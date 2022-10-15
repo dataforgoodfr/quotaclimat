@@ -50,7 +50,7 @@ should return
 Then you are ready to create a virtual environment. Go in the project folder, and run:
 ```bash
   pyenv virtualenv 3.10.2 quotaclimat
-  pyenv local my-other-project
+  pyenv local quotaclimat
 ```
 
 You now need a tool to manage dependencies. Let's use poetry.

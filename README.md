@@ -20,7 +20,6 @@ Nous passerons le projet en open source dès que nous aurons réglé la mise en 
 ## Setting up the environement
 Doing the following step will enable your local environement to be aligned with the one of any other collaborator.
 First install pyenv:
-On MacOS
 ```bash
 cd -
 brew install pyenv # pyenv itself
@@ -58,3 +57,10 @@ You now need a tool to manage dependencies. Let's use poetry.
 ```bash
 poetry update
 ```
+
+When you need to install a new dependency (use a new package, e.g. nltk), run 
+```bash
+poetry add ntlk
+```
+
+After commiting to the repo, other team members will be able to use the exact same environment you are using. 

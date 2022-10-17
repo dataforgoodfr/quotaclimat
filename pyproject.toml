@@ -15,6 +15,8 @@ plotly = "^5.10.0"
 pandas = "^1.5.0"
 nltk = "^3.7"
 matplotlib = "^3.6.1"
+jupyter = "^1.0.0"
+notebook = "^6.5.1"
 
 [build-system]
 requires = ["poetry-core"]

@@ -53,7 +53,7 @@ def deduplicate_extracts(df):
         x for x in df.columns.tolist() if x not in ["keyword", "text", "highlight"]
     ]
     df_dedup = df.groupby(deduplicate_ids).agg(
-        {"keyword": [set, "count"], "text": "first"}
+        {"keyword": [set, pd.Series.nunique], "text": "first"}
     )
     df_dedup.columns = ["keywords", "nb_keywords_in_extract", "text"]
     # convert set in list for ease of use

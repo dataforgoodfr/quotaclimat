@@ -18,6 +18,8 @@ matplotlib = "^3.6.1"
 ipykernel = "^6.16.0"
 nbformat = "^5.7.0"
 openpyxl = "^3.0.10"
+jupyter = "^1.0.0"
+notebook = "^6.5.1"
 
 [build-system]
 requires = ["poetry-core"]

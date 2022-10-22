@@ -1,5 +1,6 @@
 import datetime
-import os
+from os import listdir
+from os.path import isfile, join
 
 import pandas as pd
 
@@ -10,13 +11,14 @@ def columns_names_to_camel_case(df):
 
 
 def read_and_format_all_data_dump(
-    path_folder="../data/keywords", channel_metdada_path="../data/channels.xlsx"
+    path_folder="../data/keywords/", path_channel_metadata="../data/channels.xlsx"
 ):
     df_all = pd.DataFrame()
-    for path_file in os.listdir(path_folder):
-        df_i = read_and_format_one(path_file, channel_metdada_path)
+    list_all_files = [f for f in listdir(path_folder) if isfile(join(path_folder, f))]
+    for path_file in list_all_files:
+        df_i = read_and_format_one(path_folder + path_file, path_channel_metadata)
         df_all = pd.concat([df_all, df_i])
-    return df_i
+    return df_all
 
 
 def read_and_format_one(path_file, path_channels):

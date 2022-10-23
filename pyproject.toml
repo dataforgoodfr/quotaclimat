@@ -20,6 +20,8 @@ nbformat = "^5.7.0"
 openpyxl = "^3.0.10"
 jupyter = "^1.0.0"
 notebook = "^6.5.1"
+dash = "^2.6.2"
+streamlit = "^1.13.0"
 
 [build-system]
 requires = ["poetry-core"]

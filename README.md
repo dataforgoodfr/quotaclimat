@@ -24,13 +24,14 @@ Nous passerons le projet en open source dès que nous aurons réglé la mise en 
 - data --------------------------------- les données temporairement ici
 - notebooks ---------------------------- les analyses
         quickstart.ipynb --------------- un premier notebook Python d'analyse
-- data_processing ---------------------- methods related to process raw and aggregated data
-        read_format_deduplicate -------- read all files and put them together
-- data_analytics ----------------------- methods and figures answer the questions from media tree
-        data_coverage.py --------------- coverage of extracts and keywords in samples
-- ui ----------------------------------- dashboarding
-        streamlite_dashboard.py -------- Putting the figure together and set layout
-- app.py ------------------------------- Run dashboard
+- quotaclimat -------------------------- package the dashboard
+        data_processing ---------------- methods related to process raw and aggregated data
+          read_format_deduplicate ------ read all files and put them together
+         data_analytics ---------------- methods and figures answer the questions from media tree
+          data_coverage.py ------------- coverage of extracts and keywords in samples
+         ui ---------------------------- dashboarding
+          streamlite_dashboard.py ------ bring the figure together and set layout
+        app.py ------------------------- run dashboard
 ```
 
 ### :nut_and_bolt: Setting up the environment

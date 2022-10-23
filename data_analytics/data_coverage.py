@@ -39,13 +39,13 @@ def display_time_coverage_of_extracts(
     fig.show()
 
 
-def get_number_of_duplicates(df: pd.Dataframe):
+def get_number_of_duplicates(df: pd.DataFrame):
     print("Number of duplicates in the data (keywords covering the same extract): ")
     print(len(df) - len(deduplicate_extracts(df)))
 
 
 def fig_percentage_of_covered_time_by_keywords(
-    df_all: pd.Dataframe, path_channel_metadata: str
+    df_all: pd.DataFrame, path_channel_metadata: str
 ):
     top_n = 15
     channels = pd.read_excel(path_channel_metadata)

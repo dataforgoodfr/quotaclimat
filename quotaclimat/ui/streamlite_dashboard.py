@@ -1,8 +1,8 @@
 import streamlit as st
 
-from data_analytics.data_coverage import \
+from quotaclimat.data_analytics.data_coverage import \
     fig_percentage_of_covered_time_by_keywords
-from data_processing.read_format_deduplicate import (
+from quotaclimat.data_processing.read_format_deduplicate import (
     deduplicate_extracts, read_and_format_all_data_dump)
 
 PATH_EXTRACTS_DATA_DUMPS = "data/keywords/"

@@ -91,7 +91,7 @@ def fig_percentage_of_covered_time_by_keywords(
         # category_orders={"channel_name": count["channel_name"].tolist()},
         height=500,
         title="Pourcentage de couverture par chaîne top %s principal channel entre %s et %s"
-        % (top_n, df_all.date.min(), df_all.date.max()),
+        % (top_n, df_all.date.min().strftime("%Y-%m-%d"), df_all.date.max().strftime("%Y-%m-%d")),
     )
 
     fig.update_xaxes(tickangle=-45, title=None)

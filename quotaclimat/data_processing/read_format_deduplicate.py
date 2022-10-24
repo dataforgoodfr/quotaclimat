@@ -18,7 +18,7 @@ def read_and_format_all_data_dump(
     for path_file in list_all_files:
         df_i = read_and_format_one(path_folder + path_file, path_channel_metadata)
         df_all = pd.concat([df_all, df_i])
-    return df_all
+    return df_all.reset_index()
 
 
 def read_and_format_one(path_file, path_channels):

@@ -48,4 +48,6 @@ THEME.layout.sunburstcolorway = COLOR_SEQUENCE
 THEME.layout.colorway = COLOR_SEQUENCE
 THEME.layout.piecolorway = COLOR_SEQUENCE
 THEME.layout.font = {"family": "Helvetica"}
-px.defaults.template = THEME
+
+def get_theme():
+    return THEME

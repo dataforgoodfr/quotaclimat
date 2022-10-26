@@ -4,9 +4,9 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from quotaclimat.data_processing.read_format_deduplicate import (
+from data_processing.read_format_deduplicate import (
     deduplicate_extracts, read_and_format_all_data_dump)
-from quotaclimat.utils.plotly_theme import SMALL_SEQUENCE2
+from utils.plotly_theme import SMALL_SEQUENCE2
 
 
 def display_time_coverage_of_extracts(

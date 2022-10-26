@@ -1,4 +1,4 @@
-from ui.streamlite_dashboard import build_dashboard
+from ui.streamlite_dashboard import main
 
 if __name__ == "__main__":
-    build_dashboard()
+    main()

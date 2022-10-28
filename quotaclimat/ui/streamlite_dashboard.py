@@ -1,8 +1,8 @@
 import streamlit as st
 
-from utils.multipage import MultiPage
-from ui.pages import main_results
-from ui.pages import keywords
+from quotaclimat.utils.multipage import MultiPage
+from quotaclimat.ui.pages import main_results
+from quotaclimat.ui.pages import keywords
 
 PAGE_1 = "Introduction"
 PAGE_2 = "Résultat principaux"
@@ -13,7 +13,7 @@ def main():
     app = MultiPage()
 
     st.sidebar.header("Quota Climat & Data4Good")
-    st.sidebar.image("../coverquotaclimat.png")
+    st.sidebar.image("quotaclimat/utils/coverquotaclimat.png")
 
     app.add_page(PAGE_1, first_page)
     app.add_page(PAGE_2, main_results.app)

@@ -24,6 +24,8 @@ Nous passerons le projet en open source dès que nous aurons réglé la mise en 
 - data --------------------------------- les données temporairement ici
 - notebooks ---------------------------- les analyses
         quickstart.ipynb --------------- un premier notebook Python d'analyse
+        nlp ---------------------------- folder containing nlp related notebooks
+          nlp_hands_on.ipynb ----------- notebook using the data processing implemented in the repo, and quick eda
 - quotaclimat -------------------------- package the dashboard
         data_processing ---------------- methods related to process raw and aggregated data
           read_format_deduplicate ------ read all files and put them together

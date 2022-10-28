@@ -22,6 +22,11 @@ jupyter = "^1.0.0"
 notebook = "^6.5.1"
 dash = "^2.6.2"
 streamlit = "^1.13.0"
+textblob = "^0.17.1"
+textblob-fr = "^0.2.0"
+sklearn = "^0.0"
+wordcloud = "^1.8.2.2"
+gensim = "^4.2.0"
 
 [build-system]
 requires = ["poetry-core"]

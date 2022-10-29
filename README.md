@@ -31,8 +31,12 @@ Nous passerons le projet en open source dès que nous aurons réglé la mise en 
           read_format_deduplicate ------ read all files and put them together
          data_analytics ---------------- methods and figures answer the questions from media tree
           data_coverage.py ------------- coverage of extracts and keywords in samples
-         ui ---------------------------- dashboarding
+         ui ---------------------------- containing the piece of the user interphase (dashboard)
+          pages ------------------------ the different pages making the dashboard
           streamlite_dashboard.py ------ bring the figure together and set layout
+          utils ------------------------
+            plotly_theme.py ------------ visual identity of the project's figures
+            multipage.py --------------- generating multiple Streamlit
         app.py ------------------------- run dashboard
 ```
 

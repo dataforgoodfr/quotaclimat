@@ -15,9 +15,14 @@ class WikiChannelDataManager:
         print(self.channel_list.head(2))
         self.channel_list = self.channel_list['CHANNEL_NAME']
 
+    def get_summary(self, page):
+            return page.summary
+
+    def get_channel_type(self):
+        pass
     
     def search_channels(self):
-        for idx, channel in enumerate(self.channel_list[84:]):
+        for idx, channel in enumerate(self.channel_list):
             try:
                 searches = wikipedia.search(channel)
                 if len(searches) == 0:
@@ -32,6 +37,11 @@ class WikiChannelDataManager:
                     print(idx, page.url)
                 except wikipedia.exceptions.PageError:
                     print(f'Nothing found for {channel}')
+            print(self.get_summary(page))
+            break
+
+
+        
             
 
 

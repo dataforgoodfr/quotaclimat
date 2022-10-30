@@ -27,6 +27,7 @@ textblob-fr = "^0.2.0"
 sklearn = "^0.0"
 wordcloud = "^1.8.2.2"
 gensim = "^4.2.0"
+spacy = "^3.4.2"
 
 [build-system]
 requires = ["poetry-core"]
@@ -40,3 +41,6 @@ black = "^22.3.0"
 isort = "^5.10.1"
 flake8 = "^4.0.1"
 invoke = "^1.7.3"
+
+# also to run
+# poetry run python3 -m spacy download fr_core_news_md

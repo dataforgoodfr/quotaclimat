@@ -3,7 +3,8 @@ from os import listdir
 from os.path import isfile, join
 
 import pandas as pd
-
+# TODO
+# reconsiliate france3 with local fr3 code name 
 
 def columns_names_to_camel_case(df):
     df.columns = [x.replace(" ", "_").lower() for x in df.columns]

@@ -39,6 +39,7 @@ WARMING_STRIPES_SEQUENCE = [
 ]
 
 COLOR_SEQUENCE = COLOR_SEQUENCE  # + px.colors.qualitative.Antique
+COLOR_SEQUENCE = px.colors.qualitative.Prism
 px.defaults.template = "plotly_white"
 px.defaults.color_discrete_sequence = COLOR_SEQUENCE
 

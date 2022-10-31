@@ -1,5 +1,6 @@
 import streamlit as st
 
+
 from quotaclimat.data_analytics.data_coverage import \
     (fig_percentage_of_covered_time_by_keywords, fig_time_coverage_of_extracts)
 from quotaclimat.data_processing.read_format_deduplicate import (
@@ -25,9 +26,8 @@ def figures_computation():
     fig_percentage_of_covered_time_by_keywords_, fig_time_coverage_of_extracts_
     return fig_percentage_of_covered_time_by_keywords_, fig_time_coverage_of_extracts_
 
-def app():
-    st.header("Couverture mediatique")
-    st.sidebar.markdown("# Resultat principaux")
-    figs = figures_computation()
-    for fig_ in figs:
-        st.plotly_chart(fig_)
+st.header("Couverture mediatique")
+st.sidebar.markdown("# Resultat principaux")
+figs = figures_computation()
+for fig_ in figs:
+    st.plotly_chart(fig_)

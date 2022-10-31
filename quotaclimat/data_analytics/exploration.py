@@ -44,7 +44,7 @@ def convert_number_of_mentions(x,method = "count",n_channels = None):
 
 
 
-def show_mentions_by_channel(data,n = 30,list_of_channels = None,split = "media",method = "count",text_auto = ".2s"):
+def show_mentions_by_channel(data,n = 30,list_of_channels = None,split = "media",method = "count",text_auto = ".2s", title=""):
 
     if list_of_channels is None:
         count = data.groupby(["channel_name",split],as_index = False)["count"].sum().sort_values("count",ascending = False).head(n)
@@ -66,6 +66,7 @@ def show_mentions_by_channel(data,n = 30,list_of_channels = None,split = "media"
         text_auto = text_auto,
         category_orders={"channel_name": count["channel_name"].tolist()},
         height = 500,
+        title=title
     )
 
     fig.update_xaxes(tickangle=-45,title=None)

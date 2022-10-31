@@ -22,11 +22,19 @@ def read_and_format_all_data_dump(
     return df_all.reset_index()
 
 
-def read_and_format_one(path_file, path_channels):
-    data = pd.read_excel(path_file)
-    channels = pd.read_excel(path_channels)
+def read_and_format_one(path_file = None, path_channels = None,data = None,name = None):
+
+    if data is None:
+        data = pd.read_excel(path_file)
+
+    if path_channels is not None:
+        channels = pd.read_excel(path_channels)
+        data = data.merge(channels,on="CHANNEL")
+    else:
+        data = data.rename(columns = {"CHANNEL":"CHANNEL_NAME"})
+
     data = (
-        data.merge(channels, on="CHANNEL")
+        data
         .assign(date=lambda x: pd.to_datetime(x["DATE"], format="%Y-%m-%dT%H-%M-%S"))
         .assign(time=lambda x: x["date"].dt.time)
         .assign(
@@ -42,7 +50,7 @@ def read_and_format_one(path_file, path_channels):
         .assign(duration=lambda x: 2)
         .assign(
             keyword=lambda x: x["path_file"].map(
-                lambda y: y.rsplit("_", 1)[-1].replace(".xlsx", "")
+                lambda y: y.rsplit("_", 1)[-1].replace(".xlsx", "") if name is None else name
             )
         )
         .drop(columns=["ORIGIN", "START CHUNK", "END CHUNK", "DATE"])

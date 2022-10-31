@@ -1,2 +1,2 @@
-from quotaclimat.ui.streamlite_dashboard import \
+from quotaclimat.ui.streamlit_dashboard import \
     main as build_dashboard

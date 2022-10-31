@@ -26,13 +26,39 @@ TOP_25_CHANNELS = [
     "RFI",
 ]
 
+TOP_CHANNELS_TV_8 = [
+    'TF1',
+    'France 2',
+    'France 3',
+    'Canal+',
+    'France 5',
+    'M6',
+    'BFMTV',
+    'CNEWS',
+]
+
 TOP_CHANNELS_TV = [
-    "TF1",
-    "France 2",
-    "France 3",
-    "Canal+",
-    "France 5",
-    "M6",
-    "BFMTV",
-    "CNEWS",
+    'TF1',
+    'France 2',
+    'France 3',
+    'Canal+',
+    'France 5',
+    'M6',
+    'Arte',
+    'C8',
+    'France 24',
+    'Euronews',
+    'W9',
+    'TMC',
+    'TFX',
+    'NRJ 12',
+    'LCP',
+    'LCI',
+    'BFMTV',
+    'BFM Business'
+    'CNEWS',
+    'CSTAR',
+    'Gulli',
+    '6ter',
+    'RMC Découverte',
 ]

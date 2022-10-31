@@ -1,6 +1,8 @@
 import pandas as pd
 import wikipedia
 
+from bs4 import BeautifulSoup
+
 import os
 
 WIKI_FILE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -18,11 +20,24 @@ class WikiChannelDataManager:
     def get_summary(self, page):
             return page.summary
 
-    def get_channel_type(self):
+    def get_html(self, page):
+            return page.html()
+
+    def get_html_table(self, html):
+        soup = BeautifulSoup(html, 'lxml')
+        rows = soup.body.find('table').findAll("tr", attrs={'class':''})
+        return rows
+
+    def get_group(self, rows): 
         pass
+
+    def get_channel_type(self, rows):
+        for row in rows:
+            if 'Statut' in row.text:
+                print(row.find('div').text)
     
     def search_channels(self):
-        for idx, channel in enumerate(self.channel_list):
+        for idx, channel in enumerate(self.channel_list[1:]):
             try:
                 searches = wikipedia.search(channel)
                 if len(searches) == 0:
@@ -37,7 +52,8 @@ class WikiChannelDataManager:
                     print(idx, page.url)
                 except wikipedia.exceptions.PageError:
                     print(f'Nothing found for {channel}')
-            print(self.get_summary(page))
+            rows = self.get_html_table(self.get_html(page))
+            self.get_channel_type(rows)
             break
 
 

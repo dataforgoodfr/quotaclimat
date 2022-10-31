@@ -1,7 +1,7 @@
 import pandas as pd
 import plotly.express as px
 
-from ..utils.channels import TOP_25_CHANNELS,TOP_CHANNELS_TV
+from utils.channels import TOP_25_CHANNELS,TOP_CHANNELS_TV
 
 
 def show_mentions_by_channel(data,n = 30,list_of_channels = None,split = "media",title = "Nombre de mentions par chaîne"):

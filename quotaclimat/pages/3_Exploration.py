@@ -2,10 +2,10 @@ import streamlit as st
 import pandas as pd
 from io import StringIO
 
-from quotaclimat.utils.plotly_theme import *
-from quotaclimat.data_analytics.exploration import *
-from quotaclimat.data_processing.read_format_deduplicate import read_and_format_one
-from quotaclimat.utils.channels import TOP_25_CHANNELS,TOP_CHANNELS_TV
+from utils.plotly_theme import *
+from data_analytics.exploration import *
+from data_processing.read_format_deduplicate import read_and_format_one
+from utils.channels import TOP_25_CHANNELS,TOP_CHANNELS_TV
 
 st.write("### Outil d'exploration des fichiers Mediatree")
 

@@ -1,4 +1,4 @@
-# QuotaClimat
+# QuotaClimat x Data For Good
 ![](coverquotaclimat.png)
 
 - Pour rejoindre le projet https://dataforgood.fr/join puis sur le Slack #offseason_quotaclimat

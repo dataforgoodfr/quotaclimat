@@ -133,3 +133,9 @@ notebooks/nlp/df_all.csv
 notebooks/nlp/df_X_tfidf.pkl
 .vscode/settings.json
 
+quotaclimat/.DS_Store
+.DS_Store
+notebooks/TOKENS_keywords.xlsx
+notebooks/~$articles_manifestants_2.xlsx
+notebooks/~$articles_megabassines.xlsx
+notebooks/~$articles_sans_tokens.xlsx

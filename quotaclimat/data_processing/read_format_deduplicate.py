@@ -3,8 +3,10 @@ from os import listdir
 from os.path import isfile, join
 
 import pandas as pd
+
 # TODO
-# reconsiliate france3 with local fr3 code name 
+# reconsiliate france3 with local fr3 code name
+
 
 def columns_names_to_camel_case(df):
     df.columns = [x.replace(" ", "_").lower() for x in df.columns]
@@ -22,20 +24,21 @@ def read_and_format_all_data_dump(
     return df_all.reset_index()
 
 
-def read_and_format_one(path_file = None, path_channels = None,data = None,name = None):
+def read_and_format_one(path_file=None, path_channels=None, data=None, name=None):
 
     if data is None:
         data = pd.read_excel(path_file)
 
     if path_channels is not None:
         channels = pd.read_excel(path_channels)
-        data = data.merge(channels,on="CHANNEL")
+        data = data.merge(channels, on="CHANNEL")
     else:
-        data = data.rename(columns = {"CHANNEL":"CHANNEL_NAME"})
+        data = data.rename(columns={"CHANNEL": "CHANNEL_NAME"})
 
     data = (
-        data
-        .assign(date=lambda x: pd.to_datetime(x["DATE"], format="%Y-%m-%dT%H-%M-%S"))
+        data.assign(
+            date=lambda x: pd.to_datetime(x["DATE"], format="%Y-%m-%dT%H-%M-%S")
+        )
         .assign(time=lambda x: x["date"].dt.time)
         .assign(
             time_of_the_day=lambda x: x["time"].map(
@@ -50,7 +53,9 @@ def read_and_format_one(path_file = None, path_channels = None,data = None,name 
         .assign(duration=lambda x: 2)
         .assign(
             keyword=lambda x: x["path_file"].map(
-                lambda y: y.rsplit("_", 1)[-1].replace(".xlsx", "") if name is None else name
+                lambda y: y.rsplit("_", 1)[-1].replace(".xlsx", "")
+                if name is None
+                else name
             )
         )
         .drop(columns=["ORIGIN", "START CHUNK", "END CHUNK", "DATE"])

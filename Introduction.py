@@ -11,7 +11,6 @@ st.set_page_config(
 
 if __name__ == "__main__":
 
-
     st.image("quotaclimat/utils/coverquotaclimat.png")
 
     st.title("Quota Climat & Data4Good")
@@ -28,9 +27,17 @@ if __name__ == "__main__":
     )
 
     st.header("Structure du site web")
-    st.markdown("Le site web est divisé en différentes pages qui analysent la représentation des \
-        sujets environnementaux dans les médias :")
-    st.markdown(f"- Résultats principaux : Indicateurs aggrégés permettant d'avoir une vue globale \
-        du sujet")
-    st.markdown(f"- Mots clés : Explication des mots clés considérés et sur quelle période")
-    st.markdown(f"- Méthodologie : Détails sur la methodologie permettant ces resultats")
+    st.markdown(
+        "Le site web est divisé en différentes pages qui analysent la représentation des \
+        sujets environnementaux dans les médias :"
+    )
+    st.markdown(
+        f"- Résultats principaux : Indicateurs aggrégés permettant d'avoir une vue globale \
+        du sujet"
+    )
+    st.markdown(
+        f"- Mots clés : Explication des mots clés considérés et sur quelle période"
+    )
+    st.markdown(
+        f"- Méthodologie : Détails sur la methodologie permettant ces resultats"
+    )

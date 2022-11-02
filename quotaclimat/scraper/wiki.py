@@ -41,6 +41,17 @@ class WikiChannelDataManager:
         for row in rows:
             if 'Statut' in row.text:
                 return self.remove_parenthesis_substr(row.find('div').text.strip()).split(' ')
+
+    def get_audiences_table(self, html):
+        soup = BeautifulSoup(html, 'lxml')
+        tables = soup.findAll('table')
+        for table in tables:
+            contains_caption = table.find('caption')
+            if contains_caption is not None:
+                if 'audiences' in contains_caption.text.lower():
+                    print(contains_caption.text)
+                    return table
+        #mw-content-text > div.mw-parser-output > table:nth-child(98) > tbody
     
     def search_channels(self):
         results = {}
@@ -62,9 +73,11 @@ class WikiChannelDataManager:
                 except wikipedia.exceptions.PageError:
                     print(f'Nothing found for {channel}')
             html = self.get_html(page)
+
             rows = self.get_html_summary_table(html)
             results[channel_name]['group'] = self.get_group(rows)
             results[channel_name]['type'] = self.get_channel_type(rows)
+
         return results
 
 

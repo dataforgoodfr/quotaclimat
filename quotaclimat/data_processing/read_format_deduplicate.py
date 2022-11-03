@@ -14,7 +14,7 @@ def columns_names_to_camel_case(df):
 
 
 def read_and_format_all_data_dump(
-    path_folder="../data/keywords/", path_channel_metadata=None
+    path_folder="../data/keywords/", path_channel_metadata="../data/channels.xlsx"
 ):
     df_all = pd.DataFrame()
     list_all_files = [f for f in listdir(path_folder) if isfile(join(path_folder, f))]

@@ -61,13 +61,17 @@ def read_and_format_one(path_file=None, path_channels=None, data=None, name=None
         .drop(columns=["ORIGIN", "START CHUNK", "END CHUNK", "DATE"])
     )
     data = columns_names_to_camel_case(data)
+    data = deduplicate_extracts(data)
     return data
 
 
-def deduplicate_extracts(df):
+def deduplicate_extracts(df: pd.DataFrame):
     deduplicate_ids = [
         x for x in df.columns.tolist() if x not in ["keyword", "text", "highlight"]
     ]
+    # the deduplication assumed all sample are floored at pair minutes. The following line check if it holds
+    assert ~(df.date.dt.minute % 2).sum()
+    # this groupby all ids but keyword and text, collecting the keywords present in duplicated extract
     df_dedup = df.groupby(deduplicate_ids).agg(
         {"keyword": [set, pd.Series.nunique], "text": "first"}
     )

@@ -154,7 +154,7 @@ def show_mentions_over_time(
             )
 
             # Convert number of mentions to minutes or media time percentage if method is provided
-            n_channels = count["channel_name"].nunique()
+            n_channels = data["channel_name"].nunique()
             count["count"] = count["count"].map(
                 lambda x: convert_number_of_mentions(
                     x, method=method, n_channels=n_channels
@@ -286,7 +286,7 @@ def show_mentions_by_time_of_the_day(
             )
 
             # Convert number of mentions to minutes or media time percentage if method is provided
-            n_channels = count["channel_name"].nunique()
+            n_channels = data["channel_name"].nunique()
             count["count"] = count["count"].map(
                 lambda x: convert_number_of_mentions(
                     x, method=method, n_channels=n_channels

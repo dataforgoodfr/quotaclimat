@@ -4,7 +4,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from quotaclimat.data_processing.read_format_deduplicate import deduplicate_extracts
+from quotaclimat.data_processing.read_format_deduplicate import \
+    deduplicate_extracts
 from quotaclimat.utils.plotly_theme import SMALL_SEQUENCE2, THEME
 
 px.defaults.template = THEME
@@ -31,6 +32,7 @@ def fig_time_coverage_of_extracts(df_all: pd.DataFrame):
         showlegend=False,
     )
     return fig
+
 
 def fig_percentage_of_covered_time_by_keywords(
     df_all: pd.DataFrame, path_channel_metadata: str

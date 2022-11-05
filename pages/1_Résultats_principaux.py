@@ -2,7 +2,8 @@ import streamlit as st
 
 from quotaclimat.data_analytics.data_coverage import (
     fig_percentage_of_covered_time_by_keywords, fig_time_coverage_of_extracts)
-from quotaclimat.data_processing.read_format_deduplicate import read_and_format_all_data_dump
+from quotaclimat.data_processing.read_format_deduplicate import \
+    read_and_format_all_data_dump
 
 PATH_EXTRACTS_DATA_DUMPS = "data/keywords/"
 PATH_CHANNEL_METADATA = "data/channels.xlsx"

@@ -4,8 +4,8 @@ import pandas as pd
 import streamlit as st
 
 from quotaclimat.data_analytics.exploration import *
-from quotaclimat.data_processing.read_format_deduplicate import \
-    read_and_format_one
+from quotaclimat.data_processing.read_format_deduplicate import (
+    deduplicate_extracts, read_and_format_one)
 from quotaclimat.utils.channels import TOP_25_CHANNELS, TOP_CHANNELS_TV
 from quotaclimat.utils.plotly_theme import *
 
@@ -32,20 +32,21 @@ def load_data(uploaded_files):
         for i, uploaded_file in enumerate(uploaded_files):
 
             uploaded_file.seek(0)
-            data_file = pd.read_excel(uploaded_file)
+            df_imported = pd.read_excel(uploaded_file)
             # st.sidebar.write(uploaded_file.name)
-            data_file = read_and_format_one(
-                data=data_file,
+            df_i = read_and_format_one(
+                data=df_imported,
                 path_file=uploaded_file.name,
                 path_channels="data/channels.xlsx",
             )
 
-            data.append(data_file)
+            data.append(df_i)
 
             progress_bar.progress(float((i + 1) / len(uploaded_files)))
 
         data = pd.concat(data, axis=0, ignore_index=True)
-        return data
+        data_unique = deduplicate_extracts(data)
+        return data_unique
 
     else:
         return None

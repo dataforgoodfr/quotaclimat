@@ -1,27 +1,30 @@
+from datetime import timedelta
+
 import pandas as pd
 import plotly.express as px
-from datetime import timedelta
 
 from ..utils.channels import TOP_25_CHANNELS, TOP_CHANNELS_TV
 
-def filter_data_between_hours(data,min_hour = "15:00",max_hour = "20:00"):
 
+def filter_data_between_hours(data, min_hour="15:00", max_hour="20:00"):
     def parse_timedelta(x):
-        hours,minutes = x.split(":")
-        return timedelta(hours = int(hours),minutes = int(minutes))
+        hours, minutes = x.split(":")
+        return timedelta(hours=int(hours), minutes=int(minutes))
 
     min_hour = parse_timedelta(min_hour)
     max_hour = parse_timedelta(max_hour)
 
-    return data.loc[(data["time_of_the_day"] >= min_hour) & (data["time_of_the_day"] < max_hour)]
+    return data.loc[
+        (data["time_of_the_day"] >= min_hour) & (data["time_of_the_day"] < max_hour)
+    ]
 
 
-def convert_number_of_mentions(x,method = "count",n_channels = None):
+def convert_number_of_mentions(x, method="count", n_channels=None):
 
-    if isinstance(method,int) or isinstance(method,float):
+    if isinstance(method, int) or isinstance(method, float):
         return x * method
 
-    elif isinstance(method,str):
+    elif isinstance(method, str):
 
         if method == "count":
             return x
@@ -37,14 +40,17 @@ def convert_number_of_mentions(x,method = "count",n_channels = None):
 
             # Compute how many minutes the mentions compare to the total media time
             part_media_time = x * 2 / total_media_time
-            return part_media_time 
+            return part_media_time
 
     else:
-        raise Exception("Method argument should be count,minutes,hours,media_time or an integer or float multiplier")
+        raise Exception(
+            "Method argument should be count,minutes,hours,media_time or an integer or float multiplier"
+        )
 
 
-
-def show_mentions_by_channel(data,n = 30,list_of_channels = None,split = "media",method = "count",**kwargs):
+def show_mentions_by_channel(
+    data, n=30, list_of_channels=None, split="media", method="count", **kwargs
+):
 
     if list_of_channels is None:
         count = (
@@ -54,22 +60,27 @@ def show_mentions_by_channel(data,n = 30,list_of_channels = None,split = "media"
             .head(n)
         )
     else:
-        count = (data
-                .loc[data["channel_name"].isin(list_of_channels)]
-                .groupby(["channel_name",split],as_index = False)["count"].sum().sort_values("count",ascending = False).head(n)
+        count = (
+            data.loc[data["channel_name"].isin(list_of_channels)]
+            .groupby(["channel_name", split], as_index=False)["count"]
+            .sum()
+            .sort_values("count", ascending=False)
+            .head(n)
         )
 
-    # Convert number of mentions to minutes or media time percentage if method is provided 
+    # Convert number of mentions to minutes or media time percentage if method is provided
     n_channels = count["channel_name"].nunique()
-    count["count"] = count["count"].map(lambda x : convert_number_of_mentions(x,method = method,n_channels = n_channels))
+    count["count"] = count["count"].map(
+        lambda x: convert_number_of_mentions(x, method=method, n_channels=n_channels)
+    )
 
     fig = px.bar(
         count,
-        x = "channel_name",
-        y = "count",
-        color = split,
-        category_orders={"channel_name": count["channel_name"].tolist()},   
-        **kwargs
+        x="channel_name",
+        y="count",
+        color=split,
+        category_orders={"channel_name": count["channel_name"].tolist()},
+        **kwargs,
     )
 
     fig.update_xaxes(tickangle=-45, title=None)
@@ -92,12 +103,17 @@ def show_piechart_split_tv_radio(data):
 
 
 def show_mentions_over_time(
-    data, freq="D", split=None, kind="bar", as_percent=False, list_of_channels=None
+    data,
+    freq="D",
+    split=None,
+    kind="bar",
+    as_percent=False,
+    list_of_channels=None,
+    method="count",
+    **kwargs,
 ):
 
-def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent = False,list_of_channels = None,method = "count",**kwargs):
-
-    assert kind in ["area","bar","line"]
+    assert kind in ["area", "bar", "line"]
 
     # We take all channels if none is provided
     if list_of_channels is None:
@@ -112,14 +128,18 @@ def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent
                 .reset_index()
             )
 
-            # Convert number of mentions to minutes or media time percentage if method is provided 
+            # Convert number of mentions to minutes or media time percentage if method is provided
             n_channels = data["channel_name"].nunique()
-            count["count"] = count["count"].map(lambda x : convert_number_of_mentions(x,method = method,n_channels = n_channels))
+            count["count"] = count["count"].map(
+                lambda x: convert_number_of_mentions(
+                    x, method=method, n_channels=n_channels
+                )
+            )
 
             if kind == "bar":
-                fig = px.bar(count,x = "date",y = "count",**kwargs)
+                fig = px.bar(count, x="date", y="count", **kwargs)
             elif kind == "area":
-                fig = px.area(count,x = "date",y = "count",**kwargs)
+                fig = px.area(count, x="date", y="count", **kwargs)
             else:
                 raise Exception("kind argument should be 'area' or 'bar'")
 
@@ -133,15 +153,24 @@ def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent
                 .reset_index()
             )
 
-            # Convert number of mentions to minutes or media time percentage if method is provided 
+            # Convert number of mentions to minutes or media time percentage if method is provided
             n_channels = count["channel_name"].nunique()
-            count["count"] = count["count"].map(lambda x : convert_number_of_mentions(x,method = method,n_channels = n_channels))
+            count["count"] = count["count"].map(
+                lambda x: convert_number_of_mentions(
+                    x, method=method, n_channels=n_channels
+                )
+            )
 
             # Understand split between TV & Radio as a total percentage (ex: 55% radio / 45% TV)
             if as_percent:
 
-                fig = px.area(count,
-                            x = "date",y = "count",color = split,groupnorm='fraction',**kwargs
+                fig = px.area(
+                    count,
+                    x="date",
+                    y="count",
+                    color=split,
+                    groupnorm="fraction",
+                    **kwargs,
                 )
                 fig.update_layout(yaxis_tickformat="0%")
 
@@ -149,14 +178,14 @@ def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent
             else:
 
                 if kind == "bar":
-                    fig = px.bar(count,
-                                x = "date",y = "count",color = split,
-                                **kwargs
-                    )
+                    fig = px.bar(count, x="date", y="count", color=split, **kwargs)
                 elif kind == "area":
-                    fig = px.area(count,
-                                x = "date",y = "count",color = split,
-                                **kwargs,
+                    fig = px.area(
+                        count,
+                        x="date",
+                        y="count",
+                        color=split,
+                        **kwargs,
                     )
                 else:
                     raise Exception("kind argument should be 'area' or 'bar'")
@@ -173,21 +202,19 @@ def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent
 
         count = count.loc[count["channel_name"].isin(list_of_channels)]
 
-        # Convert number of mentions to minutes or media time percentage if method is provided 
+        # Convert number of mentions to minutes or media time percentage if method is provided
         n_channels = count["channel_name"].nunique()
-        count["count"] = count["count"].map(lambda x : convert_number_of_mentions(x,method = method,n_channels = n_channels))
+        count["count"] = count["count"].map(
+            lambda x: convert_number_of_mentions(
+                x, method=method, n_channels=n_channels
+            )
+        )
 
         if kind == "line":
-            fig = px.line(count,
-                        x = "date",y = "count",color = "channel_name",
-                        **kwargs
-            )
+            fig = px.line(count, x="date", y="count", color="channel_name", **kwargs)
 
         elif kind == "bar":
-            fig = px.bar(count,
-                        x = "date",y = "count",color = "channel_name",
-                        **kwargs
-            )
+            fig = px.bar(count, x="date", y="count", color="channel_name", **kwargs)
 
         else:
             raise Exception("kind argument should be 'line' or 'bar'")
@@ -195,9 +222,16 @@ def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent
     return fig
 
 
-def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = False,split = None,list_of_channels = None,method = "count",**kwargs):
-
-    assert kind in ["area","bar","line"]
+def show_mentions_by_time_of_the_day(
+    data,
+    freq="1H",
+    kind="bar",
+    as_percent=False,
+    split=None,
+    list_of_channels=None,
+    method="count",
+    **kwargs,
+):
 
     assert kind in ["area", "bar", "line"]
 
@@ -217,23 +251,23 @@ def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = 
                 )
             )
 
-            # Convert number of mentions to minutes or media time percentage if method is provided 
+            # Convert number of mentions to minutes or media time percentage if method is provided
             n_channels = data["channel_name"].nunique()
-            count["count"] = count["count"].map(lambda x : convert_number_of_mentions(x,method = method,n_channels = n_channels))
-            
+            count["count"] = count["count"].map(
+                lambda x: convert_number_of_mentions(
+                    x, method=method, n_channels=n_channels
+                )
+            )
+
             if kind == "bar":
                 fig = px.bar(
                     count,
-                    x = "time_of_the_day",y = "count",
-                    title = "Mention au cours des journées"
-                    **kwargs
+                    x="time_of_the_day",
+                    y="count",
+                    title="Mention au cours des journées" ** kwargs,
                 )
             elif kind == "area":
-                fig = px.area(
-                    count,
-                    x = "time_of_the_day",y = "count",
-                    **kwargs
-                )       
+                fig = px.area(count, x="time_of_the_day", y="count", **kwargs)
 
         # Split by TV or Radio
         else:
@@ -251,27 +285,40 @@ def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = 
                 .sort_values("time_of_the_day", ascending=True)
             )
 
-            # Convert number of mentions to minutes or media time percentage if method is provided 
+            # Convert number of mentions to minutes or media time percentage if method is provided
             n_channels = count["channel_name"].nunique()
-            count["count"] = count["count"].map(lambda x : convert_number_of_mentions(x,method = method,n_channels = n_channels))
+            count["count"] = count["count"].map(
+                lambda x: convert_number_of_mentions(
+                    x, method=method, n_channels=n_channels
+                )
+            )
 
             if kind == "bar":
 
                 fig = px.bar(
                     count,
-                    text_auto = "s",
-                    x = "time_of_the_day",y = "count",color=split,
-                    category_orders={"time_of_the_day":count["time_of_the_day"].unique()},
-                    **kwargs
+                    text_auto="s",
+                    x="time_of_the_day",
+                    y="count",
+                    color=split,
+                    category_orders={
+                        "time_of_the_day": count["time_of_the_day"].unique()
+                    },
+                    **kwargs,
                 )
 
             elif kind == "area":
 
                 fig = px.area(
                     count,
-                    x = "time_of_the_day",y = "count",color = split,groupnorm='fraction' if as_percent else None,
-                    category_orders={"time_of_the_day":count["time_of_the_day"].unique()},
-                    **kwargs
+                    x="time_of_the_day",
+                    y="count",
+                    color=split,
+                    groupnorm="fraction" if as_percent else None,
+                    category_orders={
+                        "time_of_the_day": count["time_of_the_day"].unique()
+                    },
+                    **kwargs,
                 )
                 if as_percent:
                     fig.update_layout(yaxis_tickformat="0%")
@@ -293,18 +340,21 @@ def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = 
 
         count = count.loc[count["channel_name"].isin(list_of_channels)]
 
-
-        # Convert number of mentions to minutes or media time percentage if method is provided 
+        # Convert number of mentions to minutes or media time percentage if method is provided
         n_channels = count["channel_name"].nunique()
-        count["count"] = count["count"].map(lambda x : convert_number_of_mentions(x,method = method,n_channels = n_channels))
-
-
+        count["count"] = count["count"].map(
+            lambda x: convert_number_of_mentions(
+                x, method=method, n_channels=n_channels
+            )
+        )
 
         if kind == "bar":
             fig = px.bar(
                 count,
-                x = "time_of_the_day",y = "count",color="channel_name",
-                category_orders={"time_of_the_day":count["time_of_the_day"].unique()},
+                x="time_of_the_day",
+                y="count",
+                color="channel_name",
+                category_orders={"time_of_the_day": count["time_of_the_day"].unique()},
                 **kwargs,
             )
 
@@ -312,8 +362,11 @@ def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = 
 
             fig = px.area(
                 count,
-                x = "time_of_the_day",y = "count",color = "channel_name",groupnorm='fraction' if as_percent else None,
-                category_orders={"time_of_the_day":count["time_of_the_day"].unique()},
+                x="time_of_the_day",
+                y="count",
+                color="channel_name",
+                groupnorm="fraction" if as_percent else None,
+                category_orders={"time_of_the_day": count["time_of_the_day"].unique()},
                 **kwargs,
             )
             if as_percent:
@@ -323,8 +376,10 @@ def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = 
 
             fig = px.line(
                 count,
-                x = "time_of_the_day",y = "count",color="channel_name",
-                category_orders={"time_of_the_day":count["time_of_the_day"].unique()},
+                x="time_of_the_day",
+                y="count",
+                color="channel_name",
+                category_orders={"time_of_the_day": count["time_of_the_day"].unique()},
                 **kwargs,
             )
 

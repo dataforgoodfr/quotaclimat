@@ -25,7 +25,7 @@ def read_and_format_all_data_dump(
     return df_all_.reset_index()
 
 
-def read_and_format_one(path_file=None, path_channels='', data=None, name=None):
+def read_and_format_one(path_file=None, path_channels="", data=None, name=None):
 
     if data is None:
         data = pd.read_excel(path_file)
@@ -101,6 +101,6 @@ def filter_data_only_keep_top_audiance(
 
 
 def hot_fix_columns_changing_over_time(df):
-    if 'channel_name' not in df:
-        df['channel_name'] = df['channel']
+    if "channel_name" not in df:
+        df["channel_name"] = df["channel"]
     return df

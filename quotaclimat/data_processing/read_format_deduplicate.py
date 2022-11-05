@@ -21,7 +21,8 @@ def read_and_format_all_data_dump(
     for path_file in list_all_files:
         df_i = read_and_format_one(path_folder + path_file, path_channel_metadata)
         df_all = pd.concat([df_all, df_i])
-    return df_all.reset_index()
+    df_all_ = deduplicate_extracts(df_all)
+    return df_all_.reset_index()
 
 
 def read_and_format_one(path_file=None, path_channels=None, data=None, name=None):
@@ -61,7 +62,6 @@ def read_and_format_one(path_file=None, path_channels=None, data=None, name=None
         .drop(columns=["ORIGIN", "START CHUNK", "END CHUNK", "DATE"])
     )
     data = columns_names_to_camel_case(data)
-    data = deduplicate_extracts(data)
     return data
 
 
@@ -81,5 +81,5 @@ def deduplicate_extracts(df: pd.DataFrame):
     df_dedup.reset_index(inplace=True)
 
     # verify unicity per channel x date
-    assert df_dedup.duplicated(subset=["channel", "date"]).any()
+    assert df_dedup.duplicated(subset=["channel_name", "date"]).any()
     return df_dedup

@@ -3,11 +3,13 @@ from datetime import datetime
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+
 from quotaclimat.data_processing.read_format_deduplicate import (
     deduplicate_extracts, read_and_format_all_data_dump)
 from quotaclimat.utils.plotly_theme import SMALL_SEQUENCE2, THEME
 
 px.defaults.template = THEME
+
 
 def fig_time_coverage_of_extracts(df_all: pd.DataFrame):
     get_number_of_duplicates(df_all)

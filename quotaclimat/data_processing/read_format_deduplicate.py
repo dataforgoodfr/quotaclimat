@@ -67,7 +67,7 @@ def read_and_format_one(path_file=None, path_channels=None, data=None, name=None
 
 def deduplicate_extracts(df: pd.DataFrame):
     deduplicate_ids = [
-        x for x in df.columns.tolist() if x not in ["keyword", "text", "highlight"]
+        x for x in df.columns.tolist() if x not in ["keyword", "text", "highlight", "index"]
     ]
     # the deduplication assumed all sample are floored at pair minutes. The following line check if it holds
     assert ~(df.date.dt.minute % 2).sum()
@@ -78,8 +78,17 @@ def deduplicate_extracts(df: pd.DataFrame):
     df_dedup.columns = ["keywords", "nb_keywords_in_extract", "text"]
     # convert set in list for ease of use
     df_dedup.keywords = df_dedup.keywords.apply(list)
+    # keep on of the keyword for easy indexing
+    df_dedup['keyword'] = df_dedup.keywords.apply(lambda k : k[0])
     df_dedup.reset_index(inplace=True)
-
     # verify unicity per channel x date
     assert df_dedup.duplicated(subset=["channel_name", "date"]).any()
     return df_dedup
+
+
+def filter_data_only_keep_top_audiance(data:pd.DataFrame, path_channels:str="../data/channels.xlsx"):
+    top_audiences = pd.read_excel(path_channels,sheet_name = "top_audiences")
+    top_audiences["channel_id"] = top_audiences["channel_name"] + "_" + top_audiences["media"]
+    data["channel_id"] = data["channel_name"] + "_" + data["media"]
+    data = data.merge(top_audiences[["channel_id"]],on = ["channel_id"],how = "inner")
+    return data

@@ -28,6 +28,7 @@ sklearn = "^0.0"
 wordcloud = "^1.8.2.2"
 gensim = "^4.2.0"
 spacy = "^3.4.2"
+transformers = "^4.24.0"
 
 [build-system]
 requires = ["poetry-core>=1.1"]

@@ -216,6 +216,7 @@ def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = 
                 fig = px.bar(
                     count,
                     x = "time_of_the_day",y = "count",
+                    title = "Mention au cours des journées"
                     **kwargs
                 )
             elif kind == "area":

@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.express as px
 from datetime import timedelta
 
-from ..utils.channels import TOP_25_CHANNELS, TOP_CHANNELS_TV
+from ..utils.channels import TOP_25_CHANNELS,TOP_CHANNELS_TV
 
 def filter_data_between_hours(data,min_hour = "15:00",max_hour = "20:00"):
 
@@ -44,21 +44,14 @@ def convert_number_of_mentions(x,method = "count",n_channels = None):
 
 
 
-def show_mentions_by_channel(data,n = 30,list_of_channels = None,split = "media",method = "count",text_auto = ".2s", title=""):
+def show_mentions_by_channel(data,n = 30,list_of_channels = None,split = "media",method = "count",**kwargs):
 
     if list_of_channels is None:
-        count = (
-            data.groupby(["channel_name", split], as_index=False)["count"]
-            .sum()
-            .sort_values("count", ascending=False)
-            .head(n)
-        )
+        count = data.groupby(["channel_name",split],as_index = False)["count"].sum().sort_values("count",ascending = False).head(n)
     else:
-        count = (
-            data.loc[data["channel_name"].isin(list_of_channels)]
-            .groupby(["channel_name", split], as_index=False)["count"]
-            .sum()
-            .sort_values("count", ascending=False)
+        count = (data
+                .loc[data["channel_name"].isin(list_of_channels)]
+                .groupby(["channel_name",split],as_index = False)["count"].sum().sort_values("count",ascending = False).head(n)
         )
 
     # Convert number of mentions to minutes or media time percentage if method is provided 
@@ -70,36 +63,32 @@ def show_mentions_by_channel(data,n = 30,list_of_channels = None,split = "media"
         x = "channel_name",
         y = "count",
         color = split,
-        text_auto = text_auto,
-        category_orders={"channel_name": count["channel_name"].tolist()},
-        height = 500,
-        title=title
+        category_orders={"channel_name": count["channel_name"].tolist()},   
+        **kwargs
     )
 
-    fig.update_xaxes(tickangle=-45, title=None)
+    fig.update_xaxes(tickangle=-45,title=None)
     fig.update_yaxes(title=None)
-    fig.update_layout(margin={"b": 100})
+    fig.update_layout(margin={"b":100})
     return fig
 
 
 def show_piechart_split_tv_radio(data):
 
-    count = (
-        data.groupby(["media"], as_index=False)["count"]
-        .sum()
-        .sort_values("count", ascending=False)
-    )
+    count = data.groupby(["media"],as_index = False)["count"].sum().sort_values("count",ascending = False)
 
-    fig = px.pie(count, names="media", values="count", title="Split TV / Radio")
-    fig.update_traces(textposition="inside", textinfo="percent+label")
+    fig = px.pie(
+        count,
+        names = "media",
+        values = "count",
+        title = "Split TV / Radio"
+    )
+    fig.update_traces(textposition='inside', textinfo='percent+label')
     return fig
 
 
-def show_mentions_over_time(
-    data, freq="D", split=None, kind="bar", as_percent=False, list_of_channels=None
-):
 
-def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent = False,list_of_channels = None,method = "count",height = 500):
+def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent = False,list_of_channels = None,method = "count",**kwargs):
 
     assert kind in ["area","bar","line"]
 
@@ -111,8 +100,8 @@ def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent
 
             count = (
                 data.set_index(["date"])
-                .groupby([pd.Grouper(freq=freq)], as_index=True)["count"]
-                .sum()
+                .groupby([pd.Grouper(freq = freq)],as_index = True)
+                ["count"].sum()
                 .reset_index()
             )
 
@@ -121,19 +110,20 @@ def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent
             count["count"] = count["count"].map(lambda x : convert_number_of_mentions(x,method = method,n_channels = n_channels))
 
             if kind == "bar":
-                fig = px.bar(count,x = "date",y = "count",height = height)
+                fig = px.bar(count,x = "date",y = "count",**kwargs)
             elif kind == "area":
-                fig = px.area(count,x = "date",y = "count",height = height)
+                fig = px.area(count,x = "date",y = "count",**kwargs)
             else:
                 raise Exception("kind argument should be 'area' or 'bar'")
+
 
         # Split TV / Radio
         else:
 
             count = (
                 data.set_index(["date"])
-                .groupby([pd.Grouper(freq=freq), split], as_index=True)["count"]
-                .sum()
+                .groupby([pd.Grouper(freq = freq),split],as_index = True)
+                ["count"].sum()
                 .reset_index()
             )
 
@@ -145,42 +135,34 @@ def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent
             if as_percent:
 
                 fig = px.area(count,
-                            x = "date",y = "count",color = split,groupnorm='fraction',
-                            title = "Evolution du nombre de mentions au cours du temps par type de média en %",height = height,
+                            x = "date",y = "count",color = split,groupnorm='fraction',**kwargs
                 )
-                fig.update_layout(yaxis_tickformat="0%")
-
+                fig.update_layout(yaxis_tickformat='0%')
+            
             # Show Total mentions by TV or Radio
             else:
 
                 if kind == "bar":
-                    fig = px.bar(
-                        count,
-                        x="date",
-                        y="count",
-                        color=split,
-                        title="Evolution du nombre de mentions au cours du temps",
-                        height=400,
+                    fig = px.bar(count,
+                                x = "date",y = "count",color = split,
+                                **kwargs
                     )
                 elif kind == "area":
-                    fig = px.area(
-                        count,
-                        x="date",
-                        y="count",
-                        color=split,
-                        title="Evolution du nombre de mentions au cours du temps",
-                        height=400,
+                    fig = px.area(count,
+                                x = "date",y = "count",color = split,
+                                **kwargs,
                     )
                 else:
                     raise Exception("kind argument should be 'area' or 'bar'")
+
 
     # Aggregate by channel if a list of channels is provided
     else:
 
         count = (
             data.set_index(["date"])
-            .groupby([pd.Grouper(freq=freq), "channel_name"], as_index=True)["count"]
-            .sum()
+            .groupby([pd.Grouper(freq = freq),"channel_name"],as_index = True)
+            ["count"].sum()
             .reset_index()
         )
 
@@ -193,13 +175,13 @@ def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent
         if kind == "line":
             fig = px.line(count,
                         x = "date",y = "count",color = "channel_name",
-                        height = height
+                        **kwargs
             )
 
         elif kind == "bar":
             fig = px.bar(count,
                         x = "date",y = "count",color = "channel_name",
-                        height = height
+                        **kwargs
             )
 
         else:
@@ -208,26 +190,22 @@ def show_mentions_over_time(data,freq = "D",split = None,kind = "bar",as_percent
     return fig
 
 
-def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = False,split = None,list_of_channels = None,method = "count",height = 400):
+def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = False,split = None,list_of_channels = None,method = "count",**kwargs):
 
     assert kind in ["area","bar","line"]
 
-    assert kind in ["area", "bar", "line"]
 
     if list_of_channels is None:
 
         if split is None:
 
             count = (
-                data.set_index(["time_of_the_day"])
-                .groupby([pd.Grouper(freq=freq)], as_index=True)["count"]
-                .sum()
+                data
+                .set_index(["time_of_the_day"])
+                .groupby([pd.Grouper(freq = freq)],as_index = True)
+                ["count"].sum()
                 .reset_index()
-                .assign(
-                    time_of_the_day=lambda x: x["time_of_the_day"].map(
-                        lambda y: str(y)[7:12]
-                    )
-                )
+                .assign(time_of_the_day = lambda x: x["time_of_the_day"].map(lambda y : str(y)[7:12]))
             )
 
             # Convert number of mentions to minutes or media time percentage if method is provided 
@@ -237,30 +215,27 @@ def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = 
             if kind == "bar":
                 fig = px.bar(
                     count,
-                    x="time_of_the_day",
-                    y="count",
+                    x = "time_of_the_day",y = "count",
+                    **kwargs
                 )
             elif kind == "area":
                 fig = px.area(
                     count,
-                    x="time_of_the_day",
-                    y="count",
-                )
+                    x = "time_of_the_day",y = "count",
+                    **kwargs
+                )       
 
         # Split by TV or Radio
         else:
 
             count = (
-                data.set_index(["time_of_the_day"])
-                .groupby([pd.Grouper(freq=freq), split], as_index=True)["count"]
-                .sum()
+                data
+                .set_index(["time_of_the_day"])
+                .groupby([pd.Grouper(freq = freq),split],as_index = True)
+                ["count"].sum()
                 .reset_index()
-                .assign(
-                    time_of_the_day=lambda x: x["time_of_the_day"].map(
-                        lambda y: str(y)[7:12]
-                    )
-                )
-                .sort_values("time_of_the_day", ascending=True)
+                .assign(time_of_the_day = lambda x: x["time_of_the_day"].map(lambda y : str(y)[7:12]))
+                .sort_values("time_of_the_day",ascending = True)
             )
 
             # Convert number of mentions to minutes or media time percentage if method is provided 
@@ -273,8 +248,8 @@ def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = 
                     count,
                     text_auto = "s",
                     x = "time_of_the_day",y = "count",color=split,
-                    height = height,
                     category_orders={"time_of_the_day":count["time_of_the_day"].unique()},
+                    **kwargs
                 )
 
             elif kind == "area":
@@ -283,24 +258,20 @@ def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = 
                     count,
                     x = "time_of_the_day",y = "count",color = split,groupnorm='fraction' if as_percent else None,
                     category_orders={"time_of_the_day":count["time_of_the_day"].unique()},
-                    height = height,
+                    **kwargs
                 )
-                if as_percent:
-                    fig.update_layout(yaxis_tickformat="0%")
+                if as_percent: fig.update_layout(yaxis_tickformat='0%') 
 
     else:
 
         count = (
-            data.set_index(["time_of_the_day"])
-            .groupby([pd.Grouper(freq=freq), "channel_name"], as_index=True)["count"]
-            .sum()
+            data
+            .set_index(["time_of_the_day"])
+            .groupby([pd.Grouper(freq = freq),"channel_name"],as_index = True)
+            ["count"].sum()
             .reset_index()
-            .assign(
-                time_of_the_day=lambda x: x["time_of_the_day"].map(
-                    lambda y: str(y)[7:12]
-                )
-            )
-            .sort_values("time_of_the_day", ascending=True)
+            .assign(time_of_the_day = lambda x: x["time_of_the_day"].map(lambda y : str(y)[7:12]))
+            .sort_values("time_of_the_day",ascending = True)
         )
 
         count = count.loc[count["channel_name"].isin(list_of_channels)]
@@ -315,48 +286,37 @@ def show_mentions_by_time_of_the_day(data,freq = "1H",kind = "bar",as_percent = 
         if kind == "bar":
             fig = px.bar(
                 count,
-                x="time_of_the_day",
-                y="count",
-                color="channel_name",
-                height=400,
-                category_orders={"time_of_the_day": count["time_of_the_day"].unique()},
-                title="Répartition des mentions par heure de la journée",
+                x = "time_of_the_day",y = "count",color="channel_name",
+                category_orders={"time_of_the_day":count["time_of_the_day"].unique()},
+                **kwargs,
             )
 
         elif kind == "area":
 
             fig = px.area(
                 count,
-                x="time_of_the_day",
-                y="count",
-                color="channel_name",
-                groupnorm="fraction" if as_percent else None,
-                category_orders={"time_of_the_day": count["time_of_the_day"].unique()},
-                title="Répartition des mentions par heure de la journée en %",
-                height=400,
+                x = "time_of_the_day",y = "count",color = "channel_name",groupnorm='fraction' if as_percent else None,
+                category_orders={"time_of_the_day":count["time_of_the_day"].unique()},
+                **kwargs,
             )
-            if as_percent:
-                fig.update_layout(yaxis_tickformat="0%")
-
+            if as_percent: fig.update_layout(yaxis_tickformat='0%') 
+        
         elif kind == "line":
 
             fig = px.line(
                 count,
-                x="time_of_the_day",
-                y="count",
-                color="channel_name",
-                height=400,
-                category_orders={"time_of_the_day": count["time_of_the_day"].unique()},
-                title="Répartition des mentions par heure de la journée",
+                x = "time_of_the_day",y = "count",color="channel_name",
+                category_orders={"time_of_the_day":count["time_of_the_day"].unique()},
+                **kwargs,
             )
 
     return fig
 
 
-def show_mentions_treemap(
-    data, list_of_channels, freq="4H", path=["channel_name", "time_of_the_day"]
-):
-    def parse_period(y, freq):
+
+def show_mentions_treemap(data,list_of_channels,freq = "4H",path = ["channel_name","time_of_the_day"]):
+
+    def parse_period(y,freq):
         hours = int(str(y)[7:9])
         return f"{hours}-{hours+int(freq.replace('H',''))}h"
 
@@ -364,31 +324,33 @@ def show_mentions_treemap(
     group = []
 
     if "time_of_the_day" in path:
-        group.append(pd.Grouper(freq=freq))
+        group.append(pd.Grouper(freq = freq))
         group.extend([x for x in path if x != "time_of_the_day"])
 
         count = (
-            data.set_index(["time_of_the_day"])
-            .groupby(group, as_index=True)["count"]
-            .sum()
+            data
+            .set_index(["time_of_the_day"])
+            .groupby(group,as_index = True)
+            ["count"].sum()
             .reset_index()
-            .assign(
-                time_of_the_day=lambda x: x["time_of_the_day"].map(
-                    lambda y: parse_period(y, freq)
-                )
-            )
-            .sort_values("time_of_the_day", ascending=True)
+            .assign(time_of_the_day = lambda x: x["time_of_the_day"].map(lambda y : parse_period(y,freq)))
+            .sort_values("time_of_the_day",ascending = True)
         )
 
     else:
 
-        count = data.groupby(path, as_index=True)["count"].sum().reset_index()
+        count = (
+            data
+            .groupby(path,as_index = True)
+            ["count"].sum()
+            .reset_index()
+        )
 
     count = count.loc[count["channel_name"].isin(list_of_channels)]
 
     fig = px.treemap(
         count,
-        path=path,
-        values="count",
+        path = path,
+        values = "count",
     )
     return fig

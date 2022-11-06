@@ -137,8 +137,8 @@ class WikiChannelDataManager:
 
 
 if __name__ == '__main__':
-    manager = WikiChannelDataManager(os.path.join(WIKI_FILE_PATH, '../../data/channels.xlsx'))
+    manager = WikiChannelDataManager(os.path.join(WIKI_FILE_PATH, '../../../data/channels.xlsx'))
     results = manager.search_channels()
-    if not os.path.isdir(os.path.join(WIKI_FILE_PATH, '../../data/channels/')):
-        os.mkdir(os.path.join(WIKI_FILE_PATH, '../../data/channels/'))
-    results.to_csv(os.path.join(WIKI_FILE_PATH, '../../data/channels/scrapped_channels.csv'))
+    if not os.path.isdir(os.path.join(WIKI_FILE_PATH, '../../../data/channels/')):
+        os.mkdir(os.path.join(WIKI_FILE_PATH, '../../../data/channels/'))
+    results.to_csv(os.path.join(WIKI_FILE_PATH, '../../../data/channels/scraped_channels.csv'))

@@ -1,46 +1,16 @@
+from pathlib import Path
+
 import streamlit as st
 
-
+MD_COP_BAROMETRE = (
+    "quotaclimat/content/Méthodologie du baromètre COP27 QuotaClimat x Data For Good.md"
+)
 st.markdown("Cette page motive la validité des resultats presentés ici.")
 st.sidebar.markdown("# 👩‍🔬 Methodologie")
-st.header("Collections des données")
-st.markdown("Cette page motive la validité des resultats presentés ici.")
-st.markdown(
-"""
-Les données ont été recuperées sur la plateforme Mediatree:
-- récupérer extract depuis mediatree par mot clef
-- trouver plus de mots clefs potentiel
-"""
-)
+tab1, tab2, tab3 = st.tabs(["Baromètre COP", "Traitement et qualité", "Stress Test"])
 
-st.markdown('''
-    <style>
-    [data-testid="stMarkdownContainer"] ul{
-        padding-left:40px;
-    }
-    </style>
-    ''', unsafe_allow_html=True)
-
-st.header("Filtrer")
-st.markdown(
-"""
-Les données sont ensuite passé au crible:
-- dedoublonner
-- vérifier la pertinence de l'extraction
-"""
-)
-st.header("Enrichir l'information")
-st.markdown(
-"""
-Topic modeling et analyse de qualité:
-- tbd
-"""
-)
-st.markdown(
-"""
--    
-"""
-)
+with tab1:
+    st.markdown(Path(MD_COP_BAROMETRE).read_text(), unsafe_allow_html=True)
 
 btn = st.button("Celebrate!")
 if btn:

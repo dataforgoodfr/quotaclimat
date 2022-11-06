@@ -6,7 +6,7 @@ import plotly.express as px
 from ..utils.channels import TOP_25_CHANNELS, TOP_CHANNELS_TV
 
 
-def filter_data_between_hours(data, min_hour="15:00", max_hour="20:00"):
+def filter_data_between_hours(data, min_hour="06:00", max_hour="24:00"):
     def parse_timedelta(x):
         hours, minutes = x.split(":")
         return timedelta(hours=int(hours), minutes=int(minutes))

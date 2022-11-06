@@ -48,7 +48,7 @@ THEME.layout.treemapcolorway = COLOR_SEQUENCE
 THEME.layout.sunburstcolorway = COLOR_SEQUENCE
 THEME.layout.colorway = COLOR_SEQUENCE
 THEME.layout.piecolorway = COLOR_SEQUENCE
-THEME.layout.font = {"family": "Helvetica"}
+THEME.layout.font = {"family": "Poppins"}
 
 def get_theme():
     return THEME

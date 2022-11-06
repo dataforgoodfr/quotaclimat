@@ -19,12 +19,21 @@ class WikiChannelDataManager:
         self.channel_list = self.channel_list['CHANNEL_NAME']
 
     def get_summary(self, page):
+            """
+            Return wiki page summary as str
+            """
             return page.summary
 
     def get_html(self, page):
+            """
+            Get page html as str
+            """
             return page.html()
 
     def get_html_summary_table(self, html):
+        """
+        Gets the first table in the page (usually the summary table) and returns the rows
+        """
         soup = BeautifulSoup(html, 'lxml')
         try:
             rows = soup.body.find('table').findAll("tr", attrs={'class':''})
@@ -33,6 +42,9 @@ class WikiChannelDataManager:
         return rows
 
     def get_group(self, rows): 
+        """
+        Iterates rows to look for 'Propriétaire'
+        """
         for row in rows:
             if 'Propriétaire' in row.text:
                 try:
@@ -41,9 +53,15 @@ class WikiChannelDataManager:
                     return None
 
     def remove_parenthesis_substr(self, text):
+        """
+        Removes substring in parenthesis
+        """
         return re.sub("[\(\[].*?[\)\]]", "", text)
 
     def get_channel_type(self, rows):
+        """
+        Iterates rows to look for 'Statut': the type of channel
+        """
         for row in rows:
             if 'Statut' in row.text:
                 try:
@@ -52,6 +70,11 @@ class WikiChannelDataManager:
                     return None
 
     def parse_type_list(self, type_list):
+        """
+        Checks for type of news channel and for its privatization status
+        """
+        if type_list is None:
+            return None, None
         theme = [el for el in type_list if el.title() in ('Généraliste', 'Thématique')]
         ownership = [el for el in type_list if el.lower() in ('publique', 'privée')]
         theme = None if len(theme)==0 else theme[0]
@@ -59,6 +82,9 @@ class WikiChannelDataManager:
         return theme, ownership
 
     def get_audiences_table(self, html):
+        """
+        Get audiences table (not complete)
+        """
         soup = BeautifulSoup(html, 'lxml')
         tables = soup.findAll('table')
         for table in tables:
@@ -70,6 +96,9 @@ class WikiChannelDataManager:
         #mw-content-text > div.mw-parser-output > table:nth-child(98) > tbody
 
     def post_process_results(self, results):
+        """
+        Maps types to english words
+        """
         results.type = results.type.map({'Généraliste': 'general', 'Thématique': 'news'})
         results.privatization_status = results.privatization_status.map({'publique': 'public', 'privée': 'private'})
         results.index.name = 'channel'
@@ -77,7 +106,7 @@ class WikiChannelDataManager:
     
     def search_channels(self):
         results = {}
-        for idx, channel in enumerate(self.channel_list[:10]):
+        for idx, channel in enumerate(self.channel_list):
             channel_name = channel.replace(' ', '_').lower()
             try:
                 searches = wikipedia.search(channel)
@@ -102,7 +131,7 @@ class WikiChannelDataManager:
                 results[channel_name]['type'] = theme
                 results[channel_name]['privatization_status'] = ownership
                 results[channel_name]['group'] = self.get_group(rows)
-            except ValueError:
+            except TypeError:
                 continue
         return self.post_process_results(pd.DataFrame.from_dict(results, orient='index'))
 
@@ -112,4 +141,4 @@ if __name__ == '__main__':
     results = manager.search_channels()
     if not os.path.isdir(os.path.join(WIKI_FILE_PATH, '../../data/channels/')):
         os.mkdir(os.path.join(WIKI_FILE_PATH, '../../data/channels/'))
-    results.to_csv(os.path.join(WIKI_FILE_PATH, '../../data/channels/results.csv'))
+    results.to_csv(os.path.join(WIKI_FILE_PATH, '../../data/channels/scrapped_channels.csv'))

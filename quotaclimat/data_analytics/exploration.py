@@ -264,7 +264,7 @@ def show_mentions_by_time_of_the_day(
                     count,
                     x="time_of_the_day",
                     y="count",
-                    title="Mention au cours des journées" ** kwargs,
+                    **kwargs,
                 )
             elif kind == "area":
                 fig = px.area(count, x="time_of_the_day", y="count", **kwargs)

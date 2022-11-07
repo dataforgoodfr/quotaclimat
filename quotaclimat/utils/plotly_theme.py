@@ -38,6 +38,7 @@ WARMING_STRIPES_SEQUENCE = [
     "#67000d",
 ]
 
+
 COLOR_SEQUENCE = COLOR_SEQUENCE  # + px.colors.qualitative.Antique
 COLOR_SEQUENCE = px.colors.qualitative.Prism
 px.defaults.template = "plotly_white"

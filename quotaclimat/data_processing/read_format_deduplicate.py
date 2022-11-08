@@ -59,9 +59,14 @@ def read_and_format_one(path_file=None, path_channels="", data=None, name=None):
             )
         )
         .drop(columns=["ORIGIN", "START CHUNK", "END CHUNK", "DATE"])
+        .reset_index(drop = True)
     )
     data = columns_names_to_camel_case(data)
     data = hot_fix_columns_changing_over_time(data)
+
+    # Remove duplicates
+    data = data.drop_duplicates(subset = ["media","date","channel_name"])
+
     return data
 
 

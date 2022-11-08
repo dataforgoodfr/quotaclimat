@@ -64,7 +64,7 @@ def read_and_format_one(path_file=None, path_channels="", data=None, name=None):
     data = columns_names_to_camel_case(data)
     data = hot_fix_columns_changing_over_time(data)
 
-    # Remove duplicates
+    # Remove duplicates within one keyword
     data = data.drop_duplicates(subset = ["media","date","channel_name"])
 
     return data

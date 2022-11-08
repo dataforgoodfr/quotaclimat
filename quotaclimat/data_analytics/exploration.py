@@ -74,7 +74,12 @@ def show_mentions_by_channel(
         lambda x: convert_number_of_mentions(x, method=method, n_channels=n_channels)
     )
 
-    order = count.groupby("channel_name")["count"].sum().sort_values(ascending = False).index.tolist()
+    order = (
+        count.groupby("channel_name")["count"]
+        .sum()
+        .sort_values(ascending=False)
+        .index.tolist()
+    )
 
     fig = px.bar(
         count,

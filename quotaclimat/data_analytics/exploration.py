@@ -6,7 +6,7 @@ import plotly.express as px
 from ..utils.channels import TOP_25_CHANNELS, TOP_CHANNELS_TV
 
 
-def filter_data_between_hours(data, min_hour="15:00", max_hour="20:00"):
+def filter_data_between_hours(data, min_hour="06:00", max_hour="24:00"):
     def parse_timedelta(x):
         hours, minutes = x.split(":")
         return timedelta(hours=int(hours), minutes=int(minutes))
@@ -74,12 +74,19 @@ def show_mentions_by_channel(
         lambda x: convert_number_of_mentions(x, method=method, n_channels=n_channels)
     )
 
+    order = (
+        count.groupby("channel_name")["count"]
+        .sum()
+        .sort_values(ascending=False)
+        .index.tolist()
+    )
+
     fig = px.bar(
         count,
         x="channel_name",
         y="count",
         color=split,
-        category_orders={"channel_name": count["channel_name"].tolist()},
+        category_orders={"channel_name": order},
         **kwargs,
     )
 
@@ -264,7 +271,7 @@ def show_mentions_by_time_of_the_day(
                     count,
                     x="time_of_the_day",
                     y="count",
-                    title="Mention au cours des journées" ** kwargs,
+                    **kwargs,
                 )
             elif kind == "area":
                 fig = px.area(count, x="time_of_the_day", y="count", **kwargs)

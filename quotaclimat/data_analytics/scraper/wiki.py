@@ -135,6 +135,30 @@ class WikiChannelDataManager:
                 continue
         return self.post_process_results(pd.DataFrame.from_dict(results, orient='index'))
 
+    
+    def generate_page_content(self, n_fetch=None):
+        results = {}
+        n_fetch = len(self.channel_list) if n_fetch is None else n_fetch
+        for idx, channel in enumerate(self.channel_list[:n_fetch]):
+            channel_name = channel.replace(' ', '_').lower()
+            try:
+                searches = wikipedia.search(channel)
+                if len(searches) == 0:
+                    print(f'Nothing found for {channel}')
+                    continue
+                page = wikipedia.page(searches[0], auto_suggest=False)
+            except wikipedia.exceptions.DisambiguationError:
+                try:
+                    searches = wikipedia.search(channel)
+                    page = wikipedia.page(searches[0] + ' (chaîne de télévision)', auto_suggest=False)
+                except wikipedia.exceptions.PageError:
+                    print(f'Nothing found for {channel}')
+                    page = None
+            if page is not None:
+                yield channel_name, page.content.replace("\n", "")
+            else:
+                yield channel_name, None
+
 
 if __name__ == '__main__':
     manager = WikiChannelDataManager(os.path.join(WIKI_FILE_PATH, '../../../data/channels.xlsx'))

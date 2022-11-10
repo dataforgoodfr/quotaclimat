@@ -20,7 +20,10 @@ def get_data():
 st.header("Programme télévision pour les prochains jours")
 st.sidebar.markdown("# Programme TV")
 df = get_data()
-st.write(df)
+
+bool_print = st.checkbox("Afficher la donnée sous forme de tableau")
+if bool_print:
+    st.write(df)
 
 channels = st.multiselect(
     "De quelle chaine de télévision voulez vous visualiser le programme TV ?",

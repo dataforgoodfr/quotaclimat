@@ -31,6 +31,8 @@ spacy = "^3.4.2"
 transformers = "^4.24.0"
 seaborn = "^0.12.1"
 flashtext = "^2.7"
+inflect = "^6.0.2"
+pyairtable = "^1.3.0"
 
 [build-system]
 requires = ["poetry-core>=1.1"]

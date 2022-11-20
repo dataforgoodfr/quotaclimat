@@ -21,7 +21,7 @@ Nous passerons le projet en open source dès que nous aurons réglé la mise en 
 
 ### :file_folder: Repo structure
 ```
-- data --------------------------------- les données temporairement ici
+
 - notebooks ---------------------------- les analyses
         quickstart.ipynb --------------- un premier notebook Python d'analyse
         nlp ---------------------------- folder containing nlp related notebooks
@@ -37,7 +37,7 @@ Nous passerons le projet en open source dès que nous aurons réglé la mise en 
           utils ------------------------
             plotly_theme.py ------------ visual identity of the project's figures
             multipage.py --------------- generating multiple Streamlit
-        app.py ------------------------- run dashboard
+app.py ------------------------- run dashboard
 ```
 
 ### :nut_and_bolt: Setting up the environment

@@ -3,14 +3,15 @@ from datetime import datetime
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from quotaclimat.data_processing.read_format_deduplicate import (
-    deduplicate_extracts, read_and_format_all_data_dump)
+
+from quotaclimat.data_processing.read_format_deduplicate import \
+    deduplicate_extracts
 from quotaclimat.utils.plotly_theme import SMALL_SEQUENCE2, THEME
 
 px.defaults.template = THEME
 
+
 def fig_time_coverage_of_extracts(df_all: pd.DataFrame):
-    get_number_of_duplicates(df_all)
     # aggregate data daily
     data_all_daily = df_all.groupby(
         ["keyword", pd.Grouper(key="date", freq="d")]
@@ -31,11 +32,6 @@ def fig_time_coverage_of_extracts(df_all: pd.DataFrame):
         showlegend=False,
     )
     return fig
-
-
-def get_number_of_duplicates(df: pd.DataFrame):
-    print("Number of duplicates in the data (keywords covering the same extract): ")
-    print(len(df) - len(deduplicate_extracts(df)))
 
 
 def fig_percentage_of_covered_time_by_keywords(

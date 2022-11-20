@@ -12,32 +12,24 @@
   - [File Structure](#file_folder-file-structure)
   - [Setting up the environment](#nut_and_bolt-setting-up-the-environment)
 
-## Open source
-
-Pour l'instant le repo est privé, parce que les données sont privées.
-Nous passerons le projet en open source dès que nous aurons réglé la mise en place d'une base de données SQL
-
 ##  :wrench: Development
 
 ### :file_folder: Repo structure
 ```
-- data --------------------------------- les données temporairement ici
+
 - notebooks ---------------------------- les analyses
         quickstart.ipynb --------------- un premier notebook Python d'analyse
-        nlp ---------------------------- folder containing nlp related notebooks
-          nlp_hands_on.ipynb ----------- notebook using the data processing implemented in the repo, and quick eda
+        COP27/ ------------------------- COP27 notebook analysis
+        nlp_hands_on.ipynb ----------- notebook using the data processing implemented in the repo, and quick eda
 - quotaclimat -------------------------- package the dashboard
         data_processing ---------------- methods related to process raw and aggregated data
           read_format_deduplicate ------ read all files and put them together
-         data_analytics ---------------- methods and figures answer the questions from media tree
+        data_analytics ---------------- methods and figures answer the questions from media tree
           data_coverage.py ------------- coverage of extracts and keywords in samples
-         ui ---------------------------- containing the piece of the user interphase (dashboard)
-          pages ------------------------ the different pages making the dashboard
-          streamlite_dashboard.py ------ bring the figure together and set layout
-          utils ------------------------
+        utils --------------------------
             plotly_theme.py ------------ visual identity of the project's figures
-            multipage.py --------------- generating multiple Streamlit
-        app.py ------------------------- run dashboard
+- pages ------------------------ the different pages making the dashboard
+app.py ------------------------- run dashboard
 ```
 
 ### :nut_and_bolt: Setting up the environment

@@ -12,7 +12,7 @@ def extract_COP_occurences(path="D:\__dossier_essais\DataForGood\data\df_3medias
             cops (pandas.DataFrame): dataframe with date, media and COP number
     """
     
-    df = pd.read_csv("D:\__dossier_essais\DataForGood\data\df_3medias.csv")
+    df = pd.read_csv(path)
     interesting_columns = [
         "title", "description", "date", "media",
     ]

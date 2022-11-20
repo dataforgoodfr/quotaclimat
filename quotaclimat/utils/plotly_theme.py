@@ -38,6 +38,7 @@ WARMING_STRIPES_SEQUENCE = [
     "#67000d",
 ]
 
+
 COLOR_SEQUENCE = COLOR_SEQUENCE  # + px.colors.qualitative.Antique
 COLOR_SEQUENCE = px.colors.qualitative.Prism
 px.defaults.template = "plotly_white"
@@ -48,7 +49,7 @@ THEME.layout.treemapcolorway = COLOR_SEQUENCE
 THEME.layout.sunburstcolorway = COLOR_SEQUENCE
 THEME.layout.colorway = COLOR_SEQUENCE
 THEME.layout.piecolorway = COLOR_SEQUENCE
-THEME.layout.font = {"family": "Helvetica"}
+THEME.layout.font = {"family": "Poppins"}
 
 
 def get_theme():

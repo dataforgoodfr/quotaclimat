@@ -170,13 +170,14 @@ def show_mentions_over_time(
 
             # Understand split between TV & Radio as a total percentage (ex: 55% radio / 45% TV)
             if as_percent:
-
+                text_percentage = round(count['count']*100, 1)
                 fig = px.area(
                     count,
                     x="date",
                     y="count",
                     color=split,
                     groupnorm="fraction",
+                    text=text_percentage.apply(lambda x: str(x) + " %"),
                     **kwargs,
                 )
                 fig.update_layout(yaxis_tickformat="0%")
@@ -187,11 +188,14 @@ def show_mentions_over_time(
                 if kind == "bar":
                     fig = px.bar(count, x="date", y="count", color=split, **kwargs)
                 elif kind == "area":
+                    text_percentage = round(count['count']*100, 1)
                     fig = px.area(
                         count,
                         x="date",
                         y="count",
                         color=split,
+                        text=text_percentage.apply(lambda x: str(x) + " %"),
+
                         **kwargs,
                     )
                 else:

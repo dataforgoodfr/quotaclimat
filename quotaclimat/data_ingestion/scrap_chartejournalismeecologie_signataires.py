@@ -60,7 +60,10 @@ def write_signataire_charte(df):
 
     df.to_csv(TARGET_PATH + "/signataire_chartejournalismeecologie.csv", index=False)
 
-
-if __name__ == "__main__":
+def run():
     df = scrap_chartejournalismeecologie_dot_fr()
     write_signataire_charte(df)
+
+
+if __name__ == "__main__":
+    run()

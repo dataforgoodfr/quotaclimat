@@ -27,9 +27,9 @@ def extract_tv_program(
         Table with the TV programs for the next 2 weeks
     """
     response = requests.get(URL, headers=headers)
-    with open("../../data/xmltv-tnt.xml", "wb") as outfile:
+    with open("data_public/tv_program/temp/xmltv-tnt.xml", "wb") as outfile:
         _ = outfile.write(response.content)
-    with open("../../data/xmltv-tnt.xml", "r", encoding="utf-8") as f:
+    with open("data_public/tv_program/temp/xmltv-tnt.xml", "r", encoding="utf-8") as f:
         data = f.read()
     data = xmltodict.parse(data)
     return data

@@ -1,4 +1,4 @@
-name: Scrap data from https://xmltv.ch/xmltv/xmltv-tnt.xml
+name: scrap-tv-program
 
 on:
   workflow_dispatch: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch

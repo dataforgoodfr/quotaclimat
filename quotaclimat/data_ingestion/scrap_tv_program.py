@@ -4,7 +4,10 @@ from datetime import date
 import pandas as pd
 import requests
 import xmltodict
-from categorization_program_type import MAPPING_PROGRAMMES_CATEGORIES
+
+from categorization_program_type import \
+    MAPPING_PROGRAMMES_CATEGORIES
+
 
 
 def extract_tv_program(

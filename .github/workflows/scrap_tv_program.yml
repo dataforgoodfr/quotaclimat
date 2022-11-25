@@ -36,5 +36,5 @@ jobs:
           git config user.email github-actions@github.com
           git status
           git add .
-          git commit -m "ci(data): saved date ${{ env.PATH_DAY_PARTITION }} and ${{ env.PATH_DAY_2_DAY_AGO_PARTITION }} and ${{ env.PATH_DAY_3_DAY_AGO_PARTITION }}"
+          git commit -m "ci(data): tv program scrapper"
           git push origin main

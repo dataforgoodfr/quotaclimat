@@ -39,4 +39,4 @@ jobs:
           git status
           git add .
           git commit -m "ci(data): tv program scrapper"
-          git push origin main --force-with-lease
+          git push origin main --force

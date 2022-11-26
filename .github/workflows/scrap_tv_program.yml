@@ -32,9 +32,11 @@ jobs:
       - name: RunScrappingScript
         run: |
           poetry run python quotaclimat/data_ingestion/scrap_tv_program.py
+      - name: Push data to the repo
+        run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git status
           git add .
           git commit -m "ci(data): tv program scrapper"
-          git push origin main
+          git push origin main --force-with-lease

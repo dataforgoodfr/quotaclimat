@@ -5,7 +5,7 @@ from quotaclimat.data_analytics.sitemap_analytics import \
     plot_media_count_comparison
 from quotaclimat.data_processing.sitemap_processing import *
 
-st.markdown("Exploration des contenue des site web")
+st.markdown("Exploration du contenue des titres d'article sur les siteweb des medias")
 st.sidebar.markdown("# Exploration des contenue des site web")
 
 
@@ -24,7 +24,7 @@ keywords = st_tags(
         "transition énergétique",
         "carbone",
     ],
-    suggestions=["five"],
+    suggestions=["environment"],
     maxtags=30,
     key="1",
 )
@@ -41,7 +41,7 @@ keywords_compare = st_tags(
         "émigrés",
         "ocean viking",
     ],
-    suggestions=["five"],
+    suggestions=["politque"],
     maxtags=30,
     key="2",
 )

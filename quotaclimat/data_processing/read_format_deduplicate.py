@@ -21,8 +21,8 @@ def read_and_format_all_data_dump(
     for path_file in list_all_files:
         df_i = read_and_format_one(path_folder + path_file, path_channel_metadata)
         df_all = pd.concat([df_all, df_i])
-    #df_all_ = deduplicate_extracts(df_all)  # remove this deduplication as this is not relevant for the analysis of the media coverage 
-    return df_all.reset_index()
+    df_all_ = deduplicate_extracts(df_all)  # remove this deduplication as this is not relevant for the analysis of the media coverage
+    return df_all_.reset_index()
 
 
 def read_and_format_one(path_file=None, path_channels="", data=None, name=None):

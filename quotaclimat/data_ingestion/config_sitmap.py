@@ -47,48 +47,16 @@ SITEMAP_CONFIG = {
 }
 
 MEDIA_CONFIG = {
-
-    "bfmtv": {
-        "site_url": "https://www.bfmtv.com/",
-        "type": "tv"
-    },
-    "lefigaro": {
-        "site_url": "https://www.lefigaro.fr/",
-        "type": "webpress"
-    },
-    "francetvinfo": {
-        "site_url": "https://www.francetvinfo.fr/",
-        "type": "tv"
-    },
-    "lemonde": {
-        "site_url": "https://www.lemonde.fr/",
-        "type": "webpress"
-
-    },
-    
-    "20_minutes": {
-        "site_url": "https://www.20minutes.fr/",
-        "type": "webpress"
-    },
-
+    "bfmtv": {"site_url": "https://www.bfmtv.com/", "type": "tv"},
+    "lefigaro": {"site_url": "https://www.lefigaro.fr/", "type": "webpress"},
+    "francetvinfo": {"site_url": "https://www.francetvinfo.fr/", "type": "tv"},
+    "lemonde": {"site_url": "https://www.lemonde.fr/", "type": "webpress"},
+    "20_minutes": {"site_url": "https://www.20minutes.fr/", "type": "webpress"},
     "liberation": {
         "site_url": "https://www.liberation.fr/arc/outboundfeeds/",
-        "type": "webpress"
+        "type": "webpress",
     },
-
-    "nouvel_obs": {
-        "site_url": "https://www.nouvelobs.com/",
-        "type": "webpress"
-    },
-
-    "le_point": {
-        "site_url": "https://www.lepoint.fr/",
-        "type": "webpress"
-    },
-
-    "lexpress": {
-        "site_url": "https://www.lexpress.fr/",
-        "type": "webpress"
-    }
-
+    "nouvel_obs": {"site_url": "https://www.nouvelobs.com/", "type": "webpress"},
+    "le_point": {"site_url": "https://www.lepoint.fr/", "type": "webpress"},
+    "lexpress": {"site_url": "https://www.lexpress.fr/", "type": "webpress"},
 }

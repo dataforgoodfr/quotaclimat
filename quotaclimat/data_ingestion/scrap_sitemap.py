@@ -5,8 +5,7 @@ from typing import Dict, List
 
 import advertools as adv
 import pandas as pd
-
-from config_sitmap import SITEMAP_CONFIG, MEDIA_CONFIG
+from config_sitmap import MEDIA_CONFIG, SITEMAP_CONFIG
 
 # TODO: silence advertools loggings
 # TODO: add slack login
@@ -32,9 +31,7 @@ def find_sections(url: str, media: str) -> List[str]:
 def get_sections(df: pd.DataFrame) -> pd.DataFrame:
     """Get sections and apply it to df"""
 
-    df["section"] = df.apply(
-        lambda x: find_sections(x.url, x.media), axis=1
-    )
+    df["section"] = df.apply(lambda x: find_sections(x.url, x.media), axis=1)
 
     return df
 

@@ -5,8 +5,8 @@ from quotaclimat.data_analytics.sitemap_analytics import \
     plot_media_count_comparison
 from quotaclimat.data_processing.sitemap_processing import *
 
-st.markdown("Exploration du contenue des titres d'article sur les siteweb des medias")
-st.sidebar.markdown("# Exploration des contenue des site web")
+st.markdown("Exploration des titres d'article sur les siteweb des medias")
+st.sidebar.markdown("# Exploration des titres d'article des site web")
 
 
 df_all = load_all()
@@ -45,6 +45,7 @@ keywords_compare = st_tags(
     maxtags=30,
     key="2",
 )
-
-fig = plot_media_count_comparison(df_all, keywords, keywords_compare)
-st.plotly_chart(fig)
+btn = st.button("Lancer l'analyse")
+if btn:
+    fig = plot_media_count_comparison(df_all, keywords, keywords_compare)
+    st.plotly_chart(fig)

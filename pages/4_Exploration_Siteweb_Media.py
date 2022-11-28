@@ -1,10 +1,11 @@
 import streamlit as st
 from streamlit_tags import st_tags
 
-from quotaclimat.data_analytics.sitemap_analytics import \
-    plot_media_count_comparison, plot_comparison_of_temporal_total_count
+from quotaclimat.data_analytics.sitemap_analytics import (
+    plot_comparison_of_temporal_total_count, plot_media_count_comparison)
 from quotaclimat.data_processing.sitemap_processing import *
-#TODO: seperate processing from plotting!
+
+# TODO: seperate processing from plotting!
 
 st.markdown("Exploration des titres d'article sur les siteweb des medias")
 st.sidebar.markdown("# Exploration des titres d'article des site web")
@@ -51,5 +52,7 @@ if btn:
     fig = plot_media_count_comparison(df_all, keywords, keywords_compare)
     st.plotly_chart(fig)
 
-    fig_temporal_count = plot_comparison_of_temporal_total_count(df_all, keywords, keywords_compare)
+    fig_temporal_count = plot_comparison_of_temporal_total_count(
+        df_all, keywords, keywords_compare
+    )
     st.plotly_chart(fig_temporal_count)

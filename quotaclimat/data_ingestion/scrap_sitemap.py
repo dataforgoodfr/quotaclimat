@@ -87,7 +87,8 @@ def write_df(df: pd.DataFrame, media: str):
         "data_public/sitemap_dumps/media_type=%s/media=%s/year=%s/month=%s/"
         % (MEDIA_CONFIG[media]["type"], media, download_date.year, download_date.month)
     )
-    os.makedirs(landing_path)
+    if not os.path.exists(landing_path):
+        os.makedirs(landing_path)
     df.to_parquet(landing_path + "/%s.parquet" % download_date.strftime("%Y%m%d"))
 
 

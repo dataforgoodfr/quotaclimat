@@ -16,7 +16,6 @@ from quotaclimat.data_processing.sitemap_processing import (
 
 st.sidebar.markdown("# Exploration des titres d'article des site web")
 
-
 df_all = load_all()
 df_featured = feature_engineering_sitemap(df_all)
 
@@ -74,6 +73,8 @@ with tab1:
         #st.pyplot(make_word_cloud(df_between_two_dates))
 
 with tab2:
+    st.markdown("Exploration des titres d'article sur les siteweb des medias")
+
     keywords = st_tags(
         label="Entrez des mots clé:",
         text="Pressez entrez pour ajouter",

@@ -3297,6 +3297,22 @@ url = "https://pypi.org/simple"
 reference = "pypi-public"
 
 [[package]]
+name = "streamlit-tags"
+version = "1.2.8"
+description = "Tags custom component for Streamlit"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.dependencies]
+streamlit = ">=0.63"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.org/simple"
+reference = "pypi-public"
+
+[[package]]
 name = "tenacity"
 version = "8.1.0"
 description = "Retry code until it succeeds"
@@ -4029,7 +4045,7 @@ reference = "pypi-public"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "4608e6b14503261b399c633f52c56785ee3318a362fecb40f7f48a06da662945"
+content-hash = "e76dce4f1821f1a2711f7c03d4e0f6a59155bde269fa6c84d0b44ade7f783869"
 
 [metadata.files]
 advertools = [
@@ -5938,6 +5954,10 @@ stack-data = [
 streamlit = [
     {file = "streamlit-1.13.0-py2.py3-none-any.whl", hash = "sha256:3231a6f424f8a7f365dc9e46d4fbb66a3634fd570c74769b8a69f792d9285d3a"},
     {file = "streamlit-1.13.0.tar.gz", hash = "sha256:eb178dc87d9f01e2be11ee9e4d55f79a678597ece56cacbfe5a9236d768d48da"},
+]
+streamlit-tags = [
+    {file = "streamlit_tags-1.2.8-py3-none-any.whl", hash = "sha256:c71b10666f3fce67d8e0b3c089aa50dc48830d310223fb88005b08f157586f95"},
+    {file = "streamlit_tags-1.2.8.tar.gz", hash = "sha256:9ea46b21f206dc73164e59e3c800a96c863c90af57afde20115f001a6d986583"},
 ]
 tenacity = [
     {file = "tenacity-8.1.0-py3-none-any.whl", hash = "sha256:35525cd47f82830069f0d6b73f7eb83bc5b73ee2fff0437952cedf98b27653ac"},

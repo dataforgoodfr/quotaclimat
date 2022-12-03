@@ -1,5 +1,5 @@
 # QuotaClimat x Data For Good
-![](coverquotaclimat.png)
+![](quotaclimat/utils/coverquotaclimat.png)
 The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclimat.org/ "Quotaclimat website"), allowing them to quantify the media coverage of the climate crisis. By the mean of sitemap scrapping (among others data sources), a Streamlit dashboard is developed to answer their needs. This is work in progress! If you want to contribute:
 - Join https://dataforgood.fr/join and the Slack #offseason_quotaclimat
 - Learn about the project https://dataforgood.fr/projects/quotaclimat
@@ -34,6 +34,9 @@ The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclim
 - pages ------------------------ the different pages making the dashboard
 app.py ------------------------- run dashboard
 ```
+## Contributing
+
+Please, don't commit to main. We are working out to protect main while being able to write data through GH actions. In the meanwhile, don't be that guy.
 
 ### :nut_and_bolt: Setting up the environment
 Doing the following step will enable your local environement to be aligned with the one of any other collaborator.
@@ -141,3 +144,18 @@ poetry add ntlk
 ```
 
 After commiting to the repo, other team members will be able to use the exact same environment you are using. 
+
+
+### Run the dashboard
+```bash
+poetry run streamlit run app.py
+```
+
+### Fix linting
+Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
+```bash
+poetry run black .
+poetry run isort .
+poetry run flake8 .
+```
+There is a debt regarding the cleanest of the code right now. Let's just not make it worth for now.

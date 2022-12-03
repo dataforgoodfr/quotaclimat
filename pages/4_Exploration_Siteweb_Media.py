@@ -3,7 +3,7 @@ from streamlit_tags import st_tags
 
 from quotaclimat.data_analytics.sitemap_analytics import (
     plot_comparison_of_temporal_total_count, plot_media_count_comparison)
-from quotaclimat.data_processing.sitemap_processing import *
+from quotaclimat.data_processing.sitemap_processing import load_all
 
 # TODO: seperate processing from plotting!
 

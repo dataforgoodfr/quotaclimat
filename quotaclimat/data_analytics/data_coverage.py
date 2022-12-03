@@ -27,7 +27,7 @@ def fig_time_coverage_of_extracts(df_all: pd.DataFrame):
             go.Scatter(x=df_coverage.date, y=df_coverage.has_extract, name=key)
         )
     fig.update_layout(
-        title_text=f"Couvrance temporel des extractions %s"
+        title_text="Couvrance temporel des extractions %s"
         % datetime.today().strftime("%Y-%m-%d"),
         showlegend=False,
     )

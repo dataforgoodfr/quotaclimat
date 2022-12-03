@@ -1,11 +1,13 @@
 # from pathlib import Path
 import os
+import traceback
 from datetime import datetime
 
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+from app import logger
 from quotaclimat.data_processing.extract_and_process_tv_program import \
     get_tv_programs_next_days
 

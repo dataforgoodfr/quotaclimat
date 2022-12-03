@@ -1,15 +1,15 @@
 import json
 import traceback
-from logging import Handler, CRITICAL, ERROR, WARNING, INFO, FATAL, DEBUG, NOTSET, Formatter
+from logging import (CRITICAL, DEBUG, ERROR, FATAL, INFO, NOTSET, WARNING,
+                     Formatter, Handler)
 
 import six
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
-
-ERROR_COLOR = '#FF0000'
-WARNING_COLOR = '#FFA500'
-INFO_COLOR = '#439FE0'
+ERROR_COLOR = "#FF0000"
+WARNING_COLOR = "#FFA500"
+INFO_COLOR = "#439FE0"
 
 COLORS = {
     CRITICAL: ERROR_COLOR,
@@ -53,26 +53,21 @@ class SlackerLogHandler(Handler):
         self.client = WebClient(token=slack_token)
 
         self.channel = channel
-        if not self.channel.startswith('#') and not self.channel.startswith('@'):
-            self.channel = '#' + self.channel
+        if not self.channel.startswith("#") and not self.channel.startswith("@"):
+            self.channel = "#" + self.channel
 
     def build_msg(self, record):
         return six.text_type(self.format(record))
 
     def send_slack_message(self, message, attachments=None):
         self.client.chat_postMessage(
-            channel=self.channel,
-            text=message,
-            attachments=attachments
+            channel=self.channel, text=message, attachments=attachments
         )
 
     def build_trace(self, record, fallback):
-        trace = {
-            'fallback': fallback,
-            'color': COLORS.get(self.level, NOTSET)
-        }
+        trace = {"fallback": fallback, "color": COLORS.get(self.level, NOTSET)}
         if record.exc_info:
-            trace['text'] = '\n'.join(traceback.format_exception(*record.exc_info))
+            trace["text"] = "\n".join(traceback.format_exception(*record.exc_info))
         return trace
 
     def emit(self, record):
@@ -83,10 +78,7 @@ class SlackerLogHandler(Handler):
         else:
             attachments = None
         try:
-            self.send_slack_message(
-                message=message,
-                attachments=attachments
-            )
+            self.send_slack_message(message=message, attachments=attachments)
         except SlackApiError as e:
             if self.fail_silent:
                 pass

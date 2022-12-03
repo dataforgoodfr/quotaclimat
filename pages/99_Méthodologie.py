@@ -1,4 +1,6 @@
+import traceback
 from pathlib import Path
+
 import streamlit as st
 
 MD_COP_BAROMETRE = (

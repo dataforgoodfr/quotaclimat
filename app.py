@@ -1,19 +1,24 @@
 # from quotaclimat import build_dashboard
-from quotaclimat.logging import SlackerLogHandler, NoStacktraceFormatter
-
-import streamlit as st
 import logging
 import os
 
-SLACK_TOKEN = os.getenv('SLACK_TOKEN')
-SLACK_CHANNEL = os.getenv('SLACK_CHANNEL')
+import streamlit as st
 
-slack_handler = SlackerLogHandler(SLACK_TOKEN, SLACK_CHANNEL, stack_trace=True, fail_silent=False)
-formatter = NoStacktraceFormatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+from quotaclimat.logging import NoStacktraceFormatter, SlackerLogHandler
+
+SLACK_TOKEN = os.getenv("SLACK_TOKEN")
+SLACK_CHANNEL = os.getenv("SLACK_CHANNEL")
+
+slack_handler = SlackerLogHandler(
+    SLACK_TOKEN, SLACK_CHANNEL, stack_trace=True, fail_silent=False
+)
+formatter = NoStacktraceFormatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 slack_handler.setFormatter(formatter)
 
 global logger
-logger = logging.getLogger('Quotaclimat Logger')
+logger = logging.getLogger("Quotaclimat Logger")
 logger.addHandler(slack_handler)
 logger.setLevel(logging.ERROR)
 

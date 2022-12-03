@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 from streamlit_tags import st_tags
 
+from app import logger
 from quotaclimat.data_analytics.sitemap_analytics import (
     fig_percentage_between_two_dates_per_day_and_leaderboard_per_media,
     plot_comparison_of_temporal_total_count,

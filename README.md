@@ -1,9 +1,9 @@
 # QuotaClimat x Data For Good
 ![](coverquotaclimat.png)
-
-- Pour rejoindre le projet https://dataforgood.fr/join puis sur le Slack #offseason_quotaclimat
-- Pour en savoir plus sur le projet https://dataforgood.fr/projects/quotaclimat
-- Pour la répartition des tâches https://dataforgood.slite.page/p/xECA5kt9LFqtOA/Comment-contribuer-au-projet-QuotaClimat-x-Data-For-Good
+The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclimat.org/ "Quotaclimat website"), allowing them to quantify the media coverage of the climate crisis. By the mean of sitemap scrapping (among others data sources), a Streamlit dashboard is developed to answer their needs. This is work in progress! If you want to contribute:
+- Join https://dataforgood.fr/join and the Slack #offseason_quotaclimat
+- Learn about the project https://dataforgood.fr/projects/quotaclimat
+- To get assigned a task, introdcue yourself on Slack. Dev meetings are on Tuesdays at 19h or 13h.
 
 ## :ledger: Index
 
@@ -16,15 +16,18 @@
 
 ### :file_folder: Repo structure
 ```
-
-- notebooks ---------------------------- les analyses
+-.github/workflows --------------------- ochestrate GH actions jobs
+- data_public -------------------------- data saved from the scrapping
+- notebooks ---------------------------- r&d
         quickstart.ipynb --------------- un premier notebook Python d'analyse
         COP27/ ------------------------- COP27 notebook analysis
-        nlp_hands_on.ipynb ----------- notebook using the data processing implemented in the repo, and quick eda
-- quotaclimat -------------------------- package the dashboard
+        nlp_hands_on.ipynb ------------- notebook using the data processing implemented in the repo, and quick eda
+- quotaclimat -------------------------- all methods needed to serve the dashboard
         data_processing ---------------- methods related to process raw and aggregated data
-          read_format_deduplicate ------ read all files and put them together
-        data_analytics ---------------- methods and figures answer the questions from media tree
+          read_format_deduplicate ------ read all mediatree extracts and put them together
+        data_ingestion ----------------- scripts for scrapping jobs
+        data_models -------------------- data schemas
+        data_analytics ----------------- methods and figures answer the questions from media tree
           data_coverage.py ------------- coverage of extracts and keywords in samples
         utils --------------------------
             plotly_theme.py ------------ visual identity of the project's figures

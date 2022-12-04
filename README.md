@@ -21,22 +21,18 @@ This is work in progress! If you want to contribute:
 ### :file_folder: Repo structure
 ```
 -.github/workflows --------------------- ochestrate GH actions jobs
-- data_public -------------------------- data saved from the scrapping
+- data_public -------------------------- data ingested by the scrapping jobs
 - notebooks ---------------------------- r&d
-        quickstart.ipynb --------------- un premier notebook Python d'analyse
         COP27/ ------------------------- COP27 notebook analysis
-        nlp_hands_on.ipynb ------------- notebook using the data processing implemented in the repo, and quick eda
 - quotaclimat -------------------------- all methods needed to serve the dashboard
         data_processing ---------------- methods related to process raw and aggregated data
-          read_format_deduplicate ------ read all mediatree extracts and put them together
         data_ingestion ----------------- scripts for scrapping jobs
         data_models -------------------- data schemas
         data_analytics ----------------- methods and figures answer the questions from media tree
-          data_coverage.py ------------- coverage of extracts and keywords in samples
         utils --------------------------
             plotly_theme.py ------------ visual identity of the project's figures
-- pages ------------------------ the different pages making the dashboard
-app.py ------------------------- run dashboard
+- pages -------------------------------- the different pages making the dashboard
+app.py --------------------------------- run dashboard
 ```
 ## Contributing
 

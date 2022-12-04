@@ -1,6 +1,10 @@
 # QuotaClimat x Data For Good
 ![](quotaclimat/utils/coverquotaclimat.png)
-The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclimat.org/ "Quotaclimat website"), allowing them to quantify the media coverage of the climate crisis. By the mean of sitemap scrapping (among others data sources), a Streamlit dashboard is developed to answer their needs. This is work in progress! If you want to contribute:
+The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclimat.org/ "Quotaclimat website"), allowing them to quantify the media coverage of the climate crisis. By the mean of sitemap scrapping (among others data sources), a Streamlit dashboard is developed to answer their needs. 
+- 2022-09-28, Introduction by Eva Morel (Quotaclimat): from 14:10 to 32:00 https://www.youtube.com/watch?v=GMrwDjq3rYs
+- 2022-11-29 Project status and prospects by Estelle Rambier (Data): from 09:00 to 25:00 https://www.youtube.com/watch?v=cLGQxHJWwYA
+
+This is work in progress! If you want to contribute:
 - Join https://dataforgood.fr/join and the Slack #offseason_quotaclimat
 - Learn about the project https://dataforgood.fr/projects/quotaclimat
 - To get assigned a task, introdcue yourself on Slack. Dev meetings are on Tuesdays at 19h or 13h.

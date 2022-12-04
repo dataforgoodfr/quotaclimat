@@ -1,6 +1,30 @@
+import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from nltk.corpus import stopwords
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import MultiLabelBinarizer
+from wordcloud import WordCloud
+
+SECTION_CLIMAT = ["planete", "environnement", "crise-climatique"]
+CLIMATE_KW = [
+    " cop27",
+    "  cop ",
+    "climatique",
+    "écologie",
+    "CO2",
+    "effet de serre",
+    "transition énergétique",
+    "carbone",
+    "sécheresse" "transition énergétique",
+    "méthane",
+    "GIEC",
+    "zéro émission",
+]
+
+
+stopwords = stopwords.words("french")
 
 
 def plot_media_count_comparison(df, keywords: list, keywords_comp: list):
@@ -62,4 +86,37 @@ def plot_comparison_of_temporal_total_count(df, keywords: list, keywords_comp: l
         xaxis_title="Date de publication des articles",
         yaxis_title="Nombre total d articles",
     )
+    return fig
+
+
+def filter_df_section_and_keyword(
+    df_origin: pd.DataFrame, keywords: list, sections: list
+):
+    df = df_origin.copy()
+    df_positive_topic = df[
+        df.news_title.str.contains("|".join(keywords)) | (df[sections] == 1).any(axis=1)
+    ]
+    return df_positive_topic
+
+
+def make_word_cloud(df_origin: pd.DataFrame):
+
+    vectorizer = TfidfVectorizer(max_df=0.1, min_df=0.01, stop_words=stopwords)
+    tfidf_positive_topic = vectorizer.fit_transform(df_origin.news_title)
+    tfidf_positive_topic_sum = pd.DataFrame(
+        tfidf_positive_topic.T.sum(axis=1),
+        index=vectorizer.get_feature_names(),
+        columns=["tfidf_sum"],
+    )
+
+    wordcloud = WordCloud()
+    wordcloud.generate_from_frequencies(
+        frequencies=tfidf_positive_topic_sum.to_dict()["tfidf_sum"]
+    )
+    fig, ax = plt.subplots(figsize=(13, 8), facecolor="k")
+
+    ax = plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=0)
+
     return fig

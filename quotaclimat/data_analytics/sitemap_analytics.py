@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import nltk
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -22,9 +23,9 @@ CLIMATE_KW = [
     "GIEC",
     "zéro émission",
 ]
+nltk.download("stopwords")
 
-
-stopwords = stopwords.words("french")
+stopwords_fr = nltk.corpus.stopwords.words("french")
 
 
 def plot_media_count_comparison(df, keywords: list, keywords_comp: list):
@@ -101,7 +102,7 @@ def filter_df_section_and_keyword(
 
 def make_word_cloud(df_origin: pd.DataFrame):
 
-    vectorizer = TfidfVectorizer(max_df=0.1, min_df=0.01, stop_words=stopwords)
+    vectorizer = TfidfVectorizer(max_df=0.1, min_df=0.01, stop_words=stopwords_fr)
     tfidf_positive_topic = vectorizer.fit_transform(df_origin.news_title)
     tfidf_positive_topic_sum = pd.DataFrame(
         tfidf_positive_topic.T.sum(axis=1),

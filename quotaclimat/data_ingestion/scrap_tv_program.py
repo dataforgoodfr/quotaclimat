@@ -4,7 +4,31 @@ from datetime import date
 import pandas as pd
 import requests
 import xmltodict
+import traceback
+import logging
+import sys
+import os
 from categorization_program_type import MAPPING_PROGRAMMES_CATEGORIES
+
+dir_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(dir_path, '..', '..'))
+
+from quotaclimat.logging import NoStacktraceFormatter, SlackerLogHandler
+
+
+SLACK_TOKEN = os.getenv("SLACK_TOKEN")
+SLACK_CHANNEL = os.getenv("SLACK_CHANNEL")
+
+slack_handler = SlackerLogHandler(
+    SLACK_TOKEN, SLACK_CHANNEL, stack_trace=True, fail_silent=False
+)
+formatter = NoStacktraceFormatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+slack_handler.setFormatter(formatter)
+logger = logging.getLogger("Quotaclimat Logger")
+logger.addHandler(slack_handler)
+logger.setLevel(logging.ERROR)
 
 
 def extract_tv_program(
@@ -146,4 +170,7 @@ def get_tv_programs_next_days(number_of_days: int, save: bool = True):
 
 
 if __name__ == "__main__":
-    df = get_tv_programs_next_days(number_of_days=7, save=True)
+    try:
+        df = get_tv_programs_next_days(number_of_days=7, save=True)
+    except:
+        logger.error(traceback.format_exc())

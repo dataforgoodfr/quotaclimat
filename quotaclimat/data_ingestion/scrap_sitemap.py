@@ -2,14 +2,33 @@ import logging
 import os
 import re
 from typing import Dict, List
+import sys
 
 import advertools as adv
 import pandas as pd
 from config_sitmap import MEDIA_CONFIG, SITEMAP_CONFIG
 
 # TODO: silence advertools loggings
-# TODO: add slack login
 # TODO: add data models
+
+dir_path = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, os.path.join(dir_path, '..', '..'))
+
+from quotaclimat.logging import NoStacktraceFormatter, SlackerLogHandler
+
+SLACK_TOKEN = os.getenv("SLACK_TOKEN")
+SLACK_CHANNEL = os.getenv("SLACK_CHANNEL")
+
+slack_handler = SlackerLogHandler(
+    SLACK_TOKEN, SLACK_CHANNEL, stack_trace=True, fail_silent=False
+)
+formatter = NoStacktraceFormatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+slack_handler.setFormatter(formatter)
+logger = logging.getLogger("Quotaclimat Logger")
+logger.addHandler(slack_handler)
+logger.setLevel(logging.ERROR)
 
 
 def cure_df(df: pd.DataFrame) -> pd.DataFrame:
@@ -99,7 +118,7 @@ def run():
             df = query_one_sitemap_and_transform(media, sitemap_conf)
             write_df(df, media)
         except Exception as err:
-            logging.error("Could not write data for %s: %s" % (media, err))
+            logger.error("Could not write data for %s: %s" % (media, err))
             continue
 
 

@@ -1,10 +1,12 @@
 import glob
+from pathlib import Path
 
 import pandas as pd
 from sklearn.preprocessing import MultiLabelBinarizer
 
-LANDING_PATH_SITEMAP = "data_public/sitemap_dumps/"
+LOCAL_PATH = Path(__file__).parent.parent.parent
 
+LANDING_PATH_SITEMAP = str(LOCAL_PATH / Path("data_public/sitemap_dumps/"))+'/'
 
 def load_all(path: str = LANDING_PATH_SITEMAP):
     files = glob.glob(path + "**/**/**/**/*.parquet")

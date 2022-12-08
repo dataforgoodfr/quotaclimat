@@ -18,6 +18,10 @@ st.sidebar.markdown("# Exploration des titres d'article des site web")
 
 df_all = load_all()
 
+date_min = df_all.news_publication_date.min().date()
+date_max = df_all.news_publication_date.max().date()
+
+
 tab1, tab2, tab3 = st.tabs(
     [
         "Evolution au cours du temps",
@@ -26,14 +30,17 @@ tab1, tab2, tab3 = st.tabs(
     ]
 )
 
+with tab1:
+    st.markdown("Onglet en cours de constuction") #TODO
 
 with tab2:
-    st.markdown("Exploration des titres d'article sur les siteweb des medias")
+    st.markdown("## Exploration des titres d'article sur les siteweb des medias")
+    st.markdown(f"Données disponibles du {date_min} au {date_max}.")
     keywords = st_tags(
         label="Entrez des mots clé:",
         text="Pressez entrez pour ajouter",
         value=[
-            " COP",
+            "COP",
             "climatique",
             "écologie",
             "CO2",
@@ -41,7 +48,7 @@ with tab2:
             "transition énergétique",
             "carbone",
         ],
-        suggestions=["environment"],
+        suggestions=["environnement"],
         maxtags=30,
         key="1",
     )
@@ -50,7 +57,7 @@ with tab2:
         text="Pressez entrez pour ajouter",
         value=[
             "migrants",
-            " immigrés",
+            "immigrés",
             "sans-papiers",
             "immigration",
             "migration",
@@ -58,7 +65,7 @@ with tab2:
             "émigrés",
             "ocean viking",
         ],
-        suggestions=["politque"],
+        suggestions=["politique"],
         maxtags=30,
         key="2",
     )

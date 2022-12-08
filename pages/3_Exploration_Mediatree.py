@@ -3,11 +3,11 @@ from io import StringIO
 import pandas as pd
 import streamlit as st
 
-from quotaclimat.data_analytics.exploration import *
+import quotaclimat.data_analytics.exploration as mt_exploration
 from quotaclimat.data_processing.read_format_deduplicate import (
     deduplicate_extracts, read_and_format_one)
 from quotaclimat.utils.channels import TOP_25_CHANNELS, TOP_CHANNELS_TV
-from quotaclimat.utils.plotly_theme import *
+from quotaclimat.utils.plotly_theme import THEME
 
 import datetime
 
@@ -69,27 +69,30 @@ if data is not None:
     with st.expander("📺 Répartition par chaîne", expanded=False):
 
         st.markdown('### Nombre de mentions par chaîne')
-        fig = show_mentions_by_channel(data, n=30)
+        fig = mt_exploration.show_mentions_by_channel(data, n=30)
+
         st.plotly_chart(fig, use_container_width=True)
 
         col1, col2 = st.columns(2)
 
         col1.markdown('### Nombre de mentions dans les chaînes les plus écoutés')
-        fig = show_mentions_by_channel(data, list_of_channels=TOP_25_CHANNELS)
+        fig = mt_exploration.show_mentions_by_channel(
+            data, list_of_channels=TOP_25_CHANNELS
+        )
         col1.plotly_chart(fig, use_container_width=True)
 
-        #col2.markdown('### Répartion TV / Radio')
-        fig = show_piechart_split_tv_radio(data)
+        fig = mt_exploration.show_piechart_split_tv_radio(data)
+
         col2.plotly_chart(fig, use_container_width=True)
 
     with st.expander("📅 Evolution au cours du temps", expanded=False):
 
-        
-
-        fig = show_mentions_over_time(data, freq=PLOT_FREQUENCY, split="media", kind="area")
+        fig = mt_exploration.show_mentions_over_time(
+            data, freq=PLOT_FREQUENCY, split="media", kind="area"
+        )
         st.plotly_chart(fig, use_container_width=True)
 
-        fig = show_mentions_over_time(
+        fig = mt_exploration.show_mentions_over_time(
             data, freq=PLOT_FREQUENCY, list_of_channels=TOP_CHANNELS_TV, kind="bar"
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -97,27 +100,34 @@ if data is not None:
         selection_channels = st.multiselect(
             "Choisir les chaînes à étudier", TOP_25_CHANNELS, default=["CNEWS", "BFMTV"]
         )
-        fig = show_mentions_over_time(
+
+        fig = mt_exploration.show_mentions_over_time(
             data, freq=PLOT_FREQUENCY, list_of_channels=selection_channels, kind="bar"
+
         )
         st.plotly_chart(fig, use_container_width=True)
 
     with st.expander("⏲ Répartition par heure de la journée", expanded=False):
 
-        fig = show_mentions_by_time_of_the_day(data, freq="1H", split="media")
+        fig = mt_exploration.show_mentions_by_time_of_the_day(
+            data, freq="1H", split="media"
+        )
         st.plotly_chart(fig, use_container_width=True)
 
-        fig = show_mentions_by_time_of_the_day(
+        fig = mt_exploration.show_mentions_by_time_of_the_day(
             data, freq="1H", list_of_channels=TOP_CHANNELS_TV, kind="area"
         )
         st.plotly_chart(fig, use_container_width=True)
 
     with st.expander("🔎 Répartition par mot clé", expanded=False):
 
-        fig = show_mentions_over_time(data, freq=PLOT_FREQUENCY, split="keyword", kind="area")
+        fig = mt_exploration.show_mentions_over_time(
+            data, freq=PLOT_FREQUENCY, split="keyword", kind="area"
+        )
+
         st.plotly_chart(fig, use_container_width=True)
 
-        fig = show_mentions_treemap(
+        fig = mt_exploration.show_mentions_treemap(
             data,
             TOP_25_CHANNELS,
             freq="4H",

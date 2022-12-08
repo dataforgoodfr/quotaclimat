@@ -1,7 +1,8 @@
 import sys
 
-sys.path.append(".")
 from quotaclimat import build_dashboard
+
+sys.path.append(".")
 
 
 def test_dashboard_creation():

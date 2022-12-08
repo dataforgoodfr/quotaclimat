@@ -9,6 +9,7 @@ import streamlit as st
 
 from quotaclimat.data_processing.extract_and_process_tv_program import \
     get_tv_programs_next_days
+
 # TODO: make dynamic!
 PATH_TV_PROGRAMS = "data_public/tv_program/20221125_20221202_Programme_TV.csv"
 

@@ -1,6 +1,8 @@
 import streamlit as st
 
-from quotaclimat.data_analytics.analytics_signataire_charte import *
+from quotaclimat.data_analytics.analytics_signataire_charte import (
+    bar_plot_nb_of_signataire_per_media, get_summary_statistics,
+    load_signing_partners_data)
 from quotaclimat.data_ingestion.scrap_chartejournalismeecologie_signataires import \
     run as scrap_charte_journalisme
 

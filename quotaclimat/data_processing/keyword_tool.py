@@ -28,18 +28,18 @@ class KeywordsTool:
         self.lowercase = lowercase
 
     def load_from_dict(self, keywords: dict):
-        def remove_symbol(l):
-            return [x.replace("-", " ") for x in l]
+        def remove_symbol(text):
+            return [x.replace("-", " ") for x in text]
 
-        def add_singular_and_plural(l):
+        def add_singular_and_plural(text: str):
             new_l = []
-            for x in l:
+            for x in text:
                 x_singular = self.inflect.singular_noun(x)
-                if x_singular != False:
+                if x_singular:
                     new_l.append(x_singular)
 
                 x_plural = self.inflect.plural(x)
-                if x_plural != False:
+                if x_plural:
                     new_l.append(x_plural)
 
             return new_l

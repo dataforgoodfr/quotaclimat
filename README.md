@@ -1,9 +1,13 @@
 # QuotaClimat x Data For Good
-![](coverquotaclimat.png)
+![](quotaclimat/utils/coverquotaclimat.png)
+The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclimat.org/ "Quotaclimat website"), allowing them to quantify the media coverage of the climate crisis. By the mean of sitemap scrapping (among others data sources), a Streamlit dashboard is developed to answer their needs. 
+- 2022-09-28, Introduction by Eva Morel (Quotaclimat): from 14:10 to 32:00 https://www.youtube.com/watch?v=GMrwDjq3rYs
+- 2022-11-29 Project status and prospects by Estelle Rambier (Data): from 09:00 to 25:00 https://www.youtube.com/watch?v=cLGQxHJWwYA
 
-- Pour rejoindre le projet https://dataforgood.fr/join puis sur le Slack #offseason_quotaclimat
-- Pour en savoir plus sur le projet https://dataforgood.fr/projects/quotaclimat
-- Pour la répartition des tâches https://dataforgood.slite.page/p/xECA5kt9LFqtOA/Comment-contribuer-au-projet-QuotaClimat-x-Data-For-Good
+This is work in progress! If you want to contribute:
+- Join https://dataforgood.fr/join and the Slack #offseason_quotaclimat
+- Learn about the project https://dataforgood.fr/projects/quotaclimat
+- To get assigned a task, introdcue yourself on Slack. Dev meetings are on Tuesdays at 19h or 13h.
 
 ## :ledger: Index
 
@@ -16,21 +20,23 @@
 
 ### :file_folder: Repo structure
 ```
-
-- notebooks ---------------------------- les analyses
-        quickstart.ipynb --------------- un premier notebook Python d'analyse
+-.github/workflows --------------------- ochestrate GH actions jobs
+- data_public -------------------------- data ingested by the scrapping jobs
+- notebooks ---------------------------- r&d
         COP27/ ------------------------- COP27 notebook analysis
-        nlp_hands_on.ipynb ----------- notebook using the data processing implemented in the repo, and quick eda
-- quotaclimat -------------------------- package the dashboard
+- quotaclimat -------------------------- all methods needed to serve the dashboard
         data_processing ---------------- methods related to process raw and aggregated data
-          read_format_deduplicate ------ read all files and put them together
-        data_analytics ---------------- methods and figures answer the questions from media tree
-          data_coverage.py ------------- coverage of extracts and keywords in samples
+        data_ingestion ----------------- scripts for scrapping jobs
+        data_models -------------------- data schemas
+        data_analytics ----------------- methods and figures answer the questions from media tree
         utils --------------------------
             plotly_theme.py ------------ visual identity of the project's figures
-- pages ------------------------ the different pages making the dashboard
-app.py ------------------------- run dashboard
+- pages -------------------------------- the different pages making the dashboard
+app.py --------------------------------- run dashboard
 ```
+## Contributing
+
+Please, don't commit to main. We are working out to protect main while being able to write data through GH actions. In the meanwhile, don't be that guy.
 
 ### :nut_and_bolt: Setting up the environment
 Doing the following step will enable your local environement to be aligned with the one of any other collaborator.
@@ -138,3 +144,18 @@ poetry add ntlk
 ```
 
 After commiting to the repo, other team members will be able to use the exact same environment you are using. 
+
+
+### Run the dashboard
+```bash
+poetry run streamlit run app.py
+```
+
+### Fix linting
+Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
+```bash
+poetry run black .
+poetry run isort .
+poetry run flake8 .
+```
+There is a debt regarding the cleanest of the code right now. Let's just not make it worth for now.

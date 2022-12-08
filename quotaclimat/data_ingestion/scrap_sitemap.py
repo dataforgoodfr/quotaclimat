@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.join(dir_path, '..', '..'))
 from quotaclimat.logging import NoStacktraceFormatter, SlackerLogHandler
 
 SLACK_TOKEN = os.getenv("SLACK_TOKEN")
-SLACK_CHANNEL = os.getenv("SLACK_CHANNEL")
+SLACK_CHANNEL = 'offseason_quotaclimat_logging'
 
 slack_handler = SlackerLogHandler(
     SLACK_TOKEN, SLACK_CHANNEL, stack_trace=True, fail_silent=False

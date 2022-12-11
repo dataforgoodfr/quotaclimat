@@ -5,7 +5,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.preprocessing import MultiLabelBinarizer
 from wordcloud import WordCloud
 
 SECTION_CLIMAT = ["planete", "environnement", "crise-climatique"]

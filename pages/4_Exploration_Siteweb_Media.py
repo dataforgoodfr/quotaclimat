@@ -5,10 +5,9 @@ import streamlit as st
 from streamlit_tags import st_tags
 
 from quotaclimat.data_analytics.sitemap_analytics import (
-    CLIMATE_KW, SECTION_CLIMAT,
     fig_percentage_between_two_dates_per_day_and_leaderboard_per_media,
-    filter_df_section_and_keyword, make_word_cloud,
-    plot_comparison_of_temporal_total_count, plot_media_count_comparison)
+    make_word_cloud, plot_comparison_of_temporal_total_count,
+    plot_media_count_comparison)
 from quotaclimat.data_processing.sitemap_processing import (
     feature_engineering_sitemap, filter_df, load_all)
 

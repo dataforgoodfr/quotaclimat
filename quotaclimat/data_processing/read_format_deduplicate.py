@@ -29,14 +29,21 @@ def read_and_format_all_data_dump(
     return df_all_.reset_index()
 
 
-def validate_file_name_semantics(path_file:str):
-    if not all([len(path_file.split("_")) == 3, (len(path_file.rsplit("_", 2)[0]) == len(path_file.rsplit("_", 2)[0]) == 8)]):
-        raise  Exception( "Error: File name was %s should be of the following format: date_date_keyword.xlsx e.g. 20221106_20221106_COP27.xlsx"
-            % path_file)
+def validate_file_name_semantics(path_file: str):
+    if not all(
+        [
+            len(path_file.split("_")) == 3,
+            (len(path_file.rsplit("_", 2)[0]) == len(path_file.rsplit("_", 2)[0]) == 8),
+        ]
+    ):
+        raise Exception(
+            "Error: File name was %s should be of the following format: date_date_keyword.xlsx e.g. 20221106_20221106_COP27.xlsx"
+            % path_file
+        )
 
 
 def read_and_format_one(path_file=None, path_channels="", data=None, name=None):
-    
+
     validate_file_name_semantics(path_file)
 
     if data is None:
@@ -50,7 +57,6 @@ def read_and_format_one(path_file=None, path_channels="", data=None, name=None):
     else:
         MediatreeDataImport.to_schema().validate(data)
         data = data.rename(columns={"CHANNEL": "CHANNEL_NAME"})
-
 
     # Process data
     data = (

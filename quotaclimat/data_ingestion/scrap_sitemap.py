@@ -70,6 +70,7 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
     temp_df["media"] = media
     df = get_sections(temp_df)
     df = change_datetime_format(df)
+    df["media_type"] = MEDIA_CONFIG[media]["type"]
     sanity_check()
     return df
 

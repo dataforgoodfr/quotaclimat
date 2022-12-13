@@ -71,7 +71,7 @@ with tab1:
         )
         st.plotly_chart(fig_time_series)
         st.plotly_chart(fig_leaderboard)
-        st.pyplot(make_word_cloud(df_between_two_dates))
+        #st.pyplot(make_word_cloud(df_between_two_dates))
 
 with tab2:
     keywords = st_tags(

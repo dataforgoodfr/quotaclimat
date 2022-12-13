@@ -33,7 +33,6 @@ with tab1:
         a_week_ago = datetime.datetime.today() - datetime.timedelta(weeks=1)
 
         df_last_week = df_all[pd.to_datetime(df_all.download_date) > a_week_ago]
-        del df_last_week
         df_lw_featured = feature_engineering_sitemap(df_last_week)
         del df_last_week
         st.pyplot(make_word_cloud(df_lw_featured))

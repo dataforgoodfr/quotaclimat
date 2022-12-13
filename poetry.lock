@@ -599,7 +599,7 @@ reference = "pypi-public"
 
 [[package]]
 name = "dash"
-version = "2.7.0"
+version = "2.7.1"
 description = "A Python framework for building reactive web-apps. Developed by Plotly."
 category = "main"
 optional = false
@@ -614,7 +614,7 @@ plotly = ">=5.0.0"
 
 [package.extras]
 celery = ["celery[redis] (>=5.1.2)", "importlib-metadata (<5)", "redis (>=3.5.3)"]
-ci = ["black (==21.6b0)", "black (==22.3.0)", "dash-dangerously-set-inner-html", "dash-flow-example (==0.0.5)", "flake8 (==3.9.2)", "flaky (==3.7.0)", "flask-talisman (==1.0.0)", "isort (==4.3.21)", "mimesis", "mock (==4.0.3)", "numpy", "openpyxl", "orjson (==3.5.4)", "orjson (==3.6.7)", "pandas (==1.1.5)", "pandas (>=1.4.0)", "preconditions", "py (==1.11.0)", "pyarrow", "pyarrow (<3)", "pylint (==2.13.5)", "pytest-mock", "pytest-rerunfailures", "pytest-sugar (==0.9.5)", "xlrd (<2)", "xlrd (>=2.0.1)"]
+ci = ["black (==21.6b0)", "black (==22.3.0)", "dash-dangerously-set-inner-html", "dash-flow-example (==0.0.5)", "flake8 (==3.9.2)", "flaky (==3.7.0)", "flask-talisman (==1.0.0)", "isort (==4.3.21)", "mimesis", "mock (==4.0.3)", "numpy", "openpyxl", "orjson (==3.5.4)", "orjson (==3.6.7)", "pandas (==1.1.5)", "pandas (>=1.4.0)", "preconditions", "pyarrow", "pyarrow (<3)", "pylint (==2.13.5)", "pytest-mock", "pytest-rerunfailures", "pytest-sugar (==0.9.6)", "xlrd (<2)", "xlrd (>=2.0.1)"]
 compress = ["flask-compress"]
 dev = ["PyYAML (>=5.4.1)", "coloredlogs (>=15.0.1)", "fire (>=0.4.0)"]
 diskcache = ["diskcache (>=5.2.1)", "multiprocess (>=0.70.12)", "psutil (>=5.8.0)"]
@@ -1230,17 +1230,17 @@ reference = "pypi-public"
 
 [[package]]
 name = "isort"
-version = "5.10.1"
+version = "5.11.1"
 description = "A Python utility / library to sort Python imports."
 category = "dev"
 optional = false
-python-versions = ">=3.6.1,<4.0"
+python-versions = ">=3.7.0"
 
 [package.extras]
 colors = ["colorama (>=0.4.3,<0.5.0)"]
-pipfile_deprecated_finder = ["pipreqs", "requirementslib"]
+pipfile-deprecated-finder = ["pipreqs", "requirementslib"]
 plugins = ["setuptools"]
-requirements_deprecated_finder = ["pip-api", "pipreqs"]
+requirements-deprecated-finder = ["pip-api", "pipreqs"]
 
 [package.source]
 type = "legacy"
@@ -1892,7 +1892,7 @@ reference = "pypi-public"
 
 [[package]]
 name = "nltk"
-version = "3.7"
+version = "3.8"
 description = "Natural Language Toolkit"
 category = "main"
 optional = false
@@ -3033,6 +3033,31 @@ url = "https://pypi.org/simple"
 reference = "pypi-public"
 
 [[package]]
+name = "scikit-learn"
+version = "1.2.0"
+description = "A set of python modules for machine learning and data mining"
+category = "main"
+optional = false
+python-versions = ">=3.8"
+
+[package.dependencies]
+joblib = ">=1.1.1"
+numpy = ">=1.17.3"
+scipy = ">=1.3.2"
+threadpoolctl = ">=2.0.0"
+
+[package.extras]
+benchmark = ["matplotlib (>=3.1.3)", "memory_profiler (>=0.57.0)", "pandas (>=1.0.5)"]
+docs = ["Pillow (>=7.1.2)", "matplotlib (>=3.1.3)", "memory_profiler (>=0.57.0)", "numpydoc (>=1.2.0)", "pandas (>=1.0.5)", "plotly (>=5.10.0)", "pooch (>=1.6.0)", "scikit-image (>=0.16.2)", "seaborn (>=0.9.0)", "sphinx (>=4.0.1)", "sphinx-gallery (>=0.7.0)", "sphinx-prompt (>=1.3.0)", "sphinxext-opengraph (>=0.4.2)"]
+examples = ["matplotlib (>=3.1.3)", "pandas (>=1.0.5)", "plotly (>=5.10.0)", "pooch (>=1.6.0)", "scikit-image (>=0.16.2)", "seaborn (>=0.9.0)"]
+tests = ["black (>=22.3.0)", "flake8 (>=3.8.2)", "matplotlib (>=3.1.3)", "mypy (>=0.961)", "numpydoc (>=1.2.0)", "pandas (>=1.0.5)", "pooch (>=1.6.0)", "pyamg (>=4.0.0)", "pytest (>=5.3.1)", "pytest-cov (>=2.9.0)", "scikit-image (>=0.16.2)"]
+
+[package.source]
+type = "legacy"
+url = "https://pypi.org/simple"
+reference = "pypi-public"
+
+[[package]]
 name = "scipy"
 version = "1.9.3"
 description = "Fundamental algorithms for scientific computing in Python"
@@ -3214,19 +3239,6 @@ description = "Python 2 and 3 compatibility utilities"
 category = "main"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
-
-[package.source]
-type = "legacy"
-url = "https://pypi.org/simple"
-reference = "pypi-public"
-
-[[package]]
-name = "sklearn"
-version = "0.0.post1"
-description = "deprecated sklearn package, use scikit-learn instead"
-category = "main"
-optional = false
-python-versions = "*"
 
 [package.source]
 type = "legacy"
@@ -3595,6 +3607,19 @@ url = "https://pypi.org/simple"
 reference = "pypi-public"
 
 [[package]]
+name = "threadpoolctl"
+version = "3.1.0"
+description = "threadpoolctl"
+category = "main"
+optional = false
+python-versions = ">=3.6"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.org/simple"
+reference = "pypi-public"
+
+[[package]]
 name = "tinycss2"
 version = "1.2.1"
 description = "A tiny CSS parser"
@@ -3727,7 +3752,7 @@ reference = "pypi-public"
 
 [[package]]
 name = "traitlets"
-version = "5.7.0"
+version = "5.7.1"
 description = "Traitlets Python configuration system"
 category = "main"
 optional = false
@@ -4258,7 +4283,7 @@ reference = "pypi-public"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.10"
-content-hash = "3c5468eea3435a01905479f749136a01a94312c71403b3d22a9f82649a279541"
+content-hash = "e12f9104f6fe04a5c2eadf55edc54c5eedb00bc0653d78cff5f8b9967bae4246"
 
 [metadata.files]
 advertools = [
@@ -4683,8 +4708,8 @@ cymem = [
     {file = "cymem-2.0.7.tar.gz", hash = "sha256:e6034badb5dd4e10344211c81f16505a55553a7164adc314c75bd80cf07e57a8"},
 ]
 dash = [
-    {file = "dash-2.7.0-py3-none-any.whl", hash = "sha256:101ea41e06c49526964bc1943b341c7c57cbb607d1ec7f73d7debdbcbb0789f6"},
-    {file = "dash-2.7.0.tar.gz", hash = "sha256:0b8e550539760c9c4e1506f38e052a7123a15a86efc3aa9a2e0aa4e1a57f62bf"},
+    {file = "dash-2.7.1-py3-none-any.whl", hash = "sha256:0935490e3dd2d2a046291989824732901437bc0336d592eadcb93fd9c866d4c9"},
+    {file = "dash-2.7.1.tar.gz", hash = "sha256:13cd19d19288a8fb9c2a5cd069c72643758fc2fcda68cacc72474a4ec6b7667d"},
 ]
 dash-core-components = [
     {file = "dash_core_components-2.0.0-py3-none-any.whl", hash = "sha256:52b8e8cce13b18d0802ee3acbc5e888cb1248a04968f962d63d070400af2e346"},
@@ -4852,8 +4877,8 @@ isoduration = [
     {file = "isoduration-20.11.0.tar.gz", hash = "sha256:ac2f9015137935279eac671f94f89eb00584f940f5dc49462a0c4ee692ba1bd9"},
 ]
 isort = [
-    {file = "isort-5.10.1-py3-none-any.whl", hash = "sha256:6f62d78e2f89b4500b080fe3a81690850cd254227f27f75c3a0c491a1f351ba7"},
-    {file = "isort-5.10.1.tar.gz", hash = "sha256:e8443a5e7a020e9d7f97f1d7d9cd17c88bcb3bc7e218bf9cf5095fe550be2951"},
+    {file = "isort-5.11.1-py3-none-any.whl", hash = "sha256:bf02c95f1fe615ebbe13a619cfed1619ddfe8941274c9e3de3143adca406cb02"},
+    {file = "isort-5.11.1.tar.gz", hash = "sha256:7c5bd998504826b6f1e6f2f98b533976b066baba29b8bae83fdeefd0b89c6b70"},
 ]
 itemadapter = [
     {file = "itemadapter-0.7.0-py3-none-any.whl", hash = "sha256:0e0ab4ddf92c71af57c2386952a61756ae2ecf6c65f976ffaee9ba91ae87a91c"},
@@ -5226,8 +5251,8 @@ nest-asyncio = [
     {file = "nest_asyncio-1.5.6.tar.gz", hash = "sha256:d267cc1ff794403f7df692964d1d2a3fa9418ffea2a3f6859a439ff482fef290"},
 ]
 nltk = [
-    {file = "nltk-3.7-py3-none-any.whl", hash = "sha256:ba3de02490308b248f9b94c8bc1ac0683e9aa2ec49ee78536d8667afb5e3eec8"},
-    {file = "nltk-3.7.zip", hash = "sha256:d6507d6460cec76d70afea4242a226a7542f85c669177b9c7f562b7cf1b05502"},
+    {file = "nltk-3.8-py3-none-any.whl", hash = "sha256:3306502f487aa9fb0566e23443fa287a85a8d8d0821e2ef1655b4e3f0ea4aeee"},
+    {file = "nltk-3.8.zip", hash = "sha256:74b30826a37d78d53427105bbd037dd880251be269fca64ee530838a46ed55fc"},
 ]
 nodeenv = [
     {file = "nodeenv-1.7.0-py2.py3-none-any.whl", hash = "sha256:27083a7b96a25f2f5e1d8cb4b6317ee8aeda3bdd121394e5ac54e498028a042e"},
@@ -5948,6 +5973,29 @@ rich = [
     {file = "rich-12.6.0-py3-none-any.whl", hash = "sha256:a4eb26484f2c82589bd9a17c73d32a010b1e29d89f1604cd9bf3a2097b81bb5e"},
     {file = "rich-12.6.0.tar.gz", hash = "sha256:ba3a3775974105c221d31141f2c116f4fd65c5ceb0698657a11e9f295ec93fd0"},
 ]
+scikit-learn = [
+    {file = "scikit-learn-1.2.0.tar.gz", hash = "sha256:680b65b3caee469541385d2ca5b03ff70408f6c618c583948312f0d2125df680"},
+    {file = "scikit_learn-1.2.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:1beaa631434d1f17a20b1eef5d842e58c195875d2bc11901a1a70b5fe544745b"},
+    {file = "scikit_learn-1.2.0-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:d395730f26d8fc752321f1953ddf72647c892d8bed74fad4d7c816ec9b602dfa"},
+    {file = "scikit_learn-1.2.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fd3480c982b9e616b9f76ad8587804d3f4e91b4e2a6752e7dafb8a2e1f541098"},
+    {file = "scikit_learn-1.2.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:184a42842a4e698ffa4d849b6019de50a77a0aa24d26afa28fa49c9190bb144b"},
+    {file = "scikit_learn-1.2.0-cp310-cp310-win_amd64.whl", hash = "sha256:867023a044fdfe59e5014a7fec7a3086a8928f10b5dce9382eedf4135f6709a2"},
+    {file = "scikit_learn-1.2.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:5546a8894a0616e92489ef995b39a0715829f3df96e801bb55cbf196be0d9649"},
+    {file = "scikit_learn-1.2.0-cp311-cp311-macosx_12_0_arm64.whl", hash = "sha256:bc7073e025b62c1067cbfb76e69d08650c6b9d7a0e7afdfa20cb92d4afe516f6"},
+    {file = "scikit_learn-1.2.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:fc0a72237f0c56780cf550df87201a702d3bdcbbb23c6ef7d54c19326fa23f19"},
+    {file = "scikit_learn-1.2.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4e1ea0bc1706da45589bcf2490cde6276490a1b88f9af208dbb396fdc3a0babf"},
+    {file = "scikit_learn-1.2.0-cp311-cp311-win_amd64.whl", hash = "sha256:f17420a8e3f40129aeb7e0f5ee35822d6178617007bb8f69521a2cefc20d5f00"},
+    {file = "scikit_learn-1.2.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:25ba705ee1600ffc5df1dccd8fae129d7c6836e44ffcbb52d78536c9eaf8fcf9"},
+    {file = "scikit_learn-1.2.0-cp38-cp38-macosx_12_0_arm64.whl", hash = "sha256:6b63ca2b0643d30fbf9d25d93017ed3fb8351f31175d82d104bfec60cba7bb87"},
+    {file = "scikit_learn-1.2.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:83c772fa8c64776ad769fd764752c8452844307adcf10dee3adcc43988260f21"},
+    {file = "scikit_learn-1.2.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0834e4cec2a2e0d8978f39cb8fe1cad3be6c27a47927e1774bf5737ea65ec228"},
+    {file = "scikit_learn-1.2.0-cp38-cp38-win_amd64.whl", hash = "sha256:da29d2e379c396a63af5ed4b671ad2005cd690ac373a23bee5a0f66504e05272"},
+    {file = "scikit_learn-1.2.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:23a88883ca60c571a06278e4726b3b51b3709cfa4c93cacbf5568b22ba960899"},
+    {file = "scikit_learn-1.2.0-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:40f3ff68c505cb9d1f3693397c73991875d609da905087e00e7b4477645ec67b"},
+    {file = "scikit_learn-1.2.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e9535e867281ae6987bb80620ba14cf1649e936bfe45f48727b978b7a2dbe835"},
+    {file = "scikit_learn-1.2.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:de897720173b26842e21bed54362f5294e282422116b61cd931d4f5d870b9855"},
+    {file = "scikit_learn-1.2.0-cp39-cp39-win_amd64.whl", hash = "sha256:ceb0008f345188aa236e49c973dc160b9ed504a3abd7b321a0ecabcb669be0bd"},
+]
 scipy = [
     {file = "scipy-1.9.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:1884b66a54887e21addf9c16fb588720a8309a57b2e258ae1c7986d4444d3bc0"},
     {file = "scipy-1.9.3-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:83b89e9586c62e787f5012e8475fbb12185bafb996a03257e9675cd73d3736dd"},
@@ -6002,9 +6050,6 @@ setuptools-scm = [
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
-]
-sklearn = [
-    {file = "sklearn-0.0.post1.tar.gz", hash = "sha256:76b9ed1623775168657b86b5fe966d45752e5c87f528de6240c38923b94147c5"},
 ]
 smart-open = [
     {file = "smart_open-6.3.0-py3-none-any.whl", hash = "sha256:b4c9ae193ad6d3e7add50944b86afa0d150bd821ab8ec21edb26d9a06b66f6a8"},
@@ -6148,6 +6193,10 @@ thinc = [
     {file = "thinc-8.1.5-cp39-cp39-win_amd64.whl", hash = "sha256:16be051c6f71d967fe87c3bda3a760699539cf75fee6b32527ea38feb3002e56"},
     {file = "thinc-8.1.5.tar.gz", hash = "sha256:4d3e4de33d2d0eae7c1455c60c680e453b0204c29e3d2d548d7a9e7fe08ccfbd"},
 ]
+threadpoolctl = [
+    {file = "threadpoolctl-3.1.0-py3-none-any.whl", hash = "sha256:8b99adda265feb6773280df41eece7b2e6561b772d21ffd52e372f999024907b"},
+    {file = "threadpoolctl-3.1.0.tar.gz", hash = "sha256:a335baacfaa4400ae1f0d8e3a58d6674d2f8828e3716bb2802c44955ad391380"},
+]
 tinycss2 = [
     {file = "tinycss2-1.2.1-py3-none-any.whl", hash = "sha256:2b80a96d41e7c3914b8cda8bc7f705a4d9c49275616e886103dd839dfc847847"},
     {file = "tinycss2-1.2.1.tar.gz", hash = "sha256:8cff3a8f066c2ec677c06dbc7b45619804a6938478d9d73c284b29d14ecb0627"},
@@ -6224,8 +6273,8 @@ tqdm = [
     {file = "tqdm-4.64.1.tar.gz", hash = "sha256:5f4f682a004951c1b450bc753c710e9280c5746ce6ffedee253ddbcbf54cf1e4"},
 ]
 traitlets = [
-    {file = "traitlets-5.7.0-py3-none-any.whl", hash = "sha256:61832ea7b7f910f5745e27e9bb269a181fd15af76027d99560299209d5b17c94"},
-    {file = "traitlets-5.7.0.tar.gz", hash = "sha256:bd0fca5c890a09bf66b33cce67ca14156b080429bc39c7ef26b075a4bd4f9fc3"},
+    {file = "traitlets-5.7.1-py3-none-any.whl", hash = "sha256:57ba2ba951632eeab9388fa45f342a5402060a5cc9f0bb942f760fafb6641581"},
+    {file = "traitlets-5.7.1.tar.gz", hash = "sha256:fde8f62c05204ead43c2c1b9389cfc85befa7f54acb5da28529d671175bb4108"},
 ]
 transformers = [
     {file = "transformers-4.25.1-py3-none-any.whl", hash = "sha256:60f1be15e17e4a54373c787c713ec149dabcc63464131ac45611618fe7c2016e"},

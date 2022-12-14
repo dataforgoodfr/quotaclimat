@@ -42,3 +42,7 @@ jobs:
           git add .
           git commit -m "ci (scrap data): sitemap"
           git push origin main --force
+      - name: Failure Logging Step
+        if: ${{ failure() }}
+        run: |
+          poetry run python quotaclimat/logging/log_error.py "${{ steps.response.outputs.result }}"

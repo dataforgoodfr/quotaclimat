@@ -63,60 +63,53 @@ TOP_CHANNELS_TV = [
 ]
 
 TOP_CHANNELS_RADIO = [
-    "RFI"
-    ,"France Inter"
-    ,"RMC"
-    ,"France Info"
-    ,"RTL"
-    ,"NRJ"
-    ,"Nostalgie"
-    ,"FIP"
-    ,"France Culture"
-    ,"Skyrock"
-    ,"Chérie FM"
-    ,"RTL2"
-    ,"Fun Radio"
-    ,"Radio Classique"
-    ,"Rire et Chansons"
-    ,"Sud Radio"
-    ,"Nova"
-    ,"France Musique"
-    ,"OÜI FM"
-    ,"BFM Business Radio"
-    ,"Latina"
-    ,"Le Mouv"
-    ,"Guadeloupe 1ère"
-    ,"Radio FG"
-    ,"TSF Jazz"
-    ]
+    "RFI",
+    "France Inter",
+    "RMC",
+    "France Info",
+    "RTL",
+    "NRJ",
+    "Nostalgie",
+    "FIP",
+    "France Culture",
+    "Skyrock",
+    "Chérie FM",
+    "RTL2",
+    "Fun Radio",
+    "Radio Classique",
+    "Rire et Chansons",
+    "Sud Radio",
+    "Nova",
+    "France Musique",
+    "OÜI FM",
+    "BFM Business Radio",
+    "Latina",
+    "Le Mouv",
+    "Guadeloupe 1ère",
+    "Radio FG",
+    "TSF Jazz",
+]
 
-TOP_CHANNELS_TV_CONTINU = [
-    "LCP"
-    ,"BFMTV"
-    ,"CNEWS"
-    ,"LCI"
-    ,"France 24"
-    ,"France Info:"
-    ]
+TOP_CHANNELS_TV_CONTINU = ["LCP", "BFMTV", "CNEWS", "LCI", "France 24", "France Info:"]
 
 TOP_CHANNELS_TV_GENERALISTE = [
-    "TF1"
-    ,"France 2"
-    ,"France 3"
-    ,"Canal+"
-    ,"France 5"
-    ,"M6"
-    ,"C8"
-    ,"W9"
-    ,"TMC"
-    ,"TFX"
-    ,"NRJ 12"
-    ,"CultureBox"
-    ,"Gulli"
-    ,"TF1 HD"
-    ,"L'Équipe 21"
-    ,"6ter"
-    ,"RMC Story"
-    ,"RMC Découverte"
-    ,"Chérie 25"
-    ]
+    "TF1",
+    "France 2",
+    "France 3",
+    "Canal+",
+    "France 5",
+    "M6",
+    "C8",
+    "W9",
+    "TMC",
+    "TFX",
+    "NRJ 12",
+    "CultureBox",
+    "Gulli",
+    "TF1 HD",
+    "L'Équipe 21",
+    "6ter",
+    "RMC Story",
+    "RMC Découverte",
+    "Chérie 25",
+]

@@ -10,7 +10,6 @@ from quotaclimat.data_processing.read_format_deduplicate import (
 from quotaclimat.utils.channels import TOP_25_CHANNELS, TOP_CHANNELS_TV
 from quotaclimat.utils.plotly_theme import THEME
 
-
 st.write("### Bilan d'un événement sur les données Mediatree - page en construction")
 
 uploaded_files = st.sidebar.file_uploader(
@@ -53,6 +52,7 @@ def load_data(uploaded_files):
     else:
         return None
 
+
 data = load_data(uploaded_files)
 
 
@@ -67,11 +67,17 @@ if data is not None:
         st.plotly_chart(fig_volume, use_container_width=True)
 
         st.markdown("## Classement")
-        fig_clsmt_tv_c = mt_bilan.plot_classement_volume_mediatique_tv_continue(data_filtered)
+        fig_clsmt_tv_c = mt_bilan.plot_classement_volume_mediatique_tv_continue(
+            data_filtered
+        )
         st.plotly_chart(fig_clsmt_tv_c, use_container_width=True)
-        fig_clsmt_tv_g = mt_bilan.plot_classement_volume_mediatique_tv_generique(data_filtered)
+        fig_clsmt_tv_g = mt_bilan.plot_classement_volume_mediatique_tv_generique(
+            data_filtered
+        )
         st.plotly_chart(fig_clsmt_tv_g, use_container_width=True)
-        fig_clsmt_radio = mt_bilan.plot_classement_volume_mediatique_radio(data_filtered)
+        fig_clsmt_radio = mt_bilan.plot_classement_volume_mediatique_radio(
+            data_filtered
+        )
         st.plotly_chart(fig_clsmt_radio, use_container_width=True)
 
     with st.expander("Comparaison entre les sujets", expanded=False):
@@ -86,12 +92,11 @@ if data is not None:
         st.markdown("## Classement")
         ranking = mt_bilan.get_ranking_evolution(data_filtered)
 
-
         st.markdown("### TV d'info en continu")
         fig_ranking_tv_c = mt_bilan.show_ranking_chart(
             ranking.query("media2=='TV - Information en continu'"),
             "Evolution du classement des chaînes TV d'information en continu",
-            height = 600,
+            height=600,
         )
         st.plotly_chart(fig_ranking_tv_c)
 
@@ -99,7 +104,7 @@ if data is not None:
         fig_ranking_tv_g = mt_bilan.show_ranking_chart(
             ranking.query("media2=='TV - Généraliste'"),
             "Evolution du classement des chaînes TV généralistes",
-            height = 600,
+            height=600,
         )
         st.plotly_chart(fig_ranking_tv_g)
 
@@ -107,7 +112,7 @@ if data is not None:
         fig_ranking_radio = mt_bilan.show_ranking_chart(
             ranking.query("media2=='Radio'"),
             "Evolution du classement des chaînes Radio",
-            height = 800,
+            height=800,
         )
         st.plotly_chart(fig_ranking_radio)
 else:

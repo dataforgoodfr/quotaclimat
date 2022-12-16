@@ -33,9 +33,6 @@ def make_ws_palette(n=10):
 
 def label_media_from_list(
     media,
-    list_gen=TOP_CHANNELS_TV_GENERALISTE,
-    list_continu=TOP_CHANNELS_TV_CONTINU,
-    list_radio=TOP_CHANNELS_RADIO,
 ):
     if media in TOP_CHANNELS_TV_GENERALISTE:
         return "TV - Généraliste"
@@ -140,7 +137,7 @@ def get_ranking_evolution(
 
 
 # %% plots
-def plot_volume_mediatique(media_time, COLOR_RADIO=COLOR_RADIO, COLOR_TV=COLOR_TV):
+def plot_volume_mediatique(media_time, keyword):
     fig = px.bar(
         media_time.reset_index(),
         x="media2",
@@ -150,7 +147,7 @@ def plot_volume_mediatique(media_time, COLOR_RADIO=COLOR_RADIO, COLOR_TV=COLOR_T
     )
     fig.update_layout(
         yaxis_tickformat="0%",
-        title="Volume médiatique total sur les 50 chaînes TV et Radio cop 27",
+        title="Volume médiatique total sur les 50 chaînes TV et Radio sur %s" % keyword,
         font_family="Poppins",
         yaxis_title="% du volume médiatique",
         xaxis_title="",

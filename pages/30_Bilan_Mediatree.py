@@ -2,6 +2,7 @@ from io import StringIO
 
 import pandas as pd
 import streamlit as st
+from streamlit_tags import st_tags
 
 import quotaclimat.data_analytics.bilan as mt_bilan
 import quotaclimat.data_analytics.exploration as mt_exploration
@@ -58,13 +59,17 @@ data = load_data(uploaded_files)
 
 if data is not None:
     data_filtered = mt_bilan.get_filtered_data(data)
-    media_time = mt_bilan.get_media_time(data_filtered)
+
     st.sidebar.metric("Extraits trouvés", len(data))
 
     with st.expander("Vue d'ensemble", expanded=False):
         st.markdown("## Analyse sur le total")
-        fig_volume = mt_bilan.plot_volume_mediatique(media_time)
-        st.plotly_chart(fig_volume, use_container_width=True)
+        for keyword in data_filtered.keyword.unique():
+            media_time = mt_bilan.get_media_time(
+                data_filtered[data_filtered.keyword == keyword]
+            )
+            fig_volume = mt_bilan.plot_volume_mediatique(media_time, keyword=keyword)
+            st.plotly_chart(fig_volume, use_container_width=True)
 
         st.markdown("## Classement")
         fig_clsmt_tv_c = mt_bilan.plot_classement_volume_mediatique_tv_continue(
@@ -86,35 +91,38 @@ if data is not None:
 
     with st.expander("Evolutions au cours du temps", expanded=False):
         st.markdown("## Volumes médiatiques")
-        fig_time_volume = mt_bilan.media_volume_over_time(data_filtered)
-        st.plotly_chart(fig_time_volume)
+        for keyword in data_filtered.keyword.unique():
+            st.markdown("### %s" % keyword)
+            data_filtered_kw = data_filtered[data_filtered.keyword == keyword]
+            fig_time_volume = mt_bilan.media_volume_over_time(data_filtered_kw)
+            st.plotly_chart(fig_time_volume)
 
-        st.markdown("## Classement")
-        ranking = mt_bilan.get_ranking_evolution(data_filtered)
+            st.markdown("## Classement")
+            ranking = mt_bilan.get_ranking_evolution(data_filtered_kw)
 
-        st.markdown("### TV d'info en continu")
-        fig_ranking_tv_c = mt_bilan.show_ranking_chart(
-            ranking.query("media2=='TV - Information en continu'"),
-            "Evolution du classement des chaînes TV d'information en continu",
-            height=600,
-        )
-        st.plotly_chart(fig_ranking_tv_c)
+            st.markdown("### TV d'info en continu")
+            fig_ranking_tv_c = mt_bilan.show_ranking_chart(
+                ranking.query("media2=='TV - Information en continu'"),
+                "Evolution du classement des chaînes TV d'information en continu",
+                height=600,
+            )
+            st.plotly_chart(fig_ranking_tv_c)
 
-        st.markdown("### TV généraliste")
-        fig_ranking_tv_g = mt_bilan.show_ranking_chart(
-            ranking.query("media2=='TV - Généraliste'"),
-            "Evolution du classement des chaînes TV généralistes",
-            height=600,
-        )
-        st.plotly_chart(fig_ranking_tv_g)
+            st.markdown("### TV généraliste")
+            fig_ranking_tv_g = mt_bilan.show_ranking_chart(
+                ranking.query("media2=='TV - Généraliste'"),
+                "Evolution du classement des chaînes TV généralistes",
+                height=600,
+            )
+            st.plotly_chart(fig_ranking_tv_g)
 
-        st.markdown("### Radio")
-        fig_ranking_radio = mt_bilan.show_ranking_chart(
-            ranking.query("media2=='Radio'"),
-            "Evolution du classement des chaînes Radio",
-            height=800,
-        )
-        st.plotly_chart(fig_ranking_radio)
+            st.markdown("### Radio")
+            fig_ranking_radio = mt_bilan.show_ranking_chart(
+                ranking.query("media2=='Radio'"),
+                "Evolution du classement des chaînes Radio",
+                height=800,
+            )
+            st.plotly_chart(fig_ranking_radio)
 else:
 
     st.info("Chargez un ou plusieurs fichiers Mediatree à droite pour lancer l'analyse")

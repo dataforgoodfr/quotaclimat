@@ -6,8 +6,7 @@ from streamlit_tags import st_tags
 
 from quotaclimat.data_analytics.sitemap_analytics import (
     fig_percentage_between_two_dates_per_day_and_leaderboard_per_media,
-    plot_comparison_of_temporal_total_count,
-    plot_media_count_comparison)
+    plot_comparison_of_temporal_total_count, plot_media_count_comparison)
 from quotaclimat.data_processing.sitemap_processing import (
     feature_engineering_sitemap, filter_df, load_all)
 
@@ -35,9 +34,8 @@ with tab1:
         df_last_week = df_all[pd.to_datetime(df_all.download_date) > a_week_ago]
         df_lw_featured = feature_engineering_sitemap(df_last_week)
         del df_last_week
-        #st.pyplot(make_word_cloud(df_lw_featured))
+        # st.pyplot(make_word_cloud(df_lw_featured))
         del df_lw_featured
-
 
     with st.expander("Analyse de mot clé", expanded=False):
         keywords = st_tags(
@@ -71,7 +69,7 @@ with tab1:
         )
         st.plotly_chart(fig_time_series)
         st.plotly_chart(fig_leaderboard)
-        #st.pyplot(make_word_cloud(df_between_two_dates))
+        # st.pyplot(make_word_cloud(df_between_two_dates))
 
 with tab2:
     keywords = st_tags(

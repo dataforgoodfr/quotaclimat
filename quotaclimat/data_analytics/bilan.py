@@ -70,15 +70,33 @@ def get_media_time(
     list_gen=TOP_CHANNELS_TV_GENERALISTE,
     list_continu=TOP_CHANNELS_TV_CONTINU,
     list_radio=TOP_CHANNELS_RADIO,
+    heure_de_grande_ecoute: bool = False,
 ):
 
     n_days = (data_filtered["day_dt"].max() - data_filtered["day_dt"].min()).days + 1
+    if heure_de_grande_ecoute:
+        data_filtered_radio = data_filtered.loc[
+            data_filtered.channel_name.isin(list_radio)
+            & (data_filtered.date.dt.hour >= 6)
+            & (data_filtered.date.dt.hour < 10)
+        ]
+        data_filtered_tv = data_filtered.loc[
+            data_filtered.channel_name.isin(list_gen + list_continu)
+            & (data_filtered.date.dt.hour >= 19)
+            & (data_filtered.date.dt.hour < 21)
+        ]
+        data_filtered = pd.concat([data_filtered_radio, data_filtered_tv])
+        hour_a_day = 2
 
     media_time = data_filtered.groupby(["media2"]).agg(
         {"count": "sum", "channel_name": "nunique"}
     )
 
     media_time.loc["Radio", "n_channels"] = len(list_radio)
+    if heure_de_grande_ecoute:
+        media_time.loc["Radio", "n_channels"] = (
+            len(list_radio) * 2
+        )  # fix for the difference of coverage between radio and TV
     media_time.loc["TV - Généraliste", "n_channels"] = len(list_gen)
     media_time.loc["TV - Information en continu", "n_channels"] = len(list_continu)
     # media_time = media_time.append(pd.DataFrame(media_time.sum(axis = 0).rename("Total")).T)

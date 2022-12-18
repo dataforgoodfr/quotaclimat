@@ -144,16 +144,16 @@ if data is not None:
             & (data_filtered.date.dt.hour >= 19)
             & (data_filtered.date.dt.hour < 21)
         ]
-        data_filtered_high_audiance = pd.concat([data_filtered_radio, data_filtered_tv])
+        data_filtered_high_audience = pd.concat([data_filtered_radio, data_filtered_tv])
         hour_a_day_tv = 2
         hour_a_day_radio = 4
         with st.expander("Vue d'ensemble", expanded=False):
 
-            for keyword in data_filtered.keyword.unique():
+            for keyword in data_filtered_high_audience.keyword.unique():
 
                 media_time_ = mt_bilan.get_media_time(
-                    data_filtered_high_audiance[
-                        data_filtered_high_audiance.keyword == keyword
+                    data_filtered_high_audience[
+                        data_filtered_high_audience.keyword == keyword
                     ],
                     heure_de_grande_ecoute=True,
                     hour_a_day=2,
@@ -165,24 +165,44 @@ if data is not None:
 
             st.markdown("## Classement")
             fig_clsmt_tv_c = mt_bilan.plot_classement_volume_mediatique_tv_continue(
-                data_filtered_high_audiance, hour_a_day=2
+                data_filtered_high_audience, hour_a_day=2
             )
             st.plotly_chart(fig_clsmt_tv_c, use_container_width=True)
             fig_clsmt_tv_g = mt_bilan.plot_classement_volume_mediatique_tv_generique(
-                data_filtered_high_audiance, hour_a_day=2
+                data_filtered_high_audience, hour_a_day=2
             )
             st.plotly_chart(fig_clsmt_tv_g, use_container_width=True)
             fig_clsmt_radio = mt_bilan.plot_classement_volume_mediatique_radio(
-                data_filtered_high_audiance, hour_a_day=4
+                data_filtered_high_audience, hour_a_day=4
             )
             st.plotly_chart(fig_clsmt_radio, use_container_width=True)
 
-        with st.expander("Comparaison entre les sujets", expanded=False):
-            st.markdown("## Classement")
-            st.write("En cours de construction")
-
         with st.expander("Evolutions au cours du temps", expanded=False):
             st.markdown("## Volumes médiatiques")
+            for keyword in data_filtered_high_audience.keyword.unique():
+
+                st.markdown("### %s" % keyword)
+                data_filtered_kw_ = data_filtered_high_audience[
+                    data_filtered_high_audience.keyword == keyword
+                ]
+                data_filtered_kw_tv = data_filtered_kw_[
+                    data_filtered_kw_.channel_name.isin(TOP_CHANNELS_TV)
+                ]
+                data_filtered_kw_radio = data_filtered_kw_[
+                    data_filtered_kw_.channel_name.isin(TOP_CHANNELS_RADIO)
+                ]
+                fig_time_volume_tv = mt_bilan.media_volume_over_time(
+                    data_filtered_kw_tv,
+                    hour_a_day=2,
+                    title="Evolution du volume médiatique top TV %s" % keyword,
+                )
+                st.plotly_chart(fig_time_volume_tv)
+                fig_time_volume_radio = mt_bilan.media_volume_over_time(
+                    data_filtered_kw_radio,
+                    hour_a_day=4,
+                    title="Evolution du volume médiatique top Radio %s" % keyword,
+                )
+                st.plotly_chart(fig_time_volume_radio)
 
 
 else:

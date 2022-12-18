@@ -336,6 +336,7 @@ def media_volume_over_time(
     n_channels=len(TOP_CHANNELS),
     minutes_by_chunk=2,
     hour_a_day=18,  # link to the filter used
+    title: str = "Evolution du volume médiatique",
 ):
     n_days = (data["day_dt"].max() - data["day_dt"].min()).days + 1
 
@@ -363,7 +364,7 @@ def media_volume_over_time(
         xaxis_tickmode="linear",
         xaxis_title="Date",
         yaxis_title="% du volume médiatique",
-        title="Evolution du volume médiatique",
+        title=title,
         legend_title="",
         yaxis_tickformat="0%",
     )

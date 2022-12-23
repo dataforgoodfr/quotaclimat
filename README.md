@@ -4,17 +4,21 @@ The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclim
 - 2022-09-28, Introduction by Eva Morel (Quotaclimat): from 14:10 to 32:00 https://www.youtube.com/watch?v=GMrwDjq3rYs
 - 2022-11-29 Project status and prospects by Estelle Rambier (Data): from 09:00 to 25:00 https://www.youtube.com/watch?v=cLGQxHJWwYA
 
-This is work in progress! If you want to contribute:
-- Join https://dataforgood.fr/join and the Slack #offseason_quotaclimat
-- Learn about the project https://dataforgood.fr/projects/quotaclimat
-- To get assigned a task, introdcue yourself on Slack. Dev meetings are on Tuesdays at 19h or 13h.
-
 ## :ledger: Index
-
-- [Open source](#open-source)
+- [First Contribution](#contrib)
 - [Development](#wrench-development)
   - [File Structure](#file_folder-file-structure)
   - [Setting up the environment](#nut_and_bolt-setting-up-the-environment)
+
+# :contrib: 🤗 I want to contribute! Where do I start?
+
+1. Learn about the project by watching the introduction videos mentioned above.
+2. Launch the Streamlit dashboard on your local, and browse around. Steps are described below.
+3.  Check out the data in data_public.
+4. Join https://dataforgood.fr/join and the Slack #offseason_quotaclimat
+5. Introduce yourself on Slack by stating your expertise and how much time you would like to give. 
+6. Join a dev meetings on Tuesdays at 19h or 13h.
+
 
 ##  :wrench: Development
 

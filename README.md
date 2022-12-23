@@ -5,12 +5,12 @@ The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclim
 - 2022-11-29 Project status and prospects by Estelle Rambier (Data): from 09:00 to 25:00 https://www.youtube.com/watch?v=cLGQxHJWwYA
 
 ## :ledger: Index
-- [First Contribution](#contrib)
+- [I want to contribute! Where do I start?](#contrib)
 - [Development](#wrench-development)
   - [File Structure](#file_folder-file-structure)
   - [Setting up the environment](#nut_and_bolt-setting-up-the-environment)
 
-#  :contrib: I want to contribute! Where do I start?
+# 🤗 I want to contribute! Where do I start?
 
 1. Learn about the project by watching the introduction videos mentioned above.
 2. Launch the Streamlit dashboard on your local, and browse around. Steps are described below.
@@ -40,7 +40,6 @@ app.py --------------------------------- run dashboard
 ```
 ## Contributing
 
-Please, don't commit to main. We are working out to protect main while being able to write data through GH actions. In the meanwhile, don't be that guy.
 
 ### :nut_and_bolt: Setting up the environment
 Doing the following step will enable your local environement to be aligned with the one of any other collaborator.

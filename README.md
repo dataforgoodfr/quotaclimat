@@ -4,7 +4,7 @@ The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclim
 - 2022-09-28, Introduction by Eva Morel (Quotaclimat): from 14:10 to 32:00 https://www.youtube.com/watch?v=GMrwDjq3rYs
 - 2022-11-29 Project status and prospects by Estelle Rambier (Data): from 09:00 to 25:00 https://www.youtube.com/watch?v=cLGQxHJWwYA
 
-## :ledger: Index
+## Index
 - [I want to contribute! Where do I start?](#contrib)
 - [Development](#wrench-development)
   - [File Structure](#file_folder-file-structure)

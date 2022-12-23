@@ -10,7 +10,7 @@ The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclim
   - [File Structure](#file_folder-file-structure)
   - [Setting up the environment](#nut_and_bolt-setting-up-the-environment)
 
-# :contrib: 🤗 I want to contribute! Where do I start?
+#  :contrib: I want to contribute! Where do I start?
 
 1. Learn about the project by watching the introduction videos mentioned above.
 2. Launch the Streamlit dashboard on your local, and browse around. Steps are described below.

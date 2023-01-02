@@ -29,7 +29,8 @@ def read_and_format_all_data_dump(
     return df_all_.reset_index()
 
 
-def validate_file_name_semantics(path_file: str):
+def validate_file_name_semantics(path_dir: str):
+    path_file = path_dir.split("/")[-1]
     if not all(
         [
             len(path_file.split("_")) == 3,

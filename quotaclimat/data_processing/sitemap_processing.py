@@ -42,11 +42,11 @@ def feature_engineering_sitemap(df_origin: pd.DataFrame):
     df = df[df.news_publication_date > "2022-11-24"]  # some article are very old
 
     # extract section
-    mlb = MultiLabelBinarizer()
-    df_sparse = pd.DataFrame(
-        mlb.fit_transform(df.section), columns=mlb.classes_, index=df.index
-    )
-    df[df_sparse.columns] = df_sparse
+    # mlb = MultiLabelBinarizer()
+    # df_sparse = pd.DataFrame(
+    #    mlb.fit_transform(df.section), columns=mlb.classes_, index=df.index
+    # )
+    # df[df_sparse.columns] = df_sparse
 
     # news title processing
     df.news_title = df.news_title.str.lower()

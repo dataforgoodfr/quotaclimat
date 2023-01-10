@@ -15,10 +15,7 @@ uploaded_files = st.sidebar.file_uploader(
     "Uploader des fichiers excel mediatree", accept_multiple_files=True, type=["xlsx"]
 )
 
-
 # button_analysis = st.sidebar.button("Lancer l'analyse")
-
-
 @st.cache(allow_output_mutation=True, suppress_st_warning=True)
 def load_data(uploaded_files):
     # TODO add deduplication

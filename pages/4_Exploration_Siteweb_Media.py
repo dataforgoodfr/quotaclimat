@@ -4,6 +4,7 @@ import pandas as pd
 import streamlit as st
 from streamlit_tags import st_tags
 
+from app import logger
 from quotaclimat.data_analytics.sitemap_analytics import (
     fig_percentage_between_two_dates_per_day_and_leaderboard_per_media,
     plot_comparison_of_temporal_total_count, plot_media_count_comparison)
@@ -14,7 +15,6 @@ from quotaclimat.data_processing.sitemap_processing import (
 
 
 st.sidebar.markdown("# Exploration des titres d'article des site web")
-
 
 df_all = load_all()
 df_featured = feature_engineering_sitemap(df_all)
@@ -70,6 +70,8 @@ with tab1:
         # st.pyplot(make_word_cloud(df_between_two_dates))
 
 with tab2:
+    st.markdown("Exploration des titres d'article sur les siteweb des medias")
+
     keywords = st_tags(
         label="Entrez des mots clé:",
         text="Pressez entrez pour ajouter",

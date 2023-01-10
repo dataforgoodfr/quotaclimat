@@ -1,6 +1,26 @@
 # from quotaclimat import build_dashboard
+import logging
+import os
 
 import streamlit as st
+
+from quotaclimat.logging import NoStacktraceFormatter, SlackerLogHandler
+
+SLACK_TOKEN = os.getenv("SLACK_TOKEN")
+SLACK_CHANNEL = os.getenv("SLACK_CHANNEL")
+
+slack_handler = SlackerLogHandler(
+    SLACK_TOKEN, SLACK_CHANNEL, stack_trace=True, fail_silent=False
+)
+formatter = NoStacktraceFormatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+slack_handler.setFormatter(formatter)
+
+global logger
+logger = logging.getLogger("Quotaclimat Logger")
+logger.addHandler(slack_handler)
+logger.setLevel(logging.ERROR)
 
 st.set_page_config(
     page_title="QuotaClimat x Data For Good",

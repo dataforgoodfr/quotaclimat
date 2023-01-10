@@ -1,18 +1,18 @@
-# %%
 # from pathlib import Path
 import os
+import traceback
 from datetime import datetime
 
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+from app import logger
 from quotaclimat.data_processing.extract_and_process_tv_program import \
     get_tv_programs_next_days
 
 # TODO: make dynamic!
 PATH_TV_PROGRAMS = "data_public/tv_program/20221125_20221202_Programme_TV.csv"
-
 
 @st.cache(allow_output_mutation=True)
 def get_data():
@@ -67,5 +67,3 @@ fig = px.timeline(
 )
 st.plotly_chart(fig)
 
-
-# %%

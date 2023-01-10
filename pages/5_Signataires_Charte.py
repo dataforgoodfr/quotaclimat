@@ -1,3 +1,5 @@
+import traceback
+
 import streamlit as st
 
 from quotaclimat.data_analytics.analytics_signataire_charte import (

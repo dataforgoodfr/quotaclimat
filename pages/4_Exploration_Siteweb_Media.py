@@ -5,11 +5,12 @@ import streamlit as st
 from streamlit_tags import st_tags
 
 from quotaclimat.data_analytics.sitemap_analytics import (
-    CLIMATE_KW, SECTION_CLIMAT, filter_df_section_and_keyword, make_word_cloud,
+    fig_percentage_between_two_dates_per_day_and_leaderboard_per_media,
     plot_comparison_of_temporal_total_count, 
-    plot_media_count_comparison, plot_media_count_comparison_all_kw)
+    plot_media_count_comparison, plot_media_count_comparison_all_kw))
+
 from quotaclimat.data_processing.sitemap_processing import (
-    feature_engineering_sitemap, load_all)
+    feature_engineering_sitemap, filter_df, load_all)
 
 # TODO: seperate processing from plotting!
 
@@ -18,6 +19,7 @@ st.sidebar.markdown("# Exploration des titres d'article des site web")
 
 
 df_all = load_all()
+df_featured = feature_engineering_sitemap(df_all)
 
 date_min = df_all.news_publication_date.min().date()
 date_max = df_all.news_publication_date.max().date()
@@ -26,13 +28,52 @@ date_max = df_all.news_publication_date.max().date()
 tab1, tab2, tab3 = st.tabs(
     [
         "Evolution au cours du temps",
-        "Comparer appartition de mot cléfs",
-        "Les mots de la semaine",
+        "Comparaison de mots clé",
+        "Qualité de couvertures WIP",
     ]
 )
 
 with tab1:
-    st.markdown("Onglet en cours de constuction") #TODO
+    with st.expander("Les mots les plus apparus cette semaine", expanded=False):
+        a_week_ago = datetime.datetime.today() - datetime.timedelta(weeks=1)
+
+        # df_last_week = df_all[pd.to_datetime(df_all.download_date) > a_week_ago]
+        # df_lw_featured = feature_engineering_sitemap(df_last_week)
+        # st.pyplot(make_word_cloud(df_lw_featured))
+
+    with st.expander("Analyse de mot clé", expanded=False):
+        keywords = st_tags(
+            label="Entrez des mots clé en minuscule:",
+            text="Pressez entrez pour ajouter",
+            value=[
+                "cop15",
+                "climatique",
+                "écologie",
+                "co2",
+                "effet de serre",
+                "transition énergétique",
+                "carbone",
+            ],
+            suggestions=["environment"],
+            maxtags=30,
+            key="0",
+        )
+        d_lower = st.date_input(
+            "Entrez date à laquel commencer le traitement", datetime.date(2022, 12, 1)
+        )
+        d_upper = st.date_input(
+            "Entrez date à laquel terminer le traitement", datetime.date(2022, 12, 8)
+        )
+        df_between_two_dates = filter_df(df_featured, d_lower, d_upper, keywords)
+        (
+            fig_time_series,
+            fig_leaderboard,
+        ) = fig_percentage_between_two_dates_per_day_and_leaderboard_per_media(
+            df_featured, d_lower, d_upper, keywords
+        )
+        st.plotly_chart(fig_time_series)
+        st.plotly_chart(fig_leaderboard)
+        # st.pyplot(make_word_cloud(df_between_two_dates))
 
 with tab2:
     st.markdown("## Exploration des titres d'article sur les siteweb des medias")
@@ -41,10 +82,10 @@ with tab2:
         label="Entrez des mots clé:",
         text="Pressez entrez pour ajouter",
         value=[
-            "COP",
+            "cop",
             "climatique",
             "écologie",
-            "CO2",
+            "co2",
             "effet de serre",
             "transition énergétique",
             "carbone",
@@ -70,9 +111,25 @@ with tab2:
         maxtags=30,
         key="2",
     )
+    d_lower_ = st.date_input(
+        "Entrez date à laquel commencer le traitement",
+        datetime.date(2022, 12, 1),
+        key="3",
+    )
+    d_upper_ = st.date_input(
+        "Entrez date à laquel terminer le traitement",
+        datetime.date(2022, 12, 8),
+        key="4",
+    )
+    df_between_two_dates = df_all[
+        (pd.to_datetime(df_all.download_date).dt.date >= d_lower_)
+        & (pd.to_datetime(df_all.download_date).dt.date <= d_upper_)
+    ]
     btn = st.button("Lancer l'analyse")
     if btn:
-        fig = plot_media_count_comparison(df_all, keywords, keywords_compare)
+        fig = plot_media_count_comparison(
+            df_between_two_dates, keywords, keywords_compare
+        )
         st.plotly_chart(fig)
 
         fig_all_kw = plot_media_count_comparison_all_kw(
@@ -81,21 +138,10 @@ with tab2:
         st.plotly_chart(fig_all_kw)
 
         fig_temporal_count = plot_comparison_of_temporal_total_count(
-            df_all, keywords, keywords_compare
+            df_between_two_dates, keywords, keywords_compare
         )
         st.plotly_chart(fig_temporal_count)
 
 
 with tab3:
-    st.markdown("Les mots les plus apparus cette semaine:")
-    a_week_ago = datetime.datetime.today() - datetime.timedelta(weeks=1)
-
-    df_last_week = df_all[pd.to_datetime(df_all.download_date) > a_week_ago]
-    df_featured = feature_engineering_sitemap(df_all)
-    st.pyplot(make_word_cloud(df_featured))
-    st.markdown("Les mots les plus apparus cette semaine dans les sections climats:")
-    df_climate = filter_df_section_and_keyword(df_featured, CLIMATE_KW, SECTION_CLIMAT)
-    print(df_featured.shape)
-
-    print(df_climate.shape)
-    st.pyplot(make_word_cloud(df_climate))
+    st.markdown("WORK IN PROGRESS ")

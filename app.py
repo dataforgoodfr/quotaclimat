@@ -14,7 +14,6 @@ if __name__ == "__main__":
 
 st.image("quotaclimat/utils/coverquotaclimat.png")
 
-    st.image(str(image_file))
 
     st.title("Quota Climat & Data4Good")
     st.markdown(

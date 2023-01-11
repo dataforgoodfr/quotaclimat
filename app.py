@@ -12,9 +12,7 @@ st.set_page_config(
 
 if __name__ == "__main__":
 
-    LOCAL_PATH = Path(__file__).parent
-
-    image_file = LOCAL_PATH / Path("quotaclimat/utils/coverquotaclimat.png")
+st.image("quotaclimat/utils/coverquotaclimat.png")
 
     st.image(str(image_file))
 

@@ -1,4 +1,5 @@
 import glob
+from pathlib import Path
 
 import pandas as pd
 from sklearn.preprocessing import MultiLabelBinarizer
@@ -6,7 +7,6 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from quotaclimat.data_ingestion.config_sitmap import MEDIA_CONFIG
 
 LANDING_PATH_SITEMAP = "data_public/sitemap_dumps/"
-
 
 def load_all(path: str = LANDING_PATH_SITEMAP):
     files = glob.glob(path + "**/**/**/**/*.parquet")

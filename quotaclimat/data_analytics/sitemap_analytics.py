@@ -131,14 +131,7 @@ def make_word_cloud(df_origin: pd.DataFrame):
 
     vectorizer = TfidfVectorizer(max_df=0.1, min_df=0.01, stop_words=stopwords_fr)
     tfidf_positive_topic = vectorizer.fit_transform(df_origin.news_title)
-    try:
-        tfidf_positive_topic_sum = pd.DataFrame(
-            tfidf_positive_topic.T.sum(axis=1),
-            index=vectorizer.get_feature_names(),
-            columns=["tfidf_sum"],
-        )
-    except AttributeError: # le nom de la fonction a changé pour sklearn > v1.0
-                tfidf_positive_topic_sum = pd.DataFrame(
+    tfidf_positive_topic_sum = pd.DataFrame(
             tfidf_positive_topic.T.sum(axis=1),
             index=vectorizer.get_feature_names_out(),
             columns=["tfidf_sum"],

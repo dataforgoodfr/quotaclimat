@@ -48,6 +48,15 @@ def change_datetime_format(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
+def clean_surrounding_whitespaces_str(string: str) -> str:
+    try:
+        return str.strip(string)
+    except TypeError: # if not a string
+        return string
+
+def clean_surrounding_whitespaces_df(df: pd.DataFrame) -> pd.DataFrame:
+    """ Remove the useless characters in each cell"""
+    return df.applymap(clean_surrounding_whitespaces_str)
 
 def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFrame:
     """Query a site map url from media_conf and tranform it as pd.DataFrame
@@ -71,6 +80,7 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
     df = get_sections(temp_df)
     df = change_datetime_format(df)
     df["media_type"] = MEDIA_CONFIG[media]["type"]
+    df = clean_surrounding_whitespaces_df(df)
     sanity_check()
     return df
 

@@ -44,6 +44,31 @@ SITEMAP_CONFIG = {
         "sitemap_url": "https://www.lexpress.fr/sitemap_actu_1.xml",
         "regex_section": r"^https:\/\/www\.lexpress\.fr\/(?P<section>[\/\w-]*)\/.+$",
     },
+    "lesechos": {
+        "sitemap_index": "https://sitemap.lesechos.fr/sitemap_index.xml",
+        "sitemap_url": "https://www.lesechos.fr/sitemap_news.xml",
+        "regex_section" : r"^https:\/\/www\.lesechos\.fr\/(?P<section>[\/\w-]*)\/.+$"
+    },
+    "investir.lesechos": {
+        "sitemap_index": "https://sitemap-investir.lesechos.fr/sitemap_index.xml",
+        "sitemap_url": "https://investir.lesechos.fr/sitemap_news.xml",
+        "regex_section" : r"^https:\/\/www\.investir.lesechos\.fr\/(?P<section>[\/\w-]*)\/.+$"
+    },
+    "lamarseillaise": {
+        "sitemap_index": "https://www.lamarseillaise.fr/sitemap.xml",
+        "sitemap_url": "https://www.lamarseillaise.fr/base-portlet/webrsrc/2ff454c5cd85ceb97c642f2eba813de1.xml", # lien dans 'https://www.lamarseillaise.fr/sitemapforgoogle.xml' en fait
+        "regex_section" : r"^https:\/\/www\.lamarseillaise\.fr\/(?P<section>[\/\w-]*)\/.+$"
+    },
+    "lequipe": {
+        "sitemap_index": "https://www.lequipe.fr/sitemap.xml",
+        "sitemap_url": "https://www.lequipe.fr/sitemap/sitemap_google_news_premium.xml", # https://www.lequipe.fr/sitemap/sitemap_google_news_gratuit.xml aussi ?
+        "regex_section" : r"^https:\/\/www\.lequipe\.fr\/(?P<section>[\/\w-]*)\/.+\/\d+$" # quelques chiffres à la fin
+    }, 
+    "lopinion": {
+        "sitemap_index": "https://www.lopinion.fr/sitemap.xml",
+        "sitemap_url": "https://www.lopinion.fr/news-sitemap-latest.xml", 
+        "regex_section" : r"^https:\/\/www\.lopinion\.fr\/(?P<section>[\/\w-]*)\/.+$"
+    },
 }
 
 MEDIA_CONFIG = {
@@ -59,4 +84,9 @@ MEDIA_CONFIG = {
     "nouvel_obs": {"site_url": "https://www.nouvelobs.com/", "type": "webpress"},
     "le_point": {"site_url": "https://www.lepoint.fr/", "type": "webpress"},
     "lexpress": {"site_url": "https://www.lexpress.fr/", "type": "webpress"},
+    "lesechos": {"site_url": "https://www.lesechos.fr/", "type": "webpress"},
+    "investir.lesechos": {"site_url": "https://investir.lesechos.fr/", "type": "webpress"},
+    "lamarseillaise": {"site_url": "http://www.lamarseillaise.fr/", "type": "webpress"},
+    "lequipe": {"site_url": "https://www.lequipe.fr/", "type": "webpress"},
+    "lopinion": {"site_url": "https://www.lopinion.fr/", "type": "webpress"},
 }

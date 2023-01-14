@@ -69,6 +69,36 @@ SITEMAP_CONFIG = {
         "sitemap_url": "https://www.lopinion.fr/news-sitemap-latest.xml", 
         "regex_section" : r"^https:\/\/www\.lopinion\.fr\/(?P<section>[\/\w-]*)\/.+$"
     },
+    "midilibre": {
+        "sitemap_index": "https://www.midilibre.fr/sitemap.xml",
+        "sitemap_url": "https://www.midilibre.fr/sitemap_articles_1.xml.gz", #sans le .gz pour afficher dans le wew browser
+        "regex_section" : None, #  articles en year/month/day/titre
+        "filter_date_label" : "lastmod"
+    }, 
+    "lindependant": {
+        "sitemap_index": "https://www.lindependant.fr/sitemap.xml",
+        "sitemap_url": "https://www.lindependant.fr/sitemap_articles_1.xml.gz",
+        "regex_section" : None, #  articles en year/month/day/titre
+        "filter_date_label" : "lastmod"
+    }, 
+    "ladepeche": {
+        "sitemap_index": "https://www.ladepeche.fr/sitemap.xml",
+        "sitemap_url": "https://www.ladepeche.fr/sitemap_articles_1.xml.gz",
+        "regex_section" : None, #  articles en year/month/day/titre
+        "filter_date_label" : "lastmod"
+    },
+    "centrepresseaveyron": {
+        "sitemap_index": "https://www.centrepresseaveyron.fr/sitemap.xml",
+        "sitemap_url": "https://www.centrepresseaveyron.fr/sitemap_articles_1.xml.gz",
+        "regex_section" : None, #  articles en year/month/day/titre
+        "filter_date_label" : "lastmod"
+    },
+    "petitbleu": {
+        "sitemap_index": "https://www.petitbleu.fr/sitemap.xml",
+        "sitemap_url": "https://www.petitbleu.fr/sitemap_articles_1.xml.gz",
+        "regex_section" : None, #  articles en year/month/day/titre
+        "filter_date_label" : "lastmod"
+    },
 }
 
 MEDIA_CONFIG = {
@@ -89,4 +119,9 @@ MEDIA_CONFIG = {
     "lamarseillaise": {"site_url": "http://www.lamarseillaise.fr/", "type": "webpress"},
     "lequipe": {"site_url": "https://www.lequipe.fr/", "type": "webpress"},
     "lopinion": {"site_url": "https://www.lopinion.fr/", "type": "webpress"},
+    "midilibre": {"site_url": "https://www.midilibre.fr/", "type": "webpress"},
+    "lindependant": {"site_url": "https://www.lindependant.fr/", "type": "webpress"},
+    "ladepeche": {"site_url": "https://www.ladepeche.fr/", "type": "webpress"},
+    "centrepresseaveyron": {"site_url": "https://www.centrepresseaveyron.fr/", "type": "webpress"},
+    "petitbleu": {"site_url": "https://www.petitbleu.fr/", "type": "webpress"},    
 }

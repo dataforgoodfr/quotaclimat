@@ -56,7 +56,7 @@ SITEMAP_CONFIG = {
     },
     "lamarseillaise": {
         "sitemap_index": "https://www.lamarseillaise.fr/sitemap.xml",
-        "sitemap_url": "https://www.lamarseillaise.fr/base-portlet/webrsrc/2ff454c5cd85ceb97c642f2eba813de1.xml", # lien dans 'https://www.lamarseillaise.fr/sitemapforgoogle.xml' en fait
+        "sitemap_url": "https://www.lamarseillaise.fr/sitemapforgoogle.xml", # lien recursif en fait
         "regex_section" : r"^https:\/\/www\.lamarseillaise\.fr\/(?P<section>[\/\w-]*)\/.+$"
     },
     "lequipe": {

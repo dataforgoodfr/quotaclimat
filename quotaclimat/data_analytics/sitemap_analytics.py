@@ -61,6 +61,7 @@ def plot_media_count_comparison(df, keywords: list, keywords_comp: list):
     )
     return fig
 
+
 def plot_media_count_comparison_all_kw(df, keywords: list):
 
     dict_data = {}
@@ -69,25 +70,30 @@ def plot_media_count_comparison_all_kw(df, keywords: list):
         dict_data[kw]["keyword"] = kw
 
     df_keywords_1 = pd.concat([value for value in dict_data.values()])
-    # Count the data for the plot 
-    df_to_plot = df_keywords_1.groupby(["media","keyword"]).count().reset_index()
+    # Count the data for the plot
+    df_to_plot = df_keywords_1.groupby(["media", "keyword"]).count().reset_index()
     # Count the proportion of a keyword in a media
     total_media = df_keywords_1.groupby(["media"]).count().news_title
     for media in total_media.items():
         mask = df_to_plot.media.values == media[0]
-        df_to_plot.loc[mask,"keyword_percent_in_media"] = df_to_plot.loc[mask,"news_title"]/media[1]*100
-    df_to_plot.keyword_percent_in_media = df_to_plot.keyword_percent_in_media.apply(lambda x : f'{x:.2f}')
+        df_to_plot.loc[mask, "keyword_percent_in_media"] = (
+            df_to_plot.loc[mask, "news_title"] / media[1] * 100
+        )
+    df_to_plot.keyword_percent_in_media = df_to_plot.keyword_percent_in_media.apply(
+        lambda x: f"{x:.2f}"
+    )
 
     fig = px.bar(
         df_to_plot,
         x="media",
         y="news_title",
         color="keyword",
-        hover_data =["keyword_percent_in_media"],
+        hover_data=["keyword_percent_in_media"],
         title="Comparaison du nombre de titre d'articles comprenant un mot d'une des deux listes (avec doublons)",
     )
 
     return fig
+
 
 def plot_comparison_of_temporal_total_count(df, keywords: list, keywords_comp: list):
 
@@ -154,11 +160,10 @@ def make_word_cloud(df_origin: pd.DataFrame):
     vectorizer = TfidfVectorizer(max_df=0.1, min_df=0.01, stop_words=stopwords_fr)
     tfidf_positive_topic = vectorizer.fit_transform(df_origin.news_title)
     tfidf_positive_topic_sum = pd.DataFrame(
-            tfidf_positive_topic.T.sum(axis=1),
-            index=vectorizer.get_feature_names_out(),
-            columns=["tfidf_sum"],
-        )
-         
+        tfidf_positive_topic.T.sum(axis=1),
+        index=vectorizer.get_feature_names_out(),
+        columns=["tfidf_sum"],
+    )
 
     wordcloud = WordCloud()
     wordcloud.generate_from_frequencies(

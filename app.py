@@ -1,6 +1,7 @@
 # from quotaclimat import build_dashboard
 
 import streamlit as st
+from pathlib import Path
 
 st.set_page_config(
     page_title="QuotaClimat x Data For Good",
@@ -11,7 +12,8 @@ st.set_page_config(
 
 if __name__ == "__main__":
 
-    st.image("quotaclimat/utils/coverquotaclimat.png")
+st.image("quotaclimat/utils/coverquotaclimat.png")
+
 
     st.title("Quota Climat & Data4Good")
     st.markdown(

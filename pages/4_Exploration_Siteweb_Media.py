@@ -6,7 +6,8 @@ from streamlit_tags import st_tags
 
 from quotaclimat.data_analytics.sitemap_analytics import (
     fig_percentage_between_two_dates_per_day_and_leaderboard_per_media,
-    plot_comparison_of_temporal_total_count, plot_media_count_comparison)
+    plot_comparison_of_temporal_total_count, plot_media_count_comparison,
+    plot_media_count_comparison_all_kw)
 from quotaclimat.data_processing.sitemap_processing import (
     feature_engineering_sitemap, filter_df, load_all)
 
@@ -18,6 +19,10 @@ st.sidebar.markdown("# Exploration des titres d'article des site web")
 
 df_all = load_all()
 df_featured = feature_engineering_sitemap(df_all)
+
+date_min = df_all.news_publication_date.min().date()
+date_max = df_all.news_publication_date.max().date()
+
 
 tab1, tab2, tab3 = st.tabs(
     [
@@ -70,6 +75,8 @@ with tab1:
         # st.pyplot(make_word_cloud(df_between_two_dates))
 
 with tab2:
+    st.markdown("## Exploration des titres d'article sur les siteweb des medias")
+    st.markdown(f"**Données disponibles du {date_min} au {date_max}.**")
     keywords = st_tags(
         label="Entrez des mots clé:",
         text="Pressez entrez pour ajouter",
@@ -82,7 +89,7 @@ with tab2:
             "transition énergétique",
             "carbone",
         ],
-        suggestions=["environment"],
+        suggestions=["environnement"],
         maxtags=30,
         key="1",
     )
@@ -91,7 +98,7 @@ with tab2:
         text="Pressez entrez pour ajouter",
         value=[
             "migrants",
-            " immigrés",
+            "immigrés",
             "sans-papiers",
             "immigration",
             "migration",
@@ -99,7 +106,7 @@ with tab2:
             "émigrés",
             "ocean viking",
         ],
-        suggestions=["politque"],
+        suggestions=["politique"],
         maxtags=30,
         key="2",
     )
@@ -123,6 +130,11 @@ with tab2:
             df_between_two_dates, keywords, keywords_compare
         )
         st.plotly_chart(fig)
+
+        fig_all_kw = plot_media_count_comparison_all_kw(
+            df_all, keywords+keywords_compare
+        )
+        st.plotly_chart(fig_all_kw)
 
         fig_temporal_count = plot_comparison_of_temporal_total_count(
             df_between_two_dates, keywords, keywords_compare

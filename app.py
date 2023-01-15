@@ -12,8 +12,7 @@ st.set_page_config(
 
 if __name__ == "__main__":
 
-st.image("quotaclimat/utils/coverquotaclimat.png")
-
+    st.image("quotaclimat/utils/coverquotaclimat.png")
 
     st.title("Quota Climat & Data4Good")
     st.markdown(
@@ -28,4 +27,4 @@ st.image("quotaclimat/utils/coverquotaclimat.png")
     )
 
     st.header("Structure du site web")
-st.markdown("Work in progress")
+    st.markdown("Work in progress")

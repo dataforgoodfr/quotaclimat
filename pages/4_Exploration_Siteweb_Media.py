@@ -132,7 +132,7 @@ with tab2:
         st.plotly_chart(fig)
 
         fig_all_kw = plot_media_count_comparison_all_kw(
-            df_all, keywords+keywords_compare
+            df_all, keywords + keywords_compare
         )
         st.plotly_chart(fig_all_kw)
 

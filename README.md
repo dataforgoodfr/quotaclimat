@@ -1,44 +1,45 @@
 # QuotaClimat x Data For Good
-![](coverquotaclimat.png)
+![](quotaclimat/utils/coverquotaclimat.png)
+The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclimat.org/ "Quotaclimat website"), allowing them to quantify the media coverage of the climate crisis. By the mean of sitemap scrapping (among others data sources), a Streamlit dashboard is developed to answer their needs. 
+- 2022-09-28, Introduction by Eva Morel (Quotaclimat): from 14:10 to 32:00 https://www.youtube.com/watch?v=GMrwDjq3rYs
+- 2022-11-29 Project status and prospects by Estelle Rambier (Data): from 09:00 to 25:00 https://www.youtube.com/watch?v=cLGQxHJWwYA
 
-- Pour rejoindre le projet https://dataforgood.fr/join puis sur le Slack #offseason_quotaclimat
-- Pour en savoir plus sur le projet https://dataforgood.fr/projects/quotaclimat
-- Pour la répartition des tâches https://dataforgood.slite.page/p/xECA5kt9LFqtOA/Comment-contribuer-au-projet-QuotaClimat-x-Data-For-Good
-
-## :ledger: Index
-
-- [Open source](#open-source)
+## Index
+- [I want to contribute! Where do I start?](#contrib)
 - [Development](#wrench-development)
   - [File Structure](#file_folder-file-structure)
   - [Setting up the environment](#nut_and_bolt-setting-up-the-environment)
 
-## Open source
+# 🤗 I want to contribute! Where do I start?
 
-Pour l'instant le repo est privé, parce que les données sont privées.
-Nous passerons le projet en open source dès que nous aurons réglé la mise en place d'une base de données SQL
+1. Learn about the project by watching the introduction videos mentioned above.
+2. Launch the Streamlit dashboard on your local, and browse around. Steps are described below.
+3.  Check out the data in data_public.
+4. Join https://dataforgood.fr/join and the Slack #offseason_quotaclimat
+5. Introduce yourself on Slack by stating your expertise and how much time you would like to give. 
+6. Join a dev meetings on Tuesdays at 19h or 13h.
+
 
 ##  :wrench: Development
 
 ### :file_folder: Repo structure
 ```
-- data --------------------------------- les données temporairement ici
-- notebooks ---------------------------- les analyses
-        quickstart.ipynb --------------- un premier notebook Python d'analyse
-        nlp ---------------------------- folder containing nlp related notebooks
-          nlp_hands_on.ipynb ----------- notebook using the data processing implemented in the repo, and quick eda
-- quotaclimat -------------------------- package the dashboard
+-.github/workflows --------------------- ochestrate GH actions jobs
+- data_public -------------------------- data ingested by the scrapping jobs
+- notebooks ---------------------------- r&d
+        COP27/ ------------------------- COP27 notebook analysis
+- quotaclimat -------------------------- all methods needed to serve the dashboard
         data_processing ---------------- methods related to process raw and aggregated data
-          read_format_deduplicate ------ read all files and put them together
-         data_analytics ---------------- methods and figures answer the questions from media tree
-          data_coverage.py ------------- coverage of extracts and keywords in samples
-         ui ---------------------------- containing the piece of the user interphase (dashboard)
-          pages ------------------------ the different pages making the dashboard
-          streamlite_dashboard.py ------ bring the figure together and set layout
-          utils ------------------------
+        data_ingestion ----------------- scripts for scrapping jobs
+        data_models -------------------- data schemas
+        data_analytics ----------------- methods and figures answer the questions from media tree
+        utils --------------------------
             plotly_theme.py ------------ visual identity of the project's figures
-            multipage.py --------------- generating multiple Streamlit
-        app.py ------------------------- run dashboard
+- pages -------------------------------- the different pages making the dashboard
+app.py --------------------------------- run dashboard
 ```
+## Contributing
+
 
 ### :nut_and_bolt: Setting up the environment
 Doing the following step will enable your local environement to be aligned with the one of any other collaborator.
@@ -146,3 +147,18 @@ poetry add ntlk
 ```
 
 After commiting to the repo, other team members will be able to use the exact same environment you are using. 
+
+
+### Run the dashboard
+```bash
+poetry run streamlit run app.py
+```
+
+### Fix linting
+Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
+```bash
+poetry run black .
+poetry run isort .
+poetry run flake8 .
+```
+There is a debt regarding the cleanest of the code right now. Let's just not make it worth for now.

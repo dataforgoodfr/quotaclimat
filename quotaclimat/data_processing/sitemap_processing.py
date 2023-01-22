@@ -68,7 +68,9 @@ def filter_df(df, date_lower_bound, date_upper_bound, keywords):
     return df_between_two_dates_kw
 
 
-def scan_for_duplicates_and_overwrite_the_history():  # there should be a more elegant way to do that
+def scan_for_duplicates_and_overwrite_the_history(
+    overwrite: bool,
+):  # there should be a more elegant way to do that
     # load all data #TODO refactor this to a window of n months
     df_archives = load_all("../data_public/sitemap_dumps/media_type")
     df_new = df_archives.copy()
@@ -87,10 +89,13 @@ def scan_for_duplicates_and_overwrite_the_history():  # there should be a more e
     )
 
     # overwrite history without duplicates
-    for mt in df_m.media_type.unique():
-        df_mt = df_m[df_m.media_type == mt]
-        for media in df_mt.media.unique():
-            df_media = df_mt[df_mt.media == media]
-            for download_date in df_media.download_date.unique():
-                df_per_day = df_media[df_media.download_date == download_date]
-                write_df(df_per_day, media)
+    if overwrite:
+        for mt in df_m.media_type.unique():
+            df_mt = df_m[df_m.media_type == mt]
+            for media in df_mt.media.unique():
+                df_media = df_mt[df_mt.media == media]
+                for download_date in df_media.download_date.unique():
+                    df_per_day = df_media[df_media.download_date == download_date]
+                    write_df(df_per_day, media)
+    else:
+        return df_m

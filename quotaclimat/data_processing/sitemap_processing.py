@@ -73,17 +73,14 @@ def scan_for_duplicates_and_overwrite_the_history(
 ):  # there should be a more elegant way to do that
     # load all data #TODO refactor this to a window of n months
     df_archives = load_all("../data_public/sitemap_dumps/media_type")
-    df_new = df_archives.copy()
-    df_all = pd.concat([df_archives, df_new])
-    del df_archives
     download_date_last = (
-        df_all.groupby("url")["download_date"]
+        df_archives.groupby("url")["download_date"]
         .apply(lambda x: x.max())
         .rename("download_date_last")
     )
-    del df_all
+    df_m = df_archives.merge(download_date_last, on=["url"])
+    del df_archives
 
-    df_m = df_new.merge(download_date_last, on=["url"])
     df_m.sort_values("download_date").drop_duplicates(
         ["url"], keep="first", inplace=True
     )

@@ -80,10 +80,8 @@ def scan_for_duplicates_and_overwrite_the_history(
     )
     df_m = df_archives.merge(download_date_last, on=["url"])
     del df_archives
-
-    df_m.sort_values("download_date").drop_duplicates(
-        ["url"], keep="first", inplace=True
-    )
+    df_m.sort_values("download_date", inplace=True)
+    df_m.drop_duplicates(["url"], keep="first", inplace=True)
 
     # overwrite history without duplicates
     if overwrite:

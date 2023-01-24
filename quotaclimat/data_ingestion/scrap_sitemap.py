@@ -6,7 +6,9 @@ from typing import Dict, List
 
 import advertools as adv
 import pandas as pd
-from config_sitmap import MEDIA_CONFIG, SITEMAP_CONFIG
+
+from quotaclimat.data_ingestion.config_sitmap import (MEDIA_CONFIG,
+                                                      SITEMAP_CONFIG)
 
 # TODO: silence advertools loggings
 # TODO: add slack login

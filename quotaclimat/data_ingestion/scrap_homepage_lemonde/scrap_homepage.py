@@ -1,6 +1,7 @@
 """ Scrap Le Monde's home page links by areas, position and type_home """
 
 import logging
+import os
 import re
 from datetime import datetime
 from typing import List
@@ -155,12 +156,30 @@ def created_at_column(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def write_data(df: pd.DataFrame):
+    df.to_parquet()
+
+
+def write_df(df: pd.DataFrame):
+    """Write de extracted dataframe to standardized path"""
+    download_date = df.created_at.min()
+    landing_path = "data_public/homepage_dumps/poc/year=%s/month=%s/day=%s" % (
+        download_date.year,
+        download_date.month,
+        download_date.day,
+    )
+    if not os.path.exists(landing_path):
+        os.makedirs(landing_path)
+    df.to_parquet(landing_path + "/%s.parquet" % download_date.strftime("%Y%m%d_%H%M"))
+
+
 def run():
     """Runs all functions"""
 
     df = get_df_article()
     df = get_type_home(df)
     df = created_at_column(df)
+    write_df(df)
 
     return df
 

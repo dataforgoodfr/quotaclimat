@@ -9,7 +9,7 @@ PATH_SIGNING_PARTNERS = "data_public/signataire_charte/"
 
 def load_signing_partners_data(latest=True):
     latest_data_path = (
-        PATH_SIGNING_PARTNERS + sorted(os.listdir(PATH_SIGNING_PARTNERS))[0]
+        PATH_SIGNING_PARTNERS + sorted(os.listdir(PATH_SIGNING_PARTNERS))[-1]
     )
     df = pd.read_csv(latest_data_path + "/" + os.listdir(latest_data_path)[0])
     return df

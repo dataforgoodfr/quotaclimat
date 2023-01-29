@@ -8,8 +8,7 @@ from config_youtube import CHANNEL_CONFIG
 
 API_SERVICE_NAME = "youtube"
 API_VERSION = "v3"
-KEY = "KEY"  # Il faut utiliser une clé API via un compte Google. Pour dev le script, j'ai utilisé ma propre clé.
-
+KEY = "AIzaSyDATQZwjAZ__AARZvLZRmAWpkcG0BQgKdM"  # Google account created: email: pwd:scrappingjob12345
 
 def create_youtube_object():
 
@@ -202,7 +201,7 @@ def converting_to_csv(final: dict, media: str):
     )
     if not os.path.exists(landing_path):
         os.makedirs(landing_path)
-    df.to_csv(landing_path + "%s.csv" % date.strftime("%Y%m%d"))
+    df.to_parquet(landing_path + "%s.csv" % date.strftime("%Y%m%d"))
 
 
 def full_scraping():

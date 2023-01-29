@@ -2,6 +2,7 @@ import os
 
 import pandas as pd
 import plotly.express as px
+import spacy
 
 PATH_SIGNING_PARTNERS = "data_public/signataire_charte/"
 
@@ -22,9 +23,7 @@ def get_summary_statistics(df):
 
 
 def bar_plot_nb_of_signataire_per_media(df):
-    """
-
-    """
+    """ """
     count_medias = (
         df.groupby("Média ou organisation").count().sort_values("Nom", ascending=False)
     )
@@ -46,19 +45,15 @@ def bar_plot_nb_of_signataire_per_media(df):
 
 
 def bar_plot_nb_of_signataire_per_job(df):
-    """
-
-    """
-    count_medias = (
-        df.groupby("Fonction").count().sort_values("Nom", ascending=False)
-    )
+    """ """
+    count_medias = df.groupby("Fonction").count().sort_values("Nom", ascending=False)
     top_n = 20
     fig = px.bar(
         count_medias.reset_index().head(top_n),
         x="Nom",
         y="Fonction",
-        orientation='h',
-        color='Fonction'
+        orientation="h",
+        color="Fonction",
     )
 
     fig.update_xaxes(tickangle=-45, title=None)
@@ -67,6 +62,6 @@ def bar_plot_nb_of_signataire_per_job(df):
         margin={"b": 100},
         title="Nombre de signataires de la charte journalisme écologie par fonction, top %s"
         % top_n,
-        showlegend=False
+        showlegend=False,
     )
     return fig

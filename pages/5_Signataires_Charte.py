@@ -1,11 +1,10 @@
 import streamlit as st
 
 from quotaclimat.data_analytics.analytics_signataire_charte import (
-    load_signing_partners_data, get_summary_statistics,
-    bar_plot_nb_of_signataire_per_media, bar_plot_nb_of_signataire_per_job)
-
-from quotaclimat.data_ingestion.scrap_chartejournalismeecologie_signataires \
-    import run as scrap_charte_journalisme
+    bar_plot_nb_of_signataire_per_job, bar_plot_nb_of_signataire_per_media,
+    get_summary_statistics, load_signing_partners_data)
+from quotaclimat.data_ingestion.scrap_chartejournalismeecologie_signataires import \
+    run as scrap_charte_journalisme
 
 st.markdown("Statistiques signature de la charte d'écologie")
 st.sidebar.markdown("# Charte Journaliste d'écologie")

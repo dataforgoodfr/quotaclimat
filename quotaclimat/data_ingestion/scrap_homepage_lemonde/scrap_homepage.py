@@ -10,7 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 from bs4.element import ResultSet, Tag
 
-from quotaclimat.data_ingestion.scrap_homepage.config_homepage_website import \
+from quotaclimat.data_ingestion.scrap_homepage_lemonde.config_homepage_website import \
     config_homepage_lemonde
 
 
@@ -163,3 +163,7 @@ def run():
     df = created_at_column(df)
 
     return df
+
+
+if __name__ == "__main__":
+    run()

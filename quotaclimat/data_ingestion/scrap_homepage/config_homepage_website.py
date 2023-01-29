@@ -1,7 +1,6 @@
 """ Config section containers and sub containers for div and class """
 
 config_homepage_lemonde = {
-
     "main_title": {
         "container": {
             "tag": "div",
@@ -79,7 +78,6 @@ config_homepage_lemonde = {
         },
         "url": "href",
     },
-
     "river_area": {
         "container": {
             "tag": "div",

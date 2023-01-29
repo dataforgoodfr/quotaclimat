@@ -41,13 +41,13 @@ SITEMAP_CONFIG = {
     },
     "lamarseillaise": {
         "sitemap_index": "https://www.lamarseillaise.fr/sitemap.xml",
-        "sitemap_url": "https://www.lamarseillaise.fr/sitemapforgoogle.xml",# lien recursif en fait
+        "sitemap_url": "https://www.lamarseillaise.fr/sitemapforgoogle.xml",  # lien recursif en fait
         "regex_section": r"^https:\/\/www\.lamarseillaise\.fr\/(?P<section>[\/\w-]*)\/.+$",
     },
     "lequipe": {
         "sitemap_index": "https://www.lequipe.fr/sitemap.xml",
-        "sitemap_url": "https://www.lequipe.fr/sitemap/sitemap_google_news_premium.xml",# https://www.lequipe.fr/sitemap/sitemap_google_news_gratuit.xml aussi ?
-        "regex_section": r"^https:\/\/www\.lequipe\.fr\/(?P<section>[\/\w-]*)\/.+\/\d+$",# quelques chiffres à la fin
+        "sitemap_url": "https://www.lequipe.fr/sitemap/sitemap_google_news_premium.xml",  # https://www.lequipe.fr/sitemap/sitemap_google_news_gratuit.xml aussi ?
+        "regex_section": r"^https:\/\/www\.lequipe\.fr\/(?P<section>[\/\w-]*)\/.+\/\d+$",  # quelques chiffres à la fin
     },
     "lopinion": {
         "sitemap_index": "https://www.lopinion.fr/sitemap.xml",
@@ -56,32 +56,32 @@ SITEMAP_CONFIG = {
     },
     "midilibre": {
         "sitemap_index": "https://www.midilibre.fr/sitemap.xml",
-        "sitemap_url": "https://www.midilibre.fr/sitemap_articles_1.xml.gz",# sans le .gz pour afficher dans le wew browser
-        "regex_section": None,# articles en year/month/day/titre
+        "sitemap_url": "https://www.midilibre.fr/sitemap_articles_1.xml.gz",  # sans le .gz pour afficher dans le wew browser
+        "regex_section": None,  # articles en year/month/day/titre
         "filter_date_label": "lastmod",
     },
     "lindependant": {
         "sitemap_index": "https://www.lindependant.fr/sitemap.xml",
         "sitemap_url": "https://www.lindependant.fr/sitemap_articles_1.xml.gz",
-        "regex_section": None,# articles en year/month/day/titre
+        "regex_section": None,  # articles en year/month/day/titre
         "filter_date_label": "lastmod",
     },
     "ladepeche": {
         "sitemap_index": "https://www.ladepeche.fr/sitemap.xml",
         "sitemap_url": "https://www.ladepeche.fr/sitemap_articles_1.xml.gz",
-        "regex_section": None,# articles en year/month/day/titre
+        "regex_section": None,  # articles en year/month/day/titre
         "filter_date_label": "lastmod",
     },
     "centrepresseaveyron": {
         "sitemap_index": "https://www.centrepresseaveyron.fr/sitemap.xml",
         "sitemap_url": "https://www.centrepresseaveyron.fr/sitemap_articles_1.xml.gz",
-        "regex_section": None,# articles en year/month/day/titre
+        "regex_section": None,  # articles en year/month/day/titre
         "filter_date_label": "lastmod",
     },
     "petitbleu": {
         "sitemap_index": "https://www.petitbleu.fr/sitemap.xml",
         "sitemap_url": "https://www.petitbleu.fr/sitemap_articles_1.xml.gz",
-        "regex_section": None,# articles en year/month/day/titre
+        "regex_section": None,  # articles en year/month/day/titre
         "filter_date_label": "lastmod",
     },
     "letelegramme": {

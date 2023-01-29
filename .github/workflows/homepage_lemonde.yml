@@ -31,7 +31,7 @@ jobs:
         run: poetry install --no-interaction --no-ansi
       - name: RunScrappingScript
         run: |
-          poetry run python qquotaclimat/data_ingestion/scrap_homepage_lemonde/scrap_homepage.py
+          poetry run python quotaclimat/data_ingestion/scrap_homepage_lemonde/scrap_homepage.py
       - name: Push data to the repo
         run: |
           git config user.name github-actions

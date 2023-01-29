@@ -1,7 +1,6 @@
 import streamlit as st
 
 from quotaclimat.data_analytics.analytics_signataire_charte import (
-    apply_lemmatizer_job, apply_lemmatizer_media,
     bar_plot_nb_of_signataire_per_job, bar_plot_nb_of_signataire_per_media,
     get_summary_statistics, load_signing_partners_data)
 from quotaclimat.data_ingestion.scrap_chartejournalismeecologie_signataires import \
@@ -12,10 +11,7 @@ st.sidebar.markdown("# Charte Journaliste d'écologie")
 
 # Import raw data
 df = load_signing_partners_data()
-# Clean Media column
-df = apply_lemmatizer_media(df)
-# Clean Job column
-df = apply_lemmatizer_job(df)
+
 # Get statistics
 nb_unique_signataire, nb_unique_organisation = get_summary_statistics(df)
 

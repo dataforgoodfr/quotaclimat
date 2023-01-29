@@ -23,7 +23,7 @@ CHANNEL_CONFIG = {
         "channel_id": "UCD25QI36ly-8hWm9OPOz7aw",
         "uploads_id": "UUD25QI36ly-8hWm9OPOz7aw",
     },
-    "Libération": {
+    "Liberation": {
         "channel_id": "UC9x4Iyu-D257P0P-VDRwSzw",
         "uploads_id": "UU9x4Iyu-D257P0P-VDRwSzw",
     },
@@ -31,7 +31,7 @@ CHANNEL_CONFIG = {
         "channel_id": "UCQd5LYcykaFeZtjDaP3bNSA",
         "uploads_id": "UUQd5LYcykaFeZtjDaP3bNSA",
     },
-    "L'Obs": {
+    "LObs": {
         "channel_id": "UC1ObaaFz4XHVPN2T5IFsU4w",
         "uploads_id": "UU1ObaaFz4XHVPN2T5IFsU4w",
     },
@@ -39,7 +39,7 @@ CHANNEL_CONFIG = {
         "channel_id": "UCfHn_8-ehdem86fEvlFg-Gw",
         "uploads_id": "UUfHn_8-ehdem86fEvlFg-Gw",
     },
-    "L'Express": {
+    "LExpress": {
         "channel_id": "UCp2kK3DyhpgFOdILF3BBC9A",
         "uploads_id": "UUp2kK3DyhpgFOdILF3BBC9A",
     },

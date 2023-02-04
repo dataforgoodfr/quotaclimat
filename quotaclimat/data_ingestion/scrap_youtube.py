@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import isodate
 
 import pandas as pd
 from apiclient.discovery import build
@@ -141,7 +142,7 @@ def video_formatting(videos_scraped: list) -> dict:
             video["channel"] = items[i]["snippet"]["channelTitle"]
             video["description"] = items[i]["snippet"]["description"]
             video["publication_date"] = items[i]["snippet"]["publishedAt"]
-            video["duration"] = items[i]["contentDetails"]["duration"]
+            video['duration (s)'] = isodate.parse_duration(items[i]['contentDetails']['duration']).total_seconds()
             if "viewCount" in items[i]["statistics"]:
                 video["view_count"] = items[i]["statistics"]["viewCount"]
             else:

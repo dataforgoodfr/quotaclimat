@@ -41,6 +41,7 @@ streamlit-tags = "^1.2.8"
 pandera = "^0.13.4"
 scikit-learn = "^1.2.0"
 google-api-python-client = "^2.73.0"
+isodate = "^0.6.1"
 
 [build-system]
 requires = ["poetry-core>=1.1"]

@@ -9,7 +9,7 @@ from config_youtube import CHANNEL_CONFIG
 
 API_SERVICE_NAME = "youtube"
 API_VERSION = "v3"
-KEY = "AIzaSyDATQZwjAZ__AARZvLZRmAWpkcG0BQgKdM"  # Google account created: email: pwd:scrappingjob12345
+KEY = "AIzaSyDATQZwjAZ__AARZvLZRmAWpkcG0BQgKdM"  # Google account created: email:scrapping.job.api.key@gmail.com pwd:scrappingjob12345
 
 def create_youtube_object():
 
@@ -158,7 +158,7 @@ def video_formatting(videos_scraped: list) -> dict:
             if "tags" in items[i]["snippet"]:
                 video["tags"] = items[i]["snippet"]["tags"]
             else:
-                video["tags"] = []
+                video["tags"] = "None"
 
             full[video["title"] + " - " + video["channel"]] = video
 

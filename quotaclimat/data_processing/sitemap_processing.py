@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.preprocessing import MultiLabelBinarizer
 
 from quotaclimat.data_ingestion.config_sitmap import MEDIA_CONFIG
+from quotaclimat.data_ingestion.scrap_sitemap import write_df
 
 LANDING_PATH_SITEMAP = "data_public/sitemap_dumps/"
 
@@ -65,3 +66,31 @@ def filter_df(df, date_lower_bound, date_upper_bound, keywords):
         df_between_two_dates.news_title.str.contains("|".join(keywords))
     ]
     return df_between_two_dates_kw
+
+
+def scan_for_duplicates_and_overwrite_the_history(
+    overwrite: bool,
+):  # there should be a more elegant way to do that
+    # load all data #TODO refactor this to a window of n months
+    df_archives = load_all("../data_public/sitemap_dumps/media_type")
+    download_date_last = (
+        df_archives.groupby("url")["download_date"]
+        .apply(lambda x: x.max())
+        .rename("download_date_last")
+    )
+    df_m = df_archives.merge(download_date_last, on=["url"])
+    del df_archives
+    df_m.sort_values("download_date", inplace=True)
+    df_m.drop_duplicates(["url"], keep="first", inplace=True)
+
+    # overwrite history without duplicates
+    if overwrite:
+        for mt in df_m.media_type.unique():
+            df_mt = df_m[df_m.media_type == mt]
+            for media in df_mt.media.unique():
+                df_media = df_mt[df_mt.media == media]
+                for download_date in df_media.download_date.unique():
+                    df_per_day = df_media[df_media.download_date == download_date]
+                    write_df(df_per_day, media)
+    else:
+        return df_m

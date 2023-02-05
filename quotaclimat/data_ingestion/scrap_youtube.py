@@ -158,7 +158,7 @@ def video_formatting(videos_scraped: list) -> dict:
             if "tags" in items[i]["snippet"]:
                 video["tags"] = items[i]["snippet"]["tags"]
             else:
-                video["tags"] = "None"
+                video["tags"] = []
 
             full[video["title"] + " - " + video["channel"]] = video
 

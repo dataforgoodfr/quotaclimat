@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
+import datetime as dt
 import nltk
 import pandas as pd
+import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from nltk.corpus import stopwords
@@ -96,7 +98,9 @@ def plot_media_count_comparison_all_kw(df, keywords: list):
 
 
 def plot_comparison_of_temporal_total_count(df, keywords: list, keywords_comp: list):
-
+    """
+    Comparaison de l évolution temporelle de l'apparition des mots clé
+    """
     df["news_publication_date_as_str"] = df.news_publication_date.dt.strftime(
         "%Y-%m-%d"
     )
@@ -142,6 +146,43 @@ def plot_comparison_of_temporal_total_count(df, keywords: list, keywords_comp: l
         xaxis_title="Date de publication des articles",
         yaxis_title="% du total d articles",
     )
+    return fig
+
+def plot_articles_total_count_evolution(df, keywords: list, keywords_comp: list):
+    """
+    Comparaison de l évolution temporelle de la présence des mots clé
+    """
+    duration = df["download_date_last"] - df["news_publication_date"] + dt.timedelta(days = 1)
+    df["duration_in_days"] = duration.dt.days
+
+    df_keywords_1 = df[df.news_title.str.contains("|".join(keywords))]
+    df_keywords_2 = df[df.news_title.str.contains("|".join(keywords_comp))]
+
+    label1 =  ", ".join(keywords)[:25] + "..."
+    label2 =  ", ".join(keywords_comp)[:25] + "..."
+    
+    day_min = df["news_publication_date"].dt.date.min()
+    day_max = df["download_date_last"].dt.date.max()
+    
+    article_count = pd.DataFrame(index = pd.date_range(day_min,day_max,freq='D'))
+    
+    for idx in article_count.index:
+        temp_min1 = df_keywords_1.news_publication_date.dt.date <= idx.date()
+        temp_max1  = idx.date() <= df_keywords_1.download_date_last.dt.date
+        article_count.loc[idx,label1] = sum(np.logical_and(temp_min1,temp_max1))
+        
+        temp_min2 = df_keywords_2.news_publication_date.dt.date <= idx.date()
+        temp_max2  = idx.date() <= df_keywords_2.download_date_last.dt.date
+        article_count.loc[idx,label2] = sum(np.logical_and(temp_min2,temp_max2))    
+    
+    
+    fig = px.line(
+        article_count.reset_index(),
+        x="index",
+        y = [label1,label2],
+        title="Evolution du nombre d'articles comprenant un mot d'une des deux listes au cours du temps",
+    )
+    
     return fig
 
 
@@ -241,3 +282,31 @@ def fig_percentage_between_two_dates_per_day_and_leaderboard_per_media(
         )
     )
     return figs_percentage
+
+
+def plot_articles_lifespan_comparison(df, keywords: list, keywords_comp: list):
+    
+    duration = df["download_date_last"] - df["news_publication_date"] + dt.timedelta(days = 1)
+    df["duration_in_days"] = duration.dt.days
+
+    df_keywords_1 = df[df.news_title.str.contains("|".join(keywords))]
+    df_keywords_2 = df[df.news_title.str.contains("|".join(keywords_comp))]
+
+    df_keywords_1["keyword list"] = ", ".join(keywords)[:25] + "..."
+    df_keywords_2["keyword list"] = ", ".join(keywords_comp)[:25] + "..."
+
+    df_to_plot = pd.concat([df_keywords_1, df_keywords_2])
+    
+    fig = px.box(
+        df_to_plot,
+        x="media",
+        y="duration_in_days",
+        color="keyword list",
+        title="Répartition du nombre de jours de présences des articles comprenant un mot d'une des deux listes",
+        hover_data = ["news_title"] ,
+        log_y = True
+    )
+    
+    return fig
+
+

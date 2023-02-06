@@ -16,6 +16,11 @@ def load_all(path: str = LANDING_PATH_SITEMAP):
     df = pd.concat(dfs)
     return filter_on_first_ingestion_date(df)
 
+def load_month(year: int, month: int, path: str = LANDING_PATH_SITEMAP):
+    files = glob.glob(path + f"**/**/year={year}\month={month}/*.parquet")
+    dfs = [pd.read_parquet(fp) for fp in files]
+    df = pd.concat(dfs)
+    return filter_on_first_ingestion_date(df)
 
 def load_tv():
     files = glob.glob(LANDING_PATH_SITEMAP + "media_type=tv/**/**/**/*.parquet")

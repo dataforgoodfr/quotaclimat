@@ -6,9 +6,8 @@ from streamlit_tags import st_tags
 
 from quotaclimat.data_analytics.sitemap_analytics import (
     fig_percentage_between_two_dates_per_day_and_leaderboard_per_media,
-    plot_comparison_of_temporal_total_count, plot_articles_total_count_evolution,
-    plot_articles_lifespan_comparison,
-    plot_media_count_comparison,
+    plot_articles_lifespan_comparison, plot_articles_total_count_evolution,
+    plot_comparison_of_temporal_total_count, plot_media_count_comparison,
     plot_media_count_comparison_all_kw)
 from quotaclimat.data_processing.sitemap_processing import (
     feature_engineering_sitemap, filter_df, load_all)

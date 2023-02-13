@@ -76,6 +76,13 @@ curl https://pyenv.run | bash
 ```
 </td>
 </tr>
+
+<tr>
+<td> Windows </td>
+<td>
+Une installation via miniconda est généralement plus simple que pyenv sur windows.
+</td>
+</tr>
 </table>
 
 Make the shell pyenv aware:
@@ -110,11 +117,22 @@ eval "$(pyenv virtualenv-init -)"
 ```
 </td>
 </tr>
+
+<tr>
+<td> Windows </td>
+<td>
+
+(TODO : translate > quels noms en anglais ?)
+In Propriétés systèmes > Paramètres système avancés >  Variables d'environnement...
+Choisissez la variable "Path" > Modifier... et ajoutez le chemin de votre installation python, où se trouve le python.exe. (par défaut, C:\Users\UserName\AppData\Local\***TBD** TODO)
+
+</td>
+</tr>
 </table>
 
 
 
-Let's install a python version:
+Let's install a python version (for windows, this step have been done with miniconda):
 ```bash
 pyenv install 3.10.2 # this will take time
 ```
@@ -135,11 +153,13 @@ Then you are ready to create a virtual environment. Go in the project folder, an
 ```
 
 You now need a tool to manage dependencies. Let's use poetry.
+On windows, if not already installed, you will need a VS installation. (#TODO : link)  
 
 ```bash
 pip install poetry
 poetry update
 ```
+NLDA : I have not been able to work with wordcloud on windows. 
 
 When you need to install a new dependency (use a new package, e.g. nltk), run 
 ```bash
@@ -153,6 +173,11 @@ After commiting to the repo, other team members will be able to use the exact sa
 ```bash
 poetry run streamlit run app.py
 ```
+On Windows, you may need :
+```bash
+poetry run python -m streamlit run app.py
+```
+Depending on your installation process and version, "python" can also be "python3" or "py".
 
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:

@@ -3,8 +3,8 @@ name: scrap-lemonde-homepage
 on:
   workflow_dispatch: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
 
-  schedule: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
-    - cron:  '00 */1 * * *'  # every hours
+  #schedule: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+  #  - cron:  '00 */1 * * *'  # every hours
 
 env:
   PYTHON_VERSION: '3.10'

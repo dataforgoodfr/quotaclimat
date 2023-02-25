@@ -59,10 +59,10 @@ with tab1:
             key="0",
         )
         d_lower = st.date_input(
-            "Entrez date à laquel commencer le traitement", datetime.date(2022, 12, 1)
+            "Entrez date à laquel commencer le traitement", datetime.date(2023, 1, 1)
         )
         d_upper = st.date_input(
-            "Entrez date à laquel terminer le traitement", datetime.date(2022, 12, 8)
+            "Entrez date à laquel terminer le traitement", datetime.date(2023, 2, 24)
         )
         df_between_two_dates = filter_df(df_featured, d_lower, d_upper, keywords)
         (
@@ -113,12 +113,12 @@ with tab2:
     )
     d_lower_ = st.date_input(
         "Entrez date à laquel commencer le traitement",
-        datetime.date(2022, 12, 1),
+        datetime.date(2023, 1, 1),
         key="3",
     )
     d_upper_ = st.date_input(
         "Entrez date à laquel terminer le traitement",
-        datetime.date(2022, 12, 8),
+        datetime.date(2023, 2, 24),
         key="4",
     )
     df_between_two_dates = df_all[

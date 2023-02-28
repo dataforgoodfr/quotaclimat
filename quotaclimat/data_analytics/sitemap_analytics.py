@@ -166,7 +166,7 @@ def plot_articles_total_count_evolution(df, keywords: list, keywords_comp: list)
     label2 = ", ".join(keywords_comp)[:25] + "..."
 
     day_min = df["news_publication_date"].dt.date.min()
-    day_max = df["download_date_last"].dt.date.max()
+    day_max = df["news_publication_date"].dt.date.max()
 
     article_count = pd.DataFrame(index=pd.date_range(day_min, day_max, freq="D"))
 

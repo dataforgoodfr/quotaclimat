@@ -80,7 +80,7 @@ curl https://pyenv.run | bash
 <tr>
 <td> Windows </td>
 <td>
-Une installation via miniconda est généralement plus simple que pyenv sur windows.
+An installation using miniconda is generally simpler than a pyenv one on Windows.
 </td>
 </tr>
 </table>
@@ -122,9 +122,16 @@ eval "$(pyenv virtualenv-init -)"
 <td> Windows </td>
 <td>
 
-(TODO : translate > quels noms en anglais ?)
-In Propriétés systèmes > Paramètres système avancés >  Variables d'environnement...
-Choisissez la variable "Path" > Modifier... et ajoutez le chemin de votre installation python, où se trouve le python.exe. (par défaut, C:\Users\UserName\AppData\Local\***TBD** TODO)
+:fr: Dans Propriétés systèmes > Paramètres système avancés >  Variables d'environnement...
+Choisissez la variable "Path" > Modifier... et ajoutez le chemin de votre installation python, où se trouve le python.exe. (par défaut, C:\Users\username\AppData\Roaming\Python\Scripts\ )
+
+:uk: In System Properties > Advanced >  Environment Variables...
+Choose the variable "Path" > Edit... et add the path to your python's installation, where is located the pyhton.exe (by default, this should be at C:\Users\username\AppData\Roaming\Python\Scripts\ )
+
+In the console, you can now try :
+```bash
+poetry --version
+```
 
 </td>
 </tr>
@@ -153,7 +160,9 @@ Then you are ready to create a virtual environment. Go in the project folder, an
 ```
 
 You now need a tool to manage dependencies. Let's use poetry.
-On windows, if not already installed, you will need a VS installation. (#TODO : link)  
+On windows, if not already installed, you will need a VS installation.
+
+Link : https://wiki.python.org/moin/WindowsCompilers#Microsoft_Visual_C.2B-.2B-_14.x_with_Visual_Studio_2022_.28x86.2C_x64.2C_ARM.2C_ARM64.29
 
 ```bash
 pip install poetry

@@ -14,9 +14,11 @@ from quotaclimat.data_processing.sitemap_processing import (
 
 # TODO: seperate processing from plotting!
 
+
 @st.cache_data(ttl=7200)
 def cached_load_all():
     return load_all()
+
 
 st.sidebar.markdown("# Exploration des titres d'article des site web")
 

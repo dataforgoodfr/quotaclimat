@@ -14,7 +14,7 @@ from quotaclimat.data_processing.extract_and_process_tv_program import \
 PATH_TV_PROGRAMS = "data_public/tv_program/20221125_20221202_Programme_TV.csv"
 
 
-@st.cache(allow_output_mutation=True)
+@st.cache_data(allow_output_mutation=True, ttl=7200)
 def get_data():
     df = pd.read_csv(PATH_TV_PROGRAMS)
     # df = get_tv_programs_next_days(number_of_days=4, save=False)

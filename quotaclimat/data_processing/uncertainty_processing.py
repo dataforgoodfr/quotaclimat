@@ -5,7 +5,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-#%% Parameters
+# %% Parameters
 CHUNK_SIZE = datetime.timedelta(minutes=2)
 
 SCORE_EVOLUTION = np.array(
@@ -36,7 +36,7 @@ SCORE_EVOLUTION = np.array(
     ]
 )
 
-#%% Fonction generale
+# %% Fonction generale
 def compute_media_time(chunks_data, n_days=16, hour_a_day=18):
     total_time = np.sum(chunks_data.date_end - chunks_data.date)
     return total_time / datetime.timedelta(hours=hour_a_day * n_days)
@@ -49,7 +49,7 @@ def get_moment_of_the_day(date_test):
     ) / datetime.timedelta(hours=24)
 
 
-#%% Fonction de score
+# %% Fonction de score
 def get_formatted_score_evolution(score_evol=SCORE_EVOLUTION):
 
     score = pd.DataFrame(score_evol, columns=["heure", "score"])
@@ -122,7 +122,7 @@ def compute_chunk_score(chunk_data, n_days=16):
     return get_chunk_score(chunk_data).sum() / n_days
 
 
-#%% extraction depuis les données de chunks
+# %% extraction depuis les données de chunks
 def get_coverage_data(data, chunk_size=CHUNK_SIZE):
     coverage_data = data[
         ["index", "channel", "date", "keyword", "mentions", "n_mentions"]
@@ -140,7 +140,7 @@ def get_mentions_date(data, chunk_size=CHUNK_SIZE):
     return data.apply(lambda x: mention_date_from_serie(x, chunk_size), axis=1)
 
 
-#%%
+# %%
 def get_coverage_data_by_channel(data, channel_name):
     data_channel = data[data.channel == channel_name]
     cov_data_channel = get_coverage_data(data_channel)
@@ -203,7 +203,7 @@ def get_coverage_by_window(
     return chunks_data
 
 
-#%% Fusion des mentions
+# %% Fusion des mentions
 def merge_date_ranges(data):
     # data is a list of tuples (start,end) for each ranges
     result = []
@@ -262,7 +262,7 @@ def join_timestamps_within_rolling_window(
     return chunks_df[["date", "date_end"]]
 
 
-#%% Plots
+# %% Plots
 def plot_grouped_chunks_and_mentions(chunks_data, df_event):
     total_time = compute_media_time(chunks_data)
 

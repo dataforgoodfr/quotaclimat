@@ -11,20 +11,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from wordcloud import WordCloud
 
 SECTION_CLIMAT = ["planete", "environnement", "crise-climatique"]
-CLIMATE_KW = [
-    " cop27",
-    "  cop ",
-    "climatique",
-    "écologie",
-    "CO2",
-    "effet de serre",
-    "transition énergétique",
-    "carbone",
-    "sécheresse" "transition énergétique",
-    "méthane",
-    "GIEC",
-    "zéro émission",
-]
+
 nltk.download("stopwords")
 
 stopwords_fr = nltk.corpus.stopwords.words("french")
@@ -213,9 +200,9 @@ def make_word_cloud(df_origin: pd.DataFrame):
     wordcloud.generate_from_frequencies(
         frequencies=tfidf_positive_topic_sum.to_dict()["tfidf_sum"]
     )
-    fig, ax = plt.subplots(figsize=(13, 8), facecolor="k")
+    fig, _ = plt.subplots(figsize=(13, 8), facecolor="k")
 
-    ax = plt.imshow(wordcloud, interpolation="bilinear")
+    _ = plt.imshow(wordcloud, interpolation="bilinear")
     plt.axis("off")
     plt.tight_layout(pad=0)
 

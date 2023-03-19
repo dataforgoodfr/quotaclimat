@@ -66,7 +66,7 @@ with tab1:
             "Entrez date à laquel commencer le traitement", datetime.date(2022, 12, 1)
         )
         d_upper = st.date_input(
-            "Entrez date à laquel terminer le traitement", datetime.date(2022, 12, 8)
+            "Entrez date à laquel terminer le traitement", datetime.date(2023, 3, 19)
         )
         df_between_two_dates = filter_df(df_featured, d_lower, d_upper, keywords)
         (

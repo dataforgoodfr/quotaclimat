@@ -11,6 +11,7 @@ from quotaclimat.data_analytics.sitemap_analytics import (
     plot_media_count_comparison_all_kw)
 from quotaclimat.data_processing.sitemap_processing import (
     feature_engineering_sitemap, filter_df, load_all)
+from quotaclimat.utils.climate_keywords import CLIMATE_KW
 
 # TODO: seperate processing from plotting!
 
@@ -49,15 +50,7 @@ with tab1:
         keywords = st_tags(
             label="Entrez des mots clé en minuscule:",
             text="Pressez entrez pour ajouter",
-            value=[
-                "cop15",
-                "climatique",
-                "écologie",
-                "co2",
-                "effet de serre",
-                "transition énergétique",
-                "carbone",
-            ],
+            value=CLIMATE_KW,
             suggestions=["environment"],
             maxtags=30,
             key="0",
@@ -85,15 +78,7 @@ with tab2:
     keywords = st_tags(
         label="Entrez des mots clé:",
         text="Pressez entrez pour ajouter",
-        value=[
-            "cop",
-            "climatique",
-            "écologie",
-            "co2",
-            "effet de serre",
-            "transition énergétique",
-            "carbone",
-        ],
+        value=CLIMATE_KW,
         suggestions=["environnement"],
         maxtags=30,
         key="1",
@@ -102,14 +87,12 @@ with tab2:
         label="Pour les comparer aux mots clé suivants:",
         text="Pressez entrez pour ajouter",
         value=[
-            "migrants",
-            "immigrés",
-            "sans-papiers",
-            "immigration",
-            "migration",
-            "émigration",
-            "émigrés",
-            "ocean viking",
+            "macron",
+            "retraites",
+            "retraite",
+            "49.3",
+            "Corée du Nord",
+            "Ukraine",
         ],
         suggestions=["politique"],
         maxtags=30,
@@ -122,7 +105,7 @@ with tab2:
     )
     d_upper_ = st.date_input(
         "Entrez date à laquel terminer le traitement",
-        datetime.date(2022, 12, 8),
+        datetime.date(2023, 3, 19),
         key="4",
     )
     df_between_two_dates = df_all[

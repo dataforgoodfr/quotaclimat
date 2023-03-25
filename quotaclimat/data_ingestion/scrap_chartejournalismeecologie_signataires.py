@@ -52,7 +52,7 @@ def apply_lemmatizer_media(df, column_name="Média ou organisation") -> pd.DataF
     nlp = spacy.load("fr_core_news_md")
 
     # New column name
-    new_column_name = f"{column_name}"
+    # new_column_name = f"{column_name}"
 
     # Apply porter stemmer
     df[column_name] = [

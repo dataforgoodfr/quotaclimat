@@ -20,7 +20,7 @@ uploaded_files = st.sidebar.file_uploader(
 # button_analysis = st.sidebar.button("Lancer l'analyse")
 
 
-@st.cache(allow_output_mutation=True, suppress_st_warning=True)
+@st.cache_data()
 def load_data(uploaded_files):
     # TODO add deduplication
 

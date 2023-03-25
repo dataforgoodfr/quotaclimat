@@ -11,20 +11,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from wordcloud import WordCloud
 
 SECTION_CLIMAT = ["planete", "environnement", "crise-climatique"]
-CLIMATE_KW = [
-    " cop27",
-    "  cop ",
-    "climatique",
-    "écologie",
-    "CO2",
-    "effet de serre",
-    "transition énergétique",
-    "carbone",
-    "sécheresse" "transition énergétique",
-    "méthane",
-    "GIEC",
-    "zéro émission",
-]
+
 nltk.download("stopwords")
 
 stopwords_fr = nltk.corpus.stopwords.words("french")
@@ -166,7 +153,7 @@ def plot_articles_total_count_evolution(df, keywords: list, keywords_comp: list)
     label2 = ", ".join(keywords_comp)[:25] + "..."
 
     day_min = df["news_publication_date"].dt.date.min()
-    day_max = df["download_date_last"].dt.date.max()
+    day_max = df["news_publication_date"].dt.date.max()
 
     article_count = pd.DataFrame(index=pd.date_range(day_min, day_max, freq="D"))
 
@@ -213,9 +200,9 @@ def make_word_cloud(df_origin: pd.DataFrame):
     wordcloud.generate_from_frequencies(
         frequencies=tfidf_positive_topic_sum.to_dict()["tfidf_sum"]
     )
-    fig, ax = plt.subplots(figsize=(13, 8), facecolor="k")
+    fig, _ = plt.subplots(figsize=(13, 8), facecolor="k")
 
-    ax = plt.imshow(wordcloud, interpolation="bilinear")
+    _ = plt.imshow(wordcloud, interpolation="bilinear")
     plt.axis("off")
     plt.tight_layout(pad=0)
 

@@ -13,11 +13,11 @@ The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclim
 # 🤱 I want to contribute! Where do I start?
 
 1. Learn about the project by watching the introduction videos mentioned above.
-2. Launch the Streamlit dashboard on your local, and browse around. Steps are described below.
-3.  Check out the data in data_public.
+2. Make sure you can check out the [documentation](https://www.notion.so/dataforgood/QuotaClimat-6c011dc529f14f309f74970df243b819) (ask access).
+3. Check out the data in data_public.
 4. Join https://dataforgood.fr/join and the Slack #offseason_quotaclimat
 5. Introduce yourself on Slack by stating your expertise and how much time you would like to give. 
-6. Join a dev meetings on Tuesdays at 19h or 13h.
+6. Join a dev meetings on Tuesdays at 19h.
 
 
 ##  :wrench: Development
@@ -76,6 +76,13 @@ curl https://pyenv.run | bash
 ```
 </td>
 </tr>
+
+<tr>
+<td> Windows </td>
+<td>
+An installation using miniconda is generally simpler than a pyenv one on Windows.
+</td>
+</tr>
 </table>
 
 Make the shell pyenv aware:
@@ -110,11 +117,29 @@ eval "$(pyenv virtualenv-init -)"
 ```
 </td>
 </tr>
+
+<tr>
+<td> Windows </td>
+<td>
+
+:fr: Dans Propriétés systèmes > Paramètres système avancés >  Variables d'environnement...
+Choisissez la variable "Path" > Modifier... et ajoutez le chemin de votre installation python, où se trouve le python.exe. (par défaut, C:\Users\username\AppData\Roaming\Python\Scripts\ )
+
+:uk: In System Properties > Advanced >  Environment Variables...
+Choose the variable "Path" > Edit... et add the path to your python's installation, where is located the pyhton.exe (by default, this should be at C:\Users\username\AppData\Roaming\Python\Scripts\ )
+
+In the console, you can now try :
+```bash
+poetry --version
+```
+
+</td>
+</tr>
 </table>
 
 
 
-Let's install a python version:
+Let's install a python version (for windows, this step have been done with miniconda):
 ```bash
 pyenv install 3.10.2 # this will take time
 ```
@@ -135,11 +160,15 @@ Then you are ready to create a virtual environment. Go in the project folder, an
 ```
 
 You now need a tool to manage dependencies. Let's use poetry.
+On windows, if not already installed, you will need a VS installation.
+
+Link : https://wiki.python.org/moin/WindowsCompilers#Microsoft_Visual_C.2B-.2B-_14.x_with_Visual_Studio_2022_.28x86.2C_x64.2C_ARM.2C_ARM64.29
 
 ```bash
 pip install poetry
 poetry update
 ```
+NLDA : I have not been able to work with wordcloud on windows. 
 
 When you need to install a new dependency (use a new package, e.g. nltk), run 
 ```bash
@@ -153,6 +182,11 @@ After commiting to the repo, other team members will be able to use the exact sa
 ```bash
 poetry run streamlit run app.py
 ```
+On Windows, you may need :
+```bash
+poetry run python -m streamlit run app.py
+```
+Depending on your installation process and version, "python" can also be "python3" or "py".
 
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:

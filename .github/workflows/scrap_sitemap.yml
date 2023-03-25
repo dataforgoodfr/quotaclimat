@@ -4,7 +4,7 @@ on:
   workflow_dispatch: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
 
   schedule: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
-    - cron:  '00 00 * * *'  # every day at 00:00 UTC
+    - cron:  '00 2 * * *'  # every day at 02:00 UTC
 
 env:
   PYTHON_VERSION: '3.10'

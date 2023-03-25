@@ -9,7 +9,7 @@ from quotaclimat.data_analytics.sitemap_analytics import (
     plot_articles_lifespan_comparison, plot_articles_total_count_evolution,
     plot_comparison_of_temporal_total_count, plot_media_count_comparison,
     plot_media_count_comparison_all_kw)
-from quotaclimat.data_processing.sitemap_processing import (
+from quotaclimat.data_processing.sitemap.sitemap_processing import (
     feature_engineering_sitemap, filter_df, load_all)
 from quotaclimat.utils.climate_keywords import CLIMATE_KW
 

@@ -3,7 +3,7 @@ import psycopg2
 
 def config_tables():
     """List of table schemas files"""
-    return ["sitemap.pgsql"]
+    return ["postgres/schemas/sitemap.pgsql"]
 
 
 def create_tables():
@@ -29,5 +29,21 @@ def create_tables():
             conn.close()
 
 
+def delete_table(table):
+    conn = psycopg2.connect(
+        database="quotaclimat",
+        user="root",
+        password="quotaclimat",
+        host="212.47.253.253",
+        port="49155",
+    )
+    cursor = conn.cursor()
+
+    query = "DROP TABLE %s;" % table
+
+    cursor.execute(query)
+
+
 if __name__ == "__main__":
     create_tables()
+    # delete_table('sitemap_table')

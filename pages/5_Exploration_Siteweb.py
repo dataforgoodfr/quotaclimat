@@ -6,12 +6,11 @@ import streamlit as st
 from streamlit_tags import st_tags
 
 from quotaclimat.data_analytics.sitemap_analytics import (
-    fig_percentage_between_two_dates_per_day_and_leaderboard_per_media,
     plot_articles_lifespan_comparison, plot_articles_total_count_evolution,
-    plot_comparison_of_temporal_total_count, plot_media_count_comparison,
-    plot_media_count_comparison_all_kw)
+    plot_bar_volumne_mediatique, plot_comparison_of_temporal_total_count,
+    plot_media_count_comparison, plot_media_count_comparison_all_kw)
 from quotaclimat.data_processing.sitemap.queries import (
-    query_data_coverage,
+    query_all_articles_titles_between_two_dates, query_data_coverage,
     query_matching_keywords_articles_titles_between_two_dates)
 from quotaclimat.data_processing.sitemap.sitemap_processing import (
     feature_engineering_sitemap, filter_df, load_all)
@@ -50,6 +49,7 @@ with tab1:
         # st.pyplot(make_word_cloud(df_lw_featured))
 
     with st.expander("Analyse de mot clé", expanded=False):
+        figs = []
         keywords = st_tags(
             label="Entrez des mots clé en minuscule:",
             text="Pressez entrez pour ajouter",
@@ -63,20 +63,62 @@ with tab1:
         )
         d_upper = st.date_input("Entrez date à laquel terminer le traitement", date_max)
 
-        matching_keywords_articles_titles_between_two_dates = (
+        df_matching_keywords_articles_titles_between_two_dates = (
             query_matching_keywords_articles_titles_between_two_dates(
                 conn, keywords, d_lower, d_upper
             )
         )
-        (
-            fig_time_series,
-            fig_leaderboard,
-        ) = fig_percentage_between_two_dates_per_day_and_leaderboard_per_media(
-            matching_keywords_articles_titles_between_two_dates,
-            d_lower,
-            d_upper,
-            keywords,
+        df_all_articles_titles_between_two_dates = (
+            query_all_articles_titles_between_two_dates(conn, d_lower, d_upper)
         )
-        st.plotly_chart(fig_time_series)
-        st.plotly_chart(fig_leaderboard)
-        # st.pyplot(make_word_cloud(df_between_two_dates))
+
+        # percentage
+        count_kw_per_type = (
+            df_matching_keywords_articles_titles_between_two_dates.groupby(
+                "type"
+            ).count()
+        )
+        count_total_per_type = df_all_articles_titles_between_two_dates.groupby(
+            "type"
+        ).count()
+
+        figs.append(
+            plot_bar_volumne_mediatique(
+                count_kw_per_type["news_title"] / count_total_per_type["news_title"]
+            )
+        )
+
+        # percentage per day
+        count_kw_per_day = (
+            df_matching_keywords_articles_titles_between_two_dates.groupby(
+                "news_publication_date"
+            ).count()
+        )
+        count_total_per_day = df_all_articles_titles_between_two_dates.groupby(
+            "news_publication_date"
+        ).count()
+        figs.append(
+            plot_bar_volumne_mediatique(
+                count_kw_per_day["news_title"] / count_total_per_day["news_title"],
+                title="Evolution du volume médiatique par jour",
+            )
+        )
+
+        # percentage per media
+        count_kw_per_day = (
+            df_matching_keywords_articles_titles_between_two_dates.groupby(
+                "publication_name"
+            ).count()
+        )
+        count_total_per_day = df_all_articles_titles_between_two_dates.groupby(
+            "publication_name"
+        ).count()
+        figs.append(
+            plot_bar_volumne_mediatique(
+                count_kw_per_day["news_title"] / count_total_per_day["news_title"],
+                title="Classement des médias",
+            )
+        )
+
+        for fig in figs:
+            st.plotly_chart(fig)

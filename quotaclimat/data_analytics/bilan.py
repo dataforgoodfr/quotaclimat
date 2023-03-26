@@ -170,6 +170,7 @@ def plot_volume_mediatique(media_time, keyword):
         yaxis_title="% du volume médiatique",
         xaxis_title="",
     )
+
     fig.update_traces(marker_color=[COLOR_RADIO, COLOR_TV, COLOR_TV])
     return fig
 

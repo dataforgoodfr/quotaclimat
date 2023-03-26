@@ -10,6 +10,12 @@ from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
 from wordcloud import WordCloud
 
+from quotaclimat.utils.plotly_theme import THEME, WARMING_STRIPES_SEQUENCE
+
+COLOR_RADIO = WARMING_STRIPES_SEQUENCE[0]
+COLOR_TV = WARMING_STRIPES_SEQUENCE[1]
+COLOR_ECO = WARMING_STRIPES_SEQUENCE[3]
+
 SECTION_CLIMAT = ["planete", "environnement", "crise-climatique"]
 
 nltk.download("stopwords")
@@ -209,10 +215,46 @@ def make_word_cloud(df_origin: pd.DataFrame):
     return fig
 
 
+def draw_figures_coverage_percentage(
+    df_gb_1, df_gb_per_media, date_lower_bound, date_upper_bound, keywords
+):
+    df_gb_1["keyword list"] = ", ".join(keywords)[:25] + "..."
+    figs_percentage = []
+    figs_percentage.append(
+        px.bar(
+            df_gb_1,
+            x="download_date",
+            y="news_title",
+            color="type",
+            title="Pourcentage de couverture total entre %s et %s"
+            % (
+                date_lower_bound.strftime("%Y-%m-%d"),
+                date_upper_bound.strftime("%Y-%m-%d"),
+            ),
+            labels={"news_title": "Pourcentage", "download_date": "Jour d indexing"},
+        )
+    )
+
+    figs_percentage.append(
+        px.bar(
+            df_gb_per_media,
+            x="publication_name",
+            y="news_title",
+            color="type",
+            title="Classement des médias entre %s et %s"
+            % (
+                date_lower_bound.strftime("%Y-%m-%d"),
+                date_upper_bound.strftime("%Y-%m-%d"),
+            ),
+            labels={"news_title": "Pourcentage", "publication_name": "Media"},
+        )
+    )
+    return figs_percentage
+
+
 def fig_percentage_between_two_dates_per_day_and_leaderboard_per_media(
     df, date_lower_bound, date_upper_bound, keywords
 ):
-    figs_percentage = []
 
     df_between_two_dates = df[
         (pd.to_datetime(df.download_date).dt.date >= date_lower_bound)
@@ -230,21 +272,6 @@ def fig_percentage_between_two_dates_per_day_and_leaderboard_per_media(
         * 100,
         2,
     ).reset_index()
-    df_gb_1["keyword list"] = ", ".join(keywords)[:25] + "..."
-    figs_percentage.append(
-        px.bar(
-            df_gb_1,
-            x="download_date",
-            y="news_title",
-            color="type",
-            title="Pourcentage de couverture total entre %s et %s"
-            % (
-                date_lower_bound.strftime("%Y-%m-%d"),
-                date_upper_bound.strftime("%Y-%m-%d"),
-            ),
-            labels={"news_title": "Pourcentage", "download_date": "Jour d indexing"},
-        )
-    )
 
     df_gb_per_media = round(
         (
@@ -256,21 +283,10 @@ def fig_percentage_between_two_dates_per_day_and_leaderboard_per_media(
     ).reset_index()
     df_gb_per_media["keyword list"] = ", ".join(keywords)[:25] + "..."
     df_gb_per_media = df_gb_per_media.sort_values("news_title", ascending=False)
-
-    figs_percentage.append(
-        px.bar(
-            df_gb_per_media,
-            x="publication_name",
-            y="news_title",
-            color="type",
-            title="Classement des médias entre %s et %s"
-            % (
-                date_lower_bound.strftime("%Y-%m-%d"),
-                date_upper_bound.strftime("%Y-%m-%d"),
-            ),
-            labels={"news_title": "Pourcentage", "publication_name": "Media"},
-        )
+    figs_percentage = draw_figures_coverage_percentage(
+        df_gb_1, df_gb_per_media, date_lower_bound, date_upper_bound, keywords
     )
+
     return figs_percentage
 
 
@@ -299,4 +315,23 @@ def plot_articles_lifespan_comparison(df, keywords: list, keywords_comp: list):
         log_y=True,
     )
 
+    return fig
+
+
+# PG
+def plot_bar_volumne_mediatique(percentages_per_type, title="Volume médiatique total"):
+    fig = px.bar(
+        percentages_per_type,
+        height=400,
+        text_auto=".1%",
+    )
+    fig.update_layout(
+        yaxis_tickformat="0%",
+        title=title,
+        font_family="Poppins",
+        yaxis_title="% du volume médiatique",
+        xaxis_title="",
+    )
+
+    # fig.update_traces(marker_color=[COLOR_RADIO, COLOR_TV, COLOR_TV])
     return fig

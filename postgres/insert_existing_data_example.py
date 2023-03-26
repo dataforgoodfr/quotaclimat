@@ -2,7 +2,7 @@ import pandas as pd
 import psycopg2
 import psycopg2.extras
 
-from quotaclimat.data_processing.sitemap_processing import load_all
+from quotaclimat.data_processing.sitemap.sitemap_processing import load_all
 
 
 def transformation_from_dumps_to_table_entry(df):
@@ -50,11 +50,26 @@ def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame):
 
 def run():
 
-    df = load_all("../../data_public/sitemap_dumps/")
-    df_sample = df.head(5)  # for the example
-    del df
-    df_to_insert = transformation_from_dumps_to_table_entry(df_sample)
-    insert_data_in_sitemap_table(df_to_insert)
+    df_archives = load_all()
+    download_date_last = (
+        df_archives.groupby("url")["download_date"]
+        .apply(lambda x: x.max())
+        .rename("download_date_last")
+    )
+    df_m = df_archives.merge(download_date_last, on=["url"])
+    # del df_archives
+    df_m.sort_values("download_date", inplace=True)
+    df_m.drop_duplicates(["url"], keep="first", inplace=True)
+    del df_archives
+    # insert by batches
+    CHUNK_SIZE = 1000
+
+    for chunk_num in range(len(df_m) // CHUNK_SIZE + 1):
+        start_index = chunk_num * CHUNK_SIZE
+        end_index = min(chunk_num * CHUNK_SIZE + CHUNK_SIZE, len(df_m))
+        df_m_batch = df_m[start_index:end_index]
+        df_to_insert = transformation_from_dumps_to_table_entry(df_m_batch)
+        insert_data_in_sitemap_table(df_to_insert)
 
 
 if __name__ == "__main__":

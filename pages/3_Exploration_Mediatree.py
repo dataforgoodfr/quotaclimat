@@ -5,7 +5,7 @@ import pandas as pd
 import streamlit as st
 
 import quotaclimat.data_analytics.exploration as mt_exploration
-from quotaclimat.data_processing.read_format_deduplicate import (
+from quotaclimat.data_processing.mediatree.read_format_deduplicate import (
     deduplicate_extracts, read_and_format_one)
 from quotaclimat.utils.channels import TOP_25_CHANNELS, TOP_CHANNELS_TV
 from quotaclimat.utils.plotly_theme import THEME

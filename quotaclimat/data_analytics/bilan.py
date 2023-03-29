@@ -7,7 +7,7 @@ import plotly.express as px
 import seaborn as sns
 
 import quotaclimat.data_analytics.exploration as mt_exploration
-from quotaclimat.data_processing.uncertainty_processing import (
+from quotaclimat.data_processing.mediatree.uncertainty_processing import (
     get_coverage_by_chunks, get_coverage_data_by_channel)
 from quotaclimat.utils.channels import (TOP_CHANNELS_RADIO,
                                         TOP_CHANNELS_TV_CONTINU,

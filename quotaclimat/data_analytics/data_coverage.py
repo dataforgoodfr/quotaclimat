@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-from quotaclimat.data_processing.read_format_deduplicate import \
+from quotaclimat.data_processing.mediatree.read_format_deduplicate import \
     deduplicate_extracts
 from quotaclimat.utils.plotly_theme import SMALL_SEQUENCE2, THEME
 

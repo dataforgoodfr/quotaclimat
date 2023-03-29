@@ -6,7 +6,7 @@ from streamlit_tags import st_tags
 
 import quotaclimat.data_analytics.bilan as mt_bilan
 import quotaclimat.data_analytics.exploration as mt_exploration
-from quotaclimat.data_processing.read_format_deduplicate import (
+from quotaclimat.data_processing.mediatree.read_format_deduplicate import (
     deduplicate_extracts, read_and_format_one)
 from quotaclimat.utils.channels import (TOP_25_CHANNELS, TOP_CHANNELS_RADIO,
                                         TOP_CHANNELS_TV)

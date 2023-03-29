@@ -23,6 +23,9 @@ from quotaclimat.utils.climate_keywords import CLIMATE_KW
 def init_connection():
     return psycopg2.connect(**st.secrets["postgres"])
 
+# Initialize session
+if 'key' not in st.session_state:
+    st.session_state.key = 'value'
 
 conn = init_connection()
 

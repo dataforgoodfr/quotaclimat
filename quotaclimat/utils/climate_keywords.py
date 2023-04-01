@@ -1,3 +1,5 @@
+# Liste des mots clés à rechercher et compter
+
 CLIMATE_KW = [
     "planète",
     "environnement",
@@ -27,4 +29,30 @@ CLIMATE_KW = [
     "impact climatique",
     "Empreinte carbone",
     "Budget énergétique",
+    "énergies renouvelables",
+]
+
+politique_KW = [
+    "élections municipales",
+    "législatives",
+    "présidentielle",
+    "voter",
+    "retraite",
+    "droit",
+    "vote",
+    "premier ministre",
+    "président",
+    "Emmanuel Macron",
+    "président de la république",
+    "loi",
+    "contre",
+    "manifestations",
+    "La mairie",
+    "le maire",
+    "débats à l’assemblée national",
+    "débat",
+    "réforme",
+    "Institutions",
+    "étranger",
+    "Ukraine",
 ]

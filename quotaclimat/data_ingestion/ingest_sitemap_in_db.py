@@ -8,9 +8,9 @@ from quotaclimat.data_ingestion.scrap_sitemap import \
     query_one_sitemap_and_transform
 
 parser = ArgumentParser()
-parser.add_argument("-p", "--dbpsw")
+parser.add_argument("-p", "--dbpwd")
 args = parser.parse_args()
-DB_PWD = args.dbpsw
+DB_PWD = args.dbpwd
 
 
 def run():

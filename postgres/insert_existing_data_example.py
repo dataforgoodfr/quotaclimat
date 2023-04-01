@@ -22,7 +22,7 @@ def transformation_from_dumps_to_table_entry(df):
     return df
 
 
-def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame):
+def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame, password: str):
     table = "sitemap_table"
     if len(df_to_insert) > 0:
         df_columns = list(df_to_insert)
@@ -37,7 +37,7 @@ def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame):
         conn = psycopg2.connect(
             database="quotaclimat",
             user="root",
-            password="quotaclimat",
+            password=password,
             host="212.47.253.253",
             port="49155",
         )
@@ -63,13 +63,13 @@ def run():
     del df_archives
     # insert by batches
     CHUNK_SIZE = 1000
-
     for chunk_num in range(len(df_m) // CHUNK_SIZE + 1):
         start_index = chunk_num * CHUNK_SIZE
         end_index = min(chunk_num * CHUNK_SIZE + CHUNK_SIZE, len(df_m))
         df_m_batch = df_m[start_index:end_index]
         df_to_insert = transformation_from_dumps_to_table_entry(df_m_batch)
-        insert_data_in_sitemap_table(df_to_insert)
+        db_password = "dummy_password_it_wont_work"
+        insert_data_in_sitemap_table(df_to_insert, db_password)
 
 
 if __name__ == "__main__":

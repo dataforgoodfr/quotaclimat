@@ -1,4 +1,4 @@
-name: scrap-sitemap
+name: db_ingestion_by_scraping_sitemamp
 
 on:
   workflow_dispatch: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch

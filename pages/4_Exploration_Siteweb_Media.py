@@ -75,10 +75,10 @@ with tab1:
             key="0",
         )
         d_lower = st.date_input(
-            "Entrez date à laquel commencer le traitement", datetime.date(2022, 12, 1)
+            "Entrez date à laquelle commencer le traitement", datetime.date(2022, 12, 1)
         )
         d_upper = st.date_input(
-            "Entrez date à laquel terminer le traitement", datetime.date(2023, 3, 19)
+            "Entrez date à laquelle terminer le traitement", datetime.date(2023, 3, 19)
         )
         df_between_two_dates = filter_df(df_featured, d_lower, d_upper, keywords)
         (
@@ -92,7 +92,7 @@ with tab1:
         # st.pyplot(make_word_cloud(df_between_two_dates))
 
 with tab2:
-    st.markdown("## Exploration des titres d'article sur les siteweb des medias")
+    st.markdown("## Exploration des titres d'article sur les siteweb des médias")
     st.markdown(f"**Données disponibles du {date_min} au {date_max}.**")
     keywords = st_tags(
         label="Entrez des mots clé:",
@@ -118,12 +118,12 @@ with tab2:
         key="2",
     )
     d_lower_ = st.date_input(
-        "Entrez date à laquel commencer le traitement",
+        "Entrez date à laquelle commencer le traitement",
         datetime.date(2022, 12, 1),
         key="3",
     )
     d_upper_ = st.date_input(
-        "Entrez date à laquel terminer le traitement",
+        "Entrez date à laquelle terminer le traitement",
         datetime.date(2023, 3, 19),
         key="4",
     )
@@ -176,10 +176,10 @@ with tab4:
 
         column_name = st.selectbox("", columns)
         start = st.date_input(
-            "Entrez date à laquel commencer le traitement", datetime.date(2023, 1, 1)
+            "Entrez date à laquelle commencer le traitement", datetime.date(2023, 1, 1)
         )
         end = st.date_input(
-            "Entrez date à laquel terminer le traitement", datetime.date(2023, 3, 20)
+            "Entrez date à laquelle terminer le traitement", datetime.date(2023, 3, 20)
         )
 
         if column_name == "lemonde":
@@ -314,10 +314,10 @@ with tab4:
     if check_global:
 
         start = st.date_input(
-            "Entrez date à laquel commencer le traitement", datetime.date(2023, 1, 1)
+            "Entrez la date à laquelle commencer le traitement", datetime.date(2023, 1, 1)
         )
         end = st.date_input(
-            "Entrez date à laquel terminer le traitement", datetime.date(2023, 3, 10)
+            "Entrez la date à laquelle terminer le traitement", datetime.date(2023, 3, 10)
         )
 
         figs_percentage = fig_percentage_between_two_dates_per_media_plot_comp(

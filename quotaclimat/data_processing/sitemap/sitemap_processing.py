@@ -8,12 +8,7 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from quotaclimat.data_ingestion.config_sitmap import MEDIA_CONFIG
 from quotaclimat.data_ingestion.scrap_sitemap import write_df
 
-
-LANDING_PATH_SITEMAP = (
-    
-    "data_public/sitemap_dumps"
-    
-)
+LANDING_PATH_SITEMAP = "data_public/sitemap_dumps"
 
 
 def load_all(path: str = LANDING_PATH_SITEMAP):

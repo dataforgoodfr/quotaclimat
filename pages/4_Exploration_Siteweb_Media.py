@@ -314,10 +314,12 @@ with tab4:
     if check_global:
 
         start = st.date_input(
-            "Entrez la date à laquelle commencer le traitement", datetime.date(2023, 1, 1)
+            "Entrez la date à laquelle commencer le traitement",
+            datetime.date(2023, 1, 1),
         )
         end = st.date_input(
-            "Entrez la date à laquelle terminer le traitement", datetime.date(2023, 3, 10)
+            "Entrez la date à laquelle terminer le traitement",
+            datetime.date(2023, 3, 10),
         )
 
         figs_percentage = fig_percentage_between_two_dates_per_media_plot_comp(

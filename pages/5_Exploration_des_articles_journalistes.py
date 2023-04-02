@@ -16,7 +16,10 @@ from quotaclimat.data_processing.sitemap.sitemap_processing import (
     feature_engineering_sitemap, filter_df, load_all)
 from quotaclimat.utils.climate_keywords import CLIMATE_KW
 
+st.set_page_config(
+    layout="wide",
 
+)
 # Initialize connection.
 # Uses st.cache_resource to only run once.
 @st.cache_resource

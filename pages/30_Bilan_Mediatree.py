@@ -12,6 +12,9 @@ from quotaclimat.utils.channels import (TOP_25_CHANNELS, TOP_CHANNELS_RADIO,
                                         TOP_CHANNELS_TV)
 from quotaclimat.utils.plotly_theme import THEME
 
+st.set_page_config(
+    layout="wide",
+)
 st.write("### Bilan d'un événement sur les données Mediatree - page en construction")
 
 uploaded_files = st.sidebar.file_uploader(

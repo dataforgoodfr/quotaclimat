@@ -6,6 +6,9 @@ from quotaclimat.data_analytics.analytics_signataire_charte import (
 from quotaclimat.data_ingestion.scrap_chartejournalismeecologie_signataires import \
     run as scrap_charte_journalisme
 
+st.set_page_config(
+    layout="wide",
+)
 st.markdown("Statistiques signature de la charte d'écologie")
 st.sidebar.markdown("# Charte Journaliste d'écologie")
 

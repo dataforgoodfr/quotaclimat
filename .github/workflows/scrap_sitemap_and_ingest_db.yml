@@ -31,5 +31,5 @@ jobs:
         run: poetry install --no-interaction --no-ansi
       - name: RunSitemapScrappingAndIngestScript
         run: |
-          poetry run python quotaclimat/data_ingestion/ingest_data_in_db.py ${{ secrets.D4G_VM_DB_PWD }}
+          poetry run python quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py -p ${{ secrets.D4G_VM_DB_PWD }}
 

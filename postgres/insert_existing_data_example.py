@@ -16,10 +16,12 @@ def transformation_from_dumps_to_table_entry(df):
         "image_caption",
         "media_type",
     ]
+    df_template_db = pd.DataFrame(columns=cols)
+    df_consistent = pd.concat([df, df_template_db])
+
     # convert section to str
-    df.section = df.section.apply(lambda x: ",".join(map(str, x)))
-    df = df[cols]
-    return df
+    df_consistent.section = df_consistent.section.apply(lambda x: ",".join(map(str, x)))
+    return df_consistent[cols]
 
 
 def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame, password: str):

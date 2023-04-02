@@ -16,15 +16,13 @@ DB_PWD = args.dbpwd
 
 def run():
     for media, sitemap_conf in SITEMAP_CONFIG.items():
-        if media != "bfmtv":  # TO REMOVE for dev: quick fail
+        try:
+            df = query_one_sitemap_and_transform(media, sitemap_conf)
+            df_to_insert = transformation_from_dumps_to_table_entry(df)
+            insert_data_in_sitemap_table(df_to_insert, DB_PWD)
+        except Exception as err:
+            logging.error("Could not ingest data in db for %s: %s" % (media, err))
             continue
-        # try:
-        df = query_one_sitemap_and_transform(media, sitemap_conf)
-        df_to_insert = transformation_from_dumps_to_table_entry(df)
-        insert_data_in_sitemap_table(df_to_insert, DB_PWD)
-        # except Exception as err:
-        #    logging.error("Could not ingest data in db for %s: %s" % (media, err))
-        #    continue
 
 
 if __name__ == "__main__":

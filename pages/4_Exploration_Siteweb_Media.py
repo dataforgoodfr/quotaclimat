@@ -37,12 +37,6 @@ st.sidebar.markdown("# Exploration des titres d'article des site web")
 
 df_all = cached_load_all()
 df_featured = feature_engineering_sitemap(df_all)
-# Ajout
-df_web = load_data_webpress()
-# Ajout
-df_preprocess = preprocess(df_web)
-
-df_preprocess["text"] = df_preprocess["text"].apply(lambda x: search_words(x))
 ##
 date_min = df_all.news_publication_date.min().date()
 date_max = df_all.news_publication_date.max().date()
@@ -168,6 +162,11 @@ with tab4:
 
     check = st.checkbox("Visualisation des sections")
     check_global = st.checkbox("Comparaison de l'apparition des mots clés")
+    # Loading data
+    df_web = load_data_webpress()
+    df_preprocess = preprocess(df_web)
+
+    df_preprocess["text"] = df_preprocess["text"].apply(lambda x: search_words(x))
 
     if check:
         st.write("#### Choisir un média à visualiser: ")

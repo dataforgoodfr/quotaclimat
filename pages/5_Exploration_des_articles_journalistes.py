@@ -18,7 +18,6 @@ from quotaclimat.utils.climate_keywords import CLIMATE_KW
 
 st.set_page_config(
     layout="wide",
-
 )
 # Initialize connection.
 # Uses st.cache_resource to only run once.

@@ -2,6 +2,9 @@ from pathlib import Path
 
 import streamlit as st
 
+st.set_page_config(
+    layout="wide",
+)
 MD_COP_BAROMETRE = (
     "quotaclimat/content/Méthodologie du baromètre COP27 QuotaClimat x Data For Good.md"
 )

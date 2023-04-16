@@ -6,11 +6,15 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import seaborn as sns
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
+from wordcloud import WordCloud
 
-# from wordcloud import WordCloud
+from quotaclimat.utils.plotly_theme import THEME, WARMING_STRIPES_SEQUENCE
+
+COLOR_RADIO = WARMING_STRIPES_SEQUENCE[0]
+COLOR_TV = WARMING_STRIPES_SEQUENCE[1]
+COLOR_ECO = WARMING_STRIPES_SEQUENCE[3]
 
 SECTION_CLIMAT = ["planete", "environnement", "crise-climatique"]
 
@@ -188,33 +192,69 @@ def filter_df_section_and_keyword(
     return df_positive_topic
 
 
-# def make_word_cloud(df_origin: pd.DataFrame):
+def make_word_cloud(df_origin: pd.DataFrame):
 
-# vectorizer = TfidfVectorizer(max_df=0.1, min_df=0.01, stop_words=stopwords_fr)
-# tfidf_positive_topic = vectorizer.fit_transform(df_origin.news_title)
-# tfidf_positive_topic_sum = pd.DataFrame(
-# tfidf_positive_topic.T.sum(axis=1),
-# index=vectorizer.get_feature_names_out(),
-# columns=["tfidf_sum"],
-# )
+    vectorizer = TfidfVectorizer(max_df=0.1, min_df=0.01, stop_words=stopwords_fr)
+    tfidf_positive_topic = vectorizer.fit_transform(df_origin.news_title)
+    tfidf_positive_topic_sum = pd.DataFrame(
+        tfidf_positive_topic.T.sum(axis=1),
+        index=vectorizer.get_feature_names_out(),
+        columns=["tfidf_sum"],
+    )
 
-# wordcloud = WordCloud()
-# wordcloud.generate_from_frequencies(
-# frequencies=tfidf_positive_topic_sum.to_dict()["tfidf_sum"]
-# )
-# fig, _ = plt.subplots(figsize=(13, 8), facecolor="k")
+    wordcloud = WordCloud()
+    wordcloud.generate_from_frequencies(
+        frequencies=tfidf_positive_topic_sum.to_dict()["tfidf_sum"]
+    )
+    fig, _ = plt.subplots(figsize=(13, 8), facecolor="k")
 
-# _ = plt.imshow(wordcloud, interpolation="bilinear")
-# plt.axis("off")
-# plt.tight_layout(pad=0)
+    _ = plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=0)
 
-# return fig
+    return fig
+
+
+def draw_figures_coverage_percentage(
+    df_gb_1, df_gb_per_media, date_lower_bound, date_upper_bound, keywords
+):
+    df_gb_1["keyword list"] = ", ".join(keywords)[:25] + "..."
+    figs_percentage = []
+    figs_percentage.append(
+        px.bar(
+            df_gb_1,
+            x="download_date",
+            y="news_title",
+            color="type",
+            title="Pourcentage de couverture total entre %s et %s"
+            % (
+                date_lower_bound.strftime("%Y-%m-%d"),
+                date_upper_bound.strftime("%Y-%m-%d"),
+            ),
+            labels={"news_title": "Pourcentage", "download_date": "Jour d indexing"},
+        )
+    )
+
+    figs_percentage.append(
+        px.bar(
+            df_gb_per_media,
+            x="publication_name",
+            y="news_title",
+            color="type",
+            title="Classement des médias entre %s et %s"
+            % (
+                date_lower_bound.strftime("%Y-%m-%d"),
+                date_upper_bound.strftime("%Y-%m-%d"),
+            ),
+            labels={"news_title": "Pourcentage", "publication_name": "Media"},
+        )
+    )
+    return figs_percentage
 
 
 def fig_percentage_between_two_dates_per_day_and_leaderboard_per_media(
     df, date_lower_bound, date_upper_bound, keywords
 ):
-    figs_percentage = []
 
     df_between_two_dates = df[
         (pd.to_datetime(df.download_date).dt.date >= date_lower_bound)
@@ -232,21 +272,6 @@ def fig_percentage_between_two_dates_per_day_and_leaderboard_per_media(
         * 100,
         2,
     ).reset_index()
-    df_gb_1["keyword list"] = ", ".join(keywords)[:25] + "..."
-    figs_percentage.append(
-        px.bar(
-            df_gb_1,
-            x="download_date",
-            y="news_title",
-            color="type",
-            title="Pourcentage de couverture total entre %s et %s"
-            % (
-                date_lower_bound.strftime("%Y-%m-%d"),
-                date_upper_bound.strftime("%Y-%m-%d"),
-            ),
-            labels={"news_title": "Pourcentage", "download_date": "Jour d indexing"},
-        )
-    )
 
     df_gb_per_media = round(
         (
@@ -258,21 +283,10 @@ def fig_percentage_between_two_dates_per_day_and_leaderboard_per_media(
     ).reset_index()
     df_gb_per_media["keyword list"] = ", ".join(keywords)[:25] + "..."
     df_gb_per_media = df_gb_per_media.sort_values("news_title", ascending=False)
-
-    figs_percentage.append(
-        px.bar(
-            df_gb_per_media,
-            x="publication_name",
-            y="news_title",
-            color="type",
-            title="Classement des médias entre %s et %s"
-            % (
-                date_lower_bound.strftime("%Y-%m-%d"),
-                date_upper_bound.strftime("%Y-%m-%d"),
-            ),
-            labels={"news_title": "Pourcentage", "publication_name": "Media"},
-        )
+    figs_percentage = draw_figures_coverage_percentage(
+        df_gb_1, df_gb_per_media, date_lower_bound, date_upper_bound, keywords
     )
+
     return figs_percentage
 
 
@@ -304,81 +318,20 @@ def plot_articles_lifespan_comparison(df, keywords: list, keywords_comp: list):
     return fig
 
 
-# Section par date
-
-
-def fig_percentage_between_two_dates_per_media_plot_stat(
-    df, feature, date_lower_bound, date_upper_bound
-):
-
-    df_between_two_dates = df[
-        (pd.to_datetime(df.download_date).dt.date >= date_lower_bound)
-        & (pd.to_datetime(df.download_date).dt.date <= date_upper_bound)
-    ]
-    ax, fig = plt.subplots(figsize=(20, 20))
-    ax = sns.countplot(
-        y=feature,
-        data=df_between_two_dates,
-        order=df_between_two_dates[feature].value_counts(ascending=False).index,
-        palette="ch:s=.25,rot=-.25",
+def plot_bar_volume_mediatique(percentages_per_type, title="Volume médiatique total"):
+    fig = px.bar(
+        percentages_per_type,
+        height=400,
+        text_auto=".1%",
     )
-    ax.set_title("Pourcentage des sections")
-
-    for p in ax.patches:
-        percentage = "{:.1f}%".format(
-            100 * p.get_width() / len(df_between_two_dates["url"])
-        )
-        x = p.get_x() + p.get_width()
-        y = p.get_y() + p.get_height() / 2
-        ax.annotate(percentage, (x, y), fontsize=20, fontweight="bold")
-
-
-# comparaison des deux listes par date
-
-
-def fig_percentage_between_two_dates_per_media_plot_comp(
-    df, date_lower_bound, date_upper_bound, keywords_climat, keywords_politique
-):
-
-    df_between_two_dates = df[
-        (pd.to_datetime(df.download_date).dt.date >= date_lower_bound)
-        & (pd.to_datetime(df.download_date).dt.date <= date_upper_bound)
-    ]
-    df_between_two_dates_kw = df_between_two_dates[
-        df_between_two_dates.news_title.str.contains("|".join(keywords_climat))
-    ]
-    # Liste climat
-    df_climat = round(
-        (
-            df_between_two_dates_kw.groupby("media").count()
-            / df.groupby(["media"]).count()
-        ).news_title
-        * 100,
-        2,
-    ).reset_index()
-
-    df_climat = df_climat[["media", "news_title"]]
-    df_climat["keyword list"] = "climat"
-    # Liste politique
-    df_between_two_dates_politique = df_between_two_dates[
-        df_between_two_dates.news_title.str.contains("|".join(keywords_politique))
-    ]
-    df_politique = round(
-        (
-            df_between_two_dates_politique.groupby("media").count()
-            / df.groupby(["media"]).count()
-        ).news_title
-        * 100,
-        2,
-    ).reset_index()
-    df_politique = df_politique[["media", "news_title"]]
-    df_politique["keyword list"] = "politique"
-    df_to_plot = pd.concat([df_climat, df_politique])
-    figs_percentage = px.bar(
-        df_to_plot,
-        x="media",
-        y="news_title",
-        color="keyword list",
-        title="Pourcentage de titre d'articles contenant un mot des listes",
+    fig.update_layout(
+        yaxis_tickformat="0%",
+        title=title,
+        font_family="Poppins",
+        yaxis_title="% du volume médiatique",
+        xaxis_title="",
     )
-    return figs_percentage
+    fig.update_layout(xaxis={"categoryorder": "total descending"}, showlegend=False)
+
+    # fig.update_traces(marker_color=[COLOR_RADIO, COLOR_TV, COLOR_TV])
+    return fig

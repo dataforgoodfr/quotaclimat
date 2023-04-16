@@ -1,4 +1,5 @@
 import glob
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -7,11 +8,12 @@ from sklearn.preprocessing import MultiLabelBinarizer
 from quotaclimat.data_ingestion.config_sitmap import MEDIA_CONFIG
 from quotaclimat.data_ingestion.scrap_sitemap import write_df
 
-LANDING_PATH_SITEMAP = "data_public/sitemap_dumps/"
+LANDING_PATH_SITEMAP = "data_public/sitemap_dumps"
 
 
 def load_all(path: str = LANDING_PATH_SITEMAP):
-    files = glob.glob(path + "**/**/**/**/*.parquet")
+    # files = glob.glob(path + "**/**/**/**/*.parquet")
+    files = glob.glob(path + "**/**/**/**/**/*.parquet")
     dfs = [pd.read_parquet(fp) for fp in files]
     df = pd.concat(dfs)
     return filter_on_first_ingestion_date(df)
@@ -32,7 +34,7 @@ def load_tv():
 
 
 def load_webpress():
-    files = glob.glob(LANDING_PATH_SITEMAP + "media_type=webpress/**/**/**/*.parquet")
+    files = glob.glob(LANDING_PATH_SITEMAP + "/media_type=webpress/**/**/**/*.parquet")
     dfs = [pd.read_parquet(fp) for fp in files]
     df = pd.concat(dfs)
     return df
@@ -101,3 +103,48 @@ def scan_for_duplicates_and_overwrite_the_history(
                     write_df(df_per_day, media)
     else:
         return df_m
+
+
+def preprocess(df):
+    """Extraction de la section: cette colonne est sous forme de liste
+    Retirer colonnes inutiles
+    concaténation titre et texte d'image
+    """
+    df["section"] = df["section"].str[0]
+    # colonnes inutiles
+    col_to_drop = [
+        "priority",
+        "changefreq",
+        "image",
+        "image_title",
+        "news",
+        "news_access",
+        "news_genres",
+        "news_keywords",
+        "news_publication",
+        "publication_language",
+        "image_loc",
+        "sitemap",
+        "media_type",
+        "media_type",
+        "sitemap_size_mb",
+        "sitemap_last_modified",
+        "publication_language",
+        "sitemap",
+        "publication_name",
+        "download_date_last",
+        "lastmod",
+    ]
+    df.drop(col_to_drop, axis=1, inplace=True)
+    df = df.fillna("None")
+    # concaténation titre et texte d'image
+    df["image_caption"].fillna(" ", inplace=True)
+    df["text"] = df["news_title"] + " " + df["image_caption"]
+    return df
+
+
+def search_words(text):
+    """retirer les chiffres et caractères spéciaux"""
+    result = re.findall(r"\b[^\d\W]+\b", text)
+
+    return " ".join(result)

@@ -10,7 +10,7 @@ def run_query(query, conn):
 # queries TODO migrate
 def query_data_coverage(conn):
     dates_min_and_max = run_query(
-        "SELECT MIN(news_publication_date), MAX(news_publication_date) from sitemap_table;",
+        "SELECT MIN(download_date), MAX(download_date) from sitemap_table;",
         conn,
     )
 

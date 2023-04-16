@@ -15,7 +15,8 @@ from quotaclimat.utils.plotly_theme import THEME
 st.set_page_config(
     layout="wide",
 )
-st.write("### Bilan d'un événement sur les données Mediatree - page en construction")
+st.write("### Bilan d'un événement sur les données Mediatree")
+st.markdown(" Cette page permet de produire un rapport analytique de couverture de mots clé. Ces analyses support seulement les formats d'extraction de Mediatree. [Voici](TODO link) un exemple d'extration.")
 
 uploaded_files = st.sidebar.file_uploader(
     "Uploader des fichiers excel mediatree", accept_multiple_files=True, type=["xlsx"]

@@ -9,7 +9,7 @@ from quotaclimat.data_ingestion.scrap_chartejournalismeecologie_signataires impo
 st.set_page_config(
     layout="wide",
 )
-st.markdown("Statistiques signature de la charte d'écologie")
+st.markdown("Statistiques des signatures de la charte d'écologie")
 st.sidebar.markdown("# Charte Journaliste d'écologie")
 
 # Import raw data

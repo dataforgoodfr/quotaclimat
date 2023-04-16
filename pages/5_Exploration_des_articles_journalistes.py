@@ -7,7 +7,7 @@ from streamlit_tags import st_tags
 
 from quotaclimat.data_analytics.sitemap_analytics import (
     plot_articles_lifespan_comparison, plot_articles_total_count_evolution,
-    plot_bar_volumne_mediatique, plot_comparison_of_temporal_total_count,
+    plot_bar_volume_mediatique, plot_comparison_of_temporal_total_count,
     plot_media_count_comparison, plot_media_count_comparison_all_kw)
 from quotaclimat.data_processing.sitemap.queries import (
     query_all_articles_titles_between_two_dates, query_data_coverage,
@@ -31,22 +31,28 @@ if "key" not in st.session_state:
     st.session_state.key = "value"
 
 conn = init_connection()
-
-
-st.sidebar.markdown("# Exploration des titres d'article des site web")
-
 date_min, date_max = query_data_coverage(conn)
 
 
-tab1, tab2, tab3 = st.tabs(
+st.sidebar.markdown("# Présence de mot dans les titres d'articles")
+st.markdown(" Cette page donne un apperçu du contenu des titres d'articles publiés de %s à %s, par une liste de média séléctionnée."%(date_min.strftime('%y-%M-%d'), date_max.strftime('%y-%M-%d')))
+
+
+
+
+tab1, tab2 = st.tabs(
     [
-        "Evolution au cours du temps",
+        "Couverture et évolution temporelle",
         "Comparaison de mots clé",
-        "Qualité de couvertures WIP",
     ]
 )
 
 with tab1:
+    st.markdown(" Cette page permet de répondre aux questions suivantes:")
+    st.markdown("- Quel est le pourcentage de présence dans le titre d'articles de ces mots ?")
+    st.markdown("- Quel est l'évolution au cours du temps de cette présence ?")
+    st.markdown("- Comment les média se compare dans cette couverture ?")
+
     with st.expander("Les mots les plus apparus cette semaine", expanded=False):
         a_week_ago = datetime.datetime.today() - datetime.timedelta(weeks=1)
 
@@ -89,7 +95,7 @@ with tab1:
         ).count()
 
         figs.append(
-            plot_bar_volumne_mediatique(
+            plot_bar_volume_mediatique(
                 count_kw_per_type["news_title"] / count_total_per_type["news_title"]
             )
         )
@@ -104,7 +110,7 @@ with tab1:
             "news_publication_date"
         ).count()
         figs.append(
-            plot_bar_volumne_mediatique(
+            plot_bar_volume_mediatique(
                 count_kw_per_day["news_title"] / count_total_per_day["news_title"],
                 title="Evolution du volume médiatique par jour",
             )
@@ -120,8 +126,8 @@ with tab1:
             "publication_name"
         ).count()
         figs.append(
-            plot_bar_volumne_mediatique(
-                count_kw_per_day["news_title"] / count_total_per_day["news_title"],
+            plot_bar_volume_mediatique(
+                (count_kw_per_day["news_title"] / count_total_per_day["news_title"]),
                 title="Classement des médias",
             )
         )

@@ -27,7 +27,6 @@ def cached_load_all():
     return load_all()
 
 
-# Ajout
 @st.cache_data(ttl=7200)
 def load_data_webpress():
     return load_webpress()
@@ -42,11 +41,10 @@ date_min = df_all.news_publication_date.min().date()
 date_max = df_all.news_publication_date.max().date()
 
 
-tab1, tab2, tab3, tab4 = st.tabs(
+tab1, tab2, tab3 = st.tabs(
     [
         "Evolution au cours du temps",
         "Comparaison de mots clé",
-        "Qualité de couvertures WIP",
         "Analyse et comparaison des titres ",
     ]
 )
@@ -153,12 +151,9 @@ with tab2:
         st.plotly_chart(fig_lifespan)
 
 
-with tab3:
-    st.markdown("WORK IN PROGRESS ")
-
 # Pourcentage des sections et comparaisons des mots clés
-with tab4:
-    st.markdown("## Pourcentage d'article dans chaque section")
+with tab3:
+    st.markdown("## Pourcentage d'article par sections")
 
     check = st.checkbox("Visualisation des sections")
     check_global = st.checkbox("Comparaison de l'apparition des mots clés")
@@ -180,136 +175,14 @@ with tab4:
         end = st.date_input(
             "Entrez date à laquelle terminer le traitement", datetime.date(2023, 3, 20)
         )
-
-        if column_name == "lemonde":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "lamarseillaise":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "lesechos":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "lefigaro":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "centrepresseaveyron":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "liberation":
-
+        if len(column_name) > 0:
             df_preprocess = df_preprocess[df_preprocess.media == column_name]
             figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
                 df_preprocess, "section", start, end
             )
             st.pyplot(figs_percentage)
 
-        elif column_name == "petitbleu":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "ladepeche":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "midilibre":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "le_point":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "investir.lesechos":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "letelegramme":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "lequipe":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-
-        elif column_name == "20_minutes":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "lopinion":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "lexpress":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "lindependant":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-        elif column_name == "nouvel_obs":
-
-            df_preprocess = df_preprocess[df_preprocess.media == column_name]
-            figs_percentage = fig_percentage_between_two_dates_per_media_plot_stat(
-                df_preprocess, "section", start, end
-            )
-            st.pyplot(figs_percentage)
-
+    # Percentage of keywords
     if check_global:
 
         start = st.date_input(

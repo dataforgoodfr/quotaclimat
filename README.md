@@ -15,7 +15,7 @@ The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclim
 1. Learn about the project by watching the introduction videos mentioned above.
 3. Check out the data in data_public.
 4. Join https://dataforgood.fr/join and the Slack #offseason_quotaclimat.
-2. Ask access to the [documentation](https://www.notion.so/dataforgood/QuotaClimat-6c011dc529f14f309f74970df243b819) to Théo Alves (dm on Slack).
+2. Ask access to the [documentation](https://www.notion.so/dataforgood/QuotaClimat-6c011dc529f14f309f74970df243b819) to Estelle Rambier (dm on Slack).
 5. Introduce yourself on Slack #offseason_quotaclimat.
 6. Join a dev meetings on Tuesdays at 19h, you will be able to view what's currently going on and we will find a something for you to contribute. If you can't make it on Tuesdays, send a Slack dm to Estelle Rambier.
 

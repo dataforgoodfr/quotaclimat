@@ -122,7 +122,7 @@ def sanity_check():
 def write_df(df: pd.DataFrame, media: str):
     """Write the extracted dataframe to standardized path"""
 
-    landing_path_media = "sitemap_dumps/media_type=%s/%s.json" % (
+    landing_path_media = "data_public/sitemap_dumps/media_type=%s/%s.json" % (
         MEDIA_CONFIG[media]["type"],
         media,
     )

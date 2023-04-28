@@ -18,8 +18,8 @@ def load_all(path: str = LANDING_PATH_SITEMAP):
     return pd.concat(dfs)
 
 
-def load_webpress(path: LANDING_PATH_SITEMAP + "/media_type=webpress"):
-    files = glob.glob(path + "/*.json")
+def load_webpress(path: LANDING_PATH_SITEMAP):
+    files = glob.glob(path + "/media_type=webpress"+ "/*.json")
     dfs = [pd.read_json(fp, orient="index") for fp in files]
     return pd.concat(dfs)
 

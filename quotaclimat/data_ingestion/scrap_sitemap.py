@@ -98,6 +98,18 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
             % (media, sitemap_conf["sitemap_url"])
         )
         return
+    cols = [
+        "publication_name",
+        "news_title",
+        "download_date",
+        "news_publication_date",
+        "news_keywords",
+        "section",
+        "image_caption",
+        "media_type",
+    ]
+    df_template_db = pd.DataFrame(columns=cols)
+    temp_df = pd.concat([temp_df, df_template_db])
     temp_df.rename(columns={"loc": "url"}, inplace=True)
     temp_df["media"] = media
     df = get_sections(temp_df)

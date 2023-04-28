@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import re
@@ -53,8 +54,9 @@ def change_datetime_format(df: pd.DataFrame) -> pd.DataFrame:
                 lambda x: x.strftime("%Y-%m-%d %H:%M:%S")
             )
             df[column_name] = df[column_name].apply(pd.Timestamp)
-        except KeyError:  # column not found
-            pass
+        except:  # column not found
+            df[column_name] = df["download_date"]
+            continue
 
     return df
 
@@ -97,6 +99,18 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
             % (media, sitemap_conf["sitemap_url"])
         )
         return
+    cols = [
+        "publication_name",
+        "news_title",
+        "download_date",
+        "news_publication_date",
+        "news_keywords",
+        "section",
+        "image_caption",
+        "media_type",
+    ]
+    df_template_db = pd.DataFrame(columns=cols)
+    temp_df = pd.concat([temp_df, df_template_db])
     temp_df.rename(columns={"loc": "url"}, inplace=True)
     temp_df["media"] = media
     df = get_sections(temp_df)
@@ -119,15 +133,58 @@ def sanity_check():
 
 
 def write_df(df: pd.DataFrame, media: str):
-    """Write de extracted dataframe to standardized path"""
-    download_date = df.download_date.min()
-    landing_path = (
-        "data_public/sitemap_dumps/media_type=%s/media=%s/year=%s/month=%s/"
-        % (MEDIA_CONFIG[media]["type"], media, download_date.year, download_date.month)
+    """Write the extracted dataframe to standardized path"""
+
+    landing_path_media = "data_public/sitemap_dumps/media_type=%s/%s.json" % (
+        MEDIA_CONFIG[media]["type"],
+        media,
     )
-    if not os.path.exists(landing_path):
-        os.makedirs(landing_path)
-    df.to_parquet(landing_path + "/%s.parquet" % download_date.strftime("%Y%m%d"))
+    if not os.path.exists(landing_path_media):
+        previous_entries = {}
+        logging.info("Writing to %s for the first time" % landing_path_media)
+
+    else:
+        with open(landing_path_media) as f:
+            previous_entries = json.load(f)
+    previous_entries = insert_or_update_entry(df, previous_entries)
+    with open(landing_path_media, "w") as f:
+        json.dump(previous_entries, f)
+
+
+def insert_or_update_entry(df_one_media: pd.DataFrame, dict_previous_entries: dict):
+    for row in df_one_media.sort_values("download_date").iterrows():
+        if row[0] not in dict_previous_entries:  # new entry
+            dict_previous_entries.update(
+                {
+                    row[0]: {
+                        "news_title": row[1]["news_title"],
+                        "image_caption": row[1]["image_caption"],
+                        "download_date": row[1]["download_date"].strftime("%Y-%m-%d"),
+                        "publication_name": row[1]["publication_name"],
+                        "news_publication_date": row[1][
+                            "news_publication_date"
+                        ].strftime("%Y-%m-%d"),
+                        "news_keywords": row[1]["news_keywords"],
+                        "section": row[1]["section"],
+                        "media_type": row[1]["media_type"],
+                        "download_date_last": row[1]["download_date"].strftime(
+                            "%Y-%m-%d"
+                        ),
+                    }
+                }
+            )
+        else:  # this will update download_date_last, without updating download_date
+            dict_previous_entries.update(
+                {
+                    row[0]: {
+                        "download_date_last": row[1]["download_date"].strftime(
+                            "%Y-%m-%d"
+                        ),
+                    }
+                }
+            )  # we update download_date_last with the current (new) download_date
+
+    return dict_previous_entries
 
 
 def run():

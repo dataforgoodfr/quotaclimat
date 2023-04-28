@@ -1,47 +1,27 @@
 import glob
+import json
+import os
 import re
-from pathlib import Path
 
 import pandas as pd
-from sklearn.preprocessing import MultiLabelBinarizer
 
 from quotaclimat.data_ingestion.config_sitmap import MEDIA_CONFIG
 from quotaclimat.data_ingestion.scrap_sitemap import write_df
 
 LANDING_PATH_SITEMAP = "data_public/sitemap_dumps"
+LANDING_PATH_SITEMAP = "data_public/sitemap_dumps"
 
 
 def load_all(path: str = LANDING_PATH_SITEMAP):
-    # files = glob.glob(path + "**/**/**/**/*.parquet")
-    files = glob.glob(path + "**/**/**/**/**/*.parquet")
-    dfs = [pd.read_parquet(fp) for fp in files]
-    df = pd.concat(dfs)
-    return filter_on_first_ingestion_date(df)
+    files = glob.glob(path + "/**/*.json")
+    dfs = [pd.read_json(fp, orient="index") for fp in files]
+    return pd.concat(dfs)
 
 
-def load_month(year: int, month: int, path: str = LANDING_PATH_SITEMAP):
-    files = glob.glob(path + f"**/**/year={year}\month={month}/*.parquet")
-    dfs = [pd.read_parquet(fp) for fp in files]
-    df = pd.concat(dfs)
-    return filter_on_first_ingestion_date(df)
-
-
-def load_tv():
-    files = glob.glob(LANDING_PATH_SITEMAP + "media_type=tv/**/**/**/*.parquet")
-    dfs = [pd.read_parquet(fp) for fp in files]
-    df = pd.concat(dfs)
-    return df
-
-
-def load_webpress():
-    files = glob.glob(LANDING_PATH_SITEMAP + "/media_type=webpress/**/**/**/*.parquet")
-    dfs = [pd.read_parquet(fp) for fp in files]
-    df = pd.concat(dfs)
-    return df
-
-
-def filter_on_first_ingestion_date(df):
-    return df[df.news_publication_date > "2022-11-24"]
+def load_webpress(path: LANDING_PATH_SITEMAP):
+    files = glob.glob(path + "/media_type=webpress" + "/*.json")
+    dfs = [pd.read_json(fp, orient="index") for fp in files]
+    return pd.concat(dfs)
 
 
 def feature_engineering_sitemap(df_origin: pd.DataFrame):
@@ -103,6 +83,65 @@ def scan_for_duplicates_and_overwrite_the_history(
                     write_df(df_per_day, media)
     else:
         return df_m
+
+
+def _migrate_from_pd_to_json(df_all: pd.DataFrame):
+    """Writes json from a dataframe, url deduplicated . This was used to migrate the paradigm to a 'git scrapping'
+
+    Args:
+        df_all (pd.DataFrame): _description_
+    """
+    df_all.set_index("url", inplace=True)
+    df_all["download_date_last"].fillna(
+        df_all["download_date"], inplace=True
+    )  # previous logic
+    urls_not_deduplicated = df_all[
+        df_all.index.duplicated()
+    ].index.unique()  # some urls were already curred
+    sanity = 0
+    for df_per_media in df_all.groupby("media"):
+        dict_i = {}
+        df_per_media[1]
+        for row in df_per_media[1].sort_values("download_date").iterrows():
+            if row[0] not in dict_i:  # new entry
+                dict_i.update(
+                    {
+                        row[0]: {
+                            "news_title": row[1]["news_title"],
+                            "image_caption": row[1]["image_caption"],
+                            "download_date": row[1]["download_date"].strftime(
+                                "%Y-%m-%d"
+                            ),
+                            "publication_name": row[1]["publication_name"],
+                            "news_publication_date": row[1][
+                                "news_publication_date"
+                            ].strftime("%Y-%m-%d"),
+                            "news_keywords": row[1]["news_keywords"],
+                            "section": row[1]["section"].tolist(),
+                            "media_type": row[1]["media_type"],
+                            "download_date_last": row[1]["download_date_last"].strftime(
+                                "%Y-%m-%d"
+                            ),
+                        }
+                    }
+                )
+            else:  # this will update download_date_last, without duplicating or changing anything else
+                if (row[0] in dict_i) and (row[0] in urls_not_deduplicated):
+                    dict_i[row[0]].update(
+                        {
+                            "download_date_last": row[1]["download_date"].strftime(
+                                "%Y-%m-%d"
+                            ),
+                        }
+                    )
+                else:
+                    sanity += 1
+        assert sanity == 0
+        landing_path = "sitemap_dumps/media_type=%s" % row[1]["media_type"]
+        if not os.path.exists(landing_path):
+            os.makedirs(landing_path)
+        with open(landing_path + "/%s.json" % row[1]["media"], "w") as f:
+            json.dump(dict_i, f)
 
 
 def preprocess(df):

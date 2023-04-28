@@ -54,8 +54,9 @@ def change_datetime_format(df: pd.DataFrame) -> pd.DataFrame:
                 lambda x: x.strftime("%Y-%m-%d %H:%M:%S")
             )
             df[column_name] = df[column_name].apply(pd.Timestamp)
-        except KeyError:  # column not found
-            pass
+        except:  # column not found
+            df[column_name] = df["download_date"]
+            continue
 
     return df
 
@@ -138,9 +139,10 @@ def write_df(df: pd.DataFrame, media: str):
         MEDIA_CONFIG[media]["type"],
         media,
     )
-    if not os.path.exists(landing_path_media.split("/" + media)[0]):
-        os.makedirs(landing_path_media)
+    if not os.path.exists(landing_path_media):
         previous_entries = {}
+        logging.info("Writing to %s for the first time" % landing_path_media)
+
     else:
         with open(landing_path_media) as f:
             previous_entries = json.load(f)
@@ -163,7 +165,7 @@ def insert_or_update_entry(df_one_media: pd.DataFrame, dict_previous_entries: di
                             "news_publication_date"
                         ].strftime("%Y-%m-%d"),
                         "news_keywords": row[1]["news_keywords"],
-                        "section": row[1]["section"].tolist(),
+                        "section": row[1]["section"],
                         "media_type": row[1]["media_type"],
                         "download_date_last": row[1]["download_date"].strftime(
                             "%Y-%m-%d"

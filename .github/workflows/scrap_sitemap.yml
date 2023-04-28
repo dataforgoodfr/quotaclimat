@@ -39,4 +39,4 @@ jobs:
           git status
           git add .
           git commit -m "ci (scrap data): sitemap"
-          git push origin main --force
+          git push -u origin main --force

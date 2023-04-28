@@ -152,6 +152,7 @@ def write_df(df: pd.DataFrame, media: str):
 
 
 def insert_or_update_entry(df_one_media: pd.DataFrame, dict_previous_entries: dict):
+    df_one_media.set_index('url', inplace=True)
     for row in df_one_media.sort_values("download_date").iterrows():
         if row[0] not in dict_previous_entries:  # new entry
             dict_previous_entries.update(

@@ -7,6 +7,7 @@ from quotaclimat.data_processing.sitemap.sitemap_processing import load_all
 
 def transformation_from_dumps_to_table_entry(df):
     cols = [
+        #"url",
         "publication_name",
         "news_title",
         "download_date",
@@ -41,7 +42,7 @@ def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame, password: str):
             user="root",
             password=password,
             host="212.47.253.253",
-            port="49155",
+            port="49157",
         )
 
         cur = conn.cursor()

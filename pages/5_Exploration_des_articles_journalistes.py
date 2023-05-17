@@ -35,7 +35,7 @@ date_min, date_max = query_data_coverage(conn)
 
 
 st.sidebar.markdown("# Présence de mot dans les titres d'articles")
-st.markdown(" Cette page donne un apperçu du contenu des titres d'articles publiés de %s à %s, par une liste de média séléctionnée."%(date_min.strftime('%y-%M-%d'), date_max.strftime('%y-%M-%d')))
+st.markdown(" Cette page donne un apperçu du contenu des titres d'articles publiés de %s à %s, par une liste de média séléctionnée."%(date_min.strftime('%Y-%m-%d'), date_max.strftime('%Y-%m-%d')))
 
 
 

@@ -23,16 +23,21 @@ nltk.download("stopwords")
 stopwords_fr = nltk.corpus.stopwords.words("french")
 
 
-def plot_media_count_comparison(df, keywords: list, keywords_comp: list):
-    df_keywords_1 = df[df.news_title.str.contains("|".join(keywords))]
-    df_keywords_2 = df[df.news_title.str.contains("|".join(keywords_comp))]
+def plot_media_count_comparison(
+    df_keywords_ref,
+    df_keywords_to_compare,
+    df_total,
+    keywords: list,
+    keywords_comp: list,
+):
 
     df_gb_1 = (
-        df_keywords_1.groupby("media").count() / df.groupby(["media"]).count()
+        df_keywords_ref.groupby("media").count() / df_total.groupby(["media"]).count()
     ).reset_index()
     df_gb_1 = round(
         (
-            df_keywords_1.groupby(["media"]).count() / df.groupby(["media"]).count()
+            df_keywords_ref.groupby(["media"]).count()
+            / df_total.groupby(["media"]).count()
         ).news_title
         * 100,
         2,
@@ -41,7 +46,8 @@ def plot_media_count_comparison(df, keywords: list, keywords_comp: list):
     df_gb_1 = df_gb_1.sort_values("news_title", ascending=False)
     df_gb_2 = round(
         (
-            df_keywords_2.groupby(["media"]).count() / df.groupby(["media"]).count()
+            df_keywords_to_compare.groupby(["media"]).count()
+            / df_total.groupby(["media"]).count()
         ).news_title
         * 100,
         2,

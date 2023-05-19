@@ -21,6 +21,8 @@ st.set_page_config(
 )
 # Initialize connection.
 # Uses st.cache_resource to only run once.
+
+
 @st.cache_resource
 def init_connection():
     return psycopg2.connect(**st.secrets["postgres"])
@@ -35,9 +37,10 @@ date_min, date_max = query_data_coverage(conn)
 
 
 st.sidebar.markdown("# Présence de mot dans les titres d'articles")
-st.markdown(" Cette page donne un apperçu du contenu des titres d'articles publiés de %s à %s, par une liste de média séléctionnée."%(date_min.strftime('%Y-%m-%d'), date_max.strftime('%Y-%m-%d')))
-
-
+st.markdown(
+    " Cette page donne un apperçu du contenu des titres d'articles publiés de %s à %s, pour cette liste de média."
+    % (date_min.strftime("%Y-%m-%d"), date_max.strftime("%Y-%m-%d"))
+)
 
 
 tab1, tab2 = st.tabs(
@@ -49,7 +52,9 @@ tab1, tab2 = st.tabs(
 
 with tab1:
     st.markdown(" Cette page permet de répondre aux questions suivantes:")
-    st.markdown("- Quel est le pourcentage de présence dans le titre d'articles de ces mots ?")
+    st.markdown(
+        "- Quel est le pourcentage de présence dans le titre d'articles de ces mots ?"
+    )
     st.markdown("- Quel est l'évolution au cours du temps de cette présence ?")
     st.markdown("- Comment les média se compare dans cette couverture ?")
 
@@ -134,3 +139,63 @@ with tab1:
 
         for fig in figs:
             st.plotly_chart(fig)
+
+
+with tab2:
+    keywords = st_tags(
+        label="Entrez des mots clé:",
+        text="Pressez entrez pour ajouter",
+        value=CLIMATE_KW,
+        suggestions=["environnement"],
+        maxtags=30,
+        key="1",
+    )
+    keywords_compare = st_tags(
+        label="Pour les comparer aux mots clé suivants:",
+        text="Pressez entrez pour ajouter",
+        value=[
+            "macron",
+            "retraites",
+            "retraite",
+            "49.3",
+            "Corée du Nord",
+            "Ukraine",
+        ],
+        suggestions=["politique"],
+        maxtags=30,
+        key="2",
+    )
+    d_lower_ = st.date_input(
+        "Entrez date à laquelle commencer le traitement",
+        datetime.date(2023, 4, 1),
+        key="3",
+    )
+    d_upper_ = st.date_input(
+        "Entrez date à laquelle terminer le traitement",
+        date_max,
+        key="4",
+    )
+
+    btn = st.button("Lancer l'analyse")
+    if btn:
+        df_all_articles_titles_between_two_dates = (
+            query_all_articles_titles_between_two_dates(conn, d_lower, d_upper)
+        )
+        df_matching_keywords_articles_titles_between_two_dates_ref = (
+            query_matching_keywords_articles_titles_between_two_dates(
+                conn, keywords, d_lower_, d_upper_
+            )
+        )
+        df_matching_keywords_articles_titles_between_two_dates_to_compare = (
+            query_matching_keywords_articles_titles_between_two_dates(
+                conn, keywords_compare, d_lower_, d_upper_
+            )
+        )
+        fig = plot_media_count_comparison(
+            df_matching_keywords_articles_titles_between_two_dates_ref,
+            df_matching_keywords_articles_titles_between_two_dates_to_compare,
+            df_all_articles_titles_between_two_dates,
+            keywords,
+            keywords_compare,
+        )
+        st.plotly_chart(fig)

@@ -15,7 +15,9 @@ LANDING_PATH_SITEMAP = "data_public/sitemap_dumps"
 def load_all(path: str = LANDING_PATH_SITEMAP):
     files = glob.glob(path + "/**/*.json")
     dfs = [pd.read_json(fp, orient="index") for fp in files]
-    return pd.concat(dfs)
+    df_all = pd.concat(dfs)
+    df_all.index.name = "url"
+    return df_all
 
 
 def load_webpress(path: LANDING_PATH_SITEMAP):

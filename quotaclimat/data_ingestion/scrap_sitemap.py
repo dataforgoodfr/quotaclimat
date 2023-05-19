@@ -175,14 +175,14 @@ def insert_or_update_entry(df_one_media: pd.DataFrame, dict_previous_entries: di
                 }
             )
         else:  # this will update download_date_last, without updating download_date
-            dict_previous_entries[row[0]].update(
+            dict_previous_entries.update(
                 {
-                    "download_date_last"
-                        : row[1]["download_date"].strftime(
+                    row[0]: {
+                        "download_date_last": row[1]["download_date"].strftime(
                             "%Y-%m-%d"
                         ),
                     }
-                
+                }
             )  # we update download_date_last with the current (new) download_date
 
     return dict_previous_entries

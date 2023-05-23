@@ -28,7 +28,8 @@ CONN = psycopg2.connect(
 
 def write_backup_between_dates(date_min: datetime, date_max: datetime):
     """Fetch the data from the db and write a flat file to S3
-
+    Later, to read the data:
+    pd.read_parquet('s3://quotaclimat-s3/backups/v1/from_..._to_....parquet', storage_options=dict_ecs)
     Args:
         date_min (datetime): date of the first element to backup
         date_max (datetime): date of the last element to backup

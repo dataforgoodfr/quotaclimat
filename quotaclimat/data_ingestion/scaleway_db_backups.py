@@ -62,7 +62,7 @@ def write_init_backup():
 def write_past_week_backup():
     today = datetime.today()
     a_week_ago = today - timedelta(days=7)
-    write_backup_between_dates(today, a_week_ago)
+    write_backup_between_dates(a_week_ago, today)
 
 
 if __name__ == "__main__":

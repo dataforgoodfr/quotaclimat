@@ -192,13 +192,13 @@ def scrap_one_channel(uploadsId: str) -> dict:
 
 def converting_to_flate_storage(final: dict, media: str):
 
-    """Fonction qui permet d'écrire les résultats du scrapping dans un csv et le placer dans le github"""
+    """Fonction qui permet d'écrire les résultats du scrapping dans un parquet et le placer dans le github"""
 
     df = pd.DataFrame.from_dict(final, orient="index").reset_index()
     date = (
         datetime.date.today()
     )  # A voir pour la date d'exécution du script si la fonction today() ne pose pas problème
-    landing_path = "data_public/youtube_dumps/channel=%s/year=%s/month=%s/" % (
+    landing_path = "data_public/youtube_extracts/channel=%s/year=%s/month=%s/" % (
         media,
         date.year,
         date.month,
@@ -220,7 +220,7 @@ def full_scraping():
         )  # Même chose que pour la fonction 'converting_to_flate_storage'
 
         if os.path.exists(  # Boucle 'if' qui permet d'éviter les requêtes à l'API pour les chaînes déjà scrapées au cas où le scraping ait été arrêté
-            "data_public/youtube_dumps/channel=%s/year=%s/month=%s/%s.csv"
+            "data_public/youtube_extracts/channel=%s/year=%s/month=%s/%s.parquet"
             % (media, date.year, date.month, date.strftime("%Y%m%d"))
         ):
             continue

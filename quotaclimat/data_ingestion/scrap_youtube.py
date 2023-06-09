@@ -190,23 +190,22 @@ def scrap_one_channel(uploadsId: str) -> dict:
     return formatted_videos
 
 
-def converting_to_csv(final: dict, media: str):
+def converting_to_flate_storage(final: dict, media: str):
 
-    """Fonction qui permet d'écrire les résultats du scrapping dans un csv et le placer dans le github"""
+    """Fonction qui permet d'écrire les résultats du scrapping dans un parquet et le placer dans le github"""
 
     df = pd.DataFrame.from_dict(final, orient="index").reset_index()
     date = (
         datetime.date.today()
     )  # A voir pour la date d'exécution du script si la fonction today() ne pose pas problème
-    landing_path = "data_public/youtube_dumps/channel=%s/year=%s/month=%s/" % (
+    landing_path = "data_public/youtube_extracts/channel=%s/year=%s/month=%s/" % (
         media,
         date.year,
         date.month,
     )
     if not os.path.exists(landing_path):
         os.makedirs(landing_path)
-    df.to_parquet(landing_path + "%s.csv" % date.strftime("%Y%m%d"))
-
+    df.to_parquet(landing_path + "%s.parquet" % date.strftime("%Y%m%d"))
 
 def full_scraping():
 
@@ -218,17 +217,17 @@ def full_scraping():
 
         date = (
             datetime.date.today()
-        )  # Même chose que pour la fonction 'converting_to_csv'
+        )  # Même chose que pour la fonction 'converting_to_flate_storage'
 
         if os.path.exists(  # Boucle 'if' qui permet d'éviter les requêtes à l'API pour les chaînes déjà scrapées au cas où le scraping ait été arrêté
-            "data_public/youtube_dumps/channel=%s/year=%s/month=%s/%s.csv"
+            "data_public/youtube_extracts/channel=%s/year=%s/month=%s/%s.parquet"
             % (media, date.year, date.month, date.strftime("%Y%m%d"))
         ):
             continue
         else:
             try:
                 final = scrap_one_channel(uploads_id)
-                converting_to_csv(final, media)
+                converting_to_flate_storage(final, media)
             except Exception as err:
                 logging.error("Could not write data for %s: %s" % (media, err))
                 continue

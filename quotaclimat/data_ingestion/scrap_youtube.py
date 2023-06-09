@@ -190,7 +190,7 @@ def scrap_one_channel(uploadsId: str) -> dict:
     return formatted_videos
 
 
-def converting_to_csv(final: dict, media: str):
+def converting_to_flate_storage(final: dict, media: str):
 
     """Fonction qui permet d'écrire les résultats du scrapping dans un csv et le placer dans le github"""
 
@@ -205,8 +205,7 @@ def converting_to_csv(final: dict, media: str):
     )
     if not os.path.exists(landing_path):
         os.makedirs(landing_path)
-    df.to_parquet(landing_path + "%s.csv" % date.strftime("%Y%m%d"))
-
+    df.to_parquet(landing_path + "%s.parquet" % date.strftime("%Y%m%d"))
 
 def full_scraping():
 
@@ -218,7 +217,7 @@ def full_scraping():
 
         date = (
             datetime.date.today()
-        )  # Même chose que pour la fonction 'converting_to_csv'
+        )  # Même chose que pour la fonction 'converting_to_flate_storage'
 
         if os.path.exists(  # Boucle 'if' qui permet d'éviter les requêtes à l'API pour les chaînes déjà scrapées au cas où le scraping ait été arrêté
             "data_public/youtube_dumps/channel=%s/year=%s/month=%s/%s.csv"
@@ -228,7 +227,7 @@ def full_scraping():
         else:
             try:
                 final = scrap_one_channel(uploads_id)
-                converting_to_csv(final, media)
+                converting_to_flate_storage(final, media)
             except Exception as err:
                 logging.error("Could not write data for %s: %s" % (media, err))
                 continue

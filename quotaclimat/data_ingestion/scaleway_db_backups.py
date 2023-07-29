@@ -22,7 +22,7 @@ CONN = psycopg2.connect(
     user="root",
     password=DB_PWD,
     host="212.47.253.253",
-    port="49157",
+    port="49154",
 )
 
 

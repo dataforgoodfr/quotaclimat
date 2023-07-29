@@ -42,7 +42,7 @@ def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame, password: str):
             user="root",
             password=password,
             host="212.47.253.253",
-            port="49157",
+            port="49154",
         )
 
         cur = conn.cursor()

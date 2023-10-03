@@ -14,4 +14,4 @@ jobs:
     - name: sleep
       run:  sleep 60
     - name: log
-      run: docker logs scrapper-sitemap
+      run: docker logs sitemap

@@ -1,0 +1,17 @@
+name: Docker Compose CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: init and load data
+      run: docker compose up -d
+    - name: sleep
+      run:  sleep 60
+    - name: log
+      run: docker logs scrapper-sitemap

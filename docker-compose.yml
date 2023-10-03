@@ -1,0 +1,24 @@
+version: '3'
+services:
+  sitemap:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    environment:
+      postgres_host: postgres_db
+      postgres_user: user
+      postgres_password: password
+      postgres_db: barometre
+    depends_on:
+      - postgres_db
+
+  postgres_db:
+    image: postgres:13.6
+    ports:
+      - 5432:5432
+    volumes:
+      - './pgdata:/var/lib/postgresql/data' # persist data https://stackoverflow.com/a/41650891/3535853
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password

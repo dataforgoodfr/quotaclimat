@@ -1,6 +1,7 @@
 version: '3'
 services:
   sitemap:
+    container_name: sitemap_app
     build:
       context: ./
       dockerfile: Dockerfile

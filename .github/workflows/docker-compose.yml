@@ -14,4 +14,4 @@ jobs:
     - name: sleep
       run:  sleep 60
     - name: log
-      run: docker logs sitemap
+      run: docker logs sitemap_app

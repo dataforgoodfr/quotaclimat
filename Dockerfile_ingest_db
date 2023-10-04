@@ -12,10 +12,10 @@ WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 RUN touch README.md
 
-RUN poetry install --without dev --no-root && rm -rf $POETRY_CACHE_DIR
+RUN poetry install --without dev --no-root --no-interaction --no-ansi && rm -rf $POETRY_CACHE_DIR
 
 COPY . .
 
 RUN poetry install --without dev
 
-ENTRYPOINT ["poetry", "run", "python", "quotaclimat/data_ingestion/scrap_sitemap.py"]
+ENTRYPOINT ["poetry", "run", "python", "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py", "-p ${{ secrets.D4G_VM_DB_PWD }"]

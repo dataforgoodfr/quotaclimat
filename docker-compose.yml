@@ -4,14 +4,35 @@ services:
     container_name: sitemap_app
     build:
       context: ./
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile_sitemap
     environment:
-      postgres_host: postgres_db
-      postgres_user: user
-      postgres_password: password
-      postgres_db: barometre
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+    volumes:
+      - ./:/app
     depends_on:
       - postgres_db
+
+
+  ingest_to_db:
+    container_name: ingest_to_db
+    build:
+      context: ./
+      dockerfile: Dockerfile_ingest_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+    volumes:
+      - ./:/app
+    depends_on:
+      - postgres_db
+      - sitemap
 
   postgres_db:
     image: postgres:13.6
@@ -23,3 +44,5 @@ services:
       POSTGRES_USER: user
       POSTGRES_DB: barometre
       POSTGRES_PASSWORD: password
+    logging: # no logs for postgres container
+            driver: none

@@ -147,7 +147,7 @@ def write_df(df: pd.DataFrame, media: str):
         with open(landing_path_media) as f:
             previous_entries = json.load(f)
     previous_entries = insert_or_update_entry(df, previous_entries)
-    with open(landing_path_media, "w") as f:
+    with open(landing_path_media, "w+") as f:
         json.dump(previous_entries, f)
 
 

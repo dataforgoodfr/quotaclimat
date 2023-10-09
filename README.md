@@ -179,11 +179,10 @@ After commiting to the repo, other team members will be able to use the exact sa
 
 ## Docker
 ```
-# Start a PG Container, and 2 services (scrap and ingest to PG)
-docker compose up 
 ## To run only one service, have a look to docker-compose.yml and pick one service :
-docker compose run sitemap_app
-docker compose run ingest_to_db
+docker compose up sitemap_app
+docker compose up ingest_to_db
+docker compose up streamlit
 ```
 
 ### Run the dashboard

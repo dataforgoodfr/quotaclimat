@@ -4,8 +4,10 @@ services:
     container_name: sitemap_app
     build:
       context: ./
-      dockerfile: Dockerfile_sitemap
+      dockerfile: Dockerfile
+    entrypoint: ["poetry", "run", "python", "quotaclimat/data_ingestion/scrap_sitemap.py"]
     environment:
+      PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre
       POSTGRES_PASSWORD: password
@@ -15,14 +17,16 @@ services:
       - ./:/app
     depends_on:
       - postgres_db
-
 
   ingest_to_db:
     container_name: ingest_to_db
     build:
       context: ./
-      dockerfile: Dockerfile_ingest_db
+      dockerfile: Dockerfile
+    entrypoint: ["poetry", "show", "pandas"]
+  #  entrypoint: ["poetry", "run", "python", "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py", "-p", "password"]
     environment:
+      PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre
       POSTGRES_PASSWORD: password
@@ -32,7 +36,24 @@ services:
       - ./:/app
     depends_on:
       - postgres_db
-      - sitemap
+
+  streamlit:
+    container_name: streamlit
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    entrypoint: ["poetry", "run", "python", "streamlit", "run", "app.py"]
+    environment:
+      PYTHONPATH: /app
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+    volumes:
+      - ./:/app
+    depends_on:
+      - postgres_db
 
   postgres_db:
     image: postgres:13.6

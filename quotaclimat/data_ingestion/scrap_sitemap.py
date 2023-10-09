@@ -2,14 +2,15 @@ import json
 import logging
 import os
 import re
+import advertools as adv
+import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List
 
-import advertools as adv
-import pandas as pd
-
 from quotaclimat.data_ingestion.config_sitmap import (MEDIA_CONFIG,
                                                       SITEMAP_CONFIG)
+
+
 
 # TODO: silence advertools loggings
 # TODO: add slack login
@@ -185,6 +186,7 @@ def insert_or_update_entry(df_one_media: pd.DataFrame, dict_previous_entries: di
 
 def run():
     for media, sitemap_conf in SITEMAP_CONFIG.items():
+        logging.info("Reading for %s: with conf %s" % (media, sitemap_conf))
         try:
             df = query_one_sitemap_and_transform(media, sitemap_conf)
             write_df(df, media)

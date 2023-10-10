@@ -5,7 +5,7 @@ on:
 
 env:
   PYTHON_VERSION: '3.10'
-  POETRY_VERSION: '1.2.1'
+  POETRY_VERSION: '1.6.1'
 
 jobs:
   check_integration:
@@ -23,4 +23,4 @@ jobs:
           virtualenvs-in-project: true
           installer-parallel: true
       - name: Verify poetry.lock agrees with pyproject.toml
-        run: poetry lock --check
+        run: poetry check --lock

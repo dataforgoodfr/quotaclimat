@@ -15,8 +15,6 @@ from quotaclimat.data_ingestion.config_sitmap import (MEDIA_CONFIG,
 # TODO: silence advertools loggings
 # TODO: add slack login
 # TODO: add data models
-
-
 def cure_df(df: pd.DataFrame) -> pd.DataFrame:
     """Clean df from unused columns"""
 

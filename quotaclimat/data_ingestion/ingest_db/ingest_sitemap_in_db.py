@@ -18,11 +18,11 @@ DB_PWD = os.environ.get('POSTGRES_PASSWORD', args.dbpwd)
 
 
 def run():
+    # be sure DB is well initialized with schemas
+    create_tables()
+
     for media, sitemap_conf in SITEMAP_CONFIG.items():
         try:
-            # is DB init with schemas ?
-            create_tables()
-
             # store data
             df = query_one_sitemap_and_transform(media, sitemap_conf)
             df_to_insert = transformation_from_dumps_to_table_entry(df)

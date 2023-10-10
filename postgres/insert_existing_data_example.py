@@ -32,6 +32,7 @@ def transformation_from_dumps_to_table_entry(df):
 
 
 def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame, password: str):
+    #@TODO use postgres utils
     table = "sitemap_table"
     if len(df_to_insert) > 0:
         df_columns = list(df_to_insert)

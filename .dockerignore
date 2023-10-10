@@ -1,2 +1,5 @@
 pgdata
 .git
+.venv
+.vscode
+notebooks

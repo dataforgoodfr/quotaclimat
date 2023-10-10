@@ -141,7 +141,7 @@ poetry --version
 
 Let's install a python version (for windows, this step have been done with miniconda):
 ```bash
-pyenv install 3.10.2 # this will take time
+pyenv install 3.11.6 # this will take time
 ```
 Check if it works properly, this command:
 ```bash
@@ -150,12 +150,12 @@ pyenv versions
 should return:
 ```bash
   system
-  3.10.2
+  3.11.6
 ```
 
 Then you are ready to create a virtual environment. Go in the project folder, and run:
 ```bash
-  pyenv virtualenv 3.10.2 quotaclimat
+  pyenv virtualenv 3.11.6 quotaclimat
   pyenv local quotaclimat
 ```
 
@@ -177,6 +177,13 @@ poetry add ntlk
 
 After commiting to the repo, other team members will be able to use the exact same environment you are using. 
 
+## Docker
+```
+## To run only one service, have a look to docker-compose.yml and pick one service :
+docker compose up sitemap_app
+docker compose up ingest_to_db
+docker compose up streamlit
+```
 
 ### Run the dashboard
 ```bash

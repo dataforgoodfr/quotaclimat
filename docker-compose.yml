@@ -1,0 +1,81 @@
+version: '3'
+services:
+  sitemap:
+    container_name: sitemap
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
+    entrypoint: ["python", "quotaclimat/data_ingestion/scrap_sitemap.py"]
+    environment:
+      PYTHONPATH: /app
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./app.py:/app/app.py
+    depends_on:
+      - postgres_db
+
+  ingest_to_db:
+    container_name: ingest_to_db
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
+    entrypoint: ["python", "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py", "-p", "password"]
+    environment:
+      PYTHONPATH: /app
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./app.py:/app/app.py
+    depends_on:
+      - postgres_db
+
+  streamlit:
+    container_name: streamlit
+    ports: 
+    - 8501:8501
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
+    entrypoint: ["poetry", "run", "python", "-m", "streamlit", "run", "app.py"]
+    environment:
+      PYTHONPATH: /app
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./app.py:/app/app.py
+      - ./pages/:/app/pages/
+      - ./.streamlit/:/app/.streamlit/
+    depends_on:
+      - postgres_db
+
+  postgres_db:
+    image: postgres:13.6
+    ports:
+      - 5432:5432
+    volumes:
+      - './pgdata:/var/lib/postgresql/data' # persist data https://stackoverflow.com/a/41650891/3535853
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+    logging: # no logs for postgres container
+            driver: none

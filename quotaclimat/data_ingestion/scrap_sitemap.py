@@ -2,26 +2,24 @@ import json
 import logging
 import os
 import re
-from datetime import datetime, timedelta
-from typing import Dict, List
-
 import advertools as adv
 import pandas as pd
+from datetime import datetime, timedelta
+from typing import Dict, List
 
 from quotaclimat.data_ingestion.config_sitmap import (MEDIA_CONFIG,
                                                       SITEMAP_CONFIG)
 
+
+
 # TODO: silence advertools loggings
 # TODO: add slack login
 # TODO: add data models
-
-
 def cure_df(df: pd.DataFrame) -> pd.DataFrame:
     """Clean df from unused columns"""
 
     df = df.rename(columns={"loc": "url"})
     return df
-
 
 def find_sections(url: str, media: str, sitemap_config=SITEMAP_CONFIG) -> List[str]:
     """Find and parse section with url"""
@@ -35,14 +33,12 @@ def find_sections(url: str, media: str, sitemap_config=SITEMAP_CONFIG) -> List[s
     else:  # regex not defined
         return "unknown"
 
-
 def get_sections(df: pd.DataFrame) -> pd.DataFrame:
     """Get sections and apply it to df"""
 
     df["section"] = df.apply(lambda x: find_sections(x.url, x.media), axis=1)
 
     return df
-
 
 def change_datetime_format(df: pd.DataFrame) -> pd.DataFrame:
     """Changes the date format for BQ"""
@@ -147,7 +143,7 @@ def write_df(df: pd.DataFrame, media: str):
         with open(landing_path_media) as f:
             previous_entries = json.load(f)
     previous_entries = insert_or_update_entry(df, previous_entries)
-    with open(landing_path_media, "w") as f:
+    with open(landing_path_media, "w+") as f:
         json.dump(previous_entries, f)
 
 
@@ -185,6 +181,7 @@ def insert_or_update_entry(df_one_media: pd.DataFrame, dict_previous_entries: di
 
 def run():
     for media, sitemap_conf in SITEMAP_CONFIG.items():
+        logging.info("Reading for %s: with conf %s" % (media, sitemap_conf))
         try:
             df = query_one_sitemap_and_transform(media, sitemap_conf)
             write_df(df, media)

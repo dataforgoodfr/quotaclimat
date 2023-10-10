@@ -1,0 +1,21 @@
+name: Docker Compose CI
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: init and load data
+      run: docker compose up -d
+    - name: sleep
+      run:  sleep 60
+    - name: log sitemap
+      run: docker logs sitemap
+    - name: log db ingestion
+      run: docker logs ingest_to_db
+    - name: log streamlit
+      run: docker logs streamlit

@@ -1,8 +1,14 @@
 import pandas as pd
 import psycopg2
 import psycopg2.extras
+import os
 
 from quotaclimat.data_processing.sitemap.sitemap_processing import load_all
+
+DB_DATABASE = os.environ.get('POSTGRES_DB', "quotaclimat")
+DB_USER = os.environ.get('POSTGRES_USER', "root")
+DB_HOST = os.environ.get('POSTGRES_HOST', "212.47.253.253")
+DB_PORT = os.environ.get('POSTGRES_PORT', "49154")
 
 
 def transformation_from_dumps_to_table_entry(df):
@@ -26,6 +32,7 @@ def transformation_from_dumps_to_table_entry(df):
 
 
 def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame, password: str):
+    #@TODO use postgres utils
     table = "sitemap_table"
     if len(df_to_insert) > 0:
         df_columns = list(df_to_insert)
@@ -37,12 +44,14 @@ def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame, password: str):
 
         # create INSERT INTO table (columns) VALUES('%s',...)
         insert_stmt = "INSERT INTO {} ({}) {}".format(table, columns, values)
+
+        #@TODO create a utils to connect to the DB
         conn = psycopg2.connect(
-            database="quotaclimat",
-            user="root",
+            database=DB_DATABASE,
+            user=DB_USER,
             password=password,
-            host="212.47.253.253",
-            port="49154",
+            host=DB_HOST,
+            port=DB_PORT,
         )
 
         cur = conn.cursor()

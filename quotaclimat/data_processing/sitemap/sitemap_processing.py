@@ -142,7 +142,7 @@ def _migrate_from_pd_to_json(df_all: pd.DataFrame):
         landing_path = "sitemap_dumps/media_type=%s" % row[1]["media_type"]
         if not os.path.exists(landing_path):
             os.makedirs(landing_path)
-        with open(landing_path + "/%s.json" % row[1]["media"], "w") as f:
+        with open(landing_path + "/%s.json" % row[1]["media"], "w+") as f:
             json.dump(dict_i, f)
 
 

@@ -13,7 +13,9 @@ jobs:
       run: docker compose up -d
     - name: sleep
       run:  sleep 60
-    - name: log sitemap_app
-      run: docker logs sitemap_app
+    - name: log sitemap
+      run: docker logs sitemap
     - name: log db ingestion
       run: docker logs ingest_to_db
+    - name: log streamlit
+      run: docker logs streamlit

@@ -27,6 +27,10 @@ ENV PATH="$PYENV_ROOT/bin:$PATH"
 
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
+# For streamlit only
+COPY pyproject.toml poetry.lock ./
+RUN pip install poetry 
+
 # App code is include with docker-compose as well
 COPY quotaclimat ./quotaclimat
 COPY postgres ./postgres

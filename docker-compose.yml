@@ -44,10 +44,13 @@ services:
 
   streamlit:
     container_name: streamlit
+    ports: 
+    - 8501:8501
     build:
       context: ./
       dockerfile: Dockerfile
-    entrypoint: ["poetry", "run", "python", "streamlit", "run", "app.py"]
+    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
+    entrypoint: ["poetry", "run", "python", "-m", "streamlit", "run", "app.py"]
     environment:
       PYTHONPATH: /app
       POSTGRES_USER: user
@@ -56,7 +59,9 @@ services:
       POSTGRES_HOST: postgres_db
       POSTGRES_PORT: 5432
     volumes:
-      - ./:/app
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./app.py:/app/app.py
     depends_on:
       - postgres_db
 

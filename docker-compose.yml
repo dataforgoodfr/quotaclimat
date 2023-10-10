@@ -62,6 +62,8 @@ services:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/
       - ./app.py:/app/app.py
+      - ./pages/:/app/pages/
+      - ./.streamlit/:/app/.streamlit/
     depends_on:
       - postgres_db
 

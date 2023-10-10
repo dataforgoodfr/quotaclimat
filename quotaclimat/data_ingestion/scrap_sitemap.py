@@ -23,7 +23,6 @@ def cure_df(df: pd.DataFrame) -> pd.DataFrame:
     df = df.rename(columns={"loc": "url"})
     return df
 
-
 def find_sections(url: str, media: str, sitemap_config=SITEMAP_CONFIG) -> List[str]:
     """Find and parse section with url"""
     if sitemap_config[media]["regex_section"] is not None:
@@ -36,14 +35,12 @@ def find_sections(url: str, media: str, sitemap_config=SITEMAP_CONFIG) -> List[s
     else:  # regex not defined
         return "unknown"
 
-
 def get_sections(df: pd.DataFrame) -> pd.DataFrame:
     """Get sections and apply it to df"""
 
     df["section"] = df.apply(lambda x: find_sections(x.url, x.media), axis=1)
 
     return df
-
 
 def change_datetime_format(df: pd.DataFrame) -> pd.DataFrame:
     """Changes the date format for BQ"""

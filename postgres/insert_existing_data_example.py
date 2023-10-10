@@ -2,9 +2,10 @@ import pandas as pd
 import psycopg2
 import psycopg2.extras
 import os
+import logging
 
 from quotaclimat.data_processing.sitemap.sitemap_processing import load_all
-
+from postgres.schemas.models import get_sitemap_cols
 DB_DATABASE = os.environ.get('POSTGRES_DB', "quotaclimat")
 DB_USER = os.environ.get('POSTGRES_USER', "root")
 DB_HOST = os.environ.get('POSTGRES_HOST', "212.47.253.253")
@@ -12,17 +13,7 @@ DB_PORT = os.environ.get('POSTGRES_PORT', "49154")
 
 
 def transformation_from_dumps_to_table_entry(df):
-    cols = [
-        #"url",
-        "publication_name",
-        "news_title",
-        "download_date",
-        "news_publication_date",
-        "news_keywords",
-        "section",
-        "image_caption",
-        "media_type",
-    ]
+    cols = get_sitemap_cols()
     df_template_db = pd.DataFrame(columns=cols)
     df_consistent = pd.concat([df, df_template_db])
 
@@ -30,10 +21,10 @@ def transformation_from_dumps_to_table_entry(df):
     df_consistent.section = df_consistent.section.apply(lambda x: ",".join(map(str, x)))
     return df_consistent[cols]
 
-
-def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame, password: str):
+def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame):
     #@TODO use postgres utils
     table = "sitemap_table"
+
     if len(df_to_insert) > 0:
         df_columns = list(df_to_insert)
         # create (col1,col2,...)
@@ -49,11 +40,10 @@ def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame, password: str):
         conn = psycopg2.connect(
             database=DB_DATABASE,
             user=DB_USER,
-            password=password,
+            password=os.environ.get('POSTGRES_PASSWORD'),
             host=DB_HOST,
             port=DB_PORT,
         )
-
         cur = conn.cursor()
         psycopg2.extras.execute_batch(cur, insert_stmt, df_to_insert.values)
         conn.commit()

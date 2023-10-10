@@ -51,6 +51,7 @@ isodate = "^0.6.1"
 psycopg2-binary = "^2.9.5"
 fsspec = "^2023.5.0"
 s3fs = "^2023.5.0"
+sqlalchemy = "^2.0.21"
 
 [build-system]
 requires = ["poetry-core>=1.1"]

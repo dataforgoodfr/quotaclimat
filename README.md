@@ -185,6 +185,19 @@ docker compose up ingest_to_db
 docker compose up streamlit
 ```
 
+### Explore postgres data using Metabase
+```
+docker compose up metabase
+```
+
+Will give you access to Metabase to explore the SQL table `sitemap table` here : http://localhost:3000/
+
+To connect to it you have use the variables used insied docker-compose.yml :
+* password: password
+* username: user
+* db: barometre
+* host : postgres_db
+
 ### Run the dashboard
 ```bash
 poetry run streamlit run app.py

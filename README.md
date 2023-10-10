@@ -141,7 +141,7 @@ poetry --version
 
 Let's install a python version (for windows, this step have been done with miniconda):
 ```bash
-pyenv install 3.10.2 # this will take time
+pyenv install 3.11.6 # this will take time
 ```
 Check if it works properly, this command:
 ```bash
@@ -150,12 +150,12 @@ pyenv versions
 should return:
 ```bash
   system
-  3.10.2
+  3.11.6
 ```
 
 Then you are ready to create a virtual environment. Go in the project folder, and run:
 ```bash
-  pyenv virtualenv 3.10.2 quotaclimat
+  pyenv virtualenv 3.11.6 quotaclimat
   pyenv local quotaclimat
 ```
 

@@ -6,19 +6,28 @@ import logging
 
 from quotaclimat.data_processing.sitemap.sitemap_processing import load_all
 from postgres.schemas.models import get_sitemap_cols
+
+#@TODO remove me
 DB_DATABASE = os.environ.get('POSTGRES_DB', "quotaclimat")
 DB_USER = os.environ.get('POSTGRES_USER', "root")
 DB_HOST = os.environ.get('POSTGRES_HOST', "212.47.253.253")
 DB_PORT = os.environ.get('POSTGRES_PORT', "49154")
 
 
-def transformation_from_dumps_to_table_entry(df):
+def parse_section(section: str):
+    logging.debug(section)
+    if("," not in section):
+        return section
+    else:
+        return ",".join(map(str, section))
+
+def transformation_from_dumps_to_table_entry(df: pd.DataFrame):
     cols = get_sitemap_cols()
     df_template_db = pd.DataFrame(columns=cols)
     df_consistent = pd.concat([df, df_template_db])
 
-    # convert section to str
-    df_consistent.section = df_consistent.section.apply(lambda x: ",".join(map(str, x)))
+    df_consistent.section = df_consistent.section.apply(parse_section)
+
     return df_consistent[cols]
 
 def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame):

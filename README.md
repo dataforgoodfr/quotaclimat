@@ -159,6 +159,11 @@ Then you are ready to create a virtual environment. Go in the project folder, an
   pyenv local quotaclimat
 ```
 
+In case of a version upgrade you can perform this command to switch
+```
+pyenv activate 3.11.6/envs/quotaclimat
+```
+
 You now need a tool to manage dependencies. Let's use poetry.
 On windows, if not already installed, you will need a VS installation.
 
@@ -207,6 +212,12 @@ On Windows, you may need :
 poetry run python -m streamlit run app.py
 ```
 Depending on your installation process and version, "python" can also be "python3" or "py".
+
+## Test
+```
+pytest test
+# TODO docker way
+```
 
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:

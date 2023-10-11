@@ -1,10 +1,13 @@
 from sqlalchemy import Column, Integer, String, DateTime, Text
 from sqlalchemy.orm import declarative_base
 from datetime import datetime
+from postgres.database_connection import connect_to_db
+import logging
 
 Base = declarative_base()
 
 def get_sitemap_cols():
+    
     cols = [
         "publication_name",
         "news_title",
@@ -44,3 +47,17 @@ class Sitemap(Base):
     url = Column(Text)
     updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
     
+def create_tables():
+    """Create tables in the PostgreSQL database"""
+
+    logging.info("create sitemap table")
+    try:
+        engine = connect_to_db()
+
+        Base.metadata.create_all(engine, checkfirst=True)
+        logging.info("Table creation done, if not already done.")
+    except (Exception) as error:
+        logging.error(error)
+    finally:
+        if engine is not None:
+            engine.dispose()

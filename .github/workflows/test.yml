@@ -1,4 +1,4 @@
-name: check_integration
+name: tests
 
 on:
   push:
@@ -8,7 +8,7 @@ env:
   POETRY_VERSION: '1.6.1'
 
 jobs:
-  check_integration:
+  poetry check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v2
@@ -24,3 +24,20 @@ jobs:
           installer-parallel: true
       - name: Verify poetry.lock agrees with pyproject.toml
         run: poetry check --lock
+
+  unit_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/checkout@v2
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: run pytest
+        run: pytest test

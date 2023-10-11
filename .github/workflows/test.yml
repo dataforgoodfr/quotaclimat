@@ -8,7 +8,7 @@ env:
   POETRY_VERSION: '1.6.1'
 
 jobs:
-  poetry check:
+  poetry_check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v2

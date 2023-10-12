@@ -1,25 +1,27 @@
+import logging
+import os
+
 import pandas as pd
 import psycopg2
 import psycopg2.extras
-import os
-import logging
 
-from quotaclimat.data_processing.sitemap.sitemap_processing import load_all
 from postgres.schemas.models import get_sitemap_cols
+from quotaclimat.data_processing.sitemap.sitemap_processing import load_all
 
-#@TODO remove me
-DB_DATABASE = os.environ.get('POSTGRES_DB', "quotaclimat")
-DB_USER = os.environ.get('POSTGRES_USER', "root")
-DB_HOST = os.environ.get('POSTGRES_HOST', "212.47.253.253")
-DB_PORT = os.environ.get('POSTGRES_PORT', "49154")
+# @TODO remove me
+DB_DATABASE = os.environ.get("POSTGRES_DB", "quotaclimat")
+DB_USER = os.environ.get("POSTGRES_USER", "root")
+DB_HOST = os.environ.get("POSTGRES_HOST", "212.47.253.253")
+DB_PORT = os.environ.get("POSTGRES_PORT", "49154")
 
 
 def parse_section(section: str):
     logging.debug(section)
-    if("," not in section):
+    if "," not in section:
         return section
     else:
         return ",".join(map(str, section))
+
 
 def transformation_from_dumps_to_table_entry(df: pd.DataFrame):
     cols = get_sitemap_cols()
@@ -30,8 +32,9 @@ def transformation_from_dumps_to_table_entry(df: pd.DataFrame):
 
     return df_consistent[cols]
 
+
 def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame):
-    #@TODO use postgres utils
+    # @TODO use postgres utils
     table = "sitemap_table"
 
     if len(df_to_insert) > 0:
@@ -45,11 +48,11 @@ def insert_data_in_sitemap_table(df_to_insert: pd.DataFrame):
         # create INSERT INTO table (columns) VALUES('%s',...)
         insert_stmt = "INSERT INTO {} ({}) {}".format(table, columns, values)
 
-        #@TODO create a utils to connect to the DB
+        # @TODO create a utils to connect to the DB
         conn = psycopg2.connect(
             database=DB_DATABASE,
             user=DB_USER,
-            password=os.environ.get('POSTGRES_PASSWORD'),
+            password=os.environ.get("POSTGRES_PASSWORD"),
             host=DB_HOST,
             port=DB_PORT,
         )

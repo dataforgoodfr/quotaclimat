@@ -16,6 +16,6 @@ with tab1:
     st.markdown(Path(MD_COP_BAROMETRE).read_text(), unsafe_allow_html=True)
 
 with tab2:
-    st.markdown("La donnée derrière les analyses des titres d'articles est mis à disposition du grand public à partir des référencement pour moteur de recherche. Cet outils utilise l'ingestion journalière dans une base de donnée à partir des [sitemap](https://www.xml-sitemaps.com/).")
-
-
+    st.markdown(
+        "La donnée derrière les analyses des titres d'articles est mis à disposition du grand public à partir des référencement pour moteur de recherche. Cet outils utilise l'ingestion journalière dans une base de donnée à partir des [sitemap](https://www.xml-sitemaps.com/)."
+    )

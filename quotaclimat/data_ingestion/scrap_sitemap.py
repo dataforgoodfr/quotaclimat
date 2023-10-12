@@ -2,14 +2,14 @@ import json
 import logging
 import os
 import re
-import advertools as adv
-import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List
 
+import advertools as adv
+import pandas as pd
+
 from quotaclimat.data_ingestion.config_sitmap import (MEDIA_CONFIG,
                                                       SITEMAP_CONFIG)
-
 
 
 # TODO: silence advertools loggings
@@ -20,6 +20,7 @@ def cure_df(df: pd.DataFrame) -> pd.DataFrame:
 
     df = df.rename(columns={"loc": "url"})
     return df
+
 
 def find_sections(url: str, media: str, sitemap_config=SITEMAP_CONFIG) -> List[str]:
     """Find and parse section with url"""
@@ -33,12 +34,14 @@ def find_sections(url: str, media: str, sitemap_config=SITEMAP_CONFIG) -> List[s
     else:  # regex not defined
         return "unknown"
 
+
 def get_sections(df: pd.DataFrame) -> pd.DataFrame:
     """Get sections and apply it to df"""
 
     df["section"] = df.apply(lambda x: find_sections(x.url, x.media), axis=1)
 
     return df
+
 
 def change_datetime_format(df: pd.DataFrame) -> pd.DataFrame:
     """Changes the date format for BQ"""

@@ -1,4 +1,5 @@
-import logging, os
+import logging
+import os
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
 
@@ -13,11 +14,11 @@ parser.add_argument("-k", "--keyid")
 parser.add_argument("-a", "--accesskey")
 
 args = parser.parse_args()
-DB_DATABASE = os.environ.get('POSTGRES_DB', "quotaclimat")
-DB_USER = os.environ.get('POSTGRES_USER', "root")
-DB_PWD = os.environ.get('POSTGRES_PASSWORD', args.dbpwd)
-DB_HOST = os.environ.get('POSTGRES_HOST', "212.47.253.253")
-DB_PORT = os.environ.get('POSTGRES_PORT', "49154")
+DB_DATABASE = os.environ.get("POSTGRES_DB", "quotaclimat")
+DB_USER = os.environ.get("POSTGRES_USER", "root")
+DB_PWD = os.environ.get("POSTGRES_PASSWORD", args.dbpwd)
+DB_HOST = os.environ.get("POSTGRES_HOST", "212.47.253.253")
+DB_PORT = os.environ.get("POSTGRES_PORT", "49154")
 KEY_ID = args.keyid
 ACCESS_KEY = args.accesskey
 

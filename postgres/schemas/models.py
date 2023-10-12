@@ -1,13 +1,16 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text
-from sqlalchemy.orm import declarative_base
-from datetime import datetime
-from postgres.database_connection import connect_to_db, get_db_session
 import logging
+from datetime import datetime
+
+from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy.orm import declarative_base
+
+from postgres.database_connection import connect_to_db, get_db_session
 
 Base = declarative_base()
 
+
 def get_sitemap_cols():
-    
+
     cols = [
         "publication_name",
         "news_title",
@@ -20,7 +23,9 @@ def get_sitemap_cols():
     ]
     return cols
 
+
 sitemap_table = "sitemap_table"
+
 
 class Sitemap(Base):
     __tablename__ = sitemap_table
@@ -37,9 +42,11 @@ class Sitemap(Base):
     url = Column(Text)
     updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
 
+
 def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
+
 
 def create_tables():
     """Create tables in the PostgreSQL database"""

@@ -41,5 +41,5 @@ jobs:
           installer-parallel: true
       - name: poetry install
         run: poetry install
-      - name: run pytest
-        run: pytest --cov test test/
+      - name: poetry run pytest
+        run: poetry run pytest --cov test test/

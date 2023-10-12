@@ -68,5 +68,5 @@ jobs:
           POSTGRES_USER: user
           POSTGRES_DB: barometre
           POSTGRES_PASSWORD: password
-          POSTGRES_HOST: postgres
+          POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432

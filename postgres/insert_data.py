@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 from sqlalchemy import DateTime
 from postgres.database_connection import connect_to_db
-from postgres.schemas.models import get_schema_sitemap, sitemap_table
+from postgres.schemas.models import sitemap_table
 import time
 from sqlalchemy.dialects.postgresql import insert
 

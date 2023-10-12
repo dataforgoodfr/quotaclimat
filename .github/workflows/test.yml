@@ -39,7 +39,7 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
-      - name: poetry install
-        run: poetry install
+      - name: poetry install --dev-dependency
+        run: poetry install --dev-dependency
       - name: run pytest
         run: pytest test

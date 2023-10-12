@@ -10,7 +10,7 @@ import pandas as pd
 
 from quotaclimat.data_ingestion.config_sitmap import (MEDIA_CONFIG,
                                                       SITEMAP_CONFIG)
-
+from postgres.schemas.models import get_sitemap_cols
 
 # TODO: silence advertools loggings
 # TODO: add slack login
@@ -22,6 +22,7 @@ def cure_df(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+# TODO test me
 def find_sections(url: str, media: str, sitemap_config=SITEMAP_CONFIG) -> List[str]:
     """Find and parse section with url"""
     if sitemap_config[media]["regex_section"] is not None:
@@ -42,7 +43,7 @@ def get_sections(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-
+# TODO test me
 def change_datetime_format(df: pd.DataFrame) -> pd.DataFrame:
     """Changes the date format for BQ"""
 
@@ -91,6 +92,8 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
         pd.DataFrame
     """
     try:
+        logging.info("Parsing %s with %s" % (media, sitemap_conf))
+        #@see https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#news-sitemaps
         temp_df = adv.sitemap_to_df(sitemap_conf["sitemap_url"])
     except AttributeError:
         logging.error(
@@ -98,16 +101,8 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
             % (media, sitemap_conf["sitemap_url"])
         )
         return
-    cols = [
-        "publication_name",
-        "news_title",
-        "download_date",
-        "news_publication_date",
-        "news_keywords",
-        "section",
-        "image_caption",
-        "media_type",
-    ]
+    cols = get_sitemap_cols()
+
     df_template_db = pd.DataFrame(columns=cols)
     temp_df = pd.concat([temp_df, df_template_db])
     temp_df.rename(columns={"loc": "url"}, inplace=True)

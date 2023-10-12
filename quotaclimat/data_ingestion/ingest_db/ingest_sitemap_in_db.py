@@ -7,21 +7,26 @@ from postgres.insert_existing_data_example import \
     transformation_from_dumps_to_table_entry
 from postgres.schemas.models import create_tables
 from quotaclimat.data_ingestion.config_sitmap import (MEDIA_CONFIG,
-                                                      SITEMAP_CONFIG)
+                                                      SITEMAP_CONFIG,
+                                                      SITEMAP_TEST_CONFIG)
 from quotaclimat.data_ingestion.scrap_sitemap import \
     query_one_sitemap_and_transform
 
-parser = ArgumentParser()
-parser.add_argument("-p", "--dbpwd")
-args = parser.parse_args()
+# parser = ArgumentParser()
+# parser.add_argument("-p", "--dbpwd")
+# args = parser.parse_args()
 
-DB_PWD = os.environ.get("POSTGRES_PASSWORD", args.dbpwd)
-
+def get_sitemap_list():
+    if(os.environ.get("POSTGRES_USER") == "user"):
+        logging.info("Testing locally")
+        return SITEMAP_TEST_CONFIG.items()
+    else:
+        return SITEMAP_CONFIG.items()
 
 def run():
     create_tables()
-
-    for media, sitemap_conf in SITEMAP_CONFIG.items():
+    sitemap_list = get_sitemap_list()   
+    for media, sitemap_conf in sitemap_list:
         try:
             df = query_one_sitemap_and_transform(media, sitemap_conf)
             df_to_insert = transformation_from_dumps_to_table_entry(df)

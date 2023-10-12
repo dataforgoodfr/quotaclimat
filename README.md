@@ -191,14 +191,14 @@ docker compose up ingest_to_db
 docker compose up streamlit
 ```
 
-### Explore postgres data using Metabase
+### Explore postgres data using Metabase - a BI tool
 ```
 docker compose up metabase
 ```
 
 Will give you access to Metabase to explore the SQL table `sitemap table` here : http://localhost:3000/
 
-To connect to it you have use the variables used insied docker-compose.yml :
+To connect to it you have use the variables used inside `docker-compose.yml` :
 * password: password
 * username: user
 * db: barometre
@@ -213,6 +213,9 @@ On Windows, you may need :
 poetry run python -m streamlit run app.py
 ```
 Depending on your installation process and version, "python" can also be "python3" or "py".
+
+### How to scrap 
+The scrapping of sitemap.xml is done using the library [advertools.](https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#)
 
 ## Test
 ```

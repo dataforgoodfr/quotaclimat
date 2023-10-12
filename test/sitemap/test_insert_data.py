@@ -6,6 +6,9 @@ import pytest
 
 from postgres.insert_data import (add_primary_key, clean_data,
                                   insert_data_in_sitemap_table)
+
+from quotaclimat.data_ingestion.ingest_db.ingest_sitemap_in_db import get_sitemap_list
+                                 
 from postgres.insert_existing_data_example import (
     parse_section, transformation_from_dumps_to_table_entry)
 from postgres.schemas.models import create_tables, get_sitemap
@@ -15,6 +18,16 @@ def test_section():
     parse_section("test") == "test"
     parse_section("test, pizza") == "test,pizza"
 
+def test_get_sitemap_list():
+    sitemap = get_sitemap_list()
+    # locally, we test only one item
+    assert len(sitemap) == 1
+
+#TODO def test_query_one_sitemap_and_transform():
+# sitemap = get_sitemap_list()
+#  for media, sitemap_conf in sitemap_list:
+#         try:
+#             df = query_one_sitemap_and_transform(media, sitemap_conf)
 
 def test_add_primary_key():
     df = pd.DataFrame(

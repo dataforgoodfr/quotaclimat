@@ -193,3 +193,11 @@ MEDIA_CONFIG = {
         "coverage": "regional",
     },
 }
+
+SITEMAP_TEST_CONFIG = {
+    "lefigaro": {
+        "sitemap_index": None,
+        "sitemap_url": "https://localhost/sitemap_news_figaro_3",
+        "regex_section": r"^https:\/\/www\.lefigaro\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    }
+}

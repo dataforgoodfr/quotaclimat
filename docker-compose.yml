@@ -41,6 +41,14 @@ services:
       - ./app.py:/app/app.py
     depends_on:
       - postgres_db
+      - nginxtest
+
+  nginxtest: # to test locally webpages
+    image: nginx:latest
+    ports:
+      - 8000:80
+    volumes:
+      - './mockwebsite:/usr/share/nginx/html'
 
   ingest_to_db:
     container_name: ingest_to_db

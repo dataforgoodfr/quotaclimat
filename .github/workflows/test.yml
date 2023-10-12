@@ -31,6 +31,9 @@ jobs:
       postgres_db:
         # Docker Hub image
         image: postgres:13.6
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
         # Provide the password for postgres
         env:
           POSTGRES_USER: user
@@ -61,3 +64,9 @@ jobs:
         run: poetry install
       - name: pytest run
         run: "poetry run pytest --cov test test/"
+        env:
+          POSTGRES_USER: user
+          POSTGRES_DB: barometre
+          POSTGRES_PASSWORD: password
+          POSTGRES_HOST: postgres_db
+          POSTGRES_PORT: 5432

@@ -28,7 +28,7 @@ jobs:
   unit_test:
     services:
       # Label used to access the service container
-      postgres_db:
+      postgres:
         # Docker Hub image
         image: postgres:13.6
         ports:
@@ -68,5 +68,5 @@ jobs:
           POSTGRES_USER: user
           POSTGRES_DB: barometre
           POSTGRES_PASSWORD: password
-          POSTGRES_HOST: postgres_db
+          POSTGRES_HOST: postgres
           POSTGRES_PORT: 5432

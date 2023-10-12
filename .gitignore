@@ -136,3 +136,4 @@ notebooks/nlp/df_X_tfidf.pkl
 .DS_Store
 pgdata
 mb-data
+.idea

@@ -161,6 +161,7 @@ Then you are ready to create a virtual environment. Go in the project folder, an
 
 In case of a version upgrade you can perform this command to switch
 ```
+eval "$(pyenv init --path)"
 pyenv activate 3.11.6/envs/quotaclimat
 ```
 
@@ -215,8 +216,9 @@ Depending on your installation process and version, "python" can also be "python
 
 ## Test
 ```
-pytest test
-# TODO docker way
+pytest test # "test" is the folder containing tests
+# OR
+docker compose up test # test is the container name running pytest test
 ```
 
 ### Fix linting

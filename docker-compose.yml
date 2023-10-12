@@ -21,6 +21,27 @@ services:
     depends_on:
       - postgres_db
 
+  test:
+    container_name: test
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    entrypoint: ["pytest", "test"]
+    environment:
+      PYTHONPATH: /app
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./test/:/app/test/
+      - ./app.py:/app/app.py
+    depends_on:
+      - postgres_db
+
   ingest_to_db:
     container_name: ingest_to_db
     build:

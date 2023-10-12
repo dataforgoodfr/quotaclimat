@@ -24,7 +24,10 @@ def connect_to_db():
 
 
     engine = create_engine(url)
-    Session = sessionmaker(bind=engine)
-    session = Session()
 
     return engine
+
+def get_db_session():
+    engine = connect_to_db()
+    Session = sessionmaker(bind=engine)
+    return Session()

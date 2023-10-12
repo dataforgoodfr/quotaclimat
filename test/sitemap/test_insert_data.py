@@ -4,7 +4,8 @@ import pandas as pd
 import numpy as np
 from postgres.insert_existing_data_example import transformation_from_dumps_to_table_entry
 from postgres.insert_existing_data_example import parse_section
-from postgres.insert_data import add_primary_key
+from postgres.insert_data import add_primary_key, insert_data_in_sitemap_table, clean_data
+from postgres.schemas.models import (create_tables, get_sitemap)
 
 def test_section():
     parse_section("test") == "test"
@@ -26,7 +27,7 @@ def test_add_primary_key():
         }]
     )
 
-    df['id'] = add_primary_key(df["publication_name"],df["news_title"],df["news_publication_date"])
+    df['id'] = add_primary_key(df)
 
     pd.testing.assert_frame_equal(expected_output,expected_output)
 
@@ -71,13 +72,42 @@ def test_transformation_from_dumps_to_table_entry():
 
     pd.testing.assert_frame_equal(output, expected_result)
 
-# def test_insert_data():
-#     publication_name: "20minutes.fr"
-#     news_title: "Coupe du monde de rugby EN DIRECT :"
-#     download_date: pd.Timestamp("2023-10-11 13:10:00")
-#     news_publication_date: pd.Timestamp("2023-10-11 13:10:00")
-#     news_keywords pd.NaN
-#     section "sport, rugby"
-#     image_caption pd.NaN
-#     media_type webpress
-#     id "20minutes.fr" + "Coupe du monde de rugby EN DIRECT :" + "2023-10-11 13:10:00"
+def test_insert_data_in_sitemap_table():
+    create_tables()
+
+    df = pd.DataFrame([{
+        "publication_name": "testpublication_name_new",
+        "news_title": "testnews_title",
+        "download_date": pd.Timestamp("2023-10-11 13:11:00"),
+        "news_publication_date": pd.Timestamp("2023-10-11 13:10:00"),
+        "news_keywords": "testnews_keywords",
+        "section": "not pizza anymore",
+        "image_caption": "testimage_caption",
+        "media_type": "testmedia_type"
+        }]
+    )
+
+    insert_data_in_sitemap_table(df)
+
+    # check the value is well existing
+    result  = get_sitemap("testpublication_nametestnews_title2023-10-11 13:10:00")
+
+    assert result.id == "testpublication_nametestnews_title2023-10-11 13:10:00"
+
+def test_clean_data():
+    df_wrong_format = pd.DataFrame([{
+        "id": "empty"
+        }]
+    )
+
+    result = clean_data(df_wrong_format)
+    assert result.empty == True
+
+    df_right_format = pd.DataFrame([{
+            "id": "proper_id"
+        }]
+    )
+    result = clean_data(df_right_format)
+    assert result.empty == False
+
+    

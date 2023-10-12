@@ -21,6 +21,27 @@ services:
     depends_on:
       - postgres_db
 
+  test:
+    container_name: test
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    entrypoint: ["poetry", "run", "pytest", "--cov", "test", "test/"]
+    environment:
+      PYTHONPATH: /app
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./test/:/app/test/
+      - ./app.py:/app/app.py
+    depends_on:
+      - postgres_db
+
   ingest_to_db:
     container_name: ingest_to_db
     build:
@@ -41,6 +62,7 @@ services:
       - ./app.py:/app/app.py
     depends_on:
       - postgres_db
+      - metabase
 
   streamlit:
     container_name: streamlit
@@ -73,9 +95,33 @@ services:
       - 5432:5432
     volumes:
       - './pgdata:/var/lib/postgresql/data' # persist data https://stackoverflow.com/a/41650891/3535853
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     environment:
       POSTGRES_USER: user
       POSTGRES_DB: barometre
       POSTGRES_PASSWORD: password
     logging: # no logs for postgres container
             driver: none
+
+  metabase:
+      container_name: metabase_barometre
+      image: metabase/metabase:latest
+      volumes:
+        - './mb-data:/metabase-data'  # Volumes where Metabase data will be persisted
+      ports:
+        - 3000:3000
+      environment:
+        MB_DB_TYPE: postgres
+        MB_DB_DBNAME: barometre
+        MB_DB_PORT: 5432
+        MB_DB_USER: user
+        MB_DB_PASS: password
+        MB_DB_HOST: postgres_db
+        MB_DB_FILE: "/metabase-data/metabase.db" # https://www.metabase.com/docs/latest/operations-guide/running-metabase-on-docker.html#mounting-a-mapped-file-storage-volume
+        JAVA_TIMEZONE: Europe/Paris
+      depends_on:
+        - postgres_db

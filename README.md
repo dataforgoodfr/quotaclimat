@@ -159,6 +159,12 @@ Then you are ready to create a virtual environment. Go in the project folder, an
   pyenv local quotaclimat
 ```
 
+In case of a version upgrade you can perform this command to switch
+```
+eval "$(pyenv init --path)"
+pyenv activate 3.11.6/envs/quotaclimat
+```
+
 You now need a tool to manage dependencies. Let's use poetry.
 On windows, if not already installed, you will need a VS installation.
 
@@ -185,6 +191,19 @@ docker compose up ingest_to_db
 docker compose up streamlit
 ```
 
+### Explore postgres data using Metabase
+```
+docker compose up metabase
+```
+
+Will give you access to Metabase to explore the SQL table `sitemap table` here : http://localhost:3000/
+
+To connect to it you have use the variables used insied docker-compose.yml :
+* password: password
+* username: user
+* db: barometre
+* host : postgres_db
+
 ### Run the dashboard
 ```bash
 poetry run streamlit run app.py
@@ -194,6 +213,13 @@ On Windows, you may need :
 poetry run python -m streamlit run app.py
 ```
 Depending on your installation process and version, "python" can also be "python3" or "py".
+
+## Test
+```
+pytest test # "test" is the folder containing tests
+# OR
+docker compose up test # test is the container name running pytest test
+```
 
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:

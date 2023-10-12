@@ -207,6 +207,7 @@ def converting_to_flate_storage(final: dict, media: str):
         os.makedirs(landing_path)
     df.to_parquet(landing_path + "%s.parquet" % date.strftime("%Y%m%d"))
 
+
 def full_scraping():
 
     """Fonction qui permet de faire le scraping de toutes les chaînes présentes dans 'config_youtube.py'"""

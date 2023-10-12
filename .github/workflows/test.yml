@@ -39,7 +39,5 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
-      - name: poetry install
-        run: poetry install
-      - name: poetry run pytest
-        run: poetry run pytest --cov test test/
+      - name: docker run test with PG database
+        run: docker compose up test

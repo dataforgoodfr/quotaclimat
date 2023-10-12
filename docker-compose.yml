@@ -26,7 +26,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    entrypoint: ["pytest", "test"]
+    entrypoint: ["poetry", "run", "pytest", "--cov", "test", "test/"]
     environment:
       PYTHONPATH: /app
       POSTGRES_USER: user

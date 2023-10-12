@@ -30,4 +30,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: docker run test with PG database
-        run: docker compose up test
+        run: docker compose up --exit-code-from test

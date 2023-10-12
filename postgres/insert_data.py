@@ -48,7 +48,7 @@ def insert_data_in_sitemap_table(df: pd.DataFrame):
     df["id"] = add_primary_key(df)
 
     df = clean_data(df)
-
+    logging.debug("Could  save%s" % (df.head(1).to_string()))
     conn = connect_to_db()
     try:
         logging.debug("Schema before saving\n%s", df.dtypes)

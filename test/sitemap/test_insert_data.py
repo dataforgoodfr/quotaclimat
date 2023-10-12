@@ -113,9 +113,9 @@ def test_insert_data_in_sitemap_table():
     insert_data_in_sitemap_table(df)
 
     # check the value is well existing
-    result = get_sitemap("testpublication_nametestnews_title2023-10-11 13:10:00")
+    result = get_sitemap("testpublication_name_newtestnews_title2023-10-11 13:10:00")
 
-    assert result.id == "testpublication_nametestnews_title2023-10-11 13:10:00"
+    assert result.id == "testpublication_name_newtestnews_title2023-10-11 13:10:00"
 
 
 def test_clean_data():

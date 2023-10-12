@@ -13,7 +13,7 @@ def connect_to_db():
     DB_PORT = os.environ.get("POSTGRES_PORT")
     DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD")
 
-    logging.debug("Connect to the host %s for DB %s" % (DB_HOST, DB_DATABASE))
+    logging.info("Connect to the host %s for DB %s" % (DB_HOST, DB_DATABASE))
 
     url = URL.create(
         drivername="postgresql",

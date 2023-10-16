@@ -51,6 +51,7 @@ jobs:
       - name: pytest run
         run: "poetry run pytest --cov test test/"
         env:
+          POSTGRES_USER: dev
           POSTGRES_USER: user
           POSTGRES_DB: postgres
           POSTGRES_PASSWORD: postgres

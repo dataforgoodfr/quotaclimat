@@ -2,11 +2,45 @@ import logging
 
 import numpy as np
 import pandas as pd
-
-from quotaclimat.data_ingestion.scrap_sitemap import (find_sections)
+import os 
+from quotaclimat.data_ingestion.scrap_sitemap import (find_sections, query_one_sitemap_and_transform)
 from quotaclimat.data_ingestion.config_sitmap import (MEDIA_CONFIG,
-                                                      SITEMAP_CONFIG)
-                                                      
+                                                      SITEMAP_TEST_CONFIG)
+
+def test_query_one_sitemap_and_transform():
+    sitemap_config = None
+    if(os.environ.get("ENV") == "docker"):
+        logging.info("Testing locally")
+        sitemap_config = SITEMAP_TEST_CONFIG["lefigaro_docker"]
+    else:
+        sitemap_config = SITEMAP_TEST_CONFIG["lefigaro"]
+
+    output = query_one_sitemap_and_transform("lefigaro", sitemap_config)
+
+    expected_result = pd.DataFrame([{
+        "url" :"https://www.lefigaro.fr/international/en-direct-conflit-hamas-israel-l-etat-hebreu-poursuit-son-pilonnage-de-la-bande-de-gaza-en-promettant-de-detruire-le-hamas-20231012",
+        "lastmod" :pd.Timestamp("2023-10-12 15:34:28"),
+        "publication_name" :"Le Figaro",
+        "publication_language" :"fr",
+        "news_publication_date" : pd.Timestamp("2023-10-12T06:13:00"),
+        "news_title" :"EN DIRECT - Conflit Hamas-Israël : l’armée israélienne dit avoir frappé Gaza avec 4000 tonnes d’explosifs depuis samedi",
+        "news_keywords" :"Israël, Hamas, conflit israélo-palestinien, International, actualité internationale, affaires étrangères, ministère des affaires étrangères, politique étrangère",
+        "news_genres" :"Blog",
+        "image_loc" :"https://i.f1g.fr/media/cms/orig/2023/10/12/eccf7495cede8869a8a35d6fd70a1635759a12dbef68dd16e82e34162f69ec4f.jpg",
+        "image_caption" :"Explosion dans le centre de la ville de Gaza ce jeudi 12 octobre.",
+        "sitemap" :"http://nginxtest:80/sitemap_news_figaro_3.xml",
+        "sitemap_last_modified" :pd.Timestamp("2023-10-12 15:52:41+00:00"),
+        "download_date": pd.Timestamp.now(),
+        "section" :["international"],
+        "media_type" :"webpress",
+        "media":"lefigaro"
+    }])
+
+    # warning : hard to compare almost the same timestamp
+    expected_result['download_date'] = output['download_date']
+    pd.testing.assert_frame_equal(output.head(1), expected_result)
+
+
 def test_find_sections():
     url_franceinfo = "https://www.francetvinfo.fr/monde/proche-orient/israel-palestine/direct-guerre-entre-israel-et-le-hamas-l-occupation-de-la-bande-de-gaza-serait-une-grave-erreur-previent-joe-biden_6125127.html"
     output = find_sections(url_franceinfo, "francetvinfo")

@@ -29,7 +29,7 @@ services:
       dockerfile: Dockerfile
     entrypoint: ["poetry", "run", "pytest", "-v", "--cov", "test", "test/"]
     environment:
-      ENV: dev
+      ENV: docker
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre

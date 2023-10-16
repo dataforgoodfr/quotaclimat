@@ -21,8 +21,6 @@ def cure_df(df: pd.DataFrame) -> pd.DataFrame:
     df = df.rename(columns={"loc": "url"})
     return df
 
-
-# TODO test me
 def find_sections(url: str, media: str, sitemap_config=SITEMAP_CONFIG) -> List[str]:
     """Find and parse section with url"""
     if sitemap_config[media]["regex_section"] is not None:
@@ -95,7 +93,7 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
         pd.DataFrame
     """
     try:
-        logging.info("Parsing %s with %s" % (media, sitemap_conf))
+        logging.info("Parsing %s with %s" % (media, sitemap_conf["sitemap_url"]))
         #@see https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#news-sitemaps
         temp_df = adv.sitemap_to_df(sitemap_conf["sitemap_url"])
     except AttributeError:
@@ -119,6 +117,7 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
 
     df["media_type"] = MEDIA_CONFIG[media]["type"]
     df = clean_surrounding_whitespaces_df(df)
+    df = df.drop(columns=["etag", "sitemap_size_mb", "news", "news_publication", "image"])
     sanity_check() # TODO data model here
     return df
 

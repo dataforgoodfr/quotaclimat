@@ -17,7 +17,7 @@ from quotaclimat.data_ingestion.scrap_sitemap import \
 # args = parser.parse_args()
 
 def get_sitemap_list():
-    if(os.environ.get("ENV") == "dev"):
+    if(os.environ.get("ENV") == "dev" or os.environ.get("ENV") == "docker"):
         logging.info("Testing locally")
         return SITEMAP_TEST_CONFIG.items()
     else:

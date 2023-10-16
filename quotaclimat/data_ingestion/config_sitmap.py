@@ -207,7 +207,12 @@ MEDIA_CONFIG = {
 SITEMAP_TEST_CONFIG = {
     "lefigaro": {
         "sitemap_index": None,
-        "sitemap_url": "https://localhost/sitemap_news_figaro_3",
+        "sitemap_url": "http://localhost:8000/sitemap_news_figaro_3.xml",
+        "regex_section": r"^https:\/\/www\.lefigaro\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    },
+    "lefigaro_docker": {
+        "sitemap_index": None,
+        "sitemap_url": "http://nginxtest:80/sitemap_news_figaro_3.xml",
         "regex_section": r"^https:\/\/www\.lefigaro\.fr\/(?P<section>[\/\w-]*)\/.+$",
     }
 }

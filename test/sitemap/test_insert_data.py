@@ -19,15 +19,10 @@ def test_section():
     parse_section("test, pizza") == "test,pizza"
 
 def test_get_sitemap_list():
-    sitemap = get_sitemap_list()
-    # locally, we test only one item
-    assert len(sitemap) == 1
-
-#TODO def test_query_one_sitemap_and_transform():
-# sitemap = get_sitemap_list()
-#  for media, sitemap_conf in sitemap_list:
-#         try:
-#             df = query_one_sitemap_and_transform(media, sitemap_conf)
+    sitemap = list(get_sitemap_list())[0]
+    # locally we test only a few items
+    sitemap_url = sitemap
+    sitemap_url == "http://nginxtest:80/sitemap_news_figaro_3.xml"
 
 def test_add_primary_key():
     df = pd.DataFrame(

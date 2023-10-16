@@ -41,6 +41,9 @@ def test_query_one_sitemap_and_transform():
 
     # warning : hard to compare almost the same timestamp
     expected_result['download_date'] = output['download_date']
+
+    # it depends on docker or local, so we don't bother
+    expected_result['sitemap'] = output['sitemap']
     pd.testing.assert_frame_equal(output.head(1), expected_result)
 
 

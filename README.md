@@ -220,7 +220,10 @@ Depending on your installation process and version, "python" can also be "python
 ### How to scrap 
 The scrapping of sitemap.xml is done using the library [advertools.](https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#)
 
-Learn more about site map here : https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap?visit_id=638330401920319694-749283483&rd=1&hl=fr
+Learn more about [site maps here](https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap?visit_id=638330401920319694-749283483&rd=1&hl=fr).
+
+#### Scrap every sitemaps
+By default, we use a env variable `ENV` to only parse from localhost. If you set this value to another thing that `docker` or `dev`, it will parse everything.
 
 ## Test
 Thanks to the nginx container, we can have a local server for sitemap :

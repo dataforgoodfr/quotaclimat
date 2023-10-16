@@ -31,7 +31,7 @@ def test_query_one_sitemap_and_transform():
         "news_genres" :"Blog",
         "image_loc" :"https://i.f1g.fr/media/cms/orig/2023/10/12/eccf7495cede8869a8a35d6fd70a1635759a12dbef68dd16e82e34162f69ec4f.jpg",
         "image_caption" :"Explosion dans le centre de la ville de Gaza ce jeudi 12 octobre.",
-        "sitemap" :"http://nginxtest:80/sitemap_news_figaro_3.xml",
+        "sitemap" :sitemap_config[media]["sitemap_url"],
         "sitemap_last_modified" :pd.Timestamp("2023-10-12 15:52:41+00:00"),
         "download_date": pd.Timestamp.now(),
         "section" :["international"],
@@ -42,8 +42,6 @@ def test_query_one_sitemap_and_transform():
     # warning : hard to compare almost the same timestamp
     expected_result['download_date'] = output['download_date']
 
-    # it depends on docker or local, so we don't bother
-    expected_result['sitemap'] = output['sitemap']
     pd.testing.assert_frame_equal(output.head(1), expected_result)
 
 

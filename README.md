@@ -184,6 +184,9 @@ poetry add ntlk
 After commiting to the repo, other team members will be able to use the exact same environment you are using. 
 
 ## Docker
+First, have docker and compose [installed on your computer](https://docs.docker.com/compose/install/#installation-scenarios)
+
+Then to start the different services
 ```
 ## To run only one service, have a look to docker-compose.yml and pick one service :
 docker compose up sitemap_app
@@ -220,6 +223,10 @@ The scrapping of sitemap.xml is done using the library [advertools.](https://adv
 Learn more about site map here : https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap?visit_id=638330401920319694-749283483&rd=1&hl=fr
 
 ## Test
+Thanks to the nginx container, we can have a local server for sitemap :
+* http://localhost:8000/sitemap_news_figaro_3.xml
+
+
 ```
 docker compose up -d nginx # used to scrap sitemap locally - a figaro like website with only 3 news
 pytest test # "test" is the folder containing tests

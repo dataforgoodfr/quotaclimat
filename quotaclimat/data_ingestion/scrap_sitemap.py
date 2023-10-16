@@ -15,11 +15,7 @@ from postgres.schemas.models import get_sitemap_cols
 # TODO: silence advertools loggings
 # TODO: add slack login
 # TODO: add data models
-def cure_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Clean df from unused columns"""
 
-    df = df.rename(columns={"loc": "url"})
-    return df
 
 def find_sections(url: str, media: str, sitemap_config=SITEMAP_CONFIG) -> List[str]:
     """Find and parse section with url"""
@@ -118,66 +114,8 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
     df["media_type"] = MEDIA_CONFIG[media]["type"]
     df = clean_surrounding_whitespaces_df(df)
     df = df.drop(columns=["etag", "sitemap_size_mb", "news", "news_publication", "image"])
-    sanity_check() # TODO data model here
+
     return df
-
-
-def sanity_check():
-    """Checks if the data is correct, input a df"""
-    # TODO data model here
-    return
-
-
-def write_df(df: pd.DataFrame, media: str):
-    """Write the extracted dataframe to standardized path"""
-
-    landing_path_media = "data_public/sitemap_dumps/media_type=%s/%s.json" % (
-        MEDIA_CONFIG[media]["type"],
-        media,
-    )
-    if not os.path.exists(landing_path_media):
-        previous_entries = {}
-        logging.info("Writing to %s for the first time" % landing_path_media)
-
-    else:
-        with open(landing_path_media) as f:
-            previous_entries = json.load(f)
-    previous_entries = insert_or_update_entry(df, previous_entries)
-    with open(landing_path_media, "w+") as f:
-        json.dump(previous_entries, f)
-
-
-def insert_or_update_entry(df_one_media: pd.DataFrame, dict_previous_entries: dict):
-    df_one_media.set_index("url", inplace=True)
-    for row in df_one_media.sort_values("download_date").iterrows():
-        if row[0] not in dict_previous_entries:  # new entry
-            dict_previous_entries.update(
-                {
-                    row[0]: {
-                        "news_title": row[1]["news_title"],
-                        "image_caption": row[1]["image_caption"],
-                        "download_date": row[1]["download_date"].strftime("%Y-%m-%d"),
-                        "publication_name": row[1]["publication_name"],
-                        "news_publication_date": row[1][
-                            "news_publication_date"
-                        ].strftime("%Y-%m-%d"),
-                        "news_keywords": row[1]["news_keywords"],
-                        "section": row[1]["section"],
-                        "media_type": row[1]["media_type"],
-                        "download_date_last": row[1]["download_date"].strftime(
-                            "%Y-%m-%d"
-                        ),
-                    }
-                }
-            )
-        else:  # this will update download_date_last, without updating download_date
-            dict_previous_entries[row[0]].update(
-                {
-                    "download_date_last": row[1]["download_date"].strftime("%Y-%m-%d"),
-                }
-            )  # we update download_date_last with the current (new) download_date
-    return dict_previous_entries
-
 
 def run():
     for media, sitemap_conf in SITEMAP_CONFIG.items():

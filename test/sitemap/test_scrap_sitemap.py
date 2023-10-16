@@ -41,6 +41,9 @@ def test_query_one_sitemap_and_transform():
 
     # warning : hard to compare almost the same timestamp
     expected_result['download_date'] = output['download_date']
+    expected_result['sitemap_last_modified'] = output['sitemap_last_modified']
+    expected_result['lastmod'] = output['lastmod']
+    expected_result['news_publication_date'] = output['news_publication_date']
 
     pd.testing.assert_frame_equal(output.head(1), expected_result)
 

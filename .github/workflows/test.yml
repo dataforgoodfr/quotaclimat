@@ -48,6 +48,8 @@ jobs:
           installer-parallel: true
       - name: poetry install
         run: poetry install
+      - name: docker compose up nginx
+        run: docker compose up nginxtest
       - name: pytest run
         run: "poetry run pytest --cov test test/"
         env:

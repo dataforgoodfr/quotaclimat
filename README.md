@@ -217,6 +217,8 @@ Depending on your installation process and version, "python" can also be "python
 ### How to scrap 
 The scrapping of sitemap.xml is done using the library [advertools.](https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#)
 
+Learn more about site map here : https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap?visit_id=638330401920319694-749283483&rd=1&hl=fr
+
 ## Test
 ```
 pytest test # "test" is the folder containing tests

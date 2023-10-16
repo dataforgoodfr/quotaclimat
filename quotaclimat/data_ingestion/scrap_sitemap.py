@@ -31,9 +31,12 @@ def find_sections(url: str, media: str, sitemap_config=SITEMAP_CONFIG) -> List[s
             sitemap_config[media]["regex_section"], clean_url_from_date
         )
 
-        return search_url.group("section").split("/") if search_url else ["unknown"]
+        output = search_url.group("section").split("/") if search_url else ["unknown"]
+        output = list(filter(lambda x: "article" not in x.lower() and not x.isdigit(), output))
+        output = list(map(lambda item: item.replace("_", "-"), output))
+        return output
     else:  # regex not defined
-        return "unknown"
+        return ["unknown"]
 
 
 def get_sections(df: pd.DataFrame) -> pd.DataFrame:
@@ -100,7 +103,7 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
             "Sitemap query error for %s: %s does not match regexp."
             % (media, sitemap_conf["sitemap_url"])
         )
-        return
+        return None
     cols = get_sitemap_cols()
 
     df_template_db = pd.DataFrame(columns=cols)
@@ -116,7 +119,7 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
 
     df["media_type"] = MEDIA_CONFIG[media]["type"]
     df = clean_surrounding_whitespaces_df(df)
-    sanity_check()
+    sanity_check() # TODO data model here
     return df
 
 

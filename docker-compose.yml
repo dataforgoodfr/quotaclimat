@@ -27,7 +27,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    entrypoint: ["poetry", "run", "pytest", "--cov", "test", "test/"]
+    entrypoint: ["poetry", "run", "pytest", "-v", "--cov", "test", "test/"]
     environment:
       ENV: dev
       PYTHONPATH: /app

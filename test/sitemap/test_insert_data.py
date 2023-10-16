@@ -1,13 +1,12 @@
 import logging
 
-import numpy as np
 import pandas as pd
-import pytest
+
 
 from postgres.insert_data import (add_primary_key, clean_data,
                                   insert_data_in_sitemap_table)
 
-from quotaclimat.data_ingestion.ingest_db.ingest_sitemap_in_db import get_sitemap_list
+
                                  
 from postgres.insert_existing_data_example import (
     parse_section, transformation_from_dumps_to_table_entry)
@@ -17,12 +16,6 @@ from postgres.schemas.models import create_tables, get_sitemap
 def test_section():
     parse_section("test") == "test"
     parse_section("test, pizza") == "test,pizza"
-
-def test_get_sitemap_list():
-    sitemap = list(get_sitemap_list())[0]
-    # locally we test only a few items
-    sitemap_url = sitemap
-    sitemap_url == "http://nginxtest:80/sitemap_news_figaro_3.xml"
 
 def test_add_primary_key():
     df = pd.DataFrame(

@@ -60,7 +60,7 @@ services:
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     entrypoint: ["python", "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py", "-p", "password"]
     environment:
-      ENV: dev
+      ENV: docker
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre

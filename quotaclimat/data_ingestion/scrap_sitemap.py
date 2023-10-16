@@ -8,35 +8,56 @@ from typing import Dict, List
 import advertools as adv
 import pandas as pd
 
-from quotaclimat.data_ingestion.config_sitmap import (MEDIA_CONFIG,
-                                                      SITEMAP_CONFIG)
+from quotaclimat.data_ingestion.config_sitmap import (SITEMAP_CONFIG, SITEMAP_TEST_CONFIG, SITEMAP_DOCKER_CONFIG, MEDIA_CONFIG)
 from postgres.schemas.models import get_sitemap_cols
+
 
 # TODO: silence advertools loggings
 # TODO: add slack login
 # TODO: add data models
 
 
-def find_sections(url: str, media: str, sitemap_config=SITEMAP_CONFIG) -> List[str]:
+def get_sitemap_list():
+    dev_env=os.environ.get("ENV") == "dev" or os.environ.get("ENV") == "docker"
+    
+    if(dev_env):
+        if(os.environ.get("ENV") == "docker"):
+            logging.info("Testing locally - docker")
+            return SITEMAP_DOCKER_CONFIG
+        else:
+            logging.info("Testing locally - without docker")
+            return SITEMAP_TEST_CONFIG
+    else:
+        logging.info("Using all the websites (production config)")
+        return SITEMAP_CONFIG
+
+def find_sections(url: str, media: str, sitemap_config) -> List[str]:
     """Find and parse section with url"""
-    if sitemap_config[media]["regex_section"] is not None:
+
+    default_output = ["unknown"]
+    logging.debug("section %s from %s" % (url, media))
+
+    if sitemap_config["regex_section"] is not None:
+        logging.debug("extract from %s", media)
         clean_url_from_date = re.sub(r"\/[0-9]{2,4}\/[0-9]{2,4}\/[0-9]{2,4}", "", url)
         search_url = re.search(
-            sitemap_config[media]["regex_section"], clean_url_from_date
+            sitemap_config["regex_section"], clean_url_from_date
         )
-
-        output = search_url.group("section").split("/") if search_url else ["unknown"]
+        logging.debug("regex %s", sitemap_config["regex_section"])
+        output = search_url.group("section").split("/") if search_url else default_output
         output = list(filter(lambda x: "article" not in x.lower() and not x.isdigit(), output))
         output = list(map(lambda item: item.replace("_", "-"), output))
+
         return output
     else:  # regex not defined
-        return ["unknown"]
+        return default_output
 
 
-def get_sections(df: pd.DataFrame) -> pd.DataFrame:
+def get_sections(df: pd.DataFrame, sitemap_config) -> pd.DataFrame:
     """Get sections and apply it to df"""
 
-    df["section"] = df.apply(lambda x: find_sections(x.url, x.media), axis=1)
+    logging.debug("extract sections from url")
+    df["section"] = df.apply(lambda x: find_sections(x.url, x.media, sitemap_config), axis=1)
 
     return df
 
@@ -104,29 +125,16 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
     temp_df = pd.concat([temp_df, df_template_db])
     temp_df.rename(columns={"loc": "url"}, inplace=True)
     temp_df["media"] = media
-    df = get_sections(temp_df)
-    df = change_datetime_format(df)
 
+    df = get_sections(temp_df, sitemap_conf)
+
+    df = change_datetime_format(df)
     date_label = sitemap_conf.get("filter_date_label", None)
     if date_label is not None:
         df = filter_on_date(df, date_label=date_label)
-
     df["media_type"] = MEDIA_CONFIG[media]["type"]
+
     df = clean_surrounding_whitespaces_df(df)
-    df = df.drop(columns=["etag", "sitemap_size_mb", "news", "news_publication", "image"])
+    df = df.drop(columns=["etag", "sitemap_size_mb", "news", "news_publication", "image"], errors='ignore')
 
     return df
-
-def run():
-    for media, sitemap_conf in SITEMAP_CONFIG.items():
-        logging.info("Reading for %s: with conf %s" % (media, sitemap_conf))
-        try:
-            df = query_one_sitemap_and_transform(media, sitemap_conf)
-            write_df(df, media)
-        except Exception as err:
-            logging.error("Could not write data for %s: %s" % (media, err))
-            continue
-
-
-if __name__ == "__main__":
-    run()

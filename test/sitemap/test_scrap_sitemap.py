@@ -4,18 +4,21 @@ import numpy as np
 import pandas as pd
 import os 
 from quotaclimat.data_ingestion.scrap_sitemap import (find_sections, query_one_sitemap_and_transform)
-from quotaclimat.data_ingestion.config_sitmap import (MEDIA_CONFIG,
-                                                      SITEMAP_TEST_CONFIG)
+from quotaclimat.data_ingestion.config_sitmap import (SITEMAP_CONFIG)
+
+from quotaclimat.data_ingestion.ingest_db.ingest_sitemap_in_db import get_sitemap_list
+
+def test_get_sitemap_list():
+    sitemap = list(get_sitemap_list())[0]
+    # locally we test only a few items
+    sitemap_url = sitemap
+    sitemap_url == "http://nginxtest:80/sitemap_news_figaro_3.xml"
 
 def test_query_one_sitemap_and_transform():
-    sitemap_config = None
-    if(os.environ.get("ENV") == "docker"):
-        logging.info("Testing locally")
-        sitemap_config = SITEMAP_TEST_CONFIG["lefigaro_docker"]
-    else:
-        sitemap_config = SITEMAP_TEST_CONFIG["lefigaro"]
+    sitemap_config = get_sitemap_list()
 
-    output = query_one_sitemap_and_transform("lefigaro", sitemap_config)
+    media = "lefigaro"
+    output = query_one_sitemap_and_transform(media, sitemap_config[media])
 
     expected_result = pd.DataFrame([{
         "url" :"https://www.lefigaro.fr/international/en-direct-conflit-hamas-israel-l-etat-hebreu-poursuit-son-pilonnage-de-la-bande-de-gaza-en-promettant-de-detruire-le-hamas-20231012",
@@ -42,27 +45,29 @@ def test_query_one_sitemap_and_transform():
 
 
 def test_find_sections():
+    sitemap_config = SITEMAP_CONFIG
+
     url_franceinfo = "https://www.francetvinfo.fr/monde/proche-orient/israel-palestine/direct-guerre-entre-israel-et-le-hamas-l-occupation-de-la-bande-de-gaza-serait-une-grave-erreur-previent-joe-biden_6125127.html"
-    output = find_sections(url_franceinfo, "francetvinfo")
+    output = find_sections(url_franceinfo, "francetvinfo", sitemap_config["francetvinfo"])
     assert output == ['monde', 'proche-orient', 'israel-palestine']
 
     url_lemonde = "https://www.lemonde.fr/emploi/article/2023/10/16/que-sait-on-du-travail-plus-d-un-tiers-des-salaries-ont-un-rythme-de-travail-impose-par-un-controle-informatise_6194727_1698637.html"
-    assert find_sections(url_lemonde, "lemonde") == ["emploi"]
+    assert find_sections(url_lemonde, "lemonde", sitemap_config["lemonde"]) == ["emploi"]
 
     url_lefigaro = "https://www.lefigaro.fr/sports/rugby/coupe-du-monde/coupe-du-monde-de-rugby-une-bagarre-eclate-dans-les-tribunes-pendant-angleterre-fidji-20231015"
-    assert find_sections(url_lefigaro, "lefigaro") == ['sports', 'rugby', 'coupe-du-monde']
+    assert find_sections(url_lefigaro, "lefigaro", sitemap_config["lefigaro"]) == ['sports', 'rugby', 'coupe-du-monde']
 
     url_lesechos = "https://www.lesechos.fr/finance-marches/marches-financiers/limpensable-resurrection-de-ftx-en-plein-proces-de-sam-bankman-fried-1987274"
-    assert find_sections(url_lesechos, "lesechos") == ["finance-marches", "marches-financiers"]
+    assert find_sections(url_lesechos, "lesechos", sitemap_config["lesechos"]) == ["finance-marches", "marches-financiers"]
 
     url_midilibre = "https://www.midilibre.fr/2023/10/15/une-rixe-a-lentree-de-la-boite-de-nuit-a-saint-jean-de-vedas-ce-dimanche-15-octobre-11520905.php"
-    assert find_sections(url_midilibre, "midilibre") == ["unknown"]
+    assert find_sections(url_midilibre, "midilibre", sitemap_config["midilibre"]) == ["unknown"]
 
     url_liberation = "https://www.liberation.fr/international/moyen-orient/guerre-hamas-israel-a-ramallah-siege-de-lautorite-palestinienne-lintifada-qui-ne-vient-pas-20231016_37VO7KNPJJAZXFFCVBDQ24KTME/"
-    assert find_sections(url_liberation, "liberation") == ["international", "moyen-orient"]
+    assert find_sections(url_liberation, "liberation", sitemap_config["liberation"]) == ["international", "moyen-orient"]
 
     url_20minutes = "https://www.20minutes.fr/sport/rugby/coupe_du_monde_de_rugby/4057884-20231016-angleterre-fidji-tres-bon-travail-xv-rose-trop-confiant-malgre-victoire-poussive"
-    assert find_sections(url_20minutes, "20_minutes") == ["sport", "rugby", "coupe-du-monde-de-rugby"]
+    assert find_sections(url_20minutes, "20_minutes", sitemap_config["20_minutes"]) == ["sport", "rugby", "coupe-du-monde-de-rugby"]
 
     url_laprovence = "https://www.laprovence.com/article/sports/6599160924963815/coupe-du-monde-de-rugby-antoine-dupont-larbitrage-na-pas-ete-a-la-hauteu"
-    assert find_sections(url_laprovence, "laprovence") == ["sports"]
+    assert find_sections(url_laprovence, "laprovence", sitemap_config["laprovence"]) == ["sports"]

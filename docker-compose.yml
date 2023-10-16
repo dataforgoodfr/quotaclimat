@@ -8,6 +8,7 @@ services:
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     entrypoint: ["python", "quotaclimat/data_ingestion/scrap_sitemap.py"]
     environment:
+      ENV: dev
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre
@@ -28,6 +29,7 @@ services:
       dockerfile: Dockerfile
     entrypoint: ["poetry", "run", "pytest", "--cov", "test", "test/"]
     environment:
+      ENV: dev
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre
@@ -58,6 +60,7 @@ services:
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     entrypoint: ["python", "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py", "-p", "password"]
     environment:
+      ENV: dev
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre
@@ -82,6 +85,7 @@ services:
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     entrypoint: ["poetry", "run", "python", "-m", "streamlit", "run", "app.py"]
     environment:
+      ENV: dev
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre

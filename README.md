@@ -221,6 +221,7 @@ Learn more about site map here : https://developers.google.com/search/docs/crawl
 
 ## Test
 ```
+docker compose up nginx # used to scrap sitemap locally
 pytest test # "test" is the folder containing tests
 # OR
 docker compose up test # test is the container name running pytest test

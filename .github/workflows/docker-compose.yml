@@ -1,8 +1,7 @@
 name: Docker Compose CI
 
 on:
-  pull_request:
-    branches: [ main ]
+  workflow_dispatch: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
 
 jobs:
   build:

@@ -113,10 +113,10 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
         logging.info("Parsing %s with %s" % (media, sitemap_conf["sitemap_url"]))
         #@see https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#news-sitemaps
         temp_df = adv.sitemap_to_df(sitemap_conf["sitemap_url"])
-    except AttributeError:
+    except (AttributeError, err):
         logging.error(
-            "Sitemap query error for %s: %s does not match regexp."
-            % (media, sitemap_conf["sitemap_url"])
+            "Sitemap query error for %s: %s does not match regexp : %s"
+            % (media, sitemap_conf["sitemap_url"], err)
         )
         return None
     cols = get_sitemap_cols()

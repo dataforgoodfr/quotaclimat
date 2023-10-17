@@ -31,24 +31,40 @@ def get_sitemap_list():
         logging.info("Using all the websites (production config)")
         return SITEMAP_CONFIG
 
+def get_sections_from_url(url, sitemap_config, default_output):
+    logging.debug("regex %s", sitemap_config["regex_section"])
+    clean_url_from_date = re.sub(r"\/[0-9]{2,4}\/[0-9]{2,4}\/[0-9]{2,4}", "", str(url))
+
+    search_url = re.search(
+        sitemap_config["regex_section"], clean_url_from_date
+    )
+
+    output = search_url.group("section").split("/") if search_url else default_output
+
+    return output
+
+def normalize_section(sections):
+    output = list(filter(lambda x: "article" not in x.lower() and not x.isdigit(), sections))
+    output = list(map(lambda item: item.replace("_", "-"), output))
+
+    return output
+
 def find_sections(url: str, media: str, sitemap_config) -> List[str]:
     """Find and parse section with url"""
 
     default_output = ["unknown"]
-    logging.debug("section %s from %s" % (url, media))
+    logging.debug("Url to parse %s from %s" % (url, media))
 
     if sitemap_config["regex_section"] is not None:
-        logging.debug("extract from %s", media)
-        clean_url_from_date = re.sub(r"\/[0-9]{2,4}\/[0-9]{2,4}\/[0-9]{2,4}", "", url)
-        search_url = re.search(
-            sitemap_config["regex_section"], clean_url_from_date
-        )
-        logging.debug("regex %s", sitemap_config["regex_section"])
-        output = search_url.group("section").split("/") if search_url else default_output
-        output = list(filter(lambda x: "article" not in x.lower() and not x.isdigit(), output))
-        output = list(map(lambda item: item.replace("_", "-"), output))
-
-        return output
+        try:
+            output = get_sections_from_url(url, sitemap_config, default_output)
+            return normalize_section(output)
+        except Exception as err:
+            logging.error(
+                "Cannot find section for media %s with url %s:\n %s"
+                % (media, url, err)
+            )
+            return default_output
     else:  # regex not defined
         return default_output
 
@@ -113,28 +129,29 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
         logging.info("Parsing %s with %s" % (media, sitemap_conf["sitemap_url"]))
         #@see https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#news-sitemaps
         temp_df = adv.sitemap_to_df(sitemap_conf["sitemap_url"])
-    except (AttributeError, err):
+        temp_df.rename(columns={"loc": "url"}, inplace=True)
+    
+        cols = get_sitemap_cols()
+
+        df_template_db = pd.DataFrame(columns=cols)
+        temp_df = pd.concat([temp_df, df_template_db])
+        temp_df["media"] = media
+
+        df = get_sections(temp_df, sitemap_conf)
+
+        df = change_datetime_format(df)
+        date_label = sitemap_conf.get("filter_date_label", None)
+        if date_label is not None:
+            df = filter_on_date(df, date_label=date_label)
+        df["media_type"] = MEDIA_CONFIG[media]["type"]
+
+        df = clean_surrounding_whitespaces_df(df)
+        df = df.drop(columns=["etag", "sitemap_size_mb", "news", "news_publication", "image"], errors='ignore')
+
+        return df
+    except Exception as err:
         logging.error(
             "Sitemap query error for %s: %s does not match regexp : %s"
             % (media, sitemap_conf["sitemap_url"], err)
         )
         return None
-    cols = get_sitemap_cols()
-
-    df_template_db = pd.DataFrame(columns=cols)
-    temp_df = pd.concat([temp_df, df_template_db])
-    temp_df.rename(columns={"loc": "url"}, inplace=True)
-    temp_df["media"] = media
-
-    df = get_sections(temp_df, sitemap_conf)
-
-    df = change_datetime_format(df)
-    date_label = sitemap_conf.get("filter_date_label", None)
-    if date_label is not None:
-        df = filter_on_date(df, date_label=date_label)
-    df["media_type"] = MEDIA_CONFIG[media]["type"]
-
-    df = clean_surrounding_whitespaces_df(df)
-    df = df.drop(columns=["etag", "sitemap_size_mb", "news", "news_publication", "image"], errors='ignore')
-
-    return df

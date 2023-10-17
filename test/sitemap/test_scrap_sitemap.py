@@ -3,10 +3,22 @@ import logging
 import numpy as np
 import pandas as pd
 import os 
-from quotaclimat.data_ingestion.scrap_sitemap import (find_sections, query_one_sitemap_and_transform)
+from quotaclimat.data_ingestion.scrap_sitemap import (find_sections, query_one_sitemap_and_transform, get_sections_from_url, normalize_section)
 from quotaclimat.data_ingestion.config_sitmap import (SITEMAP_CONFIG)
 
 from quotaclimat.data_ingestion.ingest_db.ingest_sitemap_in_db import get_sitemap_list
+
+def test_normalize_section():
+    assert normalize_section(["test", "pizza"]) == ["test", "pizza"]
+    assert normalize_section(["test", "12312"]) == ["test"]
+    assert normalize_section(["test_15", "12312"]) == ["test-15"]
+
+def test_get_sections_from_url():
+    sitemap_config = get_sitemap_list()
+    url = "https://www.lefigaro.fr/international/en-direct-conflit-hamas-israel-l-etat-hebreu-poursuit-son-pilonnage-de-la-bande-de-gaza-en-promettant-de-detruire-le-hamas-20231012"
+    output = get_sections_from_url(url, sitemap_config["lefigaro"], default_output=[""]) 
+
+    assert output == ['international']
 
 def test_get_sitemap_list():
     sitemap = list(get_sitemap_list())[0]

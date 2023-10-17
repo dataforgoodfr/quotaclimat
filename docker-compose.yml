@@ -8,6 +8,7 @@ services:
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     entrypoint: ["python", "quotaclimat/data_ingestion/scrap_sitemap.py"]
     environment:
+      ENV: dev
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre
@@ -26,8 +27,9 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    entrypoint: ["poetry", "run", "pytest", "--cov", "test", "test/"]
+    entrypoint: ["poetry", "run", "pytest", "-v", "--cov", "test", "test/"]
     environment:
+      ENV: docker
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre
@@ -41,6 +43,14 @@ services:
       - ./app.py:/app/app.py
     depends_on:
       - postgres_db
+      - nginxtest
+
+  nginxtest: # to test locally webpages
+    image: nginx:latest
+    ports:
+      - 8000:80
+    volumes:
+      - './mockwebsite:/usr/share/nginx/html'
 
   ingest_to_db:
     container_name: ingest_to_db
@@ -50,6 +60,7 @@ services:
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     entrypoint: ["python", "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py", "-p", "password"]
     environment:
+      ENV: docker
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre
@@ -74,6 +85,7 @@ services:
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     entrypoint: ["poetry", "run", "python", "-m", "streamlit", "run", "app.py"]
     environment:
+      ENV: dev
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre

@@ -3,9 +3,6 @@ name: db_ingestion_by_scraping_sitemap
 on:
   workflow_dispatch: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
 
-  schedule: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
-    - cron:  '00 2 * * *'  # every day at 02:00 UTC
-
 env:
   PYTHON_VERSION: '3.11'
   POETRY_VERSION: '1.6.1'

@@ -29,15 +29,15 @@ def clean_data(df: pd.DataFrame):
 # from https://stackoverflow.com/a/69421596/3535853
 def insert_or_do_nothing_on_conflict(table, conn, keys, data_iter):
     data = [dict(zip(keys, row)) for row in data_iter]
-    logging.info("data_iter %s", data)
+    logging.debug("data_iter %s", data)
     insert_statement = insert(table.table).values(data)
 
     on_duplicate_key_stmt = insert_statement.on_conflict_do_update(
         constraint=f"{table.table.name}_pkey",
         set_={c.key: c for c in insert_statement.excluded},
     )
-    # insert_statement.on_conflict_do_update(index_elements=['id'])
-    logging.info("insert_statement %s", on_duplicate_key_stmt)
+
+    logging.debug("insert_statement %s", on_duplicate_key_stmt)
     return conn.execute(on_duplicate_key_stmt)
 
 
@@ -51,7 +51,7 @@ def insert_data_in_sitemap_table(df: pd.DataFrame):
     logging.debug("Could  save%s" % (df.head(1).to_string()))
     conn = connect_to_db()
     try:
-        logging.debug("Schema before saving\n%s", df.dtypes)
+        logging.info("Schema before saving\n%s", df.dtypes)
         df.to_sql(
             sitemap_table,
             index=False,
@@ -60,5 +60,6 @@ def insert_data_in_sitemap_table(df: pd.DataFrame):
             chunksize=1000,
             method=insert_or_do_nothing_on_conflict,  # pandas does not handle conflict natively
         )
+        logging.info("Saved dataframe to PG")
     except Exception as err:
         logging.error("Could not save : \n %s \n %s" % (err, df.head(1).to_string()))

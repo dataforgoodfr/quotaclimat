@@ -44,6 +44,11 @@ SITEMAP_CONFIG = {
         "sitemap_url": "https://www.lamarseillaise.fr/sitemapforgoogle.xml",  # lien recursif en fait
         "regex_section": r"^https:\/\/www\.lamarseillaise\.fr\/(?P<section>[\/\w-]*)\/.+$",
     },
+    "laprovence": {
+        "sitemap_index": None,
+        "site_url": "https://www.laprovence.com/googlenews.xml",
+        "regex_section": r"^https:\/\/www\.laprovence\.com\/(?P<section>[\/\w-]*)\/.+$",
+    },
     "lequipe": {
         "sitemap_index": "https://www.lequipe.fr/sitemap.xml",
         "sitemap_url": "https://www.lequipe.fr/sitemap/sitemap_google_news_premium.xml",  # https://www.lequipe.fr/sitemap/sitemap_google_news_gratuit.xml aussi ?
@@ -84,11 +89,11 @@ SITEMAP_CONFIG = {
         "regex_section": None,  # articles en year/month/day/titre
         "filter_date_label": "lastmod",
     },
-    "letelegramme": {
-        "sitemap_index": None,
-        "sitemap_url": "https://www.letelegramme.fr/metasitemap_news.xml",
-        "regex_section": r"^https:\/\/www\.letelegramme\.fr\/(?P<section>[\/\w-]*)\/.+$",
-    },
+    # "letelegramme": { #TODO fix me
+    #     "sitemap_index": None,
+    #     "sitemap_url": "https://www.letelegramme.fr/metasitemap_news.xml",
+    #     "regex_section": r"^https:\/\/www\.letelegramme\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    # },
 }
 
 MEDIA_CONFIG = {
@@ -127,11 +132,11 @@ MEDIA_CONFIG = {
         "type": "webpress",
         "coverage": "national",
     },
-    "letelegramme": {
-        "site_url": "https://www.letelegramme.fr/",
-        "type": "webpress",
-        "coverage": "regional",
-    },
+    # "letelegramme": { #TODO Fix me
+    #     "site_url": "https://www.letelegramme.fr/",
+    #     "type": "webpress",
+    #     "coverage": "regional",
+    # },
     "le_point": {
         "site_url": "https://www.lepoint.fr/",
         "type": "webpress",
@@ -182,6 +187,11 @@ MEDIA_CONFIG = {
         "type": "webpress",
         "coverage": "regional",
     },
+    "laprovence": {
+        "site_url": "https://www.laprovence.com/googlenews.xml",
+        "type": "webpress",
+        "coverage": "regional",
+    },
     "centrepresseaveyron": {
         "site_url": "https://www.centrepresseaveyron.fr/",
         "type": "webpress",
@@ -192,4 +202,20 @@ MEDIA_CONFIG = {
         "type": "webpress",
         "coverage": "regional",
     },
+}
+
+SITEMAP_TEST_CONFIG = {
+    "lefigaro": {
+        "sitemap_index": None,
+        "sitemap_url": "http://localhost:8000/sitemap_news_figaro_3.xml",
+        "regex_section": r"^https:\/\/www\.lefigaro\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    }
+}
+    
+SITEMAP_DOCKER_CONFIG = {
+    "lefigaro": {
+        "sitemap_index": None,
+        "sitemap_url": "http://nginxtest:80/sitemap_news_figaro_3.xml",
+        "regex_section": r"^https:\/\/www\.lefigaro\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    }
 }

@@ -1,11 +1,13 @@
 import logging
 
-import numpy as np
 import pandas as pd
-import pytest
+
 
 from postgres.insert_data import (add_primary_key, clean_data,
                                   insert_data_in_sitemap_table)
+
+
+                                 
 from postgres.insert_existing_data_example import (
     parse_section, transformation_from_dumps_to_table_entry)
 from postgres.schemas.models import create_tables, get_sitemap
@@ -14,7 +16,6 @@ from postgres.schemas.models import create_tables, get_sitemap
 def test_section():
     parse_section("test") == "test"
     parse_section("test, pizza") == "test,pizza"
-
 
 def test_add_primary_key():
     df = pd.DataFrame(
@@ -55,6 +56,7 @@ def test_transformation_from_dumps_to_table_entry():
                 "section": "testsection",
                 "image_caption": "testimage_caption",
                 "media_type": "testmedia_type",
+                "url": "testurl",
             }
         ]
     )
@@ -103,9 +105,10 @@ def test_insert_data_in_sitemap_table():
                 "download_date": pd.Timestamp("2023-10-11 13:11:00"),
                 "news_publication_date": pd.Timestamp("2023-10-11 13:10:00"),
                 "news_keywords": "testnews_keywords",
-                "section": "not pizza anymore",
+                "section": "sport",
                 "image_caption": "testimage_caption",
                 "media_type": "testmedia_type",
+                "url": "testurl",
             }
         ]
     )
@@ -116,6 +119,16 @@ def test_insert_data_in_sitemap_table():
     result = get_sitemap("testpublication_name_newtestnews_title2023-10-11 13:10:00")
 
     assert result.id == "testpublication_name_newtestnews_title2023-10-11 13:10:00"
+    assert result.publication_name == "testpublication_name_new"
+    assert result.news_title == "testnews_title"
+    assert result.download_date == pd.Timestamp("2023-10-11 13:11:00")
+    assert result.news_publication_date == pd.Timestamp("2023-10-11 13:10:00")
+    assert result.news_keywords == "testnews_keywords"
+    assert result.section == "sport"
+    assert result.image_caption == "testimage_caption"
+    assert result.media_type == "testmedia_type"
+    assert result.url == "testurl"
+
 
 
 def test_clean_data():

@@ -221,6 +221,11 @@ pytest test # "test" is the folder containing tests
 docker compose up test # test is the container name running pytest test
 ```
 
+## Deploy
+Every commit on the `main` branch will build an deploy to the Scaleway container registry a new image that will be deployed. Have a look to `.github/deploy-main.yml`.
+
+Learn [more here.](https://www.scaleway.com/en/docs/tutorials/use-container-registry-github-actions/)
+
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
 ```bash

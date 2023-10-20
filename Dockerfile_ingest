@@ -28,14 +28,10 @@ ENV PYTHONPATH=/app
 
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
-# For streamlit only
-COPY pyproject.toml poetry.lock ./
-RUN pip install poetry 
-
 # App code is include with docker-compose as well
 COPY quotaclimat ./quotaclimat
 COPY postgres ./postgres
-COPY app.py ./app.py
 
-# Docker compose overwrite this config to have only one Dockerfile
-CMD ["ls"]
+
+
+ENTRYPOINT ["python", "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py"]

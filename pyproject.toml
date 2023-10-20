@@ -20,11 +20,11 @@ python = ">=3.11.0,<3.13.0"
 pandas = "^1.5.3"
 advertools = "^0.13.2"
 xmltodict = "^0.13.0"
-streamlit-tags = "^1.2.8"
 sqlalchemy = "^2.0.21"
 psycopg2-binary = "^2.9.5"
-streamlit = "^1.27.0"
 
+streamlit = "^1.27.0"
+streamlit-tags = "^1.2.8"
 # streamlit
 plotly = "^5.10.0" 
 spacy = "^3.4.2" 

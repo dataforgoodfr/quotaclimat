@@ -19,7 +19,11 @@ jobs:
         username: nologin
         password: ${{ secrets.SCALEWAY_API_KEY }}
         registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
-    - name: Build the Docker image
-      run: docker build . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/site-scrapper
-    - name: Push the Docker Image
-      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/site-scrapper
+    - name: Build ingest_to_db image
+      run: docker build -f Dockerfile_ingest . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
+    - name: Push ingest_to_db Image
+      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
+    - name: Build streamlit image
+      run: docker build -f Dockerfile_streamlit . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
+    - name: Push streamlit Image
+      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit

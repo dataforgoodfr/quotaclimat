@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Integer, String, Text
+from sqlalchemy import Column, DateTime, String, Text
 from sqlalchemy.orm import declarative_base
 
 from postgres.database_connection import connect_to_db, get_db_session
@@ -31,7 +31,7 @@ sitemap_table = "sitemap_table"
 class Sitemap(Base):
     __tablename__ = sitemap_table
 
-    id = Column(String, primary_key=True)
+    id = Column(Text, primary_key=True)
     publication_name = Column(String, nullable=False)
     news_title = Column(Text, nullable=False)
     download_date = Column(DateTime(), default=datetime.now)
@@ -58,6 +58,21 @@ def create_tables():
 
         Base.metadata.create_all(engine, checkfirst=True)
         logging.info("Table creation done, if not already done.")
+    except (Exception) as error:
+        logging.error(error)
+    finally:
+        if engine is not None:
+            engine.dispose()
+
+def drop_tables():
+    """Drop tables in the PostgreSQL database"""
+
+    logging.warning("drop tables")
+    try:
+        engine = connect_to_db()
+
+        Base.metadata.drop_all(engine, checkfirst=True)
+        logging.info("Table deletion done")
     except (Exception) as error:
         logging.error(error)
     finally:

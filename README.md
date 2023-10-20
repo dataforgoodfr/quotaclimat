@@ -206,6 +206,8 @@ To connect to it you have use the variables used inside `docker-compose.yml` :
 * username: user
 * db: barometre
 * host : postgres_db
+#### Production metabase
+If we encounter [a OOM error](https://www.metabase.com/docs/latest/troubleshooting-guide/running.html#heap-space-outofmemoryerrors), we can set this env variable : `JAVA_OPTS=-Xmx2g`
 
 ### Run the dashboard
 ```bash

@@ -4,25 +4,42 @@ import time
 import pandas as pd
 from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import insert
+import hashlib
 
 from postgres.database_connection import connect_to_db
 from postgres.schemas.models import sitemap_table
 
+def get_consistent_hash(my_pk):
+    # Convert the object to a string representation
+    obj_str = str(my_pk)
 
+    # Create a SHA-256 hash object
+    sha256 = hashlib.sha256()
+
+    # Update the hash object with the object's string representation
+    sha256.update(obj_str.encode('utf-8'))
+
+    # Get the hexadecimal representation of the hash
+    hash_value = sha256.hexdigest()
+
+    return hash_value
+
+# hash of publication name + title 
 def add_primary_key(df):
     try:
         return (
             df["publication_name"]
             + df["news_title"]
             + df["news_publication_date"].dt.strftime("%Y-%m-%d %X")
-        )
+        ).apply(get_consistent_hash)
     except (Exception) as error:
         logging.warning(error)
-        return "empty"  #  TODO improve - should be a df value
+        return hash("empty") #  TODO improve - should be a None ?
 
 
 def clean_data(df: pd.DataFrame):
-    return df.query("id != 'empty'")  #  TODO improve
+    df = df.drop_duplicates(subset="id")
+    return df.query("id != 'empty'")  #  TODO improve - should be a None ?
 
 
 # do not save when primary key already exist - ignore duplicate key
@@ -41,15 +58,25 @@ def insert_or_do_nothing_on_conflict(table, conn, keys, data_iter):
     return conn.execute(on_duplicate_key_stmt)
 
 
-def insert_data_in_sitemap_table(df: pd.DataFrame):
+def show_sitemaps_dataframe(df: pd.DataFrame):
+    
+    df_tmp = df.groupby(by="id").size().reset_index(name="count").nlargest(5, "count")
+    df_final = df_tmp[df_tmp['count'] > 1]
+    if df_final.empty:
+        logging.info("No duplicates detected")
+    else:
+        logging.warning("Duplicates to remove : %s out of %s" % (len(df_final), len(df)))
+
+def insert_data_in_sitemap_table(df: pd.DataFrame, conn):
     logging.info("Received %s elements", df.size)
 
     # primary key for the DB to avoid duplicate data
     df["id"] = add_primary_key(df)
+    show_sitemaps_dataframe(df)
 
     df = clean_data(df)
     logging.debug("Could  save%s" % (df.head(1).to_string()))
-    conn = connect_to_db()
+    
     try:
         logging.info("Schema before saving\n%s", df.dtypes)
         df.to_sql(

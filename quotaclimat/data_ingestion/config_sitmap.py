@@ -46,7 +46,7 @@ SITEMAP_CONFIG = {
     },
     "laprovence": {
         "sitemap_index": None,
-        "site_url": "https://www.laprovence.com/googlenews.xml",
+        "sitemap_url": "https://www.laprovence.com/googlenews.xml",
         "regex_section": r"^https:\/\/www\.laprovence\.com\/(?P<section>[\/\w-]*)\/.+$",
     },
     "lequipe": {

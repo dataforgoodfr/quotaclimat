@@ -1,27 +1,5 @@
-version: '3'
+version: '3.8'
 services:
-  sitemap:
-    container_name: sitemap
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
-    entrypoint: ["python", "quotaclimat/data_ingestion/scrap_sitemap.py"]
-    environment:
-      ENV: dev
-      PYTHONPATH: /app
-      POSTGRES_USER: user
-      POSTGRES_DB: barometre
-      POSTGRES_PASSWORD: password
-      POSTGRES_HOST: postgres_db
-      POSTGRES_PORT: 5432
-    volumes:
-      - ./quotaclimat/:/app/quotaclimat/
-      - ./postgres/:/app/postgres/
-      - ./app.py:/app/app.py
-    depends_on:
-      - postgres_db
-
   test:
     container_name: test
     build:
@@ -42,11 +20,18 @@ services:
       - ./test/:/app/test/
       - ./app.py:/app/app.py
     depends_on:
-      - postgres_db
-      - nginxtest
+      nginxtest:
+        condition: service_healthy
+      postgres_db:
+        condition: service_healthy
 
   nginxtest: # to test locally webpages
     image: nginx:latest
+    healthcheck:
+      test: ["CMD", "service", "nginx", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     ports:
       - 8000:80
     volumes:
@@ -86,7 +71,6 @@ services:
     entrypoint: ["poetry", "run", "python", "-m", "streamlit", "run", "app.py"]
     environment:
       ENV: dev
-      PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre
       POSTGRES_PASSWORD: password
@@ -99,10 +83,11 @@ services:
       - ./pages/:/app/pages/
       - ./.streamlit/:/app/.streamlit/
     depends_on:
-      - postgres_db
+      postgres_db:
+        condition: service_healthy
 
   postgres_db:
-    image: postgres:13.6
+    image: postgres:15
     ports:
       - 5432:5432
     volumes:
@@ -136,4 +121,5 @@ services:
         MB_DB_FILE: "/metabase-data/metabase.db" # https://www.metabase.com/docs/latest/operations-guide/running-metabase-on-docker.html#mounting-a-mapped-file-storage-volume
         JAVA_TIMEZONE: Europe/Paris
       depends_on:
-        - postgres_db
+        postgres_db:
+          condition: service_healthy

@@ -12,14 +12,9 @@ from postgres.schemas.models import sitemap_table
 def get_consistent_hash(my_pk):
     # Convert the object to a string representation
     obj_str = str(my_pk)
-
-    # Create a SHA-256 hash object
     sha256 = hashlib.sha256()
-
     # Update the hash object with the object's string representation
     sha256.update(obj_str.encode('utf-8'))
-
-    # Get the hexadecimal representation of the hash
     hash_value = sha256.hexdigest()
 
     return hash_value
@@ -30,7 +25,7 @@ def add_primary_key(df):
         return (
             df["publication_name"]
             + df["news_title"]
-            + df["news_publication_date"].dt.strftime("%Y-%m-%d %X")
+            + pd.to_datetime(df["news_publication_date"]).dt.strftime("%Y-%m-%d %X")
         ).apply(get_consistent_hash)
     except (Exception) as error:
         logging.warning(error)
@@ -78,7 +73,7 @@ def insert_data_in_sitemap_table(df: pd.DataFrame, conn):
     logging.debug("Could  save%s" % (df.head(1).to_string()))
     
     try:
-        logging.info("Schema before saving\n%s", df.dtypes)
+        logging.debug("Schema before saving\n%s", df.dtypes)
         df.to_sql(
             sitemap_table,
             index=False,

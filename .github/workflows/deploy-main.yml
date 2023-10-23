@@ -6,13 +6,41 @@ on:
     branches:    
       - main
 
+
   # to be able to force deploy    
   workflow_dispatch:
+
+
+env:
+  PYTHON_VERSION: '3.11'
+  POETRY_VERSION: '1.6.1'
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    - uses: actions/checkout@v4
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: ${{ env.POETRY_VERSION }}
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+    - name: Poetry install & bump version
+      allow-failure: true
+      run: |
+        poetry install --only dev
+        poetry version patch
+        git config user.name barometre-github-actions
+        git config user.email barometre-github-actions@github.com
+        git add pyproject.toml
+        git commit -m "[no ci]: bumping version"
+        git push origin main
     - name: Login to Scaleway Container Registry
       uses: docker/login-action@v3
       with:

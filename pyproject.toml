@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "quotaclimat"
-version = "0.1.0"
+version = "0.1.2"
 description = ""
 authors = ["Rambier Estelle <estelle.rambier@hotmail.fr>"]
 readme = "README.md"
@@ -8,11 +8,6 @@ readme = "README.md"
 [[tool.poetry.source]]
 name = "pypi-public"
 url = "https://pypi.org/simple/"
-priority = "primary"
-
-
-[[tool.poetry.source]]
-name = "PyPI"
 priority = "primary"
 
 [tool.poetry.dependencies]
@@ -34,6 +29,8 @@ nltk = "^3.7"
 beautifulsoup4 = "^4.11.1"
 scikit-learn = "^1.2.0"
 wordcloud = "^1.8.2.2"
+asyncio = "^3.4.3"
+tomli = "^2.0.1"
 
 [build-system]
 requires = ["poetry-core>=1.1"]
@@ -42,6 +39,7 @@ build-backend = "poetry.core.masonry.api"
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.4.2"
 pytest-cov = "^3.0.0"
+poetry-bumpversion = "^0.3.1"
 pre-commit = "^2.18.1"
 black = "^22.3.0"
 isort = "^5.10.1"

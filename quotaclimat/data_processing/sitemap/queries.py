@@ -1,10 +1,8 @@
 import pandas as pd
-
+from sqlalchemy.sql import text
 
 def run_query(query, conn):
-    with conn.cursor() as cur:
-        cur.execute(query)
-        return cur.fetchall()
+    return list(conn.execute(text(query)))
 
 
 # queries TODO migrate

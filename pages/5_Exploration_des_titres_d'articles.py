@@ -16,23 +16,17 @@ from quotaclimat.data_processing.sitemap.sitemap_processing import (
     feature_engineering_sitemap, filter_df, load_all)
 from quotaclimat.utils.climate_keywords import CLIMATE_KW
 
+from postgres.database_connection import get_db_session
+
 st.set_page_config(
     layout="wide",
 )
-# Initialize connection.
-# Uses st.cache_resource to only run once.
-
-
-@st.cache_resource
-def init_connection():
-    return psycopg2.connect(**st.secrets["postgres"])
-
 
 # Initialize session
 if "key" not in st.session_state:
     st.session_state.key = "value"
 
-conn = init_connection()
+conn = get_db_session()
 date_min, date_max = query_data_coverage(conn)
 
 

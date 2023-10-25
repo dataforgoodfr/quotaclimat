@@ -34,6 +34,8 @@ RUN pip install poetry
 # App code is include with docker-compose as well
 COPY quotaclimat ./quotaclimat
 COPY postgres ./postgres
+# For streamlit only
+COPY pages ./pages 
 COPY app.py ./app.py
 
 ENV PYTHONPATH=/app

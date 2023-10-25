@@ -6,12 +6,7 @@ import streamlit as st
 from quotaclimat.data_processing.sitemap.queries import \
     percentage_article_in_section_list_per_day
 from quotaclimat.data_processing.sitemap.settings import CLIMATE_SECTION
-
-
-@st.cache_resource
-def init_connection():
-    return psycopg2.connect(**st.secrets["postgres"])
-
+from postgres.database_connection import get_db_session
 
 st.set_page_config(
     layout="wide",
@@ -21,7 +16,7 @@ st.set_page_config(
 # Fetch datas
 
 
-conn = init_connection()
+conn = get_db_session()
 
 
 df_climate_per_day = percentage_article_in_section_list_per_day(conn, CLIMATE_SECTION)

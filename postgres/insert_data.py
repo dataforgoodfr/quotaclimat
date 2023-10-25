@@ -29,7 +29,7 @@ def add_primary_key(df):
         ).apply(get_consistent_hash)
     except (Exception) as error:
         logging.warning(error)
-        return hash("empty") #  TODO improve - should be a None ?
+        return get_consistent_hash("empty") #  TODO improve - should be a None ?
 
 
 def clean_data(df: pd.DataFrame):
@@ -54,23 +54,29 @@ def insert_or_do_nothing_on_conflict(table, conn, keys, data_iter):
 
 
 def show_sitemaps_dataframe(df: pd.DataFrame):
-    
-    df_tmp = df.groupby(by="id").size().reset_index(name="count").nlargest(5, "count")
-    df_final = df_tmp[df_tmp['count'] > 1]
-    if df_final.empty:
-        logging.info("No duplicates detected")
-    else:
-        logging.warning("Duplicates to remove : %s out of %s" % (len(df_final), len(df)))
+    try:
+        df_tmp = df.groupby(by="id").size().reset_index(name="count").nlargest(5, "count")
+        df_final = df_tmp[df_tmp['count'] > 1]
+        if df_final.empty:
+            logging.debug("No duplicates detected")
+        else:
+            logging.warning("Duplicates to remove : %s out of %s" % (len(df_final), len(df)))
+    except Exception as err:
+            logging.warning("Could show sitemap before saving : \n %s \n %s" % (err, df.head(1).to_string()))
 
 def insert_data_in_sitemap_table(df: pd.DataFrame, conn):
-    logging.info("Received %s elements", df.size)
+    number_of_rows = len(df)
+    if(number_of_rows == 0):
+        logging.error("0 elements to parse")
+    else:
+        logging.info("Received %s elements", number_of_rows)
 
     # primary key for the DB to avoid duplicate data
     df["id"] = add_primary_key(df)
     show_sitemaps_dataframe(df)
 
     df = clean_data(df)
-    logging.debug("Could  save%s" % (df.head(1).to_string()))
+    logging.debug("Saving %s" % (df.head(1).to_string()))
     
     try:
         logging.debug("Schema before saving\n%s", df.dtypes)
@@ -83,5 +89,7 @@ def insert_data_in_sitemap_table(df: pd.DataFrame, conn):
             method=insert_or_do_nothing_on_conflict,  # pandas does not handle conflict natively
         )
         logging.info("Saved dataframe to PG")
+        return number_of_rows
     except Exception as err:
         logging.error("Could not save : \n %s \n %s" % (err, df.head(1).to_string()))
+        return 0

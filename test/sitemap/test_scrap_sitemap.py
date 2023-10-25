@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import os 
 from quotaclimat.data_ingestion.scrap_sitemap import (find_sections, query_one_sitemap_and_transform, get_sections_from_url, normalize_section)
-from quotaclimat.data_ingestion.config_sitmap import (SITEMAP_CONFIG)
+from quotaclimat.data_ingestion.config_sitemap import (SITEMAP_CONFIG)
 
 from quotaclimat.data_ingestion.ingest_db.ingest_sitemap_in_db import get_sitemap_list
 

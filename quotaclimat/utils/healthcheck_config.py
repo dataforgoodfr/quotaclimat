@@ -33,7 +33,7 @@ async def run_health_check_server():
         try:
             await asyncio.to_thread(httpd.serve_forever)
         except asyncio.CancelledError:
-            logging.debug("health check cancel")
+            logging.info("health check cancel")
             httpd.shutdown() # to terminal infinite loop "serve_forever"
             return
             

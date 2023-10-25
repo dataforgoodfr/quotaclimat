@@ -53,7 +53,7 @@ def test_add_primary_key():
     )
     
     df_fake["id"] = add_primary_key(df_fake)
-    assert df_fake['id'].values.take(0) == hash("empty")
+    assert df_fake['id'].values.take(0) == get_consistent_hash("empty")
 
 
 def test_transformation_from_dumps_to_table_entry():

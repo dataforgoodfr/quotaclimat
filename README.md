@@ -222,6 +222,10 @@ Depending on your installation process and version, "python" can also be "python
 ### How to scrap 
 The scrapping of sitemap.xml is done using the library [advertools.](https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#)
 
+A great way to discover sitemap.xml is to check robots.txt page of websites : https://www.midilibre.fr/robots.txt
+
+What medias to parse ? This [document](https://www.culture.gouv.fr/Thematiques/Presse-ecrite/Tableaux-des-titres-de-presse-aides2) is a good start.
+
 Learn more about [site maps here](https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap?visit_id=638330401920319694-749283483&rd=1&hl=fr).
 
 #### Scrap every sitemaps

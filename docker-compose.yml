@@ -61,8 +61,10 @@ services:
       - ./postgres/:/app/postgres/
       - ./app.py:/app/app.py
     depends_on:
-      - postgres_db
-      - metabase
+      nginxtest:
+        condition: service_healthy
+      postgres_db:
+        condition: service_healthy
 
   streamlit:
     container_name: streamlit

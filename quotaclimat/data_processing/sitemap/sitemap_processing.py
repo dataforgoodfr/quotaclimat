@@ -5,7 +5,7 @@ import re
 
 import pandas as pd
 
-from quotaclimat.data_ingestion.config_sitmap import MEDIA_CONFIG
+from quotaclimat.data_ingestion.config_sitemap import MEDIA_CONFIG
 
 LANDING_PATH_SITEMAP = "data_public/sitemap_dumps"
 LANDING_PATH_SITEMAP = "data_public/sitemap_dumps"

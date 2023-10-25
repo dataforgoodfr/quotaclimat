@@ -8,7 +8,7 @@ from typing import Dict, List
 import advertools as adv
 import pandas as pd
 
-from quotaclimat.data_ingestion.config_sitmap import (SITEMAP_CONFIG, SITEMAP_TEST_CONFIG, SITEMAP_DOCKER_CONFIG, MEDIA_CONFIG)
+from quotaclimat.data_ingestion.config_sitemap import (SITEMAP_CONFIG, SITEMAP_TEST_CONFIG, SITEMAP_DOCKER_CONFIG, MEDIA_CONFIG)
 from postgres.schemas.models import get_sitemap_cols
 
 
@@ -43,7 +43,7 @@ def get_sections_from_url(url, sitemap_config, default_output):
 
     return output
 
-def normalize_section(sections):
+def normalize_section(sections) -> List[str]:
     output = list(filter(lambda x: "article" not in x.lower() and not x.isdigit(), sections))
     output = list(map(lambda item: item.replace("_", "-"), output))
 
@@ -126,7 +126,7 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
         pd.DataFrame
     """
     try:
-        logging.info("\nParsing %s with %s\n" % (media, sitemap_conf["sitemap_url"]))
+        logging.info("\n\nParsing media %s with %s" % (media, sitemap_conf["sitemap_url"]))
         #@see https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#news-sitemaps
         temp_df = adv.sitemap_to_df(sitemap_conf["sitemap_url"])
         temp_df.rename(columns={"loc": "url"}, inplace=True)

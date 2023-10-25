@@ -34,7 +34,7 @@ def test_add_primary_key():
                 "publication_name": "testpublication_name",
                 "news_title": "testnews_title",
                 "news_publication_date": pd.Timestamp("2023-10-11 13:10:00"),
-                "id": get_consistent_hash("testpublication_name" + "testnews_title" + "2023-10-11 13:10:00"),
+                "id": get_consistent_hash("testpublication_name" + "testnews_title"),
             }
         ]
     )
@@ -129,7 +129,7 @@ def test_insert_data_in_sitemap_table():
     insert_data_in_sitemap_table(df, conn)
 
     # check the value is well existing
-    primary_key = get_consistent_hash("testpublication_name_newtestnews_title2023-10-11 13:10:00")
+    primary_key = get_consistent_hash("testpublication_name_newtestnews_title")
     result = get_sitemap(primary_key)
 
     assert result.id == primary_key

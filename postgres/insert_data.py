@@ -25,7 +25,6 @@ def add_primary_key(df):
         return (
             df["publication_name"]
             + df["news_title"]
-            + pd.to_datetime(df["news_publication_date"]).dt.strftime("%Y-%m-%d %X")
         ).apply(get_consistent_hash)
     except (Exception) as error:
         logging.warning(error)

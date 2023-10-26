@@ -159,6 +159,21 @@ SITEMAP_CONFIG = {
         "sitemap_url": "https://www.letelegramme.fr/sitemaps/sitemap-news/urlset.xml",
         "regex_section": r"^https:\/\/www\.letelegramme\.fr\/(?P<section>[\/\w-]*)\/.+$",
     },
+    "nouvelobs": {
+        "sitemap_index": None,
+        "sitemap_url": "https://www.nouvelobs.com/sitemap-articles-news.xml",
+        "regex_section": r"^https:\/\/www\.nouvelobs\.com\/(?P<section>[\/\w-]*)\/.+$",
+    },
+    "mediapart": {
+        "sitemap_index": None,
+        "sitemap_url": "https://www.mediapart.fr/news_sitemap_editor_choice.xml",
+        "regex_section": r"^https:\/\/www\.mediapart\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    },
+    "francebleu": {
+        "sitemap_index": None,
+        "sitemap_url": "https://www.francebleu.fr/sitemap-news.xml",
+        "regex_section": r"^https:\/\/www\.francebleu\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    },
 }
 
 MEDIA_CONFIG = {
@@ -207,6 +222,11 @@ MEDIA_CONFIG = {
         "type": "radio",
         "coverage": "national",
     },
+    "francebleu": {
+        "site_url": "https://www.francebleu.fr/",
+        "type": "radio",
+        "coverage": "national",
+    },
     "lemonde": {
         "site_url": "https://www.lemonde.fr/",
         "type": "webpress",
@@ -222,8 +242,18 @@ MEDIA_CONFIG = {
         "type": "webpress",
         "coverage": "national",
     },
-    "nouvel_obs": {
+    "nouvelobs": {
         "site_url": "https://www.nouvelobs.com/",
+        "type": "webpress",
+        "coverage": "national",
+    },
+    "mediapart": {
+        "site_url": "https://www.mediapart.fr/",
+        "type": "webpress",
+        "coverage": "national",
+    },
+    "reporterre": {
+        "site_url": "https://www.reporterre.fr/",
         "type": "webpress",
         "coverage": "national",
     },
@@ -507,5 +537,20 @@ SITEMAP_DOCKER_CONFIG = {
         "sitemap_index": None,
         "sitemap_url": "http://nginxtest:80/letelegramme_sitemap.xml",
         "regex_section": r"^https:\/\/www\.letelegramme\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    },
+    "francebleu": {
+        "sitemap_index": None,
+        "sitemap_url": "http://nginxtest:80/francebleu_sitemap.xml",
+        "regex_section": r"^https:\/\/www\.francebleu\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    },
+    "nouvelobs": {
+        "sitemap_index": None,
+        "sitemap_url": "http://nginxtest:80/nouvelobs_sitemap.xml",
+        "regex_section": r"^https:\/\/www\.nouvelobs\.com\/(?P<section>[\/\w-]*)\/.+$",
+    },
+    "mediapart": {
+        "sitemap_index": None,
+        "sitemap_url": "http://nginxtest:80/mediapart_sitemap.xml",
+        "regex_section": r"^https:\/\/www\.mediapart\.fr\/(?P<section>[\/\w-]*)\/.+$",
     },
 }

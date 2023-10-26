@@ -2,6 +2,7 @@ import logging
 
 import numpy as np
 import pandas as pd
+import pytest
 import os 
 from quotaclimat.data_ingestion.scrap_sitemap import (find_sections, query_one_sitemap_and_transform, get_sections_from_url, normalize_section)
 from quotaclimat.data_ingestion.config_sitemap import (SITEMAP_CONFIG)
@@ -26,14 +27,20 @@ def test_get_sitemap_list():
     sitemap_url = sitemap
     sitemap_url == "http://nginxtest:80/sitemap_news_figaro_3.xml"
 
-def test_query_one_sitemap_and_transform():
+@pytest.mark.asyncio
+async def test_query_one_sitemap_and_transform():
     sitemap_config = get_sitemap_list()
 
     media = "lefigaro"
-    output = query_one_sitemap_and_transform(media, sitemap_config[media])
+    url_to_parse = ""
+    if(os.environ.get("ENV") == "docker"):
+        url_to_parse ="http://nginxtest:80/mediapart_website.html"
+    else:
+        url_to_parse = "http://localhost:8000/mediapart_website.html"
+    output = await query_one_sitemap_and_transform(media, sitemap_config[media])
 
     expected_result = pd.DataFrame([{
-        "url" :"https://www.lefigaro.fr/international/en-direct-conflit-hamas-israel-l-etat-hebreu-poursuit-son-pilonnage-de-la-bande-de-gaza-en-promettant-de-detruire-le-hamas-20231012",
+        "url" :url_to_parse,
         "lastmod" :pd.Timestamp("2023-10-12 15:34:28"),
         "publication_name" :"Le Figaro",
         "publication_language" :"fr",
@@ -46,9 +53,10 @@ def test_query_one_sitemap_and_transform():
         "sitemap" :sitemap_config[media]["sitemap_url"],
         "sitemap_last_modified" :pd.Timestamp("2023-10-12 15:52:41+00:00"),
         "download_date": pd.Timestamp.now(),
-        "section" :["international"],
+        "section" :["unknown"],
         "media_type" :"webpress",
-        "media":"lefigaro"
+        "news_description": "description could be parsed with success",
+        "media":"lefigaro",
     }])
 
     # warning : hard to compare almost the same timestamp

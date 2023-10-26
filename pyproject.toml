@@ -32,6 +32,8 @@ wordcloud = "^1.8.2.2"
 asyncio = "^3.4.3"
 tomli = "^2.0.1"
 pandera = "^0.17.2"
+aiohttp = "^3.8.6"
+pytest-asyncio = "^0.21.1"
 
 [build-system]
 requires = ["poetry-core>=1.1"]

@@ -68,7 +68,8 @@ def test_transformation_from_dumps_to_table_entry():
                 "section": "testsection",
                 "image_caption": "testimage_caption",
                 "media_type": "testmedia_type",
-                "url": "testurl",
+                "url": "my_awesome_url",
+                "news_description": "description could be parsed with success",
             }
         ]
     )
@@ -77,7 +78,7 @@ def test_transformation_from_dumps_to_table_entry():
     df = pd.DataFrame(
         [
             {
-                "url": "testurl",
+                "url": "my_awesome_url",
                 "news": "testnews",
                 "news_publication": "testnews_publication",
                 "publication_name": "testpublication_name",
@@ -97,6 +98,7 @@ def test_transformation_from_dumps_to_table_entry():
                 "media_type": "testmedia_type",
                 "media": "testmedia",
                 "lastmod": pd.Timestamp("2023-10-11 13:10:00"),
+                "news_description": "description could be parsed with success",
             }
         ]
     )
@@ -122,6 +124,7 @@ def test_insert_data_in_sitemap_table():
                 "image_caption": "testimage_caption",
                 "media_type": "testmedia_type",
                 "url": "testurl",
+                "news_description": "description",
             }
         ]
     )
@@ -142,6 +145,7 @@ def test_insert_data_in_sitemap_table():
     assert result.image_caption == "testimage_caption"
     assert result.media_type == "testmedia_type"
     assert result.url == "testurl"
+    assert result.news_description == "description"
 
 def test_clean_data():
     df_wrong_format = pd.DataFrame([{"id": "empty"}])

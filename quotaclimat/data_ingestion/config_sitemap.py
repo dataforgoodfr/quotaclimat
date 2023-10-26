@@ -377,7 +377,7 @@ SITEMAP_TEST_CONFIG = {
     },
     "lepoint": {
         "sitemap_index": None,
-        "sitemap_ur": "http://localhost:8000/lepoint_sitemap.xml",
+        "sitemap_url": "http://localhost:8000/lepoint_sitemap.xml",
         "regex_section": r"^https:\/\/www\.lepoint\.fr\/(?P<section>[\/\w-]*)\/.+$",
     },
     "nicematin": {
@@ -427,7 +427,7 @@ SITEMAP_TEST_CONFIG = {
     },
     "lefigaro": {
         "sitemap_index": None,
-        "sitemap_url": "http://localhost:8000/lefigaro_sitemap.xml",
+        "sitemap_url": "http://localhost:8000/lefigaro_localhost_sitemap.xml",
         "regex_section": r"^https:\/\/www\.lefigaro\.fr\/(?P<section>[\/\w-]*)\/.+$",
     },
     "midilibre": {
@@ -448,6 +448,16 @@ SITEMAP_TEST_CONFIG = {
 }
     
 SITEMAP_DOCKER_CONFIG = {
+    "ouest-france": {
+        "sitemap_index": None,
+        "sitemap_url": "http://nginxtest:80/ouestfrance_sitemap.xml",
+        "regex_section": r"^https:\/\/www\.ouest-france\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    },
+    "lefigaro": {
+        "sitemap_index": None,
+        "sitemap_url": "http://nginxtest:80/lefigaro_sitemap.xml",
+        "regex_section": r"^https:\/\/www\.lefigaro\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    },
      "bfmtv": {
         "sitemap_index": None,
         "sitemap_url" : "http://nginxtest:80/bfmtv_sitemap.xml",
@@ -470,7 +480,7 @@ SITEMAP_DOCKER_CONFIG = {
     },
     "lepoint": {
         "sitemap_index": None,
-        "sitemap_ur": "http://nginxtest:80/lepoint_sitemap.xml",
+        "sitemap_url": "http://nginxtest:80/lepoint_sitemap.xml",
         "regex_section": r"^https:\/\/www\.lepoint\.fr\/(?P<section>[\/\w-]*)\/.+$",
     },
     "nicematin": {
@@ -498,11 +508,6 @@ SITEMAP_DOCKER_CONFIG = {
         "sitemap_url": "http://nginxtest:80/challenges_sitemap.xml",
         "regex_section": r"^https:\/\/www\.challenges\.fr\/(?P<section>[\/\w-]*)\/.+$",
     },
-    "ouest-france": {
-        "sitemap_index": None,
-        "sitemap_url": "http://nginxtest:80/ouestfrance_sitemap.xml",
-        "regex_section": r"^https:\/\/www\.ouest-france\.fr\/(?P<section>[\/\w-]*)\/.+$",
-    },
     "la-croix": {
         "sitemap_index": None,
         "sitemap_url" :"http://nginxtest:80/lacroix_sitemap.xml",
@@ -517,11 +522,6 @@ SITEMAP_DOCKER_CONFIG = {
         "sitemap_index": None,
         "sitemap_url": "http://nginxtest:80/franceinter_sitemap.xml",
         "regex_section": r"^https:\/\/www\.radiofrance\.fr\/franceinter\/(?P<section>[\/\w-]*)\/.+$",
-    },
-    "lefigaro": {
-        "sitemap_index": None,
-        "sitemap_url": "http://nginxtest:80/lefigaro_sitemap.xml",
-        "regex_section": r"^https:\/\/www\.lefigaro\.fr\/(?P<section>[\/\w-]*)\/.+$",
     },
     "midilibre": {
         "sitemap_index": None,

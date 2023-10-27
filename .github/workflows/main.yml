@@ -3,8 +3,8 @@ name: db_scaleway_backup
 on:
   workflow_dispatch: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
 
-  schedule: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
-    - cron:  '0 0 * * 0'  # every Sunday at 00:00
+  # schedule: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+  #  - cron:  '0 0 * * 0'  # every Sunday at 00:00
 
 env:
   PYTHON_VERSION: '3.10'

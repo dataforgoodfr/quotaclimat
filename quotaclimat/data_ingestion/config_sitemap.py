@@ -383,6 +383,11 @@ MEDIA_CONFIG = {
         "type": "webpress",
         "coverage": "regional",
     },
+    "corsematin": {
+        "site_url": "https://www.corsematin.com/",
+        "type": "webpress",
+        "coverage": "regional",
+    },
     "petitbleu": {
         "site_url": "https://www.petitbleu.fr/",
         "type": "webpress",

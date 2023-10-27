@@ -3,7 +3,8 @@ from datetime import datetime
 
 from sqlalchemy import Column, DateTime, String, Text
 from sqlalchemy.orm import declarative_base
-
+import pandas as pd
+from sqlalchemy import text
 from postgres.database_connection import connect_to_db, get_db_session
 
 Base = declarative_base()
@@ -22,6 +23,7 @@ def get_sitemap_cols():
         "media_type",
         "url",
         "news_description",
+        "id",
     ]
     return cols
 
@@ -50,6 +52,15 @@ def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
 
+def get_last_month_sitemap_id(engine): 
+    query = text("""
+    SELECT id 
+    FROM sitemap_table 
+    WHERE download_date >= (current_date - interval '1 month'); 
+    """)
+    with engine.begin() as conn:
+        df = pd.read_sql_query(query, conn)
+        return df
 
 def create_tables():
     """Create tables in the PostgreSQL database"""

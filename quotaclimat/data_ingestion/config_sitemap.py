@@ -3,176 +3,212 @@ SITEMAP_CONFIG = {
         "sitemap_index": None,
         "sitemap_url": "https://www.bfmtv.com/sitemap_news.xml",
         "regex_section": r"^https:\/\/www\.bfmtv\.com\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
-    # "lejdd": { # need custom parsing
+    # "lejdd": { # need custom parsing as sitemap is missing a lot of attributes
     #     "sitemap_index": None,
-    #     "sitemap_url": "https://www.lejdd.fr/sitemap.xml?page=1",
-    #     "regex_section": r"^https:\/\/www\.lejdd\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    #     "sitemap_url": "https://www.lejdd.fr/sitemap.xml",
+    #     "regex_section": r"^https:\/\/www\.lejdd\.fr\/(?P<section>[\/\w]*)\/.+$",
+    #     "filter_date_label": "lastmod",
     # },
     "cnews": {
         "sitemap_index": None,
         "sitemap_url": "https://www.cnews.fr/googlenews.xml",
         "regex_section": r"^https:\/\/www\.cnews\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "leparisien": {
         "sitemap_index": None,
         "sitemap_url": "https://www.leparisien.fr/arc/outboundfeeds/news-sitemap/?from=0&outputType=xml&_website=leparisien",
         "regex_section": r"^https:\/\/www\.leparisien\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "lexpress": {
         "sitemap_index": None,
         "sitemap_url": "https://www.lexpress.fr/arc/outboundfeeds/sitemap-news.xml",
         "regex_section": r"^https:\/\/www\.lexpress\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "lepoint": {
         "sitemap_index": None,
         "sitemap_url": "https://www.lepoint.fr/sitemap-news.xml",
         "regex_section": r"^https:\/\/www\.lepoint\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "nicematin": {
         "sitemap_index": None,
-        "sitemap_url": " https://www.nicematin.com/googlenews.xml",
+        "sitemap_url": "https://www.nicematin.com/googlenews.xml",
         "regex_section": r"^https:\/\/www\.nicematin\.com\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
+    },
+    "corsematin": {
+        "sitemap_index": None,
+        "sitemap_url": "https://www.corsematin.com/googlenews.xml",
+        "regex_section": r"^https:\/\/www\.corsematin\.com\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
     },
     "larepubliquedespyrenees": {
         "sitemap_index": None,
-        "sitemap_url": " https://www.larepubliquedespyrenees.fr/sitemap-news.xml",
+        "sitemap_url": "https://www.larepubliquedespyrenees.fr/sitemap-news.xml",
         "regex_section": r"^https:\/\/www\.larepubliquedespyrenees\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "lamontagne": {
         "sitemap_index": None,
         "sitemap_url": "https://www.lamontagne.fr/sitemap.xml",
         "regex_section": r"^https:\/\/www\.lamontagne\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "telerama": {
         "sitemap_index": None,
         "sitemap_url": "https://www.telerama.fr/sitemaps/sitemap_news.php",
         "regex_section": r"^https:\/\/www\.telerama\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "challenges": {
         "sitemap_index": None,
         "sitemap_url": "https://www.challenges.fr/sitemap.news.xml",
         "regex_section": r"^https:\/\/www\.challenges\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "ouest-france": {
         "sitemap_index": None,
         "sitemap_url": "https://www.ouest-france.fr/googlenews-0.xml",
         "regex_section": r"^https:\/\/www\.ouest-france\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date"
     },
     "la-croix": {
         "sitemap_index": None,
         "sitemap_url": "https://www.la-croix.com/sitemap_news.xml",
         "regex_section": r"^https:\/\/www\.la-croix\.com\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "lefigaro": {
         "sitemap_index": None,
         "sitemap_url": "https://www.lefigaro.fr/sitemap_news.xml",
         "regex_section": r"^https:\/\/www\.lefigaro\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "francetvinfo": {
         "sitemap_index": None,
         "sitemap_url": "https://www.francetvinfo.fr/sitemap_news.xml",
         "regex_section": r"^https:\/\/www\.francetvinfo\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
     },
     "franceinter": {
         "sitemap_index": None,
         "sitemap_url": "https://www.radiofrance.fr/franceinter/sitemap-news.xml",
         "regex_section": r"^https:\/\/www\.radiofrance\.fr\/franceinter\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
     },
     "lemonde": {
         "sitemap_index": None,
         "sitemap_url": "https://www.lemonde.fr/sitemap_news.xml",
         "regex_section": r"^https:\/\/www\.lemonde\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "20_minutes": {
         "sitemap_index": None,
         "sitemap_url": "https://www.20minutes.fr/sitemap-news.xml",
         "regex_section": r"^https:\/\/www\.20minutes\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
     },
     "liberation": {
         "sitemap_index": None,
         "sitemap_url": "https://www.liberation.fr/arc/outboundfeeds/sitemap_news.xml?outputType=xml",
         "regex_section": r"^https:\/\/www\.liberation\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "lesechos": {
         "sitemap_index": "https://sitemap.lesechos.fr/sitemap_index.xml",
         "sitemap_url": "https://www.lesechos.fr/sitemap_news.xml",
         "regex_section": r"^https:\/\/www\.lesechos\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
     },
     "investir.lesechos": {
         "sitemap_index": "https://sitemap-investir.lesechos.fr/sitemap_index.xml",
         "sitemap_url": "https://investir.lesechos.fr/sitemap_news.xml",
         "regex_section": r"^https:\/\/www\.investir.lesechos\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
     },
     "lamarseillaise": {
         "sitemap_index": "https://www.lamarseillaise.fr/sitemap.xml",
         "sitemap_url": "https://www.lamarseillaise.fr/sitemapforgoogle.xml",
         "regex_section": r"^https:\/\/www\.lamarseillaise\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
     },
     "laprovence": {
         "sitemap_index": "https://www.laprovence.com/sitemap_index.xml",
         "sitemap_url": "https://www.laprovence.com/sitemap_news.xml",
         "regex_section": r"^https:\/\/www\.laprovence\.com\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "lequipe": {
         "sitemap_index": "https://www.lequipe.fr/sitemap.xml",
         "sitemap_url": "https://www.lequipe.fr/sitemap/sitemap_google_news_premium.xml",  # https://www.lequipe.fr/sitemap/sitemap_google_news_gratuit.xml aussi ?
         "regex_section": r"^https:\/\/www\.lequipe\.fr\/(?P<section>[\/\w-]*)\/.+\/\d+$",  # quelques chiffres à la fin
+        "filter_date_label": "lastmod",
     },
     "lopinion": {
         "sitemap_index": "https://www.lopinion.fr/sitemap.xml",
         "sitemap_url": "https://www.lopinion.fr/news-sitemap-content.xml",
         "regex_section": r"^https:\/\/www\.lopinion\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "midilibre": {
         "sitemap_index": "https://www.midilibre.fr/sitemap.xml",
         "sitemap_url": "https://www.midilibre.fr/sitemap-news.xml",
         "regex_section": None,  # articles en year/month/day/titre
-        "filter_date_label": "lastmod",
+        "filter_date_label": "news_publication_date",
     },
     "lindependant": {
         "sitemap_index": "https://www.lindependant.fr/sitemap.xml",
         "sitemap_url": "https://www.lindependant.fr/sitemap-news.xml",
         "regex_section": None,  # articles en year/month/day/titre
-        "filter_date_label": "lastmod",
+        "filter_date_label": "news_publication_date",
     },
     "ladepeche": {
         "sitemap_index": "https://www.ladepeche.fr/sitemap.xml",
         "sitemap_url": "https://www.ladepeche.fr/sitemap-news.xml",
         "regex_section": None,  # articles en year/month/day/titre
-        "filter_date_label": "lastmod",
+        "filter_date_label": "news_publication_date",
     },
     "centrepresseaveyron": {
         "sitemap_index": "https://www.centrepresseaveyron.fr/sitemap.xml",
         "sitemap_url": "https://www.centrepresseaveyron.fr/sitemap-news.xml",
         "regex_section": None,  # articles en year/month/day/titre
-        "filter_date_label": "lastmod",
+        "filter_date_label": "news_publication_date",
     },
     "petitbleu": {
         "sitemap_index": "https://www.petitbleu.fr/sitemap.xml",
         "sitemap_url": "https://www.petitbleu.fr/sitemap-news.xml",
         "regex_section": None,  # articles en year/month/day/titre
         "filter_date_label": "lastmod",
+        "filter_date_label": "news_publication_date",
     },
     "letelegramme": {
         "sitemap_index": None,
         "sitemap_url": "https://www.letelegramme.fr/sitemaps/sitemap-news/urlset.xml",
         "regex_section": r"^https:\/\/www\.letelegramme\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
     },
     "nouvelobs": {
         "sitemap_index": None,
         "sitemap_url": "https://www.nouvelobs.com/sitemap-articles-news.xml",
         "regex_section": r"^https:\/\/www\.nouvelobs\.com\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
     },
     "mediapart": {
         "sitemap_index": None,
         "sitemap_url": "https://www.mediapart.fr/news_sitemap_editor_choice.xml",
         "regex_section": r"^https:\/\/www\.mediapart\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
     },
     "francebleu": {
         "sitemap_index": None,
         "sitemap_url": "https://www.francebleu.fr/sitemap-news.xml",
         "regex_section": r"^https:\/\/www\.francebleu\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
     },
 }
 
@@ -445,6 +481,11 @@ SITEMAP_TEST_CONFIG = {
         "sitemap_url": "http://localhost:8000/letelegramme_sitemap.xml",
         "regex_section": r"^https:\/\/www\.letelegramme\.fr\/(?P<section>[\/\w-]*)\/.+$",
     },
+    "20_minutes": {
+        "sitemap_index": None,
+        "sitemap_url": "http://localhost:8000/20minutes_sitemap.xml",
+        "regex_section": r"^https:\/\/www\.20minutes\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    },
 }
     
 SITEMAP_DOCKER_CONFIG = {
@@ -523,6 +564,11 @@ SITEMAP_DOCKER_CONFIG = {
         "sitemap_url": "http://nginxtest:80/franceinter_sitemap.xml",
         "regex_section": r"^https:\/\/www\.radiofrance\.fr\/franceinter\/(?P<section>[\/\w-]*)\/.+$",
     },
+    "lemonde": {
+        "sitemap_index": None,
+        "sitemap_url": "http://nginxtest:80/lemonde_sitemap.xml",
+        "regex_section": r"^https:\/\/www\.lemonde\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    },
     "midilibre": {
         "sitemap_index": None,
         "sitemap_url": "http://nginxtest:80/midilibre_sitemap.xml",
@@ -552,5 +598,10 @@ SITEMAP_DOCKER_CONFIG = {
         "sitemap_index": None,
         "sitemap_url": "http://nginxtest:80/mediapart_sitemap.xml",
         "regex_section": r"^https:\/\/www\.mediapart\.fr\/(?P<section>[\/\w-]*)\/.+$",
+    },
+    "20_minutes": {
+        "sitemap_index": None,
+        "sitemap_url": "http://nginxtest:80/20minutes_sitemap.xml",
+        "regex_section": r"^https:\/\/www\.20minutes\.fr\/(?P<section>[\/\w-]*)\/.+$",
     },
 }

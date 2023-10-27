@@ -19,7 +19,7 @@
                                     </image:image>
             </url>
             <url>
-            <loc>https://www.lefigaro.fr/social/greve-du-13-octobre-transports-medecins-ecoles-a-quelles-perturbations-faut-il-s-attendre-20231007</loc>
+            <loc>http://localhost:8000/20minutes_website.html</loc>
             <lastmod>2023-10-12T17:34:21+02:00</lastmod>
             <news:news>
                 <news:publication>
@@ -33,23 +33,6 @@
                             <image:image>
                     <image:loc>https://i.f1g.fr/media/cms/orig/2023/10/09/8f1062e1948f5c0abb930b0665ec4958613a74853c8fba9dfb7f374b3ec82065.jpg</image:loc>
                                             <image:caption>Grève: à quoi faut-il s’attendre ce 13 octobre ?</image:caption>
-                                    </image:image>
-            </url>
-            <url>
-            <loc>https://www.lefigaro.fr/international/conflit-hamas-israel-sur-le-front-virtuel-une-guerre-des-recits-20231012</loc>
-            <lastmod>2023-10-12T17:34:09+02:00</lastmod>
-            <news:news>
-                <news:publication>
-                    <news:name>Le Figaro</news:name>
-                    <news:language>fr</news:language>
-                </news:publication>
-                <news:publication_date>2023-10-12T17:34:09+02:00</news:publication_date>
-                <news:title>Conflit Hamas-Israël : sur le front virtuel, une guerre des récits</news:title>
-                                    <news:keywords>Israël, Hamas, International, actualité internationale, affaires étrangères, ministère des affaires étrangères, politique étrangère</news:keywords>
-                                            </news:news>
-                            <image:image>
-                    <image:loc>https://i.f1g.fr/media/cms/orig/2023/10/12/e96e5b283669be3d3f5b55cb710eee8525a3757c1fb0d571669521acbbb8bb4b.jpg</image:loc>
-                                            <image:caption>Une manifestation en l’honneur des victimes israéliennes, Vienne, le 11 octobre 2023.</image:caption>
                                     </image:image>
             </url>
     </urlset>

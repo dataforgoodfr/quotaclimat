@@ -3,11 +3,10 @@ import logging
 import pandas as pd
 
 
-from postgres.insert_data import (add_primary_key, clean_data,
-                                  insert_data_in_sitemap_table,get_consistent_hash)
+from postgres.insert_data import (clean_data,
+                                  insert_data_in_sitemap_table)
+from quotaclimat.data_ingestion.scrap_sitemap import (add_primary_key, get_consistent_hash)
 
-
-                                 
 from postgres.insert_existing_data_example import (
     parse_section, transformation_from_dumps_to_table_entry)
 from postgres.schemas.models import create_tables, get_sitemap, connect_to_db
@@ -22,7 +21,7 @@ def test_add_primary_key():
         [
             {
                 "publication_name": "testpublication_name",
-                "news_title": "testnews_title",
+                "news_title": "title",
                 "news_publication_date": pd.Timestamp("2023-10-11 13:10:00"),
             }
         ]
@@ -32,9 +31,9 @@ def test_add_primary_key():
         [
             {
                 "publication_name": "testpublication_name",
-                "news_title": "testnews_title",
+                "news_title": "title",
                 "news_publication_date": pd.Timestamp("2023-10-11 13:10:00"),
-                "id": get_consistent_hash("testpublication_name" + "testnews_title"),
+                "id": get_consistent_hash("testpublication_name" + "title"),
             }
         ]
     )
@@ -70,6 +69,7 @@ def test_transformation_from_dumps_to_table_entry():
                 "media_type": "testmedia_type",
                 "url": "my_awesome_url",
                 "news_description": "description could be parsed with success",
+                "id": get_consistent_hash("testpublication_name" + "testnews_title"),
             }
         ]
     )
@@ -99,6 +99,7 @@ def test_transformation_from_dumps_to_table_entry():
                 "media": "testmedia",
                 "lastmod": pd.Timestamp("2023-10-11 13:10:00"),
                 "news_description": "description could be parsed with success",
+                "id": get_consistent_hash("testpublication_name" + "testnews_title"),
             }
         ]
     )
@@ -111,19 +112,22 @@ def test_transformation_from_dumps_to_table_entry():
 def test_insert_data_in_sitemap_table():
     create_tables()
     conn = connect_to_db()
-
+    url = "my_awesome_url"
+    title = "testnews_title"
+    primary_key = get_consistent_hash("testpublication_name_new" + title)
     df = pd.DataFrame(
         [
             {
                 "publication_name": "testpublication_name_new",
-                "news_title": "testnews_title",
+                "news_title": title,
                 "download_date": pd.Timestamp("2023-10-11 13:11:00"),
                 "news_publication_date": pd.Timestamp("2023-10-11 13:10:00"),
                 "news_keywords": "testnews_keywords",
                 "section": "sport",
                 "image_caption": "testimage_caption",
                 "media_type": "testmedia_type",
-                "url": "testurl",
+                "url": url,
+                "id": primary_key,
                 "news_description": "description",
             }
         ]
@@ -132,19 +136,18 @@ def test_insert_data_in_sitemap_table():
     insert_data_in_sitemap_table(df, conn)
 
     # check the value is well existing
-    primary_key = get_consistent_hash("testpublication_name_newtestnews_title")
     result = get_sitemap(primary_key)
 
     assert result.id == primary_key
     assert result.publication_name == "testpublication_name_new"
-    assert result.news_title == "testnews_title"
+    assert result.news_title == title
     assert result.download_date == pd.Timestamp("2023-10-11 13:11:00")
     assert result.news_publication_date == pd.Timestamp("2023-10-11 13:10:00")
     assert result.news_keywords == "testnews_keywords"
     assert result.section == "sport"
     assert result.image_caption == "testimage_caption"
     assert result.media_type == "testmedia_type"
-    assert result.url == "testurl"
+    assert result.url == url
     assert result.news_description == "description"
 
 def test_clean_data():

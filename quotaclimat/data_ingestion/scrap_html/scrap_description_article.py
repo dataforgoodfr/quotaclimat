@@ -5,9 +5,10 @@ from bs4 import BeautifulSoup
 import asyncio
 import re
 
+agent = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36"}
 async def get_url_content(url_article: str):
     async with aiohttp.ClientSession() as session:
-        async with session.get(url_article, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36"}) as response:
+        async with session.get(url_article, headers=agent) as response:
             return await response.text()
 
 def get_hat_20minutes(soup, url_article = ""):
@@ -41,7 +42,7 @@ async def get_meta_news(url_article, media):
         logging.info(f"reading hat for {media} - {hat}")
         result["description"] = hat
     else:
-        logging.warning(f"could not find description for {url_article}")
+        logging.warning(f"could not find description for {url_article} - response \n {response}")
 
     # TODO : use it someday to parse missing data
     soup_title = soup.find(name="title")

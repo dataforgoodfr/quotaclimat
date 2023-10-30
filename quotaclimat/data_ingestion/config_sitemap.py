@@ -77,6 +77,12 @@ SITEMAP_CONFIG = {
         "regex_section": r"^https:\/\/www\.ouest-france\.fr\/(?P<section>[\/\w-]*)\/.+$",
         "filter_date_label": "news_publication_date"
     },
+    "lunion": {
+        "sitemap_index": None,
+        "sitemap_url": "https://www.lunion.fr/sites/default/files/sitemaps/abonnes_lunion_fr/sitemapnews-0.xml",
+        "regex_section": r"^https:\/\/www\.lunion\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date"
+    },
     "la-croix": {
         "sitemap_index": None,
         "sitemap_url": "https://www.la-croix.com/sitemap_news.xml",
@@ -161,6 +167,12 @@ SITEMAP_CONFIG = {
         "regex_section": None,  # articles en year/month/day/titre
         "filter_date_label": "news_publication_date",
     },
+    "varmatin": {
+        "sitemap_index": "https://www.varmatin.com/sitemap.xml",
+        "sitemap_url": "https://www.varmatin.com/googlenews.xml",
+        "regex_section": r"^https:\/\/www\.varmatin\.com\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
+    },
     "lindependant": {
         "sitemap_index": "https://www.lindependant.fr/sitemap.xml",
         "sitemap_url": "https://www.lindependant.fr/sitemap-news.xml",
@@ -184,6 +196,47 @@ SITEMAP_CONFIG = {
         "sitemap_url": "https://www.petitbleu.fr/sitemap-news.xml",
         "regex_section": None,  # articles en year/month/day/titre
         "filter_date_label": "lastmod",
+    },
+    "sudouest": {
+        "sitemap_index": "https://www.sudouest.fr/sitemap.xml",
+        "sitemap_url": "https://www.sudouest.fr/sitemap-news.xml",
+         "regex_section": r"^https:\/\/www\.sudouest\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
+    },
+    "lavoixdunord": {
+        "sitemap_index": "https://www.lavoixdunord.fr/sites/default/files/sitemaps/www_lavoixdunord_fr/sitemapindex.xml",
+        "sitemap_url": "https://www.lavoixdunord.fr/sites/default/files/sitemaps/www_lavoixdunord_fr/sitemapnews-0.xml",
+         "regex_section": r"^https:\/\/www\.lavoixdunord\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
+    },
+    "courrierpicard": {
+        "sitemap_index": "https://www.courrier-picard.fr/sites/default/files/sitemaps/abonne_courrier_picard_fr/sitemapindex.xml",
+        "sitemap_url": "https://www.courrier-picard.fr/sites/default/files/sitemaps/abonne_courrier_picard_fr/sitemapnews-0.xml",
+        "regex_section": r"^https:\/\/www\.courrier-picard\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
+    },
+    "parisnormandie": {
+        "sitemap_index": "https://www.paris-normandie.fr/sites/default/files/sitemaps/www_paris_normandie_fr/sitemapindex.xml",
+        "sitemap_url": "https://www.paris-normandie.fr/sites/default/files/sitemaps/www_paris_normandie_fr/sitemapnews-0.xml",
+         "regex_section": r"^https:\/\/www\.paris-normandie\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "news_publication_date",
+    },
+    "lesteclair": {
+        "sitemap_index": None,
+        "sitemap_url": "https://www.lest-eclair.fr/sites/default/files/sitemaps/abonnes_lest_eclair_fr/sitemapnews-0.xml",
+         "regex_section": None,
+        "filter_date_label": "news_publication_date",
+    },
+    "charentelibre": {
+        "sitemap_index": None,
+        "sitemap_url": "https://www.charentelibre.fr/sitemap-news.xml",
+         "regex_section": r"^https:\/\/www\.charentelibre\.fr\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
+    },
+    "elle": {
+        "sitemap_index": None,
+        "sitemap_url": "https://www.elle.fr/sitemaps/sitemap_elle.xml",
+         "regex_section": r"^https:\/\/www\.elle\.fr\/(?P<section>[\/\w-]*)\/.+$",
         "filter_date_label": "news_publication_date",
     },
     "letelegramme": {
@@ -196,6 +249,12 @@ SITEMAP_CONFIG = {
         "sitemap_index": None,
         "sitemap_url": "https://www.nouvelobs.com/sitemap-articles-news.xml",
         "regex_section": r"^https:\/\/www\.nouvelobs\.com\/(?P<section>[\/\w-]*)\/.+$",
+        "filter_date_label": "lastmod",
+    },
+    "huffingtonpost": {
+        "sitemap_index": None,
+        "sitemap_url": "https://www.huffingtonpost.fr/sitemaps/news.xml",
+        "regex_section": r"^https:\/\/www\.huffingtonpost\.fr\/(?P<section>[\/\w-]*)\/.+$",
         "filter_date_label": "lastmod",
     },
     "mediapart": {
@@ -298,8 +357,53 @@ MEDIA_CONFIG = {
         "type": "webpress",
         "coverage": "regional",
     },
+    "courrierpicard": {
+        "site_url": "https://www.courrier-picard.fr/",
+        "type": "webpress",
+        "coverage": "regional",
+    },
+    "lavoixdunord": {
+        "site_url": "https://www.lavoixdunord.fr/",
+        "type": "webpress",
+        "coverage": "regional",
+    },
+    "lunion": {
+        "site_url": "https://www.lunion.fr/",
+        "type": "webpress",
+        "coverage": "regional",
+    },
+    "lesteclair": {
+        "site_url": "https://www.lest-eclair.fr/",
+        "type": "webpress",
+        "coverage": "regional",
+    },
+    "parisnormandie": {
+        "site_url": "https://www.paris-normandie.fr/",
+        "type": "webpress",
+        "coverage": "regional",
+    },
+    "charentelibre": {
+        "site_url": "https://www.charentelibre.fr/",
+        "type": "webpress",
+        "coverage": "regional",
+    },
+    "varmatin": {
+        "site_url": "https://www.varmatin.com/",
+        "type": "webpress",
+        "coverage": "regional",
+    },
+    "sudouest": {
+        "site_url": "https://www.sudouest.fr/",
+        "type": "webpress",
+        "coverage": "regional",
+    },
     "lepoint": {
         "site_url": "https://www.lepoint.fr/",
+        "type": "webpress",
+        "coverage": "national",
+    },
+    "elle": {
+        "site_url": "https://www.elle.fr/",
         "type": "webpress",
         "coverage": "national",
     },
@@ -330,6 +434,11 @@ MEDIA_CONFIG = {
     },
     "telerama": {
         "site_url": "https://www.telerama.fr/",
+        "type": "webpress",
+        "coverage": "national",
+    },
+    "huffingtonpost": {
+        "site_url": "https://www.huffingtonpost.fr/",
         "type": "webpress",
         "coverage": "national",
     },

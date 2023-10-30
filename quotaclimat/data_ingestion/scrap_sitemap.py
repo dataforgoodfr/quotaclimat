@@ -181,6 +181,7 @@ async def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict, df_fro
     try:
         logging.info("\n\nParsing media %s with %s" % (media, sitemap_conf["sitemap_url"]))
         #@see https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#news-sitemaps
+
         temp_df = adv.sitemap_to_df(sitemap_conf["sitemap_url"])
   
         temp_df.rename(columns={"loc": "url"}, inplace=True)

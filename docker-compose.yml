@@ -55,7 +55,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_HOST: postgres_db
       POSTGRES_PORT: 5432
-      HEALTHCHECK_PORT: 5000
+      PORT: 5000
       HEALTHCHECK_SERVER: "0.0.0.0"
     volumes:
       - ./quotaclimat/:/app/quotaclimat/

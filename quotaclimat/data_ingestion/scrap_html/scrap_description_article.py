@@ -10,12 +10,12 @@ async def get_url_content(url_article: str):
         async with session.get(url_article, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.84 Safari/537.36"}) as response:
             return await response.text()
 
-def get_hat_20minutes(soup):
-    hat = soup.select_one(".hat-summary").text
+def get_hat_20minutes(soup, url_article = ""):
+    hat = soup.select_one(".hat-summary")
     if hat is not None:
-        return hat.strip()
+        return (hat.text).strip()
     else:
-        logging.warning("could not get hat")
+        logging.warning(f"could not get hat : {url_article}")
         return ""
 
 # get https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta
@@ -38,7 +38,7 @@ async def get_meta_news(url_article, media):
         logging.debug(f"description for {url_article} is \n {description}")
         result["description"] = description
     elif media == "20_minutes": # does not have meta description
-        hat = get_hat_20minutes(soup)
+        hat = get_hat_20minutes(soup, url_article)
         logging.info(f"reading hat for {media} - {hat}")
         result["description"] = hat
     else:

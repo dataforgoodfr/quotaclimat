@@ -1,12 +1,13 @@
 import logging
 from argparse import ArgumentParser
 import sys
-
+import os
 from postgres.insert_data import insert_data_in_sitemap_table
 from postgres.insert_existing_data_example import \
     transformation_from_dumps_to_table_entry
 from postgres.schemas.models import create_tables, connect_to_db, get_last_month_sitemap_id
 from quotaclimat.utils.healthcheck_config import run_health_check_server
+from quotaclimat.utils.logger import CustomFormatter
 
 import asyncio
 
@@ -53,5 +54,16 @@ async def main():
     sys.exit(0)
 
 if __name__ == "__main__":
+    # create logger with 'spam_application'
+    logger = logging.getLogger()
+    logger.setLevel(level=os.getenv('LOGLEVEL', 'INFO').upper())
+
+    # create console handler with a higher log level
+    if (logger.hasHandlers()):
+        logger.handlers.clear()
+    ch = logging.StreamHandler()
+    ch.setFormatter(CustomFormatter())
+    logger.addHandler(ch)
+
     asyncio.run(main())
     sys.exit(0)

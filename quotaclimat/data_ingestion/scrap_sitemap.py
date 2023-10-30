@@ -60,7 +60,9 @@ def find_sections(url: str, media: str, sitemap_config) -> List[str]:
     if sitemap_config["regex_section"] is not None:
         try:
             output = get_sections_from_url(url, sitemap_config, default_output)
-            return normalize_section(output)
+            output = normalize_section(output)
+            logging.debug(f"{output}")
+            return output
         except Exception as err:
             logging.error(
                 "Cannot find section for media %s with url %s:\n %s"

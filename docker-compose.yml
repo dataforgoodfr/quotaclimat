@@ -49,6 +49,7 @@ services:
     entrypoint: ["python", "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py"]
     environment:
       ENV: docker
+      LOGLEVEL: debug # Change me to info (warning, error) to have less log
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre

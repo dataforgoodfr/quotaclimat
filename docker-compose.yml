@@ -44,7 +44,7 @@ services:
       - 5000:5000
     build:
       context: ./
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile_ingest
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     entrypoint: ["python", "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py"]
     environment:
@@ -74,7 +74,7 @@ services:
     - 8501:8501
     build:
       context: ./
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile_streamlit
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     entrypoint: ["poetry", "run", "python", "-m", "streamlit", "run", "app.py"]
     environment:

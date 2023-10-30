@@ -25,10 +25,9 @@ async def get_meta_news(url_article, media):
         "description": "",
     }
 
-    if(media != "ouest-france"):
+    if(media != "ouest-france"): # anti robot
         response = await get_url_content(str(url_article))
-    else: # https://www.zenrows.com/blog/scraping-javascript-rendered-web-pages#requirements
-        # TODO implement a selenium browserless to parse JS website as ouest-france 
+    else:
         return result
 
     soup = BeautifulSoup(response, "html.parser")

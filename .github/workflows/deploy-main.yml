@@ -24,6 +24,20 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
     - uses: actions/checkout@v4
+    - name: Login to Scaleway Container Registry
+      uses: docker/login-action@v3
+      with:
+        username: nologin
+        password: ${{ secrets.SCALEWAY_API_KEY }}
+        registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
+    - name: Build ingest_to_db image
+      run: docker build -f Dockerfile_ingest . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
+    - name: Push ingest_to_db Image
+      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
+    - name: Build streamlit image
+      run: docker build -f Dockerfile_streamlit . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
+    - name: Push streamlit Image
+      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
     - name: Install Poetry
       uses: snok/install-poetry@v1
       with:
@@ -40,17 +54,3 @@ jobs:
         git add pyproject.toml
         git commit -m "[no ci]: bumping version"
         git push origin main
-    - name: Login to Scaleway Container Registry
-      uses: docker/login-action@v3
-      with:
-        username: nologin
-        password: ${{ secrets.SCALEWAY_API_KEY }}
-        registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
-    - name: Build ingest_to_db image
-      run: docker build -f Dockerfile_ingest . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
-    - name: Push ingest_to_db Image
-      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
-    - name: Build streamlit image
-      run: docker build -f Dockerfile_streamlit . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
-    - name: Push streamlit Image
-      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit

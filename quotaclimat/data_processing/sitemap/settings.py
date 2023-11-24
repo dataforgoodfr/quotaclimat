@@ -22,5 +22,5 @@ CLIMATE_SECTION = [
     "pollution-air",
     "secheresse",
     "sur-le-green",
-    "terre"
+    "terre",
 ]

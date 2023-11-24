@@ -1,0 +1,1 @@
+Everything in this folder will be served thanks to a docker image (nginx) to be tested locally.

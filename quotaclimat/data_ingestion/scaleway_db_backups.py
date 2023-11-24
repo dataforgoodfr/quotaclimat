@@ -1,4 +1,5 @@
 import logging
+import os
 from argparse import ArgumentParser
 from datetime import datetime, timedelta
 
@@ -13,16 +14,20 @@ parser.add_argument("-k", "--keyid")
 parser.add_argument("-a", "--accesskey")
 
 args = parser.parse_args()
-DB_PWD = args.dbpwd
+DB_DATABASE = os.environ.get("POSTGRES_DB", "quotaclimat")
+DB_USER = os.environ.get("POSTGRES_USER", "root")
+DB_PWD = os.environ.get("POSTGRES_PASSWORD", args.dbpwd)
+DB_HOST = os.environ.get("POSTGRES_HOST", "212.47.253.253")
+DB_PORT = os.environ.get("POSTGRES_PORT", "49154")
 KEY_ID = args.keyid
 ACCESS_KEY = args.accesskey
 
 CONN = psycopg2.connect(
-    database="quotaclimat",
-    user="root",
+    database=DB_DATABASE,
+    user=DB_USER,
     password=DB_PWD,
-    host="212.47.253.253",
-    port="49154",
+    host=DB_HOST,
+    port=DB_PORT,
 )
 
 

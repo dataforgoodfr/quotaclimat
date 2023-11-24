@@ -1,10 +1,8 @@
 import pandas as pd
-
+from sqlalchemy.sql import text
 
 def run_query(query, conn):
-    with conn.cursor() as cur:
-        cur.execute(query)
-        return cur.fetchall()
+    return list(conn.execute(text(query)))
 
 
 # queries TODO migrate
@@ -58,12 +56,15 @@ def query_all_articles_titles_between_two_dates(conn, start_date, end_date):
         ],
     )
 
-def percentage_article_in_section_list_per_day(conn, keywords_list:list):
-       query_over_days = """SELECT download_date,
+
+def percentage_article_in_section_list_per_day(conn, keywords_list: list):
+    query_over_days = """SELECT download_date,
               ROUND((COUNT(CASE WHEN ({keywords}) THEN 1 ELSE NULL END) * 100.0 / COUNT(*)), 3)/100 AS rounded_percentage
        FROM sitemap_table
        GROUP BY download_date""".format(
-              keywords=" OR ".join("section LIKE '%%%s%%' \n" % w for w in keywords_list),
-              )
+        keywords=" OR ".join("section LIKE '%%%s%%' \n" % w for w in keywords_list),
+    )
 
-       return pd.DataFrame(run_query(query_over_days, conn), columns=['date', 'Pourcentage'])
+    return pd.DataFrame(
+        run_query(query_over_days, conn), columns=["date", "Pourcentage"]
+    )

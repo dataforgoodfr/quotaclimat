@@ -1,18 +1,14 @@
-import streamlit as st
-import plotly.express as px
 import pandas as pd
+import plotly.express as px
 import psycopg2
+import streamlit as st
 
-from quotaclimat.data_processing.sitemap.queries import percentage_article_in_section_list_per_day
+from quotaclimat.data_processing.sitemap.queries import \
+    percentage_article_in_section_list_per_day
 from quotaclimat.data_processing.sitemap.settings import CLIMATE_SECTION
-
-@st.cache_resource
-def init_connection():
-    return psycopg2.connect(**st.secrets["postgres"])
-
+from postgres.database_connection import get_db_session
 
 st.set_page_config(
-
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -20,29 +16,33 @@ st.set_page_config(
 # Fetch datas
 
 
-conn = init_connection()
+conn = get_db_session()
 
 
 df_climate_per_day = percentage_article_in_section_list_per_day(conn, CLIMATE_SECTION)
-df_sport_per_day = percentage_article_in_section_list_per_day(conn, ['sport', 'football'])
-df_politics_per_day = percentage_article_in_section_list_per_day(conn, ['politique'])
+df_sport_per_day = percentage_article_in_section_list_per_day(
+    conn, ["sport", "football"]
+)
+df_politics_per_day = percentage_article_in_section_list_per_day(conn, ["politique"])
 
 fig = px.bar(
     df_climate_per_day,
-    x='date',
-    y='Pourcentage',
+    x="date",
+    y="Pourcentage",
     height=400,
     text_auto=".1%",
 )
 fig.update_layout(
     yaxis_tickformat="0%",
-    title='% articles dans les sections climats',
+    title="% articles dans les sections climats",
     font_family="Poppins",
     yaxis_title="% du volume médiatique",
     xaxis_title="",
 )
-fig.update_traces(marker=dict(color='darkseagreen'), selector=dict(name=df_climate_per_day['date'].iloc[-1]))
-
+fig.update_traces(
+    marker=dict(color="darkseagreen"),
+    selector=dict(name=df_climate_per_day["date"].iloc[-1]),
+)
 
 
 # Page Layout
@@ -70,7 +70,7 @@ col2.markdown(
     }
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
 
 # Add the centered tile inside the styled square
@@ -80,14 +80,14 @@ col2.markdown(
         <h1>%s %% </h1>
         hier, d'articles en section climat.
     </div>
-    """%(round(df_climate_per_day['Pourcentage'].iloc[-1] * 100, 2)),
-    unsafe_allow_html=True
+    """
+    % (round(df_climate_per_day["Pourcentage"].iloc[-1] * 100, 2)),
+    unsafe_allow_html=True,
 )
 st.plotly_chart(fig)
 # Add content to the container
 with container:
     st.write("Voici un brouillon du baromètre")
-
 
 
 import streamlit as st
@@ -126,9 +126,8 @@ col2.markdown(
     }
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
-
 
 
 # Add two squares below the centered tile
@@ -139,8 +138,9 @@ col1.markdown(
         hier, d'articles en section politique.
 
     </div>
-    """%(round(df_politics_per_day['Pourcentage'].iloc[-1] * 100, 2)),
-    unsafe_allow_html=True
+    """
+    % (round(df_politics_per_day["Pourcentage"].iloc[-1] * 100, 2)),
+    unsafe_allow_html=True,
 )
 
 col3.markdown(
@@ -150,6 +150,7 @@ col3.markdown(
         hier, d'articles en section sport.
 
     </div>
-    """%(round(df_sport_per_day['Pourcentage'].iloc[-1] * 100, 2)),
-    unsafe_allow_html=True
+    """
+    % (round(df_sport_per_day["Pourcentage"].iloc[-1] * 100, 2)),
+    unsafe_allow_html=True,
 )

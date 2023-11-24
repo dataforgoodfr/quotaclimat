@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+  <url>
+    <loc>https://www.cnews.fr/culture/2023-10-25/mort-de-richard-roundtree-samuel-l-jackson-gabrielle-union-carl-weathers-les</loc>
+    <news:news>
+      <news:publication>
+        <news:name>CNEWS</news:name>
+        <news:language>fr</news:language>
+      </news:publication>
+      <news:title>Mort de Richard Roundtree : Samuel L. Jackson, Gabrielle Union, Carl Weathers… Les stars rendent hommage à l’acteur de «Shaft»</news:title>
+      <news:publication_date>2023-10-25T08:51:25+00:00</news:publication_date>
+      <news:keywords>Cinéma, culture, Carnet noir, hommages, People</news:keywords>
+    </news:news>
+    <image:image>
+      <image:loc>https://static.cnews.fr/sites/default/files/richard_roundtree_hommages_6538c96cd0e46_0.jpg</image:loc>
+      <image:caption/>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.cnews.fr/france/2023-10-25/squat-de-saint-martin-du-touch-toulouse-pres-de-200-personnes-evacuees-1410951</loc>
+    <news:news>
+      <news:publication>
+        <news:name>CNEWS</news:name>
+        <news:language>fr</news:language>
+      </news:publication>
+      <news:title>Squat de Saint-Martin-du-Touch à Toulouse : près de 200 personnes évacuées</news:title>
+      <news:publication_date>2023-10-25T08:47:27+00:00</news:publication_date>
+      <news:keywords>Squat, Toulouse, Squatteurs</news:keywords>
+    </news:news>
+    <image:image>
+      <image:loc>https://static.cnews.fr/sites/default/files/capture_decran_2023-10-25_a_10.10.05_6538ce23a0be6_0.png</image:loc>
+      <image:caption/>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://www.cnews.fr/videos/monde/2023-10-25/israel-hamas-des-que-jai-vu-lhorreur-je-suis-monte-dans-le-premier-avion</loc>
+    <news:news>
+      <news:publication>
+        <news:name>CNEWS</news:name>
+        <news:language>fr</news:language>
+      </news:publication>
+      <news:title>Israël-Hamas : «Dès que j'ai vu l'horreur, je suis monté dans le premier avion», explique un soldat de la réserve de Tsahal</news:title>
+      <news:publication_date>2023-10-25T08:29:51+00:00</news:publication_date>
+      <news:keywords>Israël, Tsahal, Armée, Hamas</news:keywords>
+    </news:news>
+    <image:image>
+      <image:loc>https://static.cnews.fr/sites/default/files/Video/x8p2xa3_6538a94a625ad_0.jpg</image:loc>
+      <image:caption>Témoignage d'un réserviste mobilisé en Israël</image:caption>
+    </image:image>
+  </url>
+</urlset>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+            <url>
+            <loc>http://nginxtest:80/mediapart_website.html</loc>
+            <lastmod>2023-10-12T17:34:28+02:00</lastmod>
+            <news:news>
+                <news:publication>
+                    <news:name>Le Figaro</news:name>
+                    <news:language>fr</news:language>
+                </news:publication>
+                <news:publication_date>2023-10-12T06:13:00+02:00</news:publication_date>
+                <news:title>EN DIRECT - Conflit Hamas-Israël : l’armée israélienne dit avoir frappé Gaza avec 4000 tonnes d’explosifs depuis samedi</news:title>
+                                    <news:keywords>Israël, Hamas, conflit israélo-palestinien, International, actualité internationale, affaires étrangères, ministère des affaires étrangères, politique étrangère</news:keywords>
+                                                    <news:genres>Blog</news:genres>
+                            </news:news>
+                            <image:image>
+                    <image:loc>https://i.f1g.fr/media/cms/orig/2023/10/12/eccf7495cede8869a8a35d6fd70a1635759a12dbef68dd16e82e34162f69ec4f.jpg</image:loc>
+                                            <image:caption>Explosion dans le centre de la ville de Gaza ce jeudi 12 octobre.</image:caption>
+                                    </image:image>
+            </url>
+            <url>
+            <loc>http://nginxtest:80/20minutes_website.html</loc>
+            <lastmod>2023-10-12T17:34:21+02:00</lastmod>
+            <news:news>
+                <news:publication>
+                    <news:name>Le Figaro</news:name>
+                    <news:language>fr</news:language>
+                </news:publication>
+                <news:publication_date>2023-10-11T16:16:00+02:00</news:publication_date>
+                <!-- missing title on purpose to test -->
+                <news:title>Grève du 13 octobre : SNCF, RATP, aérien, médecins… Retrouvez le détail des perturbations à prévoir</news:title>
+                                    <news:keywords>grève, salaires, social, RH, ressources humaines, primes, conjoncture, entreprise, œuvres sociales, trséorerie, finance, comoité d'entreprise, elections syndicales, gestion entreprise, TPE, PME, PMI, CAC 40, fiscalité des entreprises, actualités sociales</news:keywords>
+                                            </news:news>
+                            <image:image>
+                    <image:loc>https://i.f1g.fr/media/cms/orig/2023/10/09/8f1062e1948f5c0abb930b0665ec4958613a74853c8fba9dfb7f374b3ec82065.jpg</image:loc>
+                                            <image:caption>Grève: à quoi faut-il s’attendre ce 13 octobre ?</image:caption>
+                                    </image:image>
+            </url>
+
+    </urlset>

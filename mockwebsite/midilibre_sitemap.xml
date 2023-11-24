@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+          <url>
+        <loc>https://www.midilibre.fr/2023/10/24/emmanuel-macron-en-israel-le-president-annonce-que-les-sept-kidnappes-francais-sont-bien-vivantss-11539314.php</loc>
+        <news:news>
+          <news:publication>
+            <news:name>Midi Libre</news:name>
+            <news:language>fr</news:language>
+          </news:publication>
+          <news:publication_date>2023-10-24T10:01:57+02:00</news:publication_date>
+          <news:title>Les neuf "kidnappés Français" par le Hamas sont "bien vivants", annonce Emmanuel Macron en visite en Israël</news:title>
+          <news:keywords>Attaque du Hamas contre Israël, Emmanuel Macron</news:keywords>
+        </news:news>
+                  <image:image>
+            <image:loc>https://images.midilibre.fr/api/v1/images/view/653760e38756005f7e7a81d9/hd/image.jpg?v=1</image:loc>
+            <image:title>Les neuf "kidnappés Français" par le Hamas sont "bien vivants", annonce Emmanuel Macron en visite en Israël</image:title>
+          </image:image>
+              </url>
+          <url>
+        <loc>https://www.midilibre.fr/2023/10/24/controle-technique-des-deux-roues-motos-scooters-comment-la-mesure-va-t-elle-etre-mise-en-place-a-partir-de-2024-11539363.php</loc>
+        <news:news>
+          <news:publication>
+            <news:name>Midi Libre</news:name>
+            <news:language>fr</news:language>
+          </news:publication>
+          <news:publication_date>2023-10-24T10:01:03+02:00</news:publication_date>
+          <news:title>Contrôle technique des deux roues : motos, scooters... comment la mesure va-t-elle être mise en place à partir de 2024</news:title>
+          <news:keywords>Auto-moto</news:keywords>
+        </news:news>
+                  <image:image>
+            <image:loc>https://images.midilibre.fr/api/v1/images/view/6537772054da116cc865b469/hd/image.jpg?v=1</image:loc>
+            <image:title>Contrôle technique des deux roues : motos, scooters... comment la mesure va-t-elle être mise en place à partir de 2024</image:title>
+          </image:image>
+              </url>
+          <url>
+        <loc>https://www.midilibre.fr/2023/10/24/podcast-comment-les-caves-cooperatives-viticoles-sont-nees-et-quel-avenir-pour-ces-structures-aujourdhui-11532063.php</loc>
+        <news:news>
+          <news:publication>
+            <news:name>Midi Libre</news:name>
+            <news:language>fr</news:language>
+          </news:publication>
+          <news:publication_date>2023-10-24T10:06:02+02:00</news:publication_date>
+          <news:title>PODCAST. Comment les caves coopératives viticoles sont nées et quel avenir pour ces structures aujourd'hui</news:title>
+          <news:keywords>Podcasts, Viticulture, Aude</news:keywords>
+        </news:news>
+                  <image:image>
+            <image:loc>https://images.midilibre.fr/api/v1/images/view/6530efb5eea84505924071ba/hd/image.jpg?v=1</image:loc>
+            <image:title>PODCAST. Comment les caves coopératives viticoles sont nées et quel avenir pour ces structures aujourd'hui</image:title>
+          </image:image>
+        </url>
+</urlset>

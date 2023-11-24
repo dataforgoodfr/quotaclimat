@@ -134,3 +134,6 @@ notebooks/nlp/df_X_tfidf.pkl
 .vscode/settings.json
 
 .DS_Store
+pgdata
+mb-data
+.idea

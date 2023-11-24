@@ -8,42 +8,80 @@ from typing import Dict, List
 import advertools as adv
 import pandas as pd
 
-from quotaclimat.data_ingestion.config_sitmap import (MEDIA_CONFIG,
-                                                      SITEMAP_CONFIG)
+from quotaclimat.data_ingestion.config_sitemap import (SITEMAP_CONFIG, SITEMAP_TEST_CONFIG, SITEMAP_DOCKER_CONFIG, MEDIA_CONFIG)
+from postgres.schemas.models import get_sitemap_cols
+from quotaclimat.data_ingestion.scrap_html.scrap_description_article import get_meta_news
+import asyncio
+import hashlib
 
 # TODO: silence advertools loggings
 # TODO: add slack login
 # TODO: add data models
 
 
-def cure_df(df: pd.DataFrame) -> pd.DataFrame:
-    """Clean df from unused columns"""
+def get_sitemap_list():
+    dev_env=os.environ.get("ENV") == "dev" or os.environ.get("ENV") == "docker"
+    
+    if(dev_env):
+        if(os.environ.get("ENV") == "docker"):
+            logging.info("Testing locally - docker")
+            return SITEMAP_DOCKER_CONFIG
+        else:
+            logging.info("Testing locally - without docker")
+            return SITEMAP_TEST_CONFIG
+    else:
+        logging.info("Using all the websites (production config)")
+        return SITEMAP_CONFIG
 
-    df = df.rename(columns={"loc": "url"})
-    return df
+def get_sections_from_url(url, sitemap_config, default_output):
+    logging.debug("regex %s", sitemap_config["regex_section"])
+    clean_url_from_date = re.sub(r"\/[0-9]{2,4}\/[0-9]{2,4}\/[0-9]{2,4}", "", str(url))
 
+    search_url = re.search(
+        sitemap_config["regex_section"], clean_url_from_date
+    )
 
-def find_sections(url: str, media: str, sitemap_config=SITEMAP_CONFIG) -> List[str]:
+    output = search_url.group("section").split("/") if search_url else default_output
+
+    return output
+
+def normalize_section(sections) -> List[str]:
+    output = list(filter(lambda x: "article" not in x.lower() and not x.isdigit(), sections))
+    output = list(map(lambda item: item.replace("_", "-"), output))
+
+    return output
+
+def find_sections(url: str, media: str, sitemap_config) -> List[str]:
     """Find and parse section with url"""
-    if sitemap_config[media]["regex_section"] is not None:
-        clean_url_from_date = re.sub(r"\/[0-9]{2,4}\/[0-9]{2,4}\/[0-9]{2,4}", "", url)
-        search_url = re.search(
-            sitemap_config[media]["regex_section"], clean_url_from_date
-        )
 
-        return search_url.group("section").split("/") if search_url else ["unknown"]
+    default_output = ["unknown"]
+    logging.debug("Url to parse %s from %s" % (url, media))
+
+    if sitemap_config["regex_section"] is not None:
+        try:
+            output = get_sections_from_url(url, sitemap_config, default_output)
+            output = normalize_section(output)
+            logging.debug(f"{output}")
+            return output
+        except Exception as err:
+            logging.error(
+                "Cannot find section for media %s with url %s:\n %s"
+                % (media, url, err)
+            )
+            return default_output
     else:  # regex not defined
-        return "unknown"
+        return default_output
 
 
-def get_sections(df: pd.DataFrame) -> pd.DataFrame:
+def get_sections(df: pd.DataFrame, sitemap_config) -> pd.DataFrame:
     """Get sections and apply it to df"""
 
-    df["section"] = df.apply(lambda x: find_sections(x.url, x.media), axis=1)
+    logging.debug("extract sections from url")
+    df["section"] = df.apply(lambda x: find_sections(x.url, x.media, sitemap_config), axis=1)
 
     return df
 
-
+# TODO test me
 def change_datetime_format(df: pd.DataFrame) -> pd.DataFrame:
     """Changes the date format for BQ"""
 
@@ -64,9 +102,18 @@ def change_datetime_format(df: pd.DataFrame) -> pd.DataFrame:
 def filter_on_date(
     df: pd.DataFrame, date_label="lastmod", days_duration=7
 ) -> pd.DataFrame:
-
+    logging.info(f"Filtering {date_label} to keep only {days_duration} days")
+    initial_len = len(df)
+    
     mask = df.loc[:, date_label] > datetime.now() - timedelta(days=days_duration)
     df_new = df[mask].copy()  # to avoid a warning.
+    remaining_len = len(df_new)
+
+    if remaining_len != 0:
+        logging.info(f"remaining rows: {remaining_len} out of {initial_len} rows")
+    else:
+        logging.warning(f"0 rows remaining after filter - is the sitemap not updated anymore ?")
+
     return df_new
 
 
@@ -82,7 +129,47 @@ def clean_surrounding_whitespaces_df(df: pd.DataFrame) -> pd.DataFrame:
     return df.applymap(clean_surrounding_whitespaces_str)
 
 
-def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFrame:
+# TODO be able to return other type of data than description if needed
+async def add_news_meta(url: str, media:str, title:str):
+    try:
+        result = await get_meta_news(url, media)
+
+        return result["description"]
+    except (Exception) as error:
+        logging.warning(error)
+        return ""
+
+
+def get_consistent_hash(my_pk):
+    # Convert the object to a string representation
+    obj_str = str(my_pk)
+    sha256 = hashlib.sha256()
+    # Update the hash object with the object's string representation
+    sha256.update(obj_str.encode('utf-8'))
+    hash_value = sha256.hexdigest()
+
+    return hash_value
+
+
+# hash of publication name + title 
+def add_primary_key(df):
+    try:
+        return (
+            df["publication_name"]
+            + df["news_title"]
+        ).apply(get_consistent_hash)
+    except (Exception) as error:
+        logging.warning(error)
+        return get_consistent_hash("empty") #  TODO improve - should be a None ?
+        
+def get_diff_from_df(df, df_from_pg):
+    initial_len = len(df)
+    
+    difference_df = df[~df['id'].isin(df_from_pg['id'])]
+    logging.info(f"Number of new sitemap to save (compared to already saved in PG): {len(difference_df)} out of {initial_len}")
+    return difference_df
+
+async def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict, df_from_pg) -> pd.DataFrame:
     """Query a site map url from media_conf and tranform it as pd.DataFrame
 
     Args:
@@ -92,106 +179,51 @@ def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict) -> pd.DataFr
         pd.DataFrame
     """
     try:
+        logging.info("\n\nParsing media %s with %s" % (media, sitemap_conf["sitemap_url"]))
+        #@see https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#news-sitemaps
+
         temp_df = adv.sitemap_to_df(sitemap_conf["sitemap_url"])
-    except AttributeError:
+  
+        temp_df.rename(columns={"loc": "url"}, inplace=True)
+    
+        cols = get_sitemap_cols()
+
+        df_template_db = pd.DataFrame(columns=cols)
+        temp_df = pd.concat([temp_df, df_template_db])
+        temp_df["media"] = media
+        
+        df = get_sections(temp_df, sitemap_conf)
+
+        df = change_datetime_format(df)
+        # keep only one week of data to avoid massive sitemap.xml
+        date_label = sitemap_conf.get("filter_date_label", None)
+        if date_label is not None:
+            df = filter_on_date(df, date_label=date_label, days_duration=7)
+        else:
+            logging.warning("No filter by date is done")
+
+        df["media_type"] = MEDIA_CONFIG[media]["type"]
+
+        df = clean_surrounding_whitespaces_df(df)
+        df = df.drop(columns=["etag", "sitemap_size_mb", "news", "news_publication", "image"], errors='ignore')
+        
+        # primary key for the DB to avoid duplicate data
+        df["id"] = add_primary_key(df)
+
+        # empty for some medias such as JDD
+        df["publication_name"] = df["publication_name"].fillna(media)
+
+        #keep only unknown id to not parse every website for new_description
+        difference_df = get_diff_from_df(df, df_from_pg)
+        
+        # concurrency : https://stackoverflow.com/a/67944888/3535853
+        # https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+        difference_df['news_description'] = await asyncio.gather(*(add_news_meta(row["url"], media, row["news_title"]) for (_, row) in difference_df.iterrows()))
+
+        return difference_df
+    except Exception as err:
         logging.error(
-            "Sitemap query error for %s: %s does not match regexp."
-            % (media, sitemap_conf["sitemap_url"])
+            "Sitemap query error for %s: %s : %s"
+            % (media, sitemap_conf["sitemap_url"], err)
         )
-        return
-    cols = [
-        "publication_name",
-        "news_title",
-        "download_date",
-        "news_publication_date",
-        "news_keywords",
-        "section",
-        "image_caption",
-        "media_type",
-    ]
-    df_template_db = pd.DataFrame(columns=cols)
-    temp_df = pd.concat([temp_df, df_template_db])
-    temp_df.rename(columns={"loc": "url"}, inplace=True)
-    temp_df["media"] = media
-    df = get_sections(temp_df)
-    df = change_datetime_format(df)
-
-    date_label = sitemap_conf.get("filter_date_label", None)
-    if date_label is not None:
-        df = filter_on_date(df, date_label=date_label)
-
-    df["media_type"] = MEDIA_CONFIG[media]["type"]
-    df = clean_surrounding_whitespaces_df(df)
-    sanity_check()
-    return df
-
-
-def sanity_check():
-    """Checks if the data is correct, input a df"""
-    # TODO data model here
-    return
-
-
-def write_df(df: pd.DataFrame, media: str):
-    """Write the extracted dataframe to standardized path"""
-
-    landing_path_media = "data_public/sitemap_dumps/media_type=%s/%s.json" % (
-        MEDIA_CONFIG[media]["type"],
-        media,
-    )
-    if not os.path.exists(landing_path_media):
-        previous_entries = {}
-        logging.info("Writing to %s for the first time" % landing_path_media)
-
-    else:
-        with open(landing_path_media) as f:
-            previous_entries = json.load(f)
-    previous_entries = insert_or_update_entry(df, previous_entries)
-    with open(landing_path_media, "w") as f:
-        json.dump(previous_entries, f)
-
-
-def insert_or_update_entry(df_one_media: pd.DataFrame, dict_previous_entries: dict):
-    df_one_media.set_index("url", inplace=True)
-    for row in df_one_media.sort_values("download_date").iterrows():
-        if row[0] not in dict_previous_entries:  # new entry
-            dict_previous_entries.update(
-                {
-                    row[0]: {
-                        "news_title": row[1]["news_title"],
-                        "image_caption": row[1]["image_caption"],
-                        "download_date": row[1]["download_date"].strftime("%Y-%m-%d"),
-                        "publication_name": row[1]["publication_name"],
-                        "news_publication_date": row[1][
-                            "news_publication_date"
-                        ].strftime("%Y-%m-%d"),
-                        "news_keywords": row[1]["news_keywords"],
-                        "section": row[1]["section"],
-                        "media_type": row[1]["media_type"],
-                        "download_date_last": row[1]["download_date"].strftime(
-                            "%Y-%m-%d"
-                        ),
-                    }
-                }
-            )
-        else:  # this will update download_date_last, without updating download_date
-            dict_previous_entries[row[0]].update(
-                {
-                    "download_date_last": row[1]["download_date"].strftime("%Y-%m-%d"),
-                }
-            )  # we update download_date_last with the current (new) download_date
-    return dict_previous_entries
-
-
-def run():
-    for media, sitemap_conf in SITEMAP_CONFIG.items():
-        try:
-            df = query_one_sitemap_and_transform(media, sitemap_conf)
-            write_df(df, media)
-        except Exception as err:
-            logging.error("Could not write data for %s: %s" % (media, err))
-            continue
-
-
-if __name__ == "__main__":
-    run()
+        return None

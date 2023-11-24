@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<url>
+  <loc>https://www.letelegramme.fr/monde/coups-de-feu-a-bruxelles-deux-morts-le-suspect-en-fuite-6450252.php</loc>
+  <image:image xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+    <image:loc>https://media.letelegramme.fr/api/v1/images/view/652d8f34710625629665f40a/web_golden_xxl/652d8f34710625629665f40a.1</image:loc>
+    <image:caption>Un périmètre de sécurité a été installé autour de la place Sainctelette. (Hatim Kaghat/AFP)</image:caption>
+    <image:title>Un périmètre de sécurité a été installé autour de la place Sainctelette.</image:title>
+  </image:image>
+  <news:news xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+    <news:publication>
+      <news:name>Le Télégramme</news:name>
+      <news:language>fr</news:language>
+    </news:publication>
+    <news:publication_date>2023-10-16T19:29:56+00:00</news:publication_date>
+    <news:title>Coups de feu à Bruxelles : deux morts, le suspect en fuite, la piste terroriste évoquée</news:title>
+  </news:news>
+</url>
+<url>
+  <loc>https://www.letelegramme.fr/monde/mali-la-mission-de-lonu-engage-sous-tension-une-nouvelle-phase-de-son-retrait-6450249.php</loc>
+  <news:news xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+    <news:publication>
+      <news:name>Le Télégramme</news:name>
+      <news:language>fr</news:language>
+    </news:publication>
+    <news:publication_date>2023-10-16T19:18:00+00:00</news:publication_date>
+    <news:title>Mali : la mission de l’Onu engage sous tension une nouvelle phase de son retrait</news:title>
+  </news:news>
+</url>
+<url>
+  <loc>https://www.letelegramme.fr/morbihan/vannes-56000/circulation-et-stationnement-a-la-gare-de-vannes-ca-va-etre-tres-complique-pendant-deux-ans-6450250.php</loc>
+  <image:image xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+    <image:loc>https://media.letelegramme.fr/api/v1/images/view/652d8d905a16a826de416f33/web_golden_xxl/652d8d905a16a826de416f33.1</image:loc>
+    <image:caption>Le côté sud de la gare vu d’en haut. L’avenue Favrel et Lincy deviendra une voie de bus dans le sens descendant, une voie pour les voitures et bus dans le sens montant. Le parvis de la gare sera élargi et végétalisé. Les vélos y trouveront leur place. (Image : Villes et paysages)</image:caption>
+    <image:title>Le côté sud de la gare vu d’en haut. L’avenue Favrel et Lincy deviendra une voie de bus dans le sens descendant, une voie pour les voitures et bus dans le sens montant. Le parvis de la gare sera élargi et végétalisé. Les vélos y trouveront leur place.</image:title>
+  </image:image>
+  <news:news xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+    <news:publication>
+      <news:name>Le Télégramme</news:name>
+      <news:language>fr</news:language>
+    </news:publication>
+    <news:publication_date>2023-10-16T19:13:00+00:00</news:publication_date>
+    <news:title>Circulation et stationnement à la gare de Vannes : « Ça va être très compliqué pendant deux ans »</news:title>
+    <news:keywords>Futur quartier de la gare de Vannes,Gare</news:keywords>
+  </news:news>
+</url>
+<url>
+  <loc>https://www.letelegramme.fr/finistere/ergue-gaberic-29500/cinq-blesses-dans-un-accident-de-circulation-a-ergue-gaberic-6450248.php</loc>
+  <image:image xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+    <image:loc>https://media.letelegramme.fr/api/v1/images/view/652d8cd651450e731a713e6a/web_golden_xxl/652d8cd651450e731a713e6a.1</image:loc>
+    <image:caption>Un homme a été transporté dans un état critique à l’hôpital de Quimper. (Photo d’illustration Lionel Le Saux/Le Télégramme)</image:caption>
+    <image:title>Un homme a été transporté dans un état critique à l’hôpital de Quimper.</image:title>
+  </image:image>
+  <news:news xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+    <news:publication>
+      <news:name>Le Télégramme</news:name>
+      <news:language>fr</news:language>
+    </news:publication>
+    <news:publication_date>2023-10-16T19:08:00+00:00</news:publication_date>
+    <news:title>Cinq blessés dans un accident de la circulation à Ergué-Gabéric</news:title>
+    <news:keywords>Faits divers,Accident</news:keywords>
+  </news:news>
+</url>
+
+</urlset>

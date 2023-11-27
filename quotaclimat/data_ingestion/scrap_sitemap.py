@@ -10,7 +10,7 @@ import pandas as pd
 
 from quotaclimat.data_ingestion.config_sitemap import (SITEMAP_CONFIG, SITEMAP_TEST_CONFIG, SITEMAP_DOCKER_CONFIG, MEDIA_CONFIG)
 from postgres.schemas.models import get_sitemap_cols
-from quotaclimat.data_ingestion.scrap_html.scrap_description_article import get_meta_news
+from quotaclimat.data_ingestion.scrap_html.scrap_description_article import get_meta_news, agent
 import asyncio
 import hashlib
 
@@ -180,8 +180,9 @@ async def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict, df_fro
     """
     try:
         logging.info("\n\nParsing media %s with %s" % (media, sitemap_conf["sitemap_url"]))
+        logging.info(f"User-agent: { agent['User-Agent'] }")
         #@see https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#news-sitemaps
-
+        adv.sitemaps.headers['User-Agent'] = agent["User-Agent"]
         temp_df = adv.sitemap_to_df(sitemap_conf["sitemap_url"])
   
         temp_df.rename(columns={"loc": "url"}, inplace=True)
@@ -216,10 +217,8 @@ async def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict, df_fro
         #keep only unknown id to not parse every website for new_description
         difference_df = get_diff_from_df(df, df_from_pg)
         
-        # concurrency : https://stackoverflow.com/a/67944888/3535853
-        # https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
-        difference_df['news_description'] = await asyncio.gather(*(add_news_meta(row["url"], media, row["news_title"]) for (_, row) in difference_df.iterrows()))
-
+        difference_df['news_description'] = await get_description_article(media, difference_df)
+        
         return difference_df
     except Exception as err:
         logging.error(
@@ -227,3 +226,13 @@ async def query_one_sitemap_and_transform(media: str, sitemap_conf: Dict, df_fro
             % (media, sitemap_conf["sitemap_url"], err)
         )
         return None
+
+# concurrency : https://stackoverflow.com/a/67944888/3535853
+# https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#returning-a-view-versus-a-copy
+async def get_description_article(media, article_df):
+    article_tasks = []
+    for (_, row) in article_df.iterrows():
+        description = add_news_meta(row["url"], media, row["news_title"])
+        article_tasks.append(description)
+
+    return await asyncio.gather(*article_tasks)

@@ -1,20 +1,12 @@
-import logging
-
-import numpy as np
 import pandas as pd
 import pytest
-import os 
 from quotaclimat.data_ingestion.scrap_sitemap import (filter_on_date, find_sections, get_consistent_hash, get_diff_from_df, query_one_sitemap_and_transform, get_sections_from_url, normalize_section)
 from quotaclimat.data_ingestion.config_sitemap import (SITEMAP_CONFIG)
 from datetime import datetime, timedelta
-
+from utils import get_localhost
 from quotaclimat.data_ingestion.ingest_db.ingest_sitemap_in_db import get_sitemap_list
 
-url_to_parse = ""
-if(os.environ.get("ENV") == "docker"):
-    url_to_parse ="http://nginxtest:80/"
-else:
-    url_to_parse = "http://localhost:8000/"
+url_to_parse = get_localhost()
 
 def test_normalize_section():
     assert normalize_section(["test", "pizza"]) == ["test", "pizza"]
@@ -32,7 +24,7 @@ def test_get_sitemap_list():
     sitemap = list(get_sitemap_list())[0]
     # locally we test only a few items
     sitemap_url = sitemap
-    sitemap_url == "http://nginxtest:80/sitemap_news_figaro_3.xml"
+    sitemap_url == f"${url_to_parse}/sitemap_news_figaro_3.xml"
 
 @pytest.mark.asyncio
 async def test_query_one_sitemap_and_transform():
@@ -48,7 +40,7 @@ async def test_query_one_sitemap_and_transform():
     output = await query_one_sitemap_and_transform(media, sitemap_config[media], pg_df)
     title = "EN DIRECT - Conflit Hamas-Israël : l’armée israélienne dit avoir frappé Gaza avec 4000 tonnes d’explosifs depuis samedi"
     expected_result = pd.DataFrame([{
-        "url" : f"{url_to_parse}mediapart_website.html",
+        "url" : f"{url_to_parse}/mediapart_website.html",
         "lastmod" :pd.Timestamp("2023-10-12 15:34:28"),
         "publication_name" :"Le Figaro",
         "publication_language" :"fr",
@@ -96,7 +88,7 @@ async def test_query_one_sitemap_and_transform_hat_parsing():
     title = "Grève du 13 octobre : SNCF, RATP, aérien, médecins… Retrouvez le détail des perturbations à prévoir"
     publication_name = "Le Figaro"
     expected_result = pd.DataFrame([{
-        "url" : f"{url_to_parse}20minutes_website.html",
+        "url" : f"{url_to_parse}/20minutes_website.html",
         "lastmod" :pd.Timestamp("2023-10-12 15:34:21"),
         "publication_name" :"Le Figaro",
         "publication_language" :"fr",

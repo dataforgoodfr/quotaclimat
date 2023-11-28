@@ -1,0 +1,38 @@
+name: Start Scaleway
+
+on:
+  workflow_dispatch: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
+  
+  schedule: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
+  - cron:  '00 07 * * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Use CLI
+      uses: scaleway/action-scw@v0
+      with:
+        save_config: true
+        export_config: true
+        version: v2.13.0
+        access-key: ${{ secrets.SCW_ACCESS_KEY }}
+        secret-key: ${{ secrets.SCW_SECRET_KEY }}
+        default-project-id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
+        default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
+    - name: Get instance id and expose it in CONTAINER_ID env var
+      run: echo ::set-env name=CONTAINER_ID::$(cat "${GITHUB_WORKSPACE}/scw.output" | jq -r '.id')
+
+    - name: Get container ID
+      run: |
+        CONTAINER_ID=$(scw container list name=${{ secrets.CONTAINER_NAME }} | awk 'NR==2{print $1}')
+        echo "::set-output name=container_id::$CONTAINER_ID"
+
+    - name: start 1 instance
+      uses: jawher/action-scw@v2.24.0
+      env:
+        SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+      with:
+        args: container container update container-id=${{ env.CONTAINER_ID }} min-scale=1

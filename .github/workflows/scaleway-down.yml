@@ -20,12 +20,11 @@ jobs:
         secret-key: ${{ secrets.SCW_SECRET_KEY }}
         default-project-id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
         default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
-    - name: Get instance id and expose it in CONTAINER_ID env var
-      run: echo ::set-env name=CONTAINER_ID::$(cat "${GITHUB_WORKSPACE}/scw.output" | jq -r '.id')
 
     - name: Get container ID
       run: |
         echo "CONTAINER_ID=$(scw container list name=${{ secrets.CONTAINER_NAME }} | awk 'NR==2{print $1}')" >> $GITHUB_ENV
+
     - name: 0 instances
       uses: jawher/action-scw@v2.24.0
       env:

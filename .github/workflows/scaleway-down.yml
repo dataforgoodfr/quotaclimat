@@ -23,6 +23,7 @@ jobs:
     - name: Get CONTAINER_ID env var
       run: echo "CONTAINER_ID=$(cat "${GITHUB_WORKSPACE}/scw.output" | jq -r '.[0].id')"  >> $GITHUB_ENV
 
+
     - name: 0 instances
       uses: jawher/action-scw@v2.24.0
       env:

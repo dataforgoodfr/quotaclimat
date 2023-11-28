@@ -21,7 +21,7 @@ jobs:
         args: container container list name=${{ secrets.CONTAINER_NAME }} --output json
 
     - name: Get CONTAINER_ID env var
-      run: echo CONTAINER_ID=$(cat "${GITHUB_WORKSPACE}/scw.output" | jq -r '.id')
+      run: echo CONTAINER_ID=$(cat "${GITHUB_WORKSPACE}/scw.output" | jq -r '.[0].id')
 
     - name: 0 instances
       uses: jawher/action-scw@v2.24.0

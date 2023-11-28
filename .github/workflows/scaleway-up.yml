@@ -22,7 +22,7 @@ jobs:
         default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
     - name: Get container ID
       run: |
-        echo "CONTAINER_ID=$(container container list name=${{ secrets.CONTAINER_NAME }} | awk 'NR==2{print $1}')" >> $GITHUB_ENV
+        echo "CONTAINER_ID=$(scw container container list name=${{ secrets.CONTAINER_NAME }} | awk 'NR==2{print $1}')" >> $GITHUB_ENV
 
     - name: start 1 instances
       uses: jawher/action-scw@v2.24.0

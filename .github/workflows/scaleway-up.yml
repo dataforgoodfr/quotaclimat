@@ -30,5 +30,6 @@ jobs:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
         SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
         SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+        SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
         args: container container update container-id=${{ env.CONTAINER_ID }} min-scale=1

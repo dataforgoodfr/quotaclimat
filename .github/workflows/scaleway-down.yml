@@ -7,7 +7,7 @@ on:
   - cron:  '00 00 * * *'
 
 jobs:
-  build:
+  down:
     runs-on: ubuntu-latest
     steps:
     - name: Use CLI
@@ -25,9 +25,7 @@ jobs:
 
     - name: Get container ID
       run: |
-        CONTAINER_ID=$(scw container list name=${{ secrets.CONTAINER_NAME }} | awk 'NR==2{print $1}')
-        echo "::set-output name=container_id::$CONTAINER_ID"
-
+        echo "CONTAINER_ID=$(scw container list name=${{ secrets.CONTAINER_NAME }} | awk 'NR==2{print $1}')" >> $GITHUB_ENV
     - name: 0 instances
       uses: jawher/action-scw@v2.24.0
       env:

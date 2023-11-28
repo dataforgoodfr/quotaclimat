@@ -4,29 +4,25 @@ on:
   workflow_dispatch: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
   
   schedule: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
-  - cron:  '00 00 * * *'
+  - cron:  '21 00 * * *'
 
 jobs:
-  build:
+  down:
     runs-on: ubuntu-latest
     steps:
     - name: Use CLI
-      uses: scaleway/action-scw@v0
+      uses: jawher/action-scw@v2.24.0
+      env:
+        SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+        SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
-        save_config: true
-        export_config: true
-        version: v2.13.0
-        access-key: ${{ secrets.SCW_ACCESS_KEY }}
-        secret-key: ${{ secrets.SCW_SECRET_KEY }}
-        default-project-id: ${{ secrets.SCW_DEFAULT_PROJECT_ID }}
-        default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
-    - name: Get instance id and expose it in CONTAINER_ID env var
-      run: echo ::set-env name=CONTAINER_ID::$(cat "${GITHUB_WORKSPACE}/scw.output" | jq -r '.id')
+        args: container container list name=${{ secrets.CONTAINER_NAME }} --output json
 
-    - name: Get container ID
-      run: |
-        CONTAINER_ID=$(scw container list name=${{ secrets.CONTAINER_NAME }} | awk 'NR==2{print $1}')
-        echo "::set-output name=container_id::$CONTAINER_ID"
+    - name: Get CONTAINER_ID env var
+      run: echo "CONTAINER_ID=$(cat "${GITHUB_WORKSPACE}/scw.output" | jq -r '.[0].id')"  >> $GITHUB_ENV
+
 
     - name: 0 instances
       uses: jawher/action-scw@v2.24.0
@@ -34,5 +30,6 @@ jobs:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
         SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
         SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+        SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
-        args: container container update container-id=${{ env.CONTAINER_ID }} min-scale=0
+        args: container container update min-scale=0 ${{ env.CONTAINER_ID }}

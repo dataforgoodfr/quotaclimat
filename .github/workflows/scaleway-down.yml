@@ -4,7 +4,7 @@ on:
   workflow_dispatch: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
   
   schedule: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#schedule
-  - cron:  '21 00 * * *'
+  - cron:  '36 21 * * *'
 
 jobs:
   down:

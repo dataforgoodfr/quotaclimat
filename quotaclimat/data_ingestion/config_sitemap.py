@@ -5,6 +5,12 @@ SITEMAP_CONFIG = {
         "regex_section": r"^https:\/\/www\.bfmtv\.com\/(?P<section>[\/\w-]*)\/.+$",
         "filter_date_label": "lastmod",
     },
+    "marianne": {
+        "sitemap_index": None,
+        "sitemap_url": "https://www.marianne.net/sitemap_news.xml",
+        "regex_section": r"^https:\/\/www\.marianne\.net\/(?P<section>[\/\w-]*)\/.$",
+        "filter_date_label": "news_publication_date",
+    },
     # "lejdd": { # need custom parsing as sitemap is missing a lot of attributes
     #     "sitemap_index": None,
     #     "sitemap_url": "https://www.lejdd.fr/sitemap.xml",
@@ -275,6 +281,11 @@ MEDIA_CONFIG = {
     "bfmtv": {
         "site_url": "https://www.bfmtv.com/",
         "type": "tv",
+        "coverage": "national",
+    },
+    "marianne": {
+        "site_url": "https://www.marianne.net/",
+        "type": "webpress",
         "coverage": "national",
     },
     "lejdd": {

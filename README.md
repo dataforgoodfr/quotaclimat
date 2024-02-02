@@ -235,10 +235,11 @@ By default, we use a env variable `ENV` to only parse from localhost. If you set
 Thanks to the nginx container, we can have a local server for sitemap :
 * http://localhost:8000/sitemap_news_figaro_3.xml
 
-
 ```
 docker compose up -d nginx # used to scrap sitemap locally - a figaro like website with only 3 news
 pytest test # "test" is the folder containing tests
+# Only one test
+pytest -k 'mediatree' 
 # OR
 docker compose up test # test is the container name running pytest test
 ```
@@ -248,6 +249,17 @@ Every commit on the `main` branch will build an deploy to the Scaleway container
 
 Learn [more here.](https://www.scaleway.com/en/docs/tutorials/use-container-registry-github-actions/)
 
+## Import mediatree data
+https://keywords.mediatree.fr/docs/
+
+Contact QuotaClimat team to 2 files with the API's username and password inside : 
+* secrets/pwd_api.txt
+* secrets/username_api.txt
+
+```
+docker compose up mediatree
+```
+
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
 ```bash
@@ -256,3 +268,6 @@ poetry run isort .
 poetry run flake8 .
 ```
 There is a debt regarding the cleanest of the code right now. Let's just not make it worth for now.
+
+## Thanks
+* [Eleven-Strategy](https://www.welcometothejungle.com/fr/companies/eleven-strategy)

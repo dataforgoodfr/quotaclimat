@@ -74,7 +74,6 @@ def get_last_month_sitemap_id(engine):
         return df
 
 def create_tables():
-    drop_tables()
     """Create tables in the PostgreSQL database"""
     logging.info("create sitemap, keywords tables")
     try:

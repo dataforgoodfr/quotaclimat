@@ -39,6 +39,24 @@ def show_sitemaps_dataframe(df: pd.DataFrame):
     except Exception as err:
             logging.warning("Could show sitemap before saving : \n %s \n %s" % (err, df.head(1).to_string()))
 
+def save_to_pg(df, table, conn):
+    logging.info(f"Saving to PG table {table}")
+    logging.debug("Saving %s" % (df.head(1).to_string()))
+    try:
+        logging.debug("Schema before saving\n%s", df.dtypes)
+        df.to_sql(
+            table,
+            index=False,
+            con=conn,
+            if_exists="append",
+            chunksize=1000,
+            method=insert_or_do_nothing_on_conflict,  # pandas does not handle conflict natively
+        )
+        logging.info("Saved dataframe to PG")
+        return len(df)
+    except Exception as err:
+        logging.error("Could not save : \n %s \n %s" % (err, df.head(1).to_string()))
+        return 0
 
 def insert_data_in_sitemap_table(df: pd.DataFrame, conn):
     number_of_rows = len(df)
@@ -50,20 +68,5 @@ def insert_data_in_sitemap_table(df: pd.DataFrame, conn):
     show_sitemaps_dataframe(df)
 
     df = clean_data(df)
-    logging.debug("Saving %s" % (df.head(1).to_string()))
+    save_to_pg(df, sitemap_table, conn)
     
-    try:
-        logging.debug("Schema before saving\n%s", df.dtypes)
-        df.to_sql(
-            sitemap_table,
-            index=False,
-            con=conn,
-            if_exists="append",
-            chunksize=1000,
-            method=insert_or_do_nothing_on_conflict,  # pandas does not handle conflict natively
-        )
-        logging.info("Saved dataframe to PG")
-        return number_of_rows
-    except Exception as err:
-        logging.error("Could not save : \n %s \n %s" % (err, df.head(1).to_string()))
-        return 0

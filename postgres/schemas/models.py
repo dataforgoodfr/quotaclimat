@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Text
+from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY
 from sqlalchemy.orm import declarative_base
 import pandas as pd
 from sqlalchemy import text
@@ -29,7 +29,7 @@ def get_sitemap_cols():
 
 
 sitemap_table = "sitemap_table"
-
+keywords_table = "keywords"
 
 class Sitemap(Base):
     __tablename__ = sitemap_table
@@ -47,6 +47,17 @@ class Sitemap(Base):
     news_description= Column(Text) # ALTER TABLE sitemap_table add news_description text;
     updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
 
+class Keywords(Base):
+    __tablename__ = keywords_table
+
+    id = Column(Text, primary_key=True)
+    channel_name = Column(String, nullable=False)
+    channel_radio = Column(Boolean, nullable=True)
+    start = Column(DateTime())
+    plaintext= Column(Text)
+    theme=Column(ARRAY(String)) #keyword.py
+    created_at = Column(DateTime(), default=datetime.now)
+
 
 def get_sitemap(id: str):
     session = get_db_session()
@@ -63,9 +74,9 @@ def get_last_month_sitemap_id(engine):
         return df
 
 def create_tables():
+    drop_tables()
     """Create tables in the PostgreSQL database"""
-
-    logging.info("create sitemap table")
+    logging.info("create sitemap, keywords tables")
     try:
         engine = connect_to_db()
 

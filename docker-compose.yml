@@ -112,6 +112,43 @@ services:
     logging: # no logs for postgres container
             driver: none
 
+  mediatree:
+    ports:
+      - 5050:5050
+    build:
+      context: ./
+      dockerfile: Dockerfile_ingest
+    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
+    entrypoint: ["python", "quotaclimat/data_processing/mediatree/api_import.py"]
+    environment:
+      ENV: docker # change me to prod for real cases
+      LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log
+      PYTHONPATH: /app
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      PORT: 5050 # healthcheck
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      MEDIATREE_USER : /run/secrets/username_api
+      MEDIATREE_PASSWORD:  /run/secrets/pwd_api
+      MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
+      KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/ # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./test/:/app/test/
+      - ./app.py:/app/app.py
+    secrets:
+       - pwd_api
+       - username_api
+    depends_on:
+      nginxtest:
+        condition: service_healthy
+      postgres_db:
+        condition: service_healthy
+
   metabase:
       container_name: metabase_barometre
       image: metabase/metabase:latest
@@ -131,3 +168,9 @@ services:
       depends_on:
         postgres_db:
           condition: service_healthy
+
+secrets: # https://docs.docker.com/compose/use-secrets/
+    pwd_api:
+      file: secrets/pwd_api.txt
+    username_api:
+      file: secrets/username_api.txt

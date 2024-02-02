@@ -74,6 +74,8 @@ def test_find_themes():
     plaintext_multiple_themes = "climatique test bovin migrations climatiques"
     assert find_themes(plaintext_multiple_themes) == ["constat_et_concepts_globaux", "consequences"]
 
+    assert find_themes("record de température pizza adaptation au dérèglement climatique") == ["constat_et_concepts_globaux", "consequences", "solutions_dadaptation_directes"]
+
 def test_filter():
     df1 = pd.DataFrame([{
         "start": 1704798000,

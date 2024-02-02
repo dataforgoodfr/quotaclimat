@@ -77,5 +77,84 @@ THEME_KEYWORDS = {
     "zoonose",
     "espèces invasives",
     "retrait gonflement des argiles"
+],
+"solutions_directes" : [
+    "limiter la hausse des températures"
+    ,"réduction/baisse des émissions de gaz à effet de serre", "réduire les émissions de gaz à effet de serre", "baisser les émissions de gaz à effet de serre",
+    "diminuer les émissions de gaz à effet de serre", "sortie des énergies fossiles", "sortie du charbon", "décarbonation", "décarboner",
+    "transition en dehors des énergies fossile"
+    ,"manifestation pour le climat", "marche du siècle", " marche pour le climat activisme climatique", "activiste pour le climat"
+    , "militante écologiste", "désobéissance civile"
+    ,"atténuation du changement climatique"
+    ,"alternative durable", "moins polluant"
+    ,"économie circulaire"
+    ,"mobilité durable", "Voitures électriques", "Covoiturage", "Biocarburants"
+    ,"écoconception"
+    ,"réseaux de chaleur", "énergies renouvelables", "transition énergétique", "électricité décarboné", "énergies vertes",
+    "énergies durables", "éolien", "panneaux solaires", "solaires", "photovoltaïque", "géothermie", "hydroélectricité",
+    "barrages", "centrales hydroélectriques", "biomasse", "méthaniseur", "méthanisation", "biogaz", "bois-énergie", 
+    "nucléaire", "réacteurs nucléaires", "EPR", "hydrogène vert"
+    ,"économies d’énergie", "lutte contre les gaspillages énergétiques", "réduction des gaspillages énergétique", "efficacité énergétique", "économiser de l’énergie",
+     "sobriété énergétique"
+    ,"recyclage", "compostage", "valorisation des déchets", "zéro plastique"
+    ,"ciments durables", "ciments de nouvelle génération", "béton bas carbone"
+    ,"captage et stockage de carbone", "captage et stockage de CO2", "capture et séquestration de carbone", "séquestration du carbone"
+    ,"absorption du carbone", "puits de carbone", "puits carbone", "CCS", "BECCS"
+    ,"rénovation énergétique"
+    ,"industrie verte"
+    ,"agriculture biologique", "agroécologie", "polyculture élevage", "agroforesterie", "permaculture"
+    ,"label bio", "label AB", "label HVE"
+    ,"stockage du carbone dans les sols", "réduction du cheptel", "agriculture de conservation"
+    ,"restauration des tourbières", "protection des tourbières", "stockage du carbone dans les sols", "biochar", "restauration des zones humides"
+    ,"végétarien", "vegan"
+    ,"lutte contre le gaspillage alimentaire", "réduction du gaspillage alimentaire", "antigaspi", "antigaspillage"
+    ,"puits de carbone", "puits carbone"
+    ,"taxe carbone"
+    ,"décroissance"
+    ,"sobriété"
+]
+,"solutions_indirectes": [
+    "éducation au changement climatique"
+    ,"covoiturage", "vélos", "marche à pied"
+    ,"train", "transport ferroviaire", "SNCF"
+    ,"transport maritime"
+    ,"transports collectifs", "transports en commun", "Bus électriques", "bus"
+    ,"bois d’oeuvre"
+    ,"isolation", "isolation thermique", "pompes à chaleur (SAUF groupe verlaine", "SAUF atlantique)", "changement de chaudière"
+    , "chaudière biomasse"
+    ,"matériaux biosourcés", "matériaux recyclés", "matériaux recyclables"
+    ,"forêts"
+    ,"tri à la source"
+    ,"biodégradable"
+    ,"espaces verts"
+    ,"prairies"
+    ,"moins de viande", "viande rouge"
+    ,"camions électriques", "poids lourds électriques", "transport ferroviaire de marchandises", "fret ferroviaire", "transport fluvial de marchandises"
+    ,"forêt mosaïque"
+    ,"Baisse du trafic aérien"
+    ,"zadisme","zadiste","zad"
+]
+,
+"solutions_dadaptation_directes":
+[
+    "adaptation au changement climatique", "adaptation au dérèglement climatique", "adaptation au réchauffement climatique"
+    , "adaptation au réchauffement climatique", "adaptation climatique"
+    ,"maladaptation"
+    ,"renforcer les digues", "renforcer les dunes", "gestion du littoral", "prévention des inondations"
+    , "limiter l’érosion des côtes", "lutter contre l’érosion"
+    ,"gestion durable des forêts", "agroforesterie"
+    ,"pêche durable", "aquaculture durable"
+    ,"gestion de la ressource en eau", "réduction de la demande en eau", "sauvegarde de la ressource en eau"
+    , "lutte contre les gaspillages d’eau", "économies d’eau", "méga bassine", "réserve d’eau", "retenue collinaire"
+    ,"gestion durable des terres cultivables"
+    ,"amélioration des pratiques d’élevages", "réduire l’élevage intensif"
+    ,"restriction d’eau"
+    ,"réutilisation des eaux usées traitées"
+    ,"désalinisation des eaux "
+    ,"îlots de fraîcheur"
+    ,"revégétalisation", "renaturer", "reforestation"
+    ,"résistant à la sécheresse"
+    ,"prévention des catastrophes naturelles"
 ]
 }
+# TODO 1.2.1. ---> 1.3.4

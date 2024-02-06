@@ -34,10 +34,12 @@ jobs:
       run: docker build -f Dockerfile_ingest . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
     - name: Push ingest_to_db Image
       run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
+
     - name: Build mediatree_import image
       run: docker build -f Dockerfile_api_import . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import
     - name: Push mediatree_import Image
       run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import
+      
     - name: Build streamlit image
       run: docker build -f Dockerfile_streamlit . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
     - name: Push streamlit Image

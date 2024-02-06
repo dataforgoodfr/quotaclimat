@@ -1,5 +1,7 @@
-THEME_KEYWORDS = { 
- "constat_et_concepts_globaux" : [
+# Based on experts' document
+
+THEME_KEYWORDS = {
+ "changement_climatique_constat" : [ # 1.1.2
             "climatique"
             ,"réchauffement de l’atmosphère", "réchauffement des océans", "réchauffement planétaire", "seuil de réchauffement"
             ,"écologique", "écologiste"
@@ -13,11 +15,11 @@ THEME_KEYWORDS = {
             ,"crise planétaire"
             ,"accord de paris", "accords de paris","COP21", "COP15", "COP26", "COP27", "COP28", "COP29", "COP30"
             ,"Conférence des Parties", "conférence climat", "conférence des Nations Unies sur le climat"
-            ,"GIEC", "Haut conseil pour le climat,", "convention des Nations unies sur le climat"
+            ,"GIEC", "Haut conseil pour le climat", "convention des Nations unies sur le climat"
             ,"transition agricole", "transition énergétique"
         ]
 ,
-"causes_directes" : [
+"changement_climatique_causes_directes" : [ # 1.1.2.1
         "inaction climatique","insuffisance climatique",
         "gaz à effet de serre",
         "carbone",
@@ -29,7 +31,7 @@ THEME_KEYWORDS = {
         "déforestation","coupe rase",
         "greenwashing"
 ],
-"causes_indirectes": [
+"changement_climatique_causes_indirectes": [ # 1.1.2.2
     "vache", "élevage", "élevage bovin"
     ,"viande",
     "malbouffe"
@@ -42,13 +44,15 @@ THEME_KEYWORDS = {
     "carburant",
     "climatisation",
     "gaspillage alimentaire",
-    "pétrole", "fuel", "fioul", "gaz", "gaz naturel", "charbon", "kérosène", "lignite", "essence", "pompes à essence", "gaz de schiste", "gaz naturel liquéfié", "or noir", "forages pétroliers", "puits de pétrole"
-    ,"engrais azotés", "engrais de synthèse", "agriculture intensive", "élevage intensif", "agriculture industrielle", "agriculture conventionnelle", "serres chauffées", "agro-industriel"
+    "pétrole", "fuel", "fioul", "gaz", "gaz naturel", "charbon", "kérosène", "lignite", "essence", "pompes à essence", "gaz de schiste", "gaz naturel liquéfié"
+    , "or noir", "forages pétroliers", "puits de pétrole"
+    ,"engrais azotés", "engrais de synthèse", "agriculture intensive", "élevage intensif", "agriculture industrielle", "agriculture conventionnelle"
+    , "serres chauffées", "agro-industriel"
     ,"chauffage au gaz", "chauffage au fuel"
     ,"passoire thermique", "passoire énergétique", "logement mal isolé"
     ,"îlot de chaleur"
 ],
-"consequences" : [
+"changement_climatique_consequences" : [ # 1.1.3
     "augmentation des températures", "hausse de la température du globe", "température moyenne de surface", "élévation des températures",
     "météorologiques extrêmes", "phénomènes climatiques extrêmes",
     "période la plus chaude", "année la plus chaude", "mois le plus chaud", "jour le plus chaud",
@@ -56,7 +60,7 @@ THEME_KEYWORDS = {
     "record de température",
     "élévation du niveau de la mer", "hausse du niveau de la mer", "montée du niveau de la mer", "hausse du niveau marin", "élévation du niveau marin", "montée du niveau marin", "hausse du niveau des océans", "élévation du niveau des océans", "montée du niveau des océans",
     "fonte des glaces", "fonte des glaciers", "fonte de la banquise", "diminution de la banquise", "diminution des glaciers", "disparition des glaciers", "fonte des calottes glacières", "fonte du permafrost",
-    "érosion côtières", "érosion des côtes", "inondations", "submersion", "submersions marines", "submersion", "crues centenaires",
+    "érosion côtières", "érosion des côtes", "inondations", "submersion", "submersions marines", "submersion", "crues centennales",
     "blanchissement des coraux", "disparition des coraux",
     "sécheresse", "augmentation des risques de sécheresse", "stress hydrique", "canicule", "déficit de pluie", "pénurie de neige",
     "raréfaction de la ressource en eau", "rareté de la ressource en eau", "restrictions d’eau", "manquer d’eau",
@@ -65,7 +69,7 @@ THEME_KEYWORDS = {
     "acidification des oceans",
     "sécurité alimentaire", "perte agricole", "diminution des rendements agricoles", "baisse des rendements agricoles", "gels printaniers",
     "tempête xynthia", "la roya",
-    "disparition des coraux", "disparition des récifs corraliens",
+    "disparition des coraux", "disparition des récifs coralliens",
     "acidification des océans",
     "évènements climatiques extrêmes", "aléas climatiques extrêmes", "évènements météorologiques extrêmes", "évènements extrêmes", "épisodes météorologiques extrêmes", 
     "épisodes climatiques extrêmes", "fortes pluies", "pluies extrêmes", "pluies intenses", "importantes précipitations", "inondations exceptionnelles", "crue centenaire", "cyclones",
@@ -78,7 +82,7 @@ THEME_KEYWORDS = {
     "espèces invasives",
     "retrait gonflement des argiles"
 ],
-"solutions_directes" : [
+"atténuation_climatique_solutions_directes" : [ # 1.1.4.1
     "limiter la hausse des températures"
     ,"réduction/baisse des émissions de gaz à effet de serre", "réduire les émissions de gaz à effet de serre", "baisser les émissions de gaz à effet de serre",
     "diminuer les émissions de gaz à effet de serre", "sortie des énergies fossiles", "sortie du charbon", "décarbonation", "décarboner",
@@ -113,12 +117,12 @@ THEME_KEYWORDS = {
     ,"décroissance"
     ,"sobriété"
 ]
-,"solutions_indirectes": [
+,"atténuation_climatique_solutions_indirectes": [ # 	1.1.4.2
     "éducation au changement climatique"
     ,"covoiturage", "vélos", "marche à pied"
     ,"train", "transport ferroviaire", "SNCF"
     ,"transport maritime"
-    ,"transports collectifs", "transports en commun", "Bus électriques", "bus"
+    ,"transports collectifs", "transports en commun", "bus électrique", "bus"
     ,"bois d’oeuvre"
     ,"isolation", "isolation thermique", "pompes à chaleur (SAUF groupe verlaine", "SAUF atlantique)", "changement de chaudière"
     , "chaudière biomasse"
@@ -135,7 +139,7 @@ THEME_KEYWORDS = {
     ,"zadisme","zadiste","zad"
 ]
 ,
-"solutions_dadaptation_directes":
+"adaptation_climatique_solutions_directes": # 1.1.5.1
 [
     "adaptation au changement climatique", "adaptation au dérèglement climatique", "adaptation au réchauffement climatique"
     , "adaptation au réchauffement climatique", "adaptation climatique"
@@ -155,6 +159,115 @@ THEME_KEYWORDS = {
     ,"revégétalisation", "renaturer", "reforestation"
     ,"résistant à la sécheresse"
     ,"prévention des catastrophes naturelles"
+],
+"adaptation_climatique_solutions_indirectes": # 1.1.5.2
+[
+    "digues" 
+    ,"dunes" 
+    ,"gestion des milieux aquatiques"
+    ,"sorgho"
+    ,"myscanthus" 
+],
+"ressources_naturelles_concepts_generaux": # 1.2.1
+[
+"crise environnementale", "crise climatique", "crise écologique", "écologie", "écologique", "environnement", "environnemental"
+,"anthropocène", "limites planétaires", "planète", "dépassement des limites planétaires", "épuisement des ressources", "jour du dépassement"
+,"raréfaction de l’eau", "pénurie d’eau", "disponibilité d’eau douce", "baisse de la qualité de l’eau", "cycle de l’eau"
+,"salinisation des nappes", "nappes phréatiques", "pollution de l’eau", "pollution des nappes phréatiques"
+,"sécheresse", "augmentation des risques de sécheresse", "stress hydrique", "canicule", "déficite de pluie"
+,"pénurie de neige", "raréfaction de la ressource en eau", "rareté de la ressource en eau", "rareté saisonnière de la ressource en eau"
+, "fortes chaleurs", "chaleurs extrêmes", "vagues de chaleur","salinisation des sols", "intensification du cycle de l’eau"
+,"disponibilité en matériaux", "ressources minérales", "ressources renouvelables", "ressources naturelles"
+,"terres rares", "lithium", "cobalt", "cuivre"
+,"forêt", "gestion forestière", "bois d’oeuvre", "bois énergie"
+,"artificialisation des sols", "mauvaise santé des sols", "appauvrissement des sols", "sols pauvres"
+,"planète", "terre"
+],
+"ressources_naturelles_causes": # 1.2.2
+[
+    "surexploitation des ressources", "surexploitation"
+    ,"polluants éternels", "PFAS"
+    ,"surconsommation"
+    ,"pesticides", "produits toxiques"
+],
+"ressources_naturelles_solutions": # 1.2.3
+[
+    "analyse de cycle de vie", "ACV"
+    ,"biomimétisme", "bioinspiration"
+    ,"sobriété", "réduction de la demande", "réduction de la consommation (de ressources)", "maîtrise de la demande", "modération de la consommation"
+    , "fin de l’abondance"
+    ,"efficience énergétique", "efficacité énergétique"
+    ,"décarbonation", "captage du carbone"
+    ,"triptyque “réutilisation", "réparation", "recyclage”"
+    ,"réemploi", "recyclage", "réparabilité", "repair cafés", "recycleries"
+    ,"réutilisation des ressources", "lutte contre les gaspillage", "antigaspi"
+    ,"santé des sols", "préservation des sols"
+    ,"planification écologique", "transition écologique", "transformation écologique", "mutation écologique", "économie circulaire", "économie du réemploi"
+    ,"malus écologique"
+    ,"indice de réparabilité"
+],
+"biodiversité_concepts_generaux": # 1.3.1
+[
+    "biodiversité", "diversité biologique", "diversité écosystémique", "diversité du vivant", "diversité des êtres vivants", "diversité génétique"
+    ,"érosion de la biodiversité", "effondrement de la biodiversité", "extinction"
+    ,"sixième extinction de masse", "disparition des espèces", "diversité des êtres vivants"
+    ,"diversité écosystémique", "conservation de la biodiversité", "appauvrissement de la biodiversité", "chute de la biodiversité"
+    ,"déclin de la biodiversité", "déclin du vivant"
+    ,"conservation de la nature", "conserver la nature", "protéger la nature"
+    ," protection de la nature", "protéger le vivant", "protection du vivant"
+    ,"la composition physique et biologique de"
+    ,"ecosystèmes", "écosystémique", "services écosystémiques", "restauration des écosystèmes", "processus écosystémiques", "résilience des écosystèmes"
+    , "écosystèmes dégradés", "dégradation des écosystèmes", "contribution de la nature"
+    ,"IPBES"
+    ,"fertilité des sols", "pollinisation"
+    ,"intégrité écologique"
+    ,"interactions entre les êtres vivants"
+    ,"corail", "coraux", "récifs coralliens"
+    ,"convention des Nations unies sur la diversité biologique (CDB)", "COP biodiversité", "COP de Montréal"
+],
+"biodiversité_causes": # 1.3.2
+[ 
+    "dégradation de l'habitat", "condition dégradée d’habitation", "destruction des habitats naturels", "perturbation des habitats"
+    ,"perturbation des écosystèmes", "perte d’habitats", "écosystèmes dégradés", "dégradation des écosystèmes", "pression sur les milieux naturels"
+    ,"Déforestation", "artificialisation des sols", "fragmentation des milieux naturels", "habitat naturel", "déplacement des habitats"
+    ,"changement d’usage des terres", "déforestation", "infrastructures linéaires de transport", "déforestation", "déforestation importée"
+    ,"assèchement des zones humides", "disparition des haies et des pâtures"
+    ,"surexploitation des ressources", "surexploitation de la biomasse", "prélèvements", "extractivisme", "surpêche", "surexploitation du bois"
+    ,"trafics d’animaux"
+    ,"espèces menacées", "espèces exotiques", "espèces envahissantes", "Espèces invasives", "espèces envahissantes", "bactéries toxiques", "espèces protégées"
+    ,"pesticides", "produits phytosanitaires", "glyphosate", "néonicotinoïde", "chlordécone"
+    , "herbicides", "fongicides", "roundup", "monsanto", "bayer", "intrants"
+    ,"engrais azotés et phosphatés"
+    ,"produits toxiques"
+    ,"pollution de l’air", "pollution de l’eau", "pollution des sols"
+    ,"pêche industrielle", "agriculture industrielle", "agro-industrie", "agribusiness", "complexe agro-industriel", "agriculture intensive"
+    ,"huile de palme"
+    ,"OGM", "organismes génétiquement modifiées", "nouvelles techniques génomiques", "NGT"
+    ,"greenwashing"
+],
+"biodiversité_conséquences": # 1.3.3
+[
+    "espèces menacées", "espèces menacées d’extinction", "Extinction", "crise d'extinction de masse", "en voie de disparition", "Liste rouge de l'UICN"
+    , "liste rouge des espèces menacées", "disparition des oiseaux", "disparition des insectes"
+    ,"migration des espèces"
+    ,"désertification"
+    ,"zoonose", "santé animale et végétale", "menace zoologique", "zoonoses virales"
+    , "des maladies vectorielles", "propagation de maladies infectieuses"
+    , "propagation des espèces exotiques envahissantes", "prolifération des organismes nuisibles", "prolifération des maladies émergentes", "moustique tigre"
+    ,"abeilles"
+    ,"perte de biodiversité des sols", "baisse du stockage du carbone dans les sols", "dégradation des puits de carbone"
+    , "dégradation des sols", "diminution des rendements des cultures", "perturbation du cycle de l’eau"
+    ,"Détérioration des conditions de santé"
+],
+"biodiversité_solutions": # 1.3.4
+[ 
+    "solutions fondées sur la nature"
+    ,"réintroduction d'espèce", "préservation d'espèce"
+    ,"préservation des milieux", "restauration des milieux", "restauration des écosystèmes", "restauration des forêts"
+    ,"reforestation", "restauration de la biodiversité", "restaurer la biodiversité", "restauration des zones humides"
+    ,"protection des zones humides", "restauration des tourbière", "protection de la mangrove", "protection des zones côtières"
+    ,"mise en réserve", "zones de protection ou aires protégées", "parcs nationaux", "zone natura 2000"
+    ,"corridor écologique", "végétalisation des espaces urbains et des villes"
+    ,"agroforesterie", "agriculture biologique", "agroécologie", "agriculture de conservation"
 ]
 }
-# TODO 1.2.1. ---> 1.3.4

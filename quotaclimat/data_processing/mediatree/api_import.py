@@ -73,10 +73,10 @@ def get_param_api(token, type_sub, start_epoch, channel = 'm6'):
         "channel": channel,
         "token": token,
         "start_gte": start_epoch,
-        "excludes": ["srt"],
         "type": type_sub,
         "size": "1000", #  1-1000
     }
+
 
 # TODO use it when API updated
 def get_includes_or_query(array_words: List[str]) -> str: 
@@ -88,21 +88,52 @@ def get_theme_query_includes(theme_dict):
 def transform_theme_query_includes(themes_with_keywords = THEME_KEYWORDS):
     return list(map(get_theme_query_includes, themes_with_keywords))
 
-def find_themes(plaintext: str):
+# keywords : (['économie circulaire', 'panneaux solaires', 'solaires']
+def find_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str]) -> List[dict]:
+    keywords_with_timestamp = []
+
+    for keyword in keywords:
+        for subtitle in subtitle_duration:
+            if keyword in subtitle['text']:
+                keywords_with_timestamp.append({
+                    'keyword': keyword,
+                    'cts_in_ms': subtitle['cts_in_ms']
+                })
+
+    return keywords_with_timestamp
+
+def find_themes(plaintext: str, subtitle_duration: List[str]) -> Optional[List[str]]:
     matching_themes = []
+    keywords_with_timestamp = []
+
     for theme, keywords in THEME_KEYWORDS.items():
-        if any(word in plaintext for word in keywords):
-            logging.debug(f"theme found : {theme}")
+        matching_words = [word for word in keywords if word in plaintext]
+        if matching_words:
+            logging.info(f"theme found : {theme} with word {matching_words}")
             matching_themes.append(theme)
+            # look for cts_in_ms inside matching_words (['économie circulaire', 'panneaux solaires', 'solaires'] from subtitle_duration 
+            keywords_with_timestamp = find_cts_in_ms_for_keywords(subtitle_duration)
 
-    return matching_themes if matching_themes else None
+    return (matching_themes, keywords_with_timestamp) if matching_themes else None
 
-def filter_and_tag_by_theme(df: pd.DataFrame, themes_with_keywords = THEME_KEYWORDS) -> pd.DataFrame :
+def add_srt_keyword(str: List[str]) -> List[str] :
+    for srt_item in str:
+        logging.debug("str")
+        # cts_in_ms_list.append(srt_item.get('cts_in_ms', None))
+        # text_list.append(srt_item.get('text', None))
+    return "test"
+
+def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
     logging.info(f"{len(df)} subtitles to filter by keywords and tag with themes")
     df['theme'] = df['plaintext'].apply(find_themes)
         
     # remove all rows that does not have themes
     df = df.dropna(subset=['theme'])
+
+    # parse srt keywords to calculate total duration
+    df["keywords"] = df["srt"].apply(add_srt_keyword)
+    df.drop('srt', axis=1, inplace=True)
+
     logging.info(f"After filtering, we have {len(df)} subtitles left")
     return df
 
@@ -166,9 +197,14 @@ def extract_api_sub(
         logging.error("Could not query API :(%s) %s" % (type(err).__name__, err))
         return None
 
+def parse_total_results(response_sub) -> int :
+    return response_sub.get('total_results')
+
+
 def parse_reponse_subtitle(response_sub) -> Optional[pd.DataFrame]: 
     logging.debug(f"Parsing json response:\n {response_sub}")
-    total_results = response_sub.get('total_results')
+    
+    total_results = parse_total_results(response_sub)
     if(total_results > 0):
         logging.info(f"{total_results} responses received")
         new_df = json_normalize(response_sub.get('data'))

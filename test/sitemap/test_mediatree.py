@@ -4,7 +4,7 @@ from quotaclimat.data_ingestion.scrap_html.scrap_description_article import get_
 from quotaclimat.data_ingestion.scrap_sitemap import get_description_article
 from bs4 import BeautifulSoup
 from utils import get_localhost, debug_df
-from quotaclimat.data_processing.mediatree.api_import import find_themes, filter_and_tag_by_theme, parse_reponse_subtitle, get_includes_or_query, transform_theme_query_includes
+from quotaclimat.data_processing.mediatree.api_import import find_themes, add_srt_keyword, filter_and_tag_by_theme, parse_reponse_subtitle, get_includes_or_query, transform_theme_query_includes
 import json 
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 localhost = get_localhost()
@@ -15,16 +15,45 @@ json_response = json.loads("""
 {"total_results":214,
 "number_pages":43,
 "data":[
-    {"channel":{"name":"m6","title":"M6","radio":false},"start":1704798000,
-        "plaintext":"test1"},
-    {"channel":{"name":"tf1","title":"M6","radio":false},"start":1704798120,
-        "plaintext":"test2"}
-],
-"elapsed_time_ms":335}
+        {
+            "srt": [{
+                "duration_ms": 34,
+                "cts_in_ms": 1706437079004,
+                "text": "gilets"
+                },
+                {
+                "duration_ms": 34,
+                "cts_in_ms": 1706437079038,
+                "text": "jaunes"
+                },
+                {
+                "duration_ms": 34,
+                "cts_in_ms": 1706437079072,
+                "text": "en"
+                },
+                {
+                "duration_ms": 34,
+                "cts_in_ms": 1706437080006,
+                "text": "france"
+                }
+            ],
+            "channel":{"name":"m6","title":"M6","radio":false},"start":1704798000,
+            "plaintext":"test1"
+        },
+        {
+            "srt": [{
+                "duration_ms": 34,
+                "cts_in_ms": 1706437079004,
+                "text": "adaptation"
+                }
+            ],
+            "channel":{"name":"tf1","title":"M6","radio":false},"start":1704798120,
+            "plaintext":"test2"}
+    ],
+    "elapsed_time_ms":335}
 """)
 
 def test_parse_reponse_subtitle():
-    theme = "test_theme"
     expected_result = pd.DataFrame([{
         "plaintext" : plaintext1,
         "channel_name" : "m6",
@@ -66,6 +95,7 @@ def test_transform_theme_query_includes():
 
     assert output == expected
 
+
 def test_find_themes():
     plaintext_nothing = "cheese pizza"
     assert find_themes(plaintext_nothing) == None
@@ -79,6 +109,31 @@ def test_find_themes():
      ,"changement_climatique_consequences"
      ,"adaptation_climatique_solutions_directes"
     ]
+
+def test_add_srt_keyword():
+    str = [{
+          "duration_ms": 34,
+          "cts_in_ms": 1706437079004,
+          "text": "gilets"
+        },
+        {
+          "duration_ms": 34,
+          "cts_in_ms": 1706437079038,
+          "text": "jaunes"
+        },
+        {
+          "duration_ms": 34,
+          "cts_in_ms": 1706437079072,
+          "text": "en"
+        },
+        {
+          "duration_ms": 34,
+          "cts_in_ms": 1706437080006,
+          "text": "france"
+        }
+    ]
+
+    assert add_srt_keyword(str) == None
 
 def test_filter():
     df1 = pd.DataFrame([{

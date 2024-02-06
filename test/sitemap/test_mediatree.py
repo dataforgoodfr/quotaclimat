@@ -70,11 +70,15 @@ def test_find_themes():
     plaintext_nothing = "cheese pizza"
     assert find_themes(plaintext_nothing) == None
     plaintext_climat = "climatique test"
-    assert find_themes(plaintext_climat) == ["constat_et_concepts_globaux"]
+    assert find_themes(plaintext_climat) == ["changement_climatique_constat"]
     plaintext_multiple_themes = "climatique test bovin migrations climatiques"
-    assert find_themes(plaintext_multiple_themes) == ["constat_et_concepts_globaux", "consequences"]
+    assert find_themes(plaintext_multiple_themes) == ["changement_climatique_constat", "changement_climatique_consequences"]
 
-    assert find_themes("record de température pizza adaptation au dérèglement climatique") == ["constat_et_concepts_globaux", "consequences", "solutions_dadaptation_directes"]
+    assert find_themes("record de température pizza adaptation au dérèglement climatique") == [
+      "changement_climatique_constat"
+     ,"changement_climatique_consequences"
+     ,"adaptation_climatique_solutions_directes"
+    ]
 
 def test_filter():
     df1 = pd.DataFrame([{
@@ -110,17 +114,21 @@ def test_filter():
         "plaintext": "vache bovin anthropocène",
         "channel_name": "m6",
         "channel_radio": False,
-        "theme": ["constat_et_concepts_globaux", "causes_indirectes"]
+        "theme": [
+            "changement_climatique_constat",
+            "changement_climatique_causes_indirectes",
+            "ressources_naturelles_concepts_generaux"
+        ]
     },
     {
         "start": 1704798000,
         "plaintext": "pizza année la plus chaude",
         "channel_name": "m6",
         "channel_radio": False,
-         "theme": ["consequences"]
+         "theme": ["changement_climatique_consequences"]
     }])
 
     # List of words to filter on
     df = filter_and_tag_by_theme(df1)
-
+    debug_df(df)
     pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))

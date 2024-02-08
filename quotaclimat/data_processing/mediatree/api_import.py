@@ -88,12 +88,6 @@ def get_theme_query_includes(theme_dict):
 def transform_theme_query_includes(themes_with_keywords = THEME_KEYWORDS):
     return list(map(get_theme_query_includes, themes_with_keywords))
 
-# keywords : (['économie circulaire', 'panneaux solaires', 'solaires']
-# subtitle_duration : {
-        #   "duration_ms": 34,
-        #   "cts_in_ms": 1706437079004,
-        #   "text": "gilets"
-        # }
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str]) -> List[dict]:
     result = []
 

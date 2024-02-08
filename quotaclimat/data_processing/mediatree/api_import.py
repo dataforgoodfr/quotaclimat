@@ -89,49 +89,46 @@ def transform_theme_query_includes(themes_with_keywords = THEME_KEYWORDS):
     return list(map(get_theme_query_includes, themes_with_keywords))
 
 # keywords : (['économie circulaire', 'panneaux solaires', 'solaires']
-def find_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str]) -> List[dict]:
-    keywords_with_timestamp = []
+# subtitle_duration : {
+        #   "duration_ms": 34,
+        #   "cts_in_ms": 1706437079004,
+        #   "text": "gilets"
+        # }
+def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str]) -> List[dict]:
+    result = []
 
-    for keyword in keywords:
-        for subtitle in subtitle_duration:
-            if keyword in subtitle['text']:
-                keywords_with_timestamp.append({
-                    'keyword': keyword,
-                    'cts_in_ms': subtitle['cts_in_ms']
-                })
+    for multiple_keyword in keywords:
+        all_keywords = multiple_keyword.split() # case with multiple words such as 'économie circulaire'
+        match = next((item for item in subtitle_duration if item.get('text') == all_keywords[0]), None)
+        if match is not None:
+            result.append({multiple_keyword: match['cts_in_ms']})
 
-    return keywords_with_timestamp
+    return result
 
-def find_themes(plaintext: str, subtitle_duration: List[str]) -> Optional[List[str]]:
+def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -> List[Optional[List[str]]]:
     matching_themes = []
     keywords_with_timestamp = []
 
     for theme, keywords in THEME_KEYWORDS.items():
+        logging.debug(f"searching {theme} for {keywords}")
         matching_words = [word for word in keywords if word in plaintext]
         if matching_words:
             logging.info(f"theme found : {theme} with word {matching_words}")
             matching_themes.append(theme)
             # look for cts_in_ms inside matching_words (['économie circulaire', 'panneaux solaires', 'solaires'] from subtitle_duration 
-            keywords_with_timestamp = find_cts_in_ms_for_keywords(subtitle_duration)
-
-    return (matching_themes, keywords_with_timestamp) if matching_themes else None
-
-def add_srt_keyword(str: List[str]) -> List[str] :
-    for srt_item in str:
-        logging.debug("str")
-        # cts_in_ms_list.append(srt_item.get('cts_in_ms', None))
-        # text_list.append(srt_item.get('text', None))
-    return "test"
-
+            keywords_with_timestamp = get_cts_in_ms_for_keywords(subtitle_duration, matching_words)
+    
+    if len(matching_themes) > 0:
+        return [matching_themes, keywords_with_timestamp]
+    else:
+        return [None, None]
 def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
     logging.info(f"{len(df)} subtitles to filter by keywords and tag with themes")
-    df['theme'] = df['plaintext'].apply(find_themes)
-        
+    df[['theme', 'keywords_with_timestamp']] = df[['plaintext','srt']].apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
+
     # remove all rows that does not have themes
     df = df.dropna(subset=['theme'])
 
-    # parse srt keywords to calculate total duration
-    df["keywords"] = df["srt"].apply(add_srt_keyword)
     df.drop('srt', axis=1, inplace=True)
 
     logging.info(f"After filtering, we have {len(df)} subtitles left")

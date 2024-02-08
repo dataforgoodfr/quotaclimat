@@ -1,10 +1,9 @@
 import pytest
 import pandas as pd
-from quotaclimat.data_ingestion.scrap_html.scrap_description_article import get_meta_news, get_hat_20minutes, get_url_content
-from quotaclimat.data_ingestion.scrap_sitemap import get_description_article
+
 from bs4 import BeautifulSoup
 from utils import get_localhost, debug_df
-from quotaclimat.data_processing.mediatree.api_import import find_themes, add_srt_keyword, filter_and_tag_by_theme, parse_reponse_subtitle, get_includes_or_query, transform_theme_query_includes
+from quotaclimat.data_processing.mediatree.api_import import get_themes_keywords_duration, get_cts_in_ms_for_keywords, filter_and_tag_by_theme, parse_reponse_subtitle, get_includes_or_query, transform_theme_query_includes
 import json 
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 localhost = get_localhost()
@@ -55,16 +54,43 @@ json_response = json.loads("""
 
 def test_parse_reponse_subtitle():
     expected_result = pd.DataFrame([{
+        "srt": [{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079004,
+            "text": "gilets"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079038,
+            "text": "jaunes"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079072,
+            "text": "en"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": 1706437080006,
+            "text": "france"
+            }
+        ],
         "plaintext" : plaintext1,
         "channel_name" : "m6",
         "channel_radio" : False,
-         "start" : 1704798000
+        "start" : 1704798000,
     },
     {
+        "srt": [{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079004,
+            "text": "adaptation"
+            }
+        ],
         "plaintext" : plaintext2,
         "channel_name" : "tf1",
         "channel_radio" : False,
-         "start" : 1704798120
+        "start" : 1704798120,
     }])
 
     expected_result['start'] = pd.to_datetime(expected_result['start'], unit='s').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
@@ -96,25 +122,16 @@ def test_transform_theme_query_includes():
     assert output == expected
 
 
-def test_find_themes():
-    plaintext_nothing = "cheese pizza"
-    assert find_themes(plaintext_nothing) == None
-    plaintext_climat = "climatique test"
-    assert find_themes(plaintext_climat) == ["changement_climatique_constat"]
-    plaintext_multiple_themes = "climatique test bovin migrations climatiques"
-    assert find_themes(plaintext_multiple_themes) == ["changement_climatique_constat", "changement_climatique_consequences"]
-
-    assert find_themes("record de température pizza adaptation au dérèglement climatique") == [
-      "changement_climatique_constat"
-     ,"changement_climatique_consequences"
-     ,"adaptation_climatique_solutions_directes"
-    ]
-
-def test_add_srt_keyword():
-    str = [{
+def test_get_themes_keywords_duration():
+    subtitles = [{
           "duration_ms": 34,
           "cts_in_ms": 1706437079004,
           "text": "gilets"
+        },
+        {
+          "duration_ms": 34,
+          "cts_in_ms": 1706437080006,
+          "text": "solaires"
         },
         {
           "duration_ms": 34,
@@ -124,44 +141,120 @@ def test_add_srt_keyword():
         {
           "duration_ms": 34,
           "cts_in_ms": 1706437079072,
-          "text": "en"
+          "text": "économie"
+        },
+        {
+          "duration_ms": 34,
+          "cts_in_ms": 1706437079076,
+          "text": "circulaire"
+        }
+    ]
+
+    plaintext_nothing = "cheese pizza"
+    assert get_themes_keywords_duration(plaintext_nothing, subtitles) == [None,None]
+    plaintext_climat = "climatique test"
+    assert get_themes_keywords_duration(plaintext_climat, subtitles) == [["changement_climatique_constat"],[]]
+    plaintext_multiple_themes = "climatique test bovin migrations climatiques"
+    assert get_themes_keywords_duration(plaintext_multiple_themes, subtitles) == [["changement_climatique_constat", "changement_climatique_consequences"],[]]
+
+    assert get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles) == [[
+      "changement_climatique_constat"
+     ,"changement_climatique_consequences"
+     ,"adaptation_climatique_solutions_directes"
+    ],[]]
+
+def test_get_cts_in_ms_for_keywords():
+    str = [{
+          "duration_ms": 34,
+          "cts_in_ms": 1706437079004,
+          "text": "gilets"
         },
         {
           "duration_ms": 34,
           "cts_in_ms": 1706437080006,
-          "text": "france"
+          "text": "solaires"
+        },
+        {
+          "duration_ms": 34,
+          "cts_in_ms": 1706437079038,
+          "text": "jaunes"
+        },
+        {
+          "duration_ms": 34,
+          "cts_in_ms": 1706437079072,
+          "text": "économie"
+        },
+        {
+          "duration_ms": 34,
+          "cts_in_ms": 1706437079076,
+          "text": "circulaire"
         }
     ]
+    keywords = ['économie circulaire', 'panneaux solaires', 'solaires']
+    expected = [
+         {'économie circulaire' : 1706437079072},
+         {'solaires':1706437080006},
+    ]
+    assert get_cts_in_ms_for_keywords(str, keywords) == expected
 
-    assert add_srt_keyword(str) == None
 
-def test_filter():
+def test_filter_and_tag_by_theme():
     df1 = pd.DataFrame([{
         "start": 1704798000,
         "plaintext": "cheese pizza",
         "channel_name": "m6",
-        "channel_radio": False
-    },{
-        "start": 1704798000,
-        "plaintext": "tomato screen",
-        "channel_name": "m6",
-        "channel_radio": False
-    },{
-        "start": 1704798000,
-        "plaintext": "vache bovin anthropocène",
-        "channel_name": "m6",
-        "channel_radio": False
-    },
-    {
-        "start": 1704798000,
-        "plaintext": "cheese pizza",
-        "channel_name": "m6",
-        "channel_radio": False
-    },{
-        "start": 1704798000,
-        "plaintext": "pizza année la plus chaude",
-        "channel_name": "m6",
-        "channel_radio": False
+        "channel_radio": False,
+        "srt": [{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079004,
+            "text": "adaptation"
+            }
+        ],
+        },{
+            "start": 1704798000,
+            "plaintext": "tomato screen",
+            "channel_name": "m6",
+            "channel_radio": False,
+            "srt": [{
+                "duration_ms": 34,
+                "cts_in_ms": 1706437079004,
+                "text": "adaptation"
+                }
+            ],
+        },{
+            "start": 1704798000,
+            "plaintext": "vache bovin anthropocène",
+            "channel_name": "m6",
+            "channel_radio": False,
+            "srt": [{
+                "duration_ms": 34,
+                "cts_in_ms": 1706437079004,
+                "text": "adaptation"
+                }
+            ],
+        },
+        {
+            "start": 1704798000,
+            "plaintext": "cheese pizza",
+            "channel_name": "m6",
+            "channel_radio": False,
+            "srt": [{
+                    "duration_ms": 34,
+                    "cts_in_ms": 1706437079004,
+                    "text": "adaptation"
+                }
+            ],
+        },{
+            "start": 1704798000,
+            "plaintext": "pizza année la plus chaude",
+            "channel_name": "m6",
+            "channel_radio": False,
+            "srt": [{
+                "duration_ms": 34,
+                "cts_in_ms": 1706437079004,
+                "text": "adaptation"
+                }
+            ],
     }])
 
     expected_result = pd.DataFrame([{
@@ -173,14 +266,16 @@ def test_filter():
             "changement_climatique_constat",
             "changement_climatique_causes_indirectes",
             "ressources_naturelles_concepts_generaux"
-        ]
+        ],
+        "keywords_with_timestamp": []
     },
     {
         "start": 1704798000,
         "plaintext": "pizza année la plus chaude",
         "channel_name": "m6",
         "channel_radio": False,
-         "theme": ["changement_climatique_consequences"]
+        "theme": ["changement_climatique_consequences"],
+        "keywords_with_timestamp": []
     }])
 
     # List of words to filter on

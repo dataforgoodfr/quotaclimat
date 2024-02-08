@@ -283,6 +283,39 @@ def test_filter_and_tag_by_theme():
     debug_df(df)
     pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
 
+
+def test_lower_case_filter_and_tag_by_theme():
+    df1 = pd.DataFrame([{
+            "start": 1704798000,
+            "plaintext": "VACHE BOVIN Anthropocène",
+            "channel_name": "m6",
+            "channel_radio": False,
+            "srt": [{
+                "duration_ms": 34,
+                "cts_in_ms": 111,
+                "text": "Vache"
+                }
+            ],
+    }])
+
+    expected_result = pd.DataFrame([{
+        "start": 1704798000,
+        "plaintext":  "VACHE BOVIN Anthropocène",
+        "channel_name": "m6",
+        "channel_radio": False,
+        "theme": [
+            "changement_climatique_constat",
+            "changement_climatique_causes_indirectes",
+            "ressources_naturelles_concepts_generaux"
+        ],
+        "keywords_with_timestamp": [{'vache': 111}]
+    }])
+
+    # List of words to filter on
+    df = filter_and_tag_by_theme(df1)
+    debug_df(df)
+    pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
+
 def test_complexe_filter_and_tag_by_theme():
     df1 = pd.DataFrame([{
         "start": 1704798000,

@@ -100,7 +100,8 @@ def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str
     logging.debug(f"Looking for timecode for {keywords}")
     for multiple_keyword in keywords:
         all_keywords = multiple_keyword.split() # case with multiple words such as 'économie circulaire'
-        match = next((item for item in subtitle_duration if item.get('text') == all_keywords[0]), None)       
+        match = next((item for item in subtitle_duration if item.get('text').lower() == all_keywords[0].lower()), None)  
+        logging.debug(f"match found {match} with {all_keywords[0].lower()}")     
         if match is not None:
             logging.debug(f'Result added due to this match {match} based on {all_keywords[0]}')
             result.append({multiple_keyword: match['cts_in_ms']})
@@ -114,7 +115,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -
 
     for theme, keywords in THEME_KEYWORDS.items():
         logging.debug(f"searching {theme} for {keywords}")
-        matching_words = [word for word in keywords if word in plaintext]
+        matching_words = [word for word in keywords if word.lower() in plaintext.lower()]
         if matching_words:
             logging.info(f"theme found : {theme} with word {matching_words}")
             matching_themes.append(theme)

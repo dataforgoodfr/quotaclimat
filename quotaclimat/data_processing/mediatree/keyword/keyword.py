@@ -7,7 +7,7 @@ THEME_KEYWORDS = {
             ,"écologique", "écologiste"
             ,"anthropocène"
             ,"cycle du carbone", "effet de serre", "neutralité carbone", "neutralité climatique", "croissance verte", "décarbonation"
-            ,"protection de la planète", "habitabilité de la planète", "conditions de vie sur Terre"
+            ,"protection de la planète", "habitabilité de la planète", "conditions de vie sur terre"
             ,"soutenabilité environnementale"
             ,"développement durable"
             ,"dépolluer"
@@ -15,7 +15,7 @@ THEME_KEYWORDS = {
             ,"crise planétaire"
             ,"accord de paris", "accords de paris","COP21", "COP15", "COP26", "COP27", "COP28", "COP29", "COP30"
             ,"Conférence des Parties", "conférence climat", "conférence des Nations Unies sur le climat"
-            ,"GIEC", "Haut conseil pour le climat", "convention des Nations unies sur le climat"
+            ,"GIEC", "Haut conseil pour le climat", "convention des nations unies sur le climat"
             ,"transition agricole", "transition énergétique"
         ]
 ,
@@ -171,7 +171,7 @@ THEME_KEYWORDS = {
 "ressources_naturelles_concepts_generaux": # 1.2.1
 [
 "crise environnementale", "crise climatique", "crise écologique", "écologie", "écologique", "environnement", "environnemental"
-,"anthropocène", "limites planétaires", "planète", "dépassement des limites planétaires", "épuisement des ressources", "jour du dépassement"
+,"anthropocène", "limites planétaires", "dépassement des limites planétaires", "épuisement des ressources", "jour du dépassement"
 ,"raréfaction de l’eau", "pénurie d’eau", "disponibilité d’eau douce", "baisse de la qualité de l’eau", "cycle de l’eau"
 ,"salinisation des nappes", "nappes phréatiques", "pollution de l’eau", "pollution des nappes phréatiques"
 ,"sécheresse", "augmentation des risques de sécheresse", "stress hydrique", "canicule", "déficite de pluie"

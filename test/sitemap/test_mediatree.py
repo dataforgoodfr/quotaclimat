@@ -282,3 +282,83 @@ def test_filter_and_tag_by_theme():
     df = filter_and_tag_by_theme(df1)
     debug_df(df)
     pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
+
+def test_complexe_filter_and_tag_by_theme():
+    df1 = pd.DataFrame([{
+        "start": 1704798000,
+        "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
+        "channel_name": "m6",
+        "channel_radio": False,
+        "srt": [{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079004,
+            "text": "cheese"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079005,
+            "text": "pizza"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079006,
+            "text": "habitabilité"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079007,
+            "text": "de"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079008,
+            "text": "la"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079009,
+            "text": "planète"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079010,
+            "text": "conditions"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079011,
+            "text": "de"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079011,
+            "text": "vie"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079011,
+            "text": "sur"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079011,
+            "text": "terre"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079012,
+            "text": "animal"
+            },
+        ],
+    }])
+
+    expected_result = pd.DataFrame([{
+        "start": 1704798000,
+        "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
+        "channel_name": "m6",
+        "channel_radio": False,
+        "theme": [
+            "changement_climatique_constat",
+            "ressources_naturelles_concepts_generaux",
+        ],
+        "keywords_with_timestamp": [
+            {'habitabilité de la planète': 1706437079006},
+            {'conditions de vie sur terre': 1706437079010},
+            {'planète': 1706437079009},
+            {'terre': 1706437079011}
+        ]
+    }])
+
+    # List of words to filter on
+    df = filter_and_tag_by_theme(df1)
+    debug_df(df)
+    pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))

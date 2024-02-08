@@ -97,12 +97,15 @@ def transform_theme_query_includes(themes_with_keywords = THEME_KEYWORDS):
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str]) -> List[dict]:
     result = []
 
+    logging.debug(f"Looking for timecode for {keywords}")
     for multiple_keyword in keywords:
         all_keywords = multiple_keyword.split() # case with multiple words such as 'économie circulaire'
-        match = next((item for item in subtitle_duration if item.get('text') == all_keywords[0]), None)
+        match = next((item for item in subtitle_duration if item.get('text') == all_keywords[0]), None)       
         if match is not None:
+            logging.debug(f'Result added due to this match {match} based on {all_keywords[0]}')
             result.append({multiple_keyword: match['cts_in_ms']})
 
+    logging.debug(f"Timecode found {result}")
     return result
 
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -> List[Optional[List[str]]]:
@@ -116,7 +119,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -
             logging.info(f"theme found : {theme} with word {matching_words}")
             matching_themes.append(theme)
             # look for cts_in_ms inside matching_words (['économie circulaire', 'panneaux solaires', 'solaires'] from subtitle_duration 
-            keywords_with_timestamp = get_cts_in_ms_for_keywords(subtitle_duration, matching_words)
+            keywords_with_timestamp.extend(get_cts_in_ms_for_keywords(subtitle_duration, matching_words))
     
     if len(matching_themes) > 0:
         return [matching_themes, keywords_with_timestamp]

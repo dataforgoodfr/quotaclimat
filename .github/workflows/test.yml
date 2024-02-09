@@ -51,7 +51,7 @@ jobs:
       - name: docker compose up nginx
         run: docker compose up -d nginxtest
       - name: pytest run
-        run: "poetry run pytest -v --cov quotatclimat test/ > pytest-coverage.txt"
+        run: "poetry run pytest -v --cov quotatclimat test/ | tee pytest-coverage.txt"
         env:
           ENV: dev
           POSTGRES_USER: user

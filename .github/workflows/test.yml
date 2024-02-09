@@ -56,7 +56,7 @@ jobs:
           poetry run pytest --junitxml=pytest.xml \
            --cov-report=term-missing:skip-covered \
            --cov=quotatclimat test/ | \
-           tee pytest-coverage.txt"
+           tee pytest-coverage.txt
         env:
           ENV: dev
           POSTGRES_USER: user

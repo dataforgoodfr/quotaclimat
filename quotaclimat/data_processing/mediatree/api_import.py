@@ -147,19 +147,19 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -
             matching_themes.append(theme)
             # look for cts_in_ms inside matching_words (['économie circulaire', 'panneaux solaires', 'solaires'] from subtitle_duration 
             keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme)
-            number_of_keywords = len(keywords_to_add)
-            if(number_of_keywords == 0):
+            if(len(keywords_to_add) == 0):
                 logging.warning(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")
             keywords_with_timestamp.extend(keywords_to_add)
     
     if len(matching_themes) > 0:
-        return [matching_themes, keywords_with_timestamp]
+        return [matching_themes, keywords_with_timestamp, int(len(keywords_with_timestamp))]
     else:
-        return [None, None]
+        return [None, None, None]
+
 def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
     count_before_filtering = len(df)
     logging.info(f"{count_before_filtering} subtitles to filter by keywords and tag with themes")
-    df[['theme', u'keywords_with_timestamp']] = df[['plaintext','srt']].apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
+    df[['theme', u'keywords_with_timestamp', 'number_of_keywords']] = df[['plaintext','srt']].apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
 
     # remove all rows that does not have themes
     df = df.dropna(subset=['theme'])

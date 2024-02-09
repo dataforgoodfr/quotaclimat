@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON
+from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer
 from sqlalchemy.orm import declarative_base
 import pandas as pd
 from sqlalchemy import text
@@ -59,6 +59,7 @@ class Keywords(Base):
     theme=Column(ARRAY(String)) #keyword.py
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')"))
     keywords_with_timestamp = Column(JSON)
+    number_of_keywords = Column(Integer)
 
 
 def get_sitemap(id: str):

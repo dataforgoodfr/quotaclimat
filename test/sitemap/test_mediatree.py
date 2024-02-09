@@ -163,26 +163,26 @@ def test_get_themes_keywords_duration():
     ]
 
     plaintext_nothing = "cheese pizza"
-    assert get_themes_keywords_duration(plaintext_nothing, subtitles) == [None,None]
+    assert get_themes_keywords_duration(plaintext_nothing, subtitles) == [None,None, None]
     plaintext_climat = "climatique test"
-    assert get_themes_keywords_duration(plaintext_climat, subtitles) == [["changement_climatique_constat"],[]]
+    assert get_themes_keywords_duration(plaintext_climat, subtitles) == [["changement_climatique_constat"],[], 0]
     plaintext_multiple_themes = "climatique test bovin migrations climatiques"
-    assert get_themes_keywords_duration(plaintext_multiple_themes, subtitles) == [["changement_climatique_constat", "changement_climatique_consequences"],[]]
+    assert get_themes_keywords_duration(plaintext_multiple_themes, subtitles) == [["changement_climatique_constat", "changement_climatique_consequences"],[], 0]
 
     # should not accept theme 'bus' for keyword "abusive"
     plaintext_regression_incomplete_word = "abusive"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles) == [None, None]
+    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles) == [None,None, None]
     
     # should not accept theme 'ngt' for keyword "vingt"
     plaintext_regression_incomplete_word_ngt = "vingt"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles) == [None, None]
+    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles) == [None,None, None]
     
 
     assert get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles) == [[
       "changement_climatique_constat"
      ,"changement_climatique_consequences"
      ,"adaptation_climatique_solutions_directes"
-    ],[]]
+    ],[], 0]
 
 def test_get_cts_in_ms_for_keywords():
     str = [{
@@ -317,7 +317,8 @@ def test_filter_and_tag_by_theme():
             "changement_climatique_causes_indirectes",
             "ressources_naturelles_concepts_generaux"
         ],
-        "keywords_with_timestamp": []
+        "keywords_with_timestamp": [],
+        "number_of_keywords": 0.0
     },
     {
         "start": 1704798000,
@@ -325,7 +326,8 @@ def test_filter_and_tag_by_theme():
         "channel_name": "m6",
         "channel_radio": False,
         "theme": ["changement_climatique_consequences"],
-        "keywords_with_timestamp": []
+        "keywords_with_timestamp": [],
+        "number_of_keywords": 0.0
     }])
 
     # List of words to filter on
@@ -364,6 +366,7 @@ def test_lower_case_filter_and_tag_by_theme():
                 "timestamp": 111,
                 "theme": "changement_climatique_causes_indirectes",
         }]
+        ,"number_of_keywords": 1
     }])
 
     # List of words to filter on
@@ -401,6 +404,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
                 "timestamp": 111,
                 "theme": "changement_climatique_causes_indirectes",
         }]
+        ,"number_of_keywords": 1
     }])
 
     # List of words to filter on
@@ -496,6 +500,7 @@ def test_complexe_filter_and_tag_by_theme():
                 "theme":"ressources_naturelles_concepts_generaux",
             }
         ]
+        ,"number_of_keywords": 4
     }])
 
     # List of words to filter on
@@ -534,12 +539,13 @@ def test_save_to_pg_keyword():
     channel_name = "m6"
     df = pd.DataFrame([{
         "id" : primary_key,
-        "start": 1706437079006, #TODO timestamp
+        "start": 1706437079006,
         "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
         "channel_name": channel_name,
         "channel_radio": False,
         "theme": themes,
         "keywords_with_timestamp": keywords_with_timestamp
+        ,"number_of_keywords": 4
     }])
 
     df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
@@ -554,6 +560,7 @@ def test_save_to_pg_keyword():
     assert result.channel_radio == False
     assert result.theme == themes 
     assert result.keywords_with_timestamp == keywords_with_timestamp
+    assert result.number_of_keywords == 4
     assert result.start == datetime.datetime(2024, 1, 28, 10, 17, 59, 6000)
 
 def test_is_word_in_sentence():

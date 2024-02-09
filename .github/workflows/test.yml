@@ -51,7 +51,7 @@ jobs:
       - name: docker compose up nginx
         run: docker compose up -d nginxtest
       - name: pytest run
-        run: "poetry run pytest --cov test test/"
+        run: "poetry run pytest -v --cov quotatclimat test/ > pytest-coverage.txt"
         env:
           ENV: dev
           POSTGRES_USER: user
@@ -65,4 +65,8 @@ jobs:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Verify poetry.lock agrees with pyproject.toml
         run: poetry check --lock
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: pytest-coverage.txt
     

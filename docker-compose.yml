@@ -5,15 +5,17 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    entrypoint: ["poetry", "run", "pytest", "-v", "--cov", "test", "test/"]
+    entrypoint: ["poetry", "run", "pytest", "-v", "--cov", "--cov-report=html:coverage_re", "test", "test/"]
     environment:
       ENV: docker
+      LOGLEVEL: DEBUG
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre
       POSTGRES_PASSWORD: password
       POSTGRES_HOST: postgres_db
       POSTGRES_PORT: 5432
+    tty: true # colorize terminal
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/

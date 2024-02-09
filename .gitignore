@@ -1,5 +1,6 @@
 secrets/pwd_api.txt
 secrets/username_api.txt
+coverage_re
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

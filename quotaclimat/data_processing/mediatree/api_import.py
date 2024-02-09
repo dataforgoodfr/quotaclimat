@@ -19,6 +19,7 @@ from pandas import json_normalize
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from typing import List, Optional
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
+import re
 
 #read whole file to a string
 password = os.environ.get("MEDIATREE_PASSWORD")
@@ -34,10 +35,14 @@ async def get_and_save_api_data(exit_event):
     conn = connect_to_db()
     token=get_auth_token(password=password, user_name=USER)
 
-    channels = ["tf1", "france2", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
-     "europe1", "france-culture", "france-inter", "nrj", "rfm", "rmc", "rtl", "rtl2"]
-    #channels = ["arte"]
+    if(os.environ.get("ENV") == "docker"):
+        logging.warning("Docker cases - only some channels are used")
+        channels = ["tf1", "france2"]
+    else: #prod    
+        channels = ["tf1", "france2", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
+        "europe1", "france-culture", "france-inter", "nrj", "rfm", "rmc", "rtl", "rtl2"]
 
+    logging.info(f"Importing {channels}")
     for channel in channels :
         try:
             df = extract_api_sub(token, channel)
@@ -73,10 +78,10 @@ def get_param_api(token, type_sub, start_epoch, channel = 'm6'):
         "channel": channel,
         "token": token,
         "start_gte": start_epoch,
-        "excludes": ["srt"],
         "type": type_sub,
         "size": "1000", #  1-1000
     }
+
 
 # TODO use it when API updated
 def get_includes_or_query(array_words: List[str]) -> str: 
@@ -88,22 +93,80 @@ def get_theme_query_includes(theme_dict):
 def transform_theme_query_includes(themes_with_keywords = THEME_KEYWORDS):
     return list(map(get_theme_query_includes, themes_with_keywords))
 
-def find_themes(plaintext: str):
+def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str], theme: str) -> List[dict]:
+    result = []
+
+    logging.debug(f"Looking for timecode for {keywords}")
+    for multiple_keyword in keywords:
+        all_keywords = multiple_keyword.split() # case with multiple words such as 'économie circulaire'
+        match = next((item for item in subtitle_duration if is_word_in_sentence(all_keywords[0], item.get('text'))), None)  
+        logging.debug(f"match found {match} with {all_keywords[0].lower()}")     
+        if match is not None:
+            logging.debug(f'Result added due to this match {match} based on {all_keywords[0]}')
+            result.append(
+                {
+                    "keyword" :multiple_keyword.lower(),
+                    "timestamp" : match['cts_in_ms'],
+                    "theme" : theme
+                })
+
+    logging.debug(f"Timecode found {result}")
+    return result
+
+# be able to detect singular or plural for a word
+def format_word_regex(word: str) -> str:
+    word = word.replace('\'', '\' ?') # case for d'eau -> d' eau
+    if not word.endswith('s') and not word.endswith('x') and not word.endswith('à'):
+        return word + "s?"
+    elif word.endswith('s'):
+        return word + '?'
+    else:
+        return word
+
+def is_word_in_sentence(words: str, sentence: str) -> bool :
+    # words can contain plurals and several words
+    words = ' '.join(list(map(( lambda x: format_word_regex(x)), words.split(" "))))
+    logging.debug(f"testing {words}")
+    #  test https://regex101.com/r/ilvs9G/1/
+    if re.search(rf"\b{words}(?![\w-])", sentence, re.IGNORECASE):
+        logging.debug(f"words {words} found in {sentence}")
+        return True
+    else:
+        return False
+
+def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -> List[Optional[List[str]]]:
     matching_themes = []
+    keywords_with_timestamp = []
+
     for theme, keywords in THEME_KEYWORDS.items():
-        if any(word in plaintext for word in keywords):
-            logging.debug(f"theme found : {theme}")
+        logging.debug(f"searching {theme} for {keywords}")
+
+        matching_words = [word for word in keywords if is_word_in_sentence(word, plaintext)]  
+        if matching_words:
+            logging.debug(f"theme found : {theme} with word {matching_words}")
             matching_themes.append(theme)
+            # look for cts_in_ms inside matching_words (['économie circulaire', 'panneaux solaires', 'solaires'] from subtitle_duration 
+            keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme)
+            if(len(keywords_to_add) == 0):
+                logging.warning(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")
+            keywords_with_timestamp.extend(keywords_to_add)
+    
+    if len(matching_themes) > 0:
+        return [matching_themes, keywords_with_timestamp, int(len(keywords_with_timestamp))]
+    else:
+        return [None, None, None]
 
-    return matching_themes if matching_themes else None
+def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
+    count_before_filtering = len(df)
+    logging.info(f"{count_before_filtering} subtitles to filter by keywords and tag with themes")
+    df[['theme', u'keywords_with_timestamp', 'number_of_keywords']] = df[['plaintext','srt']].apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
 
-def filter_and_tag_by_theme(df: pd.DataFrame, themes_with_keywords = THEME_KEYWORDS) -> pd.DataFrame :
-    logging.info(f"{len(df)} subtitles to filter by keywords and tag with themes")
-    df['theme'] = df['plaintext'].apply(find_themes)
-        
     # remove all rows that does not have themes
     df = df.dropna(subset=['theme'])
-    logging.info(f"After filtering, we have {len(df)} subtitles left")
+
+    df.drop('srt', axis=1, inplace=True)
+
+    logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")
     return df
 
 def add_primary_key(df):
@@ -166,9 +229,14 @@ def extract_api_sub(
         logging.error("Could not query API :(%s) %s" % (type(err).__name__, err))
         return None
 
+def parse_total_results(response_sub) -> int :
+    return response_sub.get('total_results')
+
+
 def parse_reponse_subtitle(response_sub) -> Optional[pd.DataFrame]: 
     logging.debug(f"Parsing json response:\n {response_sub}")
-    total_results = response_sub.get('total_results')
+    
+    total_results = parse_total_results(response_sub)
     if(total_results > 0):
         logging.info(f"{total_results} responses received")
         new_df = json_normalize(response_sub.get('data'))

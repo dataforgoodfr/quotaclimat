@@ -7,15 +7,15 @@ THEME_KEYWORDS = {
             ,"écologique", "écologiste"
             ,"anthropocène"
             ,"cycle du carbone", "effet de serre", "neutralité carbone", "neutralité climatique", "croissance verte", "décarbonation"
-            ,"protection de la planète", "habitabilité de la planète", "conditions de vie sur Terre"
+            ,"protection de la planète", "habitabilité de la planète", "conditions de vie sur terre"
             ,"soutenabilité environnementale"
             ,"développement durable"
             ,"dépolluer"
             ,"protection du vivant", "protection des océans"
             ,"crise planétaire"
-            ,"accord de paris", "accords de paris","COP21", "COP15", "COP26", "COP27", "COP28", "COP29", "COP30"
+            ,"accord de paris","COP21", "COP15", "COP26", "COP27", "COP28", "COP29", "COP30"
             ,"Conférence des Parties", "conférence climat", "conférence des Nations Unies sur le climat"
-            ,"GIEC", "Haut conseil pour le climat", "convention des Nations unies sur le climat"
+            ,"GIEC", "Haut conseil pour le climat", "convention des nations unies sur le climat"
             ,"transition agricole", "transition énergétique"
         ]
 ,
@@ -35,9 +35,9 @@ THEME_KEYWORDS = {
     "vache", "élevage", "élevage bovin"
     ,"viande",
     "malbouffe"
-    ,"agricole", "agriculture", "agriculteurs",
+    ,"agricole", "agriculture", "agriculteur",
     "bâtiment", "Chauffage",
-    "transport", "automobile", "voitures", "aviation", "SUV",
+    "transport", "automobile", "voiture", "aviation", "SUV",
     "industrie", "secteur tertiaire",
     "énergie", "énergétique",
     "déchets",
@@ -54,13 +54,13 @@ THEME_KEYWORDS = {
 ],
 "changement_climatique_consequences" : [ # 1.1.3
     "augmentation des températures", "hausse de la température du globe", "température moyenne de surface", "élévation des températures",
-    "météorologiques extrêmes", "phénomènes climatiques extrêmes",
+    "météorologique extrême", "phénomène climatique extrêmes",
     "période la plus chaude", "année la plus chaude", "mois le plus chaud", "jour le plus chaud",
-    "pénuries",
+    "pénurie",
     "record de température",
     "élévation du niveau de la mer", "hausse du niveau de la mer", "montée du niveau de la mer", "hausse du niveau marin", "élévation du niveau marin", "montée du niveau marin", "hausse du niveau des océans", "élévation du niveau des océans", "montée du niveau des océans",
     "fonte des glaces", "fonte des glaciers", "fonte de la banquise", "diminution de la banquise", "diminution des glaciers", "disparition des glaciers", "fonte des calottes glacières", "fonte du permafrost",
-    "érosion côtières", "érosion des côtes", "inondations", "submersion", "submersions marines", "submersion", "crues centennales",
+    "érosion côtière", "érosion des côtes", "inondations", "submersion", "submersions marines", "crues centennales",
     "blanchissement des coraux", "disparition des coraux",
     "sécheresse", "augmentation des risques de sécheresse", "stress hydrique", "canicule", "déficit de pluie", "pénurie de neige",
     "raréfaction de la ressource en eau", "rareté de la ressource en eau", "restrictions d’eau", "manquer d’eau",
@@ -79,7 +79,7 @@ THEME_KEYWORDS = {
     "migrations climatiques", "migrants climatiques",
     "prolifération de moustiques", "moustique tigre", "chenille processionnaire",
     "zoonose",
-    "espèces invasives",
+    "espèce invasive",
     "retrait gonflement des argiles"
 ],
 "atténuation_climatique_solutions_directes" : [ # 1.1.4.1
@@ -92,11 +92,11 @@ THEME_KEYWORDS = {
     ,"atténuation du changement climatique"
     ,"alternative durable", "moins polluant"
     ,"économie circulaire"
-    ,"mobilité durable", "Voitures électriques", "Covoiturage", "Biocarburants"
+    ,"mobilité durable", "Voiture électrique", "Covoiturage", "Biocarburant"
     ,"écoconception"
     ,"réseaux de chaleur", "énergies renouvelables", "transition énergétique", "électricité décarboné", "énergies vertes",
-    "énergies durables", "éolien", "panneaux solaires", "solaires", "photovoltaïque", "géothermie", "hydroélectricité",
-    "barrages", "centrales hydroélectriques", "biomasse", "méthaniseur", "méthanisation", "biogaz", "bois-énergie", 
+    "énergiesdurable", "éolien", "panneaux solaires", "solaires", "photovoltaïque", "géothermie", "hydroélectricité",
+    "barrage", "centrale hydroélectrique", "biomasse", "méthaniseur", "méthanisation", "biogaz", "bois-énergie", 
     "nucléaire", "réacteurs nucléaires", "EPR", "hydrogène vert"
     ,"économies d’énergie", "lutte contre les gaspillages énergétiques", "réduction des gaspillages énergétique", "efficacité énergétique", "économiser de l’énergie",
      "sobriété énergétique"
@@ -124,7 +124,7 @@ THEME_KEYWORDS = {
     ,"transport maritime"
     ,"transports collectifs", "transports en commun", "bus électrique", "bus"
     ,"bois d’oeuvre"
-    ,"isolation", "isolation thermique", "pompes à chaleur (SAUF groupe verlaine", "SAUF atlantique)", "changement de chaudière"
+    ,"isolation", "isolation thermique", "pompes à chaleur", "changement de chaudière"
     , "chaudière biomasse"
     ,"matériaux biosourcés", "matériaux recyclés", "matériaux recyclables"
     ,"forêts"
@@ -162,8 +162,8 @@ THEME_KEYWORDS = {
 ],
 "adaptation_climatique_solutions_indirectes": # 1.1.5.2
 [
-    "digues" 
-    ,"dunes" 
+    "digue" 
+    ,"dune" 
     ,"gestion des milieux aquatiques"
     ,"sorgho"
     ,"myscanthus" 
@@ -171,7 +171,7 @@ THEME_KEYWORDS = {
 "ressources_naturelles_concepts_generaux": # 1.2.1
 [
 "crise environnementale", "crise climatique", "crise écologique", "écologie", "écologique", "environnement", "environnemental"
-,"anthropocène", "limites planétaires", "planète", "dépassement des limites planétaires", "épuisement des ressources", "jour du dépassement"
+,"anthropocène", "limites planétaires", "dépassement des limites planétaires", "épuisement des ressources", "jour du dépassement"
 ,"raréfaction de l’eau", "pénurie d’eau", "disponibilité d’eau douce", "baisse de la qualité de l’eau", "cycle de l’eau"
 ,"salinisation des nappes", "nappes phréatiques", "pollution de l’eau", "pollution des nappes phréatiques"
 ,"sécheresse", "augmentation des risques de sécheresse", "stress hydrique", "canicule", "déficite de pluie"
@@ -194,7 +194,7 @@ THEME_KEYWORDS = {
 [
     "analyse de cycle de vie", "ACV"
     ,"biomimétisme", "bioinspiration"
-    ,"sobriété", "réduction de la demande", "réduction de la consommation (de ressources)", "maîtrise de la demande", "modération de la consommation"
+    ,"sobriété", "réduction de la demande", "réduction de la consommation", "maîtrise de la demande", "modération de la consommation"
     , "fin de l’abondance"
     ,"efficience énergétique", "efficacité énergétique"
     ,"décarbonation", "captage du carbone"
@@ -216,14 +216,14 @@ THEME_KEYWORDS = {
     ,"conservation de la nature", "conserver la nature", "protéger la nature"
     ," protection de la nature", "protéger le vivant", "protection du vivant"
     ,"la composition physique et biologique de"
-    ,"ecosystèmes", "écosystémique", "services écosystémiques", "restauration des écosystèmes", "processus écosystémiques", "résilience des écosystèmes"
-    , "écosystèmes dégradés", "dégradation des écosystèmes", "contribution de la nature"
+    ,"ecosystème", "écosystémique", "services écosystémiques", "restauration des écosystèmes", "processus écosystémiques", "résilience des écosystèmes"
+    , "écosystème dégradé", "dégradation des écosystèmes", "contribution de la nature"
     ,"IPBES"
     ,"fertilité des sols", "pollinisation"
     ,"intégrité écologique"
     ,"interactions entre les êtres vivants"
     ,"corail", "coraux", "récifs coralliens"
-    ,"convention des Nations unies sur la diversité biologique (CDB)", "COP biodiversité", "COP de Montréal"
+    ,"convention des Nations unies sur la diversité biologique", "COP biodiversité", "COP de Montréal"
 ],
 "biodiversité_causes": # 1.3.2
 [ 
@@ -247,7 +247,7 @@ THEME_KEYWORDS = {
 ],
 "biodiversité_conséquences": # 1.3.3
 [
-    "espèces menacées", "espèces menacées d’extinction", "Extinction", "crise d'extinction de masse", "en voie de disparition", "Liste rouge de l'UICN"
+    "espèce menacée", "espèce menacée d’extinction", "Extinction", "crise d'extinction de masse", "en voie de disparition", "Liste rouge de l'UICN"
     , "liste rouge des espèces menacées", "disparition des oiseaux", "disparition des insectes"
     ,"migration des espèces"
     ,"désertification"

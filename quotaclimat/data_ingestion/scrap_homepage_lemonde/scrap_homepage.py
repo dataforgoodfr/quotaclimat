@@ -150,7 +150,7 @@ def get_type_home(df):
 def created_at_column(df: pd.DataFrame) -> pd.DataFrame:
     """Create new colomn with datetime now from Paris"""
 
-    df["created_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    df["created_at"] = .now().strftime("%Y-%m-%d %H:%M:%S")
     df["created_at"] = df["created_at"].apply(pd.Timestamp)
 
     return df

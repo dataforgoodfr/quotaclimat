@@ -51,7 +51,12 @@ jobs:
       - name: docker compose up nginx
         run: docker compose up -d nginxtest
       - name: pytest run
-        run: "poetry run pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=quotatclimat test/ | tee pytest-coverage.txt"
+        run: |
+          set -o pipefail
+          poetry run pytest --junitxml=pytest.xml \
+           --cov-report=term-missing:skip-covered \
+           --cov=quotatclimat test/ | \
+           tee pytest-coverage.txt"
         env:
           ENV: dev
           POSTGRES_USER: user

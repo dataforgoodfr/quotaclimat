@@ -1,11 +1,12 @@
 import logging
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY
+from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON
 from sqlalchemy.orm import declarative_base
 import pandas as pd
 from sqlalchemy import text
 from postgres.database_connection import connect_to_db, get_db_session
+import os
 
 Base = declarative_base()
 
@@ -56,7 +57,8 @@ class Keywords(Base):
     start = Column(DateTime())
     plaintext= Column(Text)
     theme=Column(ARRAY(String)) #keyword.py
-    created_at = Column(DateTime(), default=datetime.now)
+    created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')"))
+    keywords_with_timestamp = Column(JSON)
 
 
 def get_sitemap(id: str):
@@ -90,14 +92,15 @@ def create_tables():
 def drop_tables():
     """Drop tables in the PostgreSQL database"""
 
-    logging.warning("drop tables")
-    try:
-        engine = connect_to_db()
+    if(os.environ.get("ENV") == "docker"):
+        logging.warning("drop tables")
+        try:
+            engine = connect_to_db()
 
-        Base.metadata.drop_all(engine, checkfirst=True)
-        logging.info("Table deletion done")
-    except (Exception) as error:
-        logging.error(error)
-    finally:
-        if engine is not None:
-            engine.dispose()
+            Base.metadata.drop_all(engine, checkfirst=True)
+            logging.info("Table deletion done")
+        except (Exception) as error:
+            logging.error(error)
+        finally:
+            if engine is not None:
+                engine.dispose()

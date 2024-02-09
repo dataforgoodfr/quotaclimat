@@ -6,7 +6,10 @@ from utils import get_localhost, debug_df
 from quotaclimat.data_processing.mediatree.api_import import get_themes_keywords_duration, get_cts_in_ms_for_keywords, filter_and_tag_by_theme, parse_reponse_subtitle, get_includes_or_query, transform_theme_query_includes
 import json 
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
+from postgres.schemas.models import drop_tables
 localhost = get_localhost()
+
+drop_tables()
 
 plaintext1="test1"
 plaintext2="test2"
@@ -191,11 +194,20 @@ def test_get_cts_in_ms_for_keywords():
         }
     ]
     keywords = ['économie circulaire', 'panneaux solaires', 'solaires']
+    theme = "changement_climatique_constat"
     expected = [
-         {'économie circulaire' : 1706437079072},
-         {'solaires':1706437080006},
+        {
+            "keyword":'économie circulaire',
+            "timestamp" : 1706437079072,
+            "theme": theme
+        },
+        {
+            "keyword":'solaires',
+            "timestamp" : 1706437080006,
+            "theme": theme
+        },
     ]
-    assert get_cts_in_ms_for_keywords(str, keywords) == expected
+    assert get_cts_in_ms_for_keywords(str, keywords, theme) == expected
 
 
 def test_filter_and_tag_by_theme():
@@ -308,7 +320,12 @@ def test_lower_case_filter_and_tag_by_theme():
             "changement_climatique_causes_indirectes",
             "ressources_naturelles_concepts_generaux"
         ],
-        "keywords_with_timestamp": [{'vache': 111}]
+        "keywords_with_timestamp": [
+            {
+                "keyword" :"vache",
+                "timestamp": 111,
+                "theme": "changement_climatique_causes_indirectes",
+        }]
     }])
 
     # List of words to filter on
@@ -383,11 +400,26 @@ def test_complexe_filter_and_tag_by_theme():
             "changement_climatique_constat",
             "ressources_naturelles_concepts_generaux",
         ],
-        "keywords_with_timestamp": [
-            {'habitabilité de la planète': 1706437079006},
-            {'conditions de vie sur terre': 1706437079010},
-            {'planète': 1706437079009},
-            {'terre': 1706437079011}
+        "keywords_with_timestamp": [{
+                "keyword" : 'habitabilité de la planète',
+                "timestamp": 1706437079006,
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'conditions de vie sur terre',
+                "timestamp": 1706437079010,
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'planète',
+                "timestamp": 1706437079009,
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": 1706437079011,
+                "theme":"ressources_naturelles_concepts_generaux",
+            }
         ]
     }])
 

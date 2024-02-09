@@ -88,7 +88,7 @@ def get_theme_query_includes(theme_dict):
 def transform_theme_query_includes(themes_with_keywords = THEME_KEYWORDS):
     return list(map(get_theme_query_includes, themes_with_keywords))
 
-def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str]) -> List[dict]:
+def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str], theme: str) -> List[dict]:
     result = []
 
     logging.debug(f"Looking for timecode for {keywords}")
@@ -98,7 +98,12 @@ def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str
         logging.debug(f"match found {match} with {all_keywords[0].lower()}")     
         if match is not None:
             logging.debug(f'Result added due to this match {match} based on {all_keywords[0]}')
-            result.append({multiple_keyword: match['cts_in_ms']})
+            result.append(
+                {
+                    "keyword" :multiple_keyword,
+                    "timestamp" : match['cts_in_ms'], # TODO is it a real timestamp for PG ?
+                    "theme" : theme
+                })
 
     logging.debug(f"Timecode found {result}")
     return result
@@ -114,7 +119,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -
             logging.info(f"theme found : {theme} with word {matching_words}")
             matching_themes.append(theme)
             # look for cts_in_ms inside matching_words (['économie circulaire', 'panneaux solaires', 'solaires'] from subtitle_duration 
-            keywords_with_timestamp.extend(get_cts_in_ms_for_keywords(subtitle_duration, matching_words))
+            keywords_with_timestamp.extend(get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme))
     
     if len(matching_themes) > 0:
         return [matching_themes, keywords_with_timestamp]
@@ -128,6 +133,9 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
     df = df.dropna(subset=['theme'])
 
     df.drop('srt', axis=1, inplace=True)
+
+    # format for PG
+    df['keywords_with_timestamp'].apply(json.dumps)
 
     logging.info(f"After filtering, we have {len(df)} subtitles left")
     return df

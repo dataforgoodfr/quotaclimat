@@ -55,7 +55,7 @@ jobs:
           set -o pipefail
           poetry run pytest --junitxml=pytest.xml \
            --cov-report=term-missing:skip-covered \
-           --cov=quotatclimat test/ | \
+           --cov=quotaclimat --cov=postgres test/ | \
            tee pytest-coverage.txt
         env:
           ENV: dev
@@ -72,6 +72,7 @@ jobs:
         run: poetry check --lock
 
       - name: Pytest coverage comment
+        id: coverageComment
         uses: MishaKav/pytest-coverage-comment@main
         with:
           pytest-coverage-path: pytest-coverage.txt

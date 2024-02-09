@@ -5,8 +5,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
-    entrypoint: ["poetry", "run", "pytest", "-v", "--cov", "quotaclimat", "--cov-report", "html", "test/"]
+    entrypoint: ["poetry", "run", "pytest", "--cov-report", "term:skip-covered", "--cov=quotaclimat", "--cov=postgres", "test/"]
     environment:
       ENV: docker
       LOGLEVEL: DEBUG

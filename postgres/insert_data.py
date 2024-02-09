@@ -51,7 +51,7 @@ def save_to_pg(df, table, conn):
             if_exists="append",
             chunksize=1000,
             method=insert_or_do_nothing_on_conflict,  # pandas does not handle conflict natively
-            dtype={"keywords_with_timestamp": JSON}, # only for keywords
+            dtype={"keywords_with_timestamp": JSON, "theme": JSON}, # only for keywords
         )
         logging.info("Saved dataframe to PG")
         return len(df)

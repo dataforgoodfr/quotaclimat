@@ -56,10 +56,10 @@ class Keywords(Base):
     channel_radio = Column(Boolean, nullable=True)
     start = Column(DateTime())
     plaintext= Column(Text)
-    theme=Column(ARRAY(String)) #keyword.py
-    created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')"))
-    keywords_with_timestamp = Column(JSON)
-    number_of_keywords = Column(Integer)
+    theme=Column(JSON) #keyword.py  # ALTER TABLE keywords ALTER theme TYPE json USING to_json(theme);
+    created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")) # ALTER TABLE ONLY keywords ALTER COLUMN created_at SET DEFAULT (now() at time zone 'utc');
+    keywords_with_timestamp = Column(JSON) # ALTER TABLE keywords ADD keywords_with_timestamp json;
+    number_of_keywords = Column(Integer) # ALTER TABLE keywords ADD number_of_keywords integer;
 
 
 def get_sitemap(id: str):

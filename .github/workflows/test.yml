@@ -51,7 +51,12 @@ jobs:
       - name: docker compose up nginx
         run: docker compose up -d nginxtest
       - name: pytest run
-        run: "poetry run pytest --cov test test/"
+        run: |
+          set -o pipefail
+          poetry run pytest --junitxml=pytest.xml \
+           --cov-report=term-missing:skip-covered \
+           --cov=quotaclimat --cov=postgres test/ | \
+           tee pytest-coverage.txt
         env:
           ENV: dev
           POSTGRES_USER: user
@@ -59,10 +64,20 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v3
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      # - name: Upload coverage reports to Codecov
+      #   uses: codecov/codecov-action@v3
+      #   env:
+      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
       - name: Verify poetry.lock agrees with pyproject.toml
         run: poetry check --lock
-    
+
+      - name: Pytest coverage comment
+        id: coverageComment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: pytest-coverage.txt
+          junitxml-path: ./pytest.xml
+
+      - name: Check the output coverage
+        run: |
+          echo "Coverage Percantage - ${{ steps.coverageComment.outputs.coverage }}"

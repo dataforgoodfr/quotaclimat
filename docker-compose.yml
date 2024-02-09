@@ -5,7 +5,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    entrypoint: ["poetry", "run", "pytest", "-v", "--cov", "--cov-report=html:coverage_re", "test", "test/"]
+    entrypoint: ["poetry", "run", "pytest", "--cov-report", "term:skip-covered", "--cov=quotaclimat", "--cov=postgres", "test/"]
     environment:
       ENV: docker
       LOGLEVEL: DEBUG

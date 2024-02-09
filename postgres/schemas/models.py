@@ -65,6 +65,10 @@ def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
 
+def get_keyword(id: str):
+    session = get_db_session()
+    return session.get(Keywords, id)
+
 def get_last_month_sitemap_id(engine): 
     query = text("""
     SELECT id 

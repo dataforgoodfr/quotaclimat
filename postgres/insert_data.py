@@ -4,7 +4,7 @@ import time
 import pandas as pd
 from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import insert
-
+from sqlalchemy import JSON
 from postgres.schemas.models import sitemap_table
 
 def clean_data(df: pd.DataFrame):
@@ -40,7 +40,7 @@ def show_sitemaps_dataframe(df: pd.DataFrame):
             logging.warning("Could show sitemap before saving : \n %s \n %s" % (err, df.head(1).to_string()))
 
 def save_to_pg(df, table, conn):
-    logging.info(f"Saving to PG table {table}")
+    logging.info(f"Saving to PG table '{table}'")
     logging.debug("Saving %s" % (df.head(1).to_string()))
     try:
         logging.debug("Schema before saving\n%s", df.dtypes)
@@ -51,6 +51,7 @@ def save_to_pg(df, table, conn):
             if_exists="append",
             chunksize=1000,
             method=insert_or_do_nothing_on_conflict,  # pandas does not handle conflict natively
+            dtype={"keywords_with_timestamp": JSON}, # only for keywords
         )
         logging.info("Saved dataframe to PG")
         return len(df)

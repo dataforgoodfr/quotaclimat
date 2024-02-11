@@ -37,7 +37,7 @@ async def get_and_save_api_data(exit_event):
 
     if(os.environ.get("ENV") == "docker"):
         logging.warning("Docker cases - only some channels are used")
-        channels = ["tf1", "france2"]
+        channels = ["rfm", "rmc"]
     else: #prod    
         channels = ["tf1", "france2", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
         "europe1", "france-culture", "france-inter", "nrj", "rfm", "rmc", "rtl", "rtl2"]

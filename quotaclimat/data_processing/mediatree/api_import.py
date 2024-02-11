@@ -20,6 +20,7 @@ from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from typing import List, Optional
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 import re
+import swifter
 
 #read whole file to a string
 password = os.environ.get("MEDIATREE_PASSWORD")
@@ -177,7 +178,8 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
     log_min_max_date(df)
 
     logging.info(f'tagging plaintext subtitle with keywords and theme : regexp - search taking time...')
-    df[['theme', u'keywords_with_timestamp', 'number_of_keywords']] = df[['plaintext','srt']].apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
+    # using swifter to speed up apply https://github.com/jmcarpenter2/swifter
+    df[['theme', u'keywords_with_timestamp', 'number_of_keywords']] = df[['plaintext','srt']].swifter.apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
 
     # remove all rows that does not have themes
     df = df.dropna(subset=['theme'])
@@ -255,7 +257,7 @@ def extract_api_sub(
 
 def parse_raw_json(response):
     if response.status_code == 504:
-        logger.error(f"Mediatree API server error 504 {response.content}")
+        logger.error(f"Mediatree API server error 504\n {response.content}")
         return None
     else:
         return json.loads(response.content.decode('utf_8'))

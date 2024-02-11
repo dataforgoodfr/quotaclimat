@@ -194,6 +194,10 @@ docker compose up ingest_to_db
 docker compose up streamlit
 ```
 
+If you add a new dependency, don't forget to rebuild
+```
+docker compose build test # or ingest_to_db, mediatree etc
+```
 ### Explore postgres data using Metabase - a BI tool
 ```
 docker compose up metabase

@@ -29,9 +29,9 @@ def test_get_date_range():
 
     # test default
     range = get_date_range(get_yesterday(), None)
-    assert len(range) == 1
+    assert len(range) == 2
 
     # test with function
     (start_date_to_query, end_epoch) = get_start_end_date_env_variable_with_default()
     range = get_date_range(start_date_to_query, end_epoch)
-    assert len(range) == 1
+    assert len(range) == 2

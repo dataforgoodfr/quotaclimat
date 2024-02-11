@@ -82,7 +82,7 @@ def get_date_range(start_date_to_query, end_epoch):
         return range
     else:
         logging.info("Empty range using default from yesterday")
-        range = pd.date_range(start=get_datetime_yesterday(), periods=1, freq="D")
+        range = pd.date_range(start=get_datetime_yesterday(), periods=2, freq="D")
         return range
 
 def get_start_end_date_env_variable_with_default():

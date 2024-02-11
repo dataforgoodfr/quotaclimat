@@ -194,6 +194,10 @@ docker compose up ingest_to_db
 docker compose up streamlit
 ```
 
+If you add a new dependency, don't forget to rebuild
+```
+docker compose build test # or ingest_to_db, mediatree etc
+```
 ### Explore postgres data using Metabase - a BI tool
 ```
 docker compose up metabase
@@ -260,6 +264,10 @@ Contact QuotaClimat team to 2 files with the API's username and password inside 
 docker compose up mediatree
 ```
 
+### Batch import based on time
+Use env variable `START_DATE` like in docker compose (epoch second format : 1705409797).
+
+Otherwise, default is yesterday midnight date.
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
 ```bash

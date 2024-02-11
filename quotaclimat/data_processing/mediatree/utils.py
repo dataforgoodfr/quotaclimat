@@ -3,6 +3,9 @@ import pytz
 from datetime import datetime, timedelta, time
 import logging
 from zoneinfo import ZoneInfo
+import pandas as pd
+import os 
+
 timezone='Europe/Paris'
 
 def get_exact_days_from_week_day_name(
@@ -54,9 +57,40 @@ def date_to_epoch(date_string):
     epoch_time = int(date.timestamp())
     return epoch_time
 
+def get_epoch_from_datetime(date: datetime):
+    return int(date.timestamp())
+
+def get_now():
+    return datetime.now(ZoneInfo(timezone))
+
+def get_datetime_yesterday():
+    midnight_today = datetime.combine(get_now(), time.min)
+    return midnight_today - timedelta(days=1)
+
 def get_yesterday():
-    midnight_today = datetime.combine(datetime.now(ZoneInfo(timezone)), time.min)
-    yesterday = midnight_today - timedelta(days=1)
+    yesterday = get_datetime_yesterday()
     yesterday_timestamp = yesterday.timestamp()
-    logging.info(f"From date: {yesterday.strftime('%Y-%m-%d')}")
+
     return int(yesterday_timestamp)
+
+# Get range of 2 date by week from start to end
+def get_date_range(start_date_to_query, end_epoch):
+    if end_epoch is not None:
+        range = pd.date_range(pd.to_datetime(start_date_to_query, unit='s'), pd.to_datetime(end_epoch, unit='s'), freq="D") # every day
+       
+        logging.info(f"Date range: {range} \ {start_date_to_query} until {end_epoch}")
+        return range
+    else:
+        logging.info("Empty range using default from yesterday")
+        range = pd.date_range(start=get_datetime_yesterday(), periods=2, freq="D")
+        return range
+
+def get_start_end_date_env_variable_with_default():
+    start_date = os.environ.get("START_DATE")
+
+    if start_date is not None:
+        logging.info(f"Using START_DATE env var {start_date} until yesterday")
+        return (int(start_date), get_yesterday())
+    else:
+        logging.info(f"Yesterday until now")
+        return (get_yesterday(), None)

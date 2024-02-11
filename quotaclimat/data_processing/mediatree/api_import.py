@@ -20,6 +20,8 @@ from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from typing import List, Optional
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 import re
+import swifter
+from tenacity import *
 
 #read whole file to a string
 password = os.environ.get("MEDIATREE_PASSWORD")
@@ -35,25 +37,38 @@ async def get_and_save_api_data(exit_event):
     conn = connect_to_db()
     token=get_auth_token(password=password, user_name=USER)
 
+    (start_date_to_query, end_epoch) = get_start_end_date_env_variable_with_default()
+
     if(os.environ.get("ENV") == "docker"):
         logging.warning("Docker cases - only some channels are used")
-        channels = ["tf1", "france2"]
+        channels = ["france2"]
     else: #prod    
         channels = ["tf1", "france2", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
-        "europe1", "france-culture", "france-inter", "nrj", "rfm", "rmc", "rtl", "rtl2"]
+        "europe1", "france-culture", "france-inter", "nrj", "rmc", "rtl", "rtl2"]
 
     logging.info(f"Importing {channels}")
-    for channel in channels :
-        try:
-            df = extract_api_sub(token, channel)
-            if(df is not None):
-                save_to_pg(df, keywords_table, conn)
-            else: 
-                logging.info("Nothing to save to Postgresql")
-        except Exception as err:
-            continue
+
+    # https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases
+    range = get_date_range(start_date_to_query, end_epoch)
+    logging.info(f"Number of days to query : {len(range)}")
+    for date in range:
+        date_epoch = get_epoch_from_datetime(date)
+        logging.info(f"Date: {date} - {date_epoch}")
+        for channel in channels :
+            try:
+                df = extract_api_sub(token, channel, 's2t', get_epoch_from_datetime(date) )
+                if(df is not None):
+                    save_to_pg(df, keywords_table, conn)
+                else: 
+                    logging.info("Nothing to save to Postgresql")
+            except Exception as err:
+                logging.error(f"continuing loop but met error : {err}")
+                continue
     exit_event.set()
 
+# "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
+# @see https://github.com/jd/tenacity/tree/main
+@retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
 def get_auth_token(password=password, user_name=USER):
     logger.info(f"Getting a token for user {user_name}")
     try:
@@ -79,7 +94,7 @@ def get_param_api(token, type_sub, start_epoch, channel = 'm6'):
         "token": token,
         "start_gte": start_epoch,
         "type": type_sub,
-        "size": "1000", #  1-1000
+        "size": "1000", #  range 1-1000
     }
 
 
@@ -156,10 +171,19 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -
     else:
         return [None, None, None]
 
+def log_min_max_date(df):
+    max_date = max(df['start'])
+    min_date = min(df['start'])
+    logging.info(f"Date min : {min_date}, max : {max_date}")
+
 def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
     count_before_filtering = len(df)
     logging.info(f"{count_before_filtering} subtitles to filter by keywords and tag with themes")
-    df[['theme', u'keywords_with_timestamp', 'number_of_keywords']] = df[['plaintext','srt']].apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
+    log_min_max_date(df)
+
+    logging.info(f'tagging plaintext subtitle with keywords and theme : regexp - search taking time...')
+    # using swifter to speed up apply https://github.com/jmcarpenter2/swifter
+    df[['theme', u'keywords_with_timestamp', 'number_of_keywords']] = df[['plaintext','srt']].swifter.apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
 
     # remove all rows that does not have themes
     df = df.dropna(subset=['theme'])
@@ -167,9 +191,11 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
     df.drop('srt', axis=1, inplace=True)
 
     logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")
+
     return df
 
 def add_primary_key(df):
+    logging.info("Adding primary key to save to PG and have idempotent result")
     try:
         return (
             df["start"].astype(str) + df["channel_name"]
@@ -178,12 +204,22 @@ def add_primary_key(df):
         logging.error(error)
         return get_consistent_hash("empty") #  TODO improve - should be a None ?
 
+# "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
+# @see https://github.com/jd/tenacity/tree/main
+@retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
+def get_post_request(media_tree_token, type_sub, start_epoch, channel):
+    params = get_param_api(media_tree_token, type_sub, start_epoch, channel)
+    logging.info(f"Query {KEYWORDS_URL} with params {get_param_api('fake_token_for_log', type_sub, start_epoch, channel)}")
+    response = requests.post(KEYWORDS_URL, json=params)
+    return parse_raw_json(response)
+
 # Data extraction function definition
 # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
 def extract_api_sub(
         media_tree_token, 
         channel = 'm6',
-        type_sub = "s2t"
+        type_sub = "s2t",
+        start_epoch = None
     ) -> Optional[pd.DataFrame]: 
     """
 
@@ -209,16 +245,18 @@ def extract_api_sub(
         False pour avoir le dataframe par émission, True pour celui avec les mots par timestamp
         by default False
     """
-    start_epoch = get_yesterday()
+    if start_epoch is None:
+        logging.info("Default start date: Yesterday")
+        start_epoch = get_yesterday()
+    else: 
+        logging.debug(f"Date epoch: {start_epoch}")
     logging.info(f"parsing channel : {channel}")
 
-    params = get_param_api(media_tree_token, type_sub, start_epoch, channel)
-    try:
-        logging.info(f"Query {KEYWORDS_URL} with params {params}")
-        response = requests.post(KEYWORDS_URL, json=params)
-        response_sub = json.loads(response.content.decode('utf_8'))
 
-        df = parse_reponse_subtitle(response_sub)
+    try:
+        response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel)
+
+        df = parse_reponse_subtitle(response_sub, channel)
         if(df is not None):
             df = filter_and_tag_by_theme(df)
             df["id"] = add_primary_key(df)
@@ -229,16 +267,24 @@ def extract_api_sub(
         logging.error("Could not query API :(%s) %s" % (type(err).__name__, err))
         return None
 
+def parse_raw_json(response):
+    if response.status_code == 504:
+        logger.error(f"Mediatree API server error 504 (retry enabled)\n {response.content}")
+        raise Exception
+    else:
+        return json.loads(response.content.decode('utf_8'))
+
 def parse_total_results(response_sub) -> int :
     return response_sub.get('total_results')
 
 
-def parse_reponse_subtitle(response_sub) -> Optional[pd.DataFrame]: 
+def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFrame]: 
     logging.debug(f"Parsing json response:\n {response_sub}")
     
     total_results = parse_total_results(response_sub)
     if(total_results > 0):
-        logging.info(f"{total_results} responses received")
+        logging.info(f"{total_results} 'total_results' field")
+        
         new_df = json_normalize(response_sub.get('data'))
         logging.info("Schema from API before formatting :\n%s", new_df.dtypes)
         new_df.drop('channel.title', axis=1, inplace=True) # keep only channel.name
@@ -247,14 +293,24 @@ def parse_reponse_subtitle(response_sub) -> Optional[pd.DataFrame]:
         new_df.drop('start', axis=1, inplace=True) # keep only channel.name
 
         new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)
-    
-        logging.debug("Parsed %s" % (new_df.head(1).to_string()))
-        logging.info("Parsed Schema\n%s", new_df.dtypes)
 
+        log_dataframe_size(new_df, channel)
+
+        logging.debug("Parsed %s" % (new_df.head(1).to_string()))
+        logging.debug("Parsed Schema\n%s", new_df.dtypes)
+        
         return new_df
     else:
         logging.warning("No result (total_results = 0) for this channel")
         return None
+
+def log_dataframe_size(df, channel):
+    bytes_size = sys.getsizeof(df)
+    logging.info(f"Dataframe size : {bytes_size / (1000 * 1000)} Megabytes")
+    if(bytes_size > 50 * 1000 * 1000): # 50Mb
+        logging.warning(f"High Dataframe size : {bytes_size / (1000 * 1000)}")
+    if(len(df)== 1000):
+        logging.error(f"{channel} : We might lose data as we have 1000 out of 1000 results possible - we should divide this query")
 
 async def main():    
     logger.info("Start api mediatree import")

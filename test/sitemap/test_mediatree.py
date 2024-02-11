@@ -184,6 +184,27 @@ def test_get_themes_keywords_duration():
      ,"adaptation_climatique_solutions_directes"
     ],[], 0]
 
+
+    subtitles_penurie_eau = [{
+          "duration_ms": 34,
+          "cts_in_ms": 1706437079004,
+          "text": "pénurie"
+        },
+        {
+          "duration_ms": 34,
+          "cts_in_ms": 1706437080006,
+          "text": "d' "
+        },
+        {
+          "duration_ms": 34,
+          "cts_in_ms": 1706437080006,
+          "text": "eau"
+        },
+    ]
+    assert get_themes_keywords_duration("la pénurie d'eau touche Barcelone", subtitles_penurie_eau) == [[
+     "changement_climatique_consequences"
+    ],[{'keyword': "pénurie", 'timestamp': 1706437079004, 'theme': 'changement_climatique_consequences'}], 1] # TODO should be pénurie d'eau
+
 def test_get_cts_in_ms_for_keywords():
     str = [{
           "duration_ms": 34,
@@ -415,7 +436,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
 def test_complexe_filter_and_tag_by_theme():
     df1 = pd.DataFrame([{
         "start": 1704798000,
-        "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
+        "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal avec des pénuries d' eau",
         "channel_name": "m6",
         "channel_radio": False,
         "srt": [{
@@ -466,17 +487,26 @@ def test_complexe_filter_and_tag_by_theme():
             "duration_ms": 34,
             "cts_in_ms": 1706437079012,
             "text": "animal"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079013,
+            "text": "pénurie"
+            },{
+            "duration_ms": 34,
+            "cts_in_ms": 1706437079014,
+            "text": "eau"
             },
         ],
     }])
 
     expected_result = pd.DataFrame([{
         "start": 1704798000,
-        "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
+        "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal avec des pénuries d' eau",
         "channel_name": "m6",
         "channel_radio": False,
         "theme": [
             "changement_climatique_constat",
+            "changement_climatique_consequences",
             "ressources_naturelles_concepts_generaux",
         ],
         "keywords_with_timestamp": [{
@@ -490,6 +520,11 @@ def test_complexe_filter_and_tag_by_theme():
                 "theme":"changement_climatique_constat",
             },
             {
+                "keyword" : 'pénurie', # TODO Fix me  concurrence : "pénurie d’eau" / pénurie --> should be pénurie d'eau
+                "timestamp": 1706437079013,
+                "theme":"changement_climatique_consequences",
+            },
+            {
                 "keyword" : 'planète',
                 "timestamp": 1706437079009,
                 "theme":"ressources_naturelles_concepts_generaux",
@@ -498,9 +533,9 @@ def test_complexe_filter_and_tag_by_theme():
                 "keyword" : 'terre',
                 "timestamp": 1706437079011,
                 "theme":"ressources_naturelles_concepts_generaux",
-            }
+            },
         ]
-        ,"number_of_keywords": 4
+        ,"number_of_keywords": 5
     }])
 
     # List of words to filter on
@@ -579,6 +614,9 @@ def test_is_word_in_sentence():
 
     assert is_word_in_sentence("terre", "la région de terre-neuve se déplace") == False
     assert is_word_in_sentence("submersion", 'vagues-submersion') == True
+
+    assert is_word_in_sentence("pénurie d'eau", "la pénurie d' eau touche Barcelone") == True
+    assert is_word_in_sentence("pénurie d'eau", "la pénurie d'eau touche Barcelone") == True
 
 def test_format_word_regex():
     assert format_word_regex("voitures") == "voitures?"

@@ -37,11 +37,7 @@ jobs:
         poetry version patch
         PROJECT_VERSION=$(poetry version --short)
         echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
-        git config user.name barometre-github-actions
-        git config user.email barometre-github-actions@github.com
-        git add pyproject.toml
-        git commit -m "[no ci]: bumping version ${{ env.PROJECT_VERSION }}"
-        git push origin main
+
     - name: Login to Scaleway Container Registry
       uses: docker/login-action@v3
       with:

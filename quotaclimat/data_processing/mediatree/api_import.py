@@ -37,28 +37,25 @@ async def get_and_save_api_data(exit_event):
     conn = connect_to_db()
     token=get_auth_token(password=password, user_name=USER)
     type_sub = 's2t'
-    start_date_to_query = get_start_end_date_env_variable_with_default()
+
+    (start_date_to_query, end_epoch) = get_start_end_date_env_variable_with_default()
 
     if(os.environ.get("ENV") == "docker"):
         logging.warning("Docker cases - only some channels are used")
-        channels = ["france2", "tf1"]
+        channels = ["france2"]
     else: #prod    
         channels = ["tf1", "france2", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
         "europe1", "france-culture", "france-inter", "nrj", "rmc", "rtl", "rtl2"]
 
-    logging.info(f"Importing {channels}")
-
-
-    # date = 1712158328
-
-    for channel in channels :
-        # use API pagination to not miss any data
-        number_pages = get_number_of_page_by_channel(token, type_sub, start_date_to_query, channel)
-        logging.info(f"We have {number_pages} pages from the API to read")
-        for page in range(number_pages):
-            logging.info(f"Parsing {channel} - page {page} out of {number_pages}...")
+    range = get_date_range(start_date_to_query, end_epoch)
+    logging.info(f"Number of days to query : {len(range)}")
+    for date in range:
+        date_epoch = get_epoch_from_datetime(date)
+        logging.info(f"Date: {date} - {date_epoch}")
+        logging.info(f"Date: {date} - {date_epoch}")
+        for channel in channels :
             try:
-                df = extract_api_sub(token, channel, type_sub, start_date_to_query, page)
+                df = extract_api_sub(token, channel, type_sub, date_epoch)
                 if(df is not None):
                     save_to_pg(df, keywords_table, conn)
                 else: 
@@ -92,13 +89,16 @@ def get_auth_token(password=password, user_name=USER):
 # @TODO filter by keyword when api is updated (to filter first on the API side instead of filter_and_tag_by_theme )
 # see : https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
 def get_param_api(token, type_sub, start_epoch, channel = 'm6', page = 0):
+    number_of_hours = get_hour_frequency()
+    one_hour = 3600
     return {
         "channel": channel,
         "token": token,
         "start_gte": start_epoch,
+        "start_lte": start_epoch + (one_hour * number_of_hours), # Start date lower or equal
         "type": type_sub,
         "size": "1000", #  range 1-1000
-        "from": page
+        # "from": page TODO fix me
     }
 
 
@@ -212,10 +212,14 @@ def add_primary_key(df):
 # @see https://github.com/jd/tenacity/tree/main
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
 def get_post_request(media_tree_token, type_sub, start_epoch, channel, page: int = 0):
-    params = get_param_api(media_tree_token, type_sub, start_epoch, channel, page)
-    logging.info(f"Query {KEYWORDS_URL} page {page} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, page)}")
-    response = requests.post(KEYWORDS_URL, json=params)
-    return parse_raw_json(response)
+    try:
+        params = get_param_api(media_tree_token, type_sub, start_epoch, channel, page)
+        logging.info(f"Query {KEYWORDS_URL} page {page} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, page)}")
+        response = requests.post(KEYWORDS_URL, json=params)
+        return parse_raw_json(response)
+    except Exception as err:
+        logging.error("Retry - Could not query API :(%s) %s" % (type(err).__name__, err))
+        raise Exception
 
 # use API pagination to be sure to query all data from a date
 def get_number_of_page_by_channel(media_tree_token, type_sub, start_epoch, channel) -> int:
@@ -263,8 +267,6 @@ def parse_raw_json(response):
 def parse_total_results(response_sub) -> int :
     return response_sub.get('total_results')
 
-
-
 def parse_number_pages(response_sub) -> int :
     return int(response_sub.get('number_pages'))
 
@@ -299,6 +301,8 @@ def log_dataframe_size(df, channel):
     logging.info(f"Dataframe size : {bytes_size / (1000 * 1000)} Megabytes")
     if(bytes_size > 50 * 1000 * 1000): # 50Mb
         logging.warning(f"High Dataframe size : {bytes_size / (1000 * 1000)}")
+    if(len(df) == 1000):
+        logging.error("We might lose data - df size is 1000 out of 1000 - we should divide this querry")
 
 async def main():    
     logger.info("Start api mediatree import")

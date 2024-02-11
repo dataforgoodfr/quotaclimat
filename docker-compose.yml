@@ -133,7 +133,7 @@ services:
       POSTGRES_PORT: 5432
       PORT: 5050 # healthcheck
       HEALTHCHECK_SERVER: "0.0.0.0"
-      # START_DATE: 1705409797 # to test batch import 
+     # START_DATE: 1704576615 # to test batch import 
       MEDIATREE_USER : /run/secrets/username_api
       MEDIATREE_PASSWORD:  /run/secrets/pwd_api
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/

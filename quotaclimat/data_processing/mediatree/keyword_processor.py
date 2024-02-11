@@ -1,4 +1,4 @@
-from flashtext import KeywordProcessor
+from flashtexpt import KeywordProcessor
 
 
 class KeywordModel:

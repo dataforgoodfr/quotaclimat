@@ -40,7 +40,8 @@ def show_sitemaps_dataframe(df: pd.DataFrame):
             logging.warning("Could show sitemap before saving : \n %s \n %s" % (err, df.head(1).to_string()))
 
 def save_to_pg(df, table, conn):
-    logging.info(f"Saving to PG table '{table}'")
+    number_of_elements = len(df)
+    logging.info(f"Saving {number_of_elements} elements to PG table '{table}'")
     logging.debug("Saving %s" % (df.head(1).to_string()))
     try:
         logging.debug("Schema before saving\n%s", df.dtypes)

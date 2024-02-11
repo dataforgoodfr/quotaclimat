@@ -73,24 +73,12 @@ def get_yesterday():
 
     return int(yesterday_timestamp)
 
-# Get range of 2 date by week from start to end
-def get_date_range(start_date_to_query, end_epoch):
-    if end_epoch is not None:
-        range = pd.date_range(pd.to_datetime(start_date_to_query, unit='s'), pd.to_datetime(end_epoch, unit='s'), freq="D") # every day
-       
-        logging.info(f"Date range: {range} \ {start_date_to_query} until {end_epoch}")
-        return range
-    else:
-        logging.info("Empty range using default from yesterday")
-        range = pd.date_range(start=get_datetime_yesterday(), periods=2, freq="D")
-        return range
-
 def get_start_end_date_env_variable_with_default():
     start_date = os.environ.get("START_DATE")
 
     if start_date is not None:
-        logging.info(f"Using START_DATE env var {start_date} until yesterday")
-        return (int(start_date), get_yesterday())
+        logging.info(f"Using START_DATE env var {start_date}")
+        return int(start_date)
     else:
-        logging.info(f"Yesterday until now")
-        return (get_yesterday(), None)
+        logging.info(f"Getting data from yesterday - you can use START_DATE env variable to provide another starting date")
+        return get_yesterday()

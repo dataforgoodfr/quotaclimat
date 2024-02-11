@@ -35,9 +35,13 @@ jobs:
       run: |
         poetry install --only dev
         poetry version patch
-
         PROJECT_VERSION=$(poetry version --short)
         echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
+        git config user.name barometre-github-actions
+        git config user.email barometre-github-actions@github.com
+        git add pyproject.toml
+        git commit -m "[no ci]: bumping version ${{ env.PROJECT_VERSION }}"
+        git push origin main
     - name: Login to Scaleway Container Registry
       uses: docker/login-action@v3
       with:
@@ -51,7 +55,9 @@ jobs:
 
     - name: Build mediatree_import image
       run: docker build -f Dockerfile_api_import . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }}
-    - name: Push mediatree_import Image
+    - name: TAg mediatree_import latest image
+      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:latest
+    - name: Push ingest_to_db Image
       run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }}
       
     - name: Build streamlit image

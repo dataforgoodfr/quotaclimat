@@ -24,10 +24,24 @@ jobs:
       with:
         python-version: ${{ env.PYTHON_VERSION }}
     - uses: actions/checkout@v4
-    - name: Add version to environment vars
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: ${{ env.POETRY_VERSION }}
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+    - name: Poetry install & bump version
       run: |
-          PROJECT_VERSION=$(poetry version --short)
-          echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
+        poetry install --only dev
+        poetry version patch
+        git config user.name barometre-github-actions
+        git config user.email barometre-github-actions@github.com
+        git add pyproject.toml
+        git commit -m "[no ci]: bumping version"
+        git push origin main
+        PROJECT_VERSION=$(poetry version --short)
+        echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
     - name: Login to Scaleway Container Registry
       uses: docker/login-action@v3
       with:
@@ -48,19 +62,3 @@ jobs:
       run: docker build -f Dockerfile_streamlit . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
     - name: Push streamlit Image
       run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
-    - name: Install Poetry
-      uses: snok/install-poetry@v1
-      with:
-        version: ${{ env.POETRY_VERSION }}
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-        installer-parallel: true
-    - name: Poetry install & bump version
-      run: |
-        poetry install --only dev
-        poetry version patch
-        git config user.name barometre-github-actions
-        git config user.email barometre-github-actions@github.com
-        git add pyproject.toml
-        git commit -m "[no ci]: bumping version"
-        git push origin main

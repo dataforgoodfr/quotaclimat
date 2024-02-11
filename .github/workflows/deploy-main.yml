@@ -44,18 +44,19 @@ jobs:
         username: nologin
         password: ${{ secrets.SCALEWAY_API_KEY }}
         registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
-    - name: Build ingest_to_db image
-      run: docker build -f Dockerfile_ingest . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
-    - name: Push ingest_to_db Image
-      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
 
     - name: Build mediatree_import image
       run: docker build -f Dockerfile_api_import . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }}
     - name: TAg mediatree_import latest image
       run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:latest
     - name: Push ingest_to_db Image
-      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }}
-      
+      run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import
+
+    - name: Build ingest_to_db image
+      run: docker build -f Dockerfile_ingest . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
+    - name: Push ingest_to_db Image
+      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
+
     - name: Build streamlit image
       run: docker build -f Dockerfile_streamlit . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
     - name: Push streamlit Image

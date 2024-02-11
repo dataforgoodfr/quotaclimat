@@ -65,7 +65,7 @@ def get_now():
 
 def get_datetime_yesterday():
     midnight_today = datetime.combine(get_now(), time.min)
-    return midnight_today - timedelta(days=7)
+    return midnight_today - timedelta(days=1)
 
 def get_yesterday():
     yesterday = get_datetime_yesterday()
@@ -76,9 +76,8 @@ def get_yesterday():
 # Get range of 2 date by week from start to end
 def get_date_range(start_date_to_query, end_epoch):
     if end_epoch is not None:
-        range1 = pd.date_range(pd.to_datetime(start_date_to_query, unit='s'), pd.to_datetime(end_epoch, unit='s'), freq="W-MON") # every monday
-        range2 = pd.date_range(pd.to_datetime(start_date_to_query, unit='s'), pd.to_datetime(end_epoch, unit='s'), freq="W-THU") # every thursday
-        range = range1.union(range2)
+        range = pd.date_range(pd.to_datetime(start_date_to_query, unit='s'), pd.to_datetime(end_epoch, unit='s'), freq="D") # every day
+       
         logging.info(f"Date range: {range} \ {start_date_to_query} until {end_epoch}")
         return range
     else:

@@ -21,6 +21,7 @@ from typing import List, Optional
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 import re
 import swifter
+from tenacity import *
 
 #read whole file to a string
 password = os.environ.get("MEDIATREE_PASSWORD")
@@ -40,7 +41,7 @@ async def get_and_save_api_data(exit_event):
 
     if(os.environ.get("ENV") == "docker"):
         logging.warning("Docker cases - only some channels are used")
-        channels = ["tf1", "france2"]
+        channels = ["france2"]
     else: #prod    
         channels = ["tf1", "france2", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
         "europe1", "france-culture", "france-inter", "nrj", "rmc", "rtl", "rtl2"]
@@ -65,6 +66,9 @@ async def get_and_save_api_data(exit_event):
                 continue
     exit_event.set()
 
+# "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
+# @see https://github.com/jd/tenacity/tree/main
+@retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
 def get_auth_token(password=password, user_name=USER):
     logger.info(f"Getting a token for user {user_name}")
     try:
@@ -191,6 +195,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
     return df
 
 def add_primary_key(df):
+    logging.info("Adding primary key to save to PG and have idempotent result")
     try:
         return (
             df["start"].astype(str) + df["channel_name"]
@@ -198,6 +203,15 @@ def add_primary_key(df):
     except (Exception) as error:
         logging.error(error)
         return get_consistent_hash("empty") #  TODO improve - should be a None ?
+
+# "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
+# @see https://github.com/jd/tenacity/tree/main
+@retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
+def get_post_request(media_tree_token, type_sub, start_epoch, channel):
+    params = get_param_api(media_tree_token, type_sub, start_epoch, channel)
+    logging.info(f"Query {KEYWORDS_URL} with params {get_param_api('fake_token_for_log', type_sub, start_epoch, channel)}")
+    response = requests.post(KEYWORDS_URL, json=params)
+    return parse_raw_json(response)
 
 # Data extraction function definition
 # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
@@ -238,13 +252,11 @@ def extract_api_sub(
         logging.debug(f"Date epoch: {start_epoch}")
     logging.info(f"parsing channel : {channel}")
 
-    params = get_param_api(media_tree_token, type_sub, start_epoch, channel)
-    try:
-        logging.info(f"Query {KEYWORDS_URL} with params {get_param_api('fake_token_for_log', type_sub, start_epoch, channel)}")
-        response = requests.post(KEYWORDS_URL, json=params)
-        response_sub = parse_raw_json(response)
 
-        df = parse_reponse_subtitle(response_sub)
+    try:
+        response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel)
+
+        df = parse_reponse_subtitle(response_sub, channel)
         if(df is not None):
             df = filter_and_tag_by_theme(df)
             df["id"] = add_primary_key(df)
@@ -257,8 +269,8 @@ def extract_api_sub(
 
 def parse_raw_json(response):
     if response.status_code == 504:
-        logger.error(f"Mediatree API server error 504\n {response.content}")
-        return None
+        logger.error(f"Mediatree API server error 504 (retry enabled)\n {response.content}")
+        raise Exception
     else:
         return json.loads(response.content.decode('utf_8'))
 
@@ -266,7 +278,7 @@ def parse_total_results(response_sub) -> int :
     return response_sub.get('total_results')
 
 
-def parse_reponse_subtitle(response_sub) -> Optional[pd.DataFrame]: 
+def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFrame]: 
     logging.debug(f"Parsing json response:\n {response_sub}")
     
     total_results = parse_total_results(response_sub)
@@ -282,7 +294,7 @@ def parse_reponse_subtitle(response_sub) -> Optional[pd.DataFrame]:
 
         new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)
 
-        log_dataframe_size(new_df)
+        log_dataframe_size(new_df, channel)
 
         logging.debug("Parsed %s" % (new_df.head(1).to_string()))
         logging.debug("Parsed Schema\n%s", new_df.dtypes)
@@ -292,14 +304,13 @@ def parse_reponse_subtitle(response_sub) -> Optional[pd.DataFrame]:
         logging.warning("No result (total_results = 0) for this channel")
         return None
 
-def log_dataframe_size(df):
+def log_dataframe_size(df, channel):
     bytes_size = sys.getsizeof(df)
-    df.info()
     logging.info(f"Dataframe size : {bytes_size / (1000 * 1000)} Megabytes")
     if(bytes_size > 50 * 1000 * 1000): # 50Mb
         logging.warning(f"High Dataframe size : {bytes_size / (1000 * 1000)}")
     if(len(df)== 1000):
-        logging.error("We might lose data as we have 1000 out of 1000 results possible - we should divide this query")
+        logging.error(f"{channel} : We might lose data as we have 1000 out of 1000 results possible - we should divide this query")
 
 async def main():    
     logger.info("Start api mediatree import")

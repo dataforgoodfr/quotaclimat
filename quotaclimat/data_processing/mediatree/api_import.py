@@ -33,6 +33,13 @@ if(USER == '/run/secrets/username_api'):
     USER=open("/run/secrets/username_api", "r").read()
 KEYWORDS_URL = os.environ.get("KEYWORDS_URL") #https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
 
+def refresh_token(token, date):
+    if is_it_tuesday(date): # refresh token every weekday for batch import
+        logging.info("refreshing api token every weekday in case it's expired")
+        return get_auth_token(password=password, user_name=USER)
+    else:
+        return token
+
 async def get_and_save_api_data(exit_event):
     conn = connect_to_db()
     token=get_auth_token(password=password, user_name=USER)
@@ -48,10 +55,11 @@ async def get_and_save_api_data(exit_event):
         "europe1", "france-culture", "france-inter", "nrj", "rmc", "rtl", "rtl2"]
 
     range = get_date_range(start_date_to_query, end_epoch)
-    logging.info(f"Number of days to query : {len(range)}")
+    logging.info(f"Number of date to query : {len(range)}")
     for date in range:
+        token = refresh_token(token, date)
+        
         date_epoch = get_epoch_from_datetime(date)
-        logging.info(f"Date: {date} - {date_epoch}")
         logging.info(f"Date: {date} - {date_epoch}")
         for channel in channels :
             try:
@@ -228,12 +236,15 @@ def get_number_of_page_by_channel(media_tree_token, type_sub, start_epoch, chann
 
     return parse_number_pages(response_sub)
 
-
+@retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
 def get_df_api(media_tree_token, type_sub, start_epoch, channel, page):
-    response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel, page)
+    try:
+        response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel, page)
 
-    return parse_reponse_subtitle(response_sub, channel)
-
+        return parse_reponse_subtitle(response_sub, channel)
+    except Exception as err:
+        logging.error("Retry - get_df_api:(%s) %s" % (type(err).__name__, err))
+        raise Exception
 
 # Data extraction function definition
 # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList

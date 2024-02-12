@@ -71,7 +71,7 @@ def get_start_end_date_env_variable_with_default():
 
 # to query the API every X hour
 def get_hour_frequency():
-    hour_frequency=12
+    hour_frequency=20
     return hour_frequency
 
 # Get range of 2 date by week from start to end
@@ -85,3 +85,8 @@ def get_date_range(start_date_to_query, end_epoch):
         logging.info("Empty range using default from yesterday")
         range = pd.date_range(start=get_datetime_yesterday(), periods=4, freq=f"{get_hour_frequency()}h")
         return range
+
+def is_it_tuesday(date):
+    weekday = date.weekday()
+    logging.debug(f"weekday : {weekday}")
+    return weekday

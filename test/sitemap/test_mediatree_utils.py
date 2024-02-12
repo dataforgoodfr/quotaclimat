@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 
 from utils import get_localhost
-from quotaclimat.data_processing.mediatree.utils import get_yesterday, get_date_range, get_start_end_date_env_variable_with_default
+from quotaclimat.data_processing.mediatree.utils import get_yesterday, get_date_range, get_start_end_date_env_variable_with_default, is_it_tuesday
 
 import logging
 from time import strftime,localtime
@@ -18,13 +18,11 @@ def test_get_yesterday():
 
 def test_get_date_range():
     range = get_date_range(1681214197, 1681646197)
-    expected = pd.DatetimeIndex(['2023-04-11 11:56:37', '2023-04-11 23:56:37',
-         '2023-04-12 11:56:37', '2023-04-12 23:56:37',
-         '2023-04-13 11:56:37', '2023-04-13 23:56:37',
-         '2023-04-14 11:56:37', '2023-04-14 23:56:37',
-         '2023-04-15 11:56:37', '2023-04-15 23:56:37',
-         '2023-04-16 11:56:37'],
-        dtype='datetime64[ns]', freq='12H')
+    expected = pd.DatetimeIndex(['2023-04-11 11:56:37', '2023-04-12 07:56:37',
+             '2023-04-13 03:56:37', '2023-04-13 23:56:37',
+             '2023-04-14 19:56:37', '2023-04-15 15:56:37',
+             '2023-04-16 11:56:37'],
+            dtype='datetime64[ns]', freq='20H')
     assert len(expected) == len(range) # ValueError: the 'dtype' parameter is not supported in the pandas implementation of any()
 
 def test_get_default_date_range():
@@ -36,3 +34,11 @@ def test_get_default_date_range():
     (start_date_to_query, end_epoch) = get_start_end_date_env_variable_with_default()
     range = get_date_range(start_date_to_query, end_epoch)
     assert len(range) == 4
+
+
+def test_is_it_tuesday():
+    date = pd.Timestamp("2024-02-13 15:34:28")
+    assert is_it_tuesday(date) == True
+
+    date = pd.Timestamp("2024-01-01 15:34:28")
+    assert is_it_tuesday(date) == False

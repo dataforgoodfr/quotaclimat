@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 from utils import get_localhost, debug_df
 from quotaclimat.data_processing.mediatree.api_import import *
 from quotaclimat.data_processing.mediatree.utils import *
+from quotaclimat.data_processing.mediatree.detect_keywords import *
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import keywords_table, connect_to_db, get_keyword, drop_tables
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
@@ -413,6 +414,8 @@ def test_singular_plural_case_filter_and_tag_by_theme():
     pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
 
 def test_complexe_filter_and_tag_by_theme():
+    original_timestamp = 1706437079004
+    original_timestamp_first_keyword = original_timestamp + 6
     df1 = pd.DataFrame([{
         "start": 1704798000,
         "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
@@ -420,51 +423,51 @@ def test_complexe_filter_and_tag_by_theme():
         "channel_radio": False,
         "srt": [{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079004,
+            "cts_in_ms": original_timestamp,
             "text": "cheese"
             },{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079005,
+            "cts_in_ms":original_timestamp + 5,
             "text": "pizza"
             },{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079006,
+            "cts_in_ms": original_timestamp_first_keyword,
             "text": "habitabilité"
             },{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079007,
+            "cts_in_ms":original_timestamp + 7,
             "text": "de"
             },{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079008,
+            "cts_in_ms":original_timestamp + 8,
             "text": "la"
             },{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079009,
+            "cts_in_ms":original_timestamp + 9,
             "text": "planète"
             },{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079010,
+            "cts_in_ms":original_timestamp + 10,
             "text": "conditions"
             },{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079011,
+            "cts_in_ms":original_timestamp + 11,
             "text": "de"
             },{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079011,
+            "cts_in_ms":original_timestamp + 11,
             "text": "vie"
             },{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079011,
+            "cts_in_ms":original_timestamp + 11,
             "text": "sur"
             },{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079011,
+            "cts_in_ms": original_timestamp_first_keyword + get_keyword_time_separation_ms(),
             "text": "terre"
             },{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079012,
+            "cts_in_ms": original_timestamp + 12,
             "text": "animal"
             },
         ],
@@ -500,7 +503,7 @@ def test_complexe_filter_and_tag_by_theme():
                 "theme":"ressources_naturelles_concepts_generaux",
             }
         ]
-        ,"number_of_keywords": 4
+        ,"number_of_keywords": 2
     }])
 
     # List of words to filter on
@@ -545,7 +548,7 @@ def test_save_to_pg_keyword():
         "channel_radio": False,
         "theme": themes,
         "keywords_with_timestamp": keywords_with_timestamp
-        ,"number_of_keywords": 4
+        ,"number_of_keywords": 1
     }])
 
     df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
@@ -560,7 +563,7 @@ def test_save_to_pg_keyword():
     assert result.channel_radio == False
     assert result.theme == themes 
     assert result.keywords_with_timestamp == keywords_with_timestamp
-    assert result.number_of_keywords == 4
+    assert result.number_of_keywords == 1
     assert result.start == datetime.datetime(2024, 1, 28, 10, 17, 59, 6000)
 
 def test_is_word_in_sentence():
@@ -673,3 +676,14 @@ def test_with_a_mix_of_overlap_count_keywords_duration_overlap():
     ]
     
     assert count_keywords_duration_overlap(keywords_with_timestamp) == 3
+
+def test_only_one_count_keywords_duration_overlap():
+    original_timestamp = 1708010900000
+    keywords_with_timestamp = [{
+                "keyword" : 'habitabilité de la planète',
+                "timestamp": original_timestamp, # count for one
+                "theme":"changement_climatique_constat",
+            }
+    ]
+    
+    assert count_keywords_duration_overlap(keywords_with_timestamp) == 1

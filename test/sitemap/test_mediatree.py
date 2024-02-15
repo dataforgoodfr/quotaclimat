@@ -3,8 +3,8 @@ import pandas as pd
 
 from bs4 import BeautifulSoup
 from utils import get_localhost, debug_df
-from quotaclimat.data_processing.mediatree.api_import import format_word_regex, is_word_in_sentence, get_themes_keywords_duration, get_cts_in_ms_for_keywords, filter_and_tag_by_theme, parse_reponse_subtitle, get_includes_or_query, transform_theme_query_includes
-import json 
+from quotaclimat.data_processing.mediatree.api_import import *
+from quotaclimat.data_processing.mediatree.utils import *
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import keywords_table, connect_to_db, get_keyword, drop_tables
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
@@ -585,3 +585,91 @@ def test_format_word_regex():
     assert format_word_regex("voiture") == "voitures?"
     assert format_word_regex("coraux") == "coraux"
     assert format_word_regex("d'eau") == "d' ?eaus?"
+
+def test_overlap_count_keywords_duration_overlap():
+    original_timestamp = 1708010919000
+    keywords_with_timestamp = [{
+                "keyword" : 'habitabilité de la planète',
+                "timestamp": original_timestamp + 1,
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'conditions de vie sur terre',
+                "timestamp": original_timestamp + 2,
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'planète',
+                "timestamp": original_timestamp + 3,
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + 4,
+                "theme":"ressources_naturelles_concepts_generaux",
+            }
+    ]
+    
+    assert count_keywords_duration_overlap(keywords_with_timestamp) == 1
+  
+def test_no_overlap_count_keywords_duration_overlap():
+    original_timestamp = 1708010900000
+    keywords_with_timestamp = [{
+                "keyword" : 'habitabilité de la planète',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms(), 
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'conditions de vie sur terre',
+                "timestamp": original_timestamp + 2 * get_keyword_time_separation_ms(),
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'planète',
+                "timestamp": original_timestamp + 3* get_keyword_time_separation_ms(),
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + 4 * get_keyword_time_separation_ms(),
+                "theme":"ressources_naturelles_concepts_generaux",
+            }
+    ]
+    
+    assert count_keywords_duration_overlap(keywords_with_timestamp) == 4
+
+def test_with_a_mix_of_overlap_count_keywords_duration_overlap():
+    original_timestamp = 1708010900000
+    keywords_with_timestamp = [{
+                "keyword" : 'habitabilité de la planète',
+                "timestamp": original_timestamp, # count for one
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'conditions de vie sur terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() / 2,
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'planète',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms(), # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() + 2000,
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() + 10000,
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 2,  # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            }
+    ]
+    
+    assert count_keywords_duration_overlap(keywords_with_timestamp) == 3

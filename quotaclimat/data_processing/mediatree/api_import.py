@@ -6,12 +6,13 @@ import json
 
 import logging
 import asyncio
-from utils import *
 import time
 import sys
 import os
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import CustomFormatter
+from quotaclimat.data_processing.mediatree.utils import *
+from quotaclimat.data_processing.mediatree.config import *
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db
 from postgres.schemas.models import keywords_table
@@ -24,14 +25,10 @@ import swifter
 from tenacity import *
 
 #read whole file to a string
-password = os.environ.get("MEDIATREE_PASSWORD")
-if(password == '/run/secrets/pwd_api'):
-    password= open("/run/secrets/pwd_api", "r").read()
-AUTH_URL = os.environ.get("MEDIATREE_AUTH_URL") # 
-USER = os.environ.get("MEDIATREE_USER")
-if(USER == '/run/secrets/username_api'):
-    USER=open("/run/secrets/username_api", "r").read()
-KEYWORDS_URL = os.environ.get("KEYWORDS_URL") #https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
+password = get_password()
+AUTH_URL = get_auth_url()
+USER = get_user()
+KEYWORDS_URL = get_keywords_url()
 
 def refresh_token(token, date):
     if is_it_tuesday(date): # refresh token every weekday for batch import
@@ -307,6 +304,26 @@ def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFram
         logging.warning("No result (total_results = 0) for this channel")
         return None
 
+def count_keywords_duration_overlap(keywords_with_timestamp: List[dict]) -> int:
+    # in case keywords are not in the right order
+    sorted_keywords = iter(sorted(keywords_with_timestamp, key=lambda x: x['timestamp']))
+
+    count = 1
+    previous_timestamp = next(sorted_keywords)['timestamp']
+
+    for keyword_info in sorted_keywords:
+        current_timestamp = keyword_info['timestamp']
+        overlap_time = current_timestamp - previous_timestamp
+        
+        if is_time_distance_between_keyword_enough(overlap_time):
+            logging.debug(f"No overlapping keyword {count} + 1 : {overlap_time}")
+            count += 1
+            previous_timestamp = current_timestamp
+        else:
+            logging.debug(f"Keyword timestamp overlap : {overlap_time} - current count is {count}")
+
+    return count
+
 def log_dataframe_size(df, channel):
     bytes_size = sys.getsizeof(df)
     logging.info(f"Dataframe size : {bytes_size / (1000 * 1000)} Megabytes")
@@ -314,7 +331,7 @@ def log_dataframe_size(df, channel):
         logging.warning(f"High Dataframe size : {bytes_size / (1000 * 1000)}")
     if(len(df) == 1000):
         logging.error("We might lose data - df size is 1000 out of 1000 - we should divide this querry")
-
+    
 async def main():    
     logger.info("Start api mediatree import")
     create_tables()
@@ -354,3 +371,5 @@ if __name__ == "__main__":
 
     asyncio.run(main())
     sys.exit(0)
+
+

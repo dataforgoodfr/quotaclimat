@@ -268,6 +268,11 @@ docker compose up mediatree
 Use env variable `START_DATE` like in docker compose (epoch second format : 1705409797).
 
 Otherwise, default is yesterday midnight date.
+
+### Batch update
+In case we have a new word detection logic, we must re apply it to all saved keywords inside our database.
+
+We should use env variable `UPDATE`  like in docker compose (should be set to "true")
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
 ```bash

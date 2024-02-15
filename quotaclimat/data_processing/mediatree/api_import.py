@@ -1,37 +1,32 @@
 ### Library imports
 import requests
 import pandas as pd
-import datetime
 import json
 
 import logging
 import asyncio
-from utils import *
 import time
 import sys
 import os
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import CustomFormatter
+from quotaclimat.data_processing.mediatree.utils import *
+from quotaclimat.data_processing.mediatree.config import *
+from quotaclimat.data_processing.mediatree.update_pg_keywords import *
+from quotaclimat.data_processing.mediatree.detect_keywords import *
 from postgres.insert_data import save_to_pg
-from postgres.schemas.models import create_tables, connect_to_db
+from postgres.schemas.models import create_tables, connect_to_db, get_db_session
 from postgres.schemas.models import keywords_table
 from pandas import json_normalize
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from typing import List, Optional
-from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
-import re
-import swifter
 from tenacity import *
 
 #read whole file to a string
-password = os.environ.get("MEDIATREE_PASSWORD")
-if(password == '/run/secrets/pwd_api'):
-    password= open("/run/secrets/pwd_api", "r").read()
-AUTH_URL = os.environ.get("MEDIATREE_AUTH_URL") # 
-USER = os.environ.get("MEDIATREE_USER")
-if(USER == '/run/secrets/username_api'):
-    USER=open("/run/secrets/username_api", "r").read()
-KEYWORDS_URL = os.environ.get("KEYWORDS_URL") #https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
+password = get_password()
+AUTH_URL = get_auth_url()
+USER = get_user()
+KEYWORDS_URL = get_keywords_url()
 
 def refresh_token(token, date):
     if is_it_tuesday(date): # refresh token every weekday for batch import
@@ -39,6 +34,14 @@ def refresh_token(token, date):
         return get_auth_token(password=password, user_name=USER)
     else:
         return token
+
+# reapply word detector logic to all saved keywords
+# use when word detection is changed
+async def update_pg_data(exit_event):
+    logging.info("Updating already saved data from Postgresql")
+    session = get_db_session()
+    update_keywords(session)
+    exit_event.set()
 
 async def get_and_save_api_data(exit_event):
     conn = connect_to_db()
@@ -119,102 +122,6 @@ def get_theme_query_includes(theme_dict):
 
 def transform_theme_query_includes(themes_with_keywords = THEME_KEYWORDS):
     return list(map(get_theme_query_includes, themes_with_keywords))
-
-def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str], theme: str) -> List[dict]:
-    result = []
-
-    logging.debug(f"Looking for timecode for {keywords}")
-    for multiple_keyword in keywords:
-        all_keywords = multiple_keyword.split() # case with multiple words such as 'économie circulaire'
-        match = next((item for item in subtitle_duration if is_word_in_sentence(all_keywords[0], item.get('text'))), None)  
-        logging.debug(f"match found {match} with {all_keywords[0].lower()}")     
-        if match is not None:
-            logging.debug(f'Result added due to this match {match} based on {all_keywords[0]}')
-            result.append(
-                {
-                    "keyword" :multiple_keyword.lower(),
-                    "timestamp" : match['cts_in_ms'],
-                    "theme" : theme
-                })
-
-    logging.debug(f"Timecode found {result}")
-    return result
-
-# be able to detect singular or plural for a word
-def format_word_regex(word: str) -> str:
-    word = word.replace('\'', '\' ?') # case for d'eau -> d' eau
-    if not word.endswith('s') and not word.endswith('x') and not word.endswith('à'):
-        return word + "s?"
-    elif word.endswith('s'):
-        return word + '?'
-    else:
-        return word
-
-def is_word_in_sentence(words: str, sentence: str) -> bool :
-    # words can contain plurals and several words
-    words = ' '.join(list(map(( lambda x: format_word_regex(x)), words.split(" "))))
-    logging.debug(f"testing {words}")
-    #  test https://regex101.com/r/ilvs9G/1/
-    if re.search(rf"\b{words}(?![\w-])", sentence, re.IGNORECASE):
-        logging.debug(f"words {words} found in {sentence}")
-        return True
-    else:
-        return False
-
-def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -> List[Optional[List[str]]]:
-    matching_themes = []
-    keywords_with_timestamp = []
-
-    for theme, keywords in THEME_KEYWORDS.items():
-        logging.debug(f"searching {theme} for {keywords}")
-
-        matching_words = [word for word in keywords if is_word_in_sentence(word, plaintext)]  
-        if matching_words:
-            logging.debug(f"theme found : {theme} with word {matching_words}")
-            matching_themes.append(theme)
-            # look for cts_in_ms inside matching_words (['économie circulaire', 'panneaux solaires', 'solaires'] from subtitle_duration 
-            keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme)
-            if(len(keywords_to_add) == 0):
-                logging.warning(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")
-            keywords_with_timestamp.extend(keywords_to_add)
-    
-    if len(matching_themes) > 0:
-        return [matching_themes, keywords_with_timestamp, int(len(keywords_with_timestamp))]
-    else:
-        return [None, None, None]
-
-def log_min_max_date(df):
-    max_date = max(df['start'])
-    min_date = min(df['start'])
-    logging.info(f"Date min : {min_date}, max : {max_date}")
-
-def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
-    count_before_filtering = len(df)
-    logging.info(f"{count_before_filtering} subtitles to filter by keywords and tag with themes")
-    log_min_max_date(df)
-
-    logging.info(f'tagging plaintext subtitle with keywords and theme : regexp - search taking time...')
-    # using swifter to speed up apply https://github.com/jmcarpenter2/swifter
-    df[['theme', u'keywords_with_timestamp', 'number_of_keywords']] = df[['plaintext','srt']].swifter.apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
-
-    # remove all rows that does not have themes
-    df = df.dropna(subset=['theme'])
-
-    df.drop('srt', axis=1, inplace=True)
-
-    logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")
-
-    return df
-
-def add_primary_key(df):
-    logging.info("Adding primary key to save to PG and have idempotent result")
-    try:
-        return (
-            df["start"].astype(str) + df["channel_name"]
-        ).apply(get_consistent_hash)
-    except (Exception) as error:
-        logging.error(error)
-        return get_consistent_hash("empty") #  TODO improve - should be a None ?
 
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
 # @see https://github.com/jd/tenacity/tree/main
@@ -314,7 +221,7 @@ def log_dataframe_size(df, channel):
         logging.warning(f"High Dataframe size : {bytes_size / (1000 * 1000)}")
     if(len(df) == 1000):
         logging.error("We might lose data - df size is 1000 out of 1000 - we should divide this querry")
-
+    
 async def main():    
     logger.info("Start api mediatree import")
     create_tables()
@@ -324,7 +231,10 @@ async def main():
     health_check_task = asyncio.create_task(run_health_check_server())
 
     # Start batch job
-    asyncio.create_task(get_and_save_api_data(event_finish))
+    if(os.environ.get("UPDATE") == "true"):
+        asyncio.create_task(update_pg_data(event_finish))
+    else:
+        asyncio.create_task(get_and_save_api_data(event_finish))
 
     # Wait for both tasks to complete
     await event_finish.wait()
@@ -354,3 +264,5 @@ if __name__ == "__main__":
 
     asyncio.run(main())
     sys.exit(0)
+
+

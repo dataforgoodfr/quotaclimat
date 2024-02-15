@@ -12,9 +12,10 @@ from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import CustomFormatter
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.config import *
+from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from postgres.insert_data import save_to_pg
-from postgres.schemas.models import create_tables, connect_to_db
+from postgres.schemas.models import create_tables, connect_to_db, get_db_session
 from postgres.schemas.models import keywords_table
 from pandas import json_normalize
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
@@ -33,6 +34,14 @@ def refresh_token(token, date):
         return get_auth_token(password=password, user_name=USER)
     else:
         return token
+
+# reapply word detector logic to all saved keywords
+# use when word detection is changed
+async def update_pg_data(exit_event):
+    logging.info("Updating already saved data from Postgresql")
+    session = get_db_session()
+    update_keywords(session, exit_event)
+    exit_event.set()
 
 async def get_and_save_api_data(exit_event):
     conn = connect_to_db()
@@ -222,7 +231,10 @@ async def main():
     health_check_task = asyncio.create_task(run_health_check_server())
 
     # Start batch job
-    asyncio.create_task(get_and_save_api_data(event_finish))
+    if(os.environ.get("UPDATE") == "true"):
+        asyncio.create_task(update_pg_data(event_finish))
+    else:
+        asyncio.create_task(get_and_save_api_data(event_finish))
 
     # Wait for both tasks to complete
     await event_finish.wait()

@@ -5,7 +5,7 @@ import json
 
 import logging
 import asyncio
-import time
+from time import sleep
 import sys
 import os
 from quotaclimat.utils.healthcheck_config import run_health_check_server
@@ -243,8 +243,9 @@ async def main():
    # Without this we have a CrashLoopBackOff (Kubernetes health error)
     if (os.environ.get("ENV") != "dev" and os.environ.get("ENV") != "docker"):
         minutes = 15
+        seconds_to_minute = 60
         logging.warning(f"Sleeping {minutes} before safely exiting scaleway container")
-        time.sleep(60 * minutes)
+        sleep(seconds_to_minute * minutes)
 
     res=health_check_task.cancel()
     logging.info("Exiting with success")

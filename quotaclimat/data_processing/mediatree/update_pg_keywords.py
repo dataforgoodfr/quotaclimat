@@ -10,9 +10,10 @@ from quotaclimat.data_processing.mediatree.detect_keywords import *
 
 def update_keywords(session: Session) -> list:
     saved_keywords = get_keywords_columns(session)
+    logging.info(f"Updating {len(saved_keywords)} saved keywords")
     for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords in saved_keywords:
         new_number_of_keywords = count_keywords_duration_overlap(keywords_with_timestamp)
-
+        logging.debug(f"{keyword_id} new value {new_number_of_keywords}")
         update_number_of_keywords(session, keyword_id, new_number_of_keywords)
     logging.info("updated all keywords")
 

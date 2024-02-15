@@ -40,7 +40,7 @@ def refresh_token(token, date):
 async def update_pg_data(exit_event):
     logging.info("Updating already saved data from Postgresql")
     session = get_db_session()
-    update_keywords(session, exit_event)
+    update_keywords(session)
     exit_event.set()
 
 async def get_and_save_api_data(exit_event):

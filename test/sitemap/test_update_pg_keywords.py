@@ -8,12 +8,11 @@ from quotaclimat.data_ingestion.scrap_sitemap import (add_primary_key, get_consi
 
 from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db
 from postgres.insert_data import save_to_pg
-
+from quotaclimat.data_processing.mediatree.detect_keywords import *
 def test_insert_data_in_sitemap_table():
     create_tables()
     session = get_db_session()
     conn = connect_to_db()
-    new_value = 1
     wrong_value = 0
     # insezrt data
     primary_key = "test_save_to_pg_keyword"
@@ -61,6 +60,8 @@ def test_insert_data_in_sitemap_table():
     result_before_update = get_keyword(primary_key)
     update_keywords(session)
     result_after_update = get_keyword(primary_key)
+
+    new_value = count_keywords_duration_overlap(keywords_with_timestamp)
     assert result_after_update.id == result_before_update.id
     assert result_after_update.number_of_keywords == new_value
     assert result_before_update.number_of_keywords == wrong_value

@@ -43,6 +43,19 @@ async def update_pg_data(exit_event):
     update_keywords(session)
     exit_event.set()
 
+def get_channels():
+    if(os.environ.get("ENV") == "docker" or os.environ.get("CHANNEL") is not None):
+        default_channel = os.environ.get("CHANNEL") or "france2"
+        logging.warning(f"Only one channel of env var CHANNEL {default_channel} (default to france2) is used")
+
+        channels = [default_channel]
+    else: #prod  - all channels
+        logging.warning("All channels are used")
+        return ["tf1", "france2", "fr3-idf", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
+        "europe1", "france-culture", "france-inter", "nrj", "rmc", "rtl", "rtl2"]
+
+    return channels
+
 async def get_and_save_api_data(exit_event):
     conn = connect_to_db()
     token=get_auth_token(password=password, user_name=USER)
@@ -50,13 +63,8 @@ async def get_and_save_api_data(exit_event):
 
     (start_date_to_query, end_epoch) = get_start_end_date_env_variable_with_default()
 
-    if(os.environ.get("ENV") == "docker"):
-        logging.warning("Docker cases - only some channels are used")
-        channels = ["france2"]
-    else: #prod    
-        channels = ["tf1", "france2", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
-        "europe1", "france-culture", "france-inter", "nrj", "rmc", "rtl", "rtl2"]
-
+    channels = get_channels()
+        
     range = get_date_range(start_date_to_query, end_epoch)
     logging.info(f"Number of date to query : {len(range)}")
     for date in range:

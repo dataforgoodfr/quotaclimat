@@ -129,6 +129,8 @@ def test_transform_theme_query_includes():
 
     assert output == expected
 
+def test_get_channels():
+    assert get_channels() == ["france2"] # default for docker compose config
 
 def test_get_themes_keywords_duration():
     subtitles = [{

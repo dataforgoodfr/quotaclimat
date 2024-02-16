@@ -269,6 +269,11 @@ Use env variable `START_DATE` like in docker compose (epoch second format : 1705
 
 Otherwise, default is yesterday midnight date.
 
+### Batch import based on channel
+Use env variable `CHANNEL` like in docker compose (string: tf1)
+
+Otherwise, default is all channels
+
 ### Batch update
 In case we have a new word detection logic, we must re apply it to all saved keywords inside our database.
 

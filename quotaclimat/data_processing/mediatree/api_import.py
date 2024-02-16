@@ -51,7 +51,7 @@ def get_channels():
         channels = [default_channel]
     else: #prod  - all channels
         logging.warning("All channels are used")
-        return ["tf1", "france2", "fr3-idf", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
+        return ["tf1", "france2", "fr3-idf", "france5", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
         "europe1", "france-culture", "france-inter", "nrj", "rmc", "rtl", "rtl2"]
 
     return channels

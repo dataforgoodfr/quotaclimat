@@ -180,6 +180,10 @@ When you need to install a new dependency (use a new package, e.g. nltk), run
 ```bash
 poetry add ntlk
 ```
+Update dependencies
+```
+poetry self update
+```
 
 After commiting to the repo, other team members will be able to use the exact same environment you are using. 
 
@@ -263,6 +267,11 @@ Contact QuotaClimat team to 2 files with the API's username and password inside 
 ```
 docker compose up mediatree
 ```
+
+## Monitoring
+With Sentry, with env variable `SENTRY_DSN`.
+
+Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
 
 ### Batch import based on time
 Use env variable `START_DATE` like in docker compose (epoch second format : 1705409797).

@@ -119,7 +119,7 @@ def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: Li
         sorted_keywords = sorted(keywords_with_timestamp, key=lambda x: x['timestamp'])
         filtered_themes = filter_indirect_words(sorted_keywords)
         length_filtered_items = len(filtered_themes)
-        logging.info(f"Before filtering {total_keywords} - After filtering indirect kw {length_filtered_items}")
+        logging.debug(f"Before filtering {total_keywords} - After filtering indirect kw {length_filtered_items}")
         if length_filtered_items > 0:
             iter_filtered_themes = iter(filtered_themes)
             count = 1

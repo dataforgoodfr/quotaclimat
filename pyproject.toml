@@ -12,7 +12,7 @@ priority = "primary"
 
 [tool.poetry.dependencies]
 python = ">=3.11.0,<3.13.0"
-pandas = "^1.5.3"
+pandas = "^2.2.0"
 advertools = "^0.13.2"
 xmltodict = "^0.13.0"
 sqlalchemy = "^2.0.21"

@@ -70,7 +70,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -
             keywords_with_timestamp.extend(keywords_to_add)
     
     if len(matching_themes) > 0:
-        return [matching_themes, keywords_with_timestamp, count_keywords_duration_overlap(keywords_with_timestamp)]
+        return [matching_themes, keywords_with_timestamp, count_keywords_duration_overlap_without_indirect(keywords_with_timestamp)]
     else:
         return [None, None, None]
 
@@ -107,25 +107,35 @@ def add_primary_key(df):
         logging.error(error)
         return get_consistent_hash("empty") #  TODO improve - should be a None ?
 
-def count_keywords_duration_overlap(keywords_with_timestamp: List[dict]) -> int:
-    if(len(keywords_with_timestamp)) <= 1:
-        return len(keywords_with_timestamp)
+def filter_indirect_words(keywords_with_timestamp: List[dict]) -> List[dict]:
+    return list(filter(lambda kw: 'indirectes' not in kw['theme'], keywords_with_timestamp))
+
+def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: List[dict]) -> int:
+    total_keywords = len(keywords_with_timestamp)
+    if(total_keywords) == 0:
+        return 0
     else:
         # in case keywords are not in the right order
-        sorted_keywords = iter(sorted(keywords_with_timestamp, key=lambda x: x['timestamp']))
+        sorted_keywords = sorted(keywords_with_timestamp, key=lambda x: x['timestamp'])
+        filtered_themes = filter_indirect_words(sorted_keywords)
+        length_filtered_items = len(filtered_themes)
+        logging.info(f"Before filtering {total_keywords} - After filtering indirect kw {length_filtered_items}")
+        if length_filtered_items > 0:
+            iter_filtered_themes = iter(filtered_themes)
+            count = 1
+            previous_timestamp = next(iter_filtered_themes)['timestamp']
 
-        count = 1
-        previous_timestamp = next(sorted_keywords)['timestamp']
+            for keyword_info in filtered_themes:
+                current_timestamp = keyword_info['timestamp']
+                overlap_time = current_timestamp - previous_timestamp
+                
+                if is_time_distance_between_keyword_enough(overlap_time):
+                    logging.debug(f"No overlapping keyword {count} + 1 : {overlap_time}")
+                    count += 1
+                    previous_timestamp = current_timestamp
+                else:
+                    logging.debug(f"Keyword timestamp overlap : {overlap_time} - current count is {count}")
 
-        for keyword_info in sorted_keywords:
-            current_timestamp = keyword_info['timestamp']
-            overlap_time = current_timestamp - previous_timestamp
-            
-            if is_time_distance_between_keyword_enough(overlap_time):
-                logging.debug(f"No overlapping keyword {count} + 1 : {overlap_time}")
-                count += 1
-                previous_timestamp = current_timestamp
-            else:
-                logging.debug(f"Keyword timestamp overlap : {overlap_time} - current count is {count}")
-
-        return count
+            return count
+        else:
+            return 0

@@ -35,11 +35,17 @@ def test_insert_data_in_sitemap_table():
                 "keyword" : 'terre',
                 "timestamp": 1706437079011,
                 "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'digue',
+                "timestamp": 1706437079012,
+                "theme":"adaptation_climatique_solutions_indirectes",
             }
         ]
     themes = [
             "changement_climatique_constat",
             "ressources_naturelles_concepts_generaux",
+            "adaptation_climatique_solutions_indirectes"
         ]
     channel_name = "m6"
     df = pd.DataFrame([{
@@ -61,7 +67,7 @@ def test_insert_data_in_sitemap_table():
     update_keywords(session)
     result_after_update = get_keyword(primary_key)
 
-    new_value = count_keywords_duration_overlap(keywords_with_timestamp)
+    new_value = count_keywords_duration_overlap_without_indirect(keywords_with_timestamp)
     assert result_after_update.id == result_before_update.id
     assert result_after_update.number_of_keywords == new_value
     assert result_before_update.number_of_keywords == wrong_value

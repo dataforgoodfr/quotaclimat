@@ -606,6 +606,29 @@ def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
     
     assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
 
+def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
+    original_timestamp = 1708010900000
+    keywords_with_timestamp = [{
+                "keyword" : 'agriculture',
+                "timestamp": original_timestamp,
+                "theme":"changement_climatique_causes_indirectes",
+            },
+            {
+                "keyword" : 'agriculture industrielle',
+                "timestamp": original_timestamp, # same timestamp, so we take longest keyword
+                "theme":"biodiversité_causes", # different theme, keep this one
+            }
+    ]
+
+    expected = [{
+                "keyword" : 'agriculture industrielle',
+                "timestamp": original_timestamp, # same timestamp, so we take longest keyword
+                "theme":"biodiversité_causes", # different theme, keep this one
+            }
+    ]
+
+    assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
+
 def test_filter_keyword_with_same_timestamp():
     original_timestamp = 1708010900000
     keywords_with_timestamp = [{ #nothing to filter

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "quotaclimat"
-version = "0.1.36"
+version = "0.1.37"
 description = ""
 authors = ["Rambier Estelle <estelle.rambier@hotmail.fr>"]
 readme = "README.md"
@@ -13,7 +13,7 @@ priority = "primary"
 [tool.poetry.dependencies]
 python = ">=3.11.0,<3.13.0"
 pandas = "^2.2.0"
-advertools = "^0.13.2"
+advertools = "^0.14.1"
 xmltodict = "^0.13.0"
 sqlalchemy = "^2.0.21"
 psycopg2-binary = "^2.9.5"
@@ -33,9 +33,11 @@ asyncio = "^3.4.3"
 tomli = "^2.0.1"
 pandera = "^0.17.2"
 aiohttp = "^3.8.6"
-pytest-asyncio = "^0.21.1"
+pytest-asyncio = "^0.23.5"
 swifter = "^1.4.0"
 tenacity = "^8.2.3"
+sentry-sdk = "^1.40.5"
+coverage = "^7.4.2"
 
 [build-system]
 requires = ["poetry-core>=1.1"]

@@ -21,6 +21,18 @@ from pandas import json_normalize
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from typing import List, Optional
 from tenacity import *
+import sentry_sdk
+
+# read SENTRY_DSN from env
+sentry_sdk.init(
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    traces_sample_rate=0.7,
+    # Set profiles_sample_rate to 1.0 to profile 100%
+    # of sampled transactions.
+    # We recommend adjusting this value in production.
+    profiles_sample_rate=0.7,
+)
 
 #read whole file to a string
 password = get_password()
@@ -204,7 +216,7 @@ def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFram
         logging.info(f"{total_results} 'total_results' field")
         
         new_df = json_normalize(response_sub.get('data'))
-        logging.info("Schema from API before formatting :\n%s", new_df.dtypes)
+        logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
         new_df.drop('channel.title', axis=1, inplace=True) # keep only channel.name
 
         new_df['timestamp'] = (pd.to_datetime(new_df['start'], unit='s').dt.tz_localize('utc').dt.tz_convert('Europe/Paris'))

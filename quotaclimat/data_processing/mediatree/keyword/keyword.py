@@ -1,5 +1,4 @@
 # Based on experts' document
-
 THEME_KEYWORDS = {
  "changement_climatique_constat" : [ # 1.1.2
             "climatique"

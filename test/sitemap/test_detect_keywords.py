@@ -580,7 +580,6 @@ def test_filter_indirect_words():
             }
     ]
     output = filter_indirect_words(keywords_with_timestamp)
-
     assert output == expected
 
 def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():

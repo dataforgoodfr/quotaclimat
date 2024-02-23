@@ -522,7 +522,7 @@ def test_indirect_count_keywords_duration_overlap_without_indirect():
     original_timestamp = 1708010900000
     keywords_with_timestamp = [{
                 "keyword" : 'digue',
-                "timestamp": original_timestamp, # count for one
+                "timestamp": original_timestamp,
                 "theme":"adaptation_climatique_solutions_indirectes",
             }
     ]
@@ -580,5 +580,66 @@ def test_filter_indirect_words():
             }
     ]
     output = filter_indirect_words(keywords_with_timestamp)
-
     assert output == expected
+
+def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
+    original_timestamp = 1708010900000
+    keywords_with_timestamp = [{
+                "keyword" : 'pénurie',
+                "timestamp": original_timestamp, 
+                "theme":"changement_climatique_consequences",
+            },
+            {
+                "keyword" : 'pénurie de neige',
+                "timestamp": original_timestamp, # same timestamp, so we take longest keyword
+                "theme":"changement_climatique_consequences",
+            }
+    ]
+
+    expected = [{
+                "keyword" : 'pénurie de neige',
+                "timestamp": original_timestamp, 
+                "theme":"changement_climatique_consequences",
+            }
+    ]
+    
+    assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
+
+def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
+    original_timestamp = 1708010900000
+    keywords_with_timestamp = [{
+                "keyword" : 'agriculture',
+                "timestamp": original_timestamp,
+                "theme":"changement_climatique_causes_indirectes",
+            },
+            {
+                "keyword" : 'agriculture industrielle',
+                "timestamp": original_timestamp, # same timestamp, so we take longest keyword
+                "theme":"biodiversité_causes", # different theme, keep this one
+            }
+    ]
+
+    expected = [{
+                "keyword" : 'agriculture industrielle',
+                "timestamp": original_timestamp, # same timestamp, so we take longest keyword
+                "theme":"biodiversité_causes", # different theme, keep this one
+            }
+    ]
+
+    assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
+
+def test_filter_keyword_with_same_timestamp():
+    original_timestamp = 1708010900000
+    keywords_with_timestamp = [{ #nothing to filter
+                "keyword" : "période la plus chaude",
+                "timestamp": original_timestamp, 
+                "theme":"changement_climatique_consequences",
+            },
+            {
+                "keyword" : "élévation du niveau de la mer",
+                "timestamp": original_timestamp + 1,
+                "theme":"changement_climatique_consequences",
+            }
+    ]
+    
+    assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == keywords_with_timestamp

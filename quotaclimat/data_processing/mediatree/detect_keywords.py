@@ -10,6 +10,7 @@ from typing import List, Optional
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 import re
 import swifter
+from itertools import groupby
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str], theme: str) -> List[dict]:
     result = []
@@ -52,6 +53,18 @@ def is_word_in_sentence(words: str, sentence: str) -> bool :
     else:
         return False
 
+# some keywords are contained inside other keywords, we need to filter them
+def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict]) -> List[dict]:
+    # Group keywords by timestamp
+    grouped_keywords = {timestamp: list(group) for timestamp, group in groupby(keywords_with_timestamp, key=lambda x: x['timestamp'])}
+
+    # Filter out keywords with the same timestamp and keep the longest keyword
+    result = [
+        max(group, key=lambda x: len(x['keyword']))
+        for group in grouped_keywords.values()
+    ]
+
+    return result
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -> List[Optional[List[str]]]:
     matching_themes = []
     keywords_with_timestamp = []
@@ -70,6 +83,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -
             keywords_with_timestamp.extend(keywords_to_add)
     
     if len(matching_themes) > 0:
+        keywords_with_timestamp = filter_keyword_with_same_timestamp(keywords_with_timestamp)
         return [matching_themes, keywords_with_timestamp, count_keywords_duration_overlap_without_indirect(keywords_with_timestamp)]
     else:
         return [None, None, None]

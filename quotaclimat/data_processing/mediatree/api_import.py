@@ -90,7 +90,8 @@ async def get_and_save_api_data(exit_event):
             try:
                 df = extract_api_sub(token, channel, type_sub, date_epoch)
                 if(df is not None):
-                    save_to_pg(df, keywords_table, conn)
+                    # must ._to_pandas() because modin to_sql is not working
+                    save_to_pg(df._to_pandas(), keywords_table, conn)
                 else: 
                     logging.info("Nothing to save to Postgresql")
             except Exception as err:
@@ -230,7 +231,7 @@ def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFram
         log_dataframe_size(new_df, channel)
 
         logging.debug("Parsed %s" % (new_df.head(1).to_string()))
-        logging.info("Parsed Schema\n%s", new_df.dtypes)
+        logging.debug("Parsed Schema\n%s", new_df.dtypes)
         
         return new_df
     else:

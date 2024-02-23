@@ -10,6 +10,9 @@ import re
 import swifter
 from itertools import groupby
 import modin.pandas as pd
+import dask
+
+dask.config.set({'dataframe.query-planning': True})
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str], theme: str) -> List[dict]:
     result = []

@@ -1443,6 +1443,27 @@ url = "https://pypi.org/simple"
 reference = "pypi-public"
 
 [[package]]
+name = "dask-expr"
+version = "0.4.2"
+description = "High Level Expressions for Dask"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "dask-expr-0.4.2.tar.gz", hash = "sha256:af657c45c4e3b15bd66dac099b9347d2984d2850d2c6c5b8fb961a52b4c35d4b"},
+    {file = "dask_expr-0.4.2-py3-none-any.whl", hash = "sha256:f1cfcf8255ecd491a619ee9c35eaaee5c1a812834d11ef1443ebf1f2669003e6"},
+]
+
+[package.dependencies]
+dask = "2024.2.0"
+pandas = ">=2"
+pyarrow = "*"
+
+[package.source]
+type = "legacy"
+url = "https://pypi.org/simple"
+reference = "pypi-public"
+
+[[package]]
 name = "debugpy"
 version = "1.8.1"
 description = "An implementation of the Debug Adapter Protocol for Python"
@@ -8763,4 +8784,4 @@ reference = "pypi-public"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11.0,<3.13.0"
-content-hash = "b6e110dc0915c4e0cffee46f22bb9b98fc282933b3238e85539e8bb9ad0da97d"
+content-hash = "6c8174d213db20a524aea1bb6ec7f88307ed35b836e160664cd13f2637186aab"

@@ -60,7 +60,7 @@ def test_insert_data_in_sitemap_table():
     }]) 
     df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
    
-    assert save_to_pg(df, keywords_table, conn) == 1
+    assert save_to_pg(df._to_pandas(), keywords_table, conn) == 1
 
     # check the value is well existing
     result_before_update = get_keyword(primary_key)

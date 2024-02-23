@@ -101,7 +101,7 @@ def test_parse_reponse_subtitle():
     expected_result['start'] = pd.to_datetime(expected_result['start'], unit='s').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
     df = parse_reponse_subtitle(json_response)
     debug_df(df)
-    # df = df.to_pandas()
+
     pd.testing.assert_frame_equal(df._to_pandas().reset_index(drop=True), expected_result.reset_index(drop=True))
 
 def test_get_includes_or_query():

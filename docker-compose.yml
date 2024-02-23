@@ -17,6 +17,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_HOST: postgres_db
       POSTGRES_PORT: 5432
+      MODIN_ENGINE: dask #TODO test me
     tty: true # colorize terminal
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
@@ -142,6 +143,7 @@ services:
       MEDIATREE_PASSWORD:  /run/secrets/pwd_api
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
       KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/ # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
+      MODIN_ENGINE: dask #TODO test me
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/

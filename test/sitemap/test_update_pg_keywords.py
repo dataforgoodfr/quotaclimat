@@ -11,10 +11,10 @@ from postgres.insert_data import save_to_pg
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 def test_insert_data_in_sitemap_table():
     create_tables()
-    session = get_db_session()
     conn = connect_to_db()
+    
     wrong_value = 0
-    # insezrt data
+    # insert data
     primary_key = "test_save_to_pg_keyword"
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
@@ -64,6 +64,7 @@ def test_insert_data_in_sitemap_table():
 
     # check the value is well existing
     result_before_update = get_keyword(primary_key)
+    session = get_db_session(conn)
     update_keywords(session)
     result_after_update = get_keyword(primary_key)
 

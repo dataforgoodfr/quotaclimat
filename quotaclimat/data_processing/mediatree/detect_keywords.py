@@ -1,5 +1,3 @@
-import pandas as pd
-
 import logging
 
 from quotaclimat.data_processing.mediatree.utils import *
@@ -11,6 +9,7 @@ from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 import re
 import swifter
 from itertools import groupby
+import modin.pandas as pd
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str], theme: str) -> List[dict]:
     result = []

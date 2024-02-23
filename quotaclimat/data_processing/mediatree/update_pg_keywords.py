@@ -1,6 +1,6 @@
 ### Library imports
 import requests
-import pandas as pd
+import modin.pandas as pd
 import json
 
 import logging

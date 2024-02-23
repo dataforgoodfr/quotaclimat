@@ -3,7 +3,7 @@ import pytz
 from datetime import datetime, timedelta, time
 import logging
 from zoneinfo import ZoneInfo
-import pandas as pd
+import modin.pandas as pd
 import os 
 
 timezone='Europe/Paris'

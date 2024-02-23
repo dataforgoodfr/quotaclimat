@@ -22,6 +22,7 @@ from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from typing import List, Optional
 from tenacity import *
 import sentry_sdk
+from sentry_sdk.crons import monitor
 
 # read SENTRY_DSN from env
 sentry_sdk.init(
@@ -241,7 +242,9 @@ def log_dataframe_size(df, channel):
         logging.warning(f"High Dataframe size : {bytes_size / (1000 * 1000)}")
     if(len(df) == 1000):
         logging.error("We might lose data - df size is 1000 out of 1000 - we should divide this querry")
-    
+
+#https://docs.sentry.io/platforms/python/crons/
+@monitor(monitor_slug='mediatree')
 async def main():    
     logger.info("Start api mediatree import")
     create_tables()

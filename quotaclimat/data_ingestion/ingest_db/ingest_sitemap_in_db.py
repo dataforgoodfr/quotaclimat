@@ -8,7 +8,19 @@ from postgres.insert_existing_data_example import \
 from postgres.schemas.models import create_tables, connect_to_db, get_last_month_sitemap_id
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import CustomFormatter
+import sentry_sdk
+from sentry_sdk.crons import monitor
 
+# read SENTRY_DSN from env
+sentry_sdk.init(
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    traces_sample_rate=0.7,
+    # Set profiles_sample_rate to 1.0 to profile 100%
+    # of sampled transactions.
+    # We recommend adjusting this value in production.
+    profiles_sample_rate=0.7,
+)
 import asyncio
 
 from quotaclimat.data_ingestion.scrap_sitemap import \
@@ -38,6 +50,8 @@ async def batch_sitemap(exit_event):
     exit_event.set()
     return
 
+#https://docs.sentry.io/platforms/python/crons/
+@monitor(monitor_slug='sitemap')
 async def main():    
     event_finish = asyncio.Event()
     # Start the health check server in the background

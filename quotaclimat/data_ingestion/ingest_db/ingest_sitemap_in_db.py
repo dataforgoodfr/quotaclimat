@@ -70,8 +70,8 @@ async def main():
             time.sleep(60 * minutes)
 
         res=health_check_task.cancel()
-        logging.info("Exiting with success")
-        sys.exit(0)
+    logging.info("Exiting with success")
+    sys.exit(0)
 
 if __name__ == "__main__":
     # create logger with 'spam_application'

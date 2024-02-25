@@ -243,36 +243,36 @@ def log_dataframe_size(df, channel):
     if(len(df) == 1000):
         logging.error("We might lose data - df size is 1000 out of 1000 - we should divide this querry")
 
-#https://docs.sentry.io/platforms/python/crons/
-@monitor(monitor_slug='mediatree')
-async def main():    
-    logger.info("Start api mediatree import")
-    create_tables()
 
-    event_finish = asyncio.Event()
-    # Start the health check server in the background
-    health_check_task = asyncio.create_task(run_health_check_server())
+async def main():
+    with monitor(monitor_slug='mediatree'): #https://docs.sentry.io/platforms/python/crons/
+        logger.info("Start api mediatree import")
+        create_tables()
 
-    # Start batch job
-    if(os.environ.get("UPDATE") == "true"):
-        asyncio.create_task(update_pg_data(event_finish))
-    else:
-        asyncio.create_task(get_and_save_api_data(event_finish))
+        event_finish = asyncio.Event()
+        # Start the health check server in the background
+        health_check_task = asyncio.create_task(run_health_check_server())
 
-    # Wait for both tasks to complete
-    await event_finish.wait()
+        # Start batch job
+        if(os.environ.get("UPDATE") == "true"):
+            asyncio.create_task(update_pg_data(event_finish))
+        else:
+            asyncio.create_task(get_and_save_api_data(event_finish))
 
-   # only for scaleway - delay for serverless container
-   # Without this we have a CrashLoopBackOff (Kubernetes health error)
-    if (os.environ.get("ENV") != "dev" and os.environ.get("ENV") != "docker"):
-        minutes = 15
-        seconds_to_minute = 60
-        logging.warning(f"Sleeping {minutes} before safely exiting scaleway container")
-        sleep(seconds_to_minute * minutes)
+        # Wait for both tasks to complete
+        await event_finish.wait()
 
-    res=health_check_task.cancel()
-    logging.info("Exiting with success")
-    sys.exit(0)
+        # only for scaleway - delay for serverless container
+        # Without this we have a CrashLoopBackOff (Kubernetes health error)
+        if (os.environ.get("ENV") != "dev" and os.environ.get("ENV") != "docker"):
+            minutes = 15
+            seconds_to_minute = 60
+            logging.warning(f"Sleeping {minutes} before safely exiting scaleway container")
+            sleep(seconds_to_minute * minutes)
+
+        res=health_check_task.cancel()
+        logging.info("Exiting with success")
+        sys.exit(0)
 
 if __name__ == "__main__":
     # create logger with 'spam_application'

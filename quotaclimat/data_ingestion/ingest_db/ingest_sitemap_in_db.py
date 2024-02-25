@@ -50,29 +50,28 @@ async def batch_sitemap(exit_event):
     exit_event.set()
     return
 
-#https://docs.sentry.io/platforms/python/crons/
-@monitor(monitor_slug='sitemap')
-async def main():    
-    event_finish = asyncio.Event()
-    # Start the health check server in the background
-    health_check_task = asyncio.create_task(run_health_check_server())
+async def main():
+    with monitor(monitor_slug='sitemap'): #https://docs.sentry.io/platforms/python/crons/
+        event_finish = asyncio.Event()
+        # Start the health check server in the background
+        health_check_task = asyncio.create_task(run_health_check_server())
 
-    # Start batch job
-    asyncio.create_task(batch_sitemap(event_finish))
+        # Start batch job
+        asyncio.create_task(batch_sitemap(event_finish))
 
-    # Wait for both tasks to complete
-    await event_finish.wait()
+        # Wait for both tasks to complete
+        await event_finish.wait()
 
-   # only for scaleway - delay for serverless container
-   # Without this we have a CrashLoopBackOff (Kubernetes health error)
-    if (os.environ.get("ENV") != "dev" and os.environ.get("ENV") != "docker"):
-        minutes = 15
-        logging.warning(f"Sleeping {minutes} before safely exiting scaleway container")
-        time.sleep(60 * minutes)
+        # only for scaleway - delay for serverless container
+        # Without this we have a CrashLoopBackOff (Kubernetes health error)
+        if (os.environ.get("ENV") != "dev" and os.environ.get("ENV") != "docker"):
+            minutes = 15
+            logging.warning(f"Sleeping {minutes} before safely exiting scaleway container")
+            time.sleep(60 * minutes)
 
-    res=health_check_task.cancel()
-    logging.info("Exiting with success")
-    sys.exit(0)
+        res=health_check_task.cancel()
+        logging.info("Exiting with success")
+        sys.exit(0)
 
 if __name__ == "__main__":
     # create logger with 'spam_application'

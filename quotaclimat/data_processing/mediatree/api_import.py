@@ -23,17 +23,9 @@ from typing import List, Optional
 from tenacity import *
 import sentry_sdk
 from sentry_sdk.crons import monitor
+from quotaclimat.utils.sentry import sentry_init
 
-# read SENTRY_DSN from env
-sentry_sdk.init(
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    traces_sample_rate=0.7,
-    # Set profiles_sample_rate to 1.0 to profile 100%
-    # of sampled transactions.
-    # We recommend adjusting this value in production.
-    profiles_sample_rate=0.7,
-)
+sentry_init()
 
 #read whole file to a string
 password = get_password()
@@ -70,31 +62,32 @@ def get_channels():
     return channels
 
 async def get_and_save_api_data(exit_event):
-    conn = connect_to_db()
-    token=get_auth_token(password=password, user_name=USER)
-    type_sub = 's2t'
+    with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
+        conn = connect_to_db()
+        token=get_auth_token(password=password, user_name=USER)
+        type_sub = 's2t'
 
-    (start_date_to_query, end_epoch) = get_start_end_date_env_variable_with_default()
+        (start_date_to_query, end_epoch) = get_start_end_date_env_variable_with_default()
 
-    channels = get_channels()
-        
-    range = get_date_range(start_date_to_query, end_epoch)
-    logging.info(f"Number of date to query : {len(range)}")
-    for date in range:
-        token = refresh_token(token, date)
-        
-        date_epoch = get_epoch_from_datetime(date)
-        logging.info(f"Date: {date} - {date_epoch}")
-        for channel in channels :
-            try:
-                df = extract_api_sub(token, channel, type_sub, date_epoch)
-                if(df is not None):
-                    save_to_pg(df, keywords_table, conn)
-                else: 
-                    logging.info("Nothing to save to Postgresql")
-            except Exception as err:
-                logging.error(f"continuing loop but met error : {err}")
-                continue
+        channels = get_channels()
+            
+        range = get_date_range(start_date_to_query, end_epoch)
+        logging.info(f"Number of date to query : {len(range)}")
+        for date in range:
+            token = refresh_token(token, date)
+            
+            date_epoch = get_epoch_from_datetime(date)
+            logging.info(f"Date: {date} - {date_epoch}")
+            for channel in channels :
+                try:
+                    df = extract_api_sub(token, channel, type_sub, date_epoch)
+                    if(df is not None):
+                        save_to_pg(df, keywords_table, conn)
+                    else: 
+                        logging.info("Nothing to save to Postgresql")
+                except Exception as err:
+                    logging.error(f"continuing loop but met error : {err}")
+                    continue
     exit_event.set()
 
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
@@ -209,31 +202,32 @@ def parse_total_results(response_sub) -> int :
 def parse_number_pages(response_sub) -> int :
     return int(response_sub.get('number_pages'))
 
-def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFrame]: 
-    logging.debug(f"Parsing json response:\n {response_sub}")
-    
-    total_results = parse_total_results(response_sub)
-    if(total_results > 0):
-        logging.info(f"{total_results} 'total_results' field")
+def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFrame]:
+    with sentry_sdk.start_transaction(op="task", name="parse_reponse_subtitle"):
+        logging.debug(f"Parsing json response:\n {response_sub}")
         
-        new_df = json_normalize(response_sub.get('data'))
-        logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
-        new_df.drop('channel.title', axis=1, inplace=True) # keep only channel.name
+        total_results = parse_total_results(response_sub)
+        if(total_results > 0):
+            logging.info(f"{total_results} 'total_results' field")
+            
+            new_df = json_normalize(response_sub.get('data'))
+            logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
+            new_df.drop('channel.title', axis=1, inplace=True) # keep only channel.name
 
-        new_df['timestamp'] = (pd.to_datetime(new_df['start'], unit='s').dt.tz_localize('utc').dt.tz_convert('Europe/Paris'))
-        new_df.drop('start', axis=1, inplace=True) # keep only channel.name
+            new_df['timestamp'] = (pd.to_datetime(new_df['start'], unit='s').dt.tz_localize('utc').dt.tz_convert('Europe/Paris'))
+            new_df.drop('start', axis=1, inplace=True) # keep only channel.name
 
-        new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)
+            new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)
 
-        log_dataframe_size(new_df, channel)
+            log_dataframe_size(new_df, channel)
 
-        logging.debug("Parsed %s" % (new_df.head(1).to_string()))
-        logging.debug("Parsed Schema\n%s", new_df.dtypes)
-        
-        return new_df
-    else:
-        logging.warning("No result (total_results = 0) for this channel")
-        return None
+            logging.debug("Parsed %s" % (new_df.head(1).to_string()))
+            logging.debug("Parsed Schema\n%s", new_df.dtypes)
+            
+            return new_df
+        else:
+            logging.warning("No result (total_results = 0) for this channel")
+            return None
 
 def log_dataframe_size(df, channel):
     bytes_size = sys.getsizeof(df)

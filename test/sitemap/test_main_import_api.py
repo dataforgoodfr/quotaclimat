@@ -27,6 +27,99 @@ def test_main_api_import():
         logging.info(f"Elapsed time for api import {end_time - start_time}")
         # must df._to_pandas() because to_sql does not handle modin dataframe
         save_to_pg(df._to_pandas(), keywords_table, conn)
+
         session = get_db_session(conn)
         saved_keywords = get_keywords_columns(session)
         assert len(saved_keywords) == len(df)
+
+def test_first_row_api_import():
+        primary_key = "71b8126a50c1ed2e5cb1eab00e4481c33587db478472c2c0e74325abb872bef6"
+        specific_keyword = get_keyword(primary_key)
+        assert specific_keyword.theme == [
+        "changement_climatique_causes_indirectes"
+        ]
+        assert specific_keyword.keywords_with_timestamp == [
+        {
+            "keyword": "bâtiment",
+            "timestamp": 1707675083088,
+            "theme": "changement_climatique_causes_indirectes"
+        }
+        ]
+        assert specific_keyword.number_of_keywords == 0
+
+def test_second_row_api_import():
+        primary_key = "67b9cc593516b40f55d6a3e89b377fccc8ab76d263c5fd6d4bfe379626190641"
+        specific_keyword = get_keyword(primary_key)
+        assert specific_keyword.theme == [
+        "changement_climatique_constat",
+        "changement_climatique_causes_indirectes",
+        "changement_climatique_consequences",
+        "atténuation_climatique_solutions_directes",
+        "ressources_naturelles_concepts_generaux"
+        ]
+        assert specific_keyword.keywords_with_timestamp == [
+        {
+            "keyword": "écologique",
+            "timestamp": 1707627623079,
+            "theme": "ressources_naturelles_concepts_generaux"
+        },
+        {
+            "keyword": "écologiste",
+            "timestamp": 1707627631076,
+            "theme": "changement_climatique_constat"
+        },
+        {
+            "keyword": "pétrole",
+            "timestamp": 1707627629004,
+            "theme": "changement_climatique_causes_indirectes"
+        },
+        {
+            "keyword": "puits de pétrole",
+            "timestamp": 1707627628054,
+            "theme": "changement_climatique_causes_indirectes"
+        },
+        {
+            "keyword": "pénurie",
+            "timestamp": 1707627683045,
+            "theme": "changement_climatique_consequences"
+        },
+        {
+            "keyword": "submersion",
+            "timestamp": 1707627611094,
+            "theme": "changement_climatique_consequences"
+        },
+        {
+            "keyword": "barrage",
+            "timestamp": 1707627686004,
+            "theme": "atténuation_climatique_solutions_directes"
+        }
+        ]
+        assert specific_keyword.number_of_keywords == 4
+
+def test_third_row_api_import():
+        primary_key = "975b41e76d298711cf55113a282e7f11c28157d761233838bb700253d47be262"
+        specific_keyword = get_keyword(primary_key)
+        assert specific_keyword.theme == [
+        "changement_climatique_constat",
+        "changement_climatique_consequences",
+        "ressources_naturelles_concepts_generaux"
+        ]
+        assert specific_keyword.keywords_with_timestamp == [
+        {
+            "keyword": "écologiste",
+            "timestamp": 1707592768096,
+            "theme": "changement_climatique_constat"
+        },
+        {
+            "keyword": "submersion",
+            "timestamp": 1707592792083,
+            "theme": "changement_climatique_consequences"
+        },
+        {
+            "keyword": "environnemental",
+            "timestamp": 1707592775099,
+            "theme": "ressources_naturelles_concepts_generaux"
+        }
+        ]
+        assert specific_keyword.number_of_keywords == 3
+        

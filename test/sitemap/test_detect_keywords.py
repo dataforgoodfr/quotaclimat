@@ -8,57 +8,60 @@ from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 
 import pandas as pd
 localhost = get_localhost()
+original_timestamp = 1706437079004
+start = datetime.utcfromtimestamp(original_timestamp / 1000)
 
 def test_get_themes_keywords_duration():
+
     subtitles = [{
           "duration_ms": 34,
-          "cts_in_ms": 1706437079004,
+          "cts_in_ms": original_timestamp,
           "text": "gilets"
         },
         {
           "duration_ms": 34,
-          "cts_in_ms": 1706437080006,
+          "cts_in_ms": original_timestamp + 6,
           "text": "solaires"
         },
         {
           "duration_ms": 34,
-          "cts_in_ms": 1706437079038,
+          "cts_in_ms": original_timestamp + 38,
           "text": "jaunes"
         },
         {
           "duration_ms": 34,
-          "cts_in_ms": 1706437079072,
+          "cts_in_ms": original_timestamp + 72,
           "text": "économie"
         },
         {
           "duration_ms": 34,
-          "cts_in_ms": 1706437079076,
+          "cts_in_ms": original_timestamp + 76,
           "text": "circulaire"
         },
         {
           "duration_ms": 34,
-          "cts_in_ms": 1706437079076,
+          "cts_in_ms": original_timestamp + 76,
           "text": "abusive"
         }
     ]
 
     plaintext_nothing = "cheese pizza"
-    assert get_themes_keywords_duration(plaintext_nothing, subtitles) == [None,None, None]
+    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == [None,None, None]
     plaintext_climat = "climatique test"
-    assert get_themes_keywords_duration(plaintext_climat, subtitles) == [["changement_climatique_constat"],[], 0]
+    assert get_themes_keywords_duration(plaintext_climat, subtitles, start) == [["changement_climatique_constat"],[], 0]
     plaintext_multiple_themes = "climatique test bovin migrations climatiques"
-    assert get_themes_keywords_duration(plaintext_multiple_themes, subtitles) == [["changement_climatique_constat", "changement_climatique_consequences"],[], 0]
+    assert get_themes_keywords_duration(plaintext_multiple_themes, subtitles, start) == [["changement_climatique_constat", "changement_climatique_consequences"],[], 0]
 
     # should not accept theme 'bus' for keyword "abusive"
     plaintext_regression_incomplete_word = "abusive"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles) == [None,None, None]
+    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles, start) == [None,None, None]
     
     # should not accept theme 'ngt' for keyword "vingt"
     plaintext_regression_incomplete_word_ngt = "vingt"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles) == [None,None, None]
+    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == [None,None, None]
     
 
-    assert get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles) == [[
+    assert get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start) == [[
       "changement_climatique_constat"
      ,"changement_climatique_consequences"
      ,"adaptation_climatique_solutions_directes"
@@ -67,27 +70,27 @@ def test_get_themes_keywords_duration():
 def test_get_cts_in_ms_for_keywords():
     str = [{
           "duration_ms": 34,
-          "cts_in_ms": 1706437079004,
+          "cts_in_ms": original_timestamp + 79004,
           "text": "gilets"
         },
         {
           "duration_ms": 34,
-          "cts_in_ms": 1706437080006,
+          "cts_in_ms": original_timestamp + 80006,
           "text": "Solaires"
         },
         {
           "duration_ms": 34,
-          "cts_in_ms": 1706437079038,
+          "cts_in_ms": original_timestamp + 79038,
           "text": "jaunes"
         },
         {
           "duration_ms": 34,
-          "cts_in_ms": 1706437079072,
+          "cts_in_ms": original_timestamp + 79072,
           "text": "économie"
         },
         {
           "duration_ms": 34,
-          "cts_in_ms": 1706437079076,
+          "cts_in_ms": original_timestamp + 79076,
           "text": "circulaire"
         }
     ]
@@ -96,12 +99,12 @@ def test_get_cts_in_ms_for_keywords():
     expected = [
         {
             "keyword":'économie circulaire',
-            "timestamp" : 1706437079072,
+            "timestamp" : original_timestamp + 79072,
             "theme": theme
         },
         {
             "keyword":'solaires',
-            "timestamp" : 1706437080006,
+            "timestamp" : original_timestamp + 80006,
             "theme": theme
         },
     ]
@@ -111,7 +114,7 @@ def test_complex_hyphen_get_cts_in_ms_for_keywords():
     str = [
         {
           "duration_ms": 34,
-          "cts_in_ms": 1706437080006,
+          "cts_in_ms": original_timestamp + 80006,
           "text": "vagues-submersion"
         }
     ]
@@ -120,7 +123,7 @@ def test_complex_hyphen_get_cts_in_ms_for_keywords():
     expected = [
         {
             "keyword":'submersion',
-            "timestamp" : 1706437080006,
+            "timestamp" : original_timestamp + 80006,
             "theme": theme
         }
     ]
@@ -130,65 +133,65 @@ def test_complex_hyphen_get_cts_in_ms_for_keywords():
 
 def test_filter_and_tag_by_theme():
     df1 = pd.DataFrame([{
-        "start": 1704798000,
+        "start": start,
         "plaintext": "cheese pizza",
         "channel_name": "m6",
         "channel_radio": False,
         "srt": [{
             "duration_ms": 34,
-            "cts_in_ms": 1706437079004,
+            "cts_in_ms": original_timestamp + 79004,
             "text": "adaptation"
             }
         ],
         },{
-            "start": 1704798000,
+            "start": start,
             "plaintext": "tomato screen",
             "channel_name": "m6",
             "channel_radio": False,
             "srt": [{
                 "duration_ms": 34,
-                "cts_in_ms": 1706437079004,
+                "cts_in_ms": original_timestamp + 79004,
                 "text": "adaptation"
                 }
             ],
         },{
-            "start": 1704798000,
+            "start": start,
             "plaintext": "méthane bovin anthropocène",
             "channel_name": "m6",
             "channel_radio": False,
             "srt": [{
                 "duration_ms": 34,
-                "cts_in_ms": 1706437079004,
+                "cts_in_ms": original_timestamp + 79004,
                 "text": "adaptation"
                 }
             ],
         },
         {
-            "start": 1704798000,
+            "start": start,
             "plaintext": "cheese pizza",
             "channel_name": "m6",
             "channel_radio": False,
             "srt": [{
                     "duration_ms": 34,
-                    "cts_in_ms": 1706437079004,
+                    "cts_in_ms": original_timestamp + 79004,
                     "text": "adaptation"
                 }
             ],
         },{
-            "start": 1704798000,
+            "start": start,
             "plaintext": "pizza année la plus chaude",
             "channel_name": "m6",
             "channel_radio": False,
             "srt": [{
                 "duration_ms": 34,
-                "cts_in_ms": 1706437079004,
+                "cts_in_ms": original_timestamp + 79004,
                 "text": "adaptation"
                 }
             ],
     }])
 
     expected_result = pd.DataFrame([{
-        "start": 1704798000,
+        "start": start,
         "plaintext": "méthane bovin anthropocène",
         "channel_name": "m6",
         "channel_radio": False,
@@ -201,7 +204,7 @@ def test_filter_and_tag_by_theme():
         "number_of_keywords": 0.0
     },
     {
-        "start": 1704798000,
+        "start": start,
         "plaintext": "pizza année la plus chaude",
         "channel_name": "m6",
         "channel_radio": False,
@@ -218,20 +221,20 @@ def test_filter_and_tag_by_theme():
 
 def test_lower_case_filter_and_tag_by_theme():
     df1 = pd.DataFrame([{
-            "start": 1704798000,
+            "start": start,
             "plaintext": "méthane BOVIN Anthropocène",
             "channel_name": "m6",
             "channel_radio": False,
             "srt": [{
                 "duration_ms": 34,
-                "cts_in_ms": 111,
+                "cts_in_ms": original_timestamp,
                 "text": "méthane"
                 }
             ],
     }])
 
     expected_result = pd.DataFrame([{
-        "start": 1704798000,
+        "start": start,
         "plaintext":  "méthane BOVIN Anthropocène",
         "channel_name": "m6",
         "channel_radio": False,
@@ -243,7 +246,7 @@ def test_lower_case_filter_and_tag_by_theme():
         "keywords_with_timestamp": [
             {
                 "keyword" :"méthane",
-                "timestamp": 111,
+                "timestamp": original_timestamp,
                 "theme": "changement_climatique_causes_directes",
         }]
         ,"number_of_keywords": 1
@@ -256,20 +259,20 @@ def test_lower_case_filter_and_tag_by_theme():
 
 def test_singular_plural_case_filter_and_tag_by_theme():
     df1 = pd.DataFrame([{
-            "start": 1704798000,
+            "start": start,
             "plaintext": "méthane BOVIN Anthropocène",
             "channel_name": "m6",
             "channel_radio": False,
             "srt": [{
                 "duration_ms": 34,
-                "cts_in_ms": 111,
+                "cts_in_ms": original_timestamp,
                 "text": "méthane"
                 }
             ],
     }])
 
     expected_result = pd.DataFrame([{
-        "start": 1704798000,
+        "start": start,
         "plaintext":  "méthane BOVIN Anthropocène",
         "channel_name": "m6",
         "channel_radio": False,
@@ -281,7 +284,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         "keywords_with_timestamp": [
             {
                 "keyword" :"méthane",
-                "timestamp": 111,
+                "timestamp": original_timestamp,
                 "theme": "changement_climatique_causes_directes",
         }]
         ,"number_of_keywords": 1
@@ -293,10 +296,9 @@ def test_singular_plural_case_filter_and_tag_by_theme():
     pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
 
 def test_complexe_filter_and_tag_by_theme():
-    original_timestamp = 1706437079004
     original_timestamp_first_keyword = original_timestamp + 6
     df1 = pd.DataFrame([{
-        "start": 1704798000,
+        "start": start,
         "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
         "channel_name": "m6",
         "channel_radio": False,
@@ -353,7 +355,7 @@ def test_complexe_filter_and_tag_by_theme():
     }])
 
     expected_result = pd.DataFrame([{
-        "start": 1704798000,
+        "start": start,
         "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
         "channel_name": "m6",
         "channel_radio": False,
@@ -415,7 +417,6 @@ def test_format_word_regex():
     assert format_word_regex("d'eau") == "d' ?eaus?"
 
 def test_overlap_count_keywords_duration_overlap_without_indirect():
-    original_timestamp = 1708010919000
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": original_timestamp + 1,
@@ -438,36 +439,34 @@ def test_overlap_count_keywords_duration_overlap_without_indirect():
             }
     ]
     
-    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp) == 1
+    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 1
   
 def test_no_overlap_count_keywords_duration_overlap_without_indirect():
-    original_timestamp = 1708010900000
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
-                "timestamp": original_timestamp + get_keyword_time_separation_ms(), 
+                "timestamp": original_timestamp, 
                 "theme":"changement_climatique_constat",
             },
             {
                 "keyword" : 'conditions de vie sur terre',
-                "timestamp": original_timestamp + 2 * get_keyword_time_separation_ms(),
+                "timestamp": original_timestamp + 1 * get_keyword_time_separation_ms(),
                 "theme":"changement_climatique_constat",
             },
             {
                 "keyword" : 'planète',
-                "timestamp": original_timestamp + 3* get_keyword_time_separation_ms(),
+                "timestamp": original_timestamp + 2 * get_keyword_time_separation_ms(),
                 "theme":"ressources_naturelles_concepts_generaux",
             },
             {
                 "keyword" : 'terre',
-                "timestamp": original_timestamp + 4 * get_keyword_time_separation_ms(),
+                "timestamp": original_timestamp + 3 * get_keyword_time_separation_ms(),
                 "theme":"ressources_naturelles_concepts_generaux",
             }
     ]
     
-    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp) == 4
+    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 4
 
 def test_with_a_mix_of_overlap_count_keywords_duration_overlap_without_indirect():
-    original_timestamp = 1708010900000
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": original_timestamp, # count for one
@@ -500,10 +499,49 @@ def test_with_a_mix_of_overlap_count_keywords_duration_overlap_without_indirect(
             }
     ]
     
-    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp) == 3
+    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 3
+
+def test_with_15second_window_count_keywords_duration_overlap_without_indirect():
+    keywords_with_timestamp = [{
+                "keyword" : 'habitabilité de la planète',
+                "timestamp": original_timestamp, # count for one
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'conditions de vie sur terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() / 2,
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'planète',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms(), # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() + 2000,
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() + 10000,
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 2 + 10000,  # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 3,  # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            }
+    ]
+    
+    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 4
 
 def test_only_one_count_keywords_duration_overlap_without_indirect():
-    original_timestamp = 1708010900000
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": original_timestamp, # count for one
@@ -511,10 +549,9 @@ def test_only_one_count_keywords_duration_overlap_without_indirect():
             }
     ]
     
-    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp) == 1
+    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 1
 
 def test_indirect_count_keywords_duration_overlap_without_indirect():
-    original_timestamp = 1708010900000
     keywords_with_timestamp = [{
                 "keyword" : 'digue',
                 "timestamp": original_timestamp,
@@ -522,10 +559,9 @@ def test_indirect_count_keywords_duration_overlap_without_indirect():
             }
     ]
     
-    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp) == 0
+    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 0
 
 def test_filter_indirect_words():
-    original_timestamp = 1708010919000
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": original_timestamp + 1,
@@ -578,7 +614,6 @@ def test_filter_indirect_words():
     assert output == expected
 
 def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
-    original_timestamp = 1708010900000
     keywords_with_timestamp = [{
                 "keyword" : 'pénurie',
                 "timestamp": original_timestamp, 
@@ -601,7 +636,6 @@ def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
     assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
 
 def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
-    original_timestamp = 1708010900000
     keywords_with_timestamp = [{
                 "keyword" : 'agriculture',
                 "timestamp": original_timestamp,
@@ -624,7 +658,6 @@ def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
     assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
 
 def test_filter_keyword_with_same_timestamp():
-    original_timestamp = 1708010900000
     keywords_with_timestamp = [{ #nothing to filter
                 "keyword" : "période la plus chaude",
                 "timestamp": original_timestamp, 
@@ -638,3 +671,124 @@ def test_filter_keyword_with_same_timestamp():
     ]
     
     assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == keywords_with_timestamp
+
+def test_get_keyword_by_fifteen_second_window():
+    keywords_with_timestamp = [{
+                "keyword" : 'habitabilité de la planète',
+                "timestamp": original_timestamp, # count for one
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'conditions de vie sur terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() / 2,
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'planète',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms(), # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() + 2000,
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() + 10000,
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 2 + 10000,  # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 3,  # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            }
+    ]
+    
+    assert get_keyword_by_fifteen_second_window(keywords_with_timestamp, start) == [1, 1, 1, 1, 0, 0, 0, 0]
+
+def test_full_house_get_keyword_by_fifteen_second_window():
+    keywords_with_timestamp = [{
+                "keyword" : 'habitabilité de la planète',
+                "timestamp": original_timestamp, # count for one
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'conditions de vie sur terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() / 2,
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'planète',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms(), # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() + 2000,
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() + 10000,
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 2 + 10000,  # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 3,  # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 4,  # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 5,  # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 6,  # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 7,  # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            },
+            {
+                "keyword" : 'terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 8 - 100,  # count for one
+                "theme":"ressources_naturelles_concepts_generaux",
+            }
+    ]
+    
+    assert get_keyword_by_fifteen_second_window(keywords_with_timestamp, start) == [1, 1, 1, 1, 1, 1, 1, 1]
+
+
+def test_simple_get_keyword_by_fifteen_second_window():
+    keywords_with_timestamp = [{
+                "keyword" : 'habitabilité de la planète',
+                "timestamp": original_timestamp, # count for one
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'conditions de vie sur terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() / 2,
+                "theme":"changement_climatique_constat",
+            }
+    ]
+    
+    assert get_keyword_by_fifteen_second_window(keywords_with_timestamp, start) == [1, 0, 0, 0, 0, 0, 0, 0]

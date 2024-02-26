@@ -45,9 +45,12 @@ def refresh_token(token, date):
 # use when word detection is changed
 async def update_pg_data(exit_event):
     logging.info("Updating already saved data from Postgresql")
-    session = get_db_session()
-    update_keywords(session)
-    exit_event.set()
+    try:
+        session = get_db_session()
+        update_keywords(session)
+        exit_event.set()
+    except Exception as err:
+        logging.error("Could update_pg_data %s:(%s) %s" % (type(err).__name__, err))
 
 def get_channels():
     if(os.environ.get("ENV") == "docker" or os.environ.get("CHANNEL") is not None):

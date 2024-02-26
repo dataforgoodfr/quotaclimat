@@ -10,21 +10,12 @@ from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import CustomFormatter
 import sentry_sdk
 from sentry_sdk.crons import monitor
-
-# read SENTRY_DSN from env
-sentry_sdk.init(
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    traces_sample_rate=0.7,
-    # Set profiles_sample_rate to 1.0 to profile 100%
-    # of sampled transactions.
-    # We recommend adjusting this value in production.
-    profiles_sample_rate=0.7,
-)
+from quotaclimat.utils.sentry import sentry_init
 import asyncio
-
 from quotaclimat.data_ingestion.scrap_sitemap import \
     query_one_sitemap_and_transform, get_sitemap_list
+
+sentry_init()
 
 async def batch_sitemap(exit_event):
     create_tables()

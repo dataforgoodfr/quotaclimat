@@ -287,6 +287,21 @@ Otherwise, default is all channels
 In case we have a new word detection logic, we must re apply it to all saved keywords inside our database.
 
 We should use env variable `UPDATE`  like in docker compose (should be set to "true")
+
+In order to see actual change in the local DB, run the test first `docker compose up test` and then these commands :
+```
+docker exec -ti quotaclimat-postgres_db-1 bash
+psql -h localhost --port 5432 -d barometre -U user
+--> enter password : password
+UPDATE keywords set number_of_keywords=1000 WHERE id = '71b8126a50c1ed2e5cb1eab00e4481c33587db478472c2c0e74325abb872bef6';
+UPDATE keywords set number_of_keywords=1000 WHERE id = '975b41e76d298711cf55113a282e7f11c28157d761233838bb700253d47be262';
+```
+
+After having updated `UPDATE` env variable to true inside docker-compose.yml and running `docker compose up mediatree` you should see these logs : 
+```
+ update_pg_keywords.py:20 | Difference old 1000 - new_number_of_keywords 0
+```
+
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
 ```bash

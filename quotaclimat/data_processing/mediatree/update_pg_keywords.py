@@ -15,11 +15,13 @@ def update_keywords(session: Session, batch_size: int = 50000) -> list:
     for i in range(0, total_updates, batch_size):
         batch_updates = saved_keywords[i:i+batch_size]
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start in batch_updates:
-            logging
             new_number_of_keywords = count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start)
-            logging.debug(f"{keyword_id} new value {new_number_of_keywords}")
-            update_number_of_keywords(session, keyword_id, new_number_of_keywords)
-
+            if(number_of_keywords != new_number_of_keywords):
+                logging.info(f"Difference old {number_of_keywords} - new_number_of_keywords {new_number_of_keywords}")
+                logging.debug(f"{keyword_id} new value {new_number_of_keywords}")
+                update_number_of_keywords(session, keyword_id, new_number_of_keywords)
+            else:
+                logging.debug("No difference")
         logging.info(f"bulk update done {i} out of {total_updates}")
         session.commit()
 

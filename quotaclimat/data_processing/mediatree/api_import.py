@@ -64,32 +64,32 @@ def get_channels():
 
 async def get_and_save_api_data(exit_event):
     with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
-    conn = connect_to_db()
-    token=get_auth_token(password=password, user_name=USER)
-    type_sub = 's2t'
+        conn = connect_to_db()
+        token=get_auth_token(password=password, user_name=USER)
+        type_sub = 's2t'
 
-    (start_date_to_query, end_epoch) = get_start_end_date_env_variable_with_default()
+        (start_date_to_query, end_epoch) = get_start_end_date_env_variable_with_default()
 
-    channels = get_channels()
+        channels = get_channels()
         
-    range = get_date_range(start_date_to_query, end_epoch)
-    logging.info(f"Number of date to query : {len(range)}")
-    for date in range:
-        token = refresh_token(token, date)
-        
-        date_epoch = get_epoch_from_datetime(date)
-        logging.info(f"Date: {date} - {date_epoch}")
-        for channel in channels :
-            try:
-                df = extract_api_sub(token, channel, type_sub, date_epoch)
-                if(df is not None):
-                    # must ._to_pandas() because modin to_sql is not working
-                    save_to_pg(df._to_pandas(), keywords_table, conn)
-                else: 
-                    logging.info("Nothing to save to Postgresql")
-            except Exception as err:
-                logging.error(f"continuing loop but met error : {err}")
-                continue
+        range = get_date_range(start_date_to_query, end_epoch)
+        logging.info(f"Number of date to query : {len(range)}")
+        for date in range:
+            token = refresh_token(token, date)
+            
+            date_epoch = get_epoch_from_datetime(date)
+            logging.info(f"Date: {date} - {date_epoch}")
+            for channel in channels :
+                try:
+                    df = extract_api_sub(token, channel, type_sub, date_epoch)
+                    if(df is not None):
+                        # must ._to_pandas() because modin to_sql is not working
+                        save_to_pg(df._to_pandas(), keywords_table, conn)
+                    else: 
+                        logging.info("Nothing to save to Postgresql")
+                except Exception as err:
+                    logging.error(f"continuing loop but met error : {err}")
+                    continue
     exit_event.set()
 
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"

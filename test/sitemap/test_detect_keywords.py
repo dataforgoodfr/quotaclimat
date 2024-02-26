@@ -815,7 +815,6 @@ def test_really_out_of_bound_get_keyword_by_fifteen_second_window():
     
     assert get_keyword_by_fifteen_second_window(keywords_with_timestamp, start) == [0, 0, 0, 0, 0, 0, 0, 0]
 
-
 def test_almost_out_of_bound_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [
             {

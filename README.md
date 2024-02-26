@@ -1,4 +1,6 @@
 # QuotaClimat x Data For Good
+![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/polomarcus/579237daab71afbb359338e2706b7f36/raw/test.json)
+
 ![](quotaclimat/utils/coverquotaclimat.png)
 The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclimat.org/ "Quotaclimat website"), allowing them to quantify the media coverage of the climate crisis. By the mean of sitemap scrapping (among others data sources), a Streamlit dashboard is developed to answer their needs. 
 - 2022-09-28, Introduction by Eva Morel (Quotaclimat): from 14:10 to 32:00 https://www.youtube.com/watch?v=GMrwDjq3rYs

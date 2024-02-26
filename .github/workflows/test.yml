@@ -81,3 +81,14 @@ jobs:
       - name: Check the output coverage
         run: |
           echo "Coverage Percantage - ${{ steps.coverageComment.outputs.coverage }}"
+
+      - name: Create Awesome Badge
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: 579237daab71afbb359338e2706b7f36
+          filename: test.json
+          label: Coverage
+          message: "${{ steps.coverageComment.outputs.tests }} tests - ${{ steps.coverageComment.outputs.coverage }}"
+          color: ${{ steps.coverageComment.outputs.color }}
+          namedLogo: python

@@ -144,8 +144,8 @@ def get_keyword_by_fifteen_second_window(filtered_themes: List[dict], start: dat
     for keyword_info in filtered_themes:
         window_number = int( (keyword_info['timestamp'] - start.timestamp() * 1000) // (window_size_seconds) )
         logging.debug(f"Window number {window_number} - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
-        if window_number > number_of_windows and window_number < 0:
-            logging.error(f"Window number {window_number} is out of range : kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
+        if window_number >= number_of_windows and window_number >= 0:
+            logging.error(f"Window number {window_number} is out of range - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
         else:
             fifteen_second_window[window_number] = 1
     

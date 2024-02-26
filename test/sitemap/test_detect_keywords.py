@@ -793,11 +793,22 @@ def test_simple_get_keyword_by_fifteen_second_window():
     
     assert get_keyword_by_fifteen_second_window(keywords_with_timestamp, start) == [1, 0, 0, 0, 0, 0, 0, 0]
 
-def test_out_of_bound_get_keyword_by_fifteen_second_window():
+def test_edge_out_of_bound_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [
             {
                 "keyword" : 'conditions de vie sur terre',
-                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 8,
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 8 + 10, # edge case - still counting for one
+                "theme":"changement_climatique_constat",
+            }
+    ]
+    
+    assert get_keyword_by_fifteen_second_window(keywords_with_timestamp, start) == [0, 0, 0, 0, 0, 0, 0, 1]
+
+def test_really_out_of_bound_get_keyword_by_fifteen_second_window():
+    keywords_with_timestamp = [
+            {
+                "keyword" : 'conditions de vie sur terre',
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 15 + 10, # edge case - still counting for one
                 "theme":"changement_climatique_constat",
             }
     ]

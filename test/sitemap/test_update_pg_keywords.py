@@ -9,6 +9,10 @@ from quotaclimat.data_ingestion.scrap_sitemap import (add_primary_key, get_consi
 from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db
 from postgres.insert_data import save_to_pg
 from quotaclimat.data_processing.mediatree.detect_keywords import *
+
+original_timestamp = 1706437079004
+start = datetime.utcfromtimestamp(original_timestamp / 1000)
+
 def test_insert_data_in_sitemap_table():
     create_tables()
     conn = connect_to_db()
@@ -18,27 +22,27 @@ def test_insert_data_in_sitemap_table():
     primary_key = "test_save_to_pg_keyword"
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
-                "timestamp": 1706437079006, 
+                "timestamp": original_timestamp + 6, 
                 "theme":"changement_climatique_constat",
             },
             {
                 "keyword" : 'conditions de vie sur terre',
-                "timestamp": 1706437079010,
+                "timestamp": original_timestamp + 10,
                 "theme":"changement_climatique_constat",
             },
             {
                 "keyword" : 'planète',
-                "timestamp": 1706437079009,
+                "timestamp": original_timestamp + 9,
                 "theme":"ressources_naturelles_concepts_generaux",
             },
             {
                 "keyword" : 'terre',
-                "timestamp": 1706437079011,
+                "timestamp": original_timestamp + 11,
                 "theme":"ressources_naturelles_concepts_generaux",
             },
             {
                 "keyword" : 'digue',
-                "timestamp": 1706437079012,
+                "timestamp": original_timestamp + 12,
                 "theme":"adaptation_climatique_solutions_indirectes",
             }
         ]
@@ -50,7 +54,7 @@ def test_insert_data_in_sitemap_table():
     channel_name = "m6"
     df = pd.DataFrame([{
         "id" : primary_key,
-        "start": 1706437079006,
+        "start": start,
         "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
         "channel_name": channel_name,
         "channel_radio": False,
@@ -68,7 +72,7 @@ def test_insert_data_in_sitemap_table():
     update_keywords(session)
     result_after_update = get_keyword(primary_key)
 
-    new_value = count_keywords_duration_overlap_without_indirect(keywords_with_timestamp)
+    new_value = count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start)
     assert result_after_update.id == result_before_update.id
     assert result_after_update.number_of_keywords == new_value
     assert result_before_update.number_of_keywords == wrong_value

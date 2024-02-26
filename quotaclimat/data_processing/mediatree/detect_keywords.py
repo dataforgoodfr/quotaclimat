@@ -72,9 +72,11 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict]) -> L
     return result
 
 @sentry_sdk.trace
-def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -> List[Optional[List[str]]]:
+def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime) -> List[Optional[List[str]]]:
     matching_themes = []
     keywords_with_timestamp = []
+
+    logging.debug(f"display datetime start {start}")
 
     for theme, keywords in THEME_KEYWORDS.items():
         logging.debug(f"searching {theme} for {keywords}")
@@ -91,7 +93,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -
     
     if len(matching_themes) > 0:
         keywords_with_timestamp = filter_keyword_with_same_timestamp(keywords_with_timestamp)
-        return [matching_themes, keywords_with_timestamp, count_keywords_duration_overlap_without_indirect(keywords_with_timestamp)]
+        return [matching_themes, keywords_with_timestamp, count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start)]
     else:
         return [None, None, None]
 
@@ -109,7 +111,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
 
             logging.info(f'tagging plaintext subtitle with keywords and theme : regexp - search taking time...')
             # using swifter to speed up apply https://github.com/jmcarpenter2/swifter
-            df[['theme', u'keywords_with_timestamp', 'number_of_keywords']] = df[['plaintext','srt']].swifter.apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
+            df[['theme', u'keywords_with_timestamp', 'number_of_keywords']] = df[['plaintext','srt', 'start']].swifter.apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
 
             # remove all rows that does not have themes
             df = df.dropna(subset=['theme'])
@@ -133,33 +135,33 @@ def add_primary_key(df):
 def filter_indirect_words(keywords_with_timestamp: List[dict]) -> List[dict]:
     return list(filter(lambda kw: 'indirectes' not in kw['theme'], keywords_with_timestamp))
 
+def get_keyword_by_fifteen_second_window(filtered_themes: List[dict], start: datetime) -> List[int]:
+    window_size_seconds = get_keyword_time_separation_ms()
+    total_seconds_in_window = get_chunk_duration_api()
+    number_of_windows = int(total_seconds_in_window // window_size_seconds)
+    fifteen_second_window = [0] * number_of_windows
 
-def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: List[dict]) -> int:
+    for keyword_info in filtered_themes:
+        window_number = int( (keyword_info['timestamp'] - start.timestamp() * 1000) // (window_size_seconds) )
+        logging.debug(f"Window number {window_number} - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
+        if window_number > number_of_windows and window_number < 0:
+            logging.error(f"Window number {window_number} is out of range : kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
+        else:
+            fifteen_second_window[window_number] = 1
+    
+    return fifteen_second_window
+
+def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: List[dict], start: datetime) -> int:
     total_keywords = len(keywords_with_timestamp)
     if(total_keywords) == 0:
         return 0
     else:
-        # in case keywords are not in the right order
-        sorted_keywords = sorted(keywords_with_timestamp, key=lambda x: x['timestamp'])
-        filtered_themes = filter_indirect_words(sorted_keywords)
+        filtered_themes = filter_indirect_words(keywords_with_timestamp)
         length_filtered_items = len(filtered_themes)
         logging.debug(f"Before filtering {total_keywords} - After filtering indirect kw {length_filtered_items}")
         if length_filtered_items > 0:
-            iter_filtered_themes = iter(filtered_themes)
-            count = 1
-            previous_timestamp = next(iter_filtered_themes)['timestamp']
+            fifteen_second_window = get_keyword_by_fifteen_second_window(filtered_themes, start)
 
-            for keyword_info in filtered_themes:
-                current_timestamp = keyword_info['timestamp']
-                overlap_time = current_timestamp - previous_timestamp
-                
-                if is_time_distance_between_keyword_enough(overlap_time):
-                    logging.debug(f"No overlapping keyword {count} + 1 : {overlap_time}")
-                    count += 1
-                    previous_timestamp = current_timestamp
-                else:
-                    logging.debug(f"Keyword timestamp overlap : {overlap_time} - current count is {count}")
-
-            return count
+            return sum(fifteen_second_window)
         else:
             return 0

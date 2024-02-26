@@ -12,6 +12,9 @@ timezone='Europe/Paris'
 def get_keyword_time_separation_ms():
     return 15000
 
+def get_chunk_duration_api():
+    return 2 * 60 * 1000
+
 def is_time_distance_between_keyword_enough(overlap):
     return overlap >= get_keyword_time_separation_ms()
 

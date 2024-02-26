@@ -22,7 +22,7 @@ def test_get_date_range():
              '2023-04-13 03:56:37', '2023-04-13 23:56:37',
              '2023-04-14 19:56:37', '2023-04-15 15:56:37',
              '2023-04-16 11:56:37'],
-            dtype='datetime64[ns]', freq='20H')
+            dtype='datetime64[ns]', freq='20h')
     assert len(expected) == len(range) # ValueError: the 'dtype' parameter is not supported in the pandas implementation of any()
 
 def test_get_default_date_range():

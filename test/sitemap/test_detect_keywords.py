@@ -1,17 +1,12 @@
 import pytest
-import pandas as pd
 
-from bs4 import BeautifulSoup
 from utils import get_localhost, debug_df
-from quotaclimat.data_processing.mediatree.api_import import *
+
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
-from postgres.insert_data import save_to_pg
-from postgres.schemas.models import keywords_table, connect_to_db, get_keyword, drop_tables
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 
-import datetime
-
+import pandas as pd
 localhost = get_localhost()
 
 def test_get_themes_keywords_duration():

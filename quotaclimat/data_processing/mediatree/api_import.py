@@ -1,6 +1,5 @@
 ### Library imports
 import requests
-import pandas as pd
 import json
 
 import logging
@@ -17,12 +16,14 @@ from quotaclimat.data_processing.mediatree.detect_keywords import *
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, get_db_session
 from postgres.schemas.models import keywords_table
-from pandas import json_normalize
+
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from typing import List, Optional
 from tenacity import *
 import sentry_sdk
 from sentry_sdk.crons import monitor
+import modin.pandas as pd
+from modin.pandas import json_normalize
 from quotaclimat.utils.sentry import sentry_init
 
 sentry_init()
@@ -70,7 +71,7 @@ async def get_and_save_api_data(exit_event):
         (start_date_to_query, end_epoch) = get_start_end_date_env_variable_with_default()
 
         channels = get_channels()
-            
+        
         range = get_date_range(start_date_to_query, end_epoch)
         logging.info(f"Number of date to query : {len(range)}")
         for date in range:
@@ -82,7 +83,8 @@ async def get_and_save_api_data(exit_event):
                 try:
                     df = extract_api_sub(token, channel, type_sub, date_epoch)
                     if(df is not None):
-                        save_to_pg(df, keywords_table, conn)
+                        # must ._to_pandas() because modin to_sql is not working
+                        save_to_pg(df._to_pandas(), keywords_table, conn)
                     else: 
                         logging.info("Nothing to save to Postgresql")
                 except Exception as err:
@@ -210,7 +212,7 @@ def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFram
         if(total_results > 0):
             logging.info(f"{total_results} 'total_results' field")
             
-            new_df = json_normalize(response_sub.get('data'))
+            new_df : pd.DataFrame = json_normalize(response_sub.get('data'))
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             new_df.drop('channel.title', axis=1, inplace=True) # keep only channel.name
 
@@ -230,12 +232,8 @@ def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFram
             return None
 
 def log_dataframe_size(df, channel):
-    bytes_size = sys.getsizeof(df)
-    logging.info(f"Dataframe size : {bytes_size / (1000 * 1000)} Megabytes")
-    if(bytes_size > 50 * 1000 * 1000): # 50Mb
-        logging.warning(f"High Dataframe size : {bytes_size / (1000 * 1000)}")
     if(len(df) == 1000):
-        logging.error("We might lose data - df size is 1000 out of 1000 - we should divide this querry")
+        logging.error(f"We might lose data for {channel} - df size is 1000 out of 1000 - we should divide this querry")
 
 
 async def main():

@@ -1,21 +1,18 @@
 import pytest
-import pandas as pd
 
-from bs4 import BeautifulSoup
 from utils import get_localhost, debug_df
 from quotaclimat.data_processing.mediatree.api_import import *
 from quotaclimat.data_processing.mediatree.utils import *
-from quotaclimat.data_processing.mediatree.detect_keywords import *
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import keywords_table, connect_to_db, get_keyword, drop_tables
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
-
+import pandas as pd
 import datetime
 
 localhost = get_localhost()
 
 drop_tables()
-
+create_tables()
 plaintext1="test1"
 plaintext2="test2"
 json_response = json.loads("""
@@ -104,7 +101,8 @@ def test_parse_reponse_subtitle():
     expected_result['start'] = pd.to_datetime(expected_result['start'], unit='s').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
     df = parse_reponse_subtitle(json_response)
     debug_df(df)
-    pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
+
+    pd.testing.assert_frame_equal(df._to_pandas().reset_index(drop=True), expected_result.reset_index(drop=True))
 
 def test_get_includes_or_query():
     words = ["velo", "marche"]

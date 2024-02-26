@@ -83,6 +83,7 @@ jobs:
           echo "Coverage Percantage - ${{ steps.coverageComment.outputs.coverage }}"
 
       - name: Create Awesome Badge
+        if: github.ref == 'refs/heads/main'
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.GIST_SECRET }}

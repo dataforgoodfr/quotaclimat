@@ -9,6 +9,7 @@ from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 import re
 import swifter
 from itertools import groupby
+import sentry_sdk
 import modin.pandas as pd
 import dask
 
@@ -44,6 +45,7 @@ def format_word_regex(word: str) -> str:
     else:
         return word
 
+
 def is_word_in_sentence(words: str, sentence: str) -> bool :
     # words can contain plurals and several words
     words = ' '.join(list(map(( lambda x: format_word_regex(x)), words.split(" "))))
@@ -56,6 +58,7 @@ def is_word_in_sentence(words: str, sentence: str) -> bool :
         return False
 
 # some keywords are contained inside other keywords, we need to filter them
+
 def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict]) -> List[dict]:
     # Group keywords by timestamp
     grouped_keywords = {timestamp: list(group) for timestamp, group in groupby(keywords_with_timestamp, key=lambda x: x['timestamp'])}
@@ -67,6 +70,8 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict]) -> L
     ]
 
     return result
+
+@sentry_sdk.trace
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str]) -> List[Optional[List[str]]]:
     matching_themes = []
     keywords_with_timestamp = []
@@ -95,23 +100,25 @@ def log_min_max_date(df):
     min_date = min(df['start'])
     logging.info(f"Date min : {min_date}, max : {max_date}")
 
+
 def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
-    count_before_filtering = len(df)
-    logging.info(f"{count_before_filtering} subtitles to filter by keywords and tag with themes")
-    log_min_max_date(df)
+        with sentry_sdk.start_transaction(op="task", name="filter_and_tag_by_theme"):
+            count_before_filtering = len(df)
+            logging.info(f"{count_before_filtering} subtitles to filter by keywords and tag with themes")
+            log_min_max_date(df)
 
-    logging.info(f'tagging plaintext subtitle with keywords and theme : regexp - search taking time...')
-    # using swifter to speed up apply https://github.com/jmcarpenter2/swifter
-    df[['theme', u'keywords_with_timestamp', 'number_of_keywords']] = df[['plaintext','srt']].swifter.apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
+            logging.info(f'tagging plaintext subtitle with keywords and theme : regexp - search taking time...')
+            # using swifter to speed up apply https://github.com/jmcarpenter2/swifter
+            df[['theme', u'keywords_with_timestamp', 'number_of_keywords']] = df[['plaintext','srt']].swifter.apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
 
-    # remove all rows that does not have themes
-    df = df.dropna(subset=['theme'])
+            # remove all rows that does not have themes
+            df = df.dropna(subset=['theme'])
 
-    df.drop('srt', axis=1, inplace=True)
+            df.drop('srt', axis=1, inplace=True)
 
-    logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")
+            logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")
 
-    return df
+            return df
 
 def add_primary_key(df):
     logging.info("Adding primary key to save to PG and have idempotent result")
@@ -125,6 +132,7 @@ def add_primary_key(df):
 
 def filter_indirect_words(keywords_with_timestamp: List[dict]) -> List[dict]:
     return list(filter(lambda kw: 'indirectes' not in kw['theme'], keywords_with_timestamp))
+
 
 def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: List[dict]) -> int:
     total_keywords = len(keywords_with_timestamp)

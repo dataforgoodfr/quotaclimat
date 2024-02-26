@@ -24,17 +24,9 @@ import sentry_sdk
 from sentry_sdk.crons import monitor
 import modin.pandas as pd
 from modin.pandas import json_normalize
+from quotaclimat.utils.sentry import sentry_init
 
-# read SENTRY_DSN from env
-sentry_sdk.init(
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    traces_sample_rate=0.7,
-    # Set profiles_sample_rate to 1.0 to profile 100%
-    # of sampled transactions.
-    # We recommend adjusting this value in production.
-    profiles_sample_rate=0.7,
-)
+sentry_init()
 
 #read whole file to a string
 password = get_password()
@@ -71,6 +63,7 @@ def get_channels():
     return channels
 
 async def get_and_save_api_data(exit_event):
+    with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
     conn = connect_to_db()
     token=get_auth_token(password=password, user_name=USER)
     type_sub = 's2t'
@@ -211,65 +204,57 @@ def parse_total_results(response_sub) -> int :
 def parse_number_pages(response_sub) -> int :
     return int(response_sub.get('number_pages'))
 
-def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFrame]: 
-    logging.debug(f"Parsing json response:\n {response_sub}")
-    
-    total_results = parse_total_results(response_sub)
-    if(total_results > 0):
-        logging.info(f"{total_results} 'total_results' field")
+def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFrame]:
+    with sentry_sdk.start_transaction(op="task", name="parse_reponse_subtitle"):
+        logging.debug(f"Parsing json response:\n {response_sub}")
         
-        new_df : pd.DataFrame = json_normalize(response_sub.get('data'))
+        total_results = parse_total_results(response_sub)
+        if(total_results > 0):
+            logging.info(f"{total_results} 'total_results' field")
+            
+            new_df : pd.DataFrame = json_normalize(response_sub.get('data'))
+            logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
+            new_df.drop('channel.title', axis=1, inplace=True) # keep only channel.name
 
-        logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
-        new_df.drop('channel.title', axis=1, inplace=True) # keep only channel.name
+            new_df['timestamp'] = (pd.to_datetime(new_df['start'], unit='s').dt.tz_localize('utc').dt.tz_convert('Europe/Paris'))
+            new_df.drop('start', axis=1, inplace=True) # keep only channel.name
 
-        new_df['timestamp'] = (pd.to_datetime(new_df['start'], unit='s').dt.tz_localize('utc').dt.tz_convert('Europe/Paris'))
-        new_df.drop('start', axis=1, inplace=True) # keep only channel.name
+            new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)
 
-        new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)
+            log_dataframe_size(new_df, channel)
 
-        log_dataframe_size(new_df, channel)
-
-        logging.debug("Parsed %s" % (new_df.head(1).to_string()))
-        logging.debug("Parsed Schema\n%s", new_df.dtypes)
-        
-        return new_df
-    else:
-        logging.warning("No result (total_results = 0) for this channel")
-        return None
+            logging.debug("Parsed %s" % (new_df.head(1).to_string()))
+            logging.debug("Parsed Schema\n%s", new_df.dtypes)
+            
+            return new_df
+        else:
+            logging.warning("No result (total_results = 0) for this channel")
+            return None
 
 def log_dataframe_size(df, channel):
     if(len(df) == 1000):
         logging.error(f"We might lose data for {channel} - df size is 1000 out of 1000 - we should divide this querry")
 
-#https://docs.sentry.io/platforms/python/crons/
-@monitor(monitor_slug='mediatree')
-async def main():    
-    logger.info("Start api mediatree import")
-    create_tables()
 
-    event_finish = asyncio.Event()
-    # Start the health check server in the background
-    health_check_task = asyncio.create_task(run_health_check_server())
+async def main():
+    with monitor(monitor_slug='mediatree'): #https://docs.sentry.io/platforms/python/crons/
+        logger.info("Start api mediatree import")
+        create_tables()
 
-    # Start batch job
-    if(os.environ.get("UPDATE") == "true"):
-        asyncio.create_task(update_pg_data(event_finish))
-    else:
-        asyncio.create_task(get_and_save_api_data(event_finish))
+        event_finish = asyncio.Event()
+        # Start the health check server in the background
+        health_check_task = asyncio.create_task(run_health_check_server())
 
-    # Wait for both tasks to complete
-    await event_finish.wait()
+        # Start batch job
+        if(os.environ.get("UPDATE") == "true"):
+            asyncio.create_task(update_pg_data(event_finish))
+        else:
+            asyncio.create_task(get_and_save_api_data(event_finish))
 
-   # only for scaleway - delay for serverless container
-   # Without this we have a CrashLoopBackOff (Kubernetes health error)
-    if (os.environ.get("ENV") != "dev" and os.environ.get("ENV") != "docker"):
-        minutes = 15
-        seconds_to_minute = 60
-        logging.warning(f"Sleeping {minutes} before safely exiting scaleway container")
-        sleep(seconds_to_minute * minutes)
+        # Wait for both tasks to complete
+        await event_finish.wait()
 
-    res=health_check_task.cancel()
+        res=health_check_task.cancel()
     logging.info("Exiting with success")
     sys.exit(0)
 

@@ -10,21 +10,12 @@ from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import CustomFormatter
 import sentry_sdk
 from sentry_sdk.crons import monitor
-
-# read SENTRY_DSN from env
-sentry_sdk.init(
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    traces_sample_rate=0.7,
-    # Set profiles_sample_rate to 1.0 to profile 100%
-    # of sampled transactions.
-    # We recommend adjusting this value in production.
-    profiles_sample_rate=0.7,
-)
+from quotaclimat.utils.sentry import sentry_init
 import asyncio
-
 from quotaclimat.data_ingestion.scrap_sitemap import \
     query_one_sitemap_and_transform, get_sitemap_list
+
+sentry_init()
 
 async def batch_sitemap(exit_event):
     create_tables()
@@ -50,27 +41,26 @@ async def batch_sitemap(exit_event):
     exit_event.set()
     return
 
-#https://docs.sentry.io/platforms/python/crons/
-@monitor(monitor_slug='sitemap')
-async def main():    
-    event_finish = asyncio.Event()
-    # Start the health check server in the background
-    health_check_task = asyncio.create_task(run_health_check_server())
+async def main():
+    with monitor(monitor_slug='sitemap'): #https://docs.sentry.io/platforms/python/crons/
+        event_finish = asyncio.Event()
+        # Start the health check server in the background
+        health_check_task = asyncio.create_task(run_health_check_server())
 
-    # Start batch job
-    asyncio.create_task(batch_sitemap(event_finish))
+        # Start batch job
+        asyncio.create_task(batch_sitemap(event_finish))
 
-    # Wait for both tasks to complete
-    await event_finish.wait()
+        # Wait for both tasks to complete
+        await event_finish.wait()
 
-   # only for scaleway - delay for serverless container
-   # Without this we have a CrashLoopBackOff (Kubernetes health error)
-    if (os.environ.get("ENV") != "dev" and os.environ.get("ENV") != "docker"):
-        minutes = 15
-        logging.warning(f"Sleeping {minutes} before safely exiting scaleway container")
-        time.sleep(60 * minutes)
+        # only for scaleway - delay for serverless container
+        # Without this we have a CrashLoopBackOff (Kubernetes health error)
+        if (os.environ.get("ENV") != "dev" and os.environ.get("ENV") != "docker"):
+            minutes = 15
+            logging.warning(f"Sleeping {minutes} before safely exiting scaleway container")
+            time.sleep(60 * minutes)
 
-    res=health_check_task.cancel()
+        res=health_check_task.cancel()
     logging.info("Exiting with success")
     sys.exit(0)
 

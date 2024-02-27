@@ -60,7 +60,7 @@ class Keywords(Base):
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")) # ALTER TABLE ONLY keywords ALTER COLUMN created_at SET DEFAULT (now() at time zone 'utc');
     keywords_with_timestamp = Column(JSON) # ALTER TABLE keywords ADD keywords_with_timestamp json;
     number_of_keywords = Column(Integer) # ALTER TABLE keywords ADD number_of_keywords integer;
-
+    srt = Column(JSON) # ALTER TABLE keywords ADD srt json;
 
 def get_sitemap(id: str):
     session = get_db_session()

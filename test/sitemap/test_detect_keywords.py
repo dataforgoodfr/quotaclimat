@@ -351,30 +351,19 @@ def test_complexe_filter_and_tag_by_theme():
         "srt": srt,
         "theme": [
             "changement_climatique_constat",
-            "ressources_naturelles_concepts_generaux",
         ],
         "keywords_with_timestamp": [{
                 "keyword" : 'habitabilité de la planète',
-                "timestamp": 1706437079006,
+                "timestamp": 1706437079006, # count for one
                 "theme":"changement_climatique_constat",
             },
             {
                 "keyword" : 'conditions de vie sur terre',
-                "timestamp": 1706437079010,
+                "timestamp": 1706437079010, # timestamp too close
                 "theme":"changement_climatique_constat",
-            },
-            {
-                "keyword" : 'planète',
-                "timestamp": 1706437079009,
-                "theme":"ressources_naturelles_concepts_generaux",
-            },
-            {
-                "keyword" : 'terre',
-                "timestamp": 1706437079011,
-                "theme":"ressources_naturelles_concepts_generaux",
             }
         ]
-        ,"number_of_keywords": 2
+        ,"number_of_keywords": 1
     }])
 
     # List of words to filter on

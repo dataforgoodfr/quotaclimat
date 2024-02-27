@@ -20,7 +20,7 @@ def sentry_init():
     if(os.environ.get("SENTRY_DSN", None) != None):
         logging.info("Sentry init")
         sentry_sdk.init(
-            enable_tracing=True,
+            enable_tracing=False,
             traces_sample_rate=0.7,
             # To set a uniform sample rate
             # Set profiles_sample_rate to 1.0 to profile 100%

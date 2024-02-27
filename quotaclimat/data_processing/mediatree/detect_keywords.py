@@ -116,8 +116,6 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
             # remove all rows that does not have themes
             df = df.dropna(subset=['theme'])
 
-            df.drop('srt', axis=1, inplace=True)
-
             logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")
 
             return df

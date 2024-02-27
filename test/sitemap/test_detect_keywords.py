@@ -132,62 +132,43 @@ def test_complex_hyphen_get_cts_in_ms_for_keywords():
 
 
 def test_filter_and_tag_by_theme():
+    srt = [{
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 79004,
+            "text": "adaptation"
+            }
+    ]
     df1 = pd.DataFrame([{
         "start": start,
         "plaintext": "cheese pizza",
         "channel_name": "m6",
         "channel_radio": False,
-        "srt": [{
-            "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 79004,
-            "text": "adaptation"
-            }
-        ],
+        "srt": srt,
         },{
             "start": start,
             "plaintext": "tomato screen",
             "channel_name": "m6",
             "channel_radio": False,
-            "srt": [{
-                "duration_ms": 34,
-                "cts_in_ms": original_timestamp + 79004,
-                "text": "adaptation"
-                }
-            ],
+            "srt": srt,
         },{
             "start": start,
             "plaintext": "méthane bovin anthropocène",
             "channel_name": "m6",
             "channel_radio": False,
-            "srt": [{
-                "duration_ms": 34,
-                "cts_in_ms": original_timestamp + 79004,
-                "text": "adaptation"
-                }
-            ],
+            "srt": srt,
         },
         {
             "start": start,
             "plaintext": "cheese pizza",
             "channel_name": "m6",
             "channel_radio": False,
-            "srt": [{
-                    "duration_ms": 34,
-                    "cts_in_ms": original_timestamp + 79004,
-                    "text": "adaptation"
-                }
-            ],
+            "srt": srt,
         },{
             "start": start,
             "plaintext": "pizza année la plus chaude",
             "channel_name": "m6",
             "channel_radio": False,
-            "srt": [{
-                "duration_ms": 34,
-                "cts_in_ms": original_timestamp + 79004,
-                "text": "adaptation"
-                }
-            ],
+            "srt": srt,
     }])
 
     expected_result = pd.DataFrame([{
@@ -195,6 +176,7 @@ def test_filter_and_tag_by_theme():
         "plaintext": "méthane bovin anthropocène",
         "channel_name": "m6",
         "channel_radio": False,
+        "srt": srt,
         "theme": [
             "changement_climatique_constat",
             "changement_climatique_causes_directes",
@@ -208,6 +190,7 @@ def test_filter_and_tag_by_theme():
         "plaintext": "pizza année la plus chaude",
         "channel_name": "m6",
         "channel_radio": False,
+        "srt": srt,
         "theme": ["changement_climatique_consequences"],
         "keywords_with_timestamp": [],
         "number_of_keywords": 0.0
@@ -220,17 +203,18 @@ def test_filter_and_tag_by_theme():
 
 
 def test_lower_case_filter_and_tag_by_theme():
+    srt = [{
+                "duration_ms": 34,
+                "cts_in_ms": original_timestamp,
+                "text": "méthane"
+                }
+    ]
     df1 = pd.DataFrame([{
             "start": start,
             "plaintext": "méthane BOVIN Anthropocène",
             "channel_name": "m6",
             "channel_radio": False,
-            "srt": [{
-                "duration_ms": 34,
-                "cts_in_ms": original_timestamp,
-                "text": "méthane"
-                }
-            ],
+            "srt": srt,
     }])
 
     expected_result = pd.DataFrame([{
@@ -238,6 +222,7 @@ def test_lower_case_filter_and_tag_by_theme():
         "plaintext":  "méthane BOVIN Anthropocène",
         "channel_name": "m6",
         "channel_radio": False,
+        "srt": srt,
         "theme": [
             "changement_climatique_constat",
             "changement_climatique_causes_directes",
@@ -258,17 +243,18 @@ def test_lower_case_filter_and_tag_by_theme():
     pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
 
 def test_singular_plural_case_filter_and_tag_by_theme():
+    srt = [{
+                "duration_ms": 34,
+                "cts_in_ms": original_timestamp,
+                "text": "méthane"
+                }
+    ]
     df1 = pd.DataFrame([{
             "start": start,
             "plaintext": "méthane BOVIN Anthropocène",
             "channel_name": "m6",
             "channel_radio": False,
-            "srt": [{
-                "duration_ms": 34,
-                "cts_in_ms": original_timestamp,
-                "text": "méthane"
-                }
-            ],
+            "srt": srt,
     }])
 
     expected_result = pd.DataFrame([{
@@ -276,6 +262,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         "plaintext":  "méthane BOVIN Anthropocène",
         "channel_name": "m6",
         "channel_radio": False,
+        "srt": srt,
         "theme": [
             "changement_climatique_constat",
             "changement_climatique_causes_directes",
@@ -297,12 +284,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
 
 def test_complexe_filter_and_tag_by_theme():
     original_timestamp_first_keyword = original_timestamp + 6
-    df1 = pd.DataFrame([{
-        "start": start,
-        "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
-        "channel_name": "m6",
-        "channel_radio": False,
-        "srt": [{
+    srt = [{
             "duration_ms": 34,
             "cts_in_ms": original_timestamp,
             "text": "cheese"
@@ -351,7 +333,14 @@ def test_complexe_filter_and_tag_by_theme():
             "cts_in_ms": original_timestamp + 12,
             "text": "animal"
             },
-        ],
+    ]
+   
+    df1 = pd.DataFrame([{
+        "start": start,
+        "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
+        "channel_name": "m6",
+        "channel_radio": False,
+        "srt": srt,
     }])
 
     expected_result = pd.DataFrame([{
@@ -359,6 +348,7 @@ def test_complexe_filter_and_tag_by_theme():
         "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
         "channel_name": "m6",
         "channel_radio": False,
+        "srt": srt,
         "theme": [
             "changement_climatique_constat",
             "ressources_naturelles_concepts_generaux",

@@ -19,15 +19,21 @@ THEME_KEYWORDS = {
         ]
 ,
 "changement_climatique_causes_directes" : [ # 1.1.2.1
-        "inaction climatique","insuffisance climatique",
+        "inaction climatique",
+        "insuffisance climatique",
         "gaz à effet de serre",
         "carbone",
         "polluant",
-        "CO2",
+        "co2",
         "méthane",
-        "émissions territoriales","émissions importées","émissions liées à la consommation","émissions anthropiques",
-        "énergies fossiles","combustibles fossiles",
-        "déforestation","coupe rase",
+        "émissions territoriales",
+        "émissions importées",
+        "émissions liées à la consommation",
+        "émissions anthropiques",
+        "énergies fossiles",
+        "combustibles fossiles",
+        "déforestation",
+        "coupe rase",
         "greenwashing"
 ],
 "changement_climatique_causes_indirectes": [ # 1.1.2.2
@@ -43,10 +49,28 @@ THEME_KEYWORDS = {
     "carburant",
     "climatisation",
     "gaspillage alimentaire",
-    "pétrole", "fuel", "fioul", "gaz", "gaz naturel", "charbon", "kérosène", "lignite", "essence", "pompes à essence", "gaz de schiste", "gaz naturel liquéfié"
-    , "or noir", "forages pétroliers", "puits de pétrole"
-    ,"engrais azotés", "engrais de synthèse", "agriculture intensive", "élevage intensif", "agriculture industrielle", "agriculture conventionnelle"
-    , "serres chauffées", "agro-industriel"
+    "pétrole",
+     "fuel",
+     "fioul",
+     "gaz",
+     "gaz naturel",
+     "charbon",
+     "kérosène",
+     "lignite",
+     "essence",
+     "pompes à essence",
+     "gaz de schiste",
+     "gaz naturel liquéfié",
+     "or noir",
+     "forages pétroliers",
+     "puits de pétrole",
+    "engrais azotés",
+    "engrais de synthèse",
+    "agriculture intensive",
+    "élevage intensif",
+    "agriculture industrielle",
+    "agriculture conventionnelle",
+     "serres chauffées", "agro-industriel"
     ,"chauffage au gaz", "chauffage au fuel"
     ,"passoire thermique", "passoire énergétique", "logement mal isolé"
     ,"îlot de chaleur"
@@ -91,7 +115,7 @@ THEME_KEYWORDS = {
     ,"atténuation du changement climatique"
     ,"alternative durable", "moins polluant"
     ,"économie circulaire"
-    ,"mobilité durable", "Voiture électrique", "Covoiturage", "Biocarburant"
+    ,"mobilité durable", "Voiture électrique", "Biocarburant"
     ,"écoconception"
     ,"réseaux de chaleur", "énergies renouvelables", "transition énergétique", "électricité décarboné", "énergies vertes",
     "énergiesdurable", "éolien", "panneaux solaires", "solaires", "photovoltaïque", "géothermie", "hydroélectricité",
@@ -106,6 +130,7 @@ THEME_KEYWORDS = {
     ,"rénovation énergétique"
     ,"industrie verte"
     ,"agriculture biologique", "agroécologie", "polyculture élevage", "agroforesterie", "permaculture"
+    ,"quotas de pêche"
     ,"label bio", "label AB", "label HVE"
     ,"stockage du carbone dans les sols", "réduction du cheptel", "agriculture de conservation"
     ,"restauration des tourbières", "protection des tourbières", "stockage du carbone dans les sols", "biochar", "restauration des zones humides"
@@ -126,7 +151,7 @@ THEME_KEYWORDS = {
     ,"isolation", "isolation thermique", "pompes à chaleur", "changement de chaudière"
     , "chaudière biomasse"
     ,"matériaux biosourcés", "matériaux recyclés", "matériaux recyclables"
-    ,"forêts"
+    ,"forêt"
     ,"tri à la source"
     ,"biodégradable"
     ,"espaces verts"
@@ -169,37 +194,77 @@ THEME_KEYWORDS = {
 ],
 "ressources_naturelles_concepts_generaux": # 1.2.1
 [
-"crise environnementale", "crise climatique", "crise écologique", "écologie", "écologique", "environnement", "environnemental"
-,"anthropocène", "limites planétaires", "dépassement des limites planétaires", "épuisement des ressources", "jour du dépassement"
-,"raréfaction de l’eau", "pénurie d’eau", "disponibilité d’eau douce", "baisse de la qualité de l’eau", "cycle de l’eau"
-,"salinisation des nappes", "nappes phréatiques", "pollution de l’eau", "pollution des nappes phréatiques"
-,"sécheresse", "augmentation des risques de sécheresse", "stress hydrique", "canicule", "déficite de pluie"
-,"pénurie de neige", "raréfaction de la ressource en eau", "rareté de la ressource en eau", "rareté saisonnière de la ressource en eau"
-, "fortes chaleurs", "chaleurs extrêmes", "vagues de chaleur","salinisation des sols", "intensification du cycle de l’eau"
-,"disponibilité en matériaux", "ressources minérales", "ressources renouvelables", "ressources naturelles"
-,"terres rares", "lithium", "cobalt", "cuivre"
-,"forêt", "gestion forestière", "bois d’oeuvre", "bois énergie"
-,"artificialisation des sols", "mauvaise santé des sols", "appauvrissement des sols", "sols pauvres"
-,"planète", "terre"
+    "crise environnementale",
+    "crise climatique",
+    "crise écologique",
+    "anthropocène",
+    "limites planétaires",
+    "dépassement des limites planétaires",
+    "épuisement des ressources",
+    "jour du dépassement",
+    "raréfaction de l’eau",
+    "pénurie d’eau",
+    "qualité de l’eau",
+    "cycle de l’eau",
+    "salinisation des nappes",
+    "nappes phréatiques",
+    "pollution de l’eau",
+    "sécheresse",
+    "augmentation des risques de sécheresse",
+    "stress hydrique",
+    "canicule",
+    "déficite de pluie",
+    "pénurie de neige",
+    "raréfaction de la ressource en eau",
+    "rareté de la ressource en eau",
+    "rareté saisonnière de la ressource en eau",
+    "fortes chaleurs",
+    "chaleurs extrêmes",
+    "vagues de chaleur",
+    "salinisation des sols",
+    "intensification du cycle de l’eau",
+    "disponibilité en matériaux",
+    "ressources minérales",
+    "ressources renouvelables",
+    "ressources naturelles",
+    "terres rares",
+    "lithium",
+    "cobalt",
+    "cuivre",
+    "métaux critiques",
+    "forêt",
+    "gestion forestière",
+    "bois d’oeuvre",
+    "bois énergie",
+    "artificialisation des sols",
+    "mauvaise santé des sols",
+    "appauvrissement des sols",
+    "dégradation des sols",
+    "sols pauvres",
 ],
 "ressources_naturelles_causes": # 1.2.2
 [
-    "surexploitation des ressources", "surexploitation"
-    ,"polluants éternels", "PFAS"
-    ,"surconsommation"
-    ,"pesticides", "produits toxiques"
+    "surexploitation des ressources",
+    "surexploitation",
+    "surpêche",
+    "polluants éternels",
+    "PFAS",
+    "substances chimiques",
+    "surconsommation",
+    "pesticides",
+    "produits toxiques"
 ],
 "ressources_naturelles_solutions": # 1.2.3
 [
     "analyse de cycle de vie", "ACV"
     ,"biomimétisme", "bioinspiration"
-    ,"sobriété", "réduction de la demande", "réduction de la consommation", "maîtrise de la demande", "modération de la consommation"
-    , "fin de l’abondance"
-    ,"efficience énergétique", "efficacité énergétique"
-    ,"décarbonation", "captage du carbone"
-    ,"triptyque “réutilisation", "réparation", "recyclage”"
+    ,"sobriété", "réduction de la consommation", "maîtrise de la demande",
+    "moins consommer",
+    "décroissance"
+    ,"efficacité énergétique"
+    ,"récupérateur d’eau", "stockage d’eau"
     ,"réemploi", "recyclage", "réparabilité", "repair cafés", "recycleries"
-    ,"réutilisation des ressources", "lutte contre les gaspillage", "antigaspi"
+    ,"réutilisation des ressources","ressources renouvelables", "lutte contre les gaspillage", "antigaspi"
     ,"santé des sols", "préservation des sols"
     ,"planification écologique", "transition écologique", "transformation écologique", "mutation écologique", "économie circulaire", "économie du réemploi"
     ,"malus écologique"
@@ -224,7 +289,7 @@ THEME_KEYWORDS = {
     ,"corail", "coraux", "récifs coralliens"
     ,"convention des Nations unies sur la diversité biologique", "COP biodiversité", "COP de Montréal"
 ],
-"biodiversité_causes": # 1.3.2
+"biodiversité_causes_directes": # 1.3.2
 [ 
     "dégradation de l'habitat", "condition dégradée d’habitation", "destruction des habitats naturels", "perturbation des habitats"
     ,"perturbation des écosystèmes", "perte d’habitats", "écosystèmes dégradés", "dégradation des écosystèmes", "pression sur les milieux naturels"
@@ -234,15 +299,55 @@ THEME_KEYWORDS = {
     ,"surexploitation des ressources", "surexploitation de la biomasse", "prélèvements", "extractivisme", "surpêche", "surexploitation du bois"
     ,"trafics d’animaux"
     ,"espèces menacées", "espèces exotiques", "espèces envahissantes", "Espèces invasives", "espèces envahissantes", "bactéries toxiques", "espèces protégées"
-    ,"pesticides", "produits phytosanitaires", "glyphosate", "néonicotinoïde", "chlordécone"
-    , "herbicides", "fongicides", "roundup", "monsanto", "bayer", "intrants"
-    ,"engrais azotés et phosphatés"
-    ,"produits toxiques"
-    ,"pollution de l’air", "pollution de l’eau", "pollution des sols"
-    ,"pêche industrielle", "agriculture industrielle", "agro-industrie", "agribusiness", "complexe agro-industriel", "agriculture intensive"
-    ,"huile de palme"
-    ,"OGM", "organismes génétiquement modifiées", "nouvelles techniques génomiques", "NGT"
-    ,"greenwashing"
+],
+ "biodiversité_causes_indirectes":
+    [
+    "pesticides",
+    "produits phytosanitaires",
+    "glyphosate",
+    "néonicotinoïde",
+    "chlordécone",
+    "herbicides",
+    "fongicides",
+    "intrants",
+    "engrais azotés et phosphatés",
+    "perturbateurs endocriniens",
+    "métaux lourds",
+    "pollution de l’air",
+    "pollution de l’eau",
+    "pollution des sols",
+    "pollution chimique",
+    "pollution environnementale",
+    "pollution atmosphérique",
+    "pollution plastique",
+    "pêche industrielle",
+    "agriculture industrielle",
+    "agro-industrie",
+    "agribusiness",
+    "complexe agro-industriel",
+    "agriculture intensive", 
+    "surpêche",
+    "extractivisme",
+    "extractiviste",
+    "OGM",
+    "organismes génétiquement modifiées",
+    "nouvelles techniques génomiques",
+    "NGT",
+    "huile de palme",
+    "corail",
+    "coraux",
+    "récifs coralliens",
+    "tourisme de masse",
+    "urbanisation",
+    "l’étalement urbain",
+    "surconsommation",
+    "micro-plastiques",
+    "changement d’usage des terres",
+    "assèchement des zones humides",
+    "disparition des haies",
+    "braconnage",
+    "trafic d’espèces",
+    "commerce illégal d’espèces"
 ],
 "biodiversité_conséquences": # 1.3.3
 [
@@ -258,15 +363,47 @@ THEME_KEYWORDS = {
     , "dégradation des sols", "diminution des rendements des cultures", "perturbation du cycle de l’eau"
     ,"Détérioration des conditions de santé"
 ],
-"biodiversité_solutions": # 1.3.4
+"biodiversité_solutions_directes": # 1.3.4.1
 [ 
-    "solutions fondées sur la nature"
-    ,"réintroduction d'espèce", "préservation d'espèce"
-    ,"préservation des milieux", "restauration des milieux", "restauration des écosystèmes", "restauration des forêts"
-    ,"reforestation", "restauration de la biodiversité", "restaurer la biodiversité", "restauration des zones humides"
-    ,"protection des zones humides", "restauration des tourbière", "protection de la mangrove", "protection des zones côtières"
-    ,"mise en réserve", "zones de protection ou aires protégées", "parcs nationaux", "zone natura 2000"
-    ,"corridor écologique", "végétalisation des espaces urbains et des villes"
-    ,"agroforesterie", "agriculture biologique", "agroécologie", "agriculture de conservation"
+    "solutions fondées sur la nature",
+    "diversité génétique"
+    "Protection du vivant",
+    "réintroduction d'espèce",
+    "préservation d'espèce",
+    "préservation des milieux",
+    "restauration des milieux",
+    "restauration des écosystèmes",
+    "restauration des forêts",
+    "restauration de la biodiversité",
+    "restaurer la biodiversité",
+    "restauration des zones humides,restauration des tourbière",
+    "restaurer la qualité de l’air",
+    "restaurer la qualité des sols",
+    "reforestation",
+    "protection des zones humides",
+    "protection de la mangrove",
+    "protection des zones côtières",
+    "Corridor écologique",
+    "végétalisation des espaces urbains",
+    "végétalisation des villes",
+    "réserve naturelle",
+    "Agroforesterie",
+    "agriculture biologique",
+    "agroécologie",
+    "agriculture de conservation",
+    "transition agroécologique",
+    "pratiques agricoles durables",
+    "espèces protégées",
+    "aires protégées"
+],
+"biodiversité_solutions_indirectes": # 1.3.4.2
+[ 
+    "économie circulaire",
+    "manger bio",
+    "zéro artificialisation nette",
+    "ZAN",
+    "réserves naturelles",
+    "le droit de l’environnement",
+    "infrastructures résilientes",
 ]
 }

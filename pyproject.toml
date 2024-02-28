@@ -10,6 +10,8 @@ name = "pypi-public"
 url = "https://pypi.org/simple/"
 priority = "primary"
 
+[pytest]
+log_level = DEBUG
 
 [[tool.poetry.source]]
 name = "PyPI"

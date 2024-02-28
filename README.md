@@ -247,9 +247,11 @@ Thanks to the nginx container, we can have a local server for sitemap :
 
 ```
 docker compose up -d nginx # used to scrap sitemap locally - a figaro like website with only 3 news
-pytest test # "test" is the folder containing tests
+# docker compose up test with entrypoint modified to sleep
+# docker exec test bash
+pytest -vv --log-level DEBUG test # "test" is the folder containing tests
 # Only one test
-pytest -k 'mediatree' 
+pytest -vv --log-level DEBUG -k detect
 # OR
 docker compose up test # test is the container name running pytest test
 ```

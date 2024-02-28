@@ -57,17 +57,46 @@ def is_word_in_sentence(words: str, sentence: str) -> bool :
     else:
         return False
 
-# some keywords are contained inside other keywords, we need to filter them
 
-def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict]) -> List[dict]:
-    # Group keywords by timestamp
-    grouped_keywords = {timestamp: list(group) for timestamp, group in groupby(keywords_with_timestamp, key=lambda x: x['timestamp'])}
+def set_timestamp_with_margin(keywords_with_timestamp: List[dict]) -> List[dict]:
+    number_of_keywords = len(keywords_with_timestamp)
+    if number_of_keywords > 1:
+        for i in range(len(keywords_with_timestamp) - 1):
+            current_timestamp = keywords_with_timestamp[i].get("timestamp")
+            next_timestamp = keywords_with_timestamp[i + 1].get("timestamp")
+
+            if current_timestamp is not None and next_timestamp is not None:           
+                if next_timestamp - current_timestamp < 1000:
+                    
+                    current_keyword = keywords_with_timestamp[i].get("keyword")
+                    next_keyword = keywords_with_timestamp[i + 1].get("keyword")
+                    logging.info(f"Close keywords - we group them {next_keyword} - {current_keyword}")
+                    if len(current_keyword) > len(next_keyword):
+                        timestamp_to_change = current_timestamp
+                    else:
+                        timestamp_to_change = next_timestamp
+                    keywords_with_timestamp[i]["timestamp"] = timestamp_to_change
+                    keywords_with_timestamp[i+1]["timestamp"] = timestamp_to_change
+
+    return keywords_with_timestamp
+
+# some keywords are contained inside other keywords, we need to filter them
+def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> List[dict]:
+    logging.info(f"Filtering keywords with same timestamp with a margin of one second")
+    number_of_keywords = len(keywords_with_timestamp) 
+    keywords_with_timestamp = set_timestamp_with_margin(keywords_with_timestamp)
+    # Group keywords by timestamp - with a margin of 1 second 
+    grouped_keywords = {timestamp: list(group) for timestamp, group in groupby(keywords_with_timestamp, key=lambda x: round(x['timestamp'], -1))}
 
     # Filter out keywords with the same timestamp and keep the longest keyword
     result = [
         max(group, key=lambda x: len(x['keyword']))
         for group in grouped_keywords.values()
     ]
+    final_result = len(result)
+
+    if final_result < number_of_keywords:
+        logging.info(f"Filtering keywords {number_of_keywords} out of {final_result}")
 
     return result
 

@@ -2,7 +2,7 @@ import pytest
 import pandas as pd
 
 from utils import get_localhost
-from quotaclimat.data_processing.mediatree.utils import get_yesterday, get_date_range, get_start_end_date_env_variable_with_default, is_it_tuesday
+from quotaclimat.data_processing.mediatree.utils import *
 
 import logging
 from time import strftime,localtime

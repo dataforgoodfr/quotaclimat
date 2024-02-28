@@ -67,6 +67,12 @@ def test_get_themes_keywords_duration():
      ,"adaptation_climatique_solutions_directes"
     ],[], 0]
 
+
+    assert get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start) == [[
+      "changement_climatique_consequences"
+     ,"atténuation_climatique_solutions_directes"
+    ],[], 0]
+
 def test_get_cts_in_ms_for_keywords():
     str = [{
           "duration_ms": 34,
@@ -310,7 +316,7 @@ def test_complexe_filter_and_tag_by_theme():
             "text": "planète"
             },{
             "duration_ms": 34,
-            "cts_in_ms":original_timestamp + 10,
+            "cts_in_ms": original_timestamp + get_keyword_time_separation_ms(),
             "text": "conditions"
             },{
             "duration_ms": 34,
@@ -354,16 +360,16 @@ def test_complexe_filter_and_tag_by_theme():
         ],
         "keywords_with_timestamp": [{
                 "keyword" : 'habitabilité de la planète',
-                "timestamp": 1706437079006, # count for one
+                "timestamp": original_timestamp_first_keyword, # count for one
                 "theme":"changement_climatique_constat",
             },
             {
                 "keyword" : 'conditions de vie sur terre',
-                "timestamp": 1706437079010, # timestamp too close
+                "timestamp": original_timestamp + get_keyword_time_separation_ms(), # timestamp too close
                 "theme":"changement_climatique_constat",
             }
         ]
-        ,"number_of_keywords": 1
+        ,"number_of_keywords": 2
     }])
 
     # List of words to filter on
@@ -614,7 +620,7 @@ def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
     
     assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
 
-def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
+def test_keyword_2words_inside_keyword_filter_keyword_with_same_timestamp():
     keywords_with_timestamp = [{
                 "keyword" : 'agriculture',
                 "timestamp": original_timestamp,
@@ -636,6 +642,59 @@ def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
 
     assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
 
+# we should keep the longest keyword, even it's come before the first one
+def test_keyword_second_word_a_bit_later_inside_keyword_filter_keyword_with_same_timestamp():
+    later_timestamp = original_timestamp + 960 # from real data
+    keywords_with_timestamp = [{
+                "keyword" : 'carbone',
+                "timestamp": later_timestamp,
+                "theme":"changement_climatique_causes_directes",
+            },
+            {
+                "keyword" : 'béton bas carbone',
+                "timestamp": original_timestamp, # same timestamp, so we take longest keyword
+                "theme":"atténuation_climatique_solutions_directes", # different theme, keep this one
+            }
+    ]
+
+    expected = [{
+                "keyword" : 'béton bas carbone',
+                "timestamp": original_timestamp, # same timestamp, so we take longest keyword
+                "theme":"atténuation_climatique_solutions_directes", # different theme, keep this one
+            }
+    ]
+
+    assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
+
+# we should keep the longest keyword, even it's come before the first one
+def test_keyword_second_word_to_keep_inside_keyword_filter_keyword_with_same_timestamp():
+    keywords_with_timestamp = [{
+                    "theme": "changement_climatique_consequences",
+                    "timestamp": 1707627703040,
+                    "keyword": "pénurie"
+            },
+            {
+                "theme":"atténuation_climatique_solutions_directes", # different theme, keep this one
+                "timestamp": 1707627708051,
+                "keyword": "barrages"
+            },
+    ]
+
+    expected = [
+        {
+                "keyword": "pénurie",
+                "timestamp": 1707627703040,
+                "theme": "changement_climatique_consequences",
+        },
+        {
+            "keyword" : 'barrages',
+            "timestamp": 1707627708051, # same timestamp, so we take longest keyword
+            "theme":"atténuation_climatique_solutions_directes", # different theme, keep this one
+        }
+    ]
+
+    assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
+
 def test_filter_keyword_with_same_timestamp():
     keywords_with_timestamp = [{ #nothing to filter
                 "keyword" : "période la plus chaude",
@@ -644,7 +703,7 @@ def test_filter_keyword_with_same_timestamp():
             },
             {
                 "keyword" : "élévation du niveau de la mer",
-                "timestamp": original_timestamp + 1,
+                "timestamp": original_timestamp + 1200, # margin superior to 1000ms
                 "theme":"changement_climatique_consequences",
             }
     ]

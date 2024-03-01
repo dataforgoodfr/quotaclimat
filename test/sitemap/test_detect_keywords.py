@@ -400,6 +400,7 @@ def test_format_word_regex():
     assert format_word_regex("voiture") == "voitures?"
     assert format_word_regex("coraux") == "coraux"
     assert format_word_regex("d'eau") == "d' ?eaus?"
+    assert format_word_regex("réseaux") == "réseaux?"
 
 def test_overlap_count_keywords_duration_overlap_without_indirect():
     keywords_with_timestamp = [{

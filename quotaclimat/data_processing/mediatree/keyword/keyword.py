@@ -8,7 +8,6 @@ THEME_KEYWORDS = {
             ,"cycle du carbone", "effet de serre", "neutralité carbone", "neutralité climatique", "croissance verte", "décarbonation"
             ,"protection de la planète", "habitabilité de la planète", "conditions de vie sur terre"
             ,"soutenabilité environnementale"
-            ,"développement durable"
             ,"dépolluer"
             ,"protection du vivant", "protection des océans"
             ,"crise planétaire"
@@ -16,6 +15,16 @@ THEME_KEYWORDS = {
             ,"Conférence des Parties", "conférence climat", "conférence des Nations Unies sur le climat"
             ,"GIEC", "Haut conseil pour le climat", "convention des nations unies sur le climat"
             ,"transition agricole", "transition énergétique"
+            ,"empreinte carbone"
+            ,"bilan carbone"
+            ,"COP vingt-et-un"
+            ,"COP quinze"
+            ,"COP vingt-six"
+            ,"COP vingt-sept"
+            ,"COP vingt-huit"
+            ,"COP vingt-neuf"
+            ,"COP trente"
+            ,"conférence des Nations Unies sur les changements climatiques"
         ]
 ,
 "changement_climatique_causes_directes" : [ # 1.1.2.1
@@ -25,6 +34,7 @@ THEME_KEYWORDS = {
         "carbone",
         "polluant",
         "co2",
+        "co deux",
         "méthane",
         "émissions territoriales",
         "émissions importées",
@@ -42,7 +52,7 @@ THEME_KEYWORDS = {
     "malbouffe"
     ,"agricole", "agriculture", "agriculteur",
     "bâtiment", "Chauffage",
-    "transport", "automobile", "voiture", "aviation", "SUV",
+    "transport", "automobile", "voiture", "aviation", "SUV","avion",
     "industrie", "secteur tertiaire",
     "énergie", "énergétique",
     "déchets",
@@ -58,12 +68,15 @@ THEME_KEYWORDS = {
      "kérosène",
      "lignite",
      "essence",
+     "diesel",
      "pompes à essence",
      "gaz de schiste",
      "gaz naturel liquéfié",
      "or noir",
      "forages pétroliers",
      "puits de pétrole",
+     "forage pétrolier",
+    "puit de pétrole",
     "engrais azotés",
     "engrais de synthèse",
     "agriculture intensive",
@@ -77,10 +90,12 @@ THEME_KEYWORDS = {
 ],
 "changement_climatique_consequences" : [ # 1.1.3
     "augmentation des températures", "hausse de la température du globe", "température moyenne de surface", "élévation des températures",
-    "météorologique extrême", "phénomène climatique extrêmes",
+    "météorologique extrême",
+    "climatique extrême",
+    "montée des eaux",
     "période la plus chaude", "année la plus chaude", "mois le plus chaud", "jour le plus chaud",
-    "pénurie",
     "record de température",
+    "maladaptation",
     "élévation du niveau de la mer", "hausse du niveau de la mer", "montée du niveau de la mer", "hausse du niveau marin", "élévation du niveau marin", "montée du niveau marin", "hausse du niveau des océans", "élévation du niveau des océans", "montée du niveau des océans",
     "fonte des glaces", "fonte des glaciers", "fonte de la banquise", "diminution de la banquise", "diminution des glaciers", "disparition des glaciers", "fonte des calottes glacières", "fonte du permafrost",
     "érosion côtière", "érosion des côtes", "inondations", "submersion", "submersions marines", "crues centennales",
@@ -98,6 +113,7 @@ THEME_KEYWORDS = {
     "épisodes climatiques extrêmes", "fortes pluies", "pluies extrêmes", "pluies intenses", "importantes précipitations", "inondations exceptionnelles", "crue centenaire", "cyclones",
     "mortalité forestière", "disparition des forêts"
     ,"glissement de terrain",
+    "pénurie d’eau",
     "pollution de l’air", "pollution atmosphérique", "pollution aux particules fines", "pollution à l’ozone",
     "migrations climatiques", "migrants climatiques",
     "prolifération de moustiques", "moustique tigre", "chenille processionnaire",
@@ -110,45 +126,58 @@ THEME_KEYWORDS = {
     ,"réduction/baisse des émissions de gaz à effet de serre", "réduire les émissions de gaz à effet de serre", "baisser les émissions de gaz à effet de serre",
     "diminuer les émissions de gaz à effet de serre", "sortie des énergies fossiles", "sortie du charbon", "décarbonation", "décarboner",
     "transition en dehors des énergies fossile"
-    ,"manifestation pour le climat", "marche du siècle", " marche pour le climat activisme climatique", "activiste pour le climat"
-    , "militante écologiste", "désobéissance civile"
     ,"atténuation du changement climatique"
-    ,"alternative durable", "moins polluant"
+    ,"revégétalisation"
+    ,"végétalisation"
+    , "moins polluant"
     ,"économie circulaire"
     ,"mobilité durable", "Voiture électrique", "Biocarburant"
     ,"écoconception"
     ,"réseaux de chaleur", "énergies renouvelables", "transition énergétique", "électricité décarboné", "énergies vertes",
-    "énergiesdurable", "éolien", "panneaux solaires", "solaires", "photovoltaïque", "géothermie", "hydroélectricité",
-    "barrage", "centrale hydroélectrique", "biomasse", "méthaniseur", "méthanisation", "biogaz", "bois-énergie", 
+    "énergiesdurable", "éolien",
+    #  "panneaux solaires", # publicités
+     "énergie solaire",
+      # "photovoltaïque", # publicités
+       "géothermie", "hydroélectricité",
+       "réduction du gaspillage énergétique",
+     "centrale hydroélectrique", "biomasse", "méthaniseur", "méthanisation", "biogaz", "bois-énergie", 
     "nucléaire", "réacteurs nucléaires", "EPR", "hydrogène vert"
     ,"économies d’énergie", "lutte contre les gaspillages énergétiques", "réduction des gaspillages énergétique", "efficacité énergétique", "économiser de l’énergie",
      "sobriété énergétique"
-    ,"recyclage", "compostage", "valorisation des déchets", "zéro plastique"
-    ,"ciments durables", "ciments de nouvelle génération", "béton bas carbone"
-    ,"captage et stockage de carbone", "captage et stockage de CO2", "capture et séquestration de carbone", "séquestration du carbone"
-    ,"absorption du carbone", "puits de carbone", "puits carbone", "CCS", "BECCS"
-    ,"rénovation énergétique"
+    , "valorisation des déchets", "zéro plastique"
+    ,"ciments durables", "ciments de nouvelle génération", "béton bas carbone", "bas carbone", "captage et stockage",
+    "capture et séquestration de carbone", "séquestration du carbone"
+    ,"absorption du carbone", "puits de carbone", "puits carbone"
     ,"industrie verte"
-    ,"agriculture biologique", "agroécologie", "polyculture élevage", "agroforesterie", "permaculture"
+    ,"agriculture biologique", "agroécologie", "polyculture élevage", "agroforesterie"
     ,"quotas de pêche"
-    ,"label bio", "label AB", "label HVE"
     ,"stockage du carbone dans les sols", "réduction du cheptel", "agriculture de conservation"
     ,"restauration des tourbières", "protection des tourbières", "stockage du carbone dans les sols", "biochar", "restauration des zones humides"
-    ,"végétarien", "vegan"
     ,"lutte contre le gaspillage alimentaire", "réduction du gaspillage alimentaire", "antigaspi", "antigaspillage"
     ,"puits de carbone", "puits carbone"
-    ,"taxe carbone"
-    ,"décroissance"
     ,"sobriété"
 ]
 ,"atténuation_climatique_solutions_indirectes": [ # 	1.1.4.2
+    "manifestation pour le climat", "marche du siècle", " marche pour le climat activisme climatique", 
+    "activiste pour le climat",
+    "militante écologiste", "désobéissance civile",
+    "taxe carbone",
+    "décroissance",
+    "agriculture biologique",
+    "permaculture",
+    "label bio", "label AB", "label HVE","label éco", "label écologique",
     "éducation au changement climatique"
-    ,"covoiturage", "vélos", "marche à pied"
+    #,"covoiturage" # publicité
+    ,"recyclage", "compostage"
+    , "vélos", "marche à pied"
+    ,"végétarien", "vegan"
     ,"train", "transport ferroviaire", "SNCF"
     ,"transport maritime"
-    ,"transports collectifs", "transports en commun", "bus électrique", "bus"
+    ,"transports collectifs", "transports en commun", "bus électrique", "bus", "tramway"
     ,"bois d’oeuvre"
-    ,"isolation", "isolation thermique", "pompes à chaleur", "changement de chaudière"
+    ,"isolation", "isolation thermique",
+    # "pompes à chaleur", publicité
+     "changement de chaudière"
     , "chaudière biomasse"
     ,"matériaux biosourcés", "matériaux recyclés", "matériaux recyclables"
     ,"forêt"
@@ -156,18 +185,26 @@ THEME_KEYWORDS = {
     ,"biodégradable"
     ,"espaces verts"
     ,"prairies"
-    ,"moins de viande", "viande rouge"
+    ,"moins de viande"
     ,"camions électriques", "poids lourds électriques", "transport ferroviaire de marchandises", "fret ferroviaire", "transport fluvial de marchandises"
     ,"forêt mosaïque"
     ,"Baisse du trafic aérien"
     ,"zadisme","zadiste","zad"
+    ,"agriculture bio"
+    ,"agriculture durable"
+    , "transition écologique"
+    ,"développement durable"
+    ,"alternative durable"
+    ,"transition climatique"
+    ,"planification écologique"
+    ,"mutation écologique"
+    , "rénovation énergétique"
 ]
 ,
 "adaptation_climatique_solutions_directes": # 1.1.5.1
 [
     "adaptation au changement climatique", "adaptation au dérèglement climatique", "adaptation au réchauffement climatique"
     , "adaptation au réchauffement climatique", "adaptation climatique"
-    ,"maladaptation"
     ,"renforcer les digues", "renforcer les dunes", "gestion du littoral", "prévention des inondations"
     , "limiter l’érosion des côtes", "lutter contre l’érosion"
     ,"gestion durable des forêts", "agroforesterie"
@@ -179,8 +216,9 @@ THEME_KEYWORDS = {
     ,"restriction d’eau"
     ,"réutilisation des eaux usées traitées"
     ,"désalinisation des eaux "
-    ,"îlots de fraîcheur"
-    ,"revégétalisation", "renaturer", "reforestation"
+    ,"îlots de fraîcheur",
+
+     "renaturer", "reforestation"
     ,"résistant à la sécheresse"
     ,"prévention des catastrophes naturelles"
 ],
@@ -191,6 +229,8 @@ THEME_KEYWORDS = {
     ,"gestion des milieux aquatiques"
     ,"sorgho"
     ,"myscanthus" 
+    ,"mega bassine"
+    ,"barrage"
 ],
 "ressources_naturelles_concepts_generaux": # 1.2.1
 [
@@ -263,10 +303,10 @@ THEME_KEYWORDS = {
     "décroissance"
     ,"efficacité énergétique"
     ,"récupérateur d’eau", "stockage d’eau"
-    ,"réemploi", "recyclage", "réparabilité", "repair cafés", "recycleries"
+    ,"réemploi", "réparabilité", "repair cafés", "recycleries"
     ,"réutilisation des ressources","ressources renouvelables", "lutte contre les gaspillage", "antigaspi"
     ,"santé des sols", "préservation des sols"
-    ,"planification écologique", "transition écologique", "transformation écologique", "mutation écologique", "économie circulaire", "économie du réemploi"
+    ,"transformation écologique", "économie circulaire", "économie du réemploi"
     ,"malus écologique"
     ,"indice de réparabilité"
 ],
@@ -283,6 +323,13 @@ THEME_KEYWORDS = {
     ,"ecosystème", "écosystémique", "services écosystémiques", "restauration des écosystèmes", "processus écosystémiques", "résilience des écosystèmes"
     , "écosystème dégradé", "dégradation des écosystèmes", "contribution de la nature"
     ,"IPBES"
+    ,"COP sur la biodiversité"
+    ,"COP15"
+    ,"COP 15"
+    ,"COP quinze"
+    ,"Union internationale pour la conservation de la nature"
+    ,"UICN"
+    ,"sommet sur la biodiversité"
     ,"fertilité des sols", "pollinisation"
     ,"intégrité écologique"
     ,"interactions entre les êtres vivants"
@@ -310,7 +357,8 @@ THEME_KEYWORDS = {
     "herbicides",
     "fongicides",
     "intrants",
-    "engrais azotés et phosphatés",
+    "engrais azotés",
+    "engrais phosphatés",
     "perturbateurs endocriniens",
     "métaux lourds",
     "pollution de l’air",
@@ -329,14 +377,11 @@ THEME_KEYWORDS = {
     "surpêche",
     "extractivisme",
     "extractiviste",
-    "OGM",
+    # "OGM", publicité
     "organismes génétiquement modifiées",
     "nouvelles techniques génomiques",
     "NGT",
     "huile de palme",
-    "corail",
-    "coraux",
-    "récifs coralliens",
     "tourisme de masse",
     "urbanisation",
     "l’étalement urbain",
@@ -351,17 +396,22 @@ THEME_KEYWORDS = {
 ],
 "biodiversité_conséquences": # 1.3.3
 [
+    "corail",
+    "coraux",
+    "récifs coralliens",
+    "récif de corail",
+    "barrière de corail",
     "espèce menacée", "espèce menacée d’extinction", "Extinction", "crise d'extinction de masse", "en voie de disparition", "Liste rouge de l'UICN"
     , "liste rouge des espèces menacées", "disparition des oiseaux", "disparition des insectes"
     ,"migration des espèces"
     ,"désertification"
-    ,"zoonose", "santé animale et végétale", "menace zoologique", "zoonoses virales"
-    , "des maladies vectorielles", "propagation de maladies infectieuses"
-    , "propagation des espèces exotiques envahissantes", "prolifération des organismes nuisibles", "prolifération des maladies émergentes", "moustique tigre"
+    ,"zoonose", "santé animale", "santé végétale", 
+    "menace zoologique", "zoonoses virales"
+    , "des maladies vectorielles"
+    , "propagation des espèces exotiues envahissantes", "prolifération des organismes nuisibles", "prolifération des maladies émergentes", "moustique tigre"
     ,"abeilles"
     ,"perte de biodiversité des sols", "baisse du stockage du carbone dans les sols", "dégradation des puits de carbone"
     , "dégradation des sols", "diminution des rendements des cultures", "perturbation du cycle de l’eau"
-    ,"Détérioration des conditions de santé"
 ],
 "biodiversité_solutions_directes": # 1.3.4.1
 [ 
@@ -388,13 +438,21 @@ THEME_KEYWORDS = {
     "végétalisation des villes",
     "réserve naturelle",
     "Agroforesterie",
-    "agriculture biologique",
+    "revégétalisation","renaturer",
+    "protection des côtes",
+    "réserve de biosphère",
     "agroécologie",
     "agriculture de conservation",
     "transition agroécologique",
     "pratiques agricoles durables",
     "espèces protégées",
-    "aires protégées"
+    "aires protégées",
+    "protection des espèces",
+    "protection de la barrière de corail",
+    "protection des coraux",
+    "protection du récif corallien",
+    "restauration des coraux",
+    "restauration du récif corallien "
 ],
 "biodiversité_solutions_indirectes": # 1.3.4.2
 [ 

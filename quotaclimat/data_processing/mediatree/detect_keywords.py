@@ -42,6 +42,8 @@ def format_word_regex(word: str) -> str:
         return word + "s?"
     elif word.endswith('s'):
         return word + '?'
+    elif word.endswith('x'):
+        return word + '?'
     else:
         return word
 

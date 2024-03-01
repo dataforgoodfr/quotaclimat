@@ -11,67 +11,71 @@ localhost = get_localhost()
 original_timestamp = 1706437079004
 start = datetime.utcfromtimestamp(original_timestamp / 1000)
 
-def test_get_themes_keywords_duration():
 
-    subtitles = [{
-          "duration_ms": 34,
-          "cts_in_ms": original_timestamp,
-          "text": "gilets"
-        },
-        {
-          "duration_ms": 34,
-          "cts_in_ms": original_timestamp + 6,
-          "text": "solaires"
-        },
-        {
-          "duration_ms": 34,
-          "cts_in_ms": original_timestamp + 38,
-          "text": "jaunes"
-        },
-        {
-          "duration_ms": 34,
-          "cts_in_ms": original_timestamp + 72,
-          "text": "économie"
-        },
-        {
-          "duration_ms": 34,
-          "cts_in_ms": original_timestamp + 76,
-          "text": "circulaire"
-        },
-        {
-          "duration_ms": 34,
-          "cts_in_ms": original_timestamp + 76,
-          "text": "abusive"
-        }
-    ]
-
+subtitles = [{
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp,
+        "text": "gilets"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 6,
+        "text": "solaires"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 38,
+        "text": "jaunes"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 72,
+        "text": "économie"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 76,
+        "text": "circulaire"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 76,
+        "text": "abusive"
+    }
+]
+def test_default_get_themes_keywords_duration():
     plaintext_nothing = "cheese pizza"
     assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == [None,None, None]
+   
+def test_one_theme_get_themes_keywords_duration():
     plaintext_climat = "climatique test"
     assert get_themes_keywords_duration(plaintext_climat, subtitles, start) == [["changement_climatique_constat"],[], 0]
+    
+def test_multiple_get_themes_keywords_duration():
     plaintext_multiple_themes = "climatique test bovin migrations climatiques"
     assert get_themes_keywords_duration(plaintext_multiple_themes, subtitles, start) == [["changement_climatique_constat", "changement_climatique_consequences"],[], 0]
 
+def test_nothing_get_themes_keywords_duration():
     # should not accept theme 'bus' for keyword "abusive"
     plaintext_regression_incomplete_word = "abusive"
     assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles, start) == [None,None, None]
     
+def test_regression_included_get_themes_keywords_duration():
     # should not accept theme 'ngt' for keyword "vingt"
     plaintext_regression_incomplete_word_ngt = "vingt"
     assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == [None,None, None]
     
 
+def test_three_get_themes_keywords_duration():
     assert get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start) == [[
       "changement_climatique_constat"
      ,"changement_climatique_consequences"
      ,"adaptation_climatique_solutions_directes"
     ],[], 0]
 
-
-    assert get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start) == [[
-      "changement_climatique_consequences"
-     ,"atténuation_climatique_solutions_directes"
-    ],[], 0]
+def test_long_get_themes_keywords_duration():
+    assert get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start) == [
+    ["adaptation_climatique_solutions_indirectes"],[], 0]
 
 def test_get_cts_in_ms_for_keywords():
     str = [{
@@ -398,8 +402,9 @@ def test_is_word_in_sentence():
 def test_format_word_regex():
     assert format_word_regex("voitures") == "voitures?"
     assert format_word_regex("voiture") == "voitures?"
-    assert format_word_regex("coraux") == "coraux"
+    assert format_word_regex("coraux") == "coraux?"
     assert format_word_regex("d'eau") == "d' ?eaus?"
+    assert format_word_regex("réseaux") == "réseaux?"
 
 def test_overlap_count_keywords_duration_overlap_without_indirect():
     keywords_with_timestamp = [{

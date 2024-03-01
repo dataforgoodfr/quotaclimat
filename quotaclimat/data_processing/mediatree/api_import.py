@@ -61,7 +61,7 @@ def get_channels():
     else: #prod  - all channels
         logging.warning("All channels are used")
         return ["tf1", "france2", "fr3-idf", "france5", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
-        "europe1", "france-culture", "france-inter", "nrj", "rmc", "rtl", "rtl2"]
+        "europe1", "france-culture", "france-inter", "sud-radio", "rmc", "rtl", "france24"]
 
     return channels
 
@@ -99,7 +99,7 @@ async def get_and_save_api_data(exit_event):
 # @see https://github.com/jd/tenacity/tree/main
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
 def get_auth_token(password=password, user_name=USER):
-    logger.info(f"Getting a token for user {user_name}")
+    logging.info(f"Getting a token for user {user_name}")
     try:
         post_arguments = {
             'grant_type': 'password'
@@ -201,7 +201,7 @@ def extract_api_sub(
 
 def parse_raw_json(response):
     if response.status_code == 504:
-        logger.error(f"Mediatree API server error 504 (retry enabled)\n {response.content}")
+        logging.error(f"Mediatree API server error 504 (retry enabled)\n {response.content}")
         raise Exception
     else:
         return json.loads(response.content.decode('utf_8'))
@@ -215,7 +215,7 @@ def parse_number_pages(response_sub) -> int :
 def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFrame]:
     with sentry_sdk.start_transaction(op="task", name="parse_reponse_subtitle"):
         total_results = parse_total_results(response_sub)
-        logging.getLogger("modin.logger.default").setLevel(logging.WARNING)
+        logging.getLogger("modin.logging.default").setLevel(logging.WARNING)
         if(total_results > 0):
             logging.info(f"{total_results} 'total_results' field")
             
@@ -244,7 +244,7 @@ def log_dataframe_size(df, channel):
 
 async def main():
     with monitor(monitor_slug='mediatree'): #https://docs.sentry.io/platforms/python/crons/
-        logger.info("Start api mediatree import")
+        logging.info("Start api mediatree import")
         create_tables()
 
         event_finish = asyncio.Event()

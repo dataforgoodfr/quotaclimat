@@ -54,7 +54,7 @@ def test_second_row_api_import():
             "changement_climatique_constat",
             "changement_climatique_causes_indirectes",
             "changement_climatique_consequences",
-            "atténuation_climatique_solutions_directes"
+            "adaptation_climatique_solutions_indirectes"
         ]
 
         assert specific_keyword.keywords_with_timestamp == [ # from metabase to speedup check
@@ -69,14 +69,9 @@ def test_second_row_api_import():
                 "theme": "changement_climatique_constat"
             },
             {
-                "keyword": "puits de pétrole",
+                "keyword": "puit de pétrole",
                 "timestamp": 1707627628054,
                 "theme": "changement_climatique_causes_indirectes"
-            },
-            {
-                "keyword": "pénurie",
-                "timestamp": 1707627683045,
-                "theme": "changement_climatique_consequences"
             },
             {
                 "keyword": "submersion",
@@ -86,10 +81,10 @@ def test_second_row_api_import():
             {
                 "keyword": "barrage",
                 "timestamp": 1707627686004,
-                "theme": "atténuation_climatique_solutions_directes"
+                "theme": "adaptation_climatique_solutions_indirectes"
             }
         ]
-        assert specific_keyword.number_of_keywords == 4
+        assert specific_keyword.number_of_keywords == 3
 
 def test_third_row_api_import():
         primary_key = "975b41e76d298711cf55113a282e7f11c28157d761233838bb700253d47be262"

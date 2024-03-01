@@ -73,8 +73,6 @@ THEME_KEYWORDS = {
      "gaz de schiste",
      "gaz naturel liquéfié",
      "or noir",
-     "forages pétroliers",
-     "puits de pétrole",
      "forage pétrolier",
     "puit de pétrole",
     "engrais azotés",
@@ -109,8 +107,7 @@ THEME_KEYWORDS = {
     "tempête xynthia", "la roya",
     "disparition des coraux", "disparition des récifs coralliens",
     "acidification des océans",
-    "évènements climatiques extrêmes", "aléas climatiques extrêmes", "évènements météorologiques extrêmes", "évènements extrêmes", "épisodes météorologiques extrêmes", 
-    "épisodes climatiques extrêmes", "fortes pluies", "pluies extrêmes", "pluies intenses", "importantes précipitations", "inondations exceptionnelles", "crue centenaire", "cyclones",
+    "forte pluie", "pluie extrême", "pluie intense", "importantes précipitations", "inondations exceptionnelles", "crue centenaire", "cyclones",
     "mortalité forestière", "disparition des forêts"
     ,"glissement de terrain",
     "pénurie d’eau",
@@ -149,7 +146,7 @@ THEME_KEYWORDS = {
     "capture et séquestration de carbone", "séquestration du carbone"
     ,"absorption du carbone", "puits de carbone", "puits carbone"
     ,"industrie verte"
-    ,"agriculture biologique", "agroécologie", "polyculture élevage", "agroforesterie"
+    , "agroécologie", "polyculture élevage", "agroforesterie"
     ,"quotas de pêche"
     ,"stockage du carbone dans les sols", "réduction du cheptel", "agriculture de conservation"
     ,"restauration des tourbières", "protection des tourbières", "stockage du carbone dans les sols", "biochar", "restauration des zones humides"
@@ -398,7 +395,7 @@ THEME_KEYWORDS = {
 [
     "corail",
     "coraux",
-    "récifs coralliens",
+    "récif corallien",
     "récif de corail",
     "barrière de corail",
     "espèce menacée", "espèce menacée d’extinction", "Extinction", "crise d'extinction de masse", "en voie de disparition", "Liste rouge de l'UICN"

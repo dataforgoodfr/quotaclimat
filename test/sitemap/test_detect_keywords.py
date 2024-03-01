@@ -625,6 +625,15 @@ def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
     
     assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
 
+def test_keyword_different_theme_keyword_filter_keyword_with_same_timestamp():
+    keywords_with_timestamp = [
+        {'keyword': 'climatique', 'timestamp': 1693757470012, 'theme': 'changement_climatique_constat'},
+        {'keyword': 'sécheresse', 'timestamp': 1693757450073, 'theme': 'changement_climatique_consequences'},
+        {'keyword': 'sécheresse', 'timestamp': 1693757450073, 'theme': 'ressources_naturelles_concepts_generaux'}
+    ]
+        
+    assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == keywords_with_timestamp
+
 def test_keyword_2words_inside_keyword_filter_keyword_with_same_timestamp():
     keywords_with_timestamp = [{
                 "keyword" : 'agriculture',

@@ -40,7 +40,7 @@ jobs:
         git config user.name barometre-github-actions
         git config user.email barometre-github-actions@github.com
         git add pyproject.toml
-        git commit -m "[no ci]: ${{ env.PROJECT_VERSION }} bumping version"
+        git commit -m "[no ci]: $PROJECT_VERSION bumping version"
         git push origin main
     - name: Login to Scaleway Container Registry
       uses: docker/login-action@v3

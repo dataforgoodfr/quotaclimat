@@ -215,8 +215,9 @@ def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: Li
         logging.debug(f"Before filtering {total_keywords} - After filtering indirect kw {length_filtered_items}")
         if length_filtered_items > 0:
             fifteen_second_window = get_keyword_by_fifteen_second_window(filtered_themes, start)
-
-            return sum(fifteen_second_window)
+            final_count = sum(fifteen_second_window)
+            logging.debug(f"Count with 15 second logic: {final_count} keywords")
+            return final_count
         else:
             return 0
     

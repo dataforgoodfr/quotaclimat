@@ -54,14 +54,14 @@ async def update_pg_data(exit_event):
 
 def get_channels():
     if(os.environ.get("ENV") == "docker" or os.environ.get("CHANNEL") is not None):
-        default_channel = os.environ.get("CHANNEL") or "france24"
+        default_channel = os.environ.get("CHANNEL") or "france2"
         logging.warning(f"Only one channel of env var CHANNEL {default_channel} (default to france2) is used")
 
         channels = [default_channel]
     else: #prod  - all channels
         logging.warning("All channels are used")
         return ["tf1", "france2", "fr3-idf", "france5", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
-        "europe1", "france-culture", "france-inter", "sudradio", "rmc", "rtl", "france24"]
+        "europe1", "france-culture", "france-inter", "sud-radio", "rmc", "rtl", "france24"]
 
     return channels
 

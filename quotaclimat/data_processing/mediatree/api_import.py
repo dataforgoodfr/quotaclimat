@@ -150,6 +150,11 @@ def get_post_request(media_tree_token, type_sub, start_epoch, channel, page: int
         params = get_param_api(media_tree_token, type_sub, start_epoch, channel, page)
         logging.info(f"Query {KEYWORDS_URL} page {page} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, page)}")
         response = requests.post(KEYWORDS_URL, json=params)
+        if response.status_code == 401:
+            logging.warning("Expired token - retrying to get a new one")
+            media_tree_token = get_auth_token(password, USER)
+            raise Exception
+        
         return parse_raw_json(response)
     except Exception as err:
         logging.error("Retry - Could not query API :(%s) %s" % (type(err).__name__, err))

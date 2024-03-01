@@ -86,6 +86,7 @@ def test_second_row_api_import():
         ]
         assert specific_keyword.number_of_keywords == 3
 
+
 def test_third_row_api_import():
         primary_key = "975b41e76d298711cf55113a282e7f11c28157d761233838bb700253d47be262"
         specific_keyword = get_keyword(primary_key)

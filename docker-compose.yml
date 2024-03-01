@@ -5,8 +5,8 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    entrypoint: ["poetry", "run", "pytest","-vv", "--log-level", "DEBUG", "--cov-report", "term:skip-covered", "--cov=quotaclimat", "--cov=postgres", "test/"]
-    # entrypoint: ["sleep", "12000"] # use to debug the container if needed
+    entrypoint: ["poetry", "run", "pytest","-vv", "-o", "log_cli=true", "--cov-report", "term:skip-covered", "--cov=quotaclimat", "--cov=postgres", "test/"]
+    #entrypoint: ["sleep", "12000"] # use to debug the container if needed
     environment:
       ENV: docker
       # CHANNEL: "fr3-idf"
@@ -24,6 +24,7 @@ services:
       - ./postgres/:/app/postgres/
       - ./test/:/app/test/
       - ./app.py:/app/app.py
+      - ./pyproject.toml:/app/pyproject.toml
     depends_on:
       nginxtest:
         condition: service_healthy

@@ -16,7 +16,7 @@ def clean_data(df: pd.DataFrame):
 # from https://stackoverflow.com/a/69421596/3535853
 def insert_or_do_nothing_on_conflict(table, conn, keys, data_iter):
     data = [dict(zip(keys, row)) for row in data_iter]
-    logging.debug("data_iter %s", data)
+
     insert_statement = insert(table.table).values(data)
 
     on_duplicate_key_stmt = insert_statement.on_conflict_do_update(
@@ -24,7 +24,6 @@ def insert_or_do_nothing_on_conflict(table, conn, keys, data_iter):
         set_={c.key: c for c in insert_statement.excluded},
     )
 
-    logging.debug("insert_statement %s", on_duplicate_key_stmt)
     return conn.execute(on_duplicate_key_stmt)
 
 

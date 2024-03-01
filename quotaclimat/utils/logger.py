@@ -1,5 +1,5 @@
 import logging
-
+import os
 class CustomFormatter(logging.Formatter):
 
     grey = "\x1b[38;20m"
@@ -22,3 +22,16 @@ class CustomFormatter(logging.Formatter):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt)
         return formatter.format(record)
+    
+def getLogger():
+    # create logger with 'spam_application'
+    logger = logging.getLogger()
+    logger.setLevel(level=os.getenv('LOGLEVEL', 'INFO').upper())
+    # create console handler with a higher log level
+    if (logger.hasHandlers()):
+        logger.handlers.clear()
+    ch = logging.StreamHandler()
+    ch.setFormatter(CustomFormatter())
+    logger.addHandler(ch)
+
+    return logger

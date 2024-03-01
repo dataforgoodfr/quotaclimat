@@ -20,6 +20,59 @@ def test_insert_data_in_sitemap_table():
     wrong_value = 0
     # insert data
     primary_key = "test_save_to_pg_keyword"
+    plaintext = "cheese pizza habitabilité de la planète conditions de vie sur terre animal digue"
+    srt = [{
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 6,
+            "text": "habitabilité"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 10,
+            "text": "de"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 11,
+            "text": "la"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 12,
+            "text": "planète"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 15000,
+            "text": "conditions"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 15500,
+            "text": "de"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 16000,
+            "text": "vie"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 17000,
+            "text": "sur"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 18000,
+            "text": "terre"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 32000,
+            "text": "digue"
+            }
+    ]
+
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": original_timestamp + 6, 
@@ -27,40 +80,41 @@ def test_insert_data_in_sitemap_table():
             },
             {
                 "keyword" : 'conditions de vie sur terre',
-                "timestamp": original_timestamp + 10,
+                "timestamp": original_timestamp + 15000,
                 "theme":"changement_climatique_constat",
             },
             {
-                "keyword" : 'planète',
+                "keyword" : 'planète', # should not be there
                 "timestamp": original_timestamp + 9,
                 "theme":"ressources_naturelles_concepts_generaux",
             },
             {
-                "keyword" : 'terre',
+                "keyword" : 'terre', # should not be there
                 "timestamp": original_timestamp + 11,
                 "theme":"ressources_naturelles_concepts_generaux",
             },
             {
                 "keyword" : 'digue',
-                "timestamp": original_timestamp + 12,
-                "theme":"adaptation_climatique_solutions_indirectes",
+                "timestamp": original_timestamp + 32000,
+                "theme":"wrong_theme",
             }
         ]
     themes = [
             "changement_climatique_constat",
             "ressources_naturelles_concepts_generaux",
             "adaptation_climatique_solutions_indirectes"
-        ]
+    ]
     channel_name = "m6"
     df = pd.DataFrame([{
         "id" : primary_key,
         "start": start,
-        "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
+        "plaintext": plaintext,
         "channel_name": channel_name,
         "channel_radio": False,
         "theme": themes,
-        "keywords_with_timestamp": keywords_with_timestamp
-        ,"number_of_keywords": wrong_value # wrong data to reapply our custom logic for "new_value"
+        "keywords_with_timestamp": keywords_with_timestamp,
+        "srt": srt,
+        "number_of_keywords": wrong_value # wrong data to reapply our custom logic for "new_value"
     }]) 
     df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
    
@@ -72,7 +126,31 @@ def test_insert_data_in_sitemap_table():
     update_keywords(session)
     result_after_update = get_keyword(primary_key)
 
-    new_value = count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start)
+    new_theme, new_keywords_with_timestamp, new_value = get_themes_keywords_duration(plaintext, srt, start)
+
+    expected_keywords_with_timestamp = [{
+                "keyword" : 'habitabilité de la planète',
+                "timestamp": original_timestamp + 6, 
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'conditions de vie sur terre',
+                "timestamp": original_timestamp + 15000,
+                "theme":"changement_climatique_constat",
+            },
+            {
+                "keyword" : 'digue',
+                "timestamp": original_timestamp + 32000,
+                "theme":"adaptation_climatique_solutions_indirectes",
+            }
+    ]
     assert result_after_update.id == result_before_update.id
+    # number_of_keywords
+    assert new_value == 2
     assert result_after_update.number_of_keywords == new_value
     assert result_before_update.number_of_keywords == wrong_value
+    # keywords_with_timestamp
+    assert result_after_update.keywords_with_timestamp == new_keywords_with_timestamp
+    assert expected_keywords_with_timestamp == new_keywords_with_timestamp
+    # theme
+    assert result_after_update.theme == ["changement_climatique_constat", "adaptation_climatique_solutions_indirectes"]

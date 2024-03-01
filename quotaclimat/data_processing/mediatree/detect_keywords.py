@@ -69,8 +69,10 @@ def set_timestamp_with_margin(keywords_with_timestamp: List[dict]) -> List[dict]
             current_keyword = keywords_with_timestamp[i].get("keyword")
             next_keyword = keywords_with_timestamp[i + 1].get("keyword")
 
-            if current_timestamp is not None and next_timestamp is not None:           
-                if next_timestamp - current_timestamp < 1000:
+            if current_timestamp is not None and next_timestamp is not None: 
+                difference = next_timestamp - current_timestamp
+                if difference < 1000 and difference != 0:
+                    logging.debug("margin of 1 second detected")
                     current_keyword = keywords_with_timestamp[i].get("keyword")
                     next_keyword = keywords_with_timestamp[i + 1].get("keyword")
                     if len(current_keyword) > len(next_keyword):
@@ -90,10 +92,18 @@ def set_timestamp_with_margin(keywords_with_timestamp: List[dict]) -> List[dict]
     return keywords_with_timestamp
 
 # some keywords are contained inside other keywords, we need to filter them
+# some keyword are tagged with the same timestamp and different theme
 def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> List[dict]:
     logging.debug(f"Filtering keywords with same timestamp with a margin of one second")
-    number_of_keywords = len(keywords_with_timestamp) 
-    keywords_with_timestamp = set_timestamp_with_margin(keywords_with_timestamp)
+    number_of_keywords = len(keywords_with_timestamp)
+
+    # we want to keep them
+    same_keyword_different_theme = [item for item in keywords_with_timestamp if len(list(filter(lambda x: x.get('keyword') == item.get('keyword') and x.get('theme') != item.get('theme'), keywords_with_timestamp))) > 0]
+    logging.debug(f"Same keyword different theme {same_keyword_different_theme}")
+    # keep the longest keyword based on almost or the same timestamp
+    unique_keywords = [item for item in keywords_with_timestamp if len(list(filter(lambda x: x.get('keyword') == item.get('keyword') and x.get('theme') != item.get('theme'), keywords_with_timestamp))) == 0]
+    logging.debug(f"Unique keywords {unique_keywords}")
+    keywords_with_timestamp = set_timestamp_with_margin(unique_keywords)
     # Group keywords by timestamp - with a margin of 1 second 
     grouped_keywords = {timestamp: list(group) for timestamp, group in groupby(keywords_with_timestamp, key=lambda x: x['timestamp'])}
 
@@ -102,6 +112,9 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> Li
         max(group, key=lambda x: len(x['keyword']))
         for group in grouped_keywords.values()
     ]
+    logging.debug(f"result keywords {result}")
+    result = result + same_keyword_different_theme
+
     final_result = len(result)
 
     if final_result < number_of_keywords:
@@ -206,3 +219,4 @@ def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: Li
             return sum(fifteen_second_window)
         else:
             return 0
+    

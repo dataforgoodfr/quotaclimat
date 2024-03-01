@@ -8,7 +8,7 @@ from time import sleep
 import sys
 import os
 from quotaclimat.utils.healthcheck_config import run_health_check_server
-from quotaclimat.utils.logger import CustomFormatter
+from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.config import *
 from quotaclimat.data_processing.mediatree.update_pg_keywords import *
@@ -214,9 +214,8 @@ def parse_number_pages(response_sub) -> int :
 
 def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFrame]:
     with sentry_sdk.start_transaction(op="task", name="parse_reponse_subtitle"):
-        logging.debug(f"Parsing json response:\n {response_sub}")
-        
         total_results = parse_total_results(response_sub)
+        logging.getLogger("modin.logger.default").setLevel(logging.WARNING)
         if(total_results > 0):
             logging.info(f"{total_results} 'total_results' field")
             
@@ -230,8 +229,7 @@ def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFram
             new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)
 
             log_dataframe_size(new_df, channel)
-
-            logging.debug("Parsed %s" % (new_df.head(1).to_string()))
+            
             logging.debug("Parsed Schema\n%s", new_df.dtypes)
             
             return new_df
@@ -267,17 +265,7 @@ async def main():
     sys.exit(0)
 
 if __name__ == "__main__":
-    # create logger with 'spam_application'
-    logger = logging.getLogger()
-    logger.setLevel(level=os.getenv('LOGLEVEL', 'INFO').upper())
-
-    # create console handler with a higher log level
-    if (logger.hasHandlers()):
-        logger.handlers.clear()
-    ch = logging.StreamHandler()
-    ch.setFormatter(CustomFormatter())
-    logger.addHandler(ch)
-
+    getLogger()
     asyncio.run(main())
     sys.exit(0)
 

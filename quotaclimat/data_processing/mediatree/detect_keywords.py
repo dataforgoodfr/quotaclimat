@@ -12,7 +12,7 @@ from itertools import groupby
 import sentry_sdk
 import modin.pandas as pd
 import dask
-
+from quotaclimat.utils.logger import getLogger
 dask.config.set({'dataframe.query-planning': True})
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str], theme: str) -> List[dict]:
@@ -49,7 +49,7 @@ def format_word_regex(word: str) -> str:
 def is_word_in_sentence(words: str, sentence: str) -> bool :
     # words can contain plurals and several words
     words = ' '.join(list(map(( lambda x: format_word_regex(x)), words.split(" "))))
-    logging.debug(f"testing {words}")
+
     #  test https://regex101.com/r/ilvs9G/1/
     if re.search(rf"\b{words}(?![\w-])", sentence, re.IGNORECASE):
         logging.debug(f"words {words} found in {sentence}")
@@ -57,10 +57,42 @@ def is_word_in_sentence(words: str, sentence: str) -> bool :
     else:
         return False
 
-# some keywords are contained inside other keywords, we need to filter them
 
-def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict]) -> List[dict]:
-    # Group keywords by timestamp
+def set_timestamp_with_margin(keywords_with_timestamp: List[dict]) -> List[dict]:
+    number_of_keywords = len(keywords_with_timestamp)
+    if number_of_keywords > 1:
+        for i in range(len(keywords_with_timestamp) - 1):
+            current_timestamp = keywords_with_timestamp[i].get("timestamp")
+            next_timestamp = keywords_with_timestamp[i + 1].get("timestamp")
+            current_keyword = keywords_with_timestamp[i].get("keyword")
+            next_keyword = keywords_with_timestamp[i + 1].get("keyword")
+
+            if current_timestamp is not None and next_timestamp is not None:           
+                if next_timestamp - current_timestamp < 1000:
+                    current_keyword = keywords_with_timestamp[i].get("keyword")
+                    next_keyword = keywords_with_timestamp[i + 1].get("keyword")
+                    if len(current_keyword) > len(next_keyword):
+                        shortest_word = next_keyword
+                        longest_word = current_keyword
+                        timestamp_to_change = current_timestamp
+                    else:
+                        shortest_word = current_keyword
+                        longest_word = next_keyword
+                        timestamp_to_change = next_timestamp
+                    
+                    if shortest_word in longest_word:
+                        logging.info(f"Close keywords - we group them {shortest_word} - {longest_word}")
+                        keywords_with_timestamp[i]["timestamp"] = timestamp_to_change
+                        keywords_with_timestamp[i+1]["timestamp"] = timestamp_to_change
+
+    return keywords_with_timestamp
+
+# some keywords are contained inside other keywords, we need to filter them
+def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> List[dict]:
+    logging.debug(f"Filtering keywords with same timestamp with a margin of one second")
+    number_of_keywords = len(keywords_with_timestamp) 
+    keywords_with_timestamp = set_timestamp_with_margin(keywords_with_timestamp)
+    # Group keywords by timestamp - with a margin of 1 second 
     grouped_keywords = {timestamp: list(group) for timestamp, group in groupby(keywords_with_timestamp, key=lambda x: x['timestamp'])}
 
     # Filter out keywords with the same timestamp and keep the longest keyword
@@ -68,6 +100,10 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict]) -> L
         max(group, key=lambda x: len(x['keyword']))
         for group in grouped_keywords.values()
     ]
+    final_result = len(result)
+
+    if final_result < number_of_keywords:
+        logging.info(f"Filtering keywords {final_result} out of {number_of_keywords} | {keywords_with_timestamp} with final result {result}")
 
     return result
 

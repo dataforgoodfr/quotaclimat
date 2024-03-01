@@ -5,11 +5,6 @@ description = ""
 authors = ["Rambier Estelle <estelle.rambier@hotmail.fr>"]
 readme = "README.md"
 
-[[tool.poetry.source]]
-name = "quotaclimat-public"
-url = "https://github.com/dataforgoodfr/quotaclimat"
-priority = "primary"
-
 [tool.pytest.ini_options]
 log_cli = 1
 log_cli_level = "DEBUG"

@@ -28,6 +28,7 @@ from quotaclimat.utils.sentry import sentry_init
 logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
 logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
 logging.getLogger('distributed').setLevel(logging.ERROR)
+logging.getLogger('worker').setLevel(logging.ERROR)
 sentry_init()
 
 #read whole file to a string
@@ -46,11 +47,12 @@ def refresh_token(token, date):
 # reapply word detector logic to all saved keywords
 # use when word detection is changed
 async def update_pg_data(exit_event):
-    start_offset = os.environ.get("START_OFFSET", 0)
-    logging.warning("Updating already saved data from Postgresql from offset {start_offset} - env variable START_OFFSET")
+    start_offset = int(os.environ.get("START_OFFSET", 0))
+    batch_size = int(os.environ.get("BATCH_SIZE", 50000))
+    logging.warning(f"Updating already saved data from Postgresql from offset {start_offset} - env variable START_OFFSET")
     try:
         session = get_db_session()
-        update_keywords(session, start_offset)
+        update_keywords(session, batch_size=batch_size, start_offset=start_offset)
         exit_event.set()
     except Exception as err:
         logging.error("Could update_pg_data %s:(%s) %s" % (type(err).__name__, err))

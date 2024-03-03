@@ -13,6 +13,8 @@ import sentry_sdk
 import modin.pandas as pd
 import dask
 from quotaclimat.utils.logger import getLogger
+logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
+logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
 dask.config.set({'dataframe.query-planning': True})
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str], theme: str) -> List[dict]:

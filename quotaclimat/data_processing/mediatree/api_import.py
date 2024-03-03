@@ -25,7 +25,9 @@ from sentry_sdk.crons import monitor
 import modin.pandas as pd
 from modin.pandas import json_normalize
 from quotaclimat.utils.sentry import sentry_init
-
+logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
+logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
+logging.getLogger('distributed').setLevel(logging.ERROR)
 sentry_init()
 
 #read whole file to a string

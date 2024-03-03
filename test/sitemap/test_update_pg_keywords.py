@@ -123,7 +123,7 @@ def test_insert_data_in_sitemap_table():
     # check the value is well existing
     result_before_update = get_keyword(primary_key)
     session = get_db_session(conn)
-    update_keywords(session)
+    update_keywords(session, batch_size=50)
     result_after_update = get_keyword(primary_key)
 
     new_theme, new_keywords_with_timestamp, new_value = get_themes_keywords_duration(plaintext, srt, start)
@@ -154,3 +154,4 @@ def test_insert_data_in_sitemap_table():
     assert expected_keywords_with_timestamp == new_keywords_with_timestamp
     # theme
     assert result_after_update.theme == ["changement_climatique_constat", "adaptation_climatique_solutions_indirectes"]
+    assert new_theme == ["changement_climatique_constat", "adaptation_climatique_solutions_indirectes"]

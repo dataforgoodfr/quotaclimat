@@ -32,7 +32,7 @@ def get_sitemap_cols():
 sitemap_table = "sitemap_table"
 # ALTER TABLE keywords_new_list
 # RENAME TO keywords; 
-keywords_table = "keywords_new_list"
+keywords_table = "keywords"
 
 class Sitemap(Base):
     __tablename__ = sitemap_table

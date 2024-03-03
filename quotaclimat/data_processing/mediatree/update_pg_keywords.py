@@ -9,11 +9,11 @@ from postgres.schemas.models import Keywords
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from sqlalchemy import func, select
 
-def update_keywords(session: Session, batch_size: int = 50000) -> list:
+def update_keywords(session: Session, batch_size: int = 50000, start_offset : int = 0) -> list:
     total_updates = get_total_count_saved_keywords(session)
-    logging.info(f"Updating {total_updates} saved keywords")
+    logging.info(f"Updating {total_updates} saved keywords from {start_offset} offsets - batch size {batch_size}")
 
-    for i in range(0, total_updates, batch_size):
+    for i in range(start_offset, total_updates, batch_size):
         current_batch_saved_keywords = get_keywords_columns(session, i, batch_size)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme in current_batch_saved_keywords:

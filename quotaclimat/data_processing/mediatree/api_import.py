@@ -46,10 +46,11 @@ def refresh_token(token, date):
 # reapply word detector logic to all saved keywords
 # use when word detection is changed
 async def update_pg_data(exit_event):
-    logging.info("Updating already saved data from Postgresql")
+    start_offset = os.environ.get("START_OFFSET", 0)
+    logging.warning("Updating already saved data from Postgresql from offset {start_offset} - env variable START_OFFSET")
     try:
         session = get_db_session()
-        update_keywords(session)
+        update_keywords(session, start_offset)
         exit_event.set()
     except Exception as err:
         logging.error("Could update_pg_data %s:(%s) %s" % (type(err).__name__, err))

@@ -306,6 +306,13 @@ After having updated `UPDATE` env variable to true inside docker-compose.yml and
  update_pg_keywords.py:20 | Difference old 1000 - new_number_of_keywords 0
 ```
 
+#### Batch update from an offset
+With +1 millions rows, we can update from an offset to fix a custom logic by using `START_OFFSET` to batch update PG from a offset. 
+
+~55 minutes to update 50K rows on a mVCPU 2240 - 4Gb RAM on Scaleway.
+
+Example inside the docker-compose.yml mediatree service -> START_OFFSET: 100
+
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
 ```bash

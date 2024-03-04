@@ -45,25 +45,25 @@ subtitles = [{
 ]
 def test_default_get_themes_keywords_duration():
     plaintext_nothing = "cheese pizza"
-    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == [None,None, None]
+    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
    
 def test_one_theme_get_themes_keywords_duration():
     plaintext_climat = "climatique test"
-    assert get_themes_keywords_duration(plaintext_climat, subtitles, start) == [["changement_climatique_constat"],[], 0]
+    assert get_themes_keywords_duration(plaintext_climat, subtitles, start) == [["changement_climatique_constat"],[], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     
 def test_multiple_get_themes_keywords_duration():
     plaintext_multiple_themes = "climatique test bovin migrations climatiques"
-    assert get_themes_keywords_duration(plaintext_multiple_themes, subtitles, start) == [["changement_climatique_constat", "changement_climatique_consequences"],[], 0]
+    assert get_themes_keywords_duration(plaintext_multiple_themes, subtitles, start) == [["changement_climatique_constat", "changement_climatique_consequences"],[], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 def test_nothing_get_themes_keywords_duration():
     # should not accept theme 'bus' for keyword "abusive"
     plaintext_regression_incomplete_word = "abusive"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles, start) == [None,None, None]
+    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
     
 def test_regression_included_get_themes_keywords_duration():
     # should not accept theme 'ngt' for keyword "vingt"
     plaintext_regression_incomplete_word_ngt = "vingt"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == [None,None, None]
+    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
     
 
 def test_three_get_themes_keywords_duration():
@@ -71,11 +71,11 @@ def test_three_get_themes_keywords_duration():
       "changement_climatique_constat"
      ,"changement_climatique_consequences"
      ,"adaptation_climatique_solutions_directes"
-    ],[], 0]
+    ],[], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 def test_long_get_themes_keywords_duration():
     assert get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start) == [
-    ["adaptation_climatique_solutions_indirectes"],[], 0]
+    ["adaptation_climatique_solutions_indirectes"],[], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 def test_get_cts_in_ms_for_keywords():
     str = [{
@@ -193,7 +193,19 @@ def test_filter_and_tag_by_theme():
             "ressources_naturelles_concepts_generaux"
         ],
         "keywords_with_timestamp": [],
-        "number_of_keywords": 0.0
+        "number_of_keywords": 0.0,
+        "number_of_changement_climatique_constat": 0.0,
+        "number_of_changement_climatique_causes_directes": 0.0,
+        "number_of_changement_climatique_consequences": 0.0,
+        "number_of_attenuation_climatique_solutions_directes": 0.0,
+        "number_of_adaptation_climatique_solutions_directes": 0.0,
+        "number_of_ressources_naturelles_concepts_generaux": 0.0,
+        "number_of_ressources_naturelles_causes": 0.0,
+        "number_of_ressources_naturelles_solutions": 0.0,
+        "number_of_biodiversite_concepts_generaux": 0.0,
+        "number_of_biodiversite_causes_directes": 0.0,
+        "number_of_biodiversite_consequences": 0.0,
+        "number_of_biodiversite_solutions_directes" :0.0
     },
     {
         "start": start,
@@ -203,11 +215,24 @@ def test_filter_and_tag_by_theme():
         "srt": srt,
         "theme": ["changement_climatique_consequences"],
         "keywords_with_timestamp": [],
-        "number_of_keywords": 0.0
+        "number_of_keywords": 0.0,
+        "number_of_changement_climatique_constat": 0.0,
+        "number_of_changement_climatique_causes_directes": 0.0,
+        "number_of_changement_climatique_consequences": 0.0,
+        "number_of_attenuation_climatique_solutions_directes": 0.0,
+        "number_of_adaptation_climatique_solutions_directes": 0.0,
+        "number_of_ressources_naturelles_concepts_generaux": 0.0,
+        "number_of_ressources_naturelles_causes": 0.0,
+        "number_of_ressources_naturelles_solutions": 0.0,
+        "number_of_biodiversite_concepts_generaux": 0.0,
+        "number_of_biodiversite_causes_directes": 0.0,
+        "number_of_biodiversite_consequences": 0.0,
+        "number_of_biodiversite_solutions_directes" :0.0
     }])
 
     # List of words to filter on
     df = filter_and_tag_by_theme(df1)
+    logging.info(df.dtypes)
     debug_df(df)
     pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
 
@@ -243,8 +268,20 @@ def test_lower_case_filter_and_tag_by_theme():
                 "keyword" :"méthane",
                 "timestamp": original_timestamp,
                 "theme": "changement_climatique_causes_directes",
-        }]
-        ,"number_of_keywords": 1
+        }],
+        "number_of_keywords": 1,
+        "number_of_changement_climatique_constat": 0,
+        "number_of_changement_climatique_causes_directes": 1,
+        "number_of_changement_climatique_consequences": 0,
+        "number_of_attenuation_climatique_solutions_directes": 0,
+        "number_of_adaptation_climatique_solutions_directes": 0,
+        "number_of_ressources_naturelles_concepts_generaux": 0,
+        "number_of_ressources_naturelles_causes": 0,
+        "number_of_ressources_naturelles_solutions": 0,
+        "number_of_biodiversite_concepts_generaux": 0,
+        "number_of_biodiversite_causes_directes": 0,
+        "number_of_biodiversite_consequences": 0,
+        "number_of_biodiversite_solutions_directes" :0
     }])
 
     # List of words to filter on
@@ -283,8 +320,20 @@ def test_singular_plural_case_filter_and_tag_by_theme():
                 "keyword" :"méthane",
                 "timestamp": original_timestamp,
                 "theme": "changement_climatique_causes_directes",
-        }]
-        ,"number_of_keywords": 1
+        }],
+        "number_of_keywords": 1,
+        "number_of_changement_climatique_constat": 0,
+        "number_of_changement_climatique_causes_directes": 1,
+        "number_of_changement_climatique_consequences": 0,
+        "number_of_attenuation_climatique_solutions_directes": 0,
+        "number_of_adaptation_climatique_solutions_directes": 0,
+        "number_of_ressources_naturelles_concepts_generaux": 0,
+        "number_of_ressources_naturelles_causes": 0,
+        "number_of_ressources_naturelles_solutions": 0,
+        "number_of_biodiversite_concepts_generaux": 0,
+        "number_of_biodiversite_causes_directes": 0,
+        "number_of_biodiversite_consequences": 0,
+        "number_of_biodiversite_solutions_directes" :0
     }])
 
     # List of words to filter on
@@ -372,12 +421,25 @@ def test_complexe_filter_and_tag_by_theme():
                 "timestamp": original_timestamp + get_keyword_time_separation_ms(), # timestamp too close
                 "theme":"changement_climatique_constat",
             }
-        ]
-        ,"number_of_keywords": 2
+        ],
+        "number_of_keywords": 2,
+        "number_of_changement_climatique_constat": 2,
+        "number_of_changement_climatique_causes_directes": 0,
+        "number_of_changement_climatique_consequences": 0,
+        "number_of_attenuation_climatique_solutions_directes": 0,
+        "number_of_adaptation_climatique_solutions_directes": 0,
+        "number_of_ressources_naturelles_concepts_generaux": 0,
+        "number_of_ressources_naturelles_causes": 0,
+        "number_of_ressources_naturelles_solutions": 0,
+        "number_of_biodiversite_concepts_generaux": 0,
+        "number_of_biodiversite_causes_directes": 0,
+        "number_of_biodiversite_consequences": 0,
+        "number_of_biodiversite_solutions_directes" :0
     }])
 
     # List of words to filter on
     df = filter_and_tag_by_theme(df1)
+    logging.info(df.dtypes)
     debug_df(df)
     pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
 
@@ -643,14 +705,14 @@ def test_keyword_2words_inside_keyword_filter_keyword_with_same_timestamp():
             {
                 "keyword" : 'agriculture industrielle',
                 "timestamp": original_timestamp, # same timestamp, so we take longest keyword
-                "theme":"biodiversité_causes", # different theme, keep this one
+                "theme":"biodiversite_causes", # different theme, keep this one
             }
     ]
 
     expected = [{
                 "keyword" : 'agriculture industrielle',
                 "timestamp": original_timestamp, # same timestamp, so we take longest keyword
-                "theme":"biodiversité_causes", # different theme, keep this one
+                "theme":"biodiversite_causes", # different theme, keep this one
             }
     ]
 
@@ -667,14 +729,14 @@ def test_keyword_second_word_a_bit_later_inside_keyword_filter_keyword_with_same
             {
                 "keyword" : 'béton bas carbone',
                 "timestamp": original_timestamp, # same timestamp, so we take longest keyword
-                "theme":"atténuation_climatique_solutions_directes", # different theme, keep this one
+                "theme":"attenuation_climatique_solutions_directes", # different theme, keep this one
             }
     ]
 
     expected = [{
                 "keyword" : 'béton bas carbone',
                 "timestamp": original_timestamp, # same timestamp, so we take longest keyword
-                "theme":"atténuation_climatique_solutions_directes", # different theme, keep this one
+                "theme":"attenuation_climatique_solutions_directes", # different theme, keep this one
             }
     ]
 
@@ -688,7 +750,7 @@ def test_keyword_second_word_to_keep_inside_keyword_filter_keyword_with_same_tim
                     "keyword": "pénurie"
             },
             {
-                "theme":"atténuation_climatique_solutions_directes", # different theme, keep this one
+                "theme":"attenuation_climatique_solutions_directes", # different theme, keep this one
                 "timestamp": 1707627708051,
                 "keyword": "barrages"
             },
@@ -703,7 +765,7 @@ def test_keyword_second_word_to_keep_inside_keyword_filter_keyword_with_same_tim
         {
             "keyword" : 'barrages',
             "timestamp": 1707627708051, # same timestamp, so we take longest keyword
-            "theme":"atténuation_climatique_solutions_directes", # different theme, keep this one
+            "theme":"attenuation_climatique_solutions_directes", # different theme, keep this one
         }
     ]
 

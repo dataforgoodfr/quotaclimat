@@ -118,7 +118,7 @@ THEME_KEYWORDS = {
     "espèce invasive",
     "retrait gonflement des argiles"
 ],
-"atténuation_climatique_solutions_directes" : [ # 1.1.4.1
+"attenuation_climatique_solutions_directes" : [ # 1.1.4.1
     "limiter la hausse des températures"
     ,"réduction/baisse des émissions de gaz à effet de serre", "réduire les émissions de gaz à effet de serre", "baisser les émissions de gaz à effet de serre",
     "diminuer les émissions de gaz à effet de serre", "sortie des énergies fossiles", "sortie du charbon", "décarbonation", "décarboner",
@@ -128,7 +128,7 @@ THEME_KEYWORDS = {
     ,"végétalisation"
     , "moins polluant"
     ,"économie circulaire"
-    ,"mobilité durable", "Voiture électrique", "Biocarburant"
+    ,"mobilité durable", "Biocarburant"
     ,"écoconception"
     ,"réseaux de chaleur", "énergies renouvelables", "transition énergétique", "électricité décarboné", "énergies vertes",
     "énergiesdurable", "éolien",
@@ -154,7 +154,7 @@ THEME_KEYWORDS = {
     ,"puits de carbone", "puits carbone"
     ,"sobriété"
 ]
-,"atténuation_climatique_solutions_indirectes": [ # 	1.1.4.2
+,"attenuation_climatique_solutions_indirectes": [ # 	1.1.4.2
     "manifestation pour le climat", "marche du siècle", " marche pour le climat activisme climatique", 
     "activiste pour le climat",
     "militante écologiste", "désobéissance civile",
@@ -164,6 +164,7 @@ THEME_KEYWORDS = {
     "permaculture",
     "label bio", "label AB", "label HVE","label éco", "label écologique",
     "éducation au changement climatique"
+    ,"voiture électrique"
     #,"covoiturage" # publicité
     ,"recyclage", "compostage"
     , "vélos", "marche à pied"
@@ -307,7 +308,7 @@ THEME_KEYWORDS = {
     ,"malus écologique"
     ,"indice de réparabilité"
 ],
-"biodiversité_concepts_generaux": # 1.3.1
+"biodiversite_concepts_generaux": # 1.3.1
 [
     "biodiversité", "diversité biologique", "diversité écosystémique", "diversité du vivant", "diversité des êtres vivants", "diversité génétique"
     ,"érosion de la biodiversité", "effondrement de la biodiversité", "extinction"
@@ -333,7 +334,7 @@ THEME_KEYWORDS = {
     ,"corail", "coraux", "récifs coralliens"
     ,"convention des Nations unies sur la diversité biologique", "COP biodiversité", "COP de Montréal"
 ],
-"biodiversité_causes_directes": # 1.3.2
+"biodiversite_causes_directes": # 1.3.2
 [ 
     "dégradation de l'habitat", "condition dégradée d’habitation", "destruction des habitats naturels", "perturbation des habitats"
     ,"perturbation des écosystèmes", "perte d’habitats", "écosystèmes dégradés", "dégradation des écosystèmes", "pression sur les milieux naturels"
@@ -344,7 +345,7 @@ THEME_KEYWORDS = {
     ,"trafics d’animaux"
     ,"espèces menacées", "espèces exotiques", "espèces envahissantes", "Espèces invasives", "espèces envahissantes", "bactéries toxiques", "espèces protégées"
 ],
- "biodiversité_causes_indirectes":
+ "biodiversite_causes_indirectes":
     [
     "pesticides",
     "produits phytosanitaires",
@@ -391,7 +392,7 @@ THEME_KEYWORDS = {
     "trafic d’espèces",
     "commerce illégal d’espèces"
 ],
-"biodiversité_conséquences": # 1.3.3
+"biodiversite_conséquences": # 1.3.3
 [
     "corail",
     "coraux",
@@ -410,7 +411,7 @@ THEME_KEYWORDS = {
     ,"perte de biodiversité des sols", "baisse du stockage du carbone dans les sols", "dégradation des puits de carbone"
     , "dégradation des sols", "diminution des rendements des cultures", "perturbation du cycle de l’eau"
 ],
-"biodiversité_solutions_directes": # 1.3.4.1
+"biodiversite_solutions_directes": # 1.3.4.1
 [ 
     "solutions fondées sur la nature",
     "diversité génétique"
@@ -451,7 +452,7 @@ THEME_KEYWORDS = {
     "restauration des coraux",
     "restauration du récif corallien "
 ],
-"biodiversité_solutions_indirectes": # 1.3.4.2
+"biodiversite_solutions_indirectes": # 1.3.4.2
 [ 
     "économie circulaire",
     "manger bio",

@@ -26,7 +26,6 @@ def insert_or_do_nothing_on_conflict(table, conn, keys, data_iter):
 
     return conn.execute(on_duplicate_key_stmt)
 
-
 def show_sitemaps_dataframe(df: pd.DataFrame):
     try:
         df_tmp = df.groupby(by="id").size().reset_index(name="count").nlargest(5, "count")

@@ -77,6 +77,11 @@ def test_long_get_themes_keywords_duration():
     assert get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start) == [
     ["adaptation_climatique_solutions_indirectes"],[], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
+def test_stop_word_get_themes_keywords_duration():
+    plaintext = "haute isolation thermique fabriqué en france pizza"
+    assert get_themes_keywords_duration(plaintext, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+   
+
 def test_get_cts_in_ms_for_keywords():
     str = [{
           "duration_ms": 34,

@@ -171,14 +171,15 @@ THEME_KEYWORDS = {
      "zéro plastique",
     "ciments durables", "ciments de nouvelle génération", "béton bas carbone", "bas carbone", "captage et stockage",
     "capture et séquestration de carbone", "séquestration du carbone"
-    ,"absorption du carbone", "puits de carbone", "puits carbone"
+    ,"absorption du carbone"
     ,"industrie verte"
     , "agroécologie", "polyculture élevage", "agroforesterie"
     ,"quotas de pêche"
     ,"stockage du carbone dans les sols", "réduction du cheptel", "agriculture de conservation"
     ,"restauration des tourbières", "protection des tourbières", "stockage du carbone dans les sols", "biochar", "restauration des zones humides"
     ,"lutte contre le gaspillage alimentaire", "réduction du gaspillage alimentaire", "antigaspi", "antigaspillage"
-    ,"puits de carbone", "puits carbone"
+    ,"puits de carbone"
+    , "puits carbone"
     ,"sobriété"
 ]
 ,"attenuation_climatique_solutions_indirectes": [ # 	1.1.4.2

@@ -22,7 +22,7 @@ def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str
 
     logging.debug(f"Looking for timecode for {keywords}")
     for multiple_keyword in keywords:
-        all_keywords = multiple_keyword.split() # case with multiple words such as 'économie circulaire'
+        all_keywords = multiple_keyword.split() # case with multiple words such as 'economie circulaire'
         match = next((item for item in subtitle_duration if is_word_in_sentence(all_keywords[0], item.get('text'))), None)  
         logging.debug(f"match found {match} with {all_keywords[0].lower()}")     
         if match is not None:
@@ -125,7 +125,7 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> Li
     return result
 
 @sentry_sdk.trace
-def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime) -> List[Optional[List[str]]]:
+def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime):
     matching_themes = []
     keywords_with_timestamp = []
 
@@ -138,7 +138,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         if matching_words:
             logging.debug(f"theme found : {theme} with word {matching_words}")
             matching_themes.append(theme)
-            # look for cts_in_ms inside matching_words (['économie circulaire', 'panneaux solaires', 'solaires'] from subtitle_duration 
+            # look for cts_in_ms inside matching_words (['economie circulaire', 'panneaux solaires', 'solaires'] from subtitle_duration 
             keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme)
             if(len(keywords_to_add) == 0):
                 logging.warning(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")
@@ -146,9 +146,26 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     
     if len(matching_themes) > 0:
         keywords_with_timestamp = filter_keyword_with_same_timestamp(keywords_with_timestamp)
-        return [matching_themes, keywords_with_timestamp, count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start)]
+        return [
+            matching_themes,
+            keywords_with_timestamp,
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start),
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"changement_climatique_constat"),
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"changement_climatique_causes_directes"),
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"changement_climatique_consequences"),
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"attenuation_climatique_solutions_directes"),
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"adaptation_climatique_solutions_directes"),
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"ressources_naturelles_concepts_generaux"),
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"ressources_naturelles_causes"),
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"ressources_naturelles_solutions"),
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"biodiversite_concepts_generaux"),
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"biodiversite_causes_directes"),
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"biodiversite_consequences"),
+            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"biodiversite_solutions_directes")
+        ]
+
     else:
-        return [None, None, None]
+        return [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
 
 def log_min_max_date(df):
     max_date = max(df['start'])
@@ -164,7 +181,29 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
 
             logging.info(f'tagging plaintext subtitle with keywords and theme : regexp - search taking time...')
             # using swifter to speed up apply https://github.com/jmcarpenter2/swifter
-            df[['theme', u'keywords_with_timestamp', 'number_of_keywords']] = df[['plaintext','srt', 'start']].swifter.apply(lambda row: get_themes_keywords_duration(*row), axis=1, result_type='expand')
+            df[
+                ['theme',
+                 u'keywords_with_timestamp',
+                 'number_of_keywords',
+                 'number_of_changement_climatique_constat',
+                 'number_of_changement_climatique_causes_directes',
+                 'number_of_changement_climatique_consequences',
+                 'number_of_attenuation_climatique_solutions_directes',
+                 'number_of_adaptation_climatique_solutions_directes',
+                 'number_of_ressources_naturelles_concepts_generaux',
+                 'number_of_ressources_naturelles_causes',
+                 'number_of_ressources_naturelles_solutions',
+                 'number_of_biodiversite_concepts_generaux',
+                 'number_of_biodiversite_causes_directes',
+                 'number_of_biodiversite_consequences',
+                 'number_of_biodiversite_solutions_directes'
+                ]
+            ] = df[['plaintext','srt', 'start']]\
+                .swifter.apply(\
+                    lambda row: get_themes_keywords_duration(*row),\
+                        axis=1,
+                        result_type='expand'
+                )
 
             # remove all rows that does not have themes
             df = df.dropna(subset=['theme'])
@@ -207,11 +246,14 @@ def get_keyword_by_fifteen_second_window(filtered_themes: List[dict], start: dat
     
     return fifteen_second_window
 
-def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: List[dict], start: datetime) -> int:
+def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: List[dict], start: datetime, theme: str = None) -> int:
     total_keywords = len(keywords_with_timestamp)
     if(total_keywords) == 0:
         return 0
     else:
+        if theme is not None:
+            logging.debug(f"filter theme {theme}")
+            keywords_with_timestamp = list(filter(lambda kw: kw['theme'] == theme, keywords_with_timestamp))
         filtered_themes = filter_indirect_words(keywords_with_timestamp)
         length_filtered_items = len(filtered_themes)
         logging.debug(f"Before filtering {total_keywords} - After filtering indirect kw {length_filtered_items}")

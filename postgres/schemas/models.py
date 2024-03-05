@@ -63,6 +63,18 @@ class Keywords(Base):
     keywords_with_timestamp = Column(JSON) # ALTER TABLE keywords ADD keywords_with_timestamp json;
     number_of_keywords = Column(Integer) # ALTER TABLE keywords ADD number_of_keywords integer;
     srt = Column(JSON) # ALTER TABLE keywords ADD srt json;
+    number_of_changement_climatique_constat= Column(Integer)  # ALTER TABLE keywords ADD number_of_changement_climatique_constat integer;
+    number_of_changement_climatique_causes_directes= Column(Integer)  # ALTER TABLE keywords ADD number_of_changement_climatique_causes_directes integer;
+    number_of_changement_climatique_consequences= Column(Integer)  # ALTER TABLE keywords ADD number_of_changement_climatique_consequences integer;
+    number_of_attenuation_climatique_solutions_directes= Column(Integer)  # ALTER TABLE keywords ADD number_of_attenuation_climatique_solutions_directes integer;
+    number_of_adaptation_climatique_solutions_directes= Column(Integer)  # ALTER TABLE keywords ADD number_of_adaptation_climatique_solutions_directes integer;
+    number_of_ressources_naturelles_concepts_generaux= Column(Integer)  # ALTER TABLE keywords ADD number_of_ressources_naturelles_concepts_generaux integer;
+    number_of_ressources_naturelles_causes= Column(Integer)  # ALTER TABLE keywords ADD number_of_ressources_naturelles_causes integer;
+    number_of_ressources_naturelles_solutions= Column(Integer)  # ALTER TABLE keywords ADD number_of_ressources_naturelles_solutions integer;
+    number_of_biodiversite_concepts_generaux= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_concepts_generaux integer;
+    number_of_biodiversite_causes_directes= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_causes_directes integer;
+    number_of_biodiversite_consequences= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_consequences integer;
+    number_of_biodiversite_solutions_directes= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_solutions_directes integer;
 
 def get_sitemap(id: str):
     session = get_db_session()

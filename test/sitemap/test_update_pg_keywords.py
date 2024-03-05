@@ -13,7 +13,7 @@ from quotaclimat.data_processing.mediatree.detect_keywords import *
 original_timestamp = 1706437079004
 start = datetime.utcfromtimestamp(original_timestamp / 1000)
 
-def test_insert_data_in_sitemap_table():
+def test_first_update_keywords():
     create_tables()
     conn = connect_to_db()
     
@@ -114,10 +114,22 @@ def test_insert_data_in_sitemap_table():
         "theme": themes,
         "keywords_with_timestamp": keywords_with_timestamp,
         "srt": srt,
-        "number_of_keywords": wrong_value # wrong data to reapply our custom logic for "new_value"
+        "number_of_keywords": wrong_value, # wrong data to reapply our custom logic for "new_value"
+        "number_of_changement_climatique_constat":  wrong_value,
+        "number_of_changement_climatique_causes_directes":  wrong_value,
+        "number_of_changement_climatique_consequences":  wrong_value,
+        "number_of_attenuation_climatique_solutions_directes":  wrong_value,
+        "number_of_adaptation_climatique_solutions_directes":  wrong_value,
+        "number_of_ressources_naturelles_concepts_generaux":  wrong_value,
+        "number_of_ressources_naturelles_causes":  wrong_value,
+        "number_of_ressources_naturelles_solutions":  wrong_value,
+        "number_of_biodiversite_concepts_generaux":  wrong_value,
+        "number_of_biodiversite_causes_directes":  wrong_value,
+        "number_of_biodiversite_consequences":  wrong_value,
+        "number_of_biodiversite_solutions_directes" : wrong_value
     }]) 
     df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
-   
+
     assert save_to_pg(df._to_pandas(), keywords_table, conn) == 1
 
     # check the value is well existing
@@ -126,7 +138,19 @@ def test_insert_data_in_sitemap_table():
     update_keywords(session, batch_size=50)
     result_after_update = get_keyword(primary_key)
 
-    new_theme, new_keywords_with_timestamp, new_value = get_themes_keywords_duration(plaintext, srt, start)
+    new_theme, new_keywords_with_timestamp, new_value \
+        ,number_of_changement_climatique_constat \
+        ,number_of_changement_climatique_causes_directes \
+        ,number_of_changement_climatique_consequences \
+        ,number_of_attenuation_climatique_solutions_directes \
+        ,number_of_adaptation_climatique_solutions_directes \
+        ,number_of_ressources_naturelles_concepts_generaux \
+        ,number_of_ressources_naturelles_causes \
+        ,number_of_ressources_naturelles_solutions \
+        ,number_of_biodiversite_concepts_generaux \
+        ,number_of_biodiversite_causes_directes \
+        ,number_of_biodiversite_consequences \
+        ,number_of_biodiversite_solutions_directes = get_themes_keywords_duration(plaintext, srt, start)
 
     expected_keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
@@ -145,13 +169,20 @@ def test_insert_data_in_sitemap_table():
             }
     ]
     assert result_after_update.id == result_before_update.id
+
     # number_of_keywords
     assert new_value == 2
     assert result_after_update.number_of_keywords == new_value
     assert result_before_update.number_of_keywords == wrong_value
+
+    # number_of_changement_climatique_constat
+    assert number_of_changement_climatique_constat == new_value
+    assert result_after_update.number_of_changement_climatique_constat == new_value
+
     # keywords_with_timestamp
     assert result_after_update.keywords_with_timestamp == new_keywords_with_timestamp
     assert expected_keywords_with_timestamp == new_keywords_with_timestamp
+
     # theme
     assert result_after_update.theme == ["changement_climatique_constat", "adaptation_climatique_solutions_indirectes"]
     assert new_theme == ["changement_climatique_constat", "adaptation_climatique_solutions_indirectes"]

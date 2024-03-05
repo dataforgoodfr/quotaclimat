@@ -17,17 +17,54 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
         current_batch_saved_keywords = get_keywords_columns(session, i, batch_size)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme in current_batch_saved_keywords:
-            matching_themes, new_keywords_with_timestamp, new_number_of_keywords = get_themes_keywords_duration(plaintext, srt, start)
+            
+            matching_themes, \
+            new_keywords_with_timestamp, \
+            new_number_of_keywords, \
+            number_of_changement_climatique_constat \
+            ,number_of_changement_climatique_causes_directes \
+            ,number_of_changement_climatique_consequences \
+            ,number_of_attenuation_climatique_solutions_directes \
+            ,number_of_adaptation_climatique_solutions_directes \
+            ,number_of_ressources_naturelles_concepts_generaux \
+            ,number_of_ressources_naturelles_causes \
+            ,number_of_ressources_naturelles_solutions \
+            ,number_of_biodiversite_concepts_generaux \
+            ,number_of_biodiversite_causes_directes \
+            ,number_of_biodiversite_consequences \
+            ,number_of_biodiversite_solutions_directes = get_themes_keywords_duration(plaintext, srt, start)
 
-            if(number_of_keywords != new_number_of_keywords or keywords_with_timestamp != new_keywords_with_timestamp or theme != matching_themes):
+            if(number_of_keywords != new_number_of_keywords or
+                keywords_with_timestamp != new_keywords_with_timestamp or
+                  theme != matching_themes
+                ):
                 logging.info(f"Difference detected for themes for ID {keyword_id} -  {theme} - {matching_themes} \
                              \nnumber_of_keywords {number_of_keywords} - {new_number_of_keywords}\
                              \nkeywords_with_timestamp : {keywords_with_timestamp}\
                              \n new_nkeywords_with_timestamp : {new_keywords_with_timestamp}"
                 )
-                update_keyword_row(session, keyword_id, new_number_of_keywords, new_keywords_with_timestamp, matching_themes)
             else:
                 logging.debug("No difference")
+
+            update_keyword_row(session,
+            keyword_id,
+            new_number_of_keywords,
+            new_keywords_with_timestamp,
+            matching_themes
+            ,number_of_changement_climatique_constat
+            ,number_of_changement_climatique_causes_directes
+            ,number_of_changement_climatique_consequences
+            ,number_of_attenuation_climatique_solutions_directes
+            ,number_of_adaptation_climatique_solutions_directes
+            ,number_of_ressources_naturelles_concepts_generaux
+            ,number_of_ressources_naturelles_causes
+            ,number_of_ressources_naturelles_solutions
+            ,number_of_biodiversite_concepts_generaux
+            ,number_of_biodiversite_causes_directes
+            ,number_of_biodiversite_consequences
+            ,number_of_biodiversite_solutions_directes
+            )
+
         logging.info(f"bulk update done {i} out of {total_updates}")
         session.commit()
 
@@ -55,12 +92,41 @@ def get_total_count_saved_keywords(session: Session) -> int:
         return session.execute(statement).scalar()
     
 
-def update_keyword_row(session: Session, keyword_id: int, new_number_of_keywords: int, new_keywords_with_timestamp: List[dict], matching_themes: List[str]):
+def update_keyword_row(session: Session, 
+                       keyword_id: int,
+                        new_number_of_keywords: int,
+                        new_keywords_with_timestamp: List[dict],
+                        matching_themes: List[str],
+                        number_of_changement_climatique_constat: int,
+                        number_of_changement_climatique_causes_directes: int,
+                        number_of_changement_climatique_consequences: int,
+                        number_of_attenuation_climatique_solutions_directes: int,
+                        number_of_adaptation_climatique_solutions_directes: int,
+                        number_of_ressources_naturelles_concepts_generaux: int,
+                        number_of_ressources_naturelles_causes: int,
+                        number_of_ressources_naturelles_solutions: int,
+                        number_of_biodiversite_concepts_generaux: int,
+                        number_of_biodiversite_causes_directes: int,
+                        number_of_biodiversite_consequences: int,
+                        number_of_biodiversite_solutions_directes: int,
+    ):
     session.query(Keywords).filter(Keywords.id == keyword_id).update(
         {
             Keywords.number_of_keywords: new_number_of_keywords,
             Keywords.keywords_with_timestamp: new_keywords_with_timestamp,
             Keywords.theme: matching_themes,
+            Keywords.number_of_changement_climatique_constat:number_of_changement_climatique_constat ,
+            Keywords.number_of_changement_climatique_causes_directes:number_of_changement_climatique_causes_directes ,
+            Keywords.number_of_changement_climatique_consequences:number_of_changement_climatique_consequences ,
+            Keywords.number_of_attenuation_climatique_solutions_directes:number_of_attenuation_climatique_solutions_directes ,
+            Keywords.number_of_adaptation_climatique_solutions_directes:number_of_adaptation_climatique_solutions_directes ,
+            Keywords.number_of_ressources_naturelles_concepts_generaux:number_of_ressources_naturelles_concepts_generaux ,
+            Keywords.number_of_ressources_naturelles_causes:number_of_ressources_naturelles_causes ,
+            Keywords.number_of_ressources_naturelles_solutions:number_of_ressources_naturelles_solutions ,
+            Keywords.number_of_biodiversite_concepts_generaux:number_of_biodiversite_concepts_generaux ,
+            Keywords.number_of_biodiversite_causes_directes:number_of_biodiversite_causes_directes ,
+            Keywords.number_of_biodiversite_consequences:number_of_biodiversite_consequences ,
+            Keywords.number_of_biodiversite_solutions_directes:number_of_biodiversite_solutions_directes
         },
         synchronize_session=False
     )

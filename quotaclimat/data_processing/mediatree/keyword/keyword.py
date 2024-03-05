@@ -388,7 +388,6 @@ THEME_KEYWORDS = {
      "disparition des haies et des pâtures"
     ,"surexploitation des ressources",
      "surexploitation de la biomasse",
-     "prélèvements",
      "extractivisme",
      "surpêche",
      "surexploitation du bois",
@@ -495,7 +494,6 @@ THEME_KEYWORDS = {
      "prolifération des organismes nuisibles",
      "prolifération des maladies émergentes",
      "moustique tigre",
-     "abeilles",
      "perte de biodiversité des sols",
      "baisse du stockage du carbone dans les sols",
      "dégradation des puits de carbone",

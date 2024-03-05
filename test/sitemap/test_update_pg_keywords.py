@@ -9,6 +9,7 @@ from quotaclimat.data_ingestion.scrap_sitemap import (add_primary_key, get_consi
 from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db
 from postgres.insert_data import save_to_pg
 from quotaclimat.data_processing.mediatree.detect_keywords import *
+logging.getLogger().setLevel(logging.INFO)
 
 original_timestamp = 1706437079004
 start = datetime.utcfromtimestamp(original_timestamp / 1000)

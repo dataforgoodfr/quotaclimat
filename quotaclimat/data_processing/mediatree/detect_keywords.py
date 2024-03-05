@@ -4,6 +4,7 @@ from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.config import *
 from postgres.schemas.models import keywords_table
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
+from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
 from typing import List, Optional
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 import re
@@ -124,17 +125,25 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> Li
 
     return result
 
+def remove_stopwords(plaintext: str) -> str:
+    stopwords = STOP_WORDS
+    for word in stopwords:
+        plaintext = plaintext.replace(word, '')
+
+    return plaintext
+
 @sentry_sdk.trace
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime):
     matching_themes = []
     keywords_with_timestamp = []
 
+    plaitext_without_stopwords = remove_stopwords(plaintext)
     logging.debug(f"display datetime start {start}")
 
     for theme, keywords in THEME_KEYWORDS.items():
         logging.debug(f"searching {theme} for {keywords}")
 
-        matching_words = [word for word in keywords if is_word_in_sentence(word, plaintext)]  
+        matching_words = [word for word in keywords if is_word_in_sentence(word, plaitext_without_stopwords)]  
         if matching_words:
             logging.debug(f"theme found : {theme} with word {matching_words}")
             matching_themes.append(theme)

@@ -255,7 +255,7 @@ THEME_KEYWORDS = {
     ,"dune" 
     ,"gestion des milieux aquatiques"
     ,"sorgho"
-    ,"myscanthus" 
+    ,"miscanthus" 
     ,"mega bassine"
     ,"barrage"
 ],

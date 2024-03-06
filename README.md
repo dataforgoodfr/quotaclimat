@@ -288,7 +288,7 @@ Use env variable `CHANNEL` like in docker compose (string: tf1)
 Otherwise, default is all channels
 
 ### Batch update
-In case we have a new word detection logic, we must re apply it to all saved keywords inside our database.
+In case we have a new word detection logic - and already saved data from Mediatree inside our DB (otherwise see Batch import based on time or channel) - we must re apply it to all saved keywords inside our database.
 
 We should use env variable `UPDATE`  like in docker compose (should be set to "true")
 

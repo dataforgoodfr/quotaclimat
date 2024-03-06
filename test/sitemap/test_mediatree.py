@@ -132,7 +132,7 @@ def test_get_channels():
         assert get_channels() == ["france2"] # default for docker compose config
     else:
         assert get_channels() == ["tf1", "france2", "fr3-idf", "france5", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
-        "europe1", "france-culture", "france-inter", "sud-radio", "rmc", "rtl", "france24"]
+        "europe1", "france-culture", "france-inter", "sud-radio", "rmc", "rtl", "france24", "france-info"]
 
 def test_save_to_pg_keyword():
     conn = connect_to_db()

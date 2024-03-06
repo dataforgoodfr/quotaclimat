@@ -66,7 +66,7 @@ def get_channels():
     else: #prod  - all channels
         logging.warning("All channels are used")
         return ["tf1", "france2", "fr3-idf", "france5", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
-        "europe1", "france-culture", "france-inter", "sud-radio", "rmc", "rtl", "france24"]
+        "europe1", "france-culture", "france-inter", "sud-radio", "rmc", "rtl", "france24", "france-info"]
 
     return channels
 
@@ -153,10 +153,10 @@ def transform_theme_query_includes(themes_with_keywords = THEME_KEYWORDS):
 def get_post_request(media_tree_token, type_sub, start_epoch, channel, page: int = 0):
     try:
         params = get_param_api(media_tree_token, type_sub, start_epoch, channel, page)
-        logging.info(f"Query {KEYWORDS_URL} page {page} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, page)}")
+        logging.info(f"Query {KEYWORDS_URL} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, page)}")
         response = requests.post(KEYWORDS_URL, json=params)
         if response.status_code == 401:
-            logging.warning("Expired token - retrying to get a new one")
+            logging.warning(f"401 - Expired token - retrying to get a new one {response.content}")
             media_tree_token = get_auth_token(password, USER)
             raise Exception
         

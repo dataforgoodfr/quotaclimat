@@ -73,4 +73,4 @@ jobs:
         SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
-        args: jobs definition update ${{ env.SCALEWAY_JOB_IMPORT_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }}
+        args: jobs definition update ${{ secrets.SCALEWAY_JOB_IMPORT_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }}

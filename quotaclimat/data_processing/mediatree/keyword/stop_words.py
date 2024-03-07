@@ -8,4 +8,5 @@ STOP_WORDS = [
     "engie peut vous aider par exemple avec des panneaux solaires",
     "panneaux solaires pour produire votre énergie",
     "panneaux solaires groupe",
+    "en train d"
 ]

@@ -263,7 +263,10 @@ def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: Li
         if theme is not None:
             logging.debug(f"filter theme {theme}")
             keywords_with_timestamp = list(filter(lambda kw: kw['theme'] == theme, keywords_with_timestamp))
-        
+        else: # does not count "resources" for main counter - as not ready yet
+            logging.debug("filtering ressources_ theme")
+            keywords_with_timestamp = list(filter(lambda kw: "ressources_" not in kw['theme'], keywords_with_timestamp))
+
         filtered_themes = filter_indirect_words(keywords_with_timestamp)
         length_filtered_items = len(filtered_themes)
         logging.debug(f"Before filtering {total_keywords} - After filtering indirect kw {length_filtered_items}")

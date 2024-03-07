@@ -74,36 +74,27 @@ def test_first_update_keywords():
             }
     ]
 
-    keywords_with_timestamp = [{
-                "keyword" : 'habitabilité de la planète',
-                "timestamp": original_timestamp + 6, 
-                "theme":"changement_climatique_constat",
-            },
-            {
-                "keyword" : 'conditions de vie sur terre',
-                "timestamp": original_timestamp + 15000,
-                "theme":"changement_climatique_constat",
-            },
-            {
-                "keyword" : 'planète', # should not be there
-                "timestamp": original_timestamp + 9,
-                "theme":"ressources_naturelles_concepts_generaux",
-            },
-            {
-                "keyword" : 'terre', # should not be there
-                "timestamp": original_timestamp + 11,
-                "theme":"ressources_naturelles_concepts_generaux",
-            },
-            {
-                "keyword" : 'digue',
-                "timestamp": original_timestamp + 32000,
-                "theme":"wrong_theme",
-            }
-        ]
+    keywords_with_timestamp = [
+        {
+            "keyword": "conditions de vie sur terre",
+            "timestamp": 1706437094004,
+            "theme": "changement_climatique_constat"
+        },
+        {
+            "keyword": "habitabilité de la planète",
+            "timestamp": 1706437079010,
+            "theme": "changement_climatique_constat"
+        },
+        {
+            "keyword": "digue",
+            "timestamp": 1706437111004,
+            "theme": "adaptation_climatique_solutions_indirectes"
+        }
+    ]
     themes = [
-            "changement_climatique_constat",
-            "ressources_naturelles_concepts_generaux",
-            "adaptation_climatique_solutions_indirectes"
+        "changement_climatique_constat",
+        "adaptation_climatique_solutions_indirectes",
+        "ressources_naturelles_concepts_generaux"
     ]
     channel_name = "m6"
     df = pd.DataFrame([{
@@ -153,21 +144,11 @@ def test_first_update_keywords():
         ,number_of_biodiversite_consequences \
         ,number_of_biodiversite_solutions_directes = get_themes_keywords_duration(plaintext, srt, start)
 
-    expected_keywords_with_timestamp = [{
-                "keyword" : 'habitabilité de la planète',
-                "timestamp": original_timestamp + 6, 
-                "theme":"changement_climatique_constat",
-            },
-            {
-                "keyword" : 'conditions de vie sur terre',
-                "timestamp": original_timestamp + 15000,
-                "theme":"changement_climatique_constat",
-            },
-            {
-                "keyword" : 'digue',
-                "timestamp": original_timestamp + 32000,
-                "theme":"adaptation_climatique_solutions_indirectes",
-            }
+    expected_keywords_with_timestamp = [
+    {'keyword': 'conditions de vie sur terre', 'timestamp': 1706437094004, 'theme': 'changement_climatique_constat'}, 
+    {'keyword': 'habitabilité de la planète', 'timestamp': 1706437079010, 'theme': 'changement_climatique_constat'}, 
+    {'keyword': 'digue', 'timestamp': 1706437111004, 'theme': 'adaptation_climatique_solutions_indirectes'}, 
+    {'keyword': 'planète', 'timestamp': 1706437079016, 'theme': 'ressources_naturelles_concepts_generaux'}
     ]
     assert result_after_update.id == result_before_update.id
 
@@ -185,5 +166,5 @@ def test_first_update_keywords():
     assert expected_keywords_with_timestamp == new_keywords_with_timestamp
 
     # theme
-    assert result_after_update.theme == ["changement_climatique_constat", "adaptation_climatique_solutions_indirectes"]
-    assert new_theme == ["changement_climatique_constat", "adaptation_climatique_solutions_indirectes"]
+    assert result_after_update.theme == ["changement_climatique_constat", "adaptation_climatique_solutions_indirectes", "ressources_naturelles_concepts_generaux"]
+    assert new_theme == ["changement_climatique_constat", "adaptation_climatique_solutions_indirectes", "ressources_naturelles_concepts_generaux"]

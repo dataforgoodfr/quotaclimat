@@ -13,9 +13,59 @@ logging.getLogger().setLevel(logging.INFO)
 
 original_timestamp = 1706437079004
 start = datetime.utcfromtimestamp(original_timestamp / 1000)
+create_tables()
+
+def test_delete_keywords():
+    conn = connect_to_db()
+    primary_key = "delete_me"
+    wrong_value = 0
+    df = pd.DataFrame([{
+    "id" : primary_key,
+    "start": start,
+    "plaintext": "test",
+    "channel_name": "test",
+    "channel_radio": False,
+    "theme":[],
+    "keywords_with_timestamp": [],
+    "srt": [],
+    "number_of_keywords": wrong_value, # wrong data to reapply our custom logic for "new_value"
+    "number_of_changement_climatique_constat":  wrong_value,
+    "number_of_changement_climatique_causes_directes":  wrong_value,
+    "number_of_changement_climatique_consequences":  wrong_value,
+    "number_of_attenuation_climatique_solutions_directes":  wrong_value,
+    "number_of_adaptation_climatique_solutions_directes":  wrong_value,
+    "number_of_ressources_naturelles_concepts_generaux":  wrong_value,
+    "number_of_ressources_naturelles_causes":  wrong_value,
+    "number_of_ressources_naturelles_solutions":  wrong_value,
+    "number_of_biodiversite_concepts_generaux":  wrong_value,
+    "number_of_biodiversite_causes_directes":  wrong_value,
+    "number_of_biodiversite_consequences":  wrong_value,
+    "number_of_biodiversite_solutions_directes" : wrong_value
+    }]) 
+    df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
+    assert save_to_pg(df._to_pandas(), keywords_table, conn) == 1
+    session = get_db_session(conn)
+    assert get_keyword(primary_key) != None
+    update_keyword_row(session, primary_key,
+            0,
+            None,
+            None
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            )
+    assert get_keyword(primary_key) == None
 
 def test_first_update_keywords():
-    create_tables()
     conn = connect_to_db()
     
     wrong_value = 0

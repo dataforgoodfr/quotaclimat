@@ -149,6 +149,19 @@ def test_complex_hyphen_get_cts_in_ms_for_keywords():
     assert get_cts_in_ms_for_keywords(str, keywords, theme) == expected
 
 
+def test_none_theme_filter_and_tag_by_theme():
+    df1 = pd.DataFrame([{
+        "start": start,
+        "plaintext": "cheese pizza",
+        "channel_name": "m6",
+        "channel_radio": False,
+        "srt": []
+        }])
+
+    # List of words to filter on
+    df = filter_and_tag_by_theme(df1)
+    debug_df(df)
+    assert len(df) == 0
 
 def test_filter_and_tag_by_theme():
     srt = [{

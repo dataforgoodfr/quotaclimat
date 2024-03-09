@@ -215,7 +215,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
                 )
 
             # remove all rows that does not have themes
-            df = df.dropna(subset=['theme'])
+            df = df.dropna(subset=['theme'], how='any') # any is for None values
 
             logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")
 
@@ -278,3 +278,4 @@ def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: Li
         else:
             return 0
     
+

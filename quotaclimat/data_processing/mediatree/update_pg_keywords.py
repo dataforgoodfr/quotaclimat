@@ -7,7 +7,7 @@ import logging
 from sqlalchemy.orm import Session
 from postgres.schemas.models import Keywords
 from quotaclimat.data_processing.mediatree.detect_keywords import *
-from sqlalchemy import func, select
+from sqlalchemy import func, select, delete
 
 def update_keywords(session: Session, batch_size: int = 50000, start_offset : int = 0) -> list:
     total_updates = get_total_count_saved_keywords(session)
@@ -110,23 +110,28 @@ def update_keyword_row(session: Session,
                         number_of_biodiversite_consequences: int,
                         number_of_biodiversite_solutions_directes: int,
     ):
-    session.query(Keywords).filter(Keywords.id == keyword_id).update(
-        {
-            Keywords.number_of_keywords: new_number_of_keywords,
-            Keywords.keywords_with_timestamp: new_keywords_with_timestamp,
-            Keywords.theme: matching_themes,
-            Keywords.number_of_changement_climatique_constat:number_of_changement_climatique_constat ,
-            Keywords.number_of_changement_climatique_causes_directes:number_of_changement_climatique_causes_directes ,
-            Keywords.number_of_changement_climatique_consequences:number_of_changement_climatique_consequences ,
-            Keywords.number_of_attenuation_climatique_solutions_directes:number_of_attenuation_climatique_solutions_directes ,
-            Keywords.number_of_adaptation_climatique_solutions_directes:number_of_adaptation_climatique_solutions_directes ,
-            Keywords.number_of_ressources_naturelles_concepts_generaux:number_of_ressources_naturelles_concepts_generaux ,
-            Keywords.number_of_ressources_naturelles_causes:number_of_ressources_naturelles_causes ,
-            Keywords.number_of_ressources_naturelles_solutions:number_of_ressources_naturelles_solutions ,
-            Keywords.number_of_biodiversite_concepts_generaux:number_of_biodiversite_concepts_generaux ,
-            Keywords.number_of_biodiversite_causes_directes:number_of_biodiversite_causes_directes ,
-            Keywords.number_of_biodiversite_consequences:number_of_biodiversite_consequences ,
-            Keywords.number_of_biodiversite_solutions_directes:number_of_biodiversite_solutions_directes
-        },
-        synchronize_session=False
-    )
+    if matching_themes is not None:
+        session.query(Keywords).filter(Keywords.id == keyword_id).update(
+            {
+                Keywords.number_of_keywords: new_number_of_keywords,
+                Keywords.keywords_with_timestamp: new_keywords_with_timestamp,
+                Keywords.theme: matching_themes,
+                Keywords.number_of_changement_climatique_constat:number_of_changement_climatique_constat ,
+                Keywords.number_of_changement_climatique_causes_directes:number_of_changement_climatique_causes_directes ,
+                Keywords.number_of_changement_climatique_consequences:number_of_changement_climatique_consequences ,
+                Keywords.number_of_attenuation_climatique_solutions_directes:number_of_attenuation_climatique_solutions_directes ,
+                Keywords.number_of_adaptation_climatique_solutions_directes:number_of_adaptation_climatique_solutions_directes ,
+                Keywords.number_of_ressources_naturelles_concepts_generaux:number_of_ressources_naturelles_concepts_generaux ,
+                Keywords.number_of_ressources_naturelles_causes:number_of_ressources_naturelles_causes ,
+                Keywords.number_of_ressources_naturelles_solutions:number_of_ressources_naturelles_solutions ,
+                Keywords.number_of_biodiversite_concepts_generaux:number_of_biodiversite_concepts_generaux ,
+                Keywords.number_of_biodiversite_causes_directes:number_of_biodiversite_causes_directes ,
+                Keywords.number_of_biodiversite_consequences:number_of_biodiversite_consequences ,
+                Keywords.number_of_biodiversite_solutions_directes:number_of_biodiversite_solutions_directes
+            },
+            synchronize_session=False
+        )
+    else:
+        logging.warning(f"Matching themes is empty - deleting row {keyword_id}")
+        session.query(Keywords).filter(Keywords.id == keyword_id).delete()
+        session.commit()

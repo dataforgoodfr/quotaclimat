@@ -37,7 +37,7 @@ swifter = "^1.4.0"
 tenacity = "^8.2.3"
 sentry-sdk = "^1.40.5"
 coverage = "^7.4.2"
-modin = {extras = ["all"], version = "^0.27.0"}
+modin = {extras = ["all"], version = "^0.28.0"}
 dask-expr = "^0.4.2"
 
 [build-system]

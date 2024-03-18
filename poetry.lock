@@ -1168,20 +1168,21 @@ files = [
 
 [[package]]
 name = "dask"
-version = "2024.2.0"
+version = "2024.3.1"
 description = "Parallel PyData with Task Scheduling"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "dask-2024.2.0-py3-none-any.whl", hash = "sha256:439efe5479a102d4d2712d69a52458e6c1e78b96c7020976399ce249097caf48"},
-    {file = "dask-2024.2.0.tar.gz", hash = "sha256:7ab6e8a2c1e256a4c930f2996c652f057239dee49e1c5c4742f351efe6deecd1"},
+    {file = "dask-2024.3.1-py3-none-any.whl", hash = "sha256:1ac260b8716b1a9fc144c0d7f958336812cfc3ef542a3742c9ae02387189b32b"},
+    {file = "dask-2024.3.1.tar.gz", hash = "sha256:78bee2ffd735514e572adaa669fc2a437ec256aecb6bec036a1f5b8dd36b2e60"},
 ]
 
 [package.dependencies]
 click = ">=8.1"
 cloudpickle = ">=1.5.0"
+dask-expr = {version = ">=1.0,<1.1", optional = true, markers = "extra == \"dataframe\""}
 fsspec = ">=2021.09.0"
-importlib-metadata = ">=4.13.0"
+importlib-metadata = {version = ">=4.13.0", markers = "python_version < \"3.12\""}
 numpy = {version = ">=1.21", optional = true, markers = "extra == \"array\""}
 packaging = ">=20.0"
 pandas = {version = ">=1.3", optional = true, markers = "extra == \"dataframe\""}
@@ -1192,26 +1193,26 @@ toolz = ">=0.10.0"
 [package.extras]
 array = ["numpy (>=1.21)"]
 complete = ["dask[array,dataframe,diagnostics,distributed]", "lz4 (>=4.3.2)", "pyarrow (>=7.0)", "pyarrow-hotfix"]
-dataframe = ["dask[array]", "pandas (>=1.3)"]
+dataframe = ["dask-expr (>=1.0,<1.1)", "dask[array]", "pandas (>=1.3)"]
 diagnostics = ["bokeh (>=2.4.2)", "jinja2 (>=2.10.3)"]
-distributed = ["distributed (==2024.2.0)"]
+distributed = ["distributed (==2024.3.1)"]
 test = ["pandas[test]", "pre-commit", "pytest", "pytest-cov", "pytest-rerunfailures", "pytest-timeout", "pytest-xdist"]
 
 [[package]]
 name = "dask-expr"
-version = "0.4.2"
+version = "1.0.3"
 description = "High Level Expressions for Dask"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "dask-expr-0.4.2.tar.gz", hash = "sha256:af657c45c4e3b15bd66dac099b9347d2984d2850d2c6c5b8fb961a52b4c35d4b"},
-    {file = "dask_expr-0.4.2-py3-none-any.whl", hash = "sha256:f1cfcf8255ecd491a619ee9c35eaaee5c1a812834d11ef1443ebf1f2669003e6"},
+    {file = "dask-expr-1.0.3.tar.gz", hash = "sha256:c7ae183ee434600deba7984a8d3a145b3fc65970e2341e54b78c4a83855e2016"},
+    {file = "dask_expr-1.0.3-py3-none-any.whl", hash = "sha256:6820f424f594f063826167e8cebedb6aca03252f4fdb091edb90b6da445c3536"},
 ]
 
 [package.dependencies]
-dask = "2024.2.0"
+dask = "2024.3.1"
 pandas = ">=2"
-pyarrow = "*"
+pyarrow = ">=7.0.0"
 
 [[package]]
 name = "debugpy"
@@ -1279,19 +1280,19 @@ files = [
 
 [[package]]
 name = "distributed"
-version = "2024.2.0"
+version = "2024.3.1"
 description = "Distributed scheduler for Dask"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "distributed-2024.2.0-py3-none-any.whl", hash = "sha256:9545a176a7684b155cdfc56c1bf9b1b588e08e107f9f937166d4912b1ee809f7"},
-    {file = "distributed-2024.2.0.tar.gz", hash = "sha256:884df87d784ace510173da1f12ffc3ed3b9858288cf225327e27a01e047d098a"},
+    {file = "distributed-2024.3.1-py3-none-any.whl", hash = "sha256:abab8658122e97c507ce8a5b0d46dc6cb414a2a531f92e1c5933d7c5e0dd65ac"},
+    {file = "distributed-2024.3.1.tar.gz", hash = "sha256:29d08fe11a4a46dae4dd09a7d2ff250fa429d9625dafa4ff655d86af945665c8"},
 ]
 
 [package.dependencies]
 click = ">=8.0"
 cloudpickle = ">=1.5.0"
-dask = "2024.2.0"
+dask = "2024.3.1"
 jinja2 = ">=2.10.3"
 locket = ">=1.0.0"
 msgpack = ">=1.0.0"
@@ -7333,4 +7334,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11.0,<3.13.0"
-content-hash = "eea5bc58f780081762bf75b7a39e92bd0f2c381bb6c56b183df867fa5e36fd65"
+content-hash = "6fd2722f85df794257a57f2e464d1a15ae223d9e8f7021389c56e5cdd284c783"

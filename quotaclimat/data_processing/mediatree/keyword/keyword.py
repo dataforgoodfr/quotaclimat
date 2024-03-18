@@ -135,7 +135,6 @@ THEME_KEYWORDS = {
     "hausse de la température du globe",
     "élévation de la température",
     "élévation des températures",
-    "météorologique extrême",
     "climatique extrême",
     "période la plus chaude",
     "année la plus chaude",
@@ -262,8 +261,6 @@ THEME_KEYWORDS = {
     "méthanisation",
     "biogaz",
     "bois-énergie",
-    "nucléaire",
-    "réacteur nucléaire",
     "EPR",
     "hydrogène vert",
     "Économie d’énergie",
@@ -323,6 +320,7 @@ THEME_KEYWORDS = {
     ,"mutation écologique"
     ,"covoiturage"
     ,"nucléaire"
+    ,"réacteur nucléaire"
     ,"vélos"
     ,"marche à pied"
     ,"Train"

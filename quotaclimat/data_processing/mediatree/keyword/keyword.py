@@ -284,10 +284,6 @@ THEME_KEYWORDS = {
     "capturer le carbone",
     "séquestration du carbone",
     "absorption du carbone",
-    "industrie verte",
-    "agroécologie",
-    "polyculture élevage",
-    "agroforesterie",
     "quota de pêche",
     "stockage du carbone dans les sols",
     "réduction du cheptel",
@@ -313,6 +309,10 @@ THEME_KEYWORDS = {
 ]
 ,"attenuation_climatique_solutions_indirectes": [ # 	1.1.4.2
     "transition écologique"
+    ,"industrie verte"
+    ,"agroécologie"
+    ,"polyculture élevage"
+    ,"agroforesterie"
     ,"développement durable"
     ,"alternative durable"
     ,"transition climatique"

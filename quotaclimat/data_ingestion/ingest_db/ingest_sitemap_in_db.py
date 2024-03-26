@@ -53,13 +53,6 @@ async def main():
         # Wait for both tasks to complete
         await event_finish.wait()
 
-        # only for scaleway - delay for serverless container
-        # Without this we have a CrashLoopBackOff (Kubernetes health error)
-        if (os.environ.get("ENV") != "dev" and os.environ.get("ENV") != "docker"):
-            minutes = 15
-            logging.warning(f"Sleeping {minutes} before safely exiting scaleway container")
-            time.sleep(60 * minutes)
-
         res=health_check_task.cancel()
     logging.info("Exiting with success")
     sys.exit(0)

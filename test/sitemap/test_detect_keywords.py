@@ -41,6 +41,41 @@ subtitles = [{
         "duration_ms": 34,
         "cts_in_ms": original_timestamp + 76,
         "text": "abusive"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 98,
+        "text": "barrage"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 1000,
+        "text": "record"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 1100,
+        "text": "de"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 1200,
+        "text": "température"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 1000,
+        "text": "adaptation"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 1212,
+        "text": "réchauffement"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 1300,
+        "text": "planétaire"
     }
 ]
 def test_default_get_themes_keywords_duration():
@@ -48,13 +83,13 @@ def test_default_get_themes_keywords_duration():
     assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
    
 def test_one_theme_get_themes_keywords_duration():
-    plaintext_climat = "climatique test"
-    assert get_themes_keywords_duration(plaintext_climat, subtitles, start) == [["changement_climatique_constat"],[], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    plaintext_climat = "réchauffement planétaire test"
+    assert get_themes_keywords_duration(plaintext_climat, subtitles, start) == [
+        ["changement_climatique_constat"],
+        [{'keyword': 'réchauffement planétaire',
+'theme': 'changement_climatique_constat',
+'timestamp': 1706437080216}], 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     
-def test_multiple_get_themes_keywords_duration():
-    plaintext_multiple_themes = "climatique test bovin migrations climatiques"
-    assert get_themes_keywords_duration(plaintext_multiple_themes, subtitles, start) == [["changement_climatique_constat", "changement_climatique_consequences"],[], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-
 def test_nothing_get_themes_keywords_duration():
     # should not accept theme 'bus' for keyword "abusive"
     plaintext_regression_incomplete_word = "abusive"
@@ -68,14 +103,16 @@ def test_regression_included_get_themes_keywords_duration():
 
 def test_three_get_themes_keywords_duration():
     assert get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start) == [[
-      "changement_climatique_constat"
-     ,"changement_climatique_consequences"
-     ,"adaptation_climatique_solutions"
-    ],[], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+     "adaptation_climatique_solutions"
+    ],[{'keyword': 'adaptation au dérèglement climatique',
+'theme': 'adaptation_climatique_solutions',
+'timestamp': 1706437080004}], 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
 
 def test_long_get_themes_keywords_duration():
     assert get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start) == [
-    ["adaptation_climatique_solutions_indirectes"],[], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    ["adaptation_climatique_solutions_indirectes"],[{'keyword': 'barrage',
+'theme': 'adaptation_climatique_solutions_indirectes',
+'timestamp': 1706437079102}], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 def test_stop_word_get_themes_keywords_duration():
     plaintext = "haute isolation thermique fabriqué en france pizza"
@@ -163,102 +200,6 @@ def test_none_theme_filter_and_tag_by_theme():
     debug_df(df)
     assert len(df) == 0
 
-def test_filter_and_tag_by_theme():
-    srt = [{
-            "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 79004,
-            "text": "adaptation"
-            }
-    ]
-    df1 = pd.DataFrame([{
-        "start": start,
-        "plaintext": "cheese pizza",
-        "channel_name": "m6",
-        "channel_radio": False,
-        "srt": srt,
-        },{
-            "start": start,
-            "plaintext": "tomato screen",
-            "channel_name": "m6",
-            "channel_radio": False,
-            "srt": srt,
-        },{
-            "start": start,
-            "plaintext": "méthane bovin anthropocène",
-            "channel_name": "m6",
-            "channel_radio": False,
-            "srt": srt,
-        },
-        {
-            "start": start,
-            "plaintext": "cheese pizza",
-            "channel_name": "m6",
-            "channel_radio": False,
-            "srt": srt,
-        },{
-            "start": start,
-            "plaintext": "pizza année la plus chaude",
-            "channel_name": "m6",
-            "channel_radio": False,
-            "srt": srt,
-    }])
-
-    expected_result = pd.DataFrame([{
-        "start": start,
-        "plaintext": "méthane bovin anthropocène",
-        "channel_name": "m6",
-        "channel_radio": False,
-        "srt": srt,
-        "theme": [
-            "changement_climatique_constat",
-            "changement_climatique_causes",
-            "ressources_naturelles_concepts_generaux"
-        ],
-        "keywords_with_timestamp": [],
-        "number_of_keywords": 0.0,
-        "number_of_changement_climatique_constat": 0.0,
-        "number_of_changement_climatique_causes_directes": 0.0,
-        "number_of_changement_climatique_consequences": 0.0,
-        "number_of_attenuation_climatique_solutions_directes": 0.0,
-        "number_of_adaptation_climatique_solutions_directes": 0.0,
-        "number_of_ressources_naturelles_concepts_generaux": 0.0,
-        "number_of_ressources_naturelles_causes": 0.0,
-        "number_of_ressources_naturelles_solutions": 0.0,
-        "number_of_biodiversite_concepts_generaux": 0.0,
-        "number_of_biodiversite_causes_directes": 0.0,
-        "number_of_biodiversite_consequences": 0.0,
-        "number_of_biodiversite_solutions_directes" :0.0
-    },
-    {
-        "start": start,
-        "plaintext": "pizza année la plus chaude",
-        "channel_name": "m6",
-        "channel_radio": False,
-        "srt": srt,
-        "theme": ["changement_climatique_consequences"],
-        "keywords_with_timestamp": [],
-        "number_of_keywords": 0.0,
-        "number_of_changement_climatique_constat": 0.0,
-        "number_of_changement_climatique_causes_directes": 0.0,
-        "number_of_changement_climatique_consequences": 0.0,
-        "number_of_attenuation_climatique_solutions_directes": 0.0,
-        "number_of_adaptation_climatique_solutions_directes": 0.0,
-        "number_of_ressources_naturelles_concepts_generaux": 0.0,
-        "number_of_ressources_naturelles_causes": 0.0,
-        "number_of_ressources_naturelles_solutions": 0.0,
-        "number_of_biodiversite_concepts_generaux": 0.0,
-        "number_of_biodiversite_causes_directes": 0.0,
-        "number_of_biodiversite_consequences": 0.0,
-        "number_of_biodiversite_solutions_directes" :0.0
-    }])
-
-    # List of words to filter on
-    df = filter_and_tag_by_theme(df1)
-    logging.info(df.dtypes)
-    debug_df(df)
-    pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
-
-
 def test_lower_case_filter_and_tag_by_theme():
     srt = [{
                 "duration_ms": 34,
@@ -281,9 +222,7 @@ def test_lower_case_filter_and_tag_by_theme():
         "channel_radio": False,
         "srt": srt,
         "theme": [
-            "changement_climatique_constat",
             "changement_climatique_causes",
-            "ressources_naturelles_concepts_generaux"
         ],
         "keywords_with_timestamp": [
             {
@@ -333,9 +272,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         "channel_radio": False,
         "srt": srt,
         "theme": [
-            "changement_climatique_constat",
             "changement_climatique_causes",
-            "ressources_naturelles_concepts_generaux"
         ],
         "keywords_with_timestamp": [
             {

@@ -388,7 +388,6 @@ THEME_KEYWORDS = {
     "adaptation au changement climatique",
     "adaptation au dérèglement climatique",
     "adaptation au réchauffement climatique",
-    "adaptation au réchauffement climatique",
     "adaptation climatique",
     "renforcer les digues",
     "renforcer les dunes",

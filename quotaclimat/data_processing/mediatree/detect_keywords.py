@@ -137,7 +137,6 @@ def remove_stopwords(plaintext: str) -> str:
 
 @sentry_sdk.trace
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime):
-    matching_themes = []
     keywords_with_timestamp = []
 
     plaitext_without_stopwords = remove_stopwords(plaintext)
@@ -149,22 +148,22 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         matching_words = [word for word in keywords if is_word_in_sentence(word, plaitext_without_stopwords)]  
         if matching_words:
             logging.debug(f"theme found : {theme} with word {matching_words}")
-            matching_themes.append(theme)
+
             # look for cts_in_ms inside matching_words (['economie circulaire', 'panneaux solaires', 'solaires'] from subtitle_duration 
             keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme)
             if(len(keywords_to_add) == 0):
                 logging.warning(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")
             keywords_with_timestamp.extend(keywords_to_add)
     
-    if len(matching_themes) > 0:
+    if len(keywords_with_timestamp) > 0:
         keywords_with_timestamp = filter_keyword_with_same_timestamp(keywords_with_timestamp)
         # count false positive near of 15" of positive keywords
         keywords_with_timestamp = tag_fifteen_second_window_number(keywords_with_timestamp, start)
         keywords_with_timestamp = transform_false_positive_keywords_to_positive(keywords_with_timestamp, start)
         filtered_keywords_with_timestamp = filter_indirect_words(keywords_with_timestamp)
-
+    
         return [
-            matching_themes,
+            get_themes(keywords_with_timestamp),
             clean_metadata(keywords_with_timestamp),
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start),
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_constat"),
@@ -183,6 +182,9 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
 
     else:
         return [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+
+def get_themes(keywords_with_timestamp: List[dict]) -> List[str]:
+    return list(set([kw['theme'] for kw in keywords_with_timestamp]))
 
 def clean_metadata(keywords_with_timestamp): 
     keywords_with_timestamp_copy = copy.deepcopy(keywords_with_timestamp) # immutable

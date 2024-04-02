@@ -13,10 +13,13 @@ from itertools import groupby
 import sentry_sdk
 import modin.pandas as pd
 import dask
+import copy
 from quotaclimat.utils.logger import getLogger
 logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
 logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
 dask.config.set({'dataframe.query-planning': True})
+
+indirectes = 'indirectes'
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str], theme: str) -> List[dict]:
     result = []
@@ -156,12 +159,13 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     if len(matching_themes) > 0:
         keywords_with_timestamp = filter_keyword_with_same_timestamp(keywords_with_timestamp)
         # count false positive near of 15" of positive keywords
+        keywords_with_timestamp = tag_fifteen_second_window_number(keywords_with_timestamp, start)
         keywords_with_timestamp = transform_false_positive_keywords_to_positive(keywords_with_timestamp, start)
-
         filtered_keywords_with_timestamp = filter_indirect_words(keywords_with_timestamp)
+
         return [
             matching_themes,
-            keywords_with_timestamp,
+            clean_metadata(keywords_with_timestamp),
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start),
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_constat"),
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_causes"),
@@ -179,6 +183,16 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
 
     else:
         return [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+
+def clean_metadata(keywords_with_timestamp): 
+    keywords_with_timestamp_copy = copy.deepcopy(keywords_with_timestamp) # immutable
+    if( len(keywords_with_timestamp_copy)) > 0:
+        for item in keywords_with_timestamp_copy:
+            item.pop('window_number', None)
+
+        return keywords_with_timestamp_copy
+    else:
+        return keywords_with_timestamp_copy
 
 def log_min_max_date(df):
     max_date = max(df['start'])
@@ -236,28 +250,7 @@ def add_primary_key(df):
         return get_consistent_hash("empty") #  TODO improve - should be a None ?
 
 def filter_indirect_words(keywords_with_timestamp: List[dict]) -> List[dict]:
-    return list(filter(lambda kw: 'indirectes' not in kw['theme'], keywords_with_timestamp))
-
-def get_keyword_by_fifteen_second_window(filtered_themes: List[dict], start: datetime) -> List[int]:
-    window_size_seconds = get_keyword_time_separation_ms()
-    total_seconds_in_window = get_chunk_duration_api()
-    number_of_windows = int(total_seconds_in_window // window_size_seconds)
-    fifteen_second_window = [0] * number_of_windows
-
-    for keyword_info in filtered_themes:
-        window_number = int( (keyword_info['timestamp'] - start.timestamp() * 1000) // (window_size_seconds) )
-        logging.debug(f"Window number {window_number} - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
-        if window_number >= number_of_windows and window_number >= 0:
-            if(window_number == number_of_windows): # give some slack to mediatree subtitle edge case
-                logging.warning(f"Edge cases around 2 minutes - still counting for one - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
-                window_number = number_of_windows - 1
-                fifteen_second_window[window_number] = 1
-            else:
-                logging.error(f"Window number {window_number} is out of range - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
-        else:
-            fifteen_second_window[window_number] = 1
-    
-    return fifteen_second_window
+    return list(filter(lambda kw: indirectes not in kw['theme'], keywords_with_timestamp))
 
 def count_keywords_duration_overlap(keywords_with_timestamp: List[dict], start: datetime, theme: str = None) -> int:
     total_keywords = len(keywords_with_timestamp)
@@ -274,58 +267,59 @@ def count_keywords_duration_overlap(keywords_with_timestamp: List[dict], start: 
         length_filtered_items = len(keywords_with_timestamp)
 
         if length_filtered_items > 0:
-            fifteen_second_window = get_keyword_by_fifteen_second_window(keywords_with_timestamp, start)
-            final_count = sum(fifteen_second_window)
-            logging.debug(f"Count with 15 second logic: {final_count} keywords")
-            return final_count
+            return count_different_window_number(keywords_with_timestamp, start)
         else:
             return 0
-    
+
+def count_different_window_number(keywords_with_timestamp: List[dict], start: datetime) -> int:
+    window_numbers = [item['window_number'] for item in keywords_with_timestamp if 'window_number' in item]
+    final_count = len(set(window_numbers))
+    logging.debug(f"Count with 15 second logic: {final_count} keywords")
+
+    return final_count
+
 def contains_direct_keywords(keywords_with_timestamp: List[dict]) -> bool:
-    return any('indirectes' not in kw['theme'] for kw in keywords_with_timestamp)
+    return any(indirectes not in kw['theme'] for kw in keywords_with_timestamp)
 
 # we want to count false positive near of 15" of positive keywords
 def transform_false_positive_keywords_to_positive(keywords_with_timestamp: List[dict], start) -> List[dict]:
-    tagged_keywords = tag_window_number(keywords_with_timestamp, start)
-
-    for keyword_info in tagged_keywords:
+    for keyword_info in keywords_with_timestamp:
         # get 15-second neighbouring keywords
         neighbour_keywords = list(
             filter(
                 lambda kw:
                             1 == abs(keyword_info['window_number'] - kw['window_number']) or
                             0 == abs(keyword_info['window_number'] - kw['window_number'])
-            , tagged_keywords)
+            , keywords_with_timestamp)
         )
 
         if( contains_direct_keywords(neighbour_keywords) ) :
             keyword_info['theme'] = remove_indirect(keyword_info['theme'])
 
-    for keyword_info in tagged_keywords:  
-        keyword_info.pop('window_number', None) # remove metadata
-    
-    return tagged_keywords
+    return keywords_with_timestamp
 
-def tag_window_number(keywords_with_timestamp: List[dict], start) -> List[dict]:
+def tag_fifteen_second_window_number(keywords_with_timestamp: List[dict], start) -> List[dict]:
     window_size_seconds = get_keyword_time_separation_ms()
     total_seconds_in_window = get_chunk_duration_api()
     number_of_windows = int(total_seconds_in_window // window_size_seconds)
 
     for keyword_info in keywords_with_timestamp:
         window_number = int( (keyword_info['timestamp'] - start.timestamp() * 1000) // (window_size_seconds))
-        logging.debug(f"Window number {window_number} - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
+        logging.debug(f"Window number {window_number} out of {number_of_windows} - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
         if window_number >= number_of_windows and window_number >= 0:
             if(window_number == number_of_windows): # give some slack to mediatree subtitle edge case
                 logging.warning(f"Edge cases around 2 minutes - still counting for one - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
                 window_number = number_of_windows - 1
                 keyword_info['window_number'] = window_number
+            else:
+                logging.error(f"Window number {window_number} is out of range - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
         else:
             keyword_info['window_number'] = window_number
 
     return keywords_with_timestamp
 
 def remove_indirect(theme: str) -> str:
-    if 'indirectes' in theme:
-        return theme.replace('_indirectes', '')
+    if indirectes in theme:
+        return theme.replace(f'_{indirectes}', '')
     else:
         return theme

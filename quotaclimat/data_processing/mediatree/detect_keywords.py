@@ -155,22 +155,26 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     
     if len(matching_themes) > 0:
         keywords_with_timestamp = filter_keyword_with_same_timestamp(keywords_with_timestamp)
+        # count false positive near of 15" of positive keywords
+        keywords_with_timestamp = transform_false_positive_keywords_to_positive(keywords_with_timestamp, start)
+
+        filtered_keywords_with_timestamp = filter_indirect_words(keywords_with_timestamp)
         return [
             matching_themes,
             keywords_with_timestamp,
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start),
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"changement_climatique_constat"),
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"changement_climatique_causes_directes"),
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"changement_climatique_consequences"),
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"attenuation_climatique_solutions_directes"),
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"adaptation_climatique_solutions_directes"),
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"ressources_naturelles_concepts_generaux"),
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"ressources_naturelles_causes"),
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"ressources_naturelles_solutions"),
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"biodiversite_concepts_generaux"),
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"biodiversite_causes_directes"),
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"biodiversite_consequences"),
-            count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start,"biodiversite_solutions_directes")
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_constat"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_causes"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_consequences"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"attenuation_climatique_solutions"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"adaptation_climatique_solutions"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources_naturelles_concepts_generaux"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources_naturelles_causes"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources_naturelles_solutions"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_concepts_generaux"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_causes"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_consequences"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_solutions")
         ]
 
     else:
@@ -255,7 +259,7 @@ def get_keyword_by_fifteen_second_window(filtered_themes: List[dict], start: dat
     
     return fifteen_second_window
 
-def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: List[dict], start: datetime, theme: str = None) -> int:
+def count_keywords_duration_overlap(keywords_with_timestamp: List[dict], start: datetime, theme: str = None) -> int:
     total_keywords = len(keywords_with_timestamp)
     if(total_keywords) == 0:
         return 0
@@ -267,15 +271,61 @@ def count_keywords_duration_overlap_without_indirect(keywords_with_timestamp: Li
             logging.debug("filtering ressources_ theme")
             keywords_with_timestamp = list(filter(lambda kw: "ressources_" not in kw['theme'], keywords_with_timestamp))
 
-        filtered_themes = filter_indirect_words(keywords_with_timestamp)
-        length_filtered_items = len(filtered_themes)
-        logging.debug(f"Before filtering {total_keywords} - After filtering indirect kw {length_filtered_items}")
+        length_filtered_items = len(keywords_with_timestamp)
+
         if length_filtered_items > 0:
-            fifteen_second_window = get_keyword_by_fifteen_second_window(filtered_themes, start)
+            fifteen_second_window = get_keyword_by_fifteen_second_window(keywords_with_timestamp, start)
             final_count = sum(fifteen_second_window)
             logging.debug(f"Count with 15 second logic: {final_count} keywords")
             return final_count
         else:
             return 0
     
+def contains_direct_keywords(keywords_with_timestamp: List[dict]) -> bool:
+    return any('indirectes' not in kw['theme'] for kw in keywords_with_timestamp)
 
+# we want to count false positive near of 15" of positive keywords
+def transform_false_positive_keywords_to_positive(keywords_with_timestamp: List[dict], start) -> List[dict]:
+    tagged_keywords = tag_window_number(keywords_with_timestamp, start)
+
+    for keyword_info in tagged_keywords:
+        # get 15-second neighbouring keywords
+        neighbour_keywords = list(
+            filter(
+                lambda kw:
+                            1 == abs(keyword_info['window_number'] - kw['window_number']) or
+                            0 == abs(keyword_info['window_number'] - kw['window_number'])
+            , tagged_keywords)
+        )
+
+        if( contains_direct_keywords(neighbour_keywords) ) :
+            keyword_info['theme'] = remove_indirect(keyword_info['theme'])
+
+    for keyword_info in tagged_keywords:  
+        keyword_info.pop('window_number', None) # remove metadata
+    
+    return tagged_keywords
+
+def tag_window_number(keywords_with_timestamp: List[dict], start) -> List[dict]:
+    window_size_seconds = get_keyword_time_separation_ms()
+    total_seconds_in_window = get_chunk_duration_api()
+    number_of_windows = int(total_seconds_in_window // window_size_seconds)
+
+    for keyword_info in keywords_with_timestamp:
+        window_number = int( (keyword_info['timestamp'] - start.timestamp() * 1000) // (window_size_seconds))
+        logging.debug(f"Window number {window_number} - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
+        if window_number >= number_of_windows and window_number >= 0:
+            if(window_number == number_of_windows): # give some slack to mediatree subtitle edge case
+                logging.warning(f"Edge cases around 2 minutes - still counting for one - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
+                window_number = number_of_windows - 1
+                keyword_info['window_number'] = window_number
+        else:
+            keyword_info['window_number'] = window_number
+
+    return keywords_with_timestamp
+
+def remove_indirect(theme: str) -> str:
+    if 'indirectes' in theme:
+        return theme.replace('_indirectes', '')
+    else:
+        return theme

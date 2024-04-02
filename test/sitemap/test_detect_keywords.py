@@ -70,7 +70,7 @@ def test_three_get_themes_keywords_duration():
     assert get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start) == [[
       "changement_climatique_constat"
      ,"changement_climatique_consequences"
-     ,"adaptation_climatique_solutions_directes"
+     ,"adaptation_climatique_solutions"
     ],[], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 def test_long_get_themes_keywords_duration():
@@ -211,7 +211,7 @@ def test_filter_and_tag_by_theme():
         "srt": srt,
         "theme": [
             "changement_climatique_constat",
-            "changement_climatique_causes_directes",
+            "changement_climatique_causes",
             "ressources_naturelles_concepts_generaux"
         ],
         "keywords_with_timestamp": [],
@@ -282,14 +282,14 @@ def test_lower_case_filter_and_tag_by_theme():
         "srt": srt,
         "theme": [
             "changement_climatique_constat",
-            "changement_climatique_causes_directes",
+            "changement_climatique_causes",
             "ressources_naturelles_concepts_generaux"
         ],
         "keywords_with_timestamp": [
             {
                 "keyword" :"méthane",
                 "timestamp": original_timestamp,
-                "theme": "changement_climatique_causes_directes",
+                "theme": "changement_climatique_causes",
         }],
         "number_of_keywords": 1,
         "number_of_changement_climatique_constat": 0,
@@ -334,14 +334,14 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         "srt": srt,
         "theme": [
             "changement_climatique_constat",
-            "changement_climatique_causes_directes",
+            "changement_climatique_causes",
             "ressources_naturelles_concepts_generaux"
         ],
         "keywords_with_timestamp": [
             {
                 "keyword" :"méthane",
                 "timestamp": original_timestamp,
-                "theme": "changement_climatique_causes_directes",
+                "theme": "changement_climatique_causes",
         }],
         "number_of_keywords": 1,
         "number_of_changement_climatique_constat": 0,
@@ -479,7 +479,7 @@ def test_format_word_regex():
     assert format_word_regex("d'eau") == "d' ?eaus?"
     assert format_word_regex("réseaux") == "réseaux?"
 
-def test_overlap_count_keywords_duration_overlap_without_indirect():
+def test_overlap_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": original_timestamp + 1,
@@ -502,9 +502,9 @@ def test_overlap_count_keywords_duration_overlap_without_indirect():
             }
     ]
     
-    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 1
+    assert count_keywords_duration_overlap(keywords_with_timestamp, start) == 1
   
-def test_no_overlap_count_keywords_duration_overlap_without_indirect():
+def test_no_overlap_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": original_timestamp, 
@@ -537,9 +537,9 @@ def test_no_overlap_count_keywords_duration_overlap_without_indirect():
             },
     ]
     
-    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 4
+    assert count_keywords_duration_overlap(keywords_with_timestamp, start) == 4
 
-def test_with_a_mix_of_overlap_count_keywords_duration_overlap_without_indirect():
+def test_with_a_mix_of_overlap_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": original_timestamp, # count for one
@@ -577,9 +577,9 @@ def test_with_a_mix_of_overlap_count_keywords_duration_overlap_without_indirect(
             },
     ]
     
-    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 2
+    assert count_keywords_duration_overlap(keywords_with_timestamp, start) == 2
 
-def test_with_15second_window_count_keywords_duration_overlap_without_indirect():
+def test_with_15second_window_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": original_timestamp, # count for one
@@ -617,9 +617,9 @@ def test_with_15second_window_count_keywords_duration_overlap_without_indirect()
             }
     ]
     
-    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 1
+    assert count_keywords_duration_overlap(keywords_with_timestamp, start) == 1
 
-def test_only_one_count_keywords_duration_overlap_without_indirect():
+def test_only_one_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": original_timestamp, # count for one
@@ -627,9 +627,9 @@ def test_only_one_count_keywords_duration_overlap_without_indirect():
             }
     ]
     
-    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 1
+    assert count_keywords_duration_overlap(keywords_with_timestamp, start) == 1
 
-def test_indirect_count_keywords_duration_overlap_without_indirect():
+def test_indirect_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
                 "keyword" : 'digue',
                 "timestamp": original_timestamp,
@@ -637,9 +637,9 @@ def test_indirect_count_keywords_duration_overlap_without_indirect():
             }
     ]
     
-    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 0
+    assert count_keywords_duration_overlap(keywords_with_timestamp, start) == 1
 
-def test_resources_count_keywords_duration_overlap_without_indirect():
+def test_resources_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
                 "keyword" : 'lithium',
                 "timestamp": original_timestamp,
@@ -647,7 +647,7 @@ def test_resources_count_keywords_duration_overlap_without_indirect():
             }
     ]
     
-    assert count_keywords_duration_overlap_without_indirect(keywords_with_timestamp, start) == 0
+    assert count_keywords_duration_overlap(keywords_with_timestamp, start) == 0
 
 def test_filter_indirect_words():
     keywords_with_timestamp = [{
@@ -760,19 +760,19 @@ def test_keyword_second_word_a_bit_later_inside_keyword_filter_keyword_with_same
     keywords_with_timestamp = [{
                 "keyword" : 'carbone',
                 "timestamp": later_timestamp,
-                "theme":"changement_climatique_causes_directes",
+                "theme":"changement_climatique_causes",
             },
             {
                 "keyword" : 'béton bas carbone',
                 "timestamp": original_timestamp, # same timestamp, so we take longest keyword
-                "theme":"attenuation_climatique_solutions_directes", # different theme, keep this one
+                "theme":"attenuation_climatique_solutions", # different theme, keep this one
             }
     ]
 
     expected = [{
                 "keyword" : 'béton bas carbone',
                 "timestamp": original_timestamp, # same timestamp, so we take longest keyword
-                "theme":"attenuation_climatique_solutions_directes", # different theme, keep this one
+                "theme":"attenuation_climatique_solutions", # different theme, keep this one
             }
     ]
 
@@ -786,7 +786,7 @@ def test_keyword_second_word_to_keep_inside_keyword_filter_keyword_with_same_tim
                     "keyword": "pénurie"
             },
             {
-                "theme":"attenuation_climatique_solutions_directes", # different theme, keep this one
+                "theme":"attenuation_climatique_solutions", # different theme, keep this one
                 "timestamp": 1707627708051,
                 "keyword": "barrages"
             },
@@ -801,7 +801,7 @@ def test_keyword_second_word_to_keep_inside_keyword_filter_keyword_with_same_tim
         {
             "keyword" : 'barrages',
             "timestamp": 1707627708051, # same timestamp, so we take longest keyword
-            "theme":"attenuation_climatique_solutions_directes", # different theme, keep this one
+            "theme":"attenuation_climatique_solutions", # different theme, keep this one
         }
     ]
 
@@ -975,3 +975,121 @@ def test_almost_out_of_bound_get_keyword_by_fifteen_second_window():
     ]
     
     assert get_keyword_by_fifteen_second_window(keywords_with_timestamp, start) == [0, 0, 0, 0, 0, 0, 0, 1]
+
+def test_tag_window_number():
+    keywords_with_timestamp = [
+        {'keyword': 'recyclage',
+         'timestamp': original_timestamp,
+         'theme': 'attenuation_climatique_solutions_indirectes' # should be transformed to direct
+        },
+        {'keyword': 'climatique',
+         'timestamp': original_timestamp + 150,
+         'theme': 'changement_climatique_constat'
+        },
+        {'keyword': 'covoiturage',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() + 10000, # should be transformed to direct
+         'theme': 'attenuation_climatique_solutions_indirectes'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 2 ,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be transformed to direct
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 6 ,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be transformed to direct
+        }
+    ]   
+    
+    expected = [
+        {'keyword': 'recyclage',
+         'timestamp': original_timestamp,
+         'window_number': 0,
+         'theme': 'attenuation_climatique_solutions_indirectes'
+        },
+        {'keyword': 'climatique',
+         'timestamp': original_timestamp + 150,
+         'window_number': 0,
+         'theme': 'changement_climatique_constat'
+        },
+        {'keyword': 'covoiturage',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() + 10000,
+         'window_number': 1,
+         'theme': 'attenuation_climatique_solutions_indirectes'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 2 ,
+          'window_number': 2,
+          'theme': 'attenuation_climatique_solutions_indirectes'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 6 ,
+          'window_number': 6,
+          'theme': 'attenuation_climatique_solutions_indirectes'
+        }
+    ]
+    assert tag_window_number(keywords_with_timestamp, start) == expected
+
+def test_transform_false_positive_keywords_to_positive():
+    keywords_with_timestamp = [
+        {'keyword': 'recyclage',
+         'timestamp': original_timestamp,
+         'theme': 'attenuation_climatique_solutions_indirectes' # should be transformed to direct
+        },
+        {'keyword': 'climatique',
+         'timestamp': original_timestamp + 150,
+         'theme': 'changement_climatique_constat'
+        },
+        {'keyword': 'covoiturage',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() + 10000, # should be transformed to direct
+         'theme': 'attenuation_climatique_solutions_indirectes'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 2 ,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be transformed to direct
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 3 ,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 5 ,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 7,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+        }
+    ]
+
+    expected_output = keywords_with_timestamp = [
+        {'keyword': 'recyclage',
+         'timestamp': original_timestamp,
+         'theme': 'attenuation_climatique_solutions' # should be transformed to direct
+        },
+        {'keyword': 'climatique',
+         'timestamp': original_timestamp + 150,
+         'theme': 'changement_climatique_constat' # our positive keyword that transform false positive
+        },
+        {'keyword': 'covoiturage',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() + 10000, # should be transformed to direct
+         'theme': 'attenuation_climatique_solutions'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 2 ,
+          'theme': 'attenuation_climatique_solutions' # should be transformed to direct
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 3 ,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 5 ,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 7,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+        }
+    ]
+    
+    assert transform_false_positive_keywords_to_positive(keywords_with_timestamp, start) == expected_output

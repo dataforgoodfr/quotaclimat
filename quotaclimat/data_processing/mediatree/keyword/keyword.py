@@ -311,6 +311,7 @@ THEME_KEYWORDS = {
     "transition écologique"
     ,"industrie verte"
     ,"agroécologie"
+    ,"agro écologie"
     ,"polyculture élevage"
     ,"agroforesterie"
     ,"développement durable"
@@ -691,6 +692,7 @@ THEME_KEYWORDS = {
 [ 
     "moins polluant",
     "agroécologie",
+    "agro écologie",
     "polyculture élevage",
     "agroforesterie",
     "agriculture de conservation",
@@ -726,7 +728,6 @@ THEME_KEYWORDS = {
     "réserve de biosphère",
     "Agroforesterie",
     "agriculture biologique",
-    "agroécologie",
     "agriculture de conservation",
     "transition agroécologique",
     "pratiques agricoles durables",

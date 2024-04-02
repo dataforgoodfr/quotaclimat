@@ -998,38 +998,109 @@ def test_transform_false_positive_keywords_to_positive():
         }
     ]
 
-    expected_output = keywords_with_timestamp = [
+    expected_output = [
         {'keyword': 'recyclage',
          'timestamp': original_timestamp,
-         'theme': 'attenuation_climatique_solutions' # should be transformed to direct
+         'theme': 'attenuation_climatique_solutions' # was indirect
+         ,'window_number': 0
         },
         {'keyword': 'climatique',
          'timestamp': original_timestamp + 150,
          'theme': 'changement_climatique_constat' # our positive keyword that transform false positive
+         ,'window_number': 0
         },
         {'keyword': 'covoiturage',
          'timestamp': original_timestamp + get_keyword_time_separation_ms() + 10000, # should be transformed to direct
          'theme': 'attenuation_climatique_solutions'
+         ,'window_number': 1
         },
         {'keyword': 'industrie verte',
          'timestamp': original_timestamp + get_keyword_time_separation_ms() * 2 ,
           'theme': 'attenuation_climatique_solutions' # should be transformed to direct
+         ,'window_number': 2
         },
         {'keyword': 'industrie verte',
          'timestamp': original_timestamp + get_keyword_time_separation_ms() * 3 ,
-          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+          'theme': 'attenuation_climatique_solutions'# should be transformed to direct
+         ,'window_number': 3
         },
         {'keyword': 'industrie verte',
          'timestamp': original_timestamp + get_keyword_time_separation_ms() * 5 ,
-          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+          'theme': 'attenuation_climatique_solutions_indirectes' # should stay to indirect
+         ,'window_number': 5
         },
         {'keyword': 'industrie verte',
          'timestamp': original_timestamp + get_keyword_time_separation_ms() * 7,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should stay to indirect
+         ,'window_number': 7
+        }
+    ]
+    
+    assert transform_false_positive_keywords_to_positive(tag_fifteen_second_window_number(keywords_with_timestamp,start), start) == expected_output
+
+def test_different_steps_transform_false_positive_keywords_to_positive():
+    keywords_with_timestamp = [
+        {'keyword': 'climatique',
+         'timestamp': original_timestamp + 150,
+         'theme': 'changement_climatique_constat'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 1 + 150,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be transformed to direct
+        },
+        {'keyword': 'agroforesterie',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 2 + 150,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+        },
+        {'keyword': 'alternative durable',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 3 + 150,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+        },
+        {'keyword': 'planification écologique',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 4 + 150,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+        },
+        {'keyword': 'nucléaire',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 6 + 150,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+        }
+    ]
+
+    expected_output = [
+        {'keyword': 'climatique',
+         'timestamp': original_timestamp + 150,
+         'window_number': 0,
+         'theme': 'changement_climatique_constat'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 1 + 150,
+          'window_number': 1,
+          'theme': 'attenuation_climatique_solutions' # should be transformed to direct
+        },
+        {'keyword': 'agroforesterie',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 2 + 150,
+          'window_number': 2,
+          'theme': 'attenuation_climatique_solutions' # should be transformed to direct
+        },
+        {'keyword': 'alternative durable',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 3 + 150,
+          'window_number': 3,
+          'theme': 'attenuation_climatique_solutions' # should be transformed to direct
+        },
+        {'keyword': 'planification écologique',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 4 + 150,
+          'window_number': 4,
+          'theme': 'attenuation_climatique_solutions' # should be transformed to direct
+        },
+        {'keyword': 'nucléaire',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 6 + 150,
+          'window_number': 6,
           'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
         }
     ]
     
     assert transform_false_positive_keywords_to_positive(tag_fifteen_second_window_number(keywords_with_timestamp,start), start) == expected_output
+
 
 def test_count_different_window_number():
     keywords_with_timestamp = [

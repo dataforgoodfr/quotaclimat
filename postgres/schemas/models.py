@@ -55,6 +55,7 @@ class Keywords(Base):
 
     id = Column(Text, primary_key=True)
     channel_name = Column(String, nullable=False)
+    channel_program = Column(String, nullable=True) # new column - alembic handles this
     channel_radio = Column(Boolean, nullable=True)
     start = Column(DateTime())
     plaintext= Column(Text)

@@ -36,4 +36,7 @@ COPY pyproject.toml pyproject.toml
 # healthcheck
 EXPOSE 5050
 
+# to migrate SQL tables schema if needed
+RUN alembic upgrade head
+
 ENTRYPOINT ["python", "quotaclimat/data_processing/mediatree/api_import.py"]

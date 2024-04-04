@@ -13,6 +13,7 @@ from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.config import *
 from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
+from quotaclimat.data_processing.mediatree.channel_program import *
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, get_db_session
 from postgres.schemas.models import keywords_table
@@ -197,6 +198,7 @@ def extract_api_sub(
         if(df is not None):
             df = filter_and_tag_by_theme(df)
             df["id"] = add_primary_key(df)
+            df["channel_program"] = add_channel_program(df)
             return df
         else:
             None

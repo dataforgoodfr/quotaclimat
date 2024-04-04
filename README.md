@@ -313,6 +313,19 @@ With +1 millions rows, we can update from an offset to fix a custom logic by usi
 
 Example inside the docker-compose.yml mediatree service -> START_OFFSET: 100
 
+## SQL Tables evolution
+Using [Alembic](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) Auto Generating Migrations¶ we can add a new column inside `models.py` and it will automatically make the schema evolution :
+
+```
+alembic revision --autogenerate -m "Add new column test for table keywords"
+```
+
+Inside our Dockerfile_api_import, we call this line 
+```
+# to migrate SQL tables schema if needed
+RUN alembic upgrade head
+```
+
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
 ```bash

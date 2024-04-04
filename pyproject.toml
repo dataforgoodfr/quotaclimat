@@ -14,7 +14,7 @@ python = ">=3.11.0,<3.13.0"
 pandas = "^2.2.0"
 advertools = "^0.14.1"
 xmltodict = "^0.13.0"
-sqlalchemy = "^2.0.21"
+sqlalchemy = "^2.0.29"
 psycopg2-binary = "^2.9.5"
 
 streamlit = "^1.27.0"
@@ -35,18 +35,18 @@ aiohttp = "^3.8.6"
 pytest-asyncio = "^0.23.5"
 swifter = "^1.4.0"
 tenacity = "^8.2.3"
-sentry-sdk = "^1.40.5"
+sentry-sdk = "^1.44.1"
 coverage = "^7.4.2"
 modin = {extras = ["all"], version = "^0.28.0"}
-dask-expr = "^1.0.5"
+dask-expr = "^1.0.9"
 
 [build-system]
 requires = ["poetry-core>=1.1"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^7.4.2"
-pytest-cov = "^3.0.0"
+pytest = "^8.1.1"
+pytest-cov = "^5.0.0"
 poetry-bumpversion = "^0.3.1"
 pre-commit = "^2.18.1"
 black = "^22.3.0"

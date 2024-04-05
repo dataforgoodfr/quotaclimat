@@ -3201,7 +3201,7 @@ files = [
     {file = "msgpack-1.0.8-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:5fbb160554e319f7b22ecf530a80a3ff496d38e8e07ae763b9e82fadfe96f273"},
     {file = "msgpack-1.0.8-cp39-cp39-win32.whl", hash = "sha256:f9af38a89b6a5c04b7d18c492c8ccf2aee7048aff1ce8437c4683bb5a1df893d"},
     {file = "msgpack-1.0.8-cp39-cp39-win_amd64.whl", hash = "sha256:ed59dd52075f8fc91da6053b12e8c89e37aa043f8986efd89e61fae69dc1b011"},
-    {file = "msgpack-1.0.8-py3-none-any.whl", hash = "sha256:24f727df1e20b9876fa6e95f840a2a2651e34c0ad147676356f4bf5fbb0206ca"},
+    {file = "msgpack-1.0.8.tar.gz", hash = "sha256:95c02b0e27e706e48d0e5426d1710ca78e0f0628d6e89d5b5a5b91a5f12274f3"},
 ]
 
 [[package]]
@@ -3305,13 +3305,13 @@ files = [
 
 [[package]]
 name = "multimethod"
-version = "1.11.2"
+version = "1.10"
 description = "Multiple argument dispatching."
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.8"
 files = [
-    {file = "multimethod-1.11.2-py3-none-any.whl", hash = "sha256:cb338f09395c0ee87d36c7691cdd794d13d8864358082cf1205f812edd5ce05a"},
-    {file = "multimethod-1.11.2.tar.gz", hash = "sha256:7f2a4863967142e6db68632fef9cd79053c09670ba0c5f113301e245140bba5c"},
+    {file = "multimethod-1.10-py3-none-any.whl", hash = "sha256:afd84da9c3d0445c84f827e4d63ad42d17c6d29b122427c6dee9032ac2d2a0d4"},
+    {file = "multimethod-1.10.tar.gz", hash = "sha256:daa45af3fe257f73abb69673fd54ddeaf31df0eb7363ad6e1251b7c9b192d8c5"},
 ]
 
 [[package]]
@@ -3732,17 +3732,17 @@ xml = ["lxml (>=4.9.2)"]
 
 [[package]]
 name = "pandera"
-version = "0.17.2"
+version = "0.18.3"
 description = "A light-weight and flexible data validation and testing tool for statistical data objects."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pandera-0.17.2-py3-none-any.whl", hash = "sha256:8e4e7b279c62f6d4b5109801544bf8d46e1c9fdf7ceceb8fedd5f3dad0c1bea1"},
-    {file = "pandera-0.17.2.tar.gz", hash = "sha256:67515984f855ba14d12443f893b5ff90ae6796f613d5f3df43abad406a48c373"},
+    {file = "pandera-0.18.3-py3-none-any.whl", hash = "sha256:376faf746db57517f7fd85f234fa193e34266e7bcd1781e5c5912befbc180b98"},
+    {file = "pandera-0.18.3.tar.gz", hash = "sha256:47dd2e10ed7d2a2bc9cfd154b76b8bcd065a9bf1413d00de902d31c7afeec014"},
 ]
 
 [package.dependencies]
-multimethod = "*"
+multimethod = "<=1.10.0"
 numpy = ">=1.19.0"
 packaging = ">=20.0"
 pandas = ">=1.2.0"
@@ -3752,7 +3752,7 @@ typing-inspect = ">=0.6.0"
 wrapt = "*"
 
 [package.extras]
-all = ["black", "dask", "fastapi", "frictionless (<=4.40.8)", "geopandas", "hypothesis (>=5.41.1)", "modin", "pandas-stubs", "pyspark (>=3.2.0)", "pyyaml (>=5.1)", "ray", "scipy", "shapely"]
+all = ["black", "dask", "fastapi", "frictionless (<=4.40.8)", "geopandas", "hypothesis (>=6.92.7)", "modin", "pandas-stubs", "pyspark (>=3.2.0)", "pyyaml (>=5.1)", "ray", "scipy", "shapely"]
 dask = ["dask"]
 fastapi = ["fastapi"]
 geopandas = ["geopandas", "shapely"]
@@ -3763,7 +3763,7 @@ modin-dask = ["dask", "modin"]
 modin-ray = ["modin", "ray"]
 mypy = ["pandas-stubs"]
 pyspark = ["pyspark (>=3.2.0)"]
-strategies = ["hypothesis (>=5.41.1)"]
+strategies = ["hypothesis (>=6.92.7)"]
 
 [[package]]
 name = "pandocfilters"
@@ -7336,4 +7336,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11.0,<3.13.0"
-content-hash = "388529a8862c7a88d8a5b146e82531a330b324f5722f0f86dfd8049585ce1033"
+content-hash = "a3ee9d4676fa1b1ec2decec9bf466b3e72d3e8e934e5f3f094c9dfb7d9dba316"

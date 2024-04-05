@@ -38,7 +38,7 @@ tenacity = "^8.2.3"
 sentry-sdk = "^1.44.1"
 coverage = "^7.4.2"
 modin = {extras = ["all"], version = "^0.28.0"}
-dask-expr = "^1.0.9"
+dask-expr = "^1.0.10"
 
 [build-system]
 requires = ["poetry-core>=1.1"]

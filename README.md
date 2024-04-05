@@ -277,6 +277,7 @@ With Sentry, with env variable `SENTRY_DSN`.
 
 Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
 
+## Batch import
 ### Batch import based on time
 Use env variable `START_DATE` like in docker compose (epoch second format : 1705409797).
 
@@ -306,12 +307,15 @@ After having updated `UPDATE` env variable to true inside docker-compose.yml and
  update_pg_keywords.py:20 | Difference old 1000 - new_number_of_keywords 0
 ```
 
-#### Batch update from an offset
+### Batch update from an offset
 With +1 millions rows, we can update from an offset to fix a custom logic by using `START_OFFSET` to batch update PG from a offset. 
 
 ~55 minutes to update 50K rows on a mVCPU 2240 - 4Gb RAM on Scaleway.
 
 Example inside the docker-compose.yml mediatree service -> START_OFFSET: 100
+
+### Channel metadata
+In order to maintain channel perimeter (weekday, hours) up to date, we save the current version inside `postgres/channel_metadata.json`, if we modify this file the next deploy will update every lines of inside Postgresql table `channel_metadata`.
 
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:

@@ -12,7 +12,7 @@ WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
 
-RUN pip install poetry==1.8.1
+RUN pip install poetry==1.8.2
 
 RUN poetry install
 

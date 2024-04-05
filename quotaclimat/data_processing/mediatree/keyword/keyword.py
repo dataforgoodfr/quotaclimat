@@ -54,7 +54,7 @@ THEME_KEYWORDS = {
     "transition énergétique",
 ]
 ,
-"changement_climatique_causes_directes" : [ # 1.1.2.1
+"changement_climatique_causes" : [ # 1.1.2.1
         "inaction climatique",
         "insuffisance climatique",
         "gaz à effet de serre",
@@ -220,7 +220,7 @@ THEME_KEYWORDS = {
     "espèce invasive",
     "retrait gonflement des argiles",
 ],
-"attenuation_climatique_solutions_directes" : [ # 1.1.4.1
+"attenuation_climatique_solutions" : [ # 1.1.4.1
     "limiter la hausse des températures",
     "réduction des émissions de gaz à effet de serre",
     "baisse des émissions de gaz à effet de serre",
@@ -345,7 +345,7 @@ THEME_KEYWORDS = {
     ,"forêt"
     ,"tri à la source"
     ,"biodégradable"
-    ,"Recyclage"
+    ,"recyclage"
     ,"compostage"
     ,"espace vert"
     ,"prairie"
@@ -383,11 +383,10 @@ THEME_KEYWORDS = {
     ,"Voitures électriques"
 ]
 ,
-"adaptation_climatique_solutions_directes": # 1.1.5.1
+"adaptation_climatique_solutions": # 1.1.5.1
 [
     "adaptation au changement climatique",
     "adaptation au dérèglement climatique",
-    "adaptation au réchauffement climatique",
     "adaptation au réchauffement climatique",
     "adaptation climatique",
     "renforcer les digues",
@@ -567,7 +566,7 @@ THEME_KEYWORDS = {
     "Union internationale pour la conservation de la nature",
     "UICN",
 ],
-"biodiversite_causes_directes": # 1.3.2
+"biodiversite_causes": # 1.3.2
 [ 
     "polluant",
     "Dégradation de l'habitat",
@@ -688,7 +687,7 @@ THEME_KEYWORDS = {
     "Mortalité forestière",
     "disparition des forêts",
 ],
-"biodiversite_solutions_directes": # 1.3.4.1
+"biodiversite_solutions": # 1.3.4.1
 [ 
     "moins polluant",
     "agroécologie",

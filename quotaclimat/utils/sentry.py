@@ -9,7 +9,7 @@ functions_to_trace = [
     {"qualified_name": "quotaclimat.data_processing.mediatree.detect_keywords.get_cts_in_ms_for_keywords"},
     {"qualified_name": "quotaclimat.data_processing.mediatree.detect_keywords.filter_keyword_with_same_timestamp"},
     {"qualified_name": "quotaclimat.data_processing.mediatree.detect_keywords.get_themes_keywords_duration"},
-    {"qualified_name": "quotaclimat.data_processing.mediatree.detect_keywords.count_keywords_duration_overlap_without_indirect"},
+    {"qualified_name": "quotaclimat.data_processing.mediatree.detect_keywords.count_keywords_duration_overlap"},
     {"qualified_name": "quotaclimat.data_processing.mediatree.detect_keywords.filter_and_tag_by_theme"},
     {"qualified_name": "quotaclimat.data_processing.mediatree.detect_keywords.add_primary_key"},
     {"qualified_name": "quotaclimat.data_processing.mediatree.api_import.extract_api_sub"},

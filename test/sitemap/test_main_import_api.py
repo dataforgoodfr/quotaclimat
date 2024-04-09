@@ -48,14 +48,15 @@ def test_first_row_api_import():
         assert specific_keyword.number_of_keywords == 0
 
 def test_second_row_api_import():
+        
         primary_key = "67b9cc593516b40f55d6a3e89b377fccc8ab76d263c5fd6d4bfe379626190641"
         specific_keyword = get_keyword(primary_key)
-        assert specific_keyword.theme == [
-            "changement_climatique_constat",
-            "changement_climatique_causes_indirectes",
+        assert set(specific_keyword.theme) == set([
             "changement_climatique_consequences",
-            "adaptation_climatique_solutions_indirectes"
-        ]
+            "adaptation_climatique_solutions_indirectes",
+            "changement_climatique_constat",
+            "changement_climatique_causes",
+        ])
 
         assert specific_keyword.keywords_with_timestamp == [ # from metabase to speedup check
             {
@@ -71,7 +72,7 @@ def test_second_row_api_import():
             {
                 "keyword": "puit de pétrole",
                 "timestamp": 1707627628054,
-                "theme": "changement_climatique_causes_indirectes"
+                "theme": "changement_climatique_causes" # was indirectes before
             },
             {
                 "keyword": "submersion",
@@ -90,10 +91,10 @@ def test_second_row_api_import():
 def test_third_row_api_import():
         primary_key = "975b41e76d298711cf55113a282e7f11c28157d761233838bb700253d47be262"
         specific_keyword = get_keyword(primary_key)
-        assert specific_keyword.theme == [
+        assert set(specific_keyword.theme) == set([
+            "changement_climatique_consequences",
             "changement_climatique_constat",
-            "changement_climatique_consequences"
-        ]
+        ])
         assert specific_keyword.keywords_with_timestamp == [
         {
             "keyword": "écologiste",

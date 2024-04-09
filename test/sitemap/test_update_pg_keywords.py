@@ -197,24 +197,42 @@ def test_first_update_keywords():
     expected_keywords_with_timestamp = [
     {'keyword': 'conditions de vie sur terre', 'timestamp': 1706437094004, 'theme': 'changement_climatique_constat'}, 
     {'keyword': 'habitabilité de la planète', 'timestamp': 1706437079010, 'theme': 'changement_climatique_constat'}, 
-    {'keyword': 'digue', 'timestamp': 1706437111004, 'theme': 'adaptation_climatique_solutions_indirectes'}, 
+    {'keyword': 'digue', 'timestamp': 1706437111004, 'theme': 'adaptation_climatique_solutions'}, 
     {'keyword': 'planète', 'timestamp': 1706437079016, 'theme': 'ressources_naturelles_concepts_generaux'}
     ]
     assert result_after_update.id == result_before_update.id
 
     # number_of_keywords
-    assert new_value == 2
+    assert new_value == number_of_changement_climatique_constat + number_of_adaptation_climatique_solutions_directes
     assert result_after_update.number_of_keywords == new_value
     assert result_before_update.number_of_keywords == wrong_value
 
     # number_of_changement_climatique_constat
-    assert number_of_changement_climatique_constat == new_value
-    assert result_after_update.number_of_changement_climatique_constat == new_value
+    assert number_of_changement_climatique_constat == 2
+    assert result_after_update.number_of_changement_climatique_constat == 2
 
+    # number_of_adaptation_climatique_solutions_directes
+    assert number_of_adaptation_climatique_solutions_directes == 1
+    assert result_after_update.number_of_adaptation_climatique_solutions_directes == 1
+
+
+    assert number_of_ressources_naturelles_concepts_generaux == 1
+    
     # keywords_with_timestamp
     assert result_after_update.keywords_with_timestamp == new_keywords_with_timestamp
     assert expected_keywords_with_timestamp == new_keywords_with_timestamp
 
+    assert number_of_changement_climatique_causes_directes == 0
+    assert number_of_changement_climatique_consequences == 0
+    assert number_of_attenuation_climatique_solutions_directes == 0
+
+    assert number_of_ressources_naturelles_causes == 0
+    assert number_of_ressources_naturelles_solutions == 0
+    assert number_of_biodiversite_concepts_generaux == 0
+    assert number_of_biodiversite_causes_directes == 0
+    assert number_of_biodiversite_consequences == 0
+    assert number_of_biodiversite_solutions_directes == 0
+
     # theme
-    assert result_after_update.theme == ["changement_climatique_constat", "adaptation_climatique_solutions_indirectes", "ressources_naturelles_concepts_generaux"]
-    assert new_theme == ["changement_climatique_constat", "adaptation_climatique_solutions_indirectes", "ressources_naturelles_concepts_generaux"]
+    assert set(result_after_update.theme) == set(["adaptation_climatique_solutions", "ressources_naturelles_concepts_generaux","changement_climatique_constat"])
+    assert set(new_theme) == set(["adaptation_climatique_solutions", "ressources_naturelles_concepts_generaux","changement_climatique_constat"])

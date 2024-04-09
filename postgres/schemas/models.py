@@ -1,12 +1,13 @@
 import logging
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer
-from sqlalchemy.orm import declarative_base
+from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer, Table, MetaData
+from sqlalchemy.orm import declarative_base, sessionmaker
 import pandas as pd
 from sqlalchemy import text
 from postgres.database_connection import connect_to_db, get_db_session
 import os
+import json
 
 Base = declarative_base()
 
@@ -33,6 +34,7 @@ sitemap_table = "sitemap_table"
 # ALTER TABLE keywords_new_list
 # RENAME TO keywords; 
 keywords_table = "keywords"
+channel_metadata_table = "channel_metadata"
 
 class Sitemap(Base):
     __tablename__ = sitemap_table
@@ -77,6 +79,14 @@ class Keywords(Base):
     number_of_biodiversite_consequences= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_consequences integer;
     number_of_biodiversite_solutions_directes= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_solutions_directes integer;
 
+class Channel_Metadata(Base):
+    __tablename__ = channel_metadata_table
+    id = Column(Text, primary_key=True)
+    channel_name = Column(String, nullable=False)
+    channel_title = Column(String, nullable=False)
+    duration_minutes= Column(Integer)
+    weekday= Column(Integer)  
+
 def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
@@ -97,11 +107,12 @@ def get_last_month_sitemap_id(engine):
 
 def create_tables():
     """Create tables in the PostgreSQL database"""
-    logging.info("create sitemap, keywords tables")
+    logging.info("create sitemap, keywords tables - update channel_metadata")
     try:
         engine = connect_to_db()
 
         Base.metadata.create_all(engine, checkfirst=True)
+        update_channel_metadata(engine)
         logging.info("Table creation done, if not already done.")
     except (Exception) as error:
         logging.error(error)
@@ -109,16 +120,43 @@ def create_tables():
         if engine is not None:
             engine.dispose()
 
+def update_channel_metadata(engine):
+    logging.info("Update channel metadata")
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    json_file_path = os.path.join(current_dir, '..', 'channel_metadata.json')
+    with open(json_file_path, 'r') as f:
+        data = json.load(f)
+        
+        for item in data:
+            metadata = {
+                'id': item['ID'],
+                'channel_name': item['Channel Name'],
+                'channel_title': item['Channel Title'],
+                'duration_minutes': int(item['Duration Minutes']),
+                'weekday': int(item['Weekday'])
+            }
+            session.merge(Channel_Metadata(**metadata))
+        
+        # Commit all changes at once after processing all items
+        session.commit()
+        logging.info("Updated channel metadata")
+
 def drop_tables():
-    """Drop tables in the PostgreSQL database"""
+    """Drop table keyword in the PostgreSQL database"""
 
     if(os.environ.get("ENV") == "docker"):
         logging.warning("drop tables")
         try:
+            
             engine = connect_to_db()
+            metadata = MetaData(bind=engine)
+            metadata.reflect()
+            keywords_table = Table(keywords_table, metadata)
+            keywords_table.drop()
 
-            Base.metadata.drop_all(engine, checkfirst=True)
-            logging.info("Table deletion done")
+            logging.info(f"Table {keywords_table} deletion done")
         except (Exception) as error:
             logging.error(error)
         finally:

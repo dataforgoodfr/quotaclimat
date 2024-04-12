@@ -1224,6 +1224,14 @@
                   "program_type": "Information - Journal"
                 },
                 {
+                  "channel_name": "france2",
+                  "start": "06:30",
+                  "end": "09:30",
+                  "weekday": 3,
+                  "program_name": "Télématin",
+                  "program_type": "Information - Autres émissions"
+                },
+                {
                   "channel_name": "france3-idf",
                   "start": "07:00",
                   "end": "09:00",

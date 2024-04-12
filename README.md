@@ -318,7 +318,11 @@ Example inside the docker-compose.yml mediatree service -> START_OFFSET: 100
 Using [Alembic](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) Auto Generating Migrations¶ we can add a new column inside `models.py` and it will automatically make the schema evolution :
 
 ```
-alembic revision --autogenerate -m "Add new column test for table keywords"
+# connect to the test container : docker compose test exec bash
+poetry run alembic revision --autogenerate -m "Add new column test for table keywords"
+# this should generate a file to commit inside "alembic/versions"
+# to apply it we need to run, from our container
+poetry run alembic upgrade head
 ```
 
 Inside our Dockerfile_api_import, we call this line 

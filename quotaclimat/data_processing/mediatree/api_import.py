@@ -138,16 +138,6 @@ def get_param_api(token, type_sub, start_epoch, channel = 'm6', page = 0):
     }
 
 
-# TODO use it when API updated
-def get_includes_or_query(array_words: List[str]) -> str: 
-    return " OU ".join(array_words)
-
-def get_theme_query_includes(theme_dict):
-    return {key: get_includes_or_query(values) for key, values in theme_dict.items()}
-
-def transform_theme_query_includes(themes_with_keywords = THEME_KEYWORDS):
-    return list(map(get_theme_query_includes, themes_with_keywords))
-
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
 # @see https://github.com/jd/tenacity/tree/main
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
@@ -230,7 +220,7 @@ def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFram
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             new_df.drop('channel.title', axis=1, inplace=True) # keep only channel.name
 
-            new_df['timestamp'] = pd.to_datetime(new_df['start'], unit='s', utc=True).tz_convert('Europe/Paris')
+            new_df['timestamp'] = pd.to_datetime(new_df['start'], unit='s', utc=True).dt.tz_convert('Europe/Paris')
             new_df.drop('start', axis=1, inplace=True) # keep only channel.name
 
             new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)

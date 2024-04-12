@@ -104,29 +104,6 @@ def test_parse_reponse_subtitle():
 
     pd.testing.assert_frame_equal(df._to_pandas().reset_index(drop=True), expected_result.reset_index(drop=True))
 
-def test_get_includes_or_query():
-    words = ["velo", "marche"]
-    output = get_includes_or_query(words)
-    assert output  == "velo OU marche"
-
-def test_transform_theme_query_includes():
-    theme = [{
-    "causes_directes" : [
-           "inaction climatique","insuffisance climatique",
-            "gaz à effet de serre"
-    ]},{
-    "causes_indirectes": [
-        "méthane", "élevage", "élevage bovin"
-      ]
-    }]
-    output = transform_theme_query_includes(theme)
-    expected = [
-    {"causes_directes" : "inaction climatique OU insuffisance climatique OU gaz à effet de serre"},
-    {"causes_indirectes": "méthane OU élevage OU élevage bovin"}
-    ]
-
-    assert output == expected
-
 def test_get_channels():
     if(os.environ.get("ENV") == "docker"):
         assert get_channels() == ["france2"] # default for docker compose config

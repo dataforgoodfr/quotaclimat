@@ -47,7 +47,9 @@ def merge_program_subtitle(df_subtitle: pd.DataFrame, df_program: pd.DataFrame):
             subtitle['program_name'] = matching_rows.iloc[0]['program_name']
             subtitle['program_type'] = matching_rows.iloc[0]['program_type']
         else:
-            logging.error("Program tv : no matching rows found")
+            logging.warn(f"Program tv : no matching rows found {subtitle['channel_name']} for weekday {start_weekday} - {start_time}")
+            subtitle['program_name'] = ""
+            subtitle['program_type'] = ""
         merged_data.append(subtitle)
 
     # Convert the list of dictionaries to a DataFrame

@@ -1,10 +1,10 @@
 import pytest
-import pandas as pd
+
 
 from quotaclimat.data_processing.mediatree.channel_program import *
-
+from utils import get_localhost, debug_df
 import logging
-
+import pandas as pd
 
 primary_key = "test_save_to_pg_keyword"
 keywords_with_timestamp = [{
@@ -45,7 +45,7 @@ df = pd.DataFrame([{
     ,"number_of_keywords": 1
 }])
 
-df['start'] = pd.to_datetime(df['start'], unit='s')#.dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
+df['start'] = pd.to_datetime(df['start'], unit='s', utc=True).dt.tz_convert('Europe/Paris')
 
 def test_add_channel_program():
     output = add_channel_program(df)
@@ -63,12 +63,13 @@ def test_add_channel_program():
         ,"program_type": "matinale"
     }])
 
-    assert output == expected
+    pd.testing.assert_frame_equal(output._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
+
 
 def test_add_channel_program_evening_jt():
     jt_20h02 = 1712772151 # wednesday - 3 
 
-    df['start'] = pd.to_datetime(jt_20h02, unit='s')#.dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
+    df['start'] = pd.to_datetime(jt_20h02, unit='s', utc=True).tz_convert('Europe/Paris')
     
     output = add_channel_program(df)
 
@@ -84,5 +85,6 @@ def test_add_channel_program_evening_jt():
         ,"program_name": "Télématin"
         ,"program_type": "matinale"
     }])
+    debug_df(output)
+    pd.testing.assert_frame_equal(output._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
 
-    assert output == expected

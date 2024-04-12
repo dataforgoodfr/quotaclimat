@@ -1,15 +1,15 @@
 [
     {
       "channel_name": "franceinter",
-      "start": "6:00",
-      "end": "7:00",
+      "start": "06:00",
+      "end": "07:00",
       "weekday": 0,
       "program_name": "Le 5/7",
       "program_type": ""
     },
     {
       "channel_name": "franceinter",
-      "start": "7:00",
+      "start": "07:00",
       "end": "10:00",
       "weekday": 0,
       "program_name": "Le 7/10",
@@ -33,8 +33,8 @@
     },
     {
       "channel_name": "franceculture",
-      "start": "6:30",
-      "end": "9:00",
+      "start": "06:30",
+      "end": "09:00",
       "weekday": 0,
       "program_name": "Les matins",
       "program_type": ""
@@ -57,16 +57,16 @@
     },
     {
       "channel_name": "rtl",
-      "start": "6:00",
-      "end": "7:00",
+      "start": "06:00",
+      "end": "07:00",
       "weekday": 0,
       "program_name": "RTL Petit Matin",
       "program_type": ""
     },
     {
       "channel_name": "rtl",
-      "start": "7:00",
-      "end": "9:15",
+      "start": "07:00",
+      "end": "09:15",
       "weekday": 0,
       "program_name": "RTL Matin",
       "program_type": ""
@@ -89,15 +89,15 @@
     },
     {
       "channel_name": "rmc",
-      "start": "6:30",
-      "end": "9:00",
+      "start": "06:30",
+      "end": "09:00",
       "weekday": 0,
       "program_name": "Apolline Matin",
       "program_type": ""
     },
     {
       "channel_name": "rmc",
-      "start": "9:00",
+      "start": "09:00",
       "end": "12:00",
       "weekday": 0,
       "program_name": "Les grandes gueules",
@@ -113,15 +113,15 @@
     },
     {
       "channel_name": "franceinter",
-      "start": "6:00",
-      "end": "7:00",
+      "start": "06:00",
+      "end": "07:00",
       "weekday": 1,
       "program_name": "Le 5/7",
       "program_type": ""
     },
     {
       "channel_name": "franceinter",
-      "start": "7:00",
+      "start": "07:00",
       "end": "10:00",
       "weekday": 1,
       "program_name": "Le 7/10",
@@ -145,8 +145,8 @@
     },
     {
       "channel_name": "franceculture",
-      "start": "6:30",
-      "end": "9:00",
+      "start": "06:30",
+      "end": "09:00",
       "weekday": 1,
       "program_name": "Les matins",
       "program_type": ""
@@ -169,16 +169,16 @@
     },
     {
       "channel_name": "rtl",
-      "start": "6:00",
-      "end": "7:00",
+      "start": "06:00",
+      "end": "07:00",
       "weekday": 1,
       "program_name": "RTL Petit Matin",
       "program_type": ""
     },
     {
       "channel_name": "rtl",
-      "start": "7:00",
-      "end": "9:15",
+      "start": "07:00",
+      "end": "09:15",
       "weekday": 1,
       "program_name": "RTL Matin",
       "program_type": ""
@@ -201,15 +201,15 @@
     },
     {
       "channel_name": "rmc",
-      "start": "6:30",
-      "end": "9:00",
+      "start": "06:30",
+      "end": "09:00",
       "weekday": 1,
       "program_name": "Apolline Matin",
       "program_type": ""
     },
     {
       "channel_name": "rmc",
-      "start": "9:00",
+      "start": "09:00",
       "end": "12:00",
       "weekday": 1,
       "program_name": "Les grandes gueules",
@@ -225,15 +225,15 @@
     },
     {
       "channel_name": "franceinter",
-      "start": "6:00",
-      "end": "7:00",
+      "start": "06:00",
+      "end": "07:00",
       "weekday": 2,
       "program_name": "Le 5/7",
       "program_type": ""
     },
     {
       "channel_name": "franceinter",
-      "start": "7:00",
+      "start": "07:00",
       "end": "10:00",
       "weekday": 2,
       "program_name": "Le 7/10",
@@ -257,8 +257,8 @@
     },
     {
       "channel_name": "franceculture",
-      "start": "6:30",
-      "end": "9:00",
+      "start": "06:30",
+      "end": "09:00",
       "weekday": 2,
       "program_name": "Les matins",
       "program_type": ""
@@ -281,16 +281,16 @@
     },
     {
       "channel_name": "rtl",
-      "start": "6:00",
-      "end": "7:00",
+      "start": "06:00",
+      "end": "07:00",
       "weekday": 2,
       "program_name": "RTL Petit Matin",
       "program_type": ""
     },
     {
       "channel_name": "rtl",
-      "start": "7:00",
-      "end": "9:15",
+      "start": "07:00",
+      "end": "09:15",
       "weekday": 2,
       "program_name": "RTL Matin",
       "program_type": ""
@@ -313,15 +313,15 @@
     },
     {
       "channel_name": "rmc",
-      "start": "6:30",
-      "end": "9:00",
+      "start": "06:30",
+      "end": "09:00",
       "weekday": 2,
       "program_name": "Apolline Matin",
       "program_type": ""
     },
     {
       "channel_name": "rmc",
-      "start": "9:00",
+      "start": "09:00",
       "end": "12:00",
       "weekday": 2,
       "program_name": "Les grandes gueules",
@@ -337,15 +337,15 @@
     },
     {
       "channel_name": "franceinter",
-      "start": "6:00",
-      "end": "7:00",
+      "start": "06:00",
+      "end": "07:00",
       "weekday": 3,
       "program_name": "Le 5/7",
       "program_type": ""
     },
     {
       "channel_name": "franceinter",
-      "start": "7:00",
+      "start": "07:00",
       "end": "10:00",
       "weekday": 3,
       "program_name": "Le 7/10",
@@ -369,8 +369,8 @@
     },
     {
       "channel_name": "franceculture",
-      "start": "6:30",
-      "end": "9:00",
+      "start": "06:30",
+      "end": "09:00",
       "weekday": 3,
       "program_name": "Les matins",
       "program_type": ""
@@ -393,16 +393,16 @@
     },
     {
       "channel_name": "rtl",
-      "start": "6:00",
-      "end": "7:00",
+      "start": "06:00",
+      "end": "07:00",
       "weekday": 3,
       "program_name": "RTL Petit Matin",
       "program_type": ""
     },
     {
       "channel_name": "rtl",
-      "start": "7:00",
-      "end": "9:15",
+      "start": "07:00",
+      "end": "09:15",
       "weekday": 3,
       "program_name": "RTL Matin",
       "program_type": ""
@@ -425,15 +425,15 @@
     },
     {
       "channel_name": "rmc",
-      "start": "6:30",
-      "end": "9:00",
+      "start": "06:30",
+      "end": "09:00",
       "weekday": 3,
       "program_name": "Apolline Matin",
       "program_type": ""
     },
     {
       "channel_name": "rmc",
-      "start": "9:00",
+      "start": "09:00",
       "end": "12:00",
       "weekday": 3,
       "program_name": "Les grandes gueules",
@@ -449,15 +449,15 @@
     },
     {
         "channel_name": "franceinter",
-        "start": "6:00",
-        "end": "7:00",
+        "start": "06:00",
+        "end": "07:00",
         "weekday": 4,
         "program_name": "Le 5/7",
         "program_type": ""
     },
     {
         "channel_name": "franceinter",
-        "start": "7:00",
+        "start": "07:00",
         "end": "10:00",
         "weekday": 4,
         "program_name": "Le 7/10",
@@ -481,8 +481,8 @@
     },
     {
         "channel_name": "franceculture",
-        "start": "6:30",
-        "end": "9:00",
+        "start": "06:30",
+        "end": "09:00",
         "weekday": 4,
         "program_name": "Les matins",
         "program_type": ""
@@ -505,16 +505,16 @@
     },
     {
         "channel_name": "rtl",
-        "start": "6:00",
-        "end": "7:00",
+        "start": "06:00",
+        "end": "07:00",
         "weekday": 4,
         "program_name": "RTL Petit Matin",
         "program_type": ""
     },
     {
         "channel_name": "rtl",
-        "start": "7:00",
-        "end": "9:15",
+        "start": "07:00",
+        "end": "09:15",
         "weekday": 4,
         "program_name": "RTL Matin",
         "program_type": ""
@@ -537,15 +537,15 @@
     },
     {
         "channel_name": "rmc",
-        "start": "6:30",
-        "end": "9:00",
+        "start": "06:30",
+        "end": "09:00",
         "weekday": 4,
         "program_name": "Apolline Matin",
         "program_type": ""
     },
     {
         "channel_name": "rmc",
-        "start": "9:00",
+        "start": "09:00",
         "end": "12:00",
         "weekday": 4,
         "program_name": "Les grandes gueules",
@@ -561,15 +561,15 @@
     },
         {
           "channel_name": "franceinter",
-          "start": "6:00",
-          "end": "7:00",
+          "start": "06:00",
+          "end": "07:00",
           "weekday": 5,
           "program_name": "Le 5/7",
           "program_type": ""
         },
         {
           "channel_name": "franceinter",
-          "start": "7:00",
+          "start": "07:00",
           "end": "10:00",
           "weekday": 5,
           "program_name": "Le 7/10",
@@ -593,8 +593,8 @@
         },
         {
           "channel_name": "franceculture",
-          "start": "6:30",
-          "end": "9:00",
+          "start": "06:30",
+          "end": "09:00",
           "weekday": 5,
           "program_name": "Les matins",
           "program_type": ""
@@ -617,16 +617,16 @@
         },
         {
           "channel_name": "rtl",
-          "start": "6:00",
-          "end": "7:00",
+          "start": "06:00",
+          "end": "07:00",
           "weekday": 5,
           "program_name": "RTL Petit Matin",
           "program_type": ""
         },
         {
           "channel_name": "rtl",
-          "start": "7:00",
-          "end": "9:15",
+          "start": "07:00",
+          "end": "09:15",
           "weekday": 5,
           "program_name": "RTL Matin",
           "program_type": ""
@@ -649,15 +649,15 @@
         },
         {
           "channel_name": "rmc",
-          "start": "6:30",
-          "end": "9:00",
+          "start": "06:30",
+          "end": "09:00",
           "weekday": 5,
           "program_name": "Apolline Matin",
           "program_type": ""
         },
         {
           "channel_name": "rmc",
-          "start": "9:00",
+          "start": "09:00",
           "end": "12:00",
           "weekday": 5,
           "program_name": "Les grandes gueules",
@@ -673,8 +673,8 @@
         },
             {
               "channel_name": "franceinter",
-              "start": "6:00",
-              "end": "9:00",
+              "start": "06:00",
+              "end": "09:00",
               "weekday": 6,
               "program_name": "Le 6/9",
               "program_type": ""
@@ -689,8 +689,8 @@
             },
             {
               "channel_name": "franceculture",
-              "start": "7:00",
-              "end": "9:15",
+              "start": "07:00",
+              "end": "09:15",
               "weekday": 6,
               "program_name": "Les matins du samedi",
               "program_type": ""
@@ -713,8 +713,8 @@
             },
             {
               "channel_name": "rtl",
-              "start": "6:00",
-              "end": "9:00",
+              "start": "06:00",
+              "end": "09:00",
               "weekday": 6,
               "program_name": "RTL Matin",
               "program_type": ""
@@ -737,8 +737,8 @@
             },
             {
               "channel_name": "rmc",
-              "start": "6:30",
-              "end": "9:30",
+              "start": "06:30",
+              "end": "09:30",
               "weekday": 6,
               "program_name": "La Matinale Week-end",
               "program_type": ""
@@ -761,8 +761,8 @@
             },
             {
               "channel_name": "Europe 1",
-              "start": "6:00",
-              "end": "9:00",
+              "start": "06:00",
+              "end": "09:00",
               "weekday": 6,
               "program_name": "Europe 1 Matin Week-end",
               "program_type": ""
@@ -785,8 +785,8 @@
             },
             {
               "channel_name": "Sud Radio",
-              "start": "7:00",
-              "end": "9:20",
+              "start": "07:00",
+              "end": "09:20",
               "weekday": 6,
               "program_name": "Le Grand Matin Week-end",
               "program_type": ""
@@ -1001,8 +1001,8 @@
         },
           {
             "channel_name": "tf1",
-            "start": "6:55",
-            "end": "9:30",
+            "start": "06:55",
+            "end": "09:30",
             "weekday": 2,
             "program_name": "Bonjour ! La Matinale",
             "program_type": "Information - Magazine"
@@ -1025,16 +1025,16 @@
           },
           {
             "channel_name": "france2",
-            "start": "6:00",
-            "end": "6:25",
+            "start": "06:00",
+            "end": "06:25",
             "weekday": 2,
             "program_name": "Le 6h Info",
             "program_type": "Information - Journal"
           },
           {
             "channel_name": "france2",
-            "start": "6:30",
-            "end": "9:30",
+            "start": "06:30",
+            "end": "09:30",
             "weekday": 2,
             "program_name": "Télématin",
             "program_type": "Information - Autres émissions"
@@ -1057,8 +1057,8 @@
           },
           {
             "channel_name": "france3-idf",
-            "start": "7:00",
-            "end": "9:00",
+            "start": "07:00",
+            "end": "09:00",
             "weekday": 2,
             "program_name": "Ici Matin",
             "program_type": "Information - Journal"
@@ -1169,7 +1169,7 @@
           },
           {
             "channel_name": "bfmtv",
-            "start": "6:00",
+            "start": "06:00",
             "end": "23:00",
             "weekday": 2,
             "program_name": "Information en continu",
@@ -1177,7 +1177,7 @@
           },
           {
             "channel_name": "itele",
-            "start": "6:00",
+            "start": "06:00",
             "end": "23:00",
             "weekday": 2,
             "program_name": "Information en continu",
@@ -1185,7 +1185,7 @@
           },
           {
             "channel_name": "lci",
-            "start": "6:00",
+            "start": "06:00",
             "end": "23:00",
             "weekday": 2,
             "program_name": "Information en continu",
@@ -1193,7 +1193,7 @@
           },
           {
             "channel_name": "france24",
-            "start": "6:00",
+            "start": "06:00",
             "end": "23:00",
             "weekday": 2,
             "program_name": "Information en continu",
@@ -1201,7 +1201,7 @@
           },
           {
             "channel_name": "franceinfo",
-            "start": "6:00",
+            "start": "06:00",
             "end": "23:00",
             "weekday": 2,
             "program_name": "Information en continu",

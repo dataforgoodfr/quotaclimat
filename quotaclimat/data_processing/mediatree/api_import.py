@@ -230,7 +230,7 @@ def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFram
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             new_df.drop('channel.title', axis=1, inplace=True) # keep only channel.name
 
-            new_df['timestamp'] = (pd.to_datetime(new_df['start'], unit='s').dt.tz_localize('utc').dt.tz_convert('Europe/Paris'))
+            new_df['timestamp'] = pd.to_datetime(new_df['start'], unit='s', utc=True).tz_convert('Europe/Paris')
             new_df.drop('start', axis=1, inplace=True) # keep only channel.name
 
             new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)

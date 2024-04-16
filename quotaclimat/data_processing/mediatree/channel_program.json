@@ -1,1618 +1,599 @@
 [
     {
-      "channel_name": "franceinter",
-      "start": "06:00",
-      "end": "07:00",
-      "weekday": 0,
-      "program_name": "Le 5/7",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "07:00",
-      "end": "10:00",
-      "weekday": 0,
-      "program_name": "Le 7/10",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "13:00",
-      "end": "14:00",
-      "weekday": 0,
-      "program_name": "Le 13/14",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "19:00",
-      "end": "20:00",
-      "weekday": 0,
-      "program_name": "Le 19/20",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceculture",
-      "start": "06:30",
-      "end": "09:00",
-      "weekday": 0,
-      "program_name": "Les matins",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceculture",
-      "start": "12:30",
-      "end": "12:45",
-      "weekday": 0,
-      "program_name": "Journal de 12h30",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceculture",
-      "start": "18:00",
-      "end": "18:20",
-      "weekday": 0,
-      "program_name": "Journal de 18h",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "06:00",
-      "end": "07:00",
-      "weekday": 0,
-      "program_name": "RTL Petit Matin",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "07:00",
-      "end": "09:15",
-      "weekday": 0,
-      "program_name": "RTL Matin",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "12:00",
-      "end": "13:00",
-      "weekday": 0,
-      "program_name": "RTL Midi",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "18:00",
-      "end": "19:15",
-      "weekday": 0,
-      "program_name": "RTL Dimanche soir",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rmc",
-      "start": "06:30",
-      "end": "09:00",
-      "weekday": 0,
-      "program_name": "Apolline Matin",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rmc",
-      "start": "09:00",
-      "end": "12:00",
-      "weekday": 0,
-      "program_name": "Les grandes gueules",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rmc",
-      "start": "12:00",
-      "end": "15:00",
-      "weekday": 0,
-      "program_name": "Estelle Midi",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "06:00",
-      "end": "07:00",
-      "weekday": 1,
-      "program_name": "Le 5/7",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "07:00",
-      "end": "10:00",
-      "weekday": 1,
-      "program_name": "Le 7/10",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "13:00",
-      "end": "14:00",
-      "weekday": 1,
-      "program_name": "Le 13/14",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "19:00",
-      "end": "20:00",
-      "weekday": 1,
-      "program_name": "Le 19/20",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceculture",
-      "start": "06:30",
-      "end": "09:00",
-      "weekday": 1,
-      "program_name": "Les matins",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceculture",
-      "start": "12:30",
-      "end": "12:45",
-      "weekday": 1,
-      "program_name": "Journal de 12h30",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceculture",
-      "start": "18:00",
-      "end": "18:20",
-      "weekday": 1,
-      "program_name": "Journal de 18h",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "06:00",
-      "end": "07:00",
-      "weekday": 1,
-      "program_name": "RTL Petit Matin",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "07:00",
-      "end": "09:15",
-      "weekday": 1,
-      "program_name": "RTL Matin",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "12:00",
-      "end": "13:00",
-      "weekday": 1,
-      "program_name": "RTL Midi",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "18:00",
-      "end": "19:15",
-      "weekday": 1,
-      "program_name": "RTL Dimanche soir",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rmc",
-      "start": "06:30",
-      "end": "09:00",
-      "weekday": 1,
-      "program_name": "Apolline Matin",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rmc",
-      "start": "09:00",
-      "end": "12:00",
-      "weekday": 1,
-      "program_name": "Les grandes gueules",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rmc",
-      "start": "12:00",
-      "end": "15:00",
-      "weekday": 1,
-      "program_name": "Estelle Midi",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "06:00",
-      "end": "07:00",
-      "weekday": 2,
-      "program_name": "Le 5/7",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "07:00",
-      "end": "10:00",
-      "weekday": 2,
-      "program_name": "Le 7/10",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "13:00",
-      "end": "14:00",
-      "weekday": 2,
-      "program_name": "Le 13/14",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "19:00",
-      "end": "20:00",
-      "weekday": 2,
-      "program_name": "Le 19/20",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceculture",
-      "start": "06:30",
-      "end": "09:00",
-      "weekday": 2,
-      "program_name": "Les matins",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceculture",
-      "start": "12:30",
-      "end": "12:45",
-      "weekday": 2,
-      "program_name": "Journal de 12h30",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceculture",
-      "start": "18:00",
-      "end": "18:20",
-      "weekday": 2,
-      "program_name": "Journal de 18h",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "06:00",
-      "end": "07:00",
-      "weekday": 2,
-      "program_name": "RTL Petit Matin",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "07:00",
-      "end": "09:15",
-      "weekday": 2,
-      "program_name": "RTL Matin",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "12:00",
-      "end": "13:00",
-      "weekday": 2,
-      "program_name": "RTL Midi",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "18:00",
-      "end": "19:15",
-      "weekday": 2,
-      "program_name": "RTL Dimanche soir",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rmc",
-      "start": "06:30",
-      "end": "09:00",
-      "weekday": 2,
-      "program_name": "Apolline Matin",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rmc",
-      "start": "09:00",
-      "end": "12:00",
-      "weekday": 2,
-      "program_name": "Les grandes gueules",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rmc",
-      "start": "12:00",
-      "end": "15:00",
-      "weekday": 2,
-      "program_name": "Estelle Midi",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "06:00",
-      "end": "07:00",
-      "weekday": 3,
-      "program_name": "Le 5/7",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "07:00",
-      "end": "10:00",
-      "weekday": 3,
-      "program_name": "Le 7/10",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "13:00",
-      "end": "14:00",
-      "weekday": 3,
-      "program_name": "Le 13/14",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceinter",
-      "start": "19:00",
-      "end": "20:00",
-      "weekday": 3,
-      "program_name": "Le 19/20",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceculture",
-      "start": "06:30",
-      "end": "09:00",
-      "weekday": 3,
-      "program_name": "Les matins",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceculture",
-      "start": "12:30",
-      "end": "12:45",
-      "weekday": 3,
-      "program_name": "Journal de 12h30",
-      "program_type": ""
-    },
-    {
-      "channel_name": "franceculture",
-      "start": "18:00",
-      "end": "18:20",
-      "weekday": 3,
-      "program_name": "Journal de 18h",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "06:00",
-      "end": "07:00",
-      "weekday": 3,
-      "program_name": "RTL Petit Matin",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "07:00",
-      "end": "09:15",
-      "weekday": 3,
-      "program_name": "RTL Matin",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "12:00",
-      "end": "13:00",
-      "weekday": 3,
-      "program_name": "RTL Midi",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rtl",
-      "start": "18:00",
-      "end": "19:15",
-      "weekday": 3,
-      "program_name": "RTL Dimanche soir",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rmc",
-      "start": "06:30",
-      "end": "09:00",
-      "weekday": 3,
-      "program_name": "Apolline Matin",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rmc",
-      "start": "09:00",
-      "end": "12:00",
-      "weekday": 3,
-      "program_name": "Les grandes gueules",
-      "program_type": ""
-    },
-    {
-      "channel_name": "rmc",
-      "start": "12:00",
-      "end": "15:00",
-      "weekday": 3,
-      "program_name": "Estelle Midi",
-      "program_type": ""
-    },
-    {
-        "channel_name": "franceinter",
-        "start": "06:00",
-        "end": "07:00",
-        "weekday": 4,
-        "program_name": "Le 5/7",
-        "program_type": ""
-    },
-    {
-        "channel_name": "franceinter",
-        "start": "07:00",
-        "end": "10:00",
-        "weekday": 4,
-        "program_name": "Le 7/10",
-        "program_type": ""
-    },
-    {
-        "channel_name": "franceinter",
-        "start": "13:00",
-        "end": "14:00",
-        "weekday": 4,
-        "program_name": "Le 13/14",
-        "program_type": ""
-    },
-    {
-        "channel_name": "franceinter",
-        "start": "19:00",
-        "end": "20:00",
-        "weekday": 4,
-        "program_name": "Le 19/20",
-        "program_type": ""
-    },
-    {
-        "channel_name": "franceculture",
-        "start": "06:30",
-        "end": "09:00",
-        "weekday": 4,
-        "program_name": "Les matins",
-        "program_type": ""
-    },
-    {
-        "channel_name": "franceculture",
-        "start": "12:30",
-        "end": "12:45",
-        "weekday": 4,
-        "program_name": "Journal de 12h30",
-        "program_type": ""
-    },
-    {
-        "channel_name": "franceculture",
-        "start": "18:00",
-        "end": "18:20",
-        "weekday": 4,
-        "program_name": "Journal de 18h",
-        "program_type": ""
-    },
-    {
-        "channel_name": "rtl",
-        "start": "06:00",
-        "end": "07:00",
-        "weekday": 4,
-        "program_name": "RTL Petit Matin",
-        "program_type": ""
-    },
-    {
-        "channel_name": "rtl",
-        "start": "07:00",
-        "end": "09:15",
-        "weekday": 4,
-        "program_name": "RTL Matin",
-        "program_type": ""
-    },
-    {
-        "channel_name": "rtl",
-        "start": "12:00",
-        "end": "13:00",
-        "weekday": 4,
-        "program_name": "RTL Midi",
-        "program_type": ""
-    },
-    {
-        "channel_name": "rtl",
-        "start": "18:00",
-        "end": "19:15",
-        "weekday": 4,
-        "program_name": "RTL Dimanche soir",
-        "program_type": ""
-    },
-    {
-        "channel_name": "rmc",
-        "start": "06:30",
-        "end": "09:00",
-        "weekday": 4,
-        "program_name": "Apolline Matin",
-        "program_type": ""
-    },
-    {
-        "channel_name": "rmc",
-        "start": "09:00",
-        "end": "12:00",
-        "weekday": 4,
-        "program_name": "Les grandes gueules",
-        "program_type": ""
-    },
-    {
-        "channel_name": "rmc",
-        "start": "12:00",
-        "end": "15:00",
-        "weekday": 4,
-        "program_name": "Estelle Midi",
-        "program_type": ""
-    },
-        {
-          "channel_name": "franceinter",
-          "start": "06:00",
-          "end": "07:00",
-          "weekday": 5,
-          "program_name": "Le 5/7",
-          "program_type": ""
-        },
-        {
-          "channel_name": "franceinter",
-          "start": "07:00",
-          "end": "10:00",
-          "weekday": 5,
-          "program_name": "Le 7/10",
-          "program_type": ""
-        },
-        {
-          "channel_name": "franceinter",
-          "start": "13:00",
-          "end": "14:00",
-          "weekday": 5,
-          "program_name": "Le 13/14",
-          "program_type": ""
-        },
-        {
-          "channel_name": "franceinter",
-          "start": "19:00",
-          "end": "20:00",
-          "weekday": 5,
-          "program_name": "Le 19/20",
-          "program_type": ""
-        },
-        {
-          "channel_name": "franceculture",
-          "start": "06:30",
-          "end": "09:00",
-          "weekday": 5,
-          "program_name": "Les matins",
-          "program_type": ""
-        },
-        {
-          "channel_name": "franceculture",
-          "start": "12:30",
-          "end": "12:45",
-          "weekday": 5,
-          "program_name": "Journal de 12h30",
-          "program_type": ""
-        },
-        {
-          "channel_name": "franceculture",
-          "start": "18:00",
-          "end": "18:20",
-          "weekday": 5,
-          "program_name": "Journal de 18h",
-          "program_type": ""
-        },
-        {
-          "channel_name": "rtl",
-          "start": "06:00",
-          "end": "07:00",
-          "weekday": 5,
-          "program_name": "RTL Petit Matin",
-          "program_type": ""
-        },
-        {
-          "channel_name": "rtl",
-          "start": "07:00",
-          "end": "09:15",
-          "weekday": 5,
-          "program_name": "RTL Matin",
-          "program_type": ""
-        },
-        {
-          "channel_name": "rtl",
-          "start": "12:00",
-          "end": "13:00",
-          "weekday": 5,
-          "program_name": "RTL Midi",
-          "program_type": ""
-        },
-        {
-          "channel_name": "rtl",
-          "start": "18:00",
-          "end": "19:15",
-          "weekday": 5,
-          "program_name": "RTL Dimanche soir",
-          "program_type": ""
-        },
-        {
-          "channel_name": "rmc",
-          "start": "06:30",
-          "end": "09:00",
-          "weekday": 5,
-          "program_name": "Apolline Matin",
-          "program_type": ""
-        },
-        {
-          "channel_name": "rmc",
-          "start": "09:00",
-          "end": "12:00",
-          "weekday": 5,
-          "program_name": "Les grandes gueules",
-          "program_type": ""
-        },
-        {
-          "channel_name": "rmc",
-          "start": "12:00",
-          "end": "15:00",
-          "weekday": 5,
-          "program_name": "Estelle Midi",
-          "program_type": ""
-        },
-            {
-              "channel_name": "franceinter",
-              "start": "06:00",
-              "end": "09:00",
-              "weekday": 6,
-              "program_name": "Le 6/9",
-              "program_type": ""
-            },
-            {
-              "channel_name": "franceinter",
-              "start": "13:00",
-              "end": "14:00",
-              "weekday": 6,
-              "program_name": "Le journal de 13h du WE",
-              "program_type": ""
-            },
-            {
-              "channel_name": "franceculture",
-              "start": "07:00",
-              "end": "09:15",
-              "weekday": 6,
-              "program_name": "Les matins du samedi",
-              "program_type": ""
-            },
-            {
-              "channel_name": "franceculture",
-              "start": "12:30",
-              "end": "12:45",
-              "weekday": 6,
-              "program_name": "Journal de 12h30",
-              "program_type": ""
-            },
-            {
-              "channel_name": "franceculture",
-              "start": "18:00",
-              "end": "18:10",
-              "weekday": 6,
-              "program_name": "Journal de 18h",
-              "program_type": ""
-            },
-            {
-              "channel_name": "rtl",
-              "start": "06:00",
-              "end": "09:00",
-              "weekday": 6,
-              "program_name": "RTL Matin",
-              "program_type": ""
-            },
-            {
-              "channel_name": "rtl",
-              "start": "13:00",
-              "end": "14:00",
-              "weekday": 6,
-              "program_name": "Focus Dimanche",
-              "program_type": ""
-            },
-            {
-              "channel_name": "rtl",
-              "start": "18:00",
-              "end": "19:15",
-              "weekday": 6,
-              "program_name": "RTL Dimanche soir",
-              "program_type": ""
-            },
-            {
-              "channel_name": "rmc",
-              "start": "06:30",
-              "end": "09:30",
-              "weekday": 6,
-              "program_name": "La Matinale Week-end",
-              "program_type": ""
-            },
-            {
-              "channel_name": "rmc",
-              "start": "12:00",
-              "end": "13:00",
-              "weekday": 6,
-              "program_name": "Journal",
-              "program_type": ""
-            },
-            {
-              "channel_name": "rmc",
-              "start": "18:00",
-              "end": "19:00",
-              "weekday": 6,
-              "program_name": "RTL Dimanche soir",
-              "program_type": ""
-            },
-            {
-              "channel_name": "Europe 1",
-              "start": "06:00",
-              "end": "09:00",
-              "weekday": 6,
-              "program_name": "Europe 1 Matin Week-end",
-              "program_type": ""
-            },
-            {
-              "channel_name": "Europe 1",
-              "start": "12:30",
-              "end": "13:00",
-              "weekday": 6,
-              "program_name": "Midi Week-end",
-              "program_type": ""
-            },
-            {
-              "channel_name": "Europe 1",
-              "start": "18:00",
-              "end": "19:00",
-              "weekday": 6,
-              "program_name": "Soir Week-end",
-              "program_type": ""
-            },
-            {
-              "channel_name": "Sud Radio",
-              "start": "07:00",
-              "end": "09:20",
-              "weekday": 6,
-              "program_name": "Le Grand Matin Week-end",
-              "program_type": ""
-            },
-    {
       "channel_name": "tf1",
-      "start": "06:55",
-      "end": "09:30",
-      "weekday": 0,
+      "start": "6:55",
+      "end": "9:30",
+      "weekday": "weekday",
       "program_name": "Bonjour ! La Matinale",
       "program_type": "Information - Magazine"
     },
     {
+      "channel_name": "tf1",
+      "start": "13:00",
+      "end": "13:40",
+      "weekday": "*",
+      "program_name": "JT 13h",
+      "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "tf1",
+      "start": "19:55",
+      "end": "20:40",
+      "weekday": "*",
+      "program_name": "JT 20h + météo",
+      "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "tf1",
+      "start": "13:40",
+      "end": "14:50",
+      "weekday": 6,
+      "program_name": "Reportage Découverte",
+      "program_type": "Information - Magazine"
+    },
+    {
+      "channel_name": "tf1",
+      "start": "14:50",
+      "end": "16:00",
+      "weekday": 6,
+      "program_name": "Grands reportages",
+      "program_type": "Information - Magazine"
+    },
+    {
+      "channel_name": "tf1",
+      "start": "17:15",
+      "end": "18:20",
+      "weekday": 6,
+      "program_name": "Sept à huit Life",
+      "program_type": "Information - Magazine"
+    },
+    {
+      "channel_name": "tf1",
+      "start": "18:20",
+      "end": "19:45",
+      "weekday": 6,
+      "program_name": "Sept à huit",
+      "program_type": "Information - Magazine"
+    },
+    {
       "channel_name": "france2",
-      "start": "06:00",
-      "end": "06:25",
-      "weekday": 0,
+      "start": "6:00",
+      "end": "9:30",
+      "weekday": "*",
       "program_name": "Le 6h Info",
       "program_type": "Information - Journal"
     },
     {
-      "channel_name": "france3-idf",
-      "start": "07:00",
-      "end": "09:00",
-      "weekday": 0,
+      "channel_name": "france2",
+      "start": "6:30",
+      "end": "9:30",
+      "weekday": "*",
+      "program_name": "Télématin",
+      "program_type": "Information - Autres émissions"
+    },
+    {
+      "channel_name": "france2",
+      "start": "13:00",
+      "end": "13:40",
+      "weekday": "weekday",
+      "program_name": "JT 13h",
+      "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "france2",
+      "start": "13:00",
+      "end": "13:15",
+      "weekday": "weekend",
+      "program_name": "JT 13h",
+      "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "france2",
+      "start": "13:15",
+      "end": "14:05",
+      "weekday": 5,
+      "program_name": "13h15 le samedi",
+      "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "france2",
+      "start": "13:15",
+      "end": "14:05",
+      "weekday": 6,
+      "program_name": "13h15 le dimanche",
+      "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "france2",
+      "start": "10:35",
+      "end": "11:00",
+      "weekday": 6,
+      "program_name": "Nous les européens",
+      "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "france2",
+      "start": "19:55",
+      "end": "20:40",
+      "weekday": "weekday",
+      "program_name": "JT 20h + météo",
+      "program_type": "Information - Journal"
+    },    
+    {
+      "channel_name": "france2",
+      "start": "19:55",
+      "end": "20:30",
+      "weekday": "weekend",
+      "program_name": "JT 20h + météo",
+      "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "france2",
+      "start": "21:10",
+      "end": "23:00",
+      "weekday": 3,
+      "program_name": "Envoyé spécial",
+      "program_type": "Information - Magazine"
+    },  
+    {
+      "channel_name": "france2",
+      "start": "20:30",
+      "end": "21:00",
+      "weekday": 5,
+      "program_name": "20h30 le samedi",
+      "program_type": "Information - Journal"
+    },    
+    {
+      "channel_name": "france2",
+      "start": "20:30",
+      "end": "21:00",
+      "weekday": 6,
+      "program_name": "20h30 le dimanche",
+      "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "fr3-idf",
+      "start": "7:00",
+      "end": "9:00",
+      "weekday": "weekday",
       "program_name": "Ici Matin",
       "program_type": "Information - Journal"
     },
     {
-      "channel_name": "france5",
-      "start": "17:40",
-      "end": "18:55",
-      "weekday": 0,
-      "program_name": "C dans l'air",
-      "program_type": "Magazine"
+      "channel_name": "fr3-idf",
+      "start": "12:00",
+      "end": "12:50",
+      "weekday": "*",
+      "program_name": "JT 12h",
+      "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "fr3-idf",
+      "start": "19:00",
+      "end": "19:55",
+      "weekday": "*",
+      "program_name": "JT 19h + météo",
+      "program_type": "Information - Journal"
     },
     {
       "channel_name": "m6",
       "start": "12:45",
       "end": "13:35",
-      "weekday": 0,
+      "weekday": "*",
       "program_name": "JT 1245",
       "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "m6",
+      "start": "13:50",
+      "end": "17:20",
+      "weekday": "weekday",
+      "program_name": "1 jour un doc",
+      "program_type": "Information - Magazine"
+    },
+    {
+      "channel_name": "m6",
+      "start": "19:40",
+      "end": "20:10",
+      "weekday":  "*",
+      "program_name": "JT 1945 + météo",
+      "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "m6",
+      "start": "11:00",
+      "end": "12:30",
+      "weekday":  5,
+      "program_name": "66 minutes samedi",
+      "program_type": "Information - Magazine"
+    },
+    {
+      "channel_name": "m6",
+      "start": "16:35",
+      "end": "19:30",
+      "weekday":  6,
+      "program_name": "66 minutes",
+      "program_type": "Information - Magazine"
+    },
+    {
+      "channel_name": "m6",
+      "start": "21:10",
+      "end": "23:15",
+      "weekday":  6,
+      "program_name": "Capital / Zone interdite",
+      "program_type": "Information - Magazine"
     },
     {
       "channel_name": "arte",
       "start": "19:45",
       "end": "20:05",
-      "weekday": 0,
+      "weekday": "*",
       "program_name": "JT",
-      "program_type": "?"
+      "program_type": "Information - Journal"
+    },
+    {
+      "channel_name": "arte",
+      "start": "20:05",
+      "end": "20:50",
+      "weekday": "*",
+      "program_name": "28 minutes",
+      "program_type": "Information - Magazine"
     },
     {
       "channel_name": "d8",
-      "start": "19:00",
-      "end": "21:20",
-      "weekday": 0,
-      "program_name": "TPMP",
-      "program_type": "Divertissements - Autres"
-    },
-    {
-      "channel_name": "tmc",
-      "start": "19:20",
-      "end": "21:25",
-      "weekday": 0,
-      "program_name": "Quotidien",
-      "program_type": "Magazine"
+      "start": "12:30",
+      "end": "13:00",
+      "weekday": "weekday",
+      "program_name": "Le journal du jour + météo",
+      "program_type": "Information - Journal"
     },
     {
       "channel_name": "bfmtv",
-      "start": "06:00",
+      "start": "6:00",
       "end": "23:00",
-      "weekday": 0,
+      "weekday": "*",
       "program_name": "Information en continu",
       "program_type": ""
     },
     {
       "channel_name": "itele",
-      "start": "06:00",
+      "start": "6:00",
       "end": "23:00",
-      "weekday": 0,
+      "weekday": "*",
       "program_name": "Information en continu",
       "program_type": ""
     },
     {
       "channel_name": "lci",
-      "start": "06:00",
+      "start": "6:00",
       "end": "23:00",
-      "weekday": 0,
+      "weekday": "*",
       "program_name": "Information en continu",
       "program_type": ""
     },
     {
       "channel_name": "france24",
-      "start": "06:00",
+      "start": "6:00",
       "end": "23:00",
-      "weekday": 0,
+      "weekday": "*",
       "program_name": "Information en continu",
       "program_type": ""
     },
     {
-      "channel_name": "franceinf:",
-      "start": "06:00",
+      "channel_name": "franceinfo",
+      "start": "6:00",
+      "end": "23:00",
+      "weekday": "*",
+      "program_name": "Information en continu",
+      "program_type": ""
+    },
+    {
+      "channel_name": "franceinter",
+      "start": "6:00",
+      "end": "7:00",
+      "weekday": 0,
+      "program_name": "Le 5/7",
+      "program_type": ""
+    },
+    {
+      "channel_name": "franceinter",
+      "start": "7:00",
+      "end": "10:00",
+      "weekday": 0,
+      "program_name": "Le 7/10",
+      "program_type": ""
+    },    {
+      "channel_name": "franceinter",
+      "start": "6:00",
+      "end": "7:00",
+      "weekday": 1,
+      "program_name": "Le 5/7",
+      "program_type": ""
+    },
+    {
+      "channel_name": "franceinter",
+      "start": "7:00",
+      "end": "10:00",
+      "weekday": 1,
+      "program_name": "Le 7/10",
+      "program_type": ""
+    },    {
+      "channel_name": "franceinter",
+      "start": "6:00",
+      "end": "7:00",
+      "weekday": 2,
+      "program_name": "Le 5/7",
+      "program_type": ""
+    },
+    {
+      "channel_name": "franceinter",
+      "start": "7:00",
+      "end": "10:00",
+      "weekday": 2,
+      "program_name": "Le 7/10",
+      "program_type": ""
+    },    {
+      "channel_name": "franceinter",
+      "start": "6:00",
+      "end": "7:00",
+      "weekday": 3,
+      "program_name": "Le 5/7",
+      "program_type": ""
+    },
+    {
+      "channel_name": "franceinter",
+      "start": "7:00",
+      "end": "10:00",
+      "weekday": 3,
+      "program_name": "Le 7/10",
+      "program_type": ""
+    },
+    {
+      "channel_name": "franceinter",
+      "start": "6:00",
+      "end": "9:00",
+      "weekday": 4,
+      "program_name": "Le 6/9",
+      "program_type": ""
+    },
+    {
+      "channel_name": "franceinter",
+      "start": "6:00",
+      "end": "9:00",
+      "weekday": "weekend",
+      "program_name": "Le 6/9",
+      "program_type": ""
+    },
+    {
+      "channel_name": "franceinter",
+      "start": "13:00",
+      "end": "14:00",
+      "weekday": "weekday",
+      "program_name": "Le 13/14",
+      "program_type": ""
+    },
+    {
+      "channel_name": "franceinter",
+      "start": "13:00",
+      "end": "13:30",
+      "weekday": "weekend",
+      "program_name": "Le journal de 13h du WE",
+      "program_type": ""
+    },
+    {
+      "channel_name": "franceinter",
+      "start": "19:00",
+      "end": "20:00",
+      "weekday": "*",
+      "program_name": "Le 19/20",
+      "program_type": ""
+    },
+    {
+      "channel_name": "France Culture",
+      "start": "6:30",
+      "end": "9:00",
+      "weekday": "*",
+      "program_name": "Les matins",
+      "program_type": ""
+    },
+    {
+      "channel_name": "France Culture",
+      "start": "12:30",
+      "end": "12:50",
+      "weekday": "*",
+      "program_name": "Journal de 12h30",
+      "program_type": ""
+    },
+    {
+      "channel_name": "France Culture",
+      "start": "18:00",
+      "end": "18:20",
+      "weekday": "*",
+      "program_name": "Journal de 18h",
+      "program_type": ""
+    },
+    {
+      "channel_name": "RTL",
+      "start": "6:00",
+      "end": "7:00",
+      "weekday": "weekday",
+      "program_name": "RTL Petit Matin",
+      "program_type": ""
+    },
+    {
+      "channel_name": "RTL",
+      "start": "7:00",
+      "end": "9:00",
+      "weekday": "weekday",
+      "program_name": "RTL Matin",
+      "program_type": ""
+    },
+    {
+      "channel_name": "RTL",
+      "start": "12:00",
+      "end": "13:00",
+      "weekday": "weekday",
+      "program_name": "RTL Midi",
+      "program_type": ""
+    },
+    {
+      "channel_name": "RTL",
+      "start": "18:00",
+      "end": "20:00",
+      "weekday": "weekday",
+      "program_name": "RTL Bonsoir",
+      "program_type": ""
+    },
+    {
+      "channel_name": "RTL",
+      "start": "18:00",
+      "end": "18:15",
+      "weekday": 5,
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "RTL",
+      "start": "6:00",
+      "end": "9:15",
+      "weekday": "weekend",
+      "program_name": "RTL Matin",
+      "program_type": ""
+    },
+    {
+      "channel_name": "RTL",
+      "start": "18:00",
+      "end": "19:15",
+      "weekday": 6,
+      "program_name": "RTL Dimanche soir",
+      "program_type": ""
+    },
+    {
+      "channel_name": "RTL",
+      "start": "13:00",
+      "end": "14:00",
+      "weekday": 6,
+      "program_name": "Focus Dimanche",
+      "program_type": ""
+    },
+    {
+      "channel_name": "RMC", 
+      "start": "6:30",
+      "end": "9:00",
+      "weekday": 0,
+      "program_name": "Apolline Matin",
+      "program_type": ""
+    },
+    {
+      "channel_name": "RMC",
+      "start": "9:00",
+      "end": "12:00",
+      "weekday": 0,
+      "program_name": "Les grandes gueules",
+      "program_type": ""
+    },
+    {
+      "channel_name": "RMC",
+      "start": "12:00",
+      "end": "15:00",
+      "weekday": 0,
+      "program_name": "Estelle Midi",
+      "program_type": ""
+    },
+    {
+      "channel_name": "Europe 1",
+      "start": "6:00",
+      "end": "7:00",
+      "weekday": 0,
+      "program_name": "Bonjour",
+      "program_type": ""
+    },
+    {
+      "channel_name": "Europe 1",
+      "start": "7:00",
+      "end": "9:00",
+      "weekday": 0,
+      "program_name": "Europe 1 Matin",
+      "program_type": ""
+    },
+    {
+      "channel_name": "Europe 1",
+      "start": "9:00",
+      "end": "9:30",
+      "weekday": 0,
+      "program_name": "L'heure des pros",
+      "program_type": ""
+    },
+    {
+      "channel_name": "Europe 1",
+      "start": "11:00",
+      "end": "13:00",
+      "weekday": 0,
+      "program_name": "Pascal Praud et vous",
+      "program_type": ""
+    },
+    {
+      "channel_name": "Europe 1",
+      "start": "13:00",
+      "end": "14:00",
+      "weekday": 0,
+      "program_name": "Europe 1 Matin",
+      "program_type": ""
+    },
+    {
+      "channel_name": "Europe 1",
+      "start": "18:00",
+      "end": "19:00",
+      "weekday": 0,
+      "program_name": "Punchline",
+      "program_type": ""
+    },
+    {
+      "channel_name": "Europe 1",
+      "start": "19:00",
+      "end": "20:00",
+      "weekday": 0,
+      "program_name": "Soir",
+      "program_type": ""
+    },
+    {
+      "channel_name": "Sud Radio",
+      "start": "6:50",
+      "end": "10:00",
+      "weekday": 0,
+      "program_name": "Le Grand Matin",
+      "program_type": ""
+    },
+    {
+      "channel_name": "Sud Radio",
+      "start": "10:40",
+      "end": "12:00",
+      "weekday": 0,
+      "program_name": "Mettez-vous d'accord",
+      "program_type": ""
+    },
+    {
+      "channel_name": "Sud Radio",
+      "start": "12:00",
+      "end": "14:00",
+      "weekday": 0,
+      "program_name": "Sud Radio dans tous ses états",
+      "program_type": ""
+    },
+    {
+      "channel_name": "RFI",
+      "start": "",
+      "end": "",
+      "weekday": 0,
+      "program_name": "Un journal de 10 min/ heure",
+      "program_type": ""
+    },
+    {
+      "channel_name": "franceinfo:",
+      "start": "6:00",
       "end": "23:00",
       "weekday": 0,
       "program_name": "Information en continu",
       "program_type": ""
-    },
-        {
-          "channel_name": "tf1",
-          "start": "06:55",
-          "end": "09:30",
-          "weekday": 1,
-          "program_name": "Bonjour ! La Matinale",
-          "program_type": "Information - Magazine"
-        },
-        {
-          "channel_name": "france2",
-          "start": "06:00",
-          "end": "06:25",
-          "weekday": 1,
-          "program_name": "Le 6h Info",
-          "program_type": "Information - Journal"
-        },
-        {
-          "channel_name": "france3-idf",
-          "start": "07:00",
-          "end": "09:00",
-          "weekday": 1,
-          "program_name": "Ici Matin",
-          "program_type": "Information - Journal"
-        },
-        {
-          "channel_name": "france5",
-          "start": "17:40",
-          "end": "18:55",
-          "weekday": 1,
-          "program_name": "C dans l'air",
-          "program_type": "Magazine"
-        },
-        {
-          "channel_name": "m6",
-          "start": "12:45",
-          "end": "13:35",
-          "weekday": 1,
-          "program_name": "JT 1245",
-          "program_type": "Information - Journal"
-        },
-        {
-          "channel_name": "arte",
-          "start": "19:45",
-          "end": "20:05",
-          "weekday": 1,
-          "program_name": "JT",
-          "program_type": "?"
-        },
-        {
-          "channel_name": "d8",
-          "start": "19:00",
-          "end": "21:20",
-          "weekday": 1,
-          "program_name": "TPMP",
-          "program_type": "Divertissements - Autres"
-        },
-        {
-          "channel_name": "tmc",
-          "start": "19:20",
-          "end": "21:25",
-          "weekday": 1,
-          "program_name": "Quotidien",
-          "program_type": "Magazine"
-        },
-        {
-          "channel_name": "bfmtv",
-          "start": "06:00",
-          "end": "23:00",
-          "weekday": 1,
-          "program_name": "Information en continu",
-          "program_type": ""
-        },
-        {
-          "channel_name": "itele",
-          "start": "06:00",
-          "end": "23:00",
-          "weekday": 1,
-          "program_name": "Information en continu",
-          "program_type": ""
-        },
-        {
-          "channel_name": "lci",
-          "start": "06:00",
-          "end": "23:00",
-          "weekday": 1,
-          "program_name": "Information en continu",
-          "program_type": ""
-        },
-        {
-          "channel_name": "france24",
-          "start": "06:00",
-          "end": "23:00",
-          "weekday": 1,
-          "program_name": "Information en continu",
-          "program_type": ""
-        },
-        {
-          "channel_name": "franceinf:",
-          "start": "06:00",
-          "end": "23:00",
-          "weekday": 1,
-          "program_name": "Information en continu",
-          "program_type": ""
-        },
-          {
-            "channel_name": "tf1",
-            "start": "06:55",
-            "end": "09:30",
-            "weekday": 2,
-            "program_name": "Bonjour ! La Matinale",
-            "program_type": "Information - Magazine"
-          },
-          {
-            "channel_name": "tf1",
-            "start": "13:00",
-            "end": "13:40",
-            "weekday": 2,
-            "program_name": "JT 13h",
-            "program_type": "Information - Journal"
-          },
-          {
-            "channel_name": "tf1",
-            "start": "19:55",
-            "end": "20:40",
-            "weekday": 2,
-            "program_name": "JT 20h + météo",
-            "program_type": "Information - Journal"
-          },
-          {
-            "channel_name": "france2",
-            "start": "06:00",
-            "end": "06:25",
-            "weekday": 2,
-            "program_name": "Le 6h Info",
-            "program_type": "Information - Journal"
-          },
-          {
-            "channel_name": "france2",
-            "start": "06:30",
-            "end": "09:30",
-            "weekday": 2,
-            "program_name": "Télématin",
-            "program_type": "Information - Autres émissions"
-          },
-          {
-            "channel_name": "france2",
-            "start": "13:00",
-            "end": "13:40",
-            "weekday": 2,
-            "program_name": "JT 13h",
-            "program_type": "Information - Journal"
-          },
-          {
-            "channel_name": "france2",
-            "start": "19:55",
-            "end": "20:40",
-            "weekday": 2,
-            "program_name": "JT 20h + météo",
-            "program_type": "Information - Journal"
-          },
-          {
-            "channel_name": "france3-idf",
-            "start": "07:00",
-            "end": "09:00",
-            "weekday": 2,
-            "program_name": "Ici Matin",
-            "program_type": "Information - Journal"
-          },
-          {
-            "channel_name": "france3-idf",
-            "start": "12:00",
-            "end": "12:50",
-            "weekday": 2,
-            "program_name": "JT 12h",
-            "program_type": "Information - Journal"
-          },
-          {
-            "channel_name": "france3-idf",
-            "start": "19:00",
-            "end": "19:55",
-            "weekday": 2,
-            "program_name": "JT 19h + météo",
-            "program_type": "Information - Journal"
-          },
-          {
-            "channel_name": "france5",
-            "start": "17:40",
-            "end": "18:55",
-            "weekday": 2,
-            "program_name": "C dans l'air",
-            "program_type": "Magazine"
-          },
-          {
-            "channel_name": "france5",
-            "start": "18:55",
-            "end": "19:55",
-            "weekday": 2,
-            "program_name": "C à vous",
-            "program_type": "Magazine"
-          },
-          {
-            "channel_name": "france5",
-            "start": "20:05",
-            "end": "21:05",
-            "weekday": 2,
-            "program_name": "C à vous la suite",
-            "program_type": "Magazine"
-          },
-          {
-            "channel_name": "m6",
-            "start": "12:45",
-            "end": "13:35",
-            "weekday": 2,
-            "program_name": "JT 1245",
-            "program_type": "Information - Journal"
-          },
-          {
-            "channel_name": "m6",
-            "start": "13:50",
-            "end": "17:20",
-            "weekday": 2,
-            "program_name": "1 jour un doc",
-            "program_type": "Information - Magazine"
-          },
-          {
-            "channel_name": "m6",
-            "start": "19:40",
-            "end": "20:10",
-            "weekday": 2,
-            "program_name": "JT 1945 + météo",
-            "program_type": "Information - Journal"
-          },
-          {
-            "channel_name": "arte",
-            "start": "19:45",
-            "end": "20:05",
-            "weekday": 2,
-            "program_name": "JT",
-            "program_type": "?"
-          },
-          {
-            "channel_name": "arte",
-            "start": "20:05",
-            "end": "20:50",
-            "weekday": 2,
-            "program_name": "28 minutes",
-            "program_type": "?"
-          },
-          {
-            "channel_name": "d8",
-            "start": "19:00",
-            "end": "21:20",
-            "weekday": 2,
-            "program_name": "TPMP",
-            "program_type": "Divertissements - Autres"
-          },
-          {
-            "channel_name": "d8",
-            "start": "12:30",
-            "end": "13:00",
-            "weekday": 2,
-            "program_name": "Le journal du jour + météo",
-            "program_type": "Information - Journal"
-          },
-          {
-            "channel_name": "tmc",
-            "start": "19:20",
-            "end": "21:25",
-            "weekday": 2,
-            "program_name": "Quotidien",
-            "program_type": "Magazine"
-          },
-          {
-            "channel_name": "bfmtv",
-            "start": "06:00",
-            "end": "23:00",
-            "weekday": 2,
-            "program_name": "Information en continu",
-            "program_type": "?"
-          },
-          {
-            "channel_name": "itele",
-            "start": "06:00",
-            "end": "23:00",
-            "weekday": 2,
-            "program_name": "Information en continu",
-            "program_type": "?"
-          },
-          {
-            "channel_name": "lci",
-            "start": "06:00",
-            "end": "23:00",
-            "weekday": 2,
-            "program_name": "Information en continu",
-            "program_type": "?"
-          },
-          {
-            "channel_name": "france24",
-            "start": "06:00",
-            "end": "23:00",
-            "weekday": 2,
-            "program_name": "Information en continu",
-            "program_type": "?"
-          },
-          {
-            "channel_name": "franceinfo",
-            "start": "06:00",
-            "end": "23:00",
-            "weekday": 2,
-            "program_name": "Information en continu",
-            "program_type": "?"
-          },
-                {
-                  "channel_name": "tf1",
-                  "start": "06:55",
-                  "end": "09:30",
-                  "weekday": 3,
-                  "program_name": "Bonjour ! La Matinale",
-                  "program_type": "Information - Magazine"
-                },
-                {
-                  "channel_name": "france2",
-                  "start": "06:00",
-                  "end": "06:25",
-                  "weekday": 3,
-                  "program_name": "Le 6h Info",
-                  "program_type": "Information - Journal"
-                },
-                {
-                  "channel_name": "france2",
-                  "start": "06:30",
-                  "end": "09:30",
-                  "weekday": 3,
-                  "program_name": "Télématin",
-                  "program_type": "Information - Autres émissions"
-                },
-                {
-                  "channel_name": "france3-idf",
-                  "start": "07:00",
-                  "end": "09:00",
-                  "weekday": 3,
-                  "program_name": "Ici Matin",
-                  "program_type": "Information - Journal"
-                },
-                {
-                  "channel_name": "france5",
-                  "start": "17:40",
-                  "end": "18:55",
-                  "weekday": 3,
-                  "program_name": "C dans l'air",
-                  "program_type": "Magazine"
-                },
-                {
-                  "channel_name": "m6",
-                  "start": "12:45",
-                  "end": "13:35",
-                  "weekday": 3,
-                  "program_name": "JT 1245",
-                  "program_type": "Information - Journal"
-                },
-                {
-                  "channel_name": "arte",
-                  "start": "19:45",
-                  "end": "20:05",
-                  "weekday": 3,
-                  "program_name": "JT",
-                  "program_type": "?"
-                },
-                {
-                  "channel_name": "d8",
-                  "start": "19:00",
-                  "end": "21:20",
-                  "weekday": 3,
-                  "program_name": "TPMP",
-                  "program_type": "Divertissements - Autres"
-                },
-                {
-                  "channel_name": "tmc",
-                  "start": "19:20",
-                  "end": "21:25",
-                  "weekday": 3,
-                  "program_name": "Quotidien",
-                  "program_type": "Magazine"
-                },
-                {
-                  "channel_name": "bfmtv",
-                  "start": "06:00",
-                  "end": "23:00",
-                  "weekday": 3,
-                  "program_name": "Information en continu",
-                  "program_type": ""
-                },
-                {
-                  "channel_name": "itele",
-                  "start": "06:00",
-                  "end": "23:00",
-                  "weekday": 3,
-                  "program_name": "Information en continu",
-                  "program_type": ""
-                },
-                {
-                  "channel_name": "lci",
-                  "start": "06:00",
-                  "end": "23:00",
-                  "weekday": 3,
-                  "program_name": "Information en continu",
-                  "program_type": ""
-                },
-                {
-                  "channel_name": "france24",
-                  "start": "06:00",
-                  "end": "23:00",
-                  "weekday": 3,
-                  "program_name": "Information en continu",
-                  "program_type": ""
-                },
-                {
-                  "channel_name": "franceinf:",
-                  "start": "06:00",
-                  "end": "23:00",
-                  "weekday": 3,
-                  "program_name": "Information en continu",
-                  "program_type": ""
-                },
-        {
-            "channel_name": "tf1",
-            "start": "06:55",
-            "end": "09:30",
-            "weekday": 4,
-            "program_name": "Bonjour ! La Matinale",
-            "program_type": "Information - Magazine"
-        },
-        {
-            "channel_name": "france2",
-            "start": "06:00",
-            "end": "06:25",
-            "weekday": 4,
-            "program_name": "Le 6h Info",
-            "program_type": "Information - Journal"
-        },
-        {
-            "channel_name": "france3-idf",
-            "start": "07:00",
-            "end": "09:00",
-            "weekday": 4,
-            "program_name": "Ici Matin",
-            "program_type": "Information - Journal"
-        },
-        {
-            "channel_name": "france5",
-            "start": "17:40",
-            "end": "18:55",
-            "weekday": 4,
-            "program_name": "C dans l'air",
-            "program_type": "Magazine"
-        },
-        {
-            "channel_name": "m6",
-            "start": "12:45",
-            "end": "13:35",
-            "weekday": 4,
-            "program_name": "JT 1245",
-            "program_type": "Information - Journal"
-        },
-        {
-            "channel_name": "arte",
-            "start": "19:45",
-            "end": "20:05",
-            "weekday": 4,
-            "program_name": "JT",
-            "program_type": "?"
-        },
-        {
-            "channel_name": "d8",
-            "start": "19:00",
-            "end": "21:20",
-            "weekday": 4,
-            "program_name": "TPMP",
-            "program_type": "Divertissements - Autres"
-        },
-        {
-            "channel_name": "tmc",
-            "start": "19:20",
-            "end": "21:25",
-            "weekday": 4,
-            "program_name": "Quotidien",
-            "program_type": "Magazine"
-        },
-        {
-            "channel_name": "bfmtv",
-            "start": "06:00",
-            "end": "23:00",
-            "weekday": 4,
-            "program_name": "Information en continu",
-            "program_type": ""
-        },
-        {
-            "channel_name": "itele",
-            "start": "06:00",
-            "end": "23:00",
-            "weekday": 4,
-            "program_name": "Information en continu",
-            "program_type": ""
-        },
-        {
-            "channel_name": "lci",
-            "start": "06:00",
-            "end": "23:00",
-            "weekday": 4,
-            "program_name": "Information en continu",
-            "program_type": ""
-        },
-        {
-            "channel_name": "france24",
-            "start": "06:00",
-            "end": "23:00",
-            "weekday": 4,
-            "program_name": "Information en continu",
-            "program_type": ""
-        },
-        {
-            "channel_name": "franceinf:",
-            "start": "06:00",
-            "end": "23:00",
-            "weekday": 4,
-            "program_name": "Information en continu",
-            "program_type": ""
-        },
-            {
-              "channel_name": "tf1",
-              "start": "13:00",
-              "end": "13:40",
-              "weekday": 5,
-              "program_name": "JT 13h",
-              "program_type": "Information - Journal"
-            },
-            {
-              "channel_name": "france2",
-              "start": "12:00",
-              "end": "12:50",
-              "weekday": 5,
-              "program_name": "JT 12h",
-              "program_type": "Information - Journal"
-            },
-            {
-              "channel_name": "france3-idf",
-              "start": "12:00",
-              "end": "12:50",
-              "weekday": 5,
-              "program_name": "JT 12h",
-              "program_type": "Information - Journal"
-            },
-            {
-              "channel_name": "france5",
-              "start": "11:00",
-              "end": "12:30",
-              "weekday": 5,
-              "program_name": "66 minutes samedi",
-              "program_type": "Information - Magazine"
-            },
-            {
-              "channel_name": "m6",
-              "start": "12:45",
-              "end": "13:35",
-              "weekday": 5,
-              "program_name": "JT 1245",
-              "program_type": "Information - Journal"
-            },
-            {
-              "channel_name": "arte",
-              "start": "20:05",
-              "end": "20:50",
-              "weekday": 5,
-              "program_name": "28 minutes",
-              "program_type": "?"
-            },
-            {
-              "channel_name": "d8",
-              "start": "19:00",
-              "end": "21:00",
-              "weekday": 5,
-              "program_name": "TPMP Week-end",
-              "program_type": "Divertissements - Autres"
-            },
-            {
-              "channel_name": "bfmtv",
-              "start": "06:00",
-              "end": "23:00",
-              "weekday": 5,
-              "program_name": "Information en continu",
-              "program_type": ""
-            },
-            {
-              "channel_name": "itele",
-              "start": "06:00",
-              "end": "23:00",
-              "weekday": 5,
-              "program_name": "Information en continu",
-              "program_type": ""
-            },
-            {
-              "channel_name": "lci",
-              "start": "06:00",
-              "end": "23:00",
-              "weekday": 5,
-              "program_name": "Information en continu",
-              "program_type": ""
-            },
-            {
-              "channel_name": "france24",
-              "start": "06:00",
-              "end": "23:00",
-              "weekday": 5,
-              "program_name": "Information en continu",
-              "program_type": ""
-            },
-            {
-              "channel_name": "franceinf:",
-              "start": "06:00",
-              "end": "23:00",
-              "weekday": 5,
-              "program_name": "Information en continu",
-              "program_type": ""
-            },
-                {
-                  "channel_name": "tf1",
-                  "start": "13:00",
-                  "end": "13:40",
-                  "weekday": 5,
-                  "program_name": "JT 13h",
-                  "program_type": "Information - Journal"
-                },
-                {
-                  "channel_name": "france2",
-                  "start": "12:00",
-                  "end": "12:50",
-                  "weekday": 5,
-                  "program_name": "JT 12h",
-                  "program_type": "Information - Journal"
-                },
-                {
-                  "channel_name": "france3-idf",
-                  "start": "12:00",
-                  "end": "12:50",
-                  "weekday": 5,
-                  "program_name": "JT 12h",
-                  "program_type": "Information - Journal"
-                },
-                {
-                  "channel_name": "france5",
-                  "start": "11:00",
-                  "end": "12:30",
-                  "weekday": 5,
-                  "program_name": "66 minutes samedi",
-                  "program_type": "Information - Magazine"
-                },
-                {
-                  "channel_name": "m6",
-                  "start": "12:45",
-                  "end": "13:35",
-                  "weekday": 5,
-                  "program_name": "JT 1245",
-                  "program_type": "Information - Journal"
-                },
-                {
-                  "channel_name": "arte",
-                  "start": "20:05",
-                  "end": "20:50",
-                  "weekday": 5,
-                  "program_name": "28 minutes",
-                  "program_type": "?"
-                },
-                {
-                  "channel_name": "d8",
-                  "start": "19:00",
-                  "end": "21:00",
-                  "weekday": 5,
-                  "program_name": "TPMP Week-end",
-                  "program_type": "Divertissements - Autres"
-                },
-                {
-                  "channel_name": "bfmtv",
-                  "start": "06:00",
-                  "end": "23:00",
-                  "weekday": 5,
-                  "program_name": "Information en continu",
-                  "program_type": ""
-                },
-                {
-                  "channel_name": "itele",
-                  "start": "06:00",
-                  "end": "23:00",
-                  "weekday": 5,
-                  "program_name": "Information en continu",
-                  "program_type": ""
-                },
-                {
-                  "channel_name": "lci",
-                  "start": "06:00",
-                  "end": "23:00",
-                  "weekday": 5,
-                  "program_name": "Information en continu",
-                  "program_type": ""
-                },
-                {
-                  "channel_name": "france24",
-                  "start": "06:00",
-                  "end": "23:00",
-                  "weekday": 5,
-                  "program_name": "Information en continu",
-                  "program_type": ""
-                },
-                {
-                  "channel_name": "franceinf:",
-                  "start": "06:00",
-                  "end": "23:00",
-                  "weekday": 5,
-                  "program_name": "Information en continu",
-                  "program_type": ""
-                }
-          ]
+    }
+]

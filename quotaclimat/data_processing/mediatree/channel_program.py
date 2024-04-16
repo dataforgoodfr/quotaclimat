@@ -27,6 +27,25 @@ def add_channel_program(df: pd.DataFrame):
         logging.error("Could not merge program and subtitle df", error)
         raise Exception
 
+# to avoid repeating our channel_program.json file for every day of the week
+def is_news_channel(channel_name: str) -> bool:
+    news_channels = ['bfmtv', 'itele', 'lci', 'france-info', 'franceinfotv', 'france24']
+    return channel_name in news_channels
+
+def compare_weekday(df_program_weekday, start_weekday: int) -> bool:
+    match isinstance(df_program_weekday, str):
+        case False: #int case
+            return start_weekday == df_program_weekday
+        case True: # string case
+            match df_program_weekday:
+                case '*': return True
+                case 'weekday':
+                    return start_weekday < 5
+                case 'weekend':
+                    return start_weekday > 4
+                case _ : return False
+    
+
 def merge_program_subtitle(df_subtitle: pd.DataFrame, df_program: pd.DataFrame):
     merged_data = []
     for index, subtitle in df_subtitle.iterrows():
@@ -38,7 +57,7 @@ def merge_program_subtitle(df_subtitle: pd.DataFrame, df_program: pd.DataFrame):
 
         matching_rows = df_program[
                         (df_program['channel_name'] == subtitle['channel_name']) &
-                         (df_program['weekday'] == start_weekday)  &
+                         (compare_weekday(df_program['weekday'], start_weekday))  &
                          (df_program['start'] <= start_time) &
                          (df_program['end'] >= start_time)
                         ]
@@ -56,8 +75,3 @@ def merge_program_subtitle(df_subtitle: pd.DataFrame, df_program: pd.DataFrame):
     merged_df = pd.DataFrame(merged_data)
 
     return merged_df
-
-#TODO
-# E       Attribute "dtype" are different
-# E       [left]:  datetime64[ns, Europe/Paris]
-# E       [right]: int64

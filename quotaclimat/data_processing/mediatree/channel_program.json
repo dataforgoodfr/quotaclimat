@@ -58,7 +58,7 @@
     {
       "channel_name": "france2",
       "start": "6:00",
-      "end": "9:30",
+      "end": "6:25",
       "weekday": "*",
       "program_name": "Le 6h Info",
       "program_type": "Information - Journal"

@@ -280,7 +280,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "franceinfo",
+      "channel_name": "franceinfotv",
       "start": "6:00",
       "end": "23:00",
       "weekday": "*",
@@ -288,7 +288,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "6:00",
       "end": "7:00",
       "weekday": 0,
@@ -296,14 +296,14 @@
       "program_type": ""
     },
     {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "7:00",
       "end": "10:00",
       "weekday": 0,
       "program_name": "Le 7/10",
       "program_type": ""
     },    {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "6:00",
       "end": "7:00",
       "weekday": 1,
@@ -311,14 +311,14 @@
       "program_type": ""
     },
     {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "7:00",
       "end": "10:00",
       "weekday": 1,
       "program_name": "Le 7/10",
       "program_type": ""
     },    {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "6:00",
       "end": "7:00",
       "weekday": 2,
@@ -326,14 +326,14 @@
       "program_type": ""
     },
     {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "7:00",
       "end": "10:00",
       "weekday": 2,
       "program_name": "Le 7/10",
       "program_type": ""
     },    {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "6:00",
       "end": "7:00",
       "weekday": 3,
@@ -341,7 +341,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "7:00",
       "end": "10:00",
       "weekday": 3,
@@ -349,7 +349,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "6:00",
       "end": "9:00",
       "weekday": 4,
@@ -357,7 +357,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "6:00",
       "end": "9:00",
       "weekday": "weekend",
@@ -365,7 +365,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "13:00",
       "end": "14:00",
       "weekday": "weekday",
@@ -373,7 +373,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "13:00",
       "end": "13:30",
       "weekday": "weekend",
@@ -381,7 +381,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "franceinter",
+      "channel_name": "france-inter",
       "start": "19:00",
       "end": "20:00",
       "weekday": "*",
@@ -389,7 +389,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "France Culture",
+      "channel_name": "france-culture",
       "start": "6:30",
       "end": "9:00",
       "weekday": "*",
@@ -397,7 +397,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "France Culture",
+      "channel_name": "france-culture",
       "start": "12:30",
       "end": "12:50",
       "weekday": "*",
@@ -405,7 +405,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "France Culture",
+      "channel_name": "france-culture",
       "start": "18:00",
       "end": "18:20",
       "weekday": "*",
@@ -413,7 +413,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "RTL",
+      "channel_name": "rtl",
       "start": "6:00",
       "end": "7:00",
       "weekday": "weekday",
@@ -421,7 +421,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "RTL",
+      "channel_name": "rtl",
       "start": "7:00",
       "end": "9:00",
       "weekday": "weekday",
@@ -429,7 +429,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "RTL",
+      "channel_name": "rtl",
       "start": "12:00",
       "end": "13:00",
       "weekday": "weekday",
@@ -437,7 +437,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "RTL",
+      "channel_name": "rtl",
       "start": "18:00",
       "end": "20:00",
       "weekday": "weekday",
@@ -445,7 +445,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "RTL",
+      "channel_name": "rtl",
       "start": "18:00",
       "end": "18:15",
       "weekday": 5,
@@ -453,7 +453,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "RTL",
+      "channel_name": "rtl",
       "start": "6:00",
       "end": "9:15",
       "weekday": "weekend",
@@ -461,7 +461,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "RTL",
+      "channel_name": "rtl",
       "start": "18:00",
       "end": "19:15",
       "weekday": 6,
@@ -469,7 +469,7 @@
       "program_type": ""
     },
     {
-      "channel_name": "RTL",
+      "channel_name": "rtl",
       "start": "13:00",
       "end": "14:00",
       "weekday": 6,
@@ -477,123 +477,291 @@
       "program_type": ""
     },
     {
-      "channel_name": "RMC", 
+      "channel_name": "rmc", 
       "start": "6:30",
       "end": "9:00",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "Apolline Matin",
       "program_type": ""
     },
     {
-      "channel_name": "RMC",
+      "channel_name": "rmc",
       "start": "9:00",
       "end": "12:00",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "Les grandes gueules",
       "program_type": ""
     },
     {
-      "channel_name": "RMC",
+      "channel_name": "rmc",
       "start": "12:00",
       "end": "15:00",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "Estelle Midi",
       "program_type": ""
     },
     {
-      "channel_name": "Europe 1",
+      "channel_name": "rmc",
+      "start": "6:30",
+      "end": "9:30",
+      "weekday": "weekend",
+      "program_name": "La Matinale Week-end",
+      "program_type": ""
+    },
+    {
+      "channel_name": "europe1",
       "start": "6:00",
       "end": "7:00",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "Bonjour",
       "program_type": ""
     },
     {
-      "channel_name": "Europe 1",
+      "channel_name": "europe1",
       "start": "7:00",
       "end": "9:00",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "Europe 1 Matin",
       "program_type": ""
     },
     {
-      "channel_name": "Europe 1",
+      "channel_name": "europe1",
       "start": "9:00",
       "end": "9:30",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "L'heure des pros",
       "program_type": ""
     },
     {
-      "channel_name": "Europe 1",
+      "channel_name": "europe1",
       "start": "11:00",
       "end": "13:00",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "Pascal Praud et vous",
       "program_type": ""
     },
     {
-      "channel_name": "Europe 1",
+      "channel_name": "europe1",
       "start": "13:00",
       "end": "14:00",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "Europe 1 Matin",
       "program_type": ""
     },
     {
-      "channel_name": "Europe 1",
+      "channel_name": "europe1",
       "start": "18:00",
       "end": "19:00",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "Punchline",
       "program_type": ""
     },
     {
-      "channel_name": "Europe 1",
+      "channel_name": "europe1",
       "start": "19:00",
       "end": "20:00",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "Soir",
       "program_type": ""
     },
     {
-      "channel_name": "Sud Radio",
+      "channel_name": "europe1",
+      "start": "6:00",
+      "end": "9:00",
+      "weekday": "weekend",
+      "program_name": " Europe 1 Matin Week-end",
+      "program_type": ""
+    },
+    {
+      "channel_name": "europe1",
+      "start": "12:30",
+      "end": "13:00",
+      "weekday": "weekend",
+      "program_name": "Midi Week-end",
+      "program_type": ""
+    },
+    {
+      "channel_name": "europe1",
+      "start": "18:00",
+      "end": "19:00",
+      "weekday": "weekend",
+      "program_name": "Soir Week-end",
+      "program_type": ""
+    },
+    {
+      "channel_name": "sud-radio",
       "start": "6:50",
       "end": "10:00",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "Le Grand Matin",
       "program_type": ""
     },
     {
-      "channel_name": "Sud Radio",
+      "channel_name": "sud-radio",
+      "start": "7:00",
+      "end": "9:20",
+      "weekday": "weekend",
+      "program_name": "Le Grand Matin Week-end",
+      "program_type": ""
+    },
+    {
+      "channel_name": "sud-radio",
       "start": "10:40",
       "end": "12:00",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "Mettez-vous d'accord",
       "program_type": ""
     },
     {
-      "channel_name": "Sud Radio",
+      "channel_name": "sud-radio",
       "start": "12:00",
       "end": "14:00",
-      "weekday": 0,
+      "weekday": "weekday",
       "program_name": "Sud Radio dans tous ses états",
       "program_type": ""
     },
     {
-      "channel_name": "RFI",
-      "start": "",
-      "end": "",
-      "weekday": 0,
-      "program_name": "Un journal de 10 min/ heure",
+      "channel_name": "france-info",
+      "start": "6:00",
+      "end": "23:00",
+      "weekday": "*",
+      "program_name": "Information en continu",
       "program_type": ""
     },
     {
-      "channel_name": "franceinfo:",
+      "channel_name": "rfi",
       "start": "6:00",
-      "end": "23:00",
-      "weekday": 0,
-      "program_name": "Information en continu",
+      "end": "6:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "7:00",
+      "end": "7:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "8:00",
+      "end": "8:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "9:00",
+      "end": "9:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "10:00",
+      "end": "10:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "11:00",
+      "end": "11:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "12:00",
+      "end": "12:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "13:00",
+      "end": "13:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "14:00",
+      "end": "14:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "15:00",
+      "end": "15:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "16:00",
+      "end": "16:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "17:00",
+      "end": "17:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "18:00",
+      "end": "18:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "19:00",
+      "end": "19:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "20:00",
+      "end": "20:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "21:00",
+      "end": "21:10",
+      "weekday": "*",
+      "program_name": "Journal",
+      "program_type": ""
+    },
+    {
+      "channel_name": "rfi",
+      "start": "22:00",
+      "end": "22:10",
+      "weekday": "*",
+      "program_name": "Journal",
       "program_type": ""
     }
 ]

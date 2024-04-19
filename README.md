@@ -279,9 +279,9 @@ Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
 
 ## Batch import
 ### Batch import based on time
-Use env variable `START_DATE` like in docker compose (epoch second format : 1705409797).
+If our media perimeter evolves, we need to reimport it all using env variable `START_DATE` like in docker compose (epoch second format : 1705409797).
 
-Otherwise, default is yesterday midnight date.
+Otherwise, default is yesterday midnight date (default cron job)
 
 ### Batch import based on channel
 Use env variable `CHANNEL` like in docker compose (string: tf1)
@@ -313,6 +313,8 @@ With +1 millions rows, we can update from an offset to fix a custom logic by usi
 ~55 minutes to update 50K rows on a mVCPU 2240 - 4Gb RAM on Scaleway.
 
 Example inside the docker-compose.yml mediatree service -> START_OFFSET: 100
+
+We can use a Github actions to start multiple update operations with different offsets.
 
 ## SQL Tables evolution
 Using [Alembic](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) Auto Generating Migrations¶ we can add a new column inside `models.py` and it will automatically make the schema evolution :

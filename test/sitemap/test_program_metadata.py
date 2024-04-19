@@ -47,7 +47,7 @@ df = pd.DataFrame([{
 
 df['start'] = pd.to_datetime(df['start'], unit='s', utc=True).dt.tz_convert('Europe/Paris')
 
-def test_add_channel_program():
+def test_add_channel_program_france2():
     output = add_channel_program(df)
 
     expected = pd.DataFrame([{
@@ -66,7 +66,12 @@ def test_add_channel_program():
     debug_df(output)
     pd.testing.assert_frame_equal(output._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
 
+def test_get_programs():
+    programs = get_programs()
 
+    assert len(programs) > 0
+
+def test_add_channel_program_france2_jt():
     jt_20h02 = 1712772151 # wednesday - 3 
 
     df['start'] = pd.to_datetime(jt_20h02, unit='s', utc=True).tz_convert('Europe/Paris')
@@ -91,11 +96,13 @@ def test_add_channel_program():
 
 def test_compare_weekday_string():
     assert compare_weekday('*', 0) == True
+    assert compare_weekday('*', 3) == True
     assert compare_weekday('weekday', 4) == True
     assert compare_weekday('weekday', 6) == False
     assert compare_weekday('weekday', 5) == False
     assert compare_weekday('weekend', 5) == True
     assert compare_weekday('weekend', 6) == True
+    assert compare_weekday('weekend', 3) == False
     
 def test_compare_weekday_int():
     assert compare_weekday(1, 5) == False

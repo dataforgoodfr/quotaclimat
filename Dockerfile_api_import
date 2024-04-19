@@ -38,7 +38,8 @@ COPY alembic.ini ./alembic.ini
 # healthcheck
 EXPOSE 5050
 
-# to migrate SQL tables schema if needed - TODO test me
-RUN poetry run alembic upgrade head
+# Use a separate script to handle migrations and start the application
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
 
-ENTRYPOINT ["python", "quotaclimat/data_processing/mediatree/api_import.py"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

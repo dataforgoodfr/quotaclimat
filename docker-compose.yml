@@ -77,32 +77,6 @@ services:
       postgres_db:
         condition: service_healthy
 
-  streamlit:
-    container_name: streamlit
-    ports: 
-    - 8501:8501
-    build:
-      context: ./
-      dockerfile: Dockerfile_streamlit
-    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
-    entrypoint: ["poetry", "run", "python", "-m", "streamlit", "run", "app.py"]
-    environment:
-      ENV: dev
-      POSTGRES_USER: user
-      POSTGRES_DB: barometre
-      POSTGRES_PASSWORD: password
-      POSTGRES_HOST: postgres_db
-      POSTGRES_PORT: 5432
-    volumes:
-      - ./quotaclimat/:/app/quotaclimat/
-      - ./postgres/:/app/postgres/
-      - ./app.py:/app/app.py
-      - ./pages/:/app/pages/
-      - ./.streamlit/:/app/.streamlit/
-    depends_on:
-      postgres_db:
-        condition: service_healthy
-
   postgres_db:
     image: postgres:15
     ports:
@@ -126,9 +100,9 @@ services:
       - 5050:5050
     build:
       context: ./
-      dockerfile: Dockerfile_ingest
+      dockerfile: Dockerfile_api_import
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
-    entrypoint: ["python", "quotaclimat/data_processing/mediatree/api_import.py"]
+    #entrypoint: ["python", "quotaclimat/data_processing/mediatree/api_import.py"]
     environment:
       ENV: docker # change me to prod for real cases
       LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log

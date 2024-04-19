@@ -48,11 +48,13 @@ df = pd.DataFrame([{
 df['start'] = pd.to_datetime(df['start'], unit='s', utc=True).dt.tz_convert('Europe/Paris')
 
 def test_add_channel_program_france2():
+    telematin = thrusday_morning - 4500,
+    df['start'] = pd.to_datetime(telematin, unit='s', utc=True).tz_convert('Europe/Paris')
     output = add_channel_program(df)
 
     expected = pd.DataFrame([{
         "id" : primary_key,
-        "start": thrusday_morning, # 6:00
+        "start": telematin, # 6:02
         "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
         "channel_name": channel_name,
         "channel_radio": False,
@@ -62,30 +64,53 @@ def test_add_channel_program_france2():
         ,"program_name": "Le 6h Info"
         ,"program_type": "Information - Journal"
     }])
-    expected['start'] = pd.to_datetime(thrusday_morning, unit='s', utc=True).tz_convert('Europe/Paris')
+    expected['start'] = pd.to_datetime(telematin, unit='s', utc=True).tz_convert('Europe/Paris')
     debug_df(output)
     pd.testing.assert_frame_equal(output._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
 
 
 def test_add_channel_program_france2_telematin():
+    df['start'] = pd.to_datetime(thrusday_morning, unit='s', utc=True).tz_convert('Europe/Paris')
     output = add_channel_program(df)
 
     expected = pd.DataFrame([{
         "id" : primary_key,
-        "start": thrusday_morning + 4500, 
+        "start": thrusday_morning , # 8:02
         "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
         "channel_name": channel_name,
         "channel_radio": False,
         "theme": themes,
         "keywords_with_timestamp": keywords_with_timestamp
         ,"number_of_keywords": 1
-        ,"program_name": "Le 6h Info"
-        ,"program_type": "Information - Journal"
+        ,"program_name": "Télématin"
+        ,"program_type": "Information - Information"
     }])
     expected['start'] = pd.to_datetime(thrusday_morning, unit='s', utc=True).tz_convert('Europe/Paris')
     debug_df(output)
     pd.testing.assert_frame_equal(output._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
 
+def test_add_channel_program_wrong_time():
+    sunday_night_no_show = 1713054037
+    df['start'] = pd.to_datetime(sunday_night_no_show, unit='s', utc=True).tz_convert('Europe/Paris')
+    output = add_channel_program(df)
+    debug_df(output)
+
+
+    expected = pd.DataFrame([{
+        "id" : primary_key,
+        "start": sunday_night_no_show,
+        "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
+        "channel_name": channel_name,
+        "channel_radio": False,
+        "theme": themes,
+        "keywords_with_timestamp": keywords_with_timestamp
+        ,"number_of_keywords": 1
+        ,"program_name": ""
+        ,"program_type": ""
+    }])
+    expected['start'] = pd.to_datetime(sunday_night_no_show, unit='s', utc=True).tz_convert('Europe/Paris')
+
+    pd.testing.assert_frame_equal(output._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
 
 def test_get_programs():
     programs = get_programs()

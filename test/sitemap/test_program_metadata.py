@@ -33,7 +33,7 @@ themes = [
         "ressources_naturelles_concepts_generaux",
     ]
 channel_name = "france2"
-thrusday_morning = 1712815351
+thrusday_morning = 1712815351 # thrusday - 8h02
 df = pd.DataFrame([{
     "id" : primary_key,
     "start": thrusday_morning,
@@ -52,19 +52,40 @@ def test_add_channel_program_france2():
 
     expected = pd.DataFrame([{
         "id" : primary_key,
-        "start": thrusday_morning,
+        "start": thrusday_morning, # 6:00
         "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
         "channel_name": channel_name,
         "channel_radio": False,
         "theme": themes,
         "keywords_with_timestamp": keywords_with_timestamp
         ,"number_of_keywords": 1
-        ,"program_name": "Télématin"
-        ,"program_type": "Information - Autres émissions"
+        ,"program_name": "Le 6h Info"
+        ,"program_type": "Information - Journal"
     }])
     expected['start'] = pd.to_datetime(thrusday_morning, unit='s', utc=True).tz_convert('Europe/Paris')
     debug_df(output)
     pd.testing.assert_frame_equal(output._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
+
+
+def test_add_channel_program_france2_telematin():
+    output = add_channel_program(df)
+
+    expected = pd.DataFrame([{
+        "id" : primary_key,
+        "start": thrusday_morning + 4500, 
+        "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
+        "channel_name": channel_name,
+        "channel_radio": False,
+        "theme": themes,
+        "keywords_with_timestamp": keywords_with_timestamp
+        ,"number_of_keywords": 1
+        ,"program_name": "Le 6h Info"
+        ,"program_type": "Information - Journal"
+    }])
+    expected['start'] = pd.to_datetime(thrusday_morning, unit='s', utc=True).tz_convert('Europe/Paris')
+    debug_df(output)
+    pd.testing.assert_frame_equal(output._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
+
 
 def test_get_programs():
     programs = get_programs()

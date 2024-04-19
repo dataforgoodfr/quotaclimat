@@ -53,9 +53,13 @@ def merge_program_subtitle(df_subtitle: pd.DataFrame, df_program: pd.DataFrame):
         start_weekday = int(subtitle['start'].dayofweek)
         logging.debug(f"start_weekday {start_weekday}")
 
+        df_program["weekday_mask"] = df_program['weekday'].apply(
+            lambda x: compare_weekday(x, start_weekday)
+        )     
+
         matching_rows = df_program[
                         (df_program['channel_name'] == subtitle['channel_name']) &
-                          compare_weekday(df_program['weekday'], start_weekday)  & # fix me
+                          df_program["weekday_mask"]  &
                          (df_program['start'] <= start_time) &
                          (df_program['end'] >= start_time)
                         ]

@@ -48,7 +48,7 @@ df = pd.DataFrame([{
 df['start'] = pd.to_datetime(df['start'], unit='s', utc=True).dt.tz_convert('Europe/Paris')
 
 def test_add_channel_program_france2():
-    telematin = thrusday_morning - 4500,
+    telematin = 1712808646,
     df['start'] = pd.to_datetime(telematin, unit='s', utc=True).tz_convert('Europe/Paris')
     output = add_channel_program(df)
 

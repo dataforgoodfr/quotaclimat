@@ -151,12 +151,8 @@ def drop_tables():
     if(os.environ.get("ENV") == "docker"):
         logging.warning("drop tables")
         try:
-            
             engine = connect_to_db()
-            metadata = MetaData(bind=engine)
-            metadata.reflect()
-            keywords_table = Table(keywords_table, metadata)
-            keywords_table.drop()
+            Base.metadata.drop_all(bind=engine, tables=[Keywords.__table__])
 
             logging.info(f"Table {keywords_table} deletion done")
         except (Exception) as error:

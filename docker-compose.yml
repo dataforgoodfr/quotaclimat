@@ -5,8 +5,8 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-   #entrypoint: ["poetry", "run", "pytest","-vv", "-o", "log_cli=true", "--cov-report", "term:skip-covered", "--cov=quotaclimat", "--cov=postgres", "test/"]
-    entrypoint: ["sleep", "12000"] # use to debug the container if needed
+    entrypoint: ["poetry", "run", "pytest","-vv", "-o", "log_cli=true", "--cov-report", "term:skip-covered", "--cov=quotaclimat", "--cov=postgres", "test/"]
+    #entrypoint: ["sleep", "12000"] # use to debug the container if needed
     environment:
       ENV: docker
       # CHANNEL: "fr3-idf"
@@ -17,13 +17,12 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_HOST: postgres_db
       POSTGRES_PORT: 5432
-      MODIN_ENGINE: dask #TODO test me
+      MODIN_ENGINE: dask #default
     tty: true # colorize terminal
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/
       - ./test/:/app/test/
-      - ./app.py:/app/app.py
       - ./poetry.lock:/app/poetry.lock
       - ./pyproject.toml:/app/pyproject.toml
       - ./alembic:/app/alembic
@@ -70,7 +69,6 @@ services:
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/
-      - ./app.py:/app/app.py
     depends_on:
       nginxtest:
         condition: service_healthy
@@ -123,12 +121,11 @@ services:
       MEDIATREE_PASSWORD:  /run/secrets/pwd_api
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
       KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/ # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
-      MODIN_ENGINE: dask #TODO test me
+      MODIN_ENGINE: dask
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/
       - ./test/:/app/test/
-      - ./app.py:/app/app.py
     secrets:
        - pwd_api
        - username_api

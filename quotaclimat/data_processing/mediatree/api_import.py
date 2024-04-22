@@ -66,7 +66,7 @@ def get_channels():
         channels = [default_channel]
     else: #prod  - all channels
         logging.warning("All channels are used")
-        return ["tf1", "france2", "fr3-idf", "france5", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
+        return ["tf1", "france2", "fr3-idf", "france5", "m6", "arte", "d8", "bfmtv", "lci", "franceinfotv", "itele",
         "europe1", "france-culture", "france-inter", "sud-radio", "rmc", "rtl", "france24", "france-info", "rfi"]
 
     return channels
@@ -188,7 +188,7 @@ def extract_api_sub(
         if(df is not None):
             df = filter_and_tag_by_theme(df)
             df["id"] = add_primary_key(df)
-            df["channel_program"] = add_channel_program(df)
+            df = add_channel_program(df)
             return df
         else:
             None

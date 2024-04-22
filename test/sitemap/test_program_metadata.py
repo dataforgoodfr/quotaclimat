@@ -61,12 +61,12 @@ def test_add_channel_program_france2():
         "theme": themes,
         "keywords_with_timestamp": keywords_with_timestamp
         ,"number_of_keywords": 1
-        ,"program_name": "Le 6h Info"
-        ,"program_type": "Information - Journal"
+        ,"channel_program": "Le 6h Info"
+        ,"channel_program_type": "Information - Journal"
     }])
     expected['start'] = pd.to_datetime(telematin, unit='s', utc=True).tz_convert('Europe/Paris')
     debug_df(output)
-    pd.testing.assert_frame_equal(output._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
+    pd.testing.assert_frame_equal(output.reset_index(drop=True), expected.reset_index(drop=True))
 
 
 def test_add_channel_program_france2_telematin():
@@ -82,19 +82,18 @@ def test_add_channel_program_france2_telematin():
         "theme": themes,
         "keywords_with_timestamp": keywords_with_timestamp
         ,"number_of_keywords": 1
-        ,"program_name": "Télématin"
-        ,"program_type": "Information - Autres émissions"
+        ,"channel_program": "Télématin"
+        ,"channel_program_type": "Information - Autres émissions"
     }])
     expected['start'] = pd.to_datetime(thrusday_morning, unit='s', utc=True).tz_convert('Europe/Paris')
     debug_df(output)
-    pd.testing.assert_frame_equal(output._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
+    pd.testing.assert_frame_equal(output.reset_index(drop=True), expected.reset_index(drop=True))
 
 def test_add_channel_program_wrong_time():
     sunday_night_no_show = 1713054037
     df['start'] = pd.to_datetime(sunday_night_no_show, unit='s', utc=True).tz_convert('Europe/Paris')
     output = add_channel_program(df)
     debug_df(output)
-
 
     expected = pd.DataFrame([{
         "id" : primary_key,
@@ -105,12 +104,12 @@ def test_add_channel_program_wrong_time():
         "theme": themes,
         "keywords_with_timestamp": keywords_with_timestamp
         ,"number_of_keywords": 1
-        ,"program_name": ""
-        ,"program_type": ""
+        ,"channel_program": ""
+        ,"channel_program_type": ""
     }])
     expected['start'] = pd.to_datetime(sunday_night_no_show, unit='s', utc=True).tz_convert('Europe/Paris')
 
-    pd.testing.assert_frame_equal(output._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
+    pd.testing.assert_frame_equal(output.reset_index(drop=True), expected.reset_index(drop=True))
 
 def test_get_programs():
     programs = get_programs()
@@ -133,12 +132,12 @@ def test_add_channel_program_france2_jt():
         "theme": themes,
         "keywords_with_timestamp": keywords_with_timestamp
         ,"number_of_keywords": 1
-        ,"program_name": "JT 20h + météo"
-        ,"program_type": "Information - Journal"
+        ,"channel_program": "JT 20h + météo"
+        ,"channel_program_type": "Information - Journal"
     }])
     expected['start'] = pd.to_datetime(jt_20h02, unit='s', utc=True).tz_convert('Europe/Paris')
     #debug_df(output)
-    pd.testing.assert_frame_equal(output._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
+    pd.testing.assert_frame_equal(output.reset_index(drop=True), expected.reset_index(drop=True))
 
 def test_compare_weekday_string():
     assert compare_weekday('*', 0) == True

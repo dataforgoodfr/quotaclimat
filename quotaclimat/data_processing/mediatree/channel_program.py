@@ -4,17 +4,21 @@ import os
 
 def get_programs():
     logging.debug("Getting program tv/radio...")
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    json_file_path = os.path.join(current_dir, 'channel_program.json')
-    df_programs = pd.read_json(json_file_path)
+    try:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        json_file_path = os.path.join(current_dir, 'channel_program.json')
+        df_programs = pd.read_json(json_file_path)
 
-    df_programs['start'] = pd.to_datetime(df_programs['start'], format='%H:%M').dt.tz_localize('Europe/Paris')
-    df_programs['end'] = pd.to_datetime(df_programs['end'], format='%H:%M').dt.tz_localize('Europe/Paris')
-
+        df_programs['start'] = pd.to_datetime(df_programs['start'], format='%H:%M').dt.tz_localize('Europe/Paris')
+        df_programs['end'] = pd.to_datetime(df_programs['end'], format='%H:%M').dt.tz_localize('Europe/Paris')
+    except (Exception) as error:
+        logging.error("Could not read channel_program.json", error)
+        raise Exception
+    
     return df_programs
 
 def add_channel_program(df: pd.DataFrame): 
-    logging.debug("Adding channel program")
+    logging.info("Adding channel program")
    
     try:
         df_programs = get_programs()
@@ -43,36 +47,49 @@ def compare_weekday(df_program_weekday, start_weekday: int) -> bool:
                     return start_weekday > 4
                 case _ : return False
     
+def get_hour_minute(time: pd.Timestamp):
+    start_time = pd.to_datetime(time.strftime("%H:%M"), format="%H:%M").tz_localize('Europe/Paris')
+    logging.debug(f"start_time subtitle {start_time}")
 
-def merge_program_subtitle(df_subtitle: pd.DataFrame, df_program: pd.DataFrame):
-    merged_data = []
-    for index, subtitle in df_subtitle.iterrows():
-        start_time = pd.to_datetime(subtitle['start'].strftime("%H:%M"), format="%H:%M").tz_localize('Europe/Paris')
-        logging.info(f"start_time subtitle {start_time}")
-        # with Monday=0 and Sunday=6.
-        start_weekday = int(subtitle['start'].dayofweek)
-        logging.info(f"start_weekday subtitle {start_weekday}")
+    return start_time
 
-        df_program["weekday_mask"] = df_program['weekday'].apply(
-            lambda x: compare_weekday(x, start_weekday)
-        )     
+# with Monday=0 and Sunday=6.
+def get_day_of_week(time: pd.Timestamp):
+    start_weekday = int(time.dayofweek)
+    logging.debug(f"start_weekday subtitle {start_weekday}")
+    return start_weekday
 
-        matching_rows = df_program[
-                        (df_program['channel_name'] == subtitle['channel_name']) &
+def get_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.Timestamp, channel_name: str):
+    start_time = get_hour_minute(start_time)
+    start_weekday = get_day_of_week(start_time)
+    df_program["weekday_mask"] = df_program['weekday'].apply(
+        lambda x: compare_weekday(x, start_weekday)
+    )     
+
+    matching_rows =  df_program[
+                        (df_program['channel_name'] == channel_name) &
                           df_program["weekday_mask"]  &
                          (df_program['start'] <= start_time) &
                          (df_program['end'] >= start_time)
                         ]
-        if not matching_rows.empty:
-            subtitle['program_name'] = matching_rows.iloc[0]['program_name']
-            subtitle['program_type'] = matching_rows.iloc[0]['program_type']
-        else:
-            logging.warn(f"Program tv : no matching rows found {subtitle['channel_name']} for weekday {start_weekday} - {start_time}")
-            subtitle['program_name'] = ""
-            subtitle['program_type'] = ""
-        merged_data.append(subtitle)
+    
+    if(len(matching_rows) > 1):
+        logging.error(f"Several programs name for the same channel and time {channel_name} and {start_time} / weekday {start_weekday}")
+        
+    if not matching_rows.empty:
+        logging.debug(f"matching_rows {matching_rows}")
+        return matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type']
+    else:
+        logging.warn(f"Program tv : no matching rows found {channel_name} for weekday {start_weekday} - {start_time}")
+        return "", ""
 
-    # Convert the list of dictionaries to a DataFrame
-    merged_df = pd.DataFrame(merged_data)
+def process_subtitle(row, df_program):
+        channel_program, channel_program_type = get_program_with_start_timestamp(df_program, row['start'], row['channel_name'])
+        row['channel_program'] = channel_program
+        row['channel_program_type'] = channel_program_type
+        return row
+
+def merge_program_subtitle(df_subtitle: pd.DataFrame, df_program: pd.DataFrame):
+    merged_df = df_subtitle.apply(lambda subtitle : process_subtitle(subtitle, df_program), axis=1)
 
     return merged_df

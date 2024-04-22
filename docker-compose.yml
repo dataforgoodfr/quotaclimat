@@ -116,7 +116,7 @@ services:
       # UPDATE: "true" # to batch update PG 
       # START_OFFSET: 100 # to batch update PG from a offset
       # START_DATE: 1704576615 # to test batch import 
-      # CHANNEL : france-info # to reimport only one channel
+      CHANNEL : france-info # to reimport only one channel
       MEDIATREE_USER : /run/secrets/username_api
       MEDIATREE_PASSWORD:  /run/secrets/pwd_api
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/

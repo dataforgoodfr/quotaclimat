@@ -41,6 +41,11 @@ jobs:
         git add pyproject.toml
         git commit -m "[no ci]: $PROJECT_VERSION bumping version"
         git push origin main
+
+  docker_build_push:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
     - name: Login to Scaleway Container Registry
       uses: docker/login-action@v3
       with:
@@ -60,11 +65,10 @@ jobs:
     - name: Push ingest_to_db Image
       run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
 
-    # - name: Build streamlit image
-    #   run: docker build -f Dockerfile_streamlit . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
-    # - name: Push streamlit Image
-    #   run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
-
+  scaleway_job_update:
+    runs-on: ubuntu-latest
+    needs: docker_build_push
+    steps:
     - name: update scaleway job definition with version mediatree_import
       uses: jawher/action-scw@v2.27.0
       env:

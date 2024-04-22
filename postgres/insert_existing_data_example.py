@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 from postgres.schemas.models import get_sitemap_cols
-from quotaclimat.data_processing.sitemap.sitemap_processing import load_all
+
 
 def parse_section(section: str):
     logging.debug(section)

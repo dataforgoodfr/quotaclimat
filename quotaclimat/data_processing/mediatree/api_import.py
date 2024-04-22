@@ -13,6 +13,7 @@ from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.config import *
 from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
+from quotaclimat.data_processing.mediatree.channel_program import *
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, get_db_session
 from postgres.schemas.models import keywords_table
@@ -65,7 +66,7 @@ def get_channels():
         channels = [default_channel]
     else: #prod  - all channels
         logging.warning("All channels are used")
-        return ["tf1", "france2", "fr3-idf", "france5", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
+        return ["tf1", "france2", "fr3-idf", "france5", "m6", "arte", "d8", "bfmtv", "lci", "franceinfotv", "itele",
         "europe1", "france-culture", "france-inter", "sud-radio", "rmc", "rtl", "france24", "france-info", "rfi"]
 
     return channels
@@ -137,16 +138,6 @@ def get_param_api(token, type_sub, start_epoch, channel = 'm6', page = 0):
     }
 
 
-# TODO use it when API updated
-def get_includes_or_query(array_words: List[str]) -> str: 
-    return " OU ".join(array_words)
-
-def get_theme_query_includes(theme_dict):
-    return {key: get_includes_or_query(values) for key, values in theme_dict.items()}
-
-def transform_theme_query_includes(themes_with_keywords = THEME_KEYWORDS):
-    return list(map(get_theme_query_includes, themes_with_keywords))
-
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
 # @see https://github.com/jd/tenacity/tree/main
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
@@ -197,6 +188,7 @@ def extract_api_sub(
         if(df is not None):
             df = filter_and_tag_by_theme(df)
             df["id"] = add_primary_key(df)
+            df = add_channel_program(df)
             return df
         else:
             None
@@ -228,7 +220,7 @@ def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFram
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             new_df.drop('channel.title', axis=1, inplace=True) # keep only channel.name
 
-            new_df['timestamp'] = (pd.to_datetime(new_df['start'], unit='s').dt.tz_localize('utc').dt.tz_convert('Europe/Paris'))
+            new_df['timestamp'] = pd.to_datetime(new_df['start'], unit='s', utc=True).dt.tz_convert('Europe/Paris')
             new_df.drop('start', axis=1, inplace=True) # keep only channel.name
 
             new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)

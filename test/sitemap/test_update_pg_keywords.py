@@ -9,10 +9,11 @@ from quotaclimat.data_ingestion.scrap_sitemap import (add_primary_key, get_consi
 from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db
 from postgres.insert_data import save_to_pg
 from quotaclimat.data_processing.mediatree.detect_keywords import *
-logging.getLogger().setLevel(logging.INFO)
+import pandas as pd
 
-original_timestamp = 1706437079004
-start = datetime.utcfromtimestamp(original_timestamp / 1000)
+logging.getLogger().setLevel(logging.INFO)
+original_timestamp = 1706444334 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
+start = pd.to_datetime("2024-01-28 13:18:54", utc=True).tz_convert('Europe/Paris')
 create_tables()
 
 def test_delete_keywords():
@@ -40,10 +41,11 @@ def test_delete_keywords():
     "number_of_biodiversite_concepts_generaux":  wrong_value,
     "number_of_biodiversite_causes_directes":  wrong_value,
     "number_of_biodiversite_consequences":  wrong_value,
-    "number_of_biodiversite_solutions_directes" : wrong_value
-    }]) 
-    df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
-    assert save_to_pg(df._to_pandas(), keywords_table, conn) == 1
+    "number_of_biodiversite_solutions_directes" : wrong_value,
+    "channel_program_type": "to change",
+    "channel_program":"to change"
+    }])
+    assert save_to_pg(df, keywords_table, conn) == 1
     session = get_db_session(conn)
     assert get_keyword(primary_key) != None
     update_keyword_row(session, primary_key,
@@ -62,6 +64,8 @@ def test_delete_keywords():
             ,0
             ,0
             ,0
+            ,"télématin"
+            ,"Information - Magazine"
             )
     assert get_keyword(primary_key) == None
 
@@ -132,12 +136,12 @@ def test_first_update_keywords():
         },
         {
             "keyword": "habitabilité de la planète",
-            "timestamp": 1706437079010,
+            "timestamp": 1706444334006,
             "theme": "changement_climatique_constat"
         },
         {
             "keyword": "digue",
-            "timestamp": 1706437111004,
+            "timestamp": 1706444366000,
             "theme": "adaptation_climatique_solutions_indirectes"
         }
     ]
@@ -168,11 +172,12 @@ def test_first_update_keywords():
         "number_of_biodiversite_concepts_generaux":  wrong_value,
         "number_of_biodiversite_causes_directes":  wrong_value,
         "number_of_biodiversite_consequences":  wrong_value,
-        "number_of_biodiversite_solutions_directes" : wrong_value
-    }]) 
-    df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
+        "number_of_biodiversite_solutions_directes" : wrong_value,
+        "channel_program_type": "to change",
+        "channel_program":"to change"
+    }])
 
-    assert save_to_pg(df._to_pandas(), keywords_table, conn) == 1
+    assert save_to_pg(df, keywords_table, conn) == 1
 
     # check the value is well existing
     result_before_update = get_keyword(primary_key)
@@ -195,10 +200,10 @@ def test_first_update_keywords():
         ,number_of_biodiversite_solutions_directes = get_themes_keywords_duration(plaintext, srt, start)
 
     expected_keywords_with_timestamp = [
-    {'keyword': 'conditions de vie sur terre', 'timestamp': 1706437094004, 'theme': 'changement_climatique_constat'}, 
-    {'keyword': 'habitabilité de la planète', 'timestamp': 1706437079010, 'theme': 'changement_climatique_constat'}, 
-    {'keyword': 'digue', 'timestamp': 1706437111004, 'theme': 'adaptation_climatique_solutions'}, 
-    {'keyword': 'planète', 'timestamp': 1706437079016, 'theme': 'ressources_naturelles_concepts_generaux'}
+    {'keyword': 'conditions de vie sur terre', 'timestamp': 1706444349000, 'theme': 'changement_climatique_constat'}, 
+    {'keyword': 'habitabilité de la planète', 'timestamp': 1706444334006, 'theme': 'changement_climatique_constat'}, 
+    {'keyword': 'digue', 'timestamp': 1706444366000, 'theme': 'adaptation_climatique_solutions'}, 
+    {'keyword': 'planète', 'timestamp': 1706444334012, 'theme': 'ressources_naturelles_concepts_generaux'}
     ]
     assert result_after_update.id == result_before_update.id
 
@@ -232,6 +237,10 @@ def test_first_update_keywords():
     assert number_of_biodiversite_causes_directes == 0
     assert number_of_biodiversite_consequences == 0
     assert number_of_biodiversite_solutions_directes == 0
+
+    # program
+    assert result_after_update.channel_program == "JT 1245"
+    assert result_after_update.channel_program_type == "Information - Journal"
 
     # theme
     assert set(result_after_update.theme) == set(["adaptation_climatique_solutions", "ressources_naturelles_concepts_generaux","changement_climatique_constat"])

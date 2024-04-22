@@ -7,11 +7,11 @@ from sqlalchemy.orm import sessionmaker
 
 
 def connect_to_db():
-    DB_DATABASE = os.environ.get("POSTGRES_DB")
-    DB_USER = os.environ.get("POSTGRES_USER")
-    DB_HOST = os.environ.get("POSTGRES_HOST")
-    DB_PORT = os.environ.get("POSTGRES_PORT")
-    DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD")
+    DB_DATABASE = os.environ.get("POSTGRES_DB", "barometre")
+    DB_USER = os.environ.get("POSTGRES_USER", "user")
+    DB_HOST = os.environ.get("POSTGRES_HOST", "localhost")
+    DB_PORT = os.environ.get("POSTGRES_PORT", 5432)
+    DB_PASSWORD = os.environ.get("POSTGRES_PASSWORD", "password")
 
     logging.info("Connect to the host %s for DB %s" % (DB_HOST, DB_DATABASE))
 

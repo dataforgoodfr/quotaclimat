@@ -7,17 +7,20 @@ import logging
 from sqlalchemy.orm import Session
 from postgres.schemas.models import Keywords
 from quotaclimat.data_processing.mediatree.detect_keywords import *
+from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_program_with_start_timestamp
 from sqlalchemy import func, select, delete
 
 def update_keywords(session: Session, batch_size: int = 50000, start_offset : int = 0) -> list:
     total_updates = get_total_count_saved_keywords(session)
     logging.info(f"Updating {total_updates} saved keywords from {start_offset} offsets - batch size {batch_size}")
+    df_programs = get_programs()
 
     for i in range(start_offset, total_updates, batch_size):
         current_batch_saved_keywords = get_keywords_columns(session, i, batch_size)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size}")
-        for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme in current_batch_saved_keywords:
-            
+        for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name in current_batch_saved_keywords:
+            program_name, program_name_type = get_program_with_start_timestamp(df_programs, start, channel_name)
+
             matching_themes, \
             new_keywords_with_timestamp, \
             new_number_of_keywords, \
@@ -63,6 +66,8 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
             ,number_of_biodiversite_causes_directes
             ,number_of_biodiversite_consequences
             ,number_of_biodiversite_solutions_directes
+            ,channel_program=program_name
+            ,channel_program_type=program_name_type
             )
 
         logging.info(f"bulk update done {i} out of {total_updates}")
@@ -80,7 +85,8 @@ def get_keywords_columns(session: Session, page: int = 0, batch_size: int = 5000
             Keywords.number_of_keywords,
             Keywords.start,
             Keywords.srt,
-            Keywords.theme
+            Keywords.theme,
+            Keywords.channel_name,
         )
         .offset(page)
         .limit(batch_size)
@@ -90,7 +96,6 @@ def get_keywords_columns(session: Session, page: int = 0, batch_size: int = 5000
 def get_total_count_saved_keywords(session: Session) -> int:
         statement = select(func.count()).select_from(Keywords)
         return session.execute(statement).scalar()
-    
 
 def update_keyword_row(session: Session, 
                        keyword_id: int,
@@ -109,6 +114,8 @@ def update_keyword_row(session: Session,
                         number_of_biodiversite_causes_directes: int,
                         number_of_biodiversite_consequences: int,
                         number_of_biodiversite_solutions_directes: int,
+                        channel_program: str,
+                        channel_program_type: str,
     ):
     if matching_themes is not None:
         session.query(Keywords).filter(Keywords.id == keyword_id).update(
@@ -127,7 +134,9 @@ def update_keyword_row(session: Session,
                 Keywords.number_of_biodiversite_concepts_generaux:number_of_biodiversite_concepts_generaux ,
                 Keywords.number_of_biodiversite_causes_directes:number_of_biodiversite_causes_directes ,
                 Keywords.number_of_biodiversite_consequences:number_of_biodiversite_consequences ,
-                Keywords.number_of_biodiversite_solutions_directes:number_of_biodiversite_solutions_directes
+                Keywords.number_of_biodiversite_solutions_directes:number_of_biodiversite_solutions_directes,
+                Keywords.channel_program: channel_program,
+                Keywords.channel_program_type: channel_program_type
             },
             synchronize_session=False
         )

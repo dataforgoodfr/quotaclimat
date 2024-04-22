@@ -32,8 +32,14 @@ COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY quotaclimat ./quotaclimat
 COPY postgres ./postgres
 COPY pyproject.toml pyproject.toml
+COPY alembic/ ./alembic
+COPY alembic.ini ./alembic.ini
 
 # healthcheck
 EXPOSE 5050
 
-ENTRYPOINT ["python", "quotaclimat/data_processing/mediatree/api_import.py"]
+# Use a separate script to handle migrations and start the application
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh
+
+ENTRYPOINT ["./docker-entrypoint.sh"]

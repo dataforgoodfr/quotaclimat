@@ -60,10 +60,10 @@ jobs:
     - name: Push ingest_to_db Image
       run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
 
-    - name: Build streamlit image
-      run: docker build -f Dockerfile_streamlit . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
-    - name: Push streamlit Image
-      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
+    # - name: Build streamlit image
+    #   run: docker build -f Dockerfile_streamlit . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
+    # - name: Push streamlit Image
+    #   run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/streamlit
 
     - name: update scaleway job definition with version mediatree_import
       uses: jawher/action-scw@v2.27.0

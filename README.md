@@ -2,9 +2,15 @@
 
 
 ![](quotaclimat/utils/coverquotaclimat.png)
-The aim of this work is to deliver a tool to [QuotaClimat](https://www.quotaclimat.org/ "Quotaclimat website"), allowing them to quantify the media coverage of the climate crisis. By the mean of sitemap scrapping (among others data sources), a Streamlit dashboard is developed to answer their needs. 
-- 2022-09-28, Introduction by Eva Morel (Quotaclimat): from 14:10 to 32:00 https://www.youtube.com/watch?v=GMrwDjq3rYs
+The aim of this work is to deliver a tool to a consortium around [QuotaClimat](https://www.quotaclimat.org/ "Quotaclimat website"), [Climat Medias](https://climatmedias.org/) allowing them to quantify the media coverage of the climate crisis. 
+
+Radio and TV data are collected thanks to Mediatree.
+
+And webpress is currently at work in progress (as for 04/2024)
+
+- 2022-09-28, Introduction by Eva Morel (Quota Climat): from 14:10 to 32:00 https://www.youtube.com/watch?v=GMrwDjq3rYs
 - 2022-11-29 Project status and prospects by Estelle Rambier (Data): from 09:00 to 25:00 https://www.youtube.com/watch?v=cLGQxHJWwYA
+- 2024-03 Project tech presentation by Paul Leclercq (Data) : https://www.youtube.com/watch?v=zWk4WLVC5Hs
 
 ## Index
 - [I want to contribute! Where do I start?](#contrib)
@@ -279,9 +285,9 @@ Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
 
 ## Batch import
 ### Batch import based on time
-Use env variable `START_DATE` like in docker compose (epoch second format : 1705409797).
+If our media perimeter evolves, we need to reimport it all using env variable `START_DATE` like in docker compose (epoch second format : 1705409797).
 
-Otherwise, default is yesterday midnight date.
+Otherwise, default is yesterday midnight date (default cron job)
 
 ### Batch import based on channel
 Use env variable `CHANNEL` like in docker compose (string: tf1)
@@ -314,6 +320,24 @@ With +1 millions rows, we can update from an offset to fix a custom logic by usi
 
 Example inside the docker-compose.yml mediatree service -> START_OFFSET: 100
 
+We can use a Github actions to start multiple update operations with different offsets.
+
+## SQL Tables evolution
+Using [Alembic](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) Auto Generating Migrations¶ we can add a new column inside `models.py` and it will automatically make the schema evolution :
+
+```
+# connect to the test container : docker compose test exec bash
+poetry run alembic revision --autogenerate -m "Add new column test for table keywords"
+# this should generate a file to commit inside "alembic/versions"
+# to apply it we need to run, from our container
+poetry run alembic upgrade head
+```
+
+Inside our Dockerfile_api_import, we call this line 
+```
+# to migrate SQL tables schema if needed
+RUN alembic upgrade head
+```
 ### Channel metadata
 In order to maintain channel perimeter (weekday, hours) up to date, we save the current version inside `postgres/channel_metadata.json`, if we modify this file the next deploy will update every lines of inside Postgresql table `channel_metadata`.
 

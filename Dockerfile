@@ -1,5 +1,5 @@
 #from https://medium.com/@albertazzir/blazing-fast-python-docker-builds-with-poetry-a78a66f5aed0
-FROM python:3.11.8 as builder
+FROM python:3.11.9 as builder
 
 ENV VIRTUAL_ENV=/app/.venv
 
@@ -36,6 +36,7 @@ RUN pip install poetry
 COPY quotaclimat ./quotaclimat
 COPY postgres ./postgres
 COPY app.py ./app.py
+COPY alembic/ ./alembic
 
 # Docker compose overwrite this config to have only one Dockerfile
 CMD ["ls"]

@@ -104,37 +104,12 @@ def test_parse_reponse_subtitle():
 
     pd.testing.assert_frame_equal(df._to_pandas().reset_index(drop=True), expected_result.reset_index(drop=True))
 
-def test_get_includes_or_query():
-    words = ["velo", "marche"]
-    output = get_includes_or_query(words)
-    assert output  == "velo OU marche"
-
-def test_transform_theme_query_includes():
-    theme = [{
-    "causes_directes" : [
-           "inaction climatique","insuffisance climatique",
-            "gaz à effet de serre"
-    ]},{
-    "causes_indirectes": [
-        "méthane", "élevage", "élevage bovin"
-      ]
-    }]
-    output = transform_theme_query_includes(theme)
-    expected = [
-    {"causes_directes" : "inaction climatique OU insuffisance climatique OU gaz à effet de serre"},
-    {"causes_indirectes": "méthane OU élevage OU élevage bovin"}
-    ]
-
-    assert output == expected
-
 def test_get_channels():
     if(os.environ.get("ENV") == "docker"):
         assert get_channels() == ["france2"] # default for docker compose config
     else:
-
-        assert get_channels() == ["tf1", "france2", "fr3-idf", "france5", "m6", "arte", "d8", "tmc", "bfmtv", "lci", "franceinfotv", "itele",
+        assert get_channels() == ["tf1", "france2", "fr3-idf", "france5", "m6", "arte", "d8", "bfmtv", "lci", "franceinfotv", "itele",
         "europe1", "france-culture", "france-inter", "sud-radio", "rmc", "rtl", "france24", "france-info", "rfi"]
-
 
 def test_save_to_pg_keyword():
     conn = connect_to_db()

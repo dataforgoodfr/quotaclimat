@@ -7,7 +7,7 @@ def get_programs():
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         json_file_path = os.path.join(current_dir, 'channel_program.json')
-        df_programs = pd.read_json(json_file_path)
+        df_programs = pd.read_json(json_file_path, lines=True)
 
         df_programs['start'] = pd.to_datetime(df_programs['start'], format='%H:%M').dt.tz_localize('Europe/Paris')
         df_programs['end'] = pd.to_datetime(df_programs['end'], format='%H:%M').dt.tz_localize('Europe/Paris')
@@ -28,11 +28,6 @@ def add_channel_program(df: pd.DataFrame):
         logging.error("Could not merge program and subtitle df", error)
         raise Exception
 
-# to avoid repeating our channel_program.json file for every day of the week
-def is_news_channel(channel_name: str) -> bool:
-    news_channels = ['bfmtv', 'itele', 'lci', 'france-info', 'franceinfotv', 'france24']
-    return channel_name in news_channels
-
 def compare_weekday(df_program_weekday, start_weekday: int) -> bool:
     logging.debug(f"Comparing weekday {start_weekday} with df_program_weekday value : {df_program_weekday}")
     match isinstance(df_program_weekday, str):
@@ -48,8 +43,9 @@ def compare_weekday(df_program_weekday, start_weekday: int) -> bool:
                 case _ : return False
     
 def get_hour_minute(time: pd.Timestamp):
+    # http://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.dt.tz_localize.html
     start_time = pd.to_datetime(time.strftime("%H:%M"), format="%H:%M").tz_localize('Europe/Paris')
-    logging.debug(f"start_time subtitle {start_time}")
+    logging.debug(f"time was {time} now is start_time subtitle {start_time}")
 
     return start_time
 
@@ -70,11 +66,11 @@ def get_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.Ti
                         (df_program['channel_name'] == channel_name) &
                           df_program["weekday_mask"]  &
                          (df_program['start'] <= start_time) &
-                         (df_program['end'] >= start_time)
+                         (df_program['end'] > start_time) # stricly > to avoid overlapping programs
                         ]
     
     if(len(matching_rows) > 1):
-        logging.error(f"Several programs name for the same channel and time {channel_name} and {start_time} / weekday {start_weekday}")
+        logging.error(f"Several programs name for the same channel and time {channel_name} and {start_time} / weekday {start_weekday} - {matching_rows}")
         
     if not matching_rows.empty:
         logging.debug(f"matching_rows {matching_rows}")

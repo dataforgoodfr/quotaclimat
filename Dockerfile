@@ -17,7 +17,7 @@ RUN pip install poetry==1.8.2
 RUN poetry install
 
 # The runtime image, used to just run the code provided its virtual environment
-FROM python:3.11.8-slim as runtime
+FROM python:3.11.9-slim as runtime
 
 WORKDIR /app
 
@@ -35,7 +35,6 @@ RUN pip install poetry
 # App code is include with docker-compose as well
 COPY quotaclimat ./quotaclimat
 COPY postgres ./postgres
-COPY app.py ./app.py
 COPY alembic/ ./alembic
 
 # Docker compose overwrite this config to have only one Dockerfile

@@ -313,6 +313,9 @@ After having updated `UPDATE` env variable to true inside docker-compose.yml and
  update_pg_keywords.py:20 | Difference old 1000 - new_number_of_keywords 0
 ```
 
+### Batch program data
+`UPDATE_PROGRAM_ONLY` to true will only update program metadata, otherwise, it will update program metadata and all theme calculations.
+
 ### Batch update from an offset
 With +1 millions rows, we can update from an offset to fix a custom logic by using `START_OFFSET` to batch update PG from a offset. 
 

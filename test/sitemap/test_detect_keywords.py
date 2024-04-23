@@ -899,8 +899,8 @@ def test_really_out_of_bound_get_keyword_by_fifteen_second_window():
                 "theme":"changement_climatique_constat",
             }
     ]
-    
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 0
+    with pytest.raises(Exception):
+        count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start)
 
 def test_almost_out_of_bound_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [

@@ -314,7 +314,8 @@ def tag_fifteen_second_window_number(keywords_with_timestamp: List[dict], start)
                 window_number = number_of_windows - 1
                 keyword_info['window_number'] = window_number
             else:
-                logging.error(f"Window number {window_number} is out of range - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
+                logging.error(f"Window number {window_number} is out of range - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000} - {keyword_info['keyword']} - {keyword_info['theme']}")
+                raise Exception
         else:
             keyword_info['window_number'] = window_number
 

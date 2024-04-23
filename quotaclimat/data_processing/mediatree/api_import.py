@@ -50,10 +50,14 @@ def refresh_token(token, date):
 async def update_pg_data(exit_event):
     start_offset = int(os.environ.get("START_OFFSET", 0))
     batch_size = int(os.environ.get("BATCH_SIZE", 50000))
+    program_only = os.environ.get("UPDATE_PROGRAM_ONLY", "false") == "true"
+    if(program_only):
+        logging.warning("Update : Program only mode activated")
+
     logging.warning(f"Updating already saved data from Postgresql from offset {start_offset} - env variable START_OFFSET")
     try:
         session = get_db_session()
-        update_keywords(session, batch_size=batch_size, start_offset=start_offset)
+        update_keywords(session, batch_size=batch_size, start_offset=start_offset, program_only=program_only)
         exit_event.set()
     except Exception as err:
         logging.error("Could update_pg_data %s:(%s) %s" % (type(err).__name__, err))

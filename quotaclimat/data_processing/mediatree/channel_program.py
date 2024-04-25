@@ -15,7 +15,6 @@ def get_programs():
         current_dir = os.path.dirname(os.path.abspath(__file__))
         json_file_path = os.path.join(current_dir, 'channel_program.json')
         df_programs = pd.read_json(json_file_path, lines=True)
-        date_str = "1970-01-01"
 
         df_programs['start'] = format_hour_minute(df_programs['start'])
         df_programs['end'] = format_hour_minute(df_programs['end'])
@@ -94,7 +93,6 @@ def get_a_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.
 
     if(len(matching_rows) > 1):
         logging.error(f"Several programs name for the same channel and time {channel_name} and {start_time} - {matching_rows}")
-
     if not matching_rows.empty:
         logging.debug(f"matching_rows {matching_rows}")
         return matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type']

@@ -124,7 +124,6 @@ services:
       KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/ # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
       MODIN_ENGINE: ray
       MODIN_CPUS: 4 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
-      #TZ: 'Europe/Paris'
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/

@@ -1,8 +1,7 @@
 import pytest
 
-
 from quotaclimat.data_processing.mediatree.channel_program import *
-from utils import get_localhost, debug_df
+from test_utils import get_localhost, debug_df
 import logging
 import pandas as pd
 
@@ -138,6 +137,30 @@ def test_add_channel_program_france2_jt():
     expected['start'] = pd.to_datetime(jt_20h02, unit='s', utc=True).tz_convert('Europe/Paris')
     #debug_df(output)
     pd.testing.assert_frame_equal(output.reset_index(drop=True), expected.reset_index(drop=True))
+
+def test_get_programs_for_this_day_thusday_morning_france2():
+    df_programs = get_programs()
+    programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').normalize(), channel_name, df_programs)
+    debug_df(programs)
+    expected = pd.DataFrame([
+        {"channel_name":"france2","start":1712808000,"end":1712809500,"program_name":"Le 6h Info", "program_type":"Information - Journal"},
+        {"channel_name":"france2","start":1712809800,"end":1712820600,"program_name":"Télématin","program_type":"Information - Autres émissions"},
+        {"channel_name":"france2","start":1712833200,"end":1712835600,"program_name":"JT 13h","program_type":"Information - Journal"},
+        {"channel_name":"france2","start":1712858100,"end":1712860800,"program_name":"JT 20h + météo","program_type":"Information - Journal"},
+        {"channel_name":"france2","start":1712862600,"end":1712869200,"program_name":"Envoyé spécial","program_type":"Information - Magazine"},
+ ])
+
+    pd.testing.assert_frame_equal(programs._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
+
+def test_get_programs_for_this_day_thusday_morning_franceinfo():
+    df_programs = get_programs()
+    programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').normalize(), "france-info", df_programs)
+    debug_df(programs)
+    expected = pd.DataFrame([
+        {"channel_name":"france-info","start":1712808000,"end":1712869200,"program_name":"Information en continu", "program_type":"Information en continu"},
+ ])
+
+    pd.testing.assert_frame_equal(programs._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
 
 def test_compare_weekday_string():
     assert compare_weekday('*', 0) == True

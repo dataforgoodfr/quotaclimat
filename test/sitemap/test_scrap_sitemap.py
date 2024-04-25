@@ -3,7 +3,7 @@ import pytest
 from quotaclimat.data_ingestion.scrap_sitemap import (filter_on_date, find_sections, get_consistent_hash, get_diff_from_df, query_one_sitemap_and_transform, get_sections_from_url, normalize_section)
 from quotaclimat.data_ingestion.config_sitemap import (SITEMAP_CONFIG)
 from datetime import datetime, timedelta
-from utils import get_localhost
+from test_utils import get_localhost
 from quotaclimat.data_ingestion.ingest_db.ingest_sitemap_in_db import get_sitemap_list
 
 url_to_parse = get_localhost()

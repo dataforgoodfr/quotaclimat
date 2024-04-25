@@ -1,6 +1,6 @@
 import pytest
 
-from utils import get_localhost, debug_df
+from test_utils import get_localhost, debug_df
 from quotaclimat.data_processing.mediatree.api_import import *
 from quotaclimat.data_processing.mediatree.utils import *
 from postgres.insert_data import save_to_pg
@@ -84,6 +84,8 @@ def test_parse_reponse_subtitle():
         "channel_name" : "m6",
         "channel_radio" : False,
         "start" : 1704798000,
+        "channel_program" : "",
+        "channel_program_type" : "",
     },
     {
         "srt": [{
@@ -96,6 +98,8 @@ def test_parse_reponse_subtitle():
         "channel_name" : "tf1",
         "channel_radio" : False,
         "start" : 1704798120,
+        "channel_program" : "",
+        "channel_program_type" : "",
     }])
 
     expected_result['start'] = pd.to_datetime(expected_result['start'], unit='s').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')

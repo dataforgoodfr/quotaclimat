@@ -1,7 +1,7 @@
 import pytest
 import pandas as pd
 
-from utils import get_localhost
+from test_utils import get_localhost
 from quotaclimat.data_processing.mediatree.utils import *
 
 import logging
@@ -17,23 +17,19 @@ def test_get_yesterday():
 
 
 def test_get_date_range():
-    range = get_date_range(1681214197, 1681646197)
-    expected = pd.DatetimeIndex(['2023-04-11 11:56:37', '2023-04-12 07:56:37',
-             '2023-04-13 03:56:37', '2023-04-13 23:56:37',
-             '2023-04-14 19:56:37', '2023-04-15 15:56:37',
-             '2023-04-16 11:56:37'],
-            dtype='datetime64[ns]', freq='20h')
-    assert len(expected) == len(range) # ValueError: the 'dtype' parameter is not supported in the pandas implementation of any()
+    range = get_date_range(1681214197, 1681646197) # 11 to 16 april --> 6 days
+
+    assert 6  == len(range) # ValueError: the 'dtype' parameter is not supported in the pandas implementation of any()
 
 def test_get_default_date_range():
     # test default
     range = get_date_range(get_yesterday(), None)
-    assert len(range) == 4
+    assert len(range) == 1
 
     # test with function
     (start_date_to_query, end_epoch) = get_start_end_date_env_variable_with_default()
     range = get_date_range(start_date_to_query, end_epoch)
-    assert len(range) == 4
+    assert len(range) == 1
 
 
 def test_is_it_tuesday():

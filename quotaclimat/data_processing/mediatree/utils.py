@@ -1,5 +1,5 @@
 import datetime
-import pytz
+
 from datetime import datetime, timedelta, time
 import logging
 from zoneinfo import ZoneInfo
@@ -7,7 +7,6 @@ import modin.pandas as pd
 import os 
 
 timezone='Europe/Paris'
-
 
 def get_keyword_time_separation_ms():
     return 15000
@@ -59,8 +58,14 @@ def get_epoch_from_datetime(date: datetime):
 def get_now():
     return datetime.now(ZoneInfo(timezone))
 
+def get_min_hour(date: datetime):
+    return datetime.combine(date, time.min)
+
+def get_max_hour(date: datetime):
+    return datetime.combine(date, time.max)
+
 def get_datetime_yesterday():
-    midnight_today = datetime.combine(get_now(), time.min)
+    midnight_today = get_min_hour(get_now())
     return midnight_today - timedelta(days=1)
 
 def get_yesterday():
@@ -79,21 +84,18 @@ def get_start_end_date_env_variable_with_default():
         logging.info(f"Getting data from yesterday - you can use START_DATE env variable to provide another starting date")
         return (get_yesterday(), None)
 
-# to query the API every X hour
-def get_hour_frequency():
-    hour_frequency=20
-    return hour_frequency
-
 # Get range of 2 date by week from start to end
 def get_date_range(start_date_to_query, end_epoch):
     if end_epoch is not None:
-        range = pd.date_range(pd.to_datetime(start_date_to_query, unit='s'), pd.to_datetime(end_epoch, unit='s'), freq=f"{get_hour_frequency()}h") # every X hour
+        range = pd.date_range(pd.to_datetime(start_date_to_query, unit='s').normalize(),
+                              pd.to_datetime(end_epoch, unit='s').normalize()
+                            , freq="D")
 
-        logging.info(f"Date range: {range} \ {start_date_to_query} until {end_epoch}")
+        logging.info(f"Date range: {range} \n {start_date_to_query} until {end_epoch}")
         return range
     else:
-        logging.info("Empty range using default from yesterday")
-        range = pd.date_range(start=get_datetime_yesterday(), periods=4, freq=f"{get_hour_frequency()}h")
+        range = pd.date_range(start=get_datetime_yesterday(), periods=1, freq="D")
+        logging.info(f"using default from yesterday {range} \n {start_date_to_query} until {end_epoch}")
         return range
 
 def is_it_tuesday(date):

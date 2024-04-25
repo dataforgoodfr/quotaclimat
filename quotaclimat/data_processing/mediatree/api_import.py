@@ -81,25 +81,31 @@ async def get_and_save_api_data(exit_event):
         token=get_auth_token(password=password, user_name=USER)
         type_sub = 's2t'
 
-        (start_date_to_query, end_epoch) = get_start_end_date_env_variable_with_default()
-
+        (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default()
+        df_programs = get_programs()
         channels = get_channels()
         
-        range = get_date_range(start_date_to_query, end_epoch)
-        logging.info(f"Number of date to query : {len(range)}")
-        for date in range:
-            token = refresh_token(token, date)
+        day_range = get_date_range(start_date_to_query, end_date)
+        logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
+        for day in day_range:
+            token = refresh_token(token, day)
             
-            date_epoch = get_epoch_from_datetime(date)
-            logging.info(f"Date: {date} - {date_epoch}")
-            for channel in channels :
+            for channel in channels:
                 try:
-                    df = extract_api_sub(token, channel, type_sub, date_epoch)
-                    if(df is not None):
-                        # must ._to_pandas() because modin to_sql is not working
-                        save_to_pg(df._to_pandas(), keywords_table, conn)
-                    else: 
-                        logging.info("Nothing to save to Postgresql")
+                    programs_for_this_day = get_programs_for_this_day(day, channel, df_programs)
+
+                    for index, program in programs_for_this_day.iterrows():
+                        start_epoch = program['start']
+                        end_epoch = program['end']
+                        channel_program = program['program_name']
+                        channel_program_type = program['program_type']
+                        logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
+                        df = extract_api_sub(token, channel, type_sub, start_epoch,end_epoch, channel_program,channel_program_type) 
+                        if(df is not None):
+                            # must ._to_pandas() because modin to_sql is not working
+                            save_to_pg(df._to_pandas(), keywords_table, conn)
+                        else: 
+                            logging.info("Nothing to save to Postgresql")
                 except Exception as err:
                     logging.error(f"continuing loop but met error : {err}")
                     continue
@@ -128,30 +134,28 @@ def get_auth_token(password=password, user_name=USER):
 
 # @TODO filter by keyword when api is updated (to filter first on the API side instead of filter_and_tag_by_theme )
 # see : https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
-def get_param_api(token, type_sub, start_epoch, channel = 'm6', page = 0):
-    number_of_hours = get_hour_frequency()
-    one_hour = 3600
+def get_param_api(token, type_sub, start_epoch, channel, end_epoch):
     return {
         "channel": channel,
         "token": token,
-        "start_gte": start_epoch,
-        "start_lte": start_epoch + (one_hour * number_of_hours), # Start date lower or equal
+        "start_gte": int(start_epoch), 
+        "start_lte": int(end_epoch),
         "type": type_sub,
-        "size": "1000", #  range 1-1000
-        # "from": page TODO fix me
+        "size": "1000" #  range 1-1000
     }
 
 
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
 # @see https://github.com/jd/tenacity/tree/main
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
-def get_post_request(media_tree_token, type_sub, start_epoch, channel, page: int = 0):
+def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch):
     try:
-        params = get_param_api(media_tree_token, type_sub, start_epoch, channel, page)
-        logging.info(f"Query {KEYWORDS_URL} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, page)}")
+        params = get_param_api(media_tree_token, type_sub, start_epoch, channel, end_epoch)
+        logging.info(f"Query {KEYWORDS_URL} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, end_epoch)}")
         response = requests.post(KEYWORDS_URL, json=params)
-        if response.status_code == 401:
-            logging.warning(f"401 - Expired token - retrying to get a new one {response.content}")
+        logging.info(f"Response {response}")
+        if response.status_code >= 400:
+            logging.warning(f"{response.status_code} - Expired token ? - retrying to get a new one {response.content}")
             media_tree_token = get_auth_token(password, USER)
             raise Exception
         
@@ -160,19 +164,12 @@ def get_post_request(media_tree_token, type_sub, start_epoch, channel, page: int
         logging.error("Retry - Could not query API :(%s) %s" % (type(err).__name__, err))
         raise Exception
 
-# use API pagination to be sure to query all data from a date
-def get_number_of_page_by_channel(media_tree_token, type_sub, start_epoch, channel) -> int:
-    logging.info("get how many pages we have to parse from the API (number_pages)")
-    response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel)
-
-    return parse_number_pages(response_sub)
-
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
-def get_df_api(media_tree_token, type_sub, start_epoch, channel, page):
+def get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type):
     try:
-        response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel, page)
+        response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch)
 
-        return parse_reponse_subtitle(response_sub, channel)
+        return parse_reponse_subtitle(response_sub, channel, channel_program, channel_program_type)
     except Exception as err:
         logging.error("Retry - get_df_api:(%s) %s" % (type(err).__name__, err))
         raise Exception
@@ -184,15 +181,16 @@ def extract_api_sub(
         channel = 'm6',
         type_sub = "s2t",
         start_epoch = None,
-        page = 0
+        end_epoch = None
+        ,channel_program: str = ""
+        ,channel_program_type : str = ""
     ) -> Optional[pd.DataFrame]: 
     try:
-        df = get_df_api(media_tree_token, type_sub, start_epoch, channel, page)
+        df = get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type)
 
         if(df is not None):
             df = filter_and_tag_by_theme(df)
             df["id"] = add_primary_key(df)
-            df = add_channel_program(df)
             return df
         else:
             None
@@ -213,7 +211,7 @@ def parse_total_results(response_sub) -> int :
 def parse_number_pages(response_sub) -> int :
     return int(response_sub.get('number_pages'))
 
-def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFrame]:
+def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", channel_program_type = "") -> Optional[pd.DataFrame]:
     with sentry_sdk.start_transaction(op="task", name="parse_reponse_subtitle"):
         total_results = parse_total_results(response_sub)
         logging.getLogger("modin.logging.default").setLevel(logging.WARNING)
@@ -228,6 +226,9 @@ def parse_reponse_subtitle(response_sub, channel = None) -> Optional[pd.DataFram
             new_df.drop('start', axis=1, inplace=True) # keep only channel.name
 
             new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)
+
+            new_df['channel_program'] = channel_program
+            new_df['channel_program_type'] = channel_program_type
 
             log_dataframe_size(new_df, channel)
             

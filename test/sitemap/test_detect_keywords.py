@@ -1,6 +1,6 @@
 import pytest
 
-from utils import get_localhost, debug_df
+from test_utils import get_localhost, debug_df
 
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *

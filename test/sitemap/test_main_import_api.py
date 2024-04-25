@@ -33,79 +33,106 @@ def test_main_api_import():
         assert len(saved_keywords) == len(df)
 
 def test_first_row_api_import():
-        primary_key = "71b8126a50c1ed2e5cb1eab00e4481c33587db478472c2c0e74325abb872bef6"
+        primary_key = "29d2b1f8267b206cb62e475b960de3247e835273f396af012f5ce21bf3056472"
         specific_keyword = get_keyword(primary_key)
         assert specific_keyword.theme == [
-        "changement_climatique_causes_indirectes"
-        ]
+            "changement_climatique_consequences"
+            ]
         assert specific_keyword.keywords_with_timestamp == [
-        {
-            "keyword": "bâtiment",
-            "timestamp": 1707675083088,
-            "theme": "changement_climatique_causes_indirectes"
-        }
-        ]
-        assert specific_keyword.number_of_keywords == 0
+  {
+    "keyword": "submersion",
+    "timestamp": 1707627569016,
+    "theme": "changement_climatique_consequences"
+  }
+]
+        assert specific_keyword.number_of_keywords == 1
 
 def test_second_row_api_import():
         
-        primary_key = "67b9cc593516b40f55d6a3e89b377fccc8ab76d263c5fd6d4bfe379626190641"
+        primary_key = "9f0fb1987371c1dc0b4a165a11feb7ca7ed9b6f9f40d3d6b4fc0748e2ca59c3f"
         specific_keyword = get_keyword(primary_key)
         assert set(specific_keyword.theme) == set([
-            "changement_climatique_consequences",
-            "adaptation_climatique_solutions_indirectes",
-            "changement_climatique_constat",
-            "changement_climatique_causes",
+        "changement_climatique_constat",
+        "ressources_naturelles_concepts_generaux",
+        "changement_climatique_causes",
+        "attenuation_climatique_solutions"
         ])
 
-        assert specific_keyword.keywords_with_timestamp == [ # from metabase to speedup check
+        assert specific_keyword.keywords_with_timestamp == [
+  {
+    "keyword": "climatique",
+    "timestamp": 1707633231071,
+    "theme": "changement_climatique_constat"
+  },
+  {
+    "keyword": "écologiste",
+    "timestamp": 1707633187053,
+    "theme": "changement_climatique_constat"
+  },
+  {
+    "keyword": "énergie",
+    "timestamp": 1707633215051,
+    "theme": "changement_climatique_causes"
+  },
+  {
+    "keyword": "puit de pétrole",
+    "timestamp": 1707633159095,
+    "theme": "changement_climatique_causes"
+  },
+  {
+    "keyword": "pétrole",
+    "timestamp": 1707633160065,
+    "theme": "changement_climatique_causes"
+  },
+  {
+    "keyword": "sortie des énergies fossiles",
+    "timestamp": 1707633214077,
+    "theme": "attenuation_climatique_solutions"
+  },
+  {
+    "keyword": "forêt",
+    "timestamp": 1707633173076,
+    "theme": "attenuation_climatique_solutions"
+  },
+  {
+    "keyword": "forêt",
+    "timestamp": 1707633173076,
+    "theme": "ressources_naturelles_concepts_generaux"
+  }
+]
+        assert specific_keyword.number_of_keywords == 5
+
+
+def test_third_row_api_import():
+        primary_key = "32cb864fe56a4436151bcf78c385a7cc4226316e0563a298ac6988d1b8ee955b"
+        specific_keyword = get_keyword(primary_key)
+        assert set(specific_keyword.theme) == set([
+        "biodiversite_solutions",
+        "attenuation_climatique_solutions",
+        "changement_climatique_constat"
+        ])
+        assert specific_keyword.keywords_with_timestamp == [
             {
-                "keyword": "écologique",
-                "timestamp": 1707627623079,
+                "keyword": "climatique",
+                "timestamp": 1707566298018,
                 "theme": "changement_climatique_constat"
             },
             {
                 "keyword": "écologiste",
-                "timestamp": 1707627631076,
+                "timestamp": 1707566379060,
                 "theme": "changement_climatique_constat"
             },
             {
-                "keyword": "puit de pétrole",
-                "timestamp": 1707627628054,
-                "theme": "changement_climatique_causes" # was indirectes before
+                "keyword": "militante écologiste",
+                "timestamp": 1707566379025,
+                "theme": "attenuation_climatique_solutions"
             },
             {
-                "keyword": "submersion",
-                "timestamp": 1707627611094,
-                "theme": "changement_climatique_consequences"
-            },
-            {
-                "keyword": "barrage",
-                "timestamp": 1707627686004,
-                "theme": "adaptation_climatique_solutions_indirectes"
+                "keyword": "militante écologiste",
+                "timestamp": 1707566379025,
+                "theme": "biodiversite_solutions"
             }
-        ]
-        assert specific_keyword.number_of_keywords == 3
-
-
-def test_third_row_api_import():
-        primary_key = "975b41e76d298711cf55113a282e7f11c28157d761233838bb700253d47be262"
-        specific_keyword = get_keyword(primary_key)
-        assert set(specific_keyword.theme) == set([
-            "changement_climatique_consequences",
-            "changement_climatique_constat",
-        ])
-        assert specific_keyword.keywords_with_timestamp == [
-        {
-            "keyword": "écologiste",
-            "timestamp": 1707592768096,
-            "theme": "changement_climatique_constat"
-        },
-        {
-            "keyword": "submersion",
-            "timestamp": 1707592792083,
-            "theme": "changement_climatique_consequences"
-        }
-        ]
+            ]
+        
         assert specific_keyword.number_of_keywords == 2
         

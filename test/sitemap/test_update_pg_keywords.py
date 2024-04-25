@@ -13,7 +13,7 @@ import pandas as pd
 
 logging.getLogger().setLevel(logging.INFO)
 original_timestamp = 1706444334 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
-start = pd.to_datetime("2024-01-28 13:18:54", utc=True).tz_convert('Europe/Paris')
+start = pd.to_datetime("2024-01-28 12:18:54", utc=True).tz_convert('Europe/Paris')
 create_tables()
 
 def test_delete_keywords():

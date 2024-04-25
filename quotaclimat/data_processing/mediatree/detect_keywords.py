@@ -124,7 +124,7 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> Li
     final_result = len(result)
 
     if final_result < number_of_keywords:
-        logging.info(f"Filtering keywords {final_result} out of {number_of_keywords} | {keywords_with_timestamp} with final result {result}")
+        logging.debug(f"Filtering keywords {final_result} out of {number_of_keywords} | {keywords_with_timestamp} with final result {result}")
 
     return result
 

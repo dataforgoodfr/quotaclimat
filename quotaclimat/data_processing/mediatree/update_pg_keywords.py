@@ -7,7 +7,7 @@ import logging
 from sqlalchemy.orm import Session
 from postgres.schemas.models import Keywords
 from quotaclimat.data_processing.mediatree.detect_keywords import *
-from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_program_with_start_timestamp
+from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp
 from sqlalchemy import func, select, delete
 
 def update_keywords(session: Session, batch_size: int = 50000, start_offset : int = 0, program_only=False) -> list:
@@ -19,7 +19,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
         current_batch_saved_keywords = get_keywords_columns(session, i, batch_size)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name in current_batch_saved_keywords:
-            program_name, program_name_type = get_program_with_start_timestamp(df_programs, start, channel_name)
+            program_name, program_name_type = get_a_program_with_start_timestamp(df_programs, pd.Timestamp(start).tz_convert('Europe/Paris'), channel_name)
 
             if(not program_only):
                 try:
@@ -93,7 +93,7 @@ def get_keywords_columns(session: Session, page: int = 0, batch_size: int = 5000
             Keywords.plaintext,
             Keywords.keywords_with_timestamp,
             Keywords.number_of_keywords,
-            func.timezone('UTC', Keywords.start).label('start'),  # Stored as Europe/Pris inside PG
+            func.timezone('UTC', Keywords.start).label('start'),
             Keywords.srt,
             Keywords.theme,
             Keywords.channel_name,
@@ -158,8 +158,7 @@ def update_keyword_row(session: Session,
 def update_keyword_row_program(session: Session, 
                        keyword_id: int,
                         channel_program: str,
-                        channel_program_type: str,
-    ):
+                        channel_program_type: str):
     session.query(Keywords).filter(Keywords.id == keyword_id).update(
         {
             Keywords.channel_program: channel_program,

@@ -3,7 +3,7 @@ import pandas as pd
 from quotaclimat.data_ingestion.scrap_html.scrap_description_article import get_meta_news, get_hat_20minutes, get_url_content
 from quotaclimat.data_ingestion.scrap_sitemap import get_description_article
 from bs4 import BeautifulSoup
-from utils import get_localhost, debug_df
+from test_utils import get_localhost, debug_df
 
 localhost = get_localhost()
 

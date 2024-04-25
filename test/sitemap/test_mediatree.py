@@ -102,7 +102,7 @@ def test_parse_reponse_subtitle():
         "channel_program_type" : "",
     }])
 
-    expected_result['start'] = pd.to_datetime(expected_result['start'], unit='s').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
+    expected_result['start'] = pd.to_datetime(expected_result['start'], unit='s').dt.tz_localize('UTC')
     df = parse_reponse_subtitle(json_response)
     debug_df(df)
 
@@ -155,7 +155,7 @@ def test_save_to_pg_keyword():
         ,"number_of_keywords": 1
     }])
 
-    df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
+    df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC')#.dt.tz_convert('Europe/Paris')
    
     assert save_to_pg(df, keywords_table, conn) == 1
 

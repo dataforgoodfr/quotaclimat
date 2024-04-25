@@ -152,6 +152,11 @@ def test_get_programs_for_this_day_thusday_morning_france2():
 
     pd.testing.assert_frame_equal(programs._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
 
+def test_get_hour_minute():
+    output = get_hour_minute(pd.Timestamp(pd.to_datetime(thrusday_morning, unit='s')))
+
+    assert output == pd.Timestamp('1970-01-01 06:02:00')
+ 
 def test_get_programs_for_this_day_thusday_morning_franceinfo():
     df_programs = get_programs()
     programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').normalize(), "france-info", df_programs)
@@ -161,6 +166,13 @@ def test_get_programs_for_this_day_thusday_morning_franceinfo():
  ])
 
     pd.testing.assert_frame_equal(programs._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
+
+def test_get_a_program_with_start_timestamp():
+    df_programs = get_programs()
+    thursday_13h34 = 1713958465 # normaly up to 13h40
+    program_name, program_type = get_a_program_with_start_timestamp(df_programs, pd.to_datetime(thursday_13h34, unit='s', utc=True).tz_convert('Europe/Paris'), channel_name)
+    assert program_name == "JT 13h"
+    assert program_type == "Information - Journal"
 
 def test_compare_weekday_string():
     assert compare_weekday('*', 0) == True

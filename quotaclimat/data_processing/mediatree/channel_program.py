@@ -5,6 +5,9 @@ from datetime import datetime
 
 from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime
 
+def format_hour_minute(time: str) -> pd.Timestamp:
+    date_str = "1970-01-01"
+    return pd.to_datetime(date_str + " " + time)
 
 def get_programs():
     logging.debug("Getting program tv/radio...")
@@ -12,9 +15,10 @@ def get_programs():
         current_dir = os.path.dirname(os.path.abspath(__file__))
         json_file_path = os.path.join(current_dir, 'channel_program.json')
         df_programs = pd.read_json(json_file_path, lines=True)
+        date_str = "1970-01-01"
 
-        df_programs['start'] = pd.to_datetime(df_programs['start'], format='%H:%M').dt.tz_localize('Europe/Paris')
-        df_programs['end'] = pd.to_datetime(df_programs['end'], format='%H:%M').dt.tz_localize('Europe/Paris')
+        df_programs['start'] = format_hour_minute(df_programs['start'])
+        df_programs['end'] = format_hour_minute(df_programs['end'])
     except (Exception) as error:
         logging.error("Could not read channel_program.json", error)
         raise Exception
@@ -48,7 +52,7 @@ def compare_weekday(df_program_weekday, start_weekday: int) -> bool:
     
 def get_hour_minute(time: pd.Timestamp):
     # http://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.dt.tz_localize.html
-    start_time = pd.to_datetime(time.strftime("%H:%M"), format="%H:%M").tz_localize('Europe/Paris')
+    start_time = format_hour_minute(time.strftime("%H:%M"))
     logging.debug(f"time was {time} now is start_time subtitle {start_time}")
 
     return start_time
@@ -74,11 +78,11 @@ def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timest
     )
     matching_rows =  df_program[
                         (df_program['channel_name'] == channel_name) &
-                          df_program["weekday_mask"]
+                          df_program["weekday_mask"] == True
                         ]
     matching_rows.drop(columns=['weekday_mask'], inplace=True)
     matching_rows.drop(columns=['weekday'], inplace=True)
-
+    
     if matching_rows.empty:
         logging.warn(f"Program tv : no matching rows found {channel_name} for weekday {start_weekday} - {start_time}")
 
@@ -95,6 +99,7 @@ def get_a_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.
         logging.debug(f"matching_rows {matching_rows}")
         return matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type']
     else:
+        logging.info(f"no programs found for {channel_name} - {start_time}")
         return "", ""
 
 def process_subtitle(row, df_program):
@@ -118,11 +123,10 @@ def get_programs_for_this_day(day: datetime, channel_name: str, df_program: pd.D
 
     programs_of_a_day = get_matching_program_weekday(df_program, start_time, channel_name)
     programs_of_a_day = set_day_with_hour(programs_of_a_day, day)
-
-    programs_of_a_day[['start', 'end']] = programs_of_a_day.apply(lambda row: pd.Series({
-        'start': get_epoch_from_datetime(row['start']),
-        'end': get_epoch_from_datetime(row['end'])
-    }), axis=1)
     
+    programs_of_a_day[['start', 'end']] = programs_of_a_day.apply(lambda row: pd.Series({
+        'start': get_epoch_from_datetime(row['start'].tz_localize("Europe/Paris")),
+        'end': get_epoch_from_datetime(row['end'].tz_localize("Europe/Paris"))
+    }), axis=1)
     logging.info(f"Program of {channel_name} : {programs_of_a_day}")
     return programs_of_a_day

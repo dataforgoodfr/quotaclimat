@@ -132,18 +132,17 @@ def get_auth_token(password=password, user_name=USER):
     except Exception as err:
         logging.error("Could not get token %s:(%s) %s" % (type(err).__name__, err))
 
-# @TODO filter by keyword when api is updated (to filter first on the API side instead of filter_and_tag_by_theme )
 # see : https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
 def get_param_api(token, type_sub, start_epoch, channel, end_epoch):
+    epoch_5min_margin = 300
     return {
         "channel": channel,
         "token": token,
-        "start_gte": int(start_epoch), 
-        "start_lte": int(end_epoch),
+        "start_gte": int(start_epoch) - epoch_5min_margin,
+        "start_lte": int(end_epoch) + epoch_5min_margin,
         "type": type_sub,
         "size": "1000" #  range 1-1000
     }
-
 
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
 # @see https://github.com/jd/tenacity/tree/main
@@ -153,7 +152,6 @@ def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch
         params = get_param_api(media_tree_token, type_sub, start_epoch, channel, end_epoch)
         logging.info(f"Query {KEYWORDS_URL} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, end_epoch)}")
         response = requests.post(KEYWORDS_URL, json=params)
-        logging.info(f"Response {response}")
         if response.status_code >= 400:
             logging.warning(f"{response.status_code} - Expired token ? - retrying to get a new one {response.content}")
             media_tree_token = get_auth_token(password, USER)
@@ -222,7 +220,7 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             new_df.drop('channel.title', axis=1, inplace=True) # keep only channel.name
 
-            new_df['timestamp'] = pd.to_datetime(new_df['start'], unit='s', utc=True).dt.tz_convert('Europe/Paris')
+            new_df['timestamp'] = pd.to_datetime(new_df['start'], unit='s', utc=True)
             new_df.drop('start', axis=1, inplace=True) # keep only channel.name
 
             new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)

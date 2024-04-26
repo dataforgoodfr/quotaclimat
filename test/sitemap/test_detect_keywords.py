@@ -80,7 +80,7 @@ subtitles = [{
 ]
 def test_default_get_themes_keywords_duration():
     plaintext_nothing = "cheese pizza"
-    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None]
    
 def test_one_theme_get_themes_keywords_duration():
     plaintext_climat = "réchauffement planétaire test"
@@ -93,30 +93,176 @@ def test_one_theme_get_themes_keywords_duration():
             {
             'category': '',
             'keyword': 'planétaire',
-            'theme': 'biodiversité_concepts_generaux',
+            'theme': 'biodiversite_concepts_generaux',
             'timestamp': 1706437080304,
             },
             {
-            'category': '',
+            'category': 'Concepts généraux',
             'keyword': 'planétaire',
-            'theme': 'ressources_concepts_generaux',
+            'theme': 'ressources',
             'timestamp': 1706437080304,
         }
         ]
+    themes = ['changement_climatique_constat','ressources','biodiversite_concepts_generaux']
 
-    assert get_themes_keywords_duration(plaintext_climat, subtitles, start) == [
-        ['biodiversité_concepts_generaux','changement_climatique_constat','ressources_concepts_generaux'],
-        keywords, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    
+    (themes_output, keywords_output, 
+        number_of_keywords,
+        number_of_changement_climatique_constat,
+        number_of_changement_climatique_causes_directes,
+        number_of_changement_climatique_consequences,
+        number_of_attenuation_climatique_solutions_directes,
+        number_of_adaptation_climatique_solutions_directes,
+        number_of_ressources,
+        number_of_ressources_solutions,
+        number_of_biodiversite_concepts_generaux,
+        number_of_biodiversite_causes_directes,
+        number_of_biodiversite_consequences,
+        number_of_biodiversite_solutions_directes) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+    assert set(themes_output) == set(themes)
+    assert keywords_output == keywords
+    assert number_of_keywords == 1
+    assert number_of_changement_climatique_constat == 1
+    assert number_of_changement_climatique_causes_directes == 0
+    assert number_of_changement_climatique_consequences == 0
+    assert number_of_attenuation_climatique_solutions_directes == 0
+    assert number_of_adaptation_climatique_solutions_directes == 0
+    assert number_of_ressources == 1
+    assert number_of_ressources_solutions == 0
+    assert number_of_biodiversite_concepts_generaux == 1
+    assert number_of_biodiversite_causes_directes == 0
+    assert number_of_biodiversite_consequences == 0
+    assert number_of_biodiversite_solutions_directes == 0
+
+def test_long_sentence_theme_get_themes_keywords_duration():
+    subtitles = [{
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 6,
+            "text": "habitabilité"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 10,
+            "text": "de"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 11,
+            "text": "la"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 12,
+            "text": "planète"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 15000,
+            "text": "conditions"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 15500,
+            "text": "de"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 16000,
+            "text": "vie"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 17000,
+            "text": "sur"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 18000,
+            "text": "terre"
+            },
+            {
+            "duration_ms": 34,
+            "cts_in_ms": original_timestamp + 32000,
+            "text": "digue"
+            }
+    ]
+    plaintext_climat = "cheese pizza habitabilité de la planète conditions de vie sur terre animal digue"
+    keywords =  [{
+        'category': 'General',
+        'keyword': 'digue',
+        'theme': 'adaptation_climatique_solutions',
+        'timestamp': 1706437111004,
+        },
+        {
+        'category': 'Ecosystème',
+        'keyword': 'conditions de vie sur terre',
+        'theme': 'changement_climatique_constat',
+        'timestamp': 1706437094004,
+        },
+        {
+        'category': 'Ecosystème',
+        'keyword': 'habitabilité de la planète',
+        'theme': 'changement_climatique_constat',
+        'timestamp': 1706437079010,
+        },
+        {
+        'category': '',
+        'keyword': 'planète',
+        'theme': 'biodiversite_concepts_generaux',
+        'timestamp': 1706437079016,
+        },
+        {
+        'category': '',
+        'keyword': 'terre',
+        'theme': 'biodiversite_concepts_generaux',
+        'timestamp': 1706437097004,
+        },
+        {
+        'category': 'Concepts généraux',
+        'keyword': 'planète',
+        'theme': 'ressources',
+        'timestamp': 1706437079016,
+        }
+        ]
+    themes = ['adaptation_climatique_solutions','changement_climatique_constat','ressources','biodiversite_concepts_generaux']
+
+    (themes_output, keywords_output, 
+        number_of_keywords,
+        number_of_changement_climatique_constat,
+        number_of_changement_climatique_causes_directes,
+        number_of_changement_climatique_consequences,
+        number_of_attenuation_climatique_solutions_directes,
+        number_of_adaptation_climatique_solutions_directes,
+        number_of_ressources,
+        number_of_ressources_solutions,
+        number_of_biodiversite_concepts_generaux,
+        number_of_biodiversite_causes_directes,
+        number_of_biodiversite_consequences,
+        number_of_biodiversite_solutions_directes) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+
+    assert set(themes_output) == set(themes)
+    assert keywords_output == keywords
+    assert number_of_keywords == 1
+    assert number_of_changement_climatique_constat == 1
+    assert number_of_changement_climatique_causes_directes == 0
+    assert number_of_changement_climatique_consequences == 0
+    assert number_of_attenuation_climatique_solutions_directes == 0
+    assert number_of_adaptation_climatique_solutions_directes == 0
+    assert number_of_ressources == 1
+    assert number_of_ressources_solutions == 0
+    assert number_of_biodiversite_concepts_generaux == 1
+    assert number_of_biodiversite_causes_directes == 0
+    assert number_of_biodiversite_consequences == 0
+    assert number_of_biodiversite_solutions_directes == 0
+
 def test_nothing_get_themes_keywords_duration():
     # should not accept theme 'bus' for keyword "abusive"
     plaintext_regression_incomplete_word = "abusive"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None]
     
 def test_regression_included_get_themes_keywords_duration():
     # should not accept theme 'ngt' for keyword "vingt"
     plaintext_regression_incomplete_word_ngt = "vingt"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None]
     
 
 def test_three_get_themes_keywords_duration():
@@ -124,14 +270,14 @@ def test_three_get_themes_keywords_duration():
      "adaptation_climatique_solutions"
     ],[{'category': 'General','keyword': 'adaptation au dérèglement climatique',
 'theme': 'adaptation_climatique_solutions',
-'timestamp': 1706437080004}], 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
+'timestamp': 1706437080004}], 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
 
 def test_long_get_themes_keywords_duration():
-    themes=[
-    'ressources_energie_indirectes',
+    themes= set([
         'adaptation_climatique_solutions_indirectes',
-    'ressources_eau_solutions_indirectes',
-    ]
+        'ressources_indirectes',
+        'ressources_solutions_indirectes',
+    ])
     keywords= [
         {
             'category': 'Eau',
@@ -140,28 +286,53 @@ def test_long_get_themes_keywords_duration():
             'timestamp': 1706437079102,
         },
         {
-            'category': '',
+            'category': 'Energie',
             'keyword': 'barrage',
-            'theme': 'ressources_eau_solutions_indirectes',
+            'theme': 'ressources_indirectes',
             'timestamp': 1706437079102,
         },
         {
-            'category': '',
+            'category': 'Eau',
             'keyword': 'barrage',
-            'theme': 'ressources_energie_indirectes',
+            'theme': 'ressources_solutions_indirectes',
             'timestamp': 1706437079102,
     }]
 
-    assert get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start) == [
-    themes,keywords, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    (themes_output, keywords_output, 
+        number_of_keywords,
+        number_of_changement_climatique_constat,
+        number_of_changement_climatique_causes_directes,
+        number_of_changement_climatique_consequences,
+        number_of_attenuation_climatique_solutions_directes,
+        number_of_adaptation_climatique_solutions_directes,
+        number_of_ressources,
+        number_of_ressources_solutions,
+        number_of_biodiversite_concepts_generaux,
+        number_of_biodiversite_causes_directes,
+        number_of_biodiversite_consequences,
+        number_of_biodiversite_solutions_directes) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
+    assert set(themes_output) == set(themes)
+    assert keywords_output == keywords
+    assert number_of_keywords == 0
+    assert number_of_changement_climatique_constat == 0
+    assert number_of_changement_climatique_causes_directes == 0
+    assert number_of_changement_climatique_consequences == 0
+    assert number_of_attenuation_climatique_solutions_directes == 0
+    assert number_of_adaptation_climatique_solutions_directes == 0
+    assert number_of_ressources == 0
+    assert number_of_ressources_solutions == 0
+    assert number_of_biodiversite_concepts_generaux == 0
+    assert number_of_biodiversite_causes_directes == 0
+    assert number_of_biodiversite_consequences == 0
+    assert number_of_biodiversite_solutions_directes == 0
 
 def test_stop_word_get_themes_keywords_duration():
     plaintext = "haute isolation thermique fabriqué en france pizza"
-    assert get_themes_keywords_duration(plaintext, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None]
    
 def test_train_stop_word_get_themes_keywords_duration():
     plaintext = "en train de fabrique en france pizza"
-    assert get_themes_keywords_duration(plaintext, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None]
    
 
 def test_get_cts_in_ms_for_keywords():
@@ -289,9 +460,8 @@ def test_lower_case_filter_and_tag_by_theme():
         "number_of_changement_climatique_consequences": 0,
         "number_of_attenuation_climatique_solutions_directes": 0,
         "number_of_adaptation_climatique_solutions_directes": 0,
-        "number_of_ressources_naturelles_concepts_generaux": 0,
-        "number_of_ressources_naturelles_causes": 0,
-        "number_of_ressources_naturelles_solutions": 0,
+        "number_of_ressources": 0,
+        "number_of_ressources_solutions": 0,
         "number_of_biodiversite_concepts_generaux": 0,
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
@@ -332,6 +502,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
                 "keyword" :"méthane",
                 "timestamp": original_timestamp,
                 "theme": "changement_climatique_causes",
+                'category': 'General'
         }],
         "number_of_keywords": 1,
         "number_of_changement_climatique_constat": 0,
@@ -339,9 +510,8 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         "number_of_changement_climatique_consequences": 0,
         "number_of_attenuation_climatique_solutions_directes": 0,
         "number_of_adaptation_climatique_solutions_directes": 0,
-        "number_of_ressources_naturelles_concepts_generaux": 0,
-        "number_of_ressources_naturelles_causes": 0,
-        "number_of_ressources_naturelles_solutions": 0,
+        "number_of_ressources": 0,
+        "number_of_ressources_solutions": 0,
         "number_of_biodiversite_concepts_generaux": 0,
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
@@ -402,7 +572,7 @@ def test_complexe_filter_and_tag_by_theme():
         "channel_radio": False,
         "srt": srt,
     }])
-
+    
     expected_result = pd.DataFrame([{
         "start": start,
         "plaintext": plaintext,
@@ -410,16 +580,31 @@ def test_complexe_filter_and_tag_by_theme():
         "channel_radio": False,
         "srt": srt,
         "theme": [
-            "changement_climatique_constat"
+            "changement_climatique_constat","biodiversite_concepts_generaux"
         ],
-        "keywords_with_timestamp": [{
+        "keywords_with_timestamp": [
+            {
+                'category': 'Ecosystème',
+                'keyword': 'conditions de vie sur terre',
+                'theme': 'changement_climatique_constat',
+                'timestamp': 1706437094004,
+            },
+            {
+                'category': 'General',
                 "keyword" : 'dépolluer',
                 "timestamp": original_timestamp_first_keyword, # count for one
                 "theme":"changement_climatique_constat",
             },
             {
-                "keyword" : 'conditions de vie sur terre',
-                "timestamp": original_timestamp + get_keyword_time_separation_ms(),
+                'category': '',
+                'keyword': 'terre',
+                'theme': 'biodiversite_concepts_generaux',
+                'timestamp':1706437094010,
+            },  
+            {
+                "category": 'General',
+                "keyword" : 'terre',
+                "timestamp": 1706437094010,
                 "theme": "changement_climatique_constat",
             }
         ],
@@ -429,10 +614,9 @@ def test_complexe_filter_and_tag_by_theme():
         "number_of_changement_climatique_consequences": 0,
         "number_of_attenuation_climatique_solutions_directes": 0,
         "number_of_adaptation_climatique_solutions_directes": 0,
-        "number_of_ressources_naturelles_concepts_generaux": 0,
-        "number_of_ressources_naturelles_causes": 0,
-        "number_of_ressources_naturelles_solutions": 0,
-        "number_of_biodiversite_concepts_generaux": 0,
+        "number_of_ressources": 0,
+        "number_of_ressources_solutions": 0,
+        "number_of_biodiversite_concepts_generaux": 1,
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
@@ -440,9 +624,21 @@ def test_complexe_filter_and_tag_by_theme():
 
     # List of words to filter on
     df = filter_and_tag_by_theme(df1)
-
-    debug_df(df)
-    pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
+    assert df["channel_name"].head(1)[0] == expected_result["channel_name"].head(1)[0]
+    assert set(df["theme"].head(1)[0]) == set(expected_result["theme"].head(1)[0])
+    assert df["keywords_with_timestamp"].head(1)[0] == expected_result["keywords_with_timestamp"].head(1)[0]
+    assert df["number_of_keywords"].head(1)[0] == expected_result["number_of_keywords"].head(1)[0]
+    assert df["number_of_changement_climatique_constat"].head(1)[0] == expected_result["number_of_changement_climatique_constat"].head(1)[0]
+    assert df["number_of_changement_climatique_causes_directes"].head(1)[0] == expected_result["number_of_changement_climatique_causes_directes"].head(1)[0]
+    assert df["number_of_changement_climatique_consequences"].head(1)[0] == expected_result["number_of_changement_climatique_consequences"].head(1)[0]
+    assert df["number_of_attenuation_climatique_solutions_directes"].head(1)[0] == expected_result["number_of_attenuation_climatique_solutions_directes"].head(1)[0]
+    assert df["number_of_adaptation_climatique_solutions_directes"].head(1)[0] == expected_result["number_of_adaptation_climatique_solutions_directes"].head(1)[0]
+    assert df["number_of_ressources"].head(1)[0] == expected_result["number_of_ressources"].head(1)[0]
+    assert df["number_of_ressources_solutions"].head(1)[0] == expected_result["number_of_ressources_solutions"].head(1)[0]
+    assert df["number_of_biodiversite_concepts_generaux"].head(1)[0] == expected_result["number_of_biodiversite_concepts_generaux"].head(1)[0]
+    assert df["number_of_biodiversite_causes_directes"].head(1)[0] == expected_result["number_of_biodiversite_causes_directes"].head(1)[0]
+    assert df["number_of_biodiversite_consequences"].head(1)[0] == expected_result["number_of_biodiversite_consequences"].head(1)[0]
+    assert df["number_of_biodiversite_solutions_directes"].head(1)[0] == expected_result["number_of_biodiversite_solutions_directes"].head(1)[0]
 
 
 def test_is_word_in_sentence():
@@ -483,12 +679,12 @@ def test_overlap_count_keywords_duration_overlap():
             {
                 "keyword" : 'planète',
                 "timestamp": original_timestamp + 3,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + 4,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             }
     ]
     
@@ -508,12 +704,12 @@ def test_no_overlap_count_keywords_duration_overlap():
             {
                 "keyword" : 'planète',
                 "timestamp": original_timestamp + 2 * get_keyword_time_separation_ms(),
-                "theme":"ressources_naturelles_concepts_generaux", # doest not count resources
+                "theme":"ressources", # doest not count resources
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + 3 * get_keyword_time_separation_ms(),
-                "theme":"ressources_naturelles_concepts_generaux", # doest not count resources
+                "theme":"ressources", # doest not count resources
             },
             {
                 "keyword" : 'habitabilité de la planète',
@@ -543,22 +739,22 @@ def test_with_a_mix_of_overlap_count_keywords_duration_overlap():
             {
                 "keyword" : 'planète',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms(), # count for one
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() + 2000,
-                "theme":"ressources_naturelles_concepts_generaux", 
+                "theme":"ressources", 
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() + 10000,
-                "theme":"ressources_naturelles_concepts_generaux", 
+                "theme":"ressources", 
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 2,  # count for one
-                "theme":"ressources_naturelles_concepts_generaux",  # does not count - resources
+                "theme":"ressources",  # does not count - resources
             },
             {
                 "keyword" : 'conditions de vie sur terre',
@@ -583,27 +779,27 @@ def test_with_15second_window_count_keywords_duration_overlap():
             {
                 "keyword" : 'planète',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms(), # count for one
-                "theme":"ressources_naturelles_concepts_generaux", # doesn not count as ressources
+                "theme":"ressources", # doesn not count as ressources
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() + 2000,
-                "theme":"ressources_naturelles_concepts_generaux", # doesn not count as ressources
+                "theme":"ressources", # doesn not count as ressources
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() + 10000,
-                "theme":"ressources_naturelles_concepts_generaux", # doesn not count as ressources
+                "theme":"ressources", # doesn not count as ressources
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 2 + 10000,  # count for one
-                "theme":"ressources_naturelles_concepts_generaux", # doesn not count as ressources
+                "theme":"ressources", # doesn not count as ressources
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 3,  # count for one
-                "theme":"ressources_naturelles_concepts_generaux", # doesn not count as ressources
+                "theme":"ressources", # doesn not count as ressources
             }
     ]
     
@@ -633,7 +829,7 @@ def test_resources_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
                 "keyword" : 'lithium',
                 "timestamp": original_timestamp,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             }
     ]
     
@@ -653,12 +849,12 @@ def test_filter_indirect_words():
             {
                 "keyword" : 'planète',
                 "timestamp": original_timestamp + 3,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + 4,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'malbouffe', # should be removed
@@ -680,12 +876,12 @@ def test_filter_indirect_words():
             {
                 "keyword" : 'planète',
                 "timestamp": original_timestamp + 3,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + 4,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             }
     ]
     output = filter_indirect_words(keywords_with_timestamp)
@@ -717,7 +913,7 @@ def test_keyword_different_theme_keyword_filter_keyword_with_same_timestamp():
     keywords_with_timestamp = [
         {'keyword': 'climatique', 'timestamp': 1693757470012, 'theme': 'changement_climatique_constat'},
         {'keyword': 'sécheresse', 'timestamp': 1693757450073, 'theme': 'changement_climatique_consequences'},
-        {'keyword': 'sécheresse', 'timestamp': 1693757450073, 'theme': 'ressources_naturelles_concepts_generaux'}
+        {'keyword': 'sécheresse', 'timestamp': 1693757450073, 'theme': 'ressources'}
     ]
         
     assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == keywords_with_timestamp
@@ -826,27 +1022,27 @@ def test_get_keyword_by_fifteen_second_window():
             {
                 "keyword" : 'planète',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms(), # count for one
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() + 2000,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() + 10000,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 2 + 10000,  # count for one
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 3,  # count for one
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             }
     ]
     
@@ -866,52 +1062,52 @@ def test_full_house_get_keyword_by_fifteen_second_window():
             {
                 "keyword" : 'planète',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms(), # count for one
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() + 2000,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() + 10000,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 2 + 10000,  # count for one
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 3,  # count for one
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 4,  # count for one
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 5,  # count for one
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 6,  # count for one
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 7,  # count for one
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 8 - 100,  # count for one
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             }
     ]
     

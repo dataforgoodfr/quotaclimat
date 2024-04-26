@@ -2702,33 +2702,1344 @@ THEME_KEYWORDS = {
         }
     ],
     ## Resources from Ressources_feuille de travail
-'ressources_concepts_generaux': [{'keyword': 'surexploitation des ressources', 'category': ''}, {'keyword': 'surexploitation', 'category': ''}, {'keyword': 'polluant industriel', 'category': ''}, {'keyword': 'rejet polluant', 'category': ''}, {'keyword': 'surconsommation', 'category': ''}, {'keyword': 'extractiviste', 'category': ''}, {'keyword': 'extractivisme', 'category': ''}, {'keyword': 'polluant', 'category': ''}, {'keyword': 'pollution chimique', 'category': ''}, {'keyword': 'crise environnementale', 'category': ''}, {'keyword': 'crise climatique', 'category': ''}, {'keyword': 'crise écologique', 'category': ''}, {'keyword': 'impact environnemental', 'category': ''}, {'keyword': 'anthropocène', 'category': ''}, {'keyword': 'limites planétaires', 'category': ''}, {'keyword': 'dépassement des limites planétaires', 'category': ''}, {'keyword': 'épuisement des ressources', 'category': ''}, {'keyword': 'jour du dépassement', 'category': ''}, {'keyword': 'ressources naturelles', 'category': ''}, {'keyword': 'insécurité alimentaire', 'category': ''}, {'keyword': 'problème de sécurité alimentaire', 'category': ''}], 
-'ressources_concepts_generaux_indirectes': [{'keyword': 'agro-industriel', 'category': ''}, {'keyword': 'substance chimique', 'category': ''}, {'keyword': 'produit toxique', 'category': ''}, {'keyword': 'produit chimique', 'category': ''}, {'keyword': 'gaspillage', 'category': ''}, {'keyword': 'mauvaise gestion', 'category': ''}, {'keyword': 'industrialisation', 'category': ''}, {'keyword': 'terre ', 'category': ''}, {'keyword': 'planète', 'category': ''}, {'keyword': 'planétaire', 'category': ''}, {'keyword': 'pénurie  ', 'category': ''}, {'keyword': 'abondance', 'category': ''}, {'keyword': 'matières premières', 'category': ''}],
-'ressources_concepts_generaux_solutions': [{'keyword': 'sobriété', 'category': ''}, {'keyword': 'réduction de la consommation (de ressources)', 'category': ''}, {'keyword': 'maîtrise de la demande', 'category': ''}, {'keyword': 'moins consommer', 'category': ''}, {'keyword': "fin de l'abondance", 'category': ''}, {'keyword': 'décroissance', 'category': ''}, {'keyword': 'efficacité énergétique', 'category': ''}, {'keyword': 'ressources renouvelables', 'category': ''}, {'keyword': 'lutte contre le gaspillage', 'category': ''}, {'keyword': 'antigaspi', 'category': ''}, {'keyword': 'transition écologique', 'category': ''}, {'keyword': 'transformation écologique', 'category': ''}, {'keyword': 'mutation écologique', 'category': ''}, {'keyword': 'partage des ressources', 'category': ''}, {'keyword': 'malus écologique', 'category': ''}, {'keyword': 'antigaspi', 'category': ''}, {'keyword': 'antigaspillage', 'category': ''}, {'keyword': 'consommation responsable', 'category': ''}, {'keyword': 'consommation plus responsable', 'category': ''}, {'keyword': 'écoresponsable', 'category': ''}],
-'ressources_concepts_generaux_solutions_indirectes': [{'keyword': 'planification écologique', 'category': ''}, {'keyword': 'mutation écologique', 'category': ''}, {'keyword': 'industrie verte', 'category': ''}, {'keyword': 'rationner', 'category': ''}, {'keyword': 'rationnement ', 'category': ''}],
-'ressources_air': [{'keyword': 'surpâturage', 'category': ''}, {'keyword': 'engrais chimique', 'category': ''}, {'keyword': 'agriculture intensive', 'category': ''}, {'keyword': 'agriculture industrielle', 'category': ''}, {'keyword': 'agriculture conventionnelle', 'category': ''}, {'keyword': 'engrais azoté', 'category': ''}, {'keyword': 'engrais de synthèse', 'category': ''}, {'keyword': 'pesticide', 'category': ''}],
-'ressources_air_solutions': [{'keyword': 'gestion durable des terres cultivables', 'category': ''}, {'keyword': 'amélioration des pratiques d’élevage', 'category': ''}, {'keyword': 'réduire l’élevage intensif', 'category': ''}, {'keyword': 'sortie du charbon', 'category': ''}, {'keyword': 'transition en dehors des énergies fossiles', 'category': ''}, {'keyword': 'agriculture de conservation', 'category': ''}, {'keyword': 'réduction du gaspillage alimentaire', 'category': ''}, {'keyword': 'agriculture bio ', 'category': ''}, {'keyword': 'agriculture biologique', 'category': ''}, {'keyword': 'permaculture', 'category': ''}, {'keyword': 'agroécologie', 'category': ''}, {'keyword': 'agro écologie', 'category': ''}, {'keyword': 'polyculture élevage', 'category': ''}],
-'ressources_air_solutions_indirectes': [{'keyword': 'végétarien', 'category': ''}, {'keyword': 'végan', 'category': ''}, {'keyword': 'agriculture durable', 'category': ''}, {'keyword': 'replantation', 'category': ''}, {'keyword': 'replanter', 'category': ''}],
-'ressources_eau': [{'keyword': 'surpâturage', 'category': ''}, {'keyword': 'polluant éternel', 'category': ''}, {'keyword': 'pfas', 'category': ''}, {'keyword': 'sécheresse', 'category': ''}, {'keyword': 'canicule', 'category': ''}, {'keyword': 'déficit de pluie', 'category': ''}, {'keyword': 'pénurie de neige', 'category': ''}, {'keyword': 'fortes chaleurs', 'category': ''}, {'keyword': 'chaleurs extrêmes', 'category': ''}, {'keyword': 'vague de chaleur', 'category': ''}, {'keyword': 'engrais chimique', 'category': ''}, {'keyword': 'agriculture intensive', 'category': ''}, {'keyword': 'élevage intensif', 'category': ''}, {'keyword': 'agriculture industrielle', 'category': ''}, {'keyword': 'agriculture conventionnelle', 'category': ''}, {'keyword': 'engrais azoté', 'category': ''}, {'keyword': 'engrais de synthèse', 'category': ''}, {'keyword': 'pesticide', 'category': ''}, {'keyword': 'raréfaction de l’eau', 'category': ''}, {'keyword': 'accès à l’eau', 'category': ''}, {'keyword': 'qualité de l’eau', 'category': ''}, {'keyword': 'cycle de l’eau', 'category': ''}, {'keyword': "réserve d'eau ", 'category': ''}, {'keyword': 'eau de ruissellement', 'category': ''}, {'keyword': 'eaux de ruissellement', 'category': ''}, {'keyword': 'salinisation des nappes', 'category': ''}, {'keyword': 'nappes phréatiques', 'category': ''}, {'keyword': 'stress hydrique', 'category': ''}, {'keyword': 'raréfaction de la ressource en eau', 'category': ''}, {'keyword': 'rareté de la ressource en eau', 'category': ''}, {'keyword': 'rareté saisonnière de la ressource en eau', 'category': ''}, {'keyword': 'salinisation des sols', 'category': ''}, {'keyword': 'intensification du cycle de l’eau', 'category': ''}, {'keyword': 'acidification des oceans', 'category': ''}, {'keyword': 'eutrophisation', 'category': ''}, {'keyword': 'perte agricole', 'category': ''}, {'keyword': 'diminution des rendements agricoles', 'category': ''}, {'keyword': 'baisse des rendements agricoles', 'category': ''}, {'keyword': 'pénurie d’eau', 'category': ''}, {'keyword': 'manque d’eau', 'category': ''}, {'keyword': "pollution de l'eau", 'category': ''}, {'keyword': 'pollution des nappes', 'category': ''}, {'keyword': 'artificialisation des sols', 'category': ''}, {'keyword': 'bétonisation', 'category': ''}],
-'ressources_eau_indirectes': [{'keyword': 'irrigation', 'category': ''}, {'keyword': 'intrants', 'category': ''}, {'keyword': 'eau douce', 'category': ''}, {'keyword': 'eaux douces', 'category': ''}, {'keyword': 'ressource en eau', 'category': ''}, {'keyword': 'désertification', 'category': ''}],
-'ressources_eau_solutions': [{'keyword': 'récupérateur d’eau', 'category': ''}, {'keyword': 'stockage d’eau', 'category': ''}, {'keyword': 'gestion de la ressource en eau', 'category': ''}, {'keyword': 'réduction de la demande en eau', 'category': ''}, {'keyword': 'sauvegarde de la ressource en eau', 'category': ''}, {'keyword': 'lutte contre le gaspillage d’eau', 'category': ''}, {'keyword': 'économie d’eau', 'category': ''}, {'keyword': 'réserve d’eau', 'category': ''}, {'keyword': 'retenue collinaire', 'category': ''}, {'keyword': 'gestion durable des terres cultivables', 'category': ''}, {'keyword': 'amélioration des pratiques d’élevage ', 'category': ''}, {'keyword': 'réduire l’élevage intensif', 'category': ''}, {'keyword': 'restriction d’eau', 'category': ''}, {'keyword': 'réutilisation des eaux usées ', 'category': ''}, {'keyword': 'réutilisation des eaux', 'category': ''}, {'keyword': 'désalinisation des eaux', 'category': ''}, {'keyword': 'agriculture de conservation', 'category': ''}, {'keyword': 'réduction du gaspillage alimentaire', 'category': ''}, {'keyword': 'agriculture bio ', 'category': ''}, {'keyword': 'agriculture biologique', 'category': ''}, {'keyword': 'permaculture', 'category': ''}, {'keyword': 'agroécologie', 'category': ''}, {'keyword': 'agro écologie', 'category': ''}, {'keyword': 'polyculture élevage', 'category': ''}],
-'ressources_eau_solutions_indirectes': [{'keyword': 'méga bassine ', 'category': ''}, {'keyword': 'barrage', 'category': ''}, {'keyword': 'végétarien', 'category': ''}, {'keyword': 'végan', 'category': ''}, {'keyword': 'agriculture durable', 'category': ''}, {'keyword': 'replantation', 'category': ''}, {'keyword': 'replanter', 'category': ''}],
-'ressources_economie_circulaire_indirectes': [{'keyword': 'déchetterie', 'category': ''}, {'keyword': 'déchet ', 'category': ''}, {'keyword': 'plastique', 'category': ''}],
-'ressources_economie_circulaire': [{'keyword': 'analyse de cycle de vie', 'category': ''}, {'keyword': 'acv', 'category': ''}],
-'ressources_economie_circulaire_solutions': [{'keyword': 'biomimétisme', 'category': ''}, {'keyword': 'bioinspiration', 'category': ''}, {'keyword': 'réemploi', 'category': ''}, {'keyword': 'recyclage', 'category': ''}, {'keyword': 'réparabilité', 'category': ''}, {'keyword': 'repair cafés', 'category': ''}, {'keyword': 'recycleries', 'category': ''}, {'keyword': 'réutilisation des ressources', 'category': ''}, {'keyword': 'économie circulaire', 'category': ''}, {'keyword': 'économie du réemploi', 'category': ''}, {'keyword': 'indice de réparabilité', 'category': ''}, {'keyword': 'écoconception', 'category': ''}, {'keyword': 'matériaux biosourcés', 'category': ''}, {'keyword': 'matériaux recyclés', 'category': ''}, {'keyword': 'matériaux recyclables', 'category': ''}, {'keyword': 'tri à la source', 'category': ''}, {'keyword': 'biodégradable', 'category': ''}, {'keyword': 'compostage', 'category': ''}, {'keyword': 'zéro plastique', 'category': ''}],
-'ressources_energie': [{'keyword': 'compagnie pétrolière', 'category': ''}, {'keyword': 'compagnie gazière', 'category': ''}, {'keyword': 'bois énergie', 'category': ''}],
-'ressources_energie_indirectes': [{'keyword': 'pétrole', 'category': ''}, {'keyword': 'industrie pétrolière', 'category': ''}, {'keyword': 'forage pétrolier', 'category': ''}, {'keyword': 'puit de pétrole', 'category': ''}, {'keyword': 'gaz naturel', 'category': ''}, {'keyword': 'charbon', 'category': ''}, {'keyword': 'ressources énergétiques', 'category': ''}, {'keyword': 'besoins énergétiques', 'category': ''}, {'keyword': 'barrage', 'category': ''}],
-'ressources_energie_solutions': [{'keyword': 'sortie des énergies fossiles', 'category': ''}, {'keyword': 'sortie du charbon', 'category': ''}, {'keyword': 'transition en dehors des énergies fossiles', 'category': ''}, {'keyword': 'biocarburant', 'category': ''}, {'keyword': 'réseau de chaleur', 'category': ''}, {'keyword': 'réseaux de chaleur', 'category': ''}, {'keyword': 'énergie renouvelable', 'category': ''}, {'keyword': 'transition énergétique', 'category': ''}, {'keyword': 'énergie verte', 'category': ''}, {'keyword': 'énergie durable', 'category': ''}, {'keyword': 'éolien', 'category': ''}, {'keyword': '# panneaux solaires', 'category': ''}, {'keyword': 'énergie solaire', 'category': ''}, {'keyword': '# photovoltaïque', 'category': ''}, {'keyword': 'géothermie', 'category': ''}, {'keyword': 'hydroélectricité', 'category': ''}, {'keyword': 'centrale hydroélectrique', 'category': ''}, {'keyword': 'biomasse', 'category': ''}, {'keyword': 'biogaz', 'category': ''}, {'keyword': 'epr', 'category': ''}, {'keyword': 'hydrogène vert', 'category': ''}, {'keyword': 'économie d’énergie', 'category': ''}, {'keyword': 'réduction du gaspillage énergétique', 'category': ''}, {'keyword': 'réduction des gaspillages énergétiques', 'category': ''}, {'keyword': 'efficacité énergétique', 'category': ''}, {'keyword': 'économiser de l’énergie', 'category': ''}, {'keyword': 'sobriété énergétique', 'category': ''}, {'keyword': 'valorisation des déchets', 'category': ''}],
-'ressources_energie_solutions_indirectes': [{'keyword': 'nucléaire', 'category': ''}, {'keyword': 'réacteur nucléaire', 'category': ''}],
-'ressources_forets': [{'keyword': 'déforestation', 'category': ''}, {'keyword': 'gestion forestière', 'category': ''}, {'keyword': 'bois d’oeuvre', 'category': ''}, {'keyword': 'bois énergie', 'category': ''}],
-'ressources_forets_indirectes': [{'keyword': 'forêt', 'category': ''}, {'keyword': 'forestier', 'category': ''}, {'keyword': 'forestière', 'category': ''}],
-'ressources_forets_solutions': [{'keyword': 'gestion durable des forêts', 'category': ''}, {'keyword': 'agroforesterie', 'category': ''}, {'keyword': 'gestion durable des terres cultivables', 'category': ''}, {'keyword': 'amélioration des pratiques d’élevage ', 'category': ''}, {'keyword': 'réduire l’élevage intensif', 'category': ''}, {'keyword': 'agriculture de conservation', 'category': ''}, {'keyword': 'agriculture bio ', 'category': ''}, {'keyword': 'agriculture durable', 'category': ''}, {'keyword': 'agriculture biologique', 'category': ''}, {'keyword': 'permaculture', 'category': ''}, {'keyword': 'agroécologie', 'category': ''}, {'keyword': 'agro écologie', 'category': ''}, {'keyword': 'polyculture élevage', 'category': ''}, {'keyword': 'réduction du gaspillage alimentaire', 'category': ''}],
-'ressources_forets_solutions_indirectes': [{'keyword': 'végétarien', 'category': ''}, {'keyword': 'végan', 'category': ''}, {'keyword': 'replantation', 'category': ''}, {'keyword': 'replanter', 'category': ''}],
-'ressources_metaux_et_minerais': [{'keyword': 'industrie minière', 'category': ''}, {'keyword': 'exploration minière', 'category': ''}, {'keyword': 'exploitation minière', 'category': ''}, {'keyword': 'industrie extractive', 'category': ''}, {'keyword': 'lithium ', 'category': ''}, {'keyword': 'cobalt', 'category': ''}, {'keyword': 'cuivre', 'category': ''}, {'keyword': 'silicium', 'category': ''}, {'keyword': 'ressources minérales', 'category': ''}, {'keyword': 'terre rare', 'category': ''}, {'keyword': 'métaux critiques', 'category': ''}, {'keyword': 'minerais', 'category': ''}, {'keyword': 'ressources stratégiques', 'category': ''}, {'keyword': 'minerais stratégiques', 'category': ''}, {'keyword': 'métaux rares', 'category': ''}, {'keyword': 'métal rare', 'category': ''}, {'keyword': 'matières critiques', 'category': ''}],
-'ressources_metaux_et_minerais_indirectes': [{'keyword': 'mines', 'category': ''}, {'keyword': 'gisement', 'category': ''}, {'keyword': 'extraction', 'category': ''}],
-'ressources_metaux_et_minerais_solutions': [{'keyword': 'sortie du charbon', 'category': ''}],
-'ressources_sols': [{'keyword': 'surpâturage', 'category': ''}, {'keyword': 'artificialisation des sols', 'category': ''}, {'keyword': 'bétonisation', 'category': ''}, {'keyword': 'tassement des sols', 'category': ''}, {'keyword': 'compactage des sols', 'category': ''}, {'keyword': 'étalement urbain', 'category': ''}, {'keyword': 'engrais chimique', 'category': ''}, {'keyword': 'agriculture intensive', 'category': ''}, {'keyword': 'élevage intensif', 'category': ''}, {'keyword': 'agriculture industrielle', 'category': ''}, {'keyword': 'agriculture conventionnelle', 'category': ''}, {'keyword': 'engrais azoté', 'category': ''}, {'keyword': 'engrais de synthèse', 'category': ''}, {'keyword': 'pesticide', 'category': ''}, {'keyword': 'salinisation des sols', 'category': ''}, {'keyword': 'mauvaise santé des sols', 'category': ''}, {'keyword': 'appauvrissement des sols', 'category': ''}, {'keyword': 'acidification des sols', 'category': ''}, {'keyword': 'acidification des oceans', 'category': ''}, {'keyword': 'dégradation des sols', 'category': ''}, {'keyword': 'gestion des sols', 'category': ''}, {'keyword': 'eau de ruissellement', 'category': ''}, {'keyword': 'eaux de ruissellement', 'category': ''}, {'keyword': 'érosion hydrique', 'category': ''}, {'keyword': 'érosion éolienne', 'category': ''}, {'keyword': 'érosion des sols', 'category': ''}, {'keyword': 'perte agricole', 'category': ''}, {'keyword': 'diminution des rendements agricoles', 'category': ''}, {'keyword': 'baisse des rendements agricoles', 'category': ''}, {'keyword': 'sol dégradé', 'category': ''}, {'keyword': 'sol appauvri', 'category': ''}, {'keyword': 'pollution des sols', 'category': ''}],
-'ressources_sols_indirectes': [{'keyword': 'irrigation', 'category': ''}, {'keyword': 'intrants', 'category': ''}, {'keyword': 'sol', 'category': ''}, {'keyword': 'terre ', 'category': ''}, {'keyword': 'désertification', 'category': ''}],
-'ressources_sols_solutions': [{'keyword': 'santé des sols', 'category': ''}, {'keyword': 'préservation des sols', 'category': ''}, {'keyword': 'gestion durable des terres cultivables', 'category': ''}, {'keyword': 'amélioration des pratiques d’élevage', 'category': ''}, {'keyword': 'réduire l’élevage intensif', 'category': ''}, {'keyword': 'agriculture de conservation', 'category': ''}, {'keyword': 'réduction du gaspillage alimentaire', 'category': ''}, {'keyword': 'agriculture bio ', 'category': ''}, {'keyword': 'agriculture biologique', 'category': ''}, {'keyword': 'permaculture', 'category': ''}, {'keyword': 'agroécologie', 'category': ''}, {'keyword': 'agro écologie', 'category': ''}, {'keyword': 'polyculture élevage', 'category': ''}],
-'ressources_sols_solutions_indirectes': [{'keyword': 'végétarien', 'category': ''}, {'keyword': 'végan', 'category': ''}, {'keyword': 'agriculture durable', 'category': ''}, {'keyword': 'replantation', 'category': ''}, {'keyword': 'replanter', 'category': ''}]
+        "ressources": [
+        {
+            "keyword": "surexploitation des ressources",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "surexploitation",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "polluant industriel",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "rejet polluant",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "surconsommation",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "extractiviste",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "extractivisme",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "polluant",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "pollution chimique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "crise environnementale",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "crise climatique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "crise écologique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "impact environnemental",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "anthropocène",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "limites planétaires",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "dépassement des limites planétaires",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "épuisement des ressources",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "jour du dépassement",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "ressources naturelles",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "insécurité alimentaire",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "problème de sécurité alimentaire",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "surpâturage",
+            "category": "Air"
+        },
+        {
+            "keyword": "engrais chimique",
+            "category": "Air"
+        },
+        {
+            "keyword": "agriculture intensive",
+            "category": "Air"
+        },
+        {
+            "keyword": "agriculture industrielle",
+            "category": "Air"
+        },
+        {
+            "keyword": "agriculture conventionnelle",
+            "category": "Air"
+        },
+        {
+            "keyword": "engrais azoté",
+            "category": "Air"
+        },
+        {
+            "keyword": "engrais de synthèse",
+            "category": "Air"
+        },
+        {
+            "keyword": "pesticide",
+            "category": "Air"
+        },
+        {
+            "keyword": "surpâturage",
+            "category": "Eau"
+        },
+        {
+            "keyword": "polluant éternel",
+            "category": "Eau"
+        },
+        {
+            "keyword": "pfas",
+            "category": "Eau"
+        },
+        {
+            "keyword": "sécheresse",
+            "category": "Eau"
+        },
+        {
+            "keyword": "canicule",
+            "category": "Eau"
+        },
+        {
+            "keyword": "déficit de pluie",
+            "category": "Eau"
+        },
+        {
+            "keyword": "pénurie de neige",
+            "category": "Eau"
+        },
+        {
+            "keyword": "fortes chaleurs",
+            "category": "Eau"
+        },
+        {
+            "keyword": "chaleurs extrêmes",
+            "category": "Eau"
+        },
+        {
+            "keyword": "vague de chaleur",
+            "category": "Eau"
+        },
+        {
+            "keyword": "engrais chimique",
+            "category": "Eau"
+        },
+        {
+            "keyword": "agriculture intensive",
+            "category": "Eau"
+        },
+        {
+            "keyword": "élevage intensif",
+            "category": "Eau"
+        },
+        {
+            "keyword": "agriculture industrielle",
+            "category": "Eau"
+        },
+        {
+            "keyword": "agriculture conventionnelle",
+            "category": "Eau"
+        },
+        {
+            "keyword": "engrais azoté",
+            "category": "Eau"
+        },
+        {
+            "keyword": "engrais de synthèse",
+            "category": "Eau"
+        },
+        {
+            "keyword": "pesticide",
+            "category": "Eau"
+        },
+        {
+            "keyword": "raréfaction de l’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "accès à l’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "qualité de l’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "cycle de l’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réserve d'eau ",
+            "category": "Eau"
+        },
+        {
+            "keyword": "eau de ruissellement",
+            "category": "Eau"
+        },
+        {
+            "keyword": "eaux de ruissellement",
+            "category": "Eau"
+        },
+        {
+            "keyword": "salinisation des nappes",
+            "category": "Eau"
+        },
+        {
+            "keyword": "nappes phréatiques",
+            "category": "Eau"
+        },
+        {
+            "keyword": "stress hydrique",
+            "category": "Eau"
+        },
+        {
+            "keyword": "raréfaction de la ressource en eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "rareté de la ressource en eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "rareté saisonnière de la ressource en eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "salinisation des sols",
+            "category": "Eau"
+        },
+        {
+            "keyword": "intensification du cycle de l’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "acidification des oceans",
+            "category": "Eau"
+        },
+        {
+            "keyword": "eutrophisation",
+            "category": "Eau"
+        },
+        {
+            "keyword": "perte agricole",
+            "category": "Eau"
+        },
+        {
+            "keyword": "diminution des rendements agricoles",
+            "category": "Eau"
+        },
+        {
+            "keyword": "baisse des rendements agricoles",
+            "category": "Eau"
+        },
+        {
+            "keyword": "pénurie d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "manque d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "pollution de l'eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "pollution des nappes",
+            "category": "Eau"
+        },
+        {
+            "keyword": "artificialisation des sols",
+            "category": "Eau"
+        },
+        {
+            "keyword": "bétonisation",
+            "category": "Eau"
+        },
+        {
+            "keyword": "analyse de cycle de vie",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "acv",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "compagnie pétrolière",
+            "category": "Energie"
+        },
+        {
+            "keyword": "compagnie gazière",
+            "category": "Energie"
+        },
+        {
+            "keyword": "bois énergie",
+            "category": "Energie"
+        },
+        {
+            "keyword": "déforestation",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "gestion forestière",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "bois d’oeuvre",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "bois énergie",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "industrie minière",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "exploration minière",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "exploitation minière",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "industrie extractive",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "lithium ",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "cobalt",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "cuivre",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "silicium",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "ressources minérales",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "terre rare",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "métaux critiques",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "minerais",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "ressources stratégiques",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "minerais stratégiques",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "métaux rares",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "métal rare",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "matières critiques",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "surpâturage",
+            "category": "Sols"
+        },
+        {
+            "keyword": "artificialisation des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "bétonisation",
+            "category": "Sols"
+        },
+        {
+            "keyword": "tassement des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "compactage des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "étalement urbain",
+            "category": "Sols"
+        },
+        {
+            "keyword": "engrais chimique",
+            "category": "Sols"
+        },
+        {
+            "keyword": "agriculture intensive",
+            "category": "Sols"
+        },
+        {
+            "keyword": "élevage intensif",
+            "category": "Sols"
+        },
+        {
+            "keyword": "agriculture industrielle",
+            "category": "Sols"
+        },
+        {
+            "keyword": "agriculture conventionnelle",
+            "category": "Sols"
+        },
+        {
+            "keyword": "engrais azoté",
+            "category": "Sols"
+        },
+        {
+            "keyword": "engrais de synthèse",
+            "category": "Sols"
+        },
+        {
+            "keyword": "pesticide",
+            "category": "Sols"
+        },
+        {
+            "keyword": "salinisation des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "mauvaise santé des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "appauvrissement des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "acidification des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "acidification des oceans",
+            "category": "Sols"
+        },
+        {
+            "keyword": "dégradation des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "gestion des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "eau de ruissellement",
+            "category": "Sols"
+        },
+        {
+            "keyword": "eaux de ruissellement",
+            "category": "Sols"
+        },
+        {
+            "keyword": "érosion hydrique",
+            "category": "Sols"
+        },
+        {
+            "keyword": "érosion éolienne",
+            "category": "Sols"
+        },
+        {
+            "keyword": "érosion des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "perte agricole",
+            "category": "Sols"
+        },
+        {
+            "keyword": "diminution des rendements agricoles",
+            "category": "Sols"
+        },
+        {
+            "keyword": "baisse des rendements agricoles",
+            "category": "Sols"
+        },
+        {
+            "keyword": "sol dégradé",
+            "category": "Sols"
+        },
+        {
+            "keyword": "sol appauvri",
+            "category": "Sols"
+        },
+        {
+            "keyword": "pollution des sols",
+            "category": "Sols"
+        }
+    ],
+    "ressources_indirectes": [
+        {
+            "keyword": "agro-industriel",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "substance chimique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "produit toxique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "produit chimique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "gaspillage",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "mauvaise gestion",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "industrialisation",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "terre ",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "planète",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "planétaire",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "pénurie  ",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "abondance",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "matières premières",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "irrigation",
+            "category": "Eau"
+        },
+        {
+            "keyword": "intrants",
+            "category": "Eau"
+        },
+        {
+            "keyword": "eau douce",
+            "category": "Eau"
+        },
+        {
+            "keyword": "eaux douces",
+            "category": "Eau"
+        },
+        {
+            "keyword": "ressource en eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "désertification",
+            "category": "Eau"
+        },
+        {
+            "keyword": "déchetterie",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "déchet ",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "plastique",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "pétrole",
+            "category": "Energie"
+        },
+        {
+            "keyword": "industrie pétrolière",
+            "category": "Energie"
+        },
+        {
+            "keyword": "forage pétrolier",
+            "category": "Energie"
+        },
+        {
+            "keyword": "puit de pétrole",
+            "category": "Energie"
+        },
+        {
+            "keyword": "gaz naturel",
+            "category": "Energie"
+        },
+        {
+            "keyword": "charbon",
+            "category": "Energie"
+        },
+        {
+            "keyword": "ressources énergétiques",
+            "category": "Energie"
+        },
+        {
+            "keyword": "besoins énergétiques",
+            "category": "Energie"
+        },
+        {
+            "keyword": "barrage",
+            "category": "Energie"
+        },
+        {
+            "keyword": "forêt",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "forestier",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "forestière",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "mines",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "gisement",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "extraction",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "irrigation",
+            "category": "Sols"
+        },
+        {
+            "keyword": "intrants",
+            "category": "Sols"
+        },
+        {
+            "keyword": "sol",
+            "category": "Sols"
+        },
+        {
+            "keyword": "terre ",
+            "category": "Sols"
+        },
+        {
+            "keyword": "désertification",
+            "category": "Sols"
+        }
+    ],
+    "ressources_solutions": [
+        {
+            "keyword": "sobriété",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "réduction de la consommation (de ressources)",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "maîtrise de la demande",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "moins consommer",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "fin de l'abondance",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "décroissance",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "efficacité énergétique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "ressources renouvelables",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "lutte contre le gaspillage",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "antigaspi",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "transition écologique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "transformation écologique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "mutation écologique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "partage des ressources",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "malus écologique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "antigaspi",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "antigaspillage",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "consommation responsable",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "consommation plus responsable",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "écoresponsable",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "gestion durable des terres cultivables",
+            "category": "Air"
+        },
+        {
+            "keyword": "amélioration des pratiques d’élevage",
+            "category": "Air"
+        },
+        {
+            "keyword": "réduire l’élevage intensif",
+            "category": "Air"
+        },
+        {
+            "keyword": "sortie du charbon",
+            "category": "Air"
+        },
+        {
+            "keyword": "transition en dehors des énergies fossiles",
+            "category": "Air"
+        },
+        {
+            "keyword": "agriculture de conservation",
+            "category": "Air"
+        },
+        {
+            "keyword": "réduction du gaspillage alimentaire",
+            "category": "Air"
+        },
+        {
+            "keyword": "agriculture bio ",
+            "category": "Air"
+        },
+        {
+            "keyword": "agriculture biologique",
+            "category": "Air"
+        },
+        {
+            "keyword": "permaculture",
+            "category": "Air"
+        },
+        {
+            "keyword": "agroécologie",
+            "category": "Air"
+        },
+        {
+            "keyword": "agro écologie",
+            "category": "Air"
+        },
+        {
+            "keyword": "polyculture élevage",
+            "category": "Air"
+        },
+        {
+            "keyword": "récupérateur d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "stockage d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "gestion de la ressource en eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réduction de la demande en eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "sauvegarde de la ressource en eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "lutte contre le gaspillage d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "économie d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réserve d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "retenue collinaire",
+            "category": "Eau"
+        },
+        {
+            "keyword": "gestion durable des terres cultivables",
+            "category": "Eau"
+        },
+        {
+            "keyword": "amélioration des pratiques d’élevage ",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réduire l’élevage intensif",
+            "category": "Eau"
+        },
+        {
+            "keyword": "restriction d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réutilisation des eaux usées ",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réutilisation des eaux",
+            "category": "Eau"
+        },
+        {
+            "keyword": "désalinisation des eaux",
+            "category": "Eau"
+        },
+        {
+            "keyword": "agriculture de conservation",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réduction du gaspillage alimentaire",
+            "category": "Eau"
+        },
+        {
+            "keyword": "agriculture bio ",
+            "category": "Eau"
+        },
+        {
+            "keyword": "agriculture biologique",
+            "category": "Eau"
+        },
+        {
+            "keyword": "permaculture",
+            "category": "Eau"
+        },
+        {
+            "keyword": "agroécologie",
+            "category": "Eau"
+        },
+        {
+            "keyword": "agro écologie",
+            "category": "Eau"
+        },
+        {
+            "keyword": "polyculture élevage",
+            "category": "Eau"
+        },
+        {
+            "keyword": "biomimétisme",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "bioinspiration",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "réemploi",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "recyclage",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "réparabilité",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "repair cafés",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "recycleries",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "réutilisation des ressources",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "économie circulaire",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "économie du réemploi",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "indice de réparabilité",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "écoconception",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "matériaux biosourcés",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "matériaux recyclés",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "matériaux recyclables",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "tri à la source",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "biodégradable",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "compostage",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "zéro plastique",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "sortie des énergies fossiles",
+            "category": "Energie"
+        },
+        {
+            "keyword": "sortie du charbon",
+            "category": "Energie"
+        },
+        {
+            "keyword": "transition en dehors des énergies fossiles",
+            "category": "Energie"
+        },
+        {
+            "keyword": "biocarburant",
+            "category": "Energie"
+        },
+        {
+            "keyword": "réseau de chaleur",
+            "category": "Energie"
+        },
+        {
+            "keyword": "réseaux de chaleur",
+            "category": "Energie"
+        },
+        {
+            "keyword": "énergie renouvelable",
+            "category": "Energie"
+        },
+        {
+            "keyword": "transition énergétique",
+            "category": "Energie"
+        },
+        {
+            "keyword": "énergie verte",
+            "category": "Energie"
+        },
+        {
+            "keyword": "énergie durable",
+            "category": "Energie"
+        },
+        {
+            "keyword": "éolien",
+            "category": "Energie"
+        },
+        {
+            "keyword": "# panneaux solaires",
+            "category": "Energie"
+        },
+        {
+            "keyword": "énergie solaire",
+            "category": "Energie"
+        },
+        {
+            "keyword": "# photovoltaïque",
+            "category": "Energie"
+        },
+        {
+            "keyword": "géothermie",
+            "category": "Energie"
+        },
+        {
+            "keyword": "hydroélectricité",
+            "category": "Energie"
+        },
+        {
+            "keyword": "centrale hydroélectrique",
+            "category": "Energie"
+        },
+        {
+            "keyword": "biomasse",
+            "category": "Energie"
+        },
+        {
+            "keyword": "biogaz",
+            "category": "Energie"
+        },
+        {
+            "keyword": "epr",
+            "category": "Energie"
+        },
+        {
+            "keyword": "hydrogène vert",
+            "category": "Energie"
+        },
+        {
+            "keyword": "économie d’énergie",
+            "category": "Energie"
+        },
+        {
+            "keyword": "réduction du gaspillage énergétique",
+            "category": "Energie"
+        },
+        {
+            "keyword": "réduction des gaspillages énergétiques",
+            "category": "Energie"
+        },
+        {
+            "keyword": "efficacité énergétique",
+            "category": "Energie"
+        },
+        {
+            "keyword": "économiser de l’énergie",
+            "category": "Energie"
+        },
+        {
+            "keyword": "sobriété énergétique",
+            "category": "Energie"
+        },
+        {
+            "keyword": "valorisation des déchets",
+            "category": "Energie"
+        },
+        {
+            "keyword": "gestion durable des forêts",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "agroforesterie",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "gestion durable des terres cultivables",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "amélioration des pratiques d’élevage ",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "réduire l’élevage intensif",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "agriculture de conservation",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "agriculture bio ",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "agriculture durable",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "agriculture biologique",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "permaculture",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "agroécologie",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "agro écologie",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "polyculture élevage",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "réduction du gaspillage alimentaire",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "sortie du charbon",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "santé des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "préservation des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "gestion durable des terres cultivables",
+            "category": "Sols"
+        },
+        {
+            "keyword": "amélioration des pratiques d’élevage",
+            "category": "Sols"
+        },
+        {
+            "keyword": "réduire l’élevage intensif",
+            "category": "Sols"
+        },
+        {
+            "keyword": "agriculture de conservation",
+            "category": "Sols"
+        },
+        {
+            "keyword": "réduction du gaspillage alimentaire",
+            "category": "Sols"
+        },
+        {
+            "keyword": "agriculture bio ",
+            "category": "Sols"
+        },
+        {
+            "keyword": "agriculture biologique",
+            "category": "Sols"
+        },
+        {
+            "keyword": "permaculture",
+            "category": "Sols"
+        },
+        {
+            "keyword": "agroécologie",
+            "category": "Sols"
+        },
+        {
+            "keyword": "agro écologie",
+            "category": "Sols"
+        },
+        {
+            "keyword": "polyculture élevage",
+            "category": "Sols"
+        }
+    ],
+    "ressources_solutions_indirectes": [
+        {
+            "keyword": "planification écologique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "mutation écologique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "industrie verte",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "rationner",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "rationnement ",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "végétarien",
+            "category": "Air"
+        },
+        {
+            "keyword": "végan",
+            "category": "Air"
+        },
+        {
+            "keyword": "agriculture durable",
+            "category": "Air"
+        },
+        {
+            "keyword": "replantation",
+            "category": "Air"
+        },
+        {
+            "keyword": "replanter",
+            "category": "Air"
+        },
+        {
+            "keyword": "méga bassine ",
+            "category": "Eau"
+        },
+        {
+            "keyword": "barrage",
+            "category": "Eau"
+        },
+        {
+            "keyword": "végétarien",
+            "category": "Eau"
+        },
+        {
+            "keyword": "végan",
+            "category": "Eau"
+        },
+        {
+            "keyword": "agriculture durable",
+            "category": "Eau"
+        },
+        {
+            "keyword": "replantation",
+            "category": "Eau"
+        },
+        {
+            "keyword": "replanter",
+            "category": "Eau"
+        },
+        {
+            "keyword": "nucléaire",
+            "category": "Energie"
+        },
+        {
+            "keyword": "réacteur nucléaire",
+            "category": "Energie"
+        },
+        {
+            "keyword": "végétarien",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "végan",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "replantation",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "replanter",
+            "category": "Forêts"
+        },
+        {
+            "keyword": "végétarien",
+            "category": "Sols"
+        },
+        {
+            "keyword": "végan",
+            "category": "Sols"
+        },
+        {
+            "keyword": "agriculture durable",
+            "category": "Sols"
+        },
+        {
+            "keyword": "replantation",
+            "category": "Sols"
+        },
+        {
+            "keyword": "replanter",
+            "category": "Sols"
+        }
+    ]
 }

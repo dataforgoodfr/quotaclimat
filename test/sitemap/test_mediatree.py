@@ -131,17 +131,17 @@ def test_save_to_pg_keyword():
             {
                 "keyword" : 'planète',
                 "timestamp": 1706437079009,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             },
             {
                 "keyword" : 'terre',
                 "timestamp": 1706437079011,
-                "theme":"ressources_naturelles_concepts_generaux",
+                "theme":"ressources",
             }
         ]
     themes = [
             "changement_climatique_constat",
-            "ressources_naturelles_concepts_generaux",
+            "ressources_concepts_generaux",
         ]
     channel_name = "m6"
     df = pd.DataFrame([{

@@ -36,6 +36,7 @@ def test_first_row_api_import():
         primary_key = "29d2b1f8267b206cb62e475b960de3247e835273f396af012f5ce21bf3056472"
         specific_keyword = get_keyword(primary_key)
         assert specific_keyword.theme == [
+              'biodiversite_concepts_generaux_indirectes',
             "changement_climatique_consequences"
             ]
         assert specific_keyword.keywords_with_timestamp == [
@@ -53,7 +54,7 @@ def test_second_row_api_import():
         specific_keyword = get_keyword(primary_key)
         assert set(specific_keyword.theme) == set([
         "changement_climatique_constat",
-        "ressources_naturelles_concepts_generaux",
+        "ressources_concepts_generaux",
         "changement_climatique_causes",
         "attenuation_climatique_solutions"
         ])
@@ -97,7 +98,7 @@ def test_second_row_api_import():
   {
     "keyword": "forêt",
     "timestamp": 1707633173076,
-    "theme": "ressources_naturelles_concepts_generaux"
+    "theme": "ressources_concepts_generaux"
   }
 ]
         assert specific_keyword.number_of_keywords == 5

@@ -4,7 +4,7 @@ from test_utils import get_localhost, debug_df
 
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
-from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
+
 
 import pandas as pd
 localhost = get_localhost()
@@ -84,11 +84,29 @@ def test_default_get_themes_keywords_duration():
    
 def test_one_theme_get_themes_keywords_duration():
     plaintext_climat = "réchauffement planétaire test"
+    keywords =  [{
+            'category': 'General',
+            'keyword': 'réchauffement planétaire',
+            'theme': 'changement_climatique_constat',
+            'timestamp': 1706437080216,
+            },
+            {
+            'category': '',
+            'keyword': 'planétaire',
+            'theme': 'biodiversité_concepts_generaux',
+            'timestamp': 1706437080304,
+            },
+            {
+            'category': '',
+            'keyword': 'planétaire',
+            'theme': 'ressources_concepts_generaux',
+            'timestamp': 1706437080304,
+        }
+        ]
+
     assert get_themes_keywords_duration(plaintext_climat, subtitles, start) == [
-        ["changement_climatique_constat"],
-        [{'keyword': 'réchauffement planétaire',
-'theme': 'changement_climatique_constat',
-'timestamp': 1706437080216}], 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ['biodiversité_concepts_generaux','changement_climatique_constat','ressources_concepts_generaux'],
+        keywords, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     
 def test_nothing_get_themes_keywords_duration():
     # should not accept theme 'bus' for keyword "abusive"
@@ -104,15 +122,38 @@ def test_regression_included_get_themes_keywords_duration():
 def test_three_get_themes_keywords_duration():
     assert get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start) == [[
      "adaptation_climatique_solutions"
-    ],[{'keyword': 'adaptation au dérèglement climatique',
+    ],[{'category': 'General','keyword': 'adaptation au dérèglement climatique',
 'theme': 'adaptation_climatique_solutions',
 'timestamp': 1706437080004}], 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
 
 def test_long_get_themes_keywords_duration():
+    themes=[
+    'ressources_energie_indirectes',
+        'adaptation_climatique_solutions_indirectes',
+    'ressources_eau_solutions_indirectes',
+    ]
+    keywords= [
+        {
+            'category': 'Eau',
+            'keyword': 'barrage',
+            'theme': 'adaptation_climatique_solutions_indirectes',
+            'timestamp': 1706437079102,
+        },
+        {
+            'category': '',
+            'keyword': 'barrage',
+            'theme': 'ressources_eau_solutions_indirectes',
+            'timestamp': 1706437079102,
+        },
+        {
+            'category': '',
+            'keyword': 'barrage',
+            'theme': 'ressources_energie_indirectes',
+            'timestamp': 1706437079102,
+    }]
+
     assert get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start) == [
-    ["adaptation_climatique_solutions_indirectes"],[{'keyword': 'barrage',
-'theme': 'adaptation_climatique_solutions_indirectes',
-'timestamp': 1706437079102}], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    themes,keywords, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 def test_stop_word_get_themes_keywords_duration():
     plaintext = "haute isolation thermique fabriqué en france pizza"
@@ -150,18 +191,26 @@ def test_get_cts_in_ms_for_keywords():
           "text": "circulaire"
         }
     ]
-    keywords = ['économie circulaire', 'panneaux solaires', 'solaires']
+
+    my_category = 'my_category'
+    keywords = [
+        {'keyword':'économie circulaire', 'category':my_category},
+        {'keyword':'panneaux solaires', 'category':my_category},
+        {'keyword': 'solaires', 'category':my_category}
+    ]
     theme = "changement_climatique_constat"
     expected = [
         {
             "keyword":'économie circulaire',
             "timestamp" : original_timestamp + 79072,
-            "theme": theme
+            "theme": theme,
+            "category":my_category
         },
         {
             "keyword":'solaires',
             "timestamp" : original_timestamp + 80006,
-            "theme": theme
+            "theme": theme,
+            "category":my_category
         },
     ]
     assert get_cts_in_ms_for_keywords(str, keywords, theme) == expected
@@ -174,13 +223,16 @@ def test_complex_hyphen_get_cts_in_ms_for_keywords():
           "text": "vagues-submersion"
         }
     ]
-    keywords = ['submersion']
+
+    my_category = "test category"
+    keywords = [{'keyword': 'submersion', 'category': my_category}]
     theme = "changement_climatique_consequences"
     expected = [
         {
             "keyword":'submersion',
             "timestamp" : original_timestamp + 80006,
-            "theme": theme
+            "theme": theme,
+            "category": my_category
         }
     ]
     assert get_cts_in_ms_for_keywords(str, keywords, theme) == expected
@@ -229,6 +281,7 @@ def test_lower_case_filter_and_tag_by_theme():
                 "keyword" :"méthane",
                 "timestamp": original_timestamp,
                 "theme": "changement_climatique_causes",
+                'category': 'General'
         }],
         "number_of_keywords": 1,
         "number_of_changement_climatique_constat": 0,

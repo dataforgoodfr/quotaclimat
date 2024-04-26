@@ -5,7 +5,7 @@ from quotaclimat.data_processing.mediatree.api_import import *
 from quotaclimat.data_processing.mediatree.utils import *
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import keywords_table, connect_to_db, get_keyword, drop_tables
-from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
+
 import pandas as pd
 import datetime
 

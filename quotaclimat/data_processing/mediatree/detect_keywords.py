@@ -21,21 +21,23 @@ dask.config.set({'dataframe.query-planning': True})
 
 indirectes = 'indirectes'
 
-def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str], theme: str) -> List[dict]:
+def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], theme: str) -> List[dict]:
     result = []
 
     logging.debug(f"Looking for timecode for {keywords}")
     for multiple_keyword in keywords:
-        all_keywords = multiple_keyword.split() # case with multiple words such as 'economie circulaire'
+        category = multiple_keyword["category"]
+        all_keywords = multiple_keyword["keyword"].split() # case with multiple words such as 'economie circulaire'
         match = next((item for item in subtitle_duration if is_word_in_sentence(all_keywords[0], item.get('text'))), None)  
         logging.debug(f"match found {match} with {all_keywords[0].lower()}")     
         if match is not None:
             logging.debug(f'Result added due to this match {match} based on {all_keywords[0]}')
             result.append(
                 {
-                    "keyword" :multiple_keyword.lower(),
+                    "keyword" :multiple_keyword["keyword"].lower(),
                     "timestamp" : match['cts_in_ms'],
-                    "theme" : theme
+                    "theme" : theme,
+                    "category": category
                 })
 
     logging.debug(f"Timecode found {result}")
@@ -142,14 +144,17 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     plaitext_without_stopwords = remove_stopwords(plaintext)
     logging.debug(f"display datetime start {start}")
 
-    for theme, keywords in THEME_KEYWORDS.items():
-        logging.debug(f"searching {theme} for {keywords}")
+    for theme, keywords_dict in THEME_KEYWORDS.items():
+        logging.debug(f"searching {theme} for {keywords_dict}")
+        matching_words = []
+        for keyword_dict in keywords_dict:
+            if is_word_in_sentence(keyword_dict["keyword"], plaitext_without_stopwords):
+                matching_words.append({"keyword": keyword_dict["keyword"], "category": keyword_dict["category"]})
 
-        matching_words = [word for word in keywords if is_word_in_sentence(word, plaitext_without_stopwords)]  
         if matching_words:
             logging.debug(f"theme found : {theme} with word {matching_words}")
 
-            # look for cts_in_ms inside matching_words (['economie circulaire', 'panneaux solaires', 'solaires'] from subtitle_duration 
+            # look for cts_in_ms inside matching_words (['keyword':'economie circulaire', 'category':'air'}] from subtitle_duration 
             keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme)
             if(len(keywords_to_add) == 0):
                 logging.warning(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")

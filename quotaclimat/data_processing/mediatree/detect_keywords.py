@@ -15,6 +15,7 @@ import modin.pandas as pd
 import dask
 import copy
 from quotaclimat.utils.logger import getLogger
+from collections import defaultdict
 logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
 logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
 dask.config.set({'dataframe.query-planning': True})
@@ -67,80 +68,69 @@ def is_word_in_sentence(words: str, sentence: str) -> bool :
     else:
         return False
 
+def filter_already_contained_keyword(keywords_with_timestamp: List[dict]) -> List[dict]:
+    number_of_keywords_start = len(keywords_with_timestamp)
 
-def set_timestamp_with_margin(keywords_with_timestamp: List[dict]) -> List[dict]:
-    number_of_keywords = len(keywords_with_timestamp)
-    if number_of_keywords > 1:
-        for i in range(len(keywords_with_timestamp) - 1):
-            current_timestamp = keywords_with_timestamp[i].get("timestamp")
-            next_timestamp = keywords_with_timestamp[i + 1].get("timestamp")
-            current_keyword = keywords_with_timestamp[i].get("keyword")
-            next_keyword = keywords_with_timestamp[i + 1].get("keyword")
+    every_theme = set(map(lambda x: x['theme'], keywords_with_timestamp))
 
-            if current_timestamp is not None and next_timestamp is not None: 
-                difference = next_timestamp - current_timestamp
-                if difference < 1000 and difference != 0:
-                    logging.debug("margin of 1 second detected")
-                    current_keyword = keywords_with_timestamp[i].get("keyword")
-                    next_keyword = keywords_with_timestamp[i + 1].get("keyword")
-                    if len(current_keyword) > len(next_keyword):
-                        shortest_word = next_keyword
-                        longest_word = current_keyword
-                        timestamp_to_change = current_timestamp
-                    else:
-                        shortest_word = current_keyword
-                        longest_word = next_keyword
-                        timestamp_to_change = next_timestamp
-                    
-                    if shortest_word in longest_word:
-                        logging.info(f"Close keywords - we group them {shortest_word} - {longest_word}")
-                        keywords_with_timestamp[i]["timestamp"] = timestamp_to_change
-                        keywords_with_timestamp[i+1]["timestamp"] = timestamp_to_change
+    for theme in every_theme:
+        logging.debug(f"Updating {theme}\n\n - {keywords_with_timestamp}")
+        keywords_with_timestamp_theme = list(filter(lambda x: x['theme'] == theme, keywords_with_timestamp))
+        number_of_keywords = len(keywords_with_timestamp_theme)
+        if number_of_keywords > 1:
+            # get keyword that are in another keyword
+            keywords_to_remove = []
+            for item in keywords_with_timestamp_theme:
+                filtered_list = list(filter(lambda x: (x.get('keyword') in item.get('keyword')) and abs(x.get('timestamp') - item.get('timestamp')) < 1000, keywords_with_timestamp_theme))
+                
+                if len(filtered_list) > 1:
+                    # get all shortest words we do not want to keep as already included inside the longest word
+                    longest_word = max(filtered_list, key=lambda x: len(x.get('keyword')))
+                    logging.debug(f"longest_word keywords_to_keep : {longest_word}")
+                    shortest_words_to_remove = list(filter(lambda x: x.get('keyword') != longest_word.get('keyword'), filtered_list))
+                    logging.debug(f"shortest_words_to_remove {shortest_words_to_remove}")
+                    keywords_to_remove = keywords_to_remove + shortest_words_to_remove
+            logging.debug(f"keywords_to_remove {keywords_to_remove}")
+            # we want to remove all keywords of keywords_to_remove from keywords_with_timestamp_theme
+            if(len(keywords_to_remove) > 0):
+                # Create an empty list to collect the filtered items
+                filtered_keywords = []
 
+                # Iterate over each item in keywords_to_remove
+                for item in keywords_with_timestamp_theme:
+                    # Check if the item is not in keywords_with_timestamp_theme
+                    if item not in keywords_to_remove:
+                        logging.debug(f"Adding work we want to keep {item}\n {keywords_to_remove}")
+                        # Append the item to the filtered_keywords list
+                        filtered_keywords.append(item)
+
+                # Assign the filtered list back to keywords_with_timestamp_theme
+                keywords_with_timestamp_theme = filtered_keywords
+                number_of_keywords_theme_end = len(keywords_with_timestamp_theme)
+                logging.debug(f"\n\nkeywords_with_timestamp_theme - {number_of_keywords} {number_of_keywords_theme_end} {keywords_with_timestamp_theme}")
+        else:
+            logging.debug(f"no need to update {theme} {number_of_keywords}")
+        keywords_with_timestamp = list(filter(lambda x: x.get('theme') != theme, keywords_with_timestamp)) + keywords_with_timestamp_theme
+        number_of_keywords_end = len(keywords_with_timestamp)
+    logging.debug(f"\nSame keyword different theme start : {number_of_keywords_start} end {number_of_keywords_end}")
     return keywords_with_timestamp
-
-    
-    # Define a function to get the longest keyword from a list of dicts
-def get_longest_keyword(group):
-    for item in group:
-        logging.info(f"Item {group}: {item}")
-
-    longest_keyword = max(group, key=lambda x: len(x['keyword']))
-    return longest_keyword
 
 # some keywords are contained inside other keywords, we need to filter them
 # some keyword are tagged with the same timestamp and different theme
 def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> List[dict]:
     logging.debug(f"Filtering keywords with same timestamp with a margin of one second")
     number_of_keywords = len(keywords_with_timestamp)
+
     #TODO pytest -vv -k test_long_sentence_theme_get_themes_keywords_duration
-    keywords_with_timestamp = set_timestamp_with_margin(keywords_with_timestamp)
-    # we want to keep them
-    same_keyword_different_theme = [item for item in keywords_with_timestamp if len(list(filter(lambda x: x.get('keyword') == item.get('keyword') and x.get('theme') != item.get('theme'), keywords_with_timestamp))) > 0]
-    logging.debug(f"Same keyword different theme {same_keyword_different_theme}")
-    
-    # keep the longest keyword based on almost or the same timestamp
-    unique_keywords = [item for item in keywords_with_timestamp if len(list(filter(lambda x: x.get('keyword') == item.get('keyword') and x.get('theme') != item.get('theme'), keywords_with_timestamp))) == 0]
-    logging.info(f"Unique keywords {unique_keywords}")
-    #keywords_with_timestamp = set_timestamp_with_margin(unique_keywords)
-    
-    # Group keywords by timestamp - with a margin of 1 second 
-    grouped_keywords = {timestamp: list(group) for timestamp, group in groupby(keywords_with_timestamp, key=lambda x: x['timestamp'])}
+    keywords_with_timestamp = filter_already_contained_keyword(keywords_with_timestamp)
 
-    # Filter out keywords with the same timestamp and keep the longest keyword
-    result = [
-        max(group, key=lambda x: len(x['keyword']))
-        for group in grouped_keywords.values()
-    ]
-    logging.debug(f"result keywords {result}")
-    result = result + same_keyword_different_theme
 
-    final_result = len(result)
+    final_result = len(keywords_with_timestamp)
 
     if final_result < number_of_keywords:
-        logging.info(f"Filtering keywords {final_result} out of {number_of_keywords} | {keywords_with_timestamp} with final result {result}")
+        logging.info(f"Filtering keywords {final_result} out of {number_of_keywords} | {keywords_with_timestamp} with final result")
 
-    return result
+    return keywords_with_timestamp
 
 def remove_stopwords(plaintext: str) -> str:
     stopwords = STOP_WORDS

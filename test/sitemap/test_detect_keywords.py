@@ -1,6 +1,6 @@
 import pytest
 
-from test_utils import get_localhost, debug_df
+from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
 
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
@@ -134,49 +134,51 @@ def test_one_theme_get_themes_keywords_duration():
     assert number_of_biodiversite_solutions_directes == 0
 
 def test_long_sentence_theme_get_themes_keywords_duration():
+    conditions_ts = original_timestamp + 15000
+    habitabilite_ts = original_timestamp + 6
     subtitles = [{
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 6,
+            "cts_in_ms": habitabilite_ts,
             "text": "habitabilité"
             },
             {
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 10,
+            "cts_in_ms": habitabilite_ts + 10,
             "text": "de"
             },
             {
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 11,
+            "cts_in_ms": habitabilite_ts + 11,
             "text": "la"
             },
             {
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 12,
+            "cts_in_ms": habitabilite_ts + 12,
             "text": "planète"
             },
             {
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 15000,
+            "cts_in_ms": conditions_ts,
             "text": "conditions"
             },
             {
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 15500,
+            "cts_in_ms": conditions_ts + 50,
             "text": "de"
             },
             {
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 16000,
+            "cts_in_ms": conditions_ts + 100,
             "text": "vie"
             },
             {
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 17000,
+            "cts_in_ms": conditions_ts + 150,
             "text": "sur"
             },
             {
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 18000,
+            "cts_in_ms": conditions_ts + 200,
             "text": "terre"
             },
             {
@@ -186,42 +188,43 @@ def test_long_sentence_theme_get_themes_keywords_duration():
             }
     ]
     plaintext_climat = "cheese pizza habitabilité de la planète conditions de vie sur terre animal digue"
-    keywords =  [{
-        'category': 'General',
-        'keyword': 'digue',
-        'theme': 'adaptation_climatique_solutions',
-        'timestamp': 1706437111004,
+    keywords = [
+        {
+        'category': 'Concepts généraux',
+        'keyword': 'planète',
+        'theme': 'ressources',
+        'timestamp': habitabilite_ts + 12,
         },
         {
         'category': 'Ecosystème',
         'keyword': 'conditions de vie sur terre',
         'theme': 'changement_climatique_constat',
-        'timestamp': 1706437094004,
+        'timestamp': conditions_ts,
         },
         {
         'category': 'Ecosystème',
         'keyword': 'habitabilité de la planète',
         'theme': 'changement_climatique_constat',
-        'timestamp': 1706437079010,
+        'timestamp': habitabilite_ts,
         },
         {
         'category': '',
         'keyword': 'planète',
         'theme': 'biodiversite_concepts_generaux',
-        'timestamp': 1706437079016,
+        'timestamp': habitabilite_ts + 12,
         },
         {
         'category': '',
         'keyword': 'terre',
         'theme': 'biodiversite_concepts_generaux',
-        'timestamp': 1706437097004,
+        'timestamp': conditions_ts + 200,
         },
         {
-        'category': 'Concepts généraux',
-        'keyword': 'planète',
-        'theme': 'ressources',
-        'timestamp': 1706437079016,
-        }
+        'category': 'General',
+        'keyword': 'digue',
+        'theme': 'adaptation_climatique_solutions',
+        'timestamp': original_timestamp + 32000,
+        },
         ]
     themes = ['adaptation_climatique_solutions','changement_climatique_constat','ressources','biodiversite_concepts_generaux']
 
@@ -240,16 +243,16 @@ def test_long_sentence_theme_get_themes_keywords_duration():
         number_of_biodiversite_solutions_directes) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
 
     assert set(themes_output) == set(themes)
-    assert keywords_output == keywords
-    assert number_of_keywords == 1
-    assert number_of_changement_climatique_constat == 1
+    assert compare_unordered_lists_of_dicts(keywords_output, keywords)
+    assert number_of_keywords == 3
+    assert number_of_changement_climatique_constat == 2
     assert number_of_changement_climatique_causes_directes == 0
     assert number_of_changement_climatique_consequences == 0
     assert number_of_attenuation_climatique_solutions_directes == 0
-    assert number_of_adaptation_climatique_solutions_directes == 0
+    assert number_of_adaptation_climatique_solutions_directes == 1
     assert number_of_ressources == 1
     assert number_of_ressources_solutions == 0
-    assert number_of_biodiversite_concepts_generaux == 1
+    assert number_of_biodiversite_concepts_generaux == 2
     assert number_of_biodiversite_causes_directes == 0
     assert number_of_biodiversite_consequences == 0
     assert number_of_biodiversite_solutions_directes == 0

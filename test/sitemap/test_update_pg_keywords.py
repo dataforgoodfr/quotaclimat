@@ -204,8 +204,8 @@ def test_first_update_keywords():
     assert result_after_update.id == result_before_update.id
 
     # theme
-    assert set(result_after_update.theme) == set(["adaptation_climatique_solutions", "changement_climatique_constat"])
     assert set(new_theme) == set(["adaptation_climatique_solutions",  "changement_climatique_constat"])
+    assert set(result_after_update.theme) == set(["adaptation_climatique_solutions", "changement_climatique_constat"])
         
     # keywords_with_timestamp
     assert len(result_after_update.keywords_with_timestamp) == len(new_keywords_with_timestamp)

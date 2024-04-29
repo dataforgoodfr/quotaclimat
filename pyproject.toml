@@ -10,7 +10,7 @@ readme = "README.md"
 
 [tool.pytest.ini_options]
 log_cli = 1
-log_cli_level = "DEBUG"
+log_cli_level = "INFO"
 
 [tool.poetry.dependencies]
 python = ">=3.11.0,<3.13.0"

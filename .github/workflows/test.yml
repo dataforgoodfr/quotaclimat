@@ -55,7 +55,7 @@ jobs:
           set -o pipefail
           poetry run pytest -k 'test_update_pg_keywords'
         env:
-          ENV: ci
+          ENV: dev
           POSTGRES_USER: user
           POSTGRES_DB: postgres
           POSTGRES_PASSWORD: postgres
@@ -69,7 +69,7 @@ jobs:
            --cov=quotaclimat --cov=postgres test/ | \
            tee pytest-coverage.txt
         env:
-          ENV: ci
+          ENV: dev
           POSTGRES_USER: user
           POSTGRES_DB: postgres
           POSTGRES_PASSWORD: postgres

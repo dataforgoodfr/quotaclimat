@@ -146,7 +146,7 @@ def update_channel_metadata(engine):
 def drop_tables():
     """Drop table keyword in the PostgreSQL database"""
 
-    if(os.environ.get("ENV") == "docker" or os.environ.get("ENV") == "ci"):
+    if(os.environ.get("ENV") == "docker" or os.environ.get("ENV") == "dev"):
         logging.warning("drop tables")
         try:
             engine = connect_to_db()

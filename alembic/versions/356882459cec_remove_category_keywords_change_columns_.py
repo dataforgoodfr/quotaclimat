@@ -1,7 +1,7 @@
 """Remove: category keywords / change columns names
 
 Revision ID: 356882459cec
-Revises: faec286c7f92
+Revises: 2c48f626a749
 Create Date: 2024-04-29 10:14:27.240887
 
 """
@@ -13,7 +13,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = '356882459cec'
-down_revision: Union[str, None] = 'faec286c7f92'
+down_revision: Union[str, None] = '2c48f626a749'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

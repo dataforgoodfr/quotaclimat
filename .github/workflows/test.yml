@@ -50,10 +50,14 @@ jobs:
         run: poetry install
       - name: docker compose up nginx
         run: docker compose up -d nginxtest
-      - name: pytest run
+      - name: pytest run test_first_update_keywords
         run: |
           set -o pipefail
-          poetry run pytest --junitxml=pytest.xml \
+          poetry run pytest -k 'test_first_update_keywords'
+      - name: pytest run everything else
+        run: |
+          set -o pipefail
+          poetry run pytest -k 'not test_first_update_keywords' --junitxml=pytest.xml \
            --cov-report=term-missing:skip-covered \
            --cov=quotaclimat --cov=postgres test/ | \
            tee pytest-coverage.txt

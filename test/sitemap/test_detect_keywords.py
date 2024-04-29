@@ -89,21 +89,9 @@ def test_one_theme_get_themes_keywords_duration():
             'keyword': 'réchauffement planétaire',
             'theme': 'changement_climatique_constat',
             'timestamp': 1706437080216,
-            },
-            {
-            'category': '',
-            'keyword': 'planétaire',
-            'theme': 'biodiversite_concepts_generaux',
-            'timestamp': 1706437080304,
-            },
-            {
-            'category': 'Concepts généraux',
-            'keyword': 'planétaire',
-            'theme': 'ressources',
-            'timestamp': 1706437080304,
-        }
+            }
         ]
-    themes = ['changement_climatique_constat','ressources','biodiversite_concepts_generaux']
+    themes = ['changement_climatique_constat']
 
     (themes_output, keywords_output, 
         number_of_keywords,
@@ -127,9 +115,9 @@ def test_one_theme_get_themes_keywords_duration():
     assert number_of_changement_climatique_consequences == 0
     assert number_of_attenuation_climatique_solutions_directes == 0
     assert number_of_adaptation_climatique_solutions_directes == 0
-    assert number_of_ressources == 1
+    assert number_of_ressources == 0
     assert number_of_ressources_solutions == 0
-    assert number_of_biodiversite_concepts_generaux == 1
+    assert number_of_biodiversite_concepts_generaux == 0
     assert number_of_biodiversite_causes_directes == 0
     assert number_of_biodiversite_consequences == 0
     assert number_of_biodiversite_solutions_directes == 0
@@ -191,12 +179,6 @@ def test_long_sentence_theme_get_themes_keywords_duration():
     plaintext_climat = "cheese pizza habitabilité de la planète conditions de vie sur terre animal digue"
     keywords = [
         {
-        'category': 'Concepts généraux',
-        'keyword': 'planète',
-        'theme': 'ressources',
-        'timestamp': habitabilite_ts + 12,
-        },
-        {
         'category': 'Ecosystème',
         'keyword': 'conditions de vie sur terre',
         'theme': 'changement_climatique_constat',
@@ -209,25 +191,13 @@ def test_long_sentence_theme_get_themes_keywords_duration():
         'timestamp': habitabilite_ts,
         },
         {
-        'category': '',
-        'keyword': 'planète',
-        'theme': 'biodiversite_concepts_generaux',
-        'timestamp': habitabilite_ts + 12,
-        },
-        {
-        'category': '',
-        'keyword': 'terre',
-        'theme': 'biodiversite_concepts_generaux',
-        'timestamp': conditions_ts + 200,
-        },
-        {
         'category': 'General',
         'keyword': 'digue',
         'theme': 'adaptation_climatique_solutions',
         'timestamp': original_timestamp + 32000,
         },
         ]
-    themes = ['adaptation_climatique_solutions','changement_climatique_constat','ressources','biodiversite_concepts_generaux']
+    themes = ['adaptation_climatique_solutions','changement_climatique_constat']
 
     (themes_output, keywords_output, 
         number_of_keywords,
@@ -251,9 +221,9 @@ def test_long_sentence_theme_get_themes_keywords_duration():
     assert number_of_changement_climatique_consequences == 0
     assert number_of_attenuation_climatique_solutions_directes == 0
     assert number_of_adaptation_climatique_solutions_directes == 1
-    assert number_of_ressources == 1
+    assert number_of_ressources == 0
     assert number_of_ressources_solutions == 0
-    assert number_of_biodiversite_concepts_generaux == 2
+    assert number_of_biodiversite_concepts_generaux == 0
     assert number_of_biodiversite_causes_directes == 0
     assert number_of_biodiversite_consequences == 0
     assert number_of_biodiversite_solutions_directes == 0
@@ -281,10 +251,38 @@ def test_three_get_themes_keywords_duration():
         'theme': 'changement_climatique_consequences',
         'timestamp': 1706437080004,
     }]
-
-    assert get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start) == [[
+    themes = set([
      "adaptation_climatique_solutions", 'changement_climatique_consequences'
-    ],keywords, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0]
+    ])
+
+    (themes_output, keywords_output, 
+        number_of_keywords,
+        number_of_changement_climatique_constat,
+        number_of_changement_climatique_causes_directes,
+        number_of_changement_climatique_consequences,
+        number_of_attenuation_climatique_solutions_directes,
+        number_of_adaptation_climatique_solutions_directes,
+        number_of_ressources,
+        number_of_ressources_solutions,
+        number_of_biodiversite_concepts_generaux,
+        number_of_biodiversite_causes_directes,
+        number_of_biodiversite_consequences,
+        number_of_biodiversite_solutions_directes) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
+
+    assert set(themes_output)== themes
+    assert keywords_output == keywords
+    assert number_of_keywords == 1
+    assert number_of_changement_climatique_constat == 0
+    assert number_of_changement_climatique_causes_directes == 0
+    assert number_of_changement_climatique_consequences == 1
+    assert number_of_attenuation_climatique_solutions_directes == 0
+    assert number_of_adaptation_climatique_solutions_directes == 1
+    assert number_of_ressources == 0
+    assert number_of_ressources_solutions == 0
+    assert number_of_biodiversite_concepts_generaux == 0
+    assert number_of_biodiversite_causes_directes == 0
+    assert number_of_biodiversite_consequences == 0
+    assert number_of_biodiversite_solutions_directes == 0
 
 def test_long_get_themes_keywords_duration():
     themes= set([
@@ -594,7 +592,7 @@ def test_complexe_filter_and_tag_by_theme():
         "channel_radio": False,
         "srt": srt,
         "theme": [
-            "changement_climatique_constat","biodiversite_concepts_generaux"
+            "changement_climatique_constat"
         ],
         "keywords_with_timestamp": [
             {
@@ -608,12 +606,6 @@ def test_complexe_filter_and_tag_by_theme():
                 "keyword" : 'dépolluer',
                 "timestamp": original_timestamp_first_keyword, # count for one
                 "theme":"changement_climatique_constat",
-            },
-            {
-                'category': '',
-                'keyword': 'terre',
-                'theme': 'biodiversite_concepts_generaux',
-                'timestamp':1706437094010,
             }
         ],
         "number_of_keywords": 2,
@@ -624,7 +616,7 @@ def test_complexe_filter_and_tag_by_theme():
         "number_of_adaptation_climatique_solutions_directes": 0,
         "number_of_ressources": 0,
         "number_of_ressources_solutions": 0,
-        "number_of_biodiversite_concepts_generaux": 1,
+        "number_of_biodiversite_concepts_generaux": 0,
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
@@ -902,14 +894,14 @@ def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
                 "theme":"changement_climatique_consequences",
             },
             {
-                "keyword" : 'pénurie de neige',
+                "keyword" : 'pénurie de neige',
                 "timestamp": original_timestamp, # same timestamp, so we take longest keyword
                 "theme":"changement_climatique_consequences",
             }
     ]
 
     expected = [{
-                "keyword" : 'pénurie de neige',
+                "keyword" : 'pénurie de neige',
                 "timestamp": original_timestamp, 
                 "theme":"changement_climatique_consequences",
             }

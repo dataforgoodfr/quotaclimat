@@ -69,62 +69,26 @@ def is_word_in_sentence(words: str, sentence: str) -> bool :
         return False
 
 def filter_already_contained_keyword(keywords_with_timestamp: List[dict]) -> List[dict]:
-    # TODO we want to remove all keywords inside another keyword, even in different theme
-    
-    number_of_keywords_start = len(keywords_with_timestamp)
+    number_of_keywords = len(keywords_with_timestamp)
 
-    every_theme = set(map(lambda x: x['theme'], keywords_with_timestamp))
+    if number_of_keywords > 1:
+        keywords_to_remove = [] # get keyword that are in another keyword
+        for item in keywords_with_timestamp:
+            logging.debug(f"filtered_list testing item {item} inside keywords_with_timestamp:\n{keywords_with_timestamp}")
+            keywords_with_timestamp_without_current_item = list(filter(lambda x: x != item, keywords_with_timestamp))
+            for x in keywords_with_timestamp_without_current_item:
+                keyword_match = (x.get('keyword') in item.get('keyword')) and x.get('keyword') != item.get('keyword')
+                timestamp_match = abs(x.get('timestamp') - item.get('timestamp')) < 1000
+                if keyword_match and timestamp_match and x not in keywords_to_remove:
+                    logging.debug(f"Element to filter : {x.get('keyword')} because inside {item.get('keyword')}")
+                    keywords_to_remove.append(x)
 
-    for theme in every_theme:
-        logging.debug(f"Updating {theme}\n\n - {keywords_with_timestamp}")
-        keywords_with_timestamp_theme = list(filter(lambda x: x['theme'] == theme, keywords_with_timestamp))
-        number_of_keywords = len(keywords_with_timestamp_theme)
-        if number_of_keywords > 1:
-            # get keyword that are in another keyword
-            keywords_to_remove = []
-            for item in keywords_with_timestamp_theme:
-                logging.debug(f"filtered_list  testing item {item}")
-                filtered_list = [
-                    x for x in keywords_with_timestamp_theme
-                    if (x.get('keyword') in item.get('keyword'))
-                    and abs(x.get('timestamp') - item.get('timestamp')) < 1000
-                ]
-                logging.debug(f"filtered_list {filtered_list}")
-                if len(filtered_list) > 1:
-                    # get all shortest words we do not want to keep as already included inside the longest word
-                    longest_word = max(filtered_list, key=lambda x: len(x.get('keyword')))
-                    logging.debug(f"longest_word keywords_to_keep : {longest_word}")
-                    shortest_words_to_remove = list(filter(lambda x: x.get('keyword') != longest_word.get('keyword'), filtered_list))
-                    logging.debug(f"shortest_words_to_remove {shortest_words_to_remove}")
-                    keywords_to_remove = keywords_to_remove + shortest_words_to_remove
-                elif len(filtered_list) == 1:
-                    shortest_word_to_remove = min(keywords_with_timestamp_theme, key=lambda x: len(x.get('keyword')))
-                    logging.debug(f"Adding the shortest_word_to_remove {shortest_word_to_remove} to array {keywords_to_remove}")
-                    keywords_to_remove.append(shortest_word_to_remove)
+        logging.debug(f"keywords_to_remove: {keywords_to_remove}")
+        # we want to remove all keywords of keywords_to_remove from keywords_with_timestamp
+        if(len(keywords_to_remove) > 0):
+            for i in keywords_to_remove:
+                keywords_with_timestamp.remove(i)
 
-            logging.debug(f"keywords_to_remove {keywords_to_remove}")
-            # we want to remove all keywords of keywords_to_remove from keywords_with_timestamp_theme
-            if(len(keywords_to_remove) > 0):
-                # Create an empty list to collect the filtered items
-                filtered_keywords = []
-
-                # Iterate over each item in keywords_to_remove
-                for item in keywords_with_timestamp_theme:
-                    # Check if the item is not in keywords_with_timestamp_theme
-                    if item not in keywords_to_remove:
-                        logging.debug(f"Adding word we want to keep {item}\n Removing words: {keywords_to_remove}")
-                        # Append the item to the filtered_keywords list
-                        filtered_keywords.append(item)
-
-                # Assign the filtered list back to keywords_with_timestamp_theme
-                keywords_with_timestamp_theme = filtered_keywords
-                number_of_keywords_theme_end = len(keywords_with_timestamp_theme)
-                logging.debug(f"\n\nkeywords_with_timestamp_theme - {number_of_keywords} {number_of_keywords_theme_end} {keywords_with_timestamp_theme}")
-        else:
-            logging.debug(f"no need to update {theme} {number_of_keywords}")
-        keywords_with_timestamp = list(filter(lambda x: x.get('theme') != theme, keywords_with_timestamp)) + keywords_with_timestamp_theme
-        number_of_keywords_end = len(keywords_with_timestamp)
-    logging.debug(f"\nSame keyword different theme start : {number_of_keywords_start} end {number_of_keywords_end}")
     return keywords_with_timestamp
 
 # some keywords are contained inside other keywords, we need to filter them
@@ -133,9 +97,7 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> Li
     logging.debug(f"Filtering keywords with same timestamp with a margin of one second")
     number_of_keywords = len(keywords_with_timestamp)
 
-    #TODO pytest -vv -k test_long_sentence_theme_get_themes_keywords_duration
     keywords_with_timestamp = filter_already_contained_keyword(keywords_with_timestamp)
-
 
     final_result = len(keywords_with_timestamp)
 

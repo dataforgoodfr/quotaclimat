@@ -10,6 +10,7 @@ from postgres.schemas.models import create_tables, get_db_session, get_keyword, 
 from postgres.insert_data import save_to_pg
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 import pandas as pd
+from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
 
 logging.getLogger().setLevel(logging.INFO)
 original_timestamp = 1706444334 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
@@ -101,22 +102,22 @@ def test_first_update_keywords():
             },
             {
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 15500,
+            "cts_in_ms": original_timestamp + 15000 + 10,
             "text": "de"
             },
             {
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 16000,
+            "cts_in_ms": original_timestamp + 15000  + 15,
             "text": "vie"
             },
             {
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 17000,
+            "cts_in_ms": original_timestamp + 15000  + 20,
             "text": "sur"
             },
             {
             "duration_ms": 34,
-            "cts_in_ms": original_timestamp + 18000,
+            "cts_in_ms": original_timestamp + 15000  + 25,
             "text": "terre"
             },
             {
@@ -146,7 +147,7 @@ def test_first_update_keywords():
     themes = [
         "changement_climatique_constat",
         "adaptation_climatique_solutions_indirectes",
-        "ressources_concepts_generaux"
+        "ressources" # should be removed
     ]
     channel_name = "m6"
     df = pd.DataFrame([{
@@ -198,18 +199,18 @@ def test_first_update_keywords():
     expected_keywords_with_timestamp = [
     {'category': 'Ecosystème', 'keyword': 'conditions de vie sur terre', 'timestamp': 1706444349000, 'theme': 'changement_climatique_constat'}, 
     {'category': 'Ecosystème','keyword': 'habitabilité de la planète', 'timestamp': 1706444334006, 'theme': 'changement_climatique_constat'}, 
-    {'category': 'General','keyword': 'digue', 'timestamp': 1706444366000, 'theme': 'adaptation_climatique_solutions'}, 
-    {'category': 'Concepts généraux','keyword': 'planète', 'timestamp': 1706444334012, 'theme': 'ressources'}
+    {'category': 'General','keyword': 'digue', 'timestamp': 1706444366000, 'theme': 'adaptation_climatique_solutions'}
     ]
     assert result_after_update.id == result_before_update.id
 
     # theme
-    assert set(result_after_update.theme) == set(["adaptation_climatique_solutions","biodiversite_concepts_generaux", "ressources","changement_climatique_constat"])
-    assert set(new_theme) == set(["adaptation_climatique_solutions", "biodiversite_concepts_generaux", "ressources","changement_climatique_constat"])
+    assert set(result_after_update.theme) == set(["adaptation_climatique_solutions", "changement_climatique_constat"])
+    assert set(new_theme) == set(["adaptation_climatique_solutions",  "changement_climatique_constat"])
         
     # keywords_with_timestamp
     assert len(result_after_update.keywords_with_timestamp) == len(new_keywords_with_timestamp)
-    assert expected_keywords_with_timestamp == new_keywords_with_timestamp
+    assert compare_unordered_lists_of_dicts(expected_keywords_with_timestamp, new_keywords_with_timestamp)
+
 
     # number_of_keywords
     assert new_value == number_of_changement_climatique_constat + number_of_adaptation_climatique_solutions_directes
@@ -225,7 +226,7 @@ def test_first_update_keywords():
     assert result_after_update.number_of_adaptation_climatique_solutions_directes == 1
 
 
-    assert number_of_ressources == 1
+    assert number_of_ressources == 0
 
     assert number_of_changement_climatique_causes_directes == 0
     assert number_of_changement_climatique_consequences == 0

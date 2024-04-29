@@ -329,7 +329,7 @@ We can use a Github actions to start multiple update operations with different o
 Using [Alembic](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) Auto Generating Migrations¶ we can add a new column inside `models.py` and it will automatically make the schema evolution :
 
 ```
-# connect to the test container : docker compose test exec bash
+# connect to the test container : docker compose exec test bash
 poetry run alembic revision --autogenerate -m "Add new column test for table keywords"
 # this should generate a file to commit inside "alembic/versions"
 # to apply it we need to run, from our container

@@ -2,12 +2,15 @@
 name = "quotaclimat"
 version = "0.2.5"
 description = ""
-authors = ["Rambier Estelle <estelle.rambier@hotmail.fr>"]
+authors = [
+    "Rambier Estelle <estelle.rambier@hotmail.fr>",
+    "Paul Leclercq <paul@epauler.fr>"
+]
 readme = "README.md"
 
 [tool.pytest.ini_options]
 log_cli = 1
-log_cli_level = "INFO"
+log_cli_level = "DEBUG"
 
 [tool.poetry.dependencies]
 python = ">=3.11.0,<3.13.0"

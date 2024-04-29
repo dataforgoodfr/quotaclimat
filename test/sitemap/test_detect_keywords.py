@@ -119,7 +119,8 @@ def test_one_theme_get_themes_keywords_duration():
         number_of_biodiversite_consequences,
         number_of_biodiversite_solutions_directes) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
     assert set(themes_output) == set(themes)
-    assert keywords_output == keywords
+    assert compare_unordered_lists_of_dicts(keywords_output, keywords)
+
     assert number_of_keywords == 1
     assert number_of_changement_climatique_constat == 1
     assert number_of_changement_climatique_causes_directes == 0
@@ -269,11 +270,21 @@ def test_regression_included_get_themes_keywords_duration():
     
 
 def test_three_get_themes_keywords_duration():
+    keywords = [
+        {'category': 'General',
+         'keyword': 'adaptation au dérèglement climatique',
+        'theme': 'adaptation_climatique_solutions',
+        'timestamp': 1706437080004}
+        ,{
+        'category': 'General',
+        'keyword': 'record de température',
+        'theme': 'changement_climatique_consequences',
+        'timestamp': 1706437080004,
+    }]
+
     assert get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start) == [[
-     "adaptation_climatique_solutions"
-    ],[{'category': 'General','keyword': 'adaptation au dérèglement climatique',
-'theme': 'adaptation_climatique_solutions',
-'timestamp': 1706437080004}], 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
+     "adaptation_climatique_solutions", 'changement_climatique_consequences'
+    ],keywords, 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0]
 
 def test_long_get_themes_keywords_duration():
     themes= set([
@@ -315,7 +326,7 @@ def test_long_get_themes_keywords_duration():
         number_of_biodiversite_consequences,
         number_of_biodiversite_solutions_directes) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
     assert set(themes_output) == set(themes)
-    assert keywords_output == keywords
+    assert compare_unordered_lists_of_dicts(keywords_output, keywords)
     assert number_of_keywords == 0
     assert number_of_changement_climatique_constat == 0
     assert number_of_changement_climatique_causes_directes == 0
@@ -423,7 +434,7 @@ def test_none_theme_filter_and_tag_by_theme():
 
     # List of words to filter on
     df = filter_and_tag_by_theme(df1)
-    debug_df(df)
+
     assert len(df) == 0
 
 def test_lower_case_filter_and_tag_by_theme():
@@ -603,12 +614,6 @@ def test_complexe_filter_and_tag_by_theme():
                 'keyword': 'terre',
                 'theme': 'biodiversite_concepts_generaux',
                 'timestamp':1706437094010,
-            },  
-            {
-                "category": 'General',
-                "keyword" : 'terre',
-                "timestamp": 1706437094010,
-                "theme": "changement_climatique_constat",
             }
         ],
         "number_of_keywords": 2,
@@ -629,7 +634,7 @@ def test_complexe_filter_and_tag_by_theme():
     df = filter_and_tag_by_theme(df1)
     assert df["channel_name"].head(1)[0] == expected_result["channel_name"].head(1)[0]
     assert set(df["theme"].head(1)[0]) == set(expected_result["theme"].head(1)[0])
-    assert df["keywords_with_timestamp"].head(1)[0] == expected_result["keywords_with_timestamp"].head(1)[0]
+    assert compare_unordered_lists_of_dicts(df["keywords_with_timestamp"].head(1)[0], expected_result["keywords_with_timestamp"].head(1)[0])
     assert df["number_of_keywords"].head(1)[0] == expected_result["number_of_keywords"].head(1)[0]
     assert df["number_of_changement_climatique_constat"].head(1)[0] == expected_result["number_of_changement_climatique_constat"].head(1)[0]
     assert df["number_of_changement_climatique_causes_directes"].head(1)[0] == expected_result["number_of_changement_climatique_causes_directes"].head(1)[0]
@@ -707,12 +712,12 @@ def test_no_overlap_count_keywords_duration_overlap():
             {
                 "keyword" : 'planète',
                 "timestamp": original_timestamp + 2 * get_keyword_time_separation_ms(),
-                "theme":"ressources", # doest not count resources
+                "theme":"ressources", # resources does count now
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + 3 * get_keyword_time_separation_ms(),
-                "theme":"ressources", # doest not count resources
+                "theme":"ressources", # resources does count now
             },
             {
                 "keyword" : 'habitabilité de la planète',
@@ -726,7 +731,7 @@ def test_no_overlap_count_keywords_duration_overlap():
             },
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 4
+    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 6
 
 def test_with_a_mix_of_overlap_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -742,22 +747,22 @@ def test_with_a_mix_of_overlap_count_keywords_duration_overlap():
             {
                 "keyword" : 'planète',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms(), # count for one
-                "theme":"ressources",
+                "theme":"ressources", # resources does count now
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() + 2000,
-                "theme":"ressources", 
+                "theme":"ressources",  # resources does count now
             },
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() + 10000,
-                "theme":"ressources", 
+                "theme":"ressources",  # resources does count now
             },
             {
                 "keyword" : 'terre',
-                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 2,  # count for one
-                "theme":"ressources",  # does not count - resources
+                "timestamp": original_timestamp + get_keyword_time_separation_ms() * 2, 
+                "theme":"ressources", # resources does not count because of 'conditions de vie sur terre'
             },
             {
                 "keyword" : 'conditions de vie sur terre',
@@ -766,47 +771,47 @@ def test_with_a_mix_of_overlap_count_keywords_duration_overlap():
             },
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 2
+    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 3
 
 def test_with_15second_window_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": original_timestamp, # count for one
                 "theme":"changement_climatique_constat",
-            },
+            }, # window 0
             {
                 "keyword" : 'conditions de vie sur terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() / 2,
                 "theme":"changement_climatique_constat",
-            },
+            }, # window 0 # does not count as 2nd in the window
             {
                 "keyword" : 'planète',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms(), # count for one
-                "theme":"ressources", # doesn not count as ressources
-            },
+                "theme":"ressources", # does count now ressources
+            }, # window 1
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() + 2000,
-                "theme":"ressources", # doesn not count as ressources
-            },
+                "theme":"ressources", # does count now ressources
+            }, # window 1 # does not count as 2nd in the window
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() + 10000,
-                "theme":"ressources", # doesn not count as ressources
-            },
+                "theme":"ressources", # does count now ressources
+            }, # window 1 # does not count as 2nd in the window
             {
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 2 + 10000,  # count for one
-                "theme":"ressources", # doesn not count as ressources
-            },
-            {
+                "theme":"ressources", # does count now ressources
+            },  # window 2
+            { 
                 "keyword" : 'terre',
                 "timestamp": original_timestamp + get_keyword_time_separation_ms() * 3,  # count for one
-                "theme":"ressources", # doesn not count as ressources
-            }
+                "theme":"ressources", # does count now ressources
+            } # window 3
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 1
+    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 4
 
 def test_only_one_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -832,11 +837,11 @@ def test_resources_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
                 "keyword" : 'lithium',
                 "timestamp": original_timestamp,
-                "theme":"ressources",
+                "theme":"ressources", # should count now
             }
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 0
+    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 1
 
 def test_filter_indirect_words():
     keywords_with_timestamp = [{
@@ -910,7 +915,7 @@ def test_keyword_inside_keyword_filter_keyword_with_same_timestamp():
             }
     ]
     
-    assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
+    assert compare_unordered_lists_of_dicts(filter_keyword_with_same_timestamp(keywords_with_timestamp), expected)
 
 def test_keyword_different_theme_keyword_filter_keyword_with_same_timestamp():
     keywords_with_timestamp = [
@@ -919,7 +924,7 @@ def test_keyword_different_theme_keyword_filter_keyword_with_same_timestamp():
         {'keyword': 'sécheresse', 'timestamp': 1693757450073, 'theme': 'ressources'}
     ]
         
-    assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == keywords_with_timestamp
+    assert compare_unordered_lists_of_dicts(filter_keyword_with_same_timestamp(keywords_with_timestamp), keywords_with_timestamp)
 
 def test_keyword_2words_inside_keyword_filter_keyword_with_same_timestamp():
     keywords_with_timestamp = [{
@@ -941,7 +946,7 @@ def test_keyword_2words_inside_keyword_filter_keyword_with_same_timestamp():
             }
     ]
 
-    assert filter_keyword_with_same_timestamp(keywords_with_timestamp) == expected
+    assert compare_unordered_lists_of_dicts(filter_keyword_with_same_timestamp(keywords_with_timestamp), expected)
 
 # we should keep the longest keyword, even it's come before the first one
 def test_keyword_second_word_a_bit_later_inside_keyword_filter_keyword_with_same_timestamp():

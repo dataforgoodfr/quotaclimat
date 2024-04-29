@@ -11,7 +11,7 @@ def get_localhost():
 
 def debug_df(df):
     logging.warning("--------------------DEBUG DF-------------------")
-    logging.info((1).to_string())
+    logging.info(df.head(1).to_string())
     logging.warning("--------------------DEBUG DF-------------------")
 
 

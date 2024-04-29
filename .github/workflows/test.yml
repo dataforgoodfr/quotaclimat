@@ -55,7 +55,7 @@ jobs:
           set -o pipefail
           poetry run pytest -k 'test_update_pg_keywords'
         env:
-          ENV: dev
+          ENV: ci
           POSTGRES_USER: user
           POSTGRES_DB: postgres
           POSTGRES_PASSWORD: postgres
@@ -69,12 +69,13 @@ jobs:
            --cov=quotaclimat --cov=postgres test/ | \
            tee pytest-coverage.txt
         env:
-          ENV: docker
+          ENV: ci
           POSTGRES_USER: user
           POSTGRES_DB: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
+          
       # - name: Upload coverage reports to Codecov
       #   uses: codecov/codecov-action@v3
       #   env:

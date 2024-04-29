@@ -2,7 +2,10 @@
 name = "quotaclimat"
 version = "0.2.5"
 description = ""
-authors = ["Rambier Estelle <estelle.rambier@hotmail.fr>"]
+authors = [
+    "Rambier Estelle <estelle.rambier@hotmail.fr>",
+    "Paul Leclercq <paul@epauler.fr>"
+]
 readme = "README.md"
 
 [tool.pytest.ini_options]

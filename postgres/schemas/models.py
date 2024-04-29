@@ -63,7 +63,6 @@ class Keywords(Base):
     start = Column(DateTime())
     plaintext= Column(Text)
     theme=Column(JSON) #keyword.py  # ALTER TABLE keywords ALTER theme TYPE json USING to_json(theme);
-    category=Column(JSON) #keyword.py  # new column - alembic handles this
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")) # ALTER TABLE ONLY keywords ALTER COLUMN created_at SET DEFAULT (now() at time zone 'utc');
     keywords_with_timestamp = Column(JSON) # ALTER TABLE keywords ADD keywords_with_timestamp json;
     number_of_keywords = Column(Integer) # ALTER TABLE keywords ADD number_of_keywords integer;
@@ -73,9 +72,8 @@ class Keywords(Base):
     number_of_changement_climatique_consequences= Column(Integer)  # ALTER TABLE keywords ADD number_of_changement_climatique_consequences integer;
     number_of_attenuation_climatique_solutions_directes= Column(Integer)  # ALTER TABLE keywords ADD number_of_attenuation_climatique_solutions_directes integer;
     number_of_adaptation_climatique_solutions_directes= Column(Integer)  # ALTER TABLE keywords ADD number_of_adaptation_climatique_solutions_directes integer;
-    number_of_ressources_naturelles_concepts_generaux= Column(Integer)  # ALTER TABLE keywords ADD number_of_ressources_naturelles_concepts_generaux integer;
-    number_of_ressources_naturelles_causes= Column(Integer)  # ALTER TABLE keywords ADD number_of_ressources_naturelles_causes integer;
-    number_of_ressources_naturelles_solutions= Column(Integer)  # ALTER TABLE keywords ADD number_of_ressources_naturelles_solutions integer;
+    number_of_ressources= Column(Integer)  # ALTER TABLE keywords ADD number_of_ressources_naturelles_concepts_generaux integer;
+    number_of_ressources_solutions= Column(Integer)  # ALTER TABLE keywords ADD number_of_ressources_solutions integer;
     number_of_biodiversite_concepts_generaux= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_concepts_generaux integer;
     number_of_biodiversite_causes_directes= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_causes_directes integer;
     number_of_biodiversite_consequences= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_consequences integer;
@@ -148,7 +146,7 @@ def update_channel_metadata(engine):
 def drop_tables():
     """Drop table keyword in the PostgreSQL database"""
 
-    if(os.environ.get("ENV") == "docker"):
+    if(os.environ.get("ENV") == "docker" or os.environ.get("ENV") == "dev"):
         logging.warning("drop tables")
         try:
             engine = connect_to_db()

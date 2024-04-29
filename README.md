@@ -329,7 +329,11 @@ We can use a Github actions to start multiple update operations with different o
 Using [Alembic](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) Auto Generating Migrations¶ we can add a new column inside `models.py` and it will automatically make the schema evolution :
 
 ```
-# connect to the test container : docker compose test exec bash
+# If changes have already been applied and you want to recreate your alembic file:
+# 1. change to you main branch
+# 2. start test container and run "pytest -vv -k api" to rebuild the state of the DB
+# 3. rechange to your WIP branch and
+# 4. connect to the test container : docker compose exec test bash
 poetry run alembic revision --autogenerate -m "Add new column test for table keywords"
 # this should generate a file to commit inside "alembic/versions"
 # to apply it we need to run, from our container
@@ -343,6 +347,14 @@ RUN alembic upgrade head
 ```
 ### Channel metadata
 In order to maintain channel perimeter (weekday, hours) up to date, we save the current version inside `postgres/channel_metadata.json`, if we modify this file the next deploy will update every lines of inside Postgresql table `channel_metadata`.
+
+## Produce keywords list from Excel
+How to update `quotaclimat/data_processing/mediatree/keyword/keyword.py` for share excel file ?
+Download file locally then :
+```
+poetry run python3 quotaclimat/transform_excel_to_json.py > cc-bio.json
+# then update quotaclimat/data_processing/mediatree/keyword/keyword.py list
+```
 
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:

@@ -50,10 +50,21 @@ jobs:
         run: poetry install
       - name: docker compose up nginx
         run: docker compose up -d nginxtest
-      - name: pytest run
+      - name: pytest run test_first_update_keywords
         run: |
           set -o pipefail
-          poetry run pytest --junitxml=pytest.xml \
+          poetry run pytest -k 'test_update_pg_keywords'
+        env:
+          ENV: dev
+          POSTGRES_USER: user
+          POSTGRES_DB: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+      - name: pytest run everything else
+        run: |
+          set -o pipefail
+          poetry run pytest -k 'not test_update_pg_keywords' --junitxml=pytest.xml \
            --cov-report=term-missing:skip-covered \
            --cov=quotaclimat --cov=postgres test/ | \
            tee pytest-coverage.txt
@@ -64,6 +75,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
+          
       # - name: Upload coverage reports to Codecov
       #   uses: codecov/codecov-action@v3
       #   env:

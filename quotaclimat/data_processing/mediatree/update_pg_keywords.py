@@ -31,9 +31,8 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
                     ,number_of_changement_climatique_consequences \
                     ,number_of_attenuation_climatique_solutions_directes \
                     ,number_of_adaptation_climatique_solutions_directes \
-                    ,number_of_ressources_naturelles_concepts_generaux \
-                    ,number_of_ressources_naturelles_causes \
-                    ,number_of_ressources_naturelles_solutions \
+                    ,number_of_ressources \
+                    ,number_of_ressources_solutions \
                     ,number_of_biodiversite_concepts_generaux \
                     ,number_of_biodiversite_causes_directes \
                     ,number_of_biodiversite_consequences \
@@ -64,9 +63,8 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
                 ,number_of_changement_climatique_consequences
                 ,number_of_attenuation_climatique_solutions_directes
                 ,number_of_adaptation_climatique_solutions_directes
-                ,number_of_ressources_naturelles_concepts_generaux
-                ,number_of_ressources_naturelles_causes
-                ,number_of_ressources_naturelles_solutions
+                ,number_of_ressources
+                ,number_of_ressources_solutions
                 ,number_of_biodiversite_concepts_generaux
                 ,number_of_biodiversite_causes_directes
                 ,number_of_biodiversite_consequences
@@ -117,9 +115,8 @@ def update_keyword_row(session: Session,
                         number_of_changement_climatique_consequences: int,
                         number_of_attenuation_climatique_solutions_directes: int,
                         number_of_adaptation_climatique_solutions_directes: int,
-                        number_of_ressources_naturelles_concepts_generaux: int,
-                        number_of_ressources_naturelles_causes: int,
-                        number_of_ressources_naturelles_solutions: int,
+                        number_of_ressources: int,
+                        number_of_ressources_solutions: int,
                         number_of_biodiversite_concepts_generaux: int,
                         number_of_biodiversite_causes_directes: int,
                         number_of_biodiversite_consequences: int,
@@ -138,9 +135,8 @@ def update_keyword_row(session: Session,
                 Keywords.number_of_changement_climatique_consequences:number_of_changement_climatique_consequences ,
                 Keywords.number_of_attenuation_climatique_solutions_directes:number_of_attenuation_climatique_solutions_directes ,
                 Keywords.number_of_adaptation_climatique_solutions_directes:number_of_adaptation_climatique_solutions_directes ,
-                Keywords.number_of_ressources_naturelles_concepts_generaux:number_of_ressources_naturelles_concepts_generaux ,
-                Keywords.number_of_ressources_naturelles_causes:number_of_ressources_naturelles_causes ,
-                Keywords.number_of_ressources_naturelles_solutions:number_of_ressources_naturelles_solutions ,
+                Keywords.number_of_ressources:number_of_ressources,
+                Keywords.number_of_ressources_solutions:number_of_ressources_solutions ,
                 Keywords.number_of_biodiversite_concepts_generaux:number_of_biodiversite_concepts_generaux ,
                 Keywords.number_of_biodiversite_causes_directes:number_of_biodiversite_causes_directes ,
                 Keywords.number_of_biodiversite_consequences:number_of_biodiversite_consequences ,

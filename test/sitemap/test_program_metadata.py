@@ -19,17 +19,17 @@ keywords_with_timestamp = [{
         {
             "keyword" : 'planète',
             "timestamp": 1706437079009,
-            "theme":"ressources_naturelles_concepts_generaux",
+            "theme":"ressources",
         },
         {
             "keyword" : 'terre',
             "timestamp": 1706437079011,
-            "theme":"ressources_naturelles_concepts_generaux",
+            "theme":"ressources",
         }
     ]
 themes = [
         "changement_climatique_constat",
-        "ressources_naturelles_concepts_generaux",
+        "ressources_concepts_generaux",
     ]
 channel_name = "france2"
 thrusday_morning = 1712815351 #Thu Apr 11 2024 08:02:31 GMT+0200

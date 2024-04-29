@@ -15,27 +15,30 @@ import modin.pandas as pd
 import dask
 import copy
 from quotaclimat.utils.logger import getLogger
+from collections import defaultdict
 logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
 logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
 dask.config.set({'dataframe.query-planning': True})
 
 indirectes = 'indirectes'
 
-def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[str], theme: str) -> List[dict]:
+def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], theme: str) -> List[dict]:
     result = []
 
     logging.debug(f"Looking for timecode for {keywords}")
     for multiple_keyword in keywords:
-        all_keywords = multiple_keyword.split() # case with multiple words such as 'economie circulaire'
+        category = multiple_keyword["category"]
+        all_keywords = multiple_keyword["keyword"].split() # case with multiple words such as 'economie circulaire'
         match = next((item for item in subtitle_duration if is_word_in_sentence(all_keywords[0], item.get('text'))), None)  
         logging.debug(f"match found {match} with {all_keywords[0].lower()}")     
         if match is not None:
             logging.debug(f'Result added due to this match {match} based on {all_keywords[0]}')
             result.append(
                 {
-                    "keyword" :multiple_keyword.lower(),
+                    "keyword" :multiple_keyword["keyword"].lower(),
                     "timestamp" : match['cts_in_ms'],
-                    "theme" : theme
+                    "theme" : theme,
+                    "category": category
                 })
 
     logging.debug(f"Timecode found {result}")
@@ -65,35 +68,26 @@ def is_word_in_sentence(words: str, sentence: str) -> bool :
     else:
         return False
 
-
-def set_timestamp_with_margin(keywords_with_timestamp: List[dict]) -> List[dict]:
+def filter_already_contained_keyword(keywords_with_timestamp: List[dict]) -> List[dict]:
     number_of_keywords = len(keywords_with_timestamp)
-    if number_of_keywords > 1:
-        for i in range(len(keywords_with_timestamp) - 1):
-            current_timestamp = keywords_with_timestamp[i].get("timestamp")
-            next_timestamp = keywords_with_timestamp[i + 1].get("timestamp")
-            current_keyword = keywords_with_timestamp[i].get("keyword")
-            next_keyword = keywords_with_timestamp[i + 1].get("keyword")
 
-            if current_timestamp is not None and next_timestamp is not None: 
-                difference = next_timestamp - current_timestamp
-                if difference < 1000 and difference != 0:
-                    logging.debug("margin of 1 second detected")
-                    current_keyword = keywords_with_timestamp[i].get("keyword")
-                    next_keyword = keywords_with_timestamp[i + 1].get("keyword")
-                    if len(current_keyword) > len(next_keyword):
-                        shortest_word = next_keyword
-                        longest_word = current_keyword
-                        timestamp_to_change = current_timestamp
-                    else:
-                        shortest_word = current_keyword
-                        longest_word = next_keyword
-                        timestamp_to_change = next_timestamp
-                    
-                    if shortest_word in longest_word:
-                        logging.info(f"Close keywords - we group them {shortest_word} - {longest_word}")
-                        keywords_with_timestamp[i]["timestamp"] = timestamp_to_change
-                        keywords_with_timestamp[i+1]["timestamp"] = timestamp_to_change
+    if number_of_keywords > 1:
+        keywords_to_remove = [] # get keyword that are in another keyword
+        for item in keywords_with_timestamp:
+            logging.debug(f"filtered_list testing item {item} inside keywords_with_timestamp:\n{keywords_with_timestamp}")
+            keywords_with_timestamp_without_current_item = list(filter(lambda x: x != item, keywords_with_timestamp))
+            for x in keywords_with_timestamp_without_current_item:
+                keyword_match = (x.get('keyword') in item.get('keyword')) and x.get('keyword') != item.get('keyword')
+                timestamp_match = abs(x.get('timestamp') - item.get('timestamp')) < 1000
+                if keyword_match and timestamp_match and x not in keywords_to_remove:
+                    logging.debug(f"Element to filter : {x.get('keyword')} because inside {item.get('keyword')}")
+                    keywords_to_remove.append(x)
+
+        logging.debug(f"keywords_to_remove: {keywords_to_remove}")
+        # we want to remove all keywords of keywords_to_remove from keywords_with_timestamp
+        if(len(keywords_to_remove) > 0):
+            for i in keywords_to_remove:
+                keywords_with_timestamp.remove(i)
 
     return keywords_with_timestamp
 
@@ -103,30 +97,14 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> Li
     logging.debug(f"Filtering keywords with same timestamp with a margin of one second")
     number_of_keywords = len(keywords_with_timestamp)
 
-    # we want to keep them
-    same_keyword_different_theme = [item for item in keywords_with_timestamp if len(list(filter(lambda x: x.get('keyword') == item.get('keyword') and x.get('theme') != item.get('theme'), keywords_with_timestamp))) > 0]
-    logging.debug(f"Same keyword different theme {same_keyword_different_theme}")
-    # keep the longest keyword based on almost or the same timestamp
-    unique_keywords = [item for item in keywords_with_timestamp if len(list(filter(lambda x: x.get('keyword') == item.get('keyword') and x.get('theme') != item.get('theme'), keywords_with_timestamp))) == 0]
-    logging.debug(f"Unique keywords {unique_keywords}")
-    keywords_with_timestamp = set_timestamp_with_margin(unique_keywords)
-    # Group keywords by timestamp - with a margin of 1 second 
-    grouped_keywords = {timestamp: list(group) for timestamp, group in groupby(keywords_with_timestamp, key=lambda x: x['timestamp'])}
+    keywords_with_timestamp = filter_already_contained_keyword(keywords_with_timestamp)
 
-    # Filter out keywords with the same timestamp and keep the longest keyword
-    result = [
-        max(group, key=lambda x: len(x['keyword']))
-        for group in grouped_keywords.values()
-    ]
-    logging.debug(f"result keywords {result}")
-    result = result + same_keyword_different_theme
-
-    final_result = len(result)
+    final_result = len(keywords_with_timestamp)
 
     if final_result < number_of_keywords:
-        logging.debug(f"Filtering keywords {final_result} out of {number_of_keywords} | {keywords_with_timestamp} with final result {result}")
+        logging.info(f"Filtering keywords {final_result} out of {number_of_keywords} | {keywords_with_timestamp} with final result")
 
-    return result
+    return keywords_with_timestamp
 
 def remove_stopwords(plaintext: str) -> str:
     stopwords = STOP_WORDS
@@ -142,24 +120,28 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     plaitext_without_stopwords = remove_stopwords(plaintext)
     logging.debug(f"display datetime start {start}")
 
-    for theme, keywords in THEME_KEYWORDS.items():
-        logging.debug(f"searching {theme} for {keywords}")
+    for theme, keywords_dict in THEME_KEYWORDS.items():
+        logging.debug(f"searching {theme} for {keywords_dict}")
+        matching_words = []
+        for keyword_dict in keywords_dict:
+            if is_word_in_sentence(keyword_dict["keyword"], plaitext_without_stopwords):
+                matching_words.append({"keyword": keyword_dict["keyword"], "category": keyword_dict["category"]})
 
-        matching_words = [word for word in keywords if is_word_in_sentence(word, plaitext_without_stopwords)]  
         if matching_words:
             logging.debug(f"theme found : {theme} with word {matching_words}")
 
-            # look for cts_in_ms inside matching_words (['economie circulaire', 'panneaux solaires', 'solaires'] from subtitle_duration 
+            # look for cts_in_ms inside matching_words (['keyword':'economie circulaire', 'category':'air'}] from subtitle_duration 
             keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme)
             if(len(keywords_to_add) == 0):
                 logging.warning(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")
             keywords_with_timestamp.extend(keywords_to_add)
     
     if len(keywords_with_timestamp) > 0:
-        keywords_with_timestamp = filter_keyword_with_same_timestamp(keywords_with_timestamp)
         # count false positive near of 15" of positive keywords
         keywords_with_timestamp = tag_fifteen_second_window_number(keywords_with_timestamp, start)
         keywords_with_timestamp = transform_false_positive_keywords_to_positive(keywords_with_timestamp, start)
+        keywords_with_timestamp = filter_keyword_with_same_timestamp(keywords_with_timestamp)
+
         filtered_keywords_with_timestamp = filter_indirect_words(keywords_with_timestamp)
     
         return [
@@ -171,9 +153,8 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_consequences"),
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"attenuation_climatique_solutions"),
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"adaptation_climatique_solutions"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources_naturelles_concepts_generaux"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources_naturelles_causes"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources_naturelles_solutions"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources_solutions"),
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_concepts_generaux"),
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_causes"),
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_consequences"),
@@ -181,7 +162,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         ]
 
     else:
-        return [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+        return [None,None,None,None,None,None,None,None,None,None,None,None,None,None]
 
 def get_themes(keywords_with_timestamp: List[dict]) -> List[str]:
     return list(set([kw['theme'] for kw in keywords_with_timestamp]))
@@ -219,9 +200,8 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
                  'number_of_changement_climatique_consequences',
                  'number_of_attenuation_climatique_solutions_directes',
                  'number_of_adaptation_climatique_solutions_directes',
-                 'number_of_ressources_naturelles_concepts_generaux',
-                 'number_of_ressources_naturelles_causes',
-                 'number_of_ressources_naturelles_solutions',
+                 'number_of_ressources',
+                 'number_of_ressources_solutions',
                  'number_of_biodiversite_concepts_generaux',
                  'number_of_biodiversite_causes_directes',
                  'number_of_biodiversite_consequences',
@@ -262,9 +242,6 @@ def count_keywords_duration_overlap(keywords_with_timestamp: List[dict], start: 
         if theme is not None:
             logging.debug(f"filter theme {theme}")
             keywords_with_timestamp = list(filter(lambda kw: kw['theme'] == theme, keywords_with_timestamp))
-        else: # does not count "resources" for main counter - as not ready yet
-            logging.debug("filtering ressources_ theme")
-            keywords_with_timestamp = list(filter(lambda kw: "ressources_" not in kw['theme'], keywords_with_timestamp))
 
         length_filtered_items = len(keywords_with_timestamp)
 

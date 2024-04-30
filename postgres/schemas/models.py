@@ -35,6 +35,7 @@ sitemap_table = "sitemap_table"
 # RENAME TO keywords; 
 keywords_table = "keywords"
 channel_metadata_table = "channel_metadata"
+program_metadata_table = "program_metadata"
 
 class Sitemap(Base):
     __tablename__ = sitemap_table
@@ -87,6 +88,19 @@ class Channel_Metadata(Base):
     duration_minutes= Column(Integer)
     weekday= Column(Integer)  
 
+
+class Program_Metadata(Base):
+    __tablename__ = program_metadata_table
+    id = Column(Text, primary_key=True)
+    channel_name = Column(String, nullable=False)
+    channel_title = Column(String, nullable=False)
+    duration_minutes= Column(Integer)
+    weekday= Column(Integer)
+    start= Column(String, nullable=False)
+    end= Column(String, nullable=False)
+    channel_program= Column(String, nullable=False)
+    channel_program_type= Column(String, nullable=False)
+
 def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
@@ -113,6 +127,7 @@ def create_tables():
 
         Base.metadata.create_all(engine, checkfirst=True)
         update_channel_metadata(engine)
+        update_program_metadata(engine)
         logging.info("Table creation done, if not already done.")
     except (Exception) as error:
         logging.error(error)
@@ -142,6 +157,33 @@ def update_channel_metadata(engine):
         # Commit all changes at once after processing all items
         session.commit()
         logging.info("Updated channel metadata")
+
+def update_program_metadata(engine):
+    logging.info("Update program metadata")
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    json_file_path = os.path.join(current_dir, '..', 'program_metadata.json')
+    with open(json_file_path, 'r') as f:
+        data = json.load(f)
+        
+        for item in data:
+            metadata = {
+                'id': item['id'],
+                'channel_name': item['channel_name'],
+                'channel_title': item['channel_title'],
+                'duration_minutes': int(item['duration']),
+                'weekday': int(item['weekday']),
+                'channel_program': item['program_name'],
+                'channel_program_type': item['program_type'],
+                'start': item['start'],
+                'end': item['end'],
+            }
+            session.merge(Program_Metadata(**metadata))
+        
+        # Commit all changes at once after processing all items
+        session.commit()
+        logging.info("Updated program metadata")
 
 def drop_tables():
     """Drop table keyword in the PostgreSQL database"""

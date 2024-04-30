@@ -349,12 +349,21 @@ RUN alembic upgrade head
 In order to maintain channel perimeter (weekday, hours) up to date, we save the current version inside `postgres/channel_metadata.json`, if we modify this file the next deploy will update every lines of inside Postgresql table `channel_metadata`.
 
 ## Produce keywords list from Excel
-How to update `quotaclimat/data_processing/mediatree/keyword/keyword.py` for share excel file ?
+How to update `quotaclimat/data_processing/mediatree/keyword/keyword.py` from shared excel files ?
 Download file locally then :
 ```
 poetry run python3 quotaclimat/transform_excel_to_json.py > cc-bio.json
 # then update quotaclimat/data_processing/mediatree/keyword/keyword.py list
 ```
+
+## Program Metadata table
+How to update `postgres/program_metadata.json` (Program Metadata table)
+After updating "quotaclimat/data_processing/mediatree/channel_program.json" you need to execute to update `postgres/program_metadata.json` 
+```
+poetry run python3 quotaclimat/transform_program.py
+# need to transform it to an array of json
+```
+The SQL queries are based on this file that generate the Program Metadata table.
 
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:

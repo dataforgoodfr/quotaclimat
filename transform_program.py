@@ -91,8 +91,10 @@ for line in data:
             new_program_data['weekday'] = day
             programs.append(new_program_data)
     else:
-        # Add the original program data
-        programs.append(program_data)
+        # from 1 to 7 to simplify SQL queries 
+        new_program_data = program_data.copy()
+        new_program_data['weekday'] = new_program_data['weekday'] + 1
+        programs.append(new_program_data)
 
 sorted_programs = sorted(programs, key=lambda x: (x['weekday'], x['channel_name']))
 

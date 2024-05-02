@@ -164,26 +164,29 @@ def update_program_metadata(engine):
     session = Session()
     current_dir = os.path.dirname(os.path.abspath(__file__))
     json_file_path = os.path.join(current_dir, '..', 'program_metadata.json')
-    with open(json_file_path, 'r') as f:
-        data = json.load(f)
-        
-        for item in data:
-            metadata = {
-                'id': item['id'],
-                'channel_name': item['channel_name'],
-                'channel_title': item['channel_title'],
-                'duration_minutes': int(item['duration']),
-                'weekday': int(item['weekday']),
-                'channel_program': item['program_name'],
-                'channel_program_type': item['program_type'],
-                'start': item['start'],
-                'end': item['end'],
-            }
-            session.merge(Program_Metadata(**metadata))
-        
-        # Commit all changes at once after processing all items
-        session.commit()
-        logging.info("Updated program metadata")
+    try:
+        with open(json_file_path, 'r') as f:
+            data = json.load(f)
+            
+            for item in data:
+                metadata = {
+                    'id': item['id'],
+                    'channel_name': item['channel_name'],
+                    'channel_title': item['channel_title'],
+                    'duration_minutes': int(item['duration']),
+                    'weekday': int(item['weekday']),
+                    'channel_program': item['program_name'],
+                    'channel_program_type': item['program_type'],
+                    'start': item['start'],
+                    'end': item['end'],
+                }
+                session.merge(Program_Metadata(**metadata))
+            
+            # Commit all changes at once after processing all items
+            session.commit()
+            logging.info("Updated program metadata")
+    except (Exception) as error:
+        logging.error(f"Error : Update program metadata {error}")
 
 def drop_tables():
     """Drop table keyword in the PostgreSQL database"""

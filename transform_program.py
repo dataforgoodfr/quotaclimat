@@ -66,10 +66,6 @@ for line in data:
     else:
         program_data['channel_title'] = channel_name  # Default to channel_name if mapping not found
 
-    # Generate program ID based on channel_name, weekday, and program_name
-    program_id = generate_program_id(channel_name, program_data['weekday'], program_data['program_name'])
-    program_data['id'] = program_id
-
     # Handle special cases for weekdays
     weekday = program_data['weekday']
     if weekday == '*':
@@ -96,6 +92,11 @@ for line in data:
         new_program_data['weekday'] = new_program_data['weekday'] + 1
         programs.append(new_program_data)
 
+for program in programs:
+    # Generate program ID based on channel_name, weekday, and program_name
+    program_id = generate_program_id(program['channel_name'], program['weekday'], program['program_name'])
+    program['id'] = program_id
+    
 sorted_programs = sorted(programs, key=lambda x: (x['weekday'], x['channel_name']))
 
 with open(output_file_path, 'w', encoding='utf-8') as output_file:

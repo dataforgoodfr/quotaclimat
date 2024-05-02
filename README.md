@@ -357,13 +357,13 @@ poetry run python3 quotaclimat/transform_excel_to_json.py > cc-bio.json
 ```
 
 ## Program Metadata table
-How to update `postgres/program_metadata.json` (Program Metadata table)
-After updating "quotaclimat/data_processing/mediatree/channel_program.json" you need to execute to update `postgres/program_metadata.json` 
+After updating "quotaclimat/data_processing/mediatree/channel_program.json" you need to execute this command to update `postgres/program_metadata.json` 
 ```
-poetry run python3 quotaclimat/transform_program.py
-# need to transform it to an array of json
+poetry run python3 transform_program.py
 ```
 The SQL queries are based on this file that generate the Program Metadata table.
+
+With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.
 
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:

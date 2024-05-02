@@ -36,6 +36,7 @@ RUN pip install poetry
 COPY quotaclimat ./quotaclimat
 COPY postgres ./postgres
 COPY alembic/ ./alembic
+COPY transform_program.py ./transform_program.py
 
 # Docker compose overwrite this config to have only one Dockerfile
 CMD ["ls"]

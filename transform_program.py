@@ -1,6 +1,11 @@
+# generate program metadata for postgres database "program metadata" content
+
 import json
 from datetime import datetime
 import hashlib
+import sys
+import logging
+logging.basicConfig(level = logging.INFO)
 
 # Function to calculate duration in minutes between two time strings
 def calculate_duration(start_time, end_time):
@@ -15,11 +20,9 @@ def generate_program_id(channel_name, weekday, program_name):
     data_str = f"{channel_name}-{weekday}-{program_name}"
     return hashlib.sha256(data_str.encode()).hexdigest()
 
-# Define the input and output file paths
 input_file_path = "quotaclimat/data_processing/mediatree/channel_program.json"
 output_file_path = "postgres/program_metadata.json"
 
-# Channel name to title mapping
 channel_mapping = {
     "bfmtv": "BFM TV",
     "d8": "C8",
@@ -42,13 +45,11 @@ channel_mapping = {
     "arte": "Arte"
 }
 
-# Read the input JSON file with specified encoding (UTF-8)
 with open(input_file_path, 'r', encoding='utf-8') as input_file:
     data = input_file.readlines()
 
 programs = []
 
-# Process each line in the input data
 for line in data:
     program_data = json.loads(line.strip())
     start_time = program_data['start']
@@ -93,12 +94,10 @@ for line in data:
         # Add the original program data
         programs.append(program_data)
 
-# Sort the programs list by 'weekday' and 'channel_name'
 sorted_programs = sorted(programs, key=lambda x: (x['weekday'], x['channel_name']))
 
-# Write the sorted program data to the output JSON file with specified encoding (UTF-8)
 with open(output_file_path, 'w', encoding='utf-8') as output_file:
-    for program in sorted_programs:
-        output_file.write(json.dumps(program, ensure_ascii=False) + '\n')
+    json.dump(sorted_programs, output_file, ensure_ascii=False, indent=4)
 
-print("Output file 'postgres/program_metadata.json' has been created and sorted by weekday and channel_name.")
+logging.info(f"Output file {output_file_path} has been created and sorted by weekday and channel_name.")
+sys.exit(0)

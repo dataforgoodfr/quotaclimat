@@ -102,6 +102,7 @@ class Program_Metadata(Base):
     channel_program_type= Column(String, nullable=False)
     public = Column(Boolean, nullable=True)
     infocontinue = Column(Boolean, nullable=True)
+    radio = Column(Boolean, nullable=True)
 
 def get_sitemap(id: str):
     session = get_db_session()

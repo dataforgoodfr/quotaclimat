@@ -10,6 +10,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "e008c4077f2a3f1ec346ff222d7e57d30914bd4357f36e3b2025e05d2cf96b84"
     },
     {
@@ -23,6 +24,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "865c8fcdd09179acc8ab5ded2df8e6ab19c33e6dcbcef8dadf5c476cab3e7417"
     },
     {
@@ -36,6 +38,7 @@
         "channel_title": "BFM TV",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "0ceb81c10a9c91d7b1fc4c385118d7a98193f81cdc8ca25be2f37ff66eb90aac"
     },
     {
@@ -49,6 +52,7 @@
         "channel_title": "C8",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "b5490b78c9e49919934a4ef82f8cf5cbbccf6ef0041d9bc5f50e3d38e391e142"
     },
     {
@@ -62,6 +66,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "994cc943ca6538eb61f4910403efa90699b992cb5085f5c3b502b1c2faa383df"
     },
     {
@@ -75,6 +80,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "c71a863a26153495195746182eb69dfa28ae125cfeac0f7a47c0582ca559119b"
     },
     {
@@ -88,6 +94,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "3880711a96ee5af59bda0cd14589b87c03c2e800fbbab053a39871c813c37a28"
     },
     {
@@ -101,6 +108,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "a1eb99525c0964a7191f926961ea0edbc38df270ab2d84369ac787dd35e385ef"
     },
     {
@@ -114,6 +122,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "c71a863a26153495195746182eb69dfa28ae125cfeac0f7a47c0582ca559119b"
     },
     {
@@ -127,6 +136,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "3779a07b1d299be0e170d87c423a211ef6b8d643054ad3a6e2124a60068f3b46"
     },
     {
@@ -140,6 +150,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "8cd48e2722d138ef048be6fc17087f5a067de73ba0ad63880e74b2a182bce9a1"
     },
     {
@@ -153,6 +164,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "69df3955cf5427cb20161fe303d2a61a2cd7724ab3815a2c7dc09d8611b06128"
     },
     {
@@ -166,6 +178,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "058ca097d7f964d14bcccff54592f9c3105f63a93bd2511642b1ecf37b1fe690"
     },
     {
@@ -179,6 +192,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "5018eca67b98963c816b3a3c34148aacc02dfcf5ffc8de0158fe02af2b58d5a6"
     },
     {
@@ -192,6 +206,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "f2b861e730507a7b8da77ce6b2f1ba4d4d404dfbb82d2c5d67065c0555aee463"
     },
     {
@@ -205,6 +220,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "9cf3fb9cd6ad138140298cb382b42ee25d9dd64fe8ef17c58e2eb99acb61035d"
     },
     {
@@ -218,6 +234,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "f610dd40d26367a92fb8f9a1d9e0949460a6d404aad819c28a94536640541f4a"
     },
     {
@@ -231,6 +248,7 @@
         "channel_title": "FranceinfoRadio",
         "public": true,
         "infocontinue": true,
+        "radio": true,
         "id": "443b83ce4c1155dd5f965d200adc07c4ebf14027235a2d6a6c1011cf1a671706"
     },
     {
@@ -244,6 +262,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb0ea84ff7727f06fc029a90994e8da26f358b3563a2948d02cc6c62633f0d04"
     },
     {
@@ -257,6 +276,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "a04c06d44e58aa69534364dded49e37fab9753b16fd0deea68f26af792387d76"
     },
     {
@@ -270,6 +290,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "98e7352a9cef206a57c65b0bff5ac5190e567340dc2bf047cd8374a6b17ea1c9"
     },
     {
@@ -283,6 +304,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "b4044517eb5ea419354477f0a8132b3c33dc393c81cd434d2c64ba30042bcd36"
     },
     {
@@ -296,6 +318,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "de7840807558b2024443b11430c6136c5b93c368138fad71a36bab55e6e7ce62"
     },
     {
@@ -309,6 +332,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "92a6e78cff0ab87c2f370bcc504a6ed35c9f794714bb15e5bc16c0af6b499e79"
     },
     {
@@ -322,6 +346,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "5267a0c66255abdb757ad883d4278470a81cbc49ec31d8942db914d3e165a6b8"
     },
     {
@@ -335,6 +360,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "e1160143efbdb19f87d7f53d4035f9b78fffaa2e5af86bc3719d6428b3adaa6c"
     },
     {
@@ -348,6 +374,7 @@
         "channel_title": "France 24",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "7cfc96cc7c5473a0df49e96323e3fd9977ba25633b43cc94ab0a4c049ee6231c"
     },
     {
@@ -361,6 +388,7 @@
         "channel_title": "France Info",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "d8fc1a167a998df5df06e03e0dd55f8e9d26db97282d2f83a4f5e045fe9e11e7"
     },
     {
@@ -374,6 +402,7 @@
         "channel_title": "CNews",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "1a10aac5239337152ca54a2d834b4a05185f6f55a3299eb9812cbbf88208be1e"
     },
     {
@@ -387,6 +416,7 @@
         "channel_title": "LCI",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "28260fc9d8661347b80e4aee01185e423036a48f10bd0a2a79f28983b6cfcfa1"
     },
     {
@@ -400,6 +430,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "7182c3463a8c4afda96c5e88f77276b12e88c7b33580cba1f8c1f679c711ac0e"
     },
     {
@@ -413,6 +444,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "cc4a2d02331449f4198431a47bb31c24150033a6f09d6d2a525ecc8c870654aa"
     },
     {
@@ -426,6 +458,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "03b8dab49a7a8d50c10595b0e73c30a33b47d09b3edc4bfd204708a86669d1d3"
     },
     {
@@ -439,6 +472,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -452,6 +486,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -465,6 +500,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -478,6 +514,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -491,6 +528,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -504,6 +542,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -517,6 +556,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -530,6 +570,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -543,6 +584,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -556,6 +598,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -569,6 +612,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -582,6 +626,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -595,6 +640,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -608,6 +654,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -621,6 +668,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -634,6 +682,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -647,6 +696,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3170ad34dcb836517bdd46315955132bd7ee9d0d077dd62c896f2adfc9783514"
     },
     {
@@ -660,6 +710,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "49c9a15192ab6be64076d2884716318174f24958a4bcc3716f47b7d537058204"
     },
     {
@@ -673,6 +724,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "b198f6137086f5e7a509348e30d94352609fa5b244ad548469916dff9f0173c6"
     },
     {
@@ -686,6 +738,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "497eb2971fb770a4679433631e7630d7dfb6e1ffdd01078e2e2a8456c73043a8"
     },
     {
@@ -699,6 +752,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "fe30f03ef0018636d172f467452c5350729515a63f28886afaa673affb17dfdf"
     },
     {
@@ -712,6 +766,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "e70df20f171fdf6d9c3175e21d4406e95501bf6e659358fa1fe34a0d5db17b41"
     },
     {
@@ -725,6 +780,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "548be5199e55cde6228751fbe6567940ecfe356e4cca07a9a82b685b9fc68b4e"
     },
     {
@@ -738,6 +794,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "7132a4bdb5658ffa22cb31a5ab2aa9ed50bd5311a6953a567dd827f8b2858d1c"
     },
     {
@@ -751,6 +808,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "7eadcc69fb40d32f51a552b55fe1d69260e21752c9ef25e3f5de0f5738a018e8"
     },
     {
@@ -764,6 +822,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "899dde3daa8d98161119e3da666af86ba7d5885678793f001185ecde2a64a1e2"
     },
     {
@@ -777,6 +836,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "7495abe429ea2ceefdeddf89d2b17e14db83fc548459ef09e7db81e3e323e0ab"
     },
     {
@@ -790,6 +850,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "2a8d5572941a45390c36f7c09e8b096786f3e916cbb7ba57ac65534e383b5ef3"
     },
     {
@@ -803,6 +864,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "1232f3ef6b07a51c7780474ca31e16e63bfa1f3f9749b7e4edbfb2bb49cf45ca"
     },
     {
@@ -816,6 +878,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "6570c5769e1610e80195da4f3d2802baa2148b279f1a4945e92e0cdefd50e66f"
     },
     {
@@ -829,6 +892,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "c5df62c7e827d9e348c8c97e01e4947f271abad9ffde37aa712b961217a4f713"
     },
     {
@@ -842,6 +906,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "d7bcee8d919aa886f43f136562dde01944366d62b1a2dee1843aac678e4401d7"
     },
     {
@@ -855,6 +920,7 @@
         "channel_title": "BFM TV",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "ef935aec5c8d0282593a48702d351463ef0935d4d68b3d561bfa9e5008d3fc05"
     },
     {
@@ -868,6 +934,7 @@
         "channel_title": "C8",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "0537c81a96e6e7877d72b769c0de97184f86fd82dcbca23d244120ae94ef2b5b"
     },
     {
@@ -881,6 +948,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "944a0b4b55e29f1d9e51418950844d775ec664c826087990ffe05ad29db5da14"
     },
     {
@@ -894,6 +962,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "00ee38b683b1d0a1b2bcabbf6cb658c2d4c707cc14226cd31f32c8b7aecfe018"
     },
     {
@@ -907,6 +976,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "e890a5a9584b3cdb7ee7c56d7769aaa741d7ec13214f2b0240b816b7facad7ea"
     },
     {
@@ -920,6 +990,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "06be5ccd0a0dc351e8a2bdbfaa21df805935384207eec142cee8253ddd15adb0"
     },
     {
@@ -933,6 +1004,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "00ee38b683b1d0a1b2bcabbf6cb658c2d4c707cc14226cd31f32c8b7aecfe018"
     },
     {
@@ -946,6 +1018,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "00ccde6ea34deaa3345ba4889ed94830c3ac3c7da897bf21f600927b654654e9"
     },
     {
@@ -959,6 +1032,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "694409de0fd7e491a640a80222284de1352802bf5383d9117db36e0ea9c32f97"
     },
     {
@@ -972,6 +1046,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "5fcbf73145402a21424b28df54fd4c5122b352982cc8d04bf9310eae05d05132"
     },
     {
@@ -985,6 +1060,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "530e2311d56d6661510cffaf1e66fbb3fefccc1c0eca6b672525778da5856b43"
     },
     {
@@ -998,6 +1074,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "b7ca727aa872d3fd9f8244acce9384300ec40afe261b21cb784383e4ebf724d8"
     },
     {
@@ -1011,6 +1088,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "d4e9301959f13a97c543dd07517645b34795e466f2fc8efba33a72fc4400d84b"
     },
     {
@@ -1024,6 +1102,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bd2bf6ee393ff90f78982f44a4757ddffe1989f37e8e2d077f347f854864a854"
     },
     {
@@ -1037,6 +1116,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "75092d98bd645d4a30a28c87c54d7a9f84fa502a058f9086a5204eea1244e6d0"
     },
     {
@@ -1050,6 +1130,7 @@
         "channel_title": "FranceinfoRadio",
         "public": true,
         "infocontinue": true,
+        "radio": true,
         "id": "0ce45bbb402b07e4de285bdc60e59aaba02c591d719916fef7cb6e9090e88628"
     },
     {
@@ -1063,6 +1144,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "5cc83fbef29456ff510a05128a942da26469406d83f30b5bf789056879672792"
     },
     {
@@ -1076,6 +1158,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3f7d687081855959fad4088ea0da9a5a362e1c364ea5bd81262db46c34b1a086"
     },
     {
@@ -1089,6 +1172,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "3b5c8e78d47b85ec8f5e8d85a9a2255b30e9a037da75aff24829f581299ae2f5"
     },
     {
@@ -1102,6 +1186,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "0022f21dd88bb1c3bb8c0ac66431ee0a6a56d634e9900ed3724b77f6f7521e6e"
     },
     {
@@ -1115,6 +1200,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "a2c555b91088d059b8de59bb81c2b949d3772ba71ce66484b4bb1986ca7a5a15"
     },
     {
@@ -1128,6 +1214,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "92bc0487e355bb9837f0ccd737a4d87e70f6904d9825c47ab50fca3e32a2ec8a"
     },
     {
@@ -1141,6 +1228,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "1846d31068ed341b7c21cdd47e2ba8bd0aff40ca3f6c8b685dc34c8f38758893"
     },
     {
@@ -1154,6 +1242,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "f49ddd82420f561239ec8d35b8993471397828e68b446775072a86d870ead932"
     },
     {
@@ -1167,6 +1256,7 @@
         "channel_title": "France 24",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "a7a9925baf4d5a5b6445d7c9cafcd457502d50a93e19dd213f01cd7796822c7f"
     },
     {
@@ -1180,6 +1270,7 @@
         "channel_title": "France Info",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "f1b7fc4e4eee9e25ae05cd042cd52c84672c0ed2f28d8c64022cc9823ddd2090"
     },
     {
@@ -1193,6 +1284,7 @@
         "channel_title": "CNews",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "a255842820f0bfbc126c49801e2cf45be9f7e67633e98cf67c07b6133da4ef99"
     },
     {
@@ -1206,6 +1298,7 @@
         "channel_title": "LCI",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "8a72eaa8a372d2b0387f06b90d7501b11056201cd7b5235ff542fa0dc649bdb7"
     },
     {
@@ -1219,6 +1312,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "907dda167cc8ebfc08ed6857ab158b8c16c51e755a723435eb820c9ea5d80b3a"
     },
     {
@@ -1232,6 +1326,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "e991f66c4a3e36501af628429f2e6a510b7ffcfd60058c29d6b4491a3baf7a0c"
     },
     {
@@ -1245,6 +1340,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "ca69aaafac156add1617efb9c7b9750d1084be78b6bab2d87dab8266c6ce66c0"
     },
     {
@@ -1258,6 +1354,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1271,6 +1368,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1284,6 +1382,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1297,6 +1396,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1310,6 +1410,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1323,6 +1424,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1336,6 +1438,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1349,6 +1452,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1362,6 +1466,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1375,6 +1480,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1388,6 +1494,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1401,6 +1508,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1414,6 +1522,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1427,6 +1536,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1440,6 +1550,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1453,6 +1564,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1466,6 +1578,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "235218b0da6ab524aef3a17f9ec960d8233553f0cf08b43efdfa8bb1be717b85"
     },
     {
@@ -1479,6 +1592,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "ac771e896c1da996f8d260ccd67b9de7e99573091127e270e293f49aece906e8"
     },
     {
@@ -1492,6 +1606,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "8beba348c3c902832f6453957534515dd5c55731115dedbca5e4b4553a400175"
     },
     {
@@ -1505,6 +1620,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "e6b0fa348d2d343d7ff29330c7b48d3830e34af570698b571aa62e8f9eb41b3e"
     },
     {
@@ -1518,6 +1634,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "5894da77a2a8f569ad77dbbddf1c94d54996340b70154cc481ce3141d66988d1"
     },
     {
@@ -1531,6 +1648,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "ac917ae1bd0ca6c77c58fb569b897458069b8bd8ddfbcd6ba7c901cbffb05b7d"
     },
     {
@@ -1544,6 +1662,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "d5974158f1f7b4ef962cd10624ee35a6768d9f1a0a89124b613731e16d67f9c2"
     },
     {
@@ -1557,6 +1676,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "1627a41713264784ef22067249bacf13027f02010cf4bbf4fc6c8aa14ccc96b1"
     },
     {
@@ -1570,6 +1690,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "ad6920af338563f9945283493340f051a7e177ee250bba352b9df120126c5602"
     },
     {
@@ -1583,6 +1704,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "4c3565ec4a1d217a0f8f4e7f54fc9884623dade70a26780fca4123a8d362d628"
     },
     {
@@ -1596,6 +1718,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "76edee9ab9d3c4a3cf07be7cb7e018ff1a9df16540c2fcf13c9b5eb5781a456d"
     },
     {
@@ -1609,6 +1732,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "32ebcc4559b823f40b4bddab613af7fcc8f7776616496160c8dc19ba7d01442b"
     },
     {
@@ -1622,6 +1746,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "0a88bf49ad9fbd4ce94d0118339ca1c0db3a2e043bf888ce93de5d6ff15325d5"
     },
     {
@@ -1635,6 +1760,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "41dc27715ed349006c2b21745313833e79263ea228b6e1c1cc0ae768bcd528a1"
     },
     {
@@ -1648,6 +1774,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "61fd093a1c8a6dfb236ea53bfd6443291ea45a012b988634cb40b5debf6a4a9f"
     },
     {
@@ -1661,6 +1788,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "7751624f865ac33a3dcf587315b15b0a463d0c82cab15793ada3933a8016e7cf"
     },
     {
@@ -1674,6 +1802,7 @@
         "channel_title": "BFM TV",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "e553bde8c3a2fb3fb9d0091873756fee0e88780f71e11f59b473f8a23052882e"
     },
     {
@@ -1687,6 +1816,7 @@
         "channel_title": "C8",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "36eb06c5da61f74c242dfe0627a899351df792538b007b2d3b7e909f43beb038"
     },
     {
@@ -1700,6 +1830,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "5d77feb8cf5e7089b60c7691211e5b9be047b2013cc457e3661c9dc75886e58d"
     },
     {
@@ -1713,6 +1844,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "85df7f9394d26a8269bee18138b7a6b9d9615985174ade6bc326b6997c07f4c8"
     },
     {
@@ -1726,6 +1858,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "f31710a2733f98e2ea5da18b36d8d360f406dbd10c7240d8bb8304b9f2d6f848"
     },
     {
@@ -1739,6 +1872,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "05683c1dc789d35875cd1b13a0849a2774cc496b0ce763ae4cc9e7f67a446588"
     },
     {
@@ -1752,6 +1886,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "85df7f9394d26a8269bee18138b7a6b9d9615985174ade6bc326b6997c07f4c8"
     },
     {
@@ -1765,6 +1900,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "5e58d1a1e4f9dd2eb6c5989f5dc3677eac49925ce1d895ebf337bbf27131bf8d"
     },
     {
@@ -1778,6 +1914,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "a4d473c153a79f20e5fc0d7622ce49871a10b8c51f322c4d9c868a2200e6522d"
     },
     {
@@ -1791,6 +1928,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "39e504a617bd9435d792cf004ae1c78131146e633bdab223fce74a48d3bf2607"
     },
     {
@@ -1804,6 +1942,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "261b3b01384273150ed3ef41116eaa435807bb3416bcbde5bb9033d0f662d5dc"
     },
     {
@@ -1817,6 +1956,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "1bbafc8464dd880f5cbf87ac8c2108659b388a08394df0b162e0bc67fdc8bcfd"
     },
     {
@@ -1830,6 +1970,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "5381f94416be2b222204414fb220303c8d2b1b89ec139fb6703a4d7af1050f88"
     },
     {
@@ -1843,6 +1984,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "76de4cd5d266d6eb66cf71e5ea630efbaa02f3c2b4c9005633fe30fee6c95d63"
     },
     {
@@ -1856,6 +1998,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "7b7746184707b89dfb0c478839a33d1980f76d21f5de6a4ea5193011deac9cfb"
     },
     {
@@ -1869,6 +2012,7 @@
         "channel_title": "FranceinfoRadio",
         "public": true,
         "infocontinue": true,
+        "radio": true,
         "id": "bee2ab87bf0a55e599bea2d87b06b14c5cf2c88074869abfa7334adf34b2c1a5"
     },
     {
@@ -1882,6 +2026,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "1ce035e36e2a29d67dcd45307c77417798b6d72ee87821cdc381679bb80d6614"
     },
     {
@@ -1895,6 +2040,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "781479f86f71f665911a9d32cce6b1de8005da443aa5a92726d4a0eb6bad1868"
     },
     {
@@ -1908,6 +2054,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "63a2abd40e38c9571ac545abda927717aa60bbbe8b52ca144a4fc8f9bec54c84"
     },
     {
@@ -1921,6 +2068,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "107b03d932c60c2d99c0406faae56179b29243fdf0f6747c35efae1cbde3393c"
     },
     {
@@ -1934,6 +2082,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "72d745afc6cf638386be349eb9d506cb489172ed1ad0fb95a7d82ea21a9bd321"
     },
     {
@@ -1947,6 +2096,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "45b58ff2df3a66e53a8254658b02a14a2d704cc7a99b5e3654a2b5f6c4089f46"
     },
     {
@@ -1960,6 +2110,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "684ace48494b376b2e0c503798f51d9ae2db1886c3a2ec02c76b29104671ea23"
     },
     {
@@ -1973,6 +2124,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "eb492643d89dc4fc9208b67389cc6365af1961c0ddbad77d760e42df82884662"
     },
     {
@@ -1986,6 +2138,7 @@
         "channel_title": "France 24",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "d5d896682e442651152e9974afa68c625b257a875beb4e8be20020511eeb5cef"
     },
     {
@@ -1999,6 +2152,7 @@
         "channel_title": "France Info",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "fe514b9727a2e173c4eb6da963c733640e1749dfa0d1e2e207d0fd793a97528d"
     },
     {
@@ -2012,6 +2166,7 @@
         "channel_title": "CNews",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "c130b9eba57ae4a2f0195ca76dc224ace56ff27f2857b6970fc5787e54c73e81"
     },
     {
@@ -2025,6 +2180,7 @@
         "channel_title": "LCI",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "8e844ef0a6a4a91dfc0c6b5958cf1a54ae55f903812abc1046d4bb57e4f342ed"
     },
     {
@@ -2038,6 +2194,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "d0a925b9a270aa502958c77a6dfe66f1d4dfc45f229cb9d72f756751a131f4e3"
     },
     {
@@ -2051,6 +2208,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "d5dac14c9c635a22457a33ebddb84ed3df3e81d563a247995b0165292c90501c"
     },
     {
@@ -2064,6 +2222,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "c9c932150a2fe9f10307552743cdbe25b1903f28c11307739564a398b249e025"
     },
     {
@@ -2077,6 +2236,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2090,6 +2250,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2103,6 +2264,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2116,6 +2278,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2129,6 +2292,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2142,6 +2306,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2155,6 +2320,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2168,6 +2334,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2181,6 +2348,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2194,6 +2362,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2207,6 +2376,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2220,6 +2390,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2233,6 +2404,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2246,6 +2418,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2259,6 +2432,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2272,6 +2446,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2285,6 +2460,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bfb430ce91a7033dd11a3eb73ce0989079992d82d50f3fe6dbcc44be5a19a5de"
     },
     {
@@ -2298,6 +2474,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "0254f096c4027156a65c91e9d5f7b2f2cd02a7ee3312454bca740cae432187a8"
     },
     {
@@ -2311,6 +2488,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "06da853a83fa702d1bc7ab4baa38d17fe5fff6d102bfa07e2ba711babcb65585"
     },
     {
@@ -2324,6 +2502,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "1d67e2404b8f362ee0ed2f44d6584aad5954639dd4cf7815f0db68d3d8590fa2"
     },
     {
@@ -2337,6 +2516,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "f4f92588d236841192f7eddf9b3c09342dccad34875ca3ede41ecd4494c6662f"
     },
     {
@@ -2350,6 +2530,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "d11af865853896f38c3fdb15e30a42e01463db38ee4a34d6453f65d6bd44f792"
     },
     {
@@ -2363,6 +2544,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "da0417445fbb82f9b946c187a3adff698db693bc5552cb9b1d5e44c1fddadd14"
     },
     {
@@ -2376,6 +2558,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "995b5106a29a9365742fbd62f52bb8a22e635caf527a2ff718b6cf626bc925e5"
     },
     {
@@ -2389,6 +2572,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "250e896ed0b8ecf756c833c923d3a5c0357e82e67e1bfe4e40513aa8f1f01b77"
     },
     {
@@ -2402,6 +2586,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "3c6546185d623419ea51adc0e7c217fcb1323b0a2d6a42c1691f0d41449c4f1d"
     },
     {
@@ -2415,6 +2600,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "7d04c90a3e550138c740847e6897ea63592a5a281091b28112e791f50139e54b"
     },
     {
@@ -2428,6 +2614,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "72fb17fbaaaae55b362ec7900e45a05e18c05215a0d53cea3f687b5546952da7"
     },
     {
@@ -2441,6 +2628,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "bcc28785e39c0f4aa12b5737e163fe7c618c699f1147fbdcf8826b204e186612"
     },
     {
@@ -2454,6 +2642,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "395e89266305a12f51dcfd5545796cec0f40cbe21cab96a05f7206f2b094b7e7"
     },
     {
@@ -2467,6 +2656,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "270e096eb693197d4912c255571d48a5dd8169e39d8cfd4a5f78053d26179d01"
     },
     {
@@ -2480,6 +2670,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "b13efcf89ef7a35dc9a52b3f9d79287ea13780071f139784b1dbb31afc77e38f"
     },
     {
@@ -2493,6 +2684,7 @@
         "channel_title": "BFM TV",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "104128ff1a2496a771d1691f414d7c32106938090a47b2171d14edd70016f34c"
     },
     {
@@ -2506,6 +2698,7 @@
         "channel_title": "C8",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "8ce734c277dbeeac5e9352b9c12cdd75513b6c184d13b8f8a9000c291327e3dd"
     },
     {
@@ -2519,6 +2712,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "ff85e78fb6daf84442b3a8d32eaa68b1d22544e3eae0c674c372e47859b5c7b5"
     },
     {
@@ -2532,6 +2726,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "c0fd700c4bc1d8136b075a18db8b975bf2289bc1a32b81c447b977f5ca0b9667"
     },
     {
@@ -2545,6 +2740,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "0d3700aa8a1dac99a1e17af0fc167547f95892ff79cf7be726ef4676df13ab40"
     },
     {
@@ -2558,6 +2754,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "7b1c376fb445df937236f561a6c151f03d34c23908dd07d32af1cc6974589f3d"
     },
     {
@@ -2571,6 +2768,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "c0fd700c4bc1d8136b075a18db8b975bf2289bc1a32b81c447b977f5ca0b9667"
     },
     {
@@ -2584,6 +2782,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "924a8b9012cc838c3da3ed1cf03ec96de63fb700747499f539f9c89e75e3391d"
     },
     {
@@ -2597,6 +2796,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "b7367f92772bac202a04870d205b80d4ba70940d391953c935d6e996f5c1192d"
     },
     {
@@ -2610,6 +2810,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "f4280b2000825b27e3e3516ab74aba66d03c765515fc942668353f6ec616bcaf"
     },
     {
@@ -2623,6 +2824,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "dcb0f6144218dcdafacd8e498005ae23805e0871fb2f48ea5e742d85277679ac"
     },
     {
@@ -2636,6 +2838,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "e07cd3b677da94c4f47e8c95fa046850bf9ebae9e600d9e37c64b275c83dda5c"
     },
     {
@@ -2649,6 +2852,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "fabeb34f50381a7b995e461f3b242b7cdc16143685c0194d4047bdfa4233ace7"
     },
     {
@@ -2662,6 +2866,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "bd8ffd31fadf8b5fb9192bc0ac32f0b101ddc802b7a60e594cf6fce8c48ce5c0"
     },
     {
@@ -2675,6 +2880,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "e5c584a98bac43ada61c945cf2f946c0621419251bd2e6bcc82eb099e3e012db"
     },
     {
@@ -2688,6 +2894,7 @@
         "channel_title": "FranceinfoRadio",
         "public": true,
         "infocontinue": true,
+        "radio": true,
         "id": "de4d614e98d3fa18e708b218cc8c784c2fdfc8689273a1faf3c608faa8412ec9"
     },
     {
@@ -2701,6 +2908,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "8b500b3076c61a02eca649b77d8facf345b750720671787905159a2facb91532"
     },
     {
@@ -2714,6 +2922,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "9ccfc45afb42bd5724f18fd1e004cccdf72d354f89bc9cae8c2bc7509d7aad42"
     },
     {
@@ -2727,6 +2936,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cf23f0bf26def2c61c3fcd9ab95666dc735827bf1936b92e300ed0f9d9da708a"
     },
     {
@@ -2740,6 +2950,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "5fc6aee16bd5950803a519a4c07f2e28bce257faa2cfef4bf318793b996280c7"
     },
     {
@@ -2753,6 +2964,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "9bafcbecb8f5e07b71967cbf12136aa5df82f6cbd6dacb9696e8f903ff65c9e9"
     },
     {
@@ -2766,6 +2978,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "bdf0ad8a3f9b11125708799ded2ae755a0029b3895e8f9695c1df69f32e1b16b"
     },
     {
@@ -2779,6 +2992,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "b093f549faef5ca4d5c7024dc3faedc2fb26416f46ff260e8cc36e535ab8dcd5"
     },
     {
@@ -2792,6 +3006,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "c1550584dbb5198439d5558bac3864f1e5e6f3d7a9097a4201b38e52b2706d58"
     },
     {
@@ -2805,6 +3020,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "b973fa1d699538767b6eb5bb39264a98756acb5c7fdce638b3266ed084d5308d"
     },
     {
@@ -2818,6 +3034,7 @@
         "channel_title": "France 24",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "e32844a00f335a6aee249f206621a2f4d0eab76f87ddd36b70a33b182b819346"
     },
     {
@@ -2831,6 +3048,7 @@
         "channel_title": "France Info",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "b108f4b98a99594bca0feb8de6568cb5b550358b8344db093342273c6b40dace"
     },
     {
@@ -2844,6 +3062,7 @@
         "channel_title": "CNews",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "91f72a7aa419d1e60c1da73dfa4a8b291d3503f0f6666f841b59cc5e26b1ca67"
     },
     {
@@ -2857,6 +3076,7 @@
         "channel_title": "LCI",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "d301dab132c4dac6dc37070db7d1f553747b679f41e8d570c55cb55e68f09074"
     },
     {
@@ -2870,6 +3090,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "4e3569b19d6f6310a34d68bbc36b24223988dff23883d440305b0a7f14c7ade6"
     },
     {
@@ -2883,6 +3104,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "147698b5152e12caa81bf40b19d5fd6ce09e82b99d0ceffc095b926d87dfd3d8"
     },
     {
@@ -2896,6 +3118,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "f14ff5479d11d4ceeadc03da3da11c1c04e433400995578d48b8e3556db61fb0"
     },
     {
@@ -2909,6 +3132,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -2922,6 +3146,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -2935,6 +3160,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -2948,6 +3174,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -2961,6 +3188,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -2974,6 +3202,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -2987,6 +3216,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -3000,6 +3230,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -3013,6 +3244,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -3026,6 +3258,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -3039,6 +3272,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -3052,6 +3286,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -3065,6 +3300,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -3078,6 +3314,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -3091,6 +3328,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -3104,6 +3342,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -3117,6 +3356,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cb9cdfe21d77603250d0fe2c19640a688d9f41f0ddc5e5d8a2f6237e5cbd1bad"
     },
     {
@@ -3130,6 +3370,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "428df97d3af807ee7e973617f95c9cf8d119d60042fc4f04b5c4d2ebe68eede3"
     },
     {
@@ -3143,6 +3384,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "d41262a5245dc25fb5dd88f612c7bf671850a071c7a1b59468aac1d3cd4722b1"
     },
     {
@@ -3156,6 +3398,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "3fdd97201e32e39fdbdead67a9c6669831b7d46827daf021cd723646fb4b345a"
     },
     {
@@ -3169,6 +3412,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "82a0a3575584c03dbd4547e53e98588dd0ab2eb96758302432ca3f3265009a5d"
     },
     {
@@ -3182,6 +3426,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "1b888c3f42cd9537ab59739e84ba780d3bd15a5b60c200b8143032bc206ba718"
     },
     {
@@ -3195,6 +3440,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "ab53a1a888731218acdda4d2d838aa7bef5fbb2142896215f5d7972f1d5d0eb0"
     },
     {
@@ -3208,6 +3454,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "bcab0d51e355468456c281849b58fea1eb03d05f402ad33c099c8b3de3d05b5f"
     },
     {
@@ -3221,6 +3468,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "deeb20c8cd96b7c9f3ae91dc58c36e5d5fecfa01616e97da775e868cc2015245"
     },
     {
@@ -3234,6 +3482,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "965b96493bc6e4205e13f36dad252b1e0280a63d1a8acfc9960a572439343a4b"
     },
     {
@@ -3247,6 +3496,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "618a47f29848159a8132ab18715c1680d9922d60c9a5b8638879f6bab5950856"
     },
     {
@@ -3260,6 +3510,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "640ddbdd0ead37060f96f786f16bd27386d595baddd9d6de353a529b2f3d7071"
     },
     {
@@ -3273,6 +3524,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "abe7e2acac8def125b6f893ccebda46a17528ccc78bc83f640df234f2590681f"
     },
     {
@@ -3286,6 +3538,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "47fdab35b91809af1cc9a727df4a7ba1bca86f103e4335ab044d260612213aaf"
     },
     {
@@ -3299,6 +3552,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "87d90b42f65f7add4286790c3508c3b1aa8bba2b754d7307208d5820d454713d"
     },
     {
@@ -3312,6 +3566,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "63ba38ca44f6bbb123c25664034b836ea604275c133cac03a8ad40975ea06956"
     },
     {
@@ -3325,6 +3580,7 @@
         "channel_title": "BFM TV",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "f6b01248a878d7c4262ad724ca4921dbb8b96402e71e975de8eafdc1b93d26de"
     },
     {
@@ -3338,6 +3594,7 @@
         "channel_title": "C8",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "4724537ef787b64d254df9c885ac84f88ada486719722207eefbf55f5491df12"
     },
     {
@@ -3351,6 +3608,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "698489434d6b162ffca30613bf95cb8385e70106f2931ab8022f2f569e13d47a"
     },
     {
@@ -3364,6 +3622,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "79a1d29b5277a75e738cd5b70a85b889bb3e18f9a34ea96c5a2f161a38d13eba"
     },
     {
@@ -3377,6 +3636,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "8a43187154a25c98e3784a856a0f1bb75937aacca5208ac833d953fdc6754abd"
     },
     {
@@ -3390,6 +3650,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "ae5942b4e786c0d04f0a052384e65d43e9afa1511488539030a66cc57e1acf5a"
     },
     {
@@ -3403,6 +3664,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "79a1d29b5277a75e738cd5b70a85b889bb3e18f9a34ea96c5a2f161a38d13eba"
     },
     {
@@ -3416,6 +3678,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "47d4ff583c1a4a7fdf93b501900bd9f1d4cda80fce67c1a16cea7433663cd0d5"
     },
     {
@@ -3429,6 +3692,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "b479854bd62882c1b6e0eecdd1c56aa91bd98a5b3d69ab7331318dc0abeec100"
     },
     {
@@ -3442,6 +3706,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "3eaa70001c332aa11cac09869cb30180be077ef48a0c49b5dd05b0a01ca272c1"
     },
     {
@@ -3455,6 +3720,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "ea363fa9aa4b8f90e2c590556ee8c2627b022c8af03ecfacbc244cd9ce4cd235"
     },
     {
@@ -3468,6 +3734,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "7616360e263ff0cf748da0c38227bb03161e95e7ce7c03196d834631edb95b58"
     },
     {
@@ -3481,6 +3748,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "af7faae7d43585a962604e7d28a779cae611a97e2ab5c58979367eecb3b38a55"
     },
     {
@@ -3494,6 +3762,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "294d9e0595ce3068004ce2540124110b4ad24033828d03c42d300c01634d3816"
     },
     {
@@ -3507,6 +3776,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "b8e573a4252b2febb7c483f3ea9081882dafa44e734a942453062eef57e83650"
     },
     {
@@ -3520,6 +3790,7 @@
         "channel_title": "FranceinfoRadio",
         "public": true,
         "infocontinue": true,
+        "radio": true,
         "id": "e4315233a0d3eabcbd36080ce24f742cc72705a060897ea1071755c5d8083b71"
     },
     {
@@ -3533,6 +3804,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "63406a475f3e4765a12f083e590ba44c22e66311a5a7b04160f5865d756eb919"
     },
     {
@@ -3546,6 +3818,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "433f0818a9f67055c4a21c2d61b3042ae573748da7c5110a7dfe780c21a34fd3"
     },
     {
@@ -3559,6 +3832,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "edaae606a6946183fe64aab879b7a45b2598be11abb661d01899a3042e928449"
     },
     {
@@ -3572,6 +3846,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "d2a41b242712a914d181013f1f00b0f21fb1175d24b71b4bb4d799b8c7e1b5ce"
     },
     {
@@ -3585,6 +3860,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "d214a9cc4281e997ba52d6ac58cdd8f229234af9a4445eedad4641f06cd688dc"
     },
     {
@@ -3598,6 +3874,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "a870bd9e971a1c3cefb02e4329f461c42008250a7bc7e12cdd505ef56f4009bf"
     },
     {
@@ -3611,6 +3888,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "a2792395938b6434205212e01e151b458a0fb2e72f9b3b08be9078dbb793b1f4"
     },
     {
@@ -3624,6 +3902,7 @@
         "channel_title": "France 24",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "bc4bb2e848d6bebd7b990e8ce1e0320587b23215e64059e10efd406717a30ea1"
     },
     {
@@ -3637,6 +3916,7 @@
         "channel_title": "France Info",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "82860142ae801927b1ddfc3bd9baf58926a2f10b605cb3933859fb187773180b"
     },
     {
@@ -3650,6 +3930,7 @@
         "channel_title": "CNews",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "49fcfc6de7658cca51c3fc8401a9dc8d32c8d6907df9b44856f4528c57d487a7"
     },
     {
@@ -3663,6 +3944,7 @@
         "channel_title": "LCI",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "d16f2715a32bdd853bfe1ba322d66d732d9f31b393809e3d4d0970e3c295ec23"
     },
     {
@@ -3676,6 +3958,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "5e0888caaf56bde3ef37388fed88f2f9c9b7469d2b7d4066a51b458e183fd058"
     },
     {
@@ -3689,6 +3972,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "a83c43bb126cf5d2a6e5c43fe84ccbd2484161715379d300e8dcf2b316151396"
     },
     {
@@ -3702,6 +3986,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "2c07da9bdf157a71370275b151bb0ed57a31c804044d6cf0ecdfa365eb518dbd"
     },
     {
@@ -3715,6 +4000,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3728,6 +4014,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3741,6 +4028,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3754,6 +4042,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3767,6 +4056,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3780,6 +4070,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3793,6 +4084,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3806,6 +4098,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3819,6 +4112,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3832,6 +4126,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3845,6 +4140,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3858,6 +4154,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3871,6 +4168,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3884,6 +4182,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3897,6 +4196,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3910,6 +4210,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3923,6 +4224,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c9db7ac515cd6a17ca3cec15f65137a36cc9c20567117b08906ec302dae69cce"
     },
     {
@@ -3936,6 +4238,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "9738ee98fa19e1cfa36618e636fa00e985873cf4801e57a1498d9d355c10ffe0"
     },
     {
@@ -3949,6 +4252,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "5a97a2a4137447bc017e028ff4389322486823301c8426ee5703685ed68b06c5"
     },
     {
@@ -3962,6 +4266,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "32c5d63fa04605a7eab6a373829f5f28b4c328a72b8aa28cab90f951671b8a7c"
     },
     {
@@ -3975,6 +4280,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "cdee46fc01e7a331b5b8508bd9f17c18820f83d0461becbc3a65a7c6b811d8dc"
     },
     {
@@ -3988,6 +4294,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "54bbae726114d3dc63df6e5937382a54fc015c8e653b603efeeaed527e484e80"
     },
     {
@@ -4001,6 +4308,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "fff95433c74cd3061402f1b1adffd2173a4d2c43f1345112720967a442df1460"
     },
     {
@@ -4014,6 +4322,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "e2eda87a858f16101126c225f5404651f5b4ecc671899b92d78561b88f010577"
     },
     {
@@ -4027,6 +4336,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "5cab09e0887d040bc1496fa90a24d83a9d1782d7e64f2d0cc5b0e83699ee3d74"
     },
     {
@@ -4040,6 +4350,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "cab7955932337879acca4fea6c3a672fe972aec4033708043c8bf764b15c7bf1"
     },
     {
@@ -4053,6 +4364,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "bdb52642cf266b556aaf4a81c93dde62417b4007f133d8d5f6bb9ffb1b2efc9b"
     },
     {
@@ -4066,6 +4378,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "4de8abfa14700d7ce61bf52749a61f9c7c62159ed18cd1a274fc83a9ce9dc74c"
     },
     {
@@ -4079,6 +4392,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "d9cdc0a932ee6e14db8cf3e79f1727ce3cc786edaba4e7ae57f68c666e7fa8fb"
     },
     {
@@ -4092,6 +4406,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "b9d19ad4d7d89f8a93eb2cd7d091474007e51443e8ecb345d380627092241395"
     },
     {
@@ -4105,6 +4420,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "c1c67fdc1ebf0224f7c1a6e1667cd0a8d1b96addecaa4268febca422a064c447"
     },
     {
@@ -4118,6 +4434,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "8f93e556fc18c8c9a9adb47e2e20d66cf962fa75193341fcc0e5c55a3a6bd173"
     },
     {
@@ -4131,6 +4448,7 @@
         "channel_title": "BFM TV",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "3f98aab14cebea719ad333205806acf355207941b2c4e218a2905c760b4f9e9e"
     },
     {
@@ -4144,6 +4462,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "f570870292e0348c334a6c7a804dea374c60f8a6ef5e73fc2b16701c8fbb65e3"
     },
     {
@@ -4157,6 +4476,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "b5a8c265df44b5b78633d07415c0e75ce4a7b2e7f034492fe39a0987ba83550b"
     },
     {
@@ -4170,6 +4490,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "c05e2ef26d9a56e76494f0a86d9fac9cfa0cd9be445ae9058614df450003c390"
     },
     {
@@ -4183,6 +4504,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "e866f4598fe7d2d84c9cbf4b3f1a5d0428ce0ef7f7a6c738770b21b180ffd7b1"
     },
     {
@@ -4196,6 +4518,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "d6d84191816f7c6731e20b9906a645c25a940b6babb52ae8bf10b86894d0d8c0"
     },
     {
@@ -4209,6 +4532,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "7f779901e3ca4a62de0a564a6d7d640560e0111b1340971842c57bc45b08440d"
     },
     {
@@ -4222,6 +4546,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "d72daa141c1bfe8d7b779a7d9cefb4638970db9340cc55414a94ab24f1ef804f"
     },
     {
@@ -4235,6 +4560,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "cd4c5b642e5b01762e4bd1249003e1507589fa7a535b0b39026b718893eff499"
     },
     {
@@ -4248,6 +4574,7 @@
         "channel_title": "FranceinfoRadio",
         "public": true,
         "infocontinue": true,
+        "radio": true,
         "id": "7cb223f6996a27fa45ce91773b0f2052cf32763e001451810b830355be9cf760"
     },
     {
@@ -4261,6 +4588,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "55d04457415d8d4d46526f9e684bdfcc9d791af2f660735d033e68711d9cd865"
     },
     {
@@ -4274,6 +4602,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "73b6b541106015a07767becbec35ff3ecc910d39350ce1bc49c51327c2dffa13"
     },
     {
@@ -4287,6 +4616,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "31df6a536577faa4b46353cfda12a969eb00b8cafbdf1fcc2f52c80edda3acc8"
     },
     {
@@ -4300,6 +4630,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "35210a03f924b65e5a2425eaec42ab6bb120d5b12ad4270763bae1f4a0f519d4"
     },
     {
@@ -4313,6 +4644,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "97051e58567374b404a8d9aef48ac8c025faa5ad08e8c3b345ada0df6e9f3a0c"
     },
     {
@@ -4326,6 +4658,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "e7bde2947fb46d9b21df95faca2f578a8e661ac7135d75a8eaccbba28b0d1bcc"
     },
     {
@@ -4339,6 +4672,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "649aae5e90d2224f80a03053d7831afca6d078b26b4e11abdd546671b7ba95de"
     },
     {
@@ -4352,6 +4686,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "3f2cb85ea70804b90fc41cfdedca128219963c69bf35f516bf74a1776e2df37f"
     },
     {
@@ -4365,6 +4700,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "4a32ea3585fca089eee2676d1c9740d5c854a9c5ee4803be2038ad05a795fa06"
     },
     {
@@ -4378,6 +4714,7 @@
         "channel_title": "France 24",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "f54330012a3f2866ab867991fd41d6499f7a64f0f6cf34d07d1242f66b8cbffb"
     },
     {
@@ -4391,6 +4728,7 @@
         "channel_title": "France Info",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "5686977e1bfb3ce45fec73e0e0c889077386c43acf87c961537b8a835842cbec"
     },
     {
@@ -4404,6 +4742,7 @@
         "channel_title": "CNews",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "924e2fbb5fa5375d203d4837c1ab6375fad1799318582d4d0ab5303800de0f7e"
     },
     {
@@ -4417,6 +4756,7 @@
         "channel_title": "LCI",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "3e507c8ccc7a179c2552aad64dffb00bdeab3db96d1ef2f6b093a9d3f9ff2bc5"
     },
     {
@@ -4430,6 +4770,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "7828019d07a9ccc13466d29866599ead6a6c305ab1ba2633f55a229c1fe69e49"
     },
     {
@@ -4443,6 +4784,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "61ae3a5140eb57b717410b6cd9fff77d7c2f7f6c2efa6a204f075aad32d4d841"
     },
     {
@@ -4456,6 +4798,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "fa2f30580e19cf7668e117dedc9b3b821b8dd802b2b6b62ef20061f847b87544"
     },
     {
@@ -4469,6 +4812,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4482,6 +4826,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4495,6 +4840,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4508,6 +4854,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4521,6 +4868,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4534,6 +4882,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4547,6 +4896,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4560,6 +4910,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4573,6 +4924,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4586,6 +4938,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4599,6 +4952,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4612,6 +4966,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4625,6 +4980,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4638,6 +4994,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4651,6 +5008,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4664,6 +5022,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4677,6 +5036,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "02f6e1473f6a4052869e4d29d40b684ead7d9cbc7b4b643f2a056512a529a5bb"
     },
     {
@@ -4690,6 +5050,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "befaf872295b179e605b566451d7ef8781c541ccc270102168a28e86b50b441f"
     },
     {
@@ -4703,6 +5064,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "93d8cbed53cfd388ce307c8b799d7bece672313535ea72551ed29228fbffb059"
     },
     {
@@ -4716,6 +5078,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "4b216f156ef6289f9adbc1dd1229f665d12f76abe8937ce3221f2e0555715191"
     },
     {
@@ -4729,6 +5092,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "4e47b6b87a9acae9916427460e1e4c96c0d90a5d6fb37b870ca55207be336fff"
     },
     {
@@ -4742,6 +5106,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "d1987fcce55d52dd0290f25bc5ac0336bfea5b4365d9c040a81a5464e5d60d11"
     },
     {
@@ -4755,6 +5120,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "378f90a814a31dd24d73848421e60a7414e21bffd05cf2a3670d3c670308229c"
     },
     {
@@ -4768,6 +5134,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "b21e65e85ca94016626ed97de4cb8871f39e3cd16ae9a52d0f6075bcac4b6aea"
     },
     {
@@ -4781,6 +5148,7 @@
         "channel_title": "Arte",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "00067814c1af4a2a08baa50086ab87ee4b331bd377d4bfb8f902f1affb5ece92"
     },
     {
@@ -4794,6 +5162,7 @@
         "channel_title": "BFM TV",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "10ec239bc942f89981744737f0324e9dfa3f001fe31f58f2a5cbbe2e42818670"
     },
     {
@@ -4807,6 +5176,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "1272615f592bb39c60885601d8f8c3a771989dcc2d56502472e0c328a4603c1d"
     },
     {
@@ -4820,6 +5190,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "e4937c484b7dd3eabbe2350723614947034dd96128d9a5a32d130b12dad2334d"
     },
     {
@@ -4833,6 +5204,7 @@
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "5069147f91b14fb4bf99ff796d8be6d5d7990ce3d93e7a4ae2d3884f090058a3"
     },
     {
@@ -4846,6 +5218,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "3cfb93f6a59855240abe532b2091485d107bf221d2bbeb720cd727d6581fded5"
     },
     {
@@ -4859,6 +5232,7 @@
         "channel_title": "France 3-idf",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "27468d262745520fbf7038e6cd308ad207c44b6d32c7d7edd8262a55d8409c2d"
     },
     {
@@ -4872,6 +5246,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "7a60694d07b77a80ccc38c1b8841b79e428e7a75da2b6bdd309a5ee7dbd3b93e"
     },
     {
@@ -4885,6 +5260,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "4f83bee1bffc312fe783ed00542df00cf47ba9b4f798e04015d07b1c1a16fe4f"
     },
     {
@@ -4898,6 +5274,7 @@
         "channel_title": "France Culture",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "968b88c8c2a57198a6a86facee1a0b4a6b1de69cf5ed9efb0bd0244870943839"
     },
     {
@@ -4911,6 +5288,7 @@
         "channel_title": "FranceinfoRadio",
         "public": true,
         "infocontinue": true,
+        "radio": true,
         "id": "0caa83020c3b9d39e2aafe4ec87206ec3f871b8405308725ea3937aa8733270f"
     },
     {
@@ -4924,6 +5302,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "0792eb0f328ca3b8f8820ce7f9b6eafc3e969cd12a7733181fbf8801894b396c"
     },
     {
@@ -4937,6 +5316,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "c5761e5b472dde390e3d482c441c9e1390e1c18b6d7663aac08acda5d6b8b456"
     },
     {
@@ -4950,6 +5330,7 @@
         "channel_title": "France Inter",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "adb02a067243da9e9c5b067d76dc23454cd0b6f3fb7bd0799d8e8463482efcc8"
     },
     {
@@ -4963,6 +5344,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "e30ae98a544cf9aaecd1e22cecd42618f81035d0182b5f4fe0191f4cdbadda90"
     },
     {
@@ -4976,6 +5358,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "59d72f62d5a47d713491868e3fd713d8ca3bc6ce474615e3c838e28998992548"
     },
     {
@@ -4989,6 +5372,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "a73ac770de2dffb7763b72c33fe7ce8d371bdab19da245c172a4008cd528ef6c"
     },
     {
@@ -5002,6 +5386,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "da18520c4154bd2ccb8de770601a24b555c1fe28ff8f90e36b2fb88897d42a7e"
     },
     {
@@ -5015,6 +5400,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "b66368bc078152f020abeede10bffd381976e50d914eea9c93ad1cf8945d8bdb"
     },
     {
@@ -5028,6 +5414,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "da0ac74127935698b06e66cb63ae0d34e3dffc36f7d67fae7c2ea3fa60172263"
     },
     {
@@ -5041,6 +5428,7 @@
         "channel_title": "France 2",
         "public": true,
         "infocontinue": false,
+        "radio": false,
         "id": "ee037ae5a18ac2091d33549e7039550f77c964647a6240e0ccacc6b65cf60204"
     },
     {
@@ -5054,6 +5442,7 @@
         "channel_title": "France 24",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "19ed1b325865a5a8471cd35590ce6cb8ba29865a048196a64a7ecba1fa3f169d"
     },
     {
@@ -5067,6 +5456,7 @@
         "channel_title": "France Info",
         "public": true,
         "infocontinue": true,
+        "radio": false,
         "id": "3f3fa66c35e27893c0683db2c18c356eb00b8ad54433a73052dbc66a9e5506b4"
     },
     {
@@ -5080,6 +5470,7 @@
         "channel_title": "CNews",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "5d809d46a56ffaa02cd82d2a052aba0ddfd2d84a985f5b356ff5561f782884f4"
     },
     {
@@ -5093,6 +5484,7 @@
         "channel_title": "LCI",
         "public": false,
         "infocontinue": true,
+        "radio": false,
         "id": "c4984b38d0b96c8f73c2af29131d69087bbb9c2a06bb8387b831657dc0a7f384"
     },
     {
@@ -5106,6 +5498,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "9a593874db7dd0af5644068533adf94e930fdd5a78ef0cfc0228e554506927e4"
     },
     {
@@ -5119,6 +5512,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "0bb7d8129fd436cab6519f33b339a0eda126b6f6c6d9df89a57e2d891ab18b0b"
     },
     {
@@ -5132,6 +5526,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "304549a8b60d8707800164feef51f15075946bd4990db8d5225d763cdc78ec4a"
     },
     {
@@ -5145,6 +5540,7 @@
         "channel_title": "M6",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "cb4baaaca5a012df3154fadd3be7963930b835ceb75b9444681bd129b7492b91"
     },
     {
@@ -5158,6 +5554,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5171,6 +5568,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5184,6 +5582,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5197,6 +5596,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5210,6 +5610,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5223,6 +5624,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5236,6 +5638,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5249,6 +5652,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5262,6 +5666,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5275,6 +5680,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5288,6 +5694,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5301,6 +5708,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5314,6 +5722,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5327,6 +5736,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5340,6 +5750,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5353,6 +5764,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5366,6 +5778,7 @@
         "channel_title": "RFI",
         "public": true,
         "infocontinue": false,
+        "radio": true,
         "id": "65e52b3cb7d78da039c4addc3c824d00550ded2a31d55805fb0566dc7c8f6292"
     },
     {
@@ -5379,6 +5792,7 @@
         "channel_title": "RMC",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "aa75b4b44376749fc965ad00164ec4dc0fedc5cdf1861025b3b10aafa5282b54"
     },
     {
@@ -5392,6 +5806,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "0ca6537b207752c53f036a52874625885d09d57ca1dd37a13bef92060c3ebaf2"
     },
     {
@@ -5405,6 +5820,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "885e2adf4cf378385c697c597ab2eb3c0c139bddae10c5a4dcfe65c8fcd7e404"
     },
     {
@@ -5418,6 +5834,7 @@
         "channel_title": "RTL",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "991a44e3e3241c043858a373fc1f3ce4dfab1c3643eea8be2da26b1588fab91b"
     },
     {
@@ -5431,6 +5848,7 @@
         "channel_title": "Sud Radio",
         "public": false,
         "infocontinue": false,
+        "radio": true,
         "id": "a24abc782b2667369bd9183718cab6fca7577cd5bad2c7855d855ddc7f53771e"
     },
     {
@@ -5444,6 +5862,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "0e0656508c23decea9f420de1acbb7685382f23846f910d42dd3628e61860cfb"
     },
     {
@@ -5457,6 +5876,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "9bd50d589d131245f82e06850e25d802f029b81b74038b808c6b426e0bba9c8c"
     },
     {
@@ -5470,6 +5890,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "9d562f98e8a5e99340aa2163b1a131e67624674c4d232c8163b8a01152200221"
     },
     {
@@ -5483,6 +5904,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "9ad6696748694ef784e97f3805d9b290aa41352fb2007584217aeb03d068f22c"
     },
     {
@@ -5496,6 +5918,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "3acc3fca6bef46d5ffb434078a21611d0d45e84bb18567c04ccc630bc2a26e9b"
     },
     {
@@ -5509,6 +5932,7 @@
         "channel_title": "TF1",
         "public": false,
         "infocontinue": false,
+        "radio": false,
         "id": "6e904d526898a868e3f8745507637d1c2dd18783a700235003b0cac4ab9da695"
     }
 ]

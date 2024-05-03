@@ -29,96 +29,115 @@ channel_mapping = {
         "title": "BFM TV",
         "public": False,
         "infocontinue": True
+        ,"radio": False
     },
     "d8": {
         "title": "C8",
         "public": False,
         "infocontinue": False
+        ,"radio": False
     },
     "europe1": {
         "title": "Europe 1",
         "public": False,
         "infocontinue": False
+        ,"radio": True
     },
     "fr3-idf": {
         "title": "France 3-idf",
         "public": True,
         "infocontinue": False
+        ,"radio": False
     },
     "france-culture": {
         "title": "France Culture",
         "public": True,
         "infocontinue": False
+        ,"radio": True
     },
     "france-info": {
         "title": "FranceinfoRadio",
         "public": True,
         "infocontinue": True
+        ,"radio": True
     },
     "france-inter": {
         "title": "France Inter",
         "public": True,
         "infocontinue": False
+        ,"radio": True
     },
     "france2": {
         "title": "France 2",
         "public": True,
         "infocontinue": False
+        ,"radio": False
     },
     "france24": {
         "title": "France 24",
         "public": True,
         "infocontinue": True
+        ,"radio": False
     },
     "franceinfotv": {
         "title": "France Info",
         "public": True,
         "infocontinue": True
+        ,"radio": False
     },
     "itele": {
         "title": "CNews",
         "public": False,
         "infocontinue": True
+        ,"radio": False
     },
     "lci": {
         "title": "LCI",
         "public": False,
         "infocontinue": True
+        ,"radio": False
     },
     "m6": {
         "title": "M6",
         "public": False,
         "infocontinue": False
+        ,"radio": False
     },
     "rfi": {
         "title": "RFI",
         "public": True,
         "infocontinue": False
+        ,"radio": True
     },
     "rmc": {
         "title": "RMC",
         "public": False,
         "infocontinue": False
+        ,"radio": True
     },
     "rtl": {
         "title": "RTL",
         "public": False,
         "infocontinue": False
+        ,"radio": True
     },
     "sud-radio": {
         "title": "Sud Radio",
         "public": False,
         "infocontinue": False
+        ,"radio": True
     },
     "tf1": {
         "title": "TF1",
         "public": False,
         "infocontinue": False
+        ,"radio": False
     },
     "arte": {
         "title": "Arte",
         "public": True,
         "infocontinue": False
+        ,"radio": False
     }
 }
 
@@ -143,11 +162,13 @@ for line in data:
         program_data['channel_title'] = channel_mapping[channel_name]['title']
         program_data['public'] = channel_mapping[channel_name]['public']
         program_data['infocontinue'] = channel_mapping[channel_name]['infocontinue']
+        program_data['radio'] = channel_mapping[channel_name]['radio']
     else:
         logging.error(f"Unknown channel_name {channel_name}")
         program_data['channel_title'] = channel_name  # Default to channel_name if mapping not found
         program_data['public'] = False  # Default public to False
         program_data['infocontinue'] = False  # Default infocontinue to False
+        program_data['radio'] = False  # Default infocontinue to False
     # Handle special cases for weekdays
     weekday = program_data['weekday']
     if weekday == '*':

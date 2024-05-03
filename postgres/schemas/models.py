@@ -100,6 +100,8 @@ class Program_Metadata(Base):
     end= Column(String, nullable=False)
     channel_program= Column(String, nullable=False)
     channel_program_type= Column(String, nullable=False)
+    public = Column(Boolean, nullable=True)
+    infocontinue = Column(Boolean, nullable=True)
 
 def get_sitemap(id: str):
     session = get_db_session()
@@ -173,6 +175,8 @@ def update_program_metadata(engine):
                     'id': item['id'],
                     'channel_name': item['channel_name'],
                     'channel_title': item['channel_title'],
+                    'infocontinue': item['infocontinue'],
+                    'public': item['public'],
                     'duration_minutes': int(item['duration']),
                     'weekday': int(item['weekday']),
                     'channel_program': item['program_name'],
@@ -189,15 +193,17 @@ def update_program_metadata(engine):
         logging.error(f"Error : Update program metadata {error}")
 
 def drop_tables():
-    """Drop table keyword in the PostgreSQL database"""
+    
 
     if(os.environ.get("ENV") == "docker" or os.environ.get("ENV") == "dev"):
-        logging.warning("drop tables")
+        logging.warning("""Drop table keyword / Program_Metadata / Channel_Metadata in the PostgreSQL database""")
         try:
             engine = connect_to_db()
             Base.metadata.drop_all(bind=engine, tables=[Keywords.__table__])
+            Base.metadata.drop_all(bind=engine, tables=[Channel_Metadata.__table__])
+            Base.metadata.drop_all(bind=engine, tables=[Program_Metadata.__table__])
 
-            logging.info(f"Table {keywords_table} deletion done")
+            logging.info(f"Table keyword / Program_Metadata / Channel_Metadata deletion done")
         except (Exception) as error:
             logging.error(error)
         finally:

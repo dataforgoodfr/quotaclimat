@@ -178,6 +178,7 @@ def update_program_metadata(engine):
                     'channel_title': item['channel_title'],
                     'infocontinue': item['infocontinue'],
                     'public': item['public'],
+                    'radio': item['radio'],
                     'duration_minutes': int(item['duration']),
                     'weekday': int(item['weekday']),
                     'channel_program': item['program_name'],

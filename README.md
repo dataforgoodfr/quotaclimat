@@ -4,7 +4,7 @@
 ![](quotaclimat/utils/coverquotaclimat.png)
 The aim of this work is to deliver a tool to a consortium around [QuotaClimat](https://www.quotaclimat.org/ "Quotaclimat website"), [Climat Medias](https://climatmedias.org/) allowing them to quantify the media coverage of the climate crisis. 
 
-Radio and TV data are collected thanks to Mediatree.
+Radio and TV data are collected thanks to Mediatree API.
 
 And webpress is currently at work in progress (as for 04/2024)
 
@@ -21,33 +21,12 @@ And webpress is currently at work in progress (as for 04/2024)
 # 🤱 I want to contribute! Where do I start?
 
 1. Learn about the project by watching the introduction videos mentioned above.
-3. Check out the data in data_public.
-4. Join https://dataforgood.fr/join and the Slack #offseason_quotaclimat.
-2. Ask access to the [documentation](https://www.notion.so/dataforgood/QuotaClimat-6c011dc529f14f309f74970df243b819) to Estelle Rambier (dm on Slack).
-5. Introduce yourself on Slack #offseason_quotaclimat.
-6. Join a dev meetings on Tuesdays at 19h, you will be able to view what's currently going on and we will find a something for you to contribute. If you can't make it on Tuesdays, send a Slack dm to Estelle Rambier.
-
+2. Create an issue or/and join https://dataforgood.fr/join and the Slack #offseason_quotaclimat.
+3. Introduce yourself on Slack #offseason_quotaclimat
 
 ##  :wrench: Development
 
-### :file_folder: Repo structure
-```
--.github/workflows --------------------- ochestrate GH actions jobs
-- data_public -------------------------- data ingested by the scrapping jobs
-- notebooks ---------------------------- r&d
-        COP27/ ------------------------- COP27 notebook analysis
-- quotaclimat -------------------------- all methods needed to serve the dashboard
-        data_processing ---------------- methods related to process raw and aggregated data
-        data_ingestion ----------------- scripts for scrapping jobs
-        data_models -------------------- data schemas
-        data_analytics ----------------- methods and figures answer the questions from media tree
-        utils --------------------------
-            plotly_theme.py ------------ visual identity of the project's figures
-- pages -------------------------------- the different pages making the dashboard
-app.py --------------------------------- run dashboard
-```
 ## Contributing
-
 
 ### :nut_and_bolt: Setting up the environment
 Doing the following step will enable your local environement to be aligned with the one of any other collaborator.
@@ -201,9 +180,10 @@ First, have docker and compose [installed on your computer](https://docs.docker.
 Then to start the different services
 ```
 ## To run only one service, have a look to docker-compose.yml and pick one service :
-docker compose up sitemap_app
+docker compose up metabase
 docker compose up ingest_to_db
-docker compose up streamlit
+docker compose up mediatree
+docker compose up test
 ```
 
 If you add a new dependency, don't forget to rebuild
@@ -212,30 +192,20 @@ docker compose build test # or ingest_to_db, mediatree etc
 ```
 ### Explore postgres data using Metabase - a BI tool
 ```
-docker compose up metabase
+docker compose up metabase -d
 ```
-
-Will give you access to Metabase to explore the SQL table `sitemap table` here : http://localhost:3000/
+Will give you access to Metabase to explore the SQL table `sitemap table` or `keywords` here : http://localhost:3000/
 
 To connect to it you have use the variables used inside `docker-compose.yml` :
 * password: password
 * username: user
 * db: barometre
 * host : postgres_db
+
 #### Production metabase
 If we encounter [a OOM error](https://www.metabase.com/docs/latest/troubleshooting-guide/running.html#heap-space-outofmemoryerrors), we can set this env variable : `JAVA_OPTS=-Xmx2g`
 
-### Run the dashboard
-```bash
-poetry run streamlit run app.py
-```
-On Windows, you may need :
-```bash
-poetry run python -m streamlit run app.py
-```
-Depending on your installation process and version, "python" can also be "python3" or "py".
-
-### How to scrap 
+### Web Press - How to scrap 
 The scrapping of sitemap.xml is done using the library [advertools.](https://advertools.readthedocs.io/en/master/advertools.sitemaps.html#)
 
 A great way to discover sitemap.xml is to check robots.txt page of websites : https://www.midilibre.fr/robots.txt
@@ -267,35 +237,40 @@ Every commit on the `main` branch will build an deploy to the Scaleway container
 
 Learn [more here.](https://www.scaleway.com/en/docs/tutorials/use-container-registry-github-actions/)
 
-## Import mediatree data
-https://keywords.mediatree.fr/docs/
-
-Contact QuotaClimat team to 2 files with the API's username and password inside : 
-* secrets/pwd_api.txt
-* secrets/username_api.txt
-
-```
-docker compose up mediatree
-```
-
 ## Monitoring
 With Sentry, with env variable `SENTRY_DSN`.
 
 Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
 
-## Batch import
-### Batch import based on time
-If our media perimeter evolves, we need to reimport it all using env variable `START_DATE` like in docker compose (epoch second format : 1705409797).
+## Mediatree - Import data
+Mediatree Documentation API : https://keywords.mediatree.fr/docs/
+
+You must contact QuotaClimat team to 2 files with the API's username and password inside : 
+* secrets/pwd_api.txt
+* secrets/username_api.txt
+
+Otherwise, a mock api response is available at https://github.com/dataforgoodfr/quotaclimat/blob/main/test/sitemap/mediatree.json
+
+### Run
+```
+docker compose up mediatree
+```
+
+### Configuration - Batch import
+### Based on time
+If our media perimeter evolves, we have to reimport it all using env variable `START_DATE` like in docker compose (epoch second format : 1705409797).
 
 Otherwise, default is yesterday midnight date (default cron job)
 
-### Batch import based on channel
+### Based on channel
 Use env variable `CHANNEL` like in docker compose (string: tf1)
 
 Otherwise, default is all channels
 
-### Batch update
-In case we have a new word detection logic - and already saved data from Mediatree inside our DB (otherwise see Batch import based on time or channel) - we must re apply it to all saved keywords inside our database.
+### Update without querying Mediatre API
+In case we have a new word detection logic - and already saved data from Mediatree inside our DB (otherwise see Batch import based on time or channel) - we can re-apply it to all saved keywords inside our database.
+
+⚠️ in this case, as we won't requery Mediatree API so we can miss some chunks, but it's faster. Choose wisely between importing/updating.
 
 We should use env variable `UPDATE`  like in docker compose (should be set to "true")
 
@@ -314,7 +289,7 @@ After having updated `UPDATE` env variable to true inside docker-compose.yml and
 ```
 
 ### Batch program data
-`UPDATE_PROGRAM_ONLY` to true will only update program metadata, otherwise, it will update program metadata and all theme calculations.
+`UPDATE_PROGRAM_ONLY` to true will only update program metadata, otherwise, it will update program metadata and all theme/keywords calculations.
 
 ### Batch update from an offset
 With +1 millions rows, we can update from an offset to fix a custom logic by using `START_OFFSET` to batch update PG from a offset. 
@@ -323,7 +298,7 @@ With +1 millions rows, we can update from an offset to fix a custom logic by usi
 
 Example inside the docker-compose.yml mediatree service -> START_OFFSET: 100
 
-We can use a Github actions to start multiple update operations with different offsets.
+We can use [a Github actions to start multiple update operations with different offsets](https://github.com/dataforgoodfr/quotaclimat/blob/main/.github/workflows/scaleway-start-import-job-update.yml)
 
 ## SQL Tables evolution
 Using [Alembic](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) Auto Generating Migrations¶ we can add a new column inside `models.py` and it will automatically make the schema evolution :
@@ -350,22 +325,25 @@ RUN alembic upgrade head
 ### Channel metadata
 In order to maintain channel perimeter (weekday, hours) up to date, we save the current version inside `postgres/channel_metadata.json`, if we modify this file the next deploy will update every lines of inside Postgresql table `channel_metadata`.
 
-## Produce keywords list from Excel
+## Keywords
+## Produce keywords list from Excel files
 How to update `quotaclimat/data_processing/mediatree/keyword/keyword.py` from shared excel files ?
-Download file locally then :
+Download files locally then :
 ```
 poetry run python3 quotaclimat/transform_excel_to_json.py > cc-bio.json
 # then update quotaclimat/data_processing/mediatree/keyword/keyword.py list
 ```
 
 ## Program Metadata table
-After updating "quotaclimat/data_processing/mediatree/channel_program.json" you need to execute this command to update `postgres/program_metadata.json` 
+The media perimeter is defined here : "quotaclimat/data_processing/mediatree/channel_program.json"
+
+To calculate the right total duration for each channel, after updating "quotaclimat/data_processing/mediatree/channel_program.json" you need to execute this command to update `postgres/program_metadata.json` 
 ```
 poetry run python3 transform_program.py
 ```
 The SQL queries are based on this file that generate the Program Metadata table.
 
-With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.
+**With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.**
 
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:

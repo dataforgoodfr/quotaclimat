@@ -244,23 +244,27 @@ def log_dataframe_size(df, channel):
 
 async def main():
     with monitor(monitor_slug='mediatree'): #https://docs.sentry.io/platforms/python/crons/
-        logging.info("Start api mediatree import")
-        create_tables()
+        try:
+            logging.info("Start api mediatree import")
+            create_tables()
 
-        event_finish = asyncio.Event()
-        # Start the health check server in the background
-        health_check_task = asyncio.create_task(run_health_check_server())
+            event_finish = asyncio.Event()
+            # Start the health check server in the background
+            health_check_task = asyncio.create_task(run_health_check_server())
 
-        # Start batch job
-        if(os.environ.get("UPDATE") == "true"):
-            asyncio.create_task(update_pg_data(event_finish))
-        else:
-            asyncio.create_task(get_and_save_api_data(event_finish))
+            # Start batch job
+            if(os.environ.get("UPDATE") == "true"):
+                asyncio.create_task(update_pg_data(event_finish))
+            else:
+                asyncio.create_task(get_and_save_api_data(event_finish))
 
-        # Wait for both tasks to complete
-        await event_finish.wait()
+            # Wait for both tasks to complete
+            await event_finish.wait()
 
-        res=health_check_task.cancel()
+            res=health_check_task.cancel()
+        except Exception as err:
+            logging.fatal("Main crash (%s) %s" % (type(err).__name__, err))
+            sys.exit(1)
     logging.info("Exiting with success")
     sys.exit(0)
 

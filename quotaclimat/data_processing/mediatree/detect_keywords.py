@@ -143,23 +143,29 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         keywords_with_timestamp = filter_keyword_with_same_timestamp(keywords_with_timestamp)
 
         filtered_keywords_with_timestamp = filter_indirect_words(keywords_with_timestamp)
+
+        #
+        logging.error(
+            f'ICI PAUL: {count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"economie")}'
+        )
+        #
     
         return [
             get_themes(keywords_with_timestamp),
             clean_metadata(keywords_with_timestamp),
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start),
-            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_constat"),
-            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_causes"),
-            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_consequences"),
-            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"attenuation_climatique_solutions"),
-            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"adaptation_climatique_solutions"),
-            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources"),
-            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources_solutions"),
-            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_concepts_generaux"),
-            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_causes"),
-            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_consequences"),
-            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_solutions")
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"economie")
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_constat"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_causes"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_consequences"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"attenuation_climatique_solutions"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"adaptation_climatique_solutions"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources_solutions"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_concepts_generaux"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_causes"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_consequences"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_solutions")
+            , count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"economie")
         ]
 
     else:
@@ -206,7 +212,8 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
                  'number_of_biodiversite_concepts_generaux',
                  'number_of_biodiversite_causes_directes',
                  'number_of_biodiversite_consequences',
-                 'number_of_biodiversite_solutions_directes'
+                 'number_of_biodiversite_solutions_directes',
+                 'number_of_economie'
                 ]
             ] = df[['plaintext','srt', 'start']]\
                 .swifter.apply(\

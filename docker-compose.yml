@@ -103,7 +103,7 @@ services:
     #entrypoint: ["python", "quotaclimat/data_processing/mediatree/api_import.py"]
     environment:
       ENV: docker # change me to prod for real cases
-      LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log
+      LOGLEVEL: DEBUG # Change me to info (debug, info, warning, error) to have less log
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre

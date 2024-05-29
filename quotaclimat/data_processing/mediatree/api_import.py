@@ -269,4 +269,7 @@ if __name__ == "__main__":
     asyncio.run(main())
     sys.exit(0)
 
-
+def main_raph():
+    getLogger()
+    asyncio.run(main())
+    sys.exit(0)

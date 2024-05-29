@@ -148,17 +148,18 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             get_themes(keywords_with_timestamp),
             clean_metadata(keywords_with_timestamp),
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_constat"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_causes"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_consequences"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"attenuation_climatique_solutions"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"adaptation_climatique_solutions"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources_solutions"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_concepts_generaux"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_causes"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_consequences"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_solutions")
+            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_constat"),
+            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_causes"),
+            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_consequences"),
+            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"attenuation_climatique_solutions"),
+            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"adaptation_climatique_solutions"),
+            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources"),
+            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources_solutions"),
+            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_concepts_generaux"),
+            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_causes"),
+            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_consequences"),
+            # count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_solutions")
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"economie")
         ]
 
     else:

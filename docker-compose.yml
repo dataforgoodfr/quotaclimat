@@ -96,6 +96,7 @@ services:
   mediatree:
     ports:
       - 5050:5050
+      - 8265:8265
     build:
       context: ./
       dockerfile: Dockerfile_api_import

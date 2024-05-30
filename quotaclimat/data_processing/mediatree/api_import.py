@@ -79,13 +79,16 @@ def get_channels():
 async def get_and_save_api_data(exit_event):
     with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
         try:
-            ray.init(
+            context = ray.init(
+                dashboard_host="0.0.0.0", # for docker dashboard
                 _system_config={
+                   
                     "object_spilling_config": json.dumps(
                         {"type": "filesystem", "params": {"directory_path": "/tmp/spill"}},
                     )
                 },
             )
+            logging.info(f"ray context dahsboard : {context.dashboard_url}")
             conn = connect_to_db()
             token=get_auth_token(password=password, user_name=USER)
             type_sub = 's2t'

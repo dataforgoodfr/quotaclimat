@@ -9,4 +9,6 @@ STOP_WORDS = [
     "panneaux solaires pour produire votre énergie",
     "panneaux solaires groupe",
     "en train d"
+    ,"huile de coude est aussi une énergie renouvelable"
+    ,"le mouvement de la rénovation énergétique"
 ]

@@ -25,6 +25,7 @@ import sentry_sdk
 from sentry_sdk.crons import monitor
 import modin.pandas as pd
 from modin.pandas import json_normalize
+import ray
 from quotaclimat.utils.sentry import sentry_init
 logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
 logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
@@ -77,39 +78,50 @@ def get_channels():
 
 async def get_and_save_api_data(exit_event):
     with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
-        conn = connect_to_db()
-        token=get_auth_token(password=password, user_name=USER)
-        type_sub = 's2t'
+        try:
+            ray.init(
+                _system_config={
+                    "object_spilling_config": json.dumps(
+                        {"type": "filesystem", "params": {"directory_path": "/tmp/spill"}},
+                    )
+                },
+            )
+            conn = connect_to_db()
+            token=get_auth_token(password=password, user_name=USER)
+            type_sub = 's2t'
 
-        (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default()
-        df_programs = get_programs()
-        channels = get_channels()
-        
-        day_range = get_date_range(start_date_to_query, end_date)
-        logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
-        for day in day_range:
-            token = refresh_token(token, day)
+            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default()
+            df_programs = get_programs()
+            channels = get_channels()
             
-            for channel in channels:
-                try:
-                    programs_for_this_day = get_programs_for_this_day(day, channel, df_programs)
+            day_range = get_date_range(start_date_to_query, end_date)
+            logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
+            for day in day_range:
+                token = refresh_token(token, day)
+                
+                for channel in channels:
+                    try:
+                        programs_for_this_day = get_programs_for_this_day(day, channel, df_programs)
 
-                    for index, program in programs_for_this_day.iterrows():
-                        start_epoch = program['start']
-                        end_epoch = program['end']
-                        channel_program = program['program_name']
-                        channel_program_type = program['program_type']
-                        logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
-                        df = extract_api_sub(token, channel, type_sub, start_epoch,end_epoch, channel_program,channel_program_type) 
-                        if(df is not None):
-                            # must ._to_pandas() because modin to_sql is not working
-                            save_to_pg(df._to_pandas(), keywords_table, conn)
-                        else: 
-                            logging.info("Nothing to save to Postgresql")
-                except Exception as err:
-                    logging.error(f"continuing loop but met error : {err}")
-                    continue
-    exit_event.set()
+                        for index, program in programs_for_this_day.iterrows():
+                            start_epoch = program['start']
+                            end_epoch = program['end']
+                            channel_program = program['program_name']
+                            channel_program_type = program['program_type']
+                            logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
+                            df = extract_api_sub(token, channel, type_sub, start_epoch,end_epoch, channel_program,channel_program_type) 
+                            if(df is not None):
+                                # must ._to_pandas() because modin to_sql is not working
+                                save_to_pg(df._to_pandas(), keywords_table, conn)
+                            else: 
+                                logging.info("Nothing to save to Postgresql")
+                    except Exception as err:
+                        logging.error(f"continuing loop but met error : {err}")
+                        continue
+            exit_event.set()
+        except Exception as err:
+            logging.fatal("get_and_save_api_data (%s) %s" % (type(err).__name__, err))
+            sys.exit(1)
 
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
 # @see https://github.com/jd/tenacity/tree/main

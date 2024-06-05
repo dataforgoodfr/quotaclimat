@@ -245,7 +245,6 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             new_df['channel_program'] = new_df.apply(lambda x: channel_program, axis=1)
             new_df['channel_program_type'] = new_df.apply(lambda x: channel_program_type, axis=1)
  
-            # new_df.insert()
             logging.debug("programs were set")
             log_dataframe_size(new_df, channel)
             

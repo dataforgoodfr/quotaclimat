@@ -102,8 +102,8 @@ def get_a_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.
 
 def process_subtitle(row, df_program):
         channel_program, channel_program_type = get_a_program_with_start_timestamp(df_program, row['start'], row['channel_name'])
-        row['channel_program'] = channel_program
-        row['channel_program_type'] = channel_program_type
+        row['channel_program'] = str(channel_program)
+        row['channel_program_type'] = str(channel_program_type)
         return row
 
 def merge_program_subtitle(df_subtitle: pd.DataFrame, df_program: pd.DataFrame):

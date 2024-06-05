@@ -79,14 +79,9 @@ def get_channels():
 async def get_and_save_api_data(exit_event):
     with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
         try:
+            logging.warning(f"Available CPUS {os.cpu_count()} - MODIN_CPUS config : {os.environ.get('MODIN_CPUS', 0)}")
             context = ray.init(
                 dashboard_host="0.0.0.0", # for docker dashboard
-                _system_config={
-                   
-                    "object_spilling_config": json.dumps(
-                        {"type": "filesystem", "params": {"directory_path": "/tmp/spill"}},
-                    )
-                },
             )
             logging.info(f"ray context dahsboard : {context.dashboard_url}")
             conn = connect_to_db()
@@ -109,8 +104,8 @@ async def get_and_save_api_data(exit_event):
                         for index, program in programs_for_this_day.iterrows():
                             start_epoch = program['start']
                             end_epoch = program['end']
-                            channel_program = program['program_name']
-                            channel_program_type = program['program_type']
+                            channel_program = str(program['program_name'])
+                            channel_program_type = str(program['program_type'])
                             logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
                             df = extract_api_sub(token, channel, type_sub, start_epoch,end_epoch, channel_program,channel_program_type) 
                             if(df is not None):
@@ -233,16 +228,24 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             
             new_df : pd.DataFrame = json_normalize(response_sub.get('data'))
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
-            new_df.drop('channel.title', axis=1, inplace=True) # keep only channel.name
 
             new_df['timestamp'] = pd.to_datetime(new_df['start'], unit='s', utc=True)
             new_df.drop('start', axis=1, inplace=True) # keep only channel.name
-
-            new_df.rename(columns={'channel.name':'channel_name', 'channel.radio': 'channel_radio', 'timestamp':'start'}, inplace=True)
-
-            new_df['channel_program'] = channel_program
-            new_df['channel_program_type'] = channel_program_type
-
+            logging.debug("renaming columns")
+            new_df.rename(columns={'channel.name':'channel_name', 
+                                   'channel.title':'channel_title',
+                                   'channel.radio': 'channel_radio',
+                                    'timestamp':'start'
+                                  },
+                        inplace=True
+            )
+            logging.debug(f"setting program {channel_program} type { type(channel_program)}")
+            
+            # weird error if not using this way: (ValueError) format number 1 of "20h30 le samedi" is not recognized
+            new_df['channel_program'] = new_df.apply(lambda x: channel_program, axis=1)
+            new_df['channel_program_type'] = new_df.apply(lambda x: channel_program_type, axis=1)
+ 
+            logging.debug("programs were set")
             log_dataframe_size(new_df, channel)
             
             logging.debug("Parsed Schema\n%s", new_df.dtypes)

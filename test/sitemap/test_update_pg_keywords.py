@@ -13,8 +13,8 @@ import pandas as pd
 from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
 
 logging.getLogger().setLevel(logging.INFO)
-original_timestamp = 1706444334 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
-start = pd.to_datetime("2024-01-28 12:18:54", utc=True).tz_convert('Europe/Paris')
+original_timestamp = 1706271523 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
+start = pd.to_datetime("2024-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
 create_tables()
 
 def test_delete_keywords():
@@ -197,9 +197,9 @@ def test_first_update_keywords():
         ,number_of_biodiversite_solutions_directes = get_themes_keywords_duration(plaintext, srt, start)
 
     expected_keywords_with_timestamp = [
-    {'category': 'Ecosystème', 'keyword': 'conditions de vie sur terre', 'timestamp': 1706444349000, 'theme': 'changement_climatique_constat'}, 
-    {'category': 'Ecosystème','keyword': 'habitabilité de la planète', 'timestamp': 1706444334006, 'theme': 'changement_climatique_constat'}, 
-    {'category': 'General','keyword': 'digue', 'timestamp': 1706444366000, 'theme': 'adaptation_climatique_solutions'}
+    {'category': 'Ecosystème', 'keyword': 'conditions de vie sur terre', 'timestamp': original_timestamp + 15000, 'theme': 'changement_climatique_constat'}, 
+    {'category': 'Ecosystème','keyword': 'habitabilité de la planète', 'timestamp': original_timestamp + 6, 'theme': 'changement_climatique_constat'}, 
+    {'category': 'General','keyword': 'digue', 'timestamp':  original_timestamp + 32000, 'theme': 'adaptation_climatique_solutions'}
     ]
     assert result_after_update.id == result_before_update.id
 
@@ -239,6 +239,6 @@ def test_first_update_keywords():
     assert number_of_biodiversite_solutions_directes == 0
 
     # program
-    assert result_after_update.channel_program == "JT 1245"
-    assert result_after_update.channel_program_type == "Information - Journal"
+    assert result_after_update.channel_program == "1245 le mag"
+    assert result_after_update.channel_program_type == "Information - Magazine"
 

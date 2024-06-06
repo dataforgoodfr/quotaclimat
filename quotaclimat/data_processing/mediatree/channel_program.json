@@ -20,8 +20,9 @@
 {"channel_name":"fr3-idf","start":"7:00","end":"9:00","weekday":"weekday","program_name":"Ici Matin","program_type":"Information - Journal"}
 {"channel_name":"fr3-idf","start":"12:00","end":"12:50","weekday":"*","program_name":"JT 12h","program_type":"Information - Journal"}
 {"channel_name":"fr3-idf","start":"19:00","end":"19:55","weekday":"*","program_name":"JT 19h + météo","program_type":"Information - Journal"}
-{"channel_name":"m6","start":"12:45","end":"13:35","weekday":"*","program_name":"JT 1245","program_type":"Information - Journal"}
+{"channel_name":"m6","start":"12:45","end":"13:15","weekday":"*","program_name":"JT 1245","program_type":"Information - Journal"}
 {"channel_name":"m6","start":"13:50","end":"17:20","weekday":"weekday","program_name":"1 jour un doc","program_type":"Information - Magazine"}
+{"channel_name":"m6","start":"13:15","end":"13:50","weekday":"weekday","program_name":"1245 le mag","program_type":"Information - Magazine"}
 {"channel_name":"m6","start":"19:40","end":"20:10","weekday":"*","program_name":"JT 1945 + météo","program_type":"Information - Journal"}
 {"channel_name":"m6","start":"11:00","end":"12:30","weekday":5,"program_name":"66 minutes samedi","program_type":"Information - Magazine"}
 {"channel_name":"m6","start":"16:35","end":"19:30","weekday":6,"program_name":"66 minutes","program_type":"Information - Magazine"}

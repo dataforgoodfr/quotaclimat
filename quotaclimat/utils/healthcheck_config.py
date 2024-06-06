@@ -24,7 +24,7 @@ class HealthCheckHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write((f"Healthy.\n\nApp version {version}").encode())
 
 async def run_health_check_server():
-    PORT = int(os.environ.get("PORT", 5000))
+    PORT = int(os.environ.get("PORT_HS", 5050))
     SERVER_ADDRESS = os.environ.get("HEALTHCHECK_SERVER", "")
 
     logging.info(f"App version {version}")

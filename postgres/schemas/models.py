@@ -58,6 +58,7 @@ class Keywords(Base):
 
     id = Column(Text, primary_key=True)
     channel_name = Column(String, nullable=False)
+    channel_title = Column(String, nullable=True)
     channel_program = Column(String, nullable=True) #  arcom - alembic handles this
     channel_program_type = Column(String, nullable=True) # arcom - (magazine, journal etc) alembic handles this
     channel_radio = Column(Boolean, nullable=True)

@@ -51,13 +51,14 @@ json_response = json.loads("""
                 "text": "adaptation"
                 }
             ],
-            "channel":{"name":"tf1","title":"M6","radio":false},"start":1704798120,
+            "channel":{"name":"tf1","title":"TF1","radio":false},"start":1704798120,
             "plaintext":"test2"}
     ],
     "elapsed_time_ms":335}
 """)
 
 def test_parse_reponse_subtitle():
+    channel_program = "13h15 le samedi"
     expected_result = pd.DataFrame([{
         "srt": [{
             "duration_ms": 34,
@@ -82,9 +83,10 @@ def test_parse_reponse_subtitle():
         ],
         "plaintext" : plaintext1,
         "channel_name" : "m6",
+        "channel_title" : "M6",
         "channel_radio" : False,
         "start" : 1704798000,
-        "channel_program" : "",
+        "channel_program" : channel_program,
         "channel_program_type" : "",
     },
     {
@@ -97,13 +99,14 @@ def test_parse_reponse_subtitle():
         "plaintext" : plaintext2,
         "channel_name" : "tf1",
         "channel_radio" : False,
+        "channel_title" : "TF1",
         "start" : 1704798120,
-        "channel_program" : "",
+        "channel_program" : channel_program,
         "channel_program_type" : "",
     }])
 
     expected_result['start'] = pd.to_datetime(expected_result['start'], unit='s').dt.tz_localize('UTC')
-    df = parse_reponse_subtitle(json_response)
+    df = parse_reponse_subtitle(json_response, channel = None, channel_program = channel_program, channel_program_type = "")
     debug_df(df)
 
     pd.testing.assert_frame_equal(df._to_pandas().reset_index(drop=True), expected_result.reset_index(drop=True))
@@ -144,11 +147,13 @@ def test_save_to_pg_keyword():
             "ressources_concepts_generaux",
         ]
     channel_name = "m6"
+    channel_title = "M6"
     df = pd.DataFrame([{
         "id" : primary_key,
         "start": 1706437079006,
         "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
         "channel_name": channel_name,
+        "channel_title": channel_title,
         "channel_radio": False,
         "theme": themes,
         "keywords_with_timestamp": keywords_with_timestamp
@@ -164,6 +169,7 @@ def test_save_to_pg_keyword():
 
     assert result.id == primary_key
     assert result.channel_name == channel_name
+    assert result.channel_title == channel_title
     assert result.channel_radio == False
     assert result.theme == themes 
     assert result.keywords_with_timestamp == keywords_with_timestamp

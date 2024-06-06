@@ -345,6 +345,10 @@ The SQL queries are based on this file that generate the Program Metadata table.
 
 **With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.**
 
+## Production monitoring
+* Use scaleway
+* Use [Ray dashboard] on port 8265
+
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
 ```bash

@@ -11,5 +11,6 @@ STOP_WORDS = [
     "en train d"
     ,"huile de coude est aussi une énergie renouvelable"
     ,"huile de coude était aussi une énergie renouvelable"
+    ,"climatique c' est pour ça que je suis au crédit coopératif"
     ,"le mouvement de la rénovation énergétique"
 ]

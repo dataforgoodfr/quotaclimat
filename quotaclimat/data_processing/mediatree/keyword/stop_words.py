@@ -10,5 +10,6 @@ STOP_WORDS = [
     "panneaux solaires groupe",
     "en train d"
     ,"huile de coude est aussi une énergie renouvelable"
+    ,"huile de coude était aussi une énergie renouvelable"
     ,"le mouvement de la rénovation énergétique"
 ]

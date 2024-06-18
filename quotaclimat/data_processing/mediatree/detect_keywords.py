@@ -170,7 +170,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         return [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None] # TODO refacto me
 
 def get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds: int = 15):
-    keywords_with_timestamp_copy = keywords_with_timestamp
+    keywords_with_timestamp_copy = keywords_with_timestamp.copy()
     keywords_with_timestamp_copy = tag_wanted_duration_second_window_number(keywords_with_timestamp_copy, start, duration_seconds=duration_seconds)
     keywords_with_timestamp_copy = transform_false_positive_keywords_to_positive(keywords_with_timestamp_copy, start)
     keywords_with_timestamp_copy = filter_keyword_with_same_timestamp(keywords_with_timestamp_copy)

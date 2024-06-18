@@ -288,6 +288,12 @@ After having updated `UPDATE` env variable to true inside docker-compose.yml and
  update_pg_keywords.py:20 | Difference old 1000 - new_number_of_keywords 0
 ```
 
+We can adjust batch update with these env variables (as in the docker-compose.yml): 
+```
+BATCH_SIZE: 50000 # number of records to update in one batch
+NUMBER_OF_BATCH: 4 # number of batch size to process
+```
+
 ### Batch program data
 `UPDATE_PROGRAM_ONLY` to true will only update program metadata, otherwise, it will update program metadata and all theme/keywords calculations.
 

@@ -80,6 +80,9 @@ class Keywords(Base):
     number_of_biodiversite_causes_directes= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_causes_directes integer;
     number_of_biodiversite_consequences= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_consequences integer;
     number_of_biodiversite_solutions_directes= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_solutions_directes integer;
+    number_of_keywords_20 = Column(Integer) # ALTER TABLE keywords ADD number_of_keywords_20 integer;
+    number_of_keywords_30 = Column(Integer) # ALTER TABLE keywords ADD number_of_keywords_30 integer;
+    number_of_keywords_40 = Column(Integer) # ALTER TABLE keywords ADD number_of_keywords_40 integer;
 
 class Channel_Metadata(Base):
     __tablename__ = channel_metadata_table

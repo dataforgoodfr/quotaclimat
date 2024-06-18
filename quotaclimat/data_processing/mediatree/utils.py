@@ -8,14 +8,11 @@ import os
 
 timezone='Europe/Paris'
 
-def get_keyword_time_separation_ms():
-    return 15000
+def get_keyword_time_separation_ms(duration_seconds: int = 15):
+    return duration_seconds * 1000
 
 def get_chunk_duration_api():
     return 2 * 60 * 1000
-
-def is_time_distance_between_keyword_enough(overlap):
-    return overlap >= get_keyword_time_separation_ms()
 
 def get_exact_days_from_week_day_name(
         start_date

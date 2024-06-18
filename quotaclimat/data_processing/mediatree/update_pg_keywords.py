@@ -44,7 +44,10 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
                     ,number_of_biodiversite_concepts_generaux \
                     ,number_of_biodiversite_causes_directes \
                     ,number_of_biodiversite_consequences \
-                    ,number_of_biodiversite_solutions_directes = get_themes_keywords_duration(plaintext, srt, start)
+                    ,number_of_biodiversite_solutions_directes \
+                    ,new_number_of_keywords_20 \
+                    ,new_number_of_keywords_30 \
+                    ,new_number_of_keywords_40 = get_themes_keywords_duration(plaintext, srt, start)
                 except Exception as err:
                         logging.error(f"continuing loop but met error : {err}")
                         continue
@@ -80,6 +83,9 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
                 ,channel_program=program_name
                 ,channel_program_type=program_name_type
                 ,channel_title=channel_title
+                ,number_of_keywords_20=new_number_of_keywords_20
+                ,number_of_keywords_30=new_number_of_keywords_30
+                ,number_of_keywords_40=new_number_of_keywords_40
                 )
             else:
                 update_keyword_row_program(session
@@ -133,7 +139,10 @@ def update_keyword_row(session: Session,
                         number_of_biodiversite_solutions_directes: int,
                         channel_program: str,
                         channel_program_type: str,
-                        channel_title: str,
+                        channel_title: str
+                        ,number_of_keywords_20: int
+                        ,number_of_keywords_30: int
+                        ,number_of_keywords_40: int
     ):
     if matching_themes is not None:
         session.query(Keywords).filter(Keywords.id == keyword_id).update(
@@ -155,6 +164,9 @@ def update_keyword_row(session: Session,
                 Keywords.channel_program: channel_program,
                 Keywords.channel_program_type: channel_program_type,
                 Keywords.channel_title: channel_title
+                ,Keywords.number_of_keywords_20: number_of_keywords_20
+                ,Keywords.number_of_keywords_30: number_of_keywords_30
+                ,Keywords.number_of_keywords_40: number_of_keywords_40
             },
             synchronize_session=False
         )

@@ -14,7 +14,15 @@ def get_programs():
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         json_file_path = os.path.join(current_dir, 'channel_program.json')
-        df_programs = pd.read_json(json_file_path, lines=True)
+        data_dtype = { # UserWarning: `read_*` implementation has mismatches with pandas:
+            "channel_name":pd.StringDtype,
+            "start":pd.StringDtype,
+            "end":pd.StringDtype,
+            "weekday":pd.StringDtype,
+            "program_name":pd.StringDtype,
+            "program_type":pd.StringDtype
+        }
+        df_programs = pd.read_json(json_file_path, lines=True, dtype=data_dtype)
 
         df_programs['start'] = format_hour_minute(df_programs['start'])
         df_programs['end'] = format_hour_minute(df_programs['end'])

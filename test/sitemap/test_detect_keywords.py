@@ -688,7 +688,7 @@ def test_overlap_count_keywords_duration_overlap():
             }
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 1
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
   
 def test_no_overlap_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -723,7 +723,7 @@ def test_no_overlap_count_keywords_duration_overlap():
             },
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 6
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start),start) == 6
 
 def test_with_a_mix_of_overlap_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -763,7 +763,7 @@ def test_with_a_mix_of_overlap_count_keywords_duration_overlap():
             },
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 3
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start),start) == 3
 
 def test_with_15second_window_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -803,7 +803,7 @@ def test_with_15second_window_count_keywords_duration_overlap():
             } # window 3
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 4
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start),start) == 4
 
 def test_only_one_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -813,7 +813,7 @@ def test_only_one_count_keywords_duration_overlap():
             }
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 1
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
 
 def test_indirect_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -823,7 +823,7 @@ def test_indirect_count_keywords_duration_overlap():
             }
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 1
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
 
 def test_resources_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -833,7 +833,7 @@ def test_resources_count_keywords_duration_overlap():
             }
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 1
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start),start) == 1
 
 def test_filter_indirect_words():
     keywords_with_timestamp = [{
@@ -1046,7 +1046,7 @@ def test_get_keyword_by_fifteen_second_window():
             }
     ]
     
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 4
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 4
 
 def test_full_house_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [{
@@ -1111,7 +1111,7 @@ def test_full_house_get_keyword_by_fifteen_second_window():
             }
     ]
     
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 8
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 8
 
 
 def test_simple_get_keyword_by_fifteen_second_window():
@@ -1127,7 +1127,7 @@ def test_simple_get_keyword_by_fifteen_second_window():
             }
     ]
     
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 1
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
 
 def test_edge_out_of_bound_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [
@@ -1138,7 +1138,7 @@ def test_edge_out_of_bound_get_keyword_by_fifteen_second_window():
             }
     ]
     
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 1
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
 
 def test_really_out_of_bound_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [
@@ -1149,7 +1149,7 @@ def test_really_out_of_bound_get_keyword_by_fifteen_second_window():
             }
     ]
     with pytest.raises(Exception):
-        count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start)
+        count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start)
 
 def test_almost_out_of_bound_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [
@@ -1160,9 +1160,9 @@ def test_almost_out_of_bound_get_keyword_by_fifteen_second_window():
             }
     ]
     
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 1
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
 
-def test_tag_fifteen_second_window_number():
+def test_tag_wanted_duration_second_window_number():
     keywords_with_timestamp = [
         {'keyword': 'recyclage',
          'timestamp': original_timestamp,
@@ -1213,7 +1213,7 @@ def test_tag_fifteen_second_window_number():
           'theme': 'attenuation_climatique_solutions_indirectes'
         }
     ]
-    assert tag_fifteen_second_window_number(keywords_with_timestamp, start) == expected
+    assert tag_wanted_duration_second_window_number(keywords_with_timestamp, start) == expected
 
 def test_transform_false_positive_keywords_to_positive():
     keywords_with_timestamp = [
@@ -1285,7 +1285,7 @@ def test_transform_false_positive_keywords_to_positive():
         }
     ]
     
-    assert transform_false_positive_keywords_to_positive(tag_fifteen_second_window_number(keywords_with_timestamp,start), start) == expected_output
+    assert transform_false_positive_keywords_to_positive(tag_wanted_duration_second_window_number(keywords_with_timestamp,start), start) == expected_output
 
 def test_different_steps_transform_false_positive_keywords_to_positive():
     keywords_with_timestamp = [
@@ -1348,7 +1348,7 @@ def test_different_steps_transform_false_positive_keywords_to_positive():
         }
     ]
     
-    assert transform_false_positive_keywords_to_positive(tag_fifteen_second_window_number(keywords_with_timestamp,start), start) == expected_output
+    assert transform_false_positive_keywords_to_positive(tag_wanted_duration_second_window_number(keywords_with_timestamp,start), start) == expected_output
 
 
 def test_count_different_window_number():
@@ -1382,4 +1382,4 @@ def test_count_different_window_number():
           'theme': 'attenuation_climatique_solutions_indirectes' 
         }
     ]
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 6
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start),start) == 6

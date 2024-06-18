@@ -174,7 +174,7 @@ def test_first_update_keywords():
         "number_of_biodiversite_solutions_directes" : wrong_value,
         "channel_program_type": "to change",
         "channel_program":"to change"
-        ,"channel_title":"channel_title"
+        ,"channel_title":None
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 1

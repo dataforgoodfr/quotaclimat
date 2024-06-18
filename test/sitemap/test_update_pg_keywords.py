@@ -66,6 +66,7 @@ def test_delete_keywords():
             ,0
             ,"télématin"
             ,"Information - Magazine"
+            ,"M6"
             )
     assert get_keyword(primary_key) == None
 

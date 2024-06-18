@@ -44,6 +44,7 @@ def test_delete_keywords():
     "number_of_biodiversite_solutions_directes" : wrong_value,
     "channel_program_type": "to change",
     "channel_program":"to change"
+    ,"channel_title":"channel_title"
     }])
     assert save_to_pg(df, keywords_table, conn) == 1
     session = get_db_session(conn)
@@ -65,6 +66,7 @@ def test_delete_keywords():
             ,0
             ,"télématin"
             ,"Information - Magazine"
+            ,"M6"
             )
     assert get_keyword(primary_key) == None
 
@@ -173,6 +175,7 @@ def test_first_update_keywords():
         "number_of_biodiversite_solutions_directes" : wrong_value,
         "channel_program_type": "to change",
         "channel_program":"to change"
+        ,"channel_title":None
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 1
@@ -241,4 +244,7 @@ def test_first_update_keywords():
     # program
     assert result_after_update.channel_program == "1245 le mag"
     assert result_after_update.channel_program_type == "Information - Magazine"
+
+    #channel_title
+    assert result_after_update.channel_title == "M6"
 

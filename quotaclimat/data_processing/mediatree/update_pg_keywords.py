@@ -7,20 +7,28 @@ import logging
 from sqlalchemy.orm import Session
 from postgres.schemas.models import Keywords
 from quotaclimat.data_processing.mediatree.detect_keywords import *
-from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp
+from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp, get_channel_title_for_name
 from sqlalchemy import func, select, delete
 
-def update_keywords(session: Session, batch_size: int = 50000, start_offset : int = 0, program_only=False) -> list:
+def update_keywords(session: Session, batch_size: int = 50000, start_offset : int = 0, program_only=False, number_of_batch: int = 4) -> list:
     total_updates = get_total_count_saved_keywords(session)
-    logging.info(f"Updating {total_updates} saved keywords from {start_offset} offsets - batch size {batch_size}")
+    until_offset = start_offset + (number_of_batch * batch_size)
+    if(until_offset > total_updates):
+        logging.info(f"Until offset ({until_offset}) too high max ={total_updates}, using max instead - change number_of_batch env variable if needed")
+        until_offset = total_updates
+    
+    logging.info(f"Updating {total_updates} saved keywords from {start_offset} offsets - batch size {batch_size} - until offset {until_offset}")
     df_programs = get_programs()
 
-    for i in range(start_offset, total_updates, batch_size):
+    for i in range(start_offset, until_offset, batch_size):
         current_batch_saved_keywords = get_keywords_columns(session, i, batch_size)
-        logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size}")
-        for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name in current_batch_saved_keywords:
+        logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {until_offset}")
+        for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name, channel_title in current_batch_saved_keywords:
             program_name, program_name_type = get_a_program_with_start_timestamp(df_programs, pd.Timestamp(start).tz_convert('Europe/Paris'), channel_name)
-
+            if channel_title is None:
+                 logging.debug("channel_title none, set it using channel_name")
+                 channel_title = get_channel_title_for_name(channel_name)
+            
             if(not program_only):
                 try:
                     matching_themes, \
@@ -71,6 +79,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
                 ,number_of_biodiversite_solutions_directes
                 ,channel_program=program_name
                 ,channel_program_type=program_name_type
+                ,channel_title=channel_title
                 )
             else:
                 update_keyword_row_program(session
@@ -78,7 +87,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
                 ,channel_program=program_name
                 ,channel_program_type=program_name_type
                 )
-        logging.info(f"bulk update done {i} out of {total_updates}")
+        logging.info(f"bulk update done {i} out of {until_offset} - (max offset {total_updates})")
         session.commit()
 
     logging.info("updated all keywords")
@@ -95,6 +104,7 @@ def get_keywords_columns(session: Session, page: int = 0, batch_size: int = 5000
             Keywords.srt,
             Keywords.theme,
             Keywords.channel_name,
+            Keywords.channel_title,
         )
         .offset(page)
         .limit(batch_size)
@@ -123,6 +133,7 @@ def update_keyword_row(session: Session,
                         number_of_biodiversite_solutions_directes: int,
                         channel_program: str,
                         channel_program_type: str,
+                        channel_title: str,
     ):
     if matching_themes is not None:
         session.query(Keywords).filter(Keywords.id == keyword_id).update(
@@ -142,7 +153,8 @@ def update_keyword_row(session: Session,
                 Keywords.number_of_biodiversite_consequences:number_of_biodiversite_consequences ,
                 Keywords.number_of_biodiversite_solutions_directes:number_of_biodiversite_solutions_directes,
                 Keywords.channel_program: channel_program,
-                Keywords.channel_program_type: channel_program_type
+                Keywords.channel_program_type: channel_program_type,
+                Keywords.channel_title: channel_title
             },
             synchronize_session=False
         )

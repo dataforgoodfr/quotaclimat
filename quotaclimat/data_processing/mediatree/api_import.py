@@ -51,17 +51,20 @@ def refresh_token(token, date):
 async def update_pg_data(exit_event):
     start_offset = int(os.environ.get("START_OFFSET", 0))
     batch_size = int(os.environ.get("BATCH_SIZE", 50000))
+    number_of_batch = int(os.environ.get("NUMBER_OF_BATCH", 6))
     program_only = os.environ.get("UPDATE_PROGRAM_ONLY", "false") == "true"
     if(program_only):
         logging.warning("Update : Program only mode activated")
 
-    logging.warning(f"Updating already saved data from Postgresql from offset {start_offset} - env variable START_OFFSET")
+    #TODO get program here
+
+    logging.warning(f"Updating already saved data from Postgresql from offset {start_offset} - env variable START_OFFSET until {start_offset + number_of_batch * batch_size}")
     try:
         session = get_db_session()
-        update_keywords(session, batch_size=batch_size, start_offset=start_offset, program_only=program_only)
+        update_keywords(session, batch_size=batch_size, start_offset=start_offset, program_only=program_only, number_of_batch=number_of_batch)
         exit_event.set()
     except Exception as err:
-        logging.error("Could update_pg_data %s:(%s) %s" % (type(err).__name__, err))
+        logging.error("Could update_pg_data %s:(%s)" % (type(err).__name__, err))
 
 def get_channels():
     if(os.environ.get("ENV") == "docker" or os.environ.get("CHANNEL") is not None):
@@ -80,10 +83,7 @@ async def get_and_save_api_data(exit_event):
     with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
         try:
             logging.warning(f"Available CPUS {os.cpu_count()} - MODIN_CPUS config : {os.environ.get('MODIN_CPUS', 0)}")
-            context = ray.init(
-                dashboard_host="0.0.0.0", # for docker dashboard
-            )
-            logging.info(f"ray context dahsboard : {context.dashboard_url}")
+
             conn = connect_to_db()
             token=get_auth_token(password=password, user_name=USER)
             type_sub = 's2t'
@@ -269,6 +269,12 @@ async def main():
             event_finish = asyncio.Event()
             # Start the health check server in the background
             health_check_task = asyncio.create_task(run_health_check_server())
+            
+            context = ray.init(
+                dashboard_host="0.0.0.0", # for docker dashboard
+            )
+            logging.info(f"Ray context dahsboard available at : {context.dashboard_url}")
+            logging.warning(f"Ray Information about the env: {ray.available_resources()}")
 
             # Start batch job
             if(os.environ.get("UPDATE") == "true"):

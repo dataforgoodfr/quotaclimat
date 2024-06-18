@@ -128,3 +128,47 @@ def get_programs_for_this_day(day: datetime, channel_name: str, df_program: pd.D
     }), axis=1)
     logging.info(f"Program of {channel_name} : {programs_of_a_day}")
     return programs_of_a_day
+
+def get_channel_title_for_name(channel_name: str) -> str:
+    match channel_name:  
+        case "tf1":
+            return "TF1"
+        case "france2":
+            return "France 2"
+        case "fr3-idf":
+            return "France 3-idf"
+        case "m6":
+            return "M6"
+        case "arte":
+            return "Arte"
+        case "d8":
+            return "C8"
+        case "bfmtv":
+            return "BFM TV"
+        case "lci":
+            return "LCI"
+        case "franceinfotv":
+            return "France Info"
+        case "itele":
+            return "CNews"
+        case "europe1":
+            return "Europe 1"
+        case "france-culture":
+            return "France Culture"
+        case "france-inter":
+            return "France Inter"
+        case "sud-radio":
+            return "Sud Radio"
+        case "rmc":
+            return "RMC"
+        case "rtl":
+            return "RTL"
+        case "france24":
+            return "France 24"
+        case "france-info":
+            return "FranceinfoRadio"
+        case "rfi":
+            return "RFI"
+        case _:
+            logging.error(f"Channel_name unknown {channel_name}")
+            return ""

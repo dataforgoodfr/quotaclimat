@@ -80,7 +80,7 @@ subtitles = [{
 ]
 def test_default_get_themes_keywords_duration():
     plaintext_nothing = "cheese pizza"
-    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
    
 def test_one_theme_get_themes_keywords_duration():
     plaintext_climat = "réchauffement planétaire test"
@@ -105,7 +105,10 @@ def test_one_theme_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux,
         number_of_biodiversite_causes_directes,
         number_of_biodiversite_consequences,
-        number_of_biodiversite_solutions_directes) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_directes
+        ,number_of_keywords_20,
+        number_of_keywords_30,
+        number_of_keywords_40) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
     assert set(themes_output) == set(themes)
     assert compare_unordered_lists_of_dicts(keywords_output, keywords)
 
@@ -211,7 +214,10 @@ def test_long_sentence_theme_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux,
         number_of_biodiversite_causes_directes,
         number_of_biodiversite_consequences,
-        number_of_biodiversite_solutions_directes) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_directes
+        ,number_of_keywords_20,
+        number_of_keywords_30,
+        number_of_keywords_40) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
 
     assert set(themes_output) == set(themes)
     assert compare_unordered_lists_of_dicts(keywords_output, keywords)
@@ -231,12 +237,12 @@ def test_long_sentence_theme_get_themes_keywords_duration():
 def test_nothing_get_themes_keywords_duration():
     # should not accept theme 'bus' for keyword "abusive"
     plaintext_regression_incomplete_word = "abusive"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
     
 def test_regression_included_get_themes_keywords_duration():
     # should not accept theme 'ngt' for keyword "vingt"
     plaintext_regression_incomplete_word_ngt = "vingt"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
     
 
 def test_three_get_themes_keywords_duration():
@@ -267,7 +273,10 @@ def test_three_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux,
         number_of_biodiversite_causes_directes,
         number_of_biodiversite_consequences,
-        number_of_biodiversite_solutions_directes) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
+        number_of_biodiversite_solutions_directes
+        ,number_of_keywords_20,
+        number_of_keywords_30,
+        number_of_keywords_40) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
 
     assert set(themes_output)== themes
     assert keywords_output == keywords
@@ -322,7 +331,10 @@ def test_long_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux,
         number_of_biodiversite_causes_directes,
         number_of_biodiversite_consequences,
-        number_of_biodiversite_solutions_directes) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
+        number_of_biodiversite_solutions_directes
+        ,number_of_keywords_20,
+        number_of_keywords_30,
+        number_of_keywords_40) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
     assert set(themes_output) == set(themes)
     assert compare_unordered_lists_of_dicts(keywords_output, keywords)
     assert number_of_keywords == 0
@@ -340,11 +352,11 @@ def test_long_get_themes_keywords_duration():
 
 def test_stop_word_get_themes_keywords_duration():
     plaintext = "haute isolation thermique fabriqué en france pizza"
-    assert get_themes_keywords_duration(plaintext, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
    
 def test_train_stop_word_get_themes_keywords_duration():
     plaintext = "en train de fabrique en france pizza"
-    assert get_themes_keywords_duration(plaintext, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
    
 
 def test_get_cts_in_ms_for_keywords():
@@ -478,6 +490,9 @@ def test_lower_case_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
+        ,'number_of_keywords_20':0,
+        'number_of_keywords_30':0,
+        'number_of_keywords_40':0
     }])
 
     # List of words to filter on
@@ -528,6 +543,9 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
+        ,'number_of_keywords_20':0,
+        'number_of_keywords_30':0,
+        'number_of_keywords_40':0
     }])
 
     # List of words to filter on
@@ -620,6 +638,9 @@ def test_complexe_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
+        ,'number_of_keywords_20':0,
+        'number_of_keywords_30':0,
+        'number_of_keywords_40':0
     }])
 
     # List of words to filter on
@@ -688,7 +709,7 @@ def test_overlap_count_keywords_duration_overlap():
             }
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 1
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
   
 def test_no_overlap_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -723,7 +744,7 @@ def test_no_overlap_count_keywords_duration_overlap():
             },
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 6
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start),start) == 6
 
 def test_with_a_mix_of_overlap_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -763,7 +784,7 @@ def test_with_a_mix_of_overlap_count_keywords_duration_overlap():
             },
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 3
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start),start) == 3
 
 def test_with_15second_window_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -803,7 +824,7 @@ def test_with_15second_window_count_keywords_duration_overlap():
             } # window 3
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 4
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start),start) == 4
 
 def test_only_one_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -813,7 +834,7 @@ def test_only_one_count_keywords_duration_overlap():
             }
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 1
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
 
 def test_indirect_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -823,7 +844,7 @@ def test_indirect_count_keywords_duration_overlap():
             }
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 1
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
 
 def test_resources_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
@@ -833,7 +854,7 @@ def test_resources_count_keywords_duration_overlap():
             }
     ]
     
-    assert count_keywords_duration_overlap(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 1
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start),start) == 1
 
 def test_filter_indirect_words():
     keywords_with_timestamp = [{
@@ -1046,7 +1067,7 @@ def test_get_keyword_by_fifteen_second_window():
             }
     ]
     
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 4
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 4
 
 def test_full_house_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [{
@@ -1111,7 +1132,7 @@ def test_full_house_get_keyword_by_fifteen_second_window():
             }
     ]
     
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 8
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 8
 
 
 def test_simple_get_keyword_by_fifteen_second_window():
@@ -1127,7 +1148,7 @@ def test_simple_get_keyword_by_fifteen_second_window():
             }
     ]
     
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 1
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
 
 def test_edge_out_of_bound_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [
@@ -1138,7 +1159,7 @@ def test_edge_out_of_bound_get_keyword_by_fifteen_second_window():
             }
     ]
     
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 1
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
 
 def test_really_out_of_bound_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [
@@ -1149,7 +1170,7 @@ def test_really_out_of_bound_get_keyword_by_fifteen_second_window():
             }
     ]
     with pytest.raises(Exception):
-        count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start)
+        count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start)
 
 def test_almost_out_of_bound_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [
@@ -1160,9 +1181,9 @@ def test_almost_out_of_bound_get_keyword_by_fifteen_second_window():
             }
     ]
     
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start), start) == 1
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
 
-def test_tag_fifteen_second_window_number():
+def test_tag_wanted_duration_second_window_number():
     keywords_with_timestamp = [
         {'keyword': 'recyclage',
          'timestamp': original_timestamp,
@@ -1213,7 +1234,7 @@ def test_tag_fifteen_second_window_number():
           'theme': 'attenuation_climatique_solutions_indirectes'
         }
     ]
-    assert tag_fifteen_second_window_number(keywords_with_timestamp, start) == expected
+    assert tag_wanted_duration_second_window_number(keywords_with_timestamp, start) == expected
 
 def test_transform_false_positive_keywords_to_positive():
     keywords_with_timestamp = [
@@ -1285,7 +1306,7 @@ def test_transform_false_positive_keywords_to_positive():
         }
     ]
     
-    assert transform_false_positive_keywords_to_positive(tag_fifteen_second_window_number(keywords_with_timestamp,start), start) == expected_output
+    assert transform_false_positive_keywords_to_positive(tag_wanted_duration_second_window_number(keywords_with_timestamp,start), start) == expected_output
 
 def test_different_steps_transform_false_positive_keywords_to_positive():
     keywords_with_timestamp = [
@@ -1348,7 +1369,7 @@ def test_different_steps_transform_false_positive_keywords_to_positive():
         }
     ]
     
-    assert transform_false_positive_keywords_to_positive(tag_fifteen_second_window_number(keywords_with_timestamp,start), start) == expected_output
+    assert transform_false_positive_keywords_to_positive(tag_wanted_duration_second_window_number(keywords_with_timestamp,start), start) == expected_output
 
 
 def test_count_different_window_number():
@@ -1382,4 +1403,37 @@ def test_count_different_window_number():
           'theme': 'attenuation_climatique_solutions_indirectes' 
         }
     ]
-    assert count_different_window_number(tag_fifteen_second_window_number(keywords_with_timestamp, start),start) == 6
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start),start) == 6
+
+def test_count_different_window_number_40():
+    keywords_with_timestamp = [
+        {'keyword': 'recyclage',
+         'timestamp': original_timestamp, # count
+         'theme': 'attenuation_climatique_solutions_indirectes'
+        },
+        {'keyword': 'climatique',
+         'timestamp': original_timestamp + 150,
+         'theme': 'changement_climatique_constat'
+        },
+        {'keyword': 'covoiturage',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() + 10000,
+         'theme': 'attenuation_climatique_solutions_indirectes'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 2 , # count
+          'theme': 'attenuation_climatique_solutions_indirectes'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 3 , # count
+          'theme': 'attenuation_climatique_solutions_indirectes' 
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 5 , # count
+          'theme': 'attenuation_climatique_solutions_indirectes' 
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 7, # count
+          'theme': 'attenuation_climatique_solutions_indirectes' 
+        }
+    ]
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, 40),start) == 3

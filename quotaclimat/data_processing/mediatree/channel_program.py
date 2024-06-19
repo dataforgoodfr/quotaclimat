@@ -44,7 +44,7 @@ def add_channel_program(df: pd.DataFrame):
         logging.error("Could not merge program and subtitle df", error)
         raise Exception
 
-def compare_weekday(df_program_weekday, start_weekday: int) -> bool:
+def compare_weekday(df_program_weekday: str, start_weekday: int) -> bool:
     logging.debug(f"Comparing weekday {start_weekday} with df_program_weekday value : {df_program_weekday}")
     match not df_program_weekday.isdigit():
         case False: #int case

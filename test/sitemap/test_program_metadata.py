@@ -192,6 +192,6 @@ def test_compare_weekday_string():
     assert compare_weekday('weekend', 3) == False
     
 def test_compare_weekday_int():
-    assert compare_weekday(1, 5) == False
-    assert compare_weekday(1, 1) == True
-    assert compare_weekday(4, 4) == True
+    assert compare_weekday("1", 5) == False
+    assert compare_weekday("1", 1) == True
+    assert compare_weekday("4", 4) == True

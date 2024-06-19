@@ -22,6 +22,7 @@ def get_programs():
             "program_name":pd.StringDtype,
             "program_type":pd.StringDtype
         }
+        logging.debug(f"Reading {json_file_path}")
         df_programs = pd.read_json(json_file_path, lines=True, dtype=data_dtype)
 
         df_programs['start'] = format_hour_minute(df_programs['start'])

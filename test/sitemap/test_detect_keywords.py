@@ -113,6 +113,9 @@ def test_one_theme_get_themes_keywords_duration():
     assert compare_unordered_lists_of_dicts(keywords_output, keywords)
 
     assert number_of_keywords == 1
+    assert number_of_keywords_20 == 1
+    assert number_of_keywords_30 == 1
+    assert number_of_keywords_40 == 1
     assert number_of_changement_climatique_constat == 1
     assert number_of_changement_climatique_causes_directes == 0
     assert number_of_changement_climatique_consequences == 0
@@ -490,9 +493,9 @@ def test_lower_case_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
-        ,'number_of_keywords_20':0,
-        'number_of_keywords_30':0,
-        'number_of_keywords_40':0
+        ,'number_of_keywords_20':1,
+        'number_of_keywords_30':1,
+        'number_of_keywords_40':1
     }])
 
     # List of words to filter on
@@ -543,9 +546,9 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
-        ,'number_of_keywords_20':0,
-        'number_of_keywords_30':0,
-        'number_of_keywords_40':0
+        ,'number_of_keywords_20':1,
+        'number_of_keywords_30':1,
+        'number_of_keywords_40':1
     }])
 
     # List of words to filter on
@@ -638,9 +641,9 @@ def test_complexe_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
-        ,'number_of_keywords_20':0,
-        'number_of_keywords_30':0,
-        'number_of_keywords_40':0
+        ,'number_of_keywords_20':2,
+        'number_of_keywords_30':2,
+        'number_of_keywords_40':2
     }])
 
     # List of words to filter on
@@ -711,7 +714,8 @@ def test_overlap_count_keywords_duration_overlap():
     
     assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start), start) == 1
   
-def test_no_overlap_count_keywords_duration_overlap():
+def test_20_seconds_no_overlap_count_keywords_duration_overlap():
+    duration = 20
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": original_timestamp, 
@@ -719,32 +723,32 @@ def test_no_overlap_count_keywords_duration_overlap():
             },
             {
                 "keyword" : 'conditions de vie sur terre',
-                "timestamp": original_timestamp + 1 * get_keyword_time_separation_ms(),
+                "timestamp": original_timestamp + 1 * get_keyword_time_separation_ms(duration),
                 "theme":"changement_climatique_constat",
             },
             {
                 "keyword" : 'planète',
-                "timestamp": original_timestamp + 2 * get_keyword_time_separation_ms(),
+                "timestamp": original_timestamp + 2 * get_keyword_time_separation_ms(duration),
                 "theme":"ressources", # resources does count now
             },
             {
                 "keyword" : 'terre',
-                "timestamp": original_timestamp + 3 * get_keyword_time_separation_ms(),
+                "timestamp": original_timestamp + 3 * get_keyword_time_separation_ms(duration),
                 "theme":"ressources", # resources does count now
             },
             {
                 "keyword" : 'habitabilité de la planète',
-                "timestamp": original_timestamp + 4 * get_keyword_time_separation_ms(), 
+                "timestamp": original_timestamp + 4 * get_keyword_time_separation_ms(duration), 
                 "theme":"changement_climatique_constat",
             },
             {
                 "keyword" : 'conditions de vie sur terre',
-                "timestamp": original_timestamp + 5 * get_keyword_time_separation_ms(),
+                "timestamp": original_timestamp + 5 * get_keyword_time_separation_ms(duration),
                 "theme":"changement_climatique_constat",
             },
     ]
     
-    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start),start) == 6
+    assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, duration),start) == 6
 
 def test_with_a_mix_of_overlap_count_keywords_duration_overlap():
     keywords_with_timestamp = [{

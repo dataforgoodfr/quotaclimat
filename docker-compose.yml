@@ -1,7 +1,6 @@
 version: '3.8'
 services:
   test:
-    container_name: test
     build:
       context: ./
       dockerfile: Dockerfile
@@ -18,6 +17,38 @@ services:
       POSTGRES_HOST: postgres_db
       POSTGRES_PORT: 5432
       MODIN_ENGINE: ray
+    tty: true # colorize terminal
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./test/:/app/test/
+      - ./poetry.lock:/app/poetry.lock
+      - ./pyproject.toml:/app/pyproject.toml
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    depends_on:
+      nginxtest:
+        condition: service_healthy
+      postgres_db:
+        condition: service_healthy
+
+  testconsole:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    entrypoint: ["sleep", "12000"] # use to debug the container if needed
+    environment:
+      ENV: docker
+      # CHANNEL: "fr3-idf"
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      MODIN_ENGINE: ray
+      MODIN_CPUS: 4 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
     tty: true # colorize terminal
     volumes:
       - ./quotaclimat/:/app/quotaclimat/

@@ -91,7 +91,7 @@ def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timest
     matching_rows.drop(columns=['weekday'], inplace=True)
     
     if matching_rows.empty:
-        logging.warn(f"Program tv : no matching rows found {channel_name} for weekday {start_weekday} - {start_time}")
+        logging.warning(f"Program tv : no matching rows found {channel_name} for weekday {start_weekday} - {start_time}")
 
     return matching_rows
 

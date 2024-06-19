@@ -105,7 +105,10 @@ def test_one_theme_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux,
         number_of_biodiversite_causes_directes,
         number_of_biodiversite_consequences,
-        number_of_biodiversite_solutions_directes) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_directes
+        ,number_of_keywords_20,
+        number_of_keywords_30,
+        number_of_keywords_40) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
     assert set(themes_output) == set(themes)
     assert compare_unordered_lists_of_dicts(keywords_output, keywords)
 
@@ -211,7 +214,10 @@ def test_long_sentence_theme_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux,
         number_of_biodiversite_causes_directes,
         number_of_biodiversite_consequences,
-        number_of_biodiversite_solutions_directes) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_directes
+        ,number_of_keywords_20,
+        number_of_keywords_30,
+        number_of_keywords_40) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
 
     assert set(themes_output) == set(themes)
     assert compare_unordered_lists_of_dicts(keywords_output, keywords)
@@ -267,7 +273,10 @@ def test_three_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux,
         number_of_biodiversite_causes_directes,
         number_of_biodiversite_consequences,
-        number_of_biodiversite_solutions_directes) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
+        number_of_biodiversite_solutions_directes
+        ,number_of_keywords_20,
+        number_of_keywords_30,
+        number_of_keywords_40) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
 
     assert set(themes_output)== themes
     assert keywords_output == keywords
@@ -322,7 +331,10 @@ def test_long_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux,
         number_of_biodiversite_causes_directes,
         number_of_biodiversite_consequences,
-        number_of_biodiversite_solutions_directes) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
+        number_of_biodiversite_solutions_directes
+        ,number_of_keywords_20,
+        number_of_keywords_30,
+        number_of_keywords_40) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
     assert set(themes_output) == set(themes)
     assert compare_unordered_lists_of_dicts(keywords_output, keywords)
     assert number_of_keywords == 0
@@ -478,6 +490,9 @@ def test_lower_case_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
+        ,'number_of_keywords_20':0,
+        'number_of_keywords_30':0,
+        'number_of_keywords_40':0
     }])
 
     # List of words to filter on
@@ -528,6 +543,9 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
+        ,'number_of_keywords_20':0,
+        'number_of_keywords_30':0,
+        'number_of_keywords_40':0
     }])
 
     # List of words to filter on
@@ -620,6 +638,9 @@ def test_complexe_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
+        ,'number_of_keywords_20':0,
+        'number_of_keywords_30':0,
+        'number_of_keywords_40':0
     }])
 
     # List of words to filter on
@@ -1383,3 +1404,36 @@ def test_count_different_window_number():
         }
     ]
     assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start),start) == 6
+
+def test_count_different_window_number_40():
+    keywords_with_timestamp = [
+        {'keyword': 'recyclage',
+         'timestamp': original_timestamp, # count
+         'theme': 'attenuation_climatique_solutions_indirectes'
+        },
+        {'keyword': 'climatique',
+         'timestamp': original_timestamp + 150,
+         'theme': 'changement_climatique_constat'
+        },
+        {'keyword': 'covoiturage',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() + 10000,
+         'theme': 'attenuation_climatique_solutions_indirectes'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 2 , # count
+          'theme': 'attenuation_climatique_solutions_indirectes'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 3 , # count
+          'theme': 'attenuation_climatique_solutions_indirectes' 
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 5 , # count
+          'theme': 'attenuation_climatique_solutions_indirectes' 
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms() * 7, # count
+          'theme': 'attenuation_climatique_solutions_indirectes' 
+        }
+    ]
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, 40),start) == 3

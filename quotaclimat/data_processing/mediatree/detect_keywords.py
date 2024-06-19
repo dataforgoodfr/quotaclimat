@@ -142,7 +142,6 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         keywords_with_timestamp_20 = get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds=20)
         keywords_with_timestamp_30 = get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds=30)
         keywords_with_timestamp_40 = get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds=40)
-
         filtered_keywords_with_timestamp = filter_indirect_words(keywords_with_timestamp_15)
     
         return [
@@ -170,11 +169,11 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         return [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None] # TODO refacto me
 
 def get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds: int = 15):
-    keywords_with_timestamp_copy = keywords_with_timestamp.copy()
+    logging.debug(f"using duration_seconds {duration_seconds}")
+    keywords_with_timestamp_copy = copy.deepcopy(keywords_with_timestamp)
     keywords_with_timestamp_copy = tag_wanted_duration_second_window_number(keywords_with_timestamp_copy, start, duration_seconds=duration_seconds)
     keywords_with_timestamp_copy = transform_false_positive_keywords_to_positive(keywords_with_timestamp_copy, start)
     keywords_with_timestamp_copy = filter_keyword_with_same_timestamp(keywords_with_timestamp_copy)
-
     return keywords_with_timestamp_copy
 
 def get_themes(keywords_with_timestamp: List[dict]) -> List[str]:
@@ -297,7 +296,7 @@ def tag_wanted_duration_second_window_number(keywords_with_timestamp: List[dict]
     window_size_seconds = get_keyword_time_separation_ms(duration_seconds=duration_seconds)
     total_seconds_in_window = get_chunk_duration_api()
     number_of_windows = int(total_seconds_in_window // window_size_seconds)
-
+    logging.debug(f"number_of_windows { number_of_windows} - window_size_seconds {window_size_seconds} using duration_seconds {duration_seconds}")
     for keyword_info in keywords_with_timestamp:
         window_number = int( (keyword_info['timestamp'] - start.timestamp() * 1000) // (window_size_seconds))
         logging.debug(f"Window number {window_number} out of {number_of_windows} - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")

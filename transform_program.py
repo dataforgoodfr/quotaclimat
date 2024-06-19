@@ -192,7 +192,7 @@ for line in data:
     else:
         # from 1 to 7 to simplify SQL queries 
         new_program_data = program_data.copy()
-        new_program_data['weekday'] = new_program_data['weekday'] + 1
+        new_program_data['weekday'] = int(new_program_data['weekday']) + 1
         programs.append(new_program_data)
 
 for program in programs:

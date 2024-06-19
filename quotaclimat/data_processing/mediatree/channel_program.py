@@ -15,12 +15,12 @@ def get_programs():
         current_dir = os.path.dirname(os.path.abspath(__file__))
         json_file_path = os.path.join(current_dir, 'channel_program.json')
         data_dtype = { # UserWarning: `read_*` implementation has mismatches with pandas:
-            "channel_name":pd.StringDtype,
-            "start":pd.StringDtype,
-            "end":pd.StringDtype,
-            "weekday":pd.StringDtype,
-            "program_name":pd.StringDtype,
-            "program_type":pd.StringDtype
+            "channel_name":str,
+            "start":str,
+            "end":str,
+            "weekday":str,
+            "program_name":str,
+            "program_type":str
         }
         logging.debug(f"Reading {json_file_path}")
         df_programs = pd.read_json(json_file_path, lines=True, dtype=data_dtype)
@@ -44,11 +44,11 @@ def add_channel_program(df: pd.DataFrame):
         logging.error("Could not merge program and subtitle df", error)
         raise Exception
 
-def compare_weekday(df_program_weekday, start_weekday: int) -> bool:
+def compare_weekday(df_program_weekday: str, start_weekday: int) -> bool:
     logging.debug(f"Comparing weekday {start_weekday} with df_program_weekday value : {df_program_weekday}")
-    match isinstance(df_program_weekday, str):
+    match not df_program_weekday.isdigit():
         case False: #int case
-            return start_weekday == df_program_weekday
+            return start_weekday == int(df_program_weekday)
         case True: # string case
             match df_program_weekday:
                 case '*': return True

@@ -19,7 +19,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
     
     logging.info(f"Updating {total_updates} saved keywords from {start_offset} offsets - batch size {batch_size} - until offset {until_offset}")
     df_programs = get_programs()
-
+    logging.debug("Got channel programs")
     for i in range(start_offset, until_offset, batch_size):
         current_batch_saved_keywords = get_keywords_columns(session, i, batch_size)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {until_offset}")
@@ -100,6 +100,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
 
 
 def get_keywords_columns(session: Session, page: int = 0, batch_size: int = 50000) -> list:
+    logging.debug(f"Getting {batch_size} elements from offset {page}")
     return (
         session.query(
             Keywords.id,

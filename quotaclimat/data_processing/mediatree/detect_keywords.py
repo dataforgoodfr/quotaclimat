@@ -116,7 +116,7 @@ def remove_stopwords(plaintext: str) -> str:
 @sentry_sdk.trace
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime):
     keywords_with_timestamp = []
-
+    number_of_elements_in_array = 17
     plaitext_without_stopwords = remove_stopwords(plaintext)
     logging.debug(f"display datetime start {start}")
 
@@ -144,29 +144,29 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         keywords_with_timestamp_40 = get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds=40)
         filtered_keywords_with_timestamp = filter_indirect_words(keywords_with_timestamp_15)
     
+        # TODO refacto this return array and else
         return [
             get_themes(keywords_with_timestamp_15), # theme
             clean_metadata(keywords_with_timestamp_15), # keywords
             count_keywords_duration_overlap(filtered_keywords_with_timestamp, start), # number_of_keywords
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_constat"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_causes"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"changement_climatique_consequences"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"attenuation_climatique_solutions"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"adaptation_climatique_solutions"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"ressources_solutions"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_concepts_generaux"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_causes"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_consequences"),
-            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"biodiversite_solutions")
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="changement_climatique_constat"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="changement_climatique_causes"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="changement_climatique_consequences"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="attenuation_climatique_solutions"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="adaptation_climatique_solutions"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="ressources"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="ressources_solutions"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="biodiversite_concepts_generaux"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="biodiversite_causes"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="biodiversite_consequences"),
+            count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="biodiversite_solutions")
             # number_of_keywords with special duration to compare duration
-            ,count_keywords_duration_overlap(filter_indirect_words(keywords_with_timestamp_20), start,f"keywords_20")
-            ,count_keywords_duration_overlap(filter_indirect_words(keywords_with_timestamp_30), start,f"keywords_30")
-            ,count_keywords_duration_overlap(filter_indirect_words(keywords_with_timestamp_40), start,f"keywords_40")
+            ,count_keywords_duration_overlap(filter_indirect_words(keywords_with_timestamp_20), start) # number_of_keywords_20
+            ,count_keywords_duration_overlap(filter_indirect_words(keywords_with_timestamp_30), start) # number_of_keywords_30
+            ,count_keywords_duration_overlap(filter_indirect_words(keywords_with_timestamp_40), start) # number_of_keywords_40
         ]
-
     else:
-        return [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None] # TODO refacto me
+        return [None] * number_of_elements_in_array
 
 def get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds: int = 15):
     logging.debug(f"using duration_seconds {duration_seconds}")

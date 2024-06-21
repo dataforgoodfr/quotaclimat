@@ -67,13 +67,12 @@ def test_delete_keywords():
             ,0
             ,0
             ,0
-            ,"télématin"
-            ,"Information - Magazine"
             ,"M6"
             ,0
             ,0
             ,0
             )
+    session.commit()
     assert get_keyword(primary_key) == None
 
 def test_first_update_keywords():
@@ -253,9 +252,9 @@ def test_first_update_keywords():
     assert number_of_biodiversite_consequences == 0
     assert number_of_biodiversite_solutions_directes == 0
 
-    # program
-    assert result_after_update.channel_program == "1245 le mag"
-    assert result_after_update.channel_program_type == "Information - Magazine"
+    # program - only when UPDATE_PROGRAM_ONLY for speed issues
+    # assert result_after_update.channel_program == "1245 le mag"
+    # assert result_after_update.channel_program_type == "Information - Magazine"
 
     #channel_title
     assert result_after_update.channel_title == "M6"

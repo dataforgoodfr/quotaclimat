@@ -54,9 +54,9 @@ async def update_pg_data(exit_event):
     number_of_batch = int(os.environ.get("NUMBER_OF_BATCH", 6))
     program_only = os.environ.get("UPDATE_PROGRAM_ONLY", "false") == "true"
     if(program_only):
-        logging.warning("Update : Program only mode activated")
-
-    #TODO get program here
+        logging.warning("Update : Program only mode activated - UPDATE_PROGRAM_ONLY")
+    else:
+        logging.warning("Update : programs will not be updated for performance issue - use UPDATE_PROGRAM_ONLY to true for this")
 
     logging.warning(f"Updating already saved data from Postgresql from offset {start_offset} - env variable START_OFFSET until {start_offset + number_of_batch * batch_size}")
     try:

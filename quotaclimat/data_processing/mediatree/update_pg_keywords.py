@@ -24,11 +24,10 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
         current_batch_saved_keywords = get_keywords_columns(session, i, batch_size)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {until_offset}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name, channel_title in current_batch_saved_keywords:
-            program_name, program_name_type = get_a_program_with_start_timestamp(df_programs, pd.Timestamp(start).tz_convert('Europe/Paris'), channel_name)
             if channel_title is None:
-                 logging.debug("channel_title none, set it using channel_name")
-                 channel_title = get_channel_title_for_name(channel_name)
-            
+                logging.debug("channel_title none, set it using channel_name")
+                channel_title = get_channel_title_for_name(channel_name)
+
             if(not program_only):
                 try:
                     matching_themes, \
@@ -80,14 +79,13 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
                 ,number_of_biodiversite_causes_directes
                 ,number_of_biodiversite_consequences
                 ,number_of_biodiversite_solutions_directes
-                ,channel_program=program_name
-                ,channel_program_type=program_name_type
                 ,channel_title=channel_title
                 ,number_of_keywords_20=new_number_of_keywords_20
                 ,number_of_keywords_30=new_number_of_keywords_30
                 ,number_of_keywords_40=new_number_of_keywords_40
                 )
             else:
+                program_name, program_name_type = get_a_program_with_start_timestamp(df_programs, pd.Timestamp(start).tz_convert('Europe/Paris'), channel_name)
                 update_keyword_row_program(session
                 ,keyword_id
                 ,channel_program=program_name
@@ -138,8 +136,6 @@ def update_keyword_row(session: Session,
                         number_of_biodiversite_causes_directes: int,
                         number_of_biodiversite_consequences: int,
                         number_of_biodiversite_solutions_directes: int,
-                        channel_program: str,
-                        channel_program_type: str,
                         channel_title: str
                         ,number_of_keywords_20: int
                         ,number_of_keywords_30: int
@@ -162,8 +158,6 @@ def update_keyword_row(session: Session,
                 Keywords.number_of_biodiversite_causes_directes:number_of_biodiversite_causes_directes ,
                 Keywords.number_of_biodiversite_consequences:number_of_biodiversite_consequences ,
                 Keywords.number_of_biodiversite_solutions_directes:number_of_biodiversite_solutions_directes,
-                Keywords.channel_program: channel_program,
-                Keywords.channel_program_type: channel_program_type,
                 Keywords.channel_title: channel_title
                 ,Keywords.number_of_keywords_20: number_of_keywords_20
                 ,Keywords.number_of_keywords_30: number_of_keywords_30
@@ -174,7 +168,6 @@ def update_keyword_row(session: Session,
     else:
         logging.warning(f"Matching themes is empty - deleting row {keyword_id}")
         session.query(Keywords).filter(Keywords.id == keyword_id).delete()
-        session.commit()
 
 def update_keyword_row_program(session: Session, 
                        keyword_id: int,

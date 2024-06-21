@@ -145,16 +145,16 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         keywords_with_timestamp= clean_metadata(keywords_with_timestamp_15)
         number_of_keywords= count_keywords_duration_overlap(filtered_keywords_with_timestamp, start)
 
-        number_of_changement_climatique_constat = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="changement_climatique_constat"),
-        number_of_changement_climatique_causes = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="changement_climatique_causes"),
-        number_of_changement_climatique_consequences = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="changement_climatique_consequences"),
-        number_of_attenuation_climatique_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="attenuation_climatique_solutions"),
-        number_of_adaptation_climatique_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="adaptation_climatique_solutions"),
-        number_of_ressources = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="ressources"),
-        number_of_ressources_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="ressources_solutions"),
-        number_of_biodiversite_concepts_generaux = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="biodiversite_concepts_generaux"),
-        number_of_biodiversite_causes = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="biodiversite_causes"),
-        number_of_biodiversite_consequences = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="biodiversite_consequences"),
+        number_of_changement_climatique_constat = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="changement_climatique_constat")
+        number_of_changement_climatique_causes = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="changement_climatique_causes")
+        number_of_changement_climatique_consequences = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="changement_climatique_consequences")
+        number_of_attenuation_climatique_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="attenuation_climatique_solutions")
+        number_of_adaptation_climatique_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="adaptation_climatique_solutions")
+        number_of_ressources = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="ressources")
+        number_of_ressources_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="ressources_solutions")
+        number_of_biodiversite_concepts_generaux = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="biodiversite_concepts_generaux")
+        number_of_biodiversite_causes = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="biodiversite_causes")
+        number_of_biodiversite_consequences = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="biodiversite_consequences")
         number_of_biodiversite_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme="biodiversite_solutions")
 
         if(os.environ.get("COMPARE_DURATION") == "true"):

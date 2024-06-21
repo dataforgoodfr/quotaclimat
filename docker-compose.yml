@@ -17,6 +17,7 @@ services:
       POSTGRES_HOST: postgres_db
       POSTGRES_PORT: 5432
       MODIN_ENGINE: ray
+      COMPARE_DURATION: "true"
     tty: true # colorize terminal
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
@@ -47,6 +48,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_HOST: postgres_db
       POSTGRES_PORT: 5432
+      COMPARE_DURATION: "true"
       MODIN_ENGINE: ray
       MODIN_CPUS: 4 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
     tty: true # colorize terminal
@@ -145,6 +147,7 @@ services:
       PORT_HS: 5050 # healthcheck
       HEALTHCHECK_SERVER: "0.0.0.0"
       # SENTRY_DSN: prod_only
+      # COMPARE_DURATION: "true"
       # UPDATE: "true" # to batch update PG 
       #UPDATE_PROGRAM_ONLY: "true" # to batch update PG but only channel with program
       # START_OFFSET: 1 # to batch update PG from a offset

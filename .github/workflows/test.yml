@@ -61,6 +61,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
+          COMPARE_DURATION: "true"
       - name: pytest run everything else
         run: |
           set -o pipefail
@@ -75,6 +76,7 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
+          COMPARE_DURATION: "true"
           
       # - name: Upload coverage reports to Codecov
       #   uses: codecov/codecov-action@v3

@@ -294,6 +294,10 @@ BATCH_SIZE: 50000 # number of records to update in one batch
 NUMBER_OF_BATCH: 4 # number of batch size to process
 ```
 
+### Comparison between 15/20/30/40 window
+Set `COMPARE_DURATION` to true such as in the docker-compose.yml to calculate number_of_keywords_20/30/40 in addition of 15.
+The goal is to compare different durations to select one, it should be desactivated to have more effective program.
+
 ### Batch program data
 `UPDATE_PROGRAM_ONLY` to true will only update program metadata, otherwise, it will update program metadata and all theme/keywords calculations.
 

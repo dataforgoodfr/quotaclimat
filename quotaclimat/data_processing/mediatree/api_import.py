@@ -276,6 +276,11 @@ async def main():
             logging.info(f"Ray context dahsboard available at : {context.dashboard_url}")
             logging.warning(f"Ray Information about the env: {ray.available_resources()}")
 
+            if(os.environ.get("COMPARE_DURATION") == "true"):
+                logging.warning(f"Comparaison between number_of_15/20/30/40 is activated")
+            else:
+                logging.warning(f"Comparaison between 15/20/30/40 is OFF")
+
             # Start batch job
             if(os.environ.get("UPDATE") == "true"):
                 asyncio.create_task(update_pg_data(event_finish))

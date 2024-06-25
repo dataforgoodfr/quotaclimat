@@ -8,7 +8,7 @@ from sqlalchemy import text
 from postgres.database_connection import connect_to_db, get_db_session
 import os
 import json
-
+import time
 Base = declarative_base()
 
 
@@ -52,6 +52,7 @@ class Sitemap(Base):
     url = Column(Text)
     news_description= Column(Text) # ALTER TABLE sitemap_table add news_description text;
     updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
+    version = Column(String, nullable=True) # software version
 
 class Keywords(Base):
     __tablename__ = keywords_table
@@ -66,6 +67,7 @@ class Keywords(Base):
     plaintext= Column(Text)
     theme=Column(JSON) #keyword.py  # ALTER TABLE keywords ALTER theme TYPE json USING to_json(theme);
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")) # ALTER TABLE ONLY keywords ALTER COLUMN created_at SET DEFAULT (now() at time zone 'utc');
+    updated_at = Column(DateTime(), default=datetime.now, onupdate=time.time(), nullable=True)
     keywords_with_timestamp = Column(JSON) # ALTER TABLE keywords ADD keywords_with_timestamp json;
     number_of_keywords = Column(Integer) # ALTER TABLE keywords ADD number_of_keywords integer;
     srt = Column(JSON) # ALTER TABLE keywords ADD srt json;
@@ -83,6 +85,7 @@ class Keywords(Base):
     number_of_keywords_20 = Column(Integer) # ALTER TABLE keywords ADD number_of_keywords_20 integer;
     number_of_keywords_30 = Column(Integer) # ALTER TABLE keywords ADD number_of_keywords_30 integer;
     number_of_keywords_40 = Column(Integer) # ALTER TABLE keywords ADD number_of_keywords_40 integer;
+    version = Column(String, nullable=True) # software version
 
 class Channel_Metadata(Base):
     __tablename__ = channel_metadata_table

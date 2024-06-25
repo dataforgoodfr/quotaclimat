@@ -26,7 +26,7 @@ def sentry_init():
             # Set profiles_sample_rate to 1.0 to profile 100%
             # of sampled transactions.
             # We recommend adjusting this value in production,
-            profiles_sample_rate=0.7,
+            profiles_sample_rate=0.1,
             release=get_app_version(),
             functions_to_trace=functions_to_trace,
         )

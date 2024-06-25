@@ -6,7 +6,9 @@ from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import JSON
 from postgres.schemas.models import sitemap_table, Keywords
+from quotaclimat.utils.healthcheck_config import get_app_version
 
+version = get_app_version()
 def clean_data(df: pd.DataFrame):
     df = df.drop_duplicates(subset="id")
     return df.query("id != 'empty'")  #  TODO improve - should be a None ?
@@ -41,6 +43,8 @@ def save_to_pg(df, table, conn):
     number_of_elements = len(df)
     logging.info(f"Saving {number_of_elements} elements to PG table '{table}'")
     logging.debug("Saving %s" % (df.head(1).to_string()))
+    df['version'] = version
+
     try:
         logging.debug("Schema before saving\n%s", df.dtypes)
         df.to_sql(

@@ -1,41 +1,40 @@
 # to generate keywords.py file
 import pandas as pd
 import json
+import logging
 
 # Need to import these files - slack #keywords
-excel_file_path = "cc-biodiv.xlsx"
-#excel_file_path = "resources.xlsx"
-
-if  "resources" in excel_file_path:
-    df = pd.read_excel(excel_file_path)
-else:
-    df = pd.read_excel(excel_file_path, sheet_name='Catégorisation Finale')
-
-df['category'] = df['category'].fillna('')
+excels_files = ["document-experts/Dictionnaire de mots-clés.xlsx", "document-experts/Ressources_feuille de travail.xlsx"]
+output_file = "quotaclimat/data_processing/mediatree/keyword/keyword.py"
 # Initialize the THEME_KEYWORDS dictionary
 THEME_KEYWORDS = {}
+for excel_file_path in excels_files:
+    print(f"Reading {excel_file_path}")
+    if  "Ressources_feuille" in excel_file_path:
+        df = pd.read_excel(excel_file_path)
+    else:
+        df = pd.read_excel(excel_file_path, sheet_name='Catégorisation Finale')
 
-# Iterate over the rows of the DataFrame
-for index, row in df.iterrows():
-    theme_name = row['theme']
-    keyword = row['keyword']
-    category = row['category']
+    df['category'] = df['category'].fillna('')
 
-    # Check if the theme_name already exists in THEME_KEYWORDS
-    if  "resources" in excel_file_path:
+    # Iterate over the rows of the DataFrame
+    for index, row in df.iterrows():
+        theme_name = row['theme'].strip()
+        keyword = row['keyword'].lower().strip()
+        category = row['category'].strip()
+
+        # Check if the theme_name already exists in THEME_KEYWORDS
+
         if(theme_name not in THEME_KEYWORDS):
             THEME_KEYWORDS[theme_name] = []
-    elif (theme_name not in THEME_KEYWORDS and "ressources" not in theme_name):
-        THEME_KEYWORDS[theme_name] = []
 
-    # filter # keywor
-    if  "resources" in excel_file_path:
-        THEME_KEYWORDS[theme_name].append({"keyword": keyword, "category": category})
-    elif ("#" not in keyword and "ressources" not in theme_name):
-        THEME_KEYWORDS[theme_name].append({"keyword": keyword, "category": category})
+        # filter # keyword with # (paused or removed)
+        if ("#" not in keyword):
+            THEME_KEYWORDS[theme_name].append({"keyword": keyword, "category": category})
 
 # Convert the THEME_KEYWORDS dictionary to a JSON string
-json_string = json.dumps(THEME_KEYWORDS, ensure_ascii=False, indent=4)
-
-# Print the JSON string with UTF-8 encoding
-print(json_string.encode('utf-8').decode())
+with open(output_file, 'w', encoding='utf-8') as f:
+    logging.info(f"Json written  - {len(THEME_KEYWORDS)} themes inside {output_file}")
+    print(f"Json written {len(THEME_KEYWORDS)} in {output_file}")
+    f.write("THEME_KEYWORDS = ")
+    json.dump(THEME_KEYWORDS, f, ensure_ascii=False, indent=4)

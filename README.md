@@ -338,10 +338,10 @@ In order to maintain channel perimeter (weekday, hours) up to date, we save the 
 ## Keywords
 ## Produce keywords list from Excel files
 How to update `quotaclimat/data_processing/mediatree/keyword/keyword.py` from shared excel files ?
-Download files locally then :
+Download files locally to "document-experts" from Google Drive (ask on Slack) then :
 ```
-poetry run python3 quotaclimat/transform_excel_to_json.py > cc-bio.json
-# then update quotaclimat/data_processing/mediatree/keyword/keyword.py list
+# Be sure to have updated the folder "document-experts" before running it :
+poetry run python3 quotaclimat/transform_excel_to_json.py
 ```
 
 ## Program Metadata table

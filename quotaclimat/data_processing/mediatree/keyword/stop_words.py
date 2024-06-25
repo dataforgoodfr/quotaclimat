@@ -23,7 +23,7 @@ STOP_WORDS = [
     ,"bd thierry rénovation énergétique point fr"
     ,"le mouvement de la rénovation énergétique"
     ,"en machine le gaspillage"
-    ,"-l' économie circulaire liddell"
+    ,"l' économie circulaire liddell"
     ,"l' économie circulaire carrefour"
     ,"pour l' économie circulaire bonjour"
     ,"sans ogm et cent pour cent"

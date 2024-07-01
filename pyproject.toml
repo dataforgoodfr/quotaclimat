@@ -15,7 +15,7 @@ log_cli_level = "INFO"
 [tool.poetry.dependencies]
 python = ">=3.11.0,<3.13.0"
 pandas = "^2.2.0"
-advertools = "^0.14.1"
+advertools = "^0.14.3"
 xmltodict = "^0.13.0"
 sqlalchemy = "^2.0.29"
 psycopg2-binary = "^2.9.5"

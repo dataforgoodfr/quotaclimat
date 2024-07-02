@@ -262,6 +262,12 @@ If our media perimeter evolves, we have to reimport it all using env variable `S
 
 Otherwise, default is yesterday midnight date (default cron job)
 
+**As pandas to_sql does not enable upsert (update/insert)**, if we want to update already saved rows, we have to delete first the rows and then start the program with `START_DATE` :
+```
+DELETE FROM keywords
+WHERE start > NOW() AND start > 1705409797
+```
+
 ### Based on channel
 Use env variable `CHANNEL` like in docker compose (string: tf1)
 

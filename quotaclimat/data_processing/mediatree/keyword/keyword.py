@@ -2905,10 +2905,6 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "norme",
-            "category": "General"
-        },
-        {
             "keyword": "nucléaire",
             "category": "Energie"
         },
@@ -3562,10 +3558,6 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "mesure environnementale",
-            "category": "General"
-        },
-        {
-            "keyword": "norme",
             "category": "General"
         },
         {

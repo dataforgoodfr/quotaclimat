@@ -86,6 +86,7 @@ jobs:
         run: poetry check --lock
 
       - name: Pytest coverage comment
+        if: github.actor != 'dependabot[bot]'
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@main
         with:
@@ -93,6 +94,7 @@ jobs:
           junitxml-path: ./pytest.xml
 
       - name: Check the output coverage
+        if: github.actor != 'dependabot[bot]'
         run: |
           echo "Coverage Percantage - ${{ steps.coverageComment.outputs.coverage }}"
 

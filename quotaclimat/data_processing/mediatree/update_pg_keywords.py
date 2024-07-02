@@ -9,6 +9,9 @@ from postgres.schemas.models import Keywords
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp, get_channel_title_for_name
 from sqlalchemy import func, select, delete
+from quotaclimat.utils.healthcheck_config import get_app_version
+
+version=get_app_version()
 
 def update_keywords(session: Session, batch_size: int = 50000, start_offset : int = 0, program_only=False, number_of_batch: int = 4) -> list:
     total_updates = get_total_count_saved_keywords(session)
@@ -162,6 +165,7 @@ def update_keyword_row(session: Session,
                 ,Keywords.number_of_keywords_20: number_of_keywords_20
                 ,Keywords.number_of_keywords_30: number_of_keywords_30
                 ,Keywords.number_of_keywords_40: number_of_keywords_40
+                ,Keywords.version: version
             },
             synchronize_session=False
         )

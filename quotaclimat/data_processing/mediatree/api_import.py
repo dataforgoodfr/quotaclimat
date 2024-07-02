@@ -63,6 +63,7 @@ async def update_pg_data(exit_event):
         session = get_db_session()
         update_keywords(session, batch_size=batch_size, start_offset=start_offset, program_only=program_only, number_of_batch=number_of_batch)
         exit_event.set()
+        session.close()
     except Exception as err:
         logging.error("Could update_pg_data %s:(%s)" % (type(err).__name__, err))
 
@@ -116,6 +117,7 @@ async def get_and_save_api_data(exit_event):
                     except Exception as err:
                         logging.error(f"continuing loop but met error : {err}")
                         continue
+            conn.close()
             exit_event.set()
         except Exception as err:
             logging.fatal("get_and_save_api_data (%s) %s" % (type(err).__name__, err))

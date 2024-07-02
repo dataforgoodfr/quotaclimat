@@ -109,9 +109,8 @@ async def get_and_save_api_data(exit_event):
                             logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
                             df = extract_api_sub(token, channel, type_sub, start_epoch,end_epoch, channel_program,channel_program_type) 
                             if(df is not None):
-                                # must ._to_pandas() because modin to_sql is not working
-                                save_to_pg(df._to_pandas(), keywords_table, conn)
-                            else: 
+                                save_to_pg(df, keywords_table, conn)
+                            else:
                                 logging.info("Nothing to save to Postgresql")
                     except Exception as err:
                         logging.error(f"continuing loop but met error : {err}")

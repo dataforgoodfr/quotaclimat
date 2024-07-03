@@ -30,7 +30,7 @@ def test_main_api_import():
         save_to_pg(df._to_pandas(), keywords_table, conn)
 
         session = get_db_session(conn)
-        saved_keywords = get_keywords_columns(session)
+        saved_keywords = get_keywords_columns(session, start_date="2024-02-01", end_date="2024-02-29")
         assert len(saved_keywords) == len(df)
 
 def test_first_row_api_import():

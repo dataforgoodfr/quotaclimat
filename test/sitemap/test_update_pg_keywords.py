@@ -191,7 +191,7 @@ def test_first_update_keywords():
     # check the value is well existing
     result_before_update = get_keyword(primary_key)
     session = get_db_session(conn)
-    update_keywords(session, batch_size=50)
+    update_keywords(session, batch_size=50, start_date="2024-01-01", end_date="2024-01-30")
     result_after_update = get_keyword(primary_key)
 
     new_theme, new_keywords_with_timestamp, new_value \

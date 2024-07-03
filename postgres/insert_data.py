@@ -40,7 +40,6 @@ def show_sitemaps_dataframe(df: pd.DataFrame):
 def save_to_pg(df, table, conn):
     number_of_elements = len(df)
     logging.info(f"Saving {number_of_elements} elements to PG table '{table}'")
-    logging.debug("Saving %s" % (df.head(1).to_string()))
     try:
         logging.debug("Schema before saving\n%s", df.dtypes)
         df.to_sql(

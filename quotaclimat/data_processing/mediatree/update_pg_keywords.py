@@ -8,21 +8,24 @@ from sqlalchemy.orm import Session
 from postgres.schemas.models import Keywords
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp, get_channel_title_for_name
-from sqlalchemy import func, select, delete
+from sqlalchemy import func, select, and_, func
 
-def update_keywords(session: Session, batch_size: int = 50000, start_offset : int = 0, program_only=False, number_of_batch: int = 4) -> list:
-    total_updates = get_total_count_saved_keywords(session)
-    until_offset = start_offset + (number_of_batch * batch_size)
-    if(until_offset > total_updates):
-        logging.info(f"Until offset ({until_offset}) too high max ={total_updates}, using max instead - change number_of_batch env variable if needed")
-        until_offset = total_updates
-    
-    logging.info(f"Updating {total_updates} saved keywords from {start_offset} offsets - batch size {batch_size} - until offset {until_offset}")
+def update_keywords(session: Session, batch_size: int = 50000, start_date : str = "2023-04-01", program_only=False, end_date: str = "2023-04-30") -> list:
+    total_updates = get_total_count_saved_keywords(session, start_date, end_date)
+
+    if total_updates == 0:
+        logging.error("No rows to update - change your START_DATE_UPDATE")
+        return 0
+    elif (batch_size > total_updates):
+        logging.info(f"Fixing batch size ({batch_size}) to {total_updates} because too high compared to saved elements")
+        batch_size = total_updates
+
+    logging.info(f"Updating {total_updates} saved keywords from {start_date} date to {end_date} - batch size {batch_size} - totals rows")
     df_programs = get_programs()
     logging.debug("Got channel programs")
-    for i in range(start_offset, until_offset, batch_size):
-        current_batch_saved_keywords = get_keywords_columns(session, i, batch_size)
-        logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {until_offset}")
+    for i in range(0, total_updates, batch_size):
+        current_batch_saved_keywords = get_keywords_columns(session, i, batch_size, start_date, end_date)
+        logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {total_updates}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name, channel_title in current_batch_saved_keywords:
             if channel_title is None:
                 logging.debug("channel_title none, set it using channel_name")
@@ -55,7 +58,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
                     keywords_with_timestamp != new_keywords_with_timestamp or
                     theme != matching_themes
                     ):
-                    logging.info(f"Difference detected for themes for ID {keyword_id} -  {theme} - {matching_themes} \
+                    logging.debug(f"Difference detected for themes for ID {keyword_id} -  {theme} - {matching_themes} \
                                 \nnumber_of_keywords {number_of_keywords} - {new_number_of_keywords}\
                                 \nkeywords_with_timestamp : {keywords_with_timestamp}\
                                 \n new_nkeywords_with_timestamp : {new_keywords_with_timestamp}"
@@ -91,14 +94,14 @@ def update_keywords(session: Session, batch_size: int = 50000, start_offset : in
                 ,channel_program=program_name
                 ,channel_program_type=program_name_type
                 )
-        logging.info(f"bulk update done {i} out of {until_offset} - (max offset {total_updates})")
+        logging.info(f"bulk update done {i} out of {total_updates} - (max offset {total_updates})")
         session.commit()
 
     logging.info("updated all keywords")
 
 
-def get_keywords_columns(session: Session, page: int = 0, batch_size: int = 50000) -> list:
-    logging.debug(f"Getting {batch_size} elements from offset {page}")
+def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30") -> list:
+    logging.debug(f"Getting {batch_size} elements from offset {offset}")
     return (
         session.query(
             Keywords.id,
@@ -111,13 +114,18 @@ def get_keywords_columns(session: Session, page: int = 0, batch_size: int = 5000
             Keywords.channel_name,
             Keywords.channel_title,
         )
-        .offset(page)
+        .filter(and_(func.date(Keywords.start) >= start_date, func.date(Keywords.start) <= end_date))
+        .order_by(Keywords.start, Keywords.channel_name, Keywords.plaintext)
+        .offset(offset)
         .limit(batch_size)
         .all()
     )
 
-def get_total_count_saved_keywords(session: Session) -> int:
-        statement = select(func.count()).select_from(Keywords)
+def get_total_count_saved_keywords(session: Session, start_date : str, end_date : str) -> int:
+        statement = select(func.count()).filter(
+            and_(func.date(Keywords.start) >= start_date, func.date(Keywords.start) <= end_date)
+        ).select_from(Keywords)
+        
         return session.execute(statement).scalar()
 
 def update_keyword_row(session: Session, 

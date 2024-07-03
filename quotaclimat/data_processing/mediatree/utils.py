@@ -5,6 +5,7 @@ import logging
 from zoneinfo import ZoneInfo
 import modin.pandas as pd
 import os 
+from pandas.tseries.offsets import MonthEnd
 
 timezone='Europe/Paris'
 
@@ -70,6 +71,11 @@ def get_yesterday():
     yesterday_timestamp = yesterday.timestamp()
 
     return int(yesterday_timestamp)
+
+def get_end_of_month(start_date: str) -> str:
+    date = pd.Timestamp(start_date) + MonthEnd(n=1)
+    date = pd.to_datetime(date, format='%Y%m%d')
+    return date.strftime('%Y-%m-%d')
 
 def get_start_end_date_env_variable_with_default():
     start_date = os.environ.get("START_DATE")

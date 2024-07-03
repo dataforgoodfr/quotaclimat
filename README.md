@@ -297,7 +297,6 @@ After having updated `UPDATE` env variable to true inside docker-compose.yml and
 We can adjust batch update with these env variables (as in the docker-compose.yml): 
 ```
 BATCH_SIZE: 50000 # number of records to update in one batch
-NUMBER_OF_BATCH: 4 # number of batch size to process
 ```
 
 ### Comparison between 15/20/30/40 window
@@ -308,13 +307,15 @@ The goal is to compare different durations to select one, it should be desactiva
 `UPDATE_PROGRAM_ONLY` to true will only update program metadata, otherwise, it will update program metadata and all theme/keywords calculations.
 
 ### Batch update from an offset
-With +1 millions rows, we can update from an offset to fix a custom logic by using `START_OFFSET` to batch update PG from a offset. 
+With +1 millions rows, we can update from an offset to fix a custom logic by using `START_DATE_UPDATE` (YYYY-MM-DD), the default will use the end of the month otherwise you can specify`END_DATE` (optional) (YYYY-MM-DD) to batch update PG from a date range.
 
 ~55 minutes to update 50K rows on a mVCPU 2240 - 4Gb RAM on Scaleway.
 
-Example inside the docker-compose.yml mediatree service -> START_OFFSET: 100
+Every month has ~80K rows.
 
-We can use [a Github actions to start multiple update operations with different offsets](https://github.com/dataforgoodfr/quotaclimat/blob/main/.github/workflows/scaleway-start-import-job-update.yml)
+Example inside the docker-compose.yml mediatree service -> START_DATE_UPDATE: 2024-04-01 - default END_DATE will be 2024-04-30
+ 
+We can use [a Github actions to start multiple update operations with different date, set it using the matrix](https://github.com/dataforgoodfr/quotaclimat/blob/main/.github/workflows/scaleway-start-import-job-update.yml)
 
 ## SQL Tables evolution
 Using [Alembic](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) Auto Generating Migrations¶ we can add a new column inside `models.py` and it will automatically make the schema evolution :

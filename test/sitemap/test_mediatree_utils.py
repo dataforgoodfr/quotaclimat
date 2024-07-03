@@ -38,3 +38,8 @@ def test_is_it_tuesday():
 
     date = pd.Timestamp("2024-01-01 15:34:28")
     assert is_it_tuesday(date) == False
+
+def test_get_end_of_month():
+    assert get_end_of_month("2024-04-01") == "2024-04-30"
+    assert get_end_of_month("2024-02-01") == "2024-02-29"
+    assert get_end_of_month("2024-02-15") == "2024-02-29"

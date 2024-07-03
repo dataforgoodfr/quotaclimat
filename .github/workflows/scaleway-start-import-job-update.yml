@@ -2,44 +2,21 @@ name: Import job Scaleway
 
 on:
   workflow_dispatch: # https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows#workflow_dispatch
-  
+
+
 jobs:
   start-job-image:
+    strategy:
+      matrix:
+        start_date: ["2023-04-01", "2023-05-01","2023-06-01","2023-07-01"]
     runs-on: ubuntu-latest
     steps:
-    - name: start import job to reapply logic to all elements offset 0
-      uses: jawher/action-scw@v2.27.0
+    - name: start import job to reapply logic to all elements start_date matrix
+      uses: jawher/action-scw@v2.32.1
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
         SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
         SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
-        args: jobs definition start ${{ secrets.SCALEWAY_JOB_IMPORT_ID }} environment-variables.UPDATE=true environment-variables.START_OFFSET=0
-    - name: start import job to reapply logic to all elements offset 300000
-      uses: jawher/action-scw@v2.27.0
-      env:
-        SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-        SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
-        SCW_ZONE: ${{ secrets.SCW_ZONE }}
-      with:
-        args: jobs definition start ${{ secrets.SCALEWAY_JOB_IMPORT_ID }} environment-variables.UPDATE=true environment-variables.START_OFFSET=300000
-    - name: start import job to reapply logic to all elements offset 600000
-      uses: jawher/action-scw@v2.27.0
-      env:
-        SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-        SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
-        SCW_ZONE: ${{ secrets.SCW_ZONE }}
-      with:
-        args: jobs definition start ${{ secrets.SCALEWAY_JOB_IMPORT_ID }} environment-variables.UPDATE=true environment-variables.START_OFFSET=600000
-    - name: start import job to reapply logic to all elements offset 900000
-      uses: jawher/action-scw@v2.27.0
-      env:
-        SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-        SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
-        SCW_ZONE: ${{ secrets.SCW_ZONE }}
-      with:
-        args: jobs definition start ${{ secrets.SCALEWAY_JOB_IMPORT_ID }} environment-variables.UPDATE=true environment-variables.START_OFFSET=900000
+        args: jobs definition start ${{ secrets.SCALEWAY_JOB_IMPORT_ID }} environment-variables.UPDATE=true environment-variables.START_DATE_UPDATE=${{ matrix.start_date }}

@@ -49,19 +49,20 @@ def refresh_token(token, date):
 # reapply word detector logic to all saved keywords
 # use when word detection is changed
 async def update_pg_data(exit_event):
-    start_offset = int(os.environ.get("START_OFFSET", 0))
+    start_date = os.environ.get("START_DATE_UPDATE", "2023-04-01")
+    tmp_end_date = get_end_of_month(start_date)
+    end_date = os.environ.get("END_DATE", tmp_end_date)
     batch_size = int(os.environ.get("BATCH_SIZE", 50000))
-    number_of_batch = int(os.environ.get("NUMBER_OF_BATCH", 6))
     program_only = os.environ.get("UPDATE_PROGRAM_ONLY", "false") == "true"
     if(program_only):
         logging.warning("Update : Program only mode activated - UPDATE_PROGRAM_ONLY")
     else:
         logging.warning("Update : programs will not be updated for performance issue - use UPDATE_PROGRAM_ONLY to true for this")
 
-    logging.warning(f"Updating already saved data from Postgresql from offset {start_offset} - env variable START_OFFSET until {start_offset + number_of_batch * batch_size}")
+    logging.warning(f"Updating already saved data from Postgresql from date {start_date} - env variable START_DATE_UPDATE until {end_date} - you can use END_DATE to set it (optional)")
     try:
         session = get_db_session()
-        update_keywords(session, batch_size=batch_size, start_offset=start_offset, program_only=program_only, number_of_batch=number_of_batch)
+        update_keywords(session, batch_size=batch_size, start_date=start_date, program_only=program_only, end_date=end_date)
         exit_event.set()
     except Exception as err:
         logging.error("Could update_pg_data %s:(%s)" % (type(err).__name__, err))

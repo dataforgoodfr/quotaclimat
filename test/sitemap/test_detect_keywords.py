@@ -80,7 +80,7 @@ subtitles = [{
 ]
 def test_default_get_themes_keywords_duration():
     plaintext_nothing = "cheese pizza"
-    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == [None] * 17
    
 def test_one_theme_get_themes_keywords_duration():
     plaintext_climat = "réchauffement planétaire test"
@@ -1444,3 +1444,6 @@ def test_count_different_window_number_40():
         }
     ]
     assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, 40),start) == 3
+
+def test_remove_stopwords():
+    assert remove_stopwords("l' huile de coude était aussi une énergie renouvelable stéphane est à fond sur le tri sélectif") == "l'  stéphane "

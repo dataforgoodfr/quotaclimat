@@ -9,16 +9,17 @@ STOP_WORDS = [
     ,"sur dacia point fr covoiturage"
     ,"dacia point fr un covoiturage"
     ,"engie peut vous aider par exemple avec des panneaux solaires"
-    ,"panneaux solaires pour produire votre énergie"
-    ,"panneaux solaires groupe"
     ,"verlaine photovoltaïques"
     ,"verlaine le climat"
     ,"photovoltaïques vie"
     ,"garanti photovoltaïques"
+    ,"installe des panneaux photovoltaïques et des bornes de recharge"
+    ,"panneaux solaires pour produire votre énergie"
     ,"installateur panneaux de photovoltaïques"
     ,"installateurs de panneaux photovoltaïques"
     ,"installateur de panneaux solaires"
     ,"installateurs de panneaux solaires"
+    ,"panneaux solaires groupe"
     ,"panneaux photovoltaïques garanti à vie"
     ,"on installe des panneaux photovoltaïques borne de recharge"
     ,"avec le leader du photovoltaïque"
@@ -28,6 +29,8 @@ STOP_WORDS = [
     ,"huile de coude est aussi une énergie renouvelable"
     ,"huile de coude était aussi une énergie renouvelable"
     ,'huile de coude étaient aussi une énergie renouvelable'
+    ,'huile de coude étaient aussi est aussi une énergie renouvelable '
+    ,'énergie renouvelable stéphane'
     ,"par des garanties d' origine renouvelable"
     ,"énergies renouvelables groupe verlaine"
     ,"borne de recharge offert"
@@ -60,4 +63,10 @@ STOP_WORDS = [
     ,"transition énergétique baisse de lumière"
     ,"transition énergétique co"
     ,"transition énergétique nos lumières"
+    ,"vendez votre voiture point fr"
+    ,"votre voiture obtenait un prix"
+    ,"recharge ma brosse à dents"
+    ,"qui bossait dans l' eau" # maif
+    ,"je croyais que dégât des eaux" # maif
+    ,"un goût généreux et le respect de la nature sans résidu de pesticides" # tramier
 ]

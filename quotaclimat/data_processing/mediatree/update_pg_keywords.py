@@ -58,7 +58,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     keywords_with_timestamp != new_keywords_with_timestamp or
                     theme != matching_themes
                     ):
-                    logging.debug(f"Difference detected for themes for ID {keyword_id} -  {theme} - {matching_themes} \
+                    logging.info(f"Difference detected for themes for ID {keyword_id} -  {theme} - {matching_themes} \
                                 \nnumber_of_keywords {number_of_keywords} - {new_number_of_keywords}\
                                 \nkeywords_with_timestamp : {keywords_with_timestamp}\
                                 \n new_nkeywords_with_timestamp : {new_keywords_with_timestamp}"

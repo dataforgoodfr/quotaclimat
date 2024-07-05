@@ -20,6 +20,7 @@ STOP_WORDS = [
     ,"installateur de panneaux solaires"
     ,"installateurs de panneaux solaires"
     ,"panneaux photovoltaïques garanti à vie"
+    ,"on installe des panneaux photovoltaïques borne de recharge"
     ,"avec le leader du photovoltaïque"
     ,"en train d"
     ,"consigne de vote"
@@ -56,4 +57,7 @@ STOP_WORDS = [
     ,"l' entreprise de julie fabrique des meubles en matériaux recyclés"
     ,"jardin miami fabriqué avec quatre-vingts pour cent de matériaux recyclés"
     ,"est à fond sur le tri sélectif"
+    ,"transition énergétique baisse de lumière"
+    ,"transition énergétique co"
+    ,"transition énergétique nos lumières"
 ]

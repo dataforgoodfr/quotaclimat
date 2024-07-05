@@ -69,4 +69,8 @@ STOP_WORDS = [
     ,"qui bossait dans l' eau" # maif
     ,"je croyais que dégât des eaux" # maif
     ,"un goût généreux et le respect de la nature sans résidu de pesticides" # tramier
+    ,"écoresponsables offre valable" #aldi
+    ,"écoresponsable offre valable" #aldi
+    ,"vergers écoresponsables" #aldi
+
 ]

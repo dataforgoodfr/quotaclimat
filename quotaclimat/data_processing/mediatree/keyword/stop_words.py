@@ -30,6 +30,8 @@ STOP_WORDS = [
     ,"huile de coude était aussi une énergie renouvelable"
     ,'huile de coude étaient aussi une énergie renouvelable'
     ,'huile de coude étaient aussi est aussi une énergie renouvelable '
+    ,"franchisés dans les énergies renouvelable"
+    ,"franchisé dans les énergies renouvelable"
     ,'énergie renouvelable stéphane'
     ,"par des garanties d' origine renouvelable"
     ,"énergies renouvelables groupe verlaine"
@@ -72,5 +74,25 @@ STOP_WORDS = [
     ,"écoresponsables offre valable" #aldi
     ,"écoresponsable offre valable" #aldi
     ,"vergers écoresponsables" #aldi
-
+    ,"factures avec l' installation de panneaux solaires"
+    ,"panneaux solaires et faire des économies carrefour"
+    ,"garantie carrefour énergie"
+    ,"économies sur votre énergie"
+    ,"énergie c' est trop cher je vous réponds fait comme marc"
+    ,"énergie une étude révèle que six français sur dix"
+    ,"énergie choisissez edf"
+    ,"voiture de l' année"
+    ,"voiture année"
+    ,"carrefour point fr les publicités de voiture"
+    ,"aramisauto nos voitures"
+    ,"aramis auto nos voitures"
+    ,"voiture sur aramisauto"
+    ,"voiture au meilleur prix"
+    ,"l' univers de la voiture d' occasion"
+    ,"voiture sur aramis auto"
+    ,"future voiture d' occasion reconditionnée"
+    ,"vous appel parce que ma voiture"
+    ,"disposition une voiture le temps"
+    ,"bornes de recharge et des mois de loyer"
+    ,"cent pour cent électriques bornes de recharge"
 ]

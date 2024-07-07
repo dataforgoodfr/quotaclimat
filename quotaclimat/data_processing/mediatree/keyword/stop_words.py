@@ -11,6 +11,8 @@ STOP_WORDS = [
     ,"engie peut vous aider par exemple avec des panneaux solaires"
     ,"verlaine photovoltaïques"
     ,"verlaine le climat"
+    ,"photovoltaïque groupe"
+    ,"groupe verlaine isolation photovoltaïques"
     ,"photovoltaïques vie"
     ,"garanti photovoltaïques"
     ,"installe des panneaux photovoltaïques et des bornes de recharge"

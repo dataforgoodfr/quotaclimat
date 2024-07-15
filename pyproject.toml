@@ -34,7 +34,7 @@ requires = ["poetry-core>=1.1"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.group.dev.dependencies]
-coverage = "^7.5.4"
+coverage = "^7.6.0"
 pytest = "^8.1.1"
 pytest-cov = "^5.0.0"
 poetry-bumpversion = "^0.3.1"

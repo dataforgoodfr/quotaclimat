@@ -7,6 +7,7 @@ import asyncio
 from time import sleep
 import sys
 import os
+import gc
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import *
@@ -113,6 +114,9 @@ async def get_and_save_api_data(exit_event):
                                 save_to_pg(df, keywords_table, conn)
                             else:
                                 logging.info("Nothing to save to Postgresql")
+                            logging.info(f"Memory df {df.memory_usage()}")
+                            del df # memory leak test for long running jobs
+                        gc.collect()
                     except Exception as err:
                         logging.error(f"continuing loop but met error : {err}")
                         continue

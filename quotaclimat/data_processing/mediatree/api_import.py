@@ -253,10 +253,7 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             new_df['channel_program'] = new_df.apply(lambda x: channel_program, axis=1)
             new_df['channel_program_type'] = new_df.apply(lambda x: channel_program_type, axis=1)
             logging.debug("programs were set")
-            
-            logging.debug("Parsed Schema\n%s", new_df.dtypes)
-            logging.debug("head parsed:  :\n%s", new_df.head())
-            
+           
             return new_df
         else:
             logging.warning("No result (total_results = 0) for this channel")

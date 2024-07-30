@@ -1,6 +1,6 @@
 import logging
 import os
-
+import pandas as pd
 def get_localhost():
     localhost = ""
     if(os.environ.get("ENV") == "docker"):
@@ -9,9 +9,11 @@ def get_localhost():
         localhost = "http://localhost:8000"
     return localhost
 
-def debug_df(df):
+def debug_df(df: pd.DataFrame):
+    pd.set_option('display.max_columns', None) 
     logging.warning("--------------------DEBUG DF-------------------")
-    logging.info(df.head(1).to_string())
+    logging.info(df.dtypes)
+    logging.info(df.head(1))
     logging.warning("--------------------DEBUG DF-------------------")
 
 

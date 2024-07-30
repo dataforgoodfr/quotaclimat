@@ -269,7 +269,7 @@ def add_primary_key(df):
             df["start"].astype(str) + df["channel_name"]
         ).apply(get_consistent_hash)
     except (Exception) as error:
-        logging.error(error)
+        logging.error(f"{error} with df {df.head()}")
         return get_consistent_hash("empty") #  TODO improve - should be a None ?
 
 def filter_indirect_words(keywords_with_timestamp: List[dict]) -> List[dict]:

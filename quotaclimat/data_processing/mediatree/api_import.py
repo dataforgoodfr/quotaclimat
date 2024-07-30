@@ -201,6 +201,7 @@ def extract_api_sub(
 
         if(df is not None):
             df = filter_and_tag_by_theme(df)
+            logging.info(f"Adding primary key to save to PG and have idempotent results")
             df["id"] = df.apply(lambda x: add_primary_key(x), axis=1)
             return df
         else:

@@ -263,7 +263,6 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
             return df
 
 def add_primary_key(row):
-    logging.info(f"Adding primary key to save to PG and have idempotent results")
     try:
         hash_id = get_consistent_hash(str(row["start"]) + row["channel_name"])
         logging.debug(f"hash_id {hash_id}")

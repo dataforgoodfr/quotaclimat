@@ -115,8 +115,6 @@ async def get_and_save_api_data(exit_event):
                                 save_to_pg(df, keywords_table, conn)
                             else:
                                 logging.info("Nothing to save to Postgresql")
-
-                            del df # memory leak test for long running jobs
                         gc.collect()
                     except Exception as err:
                         logging.error(f"continuing loop but met error : {err}")
@@ -239,6 +237,7 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             new_df['timestamp'] = new_df.apply(lambda x: pd.to_datetime(x['start'], unit='s', utc=True), axis=1)
             logging.debug("timestamp was set")
 
+            logging.debug("droping start column")
             new_df.drop('start', axis=1, inplace=True)
             logging.debug("renaming columns")
             new_df.rename(columns={'channel.name':'channel_name', 
@@ -249,26 +248,19 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
                         inplace=True
             )
 
-            logging.debug(f"setting program {channel_program} type { type(channel_program)}")
+            logging.debug(f"setting program {channel_program}")
             # weird error if not using this way: (ValueError) format number 1 of "20h30 le samedi" is not recognized
             new_df['channel_program'] = new_df.apply(lambda x: channel_program, axis=1)
             new_df['channel_program_type'] = new_df.apply(lambda x: channel_program_type, axis=1)
- 
             logging.debug("programs were set")
-
-            log_dataframe_size(new_df, channel)
             
             logging.debug("Parsed Schema\n%s", new_df.dtypes)
+            logging.debug("head parsed:  :\n%s", new_df.head())
             
             return new_df
         else:
             logging.warning("No result (total_results = 0) for this channel")
             return None
-
-def log_dataframe_size(df, channel):
-    if(len(df) == 1000):
-        logging.error(f"We might lose data for {channel} - df size is 1000 out of 1000 - we should divide this querry")
-
 
 async def main():
     with monitor(monitor_slug='mediatree'): #https://docs.sentry.io/platforms/python/crons/

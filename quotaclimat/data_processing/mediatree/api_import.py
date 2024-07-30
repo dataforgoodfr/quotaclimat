@@ -230,10 +230,11 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
         logging.getLogger("modin.logging.default").setLevel(logging.WARNING)
         if(total_results > 0):
             logging.info(f"{total_results} 'total_results' field")
-            
+
             new_df : pd.DataFrame = json_normalize(response_sub.get('data'))
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
-
+            pd.set_option('display.max_columns', None)
+            logging.debug("head:  :\n%s", new_df.head())
             new_df['timestamp'] = pd.to_datetime(new_df['start'], unit='s', utc=True)
             logging.debug("setting timestamp")
             new_df.drop('start', axis=1, inplace=True)

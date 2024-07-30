@@ -23,7 +23,7 @@ def test_main_api_import():
         start_time = t.time()
         df = parse_reponse_subtitle(json_response)
         df = filter_and_tag_by_theme(df)
-        df["id"] = add_primary_key(df)
+        df["id"] = df.apply(lambda x: add_primary_key(x), axis=1)
         end_time = t.time()
         logging.info(f"Elapsed time for api import {end_time - start_time}")
         # must df._to_pandas() because to_sql does not handle modin dataframe

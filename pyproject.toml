@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "quotaclimat"
-version = "0.2.56"
+version = "0.2.57"
 description = ""
 authors = [
     "Rambier Estelle <estelle.rambier@hotmail.fr>",

@@ -262,15 +262,16 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
 
             return df
 
-def add_primary_key(df):
-    logging.info("Adding primary key to save to PG and have idempotent result")
+def add_primary_key(row):
+    logging.info(f"Adding primary key to save to PG and have idempotent results")
     try:
-        return (
-            df["start"].astype(str) + df["channel_name"]
-        ).apply(get_consistent_hash)
+        hash_id = get_consistent_hash(str(row["start"]) + row["channel_name"])
+        logging.debug(f"hash_id {hash_id}")
+        return hash_id
+
     except (Exception) as error:
-        logging.error(f"{error} with df {df.head()}")
-        return get_consistent_hash("empty") #  TODO improve - should be a None ?
+        logging.error(f"{error} with df {row}")
+        raise Exception
 
 def filter_indirect_words(keywords_with_timestamp: List[dict]) -> List[dict]:
     return list(filter(lambda kw: indirectes not in kw['theme'], keywords_with_timestamp))

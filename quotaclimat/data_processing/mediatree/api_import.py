@@ -111,10 +111,11 @@ async def get_and_save_api_data(exit_event):
                             logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
                             df = extract_api_sub(token, channel, type_sub, start_epoch,end_epoch, channel_program,channel_program_type) 
                             if(df is not None):
+                                logging.debug(f"Memory df {df.memory_usage()}")
                                 save_to_pg(df, keywords_table, conn)
                             else:
                                 logging.info("Nothing to save to Postgresql")
-                            logging.info(f"Memory df {df.memory_usage()}")
+
                             del df # memory leak test for long running jobs
                         gc.collect()
                     except Exception as err:
@@ -234,7 +235,8 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
 
             new_df['timestamp'] = pd.to_datetime(new_df['start'], unit='s', utc=True)
-            new_df.drop('start', axis=1, inplace=True) # keep only channel.name
+            logging.debug("setting timestamp")
+            new_df.drop('start', axis=1, inplace=True)
             logging.debug("renaming columns")
             new_df.rename(columns={'channel.name':'channel_name', 
                                    'channel.title':'channel_title',

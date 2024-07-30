@@ -230,13 +230,15 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
         logging.getLogger("modin.logging.default").setLevel(logging.WARNING)
         if(total_results > 0):
             logging.info(f"{total_results} 'total_results' field")
-
             new_df : pd.DataFrame = json_normalize(response_sub.get('data'))
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             pd.set_option('display.max_columns', None)
             logging.debug("head:  :\n%s", new_df.head())
-            new_df['timestamp'] = pd.to_datetime(new_df['start'], unit='s', utc=True)
+           
             logging.debug("setting timestamp")
+            new_df['timestamp'] = new_df.apply(lambda x: pd.to_datetime(x['start'], unit='s', utc=True), axis=1)
+            logging.debug("timestamp was set")
+
             new_df.drop('start', axis=1, inplace=True)
             logging.debug("renaming columns")
             new_df.rename(columns={'channel.name':'channel_name', 
@@ -246,13 +248,14 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
                                   },
                         inplace=True
             )
+
             logging.debug(f"setting program {channel_program} type { type(channel_program)}")
-            
             # weird error if not using this way: (ValueError) format number 1 of "20h30 le samedi" is not recognized
             new_df['channel_program'] = new_df.apply(lambda x: channel_program, axis=1)
             new_df['channel_program_type'] = new_df.apply(lambda x: channel_program_type, axis=1)
  
             logging.debug("programs were set")
+
             log_dataframe_size(new_df, channel)
             
             logging.debug("Parsed Schema\n%s", new_df.dtypes)

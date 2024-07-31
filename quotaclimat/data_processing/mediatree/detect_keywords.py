@@ -269,7 +269,7 @@ def add_primary_key(row):
         return hash_id
 
     except (Exception) as error:
-        logging.error(f"{error} with row: start: {row["start"]} - channel_name:{row["channel_name"]}")
+        logging.error(f"{error} with row: start: {row['start']} - channel_name:{row['channel_name']}")
         raise Exception
 
 def filter_indirect_words(keywords_with_timestamp: List[dict]) -> List[dict]:

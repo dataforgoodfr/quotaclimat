@@ -84,7 +84,7 @@ def get_channels():
 async def get_and_save_api_data(exit_event):
     with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
         try:
-            logging.warning(f"Available CPUS {os.cpu_count()} - MODIN_CPUS config : {os.environ.get('MODIN_CPUS', 0)}")
+            logging.warning(f"Available CPUS {os.cpu_count()} - MODIN_CPUS config : {os.environ.get('MODIN_CPUS', 3)}")
 
             conn = connect_to_db()
             token=get_auth_token(password=password, user_name=USER)
@@ -269,9 +269,10 @@ async def main():
             event_finish = asyncio.Event()
             # Start the health check server in the background
             health_check_task = asyncio.create_task(run_health_check_server())
-            
+
             context = ray.init(
                 dashboard_host="0.0.0.0", # for docker dashboard
+                # runtime_env=dict(worker_process_setup_hook=sentry_init),
             )
             logging.info(f"Ray context dahsboard available at : {context.dashboard_url}")
             logging.warning(f"Ray Information about the env: {ray.available_resources()}")

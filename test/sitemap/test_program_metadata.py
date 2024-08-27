@@ -155,7 +155,7 @@ def test_get_programs_for_this_day_thusday_morning_france2():
 def test_get_hour_minute():
     output = get_hour_minute(pd.Timestamp(pd.to_datetime(thrusday_morning, unit='s')))
 
-    assert output == '1970-01-01 06:02:00'
+    assert output == pd.Timestamp('1970-01-01 06:02:00')
  
 def test_format_hour_minute_one_digit():
     hour_min = '6:55'

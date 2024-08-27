@@ -150,5 +150,6 @@ STOP_WORDS = [
     ,"isolation par l' extérieur"
     ,"votre énergie avec l' installation de panneaux solaires"
     ,"offrez à vos clients un devis précis pour améliorer la performance énergétique"
+    ,"pergola bioclimatique"
+    ,"on imagine des murs végétalisé"
 ]
-    

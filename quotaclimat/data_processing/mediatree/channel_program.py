@@ -23,11 +23,14 @@ def get_programs():
             "program_name":str,
             "program_type":str
         }
-        logging.debug(f"Reading {json_file_path}")
+        logging.info(f"Reading {json_file_path}")
         df_programs = pd.read_json(json_file_path, lines=True, dtype=data_dtype)
 
-        df_programs['start'] = format_hour_minute(df_programs['start'])
-        df_programs['end'] = format_hour_minute(df_programs['end'])
+        df_programs[['start', 'end']] = df_programs.apply(lambda x: pd.Series({
+            'start': format_hour_minute(x['start']),
+            'end': format_hour_minute(x['end'])
+        }), axis=1)
+
     except (Exception) as error:
         logging.error("Could not read channel_program.json")
         raise Exception

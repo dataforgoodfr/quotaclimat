@@ -88,10 +88,12 @@ def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timest
     df_program["weekday_mask"] = df_program['weekday'].apply(
         lambda x: compare_weekday(x, start_weekday)
     )
+    logging.debug("weekday_mask done")
     matching_rows =  df_program[
                         (df_program['channel_name'] == channel_name) &
                           df_program["weekday_mask"] == True
                         ]
+    logging.debug("matching_rows done")
     matching_rows.drop(columns=['weekday_mask'], inplace=True)
     matching_rows.drop(columns=['weekday'], inplace=True)
     

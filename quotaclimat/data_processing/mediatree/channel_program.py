@@ -25,7 +25,8 @@ def get_programs():
         }
         logging.info(f"Reading {json_file_path}")
         df_programs = pd.read_json(json_file_path, lines=True, dtype=data_dtype)
-
+        logging.info(df_programs.dtypes)
+        logging.info(df_programs.head(1))
         df_programs[['start', 'end']] = df_programs.apply(lambda x: pd.Series({
             'start': format_hour_minute(x['start']),
             'end': format_hour_minute(x['end'])
@@ -89,10 +90,10 @@ def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timest
         lambda x: compare_weekday(x, start_weekday)
     )
     logging.debug("weekday_mask done")
-    matching_rows =  df_program[
+    matching_rows = df_program[
                         (df_program['channel_name'] == channel_name) &
-                          df_program["weekday_mask"] == True
-                        ]
+                        (df_program["weekday_mask"] == True)
+                    ]
     logging.debug("matching_rows done")
     matching_rows.drop(columns=['weekday_mask'], inplace=True)
     matching_rows.drop(columns=['weekday'], inplace=True)

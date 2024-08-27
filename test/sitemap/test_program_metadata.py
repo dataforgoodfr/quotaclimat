@@ -199,6 +199,13 @@ def test_get_13h_program_with_start_timestamp():
     assert program_name == "13h15 le samedi"
     assert program_type == "Information - Journal"
 
+def test_get_13h_monday_program_with_start_timestamp():
+    df_programs = get_programs()
+    monday_13h18 = 1724671082
+    program_name, program_type = get_a_program_with_start_timestamp(df_programs, pd.to_datetime(monday_13h18, unit='s', utc=True).tz_convert('Europe/Paris'), channel_name)
+    assert program_name == "JT 13h"
+    assert program_type == "Information - Journal"
+
 def test_compare_weekday_string():
     assert compare_weekday('*', 0) == True
     assert compare_weekday('*', 3) == True

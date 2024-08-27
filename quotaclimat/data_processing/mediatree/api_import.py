@@ -122,7 +122,8 @@ async def get_and_save_api_data(exit_event):
             exit_event.set()
         except Exception as err:
             logging.fatal("get_and_save_api_data (%s) %s" % (type(err).__name__, err))
-            sys.exit(0)
+            ray.shutdown()
+            sys.exit(1)
 
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
 # @see https://github.com/jd/tenacity/tree/main
@@ -294,7 +295,8 @@ async def main():
             res=health_check_task.cancel()
         except Exception as err:
             logging.fatal("Main crash (%s) %s" % (type(err).__name__, err))
-            sys.exit(0)
+            ray.shutdown()
+            sys.exit(1)
     logging.info("Exiting with success")
     sys.exit(0)
 

@@ -7,6 +7,7 @@ from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime
 
 def format_hour_minute(time: str) -> pd.Timestamp:
     date_str = "1970-01-01"
+    logging.debug(f"format_hour_minute with : {time}")
     return pd.to_datetime(date_str + " " + time)
 
 def get_programs():

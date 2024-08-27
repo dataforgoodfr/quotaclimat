@@ -157,6 +157,24 @@ def test_get_hour_minute():
 
     assert output == pd.Timestamp('1970-01-01 06:02:00')
  
+def test_format_hour_minute_one_digit():
+    hour_min = '6:55'
+    output = format_hour_minute(hour_min)
+
+    assert output == pd.Timestamp(f'1970-01-01 0{hour_min}:00')
+
+def test_format_hour_minute_double_digit_with_zero():
+    hour_min = '06:55'
+    output = format_hour_minute(hour_min)
+
+    assert output == pd.Timestamp(f'1970-01-01 {hour_min}:00')
+  
+def test_format_hour_minute_double_digit():
+    hour_min = '16:55'
+    output = format_hour_minute(hour_min)
+
+    assert output == pd.Timestamp(f'1970-01-01 {hour_min}:00')
+ 
 def test_get_programs_for_this_day_thusday_morning_franceinfo():
     df_programs = get_programs()
     programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').normalize(), "france-info", df_programs)

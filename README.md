@@ -160,6 +160,7 @@ Link : https://wiki.python.org/moin/WindowsCompilers#Microsoft_Visual_C.2B-.2B-_
 ```bash
 pip install poetry
 poetry update
+poetry lock --no-update
 ```
 NLDA : I have not been able to work with wordcloud on windows. 
 

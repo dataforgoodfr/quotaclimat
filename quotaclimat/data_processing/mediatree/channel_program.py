@@ -29,7 +29,7 @@ def get_programs():
         df_programs['start'] = format_hour_minute(df_programs['start'])
         df_programs['end'] = format_hour_minute(df_programs['end'])
     except (Exception) as error:
-        logging.error("Could not read channel_program.json", error)
+        logging.error("Could not read channel_program.json")
         raise Exception
     
     return df_programs

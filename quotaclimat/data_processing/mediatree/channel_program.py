@@ -51,18 +51,27 @@ def add_channel_program(df: pd.DataFrame):
 
 def compare_weekday(df_program_weekday: str, start_weekday: int) -> bool:
     logging.debug(f"Comparing weekday {start_weekday} with df_program_weekday value : {df_program_weekday}")
-    match not df_program_weekday.isdigit():
-        case False: #int case
-            return start_weekday == int(df_program_weekday)
-        case True: # string case
-            match df_program_weekday:
-                case '*': return True
-                case 'weekday':
-                    return start_weekday < 5
-                case 'weekend':
-                    return start_weekday > 4
-                case _ : return False
-    
+    try:
+        result = False
+        match not df_program_weekday.isdigit():
+            case False: #int case
+                result = (start_weekday == int(df_program_weekday))
+            case True: # string case
+                match df_program_weekday:
+                    case '*':
+                        result = True
+                    case 'weekday':
+                        result = (start_weekday < 5)
+                    case 'weekend':
+                        result = (start_weekday > 4)
+                    case _ :
+                        result = False
+        logging.debug(f"result compare_weekday: {result}")
+        return result
+    except Exception as e:
+        logging.error(f"Error in compare_weekday: {e}")
+        return False
+
 def get_hour_minute(time: pd.Timestamp):
     # http://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Series.dt.tz_localize.html
     start_time = format_hour_minute(time.strftime("%H:%M"))
@@ -71,7 +80,7 @@ def get_hour_minute(time: pd.Timestamp):
     return start_time
 
 # with Monday=0 and Sunday=6.
-def get_day_of_week(time: pd.Timestamp):
+def get_day_of_week(time: pd.Timestamp) -> int:
     start_weekday = int(time.dayofweek)
     logging.debug(f"start_weekday subtitle {start_weekday}")
     return start_weekday
@@ -84,11 +93,10 @@ def get_matching_program_hour(df_program: pd.DataFrame, start_time: pd.Timestamp
                     ]
     
 def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timestamp, channel_name: str):
+    logging.debug(f"get_matching_program_weekday {start_time} {channel_name}")
     start_weekday = get_day_of_week(start_time)
     
-    df_program["weekday_mask"] = df_program['weekday'].apply(
-        lambda x: compare_weekday(x, start_weekday)
-    )
+    df_program["weekday_mask"] = df_program['weekday'].apply(lambda x: compare_weekday(x, start_weekday))
     logging.debug("weekday_mask done")
     matching_rows = df_program[
                         (df_program['channel_name'] == channel_name) &
@@ -133,11 +141,13 @@ def set_day_with_hour(programs_of_a_day, day: datetime):
     return programs_of_a_day
 
 def get_programs_for_this_day(day: datetime, channel_name: str, df_program: pd.DataFrame):
+    logging.debug(f"get_programs_for_this_day {day} {channel_name}")
     start_time = pd.Timestamp(day)
 
     programs_of_a_day = get_matching_program_weekday(df_program, start_time, channel_name)
-    programs_of_a_day = set_day_with_hour(programs_of_a_day, day)
-    
+    logging.debug(f"programs_of_a_day {programs_of_a_day}")
+    programs_of_a_day = programs_of_a_day(programs_of_a_day, day)
+    logging.debug(f"after programs_of_a_day programs_of_a_day {programs_of_a_day}")
     programs_of_a_day[['start', 'end']] = programs_of_a_day.apply(lambda row: pd.Series({
         'start': get_epoch_from_datetime(row['start'].tz_localize("Europe/Paris")),
         'end': get_epoch_from_datetime(row['end'].tz_localize("Europe/Paris"))

@@ -49,9 +49,10 @@ def add_channel_program(df: pd.DataFrame):
         logging.error("Could not merge program and subtitle df", error)
         raise Exception
 
-def compare_weekday(df_program_weekday: str, start_weekday: int) -> bool:
+def compare_weekday(row: str, start_weekday: int) -> bool:
     logging.debug(f"Comparing weekday {start_weekday} with df_program_weekday value : {df_program_weekday}")
     try:
+        df_program_weekday = row['weekday']
         result = False
         match not df_program_weekday.isdigit():
             case False: #int case
@@ -95,7 +96,9 @@ def get_matching_program_hour(df_program: pd.DataFrame, start_time: pd.Timestamp
 def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timestamp, channel_name: str):
     logging.debug(f"get_matching_program_weekday {start_time} {channel_name}")
     start_weekday = get_day_of_week(start_time)
-    
+    logging.debug(df_program['weekday'].unique())
+    if "weekday_mask" in df_program.columns:
+        df_program.drop(columns=["weekday_mask"], inplace=True)
     df_program["weekday_mask"] = df_program['weekday'].apply(lambda x: compare_weekday(x, start_weekday))
     logging.debug("weekday_mask done")
     matching_rows = df_program[

@@ -2,7 +2,7 @@ import modin.pandas as pd
 import logging
 import os
 from datetime import datetime
-
+import json
 from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime
 
 def format_hour_minute(time: str) -> pd.Timestamp:
@@ -15,25 +15,18 @@ def get_programs():
     try:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         json_file_path = os.path.join(current_dir, 'channel_program.json')
-        data_dtype = { # UserWarning: `read_*` implementation has mismatches with pandas:
-            "channel_name":str,
-            "start":str,
-            "end":str,
-            "weekday":str,
-            "program_name":str,
-            "program_type":str
-        }
         logging.info(f"Reading {json_file_path}")
-        df_programs = pd.read_json(json_file_path, lines=True, dtype=data_dtype)
-        logging.info(df_programs.dtypes)
-        logging.info(df_programs.head(1))
-        df_programs[['start', 'end']] = df_programs.apply(lambda x: pd.Series({
-            'start': format_hour_minute(x['start']),
-            'end': format_hour_minute(x['end'])
-        }), axis=1)
+        with open(json_file_path, 'r') as file:
+            json_data = json.load(file)
+            df_programs = pd.DataFrame(json_data)
+            logging.info(df_programs.dtypes)
+            df_programs[['start', 'end']] = df_programs.apply(lambda x: pd.Series({
+                'start': format_hour_minute(x['start']),
+                'end': format_hour_minute(x['end'])
+            }), axis=1)
 
     except (Exception) as error:
-        logging.error("Could not read channel_program.json")
+        logging.error(f"Could not read channel_program.json {error}")
         raise Exception
     
     return df_programs
@@ -49,9 +42,8 @@ def add_channel_program(df: pd.DataFrame):
         logging.error("Could not merge program and subtitle df", error)
         raise Exception
 
-def compare_weekday(row: str, start_weekday: int) -> bool:
+def compare_weekday(df_program_weekday: str, start_weekday: int) -> bool:
     try:
-        df_program_weekday = row['weekday']
         logging.debug(f"Comparing weekday {start_weekday} with row value : {df_program_weekday}")
         result = False
         match not df_program_weekday.isdigit():
@@ -99,7 +91,7 @@ def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timest
     logging.debug(df_program['weekday'].unique())
     if "weekday_mask" in df_program.columns:
         df_program.drop(columns=["weekday_mask"], inplace=True)
-    df_program["weekday_mask"] = df_program['weekday'].apply(lambda x: compare_weekday(x, start_weekday))
+    df_program["weekday_mask"] = df_program['weekday'].apply(lambda x: compare_weekday(x, start_weekday), axis=1)
     logging.debug("weekday_mask done")
     matching_rows = df_program[
                         (df_program['channel_name'] == channel_name) &
@@ -149,8 +141,8 @@ def get_programs_for_this_day(day: datetime, channel_name: str, df_program: pd.D
 
     programs_of_a_day = get_matching_program_weekday(df_program, start_time, channel_name)
     logging.debug(f"programs_of_a_day {programs_of_a_day}")
-    programs_of_a_day = programs_of_a_day(programs_of_a_day, day)
-    logging.debug(f"after programs_of_a_day programs_of_a_day {programs_of_a_day}")
+    programs_of_a_day = set_day_with_hour(programs_of_a_day, day)
+    logging.debug(f"after programs_of_a_day set_day_with_hour {programs_of_a_day}")
     programs_of_a_day[['start', 'end']] = programs_of_a_day.apply(lambda row: pd.Series({
         'start': get_epoch_from_datetime(row['start'].tz_localize("Europe/Paris")),
         'end': get_epoch_from_datetime(row['end'].tz_localize("Europe/Paris"))

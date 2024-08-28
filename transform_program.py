@@ -143,12 +143,11 @@ channel_mapping = {
 
 
 with open(input_file_path, 'r', encoding='utf-8') as input_file:
-    data = input_file.readlines()
+    data = json.load(input_file)
 
 programs = []
 
-for line in data:
-    program_data = json.loads(line.strip())
+for program_data in data:
     start_time = program_data['start']
     end_time = program_data['end']
     duration_minutes = calculate_duration(start_time, end_time)

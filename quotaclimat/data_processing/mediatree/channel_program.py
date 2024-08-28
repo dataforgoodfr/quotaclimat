@@ -50,9 +50,9 @@ def add_channel_program(df: pd.DataFrame):
         raise Exception
 
 def compare_weekday(row: str, start_weekday: int) -> bool:
-    logging.debug(f"Comparing weekday {start_weekday} with df_program_weekday value : {df_program_weekday}")
     try:
         df_program_weekday = row['weekday']
+        logging.debug(f"Comparing weekday {start_weekday} with row value : {df_program_weekday}")
         result = False
         match not df_program_weekday.isdigit():
             case False: #int case

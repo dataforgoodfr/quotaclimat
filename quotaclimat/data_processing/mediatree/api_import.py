@@ -230,7 +230,7 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
         logging.getLogger("modin.logging.default").setLevel(logging.WARNING)
         if(total_results > 0):
             logging.info(f"{total_results} 'total_results' field")
-            new_df : pd.DataFrame = json_normalize(response_sub.get('data'))
+            new_df : pd.DataFrame = json_normalize(response_sub.get('data')) # TODO UserWarning: json_normalize is not currently supported by PandasOnRay, defaulting to pandas implementation.
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             pd.set_option('display.max_columns', None)
             logging.debug("head:  :\n%s", new_df.head())

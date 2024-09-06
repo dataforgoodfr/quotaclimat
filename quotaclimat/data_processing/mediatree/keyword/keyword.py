@@ -1048,11 +1048,11 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "polluer",
-            "category": "general"
+            "category": "General"
         },
         {
             "keyword": "pollution",
-            "category": "general"
+            "category": "General"
         },
         {
             "keyword": "pollution de l’air",
@@ -1060,7 +1060,7 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "rejets industriels",
-            "category": "industrie"
+            "category": "Industrie"
         },
         {
             "keyword": "site minier",
@@ -2986,7 +2986,7 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "relocaliser la production",
-            "category": "industrie"
+            "category": "Industrie"
         },
         {
             "keyword": "rénovation",
@@ -3015,10 +3015,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "restreindre",
             "category": "General"
-        },
-        {
-            "keyword": "restreindre",
-            "category": "general"
         },
         {
             "keyword": "restriction",
@@ -3416,7 +3412,7 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "usine",
-            "category": "industrie"
+            "category": "Industrie"
         },
         {
             "keyword": "vache",
@@ -4653,10 +4649,6 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "norme",
-            "category": "General"
-        },
-        {
             "keyword": "parc",
             "category": "Ecosystème"
         },
@@ -4719,10 +4711,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "restreindre",
             "category": "General"
-        },
-        {
-            "keyword": "restreindre",
-            "category": "general"
         },
         {
             "keyword": "restriction",

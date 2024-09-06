@@ -2,13 +2,13 @@
 
 [[package]]
 name = "advertools"
-version = "0.14.4"
+version = "0.16.1"
 description = "Productivity and analysis tools for online marketing"
 optional = false
 python-versions = "*"
 files = [
-    {file = "advertools-0.14.4-py2.py3-none-any.whl", hash = "sha256:7b963ec63558101bf10b15a644a029f2e7f5bf5ff1cf0c5beac17d3d14bff5b9"},
-    {file = "advertools-0.14.4.tar.gz", hash = "sha256:3b30c98e7a51ba9702a06b86cb47205c0b228b5c2d14fa3f2a2675266b3ed823"},
+    {file = "advertools-0.16.1-py2.py3-none-any.whl", hash = "sha256:0cdbedc0f39ca094a926746056f4b7cb4c7d04b7e3b7e5a6dd320d6394f20ddb"},
+    {file = "advertools-0.16.1.tar.gz", hash = "sha256:e3614f852c2e9b76c0464bc818f967b1a5498c34211206fc6b5acae5842d51a1"},
 ]
 
 [package.dependencies]
@@ -3984,4 +3984,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11.0,<3.13.0"
-content-hash = "3ba5d5869d6550cb84515dbaa06e483050984031215811169a598f246334774e"
+content-hash = "306f5f26fb7be6679f897650e5ccb7a6d632c2349fe511353b21b322e6aaeaa3"

@@ -252,6 +252,20 @@ You must contact QuotaClimat team to 2 files with the API's username and passwor
 
 Otherwise, a mock api response is available at https://github.com/dataforgoodfr/quotaclimat/blob/main/test/sitemap/mediatree.json
 
+You can check the API with
+```
+curl -X POST https://keywords.mediatree.fr/api/auth/token/ \
+               -H "Content-Type: application/x-www-form-urlencoded" \
+               -d "grant_type=password" \
+               -d "username=USERNAME" \
+               -d "password=PASSWORD"
+```
+
+```
+curl -X GET "https://keywords.mediatree.fr/api/epg/?channel=tf1&start_gte=2024-09-01T00:00:00&start_lte=2024-09-01T23:59:59&token=TOKEN_RECEIVED_FROM_PREVIOUS_QUERY"
+```
+
+
 ### Run
 ```
 docker compose up mediatree

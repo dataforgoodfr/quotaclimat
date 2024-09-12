@@ -45,9 +45,9 @@ def test_delete_keywords():
     "channel_program_type": "to change",
     "channel_program":"to change"
     ,"channel_title":"channel_title"
-    ,"number_of_keywords_20": wrong_value
-    ,"number_of_keywords_30": wrong_value
-    ,"number_of_keywords_40": wrong_value
+    ,"number_of_keywords_climat": wrong_value
+    ,"number_of_keywords_biodiversite": wrong_value
+    ,"number_of_keywords_ressources": wrong_value
     }])
     assert save_to_pg(df, keywords_table, conn) == 1
     session = get_db_session(conn)
@@ -181,9 +181,9 @@ def test_first_update_keywords():
         "channel_program_type": "to change",
         "channel_program":"to change"
         ,"channel_title":None
-        ,"number_of_keywords_20": wrong_value
-        ,"number_of_keywords_30": wrong_value
-        ,"number_of_keywords_40": wrong_value
+        ,"number_of_keywords_climat": wrong_value
+        ,"number_of_keywords_biodiversite": wrong_value
+        ,"number_of_keywords_ressources": wrong_value
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 1
@@ -206,9 +206,9 @@ def test_first_update_keywords():
         ,number_of_biodiversite_causes_directes \
         ,number_of_biodiversite_consequences \
         ,number_of_biodiversite_solutions_directes  \
-        ,number_of_keywords_20 \
-        ,number_of_keywords_30 \
-        ,number_of_keywords_40 = get_themes_keywords_duration(plaintext, srt, start)
+        ,number_of_keywords_climat \
+        ,number_of_keywords_biodiversite \
+        ,number_of_keywords_ressources = get_themes_keywords_duration(plaintext, srt, start)
 
     expected_keywords_with_timestamp = [
     {'category': 'Ecosystème', 'keyword': 'conditions de vie sur terre', 'timestamp': original_timestamp + 15000, 'theme': 'changement_climatique_constat'}, 
@@ -260,6 +260,6 @@ def test_first_update_keywords():
     #channel_title
     assert result_after_update.channel_title == "M6"
 
-    # number_of_keywords_20
-    assert result_after_update.number_of_keywords_20 == number_of_keywords_20
+    # number_of_keywords_climat
+    assert result_after_update.number_of_keywords_climat == number_of_keywords_climat
 

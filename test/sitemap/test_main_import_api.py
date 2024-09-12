@@ -51,20 +51,17 @@ def test_second_row_api_import():
         assert set(specific_keyword.theme) == set([
                     'adaptation_climatique_solutions',
                     'attenuation_climatique_solutions',
-                    'attenuation_climatique_solutions_indirectes',
-                    'biodiversite_causes_indirectes',
-                    'biodiversite_concepts_generaux_indirectes',
+                    'biodiversite_causes',
                     'biodiversite_solutions',
-                    'biodiversite_solutions_indirectes',
-                    'changement_climatique_causes_indirectes',
-                    'changement_climatique_consequences_indirectes',
+                    'biodiversite_concepts_generaux',
+                    'changement_climatique_causes',
+                    'changement_climatique_consequences',
                     'changement_climatique_constat',
                     'ressources',
                     'ressources_solutions',
-
         ])
 
-        assert specific_keyword.number_of_keywords == 6
+        assert specific_keyword.number_of_keywords == 5
 
 
 def test_third_row_api_import():
@@ -80,5 +77,5 @@ def test_third_row_api_import():
         ])
         
               
-        assert specific_keyword.number_of_keywords == 2
+        assert specific_keyword.number_of_keywords == 1
         

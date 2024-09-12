@@ -319,9 +319,11 @@ Using [Alembic](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) Auto
 
 ```
 # If changes have already been applied (on your feature vranch) and you have to recreate your alembic file by doing :
-# 1. change to your main branch (git  switch main)
+# 1. change to your main branch 
+git  switch main
 # 2. start test container and run "pytest -vv -k api" to rebuild the state of the DB (or drop table the table you want)
-# 3. rechange to your WIP branch
+# 3. rechange to your WIP branch 
+git switch -
 # 4. connect to the test container : docker compose up test -d / docker compose exec test bash
 # 5. reapply the latest saved state : 
 poetry run alembic stamp head

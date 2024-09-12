@@ -318,12 +318,13 @@ We can use [a Github actions to start multiple update operations with different 
 Using [Alembic](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) Auto Generating Migrations¶ we can add a new column inside `models.py` and it will automatically make the schema evolution :
 
 ```
-# If changes have already been applied and you want to recreate your alembic file:
-# 1. change to you main branch
+# If changes have already been applied (on your feature vranch) and you have to recreate your alembic file by doing :
+# 1. change to your main branch (git  switch main)
 # 2. start test container and run "pytest -vv -k api" to rebuild the state of the DB (or drop table the table you want)
-# 3. rechange to your WIP branch 
+# 3. rechange to your WIP branch
 # 4. connect to the test container : docker compose up test -d / docker compose exec test bash
-# 5. reapply the latest saved state : poetry run alembic upgrade head
+# 5. reapply the latest saved state : 
+poetry run alembic stamp head
 # 6. Save the new columns
 poetry run alembic revision --autogenerate -m "Add new column test for table keywords"
 # this should generate a file to commit inside "alembic/versions"

@@ -47,9 +47,9 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     ,number_of_biodiversite_causes_directes \
                     ,number_of_biodiversite_consequences \
                     ,number_of_biodiversite_solutions_directes \
-                    ,new_number_of_keywords_20 \
-                    ,new_number_of_keywords_30 \
-                    ,new_number_of_keywords_40 = get_themes_keywords_duration(plaintext, srt, start)
+                    ,new_number_of_keywords_climat \
+                    ,new_number_of_keywords_biodiversite \
+                    ,new_number_of_keywords_ressources = get_themes_keywords_duration(plaintext, srt, start)
                 except Exception as err:
                         logging.error(f"continuing loop but met error : {err}")
                         continue
@@ -83,9 +83,9 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                 ,number_of_biodiversite_consequences
                 ,number_of_biodiversite_solutions_directes
                 ,channel_title=channel_title
-                ,number_of_keywords_20=new_number_of_keywords_20
-                ,number_of_keywords_30=new_number_of_keywords_30
-                ,number_of_keywords_40=new_number_of_keywords_40
+                ,number_of_keywords_climat=new_number_of_keywords_climat
+                ,number_of_keywords_biodiversite=new_number_of_keywords_biodiversite
+                ,number_of_keywords_ressources=new_number_of_keywords_ressources
                 )
             else:
                 program_name, program_name_type = get_a_program_with_start_timestamp(df_programs, pd.Timestamp(start).tz_convert('Europe/Paris'), channel_name)
@@ -145,9 +145,9 @@ def update_keyword_row(session: Session,
                         number_of_biodiversite_consequences: int,
                         number_of_biodiversite_solutions_directes: int,
                         channel_title: str
-                        ,number_of_keywords_20: int
-                        ,number_of_keywords_30: int
-                        ,number_of_keywords_40: int
+                        ,number_of_keywords_climat: int
+                        ,number_of_keywords_biodiversite: int
+                        ,number_of_keywords_ressources: int
     ):
     if matching_themes is not None:
         session.query(Keywords).filter(Keywords.id == keyword_id).update(
@@ -167,9 +167,9 @@ def update_keyword_row(session: Session,
                 Keywords.number_of_biodiversite_consequences:number_of_biodiversite_consequences ,
                 Keywords.number_of_biodiversite_solutions_directes:number_of_biodiversite_solutions_directes,
                 Keywords.channel_title: channel_title
-                ,Keywords.number_of_keywords_20: number_of_keywords_20
-                ,Keywords.number_of_keywords_30: number_of_keywords_30
-                ,Keywords.number_of_keywords_40: number_of_keywords_40
+                ,Keywords.number_of_keywords_climat: number_of_keywords_climat
+                ,Keywords.number_of_keywords_biodiversite: number_of_keywords_biodiversite
+                ,Keywords.number_of_keywords_ressources: number_of_keywords_ressources
             },
             synchronize_session=False
         )

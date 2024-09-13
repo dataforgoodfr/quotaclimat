@@ -103,16 +103,17 @@ async def get_and_save_api_data(exit_event):
                     try:
                         programs_for_this_day = get_programs_for_this_day(day, channel, df_programs)
 
-                        for index, program in programs_for_this_day.iterrows():
-                            start_epoch = program['start']
-                            end_epoch = program['end']
-                            channel_program = str(program['program_name'])
-                            channel_program_type = str(program['program_type'])
+                        for program in programs_for_this_day.itertuples(index=False):
+                            start_epoch = program.start
+                            end_epoch = program.end
+                            channel_program = str(program.program_name)
+                            channel_program_type = str(program.program_type)
                             logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
                             df = extract_api_sub(token, channel, type_sub, start_epoch,end_epoch, channel_program,channel_program_type) 
                             if(df is not None):
                                 logging.debug(f"Memory df {df.memory_usage()}")
                                 save_to_pg(df, keywords_table, conn)
+                                del df
                             else:
                                 logging.info("Nothing to save to Postgresql")
                         gc.collect()

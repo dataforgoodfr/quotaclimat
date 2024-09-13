@@ -201,25 +201,31 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         return [None] * number_of_elements_in_array
 
 def get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds: int = 15):
-    logging.debug(f"using duration_seconds {duration_seconds}")
-    keywords_with_timestamp_copy = copy.deepcopy(keywords_with_timestamp)
+    logging.debug(f"Using duration_seconds {duration_seconds}")
+
+    # Shallow copy to avoid unnecessary deep copying (wip: for memory leak)
+    keywords_with_timestamp_copy = [item.copy() for item in keywords_with_timestamp]
+
     keywords_with_timestamp_copy = tag_wanted_duration_second_window_number(keywords_with_timestamp_copy, start, duration_seconds=duration_seconds)
     keywords_with_timestamp_copy = transform_false_positive_keywords_to_positive(keywords_with_timestamp_copy, start)
     keywords_with_timestamp_copy = filter_keyword_with_same_timestamp(keywords_with_timestamp_copy)
+
     return keywords_with_timestamp_copy
 
 def get_themes(keywords_with_timestamp: List[dict]) -> List[str]:
     return list(set([kw['theme'] for kw in keywords_with_timestamp]))
 
-def clean_metadata(keywords_with_timestamp): 
-    keywords_with_timestamp_copy = copy.deepcopy(keywords_with_timestamp) # immutable
-    if( len(keywords_with_timestamp_copy)) > 0:
-        for item in keywords_with_timestamp_copy:
-            item.pop('window_number', None)
+def clean_metadata(keywords_with_timestamp):
+    if not keywords_with_timestamp:
+        return keywords_with_timestamp
 
-        return keywords_with_timestamp_copy
-    else:
-        return keywords_with_timestamp_copy
+    # Shallow copy instead of deep copy (wip: for memory leak)
+    keywords_with_timestamp_copy = [item.copy() for item in keywords_with_timestamp]
+
+    for item in keywords_with_timestamp_copy:
+        item.pop('window_number', None)
+
+    return keywords_with_timestamp_copy
 
 def log_min_max_date(df):
     max_date = max(df['start'])

@@ -1688,13 +1688,13 @@ files = [
 
 [[package]]
 name = "modin"
-version = "0.31.0"
+version = "0.32.0"
 description = "Modin: Make your pandas code run faster by changing one line of code."
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "modin-0.31.0-py3-none-any.whl", hash = "sha256:d97378709efb883fd6148be40c9b1a039922ac04f4f7db4208c57a2bee344de9"},
-    {file = "modin-0.31.0.tar.gz", hash = "sha256:bb11c3b2943d74bf2911fab2acb87d0c45d16becc03708be3392f7a1f5736000"},
+    {file = "modin-0.32.0-py3-none-any.whl", hash = "sha256:3f61e9ca286a1bea7296a6f70ce66f39c7fc7673c2b3e87ea34d6a499d1aebfa"},
+    {file = "modin-0.32.0.tar.gz", hash = "sha256:9f68557add5e92617d006eb98bfd93d298e7d4d9932a0cd48a5e38ee4f30a134"},
 ]
 
 [package.dependencies]
@@ -4015,4 +4015,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11.0,<3.13.0"
-content-hash = "3ba5d5869d6550cb84515dbaa06e483050984031215811169a598f246334774e"
+content-hash = "9f8c9468bb387d26c46347240894d49d27ad1392dd5214378c7106f349906bdb"

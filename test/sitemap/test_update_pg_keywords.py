@@ -347,11 +347,11 @@ def test_update_only_one_channel():
         ,"number_of_keywords_ressources": wrong_value
     }])
 
-    assert save_to_pg(df, keywords_table, conn) == 1
+    assert save_to_pg(df, keywords_table, conn) == 2
 
     # check the value is well existing
     result_before_update_m6 = get_keyword(primary_key_m6)
-    result_before_update_tf1 = get_keyword(primary_key_m6)
+    result_before_update_tf1 = get_keyword(primary_key_tf1)
 
     session = get_db_session(conn)
     # Should only update tf1 because channel=tf1)

@@ -459,7 +459,6 @@ def test_update_only_program():
 
     # check the value is well existing
     result_before_update_m6 = get_keyword(primary_key_m6)
-    result_before_update_tf1 = get_keyword(primary_key_m6)
     
     session = get_db_session(conn)
     # Should only update tf1 because channel=tf1)
@@ -494,7 +493,7 @@ def test_update_only_program():
     # number_of_keywords
     assert new_value == number_of_changement_climatique_constat + number_of_adaptation_climatique_solutions_directes
     assert result_after_update_m6.number_of_keywords == wrong_value
-    assert result_before_update_tf1.number_of_keywords == wrong_value
+    assert result_before_update_m6.number_of_keywords == wrong_value
 
     # number_of_changement_climatique_constat
     assert number_of_changement_climatique_constat == 2

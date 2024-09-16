@@ -10,8 +10,8 @@ from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp, get_channel_title_for_name
 from sqlalchemy import func, select, and_, func
 
-def update_keywords(session: Session, batch_size: int = 50000, start_date : str = "2023-04-01", program_only=False, end_date: str = "2023-04-30") -> list:
-    total_updates = get_total_count_saved_keywords(session, start_date, end_date)
+def update_keywords(session: Session, batch_size: int = 50000, start_date : str = "2023-04-01", program_only=False, end_date: str = "2023-04-30", channel: str = "") -> list:
+    total_updates = get_total_count_saved_keywords(session, start_date, end_date, channel)
 
     if total_updates == 0:
         logging.error("No rows to update - change your START_DATE_UPDATE")
@@ -20,15 +20,15 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
         logging.info(f"Fixing batch size ({batch_size}) to {total_updates} because too high compared to saved elements")
         batch_size = total_updates
 
-    logging.info(f"Updating {total_updates} saved keywords from {start_date} date to {end_date} - batch size {batch_size} - totals rows")
+    logging.info(f"Updating {total_updates} saved keywords from {start_date} date to {end_date} for channel {channel} - batch size {batch_size} - totals rows")
     df_programs = get_programs()
     logging.debug("Got channel programs")
     for i in range(0, total_updates, batch_size):
-        current_batch_saved_keywords = get_keywords_columns(session, i, batch_size, start_date, end_date)
+        current_batch_saved_keywords = get_keywords_columns(session, i, batch_size, start_date, end_date, channel)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {total_updates}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name, channel_title in current_batch_saved_keywords:
             if channel_title is None:
-                logging.debug("channel_title none, set it using channel_name")
+                logging.warning(f"channel_title none, set it using channel_name {channel_name}")
                 channel_title = get_channel_title_for_name(channel_name)
 
             if(not program_only):
@@ -100,10 +100,9 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
     logging.info("updated all keywords")
 
 
-def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30") -> list:
+def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30", channel: str = "") -> list:
     logging.debug(f"Getting {batch_size} elements from offset {offset}")
-    return (
-        session.query(
+    query = session.query(
             Keywords.id,
             Keywords.plaintext,
             Keywords.keywords_with_timestamp,
@@ -113,15 +112,21 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
             Keywords.theme,
             Keywords.channel_name,
             Keywords.channel_title,
+        ).filter(
+        and_(
+            func.date(Keywords.start) >= start_date, 
+            func.date(Keywords.start) <= end_date
         )
-        .filter(and_(func.date(Keywords.start) >= start_date, func.date(Keywords.start) <= end_date))
-        .order_by(Keywords.start, Keywords.channel_name, Keywords.plaintext)
-        .offset(offset)
-        .limit(batch_size)
-        .all()
-    )
+    ).order_by(Keywords.start, Keywords.channel_name, Keywords.plaintext)
 
-def get_total_count_saved_keywords(session: Session, start_date : str, end_date : str) -> int:
+    if channel != "":
+        query = query.filter(Keywords.channel_name == channel)
+
+    return query.offset(offset) \
+        .limit(batch_size) \
+        .all()
+
+def get_total_count_saved_keywords(session: Session, start_date : str, end_date : str, channel: str) -> int:
         statement = select(func.count()).filter(
             and_(func.date(Keywords.start) >= start_date, func.date(Keywords.start) <= end_date)
         ).select_from(Keywords)

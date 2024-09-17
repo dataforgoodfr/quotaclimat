@@ -313,6 +313,8 @@ We can adjust batch update with these env variables (as in the docker-compose.ym
 ```
 BATCH_SIZE: 50000 # number of records to update in one batch
 ```
+### Update only one channel 
+Use env variable `CHANNEL` like in docker compose (string: tf1) with `UPDATE` to true
 
 ### Batch program data
 `UPDATE_PROGRAM_ONLY` to true will only update program metadata, otherwise, it will update program metadata and all theme/keywords calculations.

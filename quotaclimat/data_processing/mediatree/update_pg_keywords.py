@@ -93,6 +93,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                 ,keyword_id
                 ,channel_program=program_name
                 ,channel_program_type=program_name_type
+                ,channel_title=channel_title
                 )
         logging.info(f"bulk update done {i} out of {total_updates} - (max offset {total_updates})")
         session.commit()
@@ -185,11 +186,13 @@ def update_keyword_row(session: Session,
 def update_keyword_row_program(session: Session, 
                        keyword_id: int,
                         channel_program: str,
-                        channel_program_type: str):
+                        channel_program_type: str,
+                        channel_title: str):
     session.query(Keywords).filter(Keywords.id == keyword_id).update(
         {
             Keywords.channel_program: channel_program,
-            Keywords.channel_program_type: channel_program_type
+            Keywords.channel_program_type: channel_program_type,
+            Keywords.channel_title: channel_title,
         },
         synchronize_session=False
     )

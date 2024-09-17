@@ -158,28 +158,6 @@ def test_first_update_keywords():
     # insert data
     primary_key = "test_save_to_pg_keyword"
    
-    keywords_with_timestamp = [
-        {
-            "keyword": "conditions de vie sur terre",
-            "timestamp": 1706437094004,
-            "theme": "changement_climatique_constat"
-        },
-        {
-            "keyword": "habitabilité de la planète",
-            "timestamp": 1706444334006,
-            "theme": "changement_climatique_constat"
-        },
-        {
-            "keyword": "digue",
-            "timestamp": 1706444366000,
-            "theme": "adaptation_climatique_solutions_indirectes"
-        }
-    ]
-    themes = [
-        "changement_climatique_constat",
-        "adaptation_climatique_solutions",
-        "ressources" # should be removed
-    ]
     channel_name = "m6"
     df = pd.DataFrame([{
         "id" : primary_key,
@@ -423,7 +401,7 @@ def test_update_only_program():
     
     wrong_value = 0
     # insert data
-    primary_key_m6 = "test_save_to_pg_keyword_m6"
+    primary_key_m6 = "test_save_to_pg_keyword_only_program_m6"
    
     m6 = "m6"
     df = pd.DataFrame([{
@@ -483,38 +461,18 @@ def test_update_only_program():
 
     assert result_after_update_m6.id == result_before_update_m6.id
 
-    # theme
-    assert set(new_theme) == set(["adaptation_climatique_solutions",  "changement_climatique_constat"])
-    assert set(result_after_update_m6.theme) == set(["adaptation_climatique_solutions", "changement_climatique_constat"])
+    # theme - not updated because of program only
+    assert set(result_after_update_m6.theme) == set(themes)
         
-    # keywords_with_timestamp
-    assert len(result_after_update_m6.keywords_with_timestamp) == len(new_keywords_with_timestamp)
-   
-    # number_of_keywords
-    assert new_value == number_of_changement_climatique_constat + number_of_adaptation_climatique_solutions_directes
+    # number_of_keywords - not updated because of program only
     assert result_after_update_m6.number_of_keywords == wrong_value
     assert result_before_update_m6.number_of_keywords == wrong_value
 
-    # number_of_changement_climatique_constat
-    assert number_of_changement_climatique_constat == 2
+    # number_of_changement_climatique_constat - not updated because of program only
     assert result_after_update_m6.number_of_changement_climatique_constat == wrong_value
 
     # number_of_adaptation_climatique_solutions_directes
-    assert number_of_adaptation_climatique_solutions_directes == wrong_value
     assert result_after_update_m6.number_of_adaptation_climatique_solutions_directes == wrong_value
-
-
-    assert number_of_ressources == wrong_value
-
-    assert number_of_changement_climatique_causes_directes == wrong_value
-    assert number_of_changement_climatique_consequences == wrong_value
-    assert number_of_attenuation_climatique_solutions_directes == wrong_value
-
-    assert number_of_ressources_solutions == wrong_value
-    assert number_of_biodiversite_concepts_generaux == wrong_value
-    assert number_of_biodiversite_causes_directes == wrong_value
-    assert number_of_biodiversite_consequences == wrong_value
-    assert number_of_biodiversite_solutions_directes == wrong_value
 
     # program - only when UPDATE_PROGRAM_ONLY for speed issues
     assert result_after_update_m6.channel_program == "1245 le mag"

@@ -88,7 +88,13 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                 ,number_of_keywords_ressources=new_number_of_keywords_ressources
                 )
             else:
-                program_name, program_name_type = get_a_program_with_start_timestamp(df_programs, pd.Timestamp(start).tz_convert('Europe/Paris'), channel_name)
+                logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
+                if(os.environ.get("ENV") == "prod"): # weird bug i don't want to know about
+                    start_tz = pd.Timestamp(start).tz_localize("UTC").tz_convert("Europe/Paris")
+                else:
+                    start_tz = pd.Timestamp(start).tz_convert("Europe/Paris")
+                logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - converted tz : {start_tz}")
+                program_name, program_name_type = get_a_program_with_start_timestamp(df_programs, start_tz, channel_name)
                 update_keyword_row_program(session
                 ,keyword_id
                 ,channel_program=program_name

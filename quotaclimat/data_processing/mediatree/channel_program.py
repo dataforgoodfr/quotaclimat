@@ -116,7 +116,7 @@ def get_a_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.
         logging.debug(f"matching_rows {matching_rows}")
         return matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type']
     else:
-        logging.info(f"no programs found for {channel_name} - {start_time}")
+        logging.warning(f"no programs found for {channel_name} - {start_time}")
         return "", ""
 
 def process_subtitle(row, df_program):

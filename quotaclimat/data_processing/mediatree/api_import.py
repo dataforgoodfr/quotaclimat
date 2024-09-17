@@ -67,7 +67,9 @@ async def update_pg_data(exit_event):
         update_keywords(session, batch_size=batch_size, start_date=start_date, program_only=program_only, end_date=end_date, channel=channel)
         exit_event.set()
     except Exception as err:
-        logging.error("Could update_pg_data %s:(%s)" % (type(err).__name__, err))
+        logging.fatal("Could not update_pg_data %s:(%s)" % (type(err).__name__, err))
+        ray.shutdown()
+        sys.exit(1)
 
 def get_channels():
     if(os.environ.get("ENV") == "docker" or os.environ.get("CHANNEL") is not None):

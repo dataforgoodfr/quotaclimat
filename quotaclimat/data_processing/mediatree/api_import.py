@@ -152,12 +152,12 @@ def get_auth_token(password=password, user_name=USER):
 
 # see : https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
 def get_param_api(token, type_sub, start_epoch, channel, end_epoch):
-    epoch_5min_margin = 300
+
     return {
         "channel": channel,
         "token": token,
-        "start_gte": int(start_epoch) - epoch_5min_margin,
-        "start_lte": int(end_epoch) + epoch_5min_margin,
+        "start_gte": int(start_epoch) - EPOCH__5MIN_MARGIN,
+        "start_lte": int(end_epoch) + EPOCH__5MIN_MARGIN,
         "type": type_sub,
         "size": "1000" #  range 1-1000
     }
@@ -308,5 +308,4 @@ if __name__ == "__main__":
     getLogger()
     asyncio.run(main())
     sys.exit(0)
-
 

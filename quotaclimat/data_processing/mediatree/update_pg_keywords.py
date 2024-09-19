@@ -96,10 +96,10 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                 logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - converted tz : {start_tz}")
                 program_name, program_name_type = get_a_program_with_start_timestamp(df_programs, start_tz, channel_name)
                 update_keyword_row_program(session
-                ,keyword_id
-                ,channel_program=program_name
-                ,channel_program_type=program_name_type
-                ,channel_title=channel_title
+                    ,keyword_id
+                    ,channel_program=program_name
+                    ,channel_program_type=program_name_type
+                    ,channel_title=channel_title
                 )
         logging.info(f"bulk update done {i} out of {total_updates} - (max offset {total_updates})")
         session.commit()

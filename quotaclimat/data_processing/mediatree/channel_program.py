@@ -3,7 +3,7 @@ import logging
 import os
 from datetime import datetime
 import json
-from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime
+from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime, EPOCH__5MIN_MARGIN
 
 def format_hour_minute(time: str) -> pd.Timestamp:
     date_str = "1970-01-01"
@@ -80,10 +80,17 @@ def get_day_of_week(time: pd.Timestamp) -> int:
 
 def get_matching_program_hour(df_program: pd.DataFrame, start_time: pd.Timestamp):
     start_time = get_hour_minute(start_time)
-    return df_program[
-                         (df_program['start'] <= start_time) &
-                         (df_program['end'] > start_time) # stricly > to avoid overlapping programs
+    matching_rows = df_program[
+                         (df_program['start'] <= (start_time + pd.Timedelta(seconds=EPOCH__5MIN_MARGIN))) &
+                         (df_program['end'] > (start_time - pd.Timedelta(seconds=EPOCH__5MIN_MARGIN))) # stricly > to avoid overlapping programs
                     ]
+    if(len(matching_rows) > 1): # no margin necessary because programs are next to each others
+        return df_program[
+                            (df_program['start'] <= (start_time)) &
+                            (df_program['end'] > (start_time)) # stricly > to avoid overlapping programs
+        ]
+    else:
+        return matching_rows
     
 def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timestamp, channel_name: str):
     logging.debug(f"get_matching_program_weekday {start_time} {channel_name}")
@@ -106,12 +113,15 @@ def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timest
 
     return matching_rows
 
+def get_closest_program_between_2_with_margin(channel_name: str,start_time: pd.Timestamp, matching_rows):
+    logging.info(f"Several programs name for the same channel and time {channel_name} and {start_time} - {matching_rows} - returning the first match")
+    matching_rows["start"]
+    return matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type']
+
 def get_a_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.Timestamp, channel_name: str):
     matching_rows = get_matching_program_weekday(df_program, start_time, channel_name)
     matching_rows = get_matching_program_hour(matching_rows, start_time)
 
-    if(len(matching_rows) > 1):
-        logging.error(f"Several programs name for the same channel and time {channel_name} and {start_time} - {matching_rows}")
     if not matching_rows.empty:
         logging.debug(f"matching_rows {matching_rows}")
         return matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type']

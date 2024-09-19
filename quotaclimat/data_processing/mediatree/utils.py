@@ -8,6 +8,7 @@ import os
 from pandas.tseries.offsets import MonthEnd
 
 timezone='Europe/Paris'
+EPOCH__5MIN_MARGIN = 300
 
 def get_keyword_time_separation_ms(duration_seconds: int = 15):
     return duration_seconds * 1000

@@ -93,7 +93,14 @@ def get_matching_program_hour(df_program: pd.DataFrame, start_time: pd.Timestamp
     number_of_result = len(matching_rows)
     logging.info(f"matching_rows {matching_rows}")
     if(number_of_result > 1): # no margin necessary because programs are next to each others
-        return matching_rows.head(1)
+        closest_result = df_program[
+                            (df_program['start'] <= (start_time)) &
+                            (df_program['end'] > (start_time)) # stricly > to avoid overlapping programs
+        ]
+        if(len(closest_result) == 0):
+            return matching_rows.head(1)
+        else:
+            return closest_result
     elif(number_of_result == 0 & number_of_rows_to_filter > 0):
         logging.warning("No results from hour filter")
         return None

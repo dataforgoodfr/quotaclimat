@@ -26,6 +26,8 @@ services:
       - ./pyproject.toml:/app/pyproject.toml
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
+      - ./_dbt:/app/_dbt
+      - ./profiles.yml:/app/profiles.yml
     depends_on:
       nginxtest:
         condition: service_healthy
@@ -104,6 +106,29 @@ services:
     depends_on:
       nginxtest:
         condition: service_healthy
+      postgres_db:
+        condition: service_healthy
+
+  dbt_runner:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    entrypoint: [ "poetry", "run", "dbt", "run", "--project-dir", "/app/_dbt" ]
+    environment:
+      ENV: docker
+      PYTHONPATH: /app
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+    tty: true
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./_dbt:/app/_dbt
+      - ./profiles.yml:/app/profiles.yml
+    depends_on:
       postgres_db:
         condition: service_healthy
 

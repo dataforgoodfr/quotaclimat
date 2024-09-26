@@ -37,6 +37,8 @@ COPY quotaclimat ./quotaclimat
 COPY postgres ./postgres
 COPY alembic/ ./alembic
 COPY transform_program.py ./transform_program.py
+COPY _dbt/ ./_dbt
+COPY profiles.yml ./profiles.yml
 
 # Docker compose overwrite this config to have only one Dockerfile
 CMD ["ls"]

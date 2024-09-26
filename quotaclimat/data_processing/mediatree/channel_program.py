@@ -19,7 +19,7 @@ def get_programs():
         with open(json_file_path, 'r') as file:
             json_data = json.load(file)
             df_programs = pd.DataFrame(json_data)
-            logging.info(df_programs.dtypes)
+
             df_programs[['start', 'end']] = df_programs.apply(lambda x: pd.Series({
                 'start': format_hour_minute(x['start']),
                 'end': format_hour_minute(x['end'])
@@ -79,16 +79,24 @@ def get_day_of_week(time: pd.Timestamp) -> int:
     return start_weekday
 
 def get_matching_program_hour(df_program: pd.DataFrame, start_time: pd.Timestamp):
+    number_of_rows_to_filter = len(df_program)
+    logging.debug(f"df_program {df_program['start']}")
+    logging.debug(f"{start_time + pd.Timedelta(seconds=EPOCH__5MIN_MARGIN + EPOCH__1MIN_MARGIN)}")
+    logging.debug(f"df_program {df_program['end']}")
+    logging.debug(f"number_of_rows_to_filter {number_of_rows_to_filter}")
     start_time = get_hour_minute(start_time)
     matching_rows = df_program[
                          (df_program['start'] <= (start_time + pd.Timedelta(seconds=EPOCH__5MIN_MARGIN + EPOCH__1MIN_MARGIN))) &
                          (df_program['end'] > (start_time - pd.Timedelta(seconds=EPOCH__5MIN_MARGIN + EPOCH__1MIN_MARGIN)))
                     ]
-    if(len(matching_rows) > 1): # no margin necessary because programs are next to each others
-        return df_program[
-                            (df_program['start'] <= (start_time)) &
-                            (df_program['end'] > (start_time)) # stricly > to avoid overlapping programs
-        ]
+    
+    number_of_result = len(matching_rows)
+    logging.info(f"matching_rows {matching_rows}")
+    if(number_of_result > 1): # no margin necessary because programs are next to each others
+        return matching_rows.head(1)
+    elif(number_of_result == 0 & number_of_rows_to_filter > 0):
+        logging.warning("No results from hour filter")
+        return None
     else:
         return matching_rows
     
@@ -99,12 +107,12 @@ def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timest
     if "weekday_mask" in df_program.columns:
         df_program.drop(columns=["weekday_mask"], inplace=True)
     df_program["weekday_mask"] = df_program['weekday'].apply(lambda x: compare_weekday(x, start_weekday), axis=1)
-    logging.debug("weekday_mask done")
+
     matching_rows = df_program[
                         (df_program['channel_name'] == channel_name) &
                         (df_program["weekday_mask"] == True)
                     ]
-    logging.debug("matching_rows done")
+
     matching_rows.drop(columns=['weekday_mask'], inplace=True)
     matching_rows.drop(columns=['weekday'], inplace=True)
     
@@ -112,11 +120,6 @@ def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timest
         logging.warning(f"Program tv : no matching rows found {channel_name} for weekday {start_weekday} - {start_time}")
 
     return matching_rows
-
-def get_closest_program_between_2_with_margin(channel_name: str,start_time: pd.Timestamp, matching_rows):
-    logging.info(f"Several programs name for the same channel and time {channel_name} and {start_time} - {matching_rows} - returning the first match")
-    matching_rows["start"]
-    return matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type']
 
 def get_a_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.Timestamp, channel_name: str):
     matching_rows = get_matching_program_weekday(df_program, start_time, channel_name)

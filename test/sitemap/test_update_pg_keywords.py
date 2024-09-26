@@ -17,6 +17,8 @@ original_timestamp = 1706271523 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
 start = pd.to_datetime("2024-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
 create_tables()
 
+wrong_value = 0
+m6 = "m6"
 plaintext = "cheese pizza habitabilité de la planète conditions de vie sur terre animal digue"
 srt = [{
         "duration_ms": 34,
@@ -398,12 +400,10 @@ def test_update_only_one_channel():
 
 def test_update_only_program():
     conn = connect_to_db()
-    
-    wrong_value = 0
+
     # insert data
     primary_key_m6 = "test_save_to_pg_keyword_only_program_m6"
    
-    m6 = "m6"
     df = pd.DataFrame([{
         "id" : primary_key_m6,
         "start": start,
@@ -477,7 +477,6 @@ def test_update_only_program_with_only_one_channel():
     # insert data
     primary_key_m6 = "test_save_to_pg_keyword_only_program_m6"
     primary_key_tf1 = "test_save_to_pg_keyword_only_program_tf1"
-    m6 = "m6"
     tf1 = "tf1"
     df = pd.DataFrame([{
         "id" : primary_key_m6,
@@ -584,3 +583,94 @@ def test_update_only_program_with_only_one_channel():
     # number_of_keywords_climat
     assert result_after_update_m6.number_of_keywords_climat == wrong_value
     assert result_after_update_tf1.number_of_keywords_climat == wrong_value
+
+def test_update_only_empty_program():
+    conn = connect_to_db()
+    
+    wrong_value = 0
+    # insert data
+    primary_key_m6 = "test_save_to_pg_keyword_only_program_m6"
+   
+    primary_key_m6 = "test_save_to_pg_keyword_only_program_m6"
+    primary_key_tf1 = "test_save_to_pg_keyword_only_program_tf1"
+    tf1 = "tf1"
+    df = pd.DataFrame([{
+        "id" : primary_key_m6,
+        "start": start,
+        "plaintext": plaintext,
+        "channel_name": m6,
+        "channel_radio": False,
+        "theme": themes,
+        "keywords_with_timestamp": keywords_with_timestamp,
+        "srt": srt,
+        "number_of_keywords": wrong_value, # wrong data to reapply our custom logic for "new_value"
+        "number_of_changement_climatique_constat":  wrong_value,
+        "number_of_changement_climatique_causes_directes":  wrong_value,
+        "number_of_changement_climatique_consequences":  wrong_value,
+        "number_of_attenuation_climatique_solutions_directes":  wrong_value,
+        "number_of_adaptation_climatique_solutions_directes":  wrong_value,
+        "number_of_ressources":  wrong_value,
+        "number_of_ressources_solutions":  wrong_value,
+        "number_of_biodiversite_concepts_generaux":  wrong_value,
+        "number_of_biodiversite_causes_directes":  wrong_value,
+        "number_of_biodiversite_consequences":  wrong_value,
+        "number_of_biodiversite_solutions_directes" : wrong_value,
+        "channel_program_type": "",
+        "channel_program":"" # Empty --> it's going to change
+        ,"channel_title":None
+        ,"number_of_keywords_climat": wrong_value
+        ,"number_of_keywords_biodiversite": wrong_value
+        ,"number_of_keywords_ressources": wrong_value
+    }, {
+        "id" : primary_key_tf1,
+        "start": start,
+        "plaintext": plaintext,
+        "channel_name": tf1,
+        "channel_radio": False,
+        "theme": themes,
+        "keywords_with_timestamp": keywords_with_timestamp,
+        "srt": srt,
+        "number_of_keywords": wrong_value, # wrong data to reapply our custom logic for "new_value"
+        "number_of_changement_climatique_constat":  wrong_value,
+        "number_of_changement_climatique_causes_directes":  wrong_value,
+        "number_of_changement_climatique_consequences":  wrong_value,
+        "number_of_attenuation_climatique_solutions_directes":  wrong_value,
+        "number_of_adaptation_climatique_solutions_directes":  wrong_value,
+        "number_of_ressources":  wrong_value,
+        "number_of_ressources_solutions":  wrong_value,
+        "number_of_biodiversite_concepts_generaux":  wrong_value,
+        "number_of_biodiversite_causes_directes":  wrong_value,
+        "number_of_biodiversite_consequences":  wrong_value,
+        "number_of_biodiversite_solutions_directes" : wrong_value,
+        "channel_program_type": "to change",
+        "channel_program":"to change"
+        ,"channel_title":None
+        ,"number_of_keywords_climat": wrong_value
+        ,"number_of_keywords_biodiversite": wrong_value
+        ,"number_of_keywords_ressources": wrong_value
+    }])
+
+    assert save_to_pg(df, keywords_table, conn) == 2
+
+    # check the value is well existing
+    result_before_update_m6 = get_keyword(primary_key_m6)
+    result_before_update_tf1 = get_keyword(primary_key_tf1)
+    
+    session = get_db_session(conn)
+    # Should only update programs because program_only = True)
+    update_keywords(session, batch_size=50, start_date="2024-01-01", program_only = True, end_date="2024-01-30",\
+                     empty_program_only=True
+                   )
+    result_after_update_m6 = get_keyword(primary_key_m6)
+    result_after_update_tf1 = get_keyword(primary_key_tf1)
+    # program - only
+    assert result_after_update_m6.channel_program == "1245 le mag"
+    assert result_before_update_m6.channel_program == ""
+    assert result_after_update_m6.channel_program_type == "Information - Magazine"
+    assert result_before_update_m6.channel_program_type == ""
+
+    ## TF1 should NOT changed because it has a value
+    assert result_after_update_tf1.channel_program == "to change"
+    assert result_before_update_tf1.channel_program == "to change"
+    assert result_after_update_tf1.channel_program_type == "to change"
+    assert result_before_update_tf1.channel_program_type == "to change"

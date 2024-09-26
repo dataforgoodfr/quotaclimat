@@ -55,16 +55,18 @@ async def update_pg_data(exit_event):
     end_date = os.environ.get("END_DATE", tmp_end_date)
     batch_size = int(os.environ.get("BATCH_SIZE", 50000))
     program_only = os.environ.get("UPDATE_PROGRAM_ONLY", "false") == "true"
+    empty_program_only = os.environ.get("UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY", "false") == "true"
     channel = os.environ.get("CHANNEL", "")
     if(program_only):
-        logging.warning("Update : Program only mode activated - UPDATE_PROGRAM_ONLY")
+        logging.warning(f"Update : Program only mode activated - UPDATE_PROGRAM_ONLY with UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY set to {empty_program_only}")
     else:
         logging.warning("Update : programs will not be updated for performance issue - use UPDATE_PROGRAM_ONLY to true for this")
 
     logging.warning(f"Updating already saved data for channel {channel} from Postgresql from date {start_date} - env variable START_DATE_UPDATE until {end_date} - you can use END_DATE to set it (optional)")
     try:
         session = get_db_session()
-        update_keywords(session, batch_size=batch_size, start_date=start_date, program_only=program_only, end_date=end_date, channel=channel)
+        update_keywords(session, batch_size=batch_size, start_date=start_date, program_only=program_only, end_date=end_date,\
+                        channel=channel, empty_program_only=empty_program_only)
         exit_event.set()
     except Exception as err:
         logging.fatal("Could not update_pg_data %s:(%s)" % (type(err).__name__, err))

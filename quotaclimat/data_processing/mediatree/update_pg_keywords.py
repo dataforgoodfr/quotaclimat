@@ -8,10 +8,11 @@ from sqlalchemy.orm import Session
 from postgres.schemas.models import Keywords
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp, get_channel_title_for_name
-from sqlalchemy import func, select, and_, func
+from sqlalchemy import func, select, and_, func, or_
 
-def update_keywords(session: Session, batch_size: int = 50000, start_date : str = "2023-04-01", program_only=False, end_date: str = "2023-04-30", channel: str = "") -> list:
-    total_updates = get_total_count_saved_keywords(session, start_date, end_date, channel)
+def update_keywords(session: Session, batch_size: int = 50000, start_date : str = "2023-04-01", program_only=False, \
+                    end_date: str = "2023-04-30", channel: str = "", empty_program_only=False) -> list:
+    total_updates = get_total_count_saved_keywords(session, start_date, end_date, channel, empty_program_only)
 
     if total_updates == 0:
         logging.error("No rows to update - change your START_DATE_UPDATE")
@@ -22,9 +23,9 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
 
     logging.info(f"Updating {total_updates} saved keywords from {start_date} date to {end_date} for channel {channel} - batch size {batch_size} - totals rows")
     df_programs = get_programs()
-    logging.debug("Got channel programs")
+
     for i in range(0, total_updates, batch_size):
-        current_batch_saved_keywords = get_keywords_columns(session, i, batch_size, start_date, end_date, channel)
+        current_batch_saved_keywords = get_keywords_columns(session, i, batch_size, start_date, end_date, channel, empty_program_only)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {total_updates}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name, channel_title in current_batch_saved_keywords:
             if channel_title is None:
@@ -87,7 +88,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                 ,number_of_keywords_biodiversite=new_number_of_keywords_biodiversite
                 ,number_of_keywords_ressources=new_number_of_keywords_ressources
                 )
-            else:
+            else: # Program only mode
                 logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
                 if(os.environ.get("ENV") == "prod"): # weird bug i don't want to know about
                     start_tz = pd.Timestamp(start).tz_localize("UTC").tz_convert("Europe/Paris")
@@ -107,7 +108,8 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
     logging.info("updated all keywords")
 
 
-def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30", channel: str = "") -> list:
+def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30",\
+                         channel: str = "", empty_program_only: bool = False) -> list:
     logging.debug(f"Getting {batch_size} elements from offset {offset}")
     query = session.query(
             Keywords.id,
@@ -129,15 +131,29 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
     if channel != "":
         query = query.filter(Keywords.channel_name == channel)
 
+    if empty_program_only:
+        query = query.filter(Keywords.channel_program == "")
+
     return query.offset(offset) \
         .limit(batch_size) \
         .all()
 
-def get_total_count_saved_keywords(session: Session, start_date : str, end_date : str, channel: str) -> int:
+def get_total_count_saved_keywords(session: Session, start_date : str, end_date : str, channel: str, empty_program_only: bool) -> int:
         statement = select(func.count()).filter(
             and_(func.date(Keywords.start) >= start_date, func.date(Keywords.start) <= end_date)
         ).select_from(Keywords)
         
+        if channel != "":
+            statement = statement.filter(Keywords.channel_name == channel)
+        
+        if empty_program_only:
+            statement = statement.filter(
+                or_(
+                    Keywords.channel_program.is_(None),
+                    Keywords.channel_program == "" 
+                )
+            )
+
         return session.execute(statement).scalar()
 
 def update_keyword_row(session: Session, 

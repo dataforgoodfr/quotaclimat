@@ -3,7 +3,7 @@ import logging
 import os
 from datetime import datetime
 import json
-from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime, EPOCH__5MIN_MARGIN
+from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime, EPOCH__5MIN_MARGIN, EPOCH__1MIN_MARGIN
 
 def format_hour_minute(time: str) -> pd.Timestamp:
     date_str = "1970-01-01"
@@ -81,8 +81,8 @@ def get_day_of_week(time: pd.Timestamp) -> int:
 def get_matching_program_hour(df_program: pd.DataFrame, start_time: pd.Timestamp):
     start_time = get_hour_minute(start_time)
     matching_rows = df_program[
-                         (df_program['start'] <= (start_time + pd.Timedelta(seconds=EPOCH__5MIN_MARGIN))) &
-                         (df_program['end'] > (start_time - pd.Timedelta(seconds=EPOCH__5MIN_MARGIN))) # stricly > to avoid overlapping programs
+                         (df_program['start'] <= (start_time + pd.Timedelta(seconds=EPOCH__5MIN_MARGIN + EPOCH__1MIN_MARGIN))) &
+                         (df_program['end'] > (start_time - pd.Timedelta(seconds=EPOCH__5MIN_MARGIN + EPOCH__1MIN_MARGIN)))
                     ]
     if(len(matching_rows) > 1): # no margin necessary because programs are next to each others
         return df_program[

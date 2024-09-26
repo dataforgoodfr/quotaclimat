@@ -228,6 +228,15 @@ def test_get_13h_monday_rfi_with_margin_program_with_start_timestamp():
     assert program_type == "Information - Journal"
 
 
+def test_get_6h26_friday_fr2_with_margin_program_with_start_timestamp():
+    df_programs = get_programs()
+    friday_6h26 = 1726719981
+    program_name, program_type = get_a_program_with_start_timestamp(df_programs,\
+                                                                    pd.to_datetime(friday_6h26, unit='s', utc=True).tz_convert('Europe/Paris'),\
+                                                                    "france2")
+    assert program_name == "Le 6h Info"
+    assert program_type == "Information - Journal"
+
 def test_compare_weekday_string():
     assert compare_weekday('*', 0) == True
     assert compare_weekday('*', 3) == True

@@ -319,6 +319,8 @@ Use env variable `CHANNEL` like in docker compose (string: tf1) with `UPDATE` to
 ### Batch program data
 `UPDATE_PROGRAM_ONLY` to true will only update program metadata, otherwise, it will update program metadata and all theme/keywords calculations.
 
+`UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY` to true will only update program metadata with empty value : "".
+
 ### Batch update from an offset
 With +1 millions rows, we can update from an offset to fix a custom logic by using `START_DATE_UPDATE` (YYYY-MM-DD), the default will use the end of the month otherwise you can specify`END_DATE` (optional) (YYYY-MM-DD) to batch update PG from a date range.
 

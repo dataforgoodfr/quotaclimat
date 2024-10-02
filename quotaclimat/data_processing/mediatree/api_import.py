@@ -239,7 +239,6 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             new_df : pd.DataFrame = json_normalize(response_sub.get('data')) # TODO UserWarning: json_normalize is not currently supported by PandasOnRay, defaulting to pandas implementation.
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             pd.set_option('display.max_columns', None)
-            logging.debug("head:  :\n%s", new_df.head())
            
             logging.debug("setting timestamp")
             new_df['timestamp'] = new_df.apply(lambda x: pd.to_datetime(x['start'], unit='s', utc=True), axis=1)

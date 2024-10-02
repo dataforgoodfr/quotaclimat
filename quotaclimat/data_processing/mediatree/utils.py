@@ -115,6 +115,6 @@ def format_hour_minute(time: str) -> pd.Timestamp:
 
 def get_timestamp_from_yyyymmdd(time: str) -> pd.Timestamp:
     if(time == ""):
-        return (pd.Timestamp.now() + pd.DateOffset(years=100)).tz_localize("Europe/Paris") # hack to be able to accept all dates
+        return (pd.Timestamp.now() + pd.DateOffset(years=100))
     else:
-        return pd.Timestamp(pd.to_datetime(time)).tz_localize("Europe/Paris")
+        return pd.Timestamp(pd.to_datetime(time))

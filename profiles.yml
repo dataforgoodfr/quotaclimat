@@ -1,0 +1,12 @@
+_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: postgres_db
+      user: user
+      password: password
+      port: 5432
+      dbname: barometre
+      schema: public
+      threads: 1

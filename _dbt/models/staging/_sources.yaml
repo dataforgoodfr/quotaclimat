@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: quotaclimat
+    database: barometre
+    schema: public
+    tables:
+      - name: keywords

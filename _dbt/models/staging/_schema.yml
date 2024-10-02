@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: stg_keywords
+    description: List of keywords said during channel_program
+    columns:
+      - name: keyword_id
+        description: "The primary key for this table"
+        data_tests:
+          - unique
+          - not_null
+
+      - name: updated_at
+        description: "Last date when keywords have been updated"
+#        data_tests:
+#          - not_null
+
+      - name: channel_title
+        description: "Title of the channel"
+#        data_tests: # Uncomment to trigger data test error
+#          - not_null

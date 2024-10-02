@@ -372,6 +372,8 @@ poetry run python3 quotaclimat/transform_excel_to_json.py
 ## Program Metadata table
 The media perimeter is defined here : "quotaclimat/data_processing/mediatree/channel_program.json"
 
+To evolve the media perimeter, we use `program_grid_start` and `program_grid_end` columns to version all evolutions.
+
 To calculate the right total duration for each channel, after updating "quotaclimat/data_processing/mediatree/channel_program.json" you need to execute this command to update `postgres/program_metadata.json` 
 ```
 poetry run python3 transform_program.py

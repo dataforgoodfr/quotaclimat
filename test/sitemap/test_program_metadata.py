@@ -177,7 +177,8 @@ def test_format_hour_minute_double_digit():
  
 def test_get_programs_for_this_day_thusday_morning_franceinfo():
     df_programs = get_programs()
-    programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').normalize(), "france-info", df_programs)
+    thrusday_morning_ts = pd.to_datetime(thrusday_morning, unit='s', utc=True).tz_convert('Europe/Paris')
+    programs = get_programs_for_this_day(thrusday_morning_ts, "france-info", df_programs)
     debug_df(programs)
     expected = pd.DataFrame([
         {"channel_name":"france-info",

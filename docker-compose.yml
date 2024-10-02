@@ -113,7 +113,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    entrypoint: [ "poetry", "run", "dbt", "run", "--project-dir", "/app/_dbt" ]
+    entrypoint: [ "poetry", "run", "dbt", "build", "--project-dir", "/app/_dbt" ]
     environment:
       ENV: docker
       PYTHONPATH: /app
@@ -128,6 +128,8 @@ services:
       - ./postgres/:/app/postgres/
       - ./_dbt:/app/_dbt
       - ./profiles.yml:/app/profiles.yml
+    networks:
+      - db_network
     depends_on:
       postgres_db:
         condition: service_healthy
@@ -149,6 +151,21 @@ services:
       POSTGRES_PASSWORD: password
     logging: # no logs for postgres container
             driver: none
+    networks:
+      - db_network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin_password
+    ports:
+      - "8080:80"
+    networks:
+      - db_network
+    depends_on:
+      - postgres_db
 
   mediatree:
     ports:
@@ -220,6 +237,10 @@ services:
       depends_on:
         postgres_db:
           condition: service_healthy
+
+networks:
+  db_network:
+    driver: bridge
 
 secrets: # https://docs.docker.com/compose/use-secrets/
     pwd_api:

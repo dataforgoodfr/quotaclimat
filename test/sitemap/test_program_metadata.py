@@ -140,7 +140,7 @@ def test_add_channel_program_france2_jt():
 
 def test_get_programs_for_this_day_thusday_morning_france2():
     df_programs = get_programs()
-    programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s'), channel_name, df_programs)
+    programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').tz_localize('Europe/Paris'), channel_name, df_programs)
     debug_df(programs)
     expected = pd.DataFrame([
         {"channel_name":"france2","start":1712808000,"end":1712809500,"program_name":"Le 6h Info", "program_type":"Information - Journal"},
@@ -178,7 +178,7 @@ def test_format_hour_minute_double_digit():
 def test_get_programs_for_this_day_thusday_morning_franceinfo():
     df_programs = get_programs()
     
-    thrusday_morning_ts = pd.to_datetime(thrusday_morning, unit='s')
+    thrusday_morning_ts = pd.to_datetime(thrusday_morning, unit='s').tz_localize('Europe/Paris')
     programs = get_programs_for_this_day(thrusday_morning_ts, "france-info", df_programs)
     debug_df(programs)
     expected = pd.DataFrame([

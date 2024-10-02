@@ -93,8 +93,8 @@ class Channel_Metadata(Base):
     id = Column(Text, primary_key=True)
     channel_name = Column(String, nullable=False)
     channel_title = Column(String, nullable=False)
-    program_grid_start = Column(String, nullable=False)
-    program_grid_end = Column(String, nullable=True)
+    program_grid_start = Column(String, nullable=False, server_default='2023-04-01')
+    program_grid_end = Column(String, nullable=True, server_default='')
     duration_minutes= Column(Integer)
     weekday= Column(Integer)  
 

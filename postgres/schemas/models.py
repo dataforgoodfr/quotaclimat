@@ -93,8 +93,8 @@ class Channel_Metadata(Base):
     id = Column(Text, primary_key=True)
     channel_name = Column(String, nullable=False)
     channel_title = Column(String, nullable=False)
-    program_grid_start = Column(String, nullable=False, server_default='2023-04-01')
-    program_grid_end = Column(String, nullable=True, server_default='')
+    program_grid_start = Column(DateTime(), nullable=False, server_default='2023-04-01')
+    program_grid_end = Column(DateTime(), nullable=True, server_default='')
     duration_minutes= Column(Integer)
     weekday= Column(Integer)  
 
@@ -113,6 +113,8 @@ class Program_Metadata(Base):
     public = Column(Boolean, nullable=True)
     infocontinue = Column(Boolean, nullable=True)
     radio = Column(Boolean, nullable=True)
+    program_grid_start = Column(DateTime(), nullable=True)
+    program_grid_end = Column(DateTime(), nullable=True)
 
 def get_sitemap(id: str):
     session = get_db_session()
@@ -200,6 +202,8 @@ def update_program_metadata(engine):
                     'channel_program_type': item['program_type'],
                     'start': item['start'],
                     'end': item['end'],
+                    'program_grid_start': datetime.strptime(item['program_grid_start'], '%Y-%m-%d'),
+                    'program_grid_end': datetime.strptime(item['program_grid_end'], '%Y-%m-%d'),
                 }
                 session.merge(Program_Metadata(**metadata))
             

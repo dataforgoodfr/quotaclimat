@@ -152,6 +152,9 @@ for program_data in data:
     end_time = program_data['end']
     duration_minutes = calculate_duration(start_time, end_time)
     
+    if program_data['program_grid_start'] == '':
+        program_data['program_grid_start'] = '2100-01-01'
+
     # Add duration to the program data
     program_data['duration'] = duration_minutes
 

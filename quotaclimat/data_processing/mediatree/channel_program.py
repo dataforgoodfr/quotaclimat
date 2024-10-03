@@ -135,6 +135,7 @@ def get_a_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.
 
     if not matching_rows.empty:
         logging.debug(f"matching_rows {matching_rows}")
+        # TODO should return closest to start_time
         return matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type']
     else:
         logging.warning(f"no programs found for {channel_name} - {start_time}")

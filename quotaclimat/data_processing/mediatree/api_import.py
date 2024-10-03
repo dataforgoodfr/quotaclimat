@@ -106,7 +106,7 @@ async def get_and_save_api_data(exit_event):
                 
                 for channel in channels:
                     try:
-                        programs_for_this_day = get_programs_for_this_day(day, channel, df_programs)
+                        programs_for_this_day = get_programs_for_this_day(day.tz_localize("Europe/Paris"), channel, df_programs)
 
                         for program in programs_for_this_day.itertuples(index=False):
                             start_epoch = program.start
@@ -282,11 +282,6 @@ async def main():
             )
             logging.info(f"Ray context dahsboard available at : {context.dashboard_url}")
             logging.warning(f"Ray Information about the env: {ray.available_resources()}")
-
-            if(os.environ.get("COMPARE_DURATION") == "true"):
-                logging.warning(f"Comparaison between number_of_15/20/30/40 is activated")
-            else:
-                logging.warning(f"Comparaison between 15/20/30/40 is OFF")
 
             # Start batch job
             if(os.environ.get("UPDATE") == "true"):

@@ -181,6 +181,11 @@ def update_program_metadata(engine):
         with open(json_file_path, 'r') as f:
             data = json.load(f)
             
+            # full overwrite
+            logging.warning("Program_Metadata table! Full overwrite (delete/recreate)")
+            session.query(Program_Metadata).delete()
+            session.commit()
+
             for item in data:
                 metadata = {
                     'id': item['id'],

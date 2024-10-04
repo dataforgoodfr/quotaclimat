@@ -16,8 +16,8 @@ def calculate_duration(start_time, end_time):
     return duration_minutes
 
 # Function to generate a consistent hash based on channel_name, weekday, and program_name
-def generate_program_id(channel_name, weekday, program_name):
-    data_str = f"{channel_name}-{weekday}-{program_name}"
+def generate_program_id(channel_name, weekday, program_name, program_grid_start):
+    data_str = f"{channel_name}-{weekday}-{program_name}-{program_grid_start}"
     return hashlib.sha256(data_str.encode()).hexdigest()
 
 input_file_path = "quotaclimat/data_processing/mediatree/channel_program.json"
@@ -199,7 +199,7 @@ for program_data in data:
 
 for program in programs:
     # Generate program ID based on channel_name, weekday, and program_name
-    program_id = generate_program_id(program['channel_name'], program['weekday'], program['program_name'])
+    program_id = generate_program_id(program['channel_name'], program['weekday'], program['program_name'], program['program_grid_start'])
     program['id'] = program_id
     
 sorted_programs = sorted(programs, key=lambda x: (x['weekday'], x['channel_name']))

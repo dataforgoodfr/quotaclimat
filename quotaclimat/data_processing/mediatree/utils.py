@@ -107,3 +107,14 @@ def is_it_tuesday(date):
     weekday = date.weekday()
     logging.debug(f"weekday : {weekday}")
     return weekday
+
+def format_hour_minute(time: str) -> pd.Timestamp:
+    date_str = "1970-01-01"
+    logging.debug(f"format_hour_minute with : {time}")
+    return pd.to_datetime(date_str + " " + time)
+
+def get_timestamp_from_yyyymmdd(time: str) -> pd.Timestamp:
+    if(time == ""):
+        return (pd.Timestamp.now() + pd.DateOffset(years=100)).tz_localize("Europe/Paris")
+    else:
+        return pd.Timestamp(pd.to_datetime(time)).tz_localize("Europe/Paris")

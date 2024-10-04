@@ -140,7 +140,7 @@ def test_add_channel_program_france2_jt():
 
 def test_get_programs_for_this_day_thusday_morning_france2():
     df_programs = get_programs()
-    programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').normalize(), channel_name, df_programs)
+    programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').tz_localize('Europe/Paris'), channel_name, df_programs)
     debug_df(programs)
     expected = pd.DataFrame([
         {"channel_name":"france2","start":1712808000,"end":1712809500,"program_name":"Le 6h Info", "program_type":"Information - Journal"},
@@ -177,10 +177,17 @@ def test_format_hour_minute_double_digit():
  
 def test_get_programs_for_this_day_thusday_morning_franceinfo():
     df_programs = get_programs()
-    programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').normalize(), "france-info", df_programs)
+    
+    thrusday_morning_ts = pd.to_datetime(thrusday_morning, unit='s').tz_localize('Europe/Paris')
+    programs = get_programs_for_this_day(thrusday_morning_ts, "france-info", df_programs)
     debug_df(programs)
     expected = pd.DataFrame([
-        {"channel_name":"france-info","start":1712808000,"end":1712869200,"program_name":"Information en continu", "program_type":"Information en continu"},
+        {"channel_name":"france-info",
+         "start":1712808000,
+         "end":1712869200,
+         "program_name":"Information en continu", 
+         "program_type":"Information en continu"
+         },
  ])
 
     pd.testing.assert_frame_equal(programs._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
@@ -235,6 +242,34 @@ def test_get_6h26_friday_fr2_with_margin_program_with_start_timestamp():
                                                                     pd.to_datetime(friday_6h26, unit='s', utc=True).tz_convert('Europe/Paris'),\
                                                                     "france2")
     assert program_name == "Le 6h Info"
+    assert program_type == "Information - Journal"
+
+
+def test_get_old_jt_20hweekday_20h19_friday_fr2():
+    df_programs = get_programs()
+    friday_20h19 = 1722622741
+    program_name, program_type = get_a_program_with_start_timestamp(df_programs,\
+                                                                    pd.to_datetime(friday_20h19, unit='s', utc=True).tz_convert('Europe/Paris'),\
+                                                                    "france2")
+    assert program_name == "JT 20h + météo"
+    assert program_type == "Information - Journal"
+
+def test_get_old_no_match_on_new_program_date_jt_20hweekday_20h55_friday_fr2():
+    df_programs = get_programs()
+    friday_20h19 = 1722624901
+    program_name, program_type = get_a_program_with_start_timestamp(df_programs,\
+                                                                    pd.to_datetime(friday_20h19, unit='s', utc=True).tz_convert('Europe/Paris'),\
+                                                                    "france2")
+    assert program_name == ""
+    assert program_type == ""
+
+def test_get_new_jt_20hweekday_20h55_friday_fr2():
+    df_programs = get_programs()
+    friday_20h55 = 1727376901
+    program_name, program_type = get_a_program_with_start_timestamp(df_programs,\
+                                                                    pd.to_datetime(friday_20h55, unit='s', utc=True).tz_convert('Europe/Paris'),\
+                                                                    "france2")
+    assert program_name == "JT 20h + météo"
     assert program_type == "Information - Journal"
 
 def test_compare_weekday_string():

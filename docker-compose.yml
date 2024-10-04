@@ -152,8 +152,8 @@ services:
       #START_DATE_UPDATE: "2024-02-01" # to batch update PG from a date
       #END_DATE: "2024-02-29" # optional - otherwise end of the month
       BATCH_SIZE: 100 # number of records to update in one batch
-      # START_DATE: 1717227223 # to test batch import 
-      CHANNEL : france-info # to reimport only one channel
+     # START_DATE: 1727610071 # to test batch import 
+      CHANNEL : fr3-idf # to reimport only one channel
       MEDIATREE_USER : /run/secrets/username_api
       MEDIATREE_PASSWORD:  /run/secrets/pwd_api
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/

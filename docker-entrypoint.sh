@@ -6,7 +6,7 @@ poetry run alembic upgrade head
 
 
 echo "update program metadata file"
-python transform_program.py
+poetry run python3 transform_program.py
 if [[ $? -eq 0 ]]; then
     echo "Command succeeded"
 else

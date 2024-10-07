@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Use CLI
-      uses: jawher/action-scw@v2.32.1
+      uses: jawher/action-scw@v2.34.0
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
         SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -24,7 +24,7 @@ jobs:
       run: echo "CONTAINER_ID=$(cat "${GITHUB_WORKSPACE}/scw.output" | jq -r '.[0].id')"  >> $GITHUB_ENV
 
     - name: start 1 instances
-      uses: jawher/action-scw@v2.32.1
+      uses: jawher/action-scw@v2.34.0
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
         SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}

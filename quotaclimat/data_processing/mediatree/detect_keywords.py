@@ -307,11 +307,26 @@ def count_keywords_duration_overlap(keywords_with_timestamp: List[dict], start: 
 def count_different_window_number(keywords_with_timestamp: List[dict], start: datetime) -> int:
     window_numbers = [item['window_number'] for item in keywords_with_timestamp if 'window_number' in item]
     final_count = len(set(window_numbers))
-    logging.debug(f"Count with 15 second logic: {final_count} keywords")
+    logging.debug(f"Count with {DEFAULT_WINDOW_DURATION} second logic: {final_count} keywords")
 
     return final_count
 
-def contains_direct_keywords(keywords_with_timestamp: List[dict]) -> bool:
+def get_subject_from_theme(theme: str) -> str:
+    if 'climatique' in theme:
+        return 'climat'
+    elif 'biodiversite' in theme:
+        return 'biodiversite'
+    elif 'ressources' in theme:
+        return 'ressources'
+    else:
+        return 'unknown'
+
+# only of the same subject (climate/biodiv/ressources) 
+def contains_direct_keywords_same_suject(keywords_with_timestamp: List[dict], theme: str) -> bool:
+    subject = get_subject_from_theme(theme)
+    logging.debug(f"subject {subject}")
+    # keep only keywords with timestamp from the same subject
+    keywords_with_timestamp = list(filter(lambda kw: get_subject_from_theme(kw['theme']) == subject, keywords_with_timestamp))
     return any(indirectes not in kw['theme'] for kw in keywords_with_timestamp)
 
 # we want to count false positive near of 15" of positive keywords
@@ -326,7 +341,8 @@ def transform_false_positive_keywords_to_positive(keywords_with_timestamp: List[
             , keywords_with_timestamp)
         )
 
-        if( contains_direct_keywords(neighbour_keywords) ) :
+        if( contains_direct_keywords_same_suject(neighbour_keywords, keyword_info['theme']) ) :
+            logging.debug(f"Transforming false positive to positive { keyword_info['keyword']} { keyword_info['theme']}")
             keyword_info['theme'] = remove_indirect(keyword_info['theme'])
 
     return keywords_with_timestamp

@@ -1328,19 +1328,19 @@ def test_different_steps_transform_false_positive_keywords_to_positive():
         },
         {'keyword': 'agroforesterie',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 2 + 150,
-          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+          'theme': 'attenuation_climatique_solutions_indirectes' # should stay indirect
         },
         {'keyword': 'alternative durable',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 3 + 150,
-          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+          'theme': 'attenuation_climatique_solutions_indirectes' # should stay indirect
         },
         {'keyword': 'planification écologique',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 4 + 150,
-          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+          'theme': 'attenuation_climatique_solutions_indirectes' # should stay indirect
         },
         {'keyword': 'nucléaire',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 6 + 150,
-          'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+          'theme': 'attenuation_climatique_solutions_indirectes' # should stay indirect
         }
     ]
 
@@ -1374,6 +1374,143 @@ def test_different_steps_transform_false_positive_keywords_to_positive():
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 6 + 150,
           'window_number': 6,
           'theme': 'attenuation_climatique_solutions_indirectes' # should be stayed to indirect
+        }
+    ]
+    
+    assert transform_false_positive_keywords_to_positive(tag_wanted_duration_second_window_number(keywords_with_timestamp,start, duration_seconds=15), start) == expected_output
+
+def test_transform_false_positive_keywords_to_positive_different_and_same_subject():
+    keywords_with_timestamp = [
+        {'keyword': 'climatique',
+         'timestamp': original_timestamp + 150,
+         'theme': 'changement_climatique_constat'
+        },
+        {'keyword': "activisme climatique",
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 1 + 151,
+          'theme': 'attenuation_climatique_solutions_indirectes' # should be transformed to direct
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 1 + 150,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'agroforesterie',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 2 + 150,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'alternative durable',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 3 + 150,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'planification écologique',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 4 + 150,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'nucléaire',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 6 + 150,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        }
+    ]
+
+    expected_output = [
+        {'keyword': 'climatique',
+         'timestamp': original_timestamp + 150,
+         'window_number': 0,
+         'theme': 'changement_climatique_constat'
+        },
+        {'keyword': "activisme climatique",
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 1 + 151,
+         'window_number': 1,
+         'theme': 'attenuation_climatique_solutions' # should be transformed to direct
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 1 + 150,
+          'window_number': 1,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'agroforesterie',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 2 + 150,
+          'window_number': 2,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'alternative durable',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 3 + 150,
+          'window_number': 3,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'planification écologique',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 4 + 150,
+          'window_number': 4,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'nucléaire',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 6 + 150,
+          'window_number': 6,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        }
+    ]
+    
+    assert transform_false_positive_keywords_to_positive(tag_wanted_duration_second_window_number(keywords_with_timestamp,start, duration_seconds=15), start) == expected_output
+
+
+
+def test_transform_false_positive_keywords_to_positive_different_subject():
+    keywords_with_timestamp = [
+        {'keyword': 'climatique',
+         'timestamp': original_timestamp + 150,
+         'theme': 'changement_climatique_constat'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 1 + 150,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'agroforesterie',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 2 + 150,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'alternative durable',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 3 + 150,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'planification écologique',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 4 + 150,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'nucléaire',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 6 + 150,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        }
+    ]
+
+    expected_output = [
+        {'keyword': 'climatique',
+         'timestamp': original_timestamp + 150,
+         'window_number': 0,
+         'theme': 'changement_climatique_constat'
+        },
+        {'keyword': 'industrie verte',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 1 + 150,
+          'window_number': 1,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'agroforesterie',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 2 + 150,
+          'window_number': 2,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'alternative durable',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 3 + 150,
+          'window_number': 3,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'planification écologique',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 4 + 150,
+          'window_number': 4,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
+        },
+        {'keyword': 'nucléaire',
+         'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 6 + 150,
+          'window_number': 6,
+          'theme': 'biodiversite_concepts_generaux_indirectes' # should stay indirect
         }
     ]
     

@@ -1,4 +1,380 @@
 THEME_KEYWORDS = {
+    "adaptation_climatique_solutions": [
+        {
+            "keyword": "adaptation au changement climatique",
+            "category": "General"
+        },
+        {
+            "keyword": "adaptation au dérèglement climatique",
+            "category": "General"
+        },
+        {
+            "keyword": "adaptation au réchauffement climatique",
+            "category": "General"
+        },
+        {
+            "keyword": "adaptation climatique",
+            "category": "General"
+        },
+        {
+            "keyword": "agro écologie",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agro écologique",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agroforesterie",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agroécologie",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "amélioration des pratiques d’élevage",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "aquaculture durable",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "bon pour la planète",
+            "category": "General"
+        },
+        {
+            "keyword": "changer nos habitudes alimentaires",
+            "category": "General"
+        },
+        {
+            "keyword": "désalinisation des eaux",
+            "category": "Eau"
+        },
+        {
+            "keyword": "développement de la planète",
+            "category": ""
+        },
+        {
+            "keyword": "eaux usées traitées",
+            "category": "Eau"
+        },
+        {
+            "keyword": "eco-prêt à taux zéro",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "eco-prêt à taux zéro",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "foresterie urbaine",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "forêt urbaine",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "gestion de la ressource en eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "gestion du littoral",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "gestion durable des forêts",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "gestion durable des terres cultivables",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "limiter l’érosion des côtes",
+            "category": "General"
+        },
+        {
+            "keyword": "lutte contre le gaspillage d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "lutter contre l’érosion",
+            "category": "General"
+        },
+        {
+            "keyword": "mesure environnementale",
+            "category": "General"
+        },
+        {
+            "keyword": "nous adapter à un futur incertain",
+            "category": "General"
+        },
+        {
+            "keyword": "prise de conscience environnementale",
+            "category": "General"
+        },
+        {
+            "keyword": "prise de conscience écologique",
+            "category": "General"
+        },
+        {
+            "keyword": "préservation de la ressource en eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "prévention des catastrophes naturelles",
+            "category": "General"
+        },
+        {
+            "keyword": "prévention des inondations",
+            "category": "General"
+        },
+        {
+            "keyword": "pêche durable",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "reforestation",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "renaturer",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "renforcer les digues",
+            "category": "Eau"
+        },
+        {
+            "keyword": "renforcer les dunes",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "restriction d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "retenue collinaire",
+            "category": "Eau"
+        },
+        {
+            "keyword": "revégétalisation",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "revégétaliser",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "récupérateur d'eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "récupérer l'eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réduction de la demande en eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réduire l’élevage intensif",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "rénovation des batiments",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "rénovation thermique",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "réserve d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "résistant à la sécheresse",
+            "category": "General"
+        },
+        {
+            "keyword": "résistante à la sécheresse",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "réutilisation des eaux usées traitées",
+            "category": "Eau"
+        },
+        {
+            "keyword": "sauvegarde de la ressource en eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "tva verte",
+            "category": "General"
+        },
+        {
+            "keyword": "tévéa verte",
+            "category": "General"
+        },
+        {
+            "keyword": "verdir la politique agricole",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "vertueux pour la planète",
+            "category": "General"
+        },
+        {
+            "keyword": "végétalisation",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "végétaliser",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "végétalisé",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "végétalisée",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "économie d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "économiser l'eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "îlot de fraîcheur",
+            "category": "Ecosystème"
+        }
+    ],
+    "adaptation_climatique_solutions_indirectes": [
+        {
+            "keyword": "arbre",
+            "category": ""
+        },
+        {
+            "keyword": "barrage",
+            "category": "Eau"
+        },
+        {
+            "keyword": "bon pour la santé",
+            "category": "General"
+        },
+        {
+            "keyword": "changer leurs habitudes",
+            "category": "General"
+        },
+        {
+            "keyword": "changer nos comportements",
+            "category": "General"
+        },
+        {
+            "keyword": "changer nos habitudes",
+            "category": "General"
+        },
+        {
+            "keyword": "digue",
+            "category": "General"
+        },
+        {
+            "keyword": "dune",
+            "category": "General"
+        },
+        {
+            "keyword": "espace vert",
+            "category": ""
+        },
+        {
+            "keyword": "espace vert",
+            "category": ""
+        },
+        {
+            "keyword": "faire baisser la température",
+            "category": ""
+        },
+        {
+            "keyword": "forêt",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "gestion de l'eau",
+            "category": ""
+        },
+        {
+            "keyword": "gestion des milieux aquatiques",
+            "category": "Eau"
+        },
+        {
+            "keyword": "jachère",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "jardin",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "manipuler la terre",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "mega bassine",
+            "category": "Eau"
+        },
+        {
+            "keyword": "miscanthus",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "norme",
+            "category": "General"
+        },
+        {
+            "keyword": "ombre",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "parc",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "planter des arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "pratiques vertueuses",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "sorgho",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "verdir",
+            "category": ""
+        },
+        {
+            "keyword": "verdure",
+            "category": ""
+        },
+        {
+            "keyword": "vertueux",
+            "category": "General"
+        },
+        {
+            "keyword": "ville durable",
+            "category": "General"
+        }
+    ],
     "attenuation_climatique_solutions": [
         {
             "keyword": "absorption du carbone",
@@ -861,1788 +1237,6 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         }
     ],
-    "biodiversite_causes_indirectes": [
-        {
-            "keyword": "acide",
-            "category": "General"
-        },
-        {
-            "keyword": "activité industrielle",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "agricole",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agriculteur",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agriculture",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agro-industrie",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agro-industriel",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agroalimentaire",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "aménagement du territoire",
-            "category": "General"
-        },
-        {
-            "keyword": "arsenic",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "bétonner",
-            "category": "General"
-        },
-        {
-            "keyword": "cancérigène",
-            "category": "General"
-        },
-        {
-            "keyword": "cancérogène",
-            "category": ""
-        },
-        {
-            "keyword": "capitalisme",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "commerce illégal d’espèces",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "complexe agro-industriel",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "disparition des haies",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "déchet",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "déchet toxique",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "déchetterie",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "emballage",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "emballage en plastique",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "emballage plastique",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "exposition des salariés",
-            "category": "General"
-        },
-        {
-            "keyword": "feux",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "feux de forêt",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "fluor",
-            "category": ""
-        },
-        {
-            "keyword": "fongicide",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "huile de palme",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "incendies",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "incinérateur",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "intrants",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "irrigation",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "jeter",
-            "category": "General"
-        },
-        {
-            "keyword": "micro-plastiques",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "mégot",
-            "category": "General"
-        },
-        {
-            "keyword": "nouvelles techniques génomiques",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "ogm",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "organisme génétiquement modifiée",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "perturbateur endocrinien",
-            "category": "General"
-        },
-        {
-            "keyword": "plante exotique envahissante",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "plante exotique invasive",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "plante exotique très invasive",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "plastique",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "plomb",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "pollue",
-            "category": "General"
-        },
-        {
-            "keyword": "polluer",
-            "category": "General"
-        },
-        {
-            "keyword": "pollution",
-            "category": "General"
-        },
-        {
-            "keyword": "pollution de l’air",
-            "category": "General"
-        },
-        {
-            "keyword": "rejets industriels",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "site minier",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "solvant",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "surconsommation",
-            "category": "General"
-        },
-        {
-            "keyword": "tourisme de masse",
-            "category": "Transport"
-        },
-        {
-            "keyword": "toxique",
-            "category": "général"
-        },
-        {
-            "keyword": "trafic d’espèces",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "urbanisation",
-            "category": "General"
-        },
-        {
-            "keyword": "urbanisme",
-            "category": "General"
-        },
-        {
-            "keyword": "zinc",
-            "category": "Industrie"
-        }
-    ],
-    "changement_climatique_consequences_indirectes": [
-        {
-            "keyword": "40 degrés",
-            "category": ""
-        },
-        {
-            "keyword": "50 degrés",
-            "category": ""
-        },
-        {
-            "keyword": "accès à l’eau",
-            "category": ""
-        },
-        {
-            "keyword": "anomalie de températures",
-            "category": ""
-        },
-        {
-            "keyword": "assécher",
-            "category": ""
-        },
-        {
-            "keyword": "asséché",
-            "category": ""
-        },
-        {
-            "keyword": "asséchée",
-            "category": ""
-        },
-        {
-            "keyword": "augmentation des températures",
-            "category": ""
-        },
-        {
-            "keyword": "cancer",
-            "category": ""
-        },
-        {
-            "keyword": "cinquante degrés",
-            "category": ""
-        },
-        {
-            "keyword": "crue",
-            "category": ""
-        },
-        {
-            "keyword": "crue centennale",
-            "category": ""
-        },
-        {
-            "keyword": "cyclone",
-            "category": ""
-        },
-        {
-            "keyword": "désertification",
-            "category": ""
-        },
-        {
-            "keyword": "dévastation",
-            "category": "General"
-        },
-        {
-            "keyword": "feux",
-            "category": ""
-        },
-        {
-            "keyword": "feux de forêt",
-            "category": ""
-        },
-        {
-            "keyword": "forte chaleur",
-            "category": ""
-        },
-        {
-            "keyword": "forte pluie",
-            "category": ""
-        },
-        {
-            "keyword": "gel printanier",
-            "category": ""
-        },
-        {
-            "keyword": "il n'y a plus de saison",
-            "category": ""
-        },
-        {
-            "keyword": "importante précipitation",
-            "category": ""
-        },
-        {
-            "keyword": "incendies",
-            "category": ""
-        },
-        {
-            "keyword": "inondable",
-            "category": "Batiments"
-        },
-        {
-            "keyword": "inondation",
-            "category": ""
-        },
-        {
-            "keyword": "la roya",
-            "category": ""
-        },
-        {
-            "keyword": "les soulèvements de la terre",
-            "category": ""
-        },
-        {
-            "keyword": "malade",
-            "category": ""
-        },
-        {
-            "keyword": "maladie",
-            "category": ""
-        },
-        {
-            "keyword": "maladies transmises par des insectes",
-            "category": ""
-        },
-        {
-            "keyword": "mois le plus chaud",
-            "category": ""
-        },
-        {
-            "keyword": "ouragan",
-            "category": ""
-        },
-        {
-            "keyword": "pathologie",
-            "category": ""
-        },
-        {
-            "keyword": "plante exotique envahissante",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "plante exotique invasive",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "plante exotique très invasive",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "pluie extrême",
-            "category": ""
-        },
-        {
-            "keyword": "pluie intense",
-            "category": ""
-        },
-        {
-            "keyword": "pluie torrentielle",
-            "category": ""
-        },
-        {
-            "keyword": "plus chaud que la normale",
-            "category": ""
-        },
-        {
-            "keyword": "plus chaude que la normale",
-            "category": ""
-        },
-        {
-            "keyword": "plus de saisons",
-            "category": ""
-        },
-        {
-            "keyword": "plus sec que la normale",
-            "category": ""
-        },
-        {
-            "keyword": "pluviométrie importante",
-            "category": ""
-        },
-        {
-            "keyword": "pollution de l'air",
-            "category": ""
-        },
-        {
-            "keyword": "prolifération des moustiques",
-            "category": ""
-        },
-        {
-            "keyword": "période la plus chaude",
-            "category": ""
-        },
-        {
-            "keyword": "quarante degrés",
-            "category": ""
-        },
-        {
-            "keyword": "restriction",
-            "category": "General"
-        },
-        {
-            "keyword": "submersion",
-            "category": ""
-        },
-        {
-            "keyword": "submersion marine",
-            "category": ""
-        },
-        {
-            "keyword": "surchauffe",
-            "category": ""
-        },
-        {
-            "keyword": "sécurité alimentaire",
-            "category": ""
-        },
-        {
-            "keyword": "tempête xynthia",
-            "category": ""
-        },
-        {
-            "keyword": "très chaud",
-            "category": ""
-        },
-        {
-            "keyword": "érosion",
-            "category": ""
-        },
-        {
-            "keyword": "étouffer",
-            "category": ""
-        }
-    ],
-    "biodiversite_causes": [
-        {
-            "keyword": "a69",
-            "category": "Transport"
-        },
-        {
-            "keyword": "acidification des océans",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "acidification du milieu marin",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "agribusiness",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agriculture conventionnelle",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agriculture extensive",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agriculture industrielle",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agriculture intensive",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "artificialisation des milieux naturels",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "artificialisation des sols",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "assèchement des zones humides",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "atteinte à la biodiversité",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "braconnage",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "cadmium",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "changement d’usage des terres",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "chlordécone",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "condition dégradée d’habitation",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "coupe rase",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "destruction de la biodiversité",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "destruction des habitats naturels",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "destruction des milieux naturels",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "décharge sauvage",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "déforestation",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "dégradation de l'habitat",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "dégradation des ecosystèmes",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "dépôt sauvage",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "engrais azoté",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "engrais de synthèse",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "engrais phosphaté",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "extractivisme",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "extractiviste",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "glyphosate",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "herbicide",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "intrant chimique",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "mauvaise nouvelle pour la planète",
-            "category": "General"
-        },
-        {
-            "keyword": "métaux lourds",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "néonicotinoïde",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "pas très écolo",
-            "category": "General"
-        },
-        {
-            "keyword": "perte d’habitats",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "perturbation des habitats",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "perturbation des écosystèmes",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "pesticide",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "pfas",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "pfoa",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "pfos",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "polluant",
-            "category": "General"
-        },
-        {
-            "keyword": "pollution atmosphérique",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "pollution chimique",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "pollution de la mer",
-            "category": "Eau"
-        },
-        {
-            "keyword": "pollution de l’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "pollution des sols",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "pollution environnementale",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "pollution plastique",
-            "category": "General"
-        },
-        {
-            "keyword": "pollution record",
-            "category": "General"
-        },
-        {
-            "keyword": "pression sur les milieux naturels",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "productivisme",
-            "category": "General"
-        },
-        {
-            "keyword": "productiviste",
-            "category": "General"
-        },
-        {
-            "keyword": "produit phytosanitaire",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "ptfe",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "pêche industrielle",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "surpêche",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "écocide",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "épandage",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "étalement urbain",
-            "category": "Ecosystème"
-        }
-    ],
-    "changement_climatique_causes": [
-        {
-            "keyword": "a69",
-            "category": "Transport"
-        },
-        {
-            "keyword": "agriculture conventionnelle",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agriculture extensive",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agriculture industrielle",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agriculture intensive",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "co deux",
-            "category": "General"
-        },
-        {
-            "keyword": "co2",
-            "category": "General"
-        },
-        {
-            "keyword": "combustibles fossiles",
-            "category": "Energie"
-        },
-        {
-            "keyword": "dyoxide de carbone",
-            "category": "General"
-        },
-        {
-            "keyword": "déforestation",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "fuel lourd",
-            "category": "Energie"
-        },
-        {
-            "keyword": "fumée industrielle",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "gaz à effet de serre",
-            "category": "General"
-        },
-        {
-            "keyword": "greenwashing",
-            "category": "General"
-        },
-        {
-            "keyword": "inaction climatique",
-            "category": "General"
-        },
-        {
-            "keyword": "insuffisance climatique",
-            "category": "General"
-        },
-        {
-            "keyword": "mauvaise nouvelle pour la planète",
-            "category": "General"
-        },
-        {
-            "keyword": "mauvaise nouvelle pour le climat",
-            "category": "General"
-        },
-        {
-            "keyword": "méthane",
-            "category": "General"
-        },
-        {
-            "keyword": "pas très écolo",
-            "category": "General"
-        },
-        {
-            "keyword": "polluant",
-            "category": "General"
-        },
-        {
-            "keyword": "pollution industrielle",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "pollution record",
-            "category": "General"
-        },
-        {
-            "keyword": "productivisme",
-            "category": "General"
-        },
-        {
-            "keyword": "productiviste",
-            "category": "General"
-        },
-        {
-            "keyword": "élevage intensif",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "émission de carbone",
-            "category": "General"
-        },
-        {
-            "keyword": "émissions anthropiques",
-            "category": "General"
-        },
-        {
-            "keyword": "émissions importées",
-            "category": "General"
-        },
-        {
-            "keyword": "émissions liées à la consommation",
-            "category": "General"
-        },
-        {
-            "keyword": "émissions territoriales",
-            "category": "General"
-        },
-        {
-            "keyword": "énergies fossiles",
-            "category": "Energie"
-        }
-    ],
-    "biodiversite_concepts_generaux_indirectes": [
-        {
-            "keyword": "abeille",
-            "category": ""
-        },
-        {
-            "keyword": "agences régionales de santé",
-            "category": ""
-        },
-        {
-            "keyword": "alimentation",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "ars",
-            "category": ""
-        },
-        {
-            "keyword": "autorité de santé",
-            "category": ""
-        },
-        {
-            "keyword": "bloc d’immeubles",
-            "category": ""
-        },
-        {
-            "keyword": "corail",
-            "category": ""
-        },
-        {
-            "keyword": "coraux",
-            "category": ""
-        },
-        {
-            "keyword": "diversité génétique",
-            "category": ""
-        },
-        {
-            "keyword": "dégrader",
-            "category": ""
-        },
-        {
-            "keyword": "désertification",
-            "category": ""
-        },
-        {
-            "keyword": "eau",
-            "category": ""
-        },
-        {
-            "keyword": "eaux",
-            "category": ""
-        },
-        {
-            "keyword": "environnement",
-            "category": ""
-        },
-        {
-            "keyword": "environnemental",
-            "category": ""
-        },
-        {
-            "keyword": "environnementale",
-            "category": ""
-        },
-        {
-            "keyword": "environnementaux",
-            "category": ""
-        },
-        {
-            "keyword": "faune",
-            "category": ""
-        },
-        {
-            "keyword": "flore",
-            "category": ""
-        },
-        {
-            "keyword": "forêt",
-            "category": ""
-        },
-        {
-            "keyword": "générations futures",
-            "category": ""
-        },
-        {
-            "keyword": "générations à venir",
-            "category": ""
-        },
-        {
-            "keyword": "impact sur la santé",
-            "category": ""
-        },
-        {
-            "keyword": "insecte",
-            "category": ""
-        },
-        {
-            "keyword": "littoral",
-            "category": ""
-        },
-        {
-            "keyword": "marais",
-            "category": ""
-        },
-        {
-            "keyword": "mer",
-            "category": ""
-        },
-        {
-            "keyword": "modèle agricole",
-            "category": ""
-        },
-        {
-            "keyword": "nature",
-            "category": ""
-        },
-        {
-            "keyword": "naturel",
-            "category": ""
-        },
-        {
-            "keyword": "naturelle",
-            "category": ""
-        },
-        {
-            "keyword": "océan",
-            "category": ""
-        },
-        {
-            "keyword": "oms",
-            "category": ""
-        },
-        {
-            "keyword": "organisation mondiale de la santé",
-            "category": ""
-        },
-        {
-            "keyword": "planète",
-            "category": ""
-        },
-        {
-            "keyword": "planétaire",
-            "category": ""
-        },
-        {
-            "keyword": "poisson",
-            "category": ""
-        },
-        {
-            "keyword": "pollinisation",
-            "category": ""
-        },
-        {
-            "keyword": "revue nature",
-            "category": ""
-        },
-        {
-            "keyword": "récif corallien",
-            "category": ""
-        },
-        {
-            "keyword": "terre",
-            "category": ""
-        },
-        {
-            "keyword": "vie sous-marine",
-            "category": ""
-        },
-        {
-            "keyword": "vivant",
-            "category": ""
-        },
-        {
-            "keyword": "écolo",
-            "category": ""
-        },
-        {
-            "keyword": "écologie",
-            "category": ""
-        },
-        {
-            "keyword": "écologiste",
-            "category": ""
-        },
-        {
-            "keyword": "écosystème",
-            "category": ""
-        }
-    ],
-    "changement_climatique_constat": [
-        {
-            "keyword": "accord de paris",
-            "category": ""
-        },
-        {
-            "keyword": "ademe",
-            "category": ""
-        },
-        {
-            "keyword": "anthropocène",
-            "category": ""
-        },
-        {
-            "keyword": "anti-écolo",
-            "category": ""
-        },
-        {
-            "keyword": "bilan carbone",
-            "category": ""
-        },
-        {
-            "keyword": "bonne nouvelle pour la planète",
-            "category": ""
-        },
-        {
-            "keyword": "capacité planétaire",
-            "category": ""
-        },
-        {
-            "keyword": "climatique",
-            "category": ""
-        },
-        {
-            "keyword": "climatologue",
-            "category": ""
-        },
-        {
-            "keyword": "climatoscepticisme",
-            "category": ""
-        },
-        {
-            "keyword": "conditions de vie sur terre",
-            "category": ""
-        },
-        {
-            "keyword": "conférence climat",
-            "category": ""
-        },
-        {
-            "keyword": "conférence des nations unies sur le climat",
-            "category": ""
-        },
-        {
-            "keyword": "conférence des nations unies sur les changements climatiques",
-            "category": ""
-        },
-        {
-            "keyword": "conférence des parties",
-            "category": ""
-        },
-        {
-            "keyword": "convention des nations unies sur le climat",
-            "category": ""
-        },
-        {
-            "keyword": "cop quinze",
-            "category": ""
-        },
-        {
-            "keyword": "cop trente",
-            "category": ""
-        },
-        {
-            "keyword": "cop vingt-et-un",
-            "category": ""
-        },
-        {
-            "keyword": "cop vingt-huit",
-            "category": ""
-        },
-        {
-            "keyword": "cop vingt-neuf",
-            "category": ""
-        },
-        {
-            "keyword": "cop vingt-sept",
-            "category": ""
-        },
-        {
-            "keyword": "cop vingt-six",
-            "category": ""
-        },
-        {
-            "keyword": "cop15",
-            "category": ""
-        },
-        {
-            "keyword": "cop21",
-            "category": ""
-        },
-        {
-            "keyword": "cop26",
-            "category": ""
-        },
-        {
-            "keyword": "cop27",
-            "category": ""
-        },
-        {
-            "keyword": "cop28",
-            "category": ""
-        },
-        {
-            "keyword": "cop29",
-            "category": ""
-        },
-        {
-            "keyword": "cop30",
-            "category": ""
-        },
-        {
-            "keyword": "crise planétaire",
-            "category": ""
-        },
-        {
-            "keyword": "croissance verte",
-            "category": ""
-        },
-        {
-            "keyword": "crédit carbone",
-            "category": ""
-        },
-        {
-            "keyword": "cycle du carbone",
-            "category": ""
-        },
-        {
-            "keyword": "d'ici 2050",
-            "category": ""
-        },
-        {
-            "keyword": "destruction de la planète",
-            "category": ""
-        },
-        {
-            "keyword": "défi climatique",
-            "category": ""
-        },
-        {
-            "keyword": "déstabilisation atmosphérique",
-            "category": ""
-        },
-        {
-            "keyword": "effet de serre",
-            "category": ""
-        },
-        {
-            "keyword": "empreinte carbone",
-            "category": ""
-        },
-        {
-            "keyword": "enjeu environnemental",
-            "category": ""
-        },
-        {
-            "keyword": "expert du climat",
-            "category": "General"
-        },
-        {
-            "keyword": "experte du climat",
-            "category": ""
-        },
-        {
-            "keyword": "france nature environnement",
-            "category": ""
-        },
-        {
-            "keyword": "giec",
-            "category": ""
-        },
-        {
-            "keyword": "green deal",
-            "category": ""
-        },
-        {
-            "keyword": "habitabilité de la planète",
-            "category": ""
-        },
-        {
-            "keyword": "habiter le monde",
-            "category": ""
-        },
-        {
-            "keyword": "haut conseil pour le climat",
-            "category": ""
-        },
-        {
-            "keyword": "hydrologue",
-            "category": ""
-        },
-        {
-            "keyword": "impact carbone",
-            "category": ""
-        },
-        {
-            "keyword": "intérêt environnemental",
-            "category": ""
-        },
-        {
-            "keyword": "mix énergétique",
-            "category": ""
-        },
-        {
-            "keyword": "mutation écologique",
-            "category": "General"
-        },
-        {
-            "keyword": "méga-orage",
-            "category": ""
-        },
-        {
-            "keyword": "neutralité carbone",
-            "category": ""
-        },
-        {
-            "keyword": "neutralité climatique",
-            "category": ""
-        },
-        {
-            "keyword": "pacte vert",
-            "category": ""
-        },
-        {
-            "keyword": "planification écologique",
-            "category": "General"
-        },
-        {
-            "keyword": "pollution émise localement",
-            "category": ""
-        },
-        {
-            "keyword": "ressource planétaire",
-            "category": ""
-        },
-        {
-            "keyword": "revue nature climate change",
-            "category": ""
-        },
-        {
-            "keyword": "réchauffement de l’atmosphère",
-            "category": ""
-        },
-        {
-            "keyword": "réchauffement des océans",
-            "category": ""
-        },
-        {
-            "keyword": "réchauffement des températures",
-            "category": ""
-        },
-        {
-            "keyword": "réchauffement planétaire",
-            "category": ""
-        },
-        {
-            "keyword": "seuil de réchauffement",
-            "category": ""
-        },
-        {
-            "keyword": "soutenabilité environnementale",
-            "category": ""
-        },
-        {
-            "keyword": "température extrême",
-            "category": ""
-        },
-        {
-            "keyword": "températures plus hautes",
-            "category": ""
-        },
-        {
-            "keyword": "transition agricole",
-            "category": "General"
-        },
-        {
-            "keyword": "transition agro écologique",
-            "category": ""
-        },
-        {
-            "keyword": "transition agroécologique",
-            "category": ""
-        },
-        {
-            "keyword": "transition climatique",
-            "category": "General"
-        },
-        {
-            "keyword": "transition en dehors des énergies fossiles",
-            "category": "Energie"
-        },
-        {
-            "keyword": "transition verte",
-            "category": "General"
-        },
-        {
-            "keyword": "transition écologique",
-            "category": "General"
-        },
-        {
-            "keyword": "transition énergétique",
-            "category": "Energie"
-        },
-        {
-            "keyword": "un climat qui change",
-            "category": ""
-        },
-        {
-            "keyword": "écologique",
-            "category": ""
-        },
-        {
-            "keyword": "émissions mondiales de co deux",
-            "category": "General"
-        },
-        {
-            "keyword": "émissions mondiales de co2",
-            "category": "General"
-        }
-    ],
-    "changement_climatique_consequences": [
-        {
-            "keyword": "acidification des océans",
-            "category": ""
-        },
-        {
-            "keyword": "aléas climatiques",
-            "category": ""
-        },
-        {
-            "keyword": "année la plus chaude",
-            "category": ""
-        },
-        {
-            "keyword": "arrêt des centrales nucléaires",
-            "category": ""
-        },
-        {
-            "keyword": "augmentation des précipitations",
-            "category": ""
-        },
-        {
-            "keyword": "augmentation des risques de sécheresse",
-            "category": ""
-        },
-        {
-            "keyword": "baisse de production agricole",
-            "category": ""
-        },
-        {
-            "keyword": "baisse des rendements agricoles",
-            "category": ""
-        },
-        {
-            "keyword": "baisse des récoltes",
-            "category": ""
-        },
-        {
-            "keyword": "blanchissement des coraux",
-            "category": ""
-        },
-        {
-            "keyword": "canicule",
-            "category": ""
-        },
-        {
-            "keyword": "canicule marine",
-            "category": ""
-        },
-        {
-            "keyword": "catastophe écologique",
-            "category": ""
-        },
-        {
-            "keyword": "catastrophe climatique",
-            "category": ""
-        },
-        {
-            "keyword": "chaleur extrême",
-            "category": ""
-        },
-        {
-            "keyword": "chaleur record",
-            "category": ""
-        },
-        {
-            "keyword": "chenille processionnaire",
-            "category": ""
-        },
-        {
-            "keyword": "climatique extrême",
-            "category": ""
-        },
-        {
-            "keyword": "conflit d’usage de l’eau",
-            "category": ""
-        },
-        {
-            "keyword": "diminution de la banquise",
-            "category": ""
-        },
-        {
-            "keyword": "diminution des glaciers",
-            "category": ""
-        },
-        {
-            "keyword": "diminution des rendements agricoles",
-            "category": ""
-        },
-        {
-            "keyword": "disparition des coraux",
-            "category": ""
-        },
-        {
-            "keyword": "disparition des forêts",
-            "category": ""
-        },
-        {
-            "keyword": "disparition des glaciers",
-            "category": ""
-        },
-        {
-            "keyword": "disparition des récifs coralliens",
-            "category": ""
-        },
-        {
-            "keyword": "décès à cause de la chaleur",
-            "category": ""
-        },
-        {
-            "keyword": "déficit de pluie",
-            "category": ""
-        },
-        {
-            "keyword": "effondrement de la falaise",
-            "category": ""
-        },
-        {
-            "keyword": "espèce invasive",
-            "category": ""
-        },
-        {
-            "keyword": "fonte de la banquise",
-            "category": ""
-        },
-        {
-            "keyword": "fonte des calottes glacières",
-            "category": ""
-        },
-        {
-            "keyword": "fonte des glaces",
-            "category": ""
-        },
-        {
-            "keyword": "fonte des glaciers",
-            "category": ""
-        },
-        {
-            "keyword": "fonte du permafrost",
-            "category": ""
-        },
-        {
-            "keyword": "glissement de terrain",
-            "category": ""
-        },
-        {
-            "keyword": "hausse de la température du globe",
-            "category": ""
-        },
-        {
-            "keyword": "hausse des températures",
-            "category": ""
-        },
-        {
-            "keyword": "hausse du niveau de la mer",
-            "category": ""
-        },
-        {
-            "keyword": "hausse du niveau des océans",
-            "category": ""
-        },
-        {
-            "keyword": "hausse du niveau marin",
-            "category": ""
-        },
-        {
-            "keyword": "impact sur l'environnement",
-            "category": ""
-        },
-        {
-            "keyword": "inondations à répétition",
-            "category": ""
-        },
-        {
-            "keyword": "intensification du cycle de l’eau",
-            "category": ""
-        },
-        {
-            "keyword": "jour le plus chaud",
-            "category": ""
-        },
-        {
-            "keyword": "l'hiver le plus chaud",
-            "category": ""
-        },
-        {
-            "keyword": "l'hiver le plus sec",
-            "category": ""
-        },
-        {
-            "keyword": "l'été le plus chaud",
-            "category": ""
-        },
-        {
-            "keyword": "la planète se réchauffe",
-            "category": ""
-        },
-        {
-            "keyword": "le climat du futur",
-            "category": ""
-        },
-        {
-            "keyword": "les eaux se réchauffent",
-            "category": ""
-        },
-        {
-            "keyword": "maladaptation",
-            "category": ""
-        },
-        {
-            "keyword": "malle adaptation",
-            "category": ""
-        },
-        {
-            "keyword": "manque d'eau",
-            "category": ""
-        },
-        {
-            "keyword": "manquer d'eau",
-            "category": ""
-        },
-        {
-            "keyword": "migrant climatique",
-            "category": ""
-        },
-        {
-            "keyword": "migration climatique",
-            "category": ""
-        },
-        {
-            "keyword": "montée des eaux",
-            "category": ""
-        },
-        {
-            "keyword": "montée du niveau de la mer",
-            "category": ""
-        },
-        {
-            "keyword": "montée du niveau des océans",
-            "category": ""
-        },
-        {
-            "keyword": "mort liées à la canicule",
-            "category": ""
-        },
-        {
-            "keyword": "mort liées à la chaleur",
-            "category": ""
-        },
-        {
-            "keyword": "mort à cause de la canicule",
-            "category": ""
-        },
-        {
-            "keyword": "mort à cause de la chaleur",
-            "category": ""
-        },
-        {
-            "keyword": "mortalité forestière",
-            "category": ""
-        },
-        {
-            "keyword": "morte à cause de la canicule",
-            "category": ""
-        },
-        {
-            "keyword": "morte à cause de la chaleur",
-            "category": ""
-        },
-        {
-            "keyword": "moustique tigre",
-            "category": ""
-        },
-        {
-            "keyword": "météorologique extrême",
-            "category": ""
-        },
-        {
-            "keyword": "perte agricole",
-            "category": ""
-        },
-        {
-            "keyword": "pénurie de neige",
-            "category": ""
-        },
-        {
-            "keyword": "pollution atmosphérique",
-            "category": ""
-        },
-        {
-            "keyword": "pollution aux particules fines",
-            "category": ""
-        },
-        {
-            "keyword": "pollution à l’ozone",
-            "category": ""
-        },
-        {
-            "keyword": "printemps le plus pluvieux",
-            "category": ""
-        },
-        {
-            "keyword": "prolifération de moustiques",
-            "category": ""
-        },
-        {
-            "keyword": "pénurie d'eau",
-            "category": ""
-        },
-        {
-            "keyword": "rareté de la ressource en eau",
-            "category": ""
-        },
-        {
-            "keyword": "rareté saisonnière de la ressource en eau",
-            "category": ""
-        },
-        {
-            "keyword": "raréfaction de la ressource en eau",
-            "category": ""
-        },
-        {
-            "keyword": "record de température",
-            "category": ""
-        },
-        {
-            "keyword": "retrait gonflement des argiles",
-            "category": ""
-        },
-        {
-            "keyword": "réfugiés climatique",
-            "category": "General"
-        },
-        {
-            "keyword": "salinisation des sols",
-            "category": ""
-        },
-        {
-            "keyword": "stress hydrique",
-            "category": ""
-        },
-        {
-            "keyword": "sécheresse",
-            "category": ""
-        },
-        {
-            "keyword": "température record",
-            "category": ""
-        },
-        {
-            "keyword": "trop grande chaleur",
-            "category": ""
-        },
-        {
-            "keyword": "urgence écologique",
-            "category": ""
-        },
-        {
-            "keyword": "vague de chaleur",
-            "category": ""
-        },
-        {
-            "keyword": "zoonose",
-            "category": ""
-        },
-        {
-            "keyword": "écocide",
-            "category": ""
-        },
-        {
-            "keyword": "élévation de la température",
-            "category": ""
-        },
-        {
-            "keyword": "élévation des températures",
-            "category": ""
-        },
-        {
-            "keyword": "élévation du niveau de la mer",
-            "category": ""
-        },
-        {
-            "keyword": "élévation du niveau des océans",
-            "category": ""
-        },
-        {
-            "keyword": "élévation du niveau marin",
-            "category": ""
-        },
-        {
-            "keyword": "érosion côtière",
-            "category": ""
-        },
-        {
-            "keyword": "érosion des côtes",
-            "category": ""
-        },
-        {
-            "keyword": "érosion du littoral",
-            "category": ""
-        },
-        {
-            "keyword": "été le plus chaud",
-            "category": ""
-        }
-    ],
     "attenuation_climatique_solutions_indirectes": [
         {
             "keyword": "activisme climatique",
@@ -3141,7 +1735,269 @@ THEME_KEYWORDS = {
             "category": "Economie des ressources"
         }
     ],
-    "changement_climatique_causes_indirectes": [
+    "biodiversite_causes": [
+        {
+            "keyword": "a69",
+            "category": "Transport"
+        },
+        {
+            "keyword": "acidification des océans",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "acidification du milieu marin",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "agribusiness",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agriculture conventionnelle",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agriculture extensive",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agriculture industrielle",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agriculture intensive",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "artificialisation des milieux naturels",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "artificialisation des sols",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "assèchement des zones humides",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "atteinte à la biodiversité",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "braconnage",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "cadmium",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "changement d’usage des terres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "chlordécone",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "condition dégradée d’habitation",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "coupe rase",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "destruction de la biodiversité",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "destruction des habitats naturels",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "destruction des milieux naturels",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "décharge sauvage",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "déforestation",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "dégradation de l'habitat",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "dégradation des ecosystèmes",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "dépôt sauvage",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "engrais azoté",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "engrais de synthèse",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "engrais phosphaté",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "extractivisme",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "extractiviste",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "glyphosate",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "herbicide",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "intrant chimique",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "mauvaise nouvelle pour la planète",
+            "category": "General"
+        },
+        {
+            "keyword": "métaux lourds",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "néonicotinoïde",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "pas très écolo",
+            "category": "General"
+        },
+        {
+            "keyword": "perte d’habitats",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "perturbation des habitats",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "perturbation des écosystèmes",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "pesticide",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "pfas",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "pfoa",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "pfos",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "polluant",
+            "category": "General"
+        },
+        {
+            "keyword": "pollution atmosphérique",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "pollution chimique",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "pollution de la mer",
+            "category": "Eau"
+        },
+        {
+            "keyword": "pollution de l’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "pollution des sols",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "pollution environnementale",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "pollution plastique",
+            "category": "General"
+        },
+        {
+            "keyword": "pollution record",
+            "category": "General"
+        },
+        {
+            "keyword": "pression sur les milieux naturels",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "productivisme",
+            "category": "General"
+        },
+        {
+            "keyword": "productiviste",
+            "category": "General"
+        },
+        {
+            "keyword": "produit phytosanitaire",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "ptfe",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "pêche industrielle",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "surpêche",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "écocide",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "épandage",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "étalement urbain",
+            "category": "Ecosystème"
+        }
+    ],
+    "biodiversite_causes_indirectes": [
+        {
+            "keyword": "acide",
+            "category": "General"
+        },
         {
             "keyword": "activité industrielle",
             "category": "Industrie"
@@ -3171,72 +2027,56 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
-            "keyword": "aliments transformés",
-            "category": "General"
-        },
-        {
             "keyword": "aménagement du territoire",
             "category": "General"
         },
         {
-            "keyword": "automobile",
-            "category": "Transport"
+            "keyword": "arsenic",
+            "category": "Industrie"
         },
         {
-            "keyword": "autoroutes",
-            "category": "Transport"
-        },
-        {
-            "keyword": "aviation",
-            "category": "Transport"
-        },
-        {
-            "keyword": "avion",
-            "category": "Transport"
-        },
-        {
-            "keyword": "azote",
+            "keyword": "bétonner",
             "category": "General"
+        },
+        {
+            "keyword": "cancérigène",
+            "category": "General"
+        },
+        {
+            "keyword": "cancérogène",
+            "category": ""
         },
         {
             "keyword": "capitalisme",
             "category": "Economie des ressources"
         },
         {
-            "keyword": "carburant",
-            "category": "Energie"
+            "keyword": "commerce illégal d’espèces",
+            "category": "Ecosystème"
         },
         {
-            "keyword": "charbon",
-            "category": "Energie"
+            "keyword": "complexe agro-industriel",
+            "category": "Agriculture"
         },
         {
-            "keyword": "chauffage",
-            "category": "Energie"
-        },
-        {
-            "keyword": "chauffage au fuel",
-            "category": "Energie"
-        },
-        {
-            "keyword": "chauffage au gaz",
-            "category": "Energie"
-        },
-        {
-            "keyword": "climatisation",
-            "category": "Batiments"
-        },
-        {
-            "keyword": "diesel",
-            "category": "Energie"
+            "keyword": "disparition des haies",
+            "category": "Ecosystème"
         },
         {
             "keyword": "déchet",
             "category": "Economie des ressources"
         },
         {
-            "keyword": "déperdition de chaleur",
-            "category": "Batiments"
+            "keyword": "déchet toxique",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "déchetterie",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "emballage",
+            "category": "Economie des ressources"
         },
         {
             "keyword": "emballage en plastique",
@@ -3247,88 +2087,92 @@ THEME_KEYWORDS = {
             "category": "Economie des ressources"
         },
         {
-            "keyword": "emissions mondiales",
+            "keyword": "exposition des salariés",
             "category": "General"
         },
         {
-            "keyword": "essence",
-            "category": "Energie"
+            "keyword": "feux",
+            "category": "Ecosystème"
         },
         {
-            "keyword": "fioul",
-            "category": "Energie"
+            "keyword": "feux de forêt",
+            "category": "Ecosystème"
         },
         {
-            "keyword": "forage pétrolier",
-            "category": "Energie"
+            "keyword": "fluor",
+            "category": ""
         },
         {
-            "keyword": "fuel",
-            "category": "Energie"
-        },
-        {
-            "keyword": "gaspillage alimentaire",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "gaz",
-            "category": "Energie"
-        },
-        {
-            "keyword": "gaz carbonique",
-            "category": "General"
-        },
-        {
-            "keyword": "gaz de schiste",
-            "category": "Energie"
-        },
-        {
-            "keyword": "gaz naturel",
-            "category": "Energie"
-        },
-        {
-            "keyword": "industrialisation",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "industrie",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "infrastructures routières",
-            "category": "Transport"
-        },
-        {
-            "keyword": "kérosène",
-            "category": "Energie"
-        },
-        {
-            "keyword": "lignite",
-            "category": "Energie"
-        },
-        {
-            "keyword": "logement mal isolé",
-            "category": "Batiments"
-        },
-        {
-            "keyword": "malbouffe",
+            "keyword": "fongicide",
             "category": "Agriculture"
         },
         {
-            "keyword": "méga-camions",
-            "category": "Transport"
+            "keyword": "huile de palme",
+            "category": "Agriculture"
         },
         {
-            "keyword": "or noir",
-            "category": "Energie"
+            "keyword": "incendies",
+            "category": "Ecosystème"
         },
         {
-            "keyword": "passoire thermique",
-            "category": "Batiments"
+            "keyword": "incinérateur",
+            "category": "Economie des ressources"
         },
         {
-            "keyword": "passoire énergétique",
-            "category": "Batiments"
+            "keyword": "intrants",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "irrigation",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "jeter",
+            "category": "General"
+        },
+        {
+            "keyword": "micro-plastiques",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "mégot",
+            "category": "General"
+        },
+        {
+            "keyword": "nouvelles techniques génomiques",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "ogm",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "organisme génétiquement modifiée",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "perturbateur endocrinien",
+            "category": "General"
+        },
+        {
+            "keyword": "plante exotique envahissante",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plante exotique invasive",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plante exotique très invasive",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plastique",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "plomb",
+            "category": "Industrie"
         },
         {
             "keyword": "pollue",
@@ -3343,354 +2187,48 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "prendre l'avion",
-            "category": "Transport"
-        },
-        {
-            "keyword": "puit de pétrole",
-            "category": "Energie"
-        },
-        {
-            "keyword": "pétrole",
-            "category": "Energie"
-        },
-        {
-            "keyword": "secteur tertiaire",
+            "keyword": "pollution de l’air",
             "category": "General"
         },
         {
-            "keyword": "serres chauffées",
-            "category": "Agriculture"
+            "keyword": "rejets industriels",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "site minier",
+            "category": "Industrie"
         },
         {
             "keyword": "solvant",
             "category": "Industrie"
         },
         {
-            "keyword": "super-poids lourds",
+            "keyword": "surconsommation",
+            "category": "General"
+        },
+        {
+            "keyword": "tourisme de masse",
             "category": "Transport"
         },
         {
-            "keyword": "suv",
-            "category": "Transport"
+            "keyword": "toxique",
+            "category": "général"
         },
         {
-            "keyword": "trafic routier",
-            "category": "Transport"
+            "keyword": "trafic d’espèces",
+            "category": "Ecosystème"
         },
         {
-            "keyword": "transport",
-            "category": "Transport"
-        },
-        {
-            "keyword": "transport aérien",
-            "category": "Transport"
-        },
-        {
-            "keyword": "transport routier",
-            "category": "Transport"
-        },
-        {
-            "keyword": "transporteur",
-            "category": "Transport"
+            "keyword": "urbanisation",
+            "category": "General"
         },
         {
             "keyword": "urbanisme",
             "category": "General"
         },
         {
-            "keyword": "usine",
+            "keyword": "zinc",
             "category": "Industrie"
-        },
-        {
-            "keyword": "vache",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "viande",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "voiture",
-            "category": "Transport"
-        },
-        {
-            "keyword": "voiture thermique",
-            "category": "Transport"
-        },
-        {
-            "keyword": "vol direct",
-            "category": "Transport"
-        },
-        {
-            "keyword": "vol paris new york",
-            "category": "Transport"
-        },
-        {
-            "keyword": "voyager",
-            "category": "Transport"
-        },
-        {
-            "keyword": "élevage",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "élevage bovine",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "îlot de chaleur",
-            "category": "Batiments"
-        }
-    ],
-    "adaptation_climatique_solutions": [
-        {
-            "keyword": "adaptation au changement climatique",
-            "category": "General"
-        },
-        {
-            "keyword": "adaptation au dérèglement climatique",
-            "category": "General"
-        },
-        {
-            "keyword": "adaptation au réchauffement climatique",
-            "category": "General"
-        },
-        {
-            "keyword": "adaptation climatique",
-            "category": "General"
-        },
-        {
-            "keyword": "agro écologie",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agro écologique",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agroforesterie",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "agroécologie",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "amélioration des pratiques d’élevage",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "aquaculture durable",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "bon pour la planète",
-            "category": "General"
-        },
-        {
-            "keyword": "changer nos habitudes alimentaires",
-            "category": "General"
-        },
-        {
-            "keyword": "désalinisation des eaux",
-            "category": "Eau"
-        },
-        {
-            "keyword": "développement de la planète",
-            "category": ""
-        },
-        {
-            "keyword": "eaux usées traitées",
-            "category": "Eau"
-        },
-        {
-            "keyword": "foresterie urbaine",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "forêt urbaine",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "gestion de la ressource en eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "gestion du littoral",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "gestion durable des forêts",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "gestion durable des terres cultivables",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "limiter l’érosion des côtes",
-            "category": "General"
-        },
-        {
-            "keyword": "lutte contre le gaspillage d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "lutter contre l’érosion",
-            "category": "General"
-        },
-        {
-            "keyword": "mesure environnementale",
-            "category": "General"
-        },
-        {
-            "keyword": "nous adapter à un futur incertain",
-            "category": "General"
-        },
-        {
-            "keyword": "prise de conscience environnementale",
-            "category": "General"
-        },
-        {
-            "keyword": "prise de conscience écologique",
-            "category": "General"
-        },
-        {
-            "keyword": "préservation de la ressource en eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "prévention des catastrophes naturelles",
-            "category": "General"
-        },
-        {
-            "keyword": "prévention des inondations",
-            "category": "General"
-        },
-        {
-            "keyword": "pêche durable",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "reforestation",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "renaturer",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "renforcer les digues",
-            "category": "Eau"
-        },
-        {
-            "keyword": "renforcer les dunes",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "restriction d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "retenue collinaire",
-            "category": "Eau"
-        },
-        {
-            "keyword": "revégétalisation",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "revégétaliser",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "récupérateur d'eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "récupérer l'eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "réduction de la demande en eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "réduire l’élevage intensif",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "rénovation des batiments",
-            "category": "Batiments"
-        },
-        {
-            "keyword": "rénovation thermique",
-            "category": "Batiments"
-        },
-        {
-            "keyword": "réserve d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "résistant à la sécheresse",
-            "category": "General"
-        },
-        {
-            "keyword": "résistante à la sécheresse",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "réutilisation des eaux usées traitées",
-            "category": "Eau"
-        },
-        {
-            "keyword": "sauvegarde de la ressource en eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "tva verte",
-            "category": "General"
-        },
-        {
-            "keyword": "tévéa verte",
-            "category": "General"
-        },
-        {
-            "keyword": "verdir la politique agricole",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "vertueux pour la planète",
-            "category": "General"
-        },
-        {
-            "keyword": "végétalisation",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "végétaliser",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "végétalisé",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "végétalisée",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "économie d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "économiser l'eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "îlot de fraîcheur",
-            "category": "Ecosystème"
         }
     ],
     "biodiversite_concepts_generaux": [
@@ -3899,13 +2437,13 @@ THEME_KEYWORDS = {
             "category": ""
         }
     ],
-    "changement_climatique_constat_indirectes": [
+    "biodiversite_concepts_generaux_indirectes": [
         {
-            "keyword": "agences régionales de santé",
+            "keyword": "abeille",
             "category": ""
         },
         {
-            "keyword": "air frais",
+            "keyword": "agences régionales de santé",
             "category": ""
         },
         {
@@ -3917,23 +2455,7 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "atmosphère",
-            "category": ""
-        },
-        {
             "keyword": "autorité de santé",
-            "category": ""
-        },
-        {
-            "keyword": "baisse des températures",
-            "category": ""
-        },
-        {
-            "keyword": "banquise",
-            "category": ""
-        },
-        {
-            "keyword": "batterie",
             "category": ""
         },
         {
@@ -3941,27 +2463,23 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "bouquet énergétique",
+            "keyword": "corail",
             "category": ""
         },
         {
-            "keyword": "bâtiment",
-            "category": "Batiments"
-        },
-        {
-            "keyword": "climat",
+            "keyword": "coraux",
             "category": ""
         },
         {
-            "keyword": "climatosceptique",
+            "keyword": "diversité génétique",
             "category": ""
         },
         {
-            "keyword": "consommation énergétique",
-            "category": "Energie"
+            "keyword": "dégrader",
+            "category": ""
         },
         {
-            "keyword": "défi de notre siècle",
+            "keyword": "désertification",
             "category": ""
         },
         {
@@ -3969,27 +2487,31 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "eau de pluie",
-            "category": ""
-        },
-        {
-            "keyword": "eaux",
-            "category": ""
-        },
-        {
             "keyword": "environnement",
             "category": ""
         },
         {
-            "keyword": "facture énergétique",
+            "keyword": "environnemental",
             "category": ""
         },
         {
-            "keyword": "fraîcheur",
+            "keyword": "environnementale",
             "category": ""
         },
         {
-            "keyword": "glacier",
+            "keyword": "environnementaux",
+            "category": ""
+        },
+        {
+            "keyword": "faune",
+            "category": ""
+        },
+        {
+            "keyword": "flore",
+            "category": ""
+        },
+        {
+            "keyword": "forêt",
             "category": ""
         },
         {
@@ -4001,11 +2523,19 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "inégalité",
+            "keyword": "impact sur la santé",
             "category": ""
         },
         {
-            "keyword": "jamais un tel phénomène",
+            "keyword": "insecte",
+            "category": ""
+        },
+        {
+            "keyword": "littoral",
+            "category": ""
+        },
+        {
+            "keyword": "marais",
             "category": ""
         },
         {
@@ -4013,11 +2543,19 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "mix électrique",
+            "keyword": "modèle agricole",
             "category": ""
         },
         {
-            "keyword": "modèle agricole",
+            "keyword": "nature",
+            "category": ""
+        },
+        {
+            "keyword": "naturel",
+            "category": ""
+        },
+        {
+            "keyword": "naturelle",
             "category": ""
         },
         {
@@ -4033,14 +2571,6 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "performance énergétique",
-            "category": ""
-        },
-        {
-            "keyword": "permafrost",
-            "category": ""
-        },
-        {
             "keyword": "planète",
             "category": ""
         },
@@ -4049,23 +2579,19 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "pont thermique",
-            "category": "Batiments"
+            "keyword": "poisson",
+            "category": ""
+        },
+        {
+            "keyword": "pollinisation",
+            "category": ""
         },
         {
             "keyword": "revue nature",
             "category": ""
         },
         {
-            "keyword": "santé publique",
-            "category": ""
-        },
-        {
-            "keyword": "sol",
-            "category": ""
-        },
-        {
-            "keyword": "température",
+            "keyword": "récif corallien",
             "category": ""
         },
         {
@@ -4073,7 +2599,11 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "éco-anxiété",
+            "keyword": "vie sous-marine",
+            "category": ""
+        },
+        {
+            "keyword": "vivant",
             "category": ""
         },
         {
@@ -4091,9 +2621,273 @@ THEME_KEYWORDS = {
         {
             "keyword": "écosystème",
             "category": ""
+        }
+    ],
+    "biodiversite_consequences": [
+        {
+            "keyword": "baisse de production agricole",
+            "category": ""
         },
         {
-            "keyword": "énergie",
+            "keyword": "baisse des rendements agricoles",
+            "category": ""
+        },
+        {
+            "keyword": "baisse des récoltes",
+            "category": ""
+        },
+        {
+            "keyword": "baisse du stockage du carbone dans les sols",
+            "category": ""
+        },
+        {
+            "keyword": "bioérosion",
+            "category": ""
+        },
+        {
+            "keyword": "bruit routier",
+            "category": ""
+        },
+        {
+            "keyword": "catastophe écologique",
+            "category": ""
+        },
+        {
+            "keyword": "crise d'extinction de masse",
+            "category": ""
+        },
+        {
+            "keyword": "diminution des rendements agricoles",
+            "category": ""
+        },
+        {
+            "keyword": "disparition des espèces",
+            "category": ""
+        },
+        {
+            "keyword": "disparition des forêts",
+            "category": ""
+        },
+        {
+            "keyword": "disparition des insectes",
+            "category": ""
+        },
+        {
+            "keyword": "disparition des oiseaux",
+            "category": ""
+        },
+        {
+            "keyword": "disparition du vivant",
+            "category": ""
+        },
+        {
+            "keyword": "dégradation des puits de carbone",
+            "category": ""
+        },
+        {
+            "keyword": "dégradation des sols",
+            "category": ""
+        },
+        {
+            "keyword": "espèce en voie de disparition",
+            "category": ""
+        },
+        {
+            "keyword": "espèce envahissante",
+            "category": ""
+        },
+        {
+            "keyword": "espèce exotique envahissante",
+            "category": ""
+        },
+        {
+            "keyword": "espèce invasive",
+            "category": ""
+        },
+        {
+            "keyword": "espèce menacée",
+            "category": ""
+        },
+        {
+            "keyword": "espèce menacée d’extinction",
+            "category": ""
+        },
+        {
+            "keyword": "espèce éteinte",
+            "category": ""
+        },
+        {
+            "keyword": "espèces en danger",
+            "category": ""
+        },
+        {
+            "keyword": "impact sur l'environnement",
+            "category": ""
+        },
+        {
+            "keyword": "liste rouge de l'uicn",
+            "category": ""
+        },
+        {
+            "keyword": "liste rouge mondiale des espèces menacées",
+            "category": ""
+        },
+        {
+            "keyword": "migration des espèces",
+            "category": ""
+        },
+        {
+            "keyword": "mortalité des forêts",
+            "category": ""
+        },
+        {
+            "keyword": "mortalité forestière",
+            "category": ""
+        },
+        {
+            "keyword": "moustique tigre",
+            "category": ""
+        },
+        {
+            "keyword": "nature empoisonée",
+            "category": ""
+        },
+        {
+            "keyword": "perte agricole",
+            "category": ""
+        },
+        {
+            "keyword": "perte de biodiversité",
+            "category": ""
+        },
+        {
+            "keyword": "perturbation du cycle de l’eau",
+            "category": ""
+        },
+        {
+            "keyword": "pollution sonore",
+            "category": ""
+        },
+        {
+            "keyword": "santé végétale",
+            "category": ""
+        },
+        {
+            "keyword": "sol pollué",
+            "category": ""
+        },
+        {
+            "keyword": "urgence écologique",
+            "category": ""
+        },
+        {
+            "keyword": "zoonose",
+            "category": ""
+        },
+        {
+            "keyword": "zoonotique",
+            "category": ""
+        },
+        {
+            "keyword": "écosystème dégradé",
+            "category": "Ecosystème"
+        }
+    ],
+    "biodiversite_consequences_indirectes": [
+        {
+            "keyword": "assécher",
+            "category": ""
+        },
+        {
+            "keyword": "asséché",
+            "category": ""
+        },
+        {
+            "keyword": "asséchée",
+            "category": ""
+        },
+        {
+            "keyword": "cancer",
+            "category": ""
+        },
+        {
+            "keyword": "chant des oiseaux",
+            "category": ""
+        },
+        {
+            "keyword": "contaminé",
+            "category": ""
+        },
+        {
+            "keyword": "contaminée",
+            "category": ""
+        },
+        {
+            "keyword": "dengue",
+            "category": ""
+        },
+        {
+            "keyword": "dépérissement",
+            "category": ""
+        },
+        {
+            "keyword": "dévastation",
+            "category": "General"
+        },
+        {
+            "keyword": "extinction",
+            "category": ""
+        },
+        {
+            "keyword": "les soulèvements de la terre",
+            "category": ""
+        },
+        {
+            "keyword": "malade",
+            "category": ""
+        },
+        {
+            "keyword": "maladie",
+            "category": ""
+        },
+        {
+            "keyword": "maladies infectieuses",
+            "category": ""
+        },
+        {
+            "keyword": "maladies transmises par des insectes",
+            "category": ""
+        },
+        {
+            "keyword": "menacées de disparition",
+            "category": ""
+        },
+        {
+            "keyword": "pathologie",
+            "category": ""
+        },
+        {
+            "keyword": "pathologie",
+            "category": ""
+        },
+        {
+            "keyword": "prolifération des moustiques",
+            "category": ""
+        },
+        {
+            "keyword": "restriction",
+            "category": "General"
+        },
+        {
+            "keyword": "santé animale",
+            "category": ""
+        },
+        {
+            "keyword": "santé humaine",
+            "category": ""
+        },
+        {
+            "keyword": "sécurité alimentaire",
             "category": ""
         }
     ],
@@ -4464,7 +3258,7 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "résistant à la sécheresse",
-            "category": "General"
+            "category": "Ecosystème"
         },
         {
             "keyword": "résistante à la sécheresse",
@@ -4653,10 +3447,6 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
-            "keyword": "planter des arbres",
-            "category": "Ecosystème"
-        },
-        {
             "keyword": "plus durable",
             "category": "General"
         },
@@ -4753,125 +3543,877 @@ THEME_KEYWORDS = {
             "category": "Economie des ressources"
         }
     ],
-    "adaptation_climatique_solutions_indirectes": [
+    "changement climatique_constat": [
         {
-            "keyword": "arbre",
+            "keyword": "politique climatique",
             "category": ""
         },
         {
-            "keyword": "barrage",
-            "category": "Eau"
-        },
-        {
-            "keyword": "bon pour la santé",
-            "category": "General"
-        },
-        {
-            "keyword": "changer leurs habitudes",
-            "category": "General"
-        },
-        {
-            "keyword": "changer nos comportements",
-            "category": "General"
-        },
-        {
-            "keyword": "changer nos habitudes",
-            "category": "General"
-        },
-        {
-            "keyword": "digue",
-            "category": "General"
-        },
-        {
-            "keyword": "dune",
-            "category": "General"
-        },
-        {
-            "keyword": "espace vert",
+            "keyword": "scope un et deux",
             "category": ""
-        },
-        {
-            "keyword": "espace vert",
-            "category": ""
-        },
-        {
-            "keyword": "faire baisser la température",
-            "category": ""
-        },
-        {
-            "keyword": "forêt",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "gestion de l'eau",
-            "category": ""
-        },
-        {
-            "keyword": "gestion des milieux aquatiques",
-            "category": "Eau"
-        },
-        {
-            "keyword": "jachère",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "jardin",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "manipuler la terre",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "mega bassine",
-            "category": "Eau"
-        },
-        {
-            "keyword": "miscanthus",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "norme",
-            "category": "General"
-        },
-        {
-            "keyword": "ombre",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "parc",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "planter des arbres",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "pratiques vertueuses",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "sorgho",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "verdir",
-            "category": ""
-        },
-        {
-            "keyword": "verdure",
-            "category": ""
-        },
-        {
-            "keyword": "vertueux",
-            "category": "General"
-        },
-        {
-            "keyword": "ville durable",
-            "category": "General"
         }
     ],
-    "biodiversite_consequences_indirectes": [
+    "changement_climatique_cause": [
+        {
+            "keyword": "ferme-usine",
+            "category": "Agriculture"
+        }
+    ],
+    "changement_climatique_causes": [
+        {
+            "keyword": "a69",
+            "category": "Transport"
+        },
+        {
+            "keyword": "agriculture conventionnelle",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agriculture extensive",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agriculture industrielle",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agriculture intensive",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "co deux",
+            "category": "General"
+        },
+        {
+            "keyword": "co2",
+            "category": "General"
+        },
+        {
+            "keyword": "combustibles fossiles",
+            "category": "Energie"
+        },
+        {
+            "keyword": "dyoxide de carbone",
+            "category": "General"
+        },
+        {
+            "keyword": "déforestation",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "fuel lourd",
+            "category": "Energie"
+        },
+        {
+            "keyword": "fumée industrielle",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "gaz à effet de serre",
+            "category": "General"
+        },
+        {
+            "keyword": "greenwashing",
+            "category": "General"
+        },
+        {
+            "keyword": "inaction climatique",
+            "category": "General"
+        },
+        {
+            "keyword": "insuffisance climatique",
+            "category": "General"
+        },
+        {
+            "keyword": "mauvaise nouvelle pour la planète",
+            "category": "General"
+        },
+        {
+            "keyword": "mauvaise nouvelle pour le climat",
+            "category": "General"
+        },
+        {
+            "keyword": "méthane",
+            "category": "General"
+        },
+        {
+            "keyword": "pas très écolo",
+            "category": "General"
+        },
+        {
+            "keyword": "polluant",
+            "category": "General"
+        },
+        {
+            "keyword": "pollution industrielle",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "pollution record",
+            "category": "General"
+        },
+        {
+            "keyword": "productivisme",
+            "category": "General"
+        },
+        {
+            "keyword": "productiviste",
+            "category": "General"
+        },
+        {
+            "keyword": "élevage intensif",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "émission de carbone",
+            "category": "General"
+        },
+        {
+            "keyword": "émissions anthropiques",
+            "category": "General"
+        },
+        {
+            "keyword": "émissions importées",
+            "category": "General"
+        },
+        {
+            "keyword": "émissions liées à la consommation",
+            "category": "General"
+        },
+        {
+            "keyword": "émissions territoriales",
+            "category": "General"
+        },
+        {
+            "keyword": "énergies fossiles",
+            "category": "Energie"
+        }
+    ],
+    "changement_climatique_causes_indirectes": [
+        {
+            "keyword": "activité industrielle",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "agricole",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agriculteur",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agriculture",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agro-industrie",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agro-industriel",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "agroalimentaire",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "aliments transformés",
+            "category": "General"
+        },
+        {
+            "keyword": "aménagement du territoire",
+            "category": "General"
+        },
+        {
+            "keyword": "automobile",
+            "category": "Transport"
+        },
+        {
+            "keyword": "autoroutes",
+            "category": "Transport"
+        },
+        {
+            "keyword": "aviation",
+            "category": "Transport"
+        },
+        {
+            "keyword": "avion",
+            "category": "Transport"
+        },
+        {
+            "keyword": "azote",
+            "category": "General"
+        },
+        {
+            "keyword": "capitalisme",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "carburant",
+            "category": "Energie"
+        },
+        {
+            "keyword": "charbon",
+            "category": "Energie"
+        },
+        {
+            "keyword": "chauffage",
+            "category": "Energie"
+        },
+        {
+            "keyword": "chauffage au fuel",
+            "category": "Energie"
+        },
+        {
+            "keyword": "chauffage au gaz",
+            "category": "Energie"
+        },
+        {
+            "keyword": "climatisation",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "diesel",
+            "category": "Energie"
+        },
+        {
+            "keyword": "déchet",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "déperdition de chaleur",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "emballage en plastique",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "emballage plastique",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "emissions mondiales",
+            "category": "General"
+        },
+        {
+            "keyword": "essence",
+            "category": "Energie"
+        },
+        {
+            "keyword": "fioul",
+            "category": "Energie"
+        },
+        {
+            "keyword": "forage pétrolier",
+            "category": "Energie"
+        },
+        {
+            "keyword": "fuel",
+            "category": "Energie"
+        },
+        {
+            "keyword": "gaspillage alimentaire",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "gaz",
+            "category": "Energie"
+        },
+        {
+            "keyword": "gaz carbonique",
+            "category": "General"
+        },
+        {
+            "keyword": "gaz de schiste",
+            "category": "Energie"
+        },
+        {
+            "keyword": "gaz naturel",
+            "category": "Energie"
+        },
+        {
+            "keyword": "industrialisation",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "industrie",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "infrastructures routières",
+            "category": "Transport"
+        },
+        {
+            "keyword": "kérosène",
+            "category": "Energie"
+        },
+        {
+            "keyword": "lignite",
+            "category": "Energie"
+        },
+        {
+            "keyword": "logement mal isolé",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "malbouffe",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "méga-camions",
+            "category": "Transport"
+        },
+        {
+            "keyword": "or noir",
+            "category": "Energie"
+        },
+        {
+            "keyword": "passoire thermique",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "passoire énergétique",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "pollue",
+            "category": "General"
+        },
+        {
+            "keyword": "polluer",
+            "category": "General"
+        },
+        {
+            "keyword": "pollution",
+            "category": "General"
+        },
+        {
+            "keyword": "prendre l'avion",
+            "category": "Transport"
+        },
+        {
+            "keyword": "puit de pétrole",
+            "category": "Energie"
+        },
+        {
+            "keyword": "pétrole",
+            "category": "Energie"
+        },
+        {
+            "keyword": "secteur tertiaire",
+            "category": "General"
+        },
+        {
+            "keyword": "serres chauffées",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "solvant",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "super-poids lourds",
+            "category": "Transport"
+        },
+        {
+            "keyword": "suv",
+            "category": "Transport"
+        },
+        {
+            "keyword": "trafic routier",
+            "category": "Transport"
+        },
+        {
+            "keyword": "transport",
+            "category": "Transport"
+        },
+        {
+            "keyword": "transport aérien",
+            "category": "Transport"
+        },
+        {
+            "keyword": "transport routier",
+            "category": "Transport"
+        },
+        {
+            "keyword": "transporteur",
+            "category": "Transport"
+        },
+        {
+            "keyword": "urbanisme",
+            "category": "General"
+        },
+        {
+            "keyword": "usine",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "vache",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "viande",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "voiture",
+            "category": "Transport"
+        },
+        {
+            "keyword": "voiture thermique",
+            "category": "Transport"
+        },
+        {
+            "keyword": "vol direct",
+            "category": "Transport"
+        },
+        {
+            "keyword": "vol paris new york",
+            "category": "Transport"
+        },
+        {
+            "keyword": "voyager",
+            "category": "Transport"
+        },
+        {
+            "keyword": "élevage",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "élevage bovine",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "îlot de chaleur",
+            "category": "Batiments"
+        }
+    ],
+    "changement_climatique_consequences": [
+        {
+            "keyword": "acidification des océans",
+            "category": ""
+        },
+        {
+            "keyword": "aléas climatiques",
+            "category": ""
+        },
+        {
+            "keyword": "année la plus chaude",
+            "category": ""
+        },
+        {
+            "keyword": "arrêt des centrales nucléaires",
+            "category": ""
+        },
+        {
+            "keyword": "augmentation des précipitations",
+            "category": ""
+        },
+        {
+            "keyword": "augmentation des risques de sécheresse",
+            "category": ""
+        },
+        {
+            "keyword": "baisse de production agricole",
+            "category": ""
+        },
+        {
+            "keyword": "baisse des rendements agricoles",
+            "category": ""
+        },
+        {
+            "keyword": "baisse des récoltes",
+            "category": ""
+        },
+        {
+            "keyword": "blanchissement des coraux",
+            "category": ""
+        },
+        {
+            "keyword": "canicule",
+            "category": ""
+        },
+        {
+            "keyword": "canicule marine",
+            "category": ""
+        },
+        {
+            "keyword": "catastophe écologique",
+            "category": ""
+        },
+        {
+            "keyword": "catastrophe climatique",
+            "category": ""
+        },
+        {
+            "keyword": "chaleur extrême",
+            "category": ""
+        },
+        {
+            "keyword": "chaleur record",
+            "category": ""
+        },
+        {
+            "keyword": "chenille processionnaire",
+            "category": ""
+        },
+        {
+            "keyword": "climatique extrême",
+            "category": ""
+        },
+        {
+            "keyword": "conflit d’usage de l’eau",
+            "category": ""
+        },
+        {
+            "keyword": "diminution de la banquise",
+            "category": ""
+        },
+        {
+            "keyword": "diminution des glaciers",
+            "category": ""
+        },
+        {
+            "keyword": "diminution des rendements agricoles",
+            "category": ""
+        },
+        {
+            "keyword": "disparition des coraux",
+            "category": ""
+        },
+        {
+            "keyword": "disparition des forêts",
+            "category": ""
+        },
+        {
+            "keyword": "disparition des glaciers",
+            "category": ""
+        },
+        {
+            "keyword": "disparition des récifs coralliens",
+            "category": ""
+        },
+        {
+            "keyword": "décès à cause de la chaleur",
+            "category": ""
+        },
+        {
+            "keyword": "déficit de pluie",
+            "category": ""
+        },
+        {
+            "keyword": "effondrement de la falaise",
+            "category": ""
+        },
+        {
+            "keyword": "espèce invasive",
+            "category": ""
+        },
+        {
+            "keyword": "fonte de la banquise",
+            "category": ""
+        },
+        {
+            "keyword": "fonte des calottes glacières",
+            "category": ""
+        },
+        {
+            "keyword": "fonte des glaces",
+            "category": ""
+        },
+        {
+            "keyword": "fonte des glaciers",
+            "category": ""
+        },
+        {
+            "keyword": "fonte du permafrost",
+            "category": ""
+        },
+        {
+            "keyword": "glissement de terrain",
+            "category": ""
+        },
+        {
+            "keyword": "hausse de la température du globe",
+            "category": ""
+        },
+        {
+            "keyword": "hausse des températures",
+            "category": ""
+        },
+        {
+            "keyword": "hausse du niveau de la mer",
+            "category": ""
+        },
+        {
+            "keyword": "hausse du niveau des océans",
+            "category": ""
+        },
+        {
+            "keyword": "hausse du niveau marin",
+            "category": ""
+        },
+        {
+            "keyword": "impact sur l'environnement",
+            "category": ""
+        },
+        {
+            "keyword": "inondations à répétition",
+            "category": ""
+        },
+        {
+            "keyword": "intensification du cycle de l’eau",
+            "category": ""
+        },
+        {
+            "keyword": "jour le plus chaud",
+            "category": ""
+        },
+        {
+            "keyword": "l'hiver le plus chaud",
+            "category": ""
+        },
+        {
+            "keyword": "l'hiver le plus sec",
+            "category": ""
+        },
+        {
+            "keyword": "l'été le plus chaud",
+            "category": ""
+        },
+        {
+            "keyword": "la planète se réchauffe",
+            "category": ""
+        },
+        {
+            "keyword": "le climat du futur",
+            "category": ""
+        },
+        {
+            "keyword": "les eaux se réchauffent",
+            "category": ""
+        },
+        {
+            "keyword": "maladaptation",
+            "category": ""
+        },
+        {
+            "keyword": "malle adaptation",
+            "category": ""
+        },
+        {
+            "keyword": "manque d'eau",
+            "category": ""
+        },
+        {
+            "keyword": "manquer d'eau",
+            "category": ""
+        },
+        {
+            "keyword": "migrant climatique",
+            "category": ""
+        },
+        {
+            "keyword": "migration climatique",
+            "category": ""
+        },
+        {
+            "keyword": "montée des eaux",
+            "category": ""
+        },
+        {
+            "keyword": "montée du niveau de la mer",
+            "category": ""
+        },
+        {
+            "keyword": "montée du niveau des océans",
+            "category": ""
+        },
+        {
+            "keyword": "mort liées à la canicule",
+            "category": ""
+        },
+        {
+            "keyword": "mort liées à la chaleur",
+            "category": ""
+        },
+        {
+            "keyword": "mort à cause de la canicule",
+            "category": ""
+        },
+        {
+            "keyword": "mort à cause de la chaleur",
+            "category": ""
+        },
+        {
+            "keyword": "mortalité forestière",
+            "category": ""
+        },
+        {
+            "keyword": "morte à cause de la canicule",
+            "category": ""
+        },
+        {
+            "keyword": "morte à cause de la chaleur",
+            "category": ""
+        },
+        {
+            "keyword": "moustique tigre",
+            "category": ""
+        },
+        {
+            "keyword": "météorologique extrême",
+            "category": ""
+        },
+        {
+            "keyword": "perte agricole",
+            "category": ""
+        },
+        {
+            "keyword": "pénurie de neige",
+            "category": ""
+        },
+        {
+            "keyword": "pollution atmosphérique",
+            "category": ""
+        },
+        {
+            "keyword": "pollution aux particules fines",
+            "category": ""
+        },
+        {
+            "keyword": "pollution à l’ozone",
+            "category": ""
+        },
+        {
+            "keyword": "printemps le plus pluvieux",
+            "category": ""
+        },
+        {
+            "keyword": "prolifération de moustiques",
+            "category": ""
+        },
+        {
+            "keyword": "pénurie d'eau",
+            "category": ""
+        },
+        {
+            "keyword": "rareté de la ressource en eau",
+            "category": ""
+        },
+        {
+            "keyword": "rareté saisonnière de la ressource en eau",
+            "category": ""
+        },
+        {
+            "keyword": "raréfaction de la ressource en eau",
+            "category": ""
+        },
+        {
+            "keyword": "record de température",
+            "category": ""
+        },
+        {
+            "keyword": "retrait gonflement des argiles",
+            "category": ""
+        },
+        {
+            "keyword": "réfugiés climatique",
+            "category": "General"
+        },
+        {
+            "keyword": "salinisation des sols",
+            "category": ""
+        },
+        {
+            "keyword": "stress hydrique",
+            "category": ""
+        },
+        {
+            "keyword": "sécheresse",
+            "category": ""
+        },
+        {
+            "keyword": "température record",
+            "category": ""
+        },
+        {
+            "keyword": "trop grande chaleur",
+            "category": ""
+        },
+        {
+            "keyword": "urgence écologique",
+            "category": ""
+        },
+        {
+            "keyword": "vague de chaleur",
+            "category": ""
+        },
+        {
+            "keyword": "zoonose",
+            "category": ""
+        },
+        {
+            "keyword": "écocide",
+            "category": ""
+        },
+        {
+            "keyword": "élévation de la température",
+            "category": ""
+        },
+        {
+            "keyword": "élévation des températures",
+            "category": ""
+        },
+        {
+            "keyword": "élévation du niveau de la mer",
+            "category": ""
+        },
+        {
+            "keyword": "élévation du niveau des océans",
+            "category": ""
+        },
+        {
+            "keyword": "élévation du niveau marin",
+            "category": ""
+        },
+        {
+            "keyword": "érosion côtière",
+            "category": ""
+        },
+        {
+            "keyword": "érosion des côtes",
+            "category": ""
+        },
+        {
+            "keyword": "érosion du littoral",
+            "category": ""
+        },
+        {
+            "keyword": "été le plus chaud",
+            "category": ""
+        }
+    ],
+    "changement_climatique_consequences_indirectes": [
+        {
+            "keyword": "40 degrés",
+            "category": ""
+        },
+        {
+            "keyword": "50 degrés",
+            "category": ""
+        },
+        {
+            "keyword": "accès à l’eau",
+            "category": ""
+        },
+        {
+            "keyword": "anomalie de températures",
+            "category": ""
+        },
         {
             "keyword": "assécher",
             "category": ""
@@ -4885,27 +4427,31 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "augmentation des températures",
+            "category": ""
+        },
+        {
             "keyword": "cancer",
             "category": ""
         },
         {
-            "keyword": "chant des oiseaux",
+            "keyword": "cinquante degrés",
             "category": ""
         },
         {
-            "keyword": "contaminé",
+            "keyword": "crue",
             "category": ""
         },
         {
-            "keyword": "contaminée",
+            "keyword": "crue centennale",
             "category": ""
         },
         {
-            "keyword": "dengue",
+            "keyword": "cyclone",
             "category": ""
         },
         {
-            "keyword": "dépérissement",
+            "keyword": "désertification",
             "category": ""
         },
         {
@@ -4913,7 +4459,47 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "extinction",
+            "keyword": "feux",
+            "category": ""
+        },
+        {
+            "keyword": "feux de forêt",
+            "category": ""
+        },
+        {
+            "keyword": "forte chaleur",
+            "category": ""
+        },
+        {
+            "keyword": "forte pluie",
+            "category": ""
+        },
+        {
+            "keyword": "gel printanier",
+            "category": ""
+        },
+        {
+            "keyword": "il n'y a plus de saison",
+            "category": ""
+        },
+        {
+            "keyword": "importante précipitation",
+            "category": ""
+        },
+        {
+            "keyword": "incendies",
+            "category": ""
+        },
+        {
+            "keyword": "inondable",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "inondation",
+            "category": ""
+        },
+        {
+            "keyword": "la roya",
             "category": ""
         },
         {
@@ -4929,15 +4515,15 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "maladies infectieuses",
-            "category": ""
-        },
-        {
             "keyword": "maladies transmises par des insectes",
             "category": ""
         },
         {
-            "keyword": "menacées de disparition",
+            "keyword": "mois le plus chaud",
+            "category": ""
+        },
+        {
+            "keyword": "ouragan",
             "category": ""
         },
         {
@@ -4945,7 +4531,51 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "pathologie",
+            "keyword": "plante exotique envahissante",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plante exotique invasive",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plante exotique très invasive",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "pluie extrême",
+            "category": ""
+        },
+        {
+            "keyword": "pluie intense",
+            "category": ""
+        },
+        {
+            "keyword": "pluie torrentielle",
+            "category": ""
+        },
+        {
+            "keyword": "plus chaud que la normale",
+            "category": ""
+        },
+        {
+            "keyword": "plus chaude que la normale",
+            "category": ""
+        },
+        {
+            "keyword": "plus de saisons",
+            "category": ""
+        },
+        {
+            "keyword": "plus sec que la normale",
+            "category": ""
+        },
+        {
+            "keyword": "pluviométrie importante",
+            "category": ""
+        },
+        {
+            "keyword": "pollution de l'air",
             "category": ""
         },
         {
@@ -4953,212 +4583,572 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "période la plus chaude",
+            "category": ""
+        },
+        {
+            "keyword": "quarante degrés",
+            "category": ""
+        },
+        {
             "keyword": "restriction",
             "category": "General"
         },
         {
-            "keyword": "santé animale",
+            "keyword": "submersion",
             "category": ""
         },
         {
-            "keyword": "santé humaine",
+            "keyword": "submersion marine",
+            "category": ""
+        },
+        {
+            "keyword": "surchauffe",
             "category": ""
         },
         {
             "keyword": "sécurité alimentaire",
             "category": ""
+        },
+        {
+            "keyword": "tempête xynthia",
+            "category": ""
+        },
+        {
+            "keyword": "très chaud",
+            "category": ""
+        },
+        {
+            "keyword": "érosion",
+            "category": ""
+        },
+        {
+            "keyword": "étouffer",
+            "category": ""
         }
     ],
-    "biodiversite_consequences": [
+    "changement_climatique_constat": [
         {
-            "keyword": "baisse de production agricole",
+            "keyword": "accord de paris",
             "category": ""
         },
         {
-            "keyword": "baisse des rendements agricoles",
+            "keyword": "ademe",
             "category": ""
         },
         {
-            "keyword": "baisse des récoltes",
+            "keyword": "anthropocène",
             "category": ""
         },
         {
-            "keyword": "baisse du stockage du carbone dans les sols",
+            "keyword": "anti-écolo",
             "category": ""
         },
         {
-            "keyword": "bioérosion",
+            "keyword": "bilan carbone",
             "category": ""
         },
         {
-            "keyword": "bruit routier",
+            "keyword": "bonne nouvelle pour la planète",
             "category": ""
         },
         {
-            "keyword": "catastophe écologique",
+            "keyword": "capacité planétaire",
             "category": ""
         },
         {
-            "keyword": "crise d'extinction de masse",
+            "keyword": "climatique",
             "category": ""
         },
         {
-            "keyword": "diminution des rendements agricoles",
+            "keyword": "climatologue",
             "category": ""
         },
         {
-            "keyword": "disparition des espèces",
+            "keyword": "climatoscepticisme",
             "category": ""
         },
         {
-            "keyword": "disparition des forêts",
+            "keyword": "conditions de vie sur terre",
             "category": ""
         },
         {
-            "keyword": "disparition des insectes",
+            "keyword": "conférence climat",
             "category": ""
         },
         {
-            "keyword": "disparition des oiseaux",
+            "keyword": "conférence des nations unies sur le climat",
             "category": ""
         },
         {
-            "keyword": "disparition du vivant",
+            "keyword": "conférence des nations unies sur les changements climatiques",
             "category": ""
         },
         {
-            "keyword": "dégradation des puits de carbone",
+            "keyword": "conférence des parties",
             "category": ""
         },
         {
-            "keyword": "dégradation des sols",
+            "keyword": "convention des nations unies sur le climat",
             "category": ""
         },
         {
-            "keyword": "espèce en voie de disparition",
+            "keyword": "cop quinze",
             "category": ""
         },
         {
-            "keyword": "espèce envahissante",
+            "keyword": "cop trente",
             "category": ""
         },
         {
-            "keyword": "espèce exotique envahissante",
+            "keyword": "cop vingt-et-un",
             "category": ""
         },
         {
-            "keyword": "espèce invasive",
+            "keyword": "cop vingt-huit",
             "category": ""
         },
         {
-            "keyword": "espèce menacée",
+            "keyword": "cop vingt-neuf",
             "category": ""
         },
         {
-            "keyword": "espèce menacée d’extinction",
+            "keyword": "cop vingt-sept",
             "category": ""
         },
         {
-            "keyword": "espèce éteinte",
+            "keyword": "cop vingt-six",
             "category": ""
         },
         {
-            "keyword": "espèces en danger",
+            "keyword": "cop15",
             "category": ""
         },
         {
-            "keyword": "impact sur l'environnement",
+            "keyword": "cop21",
             "category": ""
         },
         {
-            "keyword": "liste rouge de l'uicn",
+            "keyword": "cop26",
             "category": ""
         },
         {
-            "keyword": "liste rouge mondiale des espèces menacées",
+            "keyword": "cop27",
             "category": ""
         },
         {
-            "keyword": "migration des espèces",
+            "keyword": "cop28",
             "category": ""
         },
         {
-            "keyword": "mortalité des forêts",
+            "keyword": "cop29",
             "category": ""
         },
         {
-            "keyword": "mortalité forestière",
+            "keyword": "cop30",
             "category": ""
         },
         {
-            "keyword": "moustique tigre",
+            "keyword": "crise planétaire",
             "category": ""
         },
         {
-            "keyword": "nature empoisonée",
+            "keyword": "croissance verte",
             "category": ""
         },
         {
-            "keyword": "perte agricole",
+            "keyword": "crédit carbone",
             "category": ""
         },
         {
-            "keyword": "perte de biodiversité",
+            "keyword": "cycle du carbone",
             "category": ""
         },
         {
-            "keyword": "perturbation du cycle de l’eau",
+            "keyword": "d'ici 2050",
             "category": ""
         },
         {
-            "keyword": "pollution sonore",
+            "keyword": "destruction de la planète",
             "category": ""
         },
         {
-            "keyword": "santé végétale",
+            "keyword": "défi climatique",
             "category": ""
         },
         {
-            "keyword": "sol pollué",
+            "keyword": "déstabilisation atmosphérique",
             "category": ""
         },
         {
-            "keyword": "urgence écologique",
+            "keyword": "effet de serre",
             "category": ""
         },
         {
-            "keyword": "zoonose",
+            "keyword": "empreinte carbone",
             "category": ""
         },
         {
-            "keyword": "zoonotique",
+            "keyword": "enjeu environnemental",
             "category": ""
         },
         {
-            "keyword": "écosystème dégradé",
-            "category": "Ecosystème"
+            "keyword": "expert du climat",
+            "category": "General"
+        },
+        {
+            "keyword": "experte du climat",
+            "category": ""
+        },
+        {
+            "keyword": "france nature environnement",
+            "category": ""
+        },
+        {
+            "keyword": "giec",
+            "category": ""
+        },
+        {
+            "keyword": "green deal",
+            "category": ""
+        },
+        {
+            "keyword": "habitabilité de la planète",
+            "category": ""
+        },
+        {
+            "keyword": "habiter le monde",
+            "category": ""
+        },
+        {
+            "keyword": "haut conseil pour le climat",
+            "category": ""
+        },
+        {
+            "keyword": "hydrologue",
+            "category": ""
+        },
+        {
+            "keyword": "impact carbone",
+            "category": ""
+        },
+        {
+            "keyword": "intérêt environnemental",
+            "category": ""
+        },
+        {
+            "keyword": "mix énergétique",
+            "category": ""
+        },
+        {
+            "keyword": "mutation écologique",
+            "category": "General"
+        },
+        {
+            "keyword": "méga-orage",
+            "category": ""
+        },
+        {
+            "keyword": "neutralité carbone",
+            "category": ""
+        },
+        {
+            "keyword": "neutralité climatique",
+            "category": ""
+        },
+        {
+            "keyword": "pacte vert",
+            "category": ""
+        },
+        {
+            "keyword": "planification écologique",
+            "category": "General"
+        },
+        {
+            "keyword": "pollution émise localement",
+            "category": ""
+        },
+        {
+            "keyword": "ressource planétaire",
+            "category": ""
+        },
+        {
+            "keyword": "revue nature climate change",
+            "category": ""
+        },
+        {
+            "keyword": "réchauffement de l’atmosphère",
+            "category": ""
+        },
+        {
+            "keyword": "réchauffement des océans",
+            "category": ""
+        },
+        {
+            "keyword": "réchauffement des températures",
+            "category": ""
+        },
+        {
+            "keyword": "réchauffement planétaire",
+            "category": ""
+        },
+        {
+            "keyword": "seuil de réchauffement",
+            "category": ""
+        },
+        {
+            "keyword": "soutenabilité environnementale",
+            "category": ""
+        },
+        {
+            "keyword": "température extrême",
+            "category": ""
+        },
+        {
+            "keyword": "températures plus hautes",
+            "category": ""
+        },
+        {
+            "keyword": "transition agricole",
+            "category": "General"
+        },
+        {
+            "keyword": "transition agro écologique",
+            "category": ""
+        },
+        {
+            "keyword": "transition agroécologique",
+            "category": ""
+        },
+        {
+            "keyword": "transition climatique",
+            "category": "General"
+        },
+        {
+            "keyword": "transition en dehors des énergies fossiles",
+            "category": "Energie"
+        },
+        {
+            "keyword": "transition verte",
+            "category": "General"
+        },
+        {
+            "keyword": "transition écologique",
+            "category": "General"
+        },
+        {
+            "keyword": "transition énergétique",
+            "category": "Energie"
+        },
+        {
+            "keyword": "un climat qui change",
+            "category": ""
+        },
+        {
+            "keyword": "écologique",
+            "category": ""
+        },
+        {
+            "keyword": "émissions mondiales de co deux",
+            "category": "General"
+        },
+        {
+            "keyword": "émissions mondiales de co2",
+            "category": "General"
         }
     ],
-    "adaptation_cilmatique_solutions": [
+    "changement_climatique_constat_indirectes": [
         {
-            "keyword": "eco-prêt à taux zéro",
-            "category": "Batiments"
+            "keyword": "agences régionales de santé",
+            "category": ""
         },
         {
-            "keyword": "eco-prêt à taux zéro",
-            "category": "Batiments"
-        }
-    ],
-    "changement_climatique_cause": [
+            "keyword": "air frais",
+            "category": ""
+        },
         {
-            "keyword": "ferme-usine",
+            "keyword": "alimentation",
             "category": "Agriculture"
-        }
-    ],
-    "theme": [
+        },
         {
-            "keyword": "keyword",
-            "category": "Avis Final Consortium"
+            "keyword": "ars",
+            "category": ""
+        },
+        {
+            "keyword": "atmosphère",
+            "category": ""
+        },
+        {
+            "keyword": "autorité de santé",
+            "category": ""
+        },
+        {
+            "keyword": "baisse des températures",
+            "category": ""
+        },
+        {
+            "keyword": "banquise",
+            "category": ""
+        },
+        {
+            "keyword": "batterie",
+            "category": ""
+        },
+        {
+            "keyword": "bloc d’immeubles",
+            "category": ""
+        },
+        {
+            "keyword": "bouquet énergétique",
+            "category": ""
+        },
+        {
+            "keyword": "bâtiment",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "climat",
+            "category": ""
+        },
+        {
+            "keyword": "climatosceptique",
+            "category": ""
+        },
+        {
+            "keyword": "consommation énergétique",
+            "category": "Energie"
+        },
+        {
+            "keyword": "défi de notre siècle",
+            "category": ""
+        },
+        {
+            "keyword": "eau",
+            "category": ""
+        },
+        {
+            "keyword": "eau de pluie",
+            "category": ""
+        },
+        {
+            "keyword": "environnement",
+            "category": ""
+        },
+        {
+            "keyword": "facture énergétique",
+            "category": ""
+        },
+        {
+            "keyword": "fraîcheur",
+            "category": ""
+        },
+        {
+            "keyword": "glacier",
+            "category": ""
+        },
+        {
+            "keyword": "générations futures",
+            "category": ""
+        },
+        {
+            "keyword": "générations à venir",
+            "category": ""
+        },
+        {
+            "keyword": "inégalité",
+            "category": ""
+        },
+        {
+            "keyword": "jamais un tel phénomène",
+            "category": ""
+        },
+        {
+            "keyword": "mer",
+            "category": ""
+        },
+        {
+            "keyword": "mix électrique",
+            "category": ""
+        },
+        {
+            "keyword": "modèle agricole",
+            "category": ""
+        },
+        {
+            "keyword": "océan",
+            "category": ""
+        },
+        {
+            "keyword": "oms",
+            "category": ""
+        },
+        {
+            "keyword": "organisation mondiale de la santé",
+            "category": ""
+        },
+        {
+            "keyword": "performance énergétique",
+            "category": ""
+        },
+        {
+            "keyword": "permafrost",
+            "category": ""
+        },
+        {
+            "keyword": "planète",
+            "category": ""
+        },
+        {
+            "keyword": "planétaire",
+            "category": ""
+        },
+        {
+            "keyword": "pont thermique",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "revue nature",
+            "category": ""
+        },
+        {
+            "keyword": "santé publique",
+            "category": ""
+        },
+        {
+            "keyword": "sol",
+            "category": ""
+        },
+        {
+            "keyword": "température",
+            "category": ""
+        },
+        {
+            "keyword": "terre",
+            "category": ""
+        },
+        {
+            "keyword": "éco-anxiété",
+            "category": ""
+        },
+        {
+            "keyword": "écolo",
+            "category": ""
+        },
+        {
+            "keyword": "écologie",
+            "category": ""
+        },
+        {
+            "keyword": "écologiste",
+            "category": ""
+        },
+        {
+            "keyword": "écosystème",
+            "category": ""
+        },
+        {
+            "keyword": "énergie",
+            "category": ""
         }
     ],
     "changement_climatique_constats_indirectes": [
@@ -5167,14 +5157,10 @@ THEME_KEYWORDS = {
             "category": ""
         }
     ],
-    "changement climatique_constat": [
+    "theme": [
         {
-            "keyword": "politique climatique",
-            "category": ""
-        },
-        {
-            "keyword": "scope un et deux",
-            "category": ""
+            "keyword": "keyword",
+            "category": "Avis Final Consortium"
         }
     ],
     "ressources_indirectes": [

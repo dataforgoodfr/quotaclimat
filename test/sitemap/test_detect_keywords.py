@@ -91,7 +91,7 @@ def test_one_theme_get_themes_keywords_duration():
             'timestamp': 1706437080216,
             }
         ]
-    themes = ['changement_climatique_constat', 'ressources']
+    themes = ['changement_climatique_constat', 'ressources_indirectes']
 
     (themes_output, keywords_output, 
         number_of_keywords,
@@ -115,13 +115,13 @@ def test_one_theme_get_themes_keywords_duration():
     assert number_of_keywords == 1
     assert number_of_keywords_climat == 1
     assert number_of_keywords_biodiversite == 0
-    assert number_of_keywords_ressources == 1
+    assert number_of_keywords_ressources == 0
     assert number_of_changement_climatique_constat == 1
     assert number_of_changement_climatique_causes_directes == 0
     assert number_of_changement_climatique_consequences == 0
     assert number_of_attenuation_climatique_solutions_directes == 0
     assert number_of_adaptation_climatique_solutions_directes == 0
-    assert number_of_ressources == 1
+    assert number_of_ressources == 0
     assert number_of_ressources_solutions == 0
     assert number_of_biodiversite_concepts_generaux == 0
     assert number_of_biodiversite_causes_directes == 0

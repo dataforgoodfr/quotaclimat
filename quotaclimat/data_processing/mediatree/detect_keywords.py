@@ -21,6 +21,7 @@ logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
 dask.config.set({'dataframe.query-planning': True})
 
 indirectes = 'indirectes'
+DEFAULT_WINDOW_DURATION = 20
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], theme: str) -> List[dict]:
     result = []
@@ -117,7 +118,7 @@ def remove_stopwords(plaintext: str) -> str:
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime):
     keywords_with_timestamp = []
     number_of_elements_in_array = 17
-    default_window_in_seconds = 20
+    default_window_in_seconds = DEFAULT_WINDOW_DURATION
     plaitext_without_stopwords = remove_stopwords(plaintext)
     logging.debug(f"display datetime start {start}")
 
@@ -200,7 +201,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     else:
         return [None] * number_of_elements_in_array
 
-def get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds: int = 15):
+def get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds: int = 20):
     logging.debug(f"Using duration_seconds {duration_seconds}")
 
     # Shallow copy to avoid unnecessary deep copying (wip: for memory leak)
@@ -330,7 +331,7 @@ def transform_false_positive_keywords_to_positive(keywords_with_timestamp: List[
 
     return keywords_with_timestamp
 
-def tag_wanted_duration_second_window_number(keywords_with_timestamp: List[dict], start, duration_seconds: int = 15) -> List[dict]:
+def tag_wanted_duration_second_window_number(keywords_with_timestamp: List[dict], start, duration_seconds: int = 20) -> List[dict]:
     window_size_seconds = get_keyword_time_separation_ms(duration_seconds=duration_seconds)
     total_seconds_in_window = get_chunk_duration_api()
     number_of_windows = int(total_seconds_in_window // window_size_seconds)

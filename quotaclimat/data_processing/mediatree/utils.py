@@ -11,7 +11,7 @@ timezone='Europe/Paris'
 EPOCH__5MIN_MARGIN = 300
 EPOCH__1MIN_MARGIN = 60 # to add margin for program
 
-def get_keyword_time_separation_ms(duration_seconds: int = 15):
+def get_keyword_time_separation_ms(duration_seconds: int = 20):
     return duration_seconds * 1000
 
 def get_chunk_duration_api():

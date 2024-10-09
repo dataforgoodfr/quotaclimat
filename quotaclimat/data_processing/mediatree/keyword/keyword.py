@@ -1,22 +1,6 @@
 THEME_KEYWORDS = {
     "attenuation_climatique_solutions": [
         {
-            "keyword": "bioclimatique",
-            "category": "Batiments"
-        },
-        {
-            "keyword": "bonus écologique",
-            "category": "Transport"
-        },
-        {
-            "keyword": "borne de recharge",
-            "category": "Transport"
-        },
-        {
-            "keyword": "leasing électrique",
-            "category": "Transport"
-        },
-        {
             "keyword": "absorption du carbone",
             "category": "General"
         },
@@ -49,11 +33,11 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "agroécologie",
+            "keyword": "agroforesterie",
             "category": "Agriculture"
         },
         {
-            "keyword": "agroforesterie",
+            "keyword": "agroécologie",
             "category": "Agriculture"
         },
         {
@@ -93,11 +77,11 @@ THEME_KEYWORDS = {
             "category": "Transport"
         },
         {
-            "keyword": "avion à hydrogène",
+            "keyword": "avion vert",
             "category": "Transport"
         },
         {
-            "keyword": "avion vert",
+            "keyword": "avion à hydrogène",
             "category": "Transport"
         },
         {
@@ -117,20 +101,16 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "bâtiment à énergie positive",
-            "category": "Batiments"
-        },
-        {
-            "keyword": "béton bas carbone",
-            "category": "Batiments"
-        },
-        {
             "keyword": "biocarburant",
             "category": "Transport"
         },
         {
             "keyword": "biochar",
             "category": "Agriculture"
+        },
+        {
+            "keyword": "bioclimatique",
+            "category": "Batiments"
         },
         {
             "keyword": "biogaz",
@@ -153,8 +133,24 @@ THEME_KEYWORDS = {
             "category": "Transport"
         },
         {
+            "keyword": "bonus écologique",
+            "category": "Transport"
+        },
+        {
             "keyword": "bonus-malus écologique",
             "category": "Transport"
+        },
+        {
+            "keyword": "borne de recharge",
+            "category": "Transport"
+        },
+        {
+            "keyword": "bâtiment à énergie positive",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "béton bas carbone",
+            "category": "Batiments"
         },
         {
             "keyword": "captage et stockage",
@@ -229,38 +225,6 @@ THEME_KEYWORDS = {
             "category": "Transport"
         },
         {
-            "keyword": "décarbonation",
-            "category": "General"
-        },
-        {
-            "keyword": "décarboné",
-            "category": "General"
-        },
-        {
-            "keyword": "décarbonée",
-            "category": "General"
-        },
-        {
-            "keyword": "décarboner",
-            "category": "General"
-        },
-        {
-            "keyword": "déchet de canne à sucre",
-            "category": "Transport"
-        },
-        {
-            "keyword": "décroissance énergétique",
-            "category": "Energie"
-        },
-        {
-            "keyword": "dépolluer",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "dépollution",
-            "category": "General"
-        },
-        {
             "keyword": "descente énergétique",
             "category": "Energie"
         },
@@ -281,15 +245,35 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "éco conception",
-            "category": "Industrie"
-        },
-        {
-            "keyword": "éco geste",
+            "keyword": "décarbonation",
             "category": "General"
         },
         {
-            "keyword": "éco responsable",
+            "keyword": "décarboner",
+            "category": "General"
+        },
+        {
+            "keyword": "décarboné",
+            "category": "General"
+        },
+        {
+            "keyword": "décarbonée",
+            "category": "General"
+        },
+        {
+            "keyword": "déchet de canne à sucre",
+            "category": "Transport"
+        },
+        {
+            "keyword": "décroissance énergétique",
+            "category": "Energie"
+        },
+        {
+            "keyword": "dépolluer",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "dépollution",
             "category": "General"
         },
         {
@@ -301,64 +285,12 @@ THEME_KEYWORDS = {
             "category": "Batiments"
         },
         {
-            "keyword": "écoconception",
-            "category": "Industrie"
-        },
-        {
             "keyword": "ecomobilité",
             "category": "Transport"
         },
         {
-            "keyword": "économie circulaire",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "économie d’énergie",
-            "category": "Energie"
-        },
-        {
-            "keyword": "économie qui répare",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "économiser de l’énergie",
-            "category": "Energie"
-        },
-        {
-            "keyword": "écoresponsable",
-            "category": "General"
-        },
-        {
             "keyword": "efficacité énergétique",
             "category": "Energie"
-        },
-        {
-            "keyword": "énergie durable",
-            "category": "Energie"
-        },
-        {
-            "keyword": "énergie renouvelable",
-            "category": "Energie"
-        },
-        {
-            "keyword": "énergie solaire",
-            "category": "Energie"
-        },
-        {
-            "keyword": "énergie verte",
-            "category": "Energie"
-        },
-        {
-            "keyword": "éolien",
-            "category": "Energie"
-        },
-        {
-            "keyword": "éolienne",
-            "category": "Energie"
-        },
-        {
-            "keyword": "étiquetage unique des aliments",
-            "category": "Agriculture"
         },
         {
             "keyword": "fiscalité environnementale",
@@ -385,10 +317,6 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
-            "keyword": "géothermie",
-            "category": "Energie"
-        },
-        {
             "keyword": "geste écologique",
             "category": "General"
         },
@@ -401,6 +329,10 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
+            "keyword": "géothermie",
+            "category": "Energie"
+        },
+        {
             "keyword": "honte de prendre l'avion",
             "category": "Transport"
         },
@@ -409,15 +341,15 @@ THEME_KEYWORDS = {
             "category": "Transport"
         },
         {
-            "keyword": "hydroélectricité",
-            "category": "Energie"
-        },
-        {
             "keyword": "hydrogène",
             "category": "Energie"
         },
         {
             "keyword": "hydrogène vert",
+            "category": "Energie"
+        },
+        {
+            "keyword": "hydroélectricité",
             "category": "Energie"
         },
         {
@@ -443,6 +375,10 @@ THEME_KEYWORDS = {
         {
             "keyword": "journée mondiale de la vie sauvage",
             "category": "General"
+        },
+        {
+            "keyword": "leasing électrique",
+            "category": "Transport"
         },
         {
             "keyword": "limiter la hausse des températures",
@@ -501,14 +437,6 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "méthanisation",
-            "category": "Energie"
-        },
-        {
-            "keyword": "méthaniseur",
-            "category": "Energie"
-        },
-        {
             "keyword": "mobilité douce",
             "category": "Transport"
         },
@@ -525,6 +453,14 @@ THEME_KEYWORDS = {
             "category": "Transport"
         },
         {
+            "keyword": "méthanisation",
+            "category": "Energie"
+        },
+        {
+            "keyword": "méthaniseur",
+            "category": "Energie"
+        },
+        {
             "keyword": "net zéro émission",
             "category": "General"
         },
@@ -539,10 +475,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "panneaux solaires",
             "category": "Energie"
-        },
-        {
-            "keyword": "pêche durable",
-            "category": "Agriculture"
         },
         {
             "keyword": "photovoltaïque",
@@ -565,11 +497,11 @@ THEME_KEYWORDS = {
             "category": "Transport"
         },
         {
-            "keyword": "prise de conscience écologique",
+            "keyword": "prise de conscience environnementale",
             "category": "General"
         },
         {
-            "keyword": "prise de conscience environnementale",
+            "keyword": "prise de conscience écologique",
             "category": "General"
         },
         {
@@ -605,6 +537,10 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
+            "keyword": "pêche durable",
+            "category": "Agriculture"
+        },
+        {
             "keyword": "quota de pêche",
             "category": "Agriculture"
         },
@@ -621,62 +557,6 @@ THEME_KEYWORDS = {
             "category": "Economie des ressources"
         },
         {
-            "keyword": "réduction des émissions de carbone",
-            "category": "General"
-        },
-        {
-            "keyword": "réduction des émissions de gaz à effet de serre",
-            "category": "General"
-        },
-        {
-            "keyword": "réduction des gaspillages énergétiques",
-            "category": "Energie"
-        },
-        {
-            "keyword": "réduction du cheptel",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "réduction du gaspillage alimentaire",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "réduction du gaspillage énergétique",
-            "category": "Energie"
-        },
-        {
-            "keyword": "réduire la consommation d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "réduire le cheptel",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "réduire le trafic aérien",
-            "category": "Transport"
-        },
-        {
-            "keyword": "réduire les émissions d’azote",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "réduire les émissions de carbone",
-            "category": "General"
-        },
-        {
-            "keyword": "réduire les émissions de gaz à effet de serre",
-            "category": "General"
-        },
-        {
-            "keyword": "réduire sa consommation de viande",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "réemploi",
-            "category": "Economie des ressources"
-        },
-        {
             "keyword": "reforestation",
             "category": "Ecosystème"
         },
@@ -687,26 +567,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "renaturer",
             "category": "Ecosystème"
-        },
-        {
-            "keyword": "rénovation des batiments",
-            "category": "Batiments"
-        },
-        {
-            "keyword": "rénovation thermique",
-            "category": "Batiments"
-        },
-        {
-            "keyword": "réseau de chaleur",
-            "category": "Energie"
-        },
-        {
-            "keyword": "réseaux de chaleur",
-            "category": "Energie"
-        },
-        {
-            "keyword": "réservoir d'hydrogène",
-            "category": "Transport"
         },
         {
             "keyword": "respect de l’environnement",
@@ -737,11 +597,87 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
-            "keyword": "sans émettre de co2",
+            "keyword": "réduction des gaspillages énergétiques",
+            "category": "Energie"
+        },
+        {
+            "keyword": "réduction des émissions de carbone",
             "category": "General"
         },
         {
+            "keyword": "réduction des émissions de gaz à effet de serre",
+            "category": "General"
+        },
+        {
+            "keyword": "réduction du cheptel",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "réduction du gaspillage alimentaire",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "réduction du gaspillage énergétique",
+            "category": "Energie"
+        },
+        {
+            "keyword": "réduire la consommation d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réduire le cheptel",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "réduire le trafic aérien",
+            "category": "Transport"
+        },
+        {
+            "keyword": "réduire les émissions de carbone",
+            "category": "General"
+        },
+        {
+            "keyword": "réduire les émissions de gaz à effet de serre",
+            "category": "General"
+        },
+        {
+            "keyword": "réduire les émissions d’azote",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "réduire sa consommation de viande",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "réemploi",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "rénovation des batiments",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "rénovation thermique",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "réseau de chaleur",
+            "category": "Energie"
+        },
+        {
+            "keyword": "réseaux de chaleur",
+            "category": "Energie"
+        },
+        {
+            "keyword": "réservoir d'hydrogène",
+            "category": "Transport"
+        },
+        {
             "keyword": "sans émettre de co deux",
+            "category": "General"
+        },
+        {
+            "keyword": "sans émettre de co2",
             "category": "General"
         },
         {
@@ -755,10 +691,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "semaine du développement durable",
             "category": "General"
-        },
-        {
-            "keyword": "séquestration du carbone",
-            "category": "Industrie"
         },
         {
             "keyword": "sevrage des énergies fossiles",
@@ -801,11 +733,11 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "technologie verte",
-            "category": "General"
+            "keyword": "séquestration du carbone",
+            "category": "Industrie"
         },
         {
-            "keyword": "tévéa verte",
+            "keyword": "technologie verte",
             "category": "General"
         },
         {
@@ -817,24 +749,12 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
+            "keyword": "tévéa verte",
+            "category": "General"
+        },
+        {
             "keyword": "valorisation des déchets",
             "category": "Economie des ressources"
-        },
-        {
-            "keyword": "végétalisation",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "végétalisé",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "végétalisée",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "végétaliser",
-            "category": "Ecosystème"
         },
         {
             "keyword": "verdir la politique agricole",
@@ -849,27 +769,99 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
+            "keyword": "végétalisation",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "végétaliser",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "végétalisé",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "végétalisée",
+            "category": "Ecosystème"
+        },
+        {
             "keyword": "zéro carbone",
             "category": "General"
+        },
+        {
+            "keyword": "zéro plastique",
+            "category": "Economie des ressources"
         },
         {
             "keyword": "zéro émission nette",
             "category": "General"
         },
         {
-            "keyword": "zéro plastique",
+            "keyword": "éco conception",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "éco geste",
+            "category": "General"
+        },
+        {
+            "keyword": "éco responsable",
+            "category": "General"
+        },
+        {
+            "keyword": "écoconception",
+            "category": "Industrie"
+        },
+        {
+            "keyword": "économie circulaire",
             "category": "Economie des ressources"
+        },
+        {
+            "keyword": "économie d’énergie",
+            "category": "Energie"
+        },
+        {
+            "keyword": "économie qui répare",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "économiser de l’énergie",
+            "category": "Energie"
+        },
+        {
+            "keyword": "écoresponsable",
+            "category": "General"
+        },
+        {
+            "keyword": "énergie durable",
+            "category": "Energie"
+        },
+        {
+            "keyword": "énergie renouvelable",
+            "category": "Energie"
+        },
+        {
+            "keyword": "énergie solaire",
+            "category": "Energie"
+        },
+        {
+            "keyword": "énergie verte",
+            "category": "Energie"
+        },
+        {
+            "keyword": "éolien",
+            "category": "Energie"
+        },
+        {
+            "keyword": "éolienne",
+            "category": "Energie"
+        },
+        {
+            "keyword": "étiquetage unique des aliments",
+            "category": "Agriculture"
         }
     ],
     "biodiversite_causes_indirectes": [
-        {
-            "keyword": "emballage",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "ogm",
-            "category": "Agriculture"
-        },
         {
             "keyword": "acide",
             "category": "General"
@@ -935,6 +927,10 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
+            "keyword": "disparition des haies",
+            "category": "Ecosystème"
+        },
+        {
             "keyword": "déchet",
             "category": "Economie des ressources"
         },
@@ -947,8 +943,8 @@ THEME_KEYWORDS = {
             "category": "Economie des ressources"
         },
         {
-            "keyword": "disparition des haies",
-            "category": "Ecosystème"
+            "keyword": "emballage",
+            "category": "Economie des ressources"
         },
         {
             "keyword": "emballage en plastique",
@@ -1003,15 +999,19 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "mégot",
-            "category": "General"
-        },
-        {
             "keyword": "micro-plastiques",
             "category": "Industrie"
         },
         {
+            "keyword": "mégot",
+            "category": "General"
+        },
+        {
             "keyword": "nouvelles techniques génomiques",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "ogm",
             "category": "Agriculture"
         },
         {
@@ -1117,15 +1117,15 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "assécher",
+            "category": ""
+        },
+        {
             "keyword": "asséché",
             "category": ""
         },
         {
             "keyword": "asséchée",
-            "category": ""
-        },
-        {
-            "keyword": "assécher",
             "category": ""
         },
         {
@@ -1159,14 +1159,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "dévastation",
             "category": "General"
-        },
-        {
-            "keyword": "érosion",
-            "category": ""
-        },
-        {
-            "keyword": "étouffer",
-            "category": ""
         },
         {
             "keyword": "feux",
@@ -1241,10 +1233,6 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "période la plus chaude",
-            "category": ""
-        },
-        {
             "keyword": "plante exotique envahissante",
             "category": "Ecosystème"
         },
@@ -1297,16 +1285,16 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "période la plus chaude",
+            "category": ""
+        },
+        {
             "keyword": "quarante degrés",
             "category": ""
         },
         {
             "keyword": "restriction",
             "category": "General"
-        },
-        {
-            "keyword": "sécurité alimentaire",
-            "category": ""
         },
         {
             "keyword": "submersion",
@@ -1321,11 +1309,23 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "sécurité alimentaire",
+            "category": ""
+        },
+        {
             "keyword": "tempête xynthia",
             "category": ""
         },
         {
             "keyword": "très chaud",
+            "category": ""
+        },
+        {
+            "keyword": "érosion",
+            "category": ""
+        },
+        {
+            "keyword": "étouffer",
             "category": ""
         }
     ],
@@ -1403,6 +1403,18 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
+            "keyword": "destruction de la biodiversité",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "destruction des habitats naturels",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "destruction des milieux naturels",
+            "category": "Ecosystème"
+        },
+        {
             "keyword": "décharge sauvage",
             "category": "Economie des ressources"
         },
@@ -1423,22 +1435,6 @@ THEME_KEYWORDS = {
             "category": "Economie des ressources"
         },
         {
-            "keyword": "destruction de la biodiversité",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "destruction des habitats naturels",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "destruction des milieux naturels",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "écocide",
-            "category": "Ecosystème"
-        },
-        {
             "keyword": "engrais azoté",
             "category": "Agriculture"
         },
@@ -1449,14 +1445,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais phosphaté",
             "category": "Agriculture"
-        },
-        {
-            "keyword": "épandage",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "étalement urbain",
-            "category": "Ecosystème"
         },
         {
             "keyword": "extractivisme",
@@ -1495,19 +1483,15 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "pêche industrielle",
-            "category": "Industrie"
-        },
-        {
             "keyword": "perte d’habitats",
             "category": "Ecosystème"
         },
         {
-            "keyword": "perturbation des écosystèmes",
+            "keyword": "perturbation des habitats",
             "category": "Ecosystème"
         },
         {
-            "keyword": "perturbation des habitats",
+            "keyword": "perturbation des écosystèmes",
             "category": "Ecosystème"
         },
         {
@@ -1539,11 +1523,11 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
-            "keyword": "pollution de l’eau",
+            "keyword": "pollution de la mer",
             "category": "Eau"
         },
         {
-            "keyword": "pollution de la mer",
+            "keyword": "pollution de l’eau",
             "category": "Eau"
         },
         {
@@ -1583,8 +1567,24 @@ THEME_KEYWORDS = {
             "category": "Industrie"
         },
         {
+            "keyword": "pêche industrielle",
+            "category": "Industrie"
+        },
+        {
             "keyword": "surpêche",
             "category": "Agriculture"
+        },
+        {
+            "keyword": "écocide",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "épandage",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "étalement urbain",
+            "category": "Ecosystème"
         }
     ],
     "changement_climatique_causes": [
@@ -1621,40 +1621,12 @@ THEME_KEYWORDS = {
             "category": "Energie"
         },
         {
-            "keyword": "déforestation",
-            "category": "Ecosystème"
-        },
-        {
             "keyword": "dyoxide de carbone",
             "category": "General"
         },
         {
-            "keyword": "élevage intensif",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "émission de carbone",
-            "category": "General"
-        },
-        {
-            "keyword": "émissions anthropiques",
-            "category": "General"
-        },
-        {
-            "keyword": "émissions importées",
-            "category": "General"
-        },
-        {
-            "keyword": "émissions liées à la consommation",
-            "category": "General"
-        },
-        {
-            "keyword": "émissions territoriales",
-            "category": "General"
-        },
-        {
-            "keyword": "énergies fossiles",
-            "category": "Energie"
+            "keyword": "déforestation",
+            "category": "Ecosystème"
         },
         {
             "keyword": "fuel lourd",
@@ -1681,11 +1653,11 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "mauvaise nouvelle pour le climat",
+            "keyword": "mauvaise nouvelle pour la planète",
             "category": "General"
         },
         {
-            "keyword": "mauvaise nouvelle pour la planète",
+            "keyword": "mauvaise nouvelle pour le climat",
             "category": "General"
         },
         {
@@ -1715,6 +1687,34 @@ THEME_KEYWORDS = {
         {
             "keyword": "productiviste",
             "category": "General"
+        },
+        {
+            "keyword": "élevage intensif",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "émission de carbone",
+            "category": "General"
+        },
+        {
+            "keyword": "émissions anthropiques",
+            "category": "General"
+        },
+        {
+            "keyword": "émissions importées",
+            "category": "General"
+        },
+        {
+            "keyword": "émissions liées à la consommation",
+            "category": "General"
+        },
+        {
+            "keyword": "émissions territoriales",
+            "category": "General"
+        },
+        {
+            "keyword": "énergies fossiles",
+            "category": "Energie"
         }
     ],
     "biodiversite_concepts_generaux_indirectes": [
@@ -1751,15 +1751,15 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "diversité génétique",
+            "category": ""
+        },
+        {
             "keyword": "dégrader",
             "category": ""
         },
         {
             "keyword": "désertification",
-            "category": ""
-        },
-        {
-            "keyword": "diversité génétique",
             "category": ""
         },
         {
@@ -1771,22 +1771,6 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "écolo",
-            "category": ""
-        },
-        {
-            "keyword": "écologie",
-            "category": ""
-        },
-        {
-            "keyword": "écologiste",
-            "category": ""
-        },
-        {
-            "keyword": "écosystème",
-            "category": ""
-        },
-        {
             "keyword": "environnement",
             "category": ""
         },
@@ -1795,11 +1779,11 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "environnementaux",
+            "keyword": "environnementale",
             "category": ""
         },
         {
-            "keyword": "environnementale",
+            "keyword": "environnementaux",
             "category": ""
         },
         {
@@ -1815,11 +1799,11 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "générations à venir",
+            "keyword": "générations futures",
             "category": ""
         },
         {
-            "keyword": "générations futures",
+            "keyword": "générations à venir",
             "category": ""
         },
         {
@@ -1871,11 +1855,11 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "planétaire",
+            "keyword": "planète",
             "category": ""
         },
         {
-            "keyword": "planète",
+            "keyword": "planétaire",
             "category": ""
         },
         {
@@ -1887,11 +1871,11 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "récif corallien",
+            "keyword": "revue nature",
             "category": ""
         },
         {
-            "keyword": "revue nature",
+            "keyword": "récif corallien",
             "category": ""
         },
         {
@@ -1904,6 +1888,22 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "vivant",
+            "category": ""
+        },
+        {
+            "keyword": "écolo",
+            "category": ""
+        },
+        {
+            "keyword": "écologie",
+            "category": ""
+        },
+        {
+            "keyword": "écologiste",
+            "category": ""
+        },
+        {
+            "keyword": "écosystème",
             "category": ""
         }
     ],
@@ -2029,15 +2029,15 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "crédit carbone",
-            "category": ""
-        },
-        {
             "keyword": "crise planétaire",
             "category": ""
         },
         {
             "keyword": "croissance verte",
+            "category": ""
+        },
+        {
+            "keyword": "crédit carbone",
             "category": ""
         },
         {
@@ -2049,6 +2049,10 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "destruction de la planète",
+            "category": ""
+        },
+        {
             "keyword": "défi climatique",
             "category": ""
         },
@@ -2057,24 +2061,8 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "destruction de la planète",
-            "category": ""
-        },
-        {
-            "keyword": "écologique",
-            "category": ""
-        },
-        {
             "keyword": "effet de serre",
             "category": ""
-        },
-        {
-            "keyword": "émissions mondiales de co2",
-            "category": "General"
-        },
-        {
-            "keyword": "émissions mondiales de co deux",
-            "category": "General"
         },
         {
             "keyword": "empreinte carbone",
@@ -2129,16 +2117,16 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "méga-orage",
-            "category": ""
-        },
-        {
             "keyword": "mix énergétique",
             "category": ""
         },
         {
             "keyword": "mutation écologique",
             "category": "General"
+        },
+        {
+            "keyword": "méga-orage",
+            "category": ""
         },
         {
             "keyword": "neutralité carbone",
@@ -2161,6 +2149,14 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "ressource planétaire",
+            "category": ""
+        },
+        {
+            "keyword": "revue nature climate change",
+            "category": ""
+        },
+        {
             "keyword": "réchauffement de l’atmosphère",
             "category": ""
         },
@@ -2174,14 +2170,6 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "réchauffement planétaire",
-            "category": ""
-        },
-        {
-            "keyword": "ressource planétaire",
-            "category": ""
-        },
-        {
-            "keyword": "revue nature climate change",
             "category": ""
         },
         {
@@ -2217,15 +2205,7 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "transition écologique",
-            "category": "General"
-        },
-        {
             "keyword": "transition en dehors des énergies fossiles",
-            "category": "Energie"
-        },
-        {
-            "keyword": "transition énergétique",
             "category": "Energie"
         },
         {
@@ -2233,8 +2213,28 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
+            "keyword": "transition écologique",
+            "category": "General"
+        },
+        {
+            "keyword": "transition énergétique",
+            "category": "Energie"
+        },
+        {
             "keyword": "un climat qui change",
             "category": ""
+        },
+        {
+            "keyword": "écologique",
+            "category": ""
+        },
+        {
+            "keyword": "émissions mondiales de co deux",
+            "category": "General"
+        },
+        {
+            "keyword": "émissions mondiales de co2",
+            "category": "General"
         }
     ],
     "changement_climatique_consequences": [
@@ -2267,11 +2267,11 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "baisse des récoltes",
+            "keyword": "baisse des rendements agricoles",
             "category": ""
         },
         {
-            "keyword": "baisse des rendements agricoles",
+            "keyword": "baisse des récoltes",
             "category": ""
         },
         {
@@ -2315,14 +2315,6 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "décès à cause de la chaleur",
-            "category": ""
-        },
-        {
-            "keyword": "déficit de pluie",
-            "category": ""
-        },
-        {
             "keyword": "diminution de la banquise",
             "category": ""
         },
@@ -2351,7 +2343,11 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "écocide",
+            "keyword": "décès à cause de la chaleur",
+            "category": ""
+        },
+        {
+            "keyword": "déficit de pluie",
             "category": ""
         },
         {
@@ -2359,43 +2355,7 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "élévation de la température",
-            "category": ""
-        },
-        {
-            "keyword": "élévation des températures",
-            "category": ""
-        },
-        {
-            "keyword": "élévation du niveau de la mer",
-            "category": ""
-        },
-        {
-            "keyword": "élévation du niveau des océans",
-            "category": ""
-        },
-        {
-            "keyword": "élévation du niveau marin",
-            "category": ""
-        },
-        {
-            "keyword": "érosion côtière",
-            "category": ""
-        },
-        {
-            "keyword": "érosion des côtes",
-            "category": ""
-        },
-        {
-            "keyword": "érosion du littoral",
-            "category": ""
-        },
-        {
             "keyword": "espèce invasive",
-            "category": ""
-        },
-        {
-            "keyword": "été le plus chaud",
             "category": ""
         },
         {
@@ -2459,15 +2419,15 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "l'été le plus chaud",
-            "category": ""
-        },
-        {
             "keyword": "l'hiver le plus chaud",
             "category": ""
         },
         {
             "keyword": "l'hiver le plus sec",
+            "category": ""
+        },
+        {
+            "keyword": "l'été le plus chaud",
             "category": ""
         },
         {
@@ -2499,10 +2459,6 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "météorologique extrême",
-            "category": ""
-        },
-        {
             "keyword": "migrant climatique",
             "category": ""
         },
@@ -2523,23 +2479,7 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "mortalité forestière",
-            "category": ""
-        },
-        {
-            "keyword": "mort à cause de la canicule",
-            "category": ""
-        },
-        {
-            "keyword": "morte à cause de la canicule",
-            "category": ""
-        },
-        {
-            "keyword": "mort à cause de la chaleur",
-            "category": ""
-        },
-        {
-            "keyword": "morte à cause de la chaleur",
+            "keyword": "mort liées à la canicule",
             "category": ""
         },
         {
@@ -2547,7 +2487,23 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "mort liées à la canicule",
+            "keyword": "mort à cause de la canicule",
+            "category": ""
+        },
+        {
+            "keyword": "mort à cause de la chaleur",
+            "category": ""
+        },
+        {
+            "keyword": "mortalité forestière",
+            "category": ""
+        },
+        {
+            "keyword": "morte à cause de la canicule",
+            "category": ""
+        },
+        {
+            "keyword": "morte à cause de la chaleur",
             "category": ""
         },
         {
@@ -2555,11 +2511,7 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "pénurie d'eau",
-            "category": ""
-        },
-        {
-            "keyword": "pénurie de neige",
+            "keyword": "météorologique extrême",
             "category": ""
         },
         {
@@ -2567,7 +2519,7 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "pollution à l’ozone",
+            "keyword": "pénurie de neige",
             "category": ""
         },
         {
@@ -2579,6 +2531,10 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "pollution à l’ozone",
+            "category": ""
+        },
+        {
             "keyword": "printemps le plus pluvieux",
             "category": ""
         },
@@ -2587,7 +2543,7 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "raréfaction de la ressource en eau",
+            "keyword": "pénurie d'eau",
             "category": ""
         },
         {
@@ -2599,7 +2555,15 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "raréfaction de la ressource en eau",
+            "category": ""
+        },
+        {
             "keyword": "record de température",
+            "category": ""
+        },
+        {
+            "keyword": "retrait gonflement des argiles",
             "category": ""
         },
         {
@@ -2607,19 +2571,15 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "retrait gonflement des argiles",
-            "category": ""
-        },
-        {
             "keyword": "salinisation des sols",
             "category": ""
         },
         {
-            "keyword": "sécheresse",
+            "keyword": "stress hydrique",
             "category": ""
         },
         {
-            "keyword": "stress hydrique",
+            "keyword": "sécheresse",
             "category": ""
         },
         {
@@ -2640,6 +2600,46 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "zoonose",
+            "category": ""
+        },
+        {
+            "keyword": "écocide",
+            "category": ""
+        },
+        {
+            "keyword": "élévation de la température",
+            "category": ""
+        },
+        {
+            "keyword": "élévation des températures",
+            "category": ""
+        },
+        {
+            "keyword": "élévation du niveau de la mer",
+            "category": ""
+        },
+        {
+            "keyword": "élévation du niveau des océans",
+            "category": ""
+        },
+        {
+            "keyword": "élévation du niveau marin",
+            "category": ""
+        },
+        {
+            "keyword": "érosion côtière",
+            "category": ""
+        },
+        {
+            "keyword": "érosion des côtes",
+            "category": ""
+        },
+        {
+            "keyword": "érosion du littoral",
+            "category": ""
+        },
+        {
+            "keyword": "été le plus chaud",
             "category": ""
         }
     ],
@@ -2709,11 +2709,11 @@ THEME_KEYWORDS = {
             "category": "Transport"
         },
         {
-            "keyword": "camion électrique",
+            "keyword": "camion xxl",
             "category": "Transport"
         },
         {
-            "keyword": "camion xxl",
+            "keyword": "camion électrique",
             "category": "Transport"
         },
         {
@@ -2759,22 +2759,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "développement durable",
             "category": "General"
-        },
-        {
-            "keyword": "économie de carburant",
-            "category": "Transport"
-        },
-        {
-            "keyword": "écotaxe",
-            "category": "Transport"
-        },
-        {
-            "keyword": "éducation au changement climatique",
-            "category": "General"
-        },
-        {
-            "keyword": "épargne citoyenne",
-            "category": "Economie des ressources"
         },
         {
             "keyword": "epr",
@@ -2837,16 +2821,16 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
+            "keyword": "label hve",
+            "category": "Agriculture"
+        },
+        {
             "keyword": "label éco",
             "category": "Industrie"
         },
         {
             "keyword": "label écologique",
             "category": "Industrie"
-        },
-        {
-            "keyword": "label hve",
-            "category": "Agriculture"
         },
         {
             "keyword": "leasing social",
@@ -2869,16 +2853,16 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
-            "keyword": "marche à pied",
-            "category": "Transport"
-        },
-        {
             "keyword": "marche du siècle",
             "category": "General"
         },
         {
             "keyword": "marche pour le climat",
             "category": "General"
+        },
+        {
+            "keyword": "marche à pied",
+            "category": "Transport"
         },
         {
             "keyword": "matériau isolant",
@@ -2933,12 +2917,12 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
-            "keyword": "plus d’oxygène",
-            "category": ""
-        },
-        {
             "keyword": "plus durable",
             "category": "General"
+        },
+        {
+            "keyword": "plus d’oxygène",
+            "category": ""
         },
         {
             "keyword": "poid lourd électrique",
@@ -2961,10 +2945,6 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
-            "keyword": "préserver",
-            "category": "General"
-        },
-        {
             "keyword": "principe de précaution",
             "category": "General"
         },
@@ -2973,28 +2953,16 @@ THEME_KEYWORDS = {
             "category": "Industrie"
         },
         {
-            "keyword": "réacteur nucléaire",
-            "category": "Energie"
+            "keyword": "préserver",
+            "category": "General"
         },
         {
             "keyword": "recharge",
             "category": "Transport"
         },
         {
-            "keyword": "réguler les températures",
-            "category": "General"
-        },
-        {
             "keyword": "relocaliser la production",
             "category": "Industrie"
-        },
-        {
-            "keyword": "rénovation",
-            "category": "Batiments"
-        },
-        {
-            "keyword": "rénovation énergétique",
-            "category": "Batiments"
         },
         {
             "keyword": "replantation",
@@ -3003,10 +2971,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "replanter",
             "category": "Ecosystème"
-        },
-        {
-            "keyword": "résistance thermique",
-            "category": "Batiments"
         },
         {
             "keyword": "responsable",
@@ -3021,6 +2985,26 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
+            "keyword": "réacteur nucléaire",
+            "category": "Energie"
+        },
+        {
+            "keyword": "réguler les températures",
+            "category": "General"
+        },
+        {
+            "keyword": "rénovation",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "rénovation énergétique",
+            "category": "Batiments"
+        },
+        {
+            "keyword": "résistance thermique",
+            "category": "Batiments"
+        },
+        {
             "keyword": "saf",
             "category": "Transport"
         },
@@ -3031,14 +3015,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "taxe carbone",
             "category": "General"
-        },
-        {
-            "keyword": "té heu air",
-            "category": "Transport"
-        },
-        {
-            "keyword": "tégévé",
-            "category": "Transport"
         },
         {
             "keyword": "ter",
@@ -3085,6 +3061,34 @@ THEME_KEYWORDS = {
             "category": "Economie des ressources"
         },
         {
+            "keyword": "té heu air",
+            "category": "Transport"
+        },
+        {
+            "keyword": "tégévé",
+            "category": "Transport"
+        },
+        {
+            "keyword": "verdir",
+            "category": ""
+        },
+        {
+            "keyword": "verdure",
+            "category": ""
+        },
+        {
+            "keyword": "vertueux",
+            "category": "General"
+        },
+        {
+            "keyword": "ville durable",
+            "category": "General"
+        },
+        {
+            "keyword": "voitures électriques",
+            "category": "Transport"
+        },
+        {
             "keyword": "végan",
             "category": "Agriculture"
         },
@@ -3109,26 +3113,6 @@ THEME_KEYWORDS = {
             "category": "Transport"
         },
         {
-            "keyword": "verdir",
-            "category": ""
-        },
-        {
-            "keyword": "verdure",
-            "category": ""
-        },
-        {
-            "keyword": "vertueux",
-            "category": "General"
-        },
-        {
-            "keyword": "ville durable",
-            "category": "General"
-        },
-        {
-            "keyword": "voitures électriques",
-            "category": "Transport"
-        },
-        {
             "keyword": "zad",
             "category": "Ecosystème"
         },
@@ -3139,6 +3123,22 @@ THEME_KEYWORDS = {
         {
             "keyword": "zadiste",
             "category": "General"
+        },
+        {
+            "keyword": "économie de carburant",
+            "category": "Transport"
+        },
+        {
+            "keyword": "écotaxe",
+            "category": "Transport"
+        },
+        {
+            "keyword": "éducation au changement climatique",
+            "category": "General"
+        },
+        {
+            "keyword": "épargne citoyenne",
+            "category": "Economie des ressources"
         }
     ],
     "changement_climatique_causes_indirectes": [
@@ -3227,24 +3227,16 @@ THEME_KEYWORDS = {
             "category": "Batiments"
         },
         {
+            "keyword": "diesel",
+            "category": "Energie"
+        },
+        {
             "keyword": "déchet",
             "category": "Economie des ressources"
         },
         {
             "keyword": "déperdition de chaleur",
             "category": "Batiments"
-        },
-        {
-            "keyword": "diesel",
-            "category": "Energie"
-        },
-        {
-            "keyword": "élevage",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "élevage bovine",
-            "category": "Agriculture"
         },
         {
             "keyword": "emballage en plastique",
@@ -3295,10 +3287,6 @@ THEME_KEYWORDS = {
             "category": "Energie"
         },
         {
-            "keyword": "îlot de chaleur",
-            "category": "Batiments"
-        },
-        {
             "keyword": "industrialisation",
             "category": "Industrie"
         },
@@ -3335,16 +3323,12 @@ THEME_KEYWORDS = {
             "category": "Energie"
         },
         {
-            "keyword": "passoire énergétique",
-            "category": "Batiments"
-        },
-        {
             "keyword": "passoire thermique",
             "category": "Batiments"
         },
         {
-            "keyword": "pétrole",
-            "category": "Energie"
+            "keyword": "passoire énergétique",
+            "category": "Batiments"
         },
         {
             "keyword": "pollue",
@@ -3364,6 +3348,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "puit de pétrole",
+            "category": "Energie"
+        },
+        {
+            "keyword": "pétrole",
             "category": "Energie"
         },
         {
@@ -3431,16 +3419,28 @@ THEME_KEYWORDS = {
             "category": "Transport"
         },
         {
-            "keyword": "vol paris new york",
+            "keyword": "vol direct",
             "category": "Transport"
         },
         {
-            "keyword": "vol direct",
+            "keyword": "vol paris new york",
             "category": "Transport"
         },
         {
             "keyword": "voyager",
             "category": "Transport"
+        },
+        {
+            "keyword": "élevage",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "élevage bovine",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "îlot de chaleur",
+            "category": "Batiments"
         }
     ],
     "adaptation_climatique_solutions": [
@@ -3469,11 +3469,11 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
-            "keyword": "agroécologie",
+            "keyword": "agroforesterie",
             "category": "Agriculture"
         },
         {
-            "keyword": "agroforesterie",
+            "keyword": "agroécologie",
             "category": "Agriculture"
         },
         {
@@ -3505,14 +3505,6 @@ THEME_KEYWORDS = {
             "category": "Eau"
         },
         {
-            "keyword": "économie d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "économiser l'eau",
-            "category": "Eau"
-        },
-        {
             "keyword": "foresterie urbaine",
             "category": "Ecosystème"
         },
@@ -3537,10 +3529,6 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
-            "keyword": "îlot de fraîcheur",
-            "category": "Ecosystème"
-        },
-        {
             "keyword": "limiter l’érosion des côtes",
             "category": "General"
         },
@@ -3561,8 +3549,12 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "pêche durable",
-            "category": "Agriculture"
+            "keyword": "prise de conscience environnementale",
+            "category": "General"
+        },
+        {
+            "keyword": "prise de conscience écologique",
+            "category": "General"
         },
         {
             "keyword": "préservation de la ressource en eau",
@@ -3577,27 +3569,7 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "prise de conscience écologique",
-            "category": "General"
-        },
-        {
-            "keyword": "prise de conscience environnementale",
-            "category": "General"
-        },
-        {
-            "keyword": "récupérateur d'eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "récupérer l'eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "réduction de la demande en eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "réduire l’élevage intensif",
+            "keyword": "pêche durable",
             "category": "Agriculture"
         },
         {
@@ -3615,6 +3587,38 @@ THEME_KEYWORDS = {
         {
             "keyword": "renforcer les dunes",
             "category": "Ecosystème"
+        },
+        {
+            "keyword": "restriction d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "retenue collinaire",
+            "category": "Eau"
+        },
+        {
+            "keyword": "revégétalisation",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "revégétaliser",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "récupérateur d'eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "récupérer l'eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réduction de la demande en eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réduire l’élevage intensif",
+            "category": "Agriculture"
         },
         {
             "keyword": "rénovation des batiments",
@@ -3637,39 +3641,35 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
-            "keyword": "restriction d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "retenue collinaire",
-            "category": "Eau"
-        },
-        {
             "keyword": "réutilisation des eaux usées traitées",
             "category": "Eau"
-        },
-        {
-            "keyword": "revégétalisation",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "revégétaliser",
-            "category": "Ecosystème"
         },
         {
             "keyword": "sauvegarde de la ressource en eau",
             "category": "Eau"
         },
         {
-            "keyword": "tévéa verte",
-            "category": "General"
-        },
-        {
             "keyword": "tva verte",
             "category": "General"
         },
         {
+            "keyword": "tévéa verte",
+            "category": "General"
+        },
+        {
+            "keyword": "verdir la politique agricole",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "vertueux pour la planète",
+            "category": "General"
+        },
+        {
             "keyword": "végétalisation",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "végétaliser",
             "category": "Ecosystème"
         },
         {
@@ -3681,16 +3681,16 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
-            "keyword": "végétaliser",
+            "keyword": "économie d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "économiser l'eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "îlot de fraîcheur",
             "category": "Ecosystème"
-        },
-        {
-            "keyword": "verdir la politique agricole",
-            "category": "Agriculture"
-        },
-        {
-            "keyword": "vertueux pour la planète",
-            "category": "General"
         }
     ],
     "biodiversite_concepts_generaux": [
@@ -3751,10 +3751,6 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "déclin du vivant",
-            "category": ""
-        },
-        {
             "keyword": "destruction de la planète",
             "category": ""
         },
@@ -3775,19 +3771,7 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "écologique",
-            "category": ""
-        },
-        {
-            "keyword": "écosystème forestier",
-            "category": ""
-        },
-        {
-            "keyword": "écosystèmes dégradés",
-            "category": ""
-        },
-        {
-            "keyword": "écosystémique",
+            "keyword": "déclin du vivant",
             "category": ""
         },
         {
@@ -3851,11 +3835,11 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "résilience des écosystèmes",
+            "keyword": "ressource planétaire",
             "category": ""
         },
         {
-            "keyword": "ressource planétaire",
+            "keyword": "résilience des écosystèmes",
             "category": ""
         },
         {
@@ -3897,6 +3881,22 @@ THEME_KEYWORDS = {
         {
             "keyword": "zones humides",
             "category": ""
+        },
+        {
+            "keyword": "écologique",
+            "category": ""
+        },
+        {
+            "keyword": "écosystème forestier",
+            "category": ""
+        },
+        {
+            "keyword": "écosystèmes dégradés",
+            "category": ""
+        },
+        {
+            "keyword": "écosystémique",
+            "category": ""
         }
     ],
     "changement_climatique_constat_indirectes": [
@@ -3933,10 +3933,6 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "bâtiment",
-            "category": "Batiments"
-        },
-        {
             "keyword": "batterie",
             "category": ""
         },
@@ -3947,6 +3943,10 @@ THEME_KEYWORDS = {
         {
             "keyword": "bouquet énergétique",
             "category": ""
+        },
+        {
+            "keyword": "bâtiment",
+            "category": "Batiments"
         },
         {
             "keyword": "climat",
@@ -3977,30 +3977,6 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "éco-anxiété",
-            "category": ""
-        },
-        {
-            "keyword": "écolo",
-            "category": ""
-        },
-        {
-            "keyword": "écologie",
-            "category": ""
-        },
-        {
-            "keyword": "écologiste",
-            "category": ""
-        },
-        {
-            "keyword": "écosystème",
-            "category": ""
-        },
-        {
-            "keyword": "énergie",
-            "category": ""
-        },
-        {
             "keyword": "environnement",
             "category": ""
         },
@@ -4013,7 +3989,7 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "générations à venir",
+            "keyword": "glacier",
             "category": ""
         },
         {
@@ -4021,7 +3997,7 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "glacier",
+            "keyword": "générations à venir",
             "category": ""
         },
         {
@@ -4065,11 +4041,11 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "planétaire",
+            "keyword": "planète",
             "category": ""
         },
         {
-            "keyword": "planète",
+            "keyword": "planétaire",
             "category": ""
         },
         {
@@ -4094,6 +4070,30 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "terre",
+            "category": ""
+        },
+        {
+            "keyword": "éco-anxiété",
+            "category": ""
+        },
+        {
+            "keyword": "écolo",
+            "category": ""
+        },
+        {
+            "keyword": "écologie",
+            "category": ""
+        },
+        {
+            "keyword": "écologiste",
+            "category": ""
+        },
+        {
+            "keyword": "écosystème",
+            "category": ""
+        },
+        {
+            "keyword": "énergie",
             "category": ""
         }
     ],
@@ -4127,11 +4127,11 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "agroécologie",
+            "keyword": "agroforesterie",
             "category": "Agriculture"
         },
         {
-            "keyword": "agroforesterie",
+            "keyword": "agroécologie",
             "category": "Agriculture"
         },
         {
@@ -4143,12 +4143,12 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
-            "keyword": "amélioration des pratiques d’élevages",
-            "category": "Agriculture"
-        },
-        {
             "keyword": "amoureux de la nature",
             "category": "Ecosystème"
+        },
+        {
+            "keyword": "amélioration des pratiques d’élevages",
+            "category": "Agriculture"
         },
         {
             "keyword": "bien-être des animaux",
@@ -4179,10 +4179,6 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
-            "keyword": "dépollution",
-            "category": "General"
-        },
-        {
             "keyword": "droit de l’environnement",
             "category": "General"
         },
@@ -4191,32 +4187,12 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "éco geste",
+            "keyword": "dépollution",
             "category": "General"
-        },
-        {
-            "keyword": "éco responsable",
-            "category": "General"
-        },
-        {
-            "keyword": "économie circulaire",
-            "category": "Economie des ressources"
-        },
-        {
-            "keyword": "écoresponsable",
-            "category": "General"
-        },
-        {
-            "keyword": "équilibre pour la faune et la flore",
-            "category": "Ecosystème"
         },
         {
             "keyword": "espèce protégée",
             "category": ""
-        },
-        {
-            "keyword": "étiquetage unique des aliments",
-            "category": "Agriculture"
         },
         {
             "keyword": "fiscalité environnementale",
@@ -4287,27 +4263,11 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
-            "keyword": "préservation d'espèce",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "préservation de la biodiversité",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "préservation des milieux",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "préserver les fonds marins",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "prise de conscience écologique",
+            "keyword": "prise de conscience environnementale",
             "category": "General"
         },
         {
-            "keyword": "prise de conscience environnementale",
+            "keyword": "prise de conscience écologique",
             "category": "General"
         },
         {
@@ -4335,12 +4295,12 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
-            "keyword": "protection des côtes",
-            "category": "Ecosystème"
-        },
-        {
             "keyword": "protection des cours d’eau",
             "category": "Eau"
+        },
+        {
+            "keyword": "protection des côtes",
+            "category": "Ecosystème"
         },
         {
             "keyword": "protection des espèces",
@@ -4379,16 +4339,24 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
+            "keyword": "préservation d'espèce",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "préservation de la biodiversité",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "préservation des milieux",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "préserver les fonds marins",
+            "category": "Ecosystème"
+        },
+        {
             "keyword": "recyclant",
             "category": "Economie des ressources"
-        },
-        {
-            "keyword": "réduire la consommation d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "réduire le cheptel",
-            "category": "Agriculture"
         },
         {
             "keyword": "reduire les emballages",
@@ -4399,28 +4367,8 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
-            "keyword": "réintroduction d'espèce",
-            "category": "Ecosystème"
-        },
-        {
             "keyword": "renaturer",
             "category": "Ecosystème"
-        },
-        {
-            "keyword": "réserve de biosphère",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "réserve naturelle",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "résistant à la sécheresse",
-            "category": "General"
-        },
-        {
-            "keyword": "résistante à la sécheresse",
-            "category": "General"
         },
         {
             "keyword": "respectueux de l'environnement",
@@ -4443,10 +4391,6 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
-            "keyword": "restauration des écosystèmes",
-            "category": "Ecosystème"
-        },
-        {
             "keyword": "restauration des forêts",
             "category": "Ecosystème"
         },
@@ -4460,6 +4404,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "restauration des zones humides",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "restauration des écosystèmes",
             "category": "Ecosystème"
         },
         {
@@ -4495,6 +4443,34 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
+            "keyword": "réduire la consommation d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réduire le cheptel",
+            "category": "Agriculture"
+        },
+        {
+            "keyword": "réintroduction d'espèce",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "réserve de biosphère",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "réserve naturelle",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "résistant à la sécheresse",
+            "category": "General"
+        },
+        {
+            "keyword": "résistante à la sécheresse",
+            "category": "General"
+        },
+        {
             "keyword": "sauver des espèces",
             "category": "Ecosystème"
         },
@@ -4519,30 +4495,6 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "végétalisation",
-            "category": ""
-        },
-        {
-            "keyword": "végétalisation des espaces urbains",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "végétalisation des villes",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "végétalisé",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "végétalisée",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "végétaliser",
-            "category": "Ecosystème"
-        },
-        {
             "keyword": "verdir la politique agricole",
             "category": "Agriculture"
         },
@@ -4555,8 +4507,56 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
+            "keyword": "végétalisation",
+            "category": ""
+        },
+        {
+            "keyword": "végétalisation des espaces urbains",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "végétalisation des villes",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "végétaliser",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "végétalisé",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "végétalisée",
+            "category": "Ecosystème"
+        },
+        {
             "keyword": "zone naturelle protégée",
             "category": ""
+        },
+        {
+            "keyword": "éco geste",
+            "category": "General"
+        },
+        {
+            "keyword": "éco responsable",
+            "category": "General"
+        },
+        {
+            "keyword": "économie circulaire",
+            "category": "Economie des ressources"
+        },
+        {
+            "keyword": "écoresponsable",
+            "category": "General"
+        },
+        {
+            "keyword": "équilibre pour la faune et la flore",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "étiquetage unique des aliments",
+            "category": "Agriculture"
         }
     ],
     "biodiversite_solutions_indirectes": [
@@ -4595,10 +4595,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "décroissance",
             "category": "General"
-        },
-        {
-            "keyword": "épargne citoyenne",
-            "category": "Economie des ressources"
         },
         {
             "keyword": "espace vert",
@@ -4653,10 +4649,6 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
-            "keyword": "pêche durable",
-            "category": "Agriculture"
-        },
-        {
             "keyword": "permaculture",
             "category": "Agriculture"
         },
@@ -4665,12 +4657,12 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
-            "keyword": "plus d’oxygène",
-            "category": ""
-        },
-        {
             "keyword": "plus durable",
             "category": "General"
+        },
+        {
+            "keyword": "plus d’oxygène",
+            "category": ""
         },
         {
             "keyword": "polyculture élevage",
@@ -4685,15 +4677,15 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
-            "keyword": "préserver",
-            "category": "General"
-        },
-        {
             "keyword": "principe de précaution",
             "category": "General"
         },
         {
-            "keyword": "réduire l’élevage intensif",
+            "keyword": "préserver",
+            "category": "General"
+        },
+        {
+            "keyword": "pêche durable",
             "category": "Agriculture"
         },
         {
@@ -4717,16 +4709,16 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
+            "keyword": "réduire l’élevage intensif",
+            "category": "Agriculture"
+        },
+        {
             "keyword": "toit-jardin",
             "category": "Ecosystème"
         },
         {
             "keyword": "variété rustique",
             "category": "Ecosystème"
-        },
-        {
-            "keyword": "végétation",
-            "category": "General"
         },
         {
             "keyword": "verdir",
@@ -4745,12 +4737,20 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "végétation",
+            "category": "General"
+        },
+        {
             "keyword": "zan",
             "category": "Ecosystème"
         },
         {
             "keyword": "zéro artificialisation nette",
             "category": "Ecosystème"
+        },
+        {
+            "keyword": "épargne citoyenne",
+            "category": "Economie des ressources"
         }
     ],
     "adaptation_climatique_solutions_indirectes": [
@@ -4873,15 +4873,15 @@ THEME_KEYWORDS = {
     ],
     "biodiversite_consequences_indirectes": [
         {
+            "keyword": "assécher",
+            "category": ""
+        },
+        {
             "keyword": "asséché",
             "category": ""
         },
         {
             "keyword": "asséchée",
-            "category": ""
-        },
-        {
-            "keyword": "assécher",
             "category": ""
         },
         {
@@ -4975,11 +4975,11 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "baisse des récoltes",
+            "keyword": "baisse des rendements agricoles",
             "category": ""
         },
         {
-            "keyword": "baisse des rendements agricoles",
+            "keyword": "baisse des récoltes",
             "category": ""
         },
         {
@@ -5000,14 +5000,6 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "crise d'extinction de masse",
-            "category": ""
-        },
-        {
-            "keyword": "dégradation des puits de carbone",
-            "category": ""
-        },
-        {
-            "keyword": "dégradation des sols",
             "category": ""
         },
         {
@@ -5035,8 +5027,12 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "écosystème dégradé",
-            "category": "Ecosystème"
+            "keyword": "dégradation des puits de carbone",
+            "category": ""
+        },
+        {
+            "keyword": "dégradation des sols",
+            "category": ""
         },
         {
             "keyword": "espèce en voie de disparition",
@@ -5044,10 +5040,6 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "espèce envahissante",
-            "category": ""
-        },
-        {
-            "keyword": "espèce éteinte",
             "category": ""
         },
         {
@@ -5064,6 +5056,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "espèce menacée d’extinction",
+            "category": ""
+        },
+        {
+            "keyword": "espèce éteinte",
             "category": ""
         },
         {
@@ -5137,6 +5133,10 @@ THEME_KEYWORDS = {
         {
             "keyword": "zoonotique",
             "category": ""
+        },
+        {
+            "keyword": "écosystème dégradé",
+            "category": "Ecosystème"
         }
     ],
     "adaptation_cilmatique_solutions": [
@@ -5178,14 +5178,6 @@ THEME_KEYWORDS = {
         }
     ],
     "ressources_indirectes": [
-        {
-            "keyword": "déchet",
-            "category": "Economie circulaire"
-        },
-        {
-            "keyword": "gaspillage",
-            "category": "Concepts généraux"
-        },
         {
             "keyword": "abondance",
             "category": "Concepts généraux"
@@ -5255,15 +5247,15 @@ THEME_KEYWORDS = {
             "category": "Eau"
         },
         {
+            "keyword": "assécher",
+            "category": "Eau"
+        },
+        {
             "keyword": "asséché",
             "category": "Eau"
         },
         {
             "keyword": "asséchée",
-            "category": "Eau"
-        },
-        {
-            "keyword": "assécher",
             "category": "Eau"
         },
         {
@@ -5279,12 +5271,12 @@ THEME_KEYWORDS = {
             "category": "Energie"
         },
         {
-            "keyword": "bétonner",
-            "category": "Sols"
-        },
-        {
             "keyword": "bouquet énergétique",
             "category": "Energie"
+        },
+        {
+            "keyword": "bétonner",
+            "category": "Sols"
         },
         {
             "keyword": "cadmium",
@@ -5355,7 +5347,7 @@ THEME_KEYWORDS = {
             "category": "Economie circulaire"
         },
         {
-            "keyword": "déchèterie",
+            "keyword": "déchet",
             "category": "Economie circulaire"
         },
         {
@@ -5376,6 +5368,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "déchetterie",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "déchèterie",
             "category": "Economie circulaire"
         },
         {
@@ -5404,14 +5400,6 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "eaux douces",
-            "category": "Eau"
-        },
-        {
-            "keyword": "éco-sac wc",
-            "category": "Eau"
-        },
-        {
-            "keyword": "écologie",
             "category": "Eau"
         },
         {
@@ -5459,16 +5447,32 @@ THEME_KEYWORDS = {
             "category": "Forêt"
         },
         {
-            "keyword": "forêt",
-            "category": "Forêt"
-        },
-        {
             "keyword": "forte pluie",
             "category": "Eau"
         },
         {
+            "keyword": "forêt",
+            "category": "Forêt"
+        },
+        {
             "keyword": "fuite d'eau",
             "category": "Eau"
+        },
+        {
+            "keyword": "gaspillage",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "gaz naturel",
+            "category": "Energie"
+        },
+        {
+            "keyword": "gigantisme",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "gisement",
+            "category": "Métaux et minerais"
         },
         {
             "keyword": "gâchis",
@@ -5479,24 +5483,12 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
-            "keyword": "gaz naturel",
-            "category": "Energie"
-        },
-        {
-            "keyword": "générations à venir",
-            "category": "Concepts généraux"
-        },
-        {
             "keyword": "générations futures",
             "category": "Concepts généraux"
         },
         {
-            "keyword": "gigantisme",
+            "keyword": "générations à venir",
             "category": "Concepts généraux"
-        },
-        {
-            "keyword": "gisement",
-            "category": "Métaux et minerais"
         },
         {
             "keyword": "habiter le monde",
@@ -5563,18 +5555,6 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
-            "keyword": "mégot",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "métaux lourds",
-            "category": "Sols"
-        },
-        {
-            "keyword": "métaux lourds",
-            "category": "Eau"
-        },
-        {
             "keyword": "mines",
             "category": "Métaux et minerais"
         },
@@ -5585,6 +5565,18 @@ THEME_KEYWORDS = {
         {
             "keyword": "modèle agricole",
             "category": "Concepts généraux"
+        },
+        {
+            "keyword": "mégot",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "métaux lourds",
+            "category": "Sols"
+        },
+        {
+            "keyword": "métaux lourds",
+            "category": "Eau"
         },
         {
             "keyword": "nature empoisonée",
@@ -5599,23 +5591,15 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
-            "keyword": "pénurie",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "pétrole",
-            "category": "Energie"
-        },
-        {
-            "keyword": "planétaire",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "planétaire",
-            "category": "Concepts généraux"
-        },
-        {
             "keyword": "planète",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "planétaire",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "planétaire",
             "category": "Concepts généraux"
         },
         {
@@ -5660,6 +5644,14 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "puit de pétrole",
+            "category": "Energie"
+        },
+        {
+            "keyword": "pénurie",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "pétrole",
             "category": "Energie"
         },
         {
@@ -5765,13 +5757,17 @@ THEME_KEYWORDS = {
         {
             "keyword": "zinc",
             "category": "Eau"
+        },
+        {
+            "keyword": "éco-sac wc",
+            "category": "Eau"
+        },
+        {
+            "keyword": "écologie",
+            "category": "Eau"
         }
     ],
     "ressources_solutions": [
-        {
-            "keyword": "économie circulaire",
-            "category": "Economie circulaire"
-        },
         {
             "keyword": "acv",
             "category": "Economie circulaire"
@@ -5881,6 +5877,10 @@ THEME_KEYWORDS = {
             "category": "Sols"
         },
         {
+            "keyword": "agroforesterie",
+            "category": "Forêt"
+        },
+        {
             "keyword": "agroécologie",
             "category": "Air"
         },
@@ -5895,10 +5895,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroécologie",
             "category": "Sols"
-        },
-        {
-            "keyword": "agroforesterie",
-            "category": "Forêt"
         },
         {
             "keyword": "amélioration des pratiques d’élevage",
@@ -6017,6 +6013,18 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
+            "keyword": "descente énergétique",
+            "category": "Energie"
+        },
+        {
+            "keyword": "désalinisation des eaux",
+            "category": "Eau"
+        },
+        {
+            "keyword": "droit environnemental",
+            "category": "Concepts généraux"
+        },
+        {
             "keyword": "déchet valorisé",
             "category": "Economie circulaire"
         },
@@ -6029,96 +6037,16 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
-            "keyword": "désalinisation des eaux",
-            "category": "Eau"
-        },
-        {
-            "keyword": "descente énergétique",
-            "category": "Energie"
-        },
-        {
-            "keyword": "droit environnemental",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "éco conception",
-            "category": "Economie circulaire"
-        },
-        {
-            "keyword": "éco responsable",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "écoconception",
-            "category": "Economie circulaire"
-        },
-        {
-            "keyword": "écologie industrielle",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "économie d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "économie d’énergie",
-            "category": "Energie"
-        },
-        {
-            "keyword": "économie du réemploi",
-            "category": "Economie circulaire"
-        },
-        {
-            "keyword": "économie qui répare",
-            "category": "Economie circulaire"
-        },
-        {
-            "keyword": "économiser de l’énergie",
-            "category": "Energie"
-        },
-        {
-            "keyword": "écoresponsable",
-            "category": "Concepts généraux"
-        },
-        {
             "keyword": "efficacité énergétique",
             "category": "Concepts généraux"
         },
         {
             "keyword": "efficacité énergétique",
-            "category": "Energie"
-        },
-        {
-            "keyword": "énergie durable",
-            "category": "Energie"
-        },
-        {
-            "keyword": "énergie renouvelable",
-            "category": "Energie"
-        },
-        {
-            "keyword": "énergie solaire",
-            "category": "Energie"
-        },
-        {
-            "keyword": "énergie verte",
-            "category": "Energie"
-        },
-        {
-            "keyword": "éolien",
-            "category": "Energie"
-        },
-        {
-            "keyword": "éolienne",
             "category": "Energie"
         },
         {
             "keyword": "epr",
             "category": "Energie"
-        },
-        {
-            "keyword": "éviter le plastique",
-            "category": "Economie circulaire"
         },
         {
             "keyword": "fin de l'abondance",
@@ -6135,10 +6063,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "gaspiller moins",
             "category": "Economie circulaire"
-        },
-        {
-            "keyword": "géothermie",
-            "category": "Energie"
         },
         {
             "keyword": "gestion de la ressource en eau",
@@ -6165,11 +6089,15 @@ THEME_KEYWORDS = {
             "category": "Sols"
         },
         {
-            "keyword": "hydroélectricité",
+            "keyword": "géothermie",
             "category": "Energie"
         },
         {
             "keyword": "hydrogène vert",
+            "category": "Energie"
+        },
+        {
+            "keyword": "hydroélectricité",
             "category": "Energie"
         },
         {
@@ -6201,10 +6129,6 @@ THEME_KEYWORDS = {
             "category": "Eau"
         },
         {
-            "keyword": "maîtrise de la demande",
-            "category": "Concepts généraux"
-        },
-        {
             "keyword": "malus écologique",
             "category": "Concepts généraux"
         },
@@ -6219,6 +6143,10 @@ THEME_KEYWORDS = {
         {
             "keyword": "matériaux recyclés",
             "category": "Economie circulaire"
+        },
+        {
+            "keyword": "maîtrise de la demande",
+            "category": "Concepts généraux"
         },
         {
             "keyword": "moins consommer",
@@ -6261,10 +6189,6 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
-            "keyword": "pêche durable",
-            "category": "Eau"
-        },
-        {
             "keyword": "permaculture",
             "category": "Air"
         },
@@ -6301,6 +6225,18 @@ THEME_KEYWORDS = {
             "category": "Economie circulaire"
         },
         {
+            "keyword": "prise de conscience environnementale",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "prise de conscience écologique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "protection des cours d’eau",
+            "category": "Eau"
+        },
+        {
             "keyword": "préservation de la ressource en eau",
             "category": "Eau"
         },
@@ -6313,23 +6249,7 @@ THEME_KEYWORDS = {
             "category": "Eau"
         },
         {
-            "keyword": "prise de conscience écologique",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "prise de conscience environnementale",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "protection des cours d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "récupérateur d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "récupérer l'eau",
+            "keyword": "pêche durable",
             "category": "Eau"
         },
         {
@@ -6347,6 +6267,46 @@ THEME_KEYWORDS = {
         {
             "keyword": "recyclerie",
             "category": "Economie circulaire"
+        },
+        {
+            "keyword": "reduire les emballages",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "repair cafés",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "respect de l’environnement",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "respectueux de l’environnement",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "ressource renouvelable",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "restriction d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "retenue collinaire",
+            "category": "Eau"
+        },
+        {
+            "keyword": "revégétaliser",
+            "category": "Sols"
+        },
+        {
+            "keyword": "récupérateur d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "récupérer l'eau",
+            "category": "Eau"
         },
         {
             "keyword": "réduction de la consommation",
@@ -6381,22 +6341,6 @@ THEME_KEYWORDS = {
             "category": "Energie"
         },
         {
-            "keyword": "réduire l’élevage intensif",
-            "category": "Air"
-        },
-        {
-            "keyword": "réduire l’élevage intensif",
-            "category": "Eau"
-        },
-        {
-            "keyword": "réduire l’élevage intensif",
-            "category": "Forêt"
-        },
-        {
-            "keyword": "réduire l’élevage intensif",
-            "category": "Sols"
-        },
-        {
             "keyword": "réduire la consommation d’eau",
             "category": "Eau"
         },
@@ -6417,8 +6361,20 @@ THEME_KEYWORDS = {
             "category": "Air"
         },
         {
-            "keyword": "reduire les emballages",
-            "category": "Economie circulaire"
+            "keyword": "réduire l’élevage intensif",
+            "category": "Air"
+        },
+        {
+            "keyword": "réduire l’élevage intensif",
+            "category": "Eau"
+        },
+        {
+            "keyword": "réduire l’élevage intensif",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "réduire l’élevage intensif",
+            "category": "Sols"
         },
         {
             "keyword": "réduire sa consommation de viande",
@@ -6426,10 +6382,6 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "réemploi",
-            "category": "Economie circulaire"
-        },
-        {
-            "keyword": "repair cafés",
             "category": "Economie circulaire"
         },
         {
@@ -6449,26 +6401,6 @@ THEME_KEYWORDS = {
             "category": "Eau"
         },
         {
-            "keyword": "respect de l’environnement",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "respectueux de l’environnement",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "ressource renouvelable",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "restriction d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "retenue collinaire",
-            "category": "Eau"
-        },
-        {
             "keyword": "réutilisation des eaux",
             "category": "Eau"
         },
@@ -6477,16 +6409,8 @@ THEME_KEYWORDS = {
             "category": "Economie circulaire"
         },
         {
-            "keyword": "revégétaliser",
-            "category": "Sols"
-        },
-        {
             "keyword": "sauvegarde de la ressource en eau",
             "category": "Eau"
-        },
-        {
-            "keyword": "sécurité environnementale",
-            "category": "Concepts généraux"
         },
         {
             "keyword": "semaine du développement durable",
@@ -6533,12 +6457,8 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
-            "keyword": "tévéa verte",
+            "keyword": "sécurité environnementale",
             "category": "Concepts généraux"
-        },
-        {
-            "keyword": "tri à la source",
-            "category": "Economie circulaire"
         },
         {
             "keyword": "tri des ordures",
@@ -6549,7 +6469,15 @@ THEME_KEYWORDS = {
             "category": "Economie circulaire"
         },
         {
+            "keyword": "tri à la source",
+            "category": "Economie circulaire"
+        },
+        {
             "keyword": "tva verte",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "tévéa verte",
             "category": "Concepts généraux"
         },
         {
@@ -6573,6 +6501,10 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
+            "keyword": "zone naturelle protégée",
+            "category": "Forêt"
+        },
+        {
             "keyword": "zéro déchet",
             "category": "Economie circulaire"
         },
@@ -6585,15 +6517,79 @@ THEME_KEYWORDS = {
             "category": "Economie circulaire"
         },
         {
-            "keyword": "zone naturelle protégée",
-            "category": "Forêt"
+            "keyword": "éco conception",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "éco responsable",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "écoconception",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "écologie industrielle",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "économie circulaire",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "économie du réemploi",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "économie d’eau",
+            "category": "Eau"
+        },
+        {
+            "keyword": "économie d’énergie",
+            "category": "Energie"
+        },
+        {
+            "keyword": "économie qui répare",
+            "category": "Economie circulaire"
+        },
+        {
+            "keyword": "économiser de l’énergie",
+            "category": "Energie"
+        },
+        {
+            "keyword": "écoresponsable",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "énergie durable",
+            "category": "Energie"
+        },
+        {
+            "keyword": "énergie renouvelable",
+            "category": "Energie"
+        },
+        {
+            "keyword": "énergie solaire",
+            "category": "Energie"
+        },
+        {
+            "keyword": "énergie verte",
+            "category": "Energie"
+        },
+        {
+            "keyword": "éolien",
+            "category": "Energie"
+        },
+        {
+            "keyword": "éolienne",
+            "category": "Energie"
+        },
+        {
+            "keyword": "éviter le plastique",
+            "category": "Economie circulaire"
         }
     ],
     "ressources_solutions_indirectes": [
-        {
-            "keyword": "plus durable",
-            "category": "Concepts généraux"
-        },
         {
             "keyword": "agriculture durable",
             "category": "Air"
@@ -6667,31 +6663,15 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
+            "keyword": "durée de vie",
+            "category": "Economie circulaire"
+        },
+        {
             "keyword": "déconstruire",
             "category": "Concepts généraux"
         },
         {
             "keyword": "décroissance",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "durée de vie",
-            "category": "Economie circulaire"
-        },
-        {
-            "keyword": "écolo",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "économie d'énergie",
-            "category": "Energie"
-        },
-        {
-            "keyword": "économie de carburant",
-            "category": "Energie"
-        },
-        {
-            "keyword": "épargne citoyenne",
             "category": "Concepts généraux"
         },
         {
@@ -6719,11 +6699,11 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
-            "keyword": "méga bassine",
+            "keyword": "mousseur",
             "category": "Eau"
         },
         {
-            "keyword": "mousseur",
+            "keyword": "méga bassine",
             "category": "Eau"
         },
         {
@@ -6737,6 +6717,10 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus d'oxygène",
             "category": "Air"
+        },
+        {
+            "keyword": "plus durable",
+            "category": "Concepts généraux"
         },
         {
             "keyword": "polyculture élevage",
@@ -6759,10 +6743,6 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
-            "keyword": "préserver",
-            "category": "Concepts généraux"
-        },
-        {
             "keyword": "produits en vrac",
             "category": "Economie circulaire"
         },
@@ -6771,20 +6751,16 @@ THEME_KEYWORDS = {
             "category": "Economie circulaire"
         },
         {
+            "keyword": "préserver",
+            "category": "Concepts généraux"
+        },
+        {
             "keyword": "rationnement",
             "category": "Concepts généraux"
         },
         {
             "keyword": "rationner",
             "category": "Concepts généraux"
-        },
-        {
-            "keyword": "réacteur nucléaire",
-            "category": "Energie"
-        },
-        {
-            "keyword": "réparation",
-            "category": "Economie circulaire"
         },
         {
             "keyword": "replantation",
@@ -6835,15 +6811,23 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
+            "keyword": "réacteur nucléaire",
+            "category": "Energie"
+        },
+        {
+            "keyword": "réparation",
+            "category": "Economie circulaire"
+        },
+        {
             "keyword": "se nourrir mieux",
             "category": "Concepts généraux"
         },
         {
-            "keyword": "toilette à double débit",
+            "keyword": "toilette sèche",
             "category": "Eau"
         },
         {
-            "keyword": "toilette sèche",
+            "keyword": "toilette à double débit",
             "category": "Eau"
         },
         {
@@ -6855,67 +6839,79 @@ THEME_KEYWORDS = {
             "category": "Economie circulaire"
         },
         {
-            "keyword": "végan",
-            "category": "Air"
-        },
-        {
-            "keyword": "végan",
-            "category": "Eau"
-        },
-        {
-            "keyword": "végan",
-            "category": "Forêt"
-        },
-        {
-            "keyword": "végan",
-            "category": "Sols"
-        },
-        {
-            "keyword": "végétarien",
-            "category": "Air"
-        },
-        {
-            "keyword": "végétarien",
-            "category": "Eau"
-        },
-        {
-            "keyword": "végétarien",
-            "category": "Forêt"
-        },
-        {
-            "keyword": "végétarien",
-            "category": "Sols"
-        },
-        {
-            "keyword": "végétarienne",
-            "category": "Air"
-        },
-        {
-            "keyword": "végétarienne",
-            "category": "Eau"
-        },
-        {
-            "keyword": "végétarienne",
-            "category": "Forêt"
-        },
-        {
-            "keyword": "végétarienne",
-            "category": "Sols"
-        },
-        {
             "keyword": "vertueux",
             "category": "Concepts généraux"
         },
         {
             "keyword": "vrac",
             "category": "Economie circulaire"
+        },
+        {
+            "keyword": "végan",
+            "category": "Air"
+        },
+        {
+            "keyword": "végan",
+            "category": "Eau"
+        },
+        {
+            "keyword": "végan",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "végan",
+            "category": "Sols"
+        },
+        {
+            "keyword": "végétarien",
+            "category": "Air"
+        },
+        {
+            "keyword": "végétarien",
+            "category": "Eau"
+        },
+        {
+            "keyword": "végétarien",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "végétarien",
+            "category": "Sols"
+        },
+        {
+            "keyword": "végétarienne",
+            "category": "Air"
+        },
+        {
+            "keyword": "végétarienne",
+            "category": "Eau"
+        },
+        {
+            "keyword": "végétarienne",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "végétarienne",
+            "category": "Sols"
+        },
+        {
+            "keyword": "écolo",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "économie d'énergie",
+            "category": "Energie"
+        },
+        {
+            "keyword": "économie de carburant",
+            "category": "Energie"
+        },
+        {
+            "keyword": "épargne citoyenne",
+            "category": "Concepts généraux"
         }
     ],
     "ressources": [
-        {
-            "keyword": "trier ses déchets",
-            "category": "Economie circulaire"
-        },
         {
             "keyword": "accès à l’eau",
             "category": "Eau"
@@ -7013,23 +7009,15 @@ THEME_KEYWORDS = {
             "category": "Eau"
         },
         {
+            "keyword": "baisse des rendements agricoles",
+            "category": "Eau"
+        },
+        {
+            "keyword": "baisse des rendements agricoles",
+            "category": "Sols"
+        },
+        {
             "keyword": "baisse des récoltes",
-            "category": "Sols"
-        },
-        {
-            "keyword": "baisse des rendements agricoles",
-            "category": "Eau"
-        },
-        {
-            "keyword": "baisse des rendements agricoles",
-            "category": "Sols"
-        },
-        {
-            "keyword": "bétonisation",
-            "category": "Eau"
-        },
-        {
-            "keyword": "bétonisation",
             "category": "Sols"
         },
         {
@@ -7043,6 +7031,14 @@ THEME_KEYWORDS = {
         {
             "keyword": "bois énergie",
             "category": "Forêt"
+        },
+        {
+            "keyword": "bétonisation",
+            "category": "Eau"
+        },
+        {
+            "keyword": "bétonisation",
+            "category": "Sols"
         },
         {
             "keyword": "canicule",
@@ -7073,11 +7069,11 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
-            "keyword": "crise écologique",
+            "keyword": "crise environnementale",
             "category": "Concepts généraux"
         },
         {
-            "keyword": "crise environnementale",
+            "keyword": "crise écologique",
             "category": "Concepts généraux"
         },
         {
@@ -7087,6 +7083,22 @@ THEME_KEYWORDS = {
         {
             "keyword": "d'ici 2050",
             "category": "Concepts généraux"
+        },
+        {
+            "keyword": "dessalement de l’eau de mer",
+            "category": "Eau"
+        },
+        {
+            "keyword": "destruction de la planète",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "diminution des rendements agricoles",
+            "category": "Eau"
+        },
+        {
+            "keyword": "diminution des rendements agricoles",
+            "category": "Sols"
         },
         {
             "keyword": "décharge sauvage",
@@ -7113,22 +7125,6 @@ THEME_KEYWORDS = {
             "category": "Economie circulaire"
         },
         {
-            "keyword": "dessalement de l’eau de mer",
-            "category": "Eau"
-        },
-        {
-            "keyword": "destruction de la planète",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "diminution des rendements agricoles",
-            "category": "Eau"
-        },
-        {
-            "keyword": "diminution des rendements agricoles",
-            "category": "Sols"
-        },
-        {
             "keyword": "eau de ruissellement",
             "category": "Eau"
         },
@@ -7149,26 +7145,6 @@ THEME_KEYWORDS = {
             "category": "Eau"
         },
         {
-            "keyword": "écocide",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "écologique",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "écosystème forestier",
-            "category": "Forêt"
-        },
-        {
-            "keyword": "élevage intensif",
-            "category": "Eau"
-        },
-        {
-            "keyword": "élevage intensif",
-            "category": "Sols"
-        },
-        {
             "keyword": "engrais azoté",
             "category": "Air"
         },
@@ -7202,38 +7178,6 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "engrais de synthèse",
-            "category": "Sols"
-        },
-        {
-            "keyword": "épandage",
-            "category": "Sols"
-        },
-        {
-            "keyword": "épandage",
-            "category": "Air"
-        },
-        {
-            "keyword": "épandage",
-            "category": "Eau"
-        },
-        {
-            "keyword": "épuisement des ressources",
-            "category": "Concepts généraux"
-        },
-        {
-            "keyword": "érosion des sols",
-            "category": "Sols"
-        },
-        {
-            "keyword": "érosion éolienne",
-            "category": "Sols"
-        },
-        {
-            "keyword": "érosion hydrique",
-            "category": "Sols"
-        },
-        {
-            "keyword": "étalement urbain",
             "category": "Sols"
         },
         {
@@ -7329,12 +7273,12 @@ THEME_KEYWORDS = {
             "category": "Eau"
         },
         {
-            "keyword": "matériaux polluants",
-            "category": "Concepts généraux"
-        },
-        {
             "keyword": "matière critique",
             "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "matériaux polluants",
+            "category": "Concepts généraux"
         },
         {
             "keyword": "mauvaise santé des sols",
@@ -7343,22 +7287,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "mesure environnementale",
             "category": "Concepts généraux"
-        },
-        {
-            "keyword": "métal critique",
-            "category": "Métaux et minerais"
-        },
-        {
-            "keyword": "métal rare",
-            "category": "Métaux et minerais"
-        },
-        {
-            "keyword": "métaux critiques",
-            "category": "Métaux et minerais"
-        },
-        {
-            "keyword": "métaux rares",
-            "category": "Métaux et minerais"
         },
         {
             "keyword": "minerais",
@@ -7385,6 +7313,22 @@ THEME_KEYWORDS = {
             "category": "Forêt"
         },
         {
+            "keyword": "métal critique",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "métal rare",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "métaux critiques",
+            "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "métaux rares",
+            "category": "Métaux et minerais"
+        },
+        {
             "keyword": "nappe d'eau",
             "category": "Eau"
         },
@@ -7395,14 +7339,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "pacte vert",
             "category": "Concepts généraux"
-        },
-        {
-            "keyword": "pénurie d’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "pénurie de neige",
-            "category": "Eau"
         },
         {
             "keyword": "perte agricole",
@@ -7423,6 +7359,10 @@ THEME_KEYWORDS = {
         {
             "keyword": "pesticide",
             "category": "Sols"
+        },
+        {
+            "keyword": "pénurie de neige",
+            "category": "Eau"
         },
         {
             "keyword": "pfas",
@@ -7485,10 +7425,6 @@ THEME_KEYWORDS = {
             "category": "Air"
         },
         {
-            "keyword": "préserver les fonds marins",
-            "category": "Eau"
-        },
-        {
             "keyword": "problème de sécurité alimentaire",
             "category": "Concepts généraux"
         },
@@ -7497,11 +7433,19 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
+            "keyword": "préserver les fonds marins",
+            "category": "Eau"
+        },
+        {
             "keyword": "ptfe",
             "category": "Sols"
         },
         {
             "keyword": "ptfe",
+            "category": "Eau"
+        },
+        {
+            "keyword": "pénurie d’eau",
             "category": "Eau"
         },
         {
@@ -7513,14 +7457,6 @@ THEME_KEYWORDS = {
             "category": "Eau"
         },
         {
-            "keyword": "raréfaction de l’eau",
-            "category": "Eau"
-        },
-        {
-            "keyword": "raréfaction de la ressource en eau",
-            "category": "Eau"
-        },
-        {
             "keyword": "rareté de la ressource en eau",
             "category": "Eau"
         },
@@ -7529,12 +7465,16 @@ THEME_KEYWORDS = {
             "category": "Eau"
         },
         {
-            "keyword": "rejet polluant",
-            "category": "Concepts généraux"
+            "keyword": "raréfaction de la ressource en eau",
+            "category": "Eau"
         },
         {
-            "keyword": "réserve d'eau",
+            "keyword": "raréfaction de l’eau",
             "category": "Eau"
+        },
+        {
+            "keyword": "rejet polluant",
+            "category": "Concepts généraux"
         },
         {
             "keyword": "ressource minérale",
@@ -7553,6 +7493,10 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
+            "keyword": "réserve d'eau",
+            "category": "Eau"
+        },
+        {
             "keyword": "salinisation des nappes",
             "category": "Eau"
         },
@@ -7567,10 +7511,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "santé des sols",
             "category": "Sols"
-        },
-        {
-            "keyword": "sécheresse",
-            "category": "Eau"
         },
         {
             "keyword": "sevrage aux énergies fossiles",
@@ -7625,6 +7565,10 @@ THEME_KEYWORDS = {
             "category": "Eau"
         },
         {
+            "keyword": "sécheresse",
+            "category": "Eau"
+        },
+        {
             "keyword": "tassement des sols",
             "category": "Sols"
         },
@@ -7637,20 +7581,24 @@ THEME_KEYWORDS = {
             "category": "Concepts généraux"
         },
         {
+            "keyword": "transition en dehors des énergies fossiles",
+            "category": "Energie"
+        },
+        {
+            "keyword": "transition en dehors des énergies fossiles",
+            "category": "Energie"
+        },
+        {
             "keyword": "transition écologique",
             "category": "Concepts généraux"
         },
         {
-            "keyword": "transition en dehors des énergies fossiles",
-            "category": "Energie"
-        },
-        {
-            "keyword": "transition en dehors des énergies fossiles",
-            "category": "Energie"
-        },
-        {
             "keyword": "transition énergétique",
             "category": "Energie"
+        },
+        {
+            "keyword": "trier ses déchets",
+            "category": "Economie circulaire"
         },
         {
             "keyword": "urgence écologique",
@@ -7659,6 +7607,58 @@ THEME_KEYWORDS = {
         {
             "keyword": "vague de chaleur",
             "category": "Eau"
+        },
+        {
+            "keyword": "écocide",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "écologique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "écosystème forestier",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "élevage intensif",
+            "category": "Eau"
+        },
+        {
+            "keyword": "élevage intensif",
+            "category": "Sols"
+        },
+        {
+            "keyword": "épandage",
+            "category": "Sols"
+        },
+        {
+            "keyword": "épandage",
+            "category": "Air"
+        },
+        {
+            "keyword": "épandage",
+            "category": "Eau"
+        },
+        {
+            "keyword": "épuisement des ressources",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "érosion des sols",
+            "category": "Sols"
+        },
+        {
+            "keyword": "érosion hydrique",
+            "category": "Sols"
+        },
+        {
+            "keyword": "érosion éolienne",
+            "category": "Sols"
+        },
+        {
+            "keyword": "étalement urbain",
+            "category": "Sols"
         }
     ]
 }

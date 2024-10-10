@@ -4,26 +4,22 @@ import os
 from datetime import datetime
 import json
 from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime, EPOCH__5MIN_MARGIN, EPOCH__1MIN_MARGIN, get_timestamp_from_yyyymmdd,format_hour_minute
-
+from quotaclimat.data_processing.mediatree.channel_program_data import channels_programs
 def get_programs():
     logging.debug("Getting program tv/radio...")
     try:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        json_file_path = os.path.join(current_dir, 'channel_program.json')
-        logging.info(f"Reading {json_file_path}")
-        with open(json_file_path, 'r') as file:
-            json_data = json.load(file)
-            df_programs = pd.DataFrame(json_data)
+        logging.info(f"Reading channels_programs")
+        df_programs = pd.DataFrame(channels_programs)
 
-            df_programs[['start', 'end', 'program_grid_start', 'program_grid_end']] = df_programs.apply(lambda x: pd.Series({
-                'start': format_hour_minute(x['start']),
-                'end': format_hour_minute(x['end']),
-                'program_grid_start': get_timestamp_from_yyyymmdd(x['program_grid_start']),
-                'program_grid_end': get_timestamp_from_yyyymmdd(x['program_grid_end'])
-            }), axis=1)
+        df_programs[['start', 'end', 'program_grid_start', 'program_grid_end']] = df_programs.apply(lambda x: pd.Series({
+            'start': format_hour_minute(x['start']),
+            'end': format_hour_minute(x['end']),
+            'program_grid_start': get_timestamp_from_yyyymmdd(x['program_grid_start']),
+            'program_grid_end': get_timestamp_from_yyyymmdd(x['program_grid_end'])
+        }), axis=1)
 
     except (Exception) as error:
-        logging.error(f"Could not read channel_program.json {error}")
+        logging.error(f"Could not read channel_program_data.py {error}")
         raise Exception
     
     return df_programs

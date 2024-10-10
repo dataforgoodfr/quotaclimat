@@ -380,6 +380,8 @@ poetry run python3 transform_program.py
 ```
 The SQL queries are based on this file that generate the Program Metadata table.
 
+Program data will not be updated to avoid lock concurrent issues when using `UPDATE=true` for keywords logic. Note: The default case will update them.
+
 **With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.**
 
 ## Production monitoring

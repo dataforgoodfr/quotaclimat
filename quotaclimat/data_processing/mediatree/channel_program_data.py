@@ -1,4 +1,4 @@
-[ 
+channels_programs = [ 
 {"channel_name":"tf1","start":"6:55","end":"9:30","weekday":"weekday","program_grid_start":"2023-04-01","program_grid_end":"","program_name":"Bonjour ! La Matinale","program_type":"Information - Magazine"},
 {"channel_name":"tf1","start":"13:00","end":"13:40","weekday":"weekday","program_grid_start":"2023-04-01","program_grid_end":"","program_name":"JT 13h","program_type":"Information - Journal"},
 {"channel_name":"tf1","start":"13:00","end":"13:40","weekday":"5","program_grid_start":"2023-04-01","program_grid_end":"","program_name":"JT 13h","program_type":"Information - Journal"},

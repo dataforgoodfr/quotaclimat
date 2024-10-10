@@ -140,7 +140,10 @@ def create_tables():
 
         Base.metadata.create_all(engine, checkfirst=True)
         update_channel_metadata(engine)
-        update_program_metadata(engine)
+        if(os.environ.get("UPDATE") != "true"):
+            update_program_metadata(engine)
+        else:
+            logging.warning("No program update as UPDATE=true as it can create lock issues")
         logging.info("Table creation done, if not already done.")
     except (Exception) as error:
         logging.error(error)

@@ -46,6 +46,7 @@ STOP_WORDS = [
     ,"installateur panneaux de photovoltaïques"
     ,"installateurs de panneaux photovoltaïques"
     ,"installateur de panneaux photovoltaïques"
+    ,"panneaux photovoltaïques et même sur les vêtements"
     ,"installateur de panneaux solaires"
     ,"installateurs de panneaux solaires"
     ,"verlaine installation de panneaux solaires"
@@ -85,6 +86,9 @@ STOP_WORDS = [
     ,"on installe des panneaux photovoltaïques borne de recharge"
     ,"on installe des panneaux photovoltaïques des bornes de recharge"
     ,"le leader du photovoltaïque"
+    ,"leader photovoltaïque"
+    ,"leader chez du les photovoltaïque"
+    ,"chez les photovoltaïque particuliers"
     ,"en train d"
     ,"consigne de vote"
     ,"climat de confiance"
@@ -220,6 +224,7 @@ STOP_WORDS = [
     ,"pour recycler votre épave"
     ,"la recycler la vieille"
     ,"ou les notices de panneaux photovoltaïques"
+    ,'leader du photovoltaïque'
     ,"grâce aux dons à la réparation au recyclage"
     ,"renforcement de nos filières de recyclage"
     ,"est partout en france le recyclage de pare-brise"
@@ -278,6 +283,7 @@ STOP_WORDS = [
     ,"pêche durable liddell"
     ,"pêche durable littell"
     ,"pêche durable l' idéal"
+    ,"saumon ici issus de la pêche durable"
     ,"maprimerénov leroy"
     ,"maprimerénov et économiser jusqu' à"
     ,"maprimerénov une offre comme ça même chez lapeyre"
@@ -341,6 +347,7 @@ STOP_WORDS = [
     ,"issu de l' agriculture biologique en boutique"
     ,"agriculture biologique pour les produits de beauté"
     ,"vous aimez les voitures électriques" # renault
+    ,"renault fabrique et entretient des voitures électriques"
     ,"and roll des voitures électriques"
     ,"conduisiez une voiture électrique l' application"
     ,"engie pourquoi l' ordinaire devrait être la norme"
@@ -350,4 +357,5 @@ STOP_WORDS = [
     ,"sans pesticides pour des recettes"
     ,"chez céréales bio"
     ,"agir pour la préserver découvrez comment" #gouv.fr
+    ,"oasis de verdure au milieu"
 ]

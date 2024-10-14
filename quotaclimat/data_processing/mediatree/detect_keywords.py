@@ -108,10 +108,11 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> Li
     return keywords_with_timestamp
 
 def remove_stopwords(plaintext: str) -> str:
+    logging.debug(f"Removing stopwords {plaintext}")
     stopwords = STOP_WORDS
     for word in stopwords:
         plaintext = plaintext.replace(word, '')
-
+    
     return plaintext
 
 @sentry_sdk.trace

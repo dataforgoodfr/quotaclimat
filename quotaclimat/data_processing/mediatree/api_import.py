@@ -255,6 +255,9 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
                         inplace=True
             )
 
+            logging.debug("setting channel_title")
+            new_df['channel_title'] = new_df.apply(lambda x: get_channel_title_for_name(x['channel_name']), axis=1)
+
             logging.debug(f"setting program {channel_program}")
             # weird error if not using this way: (ValueError) format number 1 of "20h30 le samedi" is not recognized
             new_df['channel_program'] = new_df.apply(lambda x: channel_program, axis=1)

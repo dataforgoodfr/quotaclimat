@@ -399,3 +399,4 @@ There is a debt regarding the cleanest of the code right now. Let's just not mak
 
 ## Thanks
 * [Eleven-Strategy](https://www.welcometothejungle.com/fr/companies/eleven-strategy)
+* [Kevin Tessier](https://kevintessier.fr)

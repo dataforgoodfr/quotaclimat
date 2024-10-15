@@ -125,12 +125,12 @@ STOP_WORDS = [
     ,"vous avez une borne de recharge" 
     ,"en ce moment borne de recharge"
     ,"vous offre la borne de recharge"
-    ,"profiter de la borne de recharge offert"
     ,"borne de recharge est offert"
-    ,"borne de recharge offerte" 
+    ,"borne de recharge offert" 
     ,"faire installer une borne de recharge" 
     ,"en copropriété une borne de recharge" 
     ,"pour les plus branchées la borne de recharge" 
+    ,"frigo on installe des panneaux photovoltaïques borne de recharge"
     ,"leasing électrique à"
     ,"dispositif mon leasing électrique"
     ,"gouvernemental mon leasing électrique"
@@ -203,6 +203,8 @@ STOP_WORDS = [
     ,"trois usines exclusivement dédié au recyclage"
     ,"trois usines exclusivement dédiés au recyclage"
     ,"trois usines exclusivement dédiées au recyclage"
+    ,"recyclage dès cette année cristallines est capable de recycler"
+    ,"tout le travail de cristaline pour le recyclage"
     ,"vivement dédiées au recyclage"
     ,"un gouvernement de recyclage"
     ,"trier devient plus simple"
@@ -210,8 +212,12 @@ STOP_WORDS = [
     ,"nous les recycle pour en faire de nouvelles"
     ,"cristalline est capable de recycler"
     ,"cristallines est capable de recycler"
+    ,"recycler les deux sont garantis"
+    ,"avec mma chez soi pièce neuve ou recycler"
     ,"cristalline et capable de recycler"
     ,"cristallines et capable de recycler"
+    ,"de recycler de recycler" # bug mediatree
+    ,"eau cristalline"
     ,"trier vos bouteilles nous les recycler"
     ,"recycler des lunettes"
     ,"est capable de recycler recycler"
@@ -248,7 +254,9 @@ STOP_WORDS = [
     ,"recharge ma brosse à dents"
     ,"qui bossait dans l' eau" # maif
     ,"je croyais que dégât des eaux" # maif
-    ,"un goût généreux et le respect de la nature sans résidu de pesticides" # tramier
+    ,"sans résidu de pesticides tramier" # tramier
+    ,"ingrédients peut transformer sans pesticides"
+    ,"des pommes gala avec moins de pesticides"
     ,"écoresponsables offre valable" #aldi
     ,"écoresponsable offre valable" #aldi
     ,"vergers écoresponsables" #aldi
@@ -277,6 +285,7 @@ STOP_WORDS = [
     ,"offrez à vos clients un devis précis pour améliorer la performance énergétique"
     ,"augmenter la performance énergétique et la"
     ,"performance énergétique de votre logement groupe verlaine"
+    ,"groupe verlaine au service du développement durable"
     ,"gaz très haute performance énergétique plus confortable"
     ,"pergola bioclimatique"
     ,"on imagine des murs végétalisé"
@@ -289,7 +298,9 @@ STOP_WORDS = [
     ,"maprimerénov une offre comme ça même chez lapeyre"
     ,"aux aides maprimerénov et de faisabilité sous condition"
     ,"leroy merlin quand on refait son isolation"
-    ,"météo avec parc saint-paul"
+    ,"parc saint-paul"
+    ,"parc d' attractions"
+    ,"atmosphère cinéma"
     ,"économies d' énergie l' impact environnemental des vies"
     ,"économies d' énergie impact environnemental des vies"
     ,"compliqué d' économiser de l' énergie alors engie vous aide"
@@ -353,9 +364,30 @@ STOP_WORDS = [
     ,"engie pourquoi l' ordinaire devrait être la norme"
     ,"de plus en plus d' énergie éolien comme celui-ci" # amazon
     ,"l' eau filtrée britta"
+    ,"brita l' eau filtrée"
+    ,"britta l' eau filtrée"
     ,"bonne maman beaucoup de noisette huile de palme"
     ,"sans pesticides pour des recettes"
     ,"chez céréales bio"
     ,"agir pour la préserver découvrez comment" #gouv.fr
     ,"oasis de verdure au milieu"
+    ,"se recharge charge jusqu'"
+    ,"scènes reconstituées dans un flacon réutilisables sa recharge"
+    ,"son empreinte carbone une formule d' origine naturelle"
+    ,"act for food pour offrir une alimentation plus saine"
+    ,"on optimise aussi la consommation d' eau on favorise la biodiversité"
+    ,"c' est le métier abeille assurances"
+    ,"face aux risques climatiques elles font" # pub assurance
+    ,"mon épargne travaille aussi pour les générations futures"
+    ,"cheveux là sans chaleur extrême"
+    ,"ses cheveux la sans chaleur extrêm"
+    ,"chaleur extrême chaque beauty"
+    ,"rénovation gd mat"
+    ,"pas trop le moment de décider l' eau froide"
+    ,"écologique la redoute"
+    ,"agence de la transition écologique avec le groupe tf1"
+    ,"c' est aussi plus écologique avec moins de consommation de carburant"
+    ,"moins de rejets de co deux sur une autoroute à péage en flux libre"
+    ,"la consigne a été bien suivie"
+    ,"les véhicules les plus polluants adrien"
 ]

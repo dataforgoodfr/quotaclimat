@@ -41,7 +41,7 @@ json_response = json.loads("""
                 "text": "france"
                 }
             ],
-            "channel":{"name":"m6","title":"M6","radio":false},"start":1704798000,
+            "channel":{"name":"m6","title":"fake m6","radio":false},"start":1704798000,
             "plaintext":"test1"
         },
         {
@@ -51,7 +51,7 @@ json_response = json.loads("""
                 "text": "adaptation"
                 }
             ],
-            "channel":{"name":"tf1","title":"TF1","radio":false},"start":1704798120,
+            "channel":{"name":"tf1","title":"fake TF1","radio":false},"start":1704798120,
             "plaintext":"test2"}
     ],
     "elapsed_time_ms":335}

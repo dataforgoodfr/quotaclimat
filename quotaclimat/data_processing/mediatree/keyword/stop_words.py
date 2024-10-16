@@ -477,4 +477,22 @@ STOP_WORDS = [
     ,"chez céréales bio"
     ,"agir pour la préserver découvrez comment" #gouv.fr
     ,"oasis de verdure au milieu"
+    ,"feux de forêt elle sait soraya"
+    ,"feux de forêt luc il fait un barbecue en forêt"
+    ,"feux de forêt saint-luc il fait un barbecue en forêt"
+    ,"produisait enfin votre propre énergie"
+    ,"mettant en commun toutes nos énergies que nous avançons"
+    ,"numériques au service des énergies vertes thématique de cette"
+    ,"consommer votre propre énergie avec" #verlaine
+    ,"consommez votre propre énergie avec" #verlaine
+    ,"robinet pour économiser l' énergie"
+    ,"souscrire un contrat d' énergie"
+    ,"programme avec tuquoi énergie expert"
+    ,"tucoy énergie"
+    ,"option énergies vertes profitez d' une"
+    ,"grâce à leur énergie leur engagement leur passion"
+    ,"logement social énergies renouvelables chaque jour la banque"
+    ,"économies d' énergie totalenergies"
+    ,"d' énergie avec total énergies"
+    ," en main vos économies d' énergie"
 ]

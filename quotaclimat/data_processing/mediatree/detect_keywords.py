@@ -107,12 +107,25 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> Li
 
     return keywords_with_timestamp
 
+def replace_word_with_context(text: str) -> str:
+    word = "groupe verlaine"
+    replacement = ""
+    pattern = f".{{0,50}}{re.escape(word)}.{{0,50}}"
+    
+    # Replace the matched word along with its surrounding context
+    result = re.sub(pattern, replacement, text)
+    
+    return result
 def remove_stopwords(plaintext: str) -> str:
     logging.debug(f"Removing stopwords {plaintext}")
     stopwords = STOP_WORDS
     for word in stopwords:
         plaintext = plaintext.replace(word, '')
     
+    if "groupe verlaine" in plaintext:
+        logging.debug(f"special groupe verlaine case")
+        plaintext = replace_word_with_context(plaintext)
+
     return plaintext
 
 @sentry_sdk.trace

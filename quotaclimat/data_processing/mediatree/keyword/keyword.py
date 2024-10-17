@@ -41,6 +41,10 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
+            "keyword": "arbre planté",
+            "category": "Ecosystème"
+        },
+        {
             "keyword": "bon pour la planète",
             "category": "General"
         },
@@ -111,6 +115,30 @@ THEME_KEYWORDS = {
         {
             "keyword": "nous adapter à un futur incertain",
             "category": "General"
+        },
+        {
+            "keyword": "plantant des arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plantation d'arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plante des arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plantent des arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "planter des arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "planté des arbres",
+            "category": "Ecosystème"
         },
         {
             "keyword": "prise de conscience environnementale",
@@ -259,10 +287,6 @@ THEME_KEYWORDS = {
     ],
     "adaptation_climatique_solutions_indirectes": [
         {
-            "keyword": "arbre",
-            "category": ""
-        },
-        {
             "keyword": "barrage",
             "category": "Eau"
         },
@@ -308,7 +332,7 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "gestion de l'eau",
-            "category": ""
+            "category": "Eau"
         },
         {
             "keyword": "gestion des milieux aquatiques",
@@ -344,10 +368,6 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "parc",
-            "category": "Ecosystème"
-        },
-        {
-            "keyword": "planter des arbres",
             "category": "Ecosystème"
         },
         {
@@ -439,6 +459,10 @@ THEME_KEYWORDS = {
         {
             "keyword": "aquaculture durable",
             "category": "Agriculture"
+        },
+        {
+            "keyword": "arbre planté",
+            "category": "Ecosystème"
         },
         {
             "keyword": "arrêter de prendre l'avion",
@@ -857,7 +881,27 @@ THEME_KEYWORDS = {
             "category": "Energie"
         },
         {
+            "keyword": "plantant des arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plantation d'arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plante des arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plantent des arbres",
+            "category": "Ecosystème"
+        },
+        {
             "keyword": "planter des arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "planté des arbres",
             "category": "Ecosystème"
         },
         {
@@ -1263,10 +1307,6 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
-            "keyword": "arbre",
-            "category": ""
-        },
-        {
             "keyword": "atténuation",
             "category": "General"
         },
@@ -1505,10 +1545,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "permaculture",
             "category": "Agriculture"
-        },
-        {
-            "keyword": "planter des arbres",
-            "category": "Ecosystème"
         },
         {
             "keyword": "plus durable",
@@ -1810,6 +1846,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "destruction de la biodiversité",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "destruction de la planète",
             "category": "Ecosystème"
         },
         {
@@ -2289,10 +2329,6 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "destruction de la planète",
-            "category": ""
-        },
-        {
             "keyword": "disparition des espèces",
             "category": ""
         },
@@ -2449,6 +2485,10 @@ THEME_KEYWORDS = {
         {
             "keyword": "alimentation",
             "category": "Agriculture"
+        },
+        {
+            "keyword": "arbre",
+            "category": ""
         },
         {
             "keyword": "ars",
@@ -2945,6 +2985,10 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
+            "keyword": "arbre planté",
+            "category": "Ecosystème"
+        },
+        {
             "keyword": "bien-être des animaux",
             "category": "Agriculture"
         },
@@ -3041,7 +3085,27 @@ THEME_KEYWORDS = {
             "category": "Ecosystème"
         },
         {
+            "keyword": "plantant des arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plantation d'arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plante des arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "plantent des arbres",
+            "category": "Ecosystème"
+        },
+        {
             "keyword": "planter des arbres",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "planté des arbres",
             "category": "Ecosystème"
         },
         {
@@ -3326,7 +3390,7 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "zone naturelle protégée",
-            "category": ""
+            "category": "Ecosystème"
         },
         {
             "keyword": "éco geste",
@@ -3591,6 +3655,10 @@ THEME_KEYWORDS = {
         {
             "keyword": "combustibles fossiles",
             "category": "Energie"
+        },
+        {
+            "keyword": "destruction de la planète",
+            "category": "Ecosystème"
         },
         {
             "keyword": "dyoxide de carbone",
@@ -4105,6 +4173,10 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "déstabilisation atmosphérique",
+            "category": ""
+        },
+        {
             "keyword": "effondrement de la falaise",
             "category": ""
         },
@@ -4337,7 +4409,15 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "température extrême",
+            "category": ""
+        },
+        {
             "keyword": "température record",
+            "category": ""
+        },
+        {
+            "keyword": "températures plus hautes",
             "category": ""
         },
         {
@@ -4435,6 +4515,10 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "cerné par les eaux",
+            "category": ""
+        },
+        {
             "keyword": "cinquante degrés",
             "category": ""
         },
@@ -4457,6 +4541,26 @@ THEME_KEYWORDS = {
         {
             "keyword": "dévastation",
             "category": "General"
+        },
+        {
+            "keyword": "eau boueuse",
+            "category": ""
+        },
+        {
+            "keyword": "eaux boueuses",
+            "category": ""
+        },
+        {
+            "keyword": "eaux déchainées",
+            "category": ""
+        },
+        {
+            "keyword": "emporté par les eaux",
+            "category": ""
+        },
+        {
+            "keyword": "englouti par les eaux",
+            "category": ""
         },
         {
             "keyword": "feux",
@@ -4499,7 +4603,19 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "l'eau est monté",
+            "category": ""
+        },
+        {
+            "keyword": "l'eau qui est monté",
+            "category": ""
+        },
+        {
             "keyword": "la roya",
+            "category": ""
+        },
+        {
+            "keyword": "les eaux sont montées",
             "category": ""
         },
         {
@@ -4519,6 +4635,10 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "millimètre d'eau",
+            "category": ""
+        },
+        {
             "keyword": "mois le plus chaud",
             "category": ""
         },
@@ -4528,6 +4648,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "pathologie",
+            "category": ""
+        },
+        {
+            "keyword": "piégé par les eaux",
             "category": ""
         },
         {
@@ -4595,6 +4719,26 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
+            "keyword": "ruissellement de l'eau",
+            "category": ""
+        },
+        {
+            "keyword": "ruissellement des eaux",
+            "category": ""
+        },
+        {
+            "keyword": "sous l'eau",
+            "category": ""
+        },
+        {
+            "keyword": "sous les eaux",
+            "category": ""
+        },
+        {
+            "keyword": "submergé par les eaux",
+            "category": ""
+        },
+        {
             "keyword": "submersion",
             "category": ""
         },
@@ -4612,6 +4756,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "tempête xynthia",
+            "category": ""
+        },
+        {
+            "keyword": "trop d'eau",
             "category": ""
         },
         {
@@ -4769,10 +4917,6 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "destruction de la planète",
-            "category": ""
-        },
-        {
             "keyword": "défi climatique",
             "category": ""
         },
@@ -4901,14 +5045,6 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
-            "keyword": "température extrême",
-            "category": ""
-        },
-        {
-            "keyword": "températures plus hautes",
-            "category": ""
-        },
-        {
             "keyword": "transition agricole",
             "category": "General"
         },
@@ -4969,6 +5105,10 @@ THEME_KEYWORDS = {
         {
             "keyword": "alimentation",
             "category": "Agriculture"
+        },
+        {
+            "keyword": "arbre",
+            "category": ""
         },
         {
             "keyword": "ars",

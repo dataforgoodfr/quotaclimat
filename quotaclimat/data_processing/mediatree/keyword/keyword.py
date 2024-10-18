@@ -1527,10 +1527,6 @@ THEME_KEYWORDS = {
             "category": "Energie"
         },
         {
-            "keyword": "ombre",
-            "category": "Ecosystème"
-        },
-        {
             "keyword": "parc",
             "category": "Ecosystème"
         },

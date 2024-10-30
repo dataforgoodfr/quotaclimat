@@ -732,4 +732,6 @@ STOP_WORDS = [
     ,"pare-brise de sa nouvelle voiture"
     ,"norauto pour votre voiture"
     ,"voitures à vivre parlons de renault"
+    ,"bienvenue dans nos prairies"
+    ,"nectaire nectar des prairies"
 ]

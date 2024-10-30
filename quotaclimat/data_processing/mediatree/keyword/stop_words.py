@@ -724,4 +724,5 @@ STOP_WORDS = [
     ,"se concrétiser grâce à la forêt"
     ,"arrêts maladie"
     ,"arrêt maladie"
+    ,"préserver mon karma"
 ]

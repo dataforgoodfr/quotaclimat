@@ -55,18 +55,23 @@ async def update_pg_data(exit_event):
     end_date = os.environ.get("END_DATE", tmp_end_date)
     batch_size = int(os.environ.get("BATCH_SIZE", 50000))
     program_only = os.environ.get("UPDATE_PROGRAM_ONLY", "false") == "true"
+    empty_program_only = os.environ.get("UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY", "false") == "true"
+    channel = os.environ.get("CHANNEL", "")
     if(program_only):
-        logging.warning("Update : Program only mode activated - UPDATE_PROGRAM_ONLY")
+        logging.warning(f"Update : Program only mode activated - UPDATE_PROGRAM_ONLY with UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY set to {empty_program_only}")
     else:
         logging.warning("Update : programs will not be updated for performance issue - use UPDATE_PROGRAM_ONLY to true for this")
 
-    logging.warning(f"Updating already saved data from Postgresql from date {start_date} - env variable START_DATE_UPDATE until {end_date} - you can use END_DATE to set it (optional)")
+    logging.warning(f"Updating already saved data for channel {channel} from Postgresql from date {start_date} - env variable START_DATE_UPDATE until {end_date} - you can use END_DATE to set it (optional)")
     try:
         session = get_db_session()
-        update_keywords(session, batch_size=batch_size, start_date=start_date, program_only=program_only, end_date=end_date)
+        update_keywords(session, batch_size=batch_size, start_date=start_date, program_only=program_only, end_date=end_date,\
+                        channel=channel, empty_program_only=empty_program_only)
         exit_event.set()
     except Exception as err:
-        logging.error("Could update_pg_data %s:(%s)" % (type(err).__name__, err))
+        logging.fatal("Could not update_pg_data %s:(%s)" % (type(err).__name__, err))
+        ray.shutdown()
+        sys.exit(1)
 
 def get_channels():
     if(os.environ.get("ENV") == "docker" or os.environ.get("CHANNEL") is not None):
@@ -101,18 +106,19 @@ async def get_and_save_api_data(exit_event):
                 
                 for channel in channels:
                     try:
-                        programs_for_this_day = get_programs_for_this_day(day, channel, df_programs)
+                        programs_for_this_day = get_programs_for_this_day(day.tz_localize("Europe/Paris"), channel, df_programs)
 
-                        for index, program in programs_for_this_day.iterrows():
-                            start_epoch = program['start']
-                            end_epoch = program['end']
-                            channel_program = str(program['program_name'])
-                            channel_program_type = str(program['program_type'])
+                        for program in programs_for_this_day.itertuples(index=False):
+                            start_epoch = program.start
+                            end_epoch = program.end
+                            channel_program = str(program.program_name)
+                            channel_program_type = str(program.program_type)
                             logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
                             df = extract_api_sub(token, channel, type_sub, start_epoch,end_epoch, channel_program,channel_program_type) 
                             if(df is not None):
                                 logging.debug(f"Memory df {df.memory_usage()}")
                                 save_to_pg(df, keywords_table, conn)
+                                del df
                             else:
                                 logging.info("Nothing to save to Postgresql")
                         gc.collect()
@@ -148,12 +154,12 @@ def get_auth_token(password=password, user_name=USER):
 
 # see : https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
 def get_param_api(token, type_sub, start_epoch, channel, end_epoch):
-    epoch_5min_margin = 300
+
     return {
         "channel": channel,
         "token": token,
-        "start_gte": int(start_epoch) - epoch_5min_margin,
-        "start_lte": int(end_epoch) + epoch_5min_margin,
+        "start_gte": int(start_epoch) - EPOCH__5MIN_MARGIN,
+        "start_lte": int(end_epoch) + EPOCH__5MIN_MARGIN,
         "type": type_sub,
         "size": "1000" #  range 1-1000
     }
@@ -233,7 +239,6 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             new_df : pd.DataFrame = json_normalize(response_sub.get('data')) # TODO UserWarning: json_normalize is not currently supported by PandasOnRay, defaulting to pandas implementation.
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             pd.set_option('display.max_columns', None)
-            logging.debug("head:  :\n%s", new_df.head())
            
             logging.debug("setting timestamp")
             new_df['timestamp'] = new_df.apply(lambda x: pd.to_datetime(x['start'], unit='s', utc=True), axis=1)
@@ -249,6 +254,9 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
                                   },
                         inplace=True
             )
+
+            logging.debug("setting channel_title")
+            new_df['channel_title'] = new_df.apply(lambda x: get_channel_title_for_name(x['channel_name']), axis=1)
 
             logging.debug(f"setting program {channel_program}")
             # weird error if not using this way: (ValueError) format number 1 of "20h30 le samedi" is not recognized
@@ -278,11 +286,6 @@ async def main():
             logging.info(f"Ray context dahsboard available at : {context.dashboard_url}")
             logging.warning(f"Ray Information about the env: {ray.available_resources()}")
 
-            if(os.environ.get("COMPARE_DURATION") == "true"):
-                logging.warning(f"Comparaison between number_of_15/20/30/40 is activated")
-            else:
-                logging.warning(f"Comparaison between 15/20/30/40 is OFF")
-
             # Start batch job
             if(os.environ.get("UPDATE") == "true"):
                 asyncio.create_task(update_pg_data(event_finish))
@@ -304,5 +307,4 @@ if __name__ == "__main__":
     getLogger()
     asyncio.run(main())
     sys.exit(0)
-
 

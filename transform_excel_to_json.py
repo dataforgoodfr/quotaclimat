@@ -32,6 +32,10 @@ for excel_file_path in excels_files:
         if ("#" not in keyword):
             THEME_KEYWORDS[theme_name].append({"keyword": keyword, "category": category})
 
+# Sort keywords alphabetically for each theme
+for theme_name in THEME_KEYWORDS:
+    THEME_KEYWORDS[theme_name] = sorted(THEME_KEYWORDS[theme_name], key=lambda x: x["keyword"])
+
 # Convert the THEME_KEYWORDS dictionary to a JSON string
 with open(output_file, 'w', encoding='utf-8') as f:
     logging.info(f"Json written  - {len(THEME_KEYWORDS)} themes inside {output_file}")

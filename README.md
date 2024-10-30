@@ -313,9 +313,13 @@ We can adjust batch update with these env variables (as in the docker-compose.ym
 ```
 BATCH_SIZE: 50000 # number of records to update in one batch
 ```
+### Update only one channel 
+Use env variable `CHANNEL` like in docker compose (string: tf1) with `UPDATE` to true
 
 ### Batch program data
 `UPDATE_PROGRAM_ONLY` to true will only update program metadata, otherwise, it will update program metadata and all theme/keywords calculations.
+
+`UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY` to true will only update program metadata with empty value : "".
 
 ### Batch update from an offset
 With +1 millions rows, we can update from an offset to fix a custom logic by using `START_DATE_UPDATE` (YYYY-MM-DD), the default will use the end of the month otherwise you can specify`END_DATE` (optional) (YYYY-MM-DD) to batch update PG from a date range.
@@ -335,10 +339,10 @@ Using [Alembic](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) Auto
 # If changes have already been applied (on your feature vranch) and you have to recreate your alembic file by doing :
 # 1. change to your main branch 
 git  switch main
-# 2. start test container and run "pytest -vv -k api" to rebuild the state of the DB (or drop table the table you want)
+# 2. start test container (docker compose up testconsole -d / docker compose exec testconsole bash) and run "pytest -vv -k api" to rebuild the state of the DB (or drop table the table you want) - just let it run a few seconds.
 # 3. rechange to your WIP branch 
 git switch -
-# 4. connect to the test container : docker compose up test -d / docker compose exec test bash
+# 4. connect to the test container : docker compose up testconsole -d / docker compose exec testconsole bash
 # 5. reapply the latest saved state : 
 poetry run alembic stamp head
 # 6. Save the new columns
@@ -366,13 +370,17 @@ poetry run python3 quotaclimat/transform_excel_to_json.py
 ```
 
 ## Program Metadata table
-The media perimeter is defined here : "quotaclimat/data_processing/mediatree/channel_program.json"
+The media perimeter is defined here : "quotaclimat/data_processing/mediatree/channel_program_data.py"
 
-To calculate the right total duration for each channel, after updating "quotaclimat/data_processing/mediatree/channel_program.json" you need to execute this command to update `postgres/program_metadata.json` 
+To evolve the media perimeter, we use `program_grid_start` and `program_grid_end` columns to version all evolutions.
+
+To calculate the right total duration for each channel, after updating "quotaclimat/data_processing/mediatree/channel_program_data.py" you need to execute this command to update `postgres/program_metadata.json` 
 ```
 poetry run python3 transform_program.py
 ```
 The SQL queries are based on this file that generate the Program Metadata table.
+
+Program data will not be updated to avoid lock concurrent issues when using `UPDATE=true` for keywords logic. Note: The default case will update them.
 
 **With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.**
 
@@ -391,3 +399,4 @@ There is a debt regarding the cleanest of the code right now. Let's just not mak
 
 ## Thanks
 * [Eleven-Strategy](https://www.welcometothejungle.com/fr/companies/eleven-strategy)
+* [Kevin Tessier](https://kevintessier.fr)

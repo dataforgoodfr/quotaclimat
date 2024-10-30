@@ -3,30 +3,23 @@ import logging
 import os
 from datetime import datetime
 import json
-from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime
-
-def format_hour_minute(time: str) -> pd.Timestamp:
-    date_str = "1970-01-01"
-    logging.debug(f"format_hour_minute with : {time}")
-    return pd.to_datetime(date_str + " " + time)
-
+from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime, EPOCH__5MIN_MARGIN, EPOCH__1MIN_MARGIN, get_timestamp_from_yyyymmdd,format_hour_minute
+from quotaclimat.data_processing.mediatree.channel_program_data import channels_programs
 def get_programs():
     logging.debug("Getting program tv/radio...")
     try:
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        json_file_path = os.path.join(current_dir, 'channel_program.json')
-        logging.info(f"Reading {json_file_path}")
-        with open(json_file_path, 'r') as file:
-            json_data = json.load(file)
-            df_programs = pd.DataFrame(json_data)
-            logging.info(df_programs.dtypes)
-            df_programs[['start', 'end']] = df_programs.apply(lambda x: pd.Series({
-                'start': format_hour_minute(x['start']),
-                'end': format_hour_minute(x['end'])
-            }), axis=1)
+        logging.info(f"Reading channels_programs")
+        df_programs = pd.DataFrame(channels_programs)
+
+        df_programs[['start', 'end', 'program_grid_start', 'program_grid_end']] = df_programs.apply(lambda x: pd.Series({
+            'start': format_hour_minute(x['start']),
+            'end': format_hour_minute(x['end']),
+            'program_grid_start': get_timestamp_from_yyyymmdd(x['program_grid_start']),
+            'program_grid_end': get_timestamp_from_yyyymmdd(x['program_grid_end'])
+        }), axis=1)
 
     except (Exception) as error:
-        logging.error(f"Could not read channel_program.json {error}")
+        logging.error(f"Could not read channel_program_data.py {error}")
         raise Exception
     
     return df_programs
@@ -79,27 +72,53 @@ def get_day_of_week(time: pd.Timestamp) -> int:
     return start_weekday
 
 def get_matching_program_hour(df_program: pd.DataFrame, start_time: pd.Timestamp):
+    number_of_rows_to_filter = len(df_program)
+    logging.debug(f"df_program {df_program['start']}")
+    logging.debug(f"{start_time + pd.Timedelta(seconds=EPOCH__5MIN_MARGIN + EPOCH__1MIN_MARGIN)}")
+    logging.debug(f"df_program {df_program['end']}")
+    logging.debug(f"number_of_rows_to_filter {number_of_rows_to_filter}")
     start_time = get_hour_minute(start_time)
-    return df_program[
-                         (df_program['start'] <= start_time) &
-                         (df_program['end'] > start_time) # stricly > to avoid overlapping programs
+    matching_rows = df_program[
+                         (df_program['start'] <= (start_time + pd.Timedelta(seconds=EPOCH__5MIN_MARGIN + EPOCH__1MIN_MARGIN))) &
+                         (df_program['end'] > (start_time - pd.Timedelta(seconds=EPOCH__5MIN_MARGIN + EPOCH__1MIN_MARGIN)))
                     ]
+    
+    number_of_result = len(matching_rows)
+    logging.info(f"matching_rows {matching_rows}")
+    if(number_of_result > 1): # no margin necessary because programs are next to each others
+        closest_result = df_program[
+                            (df_program['start'] <= (start_time)) &
+                            (df_program['end'] > (start_time)) # stricly > to avoid overlapping programs
+        ]
+        if(len(closest_result) == 0):
+            return matching_rows.head(1)
+        else:
+            return closest_result
+    elif(number_of_result == 0 & number_of_rows_to_filter > 0):
+        logging.warning("No results from hour filter")
+        return None
+    else:
+        return matching_rows
     
 def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timestamp, channel_name: str):
     logging.debug(f"get_matching_program_weekday {start_time} {channel_name}")
     start_weekday = get_day_of_week(start_time)
-    logging.debug(df_program['weekday'].unique())
+
     if "weekday_mask" in df_program.columns:
         df_program.drop(columns=["weekday_mask"], inplace=True)
     df_program["weekday_mask"] = df_program['weekday'].apply(lambda x: compare_weekday(x, start_weekday), axis=1)
-    logging.debug("weekday_mask done")
+
     matching_rows = df_program[
                         (df_program['channel_name'] == channel_name) &
-                        (df_program["weekday_mask"] == True)
+                        (df_program["weekday_mask"] == True) &
+                        (df_program["program_grid_start"] <= start_time) &
+                        (df_program["program_grid_end"] >= start_time)
                     ]
-    logging.debug("matching_rows done")
+
     matching_rows.drop(columns=['weekday_mask'], inplace=True)
     matching_rows.drop(columns=['weekday'], inplace=True)
+    matching_rows.drop(columns=['program_grid_start'], inplace=True)
+    matching_rows.drop(columns=['program_grid_end'], inplace=True)
     
     if matching_rows.empty:
         logging.warning(f"Program tv : no matching rows found {channel_name} for weekday {start_weekday} - {start_time}")
@@ -110,17 +129,19 @@ def get_a_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.
     matching_rows = get_matching_program_weekday(df_program, start_time, channel_name)
     matching_rows = get_matching_program_hour(matching_rows, start_time)
 
-    if(len(matching_rows) > 1):
-        logging.error(f"Several programs name for the same channel and time {channel_name} and {start_time} - {matching_rows}")
     if not matching_rows.empty:
         logging.debug(f"matching_rows {matching_rows}")
+        # TODO should return closest to start_time
         return matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type']
     else:
-        logging.info(f"no programs found for {channel_name} - {start_time}")
+        logging.warning(f"no programs found for {channel_name} - {start_time}")
         return "", ""
 
 def process_subtitle(row, df_program):
-        channel_program, channel_program_type = get_a_program_with_start_timestamp(df_program, row['start'], row['channel_name'])
+        channel_program, channel_program_type = get_a_program_with_start_timestamp(df_program, \
+                                                                                   row['start'], \
+                                                                                   row['channel_name']
+                                                                                )
         row['channel_program'] = str(channel_program)
         row['channel_program_type'] = str(channel_program_type)
         return row

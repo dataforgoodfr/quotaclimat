@@ -5,6 +5,8 @@ from datetime import datetime
 import hashlib
 import sys
 import logging
+from quotaclimat.data_processing.mediatree.channel_program_data import channels_programs
+
 logging.basicConfig(level = logging.INFO)
 
 # Function to calculate duration in minutes between two time strings
@@ -16,11 +18,10 @@ def calculate_duration(start_time, end_time):
     return duration_minutes
 
 # Function to generate a consistent hash based on channel_name, weekday, and program_name
-def generate_program_id(channel_name, weekday, program_name):
-    data_str = f"{channel_name}-{weekday}-{program_name}"
+def generate_program_id(channel_name, weekday, program_name, program_grid_start):
+    data_str = f"{channel_name}-{weekday}-{program_name}-{program_grid_start}"
     return hashlib.sha256(data_str.encode()).hexdigest()
 
-input_file_path = "quotaclimat/data_processing/mediatree/channel_program.json"
 output_file_path = "postgres/program_metadata.json"
 
 # Detailed information for each channel
@@ -142,16 +143,16 @@ channel_mapping = {
 }
 
 
-with open(input_file_path, 'r', encoding='utf-8') as input_file:
-    data = json.load(input_file)
-
 programs = []
 
-for program_data in data:
+for program_data in channels_programs:
     start_time = program_data['start']
     end_time = program_data['end']
     duration_minutes = calculate_duration(start_time, end_time)
     
+    if program_data['program_grid_end'] == "":
+        program_data['program_grid_end'] = '2100-01-01'
+
     # Add duration to the program data
     program_data['duration'] = duration_minutes
 
@@ -196,7 +197,7 @@ for program_data in data:
 
 for program in programs:
     # Generate program ID based on channel_name, weekday, and program_name
-    program_id = generate_program_id(program['channel_name'], program['weekday'], program['program_name'])
+    program_id = generate_program_id(program['channel_name'], program['weekday'], program['program_name'], program['program_grid_start'])
     program['id'] = program_id
     
 sorted_programs = sorted(programs, key=lambda x: (x['weekday'], x['channel_name']))

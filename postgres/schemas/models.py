@@ -111,6 +111,8 @@ class Program_Metadata(Base):
     public = Column(Boolean, nullable=True)
     infocontinue = Column(Boolean, nullable=True)
     radio = Column(Boolean, nullable=True)
+    program_grid_start = Column(DateTime(), nullable=True)
+    program_grid_end = Column(DateTime(), nullable=True)
 
 def get_sitemap(id: str):
     session = get_db_session()
@@ -138,7 +140,10 @@ def create_tables():
 
         Base.metadata.create_all(engine, checkfirst=True)
         update_channel_metadata(engine)
-        update_program_metadata(engine)
+        if(os.environ.get("UPDATE") != "true"):
+            update_program_metadata(engine)
+        else:
+            logging.warning("No program update as UPDATE=true as it can create lock issues")
         logging.info("Table creation done, if not already done.")
     except (Exception) as error:
         logging.error(error)
@@ -179,6 +184,11 @@ def update_program_metadata(engine):
         with open(json_file_path, 'r') as f:
             data = json.load(f)
             
+            # full overwrite
+            logging.warning("Program_Metadata table! Full overwrite (delete/recreate)")
+            session.query(Program_Metadata).delete()
+            session.commit()
+
             for item in data:
                 metadata = {
                     'id': item['id'],
@@ -193,6 +203,8 @@ def update_program_metadata(engine):
                     'channel_program_type': item['program_type'],
                     'start': item['start'],
                     'end': item['end'],
+                    'program_grid_start': datetime.strptime(item['program_grid_start'], '%Y-%m-%d'),
+                    'program_grid_end': datetime.strptime(item['program_grid_end'], '%Y-%m-%d'),
                 }
                 session.merge(Program_Metadata(**metadata))
             

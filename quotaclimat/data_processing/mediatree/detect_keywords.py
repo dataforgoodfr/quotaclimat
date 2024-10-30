@@ -21,6 +21,7 @@ logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
 dask.config.set({'dataframe.query-planning': True})
 
 indirectes = 'indirectes'
+DEFAULT_WINDOW_DURATION = 20
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], theme: str) -> List[dict]:
     result = []
@@ -106,10 +107,24 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> Li
 
     return keywords_with_timestamp
 
+def replace_word_with_context(text: str) -> str:
+    word = "groupe verlaine"
+    replacement = ""
+    pattern = f".{{0,50}}{re.escape(word)}.{{0,50}}"
+    
+    # Replace the matched word along with its surrounding context
+    result = re.sub(pattern, replacement, text)
+    
+    return result
 def remove_stopwords(plaintext: str) -> str:
+    logging.debug(f"Removing stopwords {plaintext}")
     stopwords = STOP_WORDS
     for word in stopwords:
         plaintext = plaintext.replace(word, '')
+    
+    if "groupe verlaine" in plaintext:
+        logging.debug(f"special groupe verlaine case")
+        plaintext = replace_word_with_context(plaintext)
 
     return plaintext
 
@@ -117,7 +132,7 @@ def remove_stopwords(plaintext: str) -> str:
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime):
     keywords_with_timestamp = []
     number_of_elements_in_array = 17
-    default_window_in_seconds = 20
+    default_window_in_seconds = DEFAULT_WINDOW_DURATION
     plaitext_without_stopwords = remove_stopwords(plaintext)
     logging.debug(f"display datetime start {start}")
 
@@ -200,26 +215,32 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     else:
         return [None] * number_of_elements_in_array
 
-def get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds: int = 15):
-    logging.debug(f"using duration_seconds {duration_seconds}")
-    keywords_with_timestamp_copy = copy.deepcopy(keywords_with_timestamp)
+def get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds: int = 20):
+    logging.debug(f"Using duration_seconds {duration_seconds}")
+
+    # Shallow copy to avoid unnecessary deep copying (wip: for memory leak)
+    keywords_with_timestamp_copy = [item.copy() for item in keywords_with_timestamp]
+
     keywords_with_timestamp_copy = tag_wanted_duration_second_window_number(keywords_with_timestamp_copy, start, duration_seconds=duration_seconds)
     keywords_with_timestamp_copy = transform_false_positive_keywords_to_positive(keywords_with_timestamp_copy, start)
     keywords_with_timestamp_copy = filter_keyword_with_same_timestamp(keywords_with_timestamp_copy)
+
     return keywords_with_timestamp_copy
 
 def get_themes(keywords_with_timestamp: List[dict]) -> List[str]:
     return list(set([kw['theme'] for kw in keywords_with_timestamp]))
 
-def clean_metadata(keywords_with_timestamp): 
-    keywords_with_timestamp_copy = copy.deepcopy(keywords_with_timestamp) # immutable
-    if( len(keywords_with_timestamp_copy)) > 0:
-        for item in keywords_with_timestamp_copy:
-            item.pop('window_number', None)
+def clean_metadata(keywords_with_timestamp):
+    if not keywords_with_timestamp:
+        return keywords_with_timestamp
 
-        return keywords_with_timestamp_copy
-    else:
-        return keywords_with_timestamp_copy
+    # Shallow copy instead of deep copy (wip: for memory leak)
+    keywords_with_timestamp_copy = [item.copy() for item in keywords_with_timestamp]
+
+    for item in keywords_with_timestamp_copy:
+        item.pop('window_number', None)
+
+    return keywords_with_timestamp_copy
 
 def log_min_max_date(df):
     max_date = max(df['start'])
@@ -300,11 +321,26 @@ def count_keywords_duration_overlap(keywords_with_timestamp: List[dict], start: 
 def count_different_window_number(keywords_with_timestamp: List[dict], start: datetime) -> int:
     window_numbers = [item['window_number'] for item in keywords_with_timestamp if 'window_number' in item]
     final_count = len(set(window_numbers))
-    logging.debug(f"Count with 15 second logic: {final_count} keywords")
+    logging.debug(f"Count with {DEFAULT_WINDOW_DURATION} second logic: {final_count} keywords")
 
     return final_count
 
-def contains_direct_keywords(keywords_with_timestamp: List[dict]) -> bool:
+def get_subject_from_theme(theme: str) -> str:
+    if 'climatique' in theme:
+        return 'climat'
+    elif 'biodiversite' in theme:
+        return 'biodiversite'
+    elif 'ressources' in theme:
+        return 'ressources'
+    else:
+        return 'unknown'
+
+# only of the same subject (climate/biodiv/ressources) 
+def contains_direct_keywords_same_suject(keywords_with_timestamp: List[dict], theme: str) -> bool:
+    subject = get_subject_from_theme(theme)
+    logging.debug(f"subject {subject}")
+    # keep only keywords with timestamp from the same subject
+    keywords_with_timestamp = list(filter(lambda kw: get_subject_from_theme(kw['theme']) == subject, keywords_with_timestamp))
     return any(indirectes not in kw['theme'] for kw in keywords_with_timestamp)
 
 # we want to count false positive near of 15" of positive keywords
@@ -319,12 +355,13 @@ def transform_false_positive_keywords_to_positive(keywords_with_timestamp: List[
             , keywords_with_timestamp)
         )
 
-        if( contains_direct_keywords(neighbour_keywords) ) :
+        if( contains_direct_keywords_same_suject(neighbour_keywords, keyword_info['theme']) ) :
+            logging.debug(f"Transforming false positive to positive { keyword_info['keyword']} { keyword_info['theme']}")
             keyword_info['theme'] = remove_indirect(keyword_info['theme'])
 
     return keywords_with_timestamp
 
-def tag_wanted_duration_second_window_number(keywords_with_timestamp: List[dict], start, duration_seconds: int = 15) -> List[dict]:
+def tag_wanted_duration_second_window_number(keywords_with_timestamp: List[dict], start, duration_seconds: int = 20) -> List[dict]:
     window_size_seconds = get_keyword_time_separation_ms(duration_seconds=duration_seconds)
     total_seconds_in_window = get_chunk_duration_api()
     number_of_windows = int(total_seconds_in_window // window_size_seconds)

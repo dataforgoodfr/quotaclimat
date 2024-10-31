@@ -350,7 +350,8 @@ STOP_WORDS = [
     ,"en france le recyclage brise" #carglass
     ,"recyclage du pare-brise" #carglass
     ,"pare-brise pour les recycler"
-    ,"pare-brise pour les recycler"
+    ,"pare-brises pour les recycler"
+    ,"paris pour les recycler"
     ,"trier devient plus simple"
     ,"grâce à vous qui trier vos bouteilles"
     ,"nous les recycle pour en faire de nouvelles"
@@ -512,6 +513,12 @@ STOP_WORDS = [
     ,"énergies renouvelables renouvelables groupe verlaine"
     ,"franchisé dans les énergies les renouvelables énergies renouvelables"
     ,"produire sa propre énergie renouvelable et locale" #edf
+    ,"l' objectif c' est de réduire ses émissions de co deux" #edf
+    ,"c' était mission décarboner" # edf
+    ,"décarbonation avec edf la décarbonation"
+    ,"edf accompagne les entreprises dans leur décarbonation"
+    ,"transition énergétique autour de trois types d' actions" #edf
+    ,"edf propose des solutions adaptées à toutes les entreprises l' industrie"
     ,"écologiques pour remplacer votre"
     ,"accrochages c' est aussi plus écologique"
     ,"par l' ademe l' agence de la transition écologique avec le groupe tf1"
@@ -528,7 +535,7 @@ STOP_WORDS = [
     ,"le responsable"
     ,"les responsables"
     ,"chaque responsable"
-    "responsable d'"
+    ,"responsable d'"
     ,"pas responsable"
     ,"autorités responsables"
     ,"épargne responsable banque populaire"
@@ -547,7 +554,8 @@ STOP_WORDS = [
     ,"spécialisée dans la formation des responsables de demain"
     ,"le monde agit pour un habitat plus responsable"
     ,"permettre de manger mieux et plus responsable en privilégiant des pratiques"
-    ,"assurance vie responsable et solidaire et performant maif"
+    ,"assurance vie responsable et solidaire" #maif
+    ,"florence vie responsable et solidairee" #maif
     ,"érigés en barrage"
     ,"partie du barrage"
     ,"barrage au"
@@ -625,9 +633,17 @@ STOP_WORDS = [
     ,"engie pourquoi l' ordinaire devrait être la norme"
     ,"de plus en plus d' énergie éolien comme celui-ci" # amazon
     ,"énergie parc éolien comme celui-ci" # amazon
-    ,"le plus grand acheteur d' énergies renouvelable"
+    ,"grand acheteur d' énergies renouvelable"
+    ,"acheteur privé d' énergies renouvelable"
+    ,"j' ai éteint je décale pour la planète"
+    ,"experts en énergie en savoir plus"
+    ,"je t' ai dit que j' avais les chauffe-eau"
+    ,"de prix maman chauffage"
+    ,"si on veut économiser plus énergie on peut aussi lever le pied"
     ,"énergies renouvelables au monde" # amazon
+    ,"en privilégiant les énergies renouvelables pas le pétrole charbon"
     ,"financiers en privilégiant les énergies renouvelable" #maif
+    ,"énergies vertes du génie"
     ,"pas le pétrole le charbon maif"
     ,"voiture ce soir parce qu' avec son assureur"
     ,"partenaire de vos économies d' énergie"
@@ -693,7 +709,7 @@ STOP_WORDS = [
     ,"pouvoir acheter une voiture électrique ça pouvait être une prise"
     ,"je dois faire réparer ma voiture rapidement"
     ,"pouvoir acheter une voiture électrique peut être une triste date"
-    ,"connaître la valeur de votre voiture simplement"
+    ,"connaître la valeur de votre voiture"
     ,"ça rentre vraiment la voiture électrique accessible oui mais fiat"
     ,"ça rendait vraiment la voiture électrique accessible oui mais fiat"
     ,"sud radio en voiture"
@@ -734,4 +750,23 @@ STOP_WORDS = [
     ,"voitures à vivre parlons de renault"
     ,"bienvenue dans nos prairies"
     ,"nectaire nectar des prairies"
+    ,"recycler complètement la paire de lunettes"
+    ,"collecte sur écosystème recycler ses protég"
+    ,"écosystèmes font écho écosystème recycler"
+    ,"écosystème point éco écosystème recycler"
+    ,"écosystème font écho écosystème recycler"
+    ,"pour le recyclage mon j"
+    ,"tu vas connaître les joyeux recyclag"
+    ,"thomas il a décidé d' être flexitariens car être flexitarien"
+    ,"en choisissant en une choisissant viande une viande plus durable"
+    ,"elle se demande celle de recharger sa voiture"
+    ,"leur énergie vous aide avec ma recharge intelligente"
+    ,"au gaz vert la france pourrait sortir france du pourrait gaz"
+    ,"au gaz vert la france pourrait sortir du gaz"
+    ,"renouvelable le gaz vert on est prêt à tout pour le faire connaître"
+    ,"hors norme"
+    ,"avant on pouvait demander au soleil de recharger vos batteries"
+    ,"magnésium naturel"
+    ,"responsable solutions énergétiques"
+    ,"responsable ressources humaines"
 ]

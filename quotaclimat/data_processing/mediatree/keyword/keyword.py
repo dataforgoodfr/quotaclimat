@@ -37,6 +37,10 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
+            "keyword": "améliorer les systèmes d'alerte et d'évacuation",
+            "category": "General"
+        },
+        {
             "keyword": "aquaculture durable",
             "category": "Agriculture"
         },
@@ -58,7 +62,7 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "développement de la planète",
-            "category": ""
+            "category": "General"
         },
         {
             "keyword": "eaux usées traitées",
@@ -287,6 +291,10 @@ THEME_KEYWORDS = {
     ],
     "adaptation_climatique_solutions_indirectes": [
         {
+            "keyword": "aménagement du territoire",
+            "category": "General"
+        },
+        {
             "keyword": "barrage",
             "category": "Eau"
         },
@@ -377,6 +385,10 @@ THEME_KEYWORDS = {
         {
             "keyword": "sorgho",
             "category": "Agriculture"
+        },
+        {
+            "keyword": "système d'alerte",
+            "category": "General"
         },
         {
             "keyword": "verdir",
@@ -874,6 +886,14 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "panneaux solaires",
+            "category": "Energie"
+        },
+        {
+            "keyword": "parc photovoltaïque",
+            "category": "Energie"
+        },
+        {
+            "keyword": "parc éolien",
             "category": "Energie"
         },
         {
@@ -2143,8 +2163,44 @@ THEME_KEYWORDS = {
             "category": "Agriculture"
         },
         {
+            "keyword": "forêt brûle",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "forêt d'algues",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "forêt détruit",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "forêt détruite",
+            "category": ""
+        },
+        {
+            "keyword": "forêt ravagé",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "forêt ravagée",
+            "category": ""
+        },
+        {
+            "keyword": "forêts brûlent",
+            "category": "Ecosystème"
+        },
+        {
+            "keyword": "forêts ont été détruites",
+            "category": "Ecosystème"
+        },
+        {
             "keyword": "huile de palme",
             "category": "Agriculture"
+        },
+        {
+            "keyword": "incendie de forêt",
+            "category": "Ecosystème"
         },
         {
             "keyword": "incendies",
@@ -2269,6 +2325,18 @@ THEME_KEYWORDS = {
     ],
     "biodiversite_concepts_generaux": [
         {
+            "keyword": "accord de kunming",
+            "category": ""
+        },
+        {
+            "keyword": "accord de kunming-montréal",
+            "category": ""
+        },
+        {
+            "keyword": "accord de montréal",
+            "category": ""
+        },
+        {
             "keyword": "ademe",
             "category": ""
         },
@@ -2301,6 +2369,10 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "cop 16",
+            "category": ""
+        },
+        {
             "keyword": "cop biodiversité",
             "category": ""
         },
@@ -2310,6 +2382,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "cop quinze",
+            "category": ""
+        },
+        {
+            "keyword": "cop seize",
             "category": ""
         },
         {
@@ -2393,6 +2469,10 @@ THEME_KEYWORDS = {
             "category": "General"
         },
         {
+            "keyword": "office national des forêts",
+            "category": ""
+        },
+        {
             "keyword": "pacte vert",
             "category": ""
         },
@@ -2402,6 +2482,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "politique climatique",
+            "category": ""
+        },
+        {
+            "keyword": "protocole de montréal",
             "category": ""
         },
         {
@@ -2576,6 +2660,14 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "mer",
+            "category": ""
+        },
+        {
+            "keyword": "ministre de la transition écologique",
+            "category": ""
+        },
+        {
+            "keyword": "ministère de la transition écologique",
             "category": ""
         },
         {
@@ -2872,6 +2964,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "extinction",
+            "category": ""
+        },
+        {
+            "keyword": "forêt détruite",
             "category": ""
         },
         {
@@ -3604,6 +3700,10 @@ THEME_KEYWORDS = {
         }
     ],
     "changement climatique_constat": [
+        {
+            "keyword": "office national des forêts",
+            "category": ""
+        },
         {
             "keyword": "politique climatique",
             "category": ""
@@ -4511,6 +4611,10 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "catastrophe",
+            "category": ""
+        },
+        {
             "keyword": "cerné par les eaux",
             "category": ""
         },
@@ -4528,6 +4632,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "cyclone",
+            "category": ""
+        },
+        {
+            "keyword": "déluge",
             "category": ""
         },
         {
@@ -4575,6 +4683,34 @@ THEME_KEYWORDS = {
             "category": ""
         },
         {
+            "keyword": "forêt brûle",
+            "category": ""
+        },
+        {
+            "keyword": "forêt d'algues",
+            "category": ""
+        },
+        {
+            "keyword": "forêt détruit",
+            "category": ""
+        },
+        {
+            "keyword": "forêt ravagé",
+            "category": ""
+        },
+        {
+            "keyword": "forêt ravagée",
+            "category": ""
+        },
+        {
+            "keyword": "forêts brûlent",
+            "category": ""
+        },
+        {
+            "keyword": "forêts ont été détruites",
+            "category": ""
+        },
+        {
             "keyword": "gel printanier",
             "category": ""
         },
@@ -4584,6 +4720,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "importante précipitation",
+            "category": ""
+        },
+        {
+            "keyword": "incendie de forêt",
             "category": ""
         },
         {
@@ -5289,7 +5429,23 @@ THEME_KEYWORDS = {
     ],
     "changement_climatique_constats_indirectes": [
         {
+            "keyword": "ministre de la transition écologique",
+            "category": ""
+        },
+        {
+            "keyword": "ministère de la transition écologique",
+            "category": ""
+        },
+        {
+            "keyword": "météo des forêts",
+            "category": ""
+        },
+        {
             "keyword": "ozone",
+            "category": ""
+        },
+        {
+            "keyword": "zone inondable",
             "category": ""
         }
     ],
@@ -5549,6 +5705,10 @@ THEME_KEYWORDS = {
             "category": "Métaux et minerais"
         },
         {
+            "keyword": "feux de forêt",
+            "category": "Forêt"
+        },
+        {
             "keyword": "fluor",
             "category": "Eau"
         },
@@ -5574,6 +5734,38 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "forêt",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "forêt brûle",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "forêt d'algues",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "forêt détruit",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "forêt détruite",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "forêt ravagé",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "forêt ravagée",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "forêts brûlent",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "forêts ont été détruites",
             "category": "Forêt"
         },
         {
@@ -5618,6 +5810,10 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "incendie",
+            "category": "Forêt"
+        },
+        {
+            "keyword": "incendie de forêt",
             "category": "Forêt"
         },
         {
@@ -5679,6 +5875,14 @@ THEME_KEYWORDS = {
         {
             "keyword": "mines",
             "category": "Métaux et minerais"
+        },
+        {
+            "keyword": "ministre de la transition écologique",
+            "category": "Concepts généraux"
+        },
+        {
+            "keyword": "ministère de la transition écologique",
+            "category": "Concepts généraux"
         },
         {
             "keyword": "mix électrique",
@@ -6307,6 +6511,10 @@ THEME_KEYWORDS = {
             "category": "Energie"
         },
         {
+            "keyword": "parc éolien",
+            "category": "Energie"
+        },
+        {
             "keyword": "partage des ressources",
             "category": "Concepts généraux"
         },
@@ -6581,6 +6789,10 @@ THEME_KEYWORDS = {
         {
             "keyword": "sécurité environnementale",
             "category": "Concepts généraux"
+        },
+        {
+            "keyword": "transition en dehors des énergies fossiles",
+            "category": "Energie"
         },
         {
             "keyword": "tri des ordures",
@@ -7459,6 +7671,10 @@ THEME_KEYWORDS = {
             "category": "Eau"
         },
         {
+            "keyword": "office national des forêts",
+            "category": "Forêt"
+        },
+        {
             "keyword": "pacte vert",
             "category": "Concepts généraux"
         },
@@ -7701,14 +7917,6 @@ THEME_KEYWORDS = {
         {
             "keyword": "transformation écologique",
             "category": "Concepts généraux"
-        },
-        {
-            "keyword": "transition en dehors des énergies fossiles",
-            "category": "Energie"
-        },
-        {
-            "keyword": "transition en dehors des énergies fossiles",
-            "category": "Energie"
         },
         {
             "keyword": "transition écologique",

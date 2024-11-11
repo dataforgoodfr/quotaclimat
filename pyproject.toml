@@ -27,7 +27,7 @@ aiohttp = "^3.10.8"
 pytest-asyncio = "^0.23.5"
 swifter = "^1.4.0"
 tenacity = "^8.2.3"
-sentry-sdk = "^2.13.0"
+sentry-sdk = "^2.18.0"
 modin = {extras = ["ray"], version = "^0.32.0"}
 openpyxl = "^3.1.5"
 requests = "^2.32.3"

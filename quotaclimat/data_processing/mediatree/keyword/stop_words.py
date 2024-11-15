@@ -231,6 +231,7 @@ STOP_WORDS = [
     ,"spécialisée dans les énergies renouvelables"
     ,"offrant un écosystème technologique durable"
     ,"borne de recharge offert"
+    ,"profitez de la borne de recharge"
     ,"plus de mille bornes de recharge"
     ,"localise une borne de recharge"
     ,"edf installe votre borne de recharge"
@@ -349,6 +350,9 @@ STOP_WORDS = [
     ,"un gouvernement de recyclage"
     ,"en france le recyclage brise" #carglass
     ,"recyclage du pare-brise" #carglass
+    ,"pare-brise de sa nouvelle voiture"
+    ,"les trajets courts fini la voiture"
+    ,"votre voiture huit en sérénité"
     ,"pare-brise pour les recycler"
     ,"pare-brises pour les recycler"
     ,"paris pour les recycler"
@@ -412,7 +416,7 @@ STOP_WORDS = [
     ,"tu sais l' autonomie la recharge rapide"
     ,"qui bossait dans l' eau" # maif
     ,"je croyais que dégât des eaux" # maif
-    ,"sans résidu de pesticides tramier" # tramier
+    ,"de pesticides tramier" # tramier
     ,"ingrédients peut transformer sans pesticides"
     ,"des pommes gala avec moins de pesticides"
     ,"écoresponsables offre valable" #aldi
@@ -640,6 +644,13 @@ STOP_WORDS = [
     ,"je t' ai dit que j' avais les chauffe-eau"
     ,"de prix maman chauffage"
     ,"si on veut économiser plus énergie on peut aussi lever le pied"
+    ,"jusqu' à quarante pour cent d' énergie"
+    ,"co deux et leurs factures d' énergie edf"
+    ,"gaspilleurs dubois et de l' énergie où on peut bien se chauff" #ademe
+    ,"gaspilleurs dubois et de l' énergie"
+    ,"retrouvez la météo avec carrefour énergie"
+    ,"pompe à chaleur et faire des économies carrefour"
+    ,"acteur majeur de la production d' énergies vertes et de la gestion des déchets"
     ,"énergies renouvelables au monde" # amazon
     ,"en privilégiant les énergies renouvelables pas le pétrole charbon"
     ,"financiers en privilégiant les énergies renouvelable" #maif
@@ -673,6 +684,9 @@ STOP_WORDS = [
     ,"grâce à leur énergie leur engagement leur passion"
     ,"logement social énergies renouvelables chaque jour la banque"
     ,"économies d' énergie totalenergies"
+    ,"énergie avec totalenergies"
+    ,"total énergie"
+    ,"co deux des transports avec totalenergies"
     ,"d' énergie avec total énergies"
     ," en main vos économies d' énergie"
     ,"ademe point fr ceci est un"
@@ -681,6 +695,13 @@ STOP_WORDS = [
     ,"ceci est un message à l'ademe et du ministère de la transition écologique"
     ,"ceci est un message à l' ademe"
     ,"ceci est un message de l' ademe"
+    ,"ademe ceci est un message"
+    ,"ademe fr ceci est un message"
+    ,"ademe point fr"
+    ,"point ademe fr"
+    ,"ademe point fr"
+    ,"ademe pourrait faire"
+    ,"bien chauffé au bois point ademe"
     ,"financent la transition écologique les entreprises"
     ,"la transition écologique chef d' entreprise"
     ,"est un message du ministère de la transition écologique"
@@ -769,4 +790,5 @@ STOP_WORDS = [
     ,"magnésium naturel"
     ,"responsable solutions énergétiques"
     ,"responsable ressources humaines"
+    ,"outre-mer"
 ]

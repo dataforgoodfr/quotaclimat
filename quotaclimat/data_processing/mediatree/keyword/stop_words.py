@@ -710,7 +710,7 @@ STOP_WORDS = [
     ,"bien chauffé au bois point ademe"
     ,"financent la transition écologique les entreprises"
     ,"la transition écologique chef d' entreprise"
-    ,"est un message du ministère de la transition écologique"
+    ,"message du ministère de la transition écologique"
     ,"contribution recyclage offre valable"
     ,"contributions recyclage offre valable"
     ,"les joies du recyclage moi j' ai peur"
@@ -806,4 +806,6 @@ STOP_WORDS = [
     ,"responsable ressources humaines"
     ,"outre-mer"
     ,"arme nucléaire"
+    ,"ademe source ademe"
+    ,"bois point ademe"
 ]

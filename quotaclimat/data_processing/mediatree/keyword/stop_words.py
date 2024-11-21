@@ -808,4 +808,5 @@ STOP_WORDS = [
     ,"arme nucléaire"
     ,"ademe source ademe"
     ,"bois point ademe"
+    ,"nouveau bouchon en plastique recyclé"
 ]

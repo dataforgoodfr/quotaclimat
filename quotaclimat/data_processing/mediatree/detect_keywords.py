@@ -193,6 +193,18 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         number_of_biodiversite_consequences = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_consequences"])
         number_of_biodiversite_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_solutions"])
 
+        number_of_changement_climatique_constat_no_hrfp = count_keywords_duration_overlap(keywords_with_timestamp, start,theme=["changement_climatique_constat"])
+        number_of_changement_climatique_causes_no_hrfp = count_keywords_duration_overlap(keywords_with_timestamp, start,theme=["changement_climatique_causes"])
+        number_of_changement_climatique_consequences_no_hrfp = count_keywords_duration_overlap(keywords_with_timestamp, start,theme=["changement_climatique_consequences"])
+        number_of_attenuation_climatique_solutions_no_hrfp = count_keywords_duration_overlap(keywords_with_timestamp, start,theme=["attenuation_climatique_solutions"])
+        number_of_adaptation_climatique_solutions_no_hrfp = count_keywords_duration_overlap(keywords_with_timestamp, start,theme=["adaptation_climatique_solutions"])
+        number_of_ressources_no_hrfp = count_keywords_duration_overlap(keywords_with_timestamp, start,theme=["ressources"])
+        number_of_ressources_solutions_no_hrfp = count_keywords_duration_overlap(keywords_with_timestamp, start,theme=["ressources_solutions"])
+        number_of_biodiversite_concepts_generaux_no_hrfp = count_keywords_duration_overlap(keywords_with_timestamp, start,theme=["biodiversite_concepts_generaux"])
+        number_of_biodiversite_causes_no_hrfp = count_keywords_duration_overlap(keywords_with_timestamp, start,theme=["biodiversite_causes"])
+        number_of_biodiversite_consequences_no_hrfp = count_keywords_duration_overlap(keywords_with_timestamp, start,theme=["biodiversite_consequences"])
+        number_of_biodiversite_solutions_no_hrfp = count_keywords_duration_overlap(keywords_with_timestamp, start,theme=["biodiversite_solutions"])
+
         return [
             theme
             ,keywords_with_timestamp 
@@ -211,6 +223,17 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             ,number_of_keywords_climat
             ,number_of_keywords_biodiversite
             ,number_of_keywords_ressources
+            ,number_of_changement_climatique_constat_no_hrfp
+            ,number_of_changement_climatique_causes_no_hrfp
+            ,number_of_changement_climatique_consequences_no_hrfp
+            ,number_of_attenuation_climatique_solutions_no_hrfp
+            ,number_of_adaptation_climatique_solutions_no_hrfp
+            ,number_of_ressources_no_hrfp
+            ,number_of_ressources_solutions_no_hrfp
+            ,number_of_biodiversite_concepts_generaux_no_hrfp
+            ,number_of_biodiversite_causes_no_hrfp
+            ,number_of_biodiversite_consequences_no_hrfp
+            ,number_of_biodiversite_solutions_no_hrfp
         ]
     else:
         return [None] * number_of_elements_in_array
@@ -274,6 +297,17 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
                  ,"number_of_keywords_climat"
                  ,"number_of_keywords_biodiversite"
                  ,"number_of_keywords_ressources"
+                 ,"number_of_changement_climatique_constat_no_hrfp"
+                 ,"number_of_changement_climatique_causes_no_hrfp"
+                 ,"number_of_changement_climatique_consequences_no_hrfp"
+                 ,"number_of_attenuation_climatique_solutions_no_hrfp"
+                 ,"number_of_adaptation_climatique_solutions_no_hrfp"
+                 ,"number_of_ressources_no_hrfp"
+                 ,"number_of_ressources_solutions_no_hrfp"
+                 ,"number_of_biodiversite_concepts_generaux_no_hrfp"
+                 ,"number_of_biodiversite_causes_no_hrfp"
+                 ,"number_of_biodiversite_consequences_no_hrfp"
+                 ,"number_of_biodiversite_solutions_no_hrfp"
                 ]
             ] = df[['plaintext','srt', 'start']]\
                 .swifter.apply(\

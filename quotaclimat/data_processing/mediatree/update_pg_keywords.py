@@ -50,7 +50,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     ,number_of_biodiversite_solutions_directes \
                     ,new_number_of_keywords_climat \
                     ,new_number_of_keywords_biodiversite \
-                    ,new_number_of_keywords_ressources \ 
+                    ,new_number_of_keywords_ressources \
                     ,number_of_changement_climatique_constat_no_hrfp \
                     ,number_of_changement_climatique_causes_no_hrfp \
                     ,number_of_changement_climatique_consequences_no_hrfp \

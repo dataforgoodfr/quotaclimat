@@ -1,0 +1,414 @@
+[
+    {
+        "keyword": "Bercy",
+        "category": "France Général"
+    },
+    {
+        "keyword": "Bruno le Maire",
+        "category": "France Général"
+    },
+    {
+        "keyword": "Budget de l'État",
+        "category": "France Général"
+    },
+    {
+        "keyword": "Budget de la France",
+        "category": "France Général"
+    },
+    {
+        "keyword": "Réformes des retraites",
+        "category": "France Général"
+    },
+    {
+        "keyword": "Réforme du travail",
+        "category": "France Général"
+    },
+    {
+        "keyword": "Prime Macron",
+        "category": "France Général"
+    },
+    {
+        "keyword": "Choose France",
+        "category": "France Général"
+    },
+    {
+        "keyword": "Économies budgétaires",
+        "category": "France Général"
+    },
+    {
+        "keyword": "Superprofits",
+        "category": "France Général"
+    },
+    {
+        "keyword": "Croissance économique",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Inflation",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Taux d'intérêt",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Politique monétaire",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Politique fiscale",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Déficit budgétaire",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Dette publique",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Marché du travail",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Indicateurs économiques",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Produit Intérieur Brut",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "PIB",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Fiscalité",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Crise économique",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Fraude fiscale",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Conjoncture économique",
+        "category": "Macro-économie"
+    },
+    {
+        "keyword": "Indices boursiers",
+        "category": "Finance"
+    },
+    {
+        "keyword": "Trading",
+        "category": "Finance"
+    },
+    {
+        "keyword": "Trader",
+        "category": "Finance"
+    },
+    {
+        "keyword": "Action en bourse",
+        "category": "Finance"
+    },
+    {
+        "keyword": "Bourse",
+        "category": "Finance"
+    },
+    {
+        "keyword": "CAC 40",
+        "category": "Finance"
+    },
+    {
+        "keyword": "Entrepreneuriat",
+        "category": "Entreprises"
+    },
+    {
+        "keyword": "Startups",
+        "category": "Entreprises"
+    },
+    {
+        "keyword": "Aide aux entreprises",
+        "category": "Entreprises"
+    },
+    {
+        "keyword": "Salaire",
+        "category": "Entreprises"
+    },
+    {
+        "keyword": "Chômage",
+        "category": "Entreprises"
+    },
+    {
+        "keyword": "Accords commerciaux",
+        "category": "Commerce international"
+    },
+    {
+        "keyword": "Mondialisation",
+        "category": "Commerce international"
+    },
+    {
+        "keyword": "Exportations",
+        "category": "Commerce international"
+    },
+    {
+        "keyword": "Importations",
+        "category": "Commerce international"
+    },
+    {
+        "keyword": "Compétitivité",
+        "category": "Commerce international"
+    },
+    {
+        "keyword": "Investissement",
+        "category": "Commerce international"
+    },
+    {
+        "keyword": "Relations commerciales",
+        "category": "Commerce international"
+    },
+    {
+        "keyword": "Déficit commerical",
+        "category": "Commerce international"
+    },
+    {
+        "keyword": "Inégalités économiques",
+        "category": "Social"
+    },
+    {
+        "keyword": "Redistribution des richesses",
+        "category": "Social"
+    },
+    {
+        "keyword": "Protection sociale",
+        "category": "Social"
+    },
+    {
+        "keyword": "Pauvreté",
+        "category": "Social"
+    },
+    {
+        "keyword": "Emploi précaire",
+        "category": "Social"
+    },
+    {
+        "keyword": "SMIC",
+        "category": "Social"
+    },
+    {
+        "keyword": "Pouvoir d'achat",
+        "category": "Social"
+    },
+    {
+        "keyword": "Grève",
+        "category": "Social"
+    },
+    {
+        "keyword": "Impôts",
+        "category": "Social"
+    },
+    {
+        "keyword": "Précarité",
+        "category": "Social"
+    },
+    {
+        "keyword": "Prix",
+        "category": ""
+    },
+    {
+        "keyword": "Inflation ",
+        "category": ""
+    },
+    {
+        "keyword": "Inversion des courbes",
+        "category": ""
+    },
+    {
+        "keyword": "Déflation",
+        "category": ""
+    },
+    {
+        "keyword": "Récession",
+        "category": ""
+    },
+    {
+        "keyword": "Taux de change",
+        "category": ""
+    },
+    {
+        "keyword": "Economie",
+        "category": ""
+    },
+    {
+        "keyword": "Politique économique",
+        "category": ""
+    },
+    {
+        "keyword": "Zone euro",
+        "category": ""
+    },
+    {
+        "keyword": "BCE",
+        "category": ""
+    },
+    {
+        "keyword": "Banque centrale européenne",
+        "category": ""
+    },
+    {
+        "keyword": "Banque de France",
+        "category": ""
+    },
+    {
+        "keyword": "Endettement",
+        "category": ""
+    },
+    {
+        "keyword": "Dette française",
+        "category": ""
+    },
+    {
+        "keyword": "Niveau d'emploi",
+        "category": ""
+    },
+    {
+        "keyword": "Difficultés de recrutement",
+        "category": ""
+    },
+    {
+        "keyword": "Actifs",
+        "category": ""
+    },
+    {
+        "keyword": "Droits de douane",
+        "category": ""
+    },
+    {
+        "keyword": "Concurrence",
+        "category": ""
+    },
+    {
+        "keyword": "TVA",
+        "category": ""
+    },
+    {
+        "keyword": "Taxe sur la valeur ajoutée",
+        "category": ""
+    },
+    {
+        "keyword": "Taxe",
+        "category": "HRFP"
+    },
+    {
+        "keyword": "Taxe carbone",
+        "category": ""
+    },
+    {
+        "keyword": "Réforme de l'assurance chômage",
+        "category": ""
+    },
+    {
+        "keyword": "Assurance chômage",
+        "category": "HRFP"
+    },
+    {
+        "keyword": "Industrie",
+        "category": ""
+    },
+    {
+        "keyword": "Politique industrielle",
+        "category": ""
+    },
+    {
+        "keyword": "Création d'emploi",
+        "category": ""
+    },
+    {
+        "keyword": "Secteurs de l'économie",
+        "category": ""
+    },
+    {
+        "keyword": "Dérapage budgétaire",
+        "category": ""
+    },
+    {
+        "keyword": "Traité de Maastricht",
+        "category": ""
+    },
+    {
+        "keyword": "Pacte de stabilité et de croissance",
+        "category": ""
+    },
+    {
+        "keyword": "Dow Jones",
+        "category": ""
+    },
+    {
+        "keyword": "Euronext 100",
+        "category": ""
+    },
+    {
+        "keyword": "DAX",
+        "category": ""
+    },
+    {
+        "keyword": "économiste",
+        "category": ""
+    },
+    {
+        "keyword": "prix à la pompe",
+        "category": ""
+    },
+    {
+        "keyword": "prix du carburant",
+        "category": ""
+    },
+    {
+        "keyword": "prix de l'énergie",
+        "category": ""
+    },
+    {
+        "keyword": "augmentation des prix",
+        "category": ""
+    },
+    {
+        "keyword": "prix en hausse",
+        "category": ""
+    },
+    {
+        "keyword": "prix en baisse",
+        "category": ""
+    },
+    {
+        "keyword": "taux d'intérêt",
+        "category": ""
+    },
+    {
+        "keyword": "prime",
+        "category": ""
+    },
+    {
+        "keyword": "aides",
+        "category": ""
+    },
+    {
+        "keyword": "plan de réindustrialisation",
+        "category": ""
+    },
+    {
+        "keyword": "précaire",
+        "category": ""
+    },
+    {
+        "keyword": "emploi",
+        "category": ""
+    },
+    {
+        "keyword": "licenciement",
+        "category": ""
+    }
+]

@@ -143,12 +143,6 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         keywords_with_timestamp = filter_keyword_with_same_timestamp(keywords_with_timestamp)
 
         filtered_keywords_with_timestamp = filter_indirect_words(keywords_with_timestamp)
-
-        #
-        logging.error(
-            f'ICI PAUL: {count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,"economie")}'
-        )
-        #
     
         return [
             get_themes(keywords_with_timestamp),
@@ -169,7 +163,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         ]
 
     else:
-        return [None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+        return [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
 
 def get_themes(keywords_with_timestamp: List[dict]) -> List[str]:
     return list(set([kw['theme'] for kw in keywords_with_timestamp]))
@@ -250,7 +244,10 @@ def count_keywords_duration_overlap(keywords_with_timestamp: List[dict], start: 
         if theme is not None:
             logging.debug(f"filter theme {theme}")
             keywords_with_timestamp = list(filter(lambda kw: kw['theme'] == theme, keywords_with_timestamp))
-
+        else:
+            logging.debug(f"all but economie")
+            keywords_with_timestamp = list(filter(lambda kw: kw['theme'] != 'economie', keywords_with_timestamp))
+        
         length_filtered_items = len(keywords_with_timestamp)
 
         if length_filtered_items > 0:

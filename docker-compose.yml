@@ -103,7 +103,7 @@ services:
     #entrypoint: ["python", "quotaclimat/data_processing/mediatree/api_import.py"]
     environment:
       ENV: docker # change me to prod for real cases
-      LOGLEVEL: DEBUG # Change me to info (debug, info, warning, error) to have less log
+      LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre
@@ -116,8 +116,8 @@ services:
       #UPDATE: "true" # to batch update PG 
       #UPDATE_PROGRAM_ONLY: "true" # to batch update PG but only channel with program
       # START_OFFSET: 100 # to batch update PG from a offset
-      START_DATE: 1714026680 # to test batch import 
-      CHANNEL : france2 # to reimport only one channel
+      START_DATE: 1717127469 # to test batch import 
+      # CHANNEL : france2 # to reimport only one channel
       MEDIATREE_USER : /run/secrets/username_api
       MEDIATREE_PASSWORD:  /run/secrets/pwd_api
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/

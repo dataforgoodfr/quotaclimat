@@ -111,16 +111,16 @@ def test_one_theme_get_themes_keywords_duration():
         number_of_keywords_biodiversite,
         number_of_keywords_ressources
         ,number_of_changement_climatique_constat_no_hrfp,
-        number_of_changement_climatique_causes_directes_no_hrfp,
+        number_of_changement_climatique_causes_no_hrfp,
         number_of_changement_climatique_consequences_no_hrfp,
-        number_of_attenuation_climatique_solutions_directes_no_hrfp,
-        number_of_adaptation_climatique_solutions_directes_no_hrfp,
+        number_of_attenuation_climatique_solutions_no_hrfp,
+        number_of_adaptation_climatique_solutions_no_hrfp,
         number_of_ressources_no_hrfp,
         number_of_ressources_solutions_no_hrfp,
         number_of_biodiversite_concepts_generaux_no_hrfp,
-        number_of_biodiversite_causes_directes_no_hrfp,
+        number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_directes_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
     assert set(themes_output) == set(themes)
     # assert compare_unordered_lists_of_dicts(keywords_output, keywords)
 
@@ -235,16 +235,16 @@ def test_long_sentence_theme_get_themes_keywords_duration():
         number_of_keywords_biodiversite,
         number_of_keywords_ressources
         ,number_of_changement_climatique_constat_no_hrfp,
-        number_of_changement_climatique_causes_directes_no_hrfp,
+        number_of_changement_climatique_causes_no_hrfp,
         number_of_changement_climatique_consequences_no_hrfp,
-        number_of_attenuation_climatique_solutions_directes_no_hrfp,
-        number_of_adaptation_climatique_solutions_directes_no_hrfp,
+        number_of_attenuation_climatique_solutions_no_hrfp,
+        number_of_adaptation_climatique_solutions_no_hrfp,
         number_of_ressources_no_hrfp,
         number_of_ressources_solutions_no_hrfp,
         number_of_biodiversite_concepts_generaux_no_hrfp,
-        number_of_biodiversite_causes_directes_no_hrfp,
+        number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_directes_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
 
     assert set(themes_output) == set(themes)
     # assert compare_unordered_lists_of_dicts(keywords_output, keywords)
@@ -307,16 +307,16 @@ def test_three_get_themes_keywords_duration():
         number_of_keywords_biodiversite,
         number_of_keywords_ressources
         ,number_of_changement_climatique_constat_no_hrfp,
-        number_of_changement_climatique_causes_directes_no_hrfp,
+        number_of_changement_climatique_causes_no_hrfp,
         number_of_changement_climatique_consequences_no_hrfp,
-        number_of_attenuation_climatique_solutions_directes_no_hrfp,
-        number_of_adaptation_climatique_solutions_directes_no_hrfp,
+        number_of_attenuation_climatique_solutions_no_hrfp,
+        number_of_adaptation_climatique_solutions_no_hrfp,
         number_of_ressources_no_hrfp,
         number_of_ressources_solutions_no_hrfp,
         number_of_biodiversite_concepts_generaux_no_hrfp,
-        number_of_biodiversite_causes_directes_no_hrfp,
+        number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_directes_no_hrfp) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
 
     assert set(themes_output)== themes
     #assert keywords_output == keywords
@@ -377,16 +377,16 @@ def test_long_get_themes_keywords_duration():
         number_of_keywords_biodiversite,
         number_of_keywords_ressources
         ,number_of_changement_climatique_constat_no_hrfp,
-        number_of_changement_climatique_causes_directes_no_hrfp,
+        number_of_changement_climatique_causes_no_hrfp,
         number_of_changement_climatique_consequences_no_hrfp,
-        number_of_attenuation_climatique_solutions_directes_no_hrfp,
-        number_of_adaptation_climatique_solutions_directes_no_hrfp,
+        number_of_attenuation_climatique_solutions_no_hrfp,
+        number_of_adaptation_climatique_solutions_no_hrfp,
         number_of_ressources_no_hrfp,
         number_of_ressources_solutions_no_hrfp,
         number_of_biodiversite_concepts_generaux_no_hrfp,
-        number_of_biodiversite_causes_directes_no_hrfp,
+        number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_directes_no_hrfp) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
     assert set(themes_output) == set(themes)
     # too hard to maintain
     #assert compare_unordered_lists_of_dicts(keywords_output, keywords)

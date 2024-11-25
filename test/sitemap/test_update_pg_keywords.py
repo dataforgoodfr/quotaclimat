@@ -200,16 +200,16 @@ def test_first_update_keywords():
         ,"number_of_keywords_biodiversite": wrong_value
         ,"number_of_keywords_ressources": wrong_value
         ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
-        "number_of_changement_climatique_causes_directes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
         "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
-        "number_of_attenuation_climatique_solutions_directes_no_hrfp":  wrong_value,
-        "number_of_adaptation_climatique_solutions_directes_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
         "number_of_ressources_no_hrfp":  wrong_value,
         "number_of_ressources_solutions_no_hrfp":  wrong_value,
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
-        "number_of_biodiversite_causes_directes_no_hrfp":  wrong_value,
+        "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_directes_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 1
@@ -236,16 +236,16 @@ def test_first_update_keywords():
         ,number_of_keywords_biodiversite \
         ,number_of_keywords_ressources \
         ,number_of_changement_climatique_constat_no_hrfp \
-        ,number_of_changement_climatique_causes_directes_no_hrfp \
+        ,number_of_changement_climatique_causes_no_hrfp \
         ,number_of_changement_climatique_consequences_no_hrfp \
-        ,number_of_attenuation_climatique_solutions_directes_no_hrfp \
-        ,number_of_adaptation_climatique_solutions_directes_no_hrfp \
+        ,number_of_attenuation_climatique_solutions_no_hrfp \
+        ,number_of_adaptation_climatique_solutions_no_hrfp \
         ,number_of_ressources_no_hrfp \
         ,number_of_ressources_solutions_no_hrfp \
         ,number_of_biodiversite_concepts_generaux_no_hrfp \
-        ,number_of_biodiversite_causes_directes_no_hrfp \
+        ,number_of_biodiversite_causes_no_hrfp \
         ,number_of_biodiversite_consequences_no_hrfp \
-        ,number_of_biodiversite_solutions_directes_no_hrfp = get_themes_keywords_duration(plaintext, srt, start)
+        ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start)
 
     assert result_after_update.id == result_before_update.id
 
@@ -332,16 +332,16 @@ def test_update_only_one_channel():
         ,"number_of_keywords_biodiversite": wrong_value
         ,"number_of_keywords_ressources": wrong_value
         ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
-        "number_of_changement_climatique_causes_directes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
         "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
-        "number_of_attenuation_climatique_solutions_directes_no_hrfp":  wrong_value,
-        "number_of_adaptation_climatique_solutions_directes_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
         "number_of_ressources_no_hrfp":  wrong_value,
         "number_of_ressources_solutions_no_hrfp":  wrong_value,
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
-        "number_of_biodiversite_causes_directes_no_hrfp":  wrong_value,
+        "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_directes_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
     }, {
         "id" : primary_key_tf1,
         "start": start,
@@ -370,16 +370,16 @@ def test_update_only_one_channel():
         ,"number_of_keywords_biodiversite": wrong_value
         ,"number_of_keywords_ressources": wrong_value
         ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
-        "number_of_changement_climatique_causes_directes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
         "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
-        "number_of_attenuation_climatique_solutions_directes_no_hrfp":  wrong_value,
-        "number_of_adaptation_climatique_solutions_directes_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
         "number_of_ressources_no_hrfp":  wrong_value,
         "number_of_ressources_solutions_no_hrfp":  wrong_value,
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
-        "number_of_biodiversite_causes_directes_no_hrfp":  wrong_value,
+        "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_directes_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 2
@@ -410,16 +410,16 @@ def test_update_only_one_channel():
         ,number_of_keywords_biodiversite \
         ,number_of_keywords_ressources \
         ,number_of_changement_climatique_constat_no_hrfp \
-        ,number_of_changement_climatique_causes_directes_no_hrfp \
+        ,number_of_changement_climatique_causes_no_hrfp \
         ,number_of_changement_climatique_consequences_no_hrfp \
-        ,number_of_attenuation_climatique_solutions_directes_no_hrfp \
-        ,number_of_adaptation_climatique_solutions_directes_no_hrfp \
+        ,number_of_attenuation_climatique_solutions_no_hrfp \
+        ,number_of_adaptation_climatique_solutions_no_hrfp \
         ,number_of_ressources_no_hrfp \
         ,number_of_ressources_solutions_no_hrfp \
         ,number_of_biodiversite_concepts_generaux_no_hrfp \
-        ,number_of_biodiversite_causes_directes_no_hrfp \
+        ,number_of_biodiversite_causes_no_hrfp \
         ,number_of_biodiversite_consequences_no_hrfp \
-        ,number_of_biodiversite_solutions_directes_no_hrfp = get_themes_keywords_duration(plaintext, srt, start)
+        ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start)
 
     assert result_after_update_tf1.id == result_before_update_tf1.id
     assert result_after_update_m6.id == result_before_update_m6.id
@@ -498,16 +498,16 @@ def test_update_only_program():
         ,"number_of_keywords_biodiversite": wrong_value
         ,"number_of_keywords_ressources": wrong_value
         ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
-        "number_of_changement_climatique_causes_directes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
         "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
-        "number_of_attenuation_climatique_solutions_directes_no_hrfp":  wrong_value,
-        "number_of_adaptation_climatique_solutions_directes_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
         "number_of_ressources_no_hrfp":  wrong_value,
         "number_of_ressources_solutions_no_hrfp":  wrong_value,
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
-        "number_of_biodiversite_causes_directes_no_hrfp":  wrong_value,
+        "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_directes_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 1
@@ -583,16 +583,16 @@ def test_update_only_program_with_only_one_channel():
         ,"number_of_keywords_biodiversite": wrong_value
         ,"number_of_keywords_ressources": wrong_value
         ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
-        "number_of_changement_climatique_causes_directes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
         "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
-        "number_of_attenuation_climatique_solutions_directes_no_hrfp":  wrong_value,
-        "number_of_adaptation_climatique_solutions_directes_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
         "number_of_ressources_no_hrfp":  wrong_value,
         "number_of_ressources_solutions_no_hrfp":  wrong_value,
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
-        "number_of_biodiversite_causes_directes_no_hrfp":  wrong_value,
+        "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_directes_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
     }, {
         "id" : primary_key_tf1,
         "start": start,
@@ -621,16 +621,16 @@ def test_update_only_program_with_only_one_channel():
         ,"number_of_keywords_biodiversite": wrong_value
         ,"number_of_keywords_ressources": wrong_value
         ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
-        "number_of_changement_climatique_causes_directes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
         "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
-        "number_of_attenuation_climatique_solutions_directes_no_hrfp":  wrong_value,
-        "number_of_adaptation_climatique_solutions_directes_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
         "number_of_ressources_no_hrfp":  wrong_value,
         "number_of_ressources_solutions_no_hrfp":  wrong_value,
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
-        "number_of_biodiversite_causes_directes_no_hrfp":  wrong_value,
+        "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_directes_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 2
@@ -721,16 +721,16 @@ def test_update_only_empty_program():
         ,"number_of_keywords_biodiversite": wrong_value
         ,"number_of_keywords_ressources": wrong_value
         ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
-        "number_of_changement_climatique_causes_directes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
         "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
-        "number_of_attenuation_climatique_solutions_directes_no_hrfp":  wrong_value,
-        "number_of_adaptation_climatique_solutions_directes_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
         "number_of_ressources_no_hrfp":  wrong_value,
         "number_of_ressources_solutions_no_hrfp":  wrong_value,
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
-        "number_of_biodiversite_causes_directes_no_hrfp":  wrong_value,
+        "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_directes_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
     }, {
         "id" : primary_key_tf1,
         "start": start,
@@ -759,16 +759,16 @@ def test_update_only_empty_program():
         ,"number_of_keywords_biodiversite": wrong_value
         ,"number_of_keywords_ressources": wrong_value
         ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
-        "number_of_changement_climatique_causes_directes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
         "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
-        "number_of_attenuation_climatique_solutions_directes_no_hrfp":  wrong_value,
-        "number_of_adaptation_climatique_solutions_directes_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
         "number_of_ressources_no_hrfp":  wrong_value,
         "number_of_ressources_solutions_no_hrfp":  wrong_value,
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
-        "number_of_biodiversite_causes_directes_no_hrfp":  wrong_value,
+        "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_directes_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 2

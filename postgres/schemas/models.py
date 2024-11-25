@@ -88,16 +88,16 @@ class Keywords(Base):
     number_of_keywords_biodiversite = Column(Integer) # sum of all biodiversite counters without duplicate
     number_of_keywords_ressources = Column(Integer) # sum of all ressources counters without duplicate
     number_of_changement_climatique_constat_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_changement_climatique_constat integer;
-    number_of_changement_climatique_causes_directes_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_changement_climatique_causes_directes integer;
+    number_of_changement_climatique_causes_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_changement_climatique_causes_directes integer;
     number_of_changement_climatique_consequences_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_changement_climatique_consequences integer;
-    number_of_attenuation_climatique_solutions_directes_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_attenuation_climatique_solutions_directes integer;
-    number_of_adaptation_climatique_solutions_directes_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_adaptation_climatique_solutions_directes integer;
+    number_of_attenuation_climatique_solutions_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_attenuation_climatique_solutions_directes integer;
+    number_of_adaptation_climatique_solutions_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_adaptation_climatique_solutions_directes integer;
     number_of_ressources_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_ressources_naturelles_concepts_generaux integer;
     number_of_ressources_solutions_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_ressources_solutions integer;
     number_of_biodiversite_concepts_generaux_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_concepts_generaux integer;
-    number_of_biodiversite_causes_directes_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_causes_directes integer;
+    number_of_biodiversite_causes_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_causes_directes integer;
     number_of_biodiversite_consequences_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_consequences integer;
-    number_of_biodiversite_solutions_directes_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_solutions_directes integer;
+    number_of_biodiversite_solutions_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_solutions_directes integer;
 
 class Channel_Metadata(Base):
     __tablename__ = channel_metadata_table

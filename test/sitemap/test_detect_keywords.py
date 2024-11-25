@@ -4,13 +4,14 @@ from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
 
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
-
+from datetime import datetime, timezone
 
 import pandas as pd
 localhost = get_localhost()
 original_timestamp = 1706437079004
-start = datetime.utcfromtimestamp(original_timestamp / 1000)
+start = datetime.fromtimestamp(original_timestamp / 1000, timezone.utc)
 
+array_of_none = [None] * 28
 
 subtitles = [{
         "duration_ms": 34,
@@ -80,7 +81,7 @@ subtitles = [{
 ]
 def test_default_get_themes_keywords_duration():
     plaintext_nothing = "cheese pizza"
-    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == [None] * 17
+    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == array_of_none
    
 def test_one_theme_get_themes_keywords_duration():
     plaintext_climat = "réchauffement planétaire test"
@@ -265,12 +266,12 @@ def test_long_sentence_theme_get_themes_keywords_duration():
 def test_nothing_get_themes_keywords_duration():
     # should not accept theme 'bus' for keyword "abusive"
     plaintext_regression_incomplete_word = "abusive"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles, start) == array_of_none
     
 def test_regression_included_get_themes_keywords_duration():
     # should not accept theme 'ngt' for keyword "vingt"
     plaintext_regression_incomplete_word_ngt = "vingt"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == array_of_none
     
 
 def test_three_get_themes_keywords_duration():
@@ -405,11 +406,11 @@ def test_long_get_themes_keywords_duration():
 
 def test_stop_word_get_themes_keywords_duration():
     plaintext = "haute isolation thermique fabriqué en france pizza"
-    assert get_themes_keywords_duration(plaintext, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext, subtitles, start) == array_of_none
    
 def test_train_stop_word_get_themes_keywords_duration():
     plaintext = "en train de fabrique en france pizza"
-    assert get_themes_keywords_duration(plaintext, subtitles, start) == [None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None,None]
+    assert get_themes_keywords_duration(plaintext, subtitles, start) == array_of_none
    
 
 def test_get_cts_in_ms_for_keywords():
@@ -546,6 +547,17 @@ def test_lower_case_filter_and_tag_by_theme():
         ,'number_of_keywords_climat':1,
         'number_of_keywords_biodiversite':0,
         'number_of_keywords_ressources':0
+        ,"number_of_changement_climatique_constat_no_hrfp": 0
+        ,"number_of_changement_climatique_causes_no_hrfp": 0
+        ,"number_of_changement_climatique_consequences_no_hrfp": 0
+        ,"number_of_attenuation_climatique_solutions_no_hrfp": 0
+        ,"number_of_adaptation_climatique_solutions_no_hrfp": 0
+        ,"number_of_ressources_no_hrfp": 0
+        ,"number_of_ressources_solutions_no_hrfp": 0
+        ,"number_of_biodiversite_concepts_generaux_no_hrfp": 0
+        ,"number_of_biodiversite_causes_no_hrfp": 0
+        ,"number_of_biodiversite_consequences_no_hrfp": 0
+        ,"number_of_biodiversite_solutions_no_hrfp":0
     }])
 
     # List of words to filter on
@@ -599,6 +611,17 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         ,'number_of_keywords_climat':1,
         'number_of_keywords_biodiversite':0,
         'number_of_keywords_ressources':0
+        ,"number_of_changement_climatique_constat_no_hrfp": 0
+        ,"number_of_changement_climatique_causes_no_hrfp": 0
+        ,"number_of_changement_climatique_consequences_no_hrfp": 0
+        ,"number_of_attenuation_climatique_solutions_no_hrfp": 0
+        ,"number_of_adaptation_climatique_solutions_no_hrfp": 0
+        ,"number_of_ressources_no_hrfp": 0
+        ,"number_of_ressources_solutions_no_hrfp": 0
+        ,"number_of_biodiversite_concepts_generaux_no_hrfp": 0
+        ,"number_of_biodiversite_causes_no_hrfp": 0
+        ,"number_of_biodiversite_consequences_no_hrfp": 0
+        ,"number_of_biodiversite_solutions_no_hrfp":0
     }])
 
     # List of words to filter on
@@ -695,6 +718,17 @@ def test_complexe_filter_and_tag_by_theme():
         ,'number_of_keywords_climat':1,
         'number_of_keywords_biodiversite':0,
         'number_of_keywords_ressources':0
+        ,"number_of_changement_climatique_constat_no_hrfp": 0
+        ,"number_of_changement_climatique_causes_no_hrfp": 0
+        ,"number_of_changement_climatique_consequences_no_hrfp": 0
+        ,"number_of_attenuation_climatique_solutions_no_hrfp": 0
+        ,"number_of_adaptation_climatique_solutions_no_hrfp": 0
+        ,"number_of_ressources_no_hrfp": 0
+        ,"number_of_ressources_solutions_no_hrfp": 0
+        ,"number_of_biodiversite_concepts_generaux_no_hrfp": 0
+        ,"number_of_biodiversite_causes_no_hrfp": 0
+        ,"number_of_biodiversite_consequences_no_hrfp": 0
+        ,"number_of_biodiversite_solutions_no_hrfp":0
     }])
 
     # List of words to filter on
@@ -1294,7 +1328,8 @@ def test_tag_wanted_duration_second_window_number():
 
 def test_transform_false_positive_keywords_to_positive():
     keywords_with_timestamp = [
-        {'keyword': 'recyclage',
+        {
+         'keyword': 'recyclage',
          'timestamp': original_timestamp,
          'theme': 'attenuation_climatique_solutions_indirectes' # should be transformed to direct
         },
@@ -1302,11 +1337,13 @@ def test_transform_false_positive_keywords_to_positive():
          'timestamp': original_timestamp + 150,
          'theme': 'changement_climatique_constat'
         },
-        {'keyword': 'covoiturage',
+        {
+         'keyword': 'covoiturage',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) + 10000, # should be transformed to direct
          'theme': 'attenuation_climatique_solutions_indirectes'
         },
-        {'keyword': 'industrie verte',
+        {
+         'keyword': 'industrie verte',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 2 ,
           'theme': 'attenuation_climatique_solutions_indirectes' # should be transformed to direct
         },
@@ -1325,32 +1362,42 @@ def test_transform_false_positive_keywords_to_positive():
     ]
 
     expected_output = [
-        {'keyword': 'recyclage',
+        {
+         'hrfp': True, 
+         'keyword': 'recyclage',
          'timestamp': original_timestamp,
          'theme': 'attenuation_climatique_solutions' # was indirect
          ,'window_number': 0
         },
-        {'keyword': 'climatique',
+        {
+         'keyword': 'climatique',
          'timestamp': original_timestamp + 150,
          'theme': 'changement_climatique_constat' # our positive keyword that transform false positive
          ,'window_number': 0
         },
-        {'keyword': 'covoiturage',
+        {
+        'hrfp': True,
+         'keyword': 'covoiturage',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) + 10000, # should be transformed to direct
          'theme': 'attenuation_climatique_solutions'
          ,'window_number': 1
         },
-        {'keyword': 'industrie verte',
+        {
+         'hrfp': True,
+         'keyword': 'industrie verte',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 2 ,
           'theme': 'attenuation_climatique_solutions' # should be transformed to direct
          ,'window_number': 2
         },
-        {'keyword': 'industrie verte',
+        {
+         'hrfp': True,   
+         'keyword': 'industrie verte',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 3 ,
           'theme': 'attenuation_climatique_solutions'# should be transformed to direct
          ,'window_number': 3
         },
-        {'keyword': 'industrie verte',
+        {
+         'keyword': 'industrie verte',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 5 ,
           'theme': 'attenuation_climatique_solutions_indirectes' # should stay to indirect
          ,'window_number': 5
@@ -1398,22 +1445,26 @@ def test_different_steps_transform_false_positive_keywords_to_positive():
          'window_number': 0,
          'theme': 'changement_climatique_constat'
         },
-        {'keyword': 'industrie verte',
+        {'hrfp': True,   
+         'keyword': 'industrie verte',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 1 + 150,
           'window_number': 1,
           'theme': 'attenuation_climatique_solutions' # should be transformed to direct
         },
-        {'keyword': 'agroforesterie',
+        {'hrfp': True,   
+         'keyword': 'agroforesterie',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 2 + 150,
           'window_number': 2,
           'theme': 'attenuation_climatique_solutions' # should be transformed to direct
         },
-        {'keyword': 'alternative durable',
+        {'hrfp': True,   
+         'keyword': 'alternative durable',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 3 + 150,
           'window_number': 3,
           'theme': 'attenuation_climatique_solutions' # should be transformed to direct
         },
-        {'keyword': 'planification écologique',
+        {'hrfp': True,   
+         'keyword': 'planification écologique',
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 4 + 150,
           'window_number': 4,
           'theme': 'attenuation_climatique_solutions' # should be transformed to direct
@@ -1433,7 +1484,8 @@ def test_transform_false_positive_keywords_to_positive_different_and_same_subjec
          'timestamp': original_timestamp + 150,
          'theme': 'changement_climatique_constat'
         },
-        {'keyword': "activisme climatique",
+        { 
+         'keyword': "activisme climatique",
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 1 + 151,
           'theme': 'attenuation_climatique_solutions_indirectes' # should be transformed to direct
         },
@@ -1465,7 +1517,9 @@ def test_transform_false_positive_keywords_to_positive_different_and_same_subjec
          'window_number': 0,
          'theme': 'changement_climatique_constat'
         },
-        {'keyword': "activisme climatique",
+        {
+         'hrfp': True,
+         'keyword': "activisme climatique",
          'timestamp': original_timestamp + get_keyword_time_separation_ms(15) * 1 + 151,
          'window_number': 1,
          'theme': 'attenuation_climatique_solutions' # should be transformed to direct

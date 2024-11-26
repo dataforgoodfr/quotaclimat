@@ -809,4 +809,9 @@ STOP_WORDS = [
     ,"ademe source ademe"
     ,"bois point ademe"
     ,"nouveau bouchon en plastique recyclé"
+    ,"alexandre le mer"
+    ,"grdf quand on parle du gaz on entre parfois dans le gaz et cent pour cent fossiles ben le gaz vert"
+    ,"grdf quand on parle du gaz on entre parfois la pompe à chaleur"
+    ,"grdf quand on parle du gaz on entre parfois assez"
+    ,"quarante pour cent d' énergie consomm"
 ]

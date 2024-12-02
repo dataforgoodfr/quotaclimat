@@ -36,6 +36,7 @@ sitemap_table = "sitemap_table"
 keywords_table = "keywords"
 channel_metadata_table = "channel_metadata"
 program_metadata_table = "program_metadata"
+stop_word_table = "stop_word"
 
 class Sitemap(Base):
     __tablename__ = sitemap_table
@@ -114,6 +115,14 @@ class Program_Metadata(Base):
     program_grid_start = Column(DateTime(), nullable=True)
     program_grid_end = Column(DateTime(), nullable=True)
 
+class Stop_Word(Base):
+    __tablename__ = stop_word_table
+    id = Column(Text, primary_key=True)
+    channel_name = Column(String, nullable=False)
+    context = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")) # ALTER TABLE ONLY keywords ALTER COLUMN created_at SET DEFAULT (now() at time zone 'utc');
+    updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
+
 def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
@@ -121,6 +130,10 @@ def get_sitemap(id: str):
 def get_keyword(id: str):
     session = get_db_session()
     return session.get(Keywords, id)
+
+def get_stop_word(id: str):
+    session = get_db_session()
+    return session.get(Stop_Word, id)
 
 def get_last_month_sitemap_id(engine): 
     query = text("""

@@ -4,15 +4,128 @@ import pandas as pd
 
 from postgres.insert_data import (clean_data,
                                   insert_data_in_sitemap_table)
-from quotaclimat.data_ingestion.scrap_sitemap import (add_primary_key, get_consistent_hash)
-
+from quotaclimat.data_processing.mediatree.stop_word.main import (get_top_keywords_by_channel)
+from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db
 from postgres.insert_existing_data_example import (
     parse_section, transformation_from_dumps_to_table_entry)
 from postgres.schemas.models import create_tables, get_sitemap, connect_to_db
+from postgres.insert_data import save_to_pg
+from postgres.schemas.models import get_stop_word, stop_word_table, keywords_table
+session = get_db_session()
 
+original_timestamp = 1706271523 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
+wrong_value = 0
+primary_key="m6_stop_word"
+m6 = "m6"
+plaintext = "cheese pizza habitabilité de la planète conditions de vie sur terre animal digue"
+srt = [{
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 6,
+        "text": "habitabilité"
+        },
+        {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 10,
+        "text": "de"
+        },
+        {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 11,
+        "text": "la"
+        },
+        {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 12,
+        "text": "planète"
+        },
+        {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 15000,
+        "text": "conditions"
+        },
+        {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 15000 + 10,
+        "text": "de"
+        },
+        {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 15000  + 15,
+        "text": "vie"
+        },
+        {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 15000  + 20,
+        "text": "sur"
+        },
+        {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 15000  + 25,
+        "text": "terre"
+        },
+        {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 32000,
+        "text": "digue"
+        }
+]
+
+keywords_with_timestamp = [
+    {
+        "keyword": "conditions de vie sur terre",
+        "timestamp": 1706437094004,
+        "theme": "changement_climatique_constat"
+    },
+    {
+        "keyword": "habitabilité de la planète",
+        "timestamp": 1706444334006,
+        "theme": "changement_climatique_constat"
+    },
+    {
+        "keyword": "digue",
+        "timestamp": 1706444366000,
+        "theme": "adaptation_climatique_solutions_indirectes"
+    }
+]
+themes = [
+    "changement_climatique_constat",
+    "adaptation_climatique_solutions",
+    "ressources" # should be removed
+]
+
+df = pd.DataFrame([{
+    "id" : primary_key,
+    "start": original_timestamp,
+    "plaintext": plaintext,
+    "channel_name": m6,
+    "channel_radio": False,
+    "theme": themes,
+    "keywords_with_timestamp": keywords_with_timestamp,
+    "srt": srt,
+    "number_of_keywords": wrong_value, # wrong data to reapply our custom logic for "new_value"
+    "number_of_changement_climatique_constat":  wrong_value,
+    "number_of_changement_climatique_causes_directes":  wrong_value,
+    "number_of_changement_climatique_consequences":  wrong_value,
+    "number_of_attenuation_climatique_solutions_directes":  wrong_value,
+    "number_of_adaptation_climatique_solutions_directes":  wrong_value,
+    "number_of_ressources":  wrong_value,
+    "number_of_ressources_solutions":  wrong_value,
+    "number_of_biodiversite_concepts_generaux":  wrong_value,
+    "number_of_biodiversite_causes_directes":  wrong_value,
+    "number_of_biodiversite_consequences":  wrong_value,
+    "number_of_biodiversite_solutions_directes" : wrong_value,
+    "channel_program_type": "to change",
+    "channel_program":"to change"
+    ,"channel_title":None
+    ,"number_of_keywords_climat": wrong_value
+    ,"number_of_keywords_biodiversite": wrong_value
+    ,"number_of_keywords_ressources": wrong_value
+}])
+
+save_to_pg(df, keywords_table, session)
 
 def test_get_top_keywords_by_channel():
-    df = pd.DataFrame(
+    df_to_save_2 = pd.DataFrame(
         [
             {
                 "publication_name": "testpublication_name",
@@ -20,137 +133,9 @@ def test_get_top_keywords_by_channel():
                 "news_publication_date": pd.Timestamp("2023-10-11 13:10:00"),
             }
         ]
-    )
-
-    expected_output = pd.DataFrame(
-        [
-            {
-                "publication_name": "testpublication_name",
-                "news_title": "title",
-                "news_publication_date": pd.Timestamp("2023-10-11 13:10:00"),
-                "id": get_consistent_hash("testpublication_name" + "title"),
-            }
-        ]
-    )
-
-    df["id"] = add_primary_key(df)
-
-    pd.testing.assert_frame_equal(expected_output, df)
-
-
-    df_fake = pd.DataFrame(
-    [
-        {
-            "fake_it": "testpublication_name",
-        }
-    ]
     )
     
-    df_fake["id"] = add_primary_key(df_fake)
-    assert df_fake['id'].values.take(0) == get_consistent_hash("empty")
+    
+    top_keywords = get_top_keywords_by_channel(session, days=3000, top=5)
 
-
-def test_transformation_from_dumps_to_table_entry():
-    expected_result = pd.DataFrame(
-        [
-            {
-                "publication_name": "testpublication_name",
-                "news_title": "testnews_title",
-                "download_date": pd.Timestamp("2023-10-11 13:10:00"),
-                "news_publication_date": pd.Timestamp("2023-10-11 13:10:00"),
-                "news_keywords": "testnews_keywords",
-                "section": "testsection",
-                "image_caption": "testimage_caption",
-                "media_type": "testmedia_type",
-                "url": "my_awesome_url",
-                "news_description": "description could be parsed with success",
-                "id": get_consistent_hash("testpublication_name" + "testnews_title"),
-            }
-        ]
-    )
-
-    ## From a sitemap.xml
-    df = pd.DataFrame(
-        [
-            {
-                "url": "my_awesome_url",
-                "news": "testnews",
-                "news_publication": "testnews_publication",
-                "publication_name": "testpublication_name",
-                "publication_language": "testpublication_language",
-                "news_publication_date": pd.Timestamp("2023-10-11 13:10:00"),
-                "news_title": "testnews_title",
-                "news_keywords": "testnews_keywords",
-                "image": "testimage",
-                "image_loc": "testimage_loc",
-                "image_caption": "testimage_caption",
-                "sitemap": "testsitemap",
-                "etag": "testetag",
-                "sitemap_last_modified": pd.Timestamp("2023-10-11 13:10:00"),
-                "sitemap_size_mb": "testsitemap_size_mb",
-                "download_date": pd.Timestamp("2023-10-11 13:10:00"),
-                "section": "testsection",
-                "media_type": "testmedia_type",
-                "media": "testmedia",
-                "lastmod": pd.Timestamp("2023-10-11 13:10:00"),
-                "news_description": "description could be parsed with success",
-                "id": get_consistent_hash("testpublication_name" + "testnews_title"),
-            }
-        ]
-    )
-
-    output = transformation_from_dumps_to_table_entry(df)
-
-    pd.testing.assert_frame_equal(output, expected_result)
-
-
-def test_insert_data_in_sitemap_table():
-    create_tables()
-    conn = connect_to_db()
-    url = "my_awesome_url"
-    title = "testnews_title"
-    primary_key = get_consistent_hash("testpublication_name_new" + title)
-    df = pd.DataFrame(
-        [
-            {
-                "publication_name": "testpublication_name_new",
-                "news_title": title,
-                "download_date": pd.Timestamp("2023-10-11 13:11:00"),
-                "news_publication_date": pd.Timestamp("2023-10-11 13:10:00"),
-                "news_keywords": "testnews_keywords",
-                "section": "sport",
-                "image_caption": "testimage_caption",
-                "media_type": "testmedia_type",
-                "url": url,
-                "id": primary_key,
-                "news_description": "description",
-            }
-        ]
-    )
-
-    insert_data_in_sitemap_table(df, conn)
-
-    # check the value is well existing
-    result = get_sitemap(primary_key)
-
-    assert result.id == primary_key
-    assert result.publication_name == "testpublication_name_new"
-    assert result.news_title == title
-    assert result.download_date == pd.Timestamp("2023-10-11 13:11:00")
-    assert result.news_publication_date == pd.Timestamp("2023-10-11 13:10:00")
-    assert result.news_keywords == "testnews_keywords"
-    assert result.section == "sport"
-    assert result.image_caption == "testimage_caption"
-    assert result.media_type == "testmedia_type"
-    assert result.url == url
-    assert result.news_description == "description"
-
-def test_clean_data():
-    df_wrong_format = pd.DataFrame([{"id": "empty"}])
-
-    result = clean_data(df_wrong_format)
-    assert result.empty == True
-
-    df_right_format = pd.DataFrame([{"id": "proper_id"}])
-    result = clean_data(df_right_format)
-    assert result.empty == False
+    pd.testing.assert_frame_equal(top_keywords, df_to_save_2)

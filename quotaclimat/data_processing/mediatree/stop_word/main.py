@@ -41,7 +41,7 @@ from datetime import datetime, timedelta
 from datetime import datetime, timedelta
 import ray
 from quotaclimat.utils.sentry import sentry_init
-from postgres.schemas.models import Keywords, ProgramMetadata  # Replace with your actual models
+from postgres.schemas.models import Keywords
 
 logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
 logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
@@ -59,6 +59,7 @@ KEYWORDS_URL = get_keywords_url()
 # def apply_cosine_similarity_on_keywords(keywords: pd.DataFrame) -> pd.DataFrame:
 
 def save_append_stop_word(session, stop_word_list: pd.DataFrame):
+    logging.info(f"Saving stop word {stop_word_list} list to the database")
     try:
         # Save the stop word list to the database
         stop_word_list.to_sql(
@@ -83,8 +84,7 @@ def get_repetitive_context_advertising(
     # for each top_unique_keywords call get_all_repetitive_context_advertising_for_a_keyword
     for keyword in top_unique_keywords.itertuples(index=False):
                             logging.info(f"Keyword: {keyword}")
-                            start_epoch = keyword.start
-                            end_epoch = keyword.end
+                            # TODO what's inside ?
                             advertising_context = get_all_repetitive_context_advertising_for_a_keyword(
                                      session, keyword, length_context_to_look_for_repetition, days
                                  )

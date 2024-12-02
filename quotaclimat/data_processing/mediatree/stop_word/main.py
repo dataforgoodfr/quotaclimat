@@ -41,7 +41,7 @@ from datetime import datetime, timedelta
 from datetime import datetime, timedelta
 import ray
 from quotaclimat.utils.sentry import sentry_init
-from postgres.schemas.models import Keywords
+from postgres.schemas.models import Keywords, Program_Metadata, stop_word_table
 
 logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
 logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
@@ -63,9 +63,9 @@ def save_append_stop_word(session, stop_word_list: pd.DataFrame):
     try:
         # Save the stop word list to the database
         stop_word_list.to_sql(
-            "stop_word_list",
+            stop_word_table,
             session.bind,
-            if_exists="append",
+            if_exists="overwrite",
             index=False,
         )
     finally:
@@ -140,14 +140,14 @@ def get_all_repetitive_context_advertising_for_a_keyword(
                 func.count().label("repetition_count"),
             )
             .join(
-                ProgramMetadata,
+                Program_Metadata,
                 and_(
-                    Keywords.channel_name == ProgramMetadata.channel_name,
-                    Keywords.channel_program == ProgramMetadata.channel_program,
-                    weekday_case == ProgramMetadata.weekday,
+                    Keywords.channel_name == Program_Metadata.channel_name,
+                    Keywords.channel_program == Program_Metadata.channel_program,
+                    weekday_case == Program_Metadata.weekday,
                     Keywords.start.between(
-                        ProgramMetadata.program_grid_start,
-                        ProgramMetadata.program_grid_end,
+                        Program_Metadata.program_grid_start,
+                        Program_Metadata.program_grid_end,
                     ),
                 ),
             )
@@ -208,24 +208,24 @@ def get_top_keywords_by_channel(session, days: int, top: int) -> pd.DataFrame:
             session.query(
                 Keywords.keyword.label("keyword"),
                 json_alias.theme.label("theme"),
-                ProgramMetadata.channel_title.label("channel_title"),
+                Program_Metadata.channel_title.label("channel_title"),
                 func.count().label("count"),
                 func.row_number()
                 .over(
-                    partition_by=ProgramMetadata.channel_title,
+                    partition_by=Program_Metadata.channel_title,
                     order_by=func.count().desc(),
                 )
                 .label("rank"),
             )
             .join(
-                ProgramMetadata,
+                Program_Metadata,
                 and_(
-                    Keywords.channel_program == ProgramMetadata.channel_program,
-                    Keywords.channel_name == ProgramMetadata.channel_name,
-                    weekday_case == ProgramMetadata.weekday,
+                    Keywords.channel_program == Program_Metadata.channel_program,
+                    Keywords.channel_name == Program_Metadata.channel_name,
+                    weekday_case == Program_Metadata.weekday,
                     Keywords.start.between(
-                        ProgramMetadata.program_grid_start,
-                        ProgramMetadata.program_grid_end,
+                        Program_Metadata.program_grid_start,
+                        Program_Metadata.program_grid_end,
                     ),
                 ),
             )
@@ -234,7 +234,7 @@ def get_top_keywords_by_channel(session, days: int, top: int) -> pd.DataFrame:
                 Keywords.start >= start_date,
                 Keywords.start < end_date,
             )
-            .group_by(Keywords.keyword, json_alias.theme, ProgramMetadata.channel_title)
+            .group_by(Keywords.keyword, json_alias.theme, Program_Metadata.channel_title)
             .having(func.count() > 1)
             .subquery()
         )

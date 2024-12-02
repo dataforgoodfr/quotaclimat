@@ -190,7 +190,7 @@ def get_channel_title_for_name(channel_name: str) -> str:
         case "lci":
             return "LCI"
         case "franceinfotv":
-            return "France Info"
+            return "France Info TV"
         case "itele":
             return "CNews"
         case "europe1":

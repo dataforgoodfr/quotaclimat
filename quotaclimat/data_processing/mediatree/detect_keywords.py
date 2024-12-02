@@ -131,7 +131,7 @@ def remove_stopwords(plaintext: str) -> str:
 @sentry_sdk.trace
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime):
     keywords_with_timestamp = []
-    number_of_elements_in_array = 17
+    number_of_elements_in_array = 28
     default_window_in_seconds = DEFAULT_WINDOW_DURATION
     plaitext_without_stopwords = remove_stopwords(plaintext)
     logging.debug(f"display datetime start {start}")
@@ -192,8 +192,32 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         number_of_biodiversite_causes = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_causes"])
         number_of_biodiversite_consequences = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_consequences"])
         number_of_biodiversite_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_solutions"])
+        
+        # No high risk of false positive counters
+        number_of_changement_climatique_constat_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_constat"], \
+            count_high_risk_false_positive=False)
+        number_of_changement_climatique_causes_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_causes"], \
+            count_high_risk_false_positive=False)
+        number_of_changement_climatique_consequences_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_consequences"], \
+            count_high_risk_false_positive=False)
+        number_of_attenuation_climatique_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["attenuation_climatique_solutions"], \
+            count_high_risk_false_positive=False)
+        number_of_adaptation_climatique_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["adaptation_climatique_solutions"], \
+            count_high_risk_false_positive=False)
+        number_of_ressources_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["ressources"], \
+            count_high_risk_false_positive=False)
+        number_of_ressources_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["ressources_solutions"], \
+            count_high_risk_false_positive=False)
+        number_of_biodiversite_concepts_generaux_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_concepts_generaux"], \
+            count_high_risk_false_positive=False)
+        number_of_biodiversite_causes_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_causes"], \
+            count_high_risk_false_positive=False)
+        number_of_biodiversite_consequences_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_consequences"], \
+            count_high_risk_false_positive=False)
+        number_of_biodiversite_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_solutions"], \
+            count_high_risk_false_positive=False)
 
-        return [
+        return [ # Change number_of_elements_in_array if a new element is added here
             theme
             ,keywords_with_timestamp 
             ,number_of_keywords
@@ -211,8 +235,20 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             ,number_of_keywords_climat
             ,number_of_keywords_biodiversite
             ,number_of_keywords_ressources
+            ,number_of_changement_climatique_constat_no_hrfp
+            ,number_of_changement_climatique_causes_no_hrfp
+            ,number_of_changement_climatique_consequences_no_hrfp
+            ,number_of_attenuation_climatique_solutions_no_hrfp
+            ,number_of_adaptation_climatique_solutions_no_hrfp
+            ,number_of_ressources_no_hrfp
+            ,number_of_ressources_solutions_no_hrfp
+            ,number_of_biodiversite_concepts_generaux_no_hrfp
+            ,number_of_biodiversite_causes_no_hrfp
+            ,number_of_biodiversite_consequences_no_hrfp
+            ,number_of_biodiversite_solutions_no_hrfp
         ]
     else:
+        logging.info("Empty keywords")
         return [None] * number_of_elements_in_array
 
 def get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds: int = 20):
@@ -274,6 +310,17 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
                  ,"number_of_keywords_climat"
                  ,"number_of_keywords_biodiversite"
                  ,"number_of_keywords_ressources"
+                 ,"number_of_changement_climatique_constat_no_hrfp"
+                 ,"number_of_changement_climatique_causes_no_hrfp"
+                 ,"number_of_changement_climatique_consequences_no_hrfp"
+                 ,"number_of_attenuation_climatique_solutions_no_hrfp"
+                 ,"number_of_adaptation_climatique_solutions_no_hrfp"
+                 ,"number_of_ressources_no_hrfp"
+                 ,"number_of_ressources_solutions_no_hrfp"
+                 ,"number_of_biodiversite_concepts_generaux_no_hrfp"
+                 ,"number_of_biodiversite_causes_no_hrfp"
+                 ,"number_of_biodiversite_consequences_no_hrfp"
+                 ,"number_of_biodiversite_solutions_no_hrfp"
                 ]
             ] = df[['plaintext','srt', 'start']]\
                 .swifter.apply(\
@@ -282,9 +329,10 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
                         result_type='expand'
                 )
 
+            logging.info("Dropping")
             # remove all rows that does not have themes
             df = df.dropna(subset=['theme'], how='any') # any is for None values
-
+            logging.info("Droped")
             logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")
 
             return df
@@ -302,15 +350,21 @@ def add_primary_key(row):
 def filter_indirect_words(keywords_with_timestamp: List[dict]) -> List[dict]:
     return list(filter(lambda kw: indirectes not in kw['theme'], keywords_with_timestamp))
 
-def count_keywords_duration_overlap(keywords_with_timestamp: List[dict], start: datetime, theme: List[str] = None) -> int:
+def filter_high_risk_false_positive(keywords_with_timestamp: List[dict]) -> List[dict]:
+    return list(filter(lambda kw: 'hrfp' not in kw, keywords_with_timestamp))
+
+def count_keywords_duration_overlap(keywords_with_timestamp: List[dict], start: datetime, theme: List[str] = None, count_high_risk_false_positive: bool = True) -> int:
     total_keywords = len(keywords_with_timestamp)
     if(total_keywords) == 0:
         return 0
     else:
+        logging.debug(f"keywords_with_timestamp is {keywords_with_timestamp}")
         if theme is not None:
             logging.debug(f"filter theme {theme}")
             keywords_with_timestamp = list(filter(lambda kw: kw['theme'] in theme, keywords_with_timestamp))
-
+        if count_high_risk_false_positive is False:
+            keywords_with_timestamp = filter_high_risk_false_positive(keywords_with_timestamp)
+        logging.debug(f"keywords_with_timestamp is after filtering {keywords_with_timestamp}")
         length_filtered_items = len(keywords_with_timestamp)
 
         if length_filtered_items > 0:
@@ -357,7 +411,9 @@ def transform_false_positive_keywords_to_positive(keywords_with_timestamp: List[
 
         if( contains_direct_keywords_same_suject(neighbour_keywords, keyword_info['theme']) ) :
             logging.debug(f"Transforming false positive to positive { keyword_info['keyword']} { keyword_info['theme']}")
-            keyword_info['theme'] = remove_indirect(keyword_info['theme'])
+            if indirectes in keyword_info['theme']:
+                keyword_info['theme'] = remove_indirect(keyword_info['theme'])
+                keyword_info['hrfp'] = True # to store if a keyword was a transformed to a direct keyword
 
     return keywords_with_timestamp
 
@@ -383,7 +439,4 @@ def tag_wanted_duration_second_window_number(keywords_with_timestamp: List[dict]
     return keywords_with_timestamp
 
 def remove_indirect(theme: str) -> str:
-    if indirectes in theme:
-        return theme.replace(f'_{indirectes}', '')
-    else:
-        return theme
+    return theme.replace(f'_{indirectes}', '')

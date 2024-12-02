@@ -35,7 +35,9 @@ def test_main_api_import():
 
 def test_first_row_api_import():
         primary_key = "29d2b1f8267b206cb62e475b960de3247e835273f396af012f5ce21bf3056472"
+        
         specific_keyword = get_keyword(primary_key)
+        logging.info(f"Getting {primary_key} :\n {specific_keyword}")
         assert set(specific_keyword.theme) == set([
               'biodiversite_concepts_generaux_indirectes',
               'changement_climatique_consequences_indirectes',

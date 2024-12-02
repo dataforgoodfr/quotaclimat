@@ -81,7 +81,7 @@ channel_mapping = {
         ,"radio": False
     },
     "franceinfotv": {
-        "title": "France Info",
+        "title": "France Info TV",
         "public": True,
         "infocontinue": True
         ,"radio": False

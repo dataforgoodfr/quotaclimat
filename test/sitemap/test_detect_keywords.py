@@ -77,21 +77,32 @@ subtitles = [{
         "duration_ms": 34,
         "cts_in_ms": original_timestamp + 1300,
         "text": "planétaire"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 1500,
+        "text": "recyclage"
+    },
+    {
+        "duration_ms": 34,
+        "cts_in_ms": original_timestamp + 1800,
+        "text": "climatique"
     }
 ]
-def test_default_get_themes_keywords_duration():
-    plaintext_nothing = "cheese pizza"
-    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == array_of_none
-   
-def test_one_theme_get_themes_keywords_duration():
-    plaintext_climat = "réchauffement planétaire test"
-    keywords =  [{
+keywords =  [{
             'category': 'General',
             'keyword': 'réchauffement planétaire',
             'theme': 'changement_climatique_constat',
             'timestamp': 1706437080216,
             }
         ]
+def test_default_get_themes_keywords_duration():
+    plaintext_nothing = "cheese pizza"
+    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == array_of_none
+   
+def test_one_theme_get_themes_keywords_duration():
+    plaintext_climat = "réchauffement planétaire test"
+    
     themes = ['changement_climatique_constat', 'ressources_indirectes']
 
     (themes_output, keywords_output, 
@@ -139,6 +150,7 @@ def test_one_theme_get_themes_keywords_duration():
     assert number_of_biodiversite_causes_directes == 0
     assert number_of_biodiversite_consequences == 0
     assert number_of_biodiversite_solutions_directes == 0
+
     assert number_of_changement_climatique_constat_no_hrfp == 1
     assert number_of_changement_climatique_causes_no_hrfp == 0
     assert number_of_changement_climatique_consequences_no_hrfp == 0
@@ -165,7 +177,7 @@ def test_two_themes_one_hrfp_get_themes_keywords_duration():
          'theme': 'changement_climatique_constat'
         }
     ]
-    themes = ['changement_climatique_constat', 'attenuation_climatique_solutions']
+    themes = ['changement_climatique_constat', 'attenuation_climatique_solutions', 'ressources_solutions']
 
     (themes_output, keywords_output, 
         number_of_keywords,
@@ -194,20 +206,22 @@ def test_two_themes_one_hrfp_get_themes_keywords_duration():
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
         number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+    
+    logging.info(f"Test got keywords_output: {keywords_output}")
     assert set(themes_output) == set(themes)
     # assert compare_unordered_lists_of_dicts(keywords_output, keywords)
 
-    assert number_of_keywords == 2
-    assert number_of_keywords_climat == 2
+    assert number_of_keywords == 1
+    assert number_of_keywords_climat == 1
     assert number_of_keywords_biodiversite == 0
-    assert number_of_keywords_ressources == 0
+    assert number_of_keywords_ressources == 1
     assert number_of_changement_climatique_constat == 1
     assert number_of_changement_climatique_causes_directes == 0
     assert number_of_changement_climatique_consequences == 0
     assert number_of_attenuation_climatique_solutions_directes == 1
     assert number_of_adaptation_climatique_solutions_directes == 0
     assert number_of_ressources == 0
-    assert number_of_ressources_solutions == 0
+    assert number_of_ressources_solutions == 1
     assert number_of_biodiversite_concepts_generaux == 0
     assert number_of_biodiversite_causes_directes == 0
     assert number_of_biodiversite_consequences == 0
@@ -215,10 +229,10 @@ def test_two_themes_one_hrfp_get_themes_keywords_duration():
     assert number_of_changement_climatique_constat_no_hrfp == 1
     assert number_of_changement_climatique_causes_no_hrfp == 0
     assert number_of_changement_climatique_consequences_no_hrfp == 0
-    assert number_of_attenuation_climatique_solutions_no_hrfp == 0
+    assert number_of_attenuation_climatique_solutions_no_hrfp == 1
     assert number_of_adaptation_climatique_solutions_no_hrfp == 0
     assert number_of_ressources_no_hrfp == 0
-    assert number_of_ressources_solutions_no_hrfp == 0
+    assert number_of_ressources_solutions_no_hrfp == 1
     assert number_of_biodiversite_concepts_generaux_no_hrfp == 0
     assert number_of_biodiversite_causes_no_hrfp == 0
     assert number_of_biodiversite_consequences_no_hrfp == 0
@@ -349,7 +363,7 @@ def test_long_sentence_theme_get_themes_keywords_duration():
     assert number_of_changement_climatique_causes_no_hrfp == 0
     assert number_of_changement_climatique_consequences_no_hrfp == 0
     assert number_of_attenuation_climatique_solutions_no_hrfp == 0
-    assert number_of_adaptation_climatique_solutions_no_hrfp == 1
+    assert number_of_adaptation_climatique_solutions_no_hrfp == 0
     assert number_of_ressources_no_hrfp == 0
     assert number_of_ressources_solutions_no_hrfp == 0
     assert number_of_biodiversite_concepts_generaux_no_hrfp == 0
@@ -368,19 +382,25 @@ def test_regression_included_get_themes_keywords_duration():
     plaintext_regression_incomplete_word_ngt = "vingt"
     assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == array_of_none
     
+def test_filter_high_risk_false_positive_without_hrfp():
+    result = filter_high_risk_false_positive(keywords_with_timestamp=keywords)
+    assert result == keywords
+
+    
+def test_filter_high_risk_false_positive_with_hrfp():
+    keywords = keywords =  [{
+            'category': 'General',
+            'keyword': 'réchauffement planétaire',
+            'theme': 'changement_climatique_constat',
+            'timestamp': 1706437080216,
+            'hrfp': True
+            }
+        ]
+
+    result = filter_high_risk_false_positive(keywords_with_timestamp=keywords)
+    assert result == []
 
 def test_three_get_themes_keywords_duration():
-    keywords = [
-        {'category': 'General',
-         'keyword': 'adaptation au dérèglement climatique',
-        'theme': 'adaptation_climatique_solutions',
-        'timestamp': 1706437080004}
-        ,{
-        'category': '',
-        'keyword': 'record de température',
-        'theme': 'changement_climatique_consequences',
-        'timestamp': 1706437080004,
-    }]
     themes = set([
      "adaptation_climatique_solutions", 'changement_climatique_consequences'
     ])
@@ -414,7 +434,7 @@ def test_three_get_themes_keywords_duration():
         number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
 
     assert set(themes_output)== themes
-    #assert keywords_output == keywords
+    logging.info(f"Got keywords:  {keywords_output}")
     assert number_of_keywords == 1
     assert number_of_changement_climatique_constat == 0
     assert number_of_changement_climatique_causes_directes == 0
@@ -664,7 +684,7 @@ def test_lower_case_filter_and_tag_by_theme():
         'number_of_keywords_biodiversite':0,
         'number_of_keywords_ressources':0
         ,"number_of_changement_climatique_constat_no_hrfp": 0
-        ,"number_of_changement_climatique_causes_no_hrfp": 0
+        ,"number_of_changement_climatique_causes_no_hrfp": 1
         ,"number_of_changement_climatique_consequences_no_hrfp": 0
         ,"number_of_attenuation_climatique_solutions_no_hrfp": 0
         ,"number_of_adaptation_climatique_solutions_no_hrfp": 0
@@ -728,7 +748,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         'number_of_keywords_biodiversite':0,
         'number_of_keywords_ressources':0
         ,"number_of_changement_climatique_constat_no_hrfp": 0
-        ,"number_of_changement_climatique_causes_no_hrfp": 0
+        ,"number_of_changement_climatique_causes_no_hrfp": 1
         ,"number_of_changement_climatique_consequences_no_hrfp": 0
         ,"number_of_attenuation_climatique_solutions_no_hrfp": 0
         ,"number_of_adaptation_climatique_solutions_no_hrfp": 0
@@ -1042,6 +1062,40 @@ def test_only_one_count_keywords_duration_overlap():
     
     assert count_keywords_duration_overlap(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, duration_seconds = 15), start) == 1
 
+def test_only_one_count_keywords_duration_overlap_no_hrfp():
+    keywords_with_timestamp = [{
+                "keyword" : 'habitabilité de la planète',
+                "timestamp": original_timestamp, # count for one
+                "theme":"changement_climatique_constat",
+            }
+    ]
+    
+    assert count_keywords_duration_overlap(\
+        tag_wanted_duration_second_window_number(keywords_with_timestamp, start, duration_seconds = 15),\
+             start, count_high_risk_false_positive=False) == 1
+
+def test_only_one_hrfp_count_keywords_duration_overlap_no_hrfp():
+    keywords_with_timestamp = [{
+                "keyword" : 'abeille',
+                "timestamp": original_timestamp,
+                "theme":"biodiversite_concepts_generaux_indirectes", # transform to direct via solutions biodiv
+            },
+            {
+                "keyword" : 'agriculture bio',
+                "timestamp": original_timestamp + 1000,
+                "theme":"biodiversite_solutions",
+            }
+    ]
+
+    tag = tag_wanted_duration_second_window_number(keywords_with_timestamp, start, duration_seconds = 15)
+    tag = get_keywords_with_timestamp_with_false_positive(tag, start, duration_seconds=15)
+
+    expected = [{'keyword': 'abeille', 'timestamp': 1706437079004, 'theme': 'biodiversite_concepts_generaux', 'window_number': 0, 'hrfp': True}, 
+                {'keyword': 'agriculture bio', 'timestamp': 1706437080004, 'theme': 'biodiversite_solutions', 'window_number': 0}
+    ]
+    assert expected == tag
+    assert count_keywords_duration_overlap(tag, start, count_high_risk_false_positive=False) == 1
+    
 def test_indirect_count_keywords_duration_overlap():
     keywords_with_timestamp = [{
                 "keyword" : 'digue',

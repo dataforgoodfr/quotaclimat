@@ -817,4 +817,5 @@ STOP_WORDS = [
     ,"panneaux solaires avec edf solutions solaire"
     ,"un bidon ça se recharge encore et encore"
     ,"ça se recharge et avec le vrac"
+    ,"encore et encore vrac recharge emballages et employables de réemploi"
 ]

@@ -125,6 +125,50 @@ services:
     logging: # no logs for postgres container
             driver: none
 
+    
+  llm:
+    ports:
+      - 5555:5555
+    build:
+      context: ./
+      dockerfile: Dockerfile_api_import
+    entrypoint: ["python", "quotaclimat/sentiment/enrich_with_llm.py"]
+    environment:
+      ENV: docker # change me to prod for real cases
+      LOGLEVEL: DEBUG # Change me to info (debug, info, warning, error) to have less log
+      PYTHONPATH: /app
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      PORT_HS: 5555 # healthcheck
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      MEDIATREE_USER : /run/secrets/username_api
+      MEDIATREE_PASSWORD:  /run/secrets/pwd_api
+      SCW_SECRET: /run/secrets/scw_api
+      SCW_API_URL: /run/secrets/scw_api_url
+      MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
+      KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/ # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
+      MODIN_ENGINE: ray
+      MODIN_CPUS: 4 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
+      MODIN_MEMORY: 1000000000 # 1Gb
+      RAY_memory_usage_threshold: 1
+    mem_limit: "1G"
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./llm/:/app/llm/
+      - ./postgres/:/app/postgres/
+      - ./test/:/app/test/
+    secrets:
+       - pwd_api
+       - username_api
+       - scw_api
+       - scw_api_url
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
   mediatree:
     ports:
       - 5050:5050
@@ -156,6 +200,7 @@ services:
       CHANNEL : fr3-idf # to reimport only one channel
       MEDIATREE_USER : /run/secrets/username_api
       MEDIATREE_PASSWORD:  /run/secrets/pwd_api
+      SCW_SECRET: /run/secrets/scw_api
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
       KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/ # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
       MODIN_ENGINE: ray
@@ -170,6 +215,7 @@ services:
     secrets:
        - pwd_api
        - username_api
+       - scw_api
     depends_on:
       nginxtest:
         condition: service_healthy
@@ -201,3 +247,7 @@ secrets: # https://docs.docker.com/compose/use-secrets/
       file: secrets/pwd_api.txt
     username_api:
       file: secrets/username_api.txt
+    scw_api:
+      file: secrets/scw_api.txt
+    scw_api_url:
+      file: secrets/scw_api_url.txt

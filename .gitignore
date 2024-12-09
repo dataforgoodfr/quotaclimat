@@ -1,9 +1,13 @@
 secrets/pwd_api.txt
 secrets/username_api.txt
+secrets/username_api.txt
+secrets/*
 documents-experts/
+llm/
 cc-bio.json
 *.xlsx
 coverage_re
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

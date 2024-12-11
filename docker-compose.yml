@@ -49,8 +49,18 @@ services:
       POSTGRES_PORT: 5432
       COMPARE_DURATION: "true"
       MODIN_ENGINE: ray
+      MEDIATREE_USER : /run/secrets/username_api
+      MEDIATREE_PASSWORD: /run/secrets/pwd_api
+      BUCKET: /run/secrets/bucket
+      BUCKET_NAME: mediatree
+      BUCKET_SECRET: /run/secrets/bucket_secret
       MODIN_CPUS: 4 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
     tty: true # colorize terminal
+    secrets:
+       - pwd_api
+       - username_api
+       - bucket
+       - bucket_secret
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/
@@ -176,6 +186,50 @@ services:
       postgres_db:
         condition: service_healthy
 
+  api_to_s3:
+    ports:
+      - 5666:5666
+      - 8265:8265
+    build:
+      context: ./
+      dockerfile: Dockerfile_api_to_s3
+    environment:
+      ENV: docker # change me to prod for real cases
+      LOGLEVEL: DEBUG # Change me to info (debug, info, warning, error) to have less log
+      PYTHONPATH: /app
+      PORT_HS: 5666 # healthcheck
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      # SENTRY_DSN: prod_only
+      #END_DATE: "2024-02-29" # optional - otherwise end of the month
+      # START_DATE: 1727610071 # to test batch import 
+      CHANNEL : fr3-idf # to reimport only one channel
+      MEDIATREE_USER : /run/secrets/username_api
+      MEDIATREE_PASSWORD: /run/secrets/pwd_api
+      BUCKET: /run/secrets/bucket
+      BUCKET_SECRET: /run/secrets/bucket_secret
+      BUCKET_NAME: mediatree
+      MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
+      KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/ # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
+      MODIN_ENGINE: ray
+      MODIN_CPUS: 4 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
+      MODIN_MEMORY: 1000000000 # 1Gb
+      RAY_memory_usage_threshold: 1
+    mem_limit: "1G"
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./test/:/app/test/
+    secrets:
+       - pwd_api
+       - username_api
+       - bucket
+       - bucket_secret
+    depends_on:
+      nginxtest:
+        condition: service_healthy
+      postgres_db:
+        condition: service_healthy
+
   metabase:
       container_name: metabase_barometre
       image: metabase/metabase:latest
@@ -197,7 +251,11 @@ services:
           condition: service_healthy
 
 secrets: # https://docs.docker.com/compose/use-secrets/
-    pwd_api:
-      file: secrets/pwd_api.txt
-    username_api:
-      file: secrets/username_api.txt
+  pwd_api:
+    file: secrets/pwd_api.txt
+  username_api:
+    file: secrets/username_api.txt
+  bucket:
+    file: secrets/scw_bucket.txt
+  bucket_secret:
+    file: secrets/scw_bucket_secret.txt

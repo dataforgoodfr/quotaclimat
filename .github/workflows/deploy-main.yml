@@ -55,11 +55,16 @@ jobs:
     - name: Push mediatree_import Image
       run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import
 
-    - name: Build ingest_to_db image
-      run: docker build -f Dockerfile_ingest . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
-    - name: Push ingest_to_db Image
-      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
+    # Not used anymore
+    # - name: Build ingest_to_db image
+    #   run: docker build -f Dockerfile_ingest . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
+    # - name: Push ingest_to_db Image
+    #   run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
 
+    - name: Build s3 image
+      run: docker build -f Dockerfile_api_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3
+    - name: Push s3 Image
+      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3
     - name: update scaleway job definition with version mediatree_import
       uses: jawher/action-scw@v2.34.0
       env:

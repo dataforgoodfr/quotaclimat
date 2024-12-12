@@ -85,6 +85,17 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp):
         logging.error(Exception)
         exit()
 
+def check_if_object_exists_in_s3(day, channel):
+    object_key = get_bucket_key(day, channel)
+    logging.info(f"Checking if object exists: {object_key}")
+    try:
+        s3_client.head_object(Bucket=BUCKET_NAME, Key=object_key)
+        logging.debug(f"Object already exists, skipping")
+        return True
+    except Exception as e:
+        logging.info(f"Object does not exist in s3, continuing \n{e}")
+        return False
+
 async def get_and_save_api_data(exit_event):
     with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
         try:
@@ -104,28 +115,33 @@ async def get_and_save_api_data(exit_event):
                 
                 for channel in channels:
                     df_res = pd.DataFrame()
-                    try:
-                        programs_for_this_day = get_programs_for_this_day(day.tz_localize("Europe/Paris"), channel, df_programs)
+                    
+                    # if object already exists, skip
+                    if not check_if_object_exists_in_s3(day, channel):
+                        try:
+                            programs_for_this_day = get_programs_for_this_day(day.tz_localize("Europe/Paris"), channel, df_programs)
 
-                        for program in programs_for_this_day.itertuples(index=False):
-                            start_epoch = program.start
-                            end_epoch = program.end
-                            channel_program = str(program.program_name)
-                            channel_program_type = str(program.program_type)
-                            logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
-                            df = get_df_api(token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type)
+                            for program in programs_for_this_day.itertuples(index=False):
+                                start_epoch = program.start
+                                end_epoch = program.end
+                                channel_program = str(program.program_name)
+                                channel_program_type = str(program.program_type)
+                                logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
+                                df = get_df_api(token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type)
 
-                            if(df is not None):
-                                df_res = pd.concat([df_res, df ], ignore_index=True)
-                            else:
-                                logging.info("Nothing to extract")
+                                if(df is not None):
+                                    df_res = pd.concat([df_res, df ], ignore_index=True)
+                                else:
+                                    logging.info("Nothing to extract")
 
-                        # save to S3
-                        save_to_s3(df_res, channel, day)
-                        
-                    except Exception as err:
-                        logging.error(f"continuing loop but met error : {err}")
-                        continue
+                            # save to S3
+                            save_to_s3(df_res, channel, day)
+                            
+                        except Exception as err:
+                            logging.error(f"continuing loop but met error : {err}")
+                            continue
+                    else:
+                        logging.info(f"Object already exists for {day} and {channel}, skipping")
             exit_event.set()
         except Exception as err:
             logging.fatal("get_and_save_api_data (%s) %s" % (type(err).__name__, err))

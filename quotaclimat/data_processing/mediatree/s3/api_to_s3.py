@@ -51,7 +51,7 @@ BUCKET_NAME = os.environ.get("BUCKET_NAME")
 REGION = 'fr-par'
 
 ENDPOINT_URL = f'https://s3.{REGION}.scw.cloud'
-
+number_of_previous_days = 7 # to replay data if a job has failed
 s3_client = boto3.client(
     service_name='s3',
     region_name=REGION,
@@ -138,8 +138,7 @@ async def get_and_save_api_data(exit_event):
 
             token=get_auth_token(password=password, user_name=USER)
             type_sub = 's2t'
-
-            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default()
+            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(number_of_previous_days)
             df_programs = get_programs()
             channels = get_channels()
             

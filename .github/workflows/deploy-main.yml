@@ -55,18 +55,6 @@ jobs:
     - name: Push mediatree_import Image
       run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import
 
-    # Not used anymore
-    # - name: Build ingest_to_db image
-    #   run: docker build -f Dockerfile_ingest . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
-    # - name: Push ingest_to_db Image
-    #   run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
-
-    - name: Build s3 image
-      run: docker build -f Dockerfile_api_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
-    - name: Tag s3 latest image
-      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:latest
-    - name: Push s3 Image
-      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
     - name: update scaleway job definition with version mediatree_import
       uses: jawher/action-scw@v2.34.0
       env:
@@ -76,7 +64,15 @@ jobs:
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
         args: jobs definition update ${{ secrets.SCALEWAY_JOB_IMPORT_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }}
-    - name: update scaleway job definition with version s3
+    
+    - name: Build s3 image
+      run: docker build -f Dockerfile_api_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
+    - name: Tag s3 latest image
+      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:latest
+    - name: Push s3 Image
+      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
+
+   - name: update scaleway job definition with version s3
       uses: jawher/action-scw@v2.34.0
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
@@ -85,3 +81,20 @@ jobs:
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
         args: jobs definition update ${{ secrets.SCALEWAY_JOB_S3_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
+    
+    - name: Build stop_words image
+      run: docker build -f Dockerfile_stop_words . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_words:${{ env.PROJECT_VERSION }}
+    - name: Tag stop_words latest image
+      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_words:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_words:latest
+    - name: Push stop_words Image
+      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_words:${{ env.PROJECT_VERSION }}
+
+    - name: update scaleway job definition with version stopwords
+      uses: jawher/action-scw@v2.34.0
+      env:
+        SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+        SCW_ZONE: ${{ secrets.SCW_ZONE }}
+      with:
+        args: jobs definition update ${{ secrets.SCALEWAY_STOP_WORDS_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_words:${{ env.PROJECT_VERSION }}

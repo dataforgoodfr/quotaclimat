@@ -72,7 +72,7 @@ srt = [{
 
 keywords_with_timestamp = [
     {
-        "keyword": "conditions de vie sur terre",
+        "keyword": "accord de paris",
         "timestamp": 1706437094004,
         "theme": "changement_climatique_constat"
     },
@@ -93,7 +93,7 @@ themes = [
     "ressources" # should be removed
 ]
 
-df = pd.DataFrame([{
+row = {
     "id" : primary_key,
     "start": original_timestamp,
     "plaintext": plaintext,
@@ -120,7 +120,9 @@ df = pd.DataFrame([{
     ,"number_of_keywords_climat": wrong_value
     ,"number_of_keywords_biodiversite": wrong_value
     ,"number_of_keywords_ressources": wrong_value
-}])
+}
+
+df = pd.DataFrame([row | {'id': 1}, row| {'id': 2}, row| {'id': 3}, row| {'id': 4}, row| {'id': 5}, row| {'id': 6}])
 
 save_to_pg(df, keywords_table, session)
 

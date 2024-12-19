@@ -189,70 +189,73 @@ def get_top_keywords_by_channel(session, days: int, top: int) -> pd.DataFrame:
     start_date = get_last_X_days(days)
 
     try:
-        # JSON alias for unnesting `keywords_with_timestamp`
-        json_alias = aliased(Keywords, name="json_keywords_with_timestamp")
-
-        # Weekday calculation for filtering
-        weekday_case = case(
-            [
-                (
-                    ((extract("dow", Keywords.start) + 1 + 6) % 7) == 0,
-                    7,
-                )
-            ],
-            else_=((extract("dow", Keywords.start) + 1 + 6) % 7),
+        # TODO use date
+        start_date =  "'2020-12-12 00:00:00.000 +01:00'"
+        end_date = "'2024-12-19 00:00:00.000 +01:00'"
+        sql_query = f"""
+        WITH ranked_keywords AS (
+            SELECT 
+                "keyword" AS "keyword",
+                "theme" AS "theme",
+                "Program Metadata - Channel Program__channel_title" AS "chaine",
+                COUNT(*) AS "Nombre",
+                ROW_NUMBER() OVER (PARTITION BY "Program Metadata - Channel Program__channel_title"
+                ORDER BY COUNT(*) DESC) AS rank,
+                ROW_NUMBER() OVER (PARTITION BY "Program Metadata - Channel Program__channel_title", "keyword" 
+                ORDER BY COUNT(*) DESC) AS rank_keyword
+            FROM (
+                SELECT
+                    "public"."program_metadata"."channel_title" AS "Program Metadata - Channel Program__channel_title",
+                    "public"."program_metadata"."channel_program" AS "Program Metadata - Channel Program__channel_program",
+                    "json_keywords_with_timestamp" ->> 'theme' AS "theme",
+                    "json_keywords_with_timestamp" ->> 'keyword' AS "keyword",
+                    "json_keywords_with_timestamp" ->> 'category' AS "category"
+                FROM
+                    "public"."keywords"
+                INNER JOIN "public"."program_metadata" 
+                    ON "public"."keywords"."channel_program" = "public"."program_metadata"."channel_program"
+                    AND "public"."keywords"."channel_name" = "public"."program_metadata"."channel_name"
+                    AND (
+                        CASE
+                            WHEN (
+                                (CAST(extract(dow FROM "public"."keywords"."start") AS integer) + 1 + 6) % 7
+                            ) = 0 THEN 7
+                            ELSE (CAST(extract(dow FROM "public"."keywords"."start") AS integer) + 1 + 6) % 7
+                        END
+                    ) = "public"."program_metadata"."weekday"
+                    AND CAST("public"."keywords"."start" AS date) >= CAST("public"."program_metadata"."program_grid_start" AS date)
+                    AND CAST("public"."keywords"."start" AS date) <= CAST("public"."program_metadata"."program_grid_end" AS date)
+                CROSS JOIN LATERAL json_array_elements("public"."keywords"."keywords_with_timestamp") AS "json_keywords_with_timestamp"
+                WHERE
+                    "json_keywords_with_timestamp" ->> 'theme' NOT LIKE '%indirect%'
+                    AND "public"."keywords"."start" >= timestamp with time zone {start_date}
+                    AND "public"."keywords"."start" < timestamp with time zone {end_date}
+            ) tmp
+            GROUP BY "keyword", "theme", "Program Metadata - Channel Program__channel_title"
+            HAVING count(*) > 1
         )
 
-        # Query construction
-        subquery = (
-            session.query(
-                Keywords.keyword.label("keyword"),
-                json_alias.theme.label("theme"),
-                Program_Metadata.channel_title.label("channel_title"),
-                func.count().label("count"),
-                func.row_number()
-                .over(
-                    partition_by=Program_Metadata.channel_title,
-                    order_by=func.count().desc(),
-                )
-                .label("rank"),
-            )
-            .join(
-                Program_Metadata,
-                and_(
-                    Keywords.channel_program == Program_Metadata.channel_program,
-                    Keywords.channel_name == Program_Metadata.channel_name,
-                    weekday_case == Program_Metadata.weekday,
-                    Keywords.start.between(
-                        Program_Metadata.program_grid_start,
-                        Program_Metadata.program_grid_end,
-                    ),
-                ),
-            )
-            .filter(
-                json_alias.theme.notlike("%indirect%"),
-                Keywords.start >= start_date,
-                Keywords.start < end_date,
-            )
-            .group_by(Keywords.keyword, json_alias.theme, Program_Metadata.channel_title)
-            .having(func.count() > 1)
-            .subquery()
-        )
+        SELECT 
+            keyword, 
+            theme, 
+            chaine, 
+            rank, 
+            "Nombre"
+        FROM ranked_keywords
+        WHERE rank <= {top} AND rank_keyword = 1
+        ORDER BY chaine, "Nombre" DESC
+        LIMIT 100;
+        """
 
-        # Final query to filter top $top keywords per channel
-        query = (
-            session.query(
-                subquery.c.keyword,
-                subquery.c.theme,
-                subquery.c.channel_title,
-                subquery.c.count,
-            )
-            .filter(subquery.c.rank <= top)
-            .order_by(subquery.c.channel_title, desc(subquery.c.count))
+        result = session.execute(
+            text(sql_query),
+            {'start_date': '2020-12-12 00:00:00.000 +01:00', 'end_date': '2024-12-19 00:00:00.000 +01:00'}
         )
-        logging.debug(f"Query: {query}")
+        logging.warning(f"result: {result}")
+        logging.debug(f"Query: {sql_query}")
         # Execute and convert to Pandas DataFrame
-        result = pd.read_sql(query.statement, session.bind)
+        result = pd.DataFrame(result.fetchall(), columns=result.keys())
+        logging.warning(f"result: {result}")
         return result
 
     finally:

@@ -818,4 +818,9 @@ STOP_WORDS = [
     ,"un bidon ça se recharge encore et encore"
     ,"ça se recharge et avec le vrac"
     ,"encore et encore vrac recharge emballages et employables de réemploi"
+    ,"fleuron industrie distributeur de panneaux solaire"
+    ,"panneaux solaires fleuron industrie"
+    ,"fleuron industrie"
+    ,"rendez-vous avec elle est aussi l' efficacité énergétique"
+    ,"rendez-vous avec elle et l' efficacité énergétique"
 ]

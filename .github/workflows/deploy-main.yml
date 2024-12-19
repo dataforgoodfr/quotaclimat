@@ -62,9 +62,11 @@ jobs:
     #   run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ingest_to_db
 
     - name: Build s3 image
-      run: docker build -f Dockerfile_api_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3
+      run: docker build -f Dockerfile_api_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
+    - name: Tag s3 latest image
+      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:latest
     - name: Push s3 Image
-      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3
+      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
     - name: update scaleway job definition with version mediatree_import
       uses: jawher/action-scw@v2.34.0
       env:

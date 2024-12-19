@@ -211,14 +211,14 @@ services:
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
       KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/ # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
       MODIN_ENGINE: ray
-      MODIN_CPUS: 4 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
-      MODIN_MEMORY: 1000000000 # 1Gb
-      RAY_memory_usage_threshold: 1
-    mem_limit: "1G"
+      MODIN_CPUS: 6 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
+      MODIN_MEMORY: 12000000000 # 1Gb
+      RAY_memory_usage_threshold: 0.95
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/
       - ./test/:/app/test/
+      - ./s3:/app/s3/
     secrets:
        - pwd_api
        - username_api

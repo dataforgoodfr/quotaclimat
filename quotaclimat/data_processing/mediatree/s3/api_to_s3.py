@@ -19,7 +19,7 @@ from quotaclimat.data_processing.mediatree.api_import import *
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, get_db_session
 from postgres.schemas.models import keywords_table
-
+import shutil
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from typing import List, Optional
 from tenacity import *
@@ -60,9 +60,31 @@ s3_client = boto3.client(
     endpoint_url=ENDPOINT_URL,
 )
 
-def get_bucket_key(date, channel):
+def get_bucket_key(date, channel, filename:str="*", suffix:str="parquet"):
     (year, month, day) = (date.year, date.month, date.day)
-    return f'year={year}/month={month:02}/day={day:02}/channel={channel}/data.json.gz'
+    return f'year={year}/month={month:1}/day={day:1}/channel={channel}/{filename}.{suffix}'
+
+def get_bucket_key_folder(date, channel):
+    (year, month, day) = (date.year, date.month, date.day)
+    return f'year={year}/month={month:1}/day={day:1}/channel={channel}/'
+
+# Function to upload folder to S3
+def upload_folder_to_s3(local_folder, bucket_name, base_s3_path):
+    logging.info(f"Reading local folder {local_folder} and uploading to S3")
+    for root, _, files in os.walk(local_folder):
+        logging.info(f"Reading files {len(files)}")
+        for file in files:
+            logging.info(f"Reading {file}")
+            local_file_path = os.path.join(root, file)
+            relative_path = os.path.relpath(local_file_path, local_folder)
+            s3_key = os.path.join(base_s3_path, relative_path).replace("\\", "/")  # Replace backslashes for S3 compatibility
+            
+            # Upload file
+            s3_client.upload_file(local_file_path, bucket_name, s3_key)
+            logging.info(f"Uploaded: {s3_key}")
+            # Delete the local folder after successful upload
+            shutil.rmtree(local_folder)
+            logging.info(f"Deleted local folder: {local_folder}")
 
 def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp):
     logging.info(f"Saving DF with {len(df)} elements to S3 for {date} and channel {channel}")
@@ -70,30 +92,43 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp):
     # to create partitions
     object_key = get_bucket_key(date, channel)
     logging.debug(f"Uploading partition: {object_key}")
-    # json_to_save = df.to_json(None, orient='records', lines=False)
-    logging.info(f"s3://{BUCKET_NAME}/{object_key}")
 
     try:
-        json_buffer = BytesIO()
-        with gzip.GzipFile(fileobj=json_buffer, mode='w') as gz:
-            df.to_json(gz, orient='records', lines=False)
+        # add partition columns year, month, day to dataframe
+        df['year'] = date.year
+        df['month'] = date.month
+        df['day'] = date.day
+        df['channel'] = channel
 
-        s3_client.put_object(Bucket=BUCKET_NAME, Key=object_key, Body=json_buffer.getvalue())
+        df = df._to_pandas() # collect data accross ray workers to avoid multiple subfolders
+        based_path = "s3/parquet"
+        df.to_parquet(based_path,
+                       compression='gzip'
+                       ,partition_cols=['year', 'month', 'day', 'channel'])
 
-        logging.info(f"Uploaded partition: {object_key}")
+        #saving full_path folder parquet to s3
+        s3_path = f"{get_bucket_key_folder(date, channel)}"
+        local_folder = f"{based_path}/{s3_path}"
+        upload_folder_to_s3(local_folder, BUCKET_NAME, s3_path)
+        
     except Exception as e:
         logging.error(Exception)
         exit()
 
 def check_if_object_exists_in_s3(day, channel):
-    object_key = get_bucket_key(day, channel)
-    logging.info(f"Checking if object exists: {object_key}")
+    folder_prefix = get_bucket_key_folder(day, channel)  # Adjust this to return the folder path
+    
+    logging.debug(f"Checking if folder exists: {folder_prefix}")
     try:
-        s3_client.head_object(Bucket=BUCKET_NAME, Key=object_key)
-        logging.debug(f"Object already exists, skipping")
-        return True
+        response = s3_client.list_objects_v2(Bucket=BUCKET_NAME, Prefix=folder_prefix, MaxKeys=1)
+        if "Contents" in response:
+            logging.info(f"Folder exists in S3: {folder_prefix}")
+            return True
+        else:
+            logging.debug(f"Folder does not exist in S3: {folder_prefix}")
+            return False
     except Exception as e:
-        logging.info(f"Object does not exist in s3, continuing \n{e}")
+        logging.error(f"Error while checking folder in S3: {folder_prefix}\n{e}")
         return False
 
 async def get_and_save_api_data(exit_event):

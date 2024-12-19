@@ -1,5 +1,7 @@
 secrets/pwd_api.txt
 secrets/username_api.txt
+secrets/*
+s3/*
 documents-experts/
 cc-bio.json
 *.xlsx

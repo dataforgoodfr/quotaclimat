@@ -384,6 +384,16 @@ Program data will not be updated to avoid lock concurrent issues when using `UPD
 
 **With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.**
 
+# Mediatre to S3
+For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway).
+
+Env variable used :
+* START_DATE (unixtimestamp such as mediatree service)
+* CHANNEL (such as mediatree service)
+* BUCKET : Scaleway Access key
+* BUCKET_SECRET : Scaleway Secret key
+* BUCKET_NAME
+
 ## Production monitoring
 * Use scaleway
 * Use [Ray dashboard] on port 8265

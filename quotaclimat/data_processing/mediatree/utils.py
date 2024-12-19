@@ -64,9 +64,9 @@ def get_min_hour(date: datetime):
 def get_max_hour(date: datetime):
     return datetime.combine(date, time.max)
 
-def get_datetime_yesterday():
+def get_datetime_yesterday(days=1):
     midnight_today = get_min_hour(get_now())
-    return midnight_today - timedelta(days=1)
+    return midnight_today - timedelta(days=days)
 
 def get_yesterday():
     yesterday = get_datetime_yesterday()
@@ -79,12 +79,12 @@ def get_end_of_month(start_date: str) -> str:
     date = pd.to_datetime(date, format='%Y%m%d')
     return date.strftime('%Y-%m-%d')
 
-def get_start_end_date_env_variable_with_default():
+def get_start_end_date_env_variable_with_default(days=1):
     start_date = os.environ.get("START_DATE")
 
     if start_date is not None:
         logging.info(f"Using START_DATE env var {start_date}")
-        return (int(start_date), get_yesterday())
+        return (int(start_date), get_yesterday(days))
     else:
         logging.info(f"Getting data from yesterday - you can use START_DATE env variable to provide another starting date")
         return (get_yesterday(), None)

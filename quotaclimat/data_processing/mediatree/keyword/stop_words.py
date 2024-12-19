@@ -814,4 +814,13 @@ STOP_WORDS = [
     ,"grdf quand on parle du gaz on entre parfois la pompe à chaleur"
     ,"grdf quand on parle du gaz on entre parfois assez"
     ,"quarante pour cent d' énergie consomm"
+    ,"panneaux solaires avec edf solutions solaire"
+    ,"un bidon ça se recharge encore et encore"
+    ,"ça se recharge et avec le vrac"
+    ,"encore et encore vrac recharge emballages et employables de réemploi"
+    ,"fleuron industrie distributeur de panneaux solaire"
+    ,"panneaux solaires fleuron industrie"
+    ,"fleuron industrie"
+    ,"rendez-vous avec elle est aussi l' efficacité énergétique"
+    ,"rendez-vous avec elle et l' efficacité énergétique"
 ]

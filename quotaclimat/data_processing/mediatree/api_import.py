@@ -236,10 +236,17 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
         logging.getLogger("modin.logging.default").setLevel(logging.WARNING)
         if(total_results > 0):
             logging.info(f"{total_results} 'total_results' field")
-            new_df : pd.DataFrame = json_normalize(response_sub.get('data')) # TODO UserWarning: json_normalize is not currently supported by PandasOnRay, defaulting to pandas implementation.
+           
+            # To avoid  UserWarning: json_normalize is not currently supported by PandasOnRay, defaulting to pandas implementation.
+            flattened_data = response_sub.get("data", [])
+            new_df : pd.DataFrame = pd.DataFrame(flattened_data)
+            new_df["channel.name"] = new_df["channel"].apply(lambda x: x["name"])
+            new_df["channel.title"] = new_df["channel"].apply(lambda x: x["title"])
+            new_df["channel.radio"] = new_df["channel"].apply(lambda x: x["radio"])
+            new_df.drop("channel", axis=1, inplace=True)
+
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             pd.set_option('display.max_columns', None)
-           
             logging.debug("setting timestamp")
             new_df['timestamp'] = new_df.apply(lambda x: pd.to_datetime(x['start'], unit='s', utc=True), axis=1)
             logging.debug("timestamp was set")

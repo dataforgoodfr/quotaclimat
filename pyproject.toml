@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "quotaclimat"
-version = "1.0.48"
+version = "1.0.56"
 description = ""
 authors = [
     "Rambier Estelle <estelle.rambier@hotmail.fr>",
@@ -13,6 +13,9 @@ log_cli = 1
 log_cli_level = "INFO"
 
 [tool.poetry.dependencies]
+s3fs = {extras = ["boto3"], version = ">=2023.12.0"}
+boto3 = "*"
+botocore = "*"
 python = ">=3.11,<=3.13"
 pandas = "^2.2.3"
 advertools = "^0.14.1"

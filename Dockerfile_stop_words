@@ -44,6 +44,3 @@ COPY docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x ./docker-entrypoint.sh
 
 ENTRYPOINT ["./docker-entrypoint_stop_word.sh"]
-build:
-    context: ./
-    dockerfile: Dockerfile_api_import

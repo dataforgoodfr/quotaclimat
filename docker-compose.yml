@@ -74,6 +74,9 @@ services:
         condition: service_healthy
       postgres_db:
         condition: service_healthy
+      metabase:
+        condition: service_healthy
+
 
   nginxtest: # to test locally webpages
     container_name: nginxtest

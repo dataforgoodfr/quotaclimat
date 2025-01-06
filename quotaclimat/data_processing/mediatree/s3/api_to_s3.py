@@ -138,7 +138,8 @@ async def get_and_save_api_data(exit_event):
 
             token=get_auth_token(password=password, user_name=USER)
             type_sub = 's2t'
-            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(number_of_previous_days)
+            start_date = int(os.environ.get("START_DATE"))
+            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
             df_programs = get_programs()
             channels = get_channels()
             
@@ -183,7 +184,7 @@ async def get_and_save_api_data(exit_event):
             sys.exit(1)
 
 async def main():
-    with monitor(monitor_slug='mediatree'): #https://docs.sentry.io/platforms/python/crons/
+    with monitor(monitor_slug='api-to-s3'): #https://docs.sentry.io/platforms/python/crons/
         try:
             logging.info("Start api to S3")
             

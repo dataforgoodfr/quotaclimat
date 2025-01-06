@@ -68,8 +68,8 @@ def get_datetime_yesterday(days=1):
     midnight_today = get_min_hour(get_now())
     return midnight_today - timedelta(days=days)
 
-def get_yesterday():
-    yesterday = get_datetime_yesterday()
+def get_yesterday(days=1):
+    yesterday = get_datetime_yesterday(days=1)
     yesterday_timestamp = yesterday.timestamp()
 
     return int(yesterday_timestamp)
@@ -79,12 +79,11 @@ def get_end_of_month(start_date: str) -> str:
     date = pd.to_datetime(date, format='%Y%m%d')
     return date.strftime('%Y-%m-%d')
 
-def get_start_end_date_env_variable_with_default(days=1):
-    start_date = os.environ.get("START_DATE")
-
+def get_start_end_date_env_variable_with_default(start_date:int, minus_days:int=1):
     if start_date is not None:
-        logging.info(f"Using START_DATE env var {start_date}")
-        return (int(start_date), get_yesterday(days))
+        start_date_minus_days = int(int(start_date) - (minus_days * 24 * 60 * 60))
+        logging.info(f"Using START_DATE env var {start_date} - to get {minus_days} day(s) before (env var NUMBER_OF_PREVIOUS_DAYS) : {start_date_minus_days}")
+        return (int(start_date), start_date_minus_days)
     else:
         logging.info(f"Getting data from yesterday - you can use START_DATE env variable to provide another starting date")
         return (get_yesterday(), None)
@@ -92,9 +91,10 @@ def get_start_end_date_env_variable_with_default(days=1):
 # Get range of 2 date by week from start to end
 def get_date_range(start_date_to_query, end_epoch):
     if end_epoch is not None:
-        range = pd.date_range(pd.to_datetime(start_date_to_query, unit='s').normalize(),
-                              pd.to_datetime(end_epoch, unit='s').normalize()
-                            , freq="D")
+        logging.info(f"Getting date range from {pd.to_datetime(start_date_to_query, unit='s').normalize()} - {pd.to_datetime(end_epoch, unit='s').normalize()}")
+        range = pd.date_range( pd.to_datetime(end_epoch, unit='s').normalize(),
+                              pd.to_datetime(start_date_to_query, unit='s').normalize(),
+                              freq="D")
 
         logging.info(f"Date range: {range} \n {start_date_to_query} until {end_epoch}")
         return range

@@ -273,7 +273,7 @@ docker compose up mediatree
 
 ### Configuration - Batch import
 ### Based on time
-If our media perimeter evolves, we have to reimport it all using env variable `START_DATE` like in docker compose (epoch second format : 1705409797).
+If our media perimeter evolves, we have to reimport it all using env variable `START_DATE` like in docker compose (epoch second format : 1705409797). By default, it will import 30 days, you can modify it with `NUMBER_OF_PREVIOUS_DAYS` (integer).
 
 Otherwise, default is yesterday midnight date (default cron job)
 

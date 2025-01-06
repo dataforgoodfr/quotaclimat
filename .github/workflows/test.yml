@@ -4,7 +4,7 @@ on:
   push:
 
 env:
-  PYTHON_VERSION: '3.12'
+  PYTHON_VERSION: ${{ env.PYTHON_VERSION }}
   POETRY_VERSION: '1.8.3'
 
 jobs:
@@ -13,6 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: poetry
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -20,10 +24,6 @@ jobs:
             virtualenvs-create: true
             virtualenvs-in-project: true
             installer-parallel: true
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: poetry
       - name: poetry install
         run: poetry install
 
@@ -47,6 +47,10 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'poetry'
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -54,10 +58,7 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: 'poetry'
+
       - name: pytest run test_first_update_keywords
         run: |
           set -o pipefail
@@ -90,6 +91,10 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'poetry'
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -97,10 +102,7 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: 'poetry'
+
       - name: docker compose up nginx
         run: docker compose up -d nginxtest
       - name: pytest run everything else
@@ -124,6 +126,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'poetry'
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -131,10 +137,6 @@ jobs:
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: 'poetry'
       - name: Verify poetry.lock agrees with pyproject.toml
         run: poetry check --lock
 
@@ -144,16 +146,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'poetry'
+      - uses: snok/install-poetry@v1
         with:
           version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
           installer-parallel: true
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-          cache: 'poetry'
 
       - name: Pytest coverage comment
         if: github.actor != 'dependabot[bot]'

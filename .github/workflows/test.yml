@@ -12,6 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
@@ -23,7 +24,6 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: poetry
-      - uses: actions/checkout@v4
       - name: poetry install
         run: poetry install
 

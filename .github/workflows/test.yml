@@ -12,8 +12,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Install poetry
-        run: pipx install poetry
+     - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
@@ -42,8 +47,13 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
-      - name: Install poetry
-        run: pipx install poetry
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
@@ -80,8 +90,13 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
-      - name: Install poetry
-        run: pipx install poetry
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
@@ -109,8 +124,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install poetry
-        run: pipx install poetry
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
@@ -123,8 +143,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install poetry
-        run: pipx install poetry
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'

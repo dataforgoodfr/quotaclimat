@@ -94,8 +94,9 @@ async def get_and_save_api_data(exit_event):
             conn = connect_to_db()
             token=get_auth_token(password=password, user_name=USER)
             type_sub = 's2t'
-
-            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default()
+            start_date = int(os.environ.get("START_DATE"))
+            number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 30))
+            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
             df_programs = get_programs()
             channels = get_channels()
             
@@ -106,6 +107,7 @@ async def get_and_save_api_data(exit_event):
                 
                 for channel in channels:
                     try:
+                        logging.info("Querying day %s for channel %s" % (day, channel))
                         programs_for_this_day = get_programs_for_this_day(day.tz_localize("Europe/Paris"), channel, df_programs)
 
                         for program in programs_for_this_day.itertuples(index=False):

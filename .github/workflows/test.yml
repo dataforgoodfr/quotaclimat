@@ -8,51 +8,78 @@ env:
   POETRY_VERSION: '1.8.3'
 
 jobs:
-  # Label of the runner job
-  unit_test:
-    # You must use a Linux environment when using service containers or container jobs
+ 
+  build:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+            version: ${{ env.POETRY_VERSION }}
+            virtualenvs-create: true
+            virtualenvs-in-project: true
+            virtualenvs-path: .venv
+            installer-parallel: true
 
-    # Service containers to run with `runner-job`
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      
+      - name: poetry install
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction
+
+
+  test_first_update_keywords:
+    needs: build
+    runs-on: ubuntu-latest
     services:
-      # Label used to access the service container
       postgres:
-        # Docker Hub image
-        image: postgres:13
-        # Provide the password for postgres
+        image: postgres:15
         env:
           POSTGRES_PASSWORD: postgres
           POSTGRES_USER: user
           POSTGRES_DB: postgres
-        # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
         ports:
-          # Maps tcp port 5432 on service container to the host
           - 5432:5432
-
     steps:
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - uses: actions/checkout@v4
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
+          virtualenvs-path: .venv
           installer-parallel: true
-      - name: poetry install
-        run: poetry install
-      - name: docker compose up nginx
-        run: docker compose up -d nginxtest
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
       - name: pytest run test_first_update_keywords
         run: |
           set -o pipefail
+          source .venv/bin/activate
           poetry run pytest -k 'test_update_pg_keywords'
         env:
           ENV: dev
@@ -62,9 +89,51 @@ jobs:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
           COMPARE_DURATION: "true"
+
+  test_everything_else:
+    needs: build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: user
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+          installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: docker compose up nginx
+        run: docker compose up -d nginxtest
       - name: pytest run everything else
         run: |
           set -o pipefail
+          source .venv/bin/activate
           poetry run pytest -k 'not test_update_pg_keywords' --junitxml=pytest.xml \
            --cov-report=term-missing:skip-covered \
            --cov=quotaclimat --cov=postgres test/ | \
@@ -77,13 +146,71 @@ jobs:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
           COMPARE_DURATION: "true"
-          
-      # - name: Upload coverage reports to Codecov
-      #   uses: codecov/codecov-action@v3
-      #   env:
-      #     CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1
+          name: code-coverage-report
+          path: | # from pytest run everything else job
+            pytest.xml
+            pytest-coverage.txt
+          overwrite:  true
+
+  verify_poetry_lock:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+          installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
       - name: Verify poetry.lock agrees with pyproject.toml
         run: poetry check --lock
+
+  coverage_and_reporting:
+    needs: [test_first_update_keywords, test_everything_else, verify_poetry_lock]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+          installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+     
+      - name: Download a single artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: code-coverage-report
 
       - name: Pytest coverage comment
         if: github.actor != 'dependabot[bot]'
@@ -96,7 +223,7 @@ jobs:
       - name: Check the output coverage
         if: github.actor != 'dependabot[bot]'
         run: |
-          echo "Coverage Percantage - ${{ steps.coverageComment.outputs.coverage }}"
+          echo "Coverage Percentage - ${{ steps.coverageComment.outputs.coverage }}"
 
       - name: Create Awesome Badge
         if: github.ref == 'refs/heads/main'

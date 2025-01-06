@@ -15,18 +15,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+          cache: poetry
       - uses: actions/checkout@v4
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          installer-parallel: true
+      - name: Install poetry
+        run: pipx install poetry
       - name: poetry install
         run: poetry install
-      - name: docker compose up nginx
-        run: docker compose up -d nginxtest
 
 
   test_first_update_keywords:
@@ -48,8 +42,12 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
-      - name: poetry install
-        run: poetry install
+      - name: Install poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'poetry'
       - name: pytest run test_first_update_keywords
         run: |
           set -o pipefail
@@ -82,8 +80,14 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
-      - name: poetry install
-        run: poetry install
+      - name: Install poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'poetry'
+      - name: docker compose up nginx
+        run: docker compose up -d nginxtest
       - name: pytest run everything else
         run: |
           set -o pipefail
@@ -105,8 +109,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: poetry install
-        run: poetry install
+      - name: Install poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'poetry'
       - name: Verify poetry.lock agrees with pyproject.toml
         run: poetry check --lock
 
@@ -115,8 +123,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: poetry install
-        run: poetry install
+      - name: Install poetry
+        run: pipx install poetry
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'poetry'
 
       - name: Pytest coverage comment
         if: github.actor != 'dependabot[bot]'

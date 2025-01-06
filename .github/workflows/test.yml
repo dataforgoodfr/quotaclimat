@@ -152,7 +152,9 @@ jobs:
         with:
           retention-days: 1
           name: code-coverage-report
-          path: pytest-coverage.txt # from pytest run everything else job
+          path: | # from pytest run everything else job
+            pytest.xml
+            pytest-coverage.txt
           overwrite:  true
 
   verify_poetry_lock:

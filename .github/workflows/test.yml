@@ -14,18 +14,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: poetry
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
             version: ${{ env.POETRY_VERSION }}
             virtualenvs-create: true
             virtualenvs-in-project: true
+            virtualenvs-path: .venv
             installer-parallel: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      
       - name: poetry install
-        run: poetry install
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction
 
 
   test_first_update_keywords:
@@ -48,20 +58,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'poetry'
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
+          virtualenvs-path: .venv
           installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: pytest run test_first_update_keywords
         run: |
           set -o pipefail
+          source .venv/bin/activate
           poetry run pytest -k 'test_update_pg_keywords'
         env:
           ENV: dev
@@ -92,22 +110,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'poetry'
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
+          virtualenvs-path: .venv
           installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: docker compose up nginx
         run: docker compose up -d nginxtest
       - name: pytest run everything else
         run: |
           set -o pipefail
+          source .venv/bin/activate
           poetry run pytest -k 'not test_update_pg_keywords' --junitxml=pytest.xml \
            --cov-report=term-missing:skip-covered \
            --cov=quotaclimat --cov=postgres test/ | \
@@ -127,16 +153,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'poetry'
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
+          virtualenvs-path: .venv
           installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
       - name: Verify poetry.lock agrees with pyproject.toml
         run: poetry check --lock
 
@@ -146,16 +179,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
+        id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'poetry'
       - name: Install Poetry
         uses: snok/install-poetry@v1
         with:
           version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
+          virtualenvs-path: .venv
           installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
 
       - name: Pytest coverage comment
         if: github.actor != 'dependabot[bot]'

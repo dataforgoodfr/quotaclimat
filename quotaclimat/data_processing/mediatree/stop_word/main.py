@@ -1,7 +1,3 @@
-### Library imports
-import requests
-import json
-
 import logging
 import asyncio
 from time import sleep
@@ -12,36 +8,18 @@ from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.config import *
-from quotaclimat.data_processing.mediatree.update_pg_keywords import *
-from quotaclimat.data_processing.mediatree.detect_keywords import *
-from quotaclimat.data_processing.mediatree.channel_program import *
 from postgres.insert_data import save_to_pg
-from postgres.schemas.models import create_tables, connect_to_db, get_db_session
-from postgres.schemas.models import keywords_table
+from postgres.schemas.models import create_tables, get_db_session
 
-from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
-from typing import List, Optional
 from tenacity import *
-import sentry_sdk
 from sentry_sdk.crons import monitor
 import modin.pandas as pd
-from modin.pandas import json_normalize
 import pandas as pd
-from sqlalchemy import create_engine, text
-from sqlalchemy import func, case, extract, and_, desc
-from sqlalchemy.orm import sessionmaker, aliased
-from sqlalchemy.sql import select
-from sqlalchemy import func, case, extract, and_, text, desc
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.sql.expression import cast
-from sqlalchemy.types import String
+from sqlalchemy import text
 import pandas as pd
-from datetime import datetime, timedelta
-
-from datetime import datetime, timedelta
 import ray
 from quotaclimat.utils.sentry import sentry_init
-from postgres.schemas.models import Keywords, Program_Metadata, stop_word_table
+from postgres.schemas.models import stop_word_table
 
 logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
 logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
@@ -111,71 +89,72 @@ def get_all_repetitive_context_advertising_for_a_keyword(
     end_date = get_now()
     start_date = get_last_X_days(days)
 
-    try:
-        # Calculate the start position for the substring based on the keyword position
-        context_start = func.greatest(
-            1, func.position(keyword, Keywords.plaintext) - 35
-        )
+    return ""
+    # try:
+    #     # Calculate the start position for the substring based on the keyword position
+    #     context_start = func.greatest(
+    #         1, func.position(keyword, Keywords.plaintext) - 35
+    #     )
 
-        # Calculate the substring context around the keyword
-        context_keyword = func.substring(
-            Keywords.plaintext, context_start, length_context
-        ).label("context_keyword")
+    #     # Calculate the substring context around the keyword
+    #     context_keyword = func.substring(
+    #         Keywords.plaintext, context_start, length_context
+    #     ).label("context_keyword")
 
-        # Weekday logic for filtering
-        weekday_case = case(
-            [
-                (
-                    ((extract("dow", Keywords.start) + 1 + 6) % 7) == 0,
-                    7,
-                )
-            ],
-            else_=((extract("dow", Keywords.start) + 1 + 6) % 7),
-        )
+    #     # Weekday logic for filtering
+    #     weekday_case = case(
+    #         [
+    #             (
+    #                 ((extract("dow", Keywords.start) + 1 + 6) % 7) == 0,
+    #                 7,
+    #             )
+    #         ],
+    #         else_=((extract("dow", Keywords.start) + 1 + 6) % 7),
+    #     )
 
-        # Subquery to calculate context_keyword
-        subquery = (
-            session.query(
-                context_keyword,
-                func.count().label("repetition_count"),
-            )
-            .join(
-                Program_Metadata,
-                and_(
-                    Keywords.channel_name == Program_Metadata.channel_name,
-                    Keywords.channel_program == Program_Metadata.channel_program,
-                    weekday_case == Program_Metadata.weekday,
-                    Keywords.start.between(
-                        Program_Metadata.program_grid_start,
-                        Program_Metadata.program_grid_end,
-                    ),
-                ),
-            )
-            .filter(
-                Keywords.start >= start_date,
-                Keywords.start < end_date,
-                Keywords.number_of_keywords > 0,
-                cast(Keywords.keywords_with_timestamp, String).ilike(f"%{keyword}%"),
-            )
-            .group_by(context_keyword)
-            .subquery()
-        )
+    #     # Subquery to calculate context_keyword
+    #     subquery = (
+    #         session.query(
+    #             context_keyword,
+    #             func.count().label("repetition_count"),
+    #         )
+    #         .join(
+    #             Program_Metadata,
+    #             and_(
+    #                 Keywords.channel_name == Program_Metadata.channel_name,
+    #                 Keywords.channel_program == Program_Metadata.channel_program,
+    #                 weekday_case == Program_Metadata.weekday,
+    #                 Keywords.start.between(
+    #                     Program_Metadata.program_grid_start,
+    #                     Program_Metadata.program_grid_end,
+    #                 ),
+    #             ),
+    #         )
+    #         .filter(
+    #             Keywords.start >= start_date,
+    #             Keywords.start < end_date,
+    #             Keywords.number_of_keywords > 0,
+    #             cast(Keywords.keywords_with_timestamp, String).ilike(f"%{keyword}%"),
+    #         )
+    #         .group_by(context_keyword)
+    #         .subquery()
+    #     )
 
-        # Query to aggregate and order the contexts
-        query = (
-            session.query(
-                subquery.c.context_keyword.label("context"),
-                subquery.c.repetition_count.label("repetition_count"),
-            )
-            .order_by(desc(subquery.c.repetition_count))
-        )
+    #     # Query to aggregate and order the contexts
+    #     query = (
+    #         session.query(
+    #             subquery.c.context_keyword.label("context"),
+    #             subquery.c.repetition_count.label("repetition_count"),
+    #         )
+    #         .order_by(desc(subquery.c.repetition_count))
+    #     )
 
-        # Execute query and convert to Pandas DataFrame
-        result = pd.read_sql(query.statement, session.bind)
-        return result
+    #     # Execute query and convert to Pandas DataFrame
+    #     result = pd.read_sql(query.statement, session.bind)
+    #     return result
 
-    finally:
-        session.close()
+    # finally:
+    #     session.close()
 
 def get_top_keywords_by_channel(session, days: int, top: int) -> pd.DataFrame:
     """

@@ -26,14 +26,16 @@ def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
         logging.info(f"Elapsed time for api import {end_time - start_time}")
         # must df._to_pandas() because to_sql does not handle modin dataframe
         save_to_pg(df._to_pandas(), keywords_table, conn)
+        
+        return len(df)
 
 def test_main_api_import():
         conn = connect_to_db()
-        insert_mediatree_json(conn)
+        len_df = insert_mediatree_json(conn)
 
         session = get_db_session(conn)
         saved_keywords = get_keywords_columns(session, start_date="2024-02-01", end_date="2024-02-29")
-        assert len(saved_keywords) == len(df)
+        assert len(saved_keywords) == len_df
 
 def test_first_row_api_import():
         primary_key = "29d2b1f8267b206cb62e475b960de3247e835273f396af012f5ce21bf3056472"

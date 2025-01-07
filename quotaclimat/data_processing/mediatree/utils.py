@@ -89,7 +89,7 @@ def get_start_end_date_env_variable_with_default(start_date:int, minus_days:int=
         return (get_yesterday(), None)
 
 # Get range of 2 date by week from start to end
-def get_date_range(start_date_to_query, end_epoch):
+def get_date_range(start_date_to_query, end_epoch, minus_days:int=1):
     if end_epoch is not None:
         logging.info(f"Getting date range from {pd.to_datetime(start_date_to_query, unit='s').normalize()} - {pd.to_datetime(end_epoch, unit='s').normalize()}")
         range = pd.date_range( pd.to_datetime(end_epoch, unit='s').normalize(),
@@ -99,8 +99,8 @@ def get_date_range(start_date_to_query, end_epoch):
         logging.info(f"Date range: {range} \n {start_date_to_query} until {end_epoch}")
         return range
     else:
-        range = pd.date_range(start=get_datetime_yesterday(), periods=1, freq="D")
-        logging.info(f"using default from yesterday {range} \n {start_date_to_query} until {end_epoch}")
+        logging.info(f"Default date range from yesterday to {minus_days} day(s) - (env var NUMBER_OF_PREVIOUS_DAYS)")
+        range = pd.date_range(start=get_datetime_yesterday(), periods=minus_days, freq="D")
         return range
 
 def is_it_tuesday(date):

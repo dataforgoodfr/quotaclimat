@@ -273,7 +273,7 @@ docker compose up mediatree
 
 ### Configuration - Batch import
 ### Based on time
-If our media perimeter evolves, we have to reimport it all using env variable `START_DATE` like in docker compose (epoch second format : 1705409797). By default, it will import 30 days, you can modify it with `NUMBER_OF_PREVIOUS_DAYS` (integer).
+If our media perimeter evolves, we have to reimport it all using env variable `START_DATE` like in docker compose (epoch second format : 1705409797). By default, it will import 1 day, you can modify it with `NUMBER_OF_PREVIOUS_DAYS` (integer).
 
 Otherwise, default is yesterday midnight date (default cron job)
 
@@ -388,8 +388,9 @@ Program data will not be updated to avoid lock concurrent issues when using `UPD
 For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway).
 
 Env variable used :
-* START_DATE (unixtimestamp such as mediatree service)
-* CHANNEL (such as mediatree service)
+* START_DATE (integer) (unixtimestamp such as mediatree service)
+* NUMBER_OF_PREVIOUS_DAYS (integer): default 7 days
+* CHANNEL: (such as mediatree service)
 * BUCKET : Scaleway Access key
 * BUCKET_SECRET : Scaleway Secret key
 * BUCKET_NAME

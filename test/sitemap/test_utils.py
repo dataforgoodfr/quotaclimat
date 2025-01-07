@@ -13,7 +13,7 @@ def debug_df(df: pd.DataFrame):
     pd.set_option('display.max_columns', None) 
     logging.warning("--------------------DEBUG DF-------------------")
     logging.info(df.dtypes)
-    logging.info(df.head(1))
+    logging.info(df.head(3))
     logging.warning("--------------------DEBUG DF-------------------")
 
 

@@ -248,11 +248,10 @@ def get_top_keywords_by_channel(session, days: int, top: int) -> pd.DataFrame:
         """
 
         result = session.execute(
-            text(sql_query),
-            {'start_date': '2020-12-12 00:00:00.000 +01:00', 'end_date': '2024-12-19 00:00:00.000 +01:00'}
+            text(sql_query)
         )
         logging.warning(f"result: {result}")
-        logging.debug(f"Query: {sql_query}")
+        logging.info(f"Query: {sql_query}")
         # Execute and convert to Pandas DataFrame
         result = pd.DataFrame(result.fetchall(), columns=result.keys())
         logging.warning(f"result: {result}")

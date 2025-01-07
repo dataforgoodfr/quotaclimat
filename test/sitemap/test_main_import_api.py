@@ -14,10 +14,8 @@ from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
 import time as t
 
 
-def test_main_api_import():
+def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
     create_tables()
-    conn = connect_to_db()
-    json_file_path = 'test/sitemap/mediatree.json'
     with open(json_file_path, 'r') as file:
         json_response = json.load(file)
         start_time = t.time()
@@ -28,6 +26,10 @@ def test_main_api_import():
         logging.info(f"Elapsed time for api import {end_time - start_time}")
         # must df._to_pandas() because to_sql does not handle modin dataframe
         save_to_pg(df._to_pandas(), keywords_table, conn)
+
+def test_main_api_import():
+        conn = connect_to_db()
+        insert_mediatree_json(conn)
 
         session = get_db_session(conn)
         saved_keywords = get_keywords_columns(session, start_date="2024-02-01", end_date="2024-02-29")

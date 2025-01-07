@@ -1,4 +1,4 @@
-# Based on advertising
+# Based on advertising - should be a SQL table "Stop_Word"
 STOP_WORDS = [
     "bonus écologique"
     ,"haute isolation thermique fabriqué en france"

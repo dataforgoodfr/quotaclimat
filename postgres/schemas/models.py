@@ -131,6 +131,7 @@ class Stop_Word(Base):
     id = Column(Text, primary_key=True)
     channel_name = Column(String, nullable=False)
     context = Column(String, nullable=False)
+    keyword = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")) # ALTER TABLE ONLY keywords ALTER COLUMN created_at SET DEFAULT (now() at time zone 'utc');
     updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
 

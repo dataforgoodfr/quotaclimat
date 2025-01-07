@@ -80,7 +80,7 @@ def get_end_of_month(start_date: str) -> str:
     return date.strftime('%Y-%m-%d')
 
 def get_start_end_date_env_variable_with_default(start_date:int, minus_days:int=1):
-    if start_date is not None:
+    if start_date != 0:
         start_date_minus_days = int(int(start_date) - (minus_days * 24 * 60 * 60))
         logging.info(f"Using START_DATE env var {start_date} - to get {minus_days} day(s) before (env var NUMBER_OF_PREVIOUS_DAYS) : {start_date_minus_days}")
         return (int(start_date), start_date_minus_days)

@@ -30,7 +30,7 @@ def test_get_end_of_month():
 
 
 def test_get_start_end_date_env_variable_with_default():
-    start_date = None
+    start_date = 0
     
     assert get_start_end_date_env_variable_with_default(start_date, minus_days=1) == (get_yesterday(), None)
 

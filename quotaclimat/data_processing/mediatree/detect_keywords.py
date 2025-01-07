@@ -329,10 +329,8 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
                         result_type='expand'
                 )
 
-            logging.info("Dropping")
             # remove all rows that does not have themes
             df = df.dropna(subset=['theme'], how='any') # any is for None values
-            logging.info("Droped")
             logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")
 
             return df

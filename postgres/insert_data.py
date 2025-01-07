@@ -4,7 +4,7 @@ import time
 import pandas as pd
 from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.types import JSON
+from sqlalchemy import JSON
 from postgres.schemas.models import sitemap_table, Keywords
 
 def clean_data(df: pd.DataFrame):

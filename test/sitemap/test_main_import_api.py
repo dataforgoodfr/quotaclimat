@@ -16,6 +16,7 @@ import time as t
 
 def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
     create_tables()
+    logging.info(f"reading {json_file_path}")
     with open(json_file_path, 'r') as file:
         json_response = json.load(file)
         start_time = t.time()
@@ -24,6 +25,7 @@ def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
         df["id"] = df.apply(lambda x: add_primary_key(x), axis=1)
         end_time = t.time()
         logging.info(f"Elapsed time for api import {end_time - start_time}")
+        
         # must df._to_pandas() because to_sql does not handle modin dataframe
         save_to_pg(df._to_pandas(), keywords_table, conn)
         
@@ -35,6 +37,7 @@ def test_main_api_import():
 
         session = get_db_session(conn)
         saved_keywords = get_keywords_columns(session, start_date="2024-02-01", end_date="2024-02-29")
+        assert len(saved_keywords) != 0
         assert len(saved_keywords) == len_df
 
 def test_first_row_api_import():

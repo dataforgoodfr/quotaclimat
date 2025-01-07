@@ -74,6 +74,13 @@ def get_yesterday(days=1):
 
     return int(yesterday_timestamp)
 
+    
+ # should format date to "'2020-12-12 00:00:00.000 +01:00'"
+def get_date_sql_query(date: datetime):
+    date = date.strftime('%Y-%m-%d %H:%M:%S.000 +00:00')
+
+    return f"'{date}'" 
+
 def get_end_of_month(start_date: str) -> str:
     date = pd.Timestamp(start_date) + MonthEnd(n=1)
     date = pd.to_datetime(date, format='%Y%m%d')
@@ -120,7 +127,7 @@ def get_timestamp_from_yyyymmdd(time: str) -> pd.Timestamp:
         return pd.Timestamp(pd.to_datetime(time)).tz_localize("Europe/Paris")
     
 
-def get_last_X_days(days):
+def get_last_X_days(days) -> datetime:
     end_date = get_now()
     start_date = end_date - timedelta(days=days)
     logging.debug(f"start_date: {start_date} end_date: {end_date}")

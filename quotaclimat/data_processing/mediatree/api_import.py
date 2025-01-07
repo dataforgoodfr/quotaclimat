@@ -95,12 +95,12 @@ async def get_and_save_api_data(exit_event):
             token=get_auth_token(password=password, user_name=USER)
             type_sub = 's2t'
             start_date = int(os.environ.get("START_DATE", 0))
-            number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 30))
+            number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 1))
             (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
             df_programs = get_programs()
             channels = get_channels()
             
-            day_range = get_date_range(start_date_to_query, end_date)
+            day_range = get_date_range(start_date_to_query, end_date, number_of_previous_days)
             logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
             for day in day_range:
                 token = refresh_token(token, day)

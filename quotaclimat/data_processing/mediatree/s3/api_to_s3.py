@@ -144,7 +144,7 @@ async def get_and_save_api_data(exit_event):
             df_programs = get_programs()
             channels = get_channels()
             
-            day_range = get_date_range(start_date_to_query, end_date)
+            day_range = get_date_range(start_date_to_query, end_date, number_of_previous_days)
             logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
             for day in day_range:
                 token = refresh_token(token, day)

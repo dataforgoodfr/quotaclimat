@@ -43,7 +43,7 @@ def save_append_stop_word(session, stop_word_list: pd.DataFrame):
         stop_word_list.to_sql(
             stop_word_table,
             session.bind,
-            if_exists="overwrite",
+            if_exists="replace",
             index=False,
         )
     finally:
@@ -52,24 +52,30 @@ def save_append_stop_word(session, stop_word_list: pd.DataFrame):
 def get_repetitive_context_advertising(
     session, top_keywords: pd.DataFrame, days: int, length_context_to_look_for_repetition: int = 35
 ) -> pd.DataFrame:
-    # get unique keywords
-    top_unique_keywords = top_keywords["keyword"].unique() # some keyword can be listed in different channels
-    logging.info(f"Top unique keywords: {top_unique_keywords}")
+    # get unique keywords and one of their channel
+    filtered_keywords = top_keywords.drop_duplicates(subset='keyword', keep='first')
+    top_unique_keyword_with_channel = filtered_keywords.to_dict(orient='records')
+    logging.info(f"Top unique keywords: {top_unique_keyword_with_channel}")
 
-    # for each top_unique_keywords call get_all_repetitive_context_advertising_for_a_keyword
-    for keyword in top_unique_keywords.itertuples(index=False):
-                            logging.info(f"Keyword: {keyword}")  # TODO what's inside ?
+    result = []
+    for keyword_channel in top_unique_keyword_with_channel:
+                            logging.info(f"Keyword: {keyword_channel["keyword"]}")
 
                             advertising_context = get_all_repetitive_context_advertising_for_a_keyword(
-                                     session, keyword["keyword"], length_context_to_look_for_repetition, days
+                                     session, keyword_channel["keyword"], channel_title=keyword_channel["channel_title"], \
+                                        length_context=length_context_to_look_for_repetition, days=days
                             )
-                            logging.info(f"Advertising context: {advertising_context}")
-                            save_append_stop_word(session, advertising_context) 
+                            
+                            if(len(advertising_context) > 0):
+                                logging.info(f"Advertising context for {keyword_channel["keyword"]}: {advertising_context}")
+                                result.extend(advertising_context)
+                            else:
+                                logging.debug(f"Advertising context empty for {keyword_channel["keyword"]}")
 
-    return advertising_context
+    return result
     
 def get_all_repetitive_context_advertising_for_a_keyword(
-    session, keyword: str, length_context:  int = 35, days:int = 7, from_date : datetime = None
+    session, keyword: str, channel_title: str, length_context:  int = 35, days:int = 7, from_date : datetime = None, min_number_of_repeatition: int = 20
 ) -> pd.DataFrame:
     """
     Fetches the repetitive context around a specified keyword in plaintext for advertising analysis.
@@ -83,14 +89,16 @@ def get_all_repetitive_context_advertising_for_a_keyword(
         pd.DataFrame: A DataFrame containing the contexts and their repetition counts.
     """
     logging.info(f"Getting context for keyword {keyword} for last {days} days from {from_date}")
+    min_length_context = 25 # security nets to not add short generic context
     start_date = get_last_X_days(days)
     if from_date is None:
         logging.info(f"From date default to today")
         end_date = get_now()
     else:
         end_date = from_date
-    # TODO fix UTF8 keyword issue (végétalisation)
-    # TODO difference between {length_context} and 80
+
+    # TODO difference between {length_context} and SUBSTRING 80
+    # TODO improve FOR LEAST(LENGTH("public"."keywords"."plaintext"), POSITION('{keyword}'
     try:
         start_date = get_date_sql_query(start_date) # "'2020-12-12 00:00:00.000 +01:00'"
         end_date = get_date_sql_query(end_date) #"'2024-12-19 00:00:00.000 +01:00'"
@@ -116,10 +124,12 @@ def get_all_repetitive_context_advertising_for_a_keyword(
                 WHERE "public"."keywords"."start" >= timestamp with time zone {start_date}
                 AND "public"."keywords"."start" < timestamp with time zone {end_date}
                 AND "public"."keywords"."number_of_keywords" > 0
-                AND "public"."keywords"."keywords_with_timestamp"::text LIKE CONCAT('%', '{keyword}', '%') 
+                AND jsonb_pretty("keywords_with_timestamp"::jsonb) LIKE CONCAT('%', '{keyword}', '%') 
                 ORDER BY "public"."keywords"."number_of_keywords" DESC
             ) tmp
+            WHERE LENGTH(SUBSTRING("context_keyword",0,80)) > {min_length_context} 
             GROUP BY 1
+            HAVING COUNT(*) >= {min_number_of_repeatition}
             ORDER BY count DESC
         """
         result = session.execute(
@@ -127,7 +137,14 @@ def get_all_repetitive_context_advertising_for_a_keyword(
         )
         logging.debug(f"Query: {sql_query}")
         # Execute and convert to Pandas DataFrame
-        result = pd.DataFrame(result.fetchall(), columns=result.keys())
+        result = [dict(row) for row in result.mappings()]
+        logging.info(f"tmp result: {result}")
+        # add keyword to result for all rows
+        for row in result:
+            
+            row["keyword"] = keyword
+            row["channel_title"] = channel_title
+        
         logging.info(f"result: {result}")
         return result
     except Exception as err:

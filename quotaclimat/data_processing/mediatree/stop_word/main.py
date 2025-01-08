@@ -69,7 +69,7 @@ def get_repetitive_context_advertising(
     return advertising_context
     
 def get_all_repetitive_context_advertising_for_a_keyword(
-    session, keyword: str, length_context: int, days=int
+    session, keyword: str, length_context:  int = 35, days:int = 7, from_date : datetime = None
 ) -> pd.DataFrame:
     """
     Fetches the repetitive context around a specified keyword in plaintext for advertising analysis.
@@ -82,76 +82,58 @@ def get_all_repetitive_context_advertising_for_a_keyword(
     Returns:
         pd.DataFrame: A DataFrame containing the contexts and their repetition counts.
     """
-    # Calculate the date range for the last 7 days
-    end_date = get_now()
+    logging.info(f"Getting context for keyword {keyword} for last {days} days from {from_date}")
     start_date = get_last_X_days(days)
-
-    return ""
-    # try:
-    #     # Calculate the start position for the substring based on the keyword position
-    #     context_start = func.greatest(
-    #         1, func.position(keyword, Keywords.plaintext) - 35
-    #     )
-
-    #     # Calculate the substring context around the keyword
-    #     context_keyword = func.substring(
-    #         Keywords.plaintext, context_start, length_context
-    #     ).label("context_keyword")
-
-    #     # Weekday logic for filtering
-    #     weekday_case = case(
-    #         [
-    #             (
-    #                 ((extract("dow", Keywords.start) + 1 + 6) % 7) == 0,
-    #                 7,
-    #             )
-    #         ],
-    #         else_=((extract("dow", Keywords.start) + 1 + 6) % 7),
-    #     )
-
-    #     # Subquery to calculate context_keyword
-    #     subquery = (
-    #         session.query(
-    #             context_keyword,
-    #             func.count().label("repetition_count"),
-    #         )
-    #         .join(
-    #             Program_Metadata,
-    #             and_(
-    #                 Keywords.channel_name == Program_Metadata.channel_name,
-    #                 Keywords.channel_program == Program_Metadata.channel_program,
-    #                 weekday_case == Program_Metadata.weekday,
-    #                 Keywords.start.between(
-    #                     Program_Metadata.program_grid_start,
-    #                     Program_Metadata.program_grid_end,
-    #                 ),
-    #             ),
-    #         )
-    #         .filter(
-    #             Keywords.start >= start_date,
-    #             Keywords.start < end_date,
-    #             Keywords.number_of_keywords > 0,
-    #             cast(Keywords.keywords_with_timestamp, String).ilike(f"%{keyword}%"),
-    #         )
-    #         .group_by(context_keyword)
-    #         .subquery()
-    #     )
-
-    #     # Query to aggregate and order the contexts
-    #     query = (
-    #         session.query(
-    #             subquery.c.context_keyword.label("context"),
-    #             subquery.c.repetition_count.label("repetition_count"),
-    #         )
-    #         .order_by(desc(subquery.c.repetition_count))
-    #     )
-
-    #     # Execute query and convert to Pandas DataFrame
-    #     result = pd.read_sql(query.statement, session.bind)
-    #     return result
-
-    # finally:
-    #     session.close()
+    if from_date is None:
+        logging.info(f"From date default to today")
+        end_date = get_now()
+    else:
+        end_date = from_date
+    # TODO fix UTF8 keyword issue (végétalisation)
+    # TODO difference between {length_context} and 80
+    try:
+        start_date = get_date_sql_query(start_date) # "'2020-12-12 00:00:00.000 +01:00'"
+        end_date = get_date_sql_query(end_date) #"'2024-12-19 00:00:00.000 +01:00'"
+        sql_query = f"""
+            SELECT SUBSTRING("context_keyword",0,80) AS "context", COUNT(*) AS "count"
+            FROM (
+                SELECT
+                "public"."keywords"."number_of_keywords",
+                "public"."keywords"."channel_title" AS "channel_title",
+                ("public"."keywords"."start" at time zone 'UTC') AS "start_UTC_time",
+                ("public"."keywords"."start") AS "start_default_time",
+                "public"."keywords"."theme" AS "theme",
+                SUBSTRING("public"."keywords"."plaintext" FROM 
+                    GREATEST(1, POSITION('{keyword}' IN "public"."keywords"."plaintext") - {length_context}) 
+                    FOR LEAST(LENGTH("public"."keywords"."plaintext"), POSITION('{keyword}' IN "public"."keywords"."plaintext"))
+                ) AS "context_keyword",
+                "public"."keywords"."keywords_with_timestamp" AS "keywords_with_timestamp",
+                "public"."keywords"."number_of_keywords" AS "number_of_keywords",
+                "public"."keywords"."channel_program" AS "channel_program",
+                "public"."keywords"."plaintext" AS "plaintext"
+                FROM
+                "public"."keywords"
+                WHERE "public"."keywords"."start" >= timestamp with time zone {start_date}
+                AND "public"."keywords"."start" < timestamp with time zone {end_date}
+                AND "public"."keywords"."number_of_keywords" > 0
+                AND "public"."keywords"."keywords_with_timestamp"::text LIKE CONCAT('%', '{keyword}', '%') 
+                ORDER BY "public"."keywords"."number_of_keywords" DESC
+            ) tmp
+            GROUP BY 1
+            ORDER BY count DESC
+        """
+        result = session.execute(
+            text(sql_query)
+        )
+        logging.debug(f"Query: {sql_query}")
+        # Execute and convert to Pandas DataFrame
+        result = pd.DataFrame(result.fetchall(), columns=result.keys())
+        logging.info(f"result: {result}")
+        return result
+    except Exception as err:
+            logging.error("get_top_keywords_by_channel crash (%s) %s" % (type(err).__name__, err))
+    finally:
+        session.close()
 
 def get_top_keywords_by_channel(session, days: int = 7, top: int = 5, from_date : datetime = None) -> pd.DataFrame:
     """
@@ -161,7 +143,7 @@ def get_top_keywords_by_channel(session, days: int = 7, top: int = 5, from_date 
     """
     
     logging.info(f"Getting top {top} keywords by channel for the last {days} days")
-    start_date = get_last_X_days(days) # TODO fix me to use actual dates
+    start_date = get_last_X_days(days)
     if from_date is None:
         logging.info(f"From date default to today")
         end_date = get_now()
@@ -219,7 +201,8 @@ def get_top_keywords_by_channel(session, days: int = 7, top: int = 5, from_date 
         result = pd.DataFrame(result.fetchall(), columns=result.keys())
         logging.info(f"result: {result}")
         return result
-
+    except Exception as err:
+            logging.error("get_top_keywords_by_channel crash (%s) %s" % (type(err).__name__, err))
     finally:
         session.close()
 

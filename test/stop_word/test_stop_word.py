@@ -6,12 +6,14 @@ from quotaclimat.data_processing.mediatree.stop_word.main import *
 from postgres.schemas.models import get_db_session, connect_to_db
 from test_main_import_api import insert_mediatree_json
 
-
+conn = connect_to_db()
+session = get_db_session(conn)
+insert_mediatree_json(conn, json_file_path='test/sitemap/short_mediatree.json')
 
 def test_get_top_keywords_by_channel():
-    conn = connect_to_db()
-    session = get_db_session(conn)
-    insert_mediatree_json(conn, json_file_path='test/sitemap/short_mediatree.json')
+    # conn = connect_to_db()
+    # session = get_db_session(conn)
+    # insert_mediatree_json(conn, json_file_path='test/sitemap/short_mediatree.json')
     excepted_df = pd.DataFrame(
         [
             {
@@ -50,6 +52,39 @@ def test_get_top_keywords_by_channel():
     assert len(top_keywords) != 0
     pd.testing.assert_frame_equal(top_keywords, excepted_df)
 
+def test_get_all_repetitive_context_advertising_for_a_keyword():
+        conn = connect_to_db()
+        session = get_db_session(conn)
+       
+        excepted_df = pd.DataFrame(
+        [
+            {
+                "context": " avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa",
+                "count": 1
+            }
+        ])
+        keyword1 =  "replantation"
+        top_context = get_all_repetitive_context_advertising_for_a_keyword(session, keyword1, days=3000, length_context=35)
+        pd.testing.assert_frame_equal(top_context, excepted_df)
+
+
+# TODO fix utf8 keyword
+def test_get_all_repetitive_context_advertising_for_a_keyword_utf8():
+        conn = connect_to_db()
+        session = get_db_session(conn)
+       
+        excepted_df = pd.DataFrame(
+        [
+            {
+                "context": " avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa",
+                "count": 1
+            }
+        ])
+        keyword1 =  "agroécologie"
+        top_context = get_all_repetitive_context_advertising_for_a_keyword(session, keyword1, days=3000, length_context=35)
+        pd.testing.assert_frame_equal(top_context, excepted_df)
+
+
 def test_get_repetitive_context_advertising():
         conn = connect_to_db()
         session = get_db_session(conn)
@@ -84,6 +119,15 @@ def test_get_repetitive_context_advertising():
                 "count": 2,
             }
         ]
-        )   
-        
-        get_repetitive_context_advertising(session, top_keywords, days=3000, top=5)
+        )
+
+        excepted_df = pd.DataFrame(
+        [
+            {
+                "context": " avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa",
+                "count": 1
+            }
+        ])
+
+        top_context = get_repetitive_context_advertising(session, top_keywords=top_keywords, days=3000, length_context=35)
+        pd.testing.assert_frame_equal(top_context, excepted_df)

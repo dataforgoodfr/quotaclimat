@@ -131,6 +131,7 @@ class Stop_Word(Base):
     id = Column(Text, primary_key=True)
     channel_title = Column(String, nullable=False)
     context = Column(String, nullable=False)
+    count = Column(Integer, nullable=False)
     keyword = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")) # ALTER TABLE ONLY keywords ALTER COLUMN created_at SET DEFAULT (now() at time zone 'utc');
     updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
@@ -159,7 +160,7 @@ def get_last_month_sitemap_id(engine):
 
 def create_tables():
     """Create tables in the PostgreSQL database"""
-    logging.info("create sitemap, keywords tables - update channel_metadata")
+    logging.info("create sitemap, keywords , stop_word tables - update channel_metadata")
     try:
         engine = connect_to_db()
 
@@ -249,6 +250,7 @@ def drop_tables():
             Base.metadata.drop_all(bind=engine, tables=[Keywords.__table__])
             Base.metadata.drop_all(bind=engine, tables=[Channel_Metadata.__table__])
             Base.metadata.drop_all(bind=engine, tables=[Program_Metadata.__table__])
+            Base.metadata.drop_all(bind=engine, tables=[Stop_Word.__table__])
 
             logging.info(f"Table keyword / Program_Metadata / Channel_Metadata deletion done")
         except (Exception) as error:

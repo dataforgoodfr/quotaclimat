@@ -40,7 +40,7 @@ COPY transform_program.py ./transform_program.py
 EXPOSE 5050
 
 # Use a separate script to handle migrations and start the application
-COPY docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
+COPY docker-entrypoint_stop_word.sh ./docker-entrypoint_stop_word.sh
+RUN chmod +x ./docker-entrypoint_stop_word.sh
 
 ENTRYPOINT ["./docker-entrypoint_stop_word.sh"]

@@ -9,9 +9,10 @@ from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.config import *
 from postgres.insert_data import save_to_pg
-from postgres.schemas.models import create_tables, get_db_session, Stop_Word
+from postgres.schemas.models import create_tables, connect_to_db, Stop_Word, get_db_session
 from sqlalchemy.orm import Session
 from sqlalchemy import func
+from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 
 from tenacity import *
 from sentry_sdk.crons import monitor
@@ -45,6 +46,7 @@ def get_all_stop_word(session: Session, offset: int = 0, batch_size: int = 50000
             Stop_Word.context,
             Stop_Word.keyword,
             Stop_Word.channel_title,
+            Stop_Word.count,
             func.timezone('UTC', Stop_Word.created_at).label('created_at'),
             func.timezone('UTC', Stop_Word.updated_at).label('updated_at')
         ).order_by(Stop_Word.created_at)
@@ -53,34 +55,23 @@ def get_all_stop_word(session: Session, offset: int = 0, batch_size: int = 50000
         .limit(batch_size) \
         .all()
 
-def save_append_stop_word(session, stop_word_list: list):
+def save_append_stop_word(conn, stop_word_list: list):
     logging.info(f"Saving stop word {stop_word_list} list to the database")
     try:
-        # save list without using pandas of stop word to the database
-        for stop_word in stop_word_list:
+        if len(stop_word_list) == 0:
+            logging.warning("No stop word to save")
+        else:
+            stop_word_list_df = pd.DataFrame(stop_word_list)
             save_to_pg(
-                session,
-                Stop_Word(
-                    context=stop_word["context"],
-                    keyword=stop_word["keyword"],
-                    channel_title=stop_word["channel_title"],
-                )
+                stop_word_list_df,
+                Stop_Word.__tablename__,
+                conn
             )
-
-
-
-        # Save the stop word list to the database
-        stop_word_list.to_sql(
-            stop_word_table,
-            session.bind,
-            if_exists="replace",
-            index=False,
-        )
     finally:
-        session.close()
+        conn.dispose()
 
 def get_repetitive_context_advertising(
-    session, top_keywords: pd.DataFrame, days: int, length_context_to_look_for_repetition: int = 35
+    session, top_keywords: pd.DataFrame, days: int, from_date: datetime = None
 ) -> pd.DataFrame:
     # get unique keywords and one of their channel
     filtered_keywords = top_keywords.drop_duplicates(subset='keyword', keep='first')
@@ -93,7 +84,7 @@ def get_repetitive_context_advertising(
 
                             advertising_context = get_all_repetitive_context_advertising_for_a_keyword(
                                      session, keyword_channel["keyword"], channel_title=keyword_channel["channel_title"], \
-                                        length_context=length_context_to_look_for_repetition, days=days
+                                     days=days,from_date=from_date
                             )
                             
                             if(len(advertising_context) > 0):
@@ -105,7 +96,10 @@ def get_repetitive_context_advertising(
     return result
     
 def get_all_repetitive_context_advertising_for_a_keyword(
-    session, keyword: str, channel_title: str, length_context:  int = 35, days:int = 7, from_date : datetime = None, min_number_of_repeatition: int = 20
+    session, keyword: str, channel_title: str, days:int = 7, from_date : datetime = None, min_number_of_repeatition: int = 20\
+    ,min_length_context:int = 20
+    ,after_context:int = 140
+    ,before_context:int = 35
 ) -> pd.DataFrame:
     """
     Fetches the repetitive context around a specified keyword in plaintext for advertising analysis.
@@ -119,13 +113,11 @@ def get_all_repetitive_context_advertising_for_a_keyword(
         pd.DataFrame: A DataFrame containing the contexts and their repetition counts.
     """
     logging.info(f"Getting context for keyword {keyword} for last {days} days from {from_date}")
-    min_length_context = 20 + len(keyword)# security nets to not add short generic context
-    after_context = 140 + len(keyword) # should include the keyword length
-    before_context = 35
+    min_length_context += len(keyword)# security nets to not add short generic context
+    after_context += len(keyword) # should include the keyword length
 
     start_date = get_last_X_days(days)
     if from_date is None:
-        logging.info(f"From date default to today")
         end_date = get_now()
     else:
         end_date = from_date
@@ -173,6 +165,7 @@ def get_all_repetitive_context_advertising_for_a_keyword(
         result = [dict(row) for row in result.mappings()]
         # add metadata to result for all rows
         for row in result:
+            row["id"] = get_consistent_hash(row["context"]) # to avoid adding duplicates
             row["keyword"] = keyword
             row["channel_title"] = channel_title
         
@@ -183,17 +176,17 @@ def get_all_repetitive_context_advertising_for_a_keyword(
     finally:
         session.close()
 
-def get_top_keywords_by_channel(session, days: int = 7, top: int = 5, from_date : datetime = None) -> pd.DataFrame:
+def get_top_keywords_by_channel(session, duration: int = 7, top: int = 5, from_date : datetime = None\
+                                ,min_number_of_keywords:int = 10) -> pd.DataFrame:
     """
     Fetches the top 5 keywords by channel for the last 7 days using SQLAlchemy ORM.
     Returns:
         pd.DataFrame: A DataFrame containing the top keywords by channel.
     """
     
-    logging.info(f"Getting top {top} keywords by channel for the last {days} days")
-    start_date = get_last_X_days(days)
+    logging.info(f"Getting top {top} keywords by channel for the last {duration} days")
+    start_date = get_last_X_days(duration)
     if from_date is None:
-        logging.info(f"From date default to today")
         end_date = get_now()
     else:
         end_date = from_date
@@ -201,6 +194,8 @@ def get_top_keywords_by_channel(session, days: int = 7, top: int = 5, from_date 
     try:
         start_date = get_date_sql_query(start_date) # "'2020-12-12 00:00:00.000 +01:00'"
         end_date = get_date_sql_query(end_date) #"'2024-12-19 00:00:00.000 +01:00'"
+        logging.info(f"From start_date {start_date} to end_date {end_date}")
+
         sql_query = f"""
         WITH ranked_keywords AS (
             SELECT 
@@ -227,7 +222,7 @@ def get_top_keywords_by_channel(session, days: int = 7, top: int = 5, from_date 
                     AND "public"."keywords"."start" < timestamp with time zone {end_date}
             ) tmp
             GROUP BY "keyword", "theme", "channel_title"
-            HAVING count(*) > 1
+            HAVING count(*) >= {min_number_of_keywords}
         )
 
         SELECT 
@@ -237,7 +232,7 @@ def get_top_keywords_by_channel(session, days: int = 7, top: int = 5, from_date 
             count
         FROM ranked_keywords
         WHERE rank <= {top} AND rank_keyword = 1
-        ORDER BY channel_title, "count" DESC
+        ORDER BY channel_title, "count" DESC, keyword 
         LIMIT 100;
         """
 
@@ -255,26 +250,35 @@ def get_top_keywords_by_channel(session, days: int = 7, top: int = 5, from_date 
         session.close()
 
 
-async def manage_stop_word(exit_event, session):
-    # get 5 top keywords for each channel for the last 7 days
-    top_keywords = get_top_keywords_by_channel(session, duration=7, top=5)
-    logging.info(f"Top keywords: {top_keywords}")
-    # for each top keyword, check if the plaintext contexte (35 words before and after) is repetitive > 5 occurences
-    stop_word_list = get_repetitive_context_advertising(session, top_keywords)
+async def manage_stop_word(exit_event = None, conn = None, duration: int = 7, from_date = None):
+    try:
+        if from_date is not None:
+            from_date = datetime.fromtimestamp(int(from_date))
+        session = get_db_session(conn)
+        # get 5 top keywords for each channel for the last 7 days
+        top_keywords = get_top_keywords_by_channel(session, duration=duration, top=5, from_date=from_date)
+        logging.info(f"Top keywords: {top_keywords}")
+        # for each top keyword, check if the plaintext contexte (35 words before and after) is repetitive > 5 occurences
+        stop_word_list = get_repetitive_context_advertising(session, top_keywords, days=duration, from_date=from_date)
 
-    # save the stop word list to the database
-    save_append_stop_word(stop_word_list)
+        # save the stop word list to the database
+        save_append_stop_word(conn, stop_word_list=stop_word_list)
+        if exit_event is not None:
+            exit_event.set()
+    except Exception as err:
+        logging.fatal("manage_stop_word (%s) %s" % (type(err).__name__, err))
+        ray.shutdown()
+        sys.exit(1)
 
-    exit_event.set()
 
-
-
-async def main(exit_event):
+# TODO : increase context length (due to repeated ad words)
+# TODO : test with several ad words said in the same plaintext
+async def main():
     with monitor(monitor_slug='stopword'): #https://docs.sentry.io/platforms/python/crons/
         try:
             logging.info("Start stop word")
             create_tables()
-            session = get_db_session()
+            conn = connect_to_db()
 
             event_finish = asyncio.Event()
             # Start the health check server in the background
@@ -287,8 +291,13 @@ async def main(exit_event):
             logging.info(f"Ray context dahsboard available at : {context.dashboard_url}")
             logging.warning(f"Ray Information about the env: {ray.available_resources()}")
 
+            number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 7))
+            logging.info(f"Number of previous days (NUMBER_OF_PREVIOUS_DAYS): {number_of_previous_days}")
+
+            from_date = os.environ.get("START_DATE", None)
+            logging.info(f"Start date (START_DATE): {from_date}")
             # Start batch job
-            asyncio.create_task(manage_stop_word(event_finish, session))
+            asyncio.create_task(manage_stop_word(exit_event=event_finish, conn=conn, duration=number_of_previous_days, from_date=from_date))
 
             # Wait for both tasks to complete
             await event_finish.wait()

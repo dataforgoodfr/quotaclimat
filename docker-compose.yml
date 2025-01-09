@@ -119,12 +119,12 @@ services:
         condition: service_healthy
 
 
-  stop_words:
+  stop_word:
     ports:
       - 5002:5002
     build:
       context: ./
-      dockerfile: Dockerfile_stop_words
+      dockerfile: Dockerfile_stop_word
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     environment:
       ENV: docker # change me to prod for real cases
@@ -137,9 +137,12 @@ services:
       POSTGRES_PORT: 5432
       PORT: 5000
       HEALTHCHECK_SERVER: "0.0.0.0"
+      NUMBER_OF_PREVIOUS_DAYS: 7000
+      START_DATE: 1733762653
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/
+      - ./test/:/app/test/
     depends_on:
       nginxtest:
         condition: service_healthy

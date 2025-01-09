@@ -9,7 +9,9 @@ from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.config import *
 from postgres.insert_data import save_to_pg
-from postgres.schemas.models import create_tables, get_db_session
+from postgres.schemas.models import create_tables, get_db_session, Stop_Word
+from sqlalchemy.orm import Session
+from sqlalchemy import func
 
 from tenacity import *
 from sentry_sdk.crons import monitor
@@ -36,9 +38,37 @@ KEYWORDS_URL = get_keywords_url()
 # TODO
 # def apply_cosine_similarity_on_keywords(keywords: pd.DataFrame) -> pd.DataFrame:
 
-def save_append_stop_word(session, stop_word_list: pd.DataFrame):
+def get_all_stop_word(session: Session, offset: int = 0, batch_size: int = 50000) -> list:
+    logging.debug(f"Getting {batch_size} elements from offset {offset}")
+    query = session.query(
+            Stop_Word.id,
+            Stop_Word.context,
+            Stop_Word.keyword,
+            Stop_Word.channel_title,
+            func.timezone('UTC', Stop_Word.created_at).label('created_at'),
+            func.timezone('UTC', Stop_Word.updated_at).label('updated_at')
+        ).order_by(Stop_Word.created_at)
+
+    return query.offset(offset) \
+        .limit(batch_size) \
+        .all()
+
+def save_append_stop_word(session, stop_word_list: list):
     logging.info(f"Saving stop word {stop_word_list} list to the database")
     try:
+        # save list without using pandas of stop word to the database
+        for stop_word in stop_word_list:
+            save_to_pg(
+                session,
+                Stop_Word(
+                    context=stop_word["context"],
+                    keyword=stop_word["keyword"],
+                    channel_title=stop_word["channel_title"],
+                )
+            )
+
+
+
         # Save the stop word list to the database
         stop_word_list.to_sql(
             stop_word_table,
@@ -89,7 +119,10 @@ def get_all_repetitive_context_advertising_for_a_keyword(
         pd.DataFrame: A DataFrame containing the contexts and their repetition counts.
     """
     logging.info(f"Getting context for keyword {keyword} for last {days} days from {from_date}")
-    min_length_context = 25 # security nets to not add short generic context
+    min_length_context = 20 + len(keyword)# security nets to not add short generic context
+    after_context = 140 + len(keyword) # should include the keyword length
+    before_context = 35
+
     start_date = get_last_X_days(days)
     if from_date is None:
         logging.info(f"From date default to today")
@@ -97,23 +130,22 @@ def get_all_repetitive_context_advertising_for_a_keyword(
     else:
         end_date = from_date
 
-    # TODO difference between {length_context} and SUBSTRING 80
-    # TODO improve FOR LEAST(LENGTH("public"."keywords"."plaintext"), POSITION('{keyword}'
     try:
         start_date = get_date_sql_query(start_date) # "'2020-12-12 00:00:00.000 +01:00'"
         end_date = get_date_sql_query(end_date) #"'2024-12-19 00:00:00.000 +01:00'"
         sql_query = f"""
-            SELECT SUBSTRING("context_keyword",0,80) AS "context", COUNT(*) AS "count"
+            SELECT SUBSTRING("context_keyword",0,80) AS "context",
+                   COUNT(*) AS "count"
             FROM (
                 SELECT
                 "public"."keywords"."number_of_keywords",
                 "public"."keywords"."channel_title" AS "channel_title",
-                ("public"."keywords"."start" at time zone 'UTC') AS "start_UTC_time",
-                ("public"."keywords"."start") AS "start_default_time",
+                "public"."keywords"."start" AS "start_default_time",
                 "public"."keywords"."theme" AS "theme",
-                SUBSTRING("public"."keywords"."plaintext" FROM 
-                    GREATEST(1, POSITION('{keyword}' IN "public"."keywords"."plaintext") - {length_context}) 
-                    FOR LEAST(LENGTH("public"."keywords"."plaintext"), POSITION('{keyword}' IN "public"."keywords"."plaintext"))
+                SUBSTRING(
+                    "public"."keywords"."plaintext", 
+                    GREATEST(POSITION('{keyword}' IN "public"."keywords"."plaintext") - {before_context}, 1), -- start position
+                    LEAST({after_context}, LENGTH( "public"."keywords"."plaintext")) -- length of the context
                 ) AS "context_keyword",
                 "public"."keywords"."keywords_with_timestamp" AS "keywords_with_timestamp",
                 "public"."keywords"."number_of_keywords" AS "number_of_keywords",
@@ -127,25 +159,24 @@ def get_all_repetitive_context_advertising_for_a_keyword(
                 AND jsonb_pretty("keywords_with_timestamp"::jsonb) LIKE CONCAT('%', '{keyword}', '%') 
                 ORDER BY "public"."keywords"."number_of_keywords" DESC
             ) tmp
-            WHERE LENGTH(SUBSTRING("context_keyword",0,80)) > {min_length_context} 
+            WHERE LENGTH(SUBSTRING("context_keyword",0,80)) > {min_length_context} -- safety net to not add small generic context
             GROUP BY 1
             HAVING COUNT(*) >= {min_number_of_repeatition}
             ORDER BY count DESC
         """
+
         result = session.execute(
             text(sql_query)
         )
         logging.debug(f"Query: {sql_query}")
         # Execute and convert to Pandas DataFrame
         result = [dict(row) for row in result.mappings()]
-        logging.info(f"tmp result: {result}")
-        # add keyword to result for all rows
+        # add metadata to result for all rows
         for row in result:
-            
             row["keyword"] = keyword
             row["channel_title"] = channel_title
         
-        logging.info(f"result: {result}")
+        logging.debug(f"result: {result}")
         return result
     except Exception as err:
             logging.error("get_top_keywords_by_channel crash (%s) %s" % (type(err).__name__, err))
@@ -216,7 +247,7 @@ def get_top_keywords_by_channel(session, days: int = 7, top: int = 5, from_date 
         logging.debug(f"Query: {sql_query}")
         # Execute and convert to Pandas DataFrame
         result = pd.DataFrame(result.fetchall(), columns=result.keys())
-        logging.info(f"result: {result}")
+        logging.debug(f"result: {result}")
         return result
     except Exception as err:
             logging.error("get_top_keywords_by_channel crash (%s) %s" % (type(err).__name__, err))
@@ -274,4 +305,3 @@ if __name__ == "__main__":
     getLogger()
     asyncio.run(main())
     sys.exit(0)
-

@@ -53,7 +53,7 @@ def test_get_top_keywords_by_channel():
     assert len(top_keywords) != 0
     pd.testing.assert_frame_equal(top_keywords, excepted_df)
 
-def test_get_all_repetitive_context_advertising_for_a_keyword():
+def test_get_all_repetitive_context_advertising_for_a_keyword_default():
         conn = connect_to_db()
         session = get_db_session(conn)
        
@@ -70,18 +70,39 @@ def test_get_all_repetitive_context_advertising_for_a_keyword():
         assert top_context == excepted_df
 
 
-# TODO improve FOR LEAST(LENGTH("public"."keywords"."plaintext"), POSITION('{keyword}'
 def test_get_all_repetitive_context_advertising_for_a_keyword_utf8_min_number_of_repeatition():
         conn = connect_to_db()
         session = get_db_session(conn)
-        min_number_of_repeatition=1
-        excepted_df = [
+        min_number_of_repeatition=1 # important for this test
+
+        excepted_df = [{
+                'channel_title': 'TF1',
+                'context': ' climatique a',
+                'context': "agroécologie végétation dans l' antre des las vegas raiders c' est ici que se j",
+                'count': 1,
+                'keyword': 'agroécologie',
+            },
             {
-                "keyword": "agroécologie",
-                "channel_title": "TF1",
-                "context": " climatique a",
-                "count": 2 # min number of repetition
-            }
+                'channel_title': 'TF1',
+                'context': "agroécologie végétation hasard peter aussi mène contre sébastien à l' "
+                'heure deu',
+                'count': 1,
+                'keyword': 'agroécologie',
+            },
+            {
+                'channel_title': 'TF1',
+                'context': 'climatique agroécologie est le hameau de la cuisine pensez à ce sujet '
+                'quinze an',
+                'count': 1,
+                'keyword': 'agroécologie',
+            },
+            {
+                'channel_title': 'TF1',
+                'context': "climatique agroécologie moment-là parce que l' éblouissement au "
+                'balcon de bucki',
+                'count': 1,
+                'keyword': 'agroécologie',
+            },
         ]
         keyword1 =  "agroécologie" # not used enough in short_mediatree.json
         top_context = get_all_repetitive_context_advertising_for_a_keyword(session, keyword1, channel_title="TF1", days=3000,\
@@ -92,7 +113,7 @@ def test_get_all_repetitive_context_advertising_for_a_keyword_not_enough_repetit
         conn = connect_to_db()
         session = get_db_session(conn)
        
-        keyword1 =  "agroécologie" # not used enough in short_mediatree.json
+        keyword1 =  "agroécologie" # not used enough in short_mediatree.json - only 1 repeat
         top_context = get_all_repetitive_context_advertising_for_a_keyword(session, keyword1, channel_title="TF1", days=3000, length_context=35)
         assert len(top_context) == 0
 
@@ -149,3 +170,33 @@ def test_get_repetitive_context_advertising():
 
         top_context = get_repetitive_context_advertising(session, top_keywords=top_keywords, days=3000, length_context_to_look_for_repetition=35)
         assert top_context == excepted
+
+
+def test_save_append_stop_word():
+    conn = connect_to_db()
+    session = get_db_session(conn)
+    to_save = [
+            {
+                "keyword": "replantation",
+                "channel_title": "France 2",
+                "context": " avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa",
+                "count": 20
+            },
+            {
+                "keyword": "climatique",
+                "channel_title": "TF1",
+                "context": "lacieux selon les experts question climatique en fait elle dépasse la question ",
+                "count": 20,
+            }
+        ]
+    save_append_stop_word(session, to_save)
+
+    # get all stop word from db
+    stop_words = get_all_stop_word(session)
+    
+    assert len(stop_words) == 2
+    assert stop_words[0].keyword == "replantation"
+    assert stop_words[1].keyword == "climatique"
+    assert stop_words[0].channel_title == "France 2"
+    assert stop_words[1].channel_title == "TF1"
+

@@ -5,7 +5,7 @@ from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 from postgres.insert_data import (clean_data,
                                   insert_data_in_sitemap_table)
 
-from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db
+from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db, drop_tables
 from postgres.insert_data import save_to_pg
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.api_import import *
@@ -33,7 +33,9 @@ def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
 
 def test_main_api_import():
         conn = connect_to_db()
+        drop_tables()
         create_tables()
+        
         len_df = insert_mediatree_json(conn)
 
         session = get_db_session(conn)

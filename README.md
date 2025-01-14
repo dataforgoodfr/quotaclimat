@@ -407,6 +407,15 @@ Env variables used :
 * NUMBER_OF_PREVIOUS_DAYS (integer): default 7 days
 * MIN_REPETITION (integer) : default 15 - Number of minimum repetition of a stop word
 
+## Remove a stop word
+To remove a false positive, we set to false the `validated` attribute :
+```
+docker exec -ti quotaclimat-postgres_db-1 bash # or docker compose exec postgres_db bash
+psql -h localhost --port 5432 -d barometre -U user
+--> enter password : password
+UPDATE stop_word set validated=false WHERE id = 'MY_ID';
+```
+
 ## Production monitoring
 * Use scaleway
 * Use [Ray dashboard] on port 8265

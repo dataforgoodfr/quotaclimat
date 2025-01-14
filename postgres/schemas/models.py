@@ -245,7 +245,7 @@ def update_program_metadata(engine):
 
 def drop_tables():
     
-    if(os.environ.get("POSTGRES_HOST") == "postgres_db"):
+    if(os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost"):
         logging.warning("""Drop table keyword / Program_Metadata / Channel_Metadata in the PostgreSQL database""")
         try:
             engine = connect_to_db()

@@ -3713,13 +3713,11 @@ THEME_KEYWORDS = {
             "category": ""
         }
     ],
-    "changement_climatique_cause": [
+    "changement_climatique_causes": [
         {
             "keyword": "ferme-usine",
             "category": "Agriculture"
-        }
-    ],
-    "changement_climatique_causes": [
+        },
         {
             "keyword": "a69",
             "category": "Transport"

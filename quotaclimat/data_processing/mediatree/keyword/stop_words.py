@@ -1,4 +1,4 @@
-# Based on advertising
+# TODO : use SQL table "Stop_Word"
 STOP_WORDS = [
     "bonus écologique"
     ,"haute isolation thermique fabriqué en france"
@@ -823,4 +823,5 @@ STOP_WORDS = [
     ,"fleuron industrie"
     ,"rendez-vous avec elle est aussi l' efficacité énergétique"
     ,"rendez-vous avec elle et l' efficacité énergétique"
+    ,"de son vivant"
 ]

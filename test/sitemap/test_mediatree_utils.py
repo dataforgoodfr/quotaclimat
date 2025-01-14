@@ -9,6 +9,12 @@ from time import strftime,localtime
 
 localhost = get_localhost()
 
+def test_get_date_sql_query():
+    date = datetime(2024, 12, 12, 0, 0, 0)
+    expected =  "'2024-12-12 00:00:00.000 +00:00'"
+
+    assert get_date_sql_query(date) == expected
+
 def test_get_yesterday():
     yesterday = get_yesterday()
     yesterday_string = strftime('%Y-%m-%d %H:%M:%S', localtime(yesterday))
@@ -26,8 +32,6 @@ def test_get_end_of_month():
     assert get_end_of_month("2024-04-01") == "2024-04-30"
     assert get_end_of_month("2024-02-01") == "2024-02-29"
     assert get_end_of_month("2024-02-15") == "2024-02-29"
-
-
 
 def test_get_start_end_date_env_variable_with_default():
     start_date = 0

@@ -149,7 +149,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             # look for cts_in_ms inside matching_words (['keyword':'economie circulaire', 'category':'air'}] from subtitle_duration 
             keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme)
             if(len(keywords_to_add) == 0):
-                logging.warning(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")
+                logging.debug(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")
             keywords_with_timestamp.extend(keywords_to_add)
     
     if len(keywords_with_timestamp) > 0:
@@ -329,10 +329,8 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
                         result_type='expand'
                 )
 
-            logging.info("Dropping")
             # remove all rows that does not have themes
             df = df.dropna(subset=['theme'], how='any') # any is for None values
-            logging.info("Droped")
             logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")
 
             return df

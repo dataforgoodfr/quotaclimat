@@ -11,8 +11,12 @@ import datetime
 
 localhost = get_localhost()
 
-drop_tables()
-create_tables()
+def init_tables(): 
+    drop_tables()
+    create_tables()
+
+init_tables()
+
 plaintext1="test1"
 plaintext2="test2"
 json_response = json.loads("""

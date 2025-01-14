@@ -5,7 +5,7 @@ from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 from postgres.insert_data import (clean_data,
                                   insert_data_in_sitemap_table)
 
-from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db
+from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db, drop_tables
 from postgres.insert_data import save_to_pg
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.api_import import *
@@ -14,10 +14,9 @@ from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
 import time as t
 
 
-def test_main_api_import():
-    create_tables()
-    conn = connect_to_db()
-    json_file_path = 'test/sitemap/mediatree.json'
+def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
+#     create_tables()
+    logging.info(f"reading {json_file_path}")
     with open(json_file_path, 'r') as file:
         json_response = json.load(file)
         start_time = t.time()
@@ -26,12 +25,23 @@ def test_main_api_import():
         df["id"] = df.apply(lambda x: add_primary_key(x), axis=1)
         end_time = t.time()
         logging.info(f"Elapsed time for api import {end_time - start_time}")
+        
         # must df._to_pandas() because to_sql does not handle modin dataframe
         save_to_pg(df._to_pandas(), keywords_table, conn)
+        
+        return len(df)
+
+def test_main_api_import():
+        conn = connect_to_db()
+        drop_tables()
+        create_tables()
+        
+        len_df = insert_mediatree_json(conn)
 
         session = get_db_session(conn)
         saved_keywords = get_keywords_columns(session, start_date="2024-02-01", end_date="2024-02-29")
-        assert len(saved_keywords) == len(df)
+        assert len(saved_keywords) != 0
+        assert len(saved_keywords) == len_df
 
 def test_first_row_api_import():
         primary_key = "29d2b1f8267b206cb62e475b960de3247e835273f396af012f5ce21bf3056472"

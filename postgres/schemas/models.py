@@ -1,8 +1,8 @@
 import logging
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer, Table, MetaData
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer, Table, MetaData, ForeignKey
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 import pandas as pd
 from sqlalchemy import text
 from postgres.database_connection import connect_to_db, get_db_session
@@ -36,6 +36,7 @@ sitemap_table = "sitemap_table"
 keywords_table = "keywords"
 channel_metadata_table = "channel_metadata"
 program_metadata_table = "program_metadata"
+stop_word_table = "stop_word"
 
 class Sitemap(Base):
     __tablename__ = sitemap_table
@@ -125,6 +126,19 @@ class Program_Metadata(Base):
     program_grid_start = Column(DateTime(), nullable=True)
     program_grid_end = Column(DateTime(), nullable=True)
 
+class Stop_Word(Base):
+    __tablename__ = stop_word_table
+    id = Column(Text, primary_key=True)
+    keyword_id = Column(Text, nullable=True)
+    channel_title = Column(String, nullable=True)
+    context = Column(String, nullable=False)
+    count = Column(Integer, nullable=True)
+    keyword = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')"))
+    start_date = Column(DateTime(timezone=True), nullable=True)
+    updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
+    validated = Column(Boolean, nullable=True, default=True)
+
 def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
@@ -132,6 +146,10 @@ def get_sitemap(id: str):
 def get_keyword(id: str):
     session = get_db_session()
     return session.get(Keywords, id)
+
+def get_stop_word(id: str):
+    session = get_db_session()
+    return session.get(Stop_Word, id)
 
 def get_last_month_sitemap_id(engine): 
     query = text("""
@@ -145,7 +163,7 @@ def get_last_month_sitemap_id(engine):
 
 def create_tables():
     """Create tables in the PostgreSQL database"""
-    logging.info("create sitemap, keywords tables - update channel_metadata")
+    logging.info("create sitemap, keywords , stop_word tables - update channel_metadata")
     try:
         engine = connect_to_db()
 
@@ -227,14 +245,14 @@ def update_program_metadata(engine):
 
 def drop_tables():
     
-
-    if(os.environ.get("ENV") == "docker" or os.environ.get("ENV") == "dev"):
+    if(os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost"):
         logging.warning("""Drop table keyword / Program_Metadata / Channel_Metadata in the PostgreSQL database""")
         try:
             engine = connect_to_db()
             Base.metadata.drop_all(bind=engine, tables=[Keywords.__table__])
             Base.metadata.drop_all(bind=engine, tables=[Channel_Metadata.__table__])
             Base.metadata.drop_all(bind=engine, tables=[Program_Metadata.__table__])
+            Base.metadata.drop_all(bind=engine, tables=[Stop_Word.__table__])
 
             logging.info(f"Table keyword / Program_Metadata / Channel_Metadata deletion done")
         except (Exception) as error:

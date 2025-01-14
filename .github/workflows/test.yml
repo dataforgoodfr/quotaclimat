@@ -90,6 +90,59 @@ jobs:
           POSTGRES_PORT: 5432
           COMPARE_DURATION: "true"
 
+  stop_word:
+    needs: build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: user
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+          installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: pytest run stop_word
+        run: |
+          set -o pipefail
+          source .venv/bin/activate
+          poetry run pytest -k 'stop_word'
+        env:
+          ENV: dev
+          POSTGRES_USER: user
+          POSTGRES_DB: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          COMPARE_DURATION: "true"
+
+
   test_everything_else:
     needs: build
     runs-on: ubuntu-latest
@@ -134,7 +187,7 @@ jobs:
         run: |
           set -o pipefail
           source .venv/bin/activate
-          poetry run pytest -k 'not test_update_pg_keywords' --junitxml=pytest.xml \
+          poetry run pytest -k 'not test_update_pg_keywords and not stop_word' --junitxml=pytest.xml \
            --cov-report=term-missing:skip-covered \
            --cov=quotaclimat --cov=postgres test/ | \
            tee pytest-coverage.txt
@@ -184,7 +237,7 @@ jobs:
         run: poetry check --lock
 
   coverage_and_reporting:
-    needs: [test_first_update_keywords, test_everything_else, verify_poetry_lock]
+    needs: [test_first_update_keywords, test_everything_else, stop_word, verify_poetry_lock]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

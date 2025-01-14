@@ -5,7 +5,7 @@ import pandas as pd
 from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import JSON
-from postgres.schemas.models import sitemap_table, Keywords
+from postgres.schemas.models import sitemap_table, Keywords, Stop_Word
 
 def clean_data(df: pd.DataFrame):
     df = df.drop_duplicates(subset="id")
@@ -36,6 +36,7 @@ def show_sitemaps_dataframe(df: pd.DataFrame):
             logging.warning("Duplicates to remove : %s out of %s" % (len(df_final), len(df)))
     except Exception as err:
             logging.warning("Could show sitemap before saving : \n %s \n %s" % (err, df.head(1).to_string()))
+
 
 def save_to_pg(df, table, conn):
     number_of_elements = len(df)

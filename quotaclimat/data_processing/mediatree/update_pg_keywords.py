@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from postgres.schemas.models import Keywords
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp, get_channel_title_for_name
-from sqlalchemy import func, select, and_, func, or_
+from sqlalchemy import func, select, and_, or_
 
 def update_keywords(session: Session, batch_size: int = 50000, start_date : str = "2023-04-01", program_only=False, \
                     end_date: str = "2023-04-30", channel: str = "", empty_program_only=False) -> list:

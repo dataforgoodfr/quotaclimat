@@ -1,8 +1,8 @@
 import logging
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer, Table, MetaData
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer, Table, MetaData, ForeignKey
+from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 import pandas as pd
 from sqlalchemy import text
 from postgres.database_connection import connect_to_db, get_db_session
@@ -129,12 +129,15 @@ class Program_Metadata(Base):
 class Stop_Word(Base):
     __tablename__ = stop_word_table
     id = Column(Text, primary_key=True)
-    channel_title = Column(String, nullable=False)
+    keyword_id = Column(Text, nullable=True)
+    channel_title = Column(String, nullable=True)
     context = Column(String, nullable=False)
-    count = Column(Integer, nullable=False)
-    keyword = Column(String, nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")) # ALTER TABLE ONLY keywords ALTER COLUMN created_at SET DEFAULT (now() at time zone 'utc');
+    count = Column(Integer, nullable=True)
+    keyword = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')"))
+    start_date = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
+    validated = Column(Boolean, nullable=True, default=True)
 
 def get_sitemap(id: str):
     session = get_db_session()
@@ -242,8 +245,7 @@ def update_program_metadata(engine):
 
 def drop_tables():
     
-
-    if(os.environ.get("ENV") == "docker" or os.environ.get("ENV") == "dev"):
+    if(os.environ.get("POSTGRES_HOST") == "postgres_db"):
         logging.warning("""Drop table keyword / Program_Metadata / Channel_Metadata in the PostgreSQL database""")
         try:
             engine = connect_to_db()

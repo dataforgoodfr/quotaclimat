@@ -137,8 +137,9 @@ services:
       POSTGRES_PORT: 5432
       PORT: 5000
       HEALTHCHECK_SERVER: "0.0.0.0"
-      NUMBER_OF_PREVIOUS_DAYS: 7000
-      START_DATE: 1733762653
+      # NUMBER_OF_PREVIOUS_DAYS: 30
+      # MIN_REPETITION: 15
+      # START_DATE: 1731683697
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/

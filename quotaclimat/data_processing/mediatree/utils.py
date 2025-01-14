@@ -127,8 +127,12 @@ def get_timestamp_from_yyyymmdd(time: str) -> pd.Timestamp:
         return pd.Timestamp(pd.to_datetime(time)).tz_localize("Europe/Paris")
     
 
-def get_last_X_days(days) -> datetime:
-    end_date = get_now()
+def get_last_X_days(days, from_date = None) -> datetime:
+    if from_date is None:
+        end_date = get_now()
+    else:
+        end_date = from_date
+
     start_date = end_date - timedelta(days=days)
     logging.debug(f"start_date: {start_date} end_date: {end_date}")
     return start_date

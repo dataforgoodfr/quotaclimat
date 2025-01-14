@@ -3819,6 +3819,20 @@ doc = ["reno", "sphinx"]
 test = ["pytest", "tornado (>=4.5)", "typeguard"]
 
 [[package]]
+name = "thefuzz"
+version = "0.22.1"
+description = "Fuzzy string matching in python"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "thefuzz-0.22.1-py3-none-any.whl", hash = "sha256:59729b33556850b90e1093c4cf9e618af6f2e4c985df193fdf3c5b5cf02ca481"},
+    {file = "thefuzz-0.22.1.tar.gz", hash = "sha256:7138039a7ecf540da323792d8592ef9902b1d79eb78c147d4f20664de79f3680"},
+]
+
+[package.dependencies]
+rapidfuzz = ">=3.0.0,<4.0.0"
+
+[[package]]
 name = "tldextract"
 version = "5.1.3"
 description = "Accurately separates a URL's subdomain, domain, and public suffix, using the Public Suffix List (PSL). By default, this includes the public ICANN TLDs and their exceptions. You can optionally support the Public Suffix List's private domains as well."
@@ -4396,4 +4410,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<=3.13"
-content-hash = "8a1c34fabac7124b260e16f06f8aed633532ba13d75bc7feac2e1844ad0462e1"
+content-hash = "17b00d944802638ecda4c01e3c4f6dcbbe587bbf169b454ca27fae82f40e37c2"

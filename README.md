@@ -297,7 +297,7 @@ We should use env variable `UPDATE`  like in docker compose (should be set to "t
 
 In order to see actual change in the local DB, run the test first `docker compose up test` and then these commands :
 ```
-docker exec -ti quotaclimat-postgres_db-1 bash
+docker exec -ti quotaclimat-postgres_db-1 bash # or docker compose exec postgres_db bash
 psql -h localhost --port 5432 -d barometre -U user
 --> enter password : password
 UPDATE keywords set number_of_keywords=1000 WHERE id = '71b8126a50c1ed2e5cb1eab00e4481c33587db478472c2c0e74325abb872bef6';
@@ -405,6 +405,7 @@ This table is read by the service "mediatree" to remove stop words from the fiel
 Env variables used : 
 * START_DATE (integer) (unixtimestamp such as mediatree service)
 * NUMBER_OF_PREVIOUS_DAYS (integer): default 7 days
+* MIN_REPETITION (integer) : default 15 - Number of minimum repetition of a stop word
 
 ## Production monitoring
 * Use scaleway

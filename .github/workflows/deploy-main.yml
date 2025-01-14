@@ -72,7 +72,7 @@ jobs:
     - name: Push s3 Image
       run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
 
-   - name: update scaleway job definition with version s3
+    - name: update scaleway job definition with version s3
       uses: jawher/action-scw@v2.34.0
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}

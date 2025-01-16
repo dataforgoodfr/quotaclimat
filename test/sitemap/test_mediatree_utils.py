@@ -37,6 +37,12 @@ def test_get_first_of_month():
     date = datetime(2024, 12, 12, 0, 0, 0)
     assert get_first_of_month(date) == "2024-12-01"
 
+def test_get_date_now_minus_days():
+    date = datetime(2024, 12, 12, 0, 0, 0)
+    assert get_date_now_minus_days(start=date, minus_days=6) == "2024-12-06"
+    assert get_date_now_minus_days(start=date, minus_days=13) == "2024-11-29"
+
+
 def test_get_start_end_date_env_variable_with_default():
     start_date = 0
     

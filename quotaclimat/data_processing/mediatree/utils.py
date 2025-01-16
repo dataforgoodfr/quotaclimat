@@ -93,6 +93,10 @@ def get_first_of_month(start_date: datetime) -> str:
     # Format as DD-MM-YYYY
     return first_day.strftime("%Y-%m-%d")
 
+def get_date_now_minus_days(start: datetime, minus_days: int):
+    new_date = start - timedelta(days=minus_days)
+    return new_date.strftime("%Y-%m-%d")
+
 def get_start_end_date_env_variable_with_default(start_date:int, minus_days:int=1):
     if start_date != 0:
         start_date_minus_days = int(int(start_date) - (minus_days * 24 * 60 * 60))

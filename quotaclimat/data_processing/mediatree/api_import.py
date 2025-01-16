@@ -51,21 +51,30 @@ def refresh_token(token, date):
 # use when word detection is changed
 @monitor(monitor_slug='update')
 async def update_pg_data(exit_event):
-    beginning_of_the_month = get_first_of_month(get_now())
-    start_date = os.environ.get("START_DATE_UPDATE", beginning_of_the_month)
-    tmp_end_date = get_end_of_month(start_date)
-    end_date = os.environ.get("END_DATE", tmp_end_date)
-    batch_size = int(os.environ.get("BATCH_SIZE", 50000))
-    program_only = os.environ.get("UPDATE_PROGRAM_ONLY", "false") == "true"
-    empty_program_only = os.environ.get("UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY", "false") == "true"
-    channel = os.environ.get("CHANNEL", "")
-    if(program_only):
-        logging.warning(f"Update : Program only mode activated - UPDATE_PROGRAM_ONLY with UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY set to {empty_program_only}")
-    else:
-        logging.warning("Update : programs will not be updated for performance issue - use UPDATE_PROGRAM_ONLY to true for this")
-
-    logging.warning(f"Updating already saved data for channel {channel} from Postgresql from date {start_date} - env variable START_DATE_UPDATE until {end_date} - you can use END_DATE to set it (optional)")
     try:
+        start_date = os.environ.get("START_DATE_UPDATE", None)
+        if start_date is None:
+            number_of_days_to_update = int(os.environ.get("NUMBER_OF_DAYS", 7))
+            tmp_start_date = get_date_now_minus_days(start=get_now(), minus_days=number_of_days_to_update)
+            logging.info(f"START_DATE_UPDATE is None, using today minus NUMBER_OF_DAYS : {number_of_days_to_update}")
+            start_date = tmp_start_date
+            end_date = get_now()
+        else:
+            logging.info(f"START_DATE_UPDATE is {start_date}")
+            tmp_end_date = get_end_of_month(start_date)
+            end_date = os.environ.get("END_DATE", tmp_end_date)
+
+        batch_size = int(os.environ.get("BATCH_SIZE", 50000))
+        program_only = os.environ.get("UPDATE_PROGRAM_ONLY", "false") == "true"
+        empty_program_only = os.environ.get("UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY", "false") == "true"
+        channel = os.environ.get("CHANNEL", "")
+        if(program_only):
+            logging.warning(f"Update : Program only mode activated - UPDATE_PROGRAM_ONLY with UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY set to {empty_program_only}")
+        else:
+            logging.warning("Update : programs will not be updated for performance issue - use UPDATE_PROGRAM_ONLY to true for this")
+
+        logging.warning(f"Updating already saved data for channel {channel} from Postgresql from date {start_date} - env variable START_DATE_UPDATE until {end_date} - you can use END_DATE to set it (optional)")
+        
         session = get_db_session()
         update_keywords(session, batch_size=batch_size, start_date=start_date, program_only=program_only, end_date=end_date,\
                         channel=channel, empty_program_only=empty_program_only)

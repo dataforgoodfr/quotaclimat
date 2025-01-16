@@ -322,15 +322,21 @@ Use env variable `CHANNEL` like in docker compose (string: tf1) with `UPDATE` to
 `UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY` to true will only update program metadata with empty value : "".
 
 ### Batch update from a date
-With +1 millions rows, we can update from an offset to fix a custom logic by using `START_DATE_UPDATE` (YYYY-MM-DD - default first day of the current month), the default will use the end of the month otherwise you can specify`END_DATE` (optional) (YYYY-MM-DD) to batch update PG from a date range.
+With +1 millions rows, we can update from an offset to fix a custom logic by using `START_DATE_UPDATE` (YYYY-MM-DD - default first day of the current month), the default will use the end of the month otherwise you can specify `END_DATE` (optional) (YYYY-MM-DD) to batch update PG from a date range.
 
-~55 minutes to update 50K rows on a mVCPU 2240 - 4Gb RAM on Scaleway.
-
-Every month has ~80K rows.
+Env variables list : 
+* START_DATE_UPDATE : string (YYYY-MM-DD ) - default to today - minus NUMBER_OF_DAYS (date is included in the query)
+* END_DATE : string (YYYY-MM-DD ) - default to end of the month (date is included in the query)
+* NUMBER_OF_DAYS : integer default to 7 days - number of days to update from (START_DATE_UPDATE - NUMBER_OF_DAYS) until START_DATE_UPDATE if START_DATE_UPDATE is empty
 
 Example inside the docker-compose.yml mediatree service -> START_DATE_UPDATE: 2024-04-01 - default END_DATE will be 2024-04-30
  
 We can use [a Github actions to start multiple update operations with different date, set it using the matrix](https://github.com/dataforgoodfr/quotaclimat/blob/main/.github/workflows/scaleway-start-import-job-update.yml)
+
+
+#### Production executions
+~55 minutes to update 50K rows on a mVCPU 2240 - 4Gb RAM on Scaleway.
+Every month has ~80K rows.
 
 ## SQL Tables evolution
 Using [Alembic](https://alembic.sqlalchemy.org/en/latest/autogenerate.html) Auto Generating Migrations¶ we can add a new column inside `models.py` and it will automatically make the schema evolution :

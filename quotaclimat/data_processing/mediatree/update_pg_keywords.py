@@ -7,6 +7,7 @@ import logging
 from sqlalchemy.orm import Session
 from postgres.schemas.models import Keywords
 from quotaclimat.data_processing.mediatree.detect_keywords import *
+from quotaclimat.data_processing.mediatree.api_import import get_stop_words
 from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp, get_channel_title_for_name
 from sqlalchemy import func, select, and_, or_
 
@@ -23,6 +24,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
 
     logging.info(f"Updating {total_updates} saved keywords from {start_date} date to {end_date} for channel {channel} - batch size {batch_size} - totals rows")
     df_programs = get_programs()
+    stop_words = get_stop_words(session, validated_only=True)
 
     for i in range(0, total_updates, batch_size):
         current_batch_saved_keywords = get_keywords_columns(session, i, batch_size, start_date, end_date, channel, empty_program_only)
@@ -61,7 +63,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     ,number_of_biodiversite_concepts_generaux_no_hrfp \
                     ,number_of_biodiversite_causes_no_hrfp \
                     ,number_of_biodiversite_consequences_no_hrfp \
-                    ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start)
+                    ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words)
                 except Exception as err:
                         logging.error(f"continuing loop but met error : {err}")
                         continue

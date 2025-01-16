@@ -91,7 +91,12 @@ def get_stop_words(session, validated_only=True):
     try:
         stop_words = get_all_stop_word(session, validated_only=validated_only)
         result = list(map(lambda stop: stop.context, stop_words))
-        logging.info(f"Got {len(result)} stop words")
+        result_len = len(result)
+        if result_len > 0:
+            logging.info(f"Got {len(result)} stop words")
+        else:
+            logging.error("No stop words from sql tables")
+
         return result
     except Exception as err:
         logging.error(f"Stop word error {err}")

@@ -120,7 +120,7 @@ def remove_stopwords(plaintext: str, stopwords: list[str]) -> str:
     logging.debug(f"Removing stopwords {plaintext}")
 
     if len(stopwords) == 0:
-        logging.error("Stop words list empty")
+        logging.warning("Stop words list empty")
 
     for word in stopwords:
         plaintext = plaintext.replace(word, '')

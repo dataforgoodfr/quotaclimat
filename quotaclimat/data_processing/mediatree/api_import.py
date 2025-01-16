@@ -49,8 +49,10 @@ def refresh_token(token, date):
 
 # reapply word detector logic to all saved keywords
 # use when word detection is changed
+@monitor(monitor_slug='update')
 async def update_pg_data(exit_event):
-    start_date = os.environ.get("START_DATE_UPDATE", "2023-04-01")
+    beginning_of_the_month = get_first_of_month(get_now())
+    start_date = os.environ.get("START_DATE_UPDATE", beginning_of_the_month)
     tmp_end_date = get_end_of_month(start_date)
     end_date = os.environ.get("END_DATE", tmp_end_date)
     batch_size = int(os.environ.get("BATCH_SIZE", 50000))

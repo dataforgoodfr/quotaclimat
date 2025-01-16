@@ -33,6 +33,10 @@ def test_get_end_of_month():
     assert get_end_of_month("2024-02-01") == "2024-02-29"
     assert get_end_of_month("2024-02-15") == "2024-02-29"
 
+def test_get_first_of_month():
+    date = datetime(2024, 12, 12, 0, 0, 0)
+    assert get_first_of_month(date) == "2024-12-01"
+
 def test_get_start_end_date_env_variable_with_default():
     start_date = 0
     

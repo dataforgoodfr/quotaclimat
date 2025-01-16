@@ -12,8 +12,19 @@ from quotaclimat.data_processing.mediatree.channel_program import get_programs, 
 from sqlalchemy import func, select, and_, or_
 
 def update_keywords(session: Session, batch_size: int = 50000, start_date : str = "2023-04-01", program_only=False, \
-                    end_date: str = "2023-04-30", channel: str = "", empty_program_only=False) -> list:
-    total_updates = get_total_count_saved_keywords(session, start_date, end_date, channel, empty_program_only)
+                    end_date: str = "2023-04-30", channel: str = "", empty_program_only=False, \
+                        stop_word_keyword_only = False) -> list:
+    df_programs = get_programs()
+
+    stop_words_object = get_stop_words(session, validated_only=True, context_only=False)
+    stop_words =  list(map(lambda stop: stop.context, stop_words_object))
+    if stop_word_keyword_only:
+        top_keyword_of_stop_words =  set(map(lambda stop: stop.keyword, stop_words_object))
+        logging.info(f"stop words keywords :\n {top_keyword_of_stop_words}")
+    else:
+        top_keyword_of_stop_words = []
+
+    total_updates = get_total_count_saved_keywords(session, start_date, end_date, channel, empty_program_only, keywords_to_includes=top_keyword_of_stop_words)
 
     if total_updates == 0:
         logging.error("No rows to update - change your START_DATE_UPDATE")
@@ -23,11 +34,10 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
         batch_size = total_updates
 
     logging.info(f"Updating {total_updates} saved keywords from {start_date} date to {end_date} for channel {channel} - batch size {batch_size} - totals rows")
-    df_programs = get_programs()
-    stop_words = get_stop_words(session, validated_only=True)
-
+    
     for i in range(0, total_updates, batch_size):
-        current_batch_saved_keywords = get_keywords_columns(session, i, batch_size, start_date, end_date, channel, empty_program_only)
+        current_batch_saved_keywords = get_keywords_columns(session, i, batch_size, start_date, end_date, channel, \
+                                                            empty_program_only, keywords_to_includes=top_keyword_of_stop_words)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {total_updates}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name, channel_title in current_batch_saved_keywords:
             if channel_title is None:
@@ -133,7 +143,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
 
 
 def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30",\
-                         channel: str = "", empty_program_only: bool = False) -> list:
+                         channel: str = "", empty_program_only: bool = False, keywords_to_includes: list[str] = []) -> list:
     logging.debug(f"Getting {batch_size} elements from offset {offset}")
     query = session.query(
             Keywords.id,
@@ -157,12 +167,18 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
 
     if empty_program_only:
         query = query.filter(Keywords.channel_program == "")
+        
+    # https://stackoverflow.com/a/33389165/3535853
+    if len(keywords_to_includes) > 0:
+        logging.info(f"Filtering plaintext that include some {len(keywords_to_includes)} keywords")
+        query = and_(*[Keywords.plaintext.ilike(f"%{word}%") for word in keywords_to_includes])
 
     return query.offset(offset) \
         .limit(batch_size) \
         .all()
 
-def get_total_count_saved_keywords(session: Session, start_date : str, end_date : str, channel: str, empty_program_only: bool) -> int:
+def get_total_count_saved_keywords(session: Session, start_date : str, end_date : str, channel: str, empty_program_only: bool,\
+                                    keywords_to_includes= []) -> int:
         statement = select(func.count()).filter(
             and_(func.date(Keywords.start) >= start_date, func.date(Keywords.start) <= end_date)
         ).select_from(Keywords)
@@ -177,6 +193,10 @@ def get_total_count_saved_keywords(session: Session, start_date : str, end_date 
                     Keywords.channel_program == "" 
                 )
             )
+        if len(keywords_to_includes) > 0:
+            logging.info(f"Filtering plaintext that include {len(keywords_to_includes)} keywords")
+            # TODO: debug me https://stackoverflow.com/a/33389165/3535853
+            statement = and_(*[Keywords.plaintext.ilike(f"%{word}%") for word in keywords_to_includes])
 
         return session.execute(statement).scalar()
 

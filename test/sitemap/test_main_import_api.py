@@ -9,6 +9,8 @@ from postgres.schemas.models import create_tables, get_db_session, get_keyword, 
 from postgres.insert_data import save_to_pg
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.api_import import *
+from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
+from quotaclimat.data_processing.mediatree.stop_word.main import save_append_stop_word
 from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
 
 import time as t
@@ -31,11 +33,23 @@ def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
         
         return len(df)
 
+
+def insert_stop_word(conn):
+       logging.info("test saving stop words")
+       to_save = []
+       for stop in STOP_WORDS:
+                stop_word  = dict()
+                stop_word['id'] = stop
+                stop_word['context'] = stop
+                to_save.append(stop_word)
+
+       save_append_stop_word(conn, to_save)
+
 def test_main_api_import():
         conn = connect_to_db()
         drop_tables()
         create_tables()
-        
+        insert_stop_word(conn)
         len_df = insert_mediatree_json(conn)
 
         session = get_db_session(conn)
@@ -91,3 +105,10 @@ def test_third_row_api_import():
         
               
         assert specific_keyword.number_of_keywords == 1
+
+
+def test_get_stop_words():
+        conn = connect_to_db()
+        session = get_db_session(conn)
+        stopwords = get_stop_words(session)      
+        assert type(stopwords[0]) == str 

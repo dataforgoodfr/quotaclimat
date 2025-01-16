@@ -1,9 +1,7 @@
 import logging
 import asyncio
-from time import sleep
 import sys
 import os
-import gc
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import *
@@ -13,7 +11,6 @@ from postgres.schemas.models import create_tables, connect_to_db, Stop_Word, get
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
-from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
 from tenacity import *
 from sentry_sdk.crons import monitor
 import modin.pandas as pd
@@ -284,8 +281,6 @@ async def manage_stop_word(exit_event = None, conn = None, duration: int = 7, fr
         sys.exit(1)
 
 
-# TODO : increase context length (due to repeated ad words)
-# TODO : test with several ad words said in the same plaintext
 async def main():
     with monitor(monitor_slug='stopword'): #https://docs.sentry.io/platforms/python/crons/
         try:

@@ -260,6 +260,7 @@ def test_stop_word_main():
 
 
 def test_stop_word_is_already_known_stop_word():
+       
        context1_avait= " avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa"
        context2_avais= " avais promis de lancer un plan de replantation euh hélas pas pu tout s' est pa"
        assert is_already_known_stop_word(context1_avait, context2_avais) == True

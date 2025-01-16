@@ -135,7 +135,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_HOST: postgres_db
       POSTGRES_PORT: 5432
-      PORT: 5000
+      PORT: 5002
       HEALTHCHECK_SERVER: "0.0.0.0"
       # NUMBER_OF_PREVIOUS_DAYS: 30
       # MIN_REPETITION: 15

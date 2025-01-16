@@ -107,9 +107,8 @@ def test_third_row_api_import():
         assert specific_keyword.number_of_keywords == 1
 
 
-def test_get_stop_words():
+def test_get_api_stop():
         conn = connect_to_db()
-        insert_stop_word(conn)
         session = get_db_session(conn)
         stopwords = get_stop_words(session)      
         assert type(stopwords[0]) == str 

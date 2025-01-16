@@ -1,13 +1,8 @@
-### Library imports
-import requests
-import json
-
 import logging
 import asyncio
 from time import sleep
 import sys
 import os
-import gzip
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import *
@@ -16,11 +11,8 @@ from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import *
 from quotaclimat.data_processing.mediatree.api_import import *
-from postgres.insert_data import save_to_pg
-from postgres.schemas.models import create_tables, connect_to_db, get_db_session
-from postgres.schemas.models import keywords_table
+
 import shutil
-from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from typing import List, Optional
 from tenacity import *
 import sentry_sdk
@@ -30,7 +22,6 @@ from modin.pandas import json_normalize
 import ray
 import s3fs
 import boto3
-from io import BytesIO
 
 from quotaclimat.utils.sentry import sentry_init
 logging.getLogger('modin.logger.default').setLevel(logging.ERROR)

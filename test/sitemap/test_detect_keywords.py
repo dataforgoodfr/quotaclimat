@@ -1854,6 +1854,3 @@ def test_count_different_window_number_40():
         }
     ]
     assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, 40),start) == 3
-
-def test_remove_stopwords():
-    assert remove_stopwords("l' huile de coude était aussi une énergie renouvelable stéphane est à fond sur le tri sélectif") == "l'  stéphane "

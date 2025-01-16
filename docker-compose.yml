@@ -135,7 +135,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_HOST: postgres_db
       POSTGRES_PORT: 5432
-      PORT: 5000
+      PORT: 5002
       HEALTHCHECK_SERVER: "0.0.0.0"
       # NUMBER_OF_PREVIOUS_DAYS: 30
       # MIN_REPETITION: 15
@@ -190,7 +190,7 @@ services:
       HEALTHCHECK_SERVER: "0.0.0.0"
       # SENTRY_DSN: prod_only
       # COMPARE_DURATION: "true"
-      #UPDATE: "true" # to batch update PG 
+      # UPDATE: "true" # to batch update PG 
       #UPDATE_PROGRAM_ONLY: "true" # to batch update PG but only channel with program
       #START_DATE_UPDATE: "2024-02-01" # to batch update PG from a date
       #END_DATE: "2024-02-29" # optional - otherwise end of the month

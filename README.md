@@ -321,8 +321,8 @@ Use env variable `CHANNEL` like in docker compose (string: tf1) with `UPDATE` to
 
 `UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY` to true will only update program metadata with empty value : "".
 
-### Batch update from an offset
-With +1 millions rows, we can update from an offset to fix a custom logic by using `START_DATE_UPDATE` (YYYY-MM-DD), the default will use the end of the month otherwise you can specify`END_DATE` (optional) (YYYY-MM-DD) to batch update PG from a date range.
+### Batch update from a date
+With +1 millions rows, we can update from an offset to fix a custom logic by using `START_DATE_UPDATE` (YYYY-MM-DD - default first day of the current month), the default will use the end of the month otherwise you can specify`END_DATE` (optional) (YYYY-MM-DD) to batch update PG from a date range.
 
 ~55 minutes to update 50K rows on a mVCPU 2240 - 4Gb RAM on Scaleway.
 

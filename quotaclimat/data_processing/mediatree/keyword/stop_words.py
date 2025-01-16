@@ -1,4 +1,4 @@
-# TODO : use SQL table "Stop_Word"
+# Use only for test - otherwise SQL table "Stop_Word" is used
 STOP_WORDS = [
     "bonus écologique"
     ,"haute isolation thermique fabriqué en france"

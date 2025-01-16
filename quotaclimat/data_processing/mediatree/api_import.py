@@ -15,11 +15,11 @@ from quotaclimat.data_processing.mediatree.config import *
 from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import *
+from quotaclimat.data_processing.mediatree.stop_word.main import get_all_stop_word
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, get_db_session
 from postgres.schemas.models import keywords_table
 
-from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from typing import List, Optional
 from tenacity import *
 import sentry_sdk
@@ -49,8 +49,10 @@ def refresh_token(token, date):
 
 # reapply word detector logic to all saved keywords
 # use when word detection is changed
+@monitor(monitor_slug='update')
 async def update_pg_data(exit_event):
-    start_date = os.environ.get("START_DATE_UPDATE", "2023-04-01")
+    beginning_of_the_month = get_first_of_month(get_now())
+    start_date = os.environ.get("START_DATE_UPDATE", beginning_of_the_month)
     tmp_end_date = get_end_of_month(start_date)
     end_date = os.environ.get("END_DATE", tmp_end_date)
     batch_size = int(os.environ.get("BATCH_SIZE", 50000))
@@ -86,6 +88,22 @@ def get_channels():
 
     return channels
 
+def get_stop_words(session, validated_only=True):
+    logging.info("Getting Stop words...")
+    try:
+        stop_words = get_all_stop_word(session, validated_only=validated_only)
+        result = list(map(lambda stop: stop.context, stop_words))
+        result_len = len(result)
+        if result_len > 0:
+            logging.info(f"Got {len(result)} stop words")
+        else:
+            logging.error("No stop words from sql tables")
+
+        return result
+    except Exception as err:
+        logging.error(f"Stop word error {err}")
+        raise Exception
+
 async def get_and_save_api_data(exit_event):
     with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
         try:
@@ -99,6 +117,8 @@ async def get_and_save_api_data(exit_event):
             (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
             df_programs = get_programs()
             channels = get_channels()
+            session = get_db_session(conn)
+            stop_words = get_stop_words(session, validated_only=True)
             
             day_range = get_date_range(start_date_to_query, end_date, number_of_previous_days)
             logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
@@ -116,7 +136,8 @@ async def get_and_save_api_data(exit_event):
                             channel_program = str(program.program_name)
                             channel_program_type = str(program.program_type)
                             logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
-                            df = extract_api_sub(token, channel, type_sub, start_epoch,end_epoch, channel_program,channel_program_type) 
+                            df = extract_api_sub(token, channel, type_sub, start_epoch,end_epoch, channel_program, \
+                                                 channel_program_type, stop_words=stop_words)
                             if(df is not None):
                                 logging.debug(f"Memory df {df.memory_usage()}")
                                 save_to_pg(df, keywords_table, conn)
@@ -204,12 +225,13 @@ def extract_api_sub(
         end_epoch = None
         ,channel_program: str = ""
         ,channel_program_type : str = ""
+        ,stop_words: list[str] = []
     ) -> Optional[pd.DataFrame]: 
     try:
         df = get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type)
 
         if(df is not None):
-            df = filter_and_tag_by_theme(df)
+            df = filter_and_tag_by_theme(df, stop_words=stop_words)
             logging.info(f"Adding primary key to save to PG and have idempotent results")
             df["id"] = df.apply(lambda x: add_primary_key(x), axis=1)
             return df

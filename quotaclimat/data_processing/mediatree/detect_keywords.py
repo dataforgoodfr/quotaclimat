@@ -4,7 +4,6 @@ from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.config import *
 from postgres.schemas.models import keywords_table
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
-from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
 from typing import List, Optional
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 import re
@@ -116,9 +115,13 @@ def replace_word_with_context(text: str) -> str:
     result = re.sub(pattern, replacement, text)
     
     return result
-def remove_stopwords(plaintext: str) -> str:
+
+def remove_stopwords(plaintext: str, stopwords: list[str]) -> str:
     logging.debug(f"Removing stopwords {plaintext}")
-    stopwords = STOP_WORDS
+
+    if len(stopwords) == 0:
+        logging.warning("Stop words list empty")
+
     for word in stopwords:
         plaintext = plaintext.replace(word, '')
     
@@ -129,11 +132,11 @@ def remove_stopwords(plaintext: str) -> str:
     return plaintext
 
 @sentry_sdk.trace
-def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime):
+def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime, stop_words: List[str] = []):
     keywords_with_timestamp = []
     number_of_elements_in_array = 28
     default_window_in_seconds = DEFAULT_WINDOW_DURATION
-    plaitext_without_stopwords = remove_stopwords(plaintext)
+    plaitext_without_stopwords = remove_stopwords(plaintext=plaintext, stopwords=stop_words)
     logging.debug(f"display datetime start {start}")
 
     for theme, keywords_dict in THEME_KEYWORDS.items():
@@ -284,7 +287,7 @@ def log_min_max_date(df):
     logging.info(f"Date min : {min_date}, max : {max_date}")
 
 
-def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
+def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = []) -> pd.DataFrame :
         with sentry_sdk.start_transaction(op="task", name="filter_and_tag_by_theme"):
             count_before_filtering = len(df)
             logging.info(f"{count_before_filtering} subtitles to filter by keywords and tag with themes")
@@ -324,7 +327,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame) -> pd.DataFrame :
                 ]
             ] = df[['plaintext','srt', 'start']]\
                 .swifter.apply(\
-                    lambda row: get_themes_keywords_duration(*row),\
+                    lambda row: get_themes_keywords_duration(*row, stop_words=stop_words),\
                         axis=1,
                         result_type='expand'
                 )

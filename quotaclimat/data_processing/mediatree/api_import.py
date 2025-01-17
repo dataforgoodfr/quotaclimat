@@ -65,6 +65,10 @@ async def update_pg_data(exit_event):
             end_date = os.environ.get("END_DATE", tmp_end_date)
 
         batch_size = int(os.environ.get("BATCH_SIZE", 50000))
+        stop_word_keyword_only = os.environ.get("STOP_WORD_KEYWORD_ONLY", "false") == "true"
+        if stop_word_keyword_only:
+            logging.warning(f"Update - STOP_WORD_KEYWORD_ONLY to true : Only updating rows whose plaintext match top stop words' keyword. It uses to speed up update.")
+
         program_only = os.environ.get("UPDATE_PROGRAM_ONLY", "false") == "true"
         empty_program_only = os.environ.get("UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY", "false") == "true"
         channel = os.environ.get("CHANNEL", "")
@@ -77,7 +81,7 @@ async def update_pg_data(exit_event):
         
         session = get_db_session()
         update_keywords(session, batch_size=batch_size, start_date=start_date, program_only=program_only, end_date=end_date,\
-                        channel=channel, empty_program_only=empty_program_only)
+                        channel=channel, empty_program_only=empty_program_only,stop_word_keyword_only=stop_word_keyword_only)
         exit_event.set()
     except Exception as err:
         logging.fatal("Could not update_pg_data %s:(%s)" % (type(err).__name__, err))
@@ -97,11 +101,15 @@ def get_channels():
 
     return channels
 
-def get_stop_words(session, validated_only=True):
+def get_stop_words(session, validated_only=True, context_only=True):
     logging.info("Getting Stop words...")
     try:
         stop_words = get_all_stop_word(session, validated_only=validated_only)
-        result = list(map(lambda stop: stop.context, stop_words))
+        if(context_only):
+            result = list(map(lambda stop: stop.context, stop_words))
+        else:
+            result = stop_words
+        
         result_len = len(result)
         if result_len > 0:
             logging.info(f"Got {len(result)} stop words")

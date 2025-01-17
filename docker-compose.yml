@@ -194,6 +194,7 @@ services:
       #UPDATE_PROGRAM_ONLY: "true" # to batch update PG but only channel with program
       START_DATE_UPDATE: "2024-02-01" # to batch update PG from a date
       # NUMBER_OF_DAYS: 7
+      STOP_WORD_KEYWORD_ONLY: "true"  # speed up execution when we only want to update stop words
       #END_DATE: "2024-02-29" # optional - otherwise end of the month
       BATCH_SIZE: 100 # number of records to update in one batch
       #START_DATE: 1727610071 # to test batch import 

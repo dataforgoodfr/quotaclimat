@@ -143,8 +143,9 @@ def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
 
-def get_keyword(id: str):
-    session = get_db_session()
+def get_keyword(id: str, session = None):
+    if session is None:
+        session = get_db_session()
     return session.get(Keywords, id)
 
 def get_stop_word(id: str):
@@ -161,11 +162,14 @@ def get_last_month_sitemap_id(engine):
         df = pd.read_sql_query(query, conn)
         return df
 
-def create_tables():
+def create_tables(conn=None):
     """Create tables in the PostgreSQL database"""
     logging.info("create sitemap, keywords , stop_word tables - update channel_metadata")
     try:
-        engine = connect_to_db()
+        if conn is None :
+            engine = connect_to_db()
+        else:
+            engine = conn
 
         Base.metadata.create_all(engine, checkfirst=True)
         update_channel_metadata(engine)
@@ -243,12 +247,24 @@ def update_program_metadata(engine):
     except (Exception) as error:
         logging.error(f"Error : Update program metadata {error}")
 
-def drop_tables():
+def empty_tables(session = None):
+    if(os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost"):
+        logging.warning("""Doing: Empty table Stop_Word / Keywords""")
+        session.query(Stop_Word).delete()
+        session.query(Keywords).delete()
+        session.commit()
+        logging.warning("""Done: Empty table Stop_Word / Keywords""")
+
+
+def drop_tables(conn = None):
     
     if(os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost"):
         logging.warning("""Drop table keyword / Program_Metadata / Channel_Metadata in the PostgreSQL database""")
         try:
-            engine = connect_to_db()
+            if conn is None :
+                engine = connect_to_db()
+            else:
+                engine = conn
             Base.metadata.drop_all(bind=engine, tables=[Keywords.__table__])
             Base.metadata.drop_all(bind=engine, tables=[Channel_Metadata.__table__])
             Base.metadata.drop_all(bind=engine, tables=[Program_Metadata.__table__])

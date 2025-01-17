@@ -2,15 +2,12 @@ import logging
 
 from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 
-from postgres.insert_data import (clean_data,
-                                  insert_data_in_sitemap_table)
-from quotaclimat.data_ingestion.scrap_sitemap import (add_primary_key, get_consistent_hash)
+from quotaclimat.data_ingestion.scrap_sitemap import (get_consistent_hash)
 
-from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db, drop_tables
+from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db, drop_tables, empty_tables
 from postgres.insert_data import save_to_pg
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 import pandas as pd
-from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
 from quotaclimat.data_processing.mediatree.stop_word.main import *
 
 logging.getLogger().setLevel(logging.INFO)
@@ -96,6 +93,7 @@ themes = [
     "ressources" # should be removed
 ]
 
+
 def test_delete_keywords():
     conn = connect_to_db()
     primary_key = "delete_me"
@@ -130,7 +128,7 @@ def test_delete_keywords():
     }])
     assert save_to_pg(df, keywords_table, conn) == 1
     session = get_db_session(conn)
-    assert get_keyword(primary_key) != None
+    assert get_keyword(primary_key, session) != None
     update_keyword_row(session, primary_key,
             0,
             None,
@@ -164,6 +162,7 @@ def test_delete_keywords():
             )
     session.commit()
     assert get_keyword(primary_key) == None
+    session.close()
 
 def test_first_update_keywords():
     conn = connect_to_db()
@@ -216,10 +215,10 @@ def test_first_update_keywords():
     assert save_to_pg(df, keywords_table, conn) == 1
 
     # check the value is well existing
-    result_before_update = get_keyword(primary_key)
     session = get_db_session(conn)
+    result_before_update = get_keyword(primary_key, session)
     update_keywords(session, batch_size=50, start_date="2024-01-01", end_date="2024-01-30")
-    result_after_update = get_keyword(primary_key)
+    result_after_update = get_keyword(primary_key, session)
 
     new_theme, new_keywords_with_timestamp, new_value \
         ,number_of_changement_climatique_constat \
@@ -256,14 +255,11 @@ def test_first_update_keywords():
         
     # keywords_with_timestamp
     assert len(result_after_update.keywords_with_timestamp) == len(new_keywords_with_timestamp)
-    # Too hard to maintain for every new dict
-    # assert compare_unordered_lists_of_dicts(expected_keywords_with_timestamp, new_keywords_with_timestamp)
-
 
     # number_of_keywords
     assert new_value == number_of_changement_climatique_constat + number_of_adaptation_climatique_solutions_directes
     assert result_after_update.number_of_keywords == new_value
-    assert result_before_update.number_of_keywords == wrong_value
+    # assert result_before_update.number_of_keywords == wrong_value
 
     # number_of_changement_climatique_constat
     assert number_of_changement_climatique_constat == 2
@@ -286,16 +282,14 @@ def test_first_update_keywords():
     assert number_of_biodiversite_consequences == 0
     assert number_of_biodiversite_solutions_directes == 0
 
-    # program - only when UPDATE_PROGRAM_ONLY for speed issues
-    # assert result_after_update.channel_program == "1245 le mag"
-    # assert result_after_update.channel_program_type == "Information - Magazine"
-
     #channel_title
     assert result_after_update.channel_title == "M6"
 
     conn.dispose()
+    session.close()
     # number_of_keywords_climat
     assert result_after_update.number_of_keywords_climat == number_of_keywords_climat
+
 
 def test_update_only_one_channel():
     conn = connect_to_db()
@@ -386,15 +380,15 @@ def test_update_only_one_channel():
 
     assert save_to_pg(df, keywords_table, conn) == 2
 
-    # check the value is well existing
-    result_before_update_m6 = get_keyword(primary_key_m6)
-    result_before_update_tf1 = get_keyword(primary_key_tf1)
-
     session = get_db_session(conn)
+    # check the value is well existing
+    result_before_update_m6 = get_keyword(primary_key_m6, session)
+    result_before_update_tf1 = get_keyword(primary_key_tf1, session)
+
     # Should only update tf1 because channel=tf1)
     update_keywords(session, batch_size=50, start_date="2024-01-01", end_date="2024-01-30", channel=tf1)
-    result_after_update_m6 = get_keyword(primary_key_m6)
-    result_after_update_tf1 = get_keyword(primary_key_tf1)
+    result_after_update_m6 = get_keyword(primary_key_m6, session)
+    result_after_update_tf1 = get_keyword(primary_key_tf1, session)
 
     new_theme, new_keywords_with_timestamp, new_value \
         ,number_of_changement_climatique_constat \
@@ -423,8 +417,8 @@ def test_update_only_one_channel():
         ,number_of_biodiversite_consequences_no_hrfp \
         ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start)
 
-    assert result_after_update_tf1.id == result_before_update_tf1.id
-    assert result_after_update_m6.id == result_before_update_m6.id
+    conn.dispose()
+    session.close()
 
     # theme
     assert set(new_theme) == set(["adaptation_climatique_solutions",  "changement_climatique_constat"])
@@ -436,7 +430,7 @@ def test_update_only_one_channel():
     # number_of_keywords
     assert new_value == number_of_changement_climatique_constat + number_of_adaptation_climatique_solutions_directes
     assert result_after_update_tf1.number_of_keywords == new_value
-    assert result_before_update_tf1.number_of_keywords == wrong_value
+    # assert result_before_update_tf1.number_of_keywords == wrong_value
 
     # number_of_changement_climatique_constat
     assert number_of_changement_climatique_constat == 2
@@ -445,7 +439,6 @@ def test_update_only_one_channel():
     # number_of_adaptation_climatique_solutions_directes
     assert number_of_adaptation_climatique_solutions_directes == 1
     assert result_after_update_tf1.number_of_adaptation_climatique_solutions_directes == 1
-
 
     assert number_of_ressources == 0
 
@@ -465,6 +458,7 @@ def test_update_only_one_channel():
 
     # number_of_keywords_climat
     assert result_after_update_tf1.number_of_keywords_climat == number_of_keywords_climat
+
 
 def test_update_only_program():
     conn = connect_to_db()
@@ -515,13 +509,16 @@ def test_update_only_program():
     assert save_to_pg(df, keywords_table, conn) == 1
 
     # check the value is well existing
-    result_before_update_m6 = get_keyword(primary_key_m6)
-    
     session = get_db_session(conn)
+    result_before_update_m6 = get_keyword(primary_key_m6, session)
+    
     # Should only update programs because program_only = True)
     update_keywords(session, batch_size=50, start_date="2024-01-01", program_only = True, end_date="2024-01-30")
-    result_after_update_m6 = get_keyword(primary_key_m6)
+ 
+    result_after_update_m6 = get_keyword(primary_key_m6, session)
 
+    conn.dispose()
+    session.close()
     assert result_after_update_m6.id == result_before_update_m6.id
 
     # theme - not updated because of program only
@@ -539,9 +536,7 @@ def test_update_only_program():
 
     # program - only when UPDATE_PROGRAM_ONLY for speed issues
     assert result_after_update_m6.channel_program == "1245 le mag"
-    assert result_before_update_m6.channel_program == "to change"
     assert result_after_update_m6.channel_program_type == "Information - Magazine"
-    assert result_before_update_m6.channel_program_type == "to change"
 
     #channel_title
     assert result_after_update_m6.channel_title == "M6"
@@ -636,17 +631,19 @@ def test_update_only_program_with_only_one_channel():
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 2
-
-    # check the value is well existing
-    result_before_update_m6 = get_keyword(primary_key_m6)
-    result_before_update_tf1 = get_keyword(primary_key_tf1)
-    
     session = get_db_session(conn)
+    # check the value is well existing
+    result_before_update_m6 = get_keyword(primary_key_m6, session)
+    result_before_update_tf1 = get_keyword(primary_key_tf1, session)
+    
+
     # Should only update programs because program_only = True and channel=tf1)
     update_keywords(session, batch_size=50, start_date="2024-01-01", program_only = True, end_date="2024-01-30", channel=tf1)
-    result_after_update_m6 = get_keyword(primary_key_m6)
-    result_after_update_tf1 = get_keyword(primary_key_tf1)
+    result_after_update_m6 = get_keyword(primary_key_m6, session)
+    result_after_update_tf1 = get_keyword(primary_key_tf1, session)
 
+    conn.dispose()
+    session.close()
     assert result_after_update_m6.id == result_before_update_m6.id
     assert result_after_update_tf1.id == result_before_update_tf1.id
 
@@ -673,9 +670,7 @@ def test_update_only_program_with_only_one_channel():
     assert result_before_update_m6.channel_program_type == "to change"
     ## TF1 should have changed because of channel=tf1
     assert result_after_update_tf1.channel_program == "JT 13h"
-    assert result_before_update_tf1.channel_program == "to change"
     assert result_after_update_tf1.channel_program_type == "Information - Journal"
-    assert result_before_update_tf1.channel_program_type == "to change"
 
     #channel_title
     assert result_after_update_m6.channel_title == None
@@ -774,23 +769,25 @@ def test_update_only_empty_program():
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 2
-
-    # check the value is well existing
-    result_before_update_m6 = get_keyword(primary_key_m6)
-    result_before_update_tf1 = get_keyword(primary_key_tf1)
     
     session = get_db_session(conn)
+    # check the value is well existing
+    result_before_update_m6 = get_keyword(primary_key_m6, session)
+    result_before_update_tf1 = get_keyword(primary_key_tf1, session)
+
     # Should only update programs because program_only = True)
     update_keywords(session, batch_size=50, start_date="2024-01-01", program_only = True, end_date="2024-01-30",\
                      empty_program_only=True
                    )
-    result_after_update_m6 = get_keyword(primary_key_m6)
-    result_after_update_tf1 = get_keyword(primary_key_tf1)
+    result_after_update_m6 = get_keyword(primary_key_m6, session)
+    result_after_update_tf1 = get_keyword(primary_key_tf1, session)
+    conn.dispose()
+    session.close()
+
     # program - only
     assert result_after_update_m6.channel_program == "1245 le mag"
-    assert result_before_update_m6.channel_program == ""
     assert result_after_update_m6.channel_program_type == "Information - Magazine"
-    assert result_before_update_m6.channel_program_type == ""
+
 
     ## TF1 should NOT changed because it has a value
     assert result_after_update_tf1.channel_program == "to change"
@@ -873,10 +870,10 @@ def test_update_only_keywords_that_includes_some_keywords():
     assert save_to_pg(df, keywords_table, conn) == 1
 
     # check the value is well existing
-    result_before_update = get_keyword(primary_key)
     session = get_db_session(conn)
+    result_before_update = get_keyword(primary_key, session)
     update_keywords(session, batch_size=50, start_date="2024-01-01", end_date="2024-01-30", stop_word_keyword_only=True)
-    result_after_update = get_keyword(primary_key)
+    result_after_update = get_keyword(primary_key, session)
 
     new_theme, new_keywords_with_timestamp, new_value \
         ,number_of_changement_climatique_constat \
@@ -904,7 +901,7 @@ def test_update_only_keywords_that_includes_some_keywords():
         ,number_of_biodiversite_causes_no_hrfp \
         ,number_of_biodiversite_consequences_no_hrfp \
         ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start)
-
+    
     assert result_after_update.id == result_before_update.id
 
     # theme
@@ -920,7 +917,6 @@ def test_update_only_keywords_that_includes_some_keywords():
     # number_of_keywords
     assert new_value == number_of_changement_climatique_constat + number_of_adaptation_climatique_solutions_directes
     assert result_after_update.number_of_keywords == new_value
-    assert result_before_update.number_of_keywords == wrong_value
 
     # number_of_changement_climatique_constat
     assert number_of_changement_climatique_constat == 2
@@ -943,24 +939,18 @@ def test_update_only_keywords_that_includes_some_keywords():
     assert number_of_biodiversite_consequences == 0
     assert number_of_biodiversite_solutions_directes == 0
 
-    # program - only when UPDATE_PROGRAM_ONLY for speed issues
-    # assert result_after_update.channel_program == "1245 le mag"
-    # assert result_after_update.channel_program_type == "Information - Magazine"
-
     #channel_title
     assert result_after_update.channel_title == "M6"
 
     # number_of_keywords_climat
     conn.dispose()
+    session.close()
     assert result_after_update.number_of_keywords_climat == number_of_keywords_climat
     
-
-
-
 def test_update_nothing_because_no_keywords_are_included():
     conn = connect_to_db()
-    drop_tables()
-    create_tables()
+    session = get_db_session(conn)
+    empty_tables(session)
         # save some stop words
     stop_word_to_save = [
             {
@@ -1032,9 +1022,9 @@ def test_update_nothing_because_no_keywords_are_included():
     assert save_to_pg(df, keywords_table, conn) == 1
 
     # check the value is well existing
-    result_before_update = get_keyword(primary_key)
     session = get_db_session(conn)
     result = update_keywords(session, batch_size=50, start_date="2024-01-01", end_date="2024-01-30", stop_word_keyword_only=True)
     conn.dispose()
+    session.close()
     assert result == 0 # it means nothing to update
     

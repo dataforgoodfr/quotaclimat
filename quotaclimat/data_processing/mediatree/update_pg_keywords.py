@@ -17,10 +17,10 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
     df_programs = get_programs()
 
     stop_words_object = get_stop_words(session, validated_only=True, context_only=False)
-    stop_words =  list(map(lambda stop: stop.context, stop_words_object))
+    stop_words = list(map(lambda stop: stop.context, stop_words_object))
     if stop_word_keyword_only and (len(stop_words) > 0):
         logging.warning(f"Using stop words to filter rows inside Keywords table")
-        top_keyword_of_stop_words =  set(map(lambda stop: stop.keyword, stop_words_object))
+        top_keyword_of_stop_words = set(map(lambda stop: stop.keyword, stop_words_object))
         logging.info(f"stop words keywords :\n {top_keyword_of_stop_words}")
     else:
         logging.info(f"No filter on plaintext for Keywords table - stop_word_keyword_only env variable to false")

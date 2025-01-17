@@ -18,10 +18,12 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
 
     stop_words_object = get_stop_words(session, validated_only=True, context_only=False)
     stop_words =  list(map(lambda stop: stop.context, stop_words_object))
-    if stop_word_keyword_only:
+    if stop_word_keyword_only and (len(stop_words) > 0):
+        logging.warning(f"Using stop words to filter rows inside Keywords table")
         top_keyword_of_stop_words =  set(map(lambda stop: stop.keyword, stop_words_object))
         logging.info(f"stop words keywords :\n {top_keyword_of_stop_words}")
     else:
+        logging.info(f"No filter on plaintext for Keywords table - stop_word_keyword_only env variable to false")
         top_keyword_of_stop_words = []
 
     total_updates = get_total_count_saved_keywords(session, start_date, end_date, channel, empty_program_only, keywords_to_includes=top_keyword_of_stop_words)
@@ -171,7 +173,9 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
     # https://stackoverflow.com/a/33389165/3535853
     if len(keywords_to_includes) > 0:
         logging.info(f"Filtering plaintext that include some {len(keywords_to_includes)} keywords")
-        query = and_(*[Keywords.plaintext.ilike(f"%{word}%") for word in keywords_to_includes])
+        query = query.filter(
+            or_(*[Keywords.plaintext.ilike(f"%{word}%") for word in keywords_to_includes])
+        )
 
     return query.offset(offset) \
         .limit(batch_size) \
@@ -196,7 +200,9 @@ def get_total_count_saved_keywords(session: Session, start_date : str, end_date 
         if len(keywords_to_includes) > 0:
             logging.info(f"Filtering plaintext that include {len(keywords_to_includes)} keywords")
             # TODO: debug me https://stackoverflow.com/a/33389165/3535853
-            statement = and_(*[Keywords.plaintext.ilike(f"%{word}%") for word in keywords_to_includes])
+            statement = statement.filter(
+                or_(*[Keywords.plaintext.ilike(f"%{word}%") for word in keywords_to_includes])
+            )
 
         return session.execute(statement).scalar()
 

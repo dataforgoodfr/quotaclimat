@@ -6,11 +6,12 @@ from postgres.insert_data import (clean_data,
                                   insert_data_in_sitemap_table)
 from quotaclimat.data_ingestion.scrap_sitemap import (add_primary_key, get_consistent_hash)
 
-from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db
+from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db, drop_tables
 from postgres.insert_data import save_to_pg
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 import pandas as pd
 from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
+from quotaclimat.data_processing.mediatree.stop_word.main import *
 
 logging.getLogger().setLevel(logging.INFO)
 original_timestamp = 1706271523 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
@@ -292,6 +293,7 @@ def test_first_update_keywords():
     #channel_title
     assert result_after_update.channel_title == "M6"
 
+    conn.dispose()
     # number_of_keywords_climat
     assert result_after_update.number_of_keywords_climat == number_of_keywords_climat
 
@@ -795,3 +797,244 @@ def test_update_only_empty_program():
     assert result_before_update_tf1.channel_program == "to change"
     assert result_after_update_tf1.channel_program_type == "to change"
     assert result_before_update_tf1.channel_program_type == "to change"
+
+
+def test_update_only_keywords_that_includes_some_keywords():
+    conn = connect_to_db()
+    plaintext_stop_word = " avait promis de lancer un plan de conditions de vie sur terre euh hélas pas pu climat tout s' est pa"
+    # save some stop words
+    stop_word_to_save = [
+            {
+                "keyword_id": "fake_id",
+                "id": "test1",
+                "keyword": "conditions de vie sur terre",
+                "channel_title": "France 2",
+                "context": " avait promis de lancer un plan de conditions de vie sur terre euh hélas pas pu climat tout s' est pa",
+                "count": 20,
+                "id" : get_consistent_hash(" avait promis de lancer un plan de replantation euh hélas pas pu climat tout s' est pa"),
+            },
+            {
+                "keyword_id": "fake_id",
+                "id": "test2",
+                "keyword": "climatique",
+                "channel_title": "TF1",
+                "context": "lacieux selon les experts question climatique en fait elle dépasse la question ",
+                "count": 19,
+                "id" : get_consistent_hash("lacieux selon les experts question climatique en fait elle dépasse la question "),
+            }
+        ]
+    save_append_stop_word(conn, stop_word_to_save)
+
+    wrong_value = 0
+    # insert data
+    primary_key = "test_save_to_pg_keyword"
+   
+    channel_name = "m6"
+    df = pd.DataFrame([{
+        "id" : primary_key,
+        "start": start,
+        "plaintext": plaintext + " " + plaintext_stop_word,
+        "channel_name": channel_name,
+        "channel_radio": False,
+        "theme": themes,
+        "keywords_with_timestamp": keywords_with_timestamp,
+        "srt": srt,
+        "number_of_keywords": wrong_value, # wrong data to reapply our custom logic for "new_value"
+        "number_of_changement_climatique_constat":  wrong_value,
+        "number_of_changement_climatique_causes_directes":  wrong_value,
+        "number_of_changement_climatique_consequences":  wrong_value,
+        "number_of_attenuation_climatique_solutions_directes":  wrong_value,
+        "number_of_adaptation_climatique_solutions_directes":  wrong_value,
+        "number_of_ressources":  wrong_value,
+        "number_of_ressources_solutions":  wrong_value,
+        "number_of_biodiversite_concepts_generaux":  wrong_value,
+        "number_of_biodiversite_causes_directes":  wrong_value,
+        "number_of_biodiversite_consequences":  wrong_value,
+        "number_of_biodiversite_solutions_directes" : wrong_value,
+        "channel_program_type": "to change",
+        "channel_program":"to change"
+        ,"channel_title":None
+        ,"number_of_keywords_climat": wrong_value
+        ,"number_of_keywords_biodiversite": wrong_value
+        ,"number_of_keywords_ressources": wrong_value
+        ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_ressources_no_hrfp":  wrong_value,
+        "number_of_ressources_solutions_no_hrfp":  wrong_value,
+        "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
+        "number_of_biodiversite_causes_no_hrfp":  wrong_value,
+        "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+    }])
+
+    assert save_to_pg(df, keywords_table, conn) == 1
+
+    # check the value is well existing
+    result_before_update = get_keyword(primary_key)
+    session = get_db_session(conn)
+    update_keywords(session, batch_size=50, start_date="2024-01-01", end_date="2024-01-30", stop_word_keyword_only=True)
+    result_after_update = get_keyword(primary_key)
+
+    new_theme, new_keywords_with_timestamp, new_value \
+        ,number_of_changement_climatique_constat \
+        ,number_of_changement_climatique_causes_directes \
+        ,number_of_changement_climatique_consequences \
+        ,number_of_attenuation_climatique_solutions_directes \
+        ,number_of_adaptation_climatique_solutions_directes \
+        ,number_of_ressources \
+        ,number_of_ressources_solutions \
+        ,number_of_biodiversite_concepts_generaux \
+        ,number_of_biodiversite_causes_directes \
+        ,number_of_biodiversite_consequences \
+        ,number_of_biodiversite_solutions_directes  \
+        ,number_of_keywords_climat \
+        ,number_of_keywords_biodiversite \
+        ,number_of_keywords_ressources \
+        ,number_of_changement_climatique_constat_no_hrfp \
+        ,number_of_changement_climatique_causes_no_hrfp \
+        ,number_of_changement_climatique_consequences_no_hrfp \
+        ,number_of_attenuation_climatique_solutions_no_hrfp \
+        ,number_of_adaptation_climatique_solutions_no_hrfp \
+        ,number_of_ressources_no_hrfp \
+        ,number_of_ressources_solutions_no_hrfp \
+        ,number_of_biodiversite_concepts_generaux_no_hrfp \
+        ,number_of_biodiversite_causes_no_hrfp \
+        ,number_of_biodiversite_consequences_no_hrfp \
+        ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start)
+
+    assert result_after_update.id == result_before_update.id
+
+    # theme
+    assert set(new_theme) == set(["adaptation_climatique_solutions",  "changement_climatique_constat"])
+    assert set(result_after_update.theme) == set(["adaptation_climatique_solutions", "changement_climatique_constat"])
+        
+    # keywords_with_timestamp
+    assert len(result_after_update.keywords_with_timestamp) == len(new_keywords_with_timestamp)
+    # Too hard to maintain for every new dict
+    # assert compare_unordered_lists_of_dicts(expected_keywords_with_timestamp, new_keywords_with_timestamp)
+
+
+    # number_of_keywords
+    assert new_value == number_of_changement_climatique_constat + number_of_adaptation_climatique_solutions_directes
+    assert result_after_update.number_of_keywords == new_value
+    assert result_before_update.number_of_keywords == wrong_value
+
+    # number_of_changement_climatique_constat
+    assert number_of_changement_climatique_constat == 2
+    assert result_after_update.number_of_changement_climatique_constat == 2
+
+    # number_of_adaptation_climatique_solutions_directes
+    assert number_of_adaptation_climatique_solutions_directes == 1
+    assert result_after_update.number_of_adaptation_climatique_solutions_directes == 1
+
+
+    assert number_of_ressources == 0
+
+    assert number_of_changement_climatique_causes_directes == 0
+    assert number_of_changement_climatique_consequences == 0
+    assert number_of_attenuation_climatique_solutions_directes == 0
+
+    assert number_of_ressources_solutions == 0
+    assert number_of_biodiversite_concepts_generaux == 0
+    assert number_of_biodiversite_causes_directes == 0
+    assert number_of_biodiversite_consequences == 0
+    assert number_of_biodiversite_solutions_directes == 0
+
+    # program - only when UPDATE_PROGRAM_ONLY for speed issues
+    # assert result_after_update.channel_program == "1245 le mag"
+    # assert result_after_update.channel_program_type == "Information - Magazine"
+
+    #channel_title
+    assert result_after_update.channel_title == "M6"
+
+    # number_of_keywords_climat
+    conn.dispose()
+    assert result_after_update.number_of_keywords_climat == number_of_keywords_climat
+    
+
+
+
+def test_update_nothing_because_no_keywords_are_included():
+    conn = connect_to_db()
+    drop_tables()
+    create_tables()
+        # save some stop words
+    stop_word_to_save = [
+            {
+                "keyword_id": "fake_id",
+                "id": "test1",
+                "keyword": "conditions de vie sur terre",
+                "channel_title": "France 2",
+                "context": " avait promis de lancer un plan de conditions de vie sur terre euh hélas pas pu climat tout s' est pa",
+                "count": 20,
+                "id" : get_consistent_hash(" avait promis de lancer un plan de replantation euh hélas pas pu climat tout s' est pa"),
+            },
+            {
+                "keyword_id": "fake_id",
+                "id": "test2",
+                "keyword": "climatique",
+                "channel_title": "TF1",
+                "context": "lacieux selon les experts question climatique en fait elle dépasse la question ",
+                "count": 19,
+                "id" : get_consistent_hash("lacieux selon les experts question climatique en fait elle dépasse la question "),
+            }
+        ]
+    save_append_stop_word(conn, stop_word_to_save)
+
+    wrong_value = 0
+    # insert data
+    primary_key = "test_update_nothing_because_no_keywords_are_included"
+    plaintext = "no keywords to match so the test should update nothing"
+    channel_name = "m6"
+    df = pd.DataFrame([{
+        "id" : primary_key,
+        "start": start,
+        "plaintext": plaintext,
+        "channel_name": channel_name,
+        "channel_radio": False,
+        "theme": themes,
+        "keywords_with_timestamp": keywords_with_timestamp,
+        "srt": srt,
+        "number_of_keywords": wrong_value, # wrong data to reapply our custom logic for "new_value"
+        "number_of_changement_climatique_constat":  wrong_value,
+        "number_of_changement_climatique_causes_directes":  wrong_value,
+        "number_of_changement_climatique_consequences":  wrong_value,
+        "number_of_attenuation_climatique_solutions_directes":  wrong_value,
+        "number_of_adaptation_climatique_solutions_directes":  wrong_value,
+        "number_of_ressources":  wrong_value,
+        "number_of_ressources_solutions":  wrong_value,
+        "number_of_biodiversite_concepts_generaux":  wrong_value,
+        "number_of_biodiversite_causes_directes":  wrong_value,
+        "number_of_biodiversite_consequences":  wrong_value,
+        "number_of_biodiversite_solutions_directes" : wrong_value,
+        "channel_program_type": "to change",
+        "channel_program":"to change"
+        ,"channel_title":None
+        ,"number_of_keywords_climat": wrong_value
+        ,"number_of_keywords_biodiversite": wrong_value
+        ,"number_of_keywords_ressources": wrong_value
+        ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_ressources_no_hrfp":  wrong_value,
+        "number_of_ressources_solutions_no_hrfp":  wrong_value,
+        "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
+        "number_of_biodiversite_causes_no_hrfp":  wrong_value,
+        "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+    }])
+
+    assert save_to_pg(df, keywords_table, conn) == 1
+
+    # check the value is well existing
+    result_before_update = get_keyword(primary_key)
+    session = get_db_session(conn)
+    result = update_keywords(session, batch_size=50, start_date="2024-01-01", end_date="2024-01-30", stop_word_keyword_only=True)
+    conn.dispose()
+    assert result == 0 # it means nothing to update
+    

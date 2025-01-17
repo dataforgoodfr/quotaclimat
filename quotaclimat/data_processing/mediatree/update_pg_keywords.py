@@ -199,7 +199,7 @@ def get_total_count_saved_keywords(session: Session, start_date : str, end_date 
             )
         if len(keywords_to_includes) > 0:
             logging.info(f"Filtering plaintext that include {len(keywords_to_includes)} keywords")
-            # TODO: debug me https://stackoverflow.com/a/33389165/3535853
+
             statement = statement.filter(
                 or_(*[Keywords.plaintext.ilike(f"%{word}%") for word in keywords_to_includes])
             )

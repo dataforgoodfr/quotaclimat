@@ -6,6 +6,7 @@ from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.config import *
+from quotaclimat.data_processing.mediatree.detect_keywords import MEDIATREE_TRANSCRIPTION_PROBLEM
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, Stop_Word, get_db_session
 from sqlalchemy.orm import Session
@@ -53,7 +54,9 @@ def get_all_stop_word(session: Session, offset: int = 0, batch_size: int = 50000
                 Stop_Word.count,
                 func.timezone('UTC', Stop_Word.created_at).label('created_at'),
                 func.timezone('UTC', Stop_Word.updated_at).label('updated_at')
-            ).select_from(Stop_Word).order_by(Stop_Word.created_at).limit(batch_size).offset(offset)       
+            ).select_from(Stop_Word) \
+    .order_by(Stop_Word.count.desc(), Stop_Word.created_at) \
+    .limit(batch_size).offset(offset)       
 
     if validated_only:
             statement = statement.filter(Stop_Word.validated.is_not(False))
@@ -137,7 +140,7 @@ def get_all_repetitive_context_advertising_for_a_keyword(
                 "public"."keywords"."theme" AS "theme",
                 "public"."keywords"."id" AS "keyword_id",
                 SUBSTRING(
-                    "public"."keywords"."plaintext", 
+                    REPLACE("public"."keywords"."plaintext",'{MEDIATREE_TRANSCRIPTION_PROBLEM}',''), -- mediatree transcription pollution
                     GREATEST(POSITION('{escaped_keyword}' IN "public"."keywords"."plaintext") - {before_context}, 1), -- start position
                     LEAST({after_context}, LENGTH( "public"."keywords"."plaintext")) -- length of the context
                 ) AS "context_keyword",

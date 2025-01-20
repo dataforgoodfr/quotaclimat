@@ -20,6 +20,7 @@ logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
 dask.config.set({'dataframe.query-planning': True})
 
 indirectes = 'indirectes'
+MEDIATREE_TRANSCRIPTION_PROBLEM = "<unk> "
 DEFAULT_WINDOW_DURATION = 20
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], theme: str) -> List[dict]:
@@ -106,10 +107,9 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> Li
 
     return keywords_with_timestamp
 
-def replace_word_with_context(text: str) -> str:
-    word = "groupe verlaine"
+def replace_word_with_context(text: str, word = "groupe verlaine", length_to_remove= 50) -> str:
     replacement = ""
-    pattern = f".{{0,50}}{re.escape(word)}.{{0,50}}"
+    pattern = f".{{0,{length_to_remove}}}{re.escape(word)}.{{0,{length_to_remove}}}"
     
     # Replace the matched word along with its surrounding context
     result = re.sub(pattern, replacement, text)
@@ -122,13 +122,21 @@ def remove_stopwords(plaintext: str, stopwords: list[str]) -> str:
     if len(stopwords) == 0:
         logging.warning("Stop words list empty")
 
+    if "groupe verlaine" in plaintext:
+        logging.info(f"special groupe verlaine case")
+        plaintext = replace_word_with_context(plaintext, word="groupe verlaine")
+
+    if "industries point com" in plaintext:
+        logging.info(f"special industries point com case")
+        plaintext = replace_word_with_context(plaintext, word="industries point com", length_to_remove=150)
+
+    if "fleuron industrie" in plaintext:
+        logging.info(f"special fleuron industrie com case")
+        plaintext = replace_word_with_context(plaintext, word="fleuron industrie", length_to_remove=150)
+
     for word in stopwords:
         plaintext = plaintext.replace(word, '')
     
-    if "groupe verlaine" in plaintext:
-        logging.debug(f"special groupe verlaine case")
-        plaintext = replace_word_with_context(plaintext)
-
     return plaintext
 
 @sentry_sdk.trace
@@ -136,6 +144,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     keywords_with_timestamp = []
     number_of_elements_in_array = 28
     default_window_in_seconds = DEFAULT_WINDOW_DURATION
+    plaintext = replace_word_with_context(text=plaintext, word=MEDIATREE_TRANSCRIPTION_PROBLEM, length_to_remove=0)
     plaitext_without_stopwords = remove_stopwords(plaintext=plaintext, stopwords=stop_words)
     logging.debug(f"display datetime start {start}")
 

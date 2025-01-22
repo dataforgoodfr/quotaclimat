@@ -50,7 +50,7 @@ def test_main_api_import():
         drop_tables()
         create_tables()
         insert_stop_word(conn)
-        len_df = insert_mediatree_json(conn)
+        len_df = insert_mediatree_json(conn, json_file_path="test/sitemap/light.json")
 
         session = get_db_session(conn)
         saved_keywords = get_keywords_columns(session, start_date="2024-02-01", end_date="2024-02-29")

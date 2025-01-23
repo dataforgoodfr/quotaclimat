@@ -12,7 +12,7 @@ def get_app_version():
         pyproject_data = tomli.load(toml_file)
 
     # Access the version from the pyproject.toml file
-    version = pyproject_data['tool']['poetry']['version']
+    version = pyproject_data['project']['version']
     return version
 
 version = get_app_version()

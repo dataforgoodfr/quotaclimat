@@ -12,9 +12,9 @@ WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
 
-RUN pip install poetry==1.8.3
+RUN pip install poetry==2.0.1
 
-RUN poetry install
+ RUN poetry install --no-root
 
 # The runtime image, used to just run the code provided its virtual environment
 FROM python:3.12.7-slim as runtime
@@ -33,6 +33,7 @@ COPY pyproject.toml poetry.lock ./
 RUN pip install poetry 
 
 # App code is include with docker-compose as well
+ 
 COPY quotaclimat ./quotaclimat
 COPY postgres ./postgres
 COPY alembic/ ./alembic

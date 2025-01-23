@@ -1,14 +1,14 @@
-[tool.poetry]
+[project]
 name = "quotaclimat"
 version = "1.0.68"
 description = ""
 authors = [
-    "Rambier Estelle <estelle.rambier@hotmail.fr>",
-    "Paul Leclercq <paul@epauler.fr>"
+    {name = "Rambier Estelle", "email"="estelle.rambier@hotmail.fr"},
+    {name = "Paul Leclercq", "email"="paul@epauler.fr"}
 ]
 readme = "README.md"
 
-[tool.pytest.ini_options]
+[pytest.ini_options]
 log_cli = 1
 log_cli_level = "INFO"
 

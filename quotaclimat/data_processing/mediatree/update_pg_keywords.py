@@ -5,26 +5,39 @@ import modin.pandas as pd
 import logging
 
 from sqlalchemy.orm import Session
-from postgres.schemas.models import Keywords
+from postgres.schemas.models import Keywords, Stop_Word
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.api_import import get_stop_words
 from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp, get_channel_title_for_name
 from sqlalchemy import func, select, and_, or_
+
+
+def get_keyword_else_context(stop_word_object: Stop_Word):
+    if stop_word_object.keyword is not None:
+        return stop_word_object.keyword
+    else:
+        return stop_word_object.context
+
+def get_top_keyword_of_stop_words(stop_word_keyword_only: bool, stop_words_objects: List[Stop_Word]):
+    top_keyword_of_stop_words = []
+    if stop_word_keyword_only and (len(stop_words_objects) > 0):
+        logging.warning(f"Using stop words to filter rows inside Keywords table")
+
+        top_keyword_of_stop_words = set(map(lambda stop: get_keyword_else_context(stop), stop_words_objects))
+        logging.info(f"stop words keywords : {top_keyword_of_stop_words}")
+    else:
+        logging.info(f"No filter on plaintext for Keywords table - stop_word_keyword_only env variable to false")
+
+    return top_keyword_of_stop_words
 
 def update_keywords(session: Session, batch_size: int = 50000, start_date : str = "2023-04-01", program_only=False, \
                     end_date: str = "2023-04-30", channel: str = "", empty_program_only=False, \
                         stop_word_keyword_only = False) -> list:
     df_programs = get_programs()
 
-    stop_words_object = get_stop_words(session, validated_only=True, context_only=False)
-    stop_words = list(map(lambda stop: stop.context, stop_words_object))
-    if stop_word_keyword_only and (len(stop_words) > 0):
-        logging.warning(f"Using stop words to filter rows inside Keywords table")
-        top_keyword_of_stop_words = set(map(lambda stop: stop.keyword, stop_words_object))
-        logging.info(f"stop words keywords :\n {top_keyword_of_stop_words}")
-    else:
-        logging.info(f"No filter on plaintext for Keywords table - stop_word_keyword_only env variable to false")
-        top_keyword_of_stop_words = []
+    stop_words_objects = get_stop_words(session, validated_only=True, context_only=False)
+    stop_words = list(map(lambda stop: stop.context, stop_words_objects))
+    top_keyword_of_stop_words = get_top_keyword_of_stop_words(stop_word_keyword_only, stop_words_objects=stop_words_objects)
 
     total_updates = get_total_count_saved_keywords(session, start_date, end_date, channel, empty_program_only, keywords_to_includes=top_keyword_of_stop_words)
 

@@ -946,7 +946,60 @@ def test_update_only_keywords_that_includes_some_keywords():
     conn.dispose()
     session.close()
     assert result_after_update.number_of_keywords_climat == number_of_keywords_climat
-    
+
+
+def test_get_top_keyword_of_stop_words_stop_word_keyword_only_True():
+    sw1 = Stop_Word(
+        id="test"
+        ,keyword_id="test"
+        ,channel_title="test"
+        ,context="test_context"
+        ,count=10
+        ,keyword="keyword1"
+        ,created_at="test"
+        ,start_date="test"
+        ,updated_at="test"
+        ,validated=True
+    )
+
+    sw2 = Stop_Word(
+        id="test"
+        ,keyword_id="test"
+        ,channel_title="test"
+        ,context="test_context"
+        ,count=10
+        ,keyword="keyword2"
+        ,created_at="test"
+        ,start_date="test"
+        ,updated_at="test"
+        ,validated=True
+    )
+
+    sw3 = Stop_Word(
+        id="test"
+        ,keyword_id="test"
+        ,channel_title="test"
+        ,context="test_context"
+        ,count=10
+        # ,keyword="keyword2" empty keyword it should use context
+        ,created_at="test"
+        ,start_date="test"
+        ,updated_at="test"
+        ,validated=True
+    )
+    stop_words_objects = [sw1, sw1, sw1, sw2, sw3]
+
+    output = get_top_keyword_of_stop_words(stop_word_keyword_only=True, stop_words_objects=stop_words_objects)
+    expected = set(["keyword1", "keyword2", "test_context"])
+
+    assert output == expected
+
+def test_get_top_keyword_of_stop_words_stop_word_keyword_only_False():
+    output = get_top_keyword_of_stop_words(stop_word_keyword_only=False, stop_words_objects=[])
+    expected = []
+
+    assert output == expected
+
 def test_update_nothing_because_no_keywords_are_included():
     conn = connect_to_db()
     session = get_db_session(conn)

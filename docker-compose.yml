@@ -238,7 +238,7 @@ services:
       # SENTRY_DSN: prod_only
       #END_DATE: "2024-02-29" # optional - otherwise end of the month
       # START_DATE: 1727610071 # to test batch import 
-      CHANNEL : fr3-idf # to reimport only one channel
+      #CHANNEL : fr3-idf # to reimport only one channel
       MEDIATREE_USER : /run/secrets/username_api
       MEDIATREE_PASSWORD: /run/secrets/pwd_api
       BUCKET: /run/secrets/bucket

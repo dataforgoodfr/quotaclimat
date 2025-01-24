@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from quotaclimat.data_processing.mediatree.s3.api_to_s3 import get_bucket_key, save_to_s3, get_bucket_key_folder
+from quotaclimat.data_processing.mediatree.s3.api_to_s3 import get_bucket_key, get_bucket_key_folder
 
 
 def test_get_bucket_key():

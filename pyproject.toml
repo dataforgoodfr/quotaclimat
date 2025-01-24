@@ -17,6 +17,7 @@ s3fs = {extras = ["boto3"], version = ">=2023.12.0"}
 boto3 = "*"
 botocore = "*"
 python = ">=3.11,<=3.13"
+s3transfer = "0.10.4"
 pandas = "^2.2.3"
 advertools = "^0.14.1"
 xmltodict = "^0.13.0"

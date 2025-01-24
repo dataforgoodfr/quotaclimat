@@ -118,7 +118,7 @@ def get_date_range(start_date_to_query, end_epoch, minus_days:int=1):
         return range
     else:
         logging.info(f"Default date range from yesterday to {minus_days} day(s) - (env var NUMBER_OF_PREVIOUS_DAYS)")
-        range = pd.date_range(start=get_datetime_yesterday(), periods=minus_days, freq="D")
+        range = pd.date_range(end=get_datetime_yesterday(), periods=minus_days, freq="D")
         return range
 
 def is_it_tuesday(date):

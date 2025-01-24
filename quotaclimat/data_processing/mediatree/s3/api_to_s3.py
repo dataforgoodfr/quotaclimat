@@ -36,20 +36,22 @@ AUTH_URL = get_auth_url()
 USER = get_user()
 KEYWORDS_URL = get_keywords_url()
 # Configuration for Scaleway Object Storage
-ACCESS_KEY = os.environ.get("BUCKET")
+ACCESS_KEY = os.environ.get('BUCKET')
 SECRET_KEY = os.environ.get("BUCKET_SECRET")
 BUCKET_NAME = os.environ.get("BUCKET_NAME")
 REGION = 'fr-par'
 
 ENDPOINT_URL = f'https://s3.{REGION}.scw.cloud'
 
-s3_client = boto3.client(
-    service_name='s3',
-    region_name=REGION,
-    aws_access_key_id=ACCESS_KEY,
-    aws_secret_access_key=SECRET_KEY,
-    endpoint_url=ENDPOINT_URL,
-)
+def get_s3_client():
+    s3_client = boto3.client(
+        service_name='s3',
+        region_name=REGION,
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY,
+        endpoint_url=ENDPOINT_URL,
+    )
+    return s3_client
 
 def get_bucket_key(date, channel, filename:str="*", suffix:str="parquet"):
     (year, month, day) = (date.year, date.month, date.day)
@@ -60,7 +62,7 @@ def get_bucket_key_folder(date, channel):
     return f'year={year}/month={month:1}/day={day:1}/channel={channel}/'
 
 # Function to upload folder to S3
-def upload_folder_to_s3(local_folder, bucket_name, base_s3_path):
+def upload_folder_to_s3(local_folder, bucket_name, base_s3_path, s3_client):
     logging.info(f"Reading local folder {local_folder} and uploading to S3")
     for root, _, files in os.walk(local_folder):
         logging.info(f"Reading files {len(files)}")
@@ -77,7 +79,7 @@ def upload_folder_to_s3(local_folder, bucket_name, base_s3_path):
             shutil.rmtree(local_folder)
             logging.info(f"Deleted local folder: {local_folder}")
 
-def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp):
+def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client):
     logging.info(f"Saving DF with {len(df)} elements to S3 for {date} and channel {channel}")
 
     # to create partitions
@@ -100,13 +102,13 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp):
         #saving full_path folder parquet to s3
         s3_path = f"{get_bucket_key_folder(date, channel)}"
         local_folder = f"{based_path}/{s3_path}"
-        upload_folder_to_s3(local_folder, BUCKET_NAME, s3_path)
+        upload_folder_to_s3(local_folder, BUCKET_NAME, s3_path,s3_client=s3_client)
         
-    except Exception as e:
-        logging.error(Exception)
-        exit()
+    except Exception as err:
+        logging.fatal("get_and_save_api_data (%s) %s" % (type(err).__name__, err))
+        sys.exit(1)
 
-def check_if_object_exists_in_s3(day, channel):
+def check_if_object_exists_in_s3(day, channel, s3_client):
     folder_prefix = get_bucket_key_folder(day, channel)  # Adjust this to return the folder path
     
     logging.debug(f"Checking if folder exists: {folder_prefix}")
@@ -116,7 +118,7 @@ def check_if_object_exists_in_s3(day, channel):
             logging.info(f"Folder exists in S3: {folder_prefix}")
             return True
         else:
-            logging.debug(f"Folder does not exist in S3: {folder_prefix}")
+            logging.info(f"Folder does not exist in S3: {folder_prefix}")
             return False
     except Exception as e:
         logging.error(f"Error while checking folder in S3: {folder_prefix}\n{e}")
@@ -126,7 +128,7 @@ async def get_and_save_api_data(exit_event):
     with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
         try:
             logging.warning(f"Available CPUS {os.cpu_count()} - MODIN_CPUS config : {os.environ.get('MODIN_CPUS', 3)}")
-
+            s3_client = get_s3_client()
             token=get_auth_token(password=password, user_name=USER)
             type_sub = 's2t'
             start_date = int(os.environ.get("START_DATE", 0))
@@ -144,7 +146,7 @@ async def get_and_save_api_data(exit_event):
                     df_res = pd.DataFrame()
                     
                     # if object already exists, skip
-                    if not check_if_object_exists_in_s3(day, channel):
+                    if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client):
                         try:
                             programs_for_this_day = get_programs_for_this_day(day.tz_localize("Europe/Paris"), channel, df_programs)
 
@@ -162,7 +164,7 @@ async def get_and_save_api_data(exit_event):
                                     logging.info("Nothing to extract")
 
                             # save to S3
-                            save_to_s3(df_res, channel, day)
+                            save_to_s3(df_res, channel, day, s3_client=s3_client)
                             
                         except Exception as err:
                             logging.error(f"continuing loop but met error : {err}")

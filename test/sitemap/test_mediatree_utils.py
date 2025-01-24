@@ -66,3 +66,12 @@ def test_get_start_end_date_with_get_date_range():
     output = get_date_range(start,end)
     assert len(output) == number_of_previous_days + 1
     pd.testing.assert_index_equal(output, expected)
+
+def test_get_start_end_date_with_get_date_range_default():
+    start_date = 0
+    number_of_previous_days = 7
+    (start,end) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
+
+    
+    output = get_date_range(start,end, minus_days=number_of_previous_days)
+    assert len(output) == number_of_previous_days

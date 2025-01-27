@@ -251,7 +251,8 @@ def get_top_keywords_by_channel(session, duration: int = 7, top: int = 5, from_d
         session.close()
 
 
-async def manage_stop_word(exit_event = None, conn = None, duration: int = 7, from_date = None, min_number_of_repetition: int = 20):
+async def manage_stop_word(exit_event = None, conn = None, duration: int = 7, from_date = None, min_number_of_repetition: int = 20 \
+                           ,stop_word_context_total_length = 80):
     try:
         if from_date is not None:
             from_date = datetime.fromtimestamp(int(from_date))
@@ -260,8 +261,6 @@ async def manage_stop_word(exit_event = None, conn = None, duration: int = 7, fr
         top_keywords = get_top_keywords_by_channel(session, duration=duration, top=5, from_date=from_date)
         logging.info(f"Top keywords: {top_keywords}")
         
-        stop_word_context_total_length = 80
-
         stop_word_list = get_repetitive_context_advertising(session, top_keywords, days=duration,\
                                                             from_date=from_date, total_length=stop_word_context_total_length,\
                                                             min_number_of_repetition=min_number_of_repetition)
@@ -305,6 +304,9 @@ async def main():
             number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 7))
             logging.info(f"Number of previous days (NUMBER_OF_PREVIOUS_DAYS): {number_of_previous_days}")
 
+            stop_word_context_total_length = int(os.environ.get("CONTEXT_TOTAL_LENGTH", 80))
+            logging.info(f"Ad context total length (CONTEXT_TOTAL_LENGTH): {stop_word_context_total_length}")
+
             min_number_of_repetition = int(os.environ.get("MIN_REPETITION", 15))
             logging.info(f"Number of minimum repetition of a stop word (MIN_REPETITION): {min_number_of_repetition}")
 
@@ -313,7 +315,8 @@ async def main():
             # Start batch job
             asyncio.create_task(manage_stop_word(exit_event=event_finish, conn=conn, duration=number_of_previous_days,\
                                                   from_date=from_date, \
-                                                  min_number_of_repetition=min_number_of_repetition))
+                                                  min_number_of_repetition=min_number_of_repetition, \
+                                                  stop_word_context_total_length = stop_word_context_total_length))
 
             # Wait for both tasks to complete
             await event_finish.wait()

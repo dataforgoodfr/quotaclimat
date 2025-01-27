@@ -413,6 +413,7 @@ Env variables used :
 * START_DATE (integer) (unixtimestamp such as mediatree service)
 * NUMBER_OF_PREVIOUS_DAYS (integer): default 7 days
 * MIN_REPETITION (integer) : default 15 - Number of minimum repetition of a stop word
+* CONTEXT_TOTAL_LENGTH (integer) : default 80 - the length of the advertising context (sentence) saved
 
 ## Remove a stop word
 To remove a false positive, we set to false the `validated` attribute :

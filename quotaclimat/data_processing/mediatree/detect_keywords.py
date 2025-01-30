@@ -116,28 +116,36 @@ def replace_word_with_context(text: str, word = "groupe verlaine", length_to_rem
     
     return result
 
+def normalize_french(text: str) -> str:
+    translation_table = str.maketrans("éèêëàáâäôöûüîï", "eeeeaaaaoouuii")
+    return text.translate(translation_table)
+
+# Stop word SQL Table have been transformed to normalize them, we have to apply the same normalization when comparing plaintext
 def remove_stopwords(plaintext: str, stopwords: list[str]) -> str:
     logging.debug(f"Removing stopwords {plaintext}")
 
     if len(stopwords) == 0:
         logging.warning("Stop words list empty")
-
+        return plaintext
+    plaintext_normalized = normalize_french(plaintext)
+    logging.info(f"normalized {plaintext_normalized}")
     if "groupe verlaine" in plaintext:
         logging.info(f"special groupe verlaine case")
-        plaintext = replace_word_with_context(plaintext, word="groupe verlaine")
+        plaintext_normalized = replace_word_with_context(plaintext_normalized, word="groupe verlaine")
 
     if "industries point com" in plaintext:
         logging.info(f"special industries point com case")
-        plaintext = replace_word_with_context(plaintext, word="industries point com", length_to_remove=150)
+        plaintext_normalized = replace_word_with_context(plaintext_normalized, word="industries point com", length_to_remove=150)
 
     if "fleuron industrie" in plaintext:
         logging.info(f"special fleuron industrie com case")
-        plaintext = replace_word_with_context(plaintext, word="fleuron industrie", length_to_remove=150)
+        plaintext_normalized = replace_word_with_context(plaintext_normalized, word="fleuron industrie", length_to_remove=150)
 
     for word in stopwords:
-        plaintext = plaintext.replace(word, '')
+        logging.info(f"Test {normalize_french(word)}")
+        plaintext_normalized = plaintext_normalized.replace(normalize_french(word), '')
     
-    return plaintext
+    return plaintext_normalized
 
 @sentry_sdk.trace
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime, stop_words: List[str] = []):
@@ -152,7 +160,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
         logging.debug(f"searching {theme} for {keywords_dict}")
         matching_words = []
         for keyword_dict in keywords_dict:
-            if is_word_in_sentence(keyword_dict["keyword"], plaitext_without_stopwords):
+            if is_word_in_sentence(normalize_french(keyword_dict["keyword"]), plaitext_without_stopwords):
                 matching_words.append({"keyword": keyword_dict["keyword"], "category": keyword_dict["category"]})
 
         if matching_words:

@@ -67,8 +67,8 @@ def test_stop_word_get_all_repetitive_context_advertising_for_a_keyword_default(
                 'keyword_id': 'f9761d34d1e9adfc44bab9ad220e216b1a9a6a0aca44c39c5fab5115fe098d79',
                 'start_date': start_date,
                 "channel_title": "France 2",
-                "context": " avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa",
-                'id': '4bd208a8e3b14f2ac46e272647729f05fb7588e427ce12d99bde6d5698415970',
+                "context": "avait promis de lancer un plan de replantation euh helas pas pu tout s' est pas",
+                'id': get_consistent_hash("avait promis de lancer un plan de replantation euh helas pas pu tout s' est pas"),
                 "count": 20 # min number of repetition
             }
         ]
@@ -88,39 +88,38 @@ def test_stop_word_get_all_repetitive_context_advertising_for_a_keyword_utf8_min
                 'channel_title': 'TF1',
                 'keyword_id': 'eb0c12caa8a290c8e8a4a4d17e0ee5a943986fc29d14f54f0e1e30becd6aae32',
                 'start_date': start_date,
-                'context': "agroécologie végétation dans l' antre des las vegas raiders c' est ici que se j",
+                'context': "agroecologie vegetation dans l' antre des las vegas raiders c' est ici que se j",
                 'count': 1,
-                'id': '06130961a8c4556edfd80084d9cf413819b8ba2d91dc8f90cca888585fac8adc',
+                'id': get_consistent_hash("agroecologie vegetation dans l' antre des las vegas raiders c' est ici que se j"),
                 'keyword': 'agroécologie',
             },
             {
                 'channel_title': 'TF1',
                 'keyword_id': '0b4d8ca4c5d512acb1fac4731e8cb46dde85be7e875c7510c84cc6b6d4ada2f4',
                 'start_date': start_date,
-                'context': "agroécologie végétation hasard peter aussi mène contre sébastien à l' heure deu",
+                'context': "agroecologie vegetation hasard peter aussi mene contre sebastien a l' heure deu",
                 'count': 1,
                 'keyword': 'agroécologie',
-                "id" : get_consistent_hash("agroécologie végétation hasard peter aussi mène contre sébastien à l' heure deu")
+                "id" : get_consistent_hash("agroecologie vegetation hasard peter aussi mene contre sebastien a l' heure deu")
             },
             {
                 'channel_title': 'TF1',
                 'keyword_id': '94a088d85f338c5857e64c0ab8b4f3232db3a52d906264eea712701a2ad31cd4',
                 'start_date': start_date,
-                'context': 'climatique agroécologie est le hameau de la cuisine pensez à ce sujet '
+                'context': 'climatique agroecologie est le hameau de la cuisine pensez a ce sujet '
                 'quinze an',
                 'count': 1,
                 'keyword': 'agroécologie',
-                "id" : get_consistent_hash('climatique agroécologie est le hameau de la cuisine pensez à ce sujet quinze an')
+                "id" : get_consistent_hash('climatique agroecologie est le hameau de la cuisine pensez a ce sujet quinze an')
             },
             {
                 'channel_title': 'TF1',
                 'keyword_id': '1571457f2fb35ff37ca3cb9eaa9040606497baaf5e6ad5d6a42c69b12c596596',
                 'start_date': start_date,
-                'context': "climatique agroécologie moment-là parce que l' éblouissement au "
-                'balcon de bucki',
+                'context': "climatique agroecologie moment-la parce que l' eblouissement au balcon de bucki",
                 'count': 1,
                 'keyword': 'agroécologie',
-                "id" : get_consistent_hash("climatique agroécologie moment-là parce que l' éblouissement au balcon de bucki")
+                "id" : get_consistent_hash("climatique agroecologie moment-la parce que l' eblouissement au balcon de bucki")
             },
         ]
         keyword1 =  "agroécologie" # not used enough in short_mediatree.json
@@ -186,24 +185,25 @@ def test_stop_word_get_repetitive_context_advertising():
             }
         ]
         )
-
+        context1 =  "avait promis de lancer un plan de replantation euh helas pas pu tout s' est pas"
+        context2 =  "lacieux selon les experts question climatique en fait elle depasse la question"
         excepted = [
             {
                 "keyword_id": "f9761d34d1e9adfc44bab9ad220e216b1a9a6a0aca44c39c5fab5115fe098d79",
                 "keyword": "replantation",
                 "channel_title": "France 2",
-                "context": " avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa",
+                "context": context1,
                 "count": 20,
-                "id" : get_consistent_hash(" avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa"),
+                "id" : get_consistent_hash(context1),
                 'start_date': start_date,
             },
             {
                 "keyword_id": "f9761d34d1e9adfc44bab9ad220e216b1a9a6a0aca44c39c5fab5115fe098d79",
                 "keyword": "climatique",
                 "channel_title": "TF1",
-                "context": "lacieux selon les experts question climatique en fait elle dépasse la question ",
+                "context": context2,
                 "count": 20,
-                "id" : get_consistent_hash("lacieux selon les experts question climatique en fait elle dépasse la question "),
+                "id" : get_consistent_hash(context2),
                 'start_date': start_date,
             }
         ]
@@ -221,18 +221,18 @@ def test_stop_word_save_append_stop_word():
                 "id": "test1",
                 "keyword": "replantation",
                 "channel_title": "France 2",
-                "context": " avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa",
+                "context": "avait promis de lancer un plan de replantation euh helas pas pu tout s' est pas",
                 "count": 20,
-                "id" : get_consistent_hash(" avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa"),
+                "id" : get_consistent_hash("avait promis de lancer un plan de replantation euh helas pas pu tout s' est pas"),
             },
             {
                 "keyword_id": "fake_id",
                 "id": "test2",
                 "keyword": "climatique",
                 "channel_title": "TF1",
-                "context": "lacieux selon les experts question climatique en fait elle dépasse la question ",
+                "context": "lacieux selon les experts question climatique en fait elle dépasse la question",
                 "count": 19,
-                "id" : get_consistent_hash("lacieux selon les experts question climatique en fait elle dépasse la question "),
+                "id" : get_consistent_hash("lacieux selon les experts question climatique en fait elle dépasse la question"),
             },
             {
                 "keyword_id": "fake_id",
@@ -256,8 +256,8 @@ def test_stop_word_save_append_stop_word():
     assert stop_words[1].count == 19
     assert stop_words[0].channel_title == "France 2"
     assert stop_words[1].channel_title == "TF1"
-    assert stop_words[0].context == " avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa"
-    assert stop_words[1].context == "lacieux selon les experts question climatique en fait elle dépasse la question "
+    assert stop_words[0].context == "avait promis de lancer un plan de replantation euh helas pas pu tout s' est pas"
+    assert stop_words[1].context == "lacieux selon les experts question climatique en fait elle dépasse la question"
     assert stop_words[2].context == "empty_keyword"
     assert stop_words[2].keyword == None
 
@@ -272,7 +272,7 @@ def test_stop_word_main():
 
 def test_stop_word_is_already_known_stop_word():
        
-       context1_avait= " avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa"
+       context1_avait= "avait promis de lancer un plan de replantation euh hélas pas pu tout s' est pa"
        context2_avais= " avais promis de lancer un plan de replantation euh hélas pas pu tout s' est pa"
        assert is_already_known_stop_word(context1_avait, context2_avais) == True
 

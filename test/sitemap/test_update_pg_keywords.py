@@ -815,9 +815,9 @@ def test_update_only_keywords_that_includes_some_keywords():
                 "id": "test2",
                 "keyword": "climatique",
                 "channel_title": "TF1",
-                "context": "lacieux selon les experts question climatique en fait elle dépasse la question ",
+                "context": "lacieux selon les experts question climatique en fait elle dépasse la question",
                 "count": 19,
-                "id" : get_consistent_hash("lacieux selon les experts question climatique en fait elle dépasse la question "),
+                "id" : get_consistent_hash("lacieux selon les experts question climatique en fait elle dépasse la question"),
             }
         ]
     save_append_stop_word(conn, stop_word_to_save)
@@ -1020,9 +1020,9 @@ def test_update_nothing_because_no_keywords_are_included():
                 "id": "test2",
                 "keyword": "climatique",
                 "channel_title": "TF1",
-                "context": "lacieux selon les experts question climatique en fait elle dépasse la question ",
+                "context": "lacieux selon les experts question climatique en fait elle dépasse la question",
                 "count": 19,
-                "id" : get_consistent_hash("lacieux selon les experts question climatique en fait elle dépasse la question "),
+                "id" : get_consistent_hash("lacieux selon les experts question climatique en fait elle dépasse la question"),
             }
         ]
     save_append_stop_word(conn, stop_word_to_save)

@@ -36,7 +36,7 @@ def test_remove_stopwords_energie():
     output = remove_stopwords(plaintext,STOP_WORDS)
     # plantext does not contain photovoltaïque
     assert "photovoltaïque" not in output
-    assert "rénovation énergétique" not in output
+    assert "rénovation énergetique" not in output
     assert "chauffage" not in output
 
 def test_remove_stopwords_fleuron():

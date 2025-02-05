@@ -55,7 +55,10 @@ def get_all_stop_word(session: Session, offset: int = 0, batch_size: int = 50000
                 func.timezone('UTC', Stop_Word.created_at).label('created_at'),
                 func.timezone('UTC', Stop_Word.updated_at).label('updated_at')
             ).select_from(Stop_Word) \
-    .order_by(Stop_Word.count.desc(), Stop_Word.created_at) \
+    .order_by(Stop_Word.count.desc(),
+              func.length(Stop_Word.context).desc(), 
+              Stop_Word.created_at
+              ) \
     .limit(batch_size).offset(offset)       
 
     if validated_only:
@@ -130,7 +133,7 @@ def get_all_repetitive_context_advertising_for_a_keyword(
         end_date_sql = get_date_sql_query(end_date) #"'2024-12-19 00:00:00.000 +01:00'"
         sql_query = f"""
             SELECT SUBSTRING("context_keyword",0,{total_length}) AS "context",
-                   MAX("keyword_id") AS "keyword_id",
+                   MAX("keyword_id") AS "keyword_id", -- enable to check directly on mediatree service
                    COUNT(*) AS "count"
             FROM (
                 SELECT
@@ -139,10 +142,14 @@ def get_all_repetitive_context_advertising_for_a_keyword(
                 "public"."keywords"."start" AS "start_default_time",
                 "public"."keywords"."theme" AS "theme",
                 "public"."keywords"."id" AS "keyword_id",
-                SUBSTRING(
-                    REPLACE("public"."keywords"."plaintext",'{MEDIATREE_TRANSCRIPTION_PROBLEM}',''), -- mediatree transcription pollution
-                    GREATEST(POSITION('{escaped_keyword}' IN "public"."keywords"."plaintext") - {before_context}, 1), -- start position
-                    LEAST({after_context}, LENGTH( "public"."keywords"."plaintext")) -- length of the context
+                TRIM(
+                    REGEXP_REPLACE(
+                        SUBSTRING(
+                            REPLACE("public"."keywords"."plaintext",'{MEDIATREE_TRANSCRIPTION_PROBLEM}',''), -- mediatree transcription pollution
+                            GREATEST(POSITION('{escaped_keyword}' IN REPLACE("public"."keywords"."plaintext",'{MEDIATREE_TRANSCRIPTION_PROBLEM}','')) - {before_context}, 1), -- start position
+                            LEAST({after_context}, LENGTH( REPLACE("public"."keywords"."plaintext",'<unk> ',''))) -- length of the context
+                        )
+                    ,'^\w{{1,2}}\s+|\s+\w{{1,2}}\s*$', '', 'g') -- removes 1-2 letter words at boundaries
                 ) AS "context_keyword",
                 "public"."keywords"."keywords_with_timestamp" AS "keywords_with_timestamp",
                 "public"."keywords"."number_of_keywords" AS "number_of_keywords",
@@ -170,6 +177,7 @@ def get_all_repetitive_context_advertising_for_a_keyword(
         result = [dict(row) for row in result.mappings()]
         # add metadata to result for all rows
         for row in result:
+            row["context"] = row["context"].strip()
             row["id"] = get_consistent_hash(row["context"]) # to avoid adding duplicates
             row["keyword"] = keyword
             row["channel_title"] = channel_title

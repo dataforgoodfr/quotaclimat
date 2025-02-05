@@ -121,7 +121,8 @@ def remove_stopwords(plaintext: str, stopwords: list[str]) -> str:
 
     if len(stopwords) == 0:
         logging.warning("Stop words list empty")
-
+        return plaintext
+    
     if "groupe verlaine" in plaintext:
         logging.info(f"special groupe verlaine case")
         plaintext = replace_word_with_context(plaintext, word="groupe verlaine")
@@ -135,9 +136,18 @@ def remove_stopwords(plaintext: str, stopwords: list[str]) -> str:
         plaintext = replace_word_with_context(plaintext, word="fleuron industrie", length_to_remove=150)
 
     for word in stopwords:
+        logging.info(f"Test {word}")
         plaintext = plaintext.replace(word, '')
     
     return plaintext
+
+def get_detected_keywords(plaitext_without_stopwords: str, keywords_dict):
+    matching_words = []
+    for keyword_dict in keywords_dict:
+        if is_word_in_sentence(keyword_dict["keyword"], plaitext_without_stopwords):
+            matching_words.append({"keyword": keyword_dict["keyword"], "category": keyword_dict["category"]})
+
+    return matching_words
 
 @sentry_sdk.trace
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime, stop_words: List[str] = []):
@@ -150,11 +160,8 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
 
     for theme, keywords_dict in THEME_KEYWORDS.items():
         logging.debug(f"searching {theme} for {keywords_dict}")
-        matching_words = []
-        for keyword_dict in keywords_dict:
-            if is_word_in_sentence(keyword_dict["keyword"], plaitext_without_stopwords):
-                matching_words.append({"keyword": keyword_dict["keyword"], "category": keyword_dict["category"]})
-
+        matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict)
+       
         if matching_words:
             logging.debug(f"theme found : {theme} with word {matching_words}")
 

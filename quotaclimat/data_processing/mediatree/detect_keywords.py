@@ -136,7 +136,6 @@ def remove_stopwords(plaintext: str, stopwords: list[str]) -> str:
         plaintext = replace_word_with_context(plaintext, word="fleuron industrie", length_to_remove=150)
 
     for word in stopwords:
-        logging.info(f"Test {word}")
         plaintext = plaintext.replace(word, '')
     
     return plaintext

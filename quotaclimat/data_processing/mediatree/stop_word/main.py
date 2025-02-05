@@ -55,7 +55,10 @@ def get_all_stop_word(session: Session, offset: int = 0, batch_size: int = 50000
                 func.timezone('UTC', Stop_Word.created_at).label('created_at'),
                 func.timezone('UTC', Stop_Word.updated_at).label('updated_at')
             ).select_from(Stop_Word) \
-    .order_by(Stop_Word.count.desc(), Stop_Word.created_at) \
+    .order_by(Stop_Word.count.desc(),
+              func.length(Stop_Word.context).desc(), 
+              Stop_Word.created_at
+              ) \
     .limit(batch_size).offset(offset)       
 
     if validated_only:
@@ -141,13 +144,11 @@ def get_all_repetitive_context_advertising_for_a_keyword(
                 "public"."keywords"."id" AS "keyword_id",
                 TRIM(
                     REGEXP_REPLACE(
-                        TRANSLATE(
-                            SUBSTRING(
-                                REPLACE("public"."keywords"."plaintext",'{MEDIATREE_TRANSCRIPTION_PROBLEM}',''), -- mediatree transcription pollution
-                                GREATEST(POSITION('{escaped_keyword}' IN REPLACE("public"."keywords"."plaintext",'{MEDIATREE_TRANSCRIPTION_PROBLEM}','')) - {before_context}, 1), -- start position
-                                LEAST({after_context}, LENGTH( REPLACE("public"."keywords"."plaintext",'<unk> ',''))) -- length of the context
-                            )
-                        ,'éèêëàáâäôöûüîï', 'eeeeaaaaoouuii')
+                        SUBSTRING(
+                            REPLACE("public"."keywords"."plaintext",'{MEDIATREE_TRANSCRIPTION_PROBLEM}',''), -- mediatree transcription pollution
+                            GREATEST(POSITION('{escaped_keyword}' IN REPLACE("public"."keywords"."plaintext",'{MEDIATREE_TRANSCRIPTION_PROBLEM}','')) - {before_context}, 1), -- start position
+                            LEAST({after_context}, LENGTH( REPLACE("public"."keywords"."plaintext",'<unk> ',''))) -- length of the context
+                        )
                     ,'^\w{{1,2}}\s+|\s+\w{{1,2}}\s*$', '', 'g') -- removes 1-2 letter words at boundaries
                 ) AS "context_keyword",
                 "public"."keywords"."keywords_with_timestamp" AS "keywords_with_timestamp",

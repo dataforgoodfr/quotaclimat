@@ -407,8 +407,6 @@ To prevent advertising keywords to blow up statistics, we remove stop words base
 
 The result will be saved inside postgresql table: stop_word.
 
-All stop word context are normalized (accent are removed) to simplify how to compare them with S2T (speed to text)
-
 This table is read by the service "mediatree" to remove stop words from the field "plaintext" to avoid to count them.
 
 Env variables used : 

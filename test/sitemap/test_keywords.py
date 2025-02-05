@@ -35,7 +35,7 @@ def test_remove_stopwords_energie():
     plaintext = "quand le prix de l' énergie augmente il y a ceux qui se couvre plus ceux qui sortent moins et il y a ceux qui choisissent d' optimiser leurs énergies panneaux solaires isolations thermique pompes à chaleur chaque jour fleuron industrie parcourt la france pour vous aider à optimiser votre énergie florent industries point com en ce moment la centrale photovoltaïque de trois kilowatts et deux mille cinq cents euros et oui deux deux mille cinq cents euros cents dépêchez euros vous dépêchez vous de réserver votre kit sur fleuron industries point com <unk> <unk> la rénovation énergétique avec ici pour changer de maison sans changer de maison isolation chauffage solaire plus de confort et d' économie avec ici pas à mal casser pas mal vous avez fait une toute la pâte à modeler la je fais comment une tartine de pâte à modeler sans pâte à modeler c' est pas interdit ça s' appelle dupin juste merci pour le partage le jour où vous aimerez la pâte"
     output = remove_stopwords(plaintext,STOP_WORDS)
     # plantext does not contain photovoltaïque
-    assert "photovoltaique" not in output
+    assert "photovoltaïque" not in output
     assert "rénovation énergetique" not in output
     assert "chauffage" not in output
 
@@ -49,7 +49,6 @@ def test_remove_stopwords_photovoltaique():
     plaintext = "point com en ce moment la centrale photovoltaïque de trois kilowatt et à deux m"
     output = remove_stopwords(plaintext,STOP_WORDS)
     # plantext does not contain photovoltaïque
-    assert "photovoltaique" not in output
     assert "photovoltaïque" not in output
     assert len(output) == 0
 

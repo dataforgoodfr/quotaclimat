@@ -11,7 +11,7 @@ def test_get_remove_stopwords_recycler():
     ]
     ad = "nous les recycler pour en faire de nouvelles en fabriquant nous-mêmes du plastique recyclé pour cela nous avons créé trois usines exclusivement dédié au recyclage dès cette année cristallines est capable de recycler autant de bouteilles"
 
-    assert remove_stopwords(ad, stop_words_list) == "nous les  pour en faire de nouvelles en fabriquant nous-memes du plastique recycle pour cela nous avons cree trois usines exclusivement dedie au recyclage des cette annee cristallines est capable de  autant de bouteilles"
+    assert remove_stopwords(ad, stop_words_list) == "nous les  pour en faire de nouvelles en fabriquant nous-mêmes du plastique recyclé pour cela nous avons créé trois usines exclusivement dédié au recyclage dès cette année cristallines est capable de  autant de bouteilles"
 
 def test_get_remove_stopwords_no_modification():
     stop_words_list = [
@@ -28,7 +28,7 @@ def test_remove_stopwords_huile():
         "est à fond sur le tri sélectif"
     ]
     assert remove_stopwords("l' huile de coude était aussi une énergie renouvelable stéphane est à fond sur le tri sélectif",stop_words_list) \
-          == "l'  stephane "
+          == "l'  stéphane "
 
 
 def test_remove_stopwords_energie():

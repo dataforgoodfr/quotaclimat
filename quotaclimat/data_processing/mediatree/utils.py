@@ -109,9 +109,12 @@ def get_start_end_date_env_variable_with_default(start_date:int, minus_days:int=
 # Get range of 2 date by week from start to end
 def get_date_range(start_date_to_query, end_epoch, minus_days:int=1):
     if end_epoch is not None:
-        logging.info(f"Getting date range from {pd.to_datetime(start_date_to_query, unit='s').normalize()} - {pd.to_datetime(end_epoch, unit='s').normalize()}")
-        range = pd.date_range( pd.to_datetime(end_epoch, unit='s').normalize(),
-                              pd.to_datetime(start_date_to_query, unit='s').normalize(),
+        logging.info(f"Getting date range from {pd.to_datetime(start_date_to_query, unit='s').normalize()}\
+                      - {pd.to_datetime(end_epoch, unit='s').normalize()}")
+        
+        range = pd.date_range( \
+                                pd.to_datetime(end_epoch, unit='s').normalize(),
+                                pd.to_datetime(start_date_to_query, unit='s').normalize(),
                               freq="D")
 
         logging.info(f"Date range: {range} \n {start_date_to_query} until {end_epoch}")
@@ -147,3 +150,4 @@ def get_last_X_days(days, from_date = None) -> datetime:
     start_date = end_date - timedelta(days=days)
     logging.debug(f"start_date: {start_date} end_date: {end_date}")
     return start_date
+

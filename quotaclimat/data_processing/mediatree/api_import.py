@@ -16,6 +16,7 @@ from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import *
 from quotaclimat.data_processing.mediatree.stop_word.main import get_all_stop_word
+from quotaclimat.data_processing.mediatree.api_import_utils.db import get_last_date_and_number_of_delay_saved_in_keywords, KeywordLastStats
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, get_db_session
 from postgres.schemas.models import keywords_table
@@ -121,25 +122,53 @@ def get_stop_words(session, validated_only=True, context_only=True):
         logging.error(f"Stop word error {err}")
         raise Exception
 
+def get_start_time_to_query_from(session)      :
+    lastSavedKeywordsDate = get_last_date_and_number_of_delay_saved_in_keywords(session)
+    logging.info(f"last saved date for keywords is {lastSavedKeywordsDate.last_day_saved}, with a delay of  \
+                 {lastSavedKeywordsDate.number_of_previous_days_from_yesterday} days, nice !")
+    
+    start_date = int(os.environ.get("START_DATE", 0))
+    default_number_of_previous_days = 1
+    if start_date != 0:
+        logging.info(f"Using START_DATE/NUMBER_OF_PREVIOUS_DAYS {start_date}")
+        number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", default_number_of_previous_days))
+        return start_date, number_of_previous_days
+
+    if(lastSavedKeywordsDate.number_of_previous_days_from_yesterday == 0):
+        logging.info("No delay, going with default dates yesterday")
+        default_start_date = 0
+        default_number_of_previous_days = 1
+        return default_start_date, default_number_of_previous_days
+    else:
+        logging.warning(f"Delay detected : {lastSavedKeywordsDate.number_of_previous_days_from_yesterday } days")
+        default_start_date = get_epoch_from_datetime(datetime(lastSavedKeywordsDate.last_day_saved.year,lastSavedKeywordsDate.last_day_saved.month,lastSavedKeywordsDate.last_day_saved.day))
+        default_number_of_previous_days = lastSavedKeywordsDate.number_of_previous_days_from_yesterday
+        return default_start_date, default_number_of_previous_days
+
 async def get_and_save_api_data(exit_event):
     with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
         try:
             logging.warning(f"Available CPUS {os.cpu_count()} - MODIN_CPUS config : {os.environ.get('MODIN_CPUS', 3)}")
 
             conn = connect_to_db()
+            session = get_db_session(conn)
             token=get_auth_token(password=password, user_name=USER)
             type_sub = 's2t'
-            start_date = int(os.environ.get("START_DATE", 0))
-            number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 1))
+
+            (start_date, number_of_previous_days) = get_start_time_to_query_from(session)
+            # TODO : Getting date range from 2024-09-29 00:00:00 - 2024-09-15 00:00:00
+            # date should be added
             (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
             df_programs = get_programs()
             channels = get_channels()
-            session = get_db_session(conn)
+            
             stop_words = get_stop_words(session, validated_only=True)
+            
             
             day_range = get_date_range(start_date_to_query, end_date, number_of_previous_days)
             logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
             for day in day_range:
+                # TODO should query S3 directly
                 token = refresh_token(token, day)
                 
                 for channel in channels:
@@ -153,6 +182,10 @@ async def get_and_save_api_data(exit_event):
                             channel_program = str(program.program_name)
                             channel_program_type = str(program.program_type)
                             logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
+
+                            # TODO should query S3
+                            # df = extract_s3_sub(token, channel, type_sub, start_epoch,end_epoch, channel_program, \
+                            #                      channel_program_type, stop_words=stop_words)
                             df = extract_api_sub(token, channel, type_sub, start_epoch,end_epoch, channel_program, \
                                                  channel_program_type, stop_words=stop_words)
                             if(df is not None):

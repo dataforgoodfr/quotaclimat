@@ -33,7 +33,6 @@ def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
         
         return len(df)
 
-
 def insert_stop_word(conn):
        logging.info("test saving stop words")
        to_save = []

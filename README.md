@@ -275,7 +275,10 @@ docker compose up mediatree
 ### Based on time
 If our media perimeter evolves, we have to reimport it all using env variable `START_DATE` like in docker compose (epoch second format : 1705409797). By default, it will import 1 day, you can modify it with `NUMBER_OF_PREVIOUS_DAYS` (integer).
 
-Otherwise, default is yesterday midnight date (default cron job)
+Otherwise, default is yesterday midnight date (default cron job).
+
+#### Production safety nets
+As Scaleway Serverless service can be down, if some dates are missing until today, it will start back from the latest date saved until today.
 
 **As pandas to_sql does not enable upsert (update/insert)**, if we want to update already saved rows, we have to delete first the rows and then start the program with `START_DATE` :
 ```
@@ -396,7 +399,7 @@ For a security nets, we have configured at data pipeline from Mediatree API to S
 
 Env variable used :
 * START_DATE (integer) (unixtimestamp such as mediatree service)
-* NUMBER_OF_PREVIOUS_DAYS (integer): default 7 days
+* NUMBER_OF_PREVIOUS_DAYS (integer): default 7 days to check if something missing
 * CHANNEL: (such as mediatree service)
 * BUCKET : Scaleway Access key
 * BUCKET_SECRET : Scaleway Secret key

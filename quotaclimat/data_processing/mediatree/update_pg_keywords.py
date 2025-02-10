@@ -288,7 +288,10 @@ def update_keyword_row(session: Session,
         )
     else:
         logging.warning(f"Matching themes is empty - deleting row {keyword_id}")
-        session.query(Keywords).filter(Keywords.id == keyword_id).delete()
+        delete_keywords_id(session, keyword_id)
+
+def delete_keywords_id(session, id):
+    session.query(Keywords).filter(Keywords.id == id).delete()
 
 def update_keyword_row_program(session: Session, 
                        keyword_id: int,

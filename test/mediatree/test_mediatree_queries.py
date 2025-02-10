@@ -17,7 +17,7 @@ create_tables()
 def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
         conn = connect_to_db()
         session = get_db_session(conn)
-        start = pd.to_datetime("2025-02-09 12:18:54", utc=True).tz_convert('Europe/Paris')
+        start = pd.to_datetime("2025-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
         wrong_value = 1
         pk = "delete_me"
         df = pd.DataFrame([{
@@ -56,4 +56,4 @@ def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
        
         assert expected_max_date.last_day_saved == keywordStats.last_day_saved
         assert keywordStats.number_of_previous_days_from_yesterday > 1
-        # delete_keywords_id(session, pk)
+        delete_keywords_id(session, pk)

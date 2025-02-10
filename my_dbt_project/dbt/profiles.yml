@@ -1,0 +1,12 @@
+my_dbt_project:
+  outputs:
+    docker:
+      pass: "{{ env_var('POSTGRES_PASSWORD') }}"
+      port: 5432
+      schema: analytics
+      threads: 4
+      type: postgres
+      user: "{{ env_var('POSTGRES_USER') }}"
+      dbname: "{{ env_var('POSTGRES_DB') }}"
+      host: "{{ env_var('POSTGRES_HOST') }}"
+  target: docker

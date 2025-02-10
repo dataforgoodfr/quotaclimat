@@ -19,6 +19,8 @@ RUN pip install poetry==2.0.1
 # The runtime image, used to just run the code provided its virtual environment
 FROM python:3.12.7-slim as runtime
 
+RUN apt-get install -y git
+
 WORKDIR /app
 
 ENV VIRTUAL_ENV=/app/.venv 

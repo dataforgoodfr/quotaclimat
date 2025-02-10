@@ -38,6 +38,7 @@ services:
       dockerfile: Dockerfile
     entrypoint: ["sleep", "12000"] # use to debug the container if needed
     environment:
+      DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       ENV: docker
       # CHANNEL: "fr3-idf"
       LOGLEVEL: DEBUG
@@ -69,6 +70,7 @@ services:
       - ./pyproject.toml:/app/pyproject.toml
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
+      - ./my_dbt_project:/app/my_dbt_project
     depends_on:
       nginxtest:
         condition: service_healthy
@@ -127,6 +129,7 @@ services:
       dockerfile: Dockerfile_stop_word
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     environment:
+      DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       ENV: docker # change me to prod for real cases
       LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log
       PYTHONPATH: /app
@@ -144,6 +147,7 @@ services:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/
       - ./test/:/app/test/
+      - ./my_dbt_project:/app/my_dbt_project
     depends_on:
       nginxtest:
         condition: service_healthy
@@ -178,6 +182,7 @@ services:
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     #entrypoint: ["python", "quotaclimat/data_processing/mediatree/api_import.py"]
     environment:
+      DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       ENV: docker # change me to prod for real cases
       LOGLEVEL: DEBUG # Change me to info (debug, info, warning, error) to have less log
       PYTHONPATH: /app
@@ -213,6 +218,7 @@ services:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/
       - ./test/:/app/test/
+      - ./my_dbt_project:/app/my_dbt_project
     secrets:
        - pwd_api
        - username_api

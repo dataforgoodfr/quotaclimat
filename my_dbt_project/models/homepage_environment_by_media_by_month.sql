@@ -3,9 +3,11 @@
     unique_key='start'
 ) }}
 
+WITH grouped_data AS (
 SELECT
   DATE_TRUNC('month', CAST("source"."start" AS timestamp)) AS "start",
-  AVG("source"."% environnement total") AS "avg"
+  "Program Metadata - Channel Name__channel_title" AS "channel_title",
+  AVG("% environnement total") AS "avg"
 FROM
   (
     SELECT
@@ -165,9 +167,14 @@ ORDER BY
       DATE_TRUNC('week', CAST("source"."start" AS timestamp)) ASC,
       "source"."Program Metadata - Channel Name__channel_title" ASC
   ) AS "source"
-WHERE
-  "source"."Program Metadata - Channel Name__channel_title" = 'Aucun'
 GROUP BY
-  DATE_TRUNC('month', CAST("source"."start" AS timestamp))
+  DATE_TRUNC('month', CAST("source"."start" AS timestamp)), "Program Metadata - Channel Name__channel_title"
 ORDER BY
   DATE_TRUNC('month', CAST("source"."start" AS timestamp)) ASC
+)
+
+SELECT 
+    *,
+    AVG("avg") OVER (PARTITION BY "start") AS "all_channel_avg"
+FROM grouped_data
+ORDER BY "start", "channel_title";

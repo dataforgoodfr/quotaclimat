@@ -123,9 +123,10 @@ def get_stop_words(session, validated_only=True, context_only=True):
         raise Exception
 
 def get_start_time_to_query_from(session)      :
+    normal_delay_in_days = 1
     lastSavedKeywordsDate = get_last_date_and_number_of_delay_saved_in_keywords(session)
     logging.info(f"last saved date for keywords is {lastSavedKeywordsDate.last_day_saved}, with a delay of  \
-                 {lastSavedKeywordsDate.number_of_previous_days_from_yesterday} days, nice !")
+                 {lastSavedKeywordsDate.number_of_previous_days_from_yesterday} days compared to yesterday")
     
     start_date = int(os.environ.get("START_DATE", 0))
     default_number_of_previous_days = 1
@@ -134,13 +135,13 @@ def get_start_time_to_query_from(session)      :
         number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", default_number_of_previous_days))
         return start_date, number_of_previous_days
 
-    if(lastSavedKeywordsDate.number_of_previous_days_from_yesterday == 0):
-        logging.info("No delay, going with default dates yesterday")
+    if(lastSavedKeywordsDate.number_of_previous_days_from_yesterday == normal_delay_in_days):
+        logging.info("No delay (nice!), going with default dates yesterday")
         default_start_date = 0
         default_number_of_previous_days = 1
         return default_start_date, default_number_of_previous_days
     else:
-        logging.warning(f"Delay detected : {lastSavedKeywordsDate.number_of_previous_days_from_yesterday } days")
+        logging.warning(f"Delay detected : {lastSavedKeywordsDate.number_of_previous_days_from_yesterday } days, it should be {normal_delay_in_days} day")
         default_start_date = get_epoch_from_datetime(datetime(lastSavedKeywordsDate.last_day_saved.year,lastSavedKeywordsDate.last_day_saved.month,lastSavedKeywordsDate.last_day_saved.day))
         default_number_of_previous_days = lastSavedKeywordsDate.number_of_previous_days_from_yesterday
         return default_start_date, default_number_of_previous_days

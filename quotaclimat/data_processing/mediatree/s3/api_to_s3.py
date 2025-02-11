@@ -11,6 +11,7 @@ from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import *
 from quotaclimat.data_processing.mediatree.api_import import *
+from quotaclimat.data_processing.mediatree.s3.s3_utils import *
 
 import shutil
 from typing import List, Optional
@@ -18,10 +19,7 @@ from tenacity import *
 import sentry_sdk
 from sentry_sdk.crons import monitor
 import modin.pandas as pd
-from modin.pandas import json_normalize
 import ray
-import s3fs
-import boto3
 
 from quotaclimat.utils.sentry import sentry_init
 logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
@@ -35,50 +33,105 @@ password = get_password()
 AUTH_URL = get_auth_url()
 USER = get_user()
 KEYWORDS_URL = get_keywords_url()
-# Configuration for Scaleway Object Storage
-ACCESS_KEY = os.environ.get('BUCKET')
-SECRET_KEY = os.environ.get("BUCKET_SECRET")
-BUCKET_NAME = os.environ.get("BUCKET_NAME")
-REGION = 'fr-par'
 
-ENDPOINT_URL = f'https://s3.{REGION}.scw.cloud'
+# "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
+# @see https://github.com/jd/tenacity/tree/main
+@retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
+def get_auth_token(password=password, user_name=USER):
+    logging.info(f"Getting a token for user {user_name}")
+    try:
+        post_arguments = {
+            'grant_type': 'password'
+            , 'username': user_name
+            , 'password': password
+        }
+        response = requests.post(
+            AUTH_URL, 
+            data=post_arguments
+        )
+        output = response.json()
+        token = output['data']['access_token']
+        return token 
+    except Exception as err:
+        logging.error("Could not get token %s:(%s) %s" % (type(err).__name__, err))
 
-def get_s3_client():
-    s3_client = boto3.client(
-        service_name='s3',
-        region_name=REGION,
-        aws_access_key_id=ACCESS_KEY,
-        aws_secret_access_key=SECRET_KEY,
-        endpoint_url=ENDPOINT_URL,
-    )
-    return s3_client
+# see : https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
+def get_param_api(token, type_sub, start_epoch, channel, end_epoch):
 
-def get_bucket_key(date, channel, filename:str="*", suffix:str="parquet"):
-    (year, month, day) = (date.year, date.month, date.day)
-    return f'year={year}/month={month:1}/day={day:1}/channel={channel}/{filename}.{suffix}'
+    return {
+        "channel": channel,
+        "token": token,
+        "start_gte": int(start_epoch) - EPOCH__5MIN_MARGIN,
+        "start_lte": int(end_epoch) + EPOCH__5MIN_MARGIN,
+        "type": type_sub,
+        "size": "1000" #  range 1-1000
+    }
 
-def get_bucket_key_folder(date, channel):
-    (year, month, day) = (date.year, date.month, date.day)
-    return f'year={year}/month={month:1}/day={day:1}/channel={channel}/'
 
-# Function to upload folder to S3
-def upload_folder_to_s3(local_folder, bucket_name, base_s3_path, s3_client):
-    logging.info(f"Reading local folder {local_folder} and uploading to S3")
-    for root, _, files in os.walk(local_folder):
-        logging.info(f"Reading files {len(files)}")
-        for file in files:
-            logging.info(f"Reading {file}")
-            local_file_path = os.path.join(root, file)
-            relative_path = os.path.relpath(local_file_path, local_folder)
-            s3_key = os.path.join(base_s3_path, relative_path).replace("\\", "/")  # Replace backslashes for S3 compatibility
-            
-            # Upload file
-            s3_client.upload_file(local_file_path, bucket_name, s3_key)
-            logging.info(f"Uploaded: {s3_key}")
-            # Delete the local folder after successful upload
-            shutil.rmtree(local_folder)
-            logging.info(f"Deleted local folder: {local_folder}")
+def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", channel_program_type = "") -> Optional[pd.DataFrame]:
+    with sentry_sdk.start_transaction(op="task", name="parse_reponse_subtitle"):
+        total_results = parse_total_results(response_sub)
+        logging.getLogger("modin.logging.default").setLevel(logging.WARNING)
+        if(total_results > 0):
+            logging.info(f"{total_results} 'total_results' field")
+           
+            # To avoid  UserWarning: json_normalize is not currently supported by PandasOnRay, defaulting to pandas implementation.
+            flattened_data = response_sub.get("data", [])
+            new_df : pd.DataFrame = pd.DataFrame(flattened_data)
+            new_df["channel.name"] = new_df["channel"].apply(lambda x: x["name"])
+            new_df["channel.title"] = new_df["channel"].apply(lambda x: x["title"])
+            new_df["channel.radio"] = new_df["channel"].apply(lambda x: x["radio"])
+            new_df.drop("channel", axis=1, inplace=True)
 
+            logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
+            pd.set_option('display.max_columns', None)
+            logging.debug("setting timestamp")
+            new_df['timestamp'] = new_df.apply(lambda x: pd.to_datetime(x['start'], unit='s', utc=True), axis=1)
+            logging.debug("timestamp was set")
+
+            logging.debug("droping start column")
+            new_df.drop('start', axis=1, inplace=True)
+            logging.debug("renaming columns")
+            new_df.rename(columns={'channel.name':'channel_name', 
+                                   'channel.title':'channel_title',
+                                   'channel.radio': 'channel_radio',
+                                    'timestamp':'start'
+                                  },
+                        inplace=True
+            )
+
+            logging.debug("setting channel_title")
+            new_df['channel_title'] = new_df.apply(lambda x: get_channel_title_for_name(x['channel_name']), axis=1)
+
+            logging.debug(f"setting program {channel_program}")
+            # weird error if not using this way: (ValueError) format number 1 of "20h30 le samedi" is not recognized
+            new_df['channel_program'] = new_df.apply(lambda x: channel_program, axis=1)
+            new_df['channel_program_type'] = new_df.apply(lambda x: channel_program_type, axis=1)
+            logging.debug("programs were set")
+           
+            return new_df
+        else:
+            logging.warning("No result (total_results = 0) for this channel")
+            return None
+
+
+@retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
+def get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type):
+    try:
+        response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch)
+
+        return parse_reponse_subtitle(response_sub, channel, channel_program, channel_program_type)
+    except Exception as err:
+        logging.error("Retry - get_df_api:(%s) %s" % (type(err).__name__, err))
+        raise Exception
+    
+def refresh_token(token, date):
+    if is_it_tuesday(date): # refresh token every weekday for batch import
+        logging.info("refreshing api token every weekday in case it's expired")
+        return get_auth_token(password=password, user_name=USER)
+    else:
+        return token
+    
 def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client):
     logging.info(f"Saving DF with {len(df)} elements to S3 for {date} and channel {channel}")
 
@@ -107,22 +160,6 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client):
     except Exception as err:
         logging.fatal("get_and_save_api_data (%s) %s" % (type(err).__name__, err))
         sys.exit(1)
-
-def check_if_object_exists_in_s3(day, channel, s3_client):
-    folder_prefix = get_bucket_key_folder(day, channel)  # Adjust this to return the folder path
-    
-    logging.debug(f"Checking if folder exists: {folder_prefix}")
-    try:
-        response = s3_client.list_objects_v2(Bucket=BUCKET_NAME, Prefix=folder_prefix, MaxKeys=1)
-        if "Contents" in response:
-            logging.info(f"Folder exists in S3: {folder_prefix}")
-            return True
-        else:
-            logging.info(f"Folder does not exist in S3: {folder_prefix}")
-            return False
-    except Exception as e:
-        logging.error(f"Error while checking folder in S3: {folder_prefix}\n{e}")
-        return False
 
 async def get_and_save_api_data(exit_event):
     with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):

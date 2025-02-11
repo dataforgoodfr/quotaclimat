@@ -177,4 +177,4 @@ SELECT
     *,
     AVG("avg") OVER (PARTITION BY "start") AS "all_channel_avg"
 FROM grouped_data
-ORDER BY "start", "channel_title";
+ORDER BY "start", "channel_title"

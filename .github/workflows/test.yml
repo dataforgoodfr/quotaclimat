@@ -189,6 +189,14 @@ jobs:
           set -o pipefail
           source .venv/bin/activate
           poetry run pytest my_dbt_project/pytest_tests\ /
+        env:
+          ENV: dev
+          POSTGRES_USER: user
+          POSTGRES_DB: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          COMPARE_DURATION: "true"
 
       - name: pytest run everything else
         run: |

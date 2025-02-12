@@ -196,8 +196,8 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-          COMPARE_DURATION: "true"
           DBT_PROJECT_DIR: my_dbt_project
+          DBT_PROFILES_DIR: my_dbt_project/dbt
 
       - name: pytest run everything else
         run: |

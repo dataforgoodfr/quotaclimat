@@ -17,8 +17,10 @@ def db_connection():
 
 def run_dbt_command(command_args):
     """Helper function to run dbt commands."""
+
+    # , "--project-dir", "/app/my_dbt_project" used by DBT_PROJECT_DIR
     result = subprocess.run(
-        ["poetry", "run", "dbt",  *command_args], # , "--project-dir", "/app/my_dbt_project" used by DBT_PROJECT_DIR
+        ["poetry", "run", "dbt",  *command_args],
         capture_output=True, text=True
     )
     print(result.stdout)  # Print dbt logs for debugging

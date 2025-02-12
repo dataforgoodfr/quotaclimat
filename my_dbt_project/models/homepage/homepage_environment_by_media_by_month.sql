@@ -1,6 +1,5 @@
 {{ config(
-    materialized='incremental',
-    unique_key='start'
+    materialized='view'
   )
 }}
 

@@ -443,16 +443,9 @@ docker compose exec testconsole bash
 
 We can define some slow queries to make them efficient with materialized views.
 
-
-To update monthly our materialized view in production we have to use :
+To update monthly our materialized view in production we have to use this command that is run on every deployement of api-import (daily)
 ```
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-
-SELECT cron.schedule(
-    'refresh_materialized_view_homepage_environment',  -- Unique job name
-    '0 0 1 * *',  -- Runs at midnight on the 1st of every month
-    'REFRESH MATERIALIZED VIEW my_dbt_project.homepage_environment_by_media_by_month'
-);
+poetry run dbt run
 ```
 
 ### Fix linting

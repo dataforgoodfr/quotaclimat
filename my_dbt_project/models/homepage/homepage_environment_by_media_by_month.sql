@@ -1,6 +1,6 @@
 {{ config(
-    materialized='incremental',
-    unique_key='start'
+    materialized='incremental'
+    ,unique_key=['start','channel_title']
   )
 }}
 
@@ -185,7 +185,7 @@ UNION ALL
 
 SELECT 
     "start",
-    'All channels' AS "channel_title",
+    'Aucun' AS "channel_title",
     AVG("avg") AS "avg_per_channel"
 FROM grouped_data
 GROUP BY "start"

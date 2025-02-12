@@ -3,7 +3,7 @@ my_dbt_project:
     docker:
       pass: "{{ env_var('POSTGRES_PASSWORD') }}"
       port: 5432
-      schema: analytics
+      schema: public
       threads: 4
       type: postgres
       user: "{{ env_var('POSTGRES_USER') }}"

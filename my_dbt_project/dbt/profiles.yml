@@ -2,7 +2,7 @@ my_dbt_project:
   outputs:
     docker:
       pass: "{{ env_var('POSTGRES_PASSWORD') }}"
-      port: 5432
+      port: "{{ env_var('POSTGRES_PORT') | as_number }}"
       schema: public
       threads: 4
       type: postgres

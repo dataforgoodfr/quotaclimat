@@ -188,7 +188,7 @@ jobs:
         run: |
           set -o pipefail
           source .venv/bin/activate
-          poetry run pytest my_dbt_project/pytest_tests\
+          poetry run pytest my_dbt_project/pytest_tests\ /
 
       - name: pytest run everything else
         run: |

@@ -39,6 +39,7 @@ services:
     entrypoint: ["sleep", "12000"] # use to debug the container if needed
     environment:
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+      DBT_PROJECT_DIR: /app/my_dbt_project
       ENV: docker
       # CHANNEL: "fr3-idf"
       LOGLEVEL: DEBUG
@@ -183,6 +184,7 @@ services:
     #entrypoint: ["python", "quotaclimat/data_processing/mediatree/api_import.py"]
     environment:
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+      DBT_PROJECT_DIR: /app/my_dbt_project
       ENV: docker # change me to prod for real cases
       LOGLEVEL: DEBUG # Change me to info (debug, info, warning, error) to have less log
       PYTHONPATH: /app

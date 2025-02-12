@@ -13,3 +13,8 @@ models:
         description: "Average environmental percentage"
         tests:
           - not_null
+
+      - name: channel_title
+        description: "Channel_Title"
+        tests:
+          - not_null

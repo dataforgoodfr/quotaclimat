@@ -18,7 +18,7 @@ def db_connection():
 def run_dbt_command(command_args):
     """Helper function to run dbt commands."""
     result = subprocess.run(
-        ["poetry", "run", "dbt",  *command_args, "--project-dir", "/app/my_dbt_project"],
+        ["poetry", "run", "dbt",  *command_args], # , "--project-dir", "/app/my_dbt_project" used by DBT_PROJECT_DIR
         capture_output=True, text=True
     )
     print(result.stdout)  # Print dbt logs for debugging
@@ -36,4 +36,4 @@ def test_homepage_environment_by_media_by_month(db_connection):
     count = cur.fetchone()[0]
     cur.close()
 
-    assert count > 0, "No data found in the materialized view!"
+    assert count == 3, "count error"

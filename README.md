@@ -433,8 +433,7 @@ UPDATE stop_word set validated=false WHERE id = 'MY_ID';
 Using [DBT](https://www.getdbt.com/), used via docker :
 ```
 docker compose up testconsole -d
-docker compoes exec testconsole bash
-> cd my_dbt_project
+docker compose exec testconsole bash
 > dbt debug  # check if this works
 > dbt run
 ```

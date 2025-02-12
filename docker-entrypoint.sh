@@ -14,7 +14,7 @@ else
 fi
 
 echo "apply dbt models"
-poetry run dbt run --project-dir /app/my_dbt_project
+poetry run dbt run
 
 echo "starting mediatree import app"
 python quotaclimat/data_processing/mediatree/api_import.py

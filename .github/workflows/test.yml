@@ -183,11 +183,13 @@ jobs:
 
       - name: docker compose up nginx
         run: docker compose up -d nginxtest
+
       - name: pytest dbt models
-      run: |
-        set -o pipefail
-        source .venv/bin/activate
-        poetry run pytest my_dbt_project/pytest_tests\
+        run: |
+          set -o pipefail
+          source .venv/bin/activate
+          poetry run pytest my_dbt_project/pytest_tests\
+
       - name: pytest run everything else
         run: |
           set -o pipefail

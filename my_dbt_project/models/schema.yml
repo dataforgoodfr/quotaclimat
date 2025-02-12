@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: homepage_environment_by_media_by_month
+    description: "Aggregated environmental data with monthly averages"
+    columns:
+      - name: start
+        description: "Month/Year"
+        tests:
+          - not_null
+
+      - name: avg
+        description: "Average environmental percentage"
+        tests:
+          - not_null
+
+      - name: channel_title
+        description: "Channel_Title"
+        tests:
+          - not_null

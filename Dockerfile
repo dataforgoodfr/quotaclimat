@@ -19,12 +19,16 @@ RUN pip install poetry==2.0.1
 # The runtime image, used to just run the code provided its virtual environment
 FROM python:3.12.7-slim as runtime
 
+RUN apt update && apt-get install -y git
+
 WORKDIR /app
 
 ENV VIRTUAL_ENV=/app/.venv 
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PATH="$PYENV_ROOT/bin:$PATH"
 ENV PYTHONPATH=/app
+ENV DBT_PROFILES_DIR=/app/my_dbt_project/dbt
+ENV DBT_PROJECT_DIR=/app/my_dbt_project
 
 COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 

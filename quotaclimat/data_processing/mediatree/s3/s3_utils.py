@@ -69,7 +69,7 @@ def upload_folder_to_s3(local_folder, bucket_name, base_s3_path, s3_client):
 def read_folder_from_s3(date, channel: str):
     s3_path: str = get_bucket_key_folder(date=date, channel=channel)
     s3_key: tuple[str] = f"s3://{BUCKET_NAME}/{s3_path}"
-    logging.info(f"Reading S3 folder {s3_key} -  {ACCESS_KEY} - {SECRET_KEY} - {ENDPOINT_URL} - {MEDIATREE_PASSWORD}")
+    logging.info(f"Reading S3 folder {s3_key}")
 
     df = pd.read_parquet(path=s3_key,
                                  storage_options={

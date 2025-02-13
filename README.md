@@ -431,6 +431,23 @@ UPDATE stop_word set validated=false WHERE id = 'MY_ID';
 * Use scaleway
 * Use [Ray dashboard] on port 8265
 
+
+## Materialized view - dbt
+Using [DBT](https://www.getdbt.com/), used via docker :
+```
+docker compose up testconsole -d
+docker compose exec testconsole bash
+> dbt debug  # check if this works
+> dbt run
+```
+
+We can define some slow queries to make them efficient with materialized views.
+
+To update monthly our materialized view in production we have to use this command that is run on every deployement of api-import (daily)
+```
+poetry run dbt run
+```
+
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
 ```bash

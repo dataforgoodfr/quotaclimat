@@ -1,6 +1,6 @@
 [project]
 name = "quotaclimat"
-version = "1.0.75"
+version = "1.0.78"
 description = ""
 authors = [
     {name = "Rambier Estelle", "email"="estelle.rambier@hotmail.fr"},
@@ -36,6 +36,8 @@ modin = {extras = ["ray"], version = "^0.32.0"}
 openpyxl = "^3.1.5"
 requests = "^2.32.3"
 thefuzz = "^0.22.1"
+dbt-core = "^1.9.2"
+dbt-postgres = "^1.9.0"
 [build-system]
 requires = ["poetry-core>=1.1"]
 build-backend = "poetry.core.masonry.api"

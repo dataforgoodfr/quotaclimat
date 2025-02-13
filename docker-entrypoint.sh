@@ -13,5 +13,7 @@ else
     echo "Command failed"
 fi
 
+echo "apply dbt models full-refresh"
+poetry run dbt run --full-refresh # drop and recreate materialized views with the most up-to-date data.
 echo "starting mediatree import app"
 python quotaclimat/data_processing/mediatree/api_import.py

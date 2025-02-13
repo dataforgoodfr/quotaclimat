@@ -207,10 +207,6 @@ services:
       #START_DATE: 1727610071 # to test batch import 
       # NUMBER_OF_PREVIOUS_DAYS: 30 # to query mediatree api only - not used for update
       CHANNEL : fr3-idf # to reimport only one channel
-      MEDIATREE_USER : /run/secrets/username_api
-      MEDIATREE_PASSWORD:  /run/secrets/pwd_api
-      MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
-      KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/ # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
       MODIN_ENGINE: ray
       MODIN_CPUS: 4 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
       MODIN_MEMORY: 1000000000 # 1Gb
@@ -222,8 +218,8 @@ services:
       - ./test/:/app/test/
       - ./my_dbt_project:/app/my_dbt_project
     secrets:
-       - pwd_api
-       - username_api
+       - bucket
+       - bucket_secret
     depends_on:
       nginxtest:
         condition: service_healthy

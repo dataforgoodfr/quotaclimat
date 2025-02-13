@@ -17,7 +17,7 @@ from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import *
 from quotaclimat.data_processing.mediatree.stop_word.main import get_all_stop_word
 from quotaclimat.data_processing.mediatree.api_import_utils.db import get_last_date_and_number_of_delay_saved_in_keywords, KeywordLastStats
-from quotaclimat.data_processing.mediatree.s3.s3_utils import *
+from quotaclimat.data_processing.mediatree.s3.s3_utils import read_folder_from_s3, transform_raw_keywords
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, get_db_session
 from postgres.schemas.models import keywords_table
@@ -157,95 +157,27 @@ async def get_and_save_s3_data_to_pg(exit_event):
                         logging.info("Querying day %s for channel %s" % (day, channel))
                         programs_for_this_day = get_programs_for_this_day(day.tz_localize("Europe/Paris"), channel, df_programs)
 
-                        # get s3 path from year,month,day and media
-                        s3_path: str = get_bucket_key_folder(date=day, channel=channel)
-                        df_channel_for_a_day = read_folder_from_s3(s3_path)
+                        df_channel_for_a_day = read_folder_from_s3(date=day, channel=channel)
 
-                        # should map row to update in case program name
-                        # df_channel_for_a_day.apply ()....
+                        df = transform_raw_keywords(df=df_channel_for_a_day, stop_words=stop_words)
+                        
+                        # TODO update programs
+                        df = update_programs(df, programs_for_this_day=programs_for_this_day)
 
-                        for program in programs_for_this_day.itertuples(index=False):
-                            start_epoch = program.start
-                            end_epoch = program.end
-                            channel_program = str(program.program_name)
-                            channel_program_type = str(program.program_type)
-                            logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
-
-                            df = extract_api_sub(channel, start_epoch, end_epoch, channel_program, \
-                                                 channel_program_type, stop_words=stop_words)
-                            if(df is not None):
-                                logging.debug(f"Memory df {df.memory_usage()}")
-                                save_to_pg(df, keywords_table, conn)
-                                del df
-                            else:
-                                logging.info("Nothing to save to Postgresql")
-                        gc.collect()
+                        if(df is not None):
+                            logging.debug(f"Memory df {df.memory_usage()}")
+                            save_to_pg(df, keywords_table, conn)
+                            del df
+                        else:
+                            logging.info("Nothing to save to Postgresql")
                     except Exception as err:
-                        logging.error(f"continuing loop but met error : {err}")
+                        logging.error(f"continuing loop fpr but met error with {channel} - day {day}: {err}")
                         continue
             exit_event.set()
         except Exception as err:
             logging.fatal("get_and_save_s3_data (%s) %s" % (type(err).__name__, err))
             ray.shutdown()
             sys.exit(1)
-
-
-# "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
-# @see https://github.com/jd/tenacity/tree/main
-@retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
-def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch):
-    try:
-        params = get_param_api(media_tree_token, type_sub, start_epoch, channel, end_epoch)
-        logging.info(f"Query {KEYWORDS_URL} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, end_epoch)}")
-        response = requests.post(KEYWORDS_URL, json=params)
-        if response.status_code >= 400:
-            logging.warning(f"{response.status_code} - Expired token ? - retrying to get a new one {response.content}")
-            media_tree_token = get_auth_token(password, USER)
-            raise Exception
-        
-        return parse_raw_json(response)
-    except Exception as err:
-        logging.error("Retry - Could not query API :(%s) %s" % (type(err).__name__, err))
-        raise Exception
-
-# Data extraction function definition
-# https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
-def extract_api_sub(
-        media_tree_token, 
-        channel = 'm6',
-        type_sub = "s2t",
-        start_epoch = None,
-        end_epoch = None
-        ,channel_program: str = ""
-        ,channel_program_type : str = ""
-        ,stop_words: list[str] = []
-    ) -> Optional[pd.DataFrame]: 
-    try:
-        df = get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type)
-
-        if(df is not None):
-            df = filter_and_tag_by_theme(df, stop_words=stop_words)
-            logging.info(f"Adding primary key to save to PG and have idempotent results")
-            df["id"] = df.apply(lambda x: add_primary_key(x), axis=1)
-            return df
-        else:
-            None
-    except Exception as err:
-        logging.error("Could not query API :(%s) %s" % (type(err).__name__, err))
-        return None
-
-def parse_raw_json(response):
-    if response.status_code == 504:
-        logging.error(f"Mediatree API server error 504 (retry enabled)\n {response.content}")
-        raise Exception
-    else:
-        return json.loads(response.content.decode('utf_8'))
-
-def parse_total_results(response_sub) -> int :
-    return response_sub.get('total_results')
-
-def parse_number_pages(response_sub) -> int :
-    return int(response_sub.get('number_pages'))
 
 async def main():
     with monitor(monitor_slug='mediatree'): #https://docs.sentry.io/platforms/python/crons/

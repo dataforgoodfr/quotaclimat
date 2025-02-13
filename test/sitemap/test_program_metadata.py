@@ -286,3 +286,28 @@ def test_compare_weekday_int():
     assert compare_weekday("1", 5) == False
     assert compare_weekday("1", 1) == True
     assert compare_weekday("4", 4) == True
+
+
+def test_update_programs_from_df():
+    date_friday_20h55 = pd.to_datetime(1727376901, unit='s', utc=True).tz_convert('Europe/Paris')
+    df = pd.DataFrame({
+        'start': [date_friday_20h55, date_friday_20h55, date_friday_20h55],
+        'channel_name': ['TF1', 'France 2', 'M6'],
+        'channel_program': ['to_be_updated', 'to_be_updated Show', None], 
+        'channel_program_type': ['to_be_updated', 'to_be_updated', None]
+    })
+
+    df_programs = get_programs()
+
+    expected_df = pd.DataFrame({
+        'start': [date_friday_20h55, date_friday_20h55, date_friday_20h55],
+        'channel_name': ['TF1', 'France 2', 'M6'],
+        'channel_program': ['News', 'Talk Show', 'Talk Show'],  # 'M6' has no match
+        'channel_program_type': ["Information - Journal", 'Discussion', 'Talk Show']
+    })
+
+    # Run the function
+    result_df = update_programs_from_df(df, df_programs)
+
+    # Assert the results match the expected DataFrame
+    pd.testing.assert_frame_equal(result_df, expected_df, check_dtype=False)

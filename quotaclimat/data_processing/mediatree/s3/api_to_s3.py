@@ -114,7 +114,37 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             logging.warning("No result (total_results = 0) for this channel")
             return None
 
+def parse_raw_json(response):
+    if response.status_code == 504:
+        logging.error(f"Mediatree API server error 504 (retry enabled)\n {response.content}")
+        raise Exception
+    else:
+        return json.loads(response.content.decode('utf_8'))
 
+def parse_total_results(response_sub) -> int :
+    return response_sub.get('total_results')
+
+def parse_number_pages(response_sub) -> int :
+    return int(response_sub.get('number_pages'))
+
+# "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
+# @see https://github.com/jd/tenacity/tree/main
+@retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
+def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch):
+    try:
+        params = get_param_api(media_tree_token, type_sub, start_epoch, channel, end_epoch)
+        logging.info(f"Query {KEYWORDS_URL} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, end_epoch)}")
+        response = requests.post(KEYWORDS_URL, json=params)
+        if response.status_code >= 400:
+            logging.warning(f"{response.status_code} - Expired token ? - retrying to get a new one {response.content}")
+            media_tree_token = get_auth_token(password, USER)
+            raise Exception
+        
+        return parse_raw_json(response)
+    except Exception as err:
+        logging.error("Retry - Could not query API :(%s) %s" % (type(err).__name__, err))
+        raise Exception
+    
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
 def get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type):
     try:

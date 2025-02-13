@@ -13,7 +13,6 @@ session = get_db_session(conn)
 
 create_tables()
 
-# TODO test me
 def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
         conn = connect_to_db()
         session = get_db_session(conn)
@@ -48,7 +47,7 @@ def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
         ,"number_of_keywords_biodiversite": wrong_value
         ,"number_of_keywords_ressources": wrong_value
         }])
-        # TODO insert dummy value
+
         save_to_pg(df, keywords_table, conn)
 
         keywordStats = get_last_date_and_number_of_delay_saved_in_keywords(session)

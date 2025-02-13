@@ -11,6 +11,7 @@ from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.api_import import *
 from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
 from quotaclimat.data_processing.mediatree.stop_word.main import save_append_stop_word
+from quotaclimat.data_processing.mediatree.s3.api_to_s3 import parse_reponse_subtitle
 from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
 
 import time as t

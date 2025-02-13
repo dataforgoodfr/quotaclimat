@@ -214,3 +214,14 @@ def get_channel_title_for_name(channel_name: str) -> str:
         case _:
             logging.error(f"Channel_name unknown {channel_name}")
             return ""
+
+def apply_update_program(row, df_programs):
+    return get_a_program_with_start_timestamp(df_program=df_programs, start_time=row['start'], channel_name=row['channel_name'])
+
+def update_programs_from_df(df: pd.DataFrame, df_programs: pd.DataFrame) -> pd.DataFrame :
+    df[['channel_program', 'channel_program_type']] = df.apply(
+        lambda row: apply_update_program(row, df_programs),
+        axis=1,
+        result_type='expand'
+    )
+    return df

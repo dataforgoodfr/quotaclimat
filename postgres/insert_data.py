@@ -55,7 +55,7 @@ def save_to_pg(df, table, conn):
         logging.info("Saved dataframe to PG")
         return len(df)
     except Exception as err:
-        logging.error("Could not save : \n %s \n %s" % (err, df.head(1).to_string()))
+        logging.error("Could not save : \n %s" % (err))
         return 0
 
 def insert_data_in_sitemap_table(df: pd.DataFrame, conn):

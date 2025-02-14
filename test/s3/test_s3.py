@@ -23,6 +23,7 @@ def test_get_bucket_key_first_of_the_month():
     channel = "tf1"
     assert get_bucket_key_folder(date, channel) == "year=2024/month=12/day=1/channel=tf1/"
 
+# TODO need to mock s3 reads
 # def test_read_folder_from_s3():
 #     first_december = 1733040125
 #     date = pd.to_datetime(first_december, unit='s', utc=True)
@@ -31,10 +32,8 @@ def test_get_bucket_key_first_of_the_month():
 #     assert False == True
 
 def test_transform_raw_keywords():
-    thrusday_morning = 1712815351 #Thu Apr 11 2024 08:02:31 GMT+0200
-    df_programs = get_programs()
-    programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').tz_localize('Europe/Paris'), "france2", df_programs)
     df= pd.read_parquet(path="test/s3/one-day-one-channel.parquet")
-    output = transform_raw_keywords(df, programs_for_this_day=programs)
+    df_programs = get_programs()
+    output = transform_raw_keywords(df, df_programs=df_programs)
 
     assert len(output) == 31

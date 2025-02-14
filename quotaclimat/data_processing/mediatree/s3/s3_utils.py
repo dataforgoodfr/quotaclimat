@@ -6,7 +6,7 @@ from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import *
 from quotaclimat.data_processing.mediatree.api_import import *
-
+import numpy as np
 import shutil
 from typing import List, Optional
 from tenacity import *
@@ -103,13 +103,20 @@ def check_if_object_exists_in_s3(day, channel, s3_client) -> bool:
 def transform_raw_keywords(
         df: pd.DataFrame
         ,stop_words: list[str] = []
+        ,df_programs = None
     ) -> Optional[pd.DataFrame]: 
     try:
         if(df is not None):
             df: pd.DataFrame = filter_and_tag_by_theme(df=df, stop_words=stop_words)    
+            df['keywords_with_timestamp'] = df['keywords_with_timestamp'].apply(lambda x: x.tolist() if isinstance(x, np.ndarray) else x)
+            df['srt'] = df['srt'].apply(lambda x: x.tolist() if isinstance(x, np.ndarray) else x)
             
+            # channels perimeter might have changed, so we need to update programs names
+            df = update_programs_and_filter_out_of_scope_programs_from_df(df, df_programs=df_programs)
+
             logging.info(f"Adding primary key to save to PG and have idempotent results")
             df["id"] = df.apply(lambda x: add_primary_key(x), axis=1)
+            df = df.drop_duplicates(subset=['id'], keep='last')
             return df
         else:
             None

@@ -123,7 +123,7 @@ def get_start_time_to_query_from(session)      :
         number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", default_number_of_previous_days))
         return start_date, number_of_previous_days
 
-    if(lastSavedKeywordsDate.number_of_previous_days_from_yesterday == normal_delay_in_days):
+    if(lastSavedKeywordsDate.last_day_saved is None or lastSavedKeywordsDate.number_of_previous_days_from_yesterday == normal_delay_in_days):
         logging.info("No delay (nice!), going with default dates yesterday")
         default_start_date = 0
         default_number_of_previous_days = 1
@@ -148,21 +148,15 @@ async def get_and_save_s3_data_to_pg(exit_event):
             channels = get_channels()
             
             stop_words = get_stop_words(session, validated_only=True)
-            
             day_range = get_date_range(start_date_to_query, end_date, number_of_previous_days)
             logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
             for day in day_range:
                 for channel in channels:
                     try:
                         logging.info("Querying day %s for channel %s" % (day, channel))
-                        programs_for_this_day = get_programs_for_this_day(day.tz_localize("Europe/Paris"), channel, df_programs)
-
                         df_channel_for_a_day = read_folder_from_s3(date=day, channel=channel)
 
-                        df = transform_raw_keywords(df=df_channel_for_a_day, stop_words=stop_words)
-                        
-                        # TODO update programs
-                        df = update_programs(df, programs_for_this_day=programs_for_this_day)
+                        df = transform_raw_keywords(df=df_channel_for_a_day, stop_words=stop_words, df_programs=df_programs)
 
                         if(df is not None):
                             logging.debug(f"Memory df {df.memory_usage()}")

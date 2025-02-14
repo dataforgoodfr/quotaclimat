@@ -356,7 +356,6 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = []) -> pd.
 def add_primary_key(row):
     try:
         hash_id = get_consistent_hash(str(row["start"]) + row["channel_name"])
-        logging.debug(f"hash_id {hash_id}")
         return hash_id
 
     except (Exception) as error:

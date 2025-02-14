@@ -4,7 +4,7 @@ from test_utils import get_localhost, debug_df
 from quotaclimat.data_processing.mediatree.api_import import *
 from quotaclimat.data_processing.mediatree.utils import *
 from postgres.insert_data import save_to_pg
-from postgres.schemas.models import keywords_table, connect_to_db, get_keyword, drop_tables
+from postgres.schemas.models import keywords_table, connect_to_db, get_keyword, drop_tables, empty_tables
 
 import pandas as pd
 import datetime
@@ -122,7 +122,7 @@ def test_get_channels():
         assert get_channels() == ["tf1", "france2", "fr3-idf", "m6", "arte", "d8", "bfmtv", "lci", "franceinfotv", "itele",
         "europe1", "france-culture", "france-inter", "sud-radio", "rmc", "rtl", "france24", "france-info", "rfi"]
 
-def test_save_to_pg_keyword():
+def test_save_to_pg_keyword_normal():
     conn = connect_to_db()
     primary_key = "test_save_to_pg_keyword"
     keywords_with_timestamp = [{
@@ -165,7 +165,6 @@ def test_save_to_pg_keyword():
     }])
 
     df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC')#.dt.tz_convert('Europe/Paris')
-   
     assert save_to_pg(df, keywords_table, conn) == 1
 
     # check the value is well existing
@@ -179,3 +178,13 @@ def test_save_to_pg_keyword():
     assert result.keywords_with_timestamp == keywords_with_timestamp
     assert result.number_of_keywords == 1
     assert result.start == datetime.datetime(2024, 1, 28, 10, 17, 59, 6000)
+
+def test_save_to_pg_keyword_parquet():
+    conn = connect_to_db()
+    thrusday_morning = 1712815351 #Thu Apr 11 2024 08:02:31 GMT+0200
+    df_programs = get_programs()
+    programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').tz_localize('Europe/Paris'), "france2", df_programs)
+    df= pd.read_parquet(path="test/s3/one-day-one-channel.parquet")
+    df = transform_raw_keywords(df, df_programs=df_programs)
+    logging.warning("Schema before saving\n%s", df.head(1))
+    assert save_to_pg(df, keywords_table, conn) == 26

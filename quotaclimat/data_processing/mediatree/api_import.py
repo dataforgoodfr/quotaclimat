@@ -1,13 +1,8 @@
 ### Library imports
-import requests
-import json
-
 import logging
 import asyncio
-from time import sleep
 import sys
 import os
-import gc
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import *
@@ -27,7 +22,6 @@ from tenacity import *
 import sentry_sdk
 from sentry_sdk.crons import monitor
 import modin.pandas as pd
-from modin.pandas import json_normalize
 import ray
 from quotaclimat.utils.sentry import sentry_init
 logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
@@ -144,7 +138,8 @@ async def get_and_save_s3_data_to_pg(exit_event):
 
             (start_date, number_of_previous_days) = get_start_time_to_query_from(session)
             (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
-            df_programs = get_programs()
+            
+            df_programs = get_programs() # memory bumps ? should be lazy instead of being copied on each worker
             channels = get_channels()
             
             stop_words = get_stop_words(session, validated_only=True)

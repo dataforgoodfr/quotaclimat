@@ -266,7 +266,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             ,number_of_biodiversite_solutions_no_hrfp
         ]
     else:
-        logging.info("Empty keywords")
+        logging.debug("Empty keywords")
         return [None] * number_of_elements_in_array
 
 def get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds: int = 20):

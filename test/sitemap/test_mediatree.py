@@ -186,5 +186,5 @@ def test_save_to_pg_keyword_parquet():
     programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').tz_localize('Europe/Paris'), "france2", df_programs)
     df= pd.read_parquet(path="test/s3/one-day-one-channel.parquet")
     df = transform_raw_keywords(df, df_programs=df_programs)
-    logging.warning("Schema before saving\n%s", df.head(1))
+
     assert save_to_pg(df, keywords_table, conn) == 26

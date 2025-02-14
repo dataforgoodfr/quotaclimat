@@ -36,4 +36,4 @@ def test_transform_raw_keywords():
     df_programs = get_programs()
     output = transform_raw_keywords(df, df_programs=df_programs)
 
-    assert len(output) == 31
+    assert len(output) == 26

@@ -68,7 +68,7 @@ def get_hour_minute(time: pd.Timestamp):
 # with Monday=0 and Sunday=6.
 def get_day_of_week(time: pd.Timestamp) -> int:
     start_weekday = int(time.dayofweek)
-    logging.debug(f"start_weekday subtitle {start_weekday}")
+    logging.debug(f"start_weekday {start_weekday}")
     return start_weekday
 
 def get_matching_program_hour(df_program: pd.DataFrame, start_time: pd.Timestamp):
@@ -84,7 +84,7 @@ def get_matching_program_hour(df_program: pd.DataFrame, start_time: pd.Timestamp
                     ]
     
     number_of_result = len(matching_rows)
-    logging.info(f"matching_rows {matching_rows}")
+    logging.debug(f"matching_rows {matching_rows}")
     if(number_of_result > 1): # no margin necessary because programs are next to each others
         closest_result = df_program[
                             (df_program['start'] <= (start_time)) &
@@ -106,7 +106,7 @@ def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timest
 
     if "weekday_mask" in df_program.columns:
         df_program.drop(columns=["weekday_mask"], inplace=True)
-    df_program["weekday_mask"] = df_program['weekday'].apply(lambda x: compare_weekday(x, start_weekday), axis=1)
+    df_program["weekday_mask"] = df_program['weekday'].apply(lambda x: compare_weekday(x, start_weekday))
 
     matching_rows = df_program[
                         (df_program['channel_name'] == channel_name) &
@@ -134,7 +134,7 @@ def get_a_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.
         # TODO should return closest to start_time
         return matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type']
     else:
-        logging.warning(f"no programs found for {channel_name} - {start_time}")
+        logging.debug(f"no programs found for {channel_name} - {start_time}")
         return "", ""
 
 def process_subtitle(row, df_program):
@@ -214,3 +214,18 @@ def get_channel_title_for_name(channel_name: str) -> str:
         case _:
             logging.error(f"Channel_name unknown {channel_name}")
             return ""
+
+
+def apply_update_program(row, df_programs):
+    return get_a_program_with_start_timestamp(df_program=df_programs, start_time=row['start'], channel_name=row['channel_name'])
+
+def update_programs_and_filter_out_of_scope_programs_from_df(df: pd.DataFrame, df_programs: pd.DataFrame) -> pd.DataFrame :
+    df[['channel_program', 'channel_program_type']] = df.apply(
+        lambda row: apply_update_program(row, df_programs),
+        axis=1,
+        result_type='expand'
+    )
+    
+    logging.debug("drop out of perimeters rows")
+    df = df.dropna(subset=['channel_program'], how='any') # any is for None values
+    return df

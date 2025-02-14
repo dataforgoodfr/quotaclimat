@@ -266,7 +266,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             ,number_of_biodiversite_solutions_no_hrfp
         ]
     else:
-        logging.info("Empty keywords")
+        logging.debug("Empty keywords")
         return [None] * number_of_elements_in_array
 
 def get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds: int = 20):
@@ -356,7 +356,6 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = []) -> pd.
 def add_primary_key(row):
     try:
         hash_id = get_consistent_hash(str(row["start"]) + row["channel_name"])
-        logging.debug(f"hash_id {hash_id}")
         return hash_id
 
     except (Exception) as error:

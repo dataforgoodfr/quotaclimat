@@ -247,10 +247,11 @@ def update_program_metadata(engine):
     except (Exception) as error:
         logging.error(f"Error : Update program metadata {error}")
 
-def empty_tables(session = None):
+def empty_tables(session = None, stop_word = True):
     if(os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost"):
         logging.warning("""Doing: Empty table Stop_Word / Keywords""")
-        session.query(Stop_Word).delete()
+        if stop_word:
+            session.query(Stop_Word).delete()
         session.query(Keywords).delete()
         session.commit()
         logging.warning("""Done: Empty table Stop_Word / Keywords""")

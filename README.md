@@ -431,6 +431,11 @@ UPDATE stop_word set validated=false WHERE id = 'MY_ID';
 * Use scaleway
 * Use [Ray dashboard] on port 8265
 
+## Bump version
+[poetry bump](https://python-poetry.org/docs/cli/#version)
+```
+poetry version minor
+```
 
 ## Materialized view - dbt
 Using [DBT](https://www.getdbt.com/), used via docker :

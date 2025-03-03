@@ -13,7 +13,7 @@ class KeywordLastStats(NamedTuple):
     number_of_previous_days_from_yesterday: int
 
 # Security nets to catch up delays from production servers errors
-def get_last_date_and_number_of_delay_saved_in_keywords(session: Session) -> KeywordLastStats:
+def get_last_date_and_number_of_delay_saved_in_keywords(session: Session, days_filter: int = 30) -> KeywordLastStats:
     logging.debug(f"get_last_date_and_number_of_delay_saved_in_keywords")
     try:
         source_subquery = (
@@ -29,7 +29,7 @@ def get_last_date_and_number_of_delay_saved_in_keywords(session: Session) -> Key
             )
             .select_from(Keywords)
             .where(
-                Keywords.start >= func.now() - text("INTERVAL '30 days'")
+                Keywords.start >= func.now() - text(f"INTERVAL '{days_filter} days'")
             )
             .subquery("source")
         )

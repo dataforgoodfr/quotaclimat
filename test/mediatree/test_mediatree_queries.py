@@ -11,10 +11,11 @@ from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 conn = connect_to_db()
 session = get_db_session(conn)
 
-create_tables()
+
 
 def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
         conn = connect_to_db()
+        create_tables(conn)
         session = get_db_session(conn)
         start = pd.to_datetime("2025-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
         wrong_value = 1
@@ -50,7 +51,7 @@ def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
 
         save_to_pg(df, keywords_table, conn)
 
-        keywordStats = get_last_date_and_number_of_delay_saved_in_keywords(session)
+        keywordStats = get_last_date_and_number_of_delay_saved_in_keywords(session, days_filter=3000)
         expected_max_date = KeywordLastStats(date(2025, 1, 26), 2)
        
         assert expected_max_date.last_day_saved == keywordStats.last_day_saved
@@ -59,7 +60,7 @@ def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
 
 
 def test_get_delay_date():
-        unixtimestamp_2025_01_26 = 1737846000
+        unixtimestamp_2025_01_26 = 1737849600
         expected_max_date = KeywordLastStats(date(2025, 1, 26), 2)
         default_start_date, default_number_of_previous_days = get_delay_date(expected_max_date, normal_delay_in_days=1)
 

@@ -84,10 +84,10 @@ def get_channels():
 
     return channels
 
-def get_stop_words(session, validated_only=True, context_only=True) -> list[Stop_Word]:
+def get_stop_words(session, validated_only=True, context_only=True, filter_days: int = None) -> list[Stop_Word]:
     logging.info("Getting Stop words...")
     try:
-        stop_words = get_all_stop_word(session, validated_only=validated_only)
+        stop_words = get_all_stop_word(session, validated_only=validated_only, filter_days=filter_days)
         if(context_only):
             result = list(map(lambda stop: stop.context, stop_words))
         else:

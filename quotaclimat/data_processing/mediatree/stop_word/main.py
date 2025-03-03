@@ -43,7 +43,7 @@ def is_already_known_stop_word(stop_words: list, context: str) -> bool:
         
     return False
 
-def get_all_stop_word(session: Session, offset: int = 0, batch_size: int = 50000, validated_only = True) -> list:
+def get_all_stop_word(session: Session, offset: int = 0, batch_size: int = 50000, validated_only = True, filter_days: int = None) -> list:
     logging.debug(f"Getting {batch_size} elements from offset {offset}")
 
     statement = select(
@@ -63,6 +63,11 @@ def get_all_stop_word(session: Session, offset: int = 0, batch_size: int = 50000
 
     if validated_only:
             statement = statement.filter(Stop_Word.validated.is_not(False))
+
+    if filter_days is not None:
+        logging.info(f"Getting last {filter_days} days of stop words only for performance execution")
+        date_threshold = datetime.utcnow() - timedelta(days=filter_days)
+        statement = statement.filter(Stop_Word.created_at >= date_threshold)
 
     return session.execute(statement).fetchall()
 

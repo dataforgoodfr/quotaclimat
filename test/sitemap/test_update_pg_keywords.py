@@ -806,9 +806,9 @@ def test_update_only_keywords_that_includes_some_keywords():
                 "id": "test1",
                 "keyword": "conditions de vie sur terre",
                 "channel_title": "France 2",
-                "context": " avait promis de lancer un plan de conditions de vie sur terre euh hélas pas pu climat tout s' est pa",
+                "context": plaintext_stop_word,
                 "count": 20,
-                "id" : get_consistent_hash(" avait promis de lancer un plan de replantation euh hélas pas pu climat tout s' est pa"),
+                "id" : get_consistent_hash(plaintext_stop_word),
             },
             {
                 "keyword_id": "fake_id",
@@ -842,7 +842,7 @@ def test_update_only_keywords_that_includes_some_keywords():
         "number_of_changement_climatique_consequences":  wrong_value,
         "number_of_attenuation_climatique_solutions_directes":  wrong_value,
         "number_of_adaptation_climatique_solutions_directes":  wrong_value,
-        "number_of_ressources":  wrong_value,
+        "number_of_ressources":  2,
         "number_of_ressources_solutions":  wrong_value,
         "number_of_biodiversite_concepts_generaux":  wrong_value,
         "number_of_biodiversite_causes_directes":  wrong_value,
@@ -905,8 +905,9 @@ def test_update_only_keywords_that_includes_some_keywords():
     assert result_after_update.id == result_before_update.id
 
     # theme
-    assert set(new_theme) == set(["adaptation_climatique_solutions",  "changement_climatique_constat"])
-    assert set(result_after_update.theme) == set(["adaptation_climatique_solutions", "changement_climatique_constat"])
+    expected_themes = set(["adaptation_climatique_solutions",  "changement_climatique_constat"])
+    assert set(new_theme) == expected_themes
+    assert set(result_after_update.theme) == expected_themes
         
     # keywords_with_timestamp
     assert len(result_after_update.keywords_with_timestamp) == len(new_keywords_with_timestamp)

@@ -88,7 +88,6 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-          COMPARE_DURATION: "true"
 
   stop_word:
     needs: build
@@ -140,7 +139,6 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-          COMPARE_DURATION: "true"
 
 
   test_everything_else:
@@ -199,7 +197,6 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-          COMPARE_DURATION: "true"
 
       - name: pytest dbt models
         run: |

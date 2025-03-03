@@ -3,7 +3,7 @@ import requests
 import modin.pandas as pd
 
 import logging
-
+import os
 from sqlalchemy.orm import Session
 from postgres.schemas.models import Keywords, Stop_Word
 from quotaclimat.data_processing.mediatree.detect_keywords import *
@@ -34,8 +34,9 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     end_date: str = "2023-04-30", channel: str = "", empty_program_only=False, \
                         stop_word_keyword_only = False) -> list:
     df_programs = get_programs()
-
-    stop_words_objects = get_stop_words(session, validated_only=True, context_only=False)
+    filter_days_stop_word = int(os.environ.get("FILTER_DAYS_STOP_WORD", 30))
+    logging.info(f"FILTER_DAYS_STOP_WORD is used to get only last {filter_days_stop_word} days of new stop words - to improve update speed")
+    stop_words_objects = get_stop_words(session, validated_only=True, context_only=False, filter_days=filter_days_stop_word)
     stop_words = list(map(lambda stop: stop.context, stop_words_objects))
     top_keyword_of_stop_words = get_top_keyword_of_stop_words(stop_word_keyword_only, stop_words_objects=stop_words_objects)
 

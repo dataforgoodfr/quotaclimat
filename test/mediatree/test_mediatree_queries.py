@@ -56,3 +56,12 @@ def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
         assert expected_max_date.last_day_saved == keywordStats.last_day_saved
         assert keywordStats.number_of_previous_days_from_yesterday > 1
         delete_keywords_id(session, pk)
+
+
+def test_get_delay_date():
+        unixtimestamp_2025_01_26 = 1737846000
+        expected_max_date = KeywordLastStats(date(2025, 1, 26), 2)
+        default_start_date, default_number_of_previous_days = get_delay_date(expected_max_date, normal_delay_in_days=1)
+
+        assert default_start_date == unixtimestamp_2025_01_26
+        assert default_number_of_previous_days == 2

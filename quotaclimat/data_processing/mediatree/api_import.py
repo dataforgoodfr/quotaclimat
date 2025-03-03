@@ -11,7 +11,7 @@ from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import *
 from quotaclimat.data_processing.mediatree.stop_word.main import get_all_stop_word
-from quotaclimat.data_processing.mediatree.api_import_utils.db import get_last_date_and_number_of_delay_saved_in_keywords, KeywordLastStats
+from quotaclimat.data_processing.mediatree.api_import_utils.db import get_last_date_and_number_of_delay_saved_in_keywords, KeywordLastStats, get_delay_date
 from quotaclimat.data_processing.mediatree.s3.s3_utils import read_folder_from_s3, transform_raw_keywords
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, get_db_session
@@ -123,9 +123,8 @@ def get_start_time_to_query_from(session)      :
         default_number_of_previous_days = 1
         return default_start_date, default_number_of_previous_days
     else:
-        logging.warning(f"Delay detected : {lastSavedKeywordsDate.number_of_previous_days_from_yesterday } days, it should be {normal_delay_in_days} day")
-        default_start_date = get_epoch_from_datetime(datetime(lastSavedKeywordsDate.last_day_saved.year,lastSavedKeywordsDate.last_day_saved.month,lastSavedKeywordsDate.last_day_saved.day))
-        default_number_of_previous_days = lastSavedKeywordsDate.number_of_previous_days_from_yesterday
+        last_saved_date, default_number_of_previous_days = get_delay_date(lastSavedKeywordsDate, normal_delay_in_days=normal_delay_in_days)
+        default_start_date = 0
         return default_start_date, default_number_of_previous_days
 
 async def get_and_save_s3_data_to_pg(exit_event):
@@ -135,14 +134,14 @@ async def get_and_save_s3_data_to_pg(exit_event):
 
             conn = connect_to_db()
             session = get_db_session(conn)
-
-            (start_date, number_of_previous_days) = get_start_time_to_query_from(session)
-            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
             
             df_programs = get_programs() # memory bumps ? should be lazy instead of being copied on each worker
             channels = get_channels()
             
             stop_words = get_stop_words(session, validated_only=True)
+            
+            (start_date, number_of_previous_days) = get_start_time_to_query_from(session)
+            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
             day_range = get_date_range(start_date_to_query, end_date, number_of_previous_days)
             logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
             for day in day_range:

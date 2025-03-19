@@ -6,6 +6,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 import pandas as pd
 from sqlalchemy import text
 from postgres.database_connection import connect_to_db, get_db_session
+from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 import os
 import json
 
@@ -99,7 +100,7 @@ class Keywords(Base):
     number_of_biodiversite_causes_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_causes_directes integer;
     number_of_biodiversite_consequences_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_consequences integer;
     number_of_biodiversite_solutions_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_solutions_directes integer;
-
+    
 class Channel_Metadata(Base):
     __tablename__ = channel_metadata_table
     id = Column(Text, primary_key=True)
@@ -139,6 +140,28 @@ class Stop_Word(Base):
     updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
     validated = Column(Boolean, nullable=True, default=True)
 
+class Dictionary(Base):
+    __tablename__ = "dictionary"
+    
+    keyword = Column(String, primary_key=True)
+
+    high_risk_of_false_positive = Column(Boolean, nullable=True, default=True)
+
+    solution = Column(Boolean, nullable=True, default=False)
+    consequence = Column(Boolean, nullable=True, default=False)
+    cause = Column(Boolean, nullable=True, default=False)
+    general_concepts = Column(Boolean, nullable=True, default=False) # biodiversity only
+    statement = Column(Boolean, nullable=True, default=False) # climate only
+
+    crisis_climate = Column(Boolean, nullable=True, default=True)
+    crisis_biodiversity = Column(Boolean, nullable=True, default=True)
+    crisis_resource = Column(Boolean, nullable=True, default=True)
+    
+    categories = Column(ARRAY(String), nullable=True)  # example ["Concepts généraux", "Sols"]
+    themes = Column(ARRAY(String), nullable=True) # example ["changement_climatique_constat", "ressources"]
+
+    language = Column(String, nullable=False)
+    
 def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
@@ -164,7 +187,7 @@ def get_last_month_sitemap_id(engine):
 
 def create_tables(conn=None):
     """Create tables in the PostgreSQL database"""
-    logging.info("create sitemap, keywords , stop_word tables - update channel_metadata")
+    logging.info("create sitemap, keywords , stop_word tables, dictionnary - update channel_metadata")
     try:
         if conn is None :
             engine = connect_to_db()
@@ -173,6 +196,8 @@ def create_tables(conn=None):
 
         Base.metadata.create_all(engine, checkfirst=True)
         update_channel_metadata(engine)
+        update_dictionary(engine, theme_keywords=THEME_KEYWORDS)
+
         if(os.environ.get("UPDATE") != "true"):
             update_program_metadata(engine)
         else:
@@ -246,6 +271,74 @@ def update_program_metadata(engine):
             logging.info("Updated program metadata")
     except (Exception) as error:
         logging.error(f"Error : Update program metadata {error}")
+
+def update_dictionary(engine, theme_keywords):
+    logging.info("Updating dictionary data")
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    
+    try:
+        # Full overwrite approach
+        logging.warning("Dictionary table! Full overwrite (delete/recreate)")
+        session.query(Dictionary).delete()
+        session.commit()
+        
+        # Dictionary to collect keywords and their unique themes/categories
+        keyword_map = {}
+        
+        # First pass: Build a mapping of keywords to their unique themes and categories
+        for theme, keywords_list in theme_keywords.items():
+            for item in keywords_list:
+                keyword = item['keyword']
+                category = item.get('category')
+                
+                if keyword not in keyword_map:
+                    # First time seeing this keyword
+                    keyword_map[keyword] = {
+                        'themes': set([theme]),  # Using sets to ensure uniqueness
+                        'categories': set([category]) if category else set(),
+                        'data': item
+                    }
+                else:
+                    # Already seen this keyword, update unique themes and categories
+                    keyword_map[keyword]['themes'].add(theme)
+                    if category:
+                        keyword_map[keyword]['categories'].add(category)
+        
+        # Second pass: Create dictionary entries with unique themes and categories as lists
+        for keyword, data in keyword_map.items():
+            item = data['data']
+            themes = list(data['themes'])  # Convert set to list
+            categories = list(data['categories'])  # Convert set to list
+            dictionary_entry = {
+                'keyword': keyword,
+                'high_risk_of_false_positive': item.get('high_risk_of_false_positive', True),
+                'solution': item.get('solution', False),
+                'consequence': item.get('consequence', False),
+                'cause': item.get('cause', False),
+                'general_concepts': item.get('general_concepts', False),
+                'statement': item.get('statement', False),
+                'crisis_climate': item.get('crisis_climate', True),
+                'crisis_biodiversity': item.get('crisis_biodiversity', True),
+                'crisis_resource': item.get('crisis_resource', True),
+                'categories': categories if categories else None,  # Use None if categories is empty
+                'themes': themes,
+                'language': item.get('language', 'fr')
+            }
+            
+            session.merge(Dictionary(**dictionary_entry))
+        
+        # Commit all changes
+        session.commit()
+        logging.info(f"Updated dictionary data successfully with {len(keyword_map)} entries")
+        
+    except Exception as error:
+        logging.error(f"Error updating dictionary data: {error}")
+        session.rollback()
+    finally:
+        session.close()
+
+
 
 def empty_tables(session = None, stop_word = True):
     if(os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost"):

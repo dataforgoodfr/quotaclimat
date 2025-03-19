@@ -376,7 +376,7 @@ How to update `quotaclimat/data_processing/mediatree/keyword/keyword.py` from sh
 Download files locally to "document-experts" from Google Drive (ask on Slack) then :
 ```
 # Be sure to have updated the folder "document-experts" before running it :
-poetry run python3 quotaclimat/transform_excel_to_json.py
+poetry run python3 transform_excel_to_json.py
 ```
 
 ## Program Metadata table

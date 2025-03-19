@@ -332,6 +332,7 @@ Env variables list :
 * END_DATE : string (YYYY-MM-DD ) - default to end of the month (date is included in the query)
 * NUMBER_OF_DAYS : integer default to 7 days - number of days to update from (START_DATE_UPDATE - NUMBER_OF_DAYS) until START_DATE_UPDATE if START_DATE_UPDATE is empty
 * STOP_WORD_KEYWORD_ONLY: boolean, default to False. If true will only update rows whose plaintext match top stop words' keyword. It uses to speed up update.
+* BIODIVERSITY_ONLY: boolean (default=false), if true will only update rows that have at least one number_of_biodiversity_* > 0
 
 Example inside the docker-compose.yml mediatree service -> START_DATE_UPDATE: 2024-04-01 - default END_DATE will be 2024-04-30
  
@@ -376,7 +377,7 @@ How to update `quotaclimat/data_processing/mediatree/keyword/keyword.py` from sh
 Download files locally to "document-experts" from Google Drive (ask on Slack) then :
 ```
 # Be sure to have updated the folder "document-experts" before running it :
-poetry run python3 quotaclimat/transform_excel_to_json.py
+poetry run python3 transform_excel_to_json.py
 ```
 
 ## Program Metadata table

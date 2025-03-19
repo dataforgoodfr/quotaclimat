@@ -1082,3 +1082,118 @@ def test_update_nothing_because_no_keywords_are_included():
     session.close()
     assert result == 0 # it means nothing to update
     
+
+def test_update_only_biodiversity():
+    conn = connect_to_db()
+    
+    wrong_value = 0
+    # insert data
+    primary_key_m6 = "test_save_to_pg_keyword_only_program_m6"
+   
+    primary_key_m6 = "test_save_to_pg_keyword_only_program_m6"
+    primary_key_tf1 = "test_save_to_pg_keyword_only_program_tf1"
+    tf1 = "tf1"
+    df = pd.DataFrame([{
+        "id" : primary_key_m6,
+        "start": start,
+        "plaintext": plaintext,
+        "channel_name": m6,
+        "channel_radio": False,
+        "theme": themes,
+        "keywords_with_timestamp": keywords_with_timestamp,
+        "srt": srt,
+        "number_of_keywords": wrong_value, # wrong data to reapply our custom logic for "new_value"
+        "number_of_changement_climatique_constat":  wrong_value,
+        "number_of_changement_climatique_causes_directes":  wrong_value,
+        "number_of_changement_climatique_consequences":  wrong_value,
+        "number_of_attenuation_climatique_solutions_directes":  wrong_value,
+        "number_of_adaptation_climatique_solutions_directes":  wrong_value,
+        "number_of_ressources":  wrong_value,
+        "number_of_ressources_solutions":  wrong_value,
+        "number_of_biodiversite_concepts_generaux":  wrong_value,
+        "number_of_biodiversite_causes_directes":  wrong_value,
+        "number_of_biodiversite_consequences":  wrong_value,
+        "number_of_biodiversite_solutions_directes" : wrong_value,
+        "channel_program_type": "",
+        "channel_program":"" # Empty --> it's going to change
+        ,"channel_title":None
+        ,"number_of_keywords_climat": wrong_value
+        ,"number_of_keywords_biodiversite": wrong_value
+        ,"number_of_keywords_ressources": wrong_value
+        ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_ressources_no_hrfp":  wrong_value,
+        "number_of_ressources_solutions_no_hrfp":  wrong_value,
+        "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
+        "number_of_biodiversite_causes_no_hrfp":  5, # should update because of this
+        "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+    }, {
+        "id" : primary_key_tf1,
+        "start": start,
+        "plaintext": plaintext,
+        "channel_name": tf1,
+        "channel_radio": False,
+        "theme": themes,
+        "keywords_with_timestamp": keywords_with_timestamp,
+        "srt": srt,
+        "number_of_keywords": 5,
+        "number_of_changement_climatique_constat":  wrong_value,
+        "number_of_changement_climatique_causes_directes":  wrong_value,
+        "number_of_changement_climatique_consequences":  wrong_value,
+        "number_of_attenuation_climatique_solutions_directes":  wrong_value,
+        "number_of_adaptation_climatique_solutions_directes":  wrong_value,
+        "number_of_ressources":  wrong_value,
+        "number_of_ressources_solutions":  wrong_value,
+        "number_of_biodiversite_concepts_generaux":  0,
+        "number_of_biodiversite_causes_directes":  0,
+        "number_of_biodiversite_consequences":  0,
+        "number_of_biodiversite_solutions_directes": 0,
+        "channel_program_type": "to change",
+        "channel_program":"to change"
+        ,"channel_title":None
+        ,"number_of_keywords_climat": wrong_value
+        ,"number_of_keywords_biodiversite": wrong_value
+        ,"number_of_keywords_ressources": wrong_value
+        ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_ressources_no_hrfp":  wrong_value,
+        "number_of_ressources_solutions_no_hrfp":  wrong_value,
+        "number_of_biodiversite_concepts_generaux_no_hrfp":  0,
+        "number_of_biodiversite_causes_no_hrfp":  0,
+        "number_of_biodiversite_consequences_no_hrfp":  0,
+        "number_of_biodiversite_solutions_no_hrfp": 0
+    }])
+
+    assert save_to_pg(df, keywords_table, conn) == 2
+    
+    session = get_db_session(conn)
+    # check the value is well existing
+    result_before_update_m6 = get_keyword(primary_key_m6, session)
+    result_before_update_tf1 = get_keyword(primary_key_tf1, session)
+
+    # Should only biodiversity_only
+    update_keywords(session, batch_size=50, start_date="2024-01-01", program_only = True, end_date="2024-01-30",\
+                     biodiversity_only=True
+                   )
+    result_after_update_m6 = get_keyword(primary_key_m6, session)
+    result_after_update_tf1 = get_keyword(primary_key_tf1, session)
+    conn.dispose()
+    session.close()
+
+    # 6 has changed because of number_of_biodiversite > 0
+    assert result_after_update_m6.channel_program == "1245 le mag"
+    assert result_after_update_m6.channel_program_type == "Information - Magazine"
+
+
+    ## TF1 should NOT changed because it has a value number_of_biodiversite at 0
+    assert result_after_update_tf1.channel_program == "to change"
+    assert result_before_update_tf1.channel_program == "to change"
+    assert result_after_update_tf1.channel_program_type == "to change"
+    assert result_before_update_tf1.channel_program_type == "to change"

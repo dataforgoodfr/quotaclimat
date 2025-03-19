@@ -2,7 +2,8 @@ secrets/pwd_api.txt
 secrets/username_api.txt
 secrets/*
 s3/*
-documents-experts/
+documents-experts/*
+llm/
 cc-bio.json
 *.xlsx
 coverage_re

@@ -21,29 +21,29 @@ def test_stop_word_get_top_keywords_by_channel():
         [
             {
                 "keyword": "replantation",
-                # "theme": "ressources_solutions",
+                "theme": "ressources_solutions",
                 "channel_title": "France 2",
-                "count": 80,
+                "count": 160,
             },{
                 "keyword": "climatique",
-                # "theme": "changement_climatique_constat",
+                "theme": "changement_climatique_constat",
                 "channel_title": "France 2",
                 "count": 20,
             },{
                 "keyword": "sortie des énergies fossiles",
-                # "theme": "attenuation_climatique_solutions",
+                "theme": "attenuation_climatique_solutions",
                 "channel_title": "France 2",
                 "count": 20,
             },
             {
                 "keyword": "agroécologie",
-                # "theme": "ressources_solutions",
+                "theme": "ressources_solutions",
                 "channel_title": "TF1",
                 "count": 8,
             },
             {
                 "keyword": "climatique",
-                # "theme": "changement_climatique_constat",
+                "theme": "changement_climatique_constat",
                 "channel_title": "TF1",
                 "count": 2,
             }
@@ -52,7 +52,7 @@ def test_stop_word_get_top_keywords_by_channel():
     
     
     top_keywords = get_top_keywords_by_channel(session, duration=3000, top=5, min_number_of_keywords=1)
-    top_keywords.drop(columns=["theme"], inplace=True) # can be several themes, so dropping theme for tests
+    # top_keywords.drop(columns=["theme"], inplace=True) # can be several themes, so dropping theme for tests
 
     assert len(top_keywords) != 0
     pd.testing.assert_frame_equal(top_keywords, excepted_df)

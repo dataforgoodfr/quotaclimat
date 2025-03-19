@@ -32,7 +32,8 @@ def get_top_keyword_of_stop_words(stop_word_keyword_only: bool, stop_words_objec
 
 def update_keywords(session: Session, batch_size: int = 50000, start_date : str = "2023-04-01", program_only=False, \
                     end_date: str = "2023-04-30", channel: str = "", empty_program_only=False, \
-                        stop_word_keyword_only = False) -> list:
+                        stop_word_keyword_only = False, \
+                        biodiversity_only = False) -> list:
     df_programs = get_programs()
     filter_days_stop_word = int(os.environ.get("FILTER_DAYS_STOP_WORD", 30))
     logging.info(f"FILTER_DAYS_STOP_WORD is used to get only last {filter_days_stop_word} days of new stop words - to improve update speed")
@@ -40,7 +41,8 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
     stop_words = list(map(lambda stop: stop.context, stop_words_objects))
     top_keyword_of_stop_words = get_top_keyword_of_stop_words(stop_word_keyword_only, stop_words_objects=stop_words_objects)
 
-    total_updates = get_total_count_saved_keywords(session, start_date, end_date, channel, empty_program_only, keywords_to_includes=top_keyword_of_stop_words)
+    total_updates = get_total_count_saved_keywords(session, start_date, end_date, channel, empty_program_only, \
+                                                        keywords_to_includes=top_keyword_of_stop_words, biodiversity_only=biodiversity_only)
 
     if total_updates == 0:
         logging.error("No rows to update - change your START_DATE_UPDATE")
@@ -53,7 +55,8 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
     
     for i in range(0, total_updates, batch_size):
         current_batch_saved_keywords = get_keywords_columns(session, i, batch_size, start_date, end_date, channel, \
-                                                            empty_program_only, keywords_to_includes=top_keyword_of_stop_words)
+                                                            empty_program_only, keywords_to_includes=top_keyword_of_stop_words, \
+                                                            biodiversity_only=biodiversity_only)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {total_updates}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name, channel_title in current_batch_saved_keywords:
             if channel_title is None:
@@ -159,7 +162,8 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
 
 
 def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30",\
-                         channel: str = "", empty_program_only: bool = False, keywords_to_includes: list[str] = []) -> list:
+                         channel: str = "", empty_program_only: bool = False, keywords_to_includes: list[str] = [], \
+                         biodiversity_only = False) -> list:
     logging.debug(f"Getting {batch_size} elements from offset {offset}")
     query = session.query(
             Keywords.id,
@@ -183,7 +187,21 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
 
     if empty_program_only:
         query = query.filter(Keywords.channel_program == "")
-        
+
+    if biodiversity_only:
+        query = query.filter(
+            or_(
+                Keywords.number_of_biodiversite_concepts_generaux > 0
+                ,Keywords.number_of_biodiversite_causes_directes > 0
+                ,Keywords.number_of_biodiversite_consequences > 0
+                ,Keywords.number_of_biodiversite_solutions_directes > 0
+                ,Keywords.number_of_biodiversite_concepts_generaux_no_hrfp > 0
+                ,Keywords.number_of_biodiversite_causes_no_hrfp > 0
+                ,Keywords.number_of_biodiversite_consequences_no_hrfp > 0
+                ,Keywords.number_of_biodiversite_solutions_no_hrfp > 0
+            )
+        )
+
     # https://stackoverflow.com/a/33389165/3535853
     if len(keywords_to_includes) > 0:
         logging.info(f"Filtering plaintext that include some {len(keywords_to_includes)} keywords")
@@ -196,7 +214,7 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
         .all()
 
 def get_total_count_saved_keywords(session: Session, start_date : str, end_date : str, channel: str, empty_program_only: bool,\
-                                    keywords_to_includes= []) -> int:
+                                    keywords_to_includes= [], biodiversity_only = False) -> int:
         statement = select(func.count()).filter(
             and_(func.date(Keywords.start) >= start_date, func.date(Keywords.start) <= end_date)
         ).select_from(Keywords)
@@ -211,6 +229,21 @@ def get_total_count_saved_keywords(session: Session, start_date : str, end_date 
                     Keywords.channel_program == "" 
                 )
             )
+
+        if biodiversity_only:
+            statement = statement.filter(
+                or_(
+                    Keywords.number_of_biodiversite_concepts_generaux > 0
+                    ,Keywords.number_of_biodiversite_causes_directes > 0
+                    ,Keywords.number_of_biodiversite_consequences > 0
+                    ,Keywords.number_of_biodiversite_solutions_directes > 0
+                    ,Keywords.number_of_biodiversite_concepts_generaux_no_hrfp > 0
+                    ,Keywords.number_of_biodiversite_causes_no_hrfp > 0
+                    ,Keywords.number_of_biodiversite_consequences_no_hrfp > 0
+                    ,Keywords.number_of_biodiversite_solutions_no_hrfp > 0
+                )
+            )
+
         if len(keywords_to_includes) > 0:
             logging.info(f"Filtering plaintext that include {len(keywords_to_includes)} keywords")
 

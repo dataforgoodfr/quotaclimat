@@ -52,6 +52,10 @@ async def update_pg_data(exit_event):
         if stop_word_keyword_only:
             logging.warning(f"Update - STOP_WORD_KEYWORD_ONLY to true : Only updating rows whose plaintext match top stop words' keyword. It uses to speed up update.")
 
+        biodiversity_only = os.environ.get("BIODIVERSITY_ONLY", "false") == "true"
+        if biodiversity_only:
+            logging.warning(f"Update - BIODIVERSITY_ONLY to true : Only updating rows whose have at least one number_of_biodiversity_* > 0. It uses to speed up update.")
+        
         program_only = os.environ.get("UPDATE_PROGRAM_ONLY", "false") == "true"
         empty_program_only = os.environ.get("UPDATE_PROGRAM_CHANNEL_EMPTY_ONLY", "false") == "true"
         channel = os.environ.get("CHANNEL", "")
@@ -64,7 +68,7 @@ async def update_pg_data(exit_event):
         
         session = get_db_session()
         update_keywords(session, batch_size=batch_size, start_date=start_date, program_only=program_only, end_date=end_date,\
-                        channel=channel, empty_program_only=empty_program_only,stop_word_keyword_only=stop_word_keyword_only)
+                        channel=channel, empty_program_only=empty_program_only,stop_word_keyword_only=stop_word_keyword_only, biodiversity_only=biodiversity_only)
         exit_event.set()
     except Exception as err:
         logging.fatal("Could not update_pg_data %s:(%s)" % (type(err).__name__, err))

@@ -3,6 +3,9 @@ secrets/username_api.txt
 secrets/*
 s3/*
 documents-experts/*
+i8n/mediatree_output
+i8n/csa-belge
+
 llm/
 cc-bio.json
 *.xlsx

@@ -68,7 +68,7 @@ def get_param_api(token, type_sub, start_epoch, channel, end_epoch):
     }
 
 
-def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", channel_program_type = "") -> Optional[pd.DataFrame]:
+def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", channel_program_type = "", program_metadata_id = "") -> Optional[pd.DataFrame]:
     with sentry_sdk.start_transaction(op="task", name="parse_reponse_subtitle"):
         total_results = parse_total_results(response_sub)
         logging.getLogger("modin.logging.default").setLevel(logging.WARNING)
@@ -107,6 +107,7 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             # weird error if not using this way: (ValueError) format number 1 of "20h30 le samedi" is not recognized
             new_df['channel_program'] = new_df.apply(lambda x: channel_program, axis=1)
             new_df['channel_program_type'] = new_df.apply(lambda x: channel_program_type, axis=1)
+            new_df['program_metadata_id'] = new_df.apply(lambda x: program_metadata_id, axis=1)
             logging.debug("programs were set")
            
             return new_df
@@ -146,11 +147,11 @@ def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch
         raise Exception
     
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
-def get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type):
+def get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type, program_metadata_id):
     try:
         response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch)
 
-        return parse_reponse_subtitle(response_sub, channel, channel_program, channel_program_type)
+        return parse_reponse_subtitle(response_sub, channel, channel_program, channel_program_type, program_metadata_id)
     except Exception as err:
         logging.error("Retry - get_df_api:(%s) %s" % (type(err).__name__, err))
         raise Exception
@@ -222,8 +223,10 @@ async def get_and_save_api_data(exit_event):
                                 end_epoch = program.end
                                 channel_program = str(program.program_name)
                                 channel_program_type = str(program.program_type)
+                                program_metadata_id = str(program.id)
                                 logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
-                                df = get_df_api(token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type)
+                                df = get_df_api(token, type_sub, start_epoch, channel, end_epoch, \
+                                                channel_program, channel_program_type,program_metadata_id=program_metadata_id)
 
                                 if(df is not None):
                                     df_res = pd.concat([df_res, df ], ignore_index=True)

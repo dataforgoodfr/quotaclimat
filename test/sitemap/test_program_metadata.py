@@ -62,6 +62,7 @@ def test_add_channel_program_france2():
         ,"number_of_keywords": 1
         ,"channel_program": "Le 6h Info"
         ,"channel_program_type": "Information - Journal"
+        ,"program_metadata_id": "2f2f98f25039e5da9c612f949cc26b8e56c7a09598b9b8493876254f7c36b8f1"
     }])
     expected['start'] = pd.to_datetime(telematin, unit='s', utc=True).tz_convert('Europe/Paris')
     debug_df(output)
@@ -83,6 +84,7 @@ def test_add_channel_program_france2_telematin():
         ,"number_of_keywords": 1
         ,"channel_program": "Télématin"
         ,"channel_program_type": "Information - Autres émissions"
+        ,"program_metadata_id": "0b7c372429898afdd4ce2ca8a23ac24cb0ff35e9df2e3294c99dbb01e86c94c8"
     }])
     expected['start'] = pd.to_datetime(thrusday_morning, unit='s', utc=True).tz_convert('Europe/Paris')
     debug_df(output)
@@ -105,6 +107,7 @@ def test_add_channel_program_wrong_time():
         ,"number_of_keywords": 1
         ,"channel_program": ""
         ,"channel_program_type": ""
+        ,"program_metadata_id": ""
     }])
     expected['start'] = pd.to_datetime(sunday_night_no_show, unit='s', utc=True).tz_convert('Europe/Paris')
 
@@ -133,6 +136,7 @@ def test_add_channel_program_france2_jt():
         ,"number_of_keywords": 1
         ,"channel_program": "JT 20h + météo"
         ,"channel_program_type": "Information - Journal"
+        ,"program_metadata_id": "638c2b3a28772f742291433dfbc78238cb5fa4299cffbbc8da7da6dc9ae68fb3"
     }])
     expected['start'] = pd.to_datetime(jt_20h02, unit='s', utc=True).tz_convert('Europe/Paris')
     #debug_df(output)
@@ -195,82 +199,91 @@ def test_get_programs_for_this_day_thusday_morning_franceinfo():
 def test_get_a_program_with_start_timestamp():
     df_programs = get_programs()
     thursday_13h34 = 1713958465 # normaly up to 13h40
-    program_name, program_type = get_a_program_with_start_timestamp(df_programs, pd.to_datetime(thursday_13h34, unit='s', utc=True).tz_convert('Europe/Paris'), channel_name)
+    program_name, program_type, id = get_a_program_with_start_timestamp(df_programs, pd.to_datetime(thursday_13h34, unit='s', utc=True).tz_convert('Europe/Paris'), channel_name)
     assert program_name == "JT 13h"
     assert program_type == "Information - Journal"
+    assert id == "2d0336de95eeb7f9a88bafe02b0350641f9a0ad1ce7f3bdd55c2aa97724e574d"
 
 def test_get_13h_program_with_start_timestamp():
     df_programs = get_programs()
     saturday_13h18 = 1717240693
-    program_name, program_type = get_a_program_with_start_timestamp(df_programs, \
+    program_name, program_type, id = get_a_program_with_start_timestamp(df_programs, \
                                                                     pd.to_datetime(saturday_13h18, unit='s', utc=True).tz_convert('Europe/Paris'),\
                                                                     channel_name)
     assert program_name == "13h15 le samedi"
     assert program_type == "Information - Journal"
+    assert id == "23a86cefdb11c7b1faef276237c0fa4752be820457684a8ee2da7ece9652914c"
 
 def test_get_13h_monday_program_with_start_timestamp():
     df_programs = get_programs()
     monday_13h18 = 1724671082
-    program_name, program_type = get_a_program_with_start_timestamp(df_programs, pd.to_datetime(monday_13h18, unit='s', utc=True).tz_convert('Europe/Paris'), channel_name)
+    program_name, program_type, id = get_a_program_with_start_timestamp(df_programs, pd.to_datetime(monday_13h18, unit='s', utc=True).tz_convert('Europe/Paris'), channel_name)
     assert program_name == "JT 13h"
     assert program_type == "Information - Journal"
+    assert id == "a2b6690144365951be1c6f8e577b64aeb5dc946ad181e927fda8e786a5959dce"
 
 def test_get_13h_monday_rfi_program_with_start_timestamp():
     df_programs = get_programs()
     monday_13h05 = 1726398337
-    program_name, program_type = get_a_program_with_start_timestamp(df_programs,\
+    program_name, program_type, id = get_a_program_with_start_timestamp(df_programs,\
                                                                     pd.to_datetime(monday_13h05, unit='s', utc=True).tz_convert('Europe/Paris'),\
                                                                     "rfi")
     assert program_name == "Journal - 13h"
     assert program_type == "Information - Journal"
+    assert id == "334d9e5ad3f29d57922e4a954d06c10e608173a70dad4c33d9290c3dbd7664d8"
 
 
 def test_get_13h_monday_rfi_with_margin_program_with_start_timestamp():
     df_programs = get_programs()
     monday_13h12 = 1726398730
-    program_name, program_type = get_a_program_with_start_timestamp(df_programs,\
+    program_name, program_type, id = get_a_program_with_start_timestamp(df_programs,\
                                                                     pd.to_datetime(monday_13h12, unit='s', utc=True).tz_convert('Europe/Paris'),\
                                                                     "rfi")
     assert program_name == "Journal - 13h"
     assert program_type == "Information - Journal"
+    assert id == "334d9e5ad3f29d57922e4a954d06c10e608173a70dad4c33d9290c3dbd7664d8"
 
 
 def test_get_6h26_friday_fr2_with_margin_program_with_start_timestamp():
     df_programs = get_programs()
     friday_6h26 = 1726719981
-    program_name, program_type = get_a_program_with_start_timestamp(df_programs,\
+    program_name, program_type, id = get_a_program_with_start_timestamp(df_programs,\
                                                                     pd.to_datetime(friday_6h26, unit='s', utc=True).tz_convert('Europe/Paris'),\
                                                                     "france2")
     assert program_name == "Le 6h Info"
     assert program_type == "Information - Journal"
+    assert id == "2f2f98f25039e5da9c612f949cc26b8e56c7a09598b9b8493876254f7c36b8f1"
 
 
 def test_get_old_jt_20hweekday_20h19_friday_fr2():
     df_programs = get_programs()
     friday_20h19 = 1722622741
-    program_name, program_type = get_a_program_with_start_timestamp(df_programs,\
+    program_name, program_type, id = get_a_program_with_start_timestamp(df_programs,\
                                                                     pd.to_datetime(friday_20h19, unit='s', utc=True).tz_convert('Europe/Paris'),\
                                                                     "france2")
     assert program_name == "JT 20h + météo"
     assert program_type == "Information - Journal"
+    assert id == "638c2b3a28772f742291433dfbc78238cb5fa4299cffbbc8da7da6dc9ae68fb3"
 
 def test_get_old_no_match_on_new_program_date_jt_20hweekday_20h55_friday_fr2():
     df_programs = get_programs()
     friday_20h19 = 1722624901
-    program_name, program_type = get_a_program_with_start_timestamp(df_programs,\
+    program_name, program_type, id = get_a_program_with_start_timestamp(df_programs,\
                                                                     pd.to_datetime(friday_20h19, unit='s', utc=True).tz_convert('Europe/Paris'),\
                                                                     "france2")
     assert program_name == ""
     assert program_type == ""
+    assert id == ""
 
 def test_get_new_jt_20hweekday_20h55_friday_fr2():
     df_programs = get_programs()
     friday_20h55 = 1727376901
-    program_name, program_type = get_a_program_with_start_timestamp(df_programs,\
+    program_name, program_type, id = get_a_program_with_start_timestamp(df_programs,\
                                                                     pd.to_datetime(friday_20h55, unit='s', utc=True).tz_convert('Europe/Paris'),\
                                                                     "france2")
     assert program_name == "JT 20h + météo"
     assert program_type == "Information - Journal"
+    assert id == "a2b6690144365951be1c6f8e577b64aeb5dc946ad181e927fda8e786a5959dce"
 
 def test_compare_weekday_string():
     assert compare_weekday('*', 0) == True
@@ -295,7 +308,8 @@ def test_update_programs_and_filter_out_of_scope_programs_from_df():
         'start': [date_friday_20h19, date_friday_20h19, date_friday_6h26],
         'channel_name': ['tf1', 'france2', 'france2'],
         'channel_program': ['to_be_updated', 'to_be_updated Show', None], 
-        'channel_program_type': ['to_be_updated', 'to_be_updated', None]
+        'channel_program_type': ['to_be_updated', 'to_be_updated', None],
+        'id': ['to_be_updated', 'to_be_updated', None]
     })
 
     df_programs = get_programs()
@@ -304,11 +318,17 @@ def test_update_programs_and_filter_out_of_scope_programs_from_df():
         'start': [date_friday_20h19, date_friday_20h19, date_friday_6h26],
         'channel_name': ['tf1', 'france2', 'france2'],
         'channel_program': ['JT 20h + météo', 'JT 20h + météo', 'Le 6h Info'],
-        'channel_program_type': ["Information - Journal", "Information - Journal", 'Information - Journal']
+        'channel_program_type': ["Information - Journal", "Information - Journal", 'Information - Journal'],
+        'program_metadata_id': ["11cef9720424ecc58a92b4b47e588d695d138cd93ffd1b6190dfc5e291b94082", "638c2b3a28772f742291433dfbc78238cb5fa4299cffbbc8da7da6dc9ae68fb3", "2f2f98f25039e5da9c612f949cc26b8e56c7a09598b9b8493876254f7c36b8f1"]
     })
 
     # Run the function
     result_df = update_programs_and_filter_out_of_scope_programs_from_df(df, df_programs)
 
     # Assert the results match the expected DataFrame
+    debug_df(result_df)
     pd.testing.assert_frame_equal(result_df, expected_df, check_dtype=False)
+
+
+def test_generate_program_id():
+    generate_program_id()

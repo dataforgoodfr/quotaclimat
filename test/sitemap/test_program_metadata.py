@@ -220,7 +220,7 @@ def test_get_13h_monday_program_with_start_timestamp():
     program_name, program_type, id = get_a_program_with_start_timestamp(df_programs, pd.to_datetime(monday_13h18, unit='s', utc=True).tz_convert('Europe/Paris'), channel_name)
     assert program_name == "JT 13h"
     assert program_type == "Information - Journal"
-    assert id == "a2b6690144365951be1c6f8e577b64aeb5dc946ad181e927fda8e786a5959dce"
+    assert id == "332db0e88e0ff6e7b49351ebee449fd06ee8aa2f25a735d639bd01be3f41d120"
 
 def test_get_13h_monday_rfi_program_with_start_timestamp():
     df_programs = get_programs()
@@ -230,7 +230,7 @@ def test_get_13h_monday_rfi_program_with_start_timestamp():
                                                                     "rfi")
     assert program_name == "Journal - 13h"
     assert program_type == "Information - Journal"
-    assert id == "334d9e5ad3f29d57922e4a954d06c10e608173a70dad4c33d9290c3dbd7664d8"
+    assert id == "9a80a5dd4be51d256587b03d1418acc1e13afc1d68d5582ebd26c91a6db1c4d5"
 
 
 def test_get_13h_monday_rfi_with_margin_program_with_start_timestamp():
@@ -241,7 +241,7 @@ def test_get_13h_monday_rfi_with_margin_program_with_start_timestamp():
                                                                     "rfi")
     assert program_name == "Journal - 13h"
     assert program_type == "Information - Journal"
-    assert id == "334d9e5ad3f29d57922e4a954d06c10e608173a70dad4c33d9290c3dbd7664d8"
+    assert id == "9a80a5dd4be51d256587b03d1418acc1e13afc1d68d5582ebd26c91a6db1c4d5"
 
 
 def test_get_6h26_friday_fr2_with_margin_program_with_start_timestamp():
@@ -252,7 +252,7 @@ def test_get_6h26_friday_fr2_with_margin_program_with_start_timestamp():
                                                                     "france2")
     assert program_name == "Le 6h Info"
     assert program_type == "Information - Journal"
-    assert id == "2f2f98f25039e5da9c612f949cc26b8e56c7a09598b9b8493876254f7c36b8f1"
+    assert id == "9bcbdd5a9e2877d13a842fa030b9f40a30d15e573915ae5903cc27418bc0f188"
 
 
 def test_get_old_jt_20hweekday_20h19_friday_fr2():
@@ -263,7 +263,7 @@ def test_get_old_jt_20hweekday_20h19_friday_fr2():
                                                                     "france2")
     assert program_name == "JT 20h + météo"
     assert program_type == "Information - Journal"
-    assert id == "638c2b3a28772f742291433dfbc78238cb5fa4299cffbbc8da7da6dc9ae68fb3"
+    assert id == "8c49d82424cf80e107b2b89b0144b4ccf1719372bd68a6638d13147e9d6a5c02"
 
 def test_get_old_no_match_on_new_program_date_jt_20hweekday_20h55_friday_fr2():
     df_programs = get_programs()
@@ -273,7 +273,7 @@ def test_get_old_no_match_on_new_program_date_jt_20hweekday_20h55_friday_fr2():
                                                                     "france2")
     assert program_name == ""
     assert program_type == ""
-    assert id == ""
+    assert id == None
 
 def test_get_new_jt_20hweekday_20h55_friday_fr2():
     df_programs = get_programs()
@@ -283,7 +283,7 @@ def test_get_new_jt_20hweekday_20h55_friday_fr2():
                                                                     "france2")
     assert program_name == "JT 20h + météo"
     assert program_type == "Information - Journal"
-    assert id == "a2b6690144365951be1c6f8e577b64aeb5dc946ad181e927fda8e786a5959dce"
+    assert id == "2a44150d6f83344ac1b618a8c600b8e8128ac305aa2696cfe8ad00e5737b7ee7"
 
 def test_compare_weekday_string():
     assert compare_weekday('*', 0) == True
@@ -319,7 +319,7 @@ def test_update_programs_and_filter_out_of_scope_programs_from_df():
         'channel_name': ['tf1', 'france2', 'france2'],
         'channel_program': ['JT 20h + météo', 'JT 20h + météo', 'Le 6h Info'],
         'channel_program_type': ["Information - Journal", "Information - Journal", 'Information - Journal'],
-        'program_metadata_id': ["11cef9720424ecc58a92b4b47e588d695d138cd93ffd1b6190dfc5e291b94082", "638c2b3a28772f742291433dfbc78238cb5fa4299cffbbc8da7da6dc9ae68fb3", "2f2f98f25039e5da9c612f949cc26b8e56c7a09598b9b8493876254f7c36b8f1"]
+        'program_metadata_id': ["78edf144b1a33df9da26ce736e5f14cc7b754eb38d67a19c37569c45a73667cd", "8c49d82424cf80e107b2b89b0144b4ccf1719372bd68a6638d13147e9d6a5c02", "9bcbdd5a9e2877d13a842fa030b9f40a30d15e573915ae5903cc27418bc0f188"]
     })
 
     # Run the function

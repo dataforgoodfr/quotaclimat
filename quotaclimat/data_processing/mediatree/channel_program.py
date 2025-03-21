@@ -10,7 +10,7 @@ from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 def generate_program_id(channel_name, weekday, program_name, program_grid_start) -> str:
     data_str = f"{channel_name}-{weekday}-{program_name}-{program_grid_start}"
     pk: str = get_consistent_hash(data_str)
-    logging.warning(f"PK {data_str} - {pk}")
+    logging.debug(f"adding pk {pk}")
     return pk
 
 def get_programs():
@@ -124,9 +124,9 @@ def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timest
                     ]
     
     # add program id for keywords foreign key
-    matching_rows[['id']] = matching_rows.apply(lambda x: pd.Series({
-        'id': generate_program_id(x['channel_name'], start_weekday, x['program_name'], x['program_grid_start'])
-    }), axis=1)
+    matching_rows['id'] = matching_rows.apply(lambda x: \
+                                              generate_program_id(x['channel_name'], start_weekday, x['program_name'], x['program_grid_start'])\
+                                        ,axis=1)
 
     matching_rows.drop(columns=['weekday_mask'], inplace=True)
     matching_rows.drop(columns=['weekday'], inplace=True)

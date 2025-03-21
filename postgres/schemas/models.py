@@ -55,6 +55,24 @@ class Sitemap(Base):
     news_description= Column(Text) # ALTER TABLE sitemap_table add news_description text;
     updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
 
+
+class Program_Metadata(Base):
+    __tablename__ = program_metadata_table
+    id = Column(Text, primary_key=True)
+    channel_name = Column(String, nullable=False)
+    channel_title = Column(String, nullable=False)
+    duration_minutes= Column(Integer)
+    weekday= Column(Integer)
+    start= Column(String, nullable=False)
+    end= Column(String, nullable=False)
+    channel_program= Column(String, nullable=False)
+    channel_program_type= Column(String, nullable=False)
+    public = Column(Boolean, nullable=True)
+    infocontinue = Column(Boolean, nullable=True)
+    radio = Column(Boolean, nullable=True)
+    program_grid_start = Column(DateTime(), nullable=True)
+    program_grid_end = Column(DateTime(), nullable=True)
+
 class Keywords(Base):
     __tablename__ = keywords_table
 
@@ -100,6 +118,9 @@ class Keywords(Base):
     number_of_biodiversite_causes_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_causes_directes integer;
     number_of_biodiversite_consequences_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_consequences integer;
     number_of_biodiversite_solutions_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_solutions_directes integer;
+
+    program_metadata_id = Column(Text, ForeignKey('program_metadata.id'), nullable=True)
+    program_metadata = relationship("Program_Metadata", foreign_keys=[program_metadata_id])
     
 class Channel_Metadata(Base):
     __tablename__ = channel_metadata_table
@@ -110,22 +131,6 @@ class Channel_Metadata(Base):
     weekday= Column(Integer)  
 
 
-class Program_Metadata(Base):
-    __tablename__ = program_metadata_table
-    id = Column(Text, primary_key=True)
-    channel_name = Column(String, nullable=False)
-    channel_title = Column(String, nullable=False)
-    duration_minutes= Column(Integer)
-    weekday= Column(Integer)
-    start= Column(String, nullable=False)
-    end= Column(String, nullable=False)
-    channel_program= Column(String, nullable=False)
-    channel_program_type= Column(String, nullable=False)
-    public = Column(Boolean, nullable=True)
-    infocontinue = Column(Boolean, nullable=True)
-    radio = Column(Boolean, nullable=True)
-    program_grid_start = Column(DateTime(), nullable=True)
-    program_grid_end = Column(DateTime(), nullable=True)
 
 class Stop_Word(Base):
     __tablename__ = stop_word_table

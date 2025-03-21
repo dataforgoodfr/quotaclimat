@@ -2,10 +2,10 @@
 
 import json
 from datetime import datetime
-import hashlib
 import sys
 import logging
 from quotaclimat.data_processing.mediatree.channel_program_data import channels_programs
+from quotaclimat.data_processing.mediatree.channel_program import generate_program_id
 
 logging.basicConfig(level = logging.INFO)
 
@@ -17,10 +17,6 @@ def calculate_duration(start_time, end_time):
     duration_minutes = (end_dt - start_dt).seconds // 60
     return duration_minutes
 
-# Function to generate a consistent hash based on channel_name, weekday, and program_name
-def generate_program_id(channel_name, weekday, program_name, program_grid_start):
-    data_str = f"{channel_name}-{weekday}-{program_name}-{program_grid_start}"
-    return hashlib.sha256(data_str.encode()).hexdigest()
 
 output_file_path = "postgres/program_metadata.json"
 

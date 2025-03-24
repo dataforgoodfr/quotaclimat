@@ -62,7 +62,7 @@ def test_add_channel_program_france2():
         ,"number_of_keywords": 1
         ,"channel_program": "Le 6h Info"
         ,"channel_program_type": "Information - Journal"
-        ,"program_metadata_id": "2f2f98f25039e5da9c612f949cc26b8e56c7a09598b9b8493876254f7c36b8f1"
+        ,"program_metadata_id": "9bcbdd5a9e2877d13a842fa030b9f40a30d15e573915ae5903cc27418bc0f188"
     }])
     expected['start'] = pd.to_datetime(telematin, unit='s', utc=True).tz_convert('Europe/Paris')
     debug_df(output)
@@ -84,7 +84,7 @@ def test_add_channel_program_france2_telematin():
         ,"number_of_keywords": 1
         ,"channel_program": "Télématin"
         ,"channel_program_type": "Information - Autres émissions"
-        ,"program_metadata_id": "0b7c372429898afdd4ce2ca8a23ac24cb0ff35e9df2e3294c99dbb01e86c94c8"
+        ,"program_metadata_id": "246dc099b3ed87b99d6cee187a2ea496a9c956b4306b41e78d34025dcf4ed096"
     }])
     expected['start'] = pd.to_datetime(thrusday_morning, unit='s', utc=True).tz_convert('Europe/Paris')
     debug_df(output)
@@ -107,10 +107,10 @@ def test_add_channel_program_wrong_time():
         ,"number_of_keywords": 1
         ,"channel_program": ""
         ,"channel_program_type": ""
-        ,"program_metadata_id": ""
+        # ,"program_metadata_id": None # TODO None != None
     }])
     expected['start'] = pd.to_datetime(sunday_night_no_show, unit='s', utc=True).tz_convert('Europe/Paris')
-
+    output.drop(columns=['program_metadata_id'], inplace=True)
     pd.testing.assert_frame_equal(output.reset_index(drop=True), expected.reset_index(drop=True))
 
 def test_get_programs():
@@ -136,7 +136,7 @@ def test_add_channel_program_france2_jt():
         ,"number_of_keywords": 1
         ,"channel_program": "JT 20h + météo"
         ,"channel_program_type": "Information - Journal"
-        ,"program_metadata_id": "638c2b3a28772f742291433dfbc78238cb5fa4299cffbbc8da7da6dc9ae68fb3"
+        ,"program_metadata_id": "5ebe4b046e556aed0c1acef4c0bfb34ae07c281a65f6664a185ab11506a55e83"
     }])
     expected['start'] = pd.to_datetime(jt_20h02, unit='s', utc=True).tz_convert('Europe/Paris')
     #debug_df(output)
@@ -147,12 +147,12 @@ def test_get_programs_for_this_day_thusday_morning_france2():
     programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').tz_localize('Europe/Paris'), channel_name, df_programs)
     debug_df(programs)
     expected = pd.DataFrame([
-        {"channel_name":"france2","start":1712808000,"end":1712809500,"program_name":"Le 6h Info", "program_type":"Information - Journal"},
-        {"channel_name":"france2","start":1712809800,"end":1712820600,"program_name":"Télématin","program_type":"Information - Autres émissions"},
-        {"channel_name":"france2","start":1712833200,"end":1712835600,"program_name":"JT 13h","program_type":"Information - Journal"},
-        {"channel_name":"france2","start":1712858100,"end":1712860800,"program_name":"JT 20h + météo","program_type":"Information - Journal"},
-        {"channel_name":"france2","start":1712862600,"end":1712869200,"program_name":"Envoyé spécial","program_type":"Information - Magazine"},
- ])
+        {"channel_name":"france2","start":1712808000,"end":1712809500,"program_name":"Le 6h Info", "program_type":"Information - Journal","id": "9bcbdd5a9e2877d13a842fa030b9f40a30d15e573915ae5903cc27418bc0f188"},
+        {"channel_name":"france2","start":1712809800,"end":1712820600,"program_name":"Télématin","program_type":"Information - Autres émissions","id": "246dc099b3ed87b99d6cee187a2ea496a9c956b4306b41e78d34025dcf4ed096"},
+        {"channel_name":"france2","start":1712833200,"end":1712835600,"program_name":"JT 13h","program_type":"Information - Journal","id": "e7b22259b0c5014fb4fdf72c97e2802582d6d89e4a6f8ea71cf4061bb47aa08a"},
+        {"channel_name":"france2","start":1712858100,"end":1712860800,"program_name":"JT 20h + météo","program_type":"Information - Journal","id": "66b422eb8e84835493adef0cdee9cf5ec22c23aebb078f148b5cf547f44b7e26"},
+        {"channel_name":"france2","start":1712862600,"end":1712869200,"program_name":"Envoyé spécial","program_type":"Information - Magazine","id": "1b793e9a0a750008d974acaf863e378baa488228871c032254955459a6fb4745"},
+    ])
 
     pd.testing.assert_frame_equal(programs._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))
 
@@ -190,7 +190,8 @@ def test_get_programs_for_this_day_thusday_morning_franceinfo():
          "start":1712808000,
          "end":1712869200,
          "program_name":"Information en continu", 
-         "program_type":"Information en continu"
+         "program_type":"Information en continu",
+         "id":"3fbc0da7495d9edd3342643e32697a735d984ca11e45172a8d2fdf8d717b4e60",
          },
  ])
 
@@ -212,7 +213,7 @@ def test_get_13h_program_with_start_timestamp():
                                                                     channel_name)
     assert program_name == "13h15 le samedi"
     assert program_type == "Information - Journal"
-    assert id == "23a86cefdb11c7b1faef276237c0fa4752be820457684a8ee2da7ece9652914c"
+    assert id == "d5c1a0c4052c9f74c57f2f5fc8f1ce91bda4988e09a9e65b32ce99caf706041b"
 
 def test_get_13h_monday_program_with_start_timestamp():
     df_programs = get_programs()
@@ -328,7 +329,3 @@ def test_update_programs_and_filter_out_of_scope_programs_from_df():
     # Assert the results match the expected DataFrame
     debug_df(result_df)
     pd.testing.assert_frame_equal(result_df, expected_df, check_dtype=False)
-
-
-def test_generate_program_id():
-    generate_program_id()

@@ -182,6 +182,7 @@ def test_save_to_pg_keyword_normal():
     assert result.number_of_keywords == 1
     assert result.start == datetime.datetime(2024, 1, 28, 10, 17, 59, 6000)
 
+# TODO check timestamp format when creating PK 
 def test_save_to_pg_keyword_parquet():
     conn = connect_to_db()
     thrusday_morning = 1712815351 #Thu Apr 11 2024 08:02:31 GMT+0200

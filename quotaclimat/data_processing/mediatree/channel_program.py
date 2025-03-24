@@ -10,7 +10,7 @@ from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 def generate_program_id(channel_name, weekday, program_name, program_grid_start) -> str:
     data_str = f"{channel_name}-{weekday}-{program_name}-{program_grid_start}"
     pk: str = get_consistent_hash(data_str)
-    logging.debug(f"adding pk {pk}")
+    logging.debug(f"adding for {channel_name} - weekday {weekday} - {program_name} - {program_grid_start} pk {pk}")
     return pk
 
 def get_programs():
@@ -109,9 +109,10 @@ def get_matching_program_hour(df_program: pd.DataFrame, start_time: pd.Timestamp
         return matching_rows
     
 def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timestamp, channel_name: str):
-    logging.debug(f"get_matching_program_weekday {start_time} {channel_name}")
-    start_weekday = get_day_of_week(start_time)
+    logging.info(f"get_matching_program_weekday {start_time} {channel_name}")
 
+    start_weekday = get_day_of_week(start_time)
+    logging.info(f"start_weekday {start_weekday}")
     if "weekday_mask" in df_program.columns:
         df_program.drop(columns=["weekday_mask"], inplace=True)
     df_program["weekday_mask"] = df_program['weekday'].apply(lambda x: compare_weekday(x, start_weekday))
@@ -124,26 +125,30 @@ def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timest
                     ]
     
     # add program id for keywords foreign key
+    # x['program_grid_start'] must be str YYYY-MM-DD
+    matching_rows['program_grid_start_str'] = matching_rows.apply(lambda x: \
+        x['program_grid_start'].strftime('%Y-%m-%d')
+    ,axis=1)
     matching_rows['id'] = matching_rows.apply(lambda x: \
-                                              generate_program_id(x['channel_name'], start_weekday, x['program_name'], x['program_grid_start'])\
+                                              generate_program_id(channel_name, start_weekday, x['program_name'], x['program_grid_start_str'])\
                                         ,axis=1)
 
     matching_rows.drop(columns=['weekday_mask'], inplace=True)
     matching_rows.drop(columns=['weekday'], inplace=True)
     matching_rows.drop(columns=['program_grid_start'], inplace=True)
     matching_rows.drop(columns=['program_grid_end'], inplace=True)
-    
+    logging.debug(f"matching_rows {matching_rows}")
     if matching_rows.empty:
         logging.warning(f"Program tv : no matching rows found {channel_name} for weekday {start_weekday} - {start_time}")
 
     return matching_rows
 
 def get_a_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.Timestamp, channel_name: str):
-    matching_rows = get_matching_program_weekday(df_program, start_time, channel_name)
+    matching_rows = get_matching_program_weekday(df_program, start_time, channel_name=channel_name)
     matching_rows = get_matching_program_hour(matching_rows, start_time)
 
     if not matching_rows.empty:
-        logging.debug(f"matching_rows {matching_rows}")
+        logging.info(f"matching_rows {matching_rows}")
         # TODO should return closest to start_time
         return matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type'], matching_rows.iloc[0]['id']
     else:

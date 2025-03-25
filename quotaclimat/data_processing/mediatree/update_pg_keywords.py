@@ -152,7 +152,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                 program_name, program_name_type, program_metadata_id = \
                       get_a_program_with_start_timestamp(df_program=df_programs, start_time=start_tz, channel_name=channel_name)
                 
-                logging.info(f"program_name {program_name} - program_name_type {program_name_type} - program_metadata_id {program_metadata_id}")
+                logging.info(f"new data for keyword_id ({keyword_id}): program_name ({program_name}) - program_name_type ({program_name_type}) - program_metadata_id ({program_metadata_id})")
                 try:
                     update_keyword_row_program(session
                         ,keyword_id

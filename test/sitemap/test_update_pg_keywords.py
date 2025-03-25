@@ -466,10 +466,9 @@ def test_update_only_program():
 
     # insert data
     primary_key_m6 = "test_save_to_pg_keyword_only_program_m6"
-    un_jour_un_doc_m6_date = pd.to_datetime("2024-01-27 14:18:54", utc=True).tz_convert('Europe/Paris')
     df = pd.DataFrame([{
         "id" : primary_key_m6,
-        "start": un_jour_un_doc_m6_date,
+        "start": start,
         "plaintext": plaintext,
         "channel_name": m6,
         "channel_radio": False,
@@ -539,7 +538,7 @@ def test_update_only_program():
     # program - only when UPDATE_PROGRAM_ONLY for speed issues
     assert result_after_update_m6.channel_program == "1245 le mag"
     assert result_after_update_m6.channel_program_type == "Information - Magazine"
-    assert result_after_update_m6.id == "3fd350c088699dcdc6692e35fc030da2946ec44875319c9089a49c112312c64a"
+    assert result_after_update_m6.program_metadata_id == "8d3fcdbc11951e82ee56d7346568455305f92e929c5103eac7f056d75c52feb4"
 
     #channel_title
     assert result_after_update_m6.channel_title == "M6"
@@ -674,6 +673,7 @@ def test_update_only_program_with_only_one_channel():
     ## TF1 should have changed because of channel=tf1
     assert result_after_update_tf1.channel_program == "JT 13h"
     assert result_after_update_tf1.channel_program_type == "Information - Journal"
+    assert result_after_update_tf1.program_metadata_id == "c21b70e006ad6ff04f27f16cc8f2096964c12d8ff92ca2aab5969ef687d2e64e"
 
     #channel_title
     assert result_after_update_m6.channel_title == None

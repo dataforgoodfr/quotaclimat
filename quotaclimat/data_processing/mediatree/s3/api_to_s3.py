@@ -68,7 +68,7 @@ def get_param_api(token, type_sub, start_epoch, channel, end_epoch):
     }
 
 
-def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", channel_program_type = "", program_metadata_id = "") -> Optional[pd.DataFrame]:
+def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", channel_program_type = "", program_metadata_id = None) -> Optional[pd.DataFrame]:
     with sentry_sdk.start_transaction(op="task", name="parse_reponse_subtitle"):
         total_results = parse_total_results(response_sub)
         logging.getLogger("modin.logging.default").setLevel(logging.WARNING)

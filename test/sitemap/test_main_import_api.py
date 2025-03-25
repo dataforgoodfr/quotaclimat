@@ -18,7 +18,7 @@ import time as t
 
 
 def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
-#     create_tables()  
+    create_tables(conn)  
     empty_tables(get_db_session(conn), stop_word=False)
     logging.info(f"reading {json_file_path}")
     with open(json_file_path, 'r') as file:

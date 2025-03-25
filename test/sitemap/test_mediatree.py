@@ -93,7 +93,7 @@ def test_parse_reponse_subtitle():
         "start" : 1704798000,
         "channel_program" : channel_program,
         "channel_program_type" : "",
-        "program_metadata_id" : "",
+        "program_metadata_id" : None,
     },
     {
         "srt": [{
@@ -109,7 +109,7 @@ def test_parse_reponse_subtitle():
         "start" : 1704798120,
         "channel_program" : channel_program,
         "channel_program_type" : "",
-        "program_metadata_id" : "",
+        "program_metadata_id" : None,
     }])
 
     expected_result['start'] = pd.to_datetime(expected_result['start'], unit='s').dt.tz_localize('UTC')

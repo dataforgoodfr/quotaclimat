@@ -34,7 +34,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     end_date: str = "2023-04-30", channel: str = "", empty_program_only=False, \
                         stop_word_keyword_only = False, \
                         biodiversity_only = False) -> list:
-    df_programs = get_programs()
+
     filter_days_stop_word = int(os.environ.get("FILTER_DAYS_STOP_WORD", 30))
     logging.info(f"FILTER_DAYS_STOP_WORD is used to get only last {filter_days_stop_word} days of new stop words - to improve update speed")
     stop_words_objects = get_stop_words(session, validated_only=True, context_only=False, filter_days=filter_days_stop_word)
@@ -142,19 +142,28 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                 ,number_of_biodiversite_solutions_no_hrfp
                 )
             else: # Program only mode
-                logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
+                logging.debug(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
                 if(os.environ.get("ENV") == "prod"): # weird bug i don't want to know about
                     start_tz = pd.Timestamp(start).tz_localize("UTC").tz_convert("Europe/Paris")
                 else:
                     start_tz = pd.Timestamp(start).tz_convert("Europe/Paris")
                 logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - converted tz : {start_tz}")
-                program_name, program_name_type = get_a_program_with_start_timestamp(df_programs, start_tz, channel_name)
-                update_keyword_row_program(session
-                    ,keyword_id
-                    ,channel_program=program_name
-                    ,channel_program_type=program_name_type
-                    ,channel_title=channel_title
-                )
+                df_programs = get_programs()
+                program_name, program_name_type, program_metadata_id = \
+                      get_a_program_with_start_timestamp(df_program=df_programs, start_time=start_tz, channel_name=channel_name)
+                
+                logging.info(f"new data for keyword_id ({keyword_id}): program_name ({program_name}) - program_name_type ({program_name_type}) - program_metadata_id ({program_metadata_id})")
+                try:
+                    update_keyword_row_program(session
+                        ,keyword_id
+                        ,channel_program=program_name
+                        ,channel_program_type=program_name_type
+                        ,channel_title=channel_title
+                        ,program_metadata_id=program_metadata_id
+                    )
+                except Exception as err:
+                    logging.error(f"update_keyword_row_program - continuing loop but met error : {err}")
+                    continue
         logging.info(f"bulk update done {i} out of {total_updates} - (max offset {total_updates})")
         session.commit()
 
@@ -331,12 +340,18 @@ def update_keyword_row_program(session: Session,
                        keyword_id: int,
                         channel_program: str,
                         channel_program_type: str,
-                        channel_title: str):
-    session.query(Keywords).filter(Keywords.id == keyword_id).update(
-        {
-            Keywords.channel_program: channel_program,
-            Keywords.channel_program_type: channel_program_type,
-            Keywords.channel_title: channel_title,
-        },
-        synchronize_session=False
-    )
+                        channel_title: str,
+                        program_metadata_id: str):
+    try:
+        session.query(Keywords).filter(Keywords.id == keyword_id).update(
+            {
+                Keywords.channel_program: channel_program,
+                Keywords.channel_program_type: channel_program_type,
+                Keywords.channel_title: channel_title,
+                Keywords.program_metadata_id: program_metadata_id,
+            },
+            synchronize_session=False
+        )
+    except Exception as err:
+        logging.error(f"update_keyword_row_program error for k_id {keyword_id} {channel_title} {channel_program} program metadata id {program_metadata_id} : {err}")
+        raise Exception

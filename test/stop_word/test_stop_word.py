@@ -14,9 +14,7 @@ create_tables()
 insert_mediatree_json(conn, json_file_path='test/sitemap/short_mediatree.json')
 
 def test_stop_word_get_top_keywords_by_channel():
-    # conn = connect_to_db()
-    # session = get_db_session(conn)
-    # insert_mediatree_json(conn, json_file_path='test/sitemap/short_mediatree.json')
+
     excepted_df = pd.DataFrame(
         [
             {

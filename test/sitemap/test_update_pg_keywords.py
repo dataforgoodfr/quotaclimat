@@ -13,6 +13,7 @@ from quotaclimat.data_processing.mediatree.stop_word.main import *
 logging.getLogger().setLevel(logging.INFO)
 original_timestamp = 1706271523 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
 start = pd.to_datetime("2024-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
+start_tf1 = pd.to_datetime("2024-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
 create_tables()
 
 wrong_value = 0
@@ -340,7 +341,7 @@ def test_update_only_one_channel():
         "number_of_biodiversite_solutions_no_hrfp" : wrong_value
     }, {
         "id" : primary_key_tf1,
-        "start": start,
+        "start": start_tf1,
         "plaintext": plaintext,
         "channel_name": tf1,
         "channel_radio": False,
@@ -465,7 +466,6 @@ def test_update_only_program():
 
     # insert data
     primary_key_m6 = "test_save_to_pg_keyword_only_program_m6"
-   
     df = pd.DataFrame([{
         "id" : primary_key_m6,
         "start": start,
@@ -489,6 +489,7 @@ def test_update_only_program():
         "number_of_biodiversite_solutions_directes" : wrong_value,
         "channel_program_type": "to change",
         "channel_program":"to change"
+        ,"program_metadata_id": None
         ,"channel_title":None
         ,"number_of_keywords_climat": wrong_value
         ,"number_of_keywords_biodiversite": wrong_value
@@ -537,6 +538,7 @@ def test_update_only_program():
     # program - only when UPDATE_PROGRAM_ONLY for speed issues
     assert result_after_update_m6.channel_program == "1245 le mag"
     assert result_after_update_m6.channel_program_type == "Information - Magazine"
+    assert result_after_update_m6.program_metadata_id == "8d3fcdbc11951e82ee56d7346568455305f92e929c5103eac7f056d75c52feb4"
 
     #channel_title
     assert result_after_update_m6.channel_title == "M6"
@@ -592,7 +594,7 @@ def test_update_only_program_with_only_one_channel():
         "number_of_biodiversite_solutions_no_hrfp" : wrong_value
     }, {
         "id" : primary_key_tf1,
-        "start": start,
+        "start": start_tf1,
         "plaintext": plaintext,
         "channel_name": tf1,
         "channel_radio": False,
@@ -671,6 +673,7 @@ def test_update_only_program_with_only_one_channel():
     ## TF1 should have changed because of channel=tf1
     assert result_after_update_tf1.channel_program == "JT 13h"
     assert result_after_update_tf1.channel_program_type == "Information - Journal"
+    assert result_after_update_tf1.program_metadata_id == "c21b70e006ad6ff04f27f16cc8f2096964c12d8ff92ca2aab5969ef687d2e64e"
 
     #channel_title
     assert result_after_update_m6.channel_title == None
@@ -730,7 +733,7 @@ def test_update_only_empty_program():
         "number_of_biodiversite_solutions_no_hrfp" : wrong_value
     }, {
         "id" : primary_key_tf1,
-        "start": start,
+        "start": start_tf1,
         "plaintext": plaintext,
         "channel_name": tf1,
         "channel_radio": False,
@@ -1133,7 +1136,7 @@ def test_update_only_biodiversity():
         "number_of_biodiversite_solutions_no_hrfp" : wrong_value
     }, {
         "id" : primary_key_tf1,
-        "start": start,
+        "start": start_tf1,
         "plaintext": plaintext,
         "channel_name": tf1,
         "channel_radio": False,

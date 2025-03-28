@@ -168,8 +168,8 @@ for program_data in channels_programs:
     # Handle special cases for weekdays
     weekday = program_data['weekday']
     if weekday == '*':
-        # Create separate entries for each weekday (1 to 7)
-        for day in range(1, 8):
+        # Create separate entries for each weekday (0 to 6)
+        for day in range(0, 7):
             new_program_data = program_data.copy()
             new_program_data['weekday'] = day
             programs.append(new_program_data)
@@ -188,7 +188,7 @@ for program_data in channels_programs:
     else:
         # from 1 to 7 to simplify SQL queries 
         new_program_data = program_data.copy()
-        new_program_data['weekday'] = int(new_program_data['weekday']) + 1
+        new_program_data['weekday'] = int(new_program_data['weekday'])
         programs.append(new_program_data)
 
 for program in programs:

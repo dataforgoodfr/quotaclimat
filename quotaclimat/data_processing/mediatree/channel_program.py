@@ -10,7 +10,7 @@ from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 def generate_program_id(channel_name, weekday, program_name, program_grid_start) -> str:
     data_str = f"{channel_name}-{weekday}-{program_name}-{program_grid_start}"
     pk: str = get_consistent_hash(data_str)
-    logging.debug(f"adding for {channel_name} - weekday {weekday} - {program_name} - {program_grid_start} pk {pk}")
+    logging.warning(f"adding for {data_str} pk {pk}")
     return pk
 
 def get_programs():
@@ -77,7 +77,7 @@ def get_hour_minute(time: pd.Timestamp):
 # with Monday=0 and Sunday=6.
 def get_day_of_week(time: pd.Timestamp) -> int:
     start_weekday = int(time.dayofweek)
-    logging.debug(f"start_weekday {start_weekday}")
+    logging.debug(f"start_weekday {start_weekday} based on {time}")
     return start_weekday
 
 def get_matching_program_hour(df_program: pd.DataFrame, start_time: pd.Timestamp):
@@ -146,8 +146,8 @@ def get_a_program_with_start_timestamp(df_program: pd.DataFrame, start_time: pd.
     matching_rows = get_matching_program_hour(matching_rows, start_time)
 
     if not matching_rows.empty:
-        logging.warning(f"return matching_rows{matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type'], matching_rows.iloc[0]['id']}")
-        logging.info(f"matching_rows {matching_rows}")
+        logging.debug(f"return matching_rows{matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type'], matching_rows.iloc[0]['id']}")
+        logging.debug(f"matching_rows {matching_rows}")
         # TODO should return closest to start_time
         return matching_rows.iloc[0]['program_name'], matching_rows.iloc[0]['program_type'], matching_rows.iloc[0]['id']
     else:

@@ -169,7 +169,7 @@ for program_data in channels_programs:
     weekday = program_data['weekday']
     if weekday == '*':
         # Create separate entries for each weekday (1 to 7)
-        for day in range(1, 8):
+        for day in range(0, 7): #TODO other is from 0 to 7
             new_program_data = program_data.copy()
             new_program_data['weekday'] = day
             programs.append(new_program_data)

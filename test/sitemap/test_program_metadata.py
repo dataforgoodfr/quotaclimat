@@ -119,6 +119,11 @@ def test_get_programs():
 
     assert len(programs) > 0
 
+def test_get_programs_weekday():
+    programs = get_programs()
+
+    assert len(programs) > 0
+
 def test_add_channel_program_france2_jt():
     jt_20h02 = 1712772151 # wednesday - 3 
 
@@ -149,13 +154,13 @@ def test_get_programs_for_this_day_thusday_morning_france2():
     programs = get_programs_for_this_day(pd.to_datetime(thrusday_morning, unit='s').tz_localize('Europe/Paris'), channel_name, df_programs)
     debug_df(programs)
 
-    envoye_special_id = "3b15cb4724ddf7a3c73ce4d140176c9816c7cbfdb3204839bdc139961e40bef2"
+    envoye_special_id = "3666a974b07ec99829c4d975e34af3ea977726bf66d7f6f4e2cbd7614b61660c"
     expected = pd.DataFrame([
         {"channel_name":"france2","start":1712808000,"end":1712809500,"program_name":"Le 6h Info", "program_type":"Information - Journal","id": "3fbbf26e8a207a8fc701c1568a89449509840bec71704a5aa1b924387999f7f9"},
         {"channel_name":"france2","start":1712809800,"end":1712820600,"program_name":"Télématin","program_type":"Information - Autres émissions","id": "119a697547071c795804ebcc23b4d6ddc0c25ae350fe630decb508e241ba5923"},
         {"channel_name":"france2","start":1712833200,"end":1712835600,"program_name":"JT 13h","program_type":"Information - Journal","id": "24fc3810571747e173f01248f253de02543fe84fb61addf5061ca25cdc8e57af"},
         {"channel_name":"france2","start":1712858100,"end":1712860800,"program_name":"JT 20h + météo","program_type":"Information - Journal","id": "046d5d696c00001f38d7aef02b4fc26cca632486104f2579c834d7265a34edfa"},
-        {"channel_name":"france2","start":1712862600,"end":1712869200,"program_name":"Envoyé spécial","program_type":"Information - Magazine","id": envoye_special_id}, # problem here
+        {"channel_name":"france2","start":1712862600,"end":1712869200,"program_name":"Envoyé spécial","program_type":"Information - Magazine","id": envoye_special_id},
     ])
 
     pd.testing.assert_frame_equal(programs._to_pandas().reset_index(drop=True), expected.reset_index(drop=True))

@@ -13,6 +13,7 @@ from quotaclimat.data_processing.mediatree.channel_program import *
 from quotaclimat.data_processing.mediatree.stop_word.main import get_all_stop_word
 from quotaclimat.data_processing.mediatree.api_import_utils.db import get_last_date_and_number_of_delay_saved_in_keywords, KeywordLastStats, get_delay_date
 from quotaclimat.data_processing.mediatree.s3.s3_utils import read_folder_from_s3, transform_raw_keywords
+from quotaclimat.data_processing.mediatree.i8n.country import *
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, get_db_session
 from postgres.schemas.models import keywords_table
@@ -75,19 +76,6 @@ async def update_pg_data(exit_event):
         ray.shutdown()
         sys.exit(1)
 
-def get_channels():
-    if(os.environ.get("ENV") == "docker" or os.environ.get("CHANNEL") is not None):
-        default_channel = os.environ.get("CHANNEL") or "france2"
-        logging.warning(f"Only one channel of env var CHANNEL {default_channel} (default to france2) is used")
-
-        channels = [default_channel]
-    else: #prod  - all channels
-        logging.warning("All channels are used")
-        return ["tf1", "france2", "fr3-idf", "m6", "arte", "bfmtv", "lci", "franceinfotv", "itele",
-        "europe1", "france-culture", "france-inter", "sud-radio", "rmc", "rtl", "france24", "france-info", "rfi"]
-
-    return channels
-
 def get_stop_words(session, validated_only=True, context_only=True, filter_days: int = None) -> list[Stop_Word]:
     logging.info("Getting Stop words...")
     try:
@@ -140,7 +128,7 @@ async def get_and_save_s3_data_to_pg(exit_event):
             session = get_db_session(conn)
             
             df_programs = get_programs() # memory bumps ? should be lazy instead of being copied on each worker
-            channels = get_channels()
+            channels = get_channels(country=FRANCE)
             
             stop_words = get_stop_words(session, validated_only=True)
             

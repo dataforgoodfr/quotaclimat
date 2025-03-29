@@ -194,6 +194,7 @@ services:
       POSTGRES_PORT: 5432
       PORT_HS: 5050 # healthcheck
       HEALTHCHECK_SERVER: "0.0.0.0"
+      # COUNTRY = "ger"
       # SENTRY_DSN: prod_only
       # UPDATE: "true" # to batch update PG 
       # BIODIVERSITY_ONLY: "true"

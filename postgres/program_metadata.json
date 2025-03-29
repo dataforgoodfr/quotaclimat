@@ -166,14 +166,14 @@
         "weekday": 1,
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
-        "program_name": "Europe 1 Matin",
+        "program_name": "Europe 1 13h",
         "program_type": "Information - Magazine",
         "duration": 60,
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
         "radio": true,
-        "id": "4f3898dca03a6d4ebe2de8748f2eca4eff17fc33feb3f4dcf34257725fdeea89"
+        "id": "d84884eb30e58528048b89dd9509c1bb8ecc8d8be97d53155c870f8d79cec885"
     },
     {
         "channel_name": "europe1",
@@ -1334,14 +1334,14 @@
         "weekday": 2,
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
-        "program_name": "Europe 1 Matin",
+        "program_name": "Europe 1 13h",
         "program_type": "Information - Magazine",
         "duration": 60,
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
         "radio": true,
-        "id": "eb83be660c8d114793072d6cf5e18db279eaaf59e917fa20ded6959555d3c6f8"
+        "id": "a6dc516f932629b5033ca6f96c127f19a1941db0a9b240767a61b72c879105cc"
     },
     {
         "channel_name": "europe1",
@@ -2502,14 +2502,14 @@
         "weekday": 3,
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
-        "program_name": "Europe 1 Matin",
+        "program_name": "Europe 1 13h",
         "program_type": "Information - Magazine",
         "duration": 60,
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
         "radio": true,
-        "id": "d8cda9e5100a740a5a5473ddd3a03871623ed09166ce4b89745a40d497918d17"
+        "id": "458b9aec4f54809a189a5baf6fd959accc4e3925abb5fe1cb8c2da91c6b1c641"
     },
     {
         "channel_name": "europe1",
@@ -3670,14 +3670,14 @@
         "weekday": 4,
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
-        "program_name": "Europe 1 Matin",
+        "program_name": "Europe 1 13h",
         "program_type": "Information - Magazine",
         "duration": 60,
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
         "radio": true,
-        "id": "bec0b46f50cbff187eea8f5ea44bdd9b33da1b9dba7d47de38d2806348f987ca"
+        "id": "8030f57cb6b2de4e7d58d40f1f1a15b557cf8f72ba645aa382b9d745aec6a139"
     },
     {
         "channel_name": "europe1",
@@ -4870,14 +4870,14 @@
         "weekday": 5,
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
-        "program_name": "Europe 1 Matin",
+        "program_name": "Europe 1 13h",
         "program_type": "Information - Magazine",
         "duration": 60,
         "channel_title": "Europe 1",
         "public": false,
         "infocontinue": false,
         "radio": true,
-        "id": "14f36c0ead9a2bdfce3f1934ba73c3681395a53df007a78733a4cd2f3cc7a3fe"
+        "id": "2726ddcd27c5b241cd02e1a3607bb922b7b58fac40c0d5920f4c395dc3bd2ce4"
     },
     {
         "channel_name": "europe1",

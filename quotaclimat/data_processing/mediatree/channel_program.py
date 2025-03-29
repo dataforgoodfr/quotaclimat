@@ -10,7 +10,7 @@ from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 def generate_program_id(channel_name, weekday, program_name, program_grid_start) -> str:
     data_str = f"{channel_name}-{weekday}-{program_name}-{program_grid_start}"
     pk: str = get_consistent_hash(data_str)
-    logging.warning(f"adding for {data_str} pk {pk}")
+    logging.info(f"adding for {data_str} pk {pk}")
     return pk
 
 def get_programs():
@@ -74,9 +74,9 @@ def get_hour_minute(time: pd.Timestamp):
 
     return start_time
 
-# with Monday=0 and Sunday=6.
+# with Monday=1 and Sunday=7.
 def get_day_of_week(time: pd.Timestamp) -> int:
-    start_weekday = int(time.dayofweek)
+    start_weekday = int(time.dayofweek) + 1
     logging.debug(f"start_weekday {start_weekday} based on {time}")
     return start_weekday
 

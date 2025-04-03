@@ -14,11 +14,11 @@ def generate_program_id(channel_name, weekday, program_name, program_grid_start)
     logging.debug(f"adding for {data_str} pk {pk}")
     return pk
 
-def get_programs(country=FRANCE)):
+def get_programs(country: CountryMediaTree = FRANCE):
     logging.debug("Getting program tv/radio...")
     try:
-        logging.info(f"Reading channels_programs")
-        df_programs = pd.DataFrame(channels_programs)
+        logging.info(f"Reading channels_programs of {country}")
+        df_programs = pd.DataFrame(country.programs)
 
         df_programs[['start', 'end', 'program_grid_start', 'program_grid_end', 'program_grid_start_str']] = df_programs.apply(lambda x: pd.Series({
             'start': format_hour_minute(x['start']),
@@ -33,6 +33,7 @@ def get_programs(country=FRANCE)):
         raise Exception
     
     return df_programs
+
 
 def add_channel_program(df: pd.DataFrame): 
     logging.info("Adding channel program")

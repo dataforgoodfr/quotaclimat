@@ -164,11 +164,11 @@ def refresh_token(token, date):
     else:
         return token
     
-def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, country=FRANCE):
+def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, country: CountryMediaTree = FRANCE):
     logging.info(f"Saving DF with {len(df)} elements to S3 for {date} and channel {channel}")
 
     # to create partitions
-    object_key = get_bucket_key(date, channel)
+    object_key = get_bucket_key(date, channel, country_code=country.code)
     logging.debug(f"Uploading partition: {object_key}")
 
     try:
@@ -177,7 +177,7 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, co
         df['month'] = date.month
         df['day'] = date.day
         df['channel'] = channel
-        df['country'] = country
+        df['country'] = country.code
 
         df = df._to_pandas() # collect data accross ray workers to avoid multiple subfolders
         based_path = "s3/parquet"
@@ -186,7 +186,7 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, co
                        ,partition_cols=['country','year', 'month', 'day', 'channel'])
 
         #saving full_path folder parquet to s3
-        s3_path = f"{get_bucket_key_folder(date, channel)}"
+        s3_path = f"{get_bucket_key_folder(date, channel, country_code=country.code)}"
         local_folder = f"{based_path}/{s3_path}"
         upload_folder_to_s3(local_folder, BUCKET_NAME, s3_path,s3_client=s3_client)
         
@@ -203,10 +203,11 @@ async def get_and_save_api_data(exit_event):
             type_sub = 's2t'
             start_date = int(os.environ.get("START_DATE", 0))
             number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 7))
-            country_code = os.environ.get("COUNTRY", FRANCE_CODE))
+            country: CountryMediaTree = get_country_from_code(os.environ.get("COUNTRY", FRANCE_CODE))
+            logging.info(f"Country used is (default fra) : {country}")
             (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
-            df_programs = get_programs()
-            channels = get_channels()
+            df_programs = get_programs(country)
+            channels = country.channels
             
             day_range = get_date_range(start_date_to_query, end_date, number_of_previous_days)
             logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
@@ -237,7 +238,7 @@ async def get_and_save_api_data(exit_event):
                                     logging.info("Nothing to extract")
 
                             # save to S3
-                            save_to_s3(df_res, channel, day, s3_client=s3_client, country)
+                            save_to_s3(df_res, channel, day, s3_client=s3_client, country=country)
                             
                         except Exception as err:
                             logging.error(f"continuing loop but met error : {err}")

@@ -165,7 +165,7 @@ class Dictionary(Base):
     categories = Column(ARRAY(String), nullable=True)  # example ["Concepts généraux", "Sols"]
     themes = Column(ARRAY(String), nullable=True) # example ["changement_climatique_constat", "ressources"]
 
-    language = Column(String, nullable=False)
+    language = Column(String, nullable=False, default="fr")
     
 def get_sitemap(id: str):
     session = get_db_session()

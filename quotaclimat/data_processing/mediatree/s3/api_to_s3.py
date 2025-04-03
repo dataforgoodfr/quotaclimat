@@ -12,6 +12,7 @@ from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import *
 from quotaclimat.data_processing.mediatree.api_import import *
 from quotaclimat.data_processing.mediatree.s3.s3_utils import *
+from quotaclimat.data_processing.mediatree.i8n.country import *
 
 import shutil
 from typing import List, Optional
@@ -163,7 +164,7 @@ def refresh_token(token, date):
     else:
         return token
     
-def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client):
+def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, country=FRANCE):
     logging.info(f"Saving DF with {len(df)} elements to S3 for {date} and channel {channel}")
 
     # to create partitions
@@ -176,12 +177,13 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client):
         df['month'] = date.month
         df['day'] = date.day
         df['channel'] = channel
+        df['country'] = country
 
         df = df._to_pandas() # collect data accross ray workers to avoid multiple subfolders
         based_path = "s3/parquet"
         df.to_parquet(based_path,
                        compression='gzip'
-                       ,partition_cols=['year', 'month', 'day', 'channel'])
+                       ,partition_cols=['country','year', 'month', 'day', 'channel'])
 
         #saving full_path folder parquet to s3
         s3_path = f"{get_bucket_key_folder(date, channel)}"
@@ -201,6 +203,7 @@ async def get_and_save_api_data(exit_event):
             type_sub = 's2t'
             start_date = int(os.environ.get("START_DATE", 0))
             number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 7))
+            country_code = os.environ.get("COUNTRY", FRANCE_CODE))
             (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
             df_programs = get_programs()
             channels = get_channels()
@@ -214,7 +217,7 @@ async def get_and_save_api_data(exit_event):
                     df_res = pd.DataFrame()
                     
                     # if object already exists, skip
-                    if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client):
+                    if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client, country=country):
                         try:
                             programs_for_this_day = get_programs_for_this_day(day.tz_localize("Europe/Paris"), channel, df_programs)
 
@@ -234,7 +237,7 @@ async def get_and_save_api_data(exit_event):
                                     logging.info("Nothing to extract")
 
                             # save to S3
-                            save_to_s3(df_res, channel, day, s3_client=s3_client)
+                            save_to_s3(df_res, channel, day, s3_client=s3_client, country)
                             
                         except Exception as err:
                             logging.error(f"continuing loop but met error : {err}")

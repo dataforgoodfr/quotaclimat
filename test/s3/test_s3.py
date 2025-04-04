@@ -15,7 +15,7 @@ def test_get_bucket_key_france():
     friday_6h26 = 1726719981
     date = pd.to_datetime(friday_6h26, unit='s', utc=True)
     channel = "tf1"
-    assert get_bucket_key(date, channel, FRANCE.code) == "year=2024/month=9/day=19/channel=tf1/*.parquet"
+    assert get_bucket_key(date, channel, country_code=FRANCE.code) == "year=2024/month=9/day=19/channel=tf1/*.parquet"
 
 def test_get_bucket_key_country():
     friday_6h26 = 1726719981

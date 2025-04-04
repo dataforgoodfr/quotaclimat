@@ -176,7 +176,7 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, co
     logging.info(f"Saving DF with {len(df)} elements to S3 for {date} and channel {channel}")
 
     # to create partitions
-    object_key = get_bucket_key(date, channel, country_code=country.code)
+    object_key = get_bucket_key(date=date, channel=channel, country_code=country.code)
     logging.debug(f"Uploading partition: {object_key}")
 
     try:

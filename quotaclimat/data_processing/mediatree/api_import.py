@@ -128,7 +128,7 @@ async def get_and_save_s3_data_to_pg(exit_event):
             session = get_db_session(conn)
             
             df_programs = get_programs() # memory bumps ? should be lazy instead of being copied on each worker
-            channels = get_channels(country=FRANCE)
+            channels = get_channels()
             
             stop_words = get_stop_words(session, validated_only=True)
             

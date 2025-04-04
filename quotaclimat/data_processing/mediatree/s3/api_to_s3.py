@@ -214,48 +214,55 @@ async def get_and_save_api_data(exit_event):
             type_sub = 's2t'
             start_date = int(os.environ.get("START_DATE", 0))
             number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 7))
-            country: CountryMediaTree = get_country_from_code(os.environ.get("COUNTRY", FRANCE_CODE))
-            logging.info(f"Country used is (default {FRANCE_CODE}) : {country}")
-            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days,timezone=country.timezone)
-            df_programs = get_programs(country)
-            channels = country.channels
-            timezone = country.timezone
-            day_range = get_date_range(start_date_to_query, end_date, number_of_previous_days)
-            logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
-            for day in day_range:
-                token = refresh_token(token, day)
-                
-                for channel in channels:
-                    df_res = pd.DataFrame()
+            country_code: str = os.environ.get("COUNTRY", FRANCE_CODE)
+            logging.info(f"Country used is (default {FRANCE_CODE}) : {country_code}")
+            countries = get_countries_array(country_code=country_code)
+
+            for country in countries:
+                logging.info(f"Country : {country}")
+                df_programs = get_programs(country)
+                channels = country.channels
+                timezone = country.timezone
+                (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, \
+                                                                                            minus_days=number_of_previous_days,\
+                                                                                            timezone=country.timezone)
+
+                day_range: pd.DatetimeIndex = get_date_range(start_date_to_query, end_date, number_of_previous_days)
+                logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
+                for day in day_range:
+                    token = refresh_token(token, day)
                     
-                    # if object already exists, skip
-                    if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client, country=country):
-                        try:
-                            programs_for_this_day = get_programs_for_this_day(day.tz_localize(timezone), channel, df_programs, timezone=timezone)
+                    for channel in channels:
+                        df_res = pd.DataFrame()
+                        
+                        # if object already exists, skip
+                        if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client, country=country):
+                            try:
+                                programs_for_this_day = get_programs_for_this_day(day.tz_localize(timezone), channel, df_programs, timezone=timezone)
 
-                            for program in programs_for_this_day.itertuples(index=False):
-                                start_epoch = program.start
-                                end_epoch = program.end
-                                channel_program = str(program.program_name)
-                                channel_program_type = str(program.program_type)
-                                program_metadata_id = str(program.id)
-                                logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
-                                df = get_df_api(token, type_sub, start_epoch, channel, end_epoch, \
-                                                channel_program, channel_program_type,program_metadata_id=program_metadata_id)
+                                for program in programs_for_this_day.itertuples(index=False):
+                                    start_epoch = program.start
+                                    end_epoch = program.end
+                                    channel_program = str(program.program_name)
+                                    channel_program_type = str(program.program_type)
+                                    program_metadata_id = str(program.id)
+                                    logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
+                                    df = get_df_api(token, type_sub, start_epoch, channel, end_epoch, \
+                                                    channel_program, channel_program_type,program_metadata_id=program_metadata_id)
 
-                                if(df is not None):
-                                    df_res = pd.concat([df_res, df ], ignore_index=True)
-                                else:
-                                    logging.info(f"Nothing to extract for {channel} {channel_program} - {start_epoch} - {end_epoch}")
+                                    if(df is not None):
+                                        df_res = pd.concat([df_res, df ], ignore_index=True)
+                                    else:
+                                        logging.info(f"Nothing to extract for {channel} {channel_program} - {start_epoch} - {end_epoch}")
 
-                            # save to S3
-                            save_to_s3(df_res, channel, day, s3_client=s3_client, country=country)
-                            
-                        except Exception as err:
-                            logging.error(f"continuing loop but met error : {err}")
-                            continue
-                    else:
-                        logging.info(f"Object already exists for {day} and {channel}, skipping")
+                                # save to S3
+                                save_to_s3(df_res, channel, day, s3_client=s3_client, country=country)
+                                
+                            except Exception as err:
+                                logging.error(f"continuing loop but met error : {err}")
+                                continue
+                        else:
+                            logging.info(f"Object already exists for {day} and {channel}, skipping")
             exit_event.set()
         except Exception as err:
             logging.fatal("get_and_save_api_data (%s) %s" % (type(err).__name__, err))

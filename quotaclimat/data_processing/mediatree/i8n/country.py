@@ -10,7 +10,8 @@ from quotaclimat.data_processing.mediatree.channel_program_data import channels_
 FranceCode = Literal["fra"]
 GermanyCode = Literal["ger"]
 BrazilCode = Literal["bra"]
-CountryCode = Union[FranceCode, GermanyCode, BrazilCode]
+AllCode = Literal["all"]
+CountryCode = Union[FranceCode, GermanyCode, BrazilCode, AllCode]
 
 class CountryMediaTree:   
     def __init__(self, code: CountryCode, language, channels: List[str], programs: List[str], timezone: str):
@@ -70,14 +71,21 @@ COUNTRIES = {
     BRAZIL.code: BRAZIL,
 }
 
+ALL_COUNTRIES_CODE : AllCode = "all"
+ALL_COUNTRIES = [FRANCE, BRAZIL, GERMANY]
+
+def get_all_countries():
+    logging.info(f"Getting all countries : {ALL_COUNTRIES}")
+    return ALL_COUNTRIES
+
 def validate_country_code(code: str) -> CountryCode:
     """Validate that a string is a valid country code."""
-    if code in (FRANCE_CODE, GERMANY_CODE, BRAZIL_CODE):
+    if code in (FRANCE_CODE, GERMANY_CODE, BRAZIL_CODE, ALL_COUNTRIES_CODE):
         return code
     raise ValueError(f"Invalid country code: {code}")
 
-def get_country_from_code(country_code: str) -> Optional[CountryMediaTree]:
-    return COUNTRIES.get(validate_country_code(country_code))
+def get_country_from_code(country_code: str) -> CountryMediaTree:
+    return COUNTRIES.get(country_code)
 
 def get_channels(country_code=FRANCE.code) -> List[str]:
     if(os.environ.get("ENV") == "docker" or os.environ.get("CHANNEL") is not None):
@@ -202,3 +210,15 @@ def get_channel_title_for_name(channel_name: str, country: CountryMediaTree = FR
     else:
         logging.error(f"Unsupported country code: {country.code}")
         return ""
+
+
+def get_countries_array(country_code: str):
+    if validate_country_code(country_code):
+        if country_code == ALL_COUNTRIES_CODE:
+            logging.info(f"Getting all countries {country_code}")
+            countries = get_all_countries()
+        else:
+            logging.info(f"Getting one country only {country_code}")
+            countries = [get_country_from_code(country_code = country_code)]
+
+    return countries

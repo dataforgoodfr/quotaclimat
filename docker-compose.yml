@@ -242,7 +242,7 @@ services:
       PYTHONPATH: /app
       PORT_HS: 5666 # healthcheck
       HEALTHCHECK_SERVER: "0.0.0.0"
-      # COUNTRY: fra    # see country.py to get all country 3-letter codes
+      COUNTRY: all    # see country.py to get all country 3-letter codes
       # SENTRY_DSN: prod_only
       #END_DATE: "2024-02-29" # optional - otherwise end of the month
       # START_DATE: 1727610071 # to test batch import 

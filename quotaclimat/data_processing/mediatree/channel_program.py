@@ -17,7 +17,7 @@ def generate_program_id(channel_name, weekday, program_name, program_grid_start)
 def get_programs(country: CountryMediaTree = FRANCE):
     logging.debug("Getting program tv/radio...")
     try:
-        logging.info(f"Reading channels_programs of {country}")
+        logging.debug(f"Reading channels_programs of {country}")
         df_programs = pd.DataFrame(country.programs)
 
         df_programs[['start', 'end', 'program_grid_start', 'program_grid_end', 'program_grid_start_str']] = df_programs.apply(lambda x: pd.Series({

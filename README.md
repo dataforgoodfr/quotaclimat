@@ -465,5 +465,6 @@ poetry run flake8 .
 There is a debt regarding the cleanest of the code right now. Let's just not make it worth for now.
 
 ## Thanks
+* [Paul Leclercq] (https://www.epauler.fr/)
 * [Eleven-Strategy](https://www.welcometothejungle.com/fr/companies/eleven-strategy)
 * [Kevin Tessier](https://kevintessier.fr)

@@ -47,12 +47,12 @@ def get_bucket_key(date, channel, filename:str="*", suffix:str="parquet", countr
     else:
         return f'country={country_code}/year={year}/month={month:1}/day={day:1}/channel={channel}/{filename}.{suffix}'
 
-def get_bucket_key_folder(date, channel, country_code : CountryCode):
+def get_bucket_key_folder(date, channel, country_code : CountryCode = FRANCE.code):
     (year, month, day) = (date.year, date.month, date.day)
     if country_code == FranceCode:
-        return f'country={country_code}/year={year}/month={month:1}/day={day:1}/channel={channel}/'
-    else: # no country for old france
         return f'year={year}/month={month:1}/day={day:1}/channel={channel}/'
+    else: # no country for old france
+        return f'country={country_code}/year={year}/month={month:1}/day={day:1}/channel={channel}/'
 
 # Function to upload folder to S3
 def upload_folder_to_s3(local_folder, bucket_name, base_s3_path, s3_client):
@@ -89,7 +89,7 @@ def read_folder_from_s3(date, channel: str, country: str = FRANCE):
 
 
 def check_if_object_exists_in_s3(day, channel, s3_client, country: CountryMediaTree = FRANCE) -> bool:
-    folder_prefix = get_bucket_key_folder(day, channel, country=country.code)  # Adjust this to return the folder path
+    folder_prefix = get_bucket_key_folder(day, channel, country_code=country.code)  # Adjust this to return the folder path
     
     logging.debug(f"Checking if folder exists: {folder_prefix}")
     try:

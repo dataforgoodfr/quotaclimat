@@ -103,7 +103,7 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
 
             logging.debug("setting channel_title")
             new_df['channel_title'] = new_df.apply(lambda x: get_channel_title_for_name(x['channel_name']), axis=1)
-
+            
             logging.debug(f"setting program {channel_program}")
             # weird error if not using this way: (ValueError) format number 1 of "20h30 le samedi" is not recognized
             new_df['channel_program'] = new_df.apply(lambda x: channel_program, axis=1)
@@ -204,11 +204,11 @@ async def get_and_save_api_data(exit_event):
             start_date = int(os.environ.get("START_DATE", 0))
             number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 7))
             country: CountryMediaTree = get_country_from_code(os.environ.get("COUNTRY", FRANCE_CODE))
-            logging.info(f"Country used is (default fra) : {country}")
-            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
+            logging.info(f"Country used is (default {FRANCE_CODE}) : {country}")
+            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days,timezone=country.timezone)
             df_programs = get_programs(country)
             channels = country.channels
-            
+            timezone = country.timezone
             day_range = get_date_range(start_date_to_query, end_date, number_of_previous_days)
             logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
             for day in day_range:
@@ -220,7 +220,7 @@ async def get_and_save_api_data(exit_event):
                     # if object already exists, skip
                     if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client, country=country):
                         try:
-                            programs_for_this_day = get_programs_for_this_day(day.tz_localize("Europe/Paris"), channel, df_programs)
+                            programs_for_this_day = get_programs_for_this_day(day.tz_localize(timezone), channel, df_programs, timezone=timezone)
 
                             for program in programs_for_this_day.itertuples(index=False):
                                 start_epoch = program.start
@@ -235,7 +235,7 @@ async def get_and_save_api_data(exit_event):
                                 if(df is not None):
                                     df_res = pd.concat([df_res, df ], ignore_index=True)
                                 else:
-                                    logging.info("Nothing to extract")
+                                    logging.info(f"Nothing to extract for {channel} {channel_program} - {start_epoch} - {end_epoch}")
 
                             # save to S3
                             save_to_s3(df_res, channel, day, s3_client=s3_client, country=country)

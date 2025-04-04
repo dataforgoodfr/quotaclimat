@@ -93,3 +93,112 @@ def get_channels(country_code=FRANCE.code) -> List[str]:
         
         logging.error(f"Unknown country {country_code} - empty array - known array are {COUNTRIES}")
         return []
+    
+def get_channel_title_for_name(channel_name: str, country: CountryMediaTree = FRANCE) -> str:
+    if country.code == FRANCE_CODE:
+        match channel_name:
+            case "tf1":
+                return "TF1"
+            case "france2":
+                return "France 2"
+            case "fr3-idf":
+                return "France 3-idf"
+            case "m6":
+                return "M6"
+            case "arte":
+                return "Arte"
+            case "d8":
+                return "C8"
+            case "bfmtv":
+                return "BFM TV"
+            case "lci":
+                return "LCI"
+            case "franceinfotv":
+                return "France Info TV"
+            case "itele":
+                return "CNews"
+            case "europe1":
+                return "Europe 1"
+            case "france-culture":
+                return "France Culture"
+            case "france-inter":
+                return "France Inter"
+            case "sud-radio":
+                return "Sud Radio"
+            case "rmc":
+                return "RMC"
+            case "rtl":
+                return "RTL"
+            case "france24":
+                return "France 24"
+            case "france-info":
+                return "FranceinfoRadio"
+            case "rfi":
+                return "RFI"
+            case _:
+                logging.error(f"Channel_name unknown {channel_name}")
+                return ""
+
+    elif country.code == GERMANY_CODE:
+        match channel_name:
+            case "ard":
+                return "ARD"
+            case "zdf":
+                return "ZDF"
+            case "rtl":
+                return "RTL"
+            case "sat1":
+                return "SAT.1"
+            case "prosieben":
+                return "ProSieben"
+            case "vox":
+                return "VOX"
+            case "kabel1":
+                return "Kabel Eins"
+            case "n24":
+                return "WELT (ex-N24)"
+            case "ntv":
+                return "n-tv"
+            case "deutschlandfunk":
+                return "Deutschlandfunk"
+            case "br":
+                return "Bayerischer Rundfunk"
+            case "wdr":
+                return "Westdeutscher Rundfunk"
+            case "swr":
+                return "Südwestrundfunk"
+            case "mdr":
+                return "Mitteldeutscher Rundfunk"
+            case "ndr":
+                return "Norddeutscher Rundfunk"
+            case _:
+                logging.error(f"Unknown channel name: {channel_name}")
+                return ""
+
+    elif country.code == BRAZIL_CODE:
+        match channel_name:
+            case "tvglobo":
+                return "TV Globo"
+            case "tvrecord":
+                return "TV Record"
+            case "sbt":
+                return "SBT"
+            case "band":
+                return "Band"
+            case "jovempan":
+                return "Jovem Pan"
+            case "cnnbrasil":
+                return "CNN Brasil"
+            case "redevida":
+                return "Rede Vida"
+            case "gazeta":
+                return "TV Gazeta"
+            case "cultura":
+                return "TV Cultura"
+            case _:
+                logging.error(f"Unknown channel name: {channel_name}")
+                return ""
+
+    else:
+        logging.error(f"Unsupported country code: {country.code}")
+        return ""

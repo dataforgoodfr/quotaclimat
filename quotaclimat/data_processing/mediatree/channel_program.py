@@ -176,7 +176,7 @@ def set_day_with_hour(programs_of_a_day, day: datetime):
     programs_of_a_day['end'] = programs_of_a_day['end'].apply(lambda dt: dt.replace(year=day.year, month=day.month, day=day.day))
     return programs_of_a_day
 
-def get_programs_for_this_day(day: datetime, channel_name: str, df_program: pd.DataFrame):
+def get_programs_for_this_day(day: datetime, channel_name: str, df_program: pd.DataFrame, timezone = FRANCE.timezone):
     logging.debug(f"get_programs_for_this_day {day} {channel_name}")
     start_time = pd.Timestamp(day)
 
@@ -185,56 +185,11 @@ def get_programs_for_this_day(day: datetime, channel_name: str, df_program: pd.D
     programs_of_a_day = set_day_with_hour(programs_of_a_day, day)
     logging.debug(f"after programs_of_a_day set_day_with_hour {programs_of_a_day}")
     programs_of_a_day[['start', 'end']] = programs_of_a_day.apply(lambda row: pd.Series({
-        'start': get_epoch_from_datetime(row['start'].tz_localize("Europe/Paris")),
-        'end': get_epoch_from_datetime(row['end'].tz_localize("Europe/Paris"))
+        'start': get_epoch_from_datetime(row['start'].tz_localize(timezone)),
+        'end': get_epoch_from_datetime(row['end'].tz_localize(timezone))
     }), axis=1)
     logging.info(f"Program of {channel_name} : {programs_of_a_day}")
     return programs_of_a_day
-
-def get_channel_title_for_name(channel_name: str) -> str:
-    match channel_name:  
-        case "tf1":
-            return "TF1"
-        case "france2":
-            return "France 2"
-        case "fr3-idf":
-            return "France 3-idf"
-        case "m6":
-            return "M6"
-        case "arte":
-            return "Arte"
-        case "d8":
-            return "C8"
-        case "bfmtv":
-            return "BFM TV"
-        case "lci":
-            return "LCI"
-        case "franceinfotv":
-            return "France Info TV"
-        case "itele":
-            return "CNews"
-        case "europe1":
-            return "Europe 1"
-        case "france-culture":
-            return "France Culture"
-        case "france-inter":
-            return "France Inter"
-        case "sud-radio":
-            return "Sud Radio"
-        case "rmc":
-            return "RMC"
-        case "rtl":
-            return "RTL"
-        case "france24":
-            return "France 24"
-        case "france-info":
-            return "FranceinfoRadio"
-        case "rfi":
-            return "RFI"
-        case _:
-            logging.error(f"Channel_name unknown {channel_name}")
-            return ""
-
 
 def apply_update_program(row, df_programs):
     return get_a_program_with_start_timestamp(df_program=df_programs, start_time=row['start'], channel_name=row['channel_name'])

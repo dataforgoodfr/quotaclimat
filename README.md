@@ -396,7 +396,9 @@ Program data will not be updated to avoid lock concurrent issues when using `UPD
 **With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.**
 
 # Mediatre to S3
-For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway).
+For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway) with partition :
+* country/year/month/day/channel
+If France, country code is None for legacy purposes.
 
 Env variable used :
 * START_DATE (integer) (unixtimestamp such as mediatree service)
@@ -405,6 +407,7 @@ Env variable used :
 * BUCKET : Scaleway Access key
 * BUCKET_SECRET : Scaleway Secret key
 * BUCKET_NAME
+* COUNTRY : 3 letter country code (default = fra), see country.py to see them all
 
 # Stop words
 To prevent advertising keywords to blow up statistics, we remove stop words based on the number of times a keyword is said in the same context.

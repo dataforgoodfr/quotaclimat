@@ -31,3 +31,9 @@ def test_get_channels_default():
       channels = get_channels()
       assert channels ==  FRANCE.channels
       os.environ['ENV'] = 'docker'
+
+def test_get_channel_title_for_name():
+      assert get_channel_title_for_name("tf1") == "TF1"
+
+def test_get_channel_title_for_name_germany():
+      assert get_channel_title_for_name("ard", GERMANY) == "ARD"

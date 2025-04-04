@@ -10,6 +10,11 @@ def test_get_bucket_key():
     channel = "tf1"
     assert get_bucket_key(date, channel) == "year=2024/month=9/day=19/channel=tf1/*.parquet"
 
+def test_get_bucket_key_country():
+    friday_6h26 = 1726719981
+    date = pd.to_datetime(friday_6h26, unit='s', utc=True)
+    channel = "tf1"
+    assert get_bucket_key(date, channel, country_code=GERMANY.code) == f"country={GERMANY.code}/year=2024/month=9/day=19/channel=tf1/*.parquet"
 
 def test_get_bucket_key_first_of_the_month():
     first_december = 1733040125
@@ -17,11 +22,26 @@ def test_get_bucket_key_first_of_the_month():
     channel = "tf1"
     assert get_bucket_key(date, channel) == "year=2024/month=12/day=1/channel=tf1/*.parquet"
 
-def test_get_bucket_key_first_of_the_month():
+def test_get_bucket_key_first_of_the_month_default():
     first_december = 1733040125
     date = pd.to_datetime(first_december, unit='s', utc=True)
     channel = "tf1"
     assert get_bucket_key_folder(date, channel) == "year=2024/month=12/day=1/channel=tf1/"
+
+def test_get_bucket_key_first_of_the_month_france():
+    first_december = 1733040125
+    date = pd.to_datetime(first_december, unit='s', utc=True)
+    channel = "tf1"
+    key_folder = f"country={FRANCE.code}/year=2024/month=12/day=1/channel=tf1/"
+    assert get_bucket_key_folder(date, channel, country_code=FRANCE.code) == key_folder
+
+def test_get_bucket_key_first_of_the_month_brazil():
+    first_december = 1733040125
+    date = pd.to_datetime(first_december, unit='s', utc=True)
+    channel = "tf1"
+    key_folder = f"country={BRAZIL.code}/year=2024/month=12/day=1/channel=tf1/"
+    assert get_bucket_key_folder(date, channel, country_code=BRAZIL.code) == key_folder
+
 
 # TODO need to mock s3 reads
 # def test_read_folder_from_s3():

@@ -39,3 +39,31 @@ def test_homepage_environment_by_media_by_month(db_connection):
     cur.close()
 
     assert count == 3, "count error"
+
+def test_core_query_environmental_shares(db_connection):
+    """Test the materialized view using dbt and pytest."""
+
+    run_dbt_command(["seed"])
+
+    run_dbt_command(["run", "--models", "core_query_environmental_shares"])
+
+    cur = db_connection.cursor()
+    cur.execute("SELECT COUNT(*) FROM public.core_query_environmental_shares;") 
+    count = cur.fetchone()[0]
+    cur.close()
+
+    assert count == 3, "count error" #TODO
+ 
+def test_core_query_thematics_keywords(db_connection):
+    """Test the materialized view using dbt and pytest."""
+
+    run_dbt_command(["seed"])
+
+    run_dbt_command(["run", "--models", "core_query_thematics_keywords"])
+
+    cur = db_connection.cursor()
+    cur.execute("SELECT COUNT(*) FROM public.core_query_thematics_keywords;") 
+    count = cur.fetchone()[0]
+    cur.close()
+
+    assert count == 3, "count error" #TODO

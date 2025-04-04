@@ -113,7 +113,7 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
            
             return new_df
         else:
-            logging.warning("No result (total_results = 0) for this channel")
+            logging.warning(f"No result (total_results = 0) for this channel {channel} - {channel_program}")
             return None
 
 def parse_raw_json(response):
@@ -163,7 +163,15 @@ def refresh_token(token, date):
         return get_auth_token(password=password, user_name=USER)
     else:
         return token
-    
+
+def get_partition_s3(country: CountryMediaTree = FRANCE) -> list[str]:
+    if country.code != FRANCE.code:
+        partition_cols = ['country','year', 'month', 'day', 'channel']
+    else:
+        partition_cols = ['year', 'month', 'day', 'channel'] # legacy for france
+
+    return partition_cols
+
 def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, country: CountryMediaTree = FRANCE):
     logging.info(f"Saving DF with {len(df)} elements to S3 for {date} and channel {channel}")
 
@@ -181,9 +189,12 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, co
 
         df = df._to_pandas() # collect data accross ray workers to avoid multiple subfolders
         based_path = "s3/parquet"
+
+        partition_cols = get_partition_s3(country)
+       
         df.to_parquet(based_path,
                        compression='gzip'
-                       ,partition_cols=['country','year', 'month', 'day', 'channel'])
+                       ,partition_cols=partition_cols)
 
         #saving full_path folder parquet to s3
         s3_path = f"{get_bucket_key_folder(date, channel, country_code=country.code)}"

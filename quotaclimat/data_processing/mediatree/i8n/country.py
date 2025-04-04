@@ -172,7 +172,7 @@ def get_channel_title_for_name(channel_name: str, country: CountryMediaTree = FR
             case "ndr":
                 return "Norddeutscher Rundfunk"
             case _:
-                logging.error(f"Unknown channel name: {channel_name}")
+                logging.error(f"Unknown channel name: {country.code} {channel_name}")
                 return ""
 
     elif country.code == BRAZIL_CODE:
@@ -196,7 +196,7 @@ def get_channel_title_for_name(channel_name: str, country: CountryMediaTree = FR
             case "cultura":
                 return "TV Cultura"
             case _:
-                logging.error(f"Unknown channel name: {channel_name}")
+                logging.error(f"Unknown channel name: {country.code} {channel_name}")
                 return ""
 
     else:

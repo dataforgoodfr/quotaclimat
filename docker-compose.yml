@@ -242,12 +242,12 @@ services:
       PYTHONPATH: /app
       PORT_HS: 5666 # healthcheck
       HEALTHCHECK_SERVER: "0.0.0.0"
-      COUNTRY: bra  # see country.py to get all country 3-letter codes
+      # COUNTRY: fra    # see country.py to get all country 3-letter codes
       # SENTRY_DSN: prod_only
       #END_DATE: "2024-02-29" # optional - otherwise end of the month
       # START_DATE: 1727610071 # to test batch import 
       #CHANNEL : fr3-idf # to reimport only one channel
-      NUMBER_OF_PREVIOUS_DAYS : 7
+      NUMBER_OF_PREVIOUS_DAYS : 1
       MEDIATREE_USER : /run/secrets/username_api
       MEDIATREE_PASSWORD: /run/secrets/pwd_api
       BUCKET: /run/secrets/bucket

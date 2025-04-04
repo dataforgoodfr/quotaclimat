@@ -40,16 +40,18 @@ def get_s3_client():
     )
     return s3_client
 
-def get_bucket_key(date, channel, filename:str="*", suffix:str="parquet", country_code : CountryCode = FranceCode):
+def get_bucket_key(date, channel, filename:str="*", suffix:str="parquet", country_code : CountryCode = FRANCE_CODE):
     (year, month, day) = (date.year, date.month, date.day)
-    if country_code == FranceCode:
+    if country_code == FRANCE_CODE:
+        logging.error(f"all ok country_code {country_code} - {FRANCE_CODE}")
         return f'year={year}/month={month:1}/day={day:1}/channel={channel}/{filename}.{suffix}'
     else:
+        logging.error(f"else country_code {country_code}")
         return f'country={country_code}/year={year}/month={month:1}/day={day:1}/channel={channel}/{filename}.{suffix}'
 
 def get_bucket_key_folder(date, channel, country_code : CountryCode = FRANCE.code):
     (year, month, day) = (date.year, date.month, date.day)
-    if country_code == FranceCode:
+    if country_code == FRANCE_CODE:
         return f'year={year}/month={month:1}/day={day:1}/channel={channel}/'
     else: # no country for old france
         return f'country={country_code}/year={year}/month={month:1}/day={day:1}/channel={channel}/'

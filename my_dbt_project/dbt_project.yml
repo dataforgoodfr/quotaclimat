@@ -35,11 +35,12 @@ models:
     homepage:
       +materialized: view
 
+# delete tables when seed are executed to have a clean start
 seeds:
   my_dbt_project:
     keywords:
       table: keywords
-      enabled: "{{ target.name != 'prod' }}"  # Disable seed in prod
+      enabled: "{{ target.name != 'prod' }}" # safe guard
       pre-hook:
         - >
           {% if target.name != 'prod' %}

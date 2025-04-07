@@ -78,7 +78,7 @@ def test_core_query_environmental_shares(db_connection):
     count = cur.fetchone()[0]
     cur.close()
 
-    assert count == 2, "count error" #TODO
+    assert count == 2, "count error"
  
 def test_core_query_thematics_keywords_count(db_connection):
     """Test the materialized view using dbt and pytest."""
@@ -91,10 +91,8 @@ def test_core_query_thematics_keywords_count(db_connection):
     assert count == 108, "count error"
 
 def test_core_query_thematics_keywords_values(db_connection):
-    """Test row count and sample values for core_query_thematics_keywords."""
 
     with db_connection.cursor() as cur:
-        # Check a specific row (e.g., first one)
         cur.execute("""
             SELECT channel_title, week, crise_type, theme, category, keyword, count
             FROM public.core_query_thematics_keywords
@@ -105,4 +103,38 @@ def test_core_query_thematics_keywords_values(db_connection):
         row = cur.fetchone()
 
         expected = ('TF1', datetime.date(2025, 1, 27), 'Crise climatique', 'changement_climatique_constat', 'Transversal', 'eau', 4)
+        assert row == expected, f"Unexpected values: {row}"
+
+def test_core_query_environmental_shares_values(db_connection):
+
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT
+            "public"."core_query_environmental_shares"."start" AS "start",
+            "public"."core_query_environmental_shares"."Program Metadata - Channel Name__channel_title" AS "Program Metadata - Channel Name__channel_title",
+            "public"."core_query_environmental_shares"."Program Metadata - Channel Name__public" AS "Program Metadata - Channel Name__public",
+            "public"."core_query_environmental_shares"."Program Metadata - Channel Name__infocontinue" AS "Program Metadata - Channel Name__infocontinue",
+            "public"."core_query_environmental_shares"."Program Metadata - Channel Name__radio" AS "Program Metadata - Channel Name__radio",
+            "public"."core_query_environmental_shares"."% environnement total" AS "% environnement total",
+            "public"."core_query_environmental_shares"."% climat" AS "% climat",
+            "public"."core_query_environmental_shares"."% climat cause" AS "% climat cause",
+            "public"."core_query_environmental_shares"."% climat solutions adaptation " AS "% climat solutions adaptation ",
+            "public"."core_query_environmental_shares"."% climat consequences" AS "% climat consequences",
+            "public"."core_query_environmental_shares"."% climat solutions attenuation" AS "% climat solutions attenuation",
+            "public"."core_query_environmental_shares"."% climat constat" AS "% climat constat",
+            "public"."core_query_environmental_shares"."% biodiversite" AS "% biodiversite",
+            "public"."core_query_environmental_shares"."% biodiversité constat" AS "% biodiversité constat",
+            "public"."core_query_environmental_shares"."% biodiversité solutions" AS "% biodiversité solutions",
+            "public"."core_query_environmental_shares"."% biodiversité conséquences" AS "% biodiversité conséquences",
+            "public"."core_query_environmental_shares"."% biodiversité causes" AS "% biodiversité causes",
+            "public"."core_query_environmental_shares"."% ressources" AS "% ressources",
+            "public"."core_query_environmental_shares"."% ressources constat" AS "% ressources constat",
+            "public"."core_query_environmental_shares"."% ressources solutions" AS "% ressources solutions"
+            FROM
+                "public"."core_query_environmental_shares"
+            WHERE "Program Metadata - Channel Name__channel_title" = 'TF1'
+            LIMIT 1
+        """)
+        row = cur.fetchone()
+        expected = (datetime.datetime(2025, 1, 27, 0, 0), 'TF1', False, False, False, 0.1333333333333333, 0.1111111111111111, 0.007407407407407407, 0.0, 0.007407407407407407, 0.0, 0.0962962962962963, 0.06666666666666665, 0.06666666666666665, 0.0, 0.0, 0.0, 0.059259259259259255, 0.059259259259259255, 0.022222222222222223)
         assert row == expected, f"Unexpected values: {row}"

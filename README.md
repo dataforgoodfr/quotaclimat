@@ -445,6 +445,7 @@ We can define some slow queries to make them efficient with materialized views u
 docker compose up testconsole -d
 docker compose exec testconsole bash
 > dbt debug  # check if this works
+# caution: this seed will reinit the keywords and program_metadata tables
 > dbt seed --select program_metadata, keywords --full-refresh  # will empty your local db - order is important
 > dbt run --models homepage_environment_by_media_by_month # change by your file name
 > poetry run pytest --log-level DEBUG -vv my_dbt_project/pytest_tests # unit test 

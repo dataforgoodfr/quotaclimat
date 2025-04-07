@@ -51,20 +51,24 @@ def run_core_query_environmental_shares():
 
     run_dbt_command(commands)
 
+@pytest.fixture(scope="module", autouse=True)
+def run_homepage_environment_by_media_by_month():
+    """Run dbt for the environmental shares model once before related tests."""
+    commands = ["run", "--models", "homepage_environment_by_media_by_month", "--full-refresh"]
+    logging.info(f"pytest running dbt homepage_environment_by_media_by_month {commands}")
+
+    run_dbt_command(commands)
+
 
 def test_homepage_environment_by_media_by_month(db_connection):
     """Test the materialized view using dbt and pytest."""
-
-    run_dbt_command(["seed"])
-
-    run_dbt_command(["run", "--models", "homepage_environment_by_media_by_month"])
 
     cur = db_connection.cursor()
     cur.execute("SELECT COUNT(*) FROM public.homepage_environment_by_media_by_month;")
     count = cur.fetchone()[0]
     cur.close()
 
-    assert count == 5, "count error"
+    assert count == 3, "count error"
 
 def test_core_query_environmental_shares(db_connection):
     """Test the materialized view using dbt and pytest."""

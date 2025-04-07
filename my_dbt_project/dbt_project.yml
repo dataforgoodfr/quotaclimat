@@ -39,3 +39,22 @@ seeds:
   my_dbt_project:
     keywords:
       table: keywords
+      enabled: "{{ target.name != 'prod' }}"  # Disable seed in prod
+      pre-hook:
+        - >
+          {% if target.name != 'prod' %}
+          DELETE FROM public.keywords;
+          {% else %}
+          -- safeguard: skip DELETE in prod
+          {% endif %}
+
+    program_metadata:
+        table: program_metadata
+        enabled: "{{ target.name != 'prod' }}" # safe guard
+        pre-hook:
+          - >
+            {% if target.name != 'prod' %}
+            DELETE FROM public.program_metadata;
+            {% else %}
+            -- safeguard: skip DELETE in prod
+            {% endif %}

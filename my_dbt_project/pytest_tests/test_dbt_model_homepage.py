@@ -58,7 +58,7 @@ def run_homepage_environment_by_media_by_month():
     run_dbt_command(commands)
 
 
-def test_homepage_environment_by_media_by_month(db_connection):
+def test_homepage_environment_by_media_by_month(db_connection,seed_dbt):
     """Test the materialized view using dbt and pytest."""
 
     cur = db_connection.cursor()
@@ -68,7 +68,7 @@ def test_homepage_environment_by_media_by_month(db_connection):
 
     assert count == 3, "count error"
 
-def test_core_query_environmental_shares(db_connection):
+def test_core_query_environmental_shares(db_connection,seed_dbt):
     """Test the materialized view using dbt and pytest."""
 
     cur = db_connection.cursor()
@@ -78,7 +78,7 @@ def test_core_query_environmental_shares(db_connection):
 
     assert count == 2, "count error"
  
-def test_core_query_thematics_keywords_count(db_connection):
+def test_core_query_thematics_keywords_count(db_connection,seed_dbt):
     """Test the materialized view using dbt and pytest."""
 
     cur = db_connection.cursor()
@@ -88,7 +88,7 @@ def test_core_query_thematics_keywords_count(db_connection):
 
     assert count == 108, "count error"
 
-def test_core_query_thematics_keywords_values(db_connection):
+def test_core_query_thematics_keywords_values(db_connection,seed_dbt):
 
     with db_connection.cursor() as cur:
         cur.execute("""
@@ -103,7 +103,7 @@ def test_core_query_thematics_keywords_values(db_connection):
         expected = ('TF1', datetime.date(2025, 1, 27), 'Crise climatique', 'changement_climatique_constat', 'Transversal', 'eau', 4)
         assert row == expected, f"Unexpected values: {row}"
 
-def test_core_query_environmental_shares_values(db_connection):
+def test_core_query_environmental_shares_values(db_connection,seed_dbt):
 
     with db_connection.cursor() as cur:
         cur.execute("""

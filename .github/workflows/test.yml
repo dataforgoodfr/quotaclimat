@@ -182,6 +182,7 @@ jobs:
         run: |
           set -o pipefail
           source .venv/bin/activate
+          poetry run dbt seed --select program_metadata, keywords --full-refresh 
           poetry run pytest --log-level DEBUG -vv my_dbt_project/pytest_tests
         env:
           ENV: dev

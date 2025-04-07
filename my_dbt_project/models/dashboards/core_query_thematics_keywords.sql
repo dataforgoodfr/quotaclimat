@@ -20,7 +20,7 @@ SELECT
     COALESCE(NULLIF(TRIM(kw ->> 'category'), ''), 'Transversal') AS category,
     kw ->> 'keyword' AS keyword,
 
-    COUNT(*) AS ligne_count
+    COUNT(*) AS count
 
 FROM public.keywords k
 LEFT JOIN public.program_metadata pm 
@@ -35,7 +35,7 @@ LEFT JOIN public.program_metadata pm
     AND CAST(k.start AS date) BETWEEN CAST(pm.program_grid_start AS date) AND CAST(pm.program_grid_end AS date)
 
 -- On déplie les mots-clés
-, json_array_elements(k.keywords_with_timestamp) AS kw
+, json_array_elements(k.keywords_with_timestamp::json) AS kw
 
 -- Exclusion des thèmes indirects
 WHERE LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
@@ -56,4 +56,4 @@ GROUP BY
 ORDER BY
     pm.channel_title,
     week,
-    crise_type;
+    crise_type

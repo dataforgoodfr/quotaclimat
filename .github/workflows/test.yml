@@ -183,7 +183,6 @@ jobs:
           set -o pipefail
           source .venv/bin/activate
           poetry run dbt debug
-          poetry run dbt seed --select program_metadata --select keywords --full-refresh
           poetry run pytest --log-level DEBUG -vv my_dbt_project/pytest_tests
         env:
           ENV: dev
@@ -194,7 +193,6 @@ jobs:
           POSTGRES_PORT: 5432
           DBT_PROJECT_DIR: my_dbt_project
           DBT_PROFILES_DIR: my_dbt_project/dbt
-
 
   test_everything_else:
     needs: build
@@ -236,21 +234,6 @@ jobs:
 
       - name: docker compose up nginx
         run: docker compose up -d nginxtest
-
-      # - name: pytest dbt models
-      #   run: |
-      #     set -o pipefail
-      #     source .venv/bin/activate
-      #     poetry run pytest my_dbt_project/pytest_tests
-      #   env:
-      #     ENV: dev
-      #     POSTGRES_USER: user
-      #     POSTGRES_DB: postgres
-      #     POSTGRES_PASSWORD: postgres
-      #     POSTGRES_HOST: localhost
-      #     POSTGRES_PORT: 5432
-      #     DBT_PROJECT_DIR: my_dbt_project
-      #     DBT_PROFILES_DIR: my_dbt_project/dbt
 
       - name: pytest run everything else
         run: |

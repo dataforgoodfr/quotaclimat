@@ -35,6 +35,7 @@ def seed_dbt():
     logging.info(f"pytest running dbt seed : {commands}")
     run_dbt_command(commands)
 
+
 seed_dbt()
 
 @pytest.fixture(scope="module", autouse=True)

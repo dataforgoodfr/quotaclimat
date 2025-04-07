@@ -28,12 +28,14 @@ def run_dbt_command(command_args):
     print(result.stdout)  # Print dbt logs for debugging
     assert result.returncode == 0, f"dbt command failed: {result.stderr}"
 
-@pytest.fixture(scope="module", autouse=True)
+
 def seed_dbt():
     """Run dbt seed once before any test."""
     commands = ["seed", "--select", "program_metadata","--select", "keywords", "--full-refresh"]
     logging.info(f"pytest running dbt seed : {commands}")
     run_dbt_command(commands)
+
+seed_dbt()
 
 @pytest.fixture(scope="module", autouse=True)
 def run_core_query_thematics_keywords():
@@ -58,7 +60,7 @@ def run_homepage_environment_by_media_by_month():
     run_dbt_command(commands)
 
 
-def test_homepage_environment_by_media_by_month(db_connection,seed_dbt):
+def test_homepage_environment_by_media_by_month(db_connection):
     """Test the materialized view using dbt and pytest."""
 
     cur = db_connection.cursor()
@@ -68,7 +70,7 @@ def test_homepage_environment_by_media_by_month(db_connection,seed_dbt):
 
     assert count == 3, "count error"
 
-def test_core_query_environmental_shares(db_connection,seed_dbt):
+def test_core_query_environmental_shares(db_connection):
     """Test the materialized view using dbt and pytest."""
 
     cur = db_connection.cursor()
@@ -78,7 +80,7 @@ def test_core_query_environmental_shares(db_connection,seed_dbt):
 
     assert count == 2, "count error"
  
-def test_core_query_thematics_keywords_count(db_connection,seed_dbt):
+def test_core_query_thematics_keywords_count(db_connection):
     """Test the materialized view using dbt and pytest."""
 
     cur = db_connection.cursor()
@@ -88,7 +90,7 @@ def test_core_query_thematics_keywords_count(db_connection,seed_dbt):
 
     assert count == 108, "count error"
 
-def test_core_query_thematics_keywords_values(db_connection,seed_dbt):
+def test_core_query_thematics_keywords_values(db_connection):
 
     with db_connection.cursor() as cur:
         cur.execute("""
@@ -103,7 +105,7 @@ def test_core_query_thematics_keywords_values(db_connection,seed_dbt):
         expected = ('TF1', datetime.date(2025, 1, 27), 'Crise climatique', 'changement_climatique_constat', 'Transversal', 'eau', 4)
         assert row == expected, f"Unexpected values: {row}"
 
-def test_core_query_environmental_shares_values(db_connection,seed_dbt):
+def test_core_query_environmental_shares_values(db_connection):
 
     with db_connection.cursor() as cur:
         cur.execute("""

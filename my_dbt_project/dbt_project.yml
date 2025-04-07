@@ -44,7 +44,17 @@ seeds:
       pre-hook:
         - >
           {% if target.name != 'prod' %}
-          DELETE FROM public.keywords;
+          DO $$
+          BEGIN
+            IF EXISTS (
+              SELECT FROM information_schema.tables 
+              WHERE table_schema = 'public' 
+              AND table_name = 'keywords'
+            ) THEN
+              EXECUTE 'DELETE FROM public.keywords';
+            END IF;
+          END
+          $$;
           {% else %}
           -- safeguard: skip DELETE in prod
           {% endif %}
@@ -55,7 +65,17 @@ seeds:
         pre-hook:
           - >
             {% if target.name != 'prod' %}
-            DELETE FROM public.program_metadata;
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'program_metadata'
+              ) THEN
+                EXECUTE 'DELETE FROM public.program_metadata';
+              END IF;
+            END
+            $$;
             {% else %}
             -- safeguard: skip DELETE in prod
             {% endif %}

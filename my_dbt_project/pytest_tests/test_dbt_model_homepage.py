@@ -32,7 +32,7 @@ def run_dbt_command(command_args):
 def seed_dbt():
     """Run dbt seed once before any test."""
     
-    commands = ["seed", "--select", "program_metadata", "keywords", "--full-refresh"]
+    commands = ["seed", "--select", "program_metadata,", "keywords", "--full-refresh"]
     logging.info(f"pytest running dbt seed : {commands}")
     run_dbt_command(commands)
 

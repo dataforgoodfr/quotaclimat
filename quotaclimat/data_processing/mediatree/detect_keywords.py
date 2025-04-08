@@ -6,6 +6,7 @@ from postgres.schemas.models import keywords_table
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from typing import List, Optional
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
+from quotaclimat.data_processing.mediatree.i8n.country import *
 import re
 import swifter
 from itertools import groupby
@@ -21,7 +22,7 @@ dask.config.set({'dataframe.query-planning': True})
 
 indirectes = 'indirectes'
 MEDIATREE_TRANSCRIPTION_PROBLEM = "<unk> "
-DEFAULT_WINDOW_DURATION = 20
+DEFAULT_WINDOW_DURATION = int(os.environ.get("DEFAULT_WINDOW_DURATION", 20))
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], theme: str) -> List[dict]:
     result = []
@@ -140,18 +141,28 @@ def remove_stopwords(plaintext: str, stopwords: list[str]) -> str:
     
     return plaintext
 
-def get_detected_keywords(plaitext_without_stopwords: str, keywords_dict):
+def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
+    return {"keyword": keyword_dict[country.keyword_column],
+            "category": keyword_dict["category"] # TODO I8N category name ?
+    }
+
+def get_detected_keywords(plaitext_without_stopwords: str, keywords_dict, country=FRANCE):
     matching_words = []
+    
+    # only keep translated keywords 
+    keywords_dict = list(filter(lambda x: x[country.keyword_column] is not None, keywords_dict))
+
     for keyword_dict in keywords_dict:
-        if is_word_in_sentence(keyword_dict["keyword"], plaitext_without_stopwords):
-            matching_words.append({"keyword": keyword_dict["keyword"], "category": keyword_dict["category"]})
+        if is_word_in_sentence(keyword_dict[country.keyword_column], plaitext_without_stopwords):
+            matching_words.append(get_keyword_matching_json(keyword_dict, country=country))
 
     return matching_words
 
 @sentry_sdk.trace
-def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime, stop_words: List[str] = []):
+def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime,
+                                stop_words: List[str] = [], country=FRANCE):
     keywords_with_timestamp = []
-    number_of_elements_in_array = 28
+    number_of_elements_in_array = 29
     default_window_in_seconds = DEFAULT_WINDOW_DURATION
     plaintext = replace_word_with_context(text=plaintext, word=MEDIATREE_TRANSCRIPTION_PROBLEM, length_to_remove=0)
     plaitext_without_stopwords = remove_stopwords(plaintext=plaintext, stopwords=stop_words)
@@ -159,7 +170,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
 
     for theme, keywords_dict in THEME_KEYWORDS.items():
         logging.debug(f"searching {theme} for {keywords_dict}")
-        matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict)
+        matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict, country=country)
        
         if matching_words:
             logging.debug(f"theme found : {theme} with word {matching_words}")
@@ -264,6 +275,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             ,number_of_biodiversite_causes_no_hrfp
             ,number_of_biodiversite_consequences_no_hrfp
             ,number_of_biodiversite_solutions_no_hrfp
+            ,country.name
         ]
     else:
         logging.debug("Empty keywords")
@@ -302,7 +314,7 @@ def log_min_max_date(df):
     logging.info(f"Date min : {min_date}, max : {max_date}")
 
 
-def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = []) -> pd.DataFrame :
+def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], country=FRANCE) -> pd.DataFrame :
         with sentry_sdk.start_transaction(op="task", name="filter_and_tag_by_theme"):
             count_before_filtering = len(df)
             logging.info(f"{count_before_filtering} subtitles to filter by keywords and tag with themes")
@@ -342,7 +354,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = []) -> pd.
                 ]
             ] = df[['plaintext','srt', 'start']]\
                 .swifter.apply(\
-                    lambda row: get_themes_keywords_duration(*row, stop_words=stop_words),\
+                    lambda row: get_themes_keywords_duration(*row, stop_words=stop_words, country=country),\
                         axis=1,
                         result_type='expand'
                 )

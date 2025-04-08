@@ -408,6 +408,7 @@ Env variable used :
 * BUCKET_SECRET : Scaleway Secret key
 * BUCKET_NAME
 * COUNTRY : 3 letter country code (default = fra), see country.py to see them all - to get all countries the code is "all"
+* DEFAULT_WINDOW_DURATION: int (default=20), the time window to divide the mediatree's 2 minute chunk (must be 120 secondes / DEFAULT_WINDOW_DURATION == 0)
 
 # Stop words
 To prevent advertising keywords to blow up statistics, we remove stop words based on the number of times a keyword is said in the same context.

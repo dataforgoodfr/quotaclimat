@@ -29,18 +29,18 @@ for excel_file_path in excels_files:
         keyword = row['keyword'].lower().strip()
         category = row['category'].strip()
 
-        # get for each language the translation, it can be None
-        keyword_english = row.get('English')
-        keyword_german = row.get('German')
-        keyword_spanish = row.get('Spanish')
-        keyword_portuguese = row.get('Portuguese')
-        keyword_polish = row.get('Polish')
-        keyword_danish = row.get('Danish') 
-        keyword_italian = row.get('Italian')
-        keyword_arabic = row.get('Arabic')
-        keyword_greek = row.get('Greek')
-        keyword_dutch = row.get('Dutch')
-        keyword_latvian = row.get('Latvian')
+        # get for each language the translation, it can be None (pandas return NaN...)
+        keyword_english = None if pd.isna(row.get('English')) else row.get('English') 
+        keyword_german = None if pd.isna(row.get('German')) else row.get('German') 
+        keyword_spanish = None if pd.isna(row.get('Spanish')) else row.get('Spanish') 
+        keyword_portuguese = None if pd.isna(row.get('Portuguese')) else row.get('Portuguese') 
+        keyword_polish = None if pd.isna(row.get('Polish')) else row.get('Polish') 
+        keyword_danish = None if pd.isna(row.get('Danish')) else row.get('Danish')  
+        keyword_italian = None if pd.isna(row.get('Italian')) else row.get('Italian') 
+        keyword_arabic = None if pd.isna(row.get('Arabic')) else row.get('Arabic') 
+        keyword_greek = None if pd.isna(row.get('Greek')) else row.get('Greek') 
+        keyword_dutch = None if pd.isna(row.get('Dutch')) else row.get('Dutch') 
+        keyword_latvian = None if pd.isna(row.get('Latvian')) else row.get('Latvian') 
 
         high_risk_of_false_positive = row['HRFP']
         crisis_climate = row['crise'] == "Climat"
@@ -105,6 +105,9 @@ with open(output_file, 'r', encoding='utf-8') as f:
     # Replace JSON boolean values with Python boolean values
     content = content.replace('true', 'True')
     content = content.replace('false', 'False')
+
+    # Replace JSON null values with Python None values
+    content = content.replace('null', 'None')
 
 # Write the modified content back to a Python file
 with open(output_file, 'w', encoding='utf-8') as f:

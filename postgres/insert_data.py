@@ -11,6 +11,24 @@ def clean_data(df: pd.DataFrame):
     df = df.drop_duplicates(subset="id")
     return df.query("id != 'empty'")  #  TODO improve - should be a None ?
 
+## UPSERT
+def insert_or_update_on_conflict(table, conn, keys, data_iter):
+    data = [dict(zip(keys, row)) for row in data_iter]
+    insert_stmt = insert(table.table).values(data)
+
+    pk = "id"
+
+    update_dict = {
+        k: insert_stmt.excluded[k]
+        for k in keys if k != pk
+    }
+
+    upsert_stmt = insert_stmt.on_conflict_do_update(
+        index_elements=[pk],
+        set_=update_dict
+    )
+
+    return conn.execute(upsert_stmt)
 
 # do not save when primary key already exist - ignore duplicate key
 # from https://stackoverflow.com/a/69421596/3535853
@@ -49,7 +67,7 @@ def save_to_pg(df, table, conn):
             con=conn,
             if_exists="append",
             chunksize=1000,
-            method=insert_or_do_nothing_on_conflict,  # pandas does not handle conflict natively
+            method=insert_or_update_on_conflict,  # TODO upsert
             dtype={"keywords_with_timestamp": JSON, "theme": JSON, "srt": JSON}, # only for keywords
         )
         logging.info("Saved dataframe to PG")

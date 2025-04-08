@@ -280,11 +280,15 @@ Otherwise, default is yesterday midnight date (default cron job).
 #### Production safety nets
 As Scaleway Serverless service can be down, if some dates are missing until today, it will start back from the latest date saved until today.
 
-**As pandas to_sql does not enable upsert (update/insert)**, if we want to update already saved rows, we have to delete first the rows and then start the program with `START_DATE` :
+### Replay data
+**As pandas to_sql does not enable upsert (update/insert)**, if we want to update already saved rows, we have to delete first the rows and then start the program with `START_DATE` and `NUMBER_OF_PREVIOUS_DAYS` :
 ```
 DELETE FROM keywords
 WHERE start BETWEEN '2024-05-01' AND '2024-05-30';
 ```
+And then replay from docker compose job "mediatree" (or scaleway job) using `START_DATE` with unix timestamp of 2024-05-30 (1717020556) and `NUMBER_OF_PREVIOUS_DAYS` to 30 to get back to 2024-05-01. Warning: it might take several hours.
+
+A better way to do it will be to stop using pandas to_sql to save data to use upsert.
 
 ### Based on channel
 Use env variable `CHANNEL` like in docker compose (string: tf1)

@@ -440,17 +440,21 @@ poetry version minor
 ```
 
 ## Materialized view - dbt
-Using [DBT](https://www.getdbt.com/), used via docker :
+We can define some slow queries to make them efficient with materialized views using [DBT](https://www.getdbt.com/), used via docker :
 ```
 docker compose up testconsole -d
 docker compose exec testconsole bash
 > dbt debug  # check if this works
-> dbt run
+# caution: this seed will reinit the keywords and program_metadata tables
+> dbt seed --select program_metadata --select keywords --full-refresh  # will empty your local db - order is important
+> dbt run --models homepage_environment_by_media_by_month # change by your file name
+> poetry run pytest --log-level DEBUG -vv my_dbt_project/pytest_tests # unit test 
 ```
 
-We can define some slow queries to make them efficient with materialized views.
+**Protips**: [Explore these data with postgres data using Metabase locally](https://github.com/dataforgoodfr/quotaclimat?tab=readme-ov-file#explore-postgres-data-using-metabase---a-bi-tool)
 
-To update monthly our materialized view in production we have to use this command that is run on every deployement of api-import (daily)
+### DBT production
+To update monthly our materialized view in production we have to use this command ([automatically done inside our docker-entrypoint](https://github.com/dataforgoodfr/quotaclimat/blob/main/docker-entrypoint.sh#L17)) that is run on every deployement of api-import (daily) :
 ```
 poetry run dbt run
 ```
@@ -465,5 +469,6 @@ poetry run flake8 .
 There is a debt regarding the cleanest of the code right now. Let's just not make it worth for now.
 
 ## Thanks
+* [Paul Leclercq] (https://www.epauler.fr/)
 * [Eleven-Strategy](https://www.welcometothejungle.com/fr/companies/eleven-strategy)
 * [Kevin Tessier](https://kevintessier.fr)

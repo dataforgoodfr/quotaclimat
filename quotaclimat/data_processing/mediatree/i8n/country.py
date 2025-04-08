@@ -7,8 +7,9 @@ from quotaclimat.data_processing.mediatree.i8n.germany.channel_program import *
 from quotaclimat.data_processing.mediatree.channel_program_data import channels_programs
 
 # Define country codes as Literal types
+# from https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
 FranceCode = Literal["fra"]
-GermanyCode = Literal["ger"]
+GermanyCode = Literal["deu"]
 BrazilCode = Literal["bra"]
 AllCode = Literal["all"]
 CountryCode = Union[FranceCode, GermanyCode, BrazilCode, AllCode]
@@ -41,7 +42,7 @@ FRANCE_TZ = "Europe/Paris"
 FRANCE_LANGUAGE = "french"
 FRANCE = CountryMediaTree(code=FRANCE_CODE,channels=FRANCE_CHANNELS, timezone=FRANCE_TZ, language=FRANCE_LANGUAGE, programs=channels_programs)
 
-GERMANY_CODE: GermanyCode ="ger"
+GERMANY_CODE: GermanyCode ="deu"
 GERMANY_CHANNELS= ["daserste"
     ,"zdf-neo"
     ,"rtl-television"

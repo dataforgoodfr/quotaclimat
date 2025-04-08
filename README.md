@@ -407,7 +407,7 @@ Env variable used :
 * BUCKET : Scaleway Access key
 * BUCKET_SECRET : Scaleway Secret key
 * BUCKET_NAME
-* COUNTRY : 3 letter country code (default = fra), see country.py to see them all - to get all countries the code is "all"
+* COUNTRY : 3 letter country code (default = fra - [Source](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3)), see country.py to see them all - to get all countries the code is "all". 
 
 # Stop words
 To prevent advertising keywords to blow up statistics, we remove stop words based on the number of times a keyword is said in the same context.

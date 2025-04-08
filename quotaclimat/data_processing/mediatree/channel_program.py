@@ -54,15 +54,15 @@ def compare_weekday(df_program_weekday: str, start_weekday: int) -> bool:
         result = False
         match not df_program_weekday.isdigit():
             case False: #int case
-                result = (start_weekday == int(df_program_weekday))
+                result = (start_weekday == (int(df_program_weekday) + 1)) # warning: legacy: channel_program_data.py is from 0 to 6 and SQL is 1 to 7
             case True: # string case
                 match df_program_weekday:
                     case '*':
                         result = True
                     case 'weekday':
-                        result = (start_weekday < 5)
+                        result = (start_weekday < 6)
                     case 'weekend':
-                        result = (start_weekday > 4)
+                        result = (start_weekday > 5)
                     case _ :
                         result = False
         logging.debug(f"result compare_weekday: {result}")
@@ -78,9 +78,9 @@ def get_hour_minute(time: pd.Timestamp):
 
     return start_time
 
-# with Monday=0 and Sunday=6.
+# with Monday=1 and Sunday=7.
 def get_day_of_week(time: pd.Timestamp) -> int:
-    start_weekday = int(time.dayofweek)
+    start_weekday = int(time.dayofweek) + 1
     logging.debug(f"start_weekday {start_weekday} based on {time}")
     return start_weekday
 

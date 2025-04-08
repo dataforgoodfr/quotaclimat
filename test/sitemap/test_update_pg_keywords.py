@@ -538,7 +538,7 @@ def test_update_only_program():
     # program - only when UPDATE_PROGRAM_ONLY for speed issues
     assert result_after_update_m6.channel_program == "1245 le mag"
     assert result_after_update_m6.channel_program_type == "Information - Magazine"
-    assert result_after_update_m6.program_metadata_id == "8d3fcdbc11951e82ee56d7346568455305f92e929c5103eac7f056d75c52feb4"
+    assert result_after_update_m6.program_metadata_id == "8ebdc0a5f4d85072658d4ef7fe16fcc13c89a4d94606ea80b27f6326c80417c3"
 
     #channel_title
     assert result_after_update_m6.channel_title == "M6"
@@ -673,7 +673,7 @@ def test_update_only_program_with_only_one_channel():
     ## TF1 should have changed because of channel=tf1
     assert result_after_update_tf1.channel_program == "JT 13h"
     assert result_after_update_tf1.channel_program_type == "Information - Journal"
-    assert result_after_update_tf1.program_metadata_id == "c21b70e006ad6ff04f27f16cc8f2096964c12d8ff92ca2aab5969ef687d2e64e"
+    assert result_after_update_tf1.program_metadata_id == "0d752edd6b8a4d9456184e6bf3c97bf5ec40708ac909954ca67004a8aee4cef2"
 
     #channel_title
     assert result_after_update_m6.channel_title == None

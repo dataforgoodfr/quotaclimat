@@ -3,6 +3,7 @@ from datetime import datetime
 
 from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer, Table, MetaData, ForeignKey
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
 from sqlalchemy import text
 from postgres.database_connection import connect_to_db, get_db_session
@@ -74,6 +75,8 @@ class Program_Metadata(Base):
     program_grid_start = Column(DateTime(), nullable=True)
     program_grid_end = Column(DateTime(), nullable=True)
     country = Column(Text, nullable=False, default=FRANCE.name) 
+    created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')"), nullable=True)
+    updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
 
 class Keywords(Base):
     __tablename__ = keywords_table
@@ -252,44 +255,57 @@ def update_channel_metadata(engine):
         logging.info("Updated channel metadata")
 
 def update_program_metadata(engine):
-    logging.info("Update program metadata")
+    logging.info("Updating program metadata")
     Session = sessionmaker(bind=engine)
     session = Session()
     current_dir = os.path.dirname(os.path.abspath(__file__))
     json_file_path = os.path.join(current_dir, '..', 'program_metadata.json')
+
     try:
         with open(json_file_path, 'r') as f:
             data = json.load(f)
-            
-            # full overwrite
-            logging.warning("Program_Metadata table! Full overwrite (delete/recreate)")
-            session.query(Program_Metadata).delete()
-            session.commit()
 
-            for item in data:
-                metadata = {
-                    'id': item['id'],
-                    'channel_name': item['channel_name'],
-                    'channel_title': item['channel_title'],
-                    'infocontinue': item['infocontinue'],
-                    'public': item['public'],
-                    'radio': item['radio'],
-                    'duration_minutes': int(item['duration']),
-                    'weekday': int(item['weekday']),
-                    'channel_program': item['program_name'],
-                    'channel_program_type': item['program_type'],
-                    'start': item['start'],
-                    'end': item['end'],
-                    'program_grid_start': datetime.strptime(item['program_grid_start'], '%Y-%m-%d'),
-                    'program_grid_end': datetime.strptime(item['program_grid_end'], '%Y-%m-%d'),
-                }
-                session.merge(Program_Metadata(**metadata))
-            
-            # Commit all changes at once after processing all items
-            session.commit()
-            logging.info("Updated program metadata")
-    except (Exception) as error:
-        logging.error(f"Error : Update program metadata {error}")
+        for item in data:
+            metadata = {
+                'id': item['id'],
+                'channel_name': item['channel_name'],
+                'channel_title': item['channel_title'],
+                'infocontinue': item['infocontinue'],
+                'public': item['public'],
+                'radio': item['radio'],
+                'duration_minutes': int(item['duration']),
+                'weekday': int(item['weekday']),
+                'channel_program': item['program_name'],
+                'channel_program_type': item['program_type'],
+                'start': item['start'],
+                'end': item['end'],
+                'program_grid_start': datetime.strptime(item['program_grid_start'], '%Y-%m-%d'),
+                'program_grid_end': datetime.strptime(item['program_grid_end'], '%Y-%m-%d'),
+            }
+
+            # Check if the record exists
+            existing_record = session.get(Program_Metadata, item['id'])
+            if existing_record:
+                for key, value in metadata.items():
+                    setattr(existing_record, key, value)
+            else:
+                logging.warning(f"New programs : {item['channel_title']} - {item['program_name']} - {item['id']}")
+                session.add(Program_Metadata(**metadata))
+
+        session.commit()
+        logging.info("Program metadata updated successfully")
+
+    except (OSError, JSONDecodeError) as file_error:
+        logging.error(f"Error reading JSON file: {file_error}")
+        session.rollback()
+    except SQLAlchemyError as db_error:
+        logging.error(f"Database error while updating program metadata: {db_error}")
+        session.rollback()
+    except Exception as error:
+        logging.error(f"Unexpected error while updating program metadata: {error}")
+        session.rollback()
+    finally:
+        session.close()
 
 def update_dictionary(engine, theme_keywords):
     logging.info("Updating dictionary data")

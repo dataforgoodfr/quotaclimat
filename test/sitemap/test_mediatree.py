@@ -191,4 +191,4 @@ def test_save_to_pg_keyword_parquet():
     df= pd.read_parquet(path="test/s3/one-day-one-channel.parquet")
     df = transform_raw_keywords(df, df_programs=df_programs)
 
-    assert save_to_pg(df, keywords_table, conn) == 26
+    assert save_to_pg(df, keywords_table, conn) == 31

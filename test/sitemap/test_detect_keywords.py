@@ -462,6 +462,7 @@ def test_three_get_themes_keywords_duration():
 def test_long_get_themes_keywords_duration():
     themes= set([
         'adaptation_climatique_solutions_indirectes',
+        'biodiversite_causes_indirectes',
         'ressources_indirectes',
         'ressources_solutions_indirectes',
     ])

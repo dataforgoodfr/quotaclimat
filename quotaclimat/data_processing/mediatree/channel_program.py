@@ -10,7 +10,7 @@ from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 def generate_program_id(channel_name, weekday, program_name, program_grid_start) -> str:
     data_str = f"{channel_name}-{weekday}-{program_name}-{program_grid_start}"
     pk: str = get_consistent_hash(data_str)
-    logging.info(f"adding for {data_str} pk {pk}")
+    logging.debug(f"adding for {data_str} pk {pk}")
     return pk
 
 def get_programs():

@@ -18,21 +18,23 @@ def get_programs(country: CountryMediaTree = FRANCE):
     logging.debug("Getting program tv/radio...")
     try:
         logging.debug(f"Reading channels_programs of {country}")
-        df_programs = pd.DataFrame(country.programs)
+        if country.programs is not None:
+            df_programs = pd.DataFrame(country.programs)
 
-        df_programs[['start', 'end', 'program_grid_start', 'program_grid_end', 'program_grid_start_str']] = df_programs.apply(lambda x: pd.Series({
-            'start': format_hour_minute(x['start']),
-            'end': format_hour_minute(x['end']),
-            'program_grid_start': get_timestamp_from_yyyymmdd(x['program_grid_start']),
-            'program_grid_end': get_timestamp_from_yyyymmdd(x['program_grid_end']),
-            'program_grid_start_str': x['program_grid_start']
-        }), axis=1)
-
+            df_programs[['start', 'end', 'program_grid_start', 'program_grid_end', 'program_grid_start_str']] = df_programs.apply(lambda x: pd.Series({
+                'start': format_hour_minute(x['start']),
+                'end': format_hour_minute(x['end']),
+                'program_grid_start': get_timestamp_from_yyyymmdd(x['program_grid_start']),
+                'program_grid_end': get_timestamp_from_yyyymmdd(x['program_grid_end']),
+                'program_grid_start_str': x['program_grid_start']
+            }), axis=1)
+            return df_programs
+        else:
+            logging.warning(f"Programs is empty for {country}")
+            return None
     except (Exception) as error:
         logging.error(f"Could not read channel_program_data.py {error}")
         raise Exception
-    
-    return df_programs
 
 
 def add_channel_program(df: pd.DataFrame): 
@@ -196,15 +198,18 @@ def apply_update_program(row, df_programs):
 
 def update_programs_and_filter_out_of_scope_programs_from_df(df: pd.DataFrame, df_programs: pd.DataFrame) -> pd.DataFrame :
     try:
-        df[['channel_program', 'channel_program_type', 'program_metadata_id']] = df.apply(
-            lambda row: apply_update_program(row, df_programs),
-            axis=1,
-            result_type='expand'
-        )
-        
-        logging.debug("drop out of perimeters rows")
-        df = df.dropna(subset=['channel_program'], how='any') # any is for None values
-        df.drop(columns=['id'], inplace=True, errors='ignore') # as replaced by program_metadata_id
+        if df_programs not None:
+            df[['channel_program', 'channel_program_type', 'program_metadata_id']] = df.apply(
+                lambda row: apply_update_program(row, df_programs),
+                axis=1,
+                result_type='expand'
+            )
+            
+            logging.debug("drop out of perimeters rows")
+            df = df.dropna(subset=['channel_program'], how='any') # any is for None values
+            df.drop(columns=['id'], inplace=True, errors='ignore') # as replaced by program_metadata_id
+        else: 
+            logging.info(f"Not updating programs because df is none")
         return df
     except Exception as err:
         logging.error(f"Could not update_programs_and_filter_out_of_scope_programs_from_df {err}")

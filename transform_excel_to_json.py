@@ -3,8 +3,9 @@ import pandas as pd
 import json
 import logging
 
-# Need to import these files - slack #keywords
+# Need to import these files - slack #metabase-keywords
 excels_files = ["document-experts/Dictionnaire - OME.xlsx"]
+i8n_dictionary = "document-experts/Dictionnaire_Multilingue.xlsx"
 output_file = "quotaclimat/data_processing/mediatree/keyword/keyword.py"
 language = "fr"
 
@@ -13,15 +14,33 @@ THEME_KEYWORDS = {}
 for excel_file_path in excels_files:
     print(f"Reading {excel_file_path}")
     df = pd.read_excel(excel_file_path, sheet_name='Catégorisation Finale')
+    i18n_df = pd.read_excel(i8n_dictionary)
+    i18n_df['French'] = i18n_df['French'].str.lower().str.strip()  # Normalize for matching
 
     df['category'] = df['Secteur'].fillna('')
     df['crise'] = df['Crise'].fillna('') 
 
+    # merge between i8n_dictionary and df based on keyword and French to get German, Spanish etc.
+    df = df.merge(i18n_df, how='left', left_on='keyword', right_on='French')
+    
     # Iterate over the rows of the DataFrame
     for index, row in df.iterrows():
         theme_name = row['Category_legacy'].strip()
         keyword = row['keyword'].lower().strip()
         category = row['category'].strip()
+
+        # get for each language the translation, it can be None
+        keyword_english = row.get('English')
+        keyword_german = row.get('German')
+        keyword_spanish = row.get('Spanish')
+        keyword_portuguese = row.get('Portuguese')
+        keyword_polish = row.get('Polish')
+        keyword_danish = row.get('Danish') 
+        keyword_italian = row.get('Italian')
+        keyword_arabic = row.get('Arabic')
+        keyword_greek = row.get('Greek')
+        keyword_dutch = row.get('Dutch')
+        keyword_latvian = row.get('Latvian')
 
         high_risk_of_false_positive = row['HRFP']
         crisis_climate = row['crise'] == "Climat"
@@ -54,7 +73,17 @@ for excel_file_path in excels_files:
                     "cause": cause,
                     "general_concepts": general_concepts,
                     "statement": statement,
-                    "language": language,
+                    "keyword_english" : keyword_english,
+                    "keyword_german" : keyword_german,
+                    "keyword_spanish" : keyword_spanish,
+                    "keyword_portuguese" : keyword_portuguese,
+                    "keyword_polish" : keyword_polish,
+                    "keyword_danish" : keyword_danish,
+                    "keyword_italian" : keyword_italian,
+                    "keyword_arabic" : keyword_arabic,
+                    "keyword_greek" : keyword_greek,
+                    "keyword_dutch" : keyword_dutch,
+                    "keyword_latvian" : keyword_latvian,
                  }
             )
 

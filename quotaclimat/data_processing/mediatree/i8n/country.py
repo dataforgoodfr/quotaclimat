@@ -10,11 +10,46 @@ from quotaclimat.data_processing.mediatree.channel_program_data import channels_
 FranceCode = Literal["fra"]
 GermanyCode = Literal["ger"]
 BrazilCode = Literal["bra"]
+BelgiumCode = Literal["bel"]
 AllCode = Literal["all"]
-CountryCode = Union[FranceCode, GermanyCode, BrazilCode, AllCode]
+CountryCode = Union[FranceCode, GermanyCode, BelgiumCode, BrazilCode, AllCode]
+
+def get_country_name_from_code(code: CountryCode) -> str:
+    match code:
+        case FRANCE.code:
+            return 'france'
+        case GERMANY.code:
+            return 'germany'
+        case BRAZIL.code:
+            return 'brazil'
+        case BELGIUM.code:
+            return 'belgium'
+        # case SPAIN.code:
+        #     return 'spain'
+        # case PORTUGAL.code:
+        #     return 'portugal'
+        # case POLAND.code:
+        #     return 'poland'
+        # case DENMARK.code:
+        #     return 'denmark'
+        # case ITALY.code:
+        #     return 'italy'
+        # case ARAB_LEAGUE.code: 
+        #     return 'arabic'
+        # case GREECE.code:
+        #     return 'greece'
+        # case NETHERLANDS.code:
+        #     return 'netherlands'
+        # case LATVIA.code:
+        #     return 'latvia'
+        # case ENGLAND.code:  # If you use a generic 'EN' or 'UK'/'US' code
+        #     return 'england'
+        case _:
+            raise ValueError(f"Unsupported country/language code: {code}")
+
 
 class CountryMediaTree:   
-    def __init__(self, code: CountryCode, language, channels: List[str], programs: List[str], timezone: str):
+    def __init__(self, code: CountryCode, language: str, channels: List[str], programs: Optional[List[str]], timezone: str):
         """
         Initialize a CountryMediaTree instance.
         
@@ -24,6 +59,7 @@ class CountryMediaTree:
             timezone (str): The country's timezone.
         """
         self.code = code
+        self.name = get_country_name_from_code(code)
         self.language = language
         self.channels = channels
         self.programs = programs
@@ -31,7 +67,7 @@ class CountryMediaTree:
 
     def __str__(self):
         """Return a string representation of the CountryMediaTree."""
-        return f"CountryMediaTree(code='{self.code}', channels={self.channels}, programs={self.programs}, language={self.language}, timezone='{self.timezone}')"
+        return f"CountryMediaTree(code='{self.code}', channels={self.channels}, programs={self.programs}, language={self.language}, name={self.name}, timezone='{self.timezone}')"
 
 
 FRANCE_CODE : FranceCode = "fra"
@@ -40,6 +76,14 @@ FRANCE_CHANNELS= ["tf1", "france2", "fr3-idf", "m6", "arte", "bfmtv", "lci", "fr
 FRANCE_TZ = "Europe/Paris"
 FRANCE_LANGUAGE = "french"
 FRANCE = CountryMediaTree(code=FRANCE_CODE,channels=FRANCE_CHANNELS, timezone=FRANCE_TZ, language=FRANCE_LANGUAGE, programs=channels_programs)
+
+
+BELGIUM_CODE : BelgiumCode = "bel"
+BELGIUM_CHANNELS= ["CANALZ","RTL","LAUNE"]
+BELGIUM_TZ = "Europe/Bruxelles"
+BELGIUM_LANGUAGE = "french" # TODO: flemish based on channel ?
+channels_programs_belgium = None # TODO
+BELGIUM = CountryMediaTree(code=BELGIUM_CODE,channels=BELGIUM_CHANNELS, timezone=BELGIUM_TZ, language=BELGIUM_LANGUAGE, programs=channels_programs_belgium)
 
 GERMANY_CODE: GermanyCode ="ger"
 GERMANY_CHANNELS= ["daserste"
@@ -72,6 +116,7 @@ COUNTRIES = {
 }
 
 ALL_COUNTRIES_CODE : AllCode = "all"
+# belgium not included in mediatree
 ALL_COUNTRIES = [FRANCE, BRAZIL, GERMANY]
 
 def get_all_countries():

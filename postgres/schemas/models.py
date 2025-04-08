@@ -7,6 +7,7 @@ import pandas as pd
 from sqlalchemy import text
 from postgres.database_connection import connect_to_db, get_db_session
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
+from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
 import os
 import json
 
@@ -72,6 +73,7 @@ class Program_Metadata(Base):
     radio = Column(Boolean, nullable=True)
     program_grid_start = Column(DateTime(), nullable=True)
     program_grid_end = Column(DateTime(), nullable=True)
+    country = Column(Text, nullable=False, default=FRANCE.name) 
 
 class Keywords(Base):
     __tablename__ = keywords_table
@@ -121,6 +123,8 @@ class Keywords(Base):
 
     program_metadata_id = Column(Text, ForeignKey('program_metadata.id'), nullable=True)
     program_metadata = relationship("Program_Metadata", foreign_keys=[program_metadata_id])
+
+    country = Column(Text, nullable=False, default=FRANCE.name)
     
 class Channel_Metadata(Base):
     __tablename__ = channel_metadata_table
@@ -129,8 +133,6 @@ class Channel_Metadata(Base):
     channel_title = Column(String, nullable=False)
     duration_minutes= Column(Integer)
     weekday= Column(Integer)  
-
-
 
 class Stop_Word(Base):
     __tablename__ = stop_word_table
@@ -144,6 +146,7 @@ class Stop_Word(Base):
     start_date = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
     validated = Column(Boolean, nullable=True, default=True)
+    country = Column(Text, nullable=False, default=FRANCE.name) # TODO PK for country
 
 class Dictionary(Base):
     __tablename__ = "dictionary"
@@ -165,8 +168,19 @@ class Dictionary(Base):
     categories = Column(ARRAY(String), nullable=True)  # example ["Concepts généraux", "Sols"]
     themes = Column(ARRAY(String), nullable=True) # example ["changement_climatique_constat", "ressources"]
 
-    language = Column(String, nullable=False, default="fr")
-    
+    # all translation of the original keyword
+    keyword_english = Column(String, nullable=True)
+    keyword_german = Column(String, nullable=True)
+    keyword_spanish = Column(String, nullable=True)
+    keyword_portuguese = Column(String, nullable=True)
+    keyword_polish = Column(String, nullable=True)
+    keyword_danish = Column(String, nullable=True)
+    keyword_italian = Column(String, nullable=True)
+    keyword_arabic = Column(String, nullable=True)
+    keyword_greek = Column(String, nullable=True)
+    keyword_dutch = Column(String, nullable=True)
+    keyword_latvian = Column(String, nullable=True)
+
 def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)

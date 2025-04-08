@@ -105,7 +105,7 @@ channels_programs = [
 {"channel_name":"europe1","start":"7:00","end":"9:00","weekday":"weekday","program_grid_start":"2023-04-01","program_grid_end":"","program_name":"Europe 1 Matin","program_type":"Information - Magazine"},
 {"channel_name":"europe1","start":"9:00","end":"9:30","weekday":"weekday","program_grid_start":"2023-04-01","program_grid_end":"","program_name":"L'heure des pros","program_type":"Information - Magazine"},
 {"channel_name":"europe1","start":"11:00","end":"13:00","weekday":"weekday","program_grid_start":"2023-04-01","program_grid_end":"","program_name":"Pascal Praud et vous","program_type":"Information - Magazine"},
-{"channel_name":"europe1","start":"13:00","end":"14:00","weekday":"weekday","program_grid_start":"2023-04-01","program_grid_end":"","program_name":"Europe 1 Matin","program_type":"Information - Magazine"},
+{"channel_name":"europe1","start":"13:00","end":"14:00","weekday":"weekday","program_grid_start":"2023-04-01","program_grid_end":"","program_name":"Europe 1 13h","program_type":"Information - Magazine"},
 {"channel_name":"europe1","start":"18:00","end":"19:00","weekday":"weekday","program_grid_start":"2023-04-01","program_grid_end":"","program_name":"Punchline","program_type":"Information - Magazine"},
 {"channel_name":"europe1","start":"19:00","end":"20:00","weekday":"weekday","program_grid_start":"2023-04-01","program_grid_end":"","program_name":"Soir","program_type":"Information - Magazine"},
 {"channel_name":"europe1","start":"6:00","end":"9:00","weekday":"weekend","program_grid_start":"2023-04-01","program_grid_end":"","program_name":" Europe 1 Matin Week-end","program_type":"Information - Magazine"},

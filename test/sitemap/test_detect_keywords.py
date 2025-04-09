@@ -11,7 +11,8 @@ localhost = get_localhost()
 original_timestamp = 1706437079004
 start = datetime.fromtimestamp(original_timestamp / 1000, timezone.utc)
 
-array_of_none = [None] * 28
+# size of array should be the same as number_of_elements_in_array
+array_of_none = [None] * 39
 
 subtitles = [{
         "duration_ms": 34,

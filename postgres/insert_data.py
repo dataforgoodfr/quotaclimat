@@ -60,7 +60,9 @@ def save_to_pg(df, table, conn):
     logging.info(f"Saving {number_of_elements} elements to PG table '{table}'")
     try:
         logging.debug("Schema before saving\n%s", df.dtypes)
-        df['updated_at'] = datetime.now()
+        if table == keywords_table:
+            df['updated_at'] = datetime.now()
+
         df.to_sql(
             table,
             index=False,

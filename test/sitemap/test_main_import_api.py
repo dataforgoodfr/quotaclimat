@@ -48,8 +48,8 @@ def insert_stop_word(conn):
 
 def test_main_api_import():
         conn = connect_to_db()
-        drop_tables()
-        create_tables()
+        drop_tables(conn)
+        create_tables(conn)
         insert_stop_word(conn)
         len_df = insert_mediatree_json(conn, json_file_path="test/sitemap/light.json")
 

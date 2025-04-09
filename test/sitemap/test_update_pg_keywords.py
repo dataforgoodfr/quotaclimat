@@ -165,8 +165,8 @@ def test_delete_keywords():
             ,0
             )
     session.commit()
-    assert get_keyword(primary_key) == None
     session.close()
+    assert get_keyword(primary_key) == None
 
 def test_first_update_keywords():
     conn = connect_to_db()

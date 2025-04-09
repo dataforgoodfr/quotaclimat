@@ -163,6 +163,17 @@ def test_delete_keywords():
             ,0
             ,0
             ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
+            ,0
             )
     session.commit()
     session.close()

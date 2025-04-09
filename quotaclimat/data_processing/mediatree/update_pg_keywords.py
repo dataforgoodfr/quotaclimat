@@ -92,7 +92,18 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     ,number_of_biodiversite_concepts_generaux_no_hrfp \
                     ,number_of_biodiversite_causes_no_hrfp \
                     ,number_of_biodiversite_consequences_no_hrfp \
-                    ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words)
+                    ,number_of_biodiversite_solutions_no_hrfp \
+                    ,number_of_changement_climatique_constat_all_hrfp \
+                    ,number_of_changement_climatique_causes_all_hrfp \
+                    ,number_of_changement_climatique_consequences_all_hrfp \
+                    ,number_of_attenuation_climatique_solutions_all_hrfp \
+                    ,number_of_adaptation_climatique_solutions_all_hrfp \
+                    ,number_of_ressources_all_hrfp \
+                    ,number_of_ressources_solutions_all_hrfp \
+                    ,number_of_biodiversite_concepts_generaux_all_hrfp \
+                    ,number_of_biodiversite_causes_all_hrfp \
+                    ,number_of_biodiversite_consequences_all_hrfp \
+                    ,number_of_biodiversite_solutions_all_hrfp = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words)
                 except Exception as err:
                         logging.error(f"continuing loop but met error : {err}")
                         continue
@@ -140,6 +151,17 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                 ,number_of_biodiversite_causes_no_hrfp
                 ,number_of_biodiversite_consequences_no_hrfp
                 ,number_of_biodiversite_solutions_no_hrfp
+                ,number_of_changement_climatique_constat_all_hrfp
+                ,number_of_changement_climatique_causes_all_hrfp
+                ,number_of_changement_climatique_consequences_all_hrfp
+                ,number_of_attenuation_climatique_solutions_all_hrfp
+                ,number_of_adaptation_climatique_solutions_all_hrfp
+                ,number_of_ressources_all_hrfp
+                ,number_of_ressources_solutions_all_hrfp
+                ,number_of_biodiversite_concepts_generaux_all_hrfp
+                ,number_of_biodiversite_causes_all_hrfp
+                ,number_of_biodiversite_consequences_all_hrfp
+                ,number_of_biodiversite_solutions_all_hrfp
                 )
             else: # Program only mode
                 logging.debug(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
@@ -208,6 +230,10 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
                 ,Keywords.number_of_biodiversite_causes_no_hrfp > 0
                 ,Keywords.number_of_biodiversite_consequences_no_hrfp > 0
                 ,Keywords.number_of_biodiversite_solutions_no_hrfp > 0
+                ,Keywords.number_of_biodiversite_concepts_generaux_all_hrfp > 0
+                ,Keywords.number_of_biodiversite_causes_all_hrfp > 0
+                ,Keywords.number_of_biodiversite_consequences_all_hrfp > 0
+                ,Keywords.number_of_biodiversite_solutions_all_hrfp > 0
             )
         )
 
@@ -250,6 +276,10 @@ def get_total_count_saved_keywords(session: Session, start_date : str, end_date 
                     ,Keywords.number_of_biodiversite_causes_no_hrfp > 0
                     ,Keywords.number_of_biodiversite_consequences_no_hrfp > 0
                     ,Keywords.number_of_biodiversite_solutions_no_hrfp > 0
+                    ,Keywords.number_of_biodiversite_concepts_generaux_all_hrfp > 0
+                    ,Keywords.number_of_biodiversite_causes_all_hrfp > 0
+                    ,Keywords.number_of_biodiversite_consequences_all_hrfp > 0
+                    ,Keywords.number_of_biodiversite_solutions_all_hrfp > 0
                 )
             )
 
@@ -292,7 +322,19 @@ def update_keyword_row(session: Session,
                         number_of_biodiversite_concepts_generaux_no_hrfp: int,
                         number_of_biodiversite_causes_no_hrfp: int,
                         number_of_biodiversite_consequences_no_hrfp: int,
-                        number_of_biodiversite_solutions_no_hrfp: int
+                        number_of_biodiversite_solutions_no_hrfp: int,
+                        number_of_changement_climatique_constat_all_hrfp: int,
+                        number_of_changement_climatique_causes_all_hrfp: int,
+                        number_of_changement_climatique_consequences_all_hrfp: int,
+                        number_of_attenuation_climatique_solutions_all_hrfp: int,
+                        number_of_adaptation_climatique_solutions_all_hrfp: int,
+                        number_of_ressources_all_hrfp: int,
+                        number_of_ressources_solutions_all_hrfp: int,
+                        number_of_biodiversite_concepts_generaux_all_hrfp: int,
+                        number_of_biodiversite_causes_all_hrfp: int,
+                        number_of_biodiversite_consequences_all_hrfp: int,
+                        number_of_biodiversite_solutions_all_hrfp: int
+                        
     ):
     if matching_themes is not None:
         session.query(Keywords).filter(Keywords.id == keyword_id).update(
@@ -326,6 +368,17 @@ def update_keyword_row(session: Session,
                 Keywords.number_of_biodiversite_causes_no_hrfp:number_of_biodiversite_causes_no_hrfp ,
                 Keywords.number_of_biodiversite_consequences_no_hrfp:number_of_biodiversite_consequences_no_hrfp ,
                 Keywords.number_of_biodiversite_solutions_no_hrfp:number_of_biodiversite_solutions_no_hrfp,
+                Keywords.number_of_changement_climatique_constat_all_hrfp:number_of_changement_climatique_constat_all_hrfp ,
+                Keywords.number_of_changement_climatique_causes_all_hrfp:number_of_changement_climatique_causes_all_hrfp ,
+                Keywords.number_of_changement_climatique_consequences_all_hrfp:number_of_changement_climatique_consequences_all_hrfp ,
+                Keywords.number_of_attenuation_climatique_solutions_all_hrfp:number_of_attenuation_climatique_solutions_all_hrfp ,
+                Keywords.number_of_adaptation_climatique_solutions_all_hrfp:number_of_adaptation_climatique_solutions_all_hrfp ,
+                Keywords.number_of_ressources_all_hrfp:number_of_ressources_all_hrfp,
+                Keywords.number_of_ressources_solutions_all_hrfp:number_of_ressources_solutions_all_hrfp ,
+                Keywords.number_of_biodiversite_concepts_generaux_all_hrfp:number_of_biodiversite_concepts_generaux_all_hrfp ,
+                Keywords.number_of_biodiversite_causes_all_hrfp:number_of_biodiversite_causes_all_hrfp ,
+                Keywords.number_of_biodiversite_consequences_all_hrfp:number_of_biodiversite_consequences_all_hrfp ,
+                Keywords.number_of_biodiversite_solutions_all_hrfp:number_of_biodiversite_solutions_all_hrfp,
             },
             synchronize_session=False
         )

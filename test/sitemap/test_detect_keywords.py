@@ -131,7 +131,18 @@ def test_one_theme_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp
+        ,number_of_changement_climatique_constat_all_hrfp
+        ,number_of_changement_climatique_causes_all_hrfp
+        ,number_of_changement_climatique_consequences_all_hrfp
+        ,number_of_attenuation_climatique_solutions_all_hrfp
+        ,number_of_adaptation_climatique_solutions_all_hrfp
+        ,number_of_ressources_all_hrfp
+        ,number_of_ressources_solutions_all_hrfp
+        ,number_of_biodiversite_concepts_generaux_all_hrfp
+        ,number_of_biodiversite_causes_all_hrfp
+        ,number_of_biodiversite_consequences_all_hrfp
+        ,number_of_biodiversite_solutions_all_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
     assert set(themes_output) == set(themes)
     # assert compare_unordered_lists_of_dicts(keywords_output, keywords)
 
@@ -162,6 +173,8 @@ def test_one_theme_get_themes_keywords_duration():
     assert number_of_biodiversite_causes_no_hrfp == 0
     assert number_of_biodiversite_consequences_no_hrfp == 0
     assert number_of_biodiversite_solutions_no_hrfp == 0
+
+    #TODO: Raph ajouter tests all_hrfp
 
 def test_two_themes_one_hrfp_get_themes_keywords_duration():
     plaintext_climat = "pizza recyclage climatique pizza"
@@ -205,7 +218,18 @@ def test_two_themes_one_hrfp_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp
+        ,number_of_changement_climatique_constat_all_hrfp
+        ,number_of_changement_climatique_causes_all_hrfp
+        ,number_of_changement_climatique_consequences_all_hrfp
+        ,number_of_attenuation_climatique_solutions_all_hrfp
+        ,number_of_adaptation_climatique_solutions_all_hrfp
+        ,number_of_ressources_all_hrfp
+        ,number_of_ressources_solutions_all_hrfp
+        ,number_of_biodiversite_concepts_generaux_all_hrfp
+        ,number_of_biodiversite_causes_all_hrfp
+        ,number_of_biodiversite_consequences_all_hrfp
+        ,number_of_biodiversite_solutions_all_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
     
     logging.info(f"Test got keywords_output: {keywords_output}")
     assert set(themes_output) == set(themes)
@@ -237,6 +261,8 @@ def test_two_themes_one_hrfp_get_themes_keywords_duration():
     assert number_of_biodiversite_causes_no_hrfp == 0
     assert number_of_biodiversite_consequences_no_hrfp == 0
     assert number_of_biodiversite_solutions_no_hrfp == 0
+
+    #TODO: @Raph ajouter tests all_hrfp
 
 
 def test_long_sentence_theme_get_themes_keywords_duration():
@@ -342,7 +368,18 @@ def test_long_sentence_theme_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp
+        ,number_of_changement_climatique_constat_all_hrfp
+        ,number_of_changement_climatique_causes_all_hrfp
+        ,number_of_changement_climatique_consequences_all_hrfp
+        ,number_of_attenuation_climatique_solutions_all_hrfp
+        ,number_of_adaptation_climatique_solutions_all_hrfp
+        ,number_of_ressources_all_hrfp
+        ,number_of_ressources_solutions_all_hrfp
+        ,number_of_biodiversite_concepts_generaux_all_hrfp
+        ,number_of_biodiversite_causes_all_hrfp
+        ,number_of_biodiversite_consequences_all_hrfp
+        ,number_of_biodiversite_solutions_all_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
 
     assert set(themes_output) == set(themes)
     # assert compare_unordered_lists_of_dicts(keywords_output, keywords)
@@ -370,6 +407,8 @@ def test_long_sentence_theme_get_themes_keywords_duration():
     assert number_of_biodiversite_causes_no_hrfp == 0
     assert number_of_biodiversite_consequences_no_hrfp == 0
     assert number_of_biodiversite_solutions_no_hrfp == 0
+
+    #TODO: @Raph ajouter all_hrfp
 
 
 def test_nothing_get_themes_keywords_duration():
@@ -431,7 +470,18 @@ def test_three_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp
+        ,number_of_changement_climatique_constat_all_hrfp
+        ,number_of_changement_climatique_causes_all_hrfp
+        ,number_of_changement_climatique_consequences_all_hrfp
+        ,number_of_attenuation_climatique_solutions_all_hrfp
+        ,number_of_adaptation_climatique_solutions_all_hrfp
+        ,number_of_ressources_all_hrfp
+        ,number_of_ressources_solutions_all_hrfp
+        ,number_of_biodiversite_concepts_generaux_all_hrfp
+        ,number_of_biodiversite_causes_all_hrfp
+        ,number_of_biodiversite_consequences_all_hrfp
+        ,number_of_biodiversite_solutions_all_hrfp) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
 
     assert set(themes_output)== themes
     logging.info(f"Got keywords:  {keywords_output}")
@@ -458,6 +508,8 @@ def test_three_get_themes_keywords_duration():
     assert number_of_biodiversite_causes_no_hrfp == 0
     assert number_of_biodiversite_consequences_no_hrfp == 0
     assert number_of_biodiversite_solutions_no_hrfp == 0
+
+    #TODO: @Raph ajouter tests all_hrfp
 
 def test_long_get_themes_keywords_duration():
     themes= set([
@@ -512,7 +564,18 @@ def test_long_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp
+        ,number_of_changement_climatique_constat_all_hrfp
+        ,number_of_changement_climatique_causes_all_hrfp
+        ,number_of_changement_climatique_consequences_all_hrfp
+        ,number_of_attenuation_climatique_solutions_all_hrfp
+        ,number_of_adaptation_climatique_solutions_all_hrfp
+        ,number_of_ressources_all_hrfp
+        ,number_of_ressources_solutions_all_hrfp
+        ,number_of_biodiversite_concepts_generaux_all_hrfp
+        ,number_of_biodiversite_causes_all_hrfp
+        ,number_of_biodiversite_consequences_all_hrfp
+        ,number_of_biodiversite_solutions_all_hrfp) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
     assert set(themes_output) == set(themes)
     # too hard to maintain
     #assert compare_unordered_lists_of_dicts(keywords_output, keywords)
@@ -539,6 +602,8 @@ def test_long_get_themes_keywords_duration():
     assert number_of_biodiversite_causes_no_hrfp == 0
     assert number_of_biodiversite_consequences_no_hrfp == 0
     assert number_of_biodiversite_solutions_no_hrfp == 0
+
+    #TODO: @Raph ajouter all_hrfp
 
 
 def test_stop_word_get_themes_keywords_duration():
@@ -695,6 +760,17 @@ def test_lower_case_filter_and_tag_by_theme():
         ,"number_of_biodiversite_causes_no_hrfp": 0
         ,"number_of_biodiversite_consequences_no_hrfp": 0
         ,"number_of_biodiversite_solutions_no_hrfp":0
+        ,"number_of_changement_climatique_constat_all_hrfp":0
+        ,"number_of_changement_climatique_causes_all_hrfp":1
+        ,"number_of_changement_climatique_consequences_all_hrfp":0
+        ,"number_of_attenuation_climatique_solutions_all_hrfp":0
+        ,"number_of_adaptation_climatique_solutions_all_hrfp":0
+        ,"number_of_ressources_all_hrfp":0
+        ,"number_of_ressources_solutions_all_hrfp":0
+        ,"number_of_biodiversite_concepts_generaux_all_hrfp":0
+        ,"number_of_biodiversite_causes_all_hrfp":0
+        ,"number_of_biodiversite_consequences_all_hrfp":0
+        ,"number_of_biodiversite_solutions_all_hrfp":0
     }])
 
     # List of words to filter on
@@ -759,6 +835,17 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         ,"number_of_biodiversite_causes_no_hrfp": 0
         ,"number_of_biodiversite_consequences_no_hrfp": 0
         ,"number_of_biodiversite_solutions_no_hrfp":0
+        ,"number_of_changement_climatique_constat_all_hrfp":0
+        ,"number_of_changement_climatique_causes_all_hrfp":1
+        ,"number_of_changement_climatique_consequences_all_hrfp":0
+        ,"number_of_attenuation_climatique_solutions_all_hrfp":0
+        ,"number_of_adaptation_climatique_solutions_all_hrfp":0
+        ,"number_of_ressources_all_hrfp":0
+        ,"number_of_ressources_solutions_all_hrfp":0
+        ,"number_of_biodiversite_concepts_generaux_all_hrfp":0
+        ,"number_of_biodiversite_causes_all_hrfp":0
+        ,"number_of_biodiversite_consequences_all_hrfp":0
+        ,"number_of_biodiversite_solutions_all_hrfp":0
     }])
 
     # List of words to filter on
@@ -866,6 +953,17 @@ def test_complexe_filter_and_tag_by_theme():
         ,"number_of_biodiversite_causes_no_hrfp": 0
         ,"number_of_biodiversite_consequences_no_hrfp": 0
         ,"number_of_biodiversite_solutions_no_hrfp":0
+        ,"number_of_changement_climatique_constat_all_hrfp":1
+        ,"number_of_changement_climatique_causes_all_hrfp":0
+        ,"number_of_changement_climatique_consequences_all_hrfp":0
+        ,"number_of_attenuation_climatique_solutions_all_hrfp":1
+        ,"number_of_adaptation_climatique_solutions_all_hrfp":0
+        ,"number_of_ressources_all_hrfp":0
+        ,"number_of_ressources_solutions_all_hrfp":0
+        ,"number_of_biodiversite_concepts_generaux_all_hrfp":0
+        ,"number_of_biodiversite_causes_all_hrfp":0
+        ,"number_of_biodiversite_consequences_all_hrfp":0
+        ,"number_of_biodiversite_solutions_all_hrfp":0
     }])
 
     # List of words to filter on
@@ -886,6 +984,8 @@ def test_complexe_filter_and_tag_by_theme():
     assert df["number_of_biodiversite_causes_directes"].head(1)[0] == expected_result["number_of_biodiversite_causes_directes"].head(1)[0]
     assert df["number_of_biodiversite_consequences"].head(1)[0] == expected_result["number_of_biodiversite_consequences"].head(1)[0]
     assert df["number_of_biodiversite_solutions_directes"].head(1)[0] == expected_result["number_of_biodiversite_solutions_directes"].head(1)[0]
+
+    #TODO: @Raph ajouter tests all_hrfp
 
 
 def test_is_word_in_sentence():

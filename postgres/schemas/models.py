@@ -10,6 +10,7 @@ from postgres.database_connection import connect_to_db, get_db_session
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 import os
 import json
+from json import JSONDecodeError
 
 Base = declarative_base()
 
@@ -174,10 +175,12 @@ def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
 
+
 def get_keyword(id: str, session = None):
     if session is None:
         session = get_db_session()
-    return session.get(Keywords, id)
+        
+    return session.query(Keywords).filter_by(id=id).one_or_none()
 
 def get_stop_word(id: str):
     session = get_db_session()
@@ -367,6 +370,7 @@ def empty_tables(session = None, stop_word = True):
         if stop_word:
             session.query(Stop_Word).delete()
         session.query(Keywords).delete()
+        
         session.commit()
         logging.warning("""Done: Empty table Stop_Word / Keywords""")
 

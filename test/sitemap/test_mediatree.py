@@ -12,11 +12,10 @@ import datetime
 
 localhost = get_localhost()
 
+@pytest.fixture(scope="module")
 def init_tables(): 
     drop_tables()
     create_tables()
-
-init_tables()
 
 plaintext1="test1"
 plaintext2="test2"
@@ -128,6 +127,7 @@ def test_get_channels():
 def test_save_to_pg_keyword_normal():
     conn = connect_to_db()
     primary_key = "test_save_to_pg_keyword"
+    start = 1706437079006
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": 1706437079006, 
@@ -157,7 +157,7 @@ def test_save_to_pg_keyword_normal():
     channel_title = "M6"
     df = pd.DataFrame([{
         "id" : primary_key,
-        "start": 1706437079006,
+        "start": start,
         "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
         "channel_name": channel_name,
         "channel_title": channel_title,
@@ -171,6 +171,7 @@ def test_save_to_pg_keyword_normal():
     assert save_to_pg(df, keywords_table, conn) == 1
 
     # check the value is well existing
+
     result = get_keyword(primary_key)
 
     assert result.id == primary_key

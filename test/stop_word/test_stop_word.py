@@ -1,4 +1,5 @@
 import logging
+import pytest
 
 import pandas as pd
 
@@ -9,9 +10,15 @@ from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 import zoneinfo
 conn = connect_to_db()
 session = get_db_session(conn)
-drop_tables()
-create_tables()
-insert_mediatree_json(conn, json_file_path='test/sitemap/short_mediatree.json')
+
+
+
+
+@pytest.fixture(scope="module", autouse=True)
+def init_tables(): 
+    drop_tables()
+    create_tables()
+    insert_mediatree_json(conn, json_file_path='test/sitemap/short_mediatree.json')
 
 def test_stop_word_get_top_keywords_by_channel():
 

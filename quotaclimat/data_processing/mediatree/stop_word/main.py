@@ -27,7 +27,7 @@ logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
 logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
 logging.getLogger('distributed').setLevel(logging.ERROR)
 logging.getLogger('worker').setLevel(logging.ERROR)
-sentry_init()
+
 
 #read whole file to a string
 password = get_password()
@@ -300,6 +300,7 @@ async def main():
     with monitor(monitor_slug='stopword'): #https://docs.sentry.io/platforms/python/crons/
         try:
             logging.info("Start stop word")
+            sentry_init()
             create_tables()
             conn = connect_to_db()
 

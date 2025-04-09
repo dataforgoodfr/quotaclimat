@@ -85,7 +85,7 @@ class Keywords(Base):
     channel_program = Column(String, nullable=True) #  arcom - alembic handles this
     channel_program_type = Column(String, nullable=True) # arcom - (magazine, journal etc) alembic handles this
     channel_radio = Column(Boolean, nullable=True)
-    start = Column(DateTime())
+    start = Column(DateTime(), primary_key=True)
     plaintext= Column(Text)
     theme=Column(JSON) #keyword.py  # ALTER TABLE keywords ALTER theme TYPE json USING to_json(theme);
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")) # ALTER TABLE ONLY keywords ALTER COLUMN created_at SET DEFAULT (now() at time zone 'utc');

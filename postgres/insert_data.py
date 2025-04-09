@@ -16,16 +16,11 @@ def insert_or_update_on_conflict(table, conn, keys, data_iter):
     data = [dict(zip(keys, row)) for row in data_iter]
     insert_stmt = insert(table.table).values(data)
 
-    pk = "id"
-
-    update_dict = {
-        k: insert_stmt.excluded[k]
-        for k in keys if k != pk
-    }
+    pk = ("id", "start") # pk of keywords
 
     upsert_stmt = insert_stmt.on_conflict_do_update(
-        index_elements=[pk],
-        set_=update_dict
+        index_elements=list(pk),
+        set_={k: insert_stmt.excluded[k] for k in keys if k not in pk}
     )
 
     return conn.execute(upsert_stmt)
@@ -74,7 +69,7 @@ def save_to_pg(df, table, conn):
         return len(df)
     except Exception as err:
         logging.error("Could not save : \n %s" % (err))
-        return 0
+        raise err
 
 def insert_data_in_sitemap_table(df: pd.DataFrame, conn):
     number_of_rows = len(df)

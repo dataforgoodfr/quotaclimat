@@ -6,6 +6,7 @@ from sqlalchemy import DateTime
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy import JSON
 from postgres.schemas.models import sitemap_table, Keywords, Stop_Word, keywords_table
+from datetime import datetime
 
 def clean_data(df: pd.DataFrame):
     df = df.drop_duplicates(subset="id")
@@ -19,7 +20,7 @@ def insert_or_update_on_conflict(table, conn, keys, data_iter):
     if table.table.name == keywords_table:
         pk = ("id", "start") # pk of keywords
     else:
-        pk = ("id")
+        pk = ("id",)
 
     upsert_stmt = insert_stmt.on_conflict_do_update(
         index_elements=list(pk),
@@ -59,6 +60,7 @@ def save_to_pg(df, table, conn):
     logging.info(f"Saving {number_of_elements} elements to PG table '{table}'")
     try:
         logging.debug("Schema before saving\n%s", df.dtypes)
+        df['updated_at'] = datetime.now()
         df.to_sql(
             table,
             index=False,

@@ -1,5 +1,5 @@
 import logging
-
+import pytest
 from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 
 from quotaclimat.data_ingestion.scrap_sitemap import (get_consistent_hash)
@@ -14,7 +14,10 @@ logging.getLogger().setLevel(logging.INFO)
 original_timestamp = 1706271523 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
 start = pd.to_datetime("2024-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
 start_tf1 = pd.to_datetime("2024-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
-create_tables()
+
+@pytest.fixture(scope="module", autouse=True)
+def init_tables(): 
+    create_tables()
 
 wrong_value = 0
 m6 = "m6"
@@ -162,8 +165,8 @@ def test_delete_keywords():
             ,0
             )
     session.commit()
-    assert get_keyword(primary_key) == None
     session.close()
+    assert get_keyword(primary_key) == None
 
 def test_first_update_keywords():
     conn = connect_to_db()

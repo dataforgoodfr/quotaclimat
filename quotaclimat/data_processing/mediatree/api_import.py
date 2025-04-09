@@ -29,7 +29,7 @@ logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
 logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
 logging.getLogger('distributed').setLevel(logging.ERROR)
 logging.getLogger('worker').setLevel(logging.ERROR)
-sentry_init()
+
 
 # reapply word detector logic to all saved keywords
 # use when word detection is changed
@@ -163,6 +163,7 @@ async def main():
     with monitor(monitor_slug='mediatree'): #https://docs.sentry.io/platforms/python/crons/
         try:
             logging.info("Start api mediatree import from S3")
+            sentry_init()
             create_tables()
 
             event_finish = asyncio.Event()

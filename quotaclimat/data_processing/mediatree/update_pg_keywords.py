@@ -335,6 +335,7 @@ def update_keyword_row(session: Session,
 
 def delete_keywords_id(session, id):
     session.query(Keywords).filter(Keywords.id == id).delete()
+    session.commit()
 
 def update_keyword_row_program(session: Session, 
                        keyword_id: int,

@@ -27,7 +27,7 @@ logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
 logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
 logging.getLogger('distributed').setLevel(logging.ERROR)
 logging.getLogger('worker').setLevel(logging.ERROR)
-sentry_init()
+
 
 #read whole file to a string
 password = get_password()
@@ -273,7 +273,7 @@ async def main():
     with monitor(monitor_slug='api-to-s3'): #https://docs.sentry.io/platforms/python/crons/
         try:
             logging.info("Start api to S3")
-            
+            sentry_init()
             event_finish = asyncio.Event()
             # Start the health check server in the background
             health_check_task = asyncio.create_task(run_health_check_server())

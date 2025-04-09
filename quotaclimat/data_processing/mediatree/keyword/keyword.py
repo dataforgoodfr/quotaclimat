@@ -3,7 +3,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "adaptation au changement climatique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17,7 +17,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "adaptation au dérèglement climatique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -31,7 +31,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "adaptation au réchauffement climatique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -45,7 +45,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "adaptation climatique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -59,7 +59,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologie",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -73,7 +73,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologique",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -87,7 +87,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroforesterie",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -101,7 +101,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroécologie",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -115,7 +115,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "amélioration des pratiques d’élevage",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -129,7 +129,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "améliorer les systèmes d'alerte et d'évacuation",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -143,7 +143,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "aquaculture durable",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -157,7 +157,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "arbre planté",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bienfaits de la nature",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -171,7 +185,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bon pour la planète",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -185,7 +199,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer nos habitudes alimentaires",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -199,7 +213,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "désalinisation des eaux",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -213,7 +227,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "développement de la planète",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -227,7 +241,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eaux usées traitées",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -241,7 +255,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eco-prêt à taux zéro",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -255,7 +269,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eco-prêt à taux zéro",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -269,7 +283,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "foresterie urbaine",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -283,7 +297,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt urbaine",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -297,7 +311,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion de la ressource en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -311,7 +325,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion du littoral",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -325,7 +339,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion durable des forêts",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -339,7 +353,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion durable des terres cultivables",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -353,7 +367,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "limiter l’érosion des côtes",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -367,7 +381,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "lutte contre le gaspillage d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -381,7 +395,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "lutter contre l’érosion",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -395,7 +409,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mesure environnementale",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -409,7 +423,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nous adapter à un futur incertain",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -423,7 +437,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plantant des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -437,7 +451,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plantation d'arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -451,7 +465,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plante des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -465,7 +479,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plantent des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -479,7 +493,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planter des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -493,7 +507,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planté des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -507,7 +521,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prise de conscience environnementale",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -521,7 +535,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "prise de conscience écologique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préservation de la nature",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -535,7 +563,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "préservation de la ressource en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préservation des forêts",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver la forêt",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver la nature",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver les forêts",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -549,7 +633,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prévention des catastrophes naturelles",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -563,7 +647,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prévention des inondations",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -577,7 +661,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pêche durable",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -591,7 +675,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "reforestation",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -605,7 +689,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "renaturer",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -619,7 +703,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "renforcer les digues",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -633,7 +717,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "renforcer les dunes",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -647,7 +731,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restriction d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -661,7 +745,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "retenue collinaire",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -675,7 +759,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "revégétalisation",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -689,7 +773,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "revégétaliser",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -703,7 +787,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "récupérateur d'eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -717,7 +801,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "récupérer l'eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -731,7 +815,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction de la demande en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -745,7 +829,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire l’élevage intensif",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -759,7 +843,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rénovation des batiments",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -773,7 +857,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rénovation thermique",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -787,7 +871,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réserve d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -801,7 +885,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "résistant à la sécheresse",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -815,7 +899,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "résistante à la sécheresse",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -829,7 +913,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réutilisation des eaux usées traitées",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -843,7 +927,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sauvegarde de la ressource en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -857,7 +941,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tva verte",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -871,7 +955,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tévéa verte",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -885,7 +969,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "verdir la politique agricole",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -899,7 +983,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vertueux pour la planète",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -913,7 +997,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétalisation",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -927,7 +1011,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétaliser",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -941,7 +1025,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétalisé",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -955,7 +1039,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétalisée",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -969,7 +1053,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -983,7 +1067,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économiser l'eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -997,7 +1081,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "îlot de fraîcheur",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1013,7 +1097,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "aménagement du territoire",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1027,7 +1111,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "barrage",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1041,7 +1125,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bon pour la santé",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1055,7 +1139,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer leurs habitudes",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1069,7 +1153,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer nos comportements",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1083,7 +1167,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer nos habitudes",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1097,7 +1181,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "digue",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1111,7 +1195,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dune",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1125,7 +1209,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espace vert",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1139,7 +1223,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espace vert",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1153,7 +1237,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "faire baisser la température",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1167,7 +1251,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1181,7 +1265,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion de l'eau",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1195,7 +1279,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion des milieux aquatiques",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1209,7 +1293,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "jachère",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1223,7 +1307,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "jardin",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1237,7 +1321,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "manipuler la terre",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1251,7 +1335,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mega bassine",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1265,7 +1349,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "miscanthus",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1279,7 +1363,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "norme",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1293,7 +1377,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ombre",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1307,7 +1391,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "parc",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "poumon vert",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1321,7 +1419,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pratiques vertueuses",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1335,7 +1433,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sorgho",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1349,7 +1447,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "système d'alerte",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1363,7 +1461,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "verdir",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1377,7 +1475,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "verdure",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1391,7 +1489,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vertueux",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1405,7 +1503,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ville durable",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1421,7 +1519,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "absorption du carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1435,7 +1533,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agir pour le climat",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1449,7 +1547,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture bio",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1463,7 +1561,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture biologique",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1477,7 +1575,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture de conservation",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1491,7 +1589,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture plus verte",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1505,7 +1603,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologie",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1519,7 +1617,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologique",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1533,7 +1631,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroforesterie",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1547,7 +1645,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroécologie",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1561,7 +1659,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ajustement carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1575,7 +1673,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "amélioration des pratiques d'élevage",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1589,7 +1687,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "anti gaspillage",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1603,7 +1701,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "antigaspi",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1617,7 +1715,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "antigaspillage",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1631,7 +1729,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "aquaculture durable",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1645,7 +1743,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "arbre planté",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1659,7 +1757,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "arrêter de prendre l'avion",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1673,7 +1771,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "atténuation du changement climatique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1687,7 +1785,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "avihonte",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1701,7 +1799,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "avion vert",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1715,7 +1813,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "avion à hydrogène",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1729,7 +1827,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse des émissions de carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1743,7 +1841,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse des émissions de gaz à effet de serre",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1757,7 +1855,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse du trafic aérien",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1771,7 +1869,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "bas carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bienfaits de la nature",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1785,7 +1897,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "biocarburant",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1799,7 +1911,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "biochar",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1813,7 +1925,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bioclimatique",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1827,7 +1939,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "biogaz",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1841,7 +1953,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "biomasse",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1855,7 +1967,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bois-énergie",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1869,7 +1981,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bon pour la planète",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1883,7 +1995,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bonus climatique",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1897,7 +2009,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bonus écologique",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1911,7 +2023,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bonus-malus écologique",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1925,7 +2037,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "borne de recharge",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1939,7 +2051,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bâtiment à énergie positive",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1953,7 +2065,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "béton bas carbone",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1967,7 +2079,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "captage et stockage",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1981,7 +2093,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "capteur de carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -1995,7 +2107,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "capture et séquestration de carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2009,7 +2121,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "capturer le carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2023,7 +2135,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "carburant d'aviation durable",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2037,7 +2149,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "carburant d'origine non fossile",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2051,7 +2163,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "carburant de synthèse",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2065,7 +2177,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "carburant durable",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2079,7 +2191,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "centrale hydroélectrique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2093,7 +2205,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer de modèle agricole",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2107,7 +2219,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer de modèle économique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2121,7 +2233,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer nos habitudes alimentaires",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2135,7 +2247,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ciment de nouvelle génération",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2149,7 +2261,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ciment durable",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2163,7 +2275,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "consommation plus responsable",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2177,7 +2289,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "consommation responsable",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2191,7 +2303,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "contre les émissions de carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2205,7 +2317,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "crit'air",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2219,7 +2331,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "descente énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2233,7 +2345,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diagnostic de performance energétique",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2247,7 +2359,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diminuer les émissions de carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2261,7 +2373,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diminuer les émissions de gaz à effet de serre",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2275,7 +2387,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "droit environnemental",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2289,7 +2401,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décarbonation",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2303,7 +2415,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décarboner",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2317,7 +2429,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décarboné",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2331,7 +2443,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décarbonée",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2345,7 +2457,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchet de canne à sucre",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2359,7 +2471,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décroissance énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2373,7 +2485,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dépolluer",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2387,7 +2499,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dépollution",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2401,7 +2513,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eco-prêt à taux 0",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2415,7 +2527,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eco-prêt à taux zéro",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2429,7 +2541,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ecomobilité",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2443,7 +2555,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "efficacité énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "en consommant moins",
+            "category": "General",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "exploitation raisonnée",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2457,7 +2597,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fin de la vente des voitures thermiques",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2471,7 +2611,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fiscalité environnementale",
             "category": "Industrie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2485,7 +2625,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "flygskam",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2499,7 +2639,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "foresterie urbaine",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2513,7 +2653,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt mosaïque",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2527,7 +2667,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt urbaine",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2541,7 +2681,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "geste écologique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2555,7 +2695,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion durable des forêts",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2569,7 +2709,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion durable des terres cultivables",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2583,7 +2723,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "géothermie",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2597,7 +2737,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "honte de prendre l'avion",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2611,7 +2751,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "huile de friture usagé",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2625,7 +2765,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hydrogène",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2639,7 +2779,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hydrogène vert",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2653,7 +2793,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hydroélectricité",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2667,7 +2807,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "isf climatique",
             "category": "Industrie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2681,7 +2821,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "isolation par l'extérieur",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2695,7 +2835,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "isolation thermique",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2709,7 +2849,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "journée de la biodiversité",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2723,7 +2863,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "journée de la terre",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2737,7 +2877,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "journée mondiale de la vie sauvage",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2751,7 +2891,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "leasing électrique",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2765,7 +2905,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "limiter la hausse des températures",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2779,7 +2919,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "limiter les émissions de carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2793,7 +2933,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "lutte contre le gaspillage alimentaire",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2807,7 +2947,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "lutte contre le gaspillage énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2821,7 +2961,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ma prime rénov",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2835,7 +2975,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "maison autonome",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2849,7 +2989,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "maison passive",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2863,7 +3003,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "malus écologique",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2877,7 +3017,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "maprimerénov",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2891,7 +3031,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "matériaux biosourcés",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2905,7 +3045,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "matériaux plus vertueux",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2919,7 +3059,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "matériaux recyclables",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2933,7 +3073,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "matériaux recyclés",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2947,7 +3087,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mesure environnementale",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2961,7 +3101,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mobilité douce",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2975,7 +3115,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mobilité durable",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -2989,7 +3129,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "moins polluant",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "moins polluer",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3003,7 +3157,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "moins prendre l'avion",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3017,7 +3171,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "méthanisation",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3031,7 +3185,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "méthaniseur",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3045,7 +3199,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "net zéro émission",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3059,7 +3213,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "objectif climatique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3073,7 +3227,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "panneau solaire",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3087,7 +3241,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "panneaux solaires",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3101,7 +3255,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "parc photovoltaïque",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3115,7 +3269,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "parc éolien",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3129,7 +3283,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "photovoltaïque",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3143,7 +3297,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plantant des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3157,7 +3311,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plantation d'arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3171,7 +3325,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plante des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3185,7 +3339,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plantent des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3199,7 +3353,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planter des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3213,7 +3367,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planté des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3227,7 +3381,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plastique recyclé",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3241,7 +3395,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollueur payeur",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3255,7 +3409,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prime à la casse",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3269,7 +3423,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prise de conscience environnementale",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3283,7 +3437,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prise de conscience écologique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3297,7 +3451,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "produits verts",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3311,7 +3465,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection de la planète",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3325,7 +3479,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection des cours d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3339,7 +3493,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection des océans",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3353,7 +3507,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection des tourbières",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3367,7 +3521,77 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection du vivant",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préservation de la nature",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préservation des forêts",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver la forêt",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver la nature",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver les forêts",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3381,7 +3605,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "puits carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3395,7 +3619,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "puits de carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3409,7 +3633,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pêche durable",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3423,7 +3647,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "quota de pêche",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3437,7 +3661,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "recyclage",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3451,7 +3675,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "recyclant",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3465,7 +3689,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "recycler",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3479,7 +3703,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "reforestation",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3493,7 +3717,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "remplacer les énergies fossiles",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3507,7 +3731,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "renaturer",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3521,7 +3745,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "respect de l’environnement",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3535,7 +3759,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "respectueux de l’environnement",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3549,7 +3773,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restauration des tourbières",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3563,7 +3787,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "restauration des zones humides",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "restauration écologique",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3577,7 +3815,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restaurer les tourbières",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3591,7 +3829,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "revégétalisation",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3605,7 +3843,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "revégétaliser",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "réduction de la consommation",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3619,7 +3871,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction des gaspillages énergétiques",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3633,7 +3885,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction des émissions de carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3647,7 +3899,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction des émissions de gaz à effet de serre",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3661,7 +3913,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction du cheptel",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3675,7 +3927,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction du gaspillage alimentaire",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3689,7 +3941,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction du gaspillage énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "réduire la consommation",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3703,7 +3969,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire la consommation d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3717,7 +3983,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire le cheptel",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3731,7 +3997,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire le trafic aérien",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3745,7 +4011,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire les émissions de carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3759,7 +4025,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire les émissions de gaz à effet de serre",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3773,7 +4039,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire les émissions d’azote",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3787,7 +4053,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire sa consommation de viande",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3801,7 +4067,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réemploi",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3815,7 +4081,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rénovation des batiments",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3829,7 +4095,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rénovation thermique",
             "category": "Batiments",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3843,7 +4109,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réseau de chaleur",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3857,7 +4123,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réseaux de chaleur",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3871,7 +4137,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réservoir d'hydrogène",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3885,7 +4151,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sans émettre de co deux",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3899,7 +4165,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sans émettre de co2",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3913,7 +4179,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "se débarrasser des énergies fossiles",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3927,7 +4193,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "se décarboner",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3941,7 +4207,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "semaine du développement durable",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3955,7 +4221,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sevrage des énergies fossiles",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3969,7 +4235,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sobriété",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3983,7 +4249,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sobriété énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -3997,7 +4263,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "société écologique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4011,7 +4277,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sortie des énergies fossiles",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4025,7 +4291,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sortie du charbon",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4039,7 +4305,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "stockage du carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4053,7 +4319,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "stockage du carbone dans les sols",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4067,7 +4333,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "stockage du co deux",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4081,7 +4347,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "stocker le carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4095,7 +4361,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "séquestration du carbone",
             "category": "Industrie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4109,7 +4375,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "technologie verte",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4123,7 +4389,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transport décarboné",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4137,7 +4403,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tva verte",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4151,7 +4417,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tévéa verte",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4165,7 +4431,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "valorisation des déchets",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4179,7 +4445,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "verdir la politique agricole",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4193,7 +4459,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vertueux pour la planète",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4207,7 +4473,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ville écologique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4221,7 +4487,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétalisation",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4235,7 +4501,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétaliser",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4249,7 +4515,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétalisé",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4263,7 +4529,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétalisée",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "zfe",
+            "category": "Transport",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "zone à faible émission",
+            "category": "Transport",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4277,7 +4571,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zéro carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4291,7 +4585,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zéro plastique",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4305,7 +4599,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zéro émission nette",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4319,7 +4613,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "éco conception",
             "category": "Industrie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4333,7 +4627,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "éco geste",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "éco organisme",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4347,7 +4655,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "éco responsable",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4361,7 +4669,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écoconception",
             "category": "Industrie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4375,7 +4683,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie circulaire",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4389,7 +4697,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie d’énergie",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4403,7 +4711,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie qui répare",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4417,7 +4725,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économiser de l’énergie",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4431,7 +4739,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écoresponsable",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4445,7 +4753,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "énergie durable",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4459,7 +4767,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "énergie renouvelable",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4473,7 +4781,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "énergie solaire",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4487,7 +4795,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "énergie verte",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4501,7 +4809,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "éolien",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4515,7 +4823,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "éolienne",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4529,7 +4837,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "étiquetage unique des aliments",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4545,7 +4853,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "activisme climatique",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4559,7 +4867,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "activiste pour le climat",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4573,7 +4881,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture durable",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4587,7 +4895,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "alternative",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4601,7 +4909,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "alternative durable",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4615,7 +4923,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "approche systémique",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4629,7 +4937,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "atténuation",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4643,7 +4951,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bardage en bois",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4657,7 +4965,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "biodégradable",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4671,7 +4979,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bois d’oeuvre",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4685,7 +4993,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bon pour la santé",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4699,7 +5007,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bonus automobile",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4713,7 +5021,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "borne électrique",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4727,7 +5035,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bus",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4741,7 +5049,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bus électrique",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4755,7 +5063,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "camion xxl",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4769,7 +5077,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "camion électrique",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4783,7 +5091,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "centrale nucléaire",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4797,7 +5105,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changement de chaudière",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4811,7 +5119,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer leurs habitudes",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4825,7 +5133,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer nos comportements",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4839,7 +5147,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer nos habitudes",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4853,7 +5161,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "compostage",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4867,7 +5175,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "covoiturage",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4881,7 +5189,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déconstruire",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4895,7 +5203,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décroissance",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4909,7 +5217,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "désobéissance civile",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4923,7 +5231,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "développement durable",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4937,7 +5245,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "epr",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4951,7 +5259,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espace vert",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4965,7 +5273,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "faire baisser la température",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4979,7 +5287,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "falloir ralentir",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -4993,7 +5301,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5007,7 +5315,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fret ferroviaire",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5021,7 +5329,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "habitude durable",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5035,7 +5343,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "industrie verte",
             "category": "Industrie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5049,7 +5357,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "intercités",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5063,7 +5371,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "isolation",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5077,7 +5385,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "isoler la façade",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5091,7 +5399,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "isoler les fenêtres",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5105,7 +5413,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "jachère",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5119,7 +5427,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "label ab",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5133,7 +5441,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "label bio",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5147,7 +5455,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "label hve",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5161,7 +5469,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "label éco",
             "category": "Industrie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5175,7 +5483,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "label écologique",
             "category": "Industrie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5189,7 +5497,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "leasing social",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5203,7 +5511,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ligne tgv",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5217,7 +5525,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "made in france",
             "category": "Industrie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5231,7 +5539,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "manifestation pour le climat",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5245,7 +5553,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "manipuler la terre",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5259,7 +5567,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "marche du siècle",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5273,7 +5581,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "marche pour le climat",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5287,7 +5595,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "marche à pied",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5301,7 +5609,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "matériau isolant",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5315,7 +5623,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "matériaux isolants",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5329,7 +5637,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "militant écologiste",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5343,7 +5651,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "militante écologiste",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5357,7 +5665,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "moins de viande",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5371,7 +5679,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "norme",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5385,7 +5693,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nucléaire",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5399,7 +5707,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "parc",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5413,7 +5721,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pass rail",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5427,7 +5735,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "passer à l'électrique",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5441,7 +5749,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "permaculture",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5455,7 +5763,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus durable",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5469,7 +5777,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus d’oxygène",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5483,7 +5791,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "poid lourd électrique",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5497,7 +5805,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polyculture élevage",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5511,7 +5819,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "pompe à chaleur",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "poumon vert",
+            "category": "Ecosystème",
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5525,7 +5847,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prairie",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5539,7 +5861,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pratiques vertueuses",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5553,7 +5875,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "principe de précaution",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5567,7 +5889,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "produire en europe",
             "category": "Industrie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5581,7 +5903,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "préserver",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5595,7 +5917,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "recharge",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5609,7 +5931,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "relocaliser la production",
             "category": "Industrie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5623,7 +5945,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replantation",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5637,7 +5959,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replanter",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5651,7 +5973,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "responsable",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5665,7 +5987,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restreindre",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5679,7 +6001,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restriction",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5693,7 +6015,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réacteur nucléaire",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5707,7 +6029,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réguler les températures",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5721,7 +6043,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rénovation",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5735,7 +6057,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rénovation énergétique",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5749,7 +6071,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "résistance thermique",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5763,7 +6085,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "saf",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5777,7 +6099,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "se déplacer en vélo",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5791,7 +6113,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "taxe carbone",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5805,7 +6127,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ter",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5819,7 +6141,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tgv",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5833,7 +6155,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "train",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5847,7 +6169,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "trains régionaux",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5861,7 +6183,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tramway",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5875,7 +6197,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transport collectif",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5889,7 +6211,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transport en commun",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5903,7 +6225,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transport ferroviaire",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5917,7 +6239,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transport fluvial",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5931,7 +6253,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transport maritime",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5945,7 +6267,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tri à la source",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5959,7 +6281,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "té heu air",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5973,7 +6295,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tégévé",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -5987,7 +6309,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "verdir",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6001,7 +6323,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "verdure",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6015,7 +6337,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vertueux",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6029,7 +6351,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ville durable",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6043,7 +6365,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "voitures électriques",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6057,7 +6379,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végan",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6071,7 +6393,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végane",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6085,7 +6407,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarien",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6099,7 +6421,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarienne",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6113,7 +6435,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "véhicule électrique",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6127,7 +6449,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vélo",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6141,7 +6463,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zad",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6155,7 +6477,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zadisme",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6169,7 +6491,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zadiste",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6183,7 +6505,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie de carburant",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6197,7 +6519,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écotaxe",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6211,7 +6533,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "éducation au changement climatique",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6225,7 +6547,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "épargne citoyenne",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -6241,7 +6563,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "a69",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6255,7 +6577,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agribusiness",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6269,7 +6591,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture conventionnelle",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6283,7 +6605,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture extensive",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6297,7 +6619,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture industrielle",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6311,7 +6633,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture intensive",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6325,7 +6647,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "artificialisation des milieux naturels",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6339,7 +6661,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "artificialisation des sols",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6353,7 +6675,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "assèchement des zones humides",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6367,7 +6689,49 @@ THEME_KEYWORDS = {
         {
             "keyword": "braconnage",
             "category": "Surexploitation des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "braconnier",
+            "category": "Surexploitation des ressources",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bétonisation",
+            "category": "Destruction des habitats",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bétonner les sols",
+            "category": "Destruction des habitats",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6381,7 +6745,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cadmium",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6395,7 +6759,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changement d’usage des terres",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6409,7 +6773,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "chlordécone",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6423,7 +6787,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "coupe rase",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6437,7 +6801,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "destruction de la planète",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6451,7 +6815,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "destruction des habitats naturels",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6465,7 +6829,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "destruction des milieux naturels",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6479,7 +6843,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "disparition des haies",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6493,7 +6857,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décharge sauvage",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6507,7 +6871,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchet toxique",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6521,7 +6885,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déforestation",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6535,7 +6899,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dépôt sauvage",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6549,7 +6913,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais azoté",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6563,7 +6927,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais de synthèse",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6577,7 +6941,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais phosphaté",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6591,7 +6955,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "extractivisme",
             "category": "Surexploitation des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6605,7 +6969,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "extractiviste",
             "category": "Surexploitation des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6619,7 +6983,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "glyphosate",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6633,7 +6997,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "herbicide",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "imperméabilisation des sols",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6647,7 +7025,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "intrant chimique",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "marée noire",
+            "category": "Pollution",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "massacre des terres",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6661,7 +7067,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mauvaise nouvelle pour la planète",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6675,7 +7081,49 @@ THEME_KEYWORDS = {
         {
             "keyword": "micro-plastique",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "microplastique",
+            "category": "Pollution",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "micropolluant",
+            "category": "Pollution",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "multinationale agroalimentaire",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6689,7 +7137,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "métaux lourds",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "nocif pour l'environnement",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6703,7 +7165,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "néonicotinoïde",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "paille en plastique",
+            "category": "Pollution",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6717,7 +7193,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "pas très écolo",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "perméabilisation des sols",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6731,7 +7221,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "perte d’habitats",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6745,7 +7235,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "pesticide",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pesticide résiduel",
+            "category": "Pollution",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6759,7 +7263,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pfas",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6773,7 +7277,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pfoa",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6787,7 +7291,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pfos",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6801,7 +7305,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "polluant",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pollueur",
+            "category": "Pollution",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6815,7 +7333,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution atmosphérique",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6829,7 +7347,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution chimique",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6843,7 +7361,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution de la mer",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6857,7 +7375,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution de l’eau",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6871,7 +7389,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution des sols",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6885,7 +7403,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution environnementale",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6899,7 +7417,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution plastique",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6913,7 +7431,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution record",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6927,7 +7445,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pression sur les milieux naturels",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6941,7 +7459,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "productivisme",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6955,7 +7473,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "productiviste",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6969,7 +7487,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "produit phytosanitaire",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6983,7 +7501,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ptfe",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -6997,7 +7515,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pêche industrielle",
             "category": "Surexploitation des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7011,7 +7529,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "surpêche",
             "category": "Surexploitation des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7025,7 +7543,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écocide",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7039,7 +7557,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "épandage",
             "category": "Pollution",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7053,7 +7571,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "étalement urbain",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7069,7 +7587,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acide",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7083,7 +7601,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "activité industrielle",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7097,7 +7615,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro-industrie",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7111,7 +7629,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro-industriel",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7125,7 +7643,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "arsenic",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "barrage",
+            "category": "Destruction des habitats",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bouteille en plastique",
+            "category": "Pollution",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7139,7 +7685,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bétonner",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7153,7 +7699,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cancérigène",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7167,7 +7713,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cancérogène",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7181,7 +7727,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "capitalisme",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7195,7 +7741,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "commerce illégal d’espèces",
             "category": "Surexploitation des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7209,7 +7755,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "complexe agro-industriel",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7223,7 +7769,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchet",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7237,7 +7783,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "emballage",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7251,7 +7797,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "emballage en plastique",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7265,7 +7811,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "emballage plastique",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7279,7 +7825,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "feux",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7293,7 +7839,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "feux de forêt",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7307,7 +7853,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fluor",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7321,7 +7867,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fongicide",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7335,7 +7881,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt brûle",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7349,7 +7895,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt d'algues",
             "category": "Espèces exotiques envahissantes",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7363,7 +7909,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt détruit",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7377,7 +7923,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt détruite",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7391,7 +7937,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt ravagé",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7405,7 +7951,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt ravagée",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7419,7 +7965,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêts brûlent",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7433,7 +7979,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêts ont été détruites",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7447,7 +7993,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "huile de palme",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7461,7 +8007,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "incendie de forêt",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7475,7 +8021,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "incendies",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7489,7 +8035,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "intrants",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "milieu artificiel",
+            "category": "Destruction des habitats",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7503,7 +8063,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mégot",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7517,7 +8077,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nouvelles techniques génomiques",
             "category": "Surexploitation des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7531,7 +8091,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ogm",
             "category": "Surexploitation des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7545,7 +8105,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "organisme génétiquement modifiée",
             "category": "Surexploitation des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7559,7 +8119,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "perturbateur endocrinien",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7573,7 +8133,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plante exotique envahissante",
             "category": "Espèces exotiques envahissantes",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7587,7 +8147,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plante exotique invasive",
             "category": "Espèces exotiques envahissantes",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7601,7 +8161,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plante exotique très invasive",
             "category": "Espèces exotiques envahissantes",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7615,7 +8175,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plastique",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7629,7 +8189,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plomb",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7643,7 +8203,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollue",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7657,7 +8217,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polluer",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7671,7 +8231,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7685,7 +8245,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution de l’air",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7699,7 +8259,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "rejets industriels",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "réchauffement",
+            "category": "Changement climatique",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7713,7 +8287,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "site minier",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7727,7 +8301,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "solvant",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7741,7 +8315,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "surconsommation",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "sécheresse",
+            "category": "General",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7755,7 +8343,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tourisme de masse",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7769,7 +8357,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "toxique",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7783,7 +8371,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "trafic d’espèces",
             "category": "Surexploitation des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7797,7 +8385,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "urbanisation",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7811,7 +8399,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "urbanisme",
             "category": "Destruction des habitats",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7825,7 +8413,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zinc",
             "category": "Pollution",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7841,7 +8429,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "accord de kunming",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7855,7 +8443,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "accord de kunming-montréal",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7869,7 +8457,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "accord de montréal",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7883,7 +8471,77 @@ THEME_KEYWORDS = {
         {
             "keyword": "ademe",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "agence de l'eau",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "aire marine protégée",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "amnésie environnementale",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "amphibien",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "animaux sauvages",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7897,7 +8555,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "anti-écolo",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "arbre remarquable",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "arnica",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7911,7 +8597,77 @@ THEME_KEYWORDS = {
         {
             "keyword": "atteinte à la biodiversité",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bien être animal",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bien-être animal",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bien-être de la nature",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bio capacité",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "biocapacité",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7925,7 +8681,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "biodiversité",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bios géo chimique",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7939,7 +8709,49 @@ THEME_KEYWORDS = {
         {
             "keyword": "bonne nouvelle pour la planète",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "calotte du groenland",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "calotte glacière",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "calotte polaire",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7953,7 +8765,77 @@ THEME_KEYWORDS = {
         {
             "keyword": "capacité planétaire",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "chauve-souris",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "cigogne",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "coléoptères",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "consommation de plastique",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "continuité écologique",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7967,7 +8849,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "convention des nations unies sur la diversité biologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7981,7 +8863,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "convention sur la diversité biologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -7995,7 +8877,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop 15",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8009,7 +8891,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop 16",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8023,7 +8905,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop biodiversité",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8037,7 +8919,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop de montréal",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "cop dix sept",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8051,7 +8947,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop quinze",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8065,7 +8961,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop seize",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8079,7 +8975,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop sur la biodiversité",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8093,7 +8989,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop15",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "crise de la biodiversité",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "cycles biogéochimiques",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8107,7 +9031,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "d'ici 2050",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8121,7 +9045,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "destruction de la biodiversité",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8135,7 +9059,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "disparition des espèces",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8149,7 +9073,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diversité biologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8163,7 +9087,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diversité des êtres vivants",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8177,7 +9101,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diversité du vivant",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8191,7 +9115,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déclin du vivant",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8205,7 +9129,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dégradation de l'habitat",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8219,7 +9143,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "dégradation des ecosystèmes",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "empreinte biodiversité",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "empreinte plastique",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8233,7 +9185,77 @@ THEME_KEYWORDS = {
         {
             "keyword": "enjeu environnemental",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "equilibre dynamique",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "espèce animale",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "espèce locale",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "espèce migratrice",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "espèce végétale",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8247,7 +9269,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "faune sauvage",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8261,7 +9283,91 @@ THEME_KEYWORDS = {
         {
             "keyword": "fertilité des sols",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "flamant rose",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "fne",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "fnh",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "fondation pour la nature et l'homme",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "forêt boréale",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "forêt tropicale",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8275,7 +9381,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "france nature environnement",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "france nature environnement",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8289,7 +9409,49 @@ THEME_KEYWORDS = {
         {
             "keyword": "green deal",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "greenpeace",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "gypaète barbu",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "habitat naturel",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8303,7 +9465,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "habiter le monde",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "hot spot de biodiversité",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8317,7 +9493,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hydrologue",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8331,7 +9507,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "impact environnementale",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "interaction avec le vivant",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8345,7 +9535,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "intégrité écologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8359,7 +9549,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "intérêt environnemental",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8373,7 +9563,217 @@ THEME_KEYWORDS = {
         {
             "keyword": "ipbes",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "journée mondiale de l'océan",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "journée mondiale des océans",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "libre évolution",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "lien au vivant",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "lien avec le vivant",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "lieu de ponte",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "ligue de protection des oiseaux",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "mammifère marin",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "mammifère terrestre",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "mangrove",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "milieu d'eau douce",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "milieu forestier",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "milieux naturels",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "mnhn",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "muséum d'histoire naturelle",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8387,7 +9787,105 @@ THEME_KEYWORDS = {
         {
             "keyword": "mutation écologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "mycorhize",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "mésange",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "métabolite",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "nappe phréatique",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "nidification",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "ofb",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "office français de la biodiversité",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8401,7 +9899,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "office national des forêts",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8415,7 +9913,77 @@ THEME_KEYWORDS = {
         {
             "keyword": "pacte vert",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "patrimoine naturel",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "personnalité juridique des éléments naturels",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "photosynthèse",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "plage de ponte",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "plancton",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8429,7 +9997,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "planification écologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "point chaud de biodiversité",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8443,7 +10025,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "politique climatique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "politique environnementale",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pollinisateur",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "polliniser",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "posidonie",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8457,7 +10095,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "protocole de montréal",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "relation au vivant",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8471,7 +10123,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "ressource planétaire",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "rouge gorge",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "réserve de chasse",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8485,7 +10165,77 @@ THEME_KEYWORDS = {
         {
             "keyword": "résilience des écosystèmes",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "santé environnementale",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "sciences de l'environnement",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "service rendu par la nature",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "services écosystémiques",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "site de ponte",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8499,7 +10249,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sixième extinction de masse",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8513,7 +10263,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sommet sur la biodiversité",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8527,7 +10277,77 @@ THEME_KEYWORDS = {
         {
             "keyword": "spécialiste de la biodiversité",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "spécialiste des questions environnementales",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "stratégie nationale biodiversité",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "séquestration du carbone",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "séquestrer le carbone",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "tortue marine",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8541,7 +10361,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tourbières",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8555,7 +10375,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition agro écologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8569,7 +10389,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition agroécologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8583,7 +10403,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition écologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8597,7 +10417,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "uicn",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8611,7 +10431,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "union internationale pour la conservation de la nature",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "ver de terre",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "vison d'europe",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "wwf",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "zone de biodiversité",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8625,7 +10501,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zones humides",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8639,7 +10515,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "écologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "écosystème aquatique",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8653,7 +10543,49 @@ THEME_KEYWORDS = {
         {
             "keyword": "écosystème forestier",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "écosystème marin",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "écosystème montagnard",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "écosystème montagnard",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8667,7 +10599,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écosystèmes dégradés",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8681,7 +10613,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écosystémique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8697,7 +10629,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "abeille",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8711,7 +10643,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agences régionales de santé",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8725,7 +10657,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agricole",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8739,7 +10671,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculteur",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8753,7 +10685,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8767,7 +10699,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroalimentaire",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8781,7 +10713,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "alimentation",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8795,7 +10727,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "aménagement du territoire",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "anguille",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8809,7 +10755,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "arbre",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8823,7 +10769,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ars",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8837,7 +10783,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "autorité de santé",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bactérie",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "biologiste",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8851,7 +10825,175 @@ THEME_KEYWORDS = {
         {
             "keyword": "bloc d’immeubles",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bocage",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "calotte",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "castor",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "cerf",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "champignon",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "chardonneret",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "chasse",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "chasseur",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "chevreuil",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "châtaignier",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "chêne",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "civelle",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8865,7 +11007,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "corail",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8879,7 +11021,91 @@ THEME_KEYWORDS = {
         {
             "keyword": "coraux",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "cours d'eau",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "crise du lien",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "croissance bleue",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "croissance verte",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "crustacé",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "dauphin",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8893,7 +11119,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diversité génétique",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8907,7 +11133,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchetterie",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8921,7 +11147,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dégrader",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8935,7 +11161,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "désertification",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8949,7 +11175,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "eau",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "eau douce",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8963,7 +11203,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "environnement",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8977,7 +11217,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "environnemental",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -8991,7 +11231,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "environnementale",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9005,7 +11245,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "environnementaux",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "espèce",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9019,7 +11273,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "faune",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9033,7 +11287,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "flore",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9047,7 +11301,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "fourmi",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "frelon",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "genepi",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "guêpe",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9061,7 +11371,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "générations futures",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9075,7 +11385,105 @@ THEME_KEYWORDS = {
         {
             "keyword": "générations à venir",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "habitat",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "hirondelle",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "humus",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "hérisson",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "hêtre",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "impact négatif",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "impact positif",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9089,7 +11497,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "impact sur la santé",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9103,7 +11511,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "incinérateur",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9117,7 +11525,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "insecte",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9131,7 +11539,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "irrigation",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "isard",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "izard",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "lac",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "le vivant",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9145,7 +11609,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "littoral",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "loup",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "lpo",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "lynx",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "mammifère",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9159,7 +11679,49 @@ THEME_KEYWORDS = {
         {
             "keyword": "marais",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "mare",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "marmotte",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "marécage",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9173,7 +11735,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "mer",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "micro-organisme",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "microbe",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "milieu humide",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "milieu montagnard",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9187,7 +11805,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ministre de la transition écologique",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9201,7 +11819,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ministère de la transition écologique",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9215,7 +11833,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "modèle agricole",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "moineau",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "mollusque",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "montagne",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "moustique",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9229,7 +11903,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nature",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9243,7 +11917,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "naturel",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9257,7 +11931,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "naturelle",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "nexus",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "non humain",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9271,7 +11973,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "océan",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "océanographe",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "oiseau",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9285,7 +12015,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "oms",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "one health",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9299,7 +12043,105 @@ THEME_KEYWORDS = {
         {
             "keyword": "organisation mondiale de la santé",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "organisme vivant",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "ours",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "ours polaire",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "papillon",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pelouse",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pigeon",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pins",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9313,7 +12155,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planète",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9327,7 +12169,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planétaire",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9341,7 +12183,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "poisson",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9355,7 +12197,77 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollinisation",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "poumon vert",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pression",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pêche professionnelle",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pêcheur",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "renard",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9369,7 +12281,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "revue nature",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "rivière",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "récif",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9383,7 +12323,91 @@ THEME_KEYWORDS = {
         {
             "keyword": "récif corallien",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "sanglier",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "sapin",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "sargasse",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "saumon",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "sciences du vivant",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "termites",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9397,7 +12421,77 @@ THEME_KEYWORDS = {
         {
             "keyword": "terre",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "tortue",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "tourbe",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "truite",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "une seule santé",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "vautour",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9411,7 +12505,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "vie sous-marine",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "virus",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9425,7 +12533,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "vivant",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "végétaux",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "zone humide",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9439,7 +12575,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écolo",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9453,7 +12589,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écologie",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9467,7 +12603,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "écologiste",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "économie bleue",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "économie maritime",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9481,7 +12645,77 @@ THEME_KEYWORDS = {
         {
             "keyword": "écosystème",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "écotourisme",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "écrevisse",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "éléphant",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "épicéa",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": True,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "étang",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9497,7 +12731,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acidification des océans",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9511,7 +12745,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acidification du milieu marin",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9525,7 +12759,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse de production agricole",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9539,7 +12773,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse des rendements agricoles",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9553,7 +12787,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse des récoltes",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9567,7 +12801,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse du stockage du carbone dans les sols",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "baleine échouée",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "biodiversité en danger",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9581,7 +12843,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bioérosion",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9595,7 +12857,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bruit routier",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9609,7 +12871,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "catastrophe écologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9623,7 +12885,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "condition dégradée d’habitation",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9637,7 +12899,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "crise d'extinction de masse",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "crise environnementale",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "dauphin échoué",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9651,7 +12941,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diminution des rendements agricoles",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9665,7 +12955,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "disparition des espèces",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9679,7 +12969,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "disparition des forêts",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9693,7 +12983,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "disparition des insectes",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9707,7 +12997,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "disparition des oiseaux",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9721,7 +13011,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "disparition du vivant",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "déclin de la biodiversité",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9735,7 +13039,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dégradation des puits de carbone",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9749,7 +13053,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dégradation des sols",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9763,7 +13067,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espèce en voie de disparition",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9777,7 +13081,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espèce envahissante",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9791,7 +13095,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espèce exotique envahissante",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9805,7 +13109,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espèce invasive",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9819,7 +13123,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espèce menacée",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9833,7 +13137,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espèce menacée d’extinction",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9847,7 +13151,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espèce éteinte",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9861,7 +13165,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espèces en danger",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9875,7 +13179,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "impact sur l'environnement",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9889,7 +13193,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "liste rouge de l'uicn",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9903,7 +13207,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "liste rouge mondiale des espèces menacées",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "mammifère échoué",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9917,7 +13235,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "migration des espèces",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9931,7 +13249,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mortalité des forêts",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9945,7 +13263,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mortalité forestière",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9959,7 +13277,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "moustique tigre",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9973,7 +13291,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nature empoisonnée",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -9987,7 +13305,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "perte agricole",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10001,7 +13319,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "perte de biodiversité",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10015,7 +13333,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "perturbation des habitats",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10029,7 +13347,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "perturbation des écosystèmes",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10043,7 +13361,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "perturbation du cycle de l’eau",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10057,7 +13375,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution sonore",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "polluée",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10071,7 +13403,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "santé végétale",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10085,7 +13417,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sol pollué",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10099,7 +13431,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "urgence écologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10113,7 +13445,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zoonose",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10127,7 +13459,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zoonotique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10141,7 +13473,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "écosystème dégradé",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "érosion de la biodiversité",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10157,7 +13503,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "assécher",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10171,7 +13517,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "asséché",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10185,7 +13531,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "asséchée",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10199,7 +13545,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cancer",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10213,7 +13559,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "chant des oiseaux",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10227,7 +13573,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "contaminé",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10241,7 +13587,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "contaminée",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10255,7 +13601,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dengue",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10269,7 +13615,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dépérissement",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10283,7 +13629,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dévastation",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10297,7 +13643,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "exposition des salariés",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10311,7 +13657,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "extinction",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10325,7 +13671,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "les soulèvements de la terre",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10339,7 +13685,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "malade",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10353,7 +13699,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "maladie",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10367,7 +13713,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "maladies infectieuses",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10381,7 +13727,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "maladies transmises par des insectes",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10395,7 +13741,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "menacées de disparition",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10409,7 +13755,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pathologie",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10423,7 +13769,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "pathologie",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pollué",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "problème sanitaire",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10437,7 +13811,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prolifération des moustiques",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10451,7 +13825,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "restriction",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "risque sanitaire",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10465,7 +13853,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "santé animale",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10479,7 +13867,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "santé humaine",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10493,7 +13881,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "sécurité alimentaire",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "échouage",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10507,9 +13909,23 @@ THEME_KEYWORDS = {
     ],
     "biodiversite_solutions": [
         {
+            "keyword": "accueillir la faune",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
             "keyword": "agriculture bio",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10523,7 +13939,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture biologique",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10537,7 +13953,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture de conservation",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10551,7 +13967,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture plus verte",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10565,7 +13981,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture régénératrice",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10579,7 +13995,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologie",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10593,7 +14009,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologique",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10607,7 +14023,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroforesterie",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10621,7 +14037,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroécologie",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10635,7 +14051,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "aire naturelle protégée",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10649,7 +14065,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "aires protégées",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10663,7 +14079,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "amoureux de la nature",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10677,7 +14093,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "amélioration des pratiques d’élevages",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10691,7 +14107,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "arbre planté",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "barrière végétale",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10705,7 +14135,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "bien-être des animaux",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "bienfaits de la nature",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10719,7 +14163,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "bioplastique",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "changement transformateur",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10733,7 +14191,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer de modèle agricole",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10747,7 +14205,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer nos habitudes alimentaires",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10761,7 +14219,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "conservation de la nature",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10775,7 +14233,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "conserver la nature",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10789,7 +14247,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "corridor écologique",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10803,7 +14261,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "droit de l’environnement",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10817,7 +14275,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "droit environnemental",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "défense de l'environnement",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "défense de la nature",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "défenseur de l'environnement",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "défenseur de la nature",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10831,7 +14345,49 @@ THEME_KEYWORDS = {
         {
             "keyword": "dépollution",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "emballage sans plastique",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "en consommant moins",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "espace naturel",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10845,7 +14401,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "espèce protégée",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "exploitation raisonnée",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10859,7 +14429,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fiscalité environnementale",
             "category": "Industrie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10873,7 +14443,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "foncière forestière",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10887,7 +14457,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "foresterie urbaine",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10901,7 +14471,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt mosaïque",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10915,7 +14485,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt urbaine",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10929,7 +14499,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion durable des forêts",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "gestion durable des ressources",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10943,7 +14527,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "journée de la biodiversité",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10957,7 +14541,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "journée de la terre",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10971,7 +14555,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "journée mondiale de la vie sauvage",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10985,7 +14569,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "mesure environnementale",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "moins de fertilisant",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -10999,7 +14597,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "moins polluant",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "moins polluer",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11013,7 +14625,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nettoyage des fonds marins",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11027,7 +14639,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "nettoyage des océans",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "paillage naturel",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11041,7 +14667,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plantant des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11055,7 +14681,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plantation d'arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11069,7 +14695,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plante des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11083,7 +14709,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plantent des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11097,7 +14723,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planter des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11111,7 +14737,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planté des arbres",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11125,7 +14751,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plastique recyclé",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11139,7 +14765,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollueur payeur",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11153,7 +14779,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pratiques agricoles durables",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11167,7 +14793,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prise de conscience environnementale",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11181,7 +14807,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prise de conscience écologique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11195,7 +14821,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "produits verts",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11209,7 +14835,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection de l'environnement",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11223,7 +14849,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection de la barrière de corail",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11237,7 +14863,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection de la mangrove",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11251,7 +14877,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection de la nature",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11265,7 +14891,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection des coraux",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11279,7 +14905,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection des cours d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11293,7 +14919,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection des côtes",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11307,7 +14933,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection des espèces",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "protection des habitats",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11321,7 +14961,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection des oiseaux",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11335,7 +14975,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection des tourbières",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11349,7 +14989,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection des zones côtières",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11363,7 +15003,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection des zones humides",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11377,7 +15017,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection du récif corallien",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11391,7 +15031,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection du vivant",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11405,7 +15045,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "protéger la nature",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11419,7 +15059,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "protéger le vivant",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "protéger les habitats",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11433,7 +15087,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "préservation d'espèce",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11447,7 +15101,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "préservation de la biodiversité",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préservation de la nature",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préservation des forêts",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11461,7 +15143,49 @@ THEME_KEYWORDS = {
         {
             "keyword": "préservation des milieux",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver la biodiversité",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver la forêt",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver la nature",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11475,7 +15199,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "préserver les fonds marins",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver les forêts",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver les sols",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11489,7 +15241,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "recyclant",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "red ensauvagement",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11503,7 +15269,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "reduire les emballages",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11517,7 +15283,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "reforestation",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11531,7 +15297,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "renaturer",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11545,7 +15311,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "respectueux de l'environnement",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11559,7 +15325,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "respectueux de l’environnement",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "restauration d'habitat",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11573,7 +15353,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restauration de la biodiversité",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11587,7 +15367,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restauration de la nature",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11601,7 +15381,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restauration des coraux",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11615,7 +15395,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "restauration des forêts",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "restauration des habitats",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11629,7 +15423,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restauration des milieux",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11643,7 +15437,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restauration des tourbières",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11657,7 +15451,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restauration des zones humides",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11671,7 +15465,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restauration des écosystèmes",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11685,7 +15479,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "restauration du récif corallien",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "restauration écologique",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11699,7 +15507,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restaurer la biodiversité",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11713,7 +15521,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restaurer la nature",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11727,7 +15535,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restaurer la qualité de l’air",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11741,7 +15549,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "restaurer la qualité des sols",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "restaurer les habitats",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11755,7 +15577,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restaurer les tourbières",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11769,7 +15591,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "revégétalisation",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11783,7 +15605,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "revégétaliser",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "ré ensauvagement",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11797,7 +15633,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire la consommation d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11811,7 +15647,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire le cheptel",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11825,7 +15661,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réintroduction d'espèce",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11839,7 +15675,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réserve de biosphère",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11853,7 +15689,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "réserve naturelle",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "réserve sauvage",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11867,7 +15717,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "résistant à la sécheresse",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11881,7 +15731,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "résistante à la sécheresse",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11895,7 +15745,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "sauver des espèces",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "sciences participatives",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11909,7 +15773,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "semaine du développement durable",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11923,7 +15787,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sobriété",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11937,7 +15801,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "société écologique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11951,7 +15815,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sol vivant",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11965,7 +15829,49 @@ THEME_KEYWORDS = {
         {
             "keyword": "solutions fondées sur la nature",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "trame verte",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "trame verte et bleu",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "transformation des pratiques agricoles",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11979,7 +15885,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "verdir la politique agricole",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -11993,7 +15899,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vertueux pour la planète",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12007,7 +15913,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ville écologique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12021,7 +15927,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétalisation",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12035,7 +15941,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétalisation des espaces urbains",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12049,7 +15955,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétalisation des villes",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12063,7 +15969,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétaliser",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12077,7 +15983,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétalisé",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12091,7 +15997,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétalisée",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12105,7 +16011,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "zone naturelle protégée",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "zone sauvage",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12119,7 +16039,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "éco geste",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "éco organisme",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12133,7 +16067,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "éco responsable",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12147,7 +16081,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie circulaire",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12161,7 +16095,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écoresponsable",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12175,7 +16109,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "équilibre pour la faune et la flore",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "éteindre l'éclairage public",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12189,7 +16137,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "étiquetage unique des aliments",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12203,9 +16151,23 @@ THEME_KEYWORDS = {
     ],
     "biodiversite_solutions_indirectes": [
         {
+            "keyword": "agriculteur bio",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
             "keyword": "agriculture durable",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12219,7 +16181,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "alternative",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12233,7 +16195,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "approche systémique",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12247,7 +16209,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "aquaculture durable",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12261,7 +16223,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "arbre",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12275,7 +16237,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "atténuation",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12289,7 +16251,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "biochar",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "compostable",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12303,7 +16279,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déconstruire",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12317,7 +16293,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décroissance",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12331,7 +16307,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espace vert",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12345,7 +16321,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion des milieux aquatiques",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12359,7 +16335,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion durable des terres cultivables",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12373,7 +16349,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "habitude durable",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12387,7 +16363,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "infrastructure résiliente",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12401,7 +16377,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "jachère",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12415,7 +16391,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "jardin",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12429,7 +16405,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "manger bio",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12443,7 +16419,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "militant écologiste",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12457,7 +16433,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "militante écologiste",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12471,7 +16447,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nettoyage des plages",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12485,7 +16461,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "norme",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12499,7 +16475,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "parc",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "parc national",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "parc naturel",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12513,7 +16517,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "permaculture",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12527,7 +16531,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus durable",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12541,7 +16545,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus d’oxygène",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12555,7 +16559,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polyculture élevage",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12569,7 +16573,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prairie",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12583,7 +16587,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pratiques vertueuses",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12597,7 +16601,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "principe de précaution",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12611,7 +16615,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "préserver",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12625,7 +16629,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pêche durable",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12639,7 +16643,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replantation",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12653,7 +16657,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replanter",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12667,7 +16671,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "responsable",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12681,7 +16685,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restreindre",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12695,7 +16699,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "restriction",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "réduction de la consommation",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "réduire la consommation",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12709,7 +16741,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire l’élevage intensif",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12723,7 +16755,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "toit-jardin",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "trame blanche",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "trame bleu",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "trame brune",
+            "category": "",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "trame noire",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12737,7 +16825,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "variété rustique",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12751,7 +16839,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "verdir",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12765,7 +16853,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "verdure",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12779,7 +16867,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vertueux",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12793,7 +16881,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ville durable",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12807,7 +16895,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétation",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12821,7 +16909,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zan",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12835,7 +16923,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zéro artificialisation nette",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12849,7 +16937,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "épargne citoyenne",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": True,
+            "crisis_resource": False,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "éteindre la lumière",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": True,
             "crisis_resource": False,
@@ -12865,7 +16967,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "a69",
             "category": "Transport",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -12879,7 +16981,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture conventionnelle",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -12893,7 +16995,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture extensive",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -12907,7 +17009,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture industrielle",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -12921,7 +17023,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture intensive",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -12935,7 +17037,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "co deux",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -12949,7 +17051,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "co2",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -12963,7 +17065,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "combustibles fossiles",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -12977,7 +17079,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "destruction de la planète",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -12991,7 +17093,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dyoxide de carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13005,7 +17107,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déforestation",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13019,7 +17121,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ferme-usine",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13033,7 +17135,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fuel lourd",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13047,7 +17149,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fumée industrielle",
             "category": "Industrie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13061,7 +17163,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gaz à effet de serre",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13075,7 +17177,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "greenwashing",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13089,7 +17191,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "inaction climatique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13103,7 +17205,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "insuffisance climatique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13117,7 +17219,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mauvaise nouvelle pour la planète",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13131,7 +17233,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mauvaise nouvelle pour le climat",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13145,7 +17247,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "méthane",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "nocif pour l'environnement",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13159,7 +17275,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pas très écolo",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13173,7 +17289,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "polluant",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": True,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pollueur",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13187,7 +17317,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution industrielle",
             "category": "Industrie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13201,7 +17331,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution record",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13215,7 +17345,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "productivisme",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13229,7 +17359,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "productiviste",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13243,7 +17373,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "élevage intensif",
             "category": "Agriculture",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13257,7 +17387,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "émission de carbone",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13271,7 +17401,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "émissions anthropiques",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13285,7 +17415,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "émissions importées",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13299,7 +17429,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "émissions liées à la consommation",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13313,7 +17443,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "émissions territoriales",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13327,7 +17457,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "énergies fossiles",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13343,7 +17473,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "activité industrielle",
             "category": "Industrie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13357,7 +17487,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agricole",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13371,7 +17501,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculteur",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13385,7 +17515,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13399,7 +17529,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro-industrie",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13413,7 +17543,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro-industriel",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13427,7 +17557,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroalimentaire",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13441,7 +17571,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "aliments transformés",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13455,7 +17585,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "aménagement du territoire",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13469,7 +17599,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "automobile",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13483,7 +17613,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "autoroutes",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13497,7 +17627,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "aviation",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13511,7 +17641,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "avion",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13525,7 +17655,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "azote",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13539,7 +17669,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "capitalisme",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13553,7 +17683,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "carburant",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13567,7 +17697,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "charbon",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13581,7 +17711,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "chauffage",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13595,7 +17725,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "chauffage au fuel",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13609,7 +17739,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "chauffage au gaz",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13623,7 +17753,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "climatisation",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13637,7 +17767,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diesel",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13651,7 +17781,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchet",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13665,7 +17795,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déperdition de chaleur",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13679,7 +17809,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "emballage en plastique",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13693,7 +17823,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "emballage plastique",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13707,7 +17837,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "emissions mondiales",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13721,7 +17851,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "essence",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13735,7 +17865,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fioul",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13749,7 +17879,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forage pétrolier",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13763,7 +17893,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fuel",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13777,7 +17907,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gaspillage alimentaire",
             "category": "Economie des ressources",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13791,7 +17921,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gaz",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13805,7 +17935,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gaz carbonique",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13819,7 +17949,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gaz de schiste",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13833,7 +17963,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gaz naturel",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13847,7 +17977,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "industrialisation",
             "category": "Industrie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13861,7 +17991,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "industrie",
             "category": "Industrie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13875,7 +18005,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "infrastructures routières",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13889,7 +18019,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "kérosène",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13903,7 +18033,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "lignite",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13917,7 +18047,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "logement mal isolé",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13931,7 +18061,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "malbouffe",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13945,7 +18075,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "méga-camions",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13959,7 +18089,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "or noir",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13973,7 +18103,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "passoire thermique",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -13987,7 +18117,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "passoire énergétique",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14001,7 +18131,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollue",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14015,7 +18145,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polluer",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14029,7 +18159,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14043,7 +18173,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prendre l'avion",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14057,7 +18187,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "puit de pétrole",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14071,7 +18201,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pétrole",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14085,7 +18215,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "secteur tertiaire",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14099,7 +18229,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "serres chauffées",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14113,7 +18243,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "solvant",
             "category": "Industrie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14127,7 +18257,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "super-poids lourds",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14141,7 +18271,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "suv",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14155,7 +18285,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "trafic routier",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14169,7 +18299,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transport",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14183,7 +18313,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transport aérien",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14197,7 +18327,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transport routier",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14211,7 +18341,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transporteur",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14225,7 +18355,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "urbanisme",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14239,7 +18369,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "usine",
             "category": "Industrie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14253,7 +18383,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vache",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14267,7 +18397,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "viande",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14281,7 +18411,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "voiture",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14295,7 +18425,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "voiture thermique",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14309,7 +18439,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vol direct",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14323,7 +18453,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vol paris new york",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14337,7 +18467,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "voyager",
             "category": "Transport",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14351,7 +18481,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "élevage",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14365,7 +18495,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "élevage bovine",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14379,7 +18509,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "îlot de chaleur",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14395,7 +18525,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acidification des océans",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14409,7 +18539,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "aléas climatiques",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14423,7 +18553,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "année la plus chaude",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14437,7 +18567,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "arrêt des centrales nucléaires",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14451,7 +18581,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "augmentation des précipitations",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14465,7 +18595,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "augmentation des risques de sécheresse",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14479,7 +18609,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse de production agricole",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14493,7 +18623,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse des rendements agricoles",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14507,7 +18637,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse des récoltes",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14521,7 +18651,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "blanchissement des coraux",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14535,7 +18665,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "canicule",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14549,7 +18679,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "canicule marine",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14563,7 +18693,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "catastophe écologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14577,7 +18707,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "catastrophe climatique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14591,7 +18721,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "chaleur extrême",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14605,7 +18735,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "chaleur record",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14619,7 +18749,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "chenille processionnaire",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14633,7 +18763,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "climatique extrême",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14647,7 +18777,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "conflit d’usage de l’eau",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14661,7 +18791,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diminution de la banquise",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14675,7 +18805,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diminution des glaciers",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14689,7 +18819,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diminution des rendements agricoles",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14703,7 +18833,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "disparition des coraux",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14717,7 +18847,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "disparition des forêts",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14731,7 +18861,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "disparition des glaciers",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14745,7 +18875,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "disparition des récifs coralliens",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14759,7 +18889,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décès à cause de la chaleur",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14773,7 +18903,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déficit de pluie",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14787,7 +18917,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déstabilisation atmosphérique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14801,7 +18931,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "effondrement de la falaise",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14815,7 +18945,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espèce invasive",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14829,7 +18959,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fonte de la banquise",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14843,7 +18973,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fonte des calottes glacières",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14857,7 +18987,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fonte des glaces",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14871,7 +19001,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fonte des glaciers",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14885,7 +19015,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fonte du permafrost",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14899,7 +19029,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "glissement de terrain",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14913,7 +19043,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hausse de la température du globe",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14927,7 +19057,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hausse des températures",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14941,7 +19071,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hausse du niveau de la mer",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14955,7 +19085,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hausse du niveau des océans",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14969,7 +19099,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hausse du niveau marin",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14983,7 +19113,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "impact sur l'environnement",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -14997,7 +19127,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "inondations à répétition",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15011,7 +19141,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "intensification du cycle de l’eau",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15025,7 +19155,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "jour le plus chaud",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15039,7 +19169,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "l'hiver le plus chaud",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15053,7 +19183,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "l'hiver le plus sec",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15067,7 +19197,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "l'été le plus chaud",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15081,7 +19211,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "la planète se réchauffe",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15095,7 +19225,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "le climat du futur",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15109,7 +19239,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "les eaux se réchauffent",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15123,7 +19253,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "maladaptation",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15137,7 +19267,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "malle adaptation",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15151,7 +19281,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "manque d'eau",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15165,7 +19295,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "manquer d'eau",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15179,7 +19309,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "migrant climatique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15193,7 +19323,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "migration climatique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15207,7 +19337,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "montée des eaux",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15221,7 +19351,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "montée du niveau de la mer",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15235,7 +19365,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "montée du niveau des océans",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15249,7 +19379,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mort liées à la canicule",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15263,7 +19393,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mort liées à la chaleur",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15277,7 +19407,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mort à cause de la canicule",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15291,7 +19421,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mort à cause de la chaleur",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15305,7 +19435,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mortalité forestière",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15319,7 +19449,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "morte à cause de la canicule",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15333,7 +19463,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "morte à cause de la chaleur",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15347,7 +19477,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "moustique tigre",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15361,7 +19491,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "météorologique extrême",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15375,7 +19505,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "perte agricole",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15389,7 +19519,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pénurie de neige",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15403,7 +19533,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution atmosphérique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15417,7 +19547,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution aux particules fines",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15431,7 +19561,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution à l’ozone",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15445,7 +19575,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "printemps le plus pluvieux",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15459,7 +19589,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prolifération de moustiques",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15473,7 +19603,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pénurie d'eau",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15487,7 +19617,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rareté de la ressource en eau",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15501,7 +19631,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rareté saisonnière de la ressource en eau",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15515,7 +19645,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "raréfaction de la ressource en eau",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15529,7 +19659,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "record de température",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15543,7 +19673,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "retrait gonflement des argiles",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15557,7 +19687,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réfugié climatique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15571,7 +19701,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "salinisation des sols",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15585,7 +19715,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "stress hydrique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15599,7 +19729,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sécheresse",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15613,7 +19743,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "température extrême",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15627,7 +19757,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "température record",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15641,7 +19771,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "températures plus hautes",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15655,7 +19785,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "trop grande chaleur",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15669,7 +19799,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "urgence écologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15683,7 +19813,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vague de chaleur",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15697,7 +19827,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zoonose",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15711,7 +19841,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écocide",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15725,7 +19855,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "élévation de la température",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15739,7 +19869,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "élévation des températures",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15753,7 +19883,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "élévation du niveau de la mer",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15767,7 +19897,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "élévation du niveau des océans",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15781,7 +19911,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "élévation du niveau marin",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15795,7 +19925,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "érosion côtière",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15809,7 +19939,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "érosion des côtes",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15823,7 +19953,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "érosion du littoral",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15837,7 +19967,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "été le plus chaud",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15853,7 +19983,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "40 degrés",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15867,7 +19997,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "50 degrés",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15881,7 +20011,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "accès à l’eau",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15895,7 +20025,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "anomalie de températures",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15909,7 +20039,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "assécher",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15923,7 +20053,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "asséché",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15937,7 +20067,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "asséchée",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15951,7 +20081,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "augmentation des températures",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15965,7 +20095,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cancer",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15979,7 +20109,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "catastrophe",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -15993,7 +20123,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cerné par les eaux",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16007,7 +20137,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cinquante degrés",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16021,7 +20151,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "crue",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16035,7 +20165,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "crue centennale",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16049,7 +20179,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cyclone",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16063,7 +20193,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déluge",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16077,7 +20207,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "désertification",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16091,7 +20221,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dévastation",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16105,7 +20235,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eau boueuse",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16119,7 +20249,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eaux boueuses",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16133,7 +20263,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eaux déchainées",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16147,7 +20277,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "emporté par les eaux",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16161,7 +20291,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "englouti par les eaux",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16175,7 +20305,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "feux",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16189,7 +20319,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "feux de forêt",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16203,7 +20333,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forte chaleur",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16217,7 +20347,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forte pluie",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16231,7 +20361,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt brûle",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16245,7 +20375,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt d'algues",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16259,7 +20389,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt détruit",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16273,7 +20403,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt détruite",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16287,7 +20417,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt ravagé",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16301,7 +20431,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt ravagée",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16315,7 +20445,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêts brûlent",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16329,7 +20459,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêts ont été détruites",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16343,7 +20473,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gel printanier",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16357,7 +20487,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "il n'y a plus de saison",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16371,7 +20501,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "importante précipitation",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16385,7 +20515,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "incendie de forêt",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16399,7 +20529,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "incendies",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16413,7 +20543,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "inondable",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16427,7 +20557,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "inondation",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16441,7 +20571,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "l'eau est monté",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16455,7 +20585,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "l'eau qui est monté",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16469,7 +20599,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "la roya",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16483,7 +20613,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "les eaux sont montées",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16497,7 +20627,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "les soulèvements de la terre",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16511,7 +20641,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "malade",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16525,7 +20655,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "maladie",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16539,7 +20669,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "maladies transmises par des insectes",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16553,7 +20683,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "millimètre d'eau",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16567,7 +20697,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mois le plus chaud",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16581,7 +20711,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ouragan",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16595,7 +20725,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pathologie",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16609,7 +20739,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "piégé par les eaux",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16623,7 +20753,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plante exotique envahissante",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16637,7 +20767,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plante exotique invasive",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16651,7 +20781,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plante exotique très invasive",
             "category": "Ecosystème",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16665,7 +20795,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pluie extrême",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16679,7 +20809,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pluie intense",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16693,7 +20823,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pluie torrentielle",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16707,7 +20837,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus chaud que la normale",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16721,7 +20851,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus chaude que la normale",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16735,7 +20865,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus de saisons",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16749,7 +20879,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus sec que la normale",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16763,7 +20893,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pluviométrie importante",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16777,7 +20907,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution de l'air",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16791,7 +20921,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prolifération des moustiques",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16805,7 +20935,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "période la plus chaude",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16819,7 +20949,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "quarante degrés",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16833,7 +20963,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restriction",
             "category": "General",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16847,7 +20977,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ruissellement de l'eau",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16861,7 +20991,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "ruissellement des eaux",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "réchauffement",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16875,7 +21019,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sous l'eau",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16889,7 +21033,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sous les eaux",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16903,7 +21047,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "submergé par les eaux",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16917,7 +21061,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "submersion",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16931,7 +21075,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "submersion marine",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16945,7 +21089,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "surchauffe",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16959,7 +21103,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sécurité alimentaire",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16973,7 +21117,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tempête xynthia",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -16987,7 +21131,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "trop d'eau",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17001,7 +21145,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "très chaud",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17015,7 +21159,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "érosion",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17029,7 +21173,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "étouffer",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17045,7 +21189,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "accord de paris",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17059,7 +21203,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ademe",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17073,7 +21217,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "anthropocène",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17087,7 +21231,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "anti-écolo",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17101,7 +21245,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bilan carbone",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17115,7 +21259,49 @@ THEME_KEYWORDS = {
         {
             "keyword": "bonne nouvelle pour la planète",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": True,
+            "language": "fr"
+        },
+        {
+            "keyword": "calotte du groenland",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": True,
+            "language": "fr"
+        },
+        {
+            "keyword": "calotte glacière",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": True,
+            "language": "fr"
+        },
+        {
+            "keyword": "calotte polaire",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17129,7 +21315,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "capacité planétaire",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17143,7 +21329,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "climatique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17157,7 +21343,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "climatologue",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17171,7 +21357,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "climatoscepticisme",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17185,7 +21371,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "conditions de vie sur terre",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17199,7 +21385,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "conférence climat",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17213,7 +21399,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "conférence des nations unies sur le climat",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17227,7 +21413,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "conférence des nations unies sur les changements climatiques",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17241,7 +21427,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "conférence des parties",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17255,7 +21441,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "convention des nations unies sur le climat",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17269,7 +21455,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop quinze",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17283,7 +21469,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop trente",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17297,7 +21483,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop vingt-et-un",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17311,7 +21497,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop vingt-huit",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17325,7 +21511,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop vingt-neuf",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17339,7 +21525,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop vingt-sept",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17353,7 +21539,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop vingt-six",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17367,7 +21553,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop15",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17381,7 +21567,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop21",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17395,7 +21581,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop26",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17409,7 +21595,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop27",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17423,7 +21609,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop28",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17437,7 +21623,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop29",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17451,7 +21637,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "cop30",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": True,
+            "language": "fr"
+        },
+        {
+            "keyword": "crise environnementale",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17465,7 +21665,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "crise planétaire",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17479,7 +21679,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "croissance verte",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17493,7 +21693,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "crédit carbone",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17507,7 +21707,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cycle du carbone",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17521,7 +21721,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "d'ici 2050",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": True,
+            "language": "fr"
+        },
+        {
+            "keyword": "défense de l'environnement",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": True,
+            "language": "fr"
+        },
+        {
+            "keyword": "défense de la nature",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": True,
+            "language": "fr"
+        },
+        {
+            "keyword": "défenseur de l'environnement",
+            "category": "",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": True,
+            "language": "fr"
+        },
+        {
+            "keyword": "défenseur de la nature",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17535,7 +21791,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "défi climatique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17549,7 +21805,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déstabilisation atmosphérique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17563,7 +21819,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "effet de serre",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17577,7 +21833,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "empreinte carbone",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17591,7 +21847,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "enjeu environnemental",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17605,7 +21861,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "expert du climat",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17619,7 +21875,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "experte du climat",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17633,7 +21889,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "france nature environnement",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17647,7 +21903,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "giec",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17661,7 +21917,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "green deal",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17675,7 +21931,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "habitabilité de la planète",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17689,7 +21945,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "habiter le monde",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17703,7 +21959,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "haut conseil pour le climat",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17717,7 +21973,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hydrologue",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17731,7 +21987,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "impact carbone",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17745,7 +22001,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "intérêt environnemental",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17759,7 +22015,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mix énergétique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17773,7 +22029,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mutation écologique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17787,7 +22043,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "méga-orage",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17801,7 +22057,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "neutralité carbone",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17815,7 +22071,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "neutralité climatique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17829,7 +22085,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "office national des forêts",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17843,7 +22099,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pacte vert",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17857,7 +22113,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planification écologique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17871,7 +22127,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "politique climatique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": True,
+            "language": "fr"
+        },
+        {
+            "keyword": "politique environnementale",
+            "category": "",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17885,7 +22155,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution émise localement",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17899,7 +22169,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ressource planétaire",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17913,7 +22183,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "revue nature climate change",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17927,7 +22197,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réchauffement de l’atmosphère",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17941,7 +22211,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réchauffement des océans",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17955,7 +22225,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réchauffement des températures",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17969,7 +22239,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "réchauffement planétaire",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": True,
+            "language": "fr"
+        },
+        {
+            "keyword": "sciences de l'environnement",
+            "category": "General",
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17983,7 +22267,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "scope un et deux",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -17997,7 +22281,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "seuil de réchauffement",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18011,7 +22295,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "soutenabilité environnementale",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18025,7 +22309,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition agricole",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18039,7 +22323,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition agro écologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18053,7 +22337,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition agroécologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18067,7 +22351,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition climatique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18081,7 +22365,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition en dehors des énergies fossiles",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18095,7 +22379,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition verte",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18109,7 +22393,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition écologique",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18123,7 +22407,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18137,7 +22421,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "un climat qui change",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18151,7 +22435,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écologique",
             "category": "",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18165,7 +22449,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "émissions mondiales de co deux",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18179,7 +22463,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "émissions mondiales de co2",
             "category": "General",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18195,7 +22479,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agences régionales de santé",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18209,7 +22493,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "air frais",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18223,7 +22507,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "alimentation",
             "category": "Agriculture",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18237,7 +22521,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "arbre",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18251,7 +22535,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ars",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18265,7 +22549,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "atmosphère",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18279,7 +22563,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "autorité de santé",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18293,7 +22577,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse des températures",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18307,7 +22591,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "banquise",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18321,7 +22605,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "batterie",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18335,7 +22619,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bloc d’immeubles",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18349,7 +22633,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bouquet énergétique",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18363,7 +22647,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "bâtiment",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": True,
+            "crisis_biodiversity": False,
+            "crisis_resource": False,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": True,
+            "language": "fr"
+        },
+        {
+            "keyword": "calotte",
+            "category": "",
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18377,7 +22675,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "climat",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18391,7 +22689,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "climatosceptique",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18405,7 +22703,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "consommation énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18419,7 +22717,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "défi de notre siècle",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18433,7 +22731,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eau",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18447,7 +22745,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eau de pluie",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18461,7 +22759,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "environnement",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18475,7 +22773,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "facture énergétique",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18489,7 +22787,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fraîcheur",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18503,7 +22801,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "glacier",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18517,7 +22815,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "générations futures",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18531,7 +22829,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "générations à venir",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18545,7 +22843,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "inégalité",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18559,7 +22857,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "jamais un tel phénomène",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18573,7 +22871,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mer",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18587,7 +22885,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ministre de la transition écologique",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18601,7 +22899,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ministère de la transition écologique",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18615,7 +22913,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mix électrique",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18629,7 +22927,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "modèle agricole",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18643,7 +22941,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "météo des forêts",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18657,7 +22955,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "océan",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18671,7 +22969,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "oms",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18685,7 +22983,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "organisation mondiale de la santé",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18699,7 +22997,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ozone",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18713,7 +23011,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "performance énergétique",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18727,7 +23025,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "permafrost",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18741,7 +23039,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planète",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18755,7 +23053,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planétaire",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18769,7 +23067,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pont thermique",
             "category": "Batiments",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18783,7 +23081,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "revue nature",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18797,7 +23095,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "santé publique",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18811,7 +23109,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sol",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18825,7 +23123,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "température",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18839,7 +23137,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "terre",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18853,7 +23151,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zone inondable",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18867,7 +23165,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "éco-anxiété",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18881,7 +23179,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écolo",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18895,7 +23193,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écologie",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18909,7 +23207,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écologiste",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18923,7 +23221,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écosystème",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18937,7 +23235,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "énergie",
             "category": "",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": True,
             "crisis_biodiversity": False,
             "crisis_resource": False,
@@ -18953,7 +23251,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "accès à l’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -18967,7 +23265,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acidification des oceans",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -18981,7 +23279,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acidification des oceans",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -18995,7 +23293,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acidification des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19009,7 +23307,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture conventionnelle",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19023,7 +23321,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture conventionnelle",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19037,7 +23335,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture conventionnelle",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19051,7 +23349,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture extensive",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19065,7 +23363,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture industrielle",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19079,7 +23377,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture industrielle",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19093,7 +23391,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture industrielle",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19107,7 +23405,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture industrielle",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19121,7 +23419,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture intensive",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19135,7 +23433,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture intensive",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19149,7 +23447,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture intensive",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19163,7 +23461,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture intensive",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19177,7 +23475,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "anthropocène",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19191,7 +23489,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "anti-écolo",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19205,7 +23503,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "appauvrissement des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19219,7 +23517,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "artificialisation des sols",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19233,7 +23531,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "artificialisation des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19247,7 +23545,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse de production agricole",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19261,7 +23559,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse de production agricole",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19275,7 +23573,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse de production agricole",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19289,7 +23587,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse des rendements agricoles",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19303,7 +23601,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse des rendements agricoles",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19317,7 +23615,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse des récoltes",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19331,7 +23629,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bois d’oeuvre",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19345,7 +23643,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bois énergie",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19359,7 +23657,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bois énergie",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19373,7 +23671,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bétonisation",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19387,7 +23685,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bétonisation",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19401,7 +23699,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "canicule",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19415,7 +23713,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "capacité planétaire",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19429,7 +23727,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "catastophe écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19443,7 +23741,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cobalt",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19457,7 +23755,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "compactage des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19471,7 +23769,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "conflits d’usage de l’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19485,7 +23783,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "crise climatique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19499,7 +23797,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "crise environnementale",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19513,7 +23811,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "crise écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19527,7 +23825,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cycle de l’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19541,7 +23839,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "d'ici 2050",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19555,7 +23853,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dessalement de l’eau de mer",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19569,7 +23867,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "destruction de la planète",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19583,7 +23881,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diminution des rendements agricoles",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19597,7 +23895,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "diminution des rendements agricoles",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19611,7 +23909,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décharge sauvage",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19625,7 +23923,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déficit de pluie",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19639,7 +23937,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déforestation",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19653,7 +23951,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dégradation des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19667,7 +23965,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dépassement des limites planétaires",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19681,7 +23979,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dépôt sauvage",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19695,7 +23993,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eau de ruissellement",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19709,7 +24007,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eau de ruissellement",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19723,7 +24021,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eaux de ruissellement",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19737,7 +24035,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eaux de ruissellement",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19751,7 +24049,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eaux souterraines",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19765,7 +24063,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais azoté",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19779,7 +24077,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais azoté",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19793,7 +24091,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais azoté",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19807,7 +24105,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais chimique",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19821,7 +24119,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais chimique",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19835,7 +24133,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais chimique",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19849,7 +24147,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais de synthèse",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19863,7 +24161,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais de synthèse",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19877,7 +24175,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "engrais de synthèse",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19891,7 +24189,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eutrophisation",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19905,7 +24203,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "exploitation minière",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19919,7 +24217,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "exploration minière",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19933,7 +24231,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "extractivisme",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19947,7 +24245,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "extractiviste",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19961,7 +24259,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fortes chaleurs",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19975,7 +24273,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "france nature environnement",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -19989,7 +24287,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fumées industrielles",
             "category": "air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20003,7 +24301,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20017,7 +24315,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion forestière",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20031,7 +24329,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "green deal",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20045,7 +24343,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hydrologue",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20059,7 +24357,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "impact des emballages plastiques",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20073,7 +24371,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "impact environnemental",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20087,7 +24385,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "impact sur l'environnement",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20101,7 +24399,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "industrie extractive",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20115,7 +24413,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "industrie minière",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20129,7 +24427,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "intensification du cycle de l’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20143,7 +24441,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "intrant chimique",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20157,7 +24455,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "intrant chimique",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20171,7 +24469,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "jour du dépassement",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20185,7 +24483,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "limites planétaires",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20199,7 +24497,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "manque d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20213,7 +24511,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "matière critique",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20227,7 +24525,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "matériaux polluants",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20241,7 +24539,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mauvaise santé des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20255,7 +24553,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mesure environnementale",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20269,7 +24567,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "minerais",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20283,7 +24581,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "minerais critiques",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20297,7 +24595,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "minerais stratégiques",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20311,7 +24609,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mix énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20325,7 +24623,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "modifier nos fonds marins",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20339,7 +24637,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mortalité des forêts",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20353,7 +24651,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "métal critique",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20367,7 +24665,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "métal rare",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20381,7 +24679,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "métaux critiques",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20395,7 +24693,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "métaux rares",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20409,7 +24707,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nappe d'eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20423,7 +24721,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nappe phréatique",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20437,7 +24735,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "office national des forêts",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20451,7 +24749,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pacte vert",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20465,7 +24763,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "perte agricole",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20479,7 +24777,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "perte agricole",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20493,7 +24791,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pesticide",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20507,7 +24805,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pesticide",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20521,7 +24819,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pesticide",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20535,7 +24833,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pénurie de neige",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20549,7 +24847,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pfas",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20563,7 +24861,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pfas",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20577,7 +24875,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pfoa",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20591,7 +24889,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pfoa",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20605,7 +24903,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pfos",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20619,7 +24917,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pfos",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20633,7 +24931,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "politiques climatiques",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20647,7 +24945,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polluant",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20661,7 +24959,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution chimique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20675,7 +24973,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution de l'eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20689,7 +24987,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution des nappes",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20703,7 +25001,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20717,7 +25015,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution record",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20731,7 +25029,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution record",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20745,7 +25043,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollution record",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "polluée",
+            "category": "Concepts généraux",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20759,7 +25071,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "problème de sécurité alimentaire",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20773,7 +25085,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "produits verts",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20787,7 +25099,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "préserver les fonds marins",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20801,7 +25113,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ptfe",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20815,7 +25127,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ptfe",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20829,7 +25141,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "pénurie d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "qualité de l'eau",
+            "category": "Eau",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20843,7 +25169,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "qualité de l’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20857,7 +25183,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rareté de la ressource en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20871,7 +25197,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rareté saisonnière de la ressource en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20885,7 +25211,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "raréfaction de la ressource en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20899,7 +25225,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "raréfaction de l’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20913,7 +25239,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rejet polluant",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20927,7 +25253,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ressource en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20941,7 +25267,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ressource minérale",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20955,7 +25281,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ressource naturelle",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20969,7 +25295,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ressource stratégique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20983,7 +25309,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ressources planétaires",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -20997,7 +25323,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réserve d'eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21011,7 +25337,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "salinisation des nappes",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21025,7 +25351,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "salinisation des sols",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21039,7 +25365,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "salinisation des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21053,7 +25379,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "santé des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21067,7 +25393,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sevrage aux énergies fossiles",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21081,7 +25407,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sol appauvri",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21095,7 +25421,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sol dégradé",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21109,7 +25435,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sol vivant",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21123,7 +25449,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sols pollués",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21137,7 +25463,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "stress hydrique",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21151,7 +25477,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "surconsommation",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21165,7 +25491,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "surexploitation",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21179,7 +25505,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "surexploitation des ressources",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21193,7 +25519,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "surpâturage",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21207,7 +25533,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "surpâturage",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21221,7 +25547,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "surpâturage",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21235,7 +25561,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "surpêche",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21249,7 +25575,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sécheresse",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21263,7 +25589,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tassement des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21277,7 +25603,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "terre rare",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21291,7 +25617,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transformation écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21305,7 +25631,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21319,7 +25645,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21333,7 +25659,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "trier ses déchets",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21347,7 +25673,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "urgence écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21361,7 +25687,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vague de chaleur",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21375,7 +25701,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écocide",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21389,7 +25715,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21403,7 +25729,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écosystème forestier",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21417,7 +25743,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "élevage intensif",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21431,7 +25757,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "élevage intensif",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21445,7 +25771,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "épandage",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21459,7 +25785,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "épandage",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21473,7 +25799,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "épandage",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21487,7 +25813,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "épuisement des ressources",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21501,7 +25827,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "érosion des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21515,7 +25841,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "érosion hydrique",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21529,7 +25855,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "érosion éolienne",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21543,7 +25869,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "étalement urbain",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21559,7 +25885,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "abondance",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21573,7 +25899,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acide",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21587,7 +25913,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acide",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21601,7 +25927,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acide",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21615,7 +25941,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acidification",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21629,7 +25955,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acidification",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21643,7 +25969,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "activité industrielle",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21657,7 +25983,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "activité industrielle",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21671,7 +25997,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "activité industrielle",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21685,7 +26011,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "activité industrielle",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21699,7 +26025,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro-industriel",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21713,7 +26039,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "alimentation",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21727,7 +26053,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "alternative",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21741,7 +26067,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "aménagement du territoire",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21755,7 +26081,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "arsenic",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21769,7 +26095,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "arsenic",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21783,7 +26109,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "arsenic",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21797,7 +26123,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "assécher",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21811,7 +26137,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "asséché",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21825,7 +26151,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "asséchée",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21839,7 +26165,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "barrage",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21853,7 +26179,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "batterie",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21867,7 +26193,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "besoin énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21881,7 +26207,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bouquet énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21895,7 +26221,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bétonner",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21909,7 +26235,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cadmium",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21923,7 +26249,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cadmium",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21937,7 +26263,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cadmium",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21951,7 +26277,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cancérigène",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21965,7 +26291,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cancérogène",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21979,7 +26305,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "capitalisme",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -21993,7 +26319,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "chaleur extrême",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22007,7 +26333,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer leurs habitudes",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22021,7 +26347,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer nos habitudes",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22035,7 +26361,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "charbon",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "chasse",
+            "category": "Forêt",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "chasseur",
+            "category": "Forêt",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22049,7 +26403,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "compagnie gazière",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22063,7 +26417,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "compagnie pétrolière",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22077,7 +26431,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "consommation énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22091,7 +26445,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "contaminé",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22105,7 +26459,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "contaminé",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22119,7 +26473,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "cuivre",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22133,7 +26487,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décharges",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22147,7 +26501,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchet",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22161,7 +26515,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchets toxiques",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22175,7 +26529,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchets toxiques",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22189,7 +26543,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchets toxiques",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22203,7 +26557,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchets toxiques",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22217,7 +26571,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchetterie",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22231,7 +26585,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchèterie",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22245,7 +26599,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "désertification",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22259,7 +26613,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "désertification",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22273,7 +26627,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eau absorbée",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22287,7 +26641,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eau de pluie",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22301,7 +26655,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eau douce",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22315,7 +26669,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eau potable",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22329,7 +26683,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "eaux douces",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22343,7 +26697,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "emballage en plastique",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22357,7 +26711,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "emballage plastique",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22371,7 +26725,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "environnement",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22385,7 +26739,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "environnemental",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22399,7 +26753,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "environnementaux",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22413,7 +26767,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "extraction",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22427,7 +26781,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "feux de forêt",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22441,7 +26795,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fluor",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22455,7 +26809,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fluor",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22469,7 +26823,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forage pétrolier",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22483,7 +26837,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forestier",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22497,7 +26851,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forestière",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22511,7 +26865,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forte pluie",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22525,7 +26879,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22539,7 +26893,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt brûle",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22553,7 +26907,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt d'algues",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22567,7 +26921,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt détruit",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22581,7 +26935,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt détruite",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22595,7 +26949,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt ravagé",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22609,7 +26963,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêt ravagée",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22623,7 +26977,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêts brûlent",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22637,7 +26991,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "forêts ont été détruites",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22651,7 +27005,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fuite d'eau",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22665,7 +27019,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gaspillage",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22679,7 +27033,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gaz naturel",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22693,7 +27047,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gigantisme",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22707,7 +27061,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gisement",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22721,7 +27075,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gâchis",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22735,7 +27089,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gâchis alimentaire",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22749,7 +27103,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "générations futures",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22763,7 +27117,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "générations à venir",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22777,7 +27131,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "habiter le monde",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22791,7 +27145,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "incendie",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22805,7 +27159,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "incendie de forêt",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22819,7 +27173,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "industrialisation",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22833,7 +27187,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "industrie pétrolière",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22847,7 +27201,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "insécurité alimentaire",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22861,7 +27215,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "intrants",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22875,7 +27229,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "intrants",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22889,7 +27243,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "invendus",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22903,7 +27257,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "irrigation",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22917,7 +27271,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "irrigation",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22931,7 +27285,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "jeter",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22945,7 +27299,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "les soulèvements de la terre",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22959,7 +27313,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "lithium",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22973,7 +27327,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "manganèse",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -22987,7 +27341,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "matière première",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23001,7 +27355,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mauvaise gestion",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23015,7 +27369,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mines",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23029,7 +27383,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ministre de la transition écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23043,7 +27397,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ministère de la transition écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23057,7 +27411,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mix électrique",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23071,7 +27425,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "modèle agricole",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23085,7 +27439,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mégot",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23099,7 +27453,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "métaux lourds",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23113,7 +27467,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "métaux lourds",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23127,7 +27481,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nature empoisonée",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23141,7 +27495,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nickel",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23155,7 +27509,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "norme",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23169,7 +27523,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planète",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23183,7 +27537,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planétaire",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23197,7 +27551,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planétaire",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23211,7 +27565,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plastique",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23225,7 +27579,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plomb",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23239,7 +27593,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plomb",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23253,7 +27607,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plomb",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23267,7 +27621,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pluviométrie importante",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23281,7 +27635,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "pollue",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pollué",
+            "category": "Concepts généraux",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23295,7 +27663,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "productivisme",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23309,7 +27677,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "productiviste",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23323,7 +27691,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "produit chimique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23337,7 +27705,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "produit toxique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23351,7 +27719,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "puit de pétrole",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23365,7 +27733,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pénurie",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23379,7 +27747,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "pétrole",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pêche professionnelle",
+            "category": "Eau",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": False,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "pêcheur",
+            "category": "Eau",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23393,7 +27789,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ressource en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23407,7 +27803,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ressource énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23421,7 +27817,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restes alimentaires",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23435,7 +27831,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restes de cantine",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23449,7 +27845,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restriction",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23463,7 +27859,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "revue nature",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23477,7 +27873,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ruisselement",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23491,7 +27887,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ruisselement",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23505,7 +27901,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "silicium",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23519,7 +27915,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "site minier",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23533,7 +27929,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sol",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23547,7 +27943,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "solvant",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23561,7 +27957,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "solvant",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23575,7 +27971,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "substance chimique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23589,7 +27985,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "suffoquer",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23603,7 +27999,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "suffoquer",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23617,7 +28013,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "terre",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23631,7 +28027,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "terre",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23645,7 +28041,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "toxique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23659,7 +28055,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "uranium",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23673,7 +28069,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "urbanisme",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23687,7 +28083,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétation",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23701,7 +28097,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétation",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23715,7 +28111,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zinc",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23729,7 +28125,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zinc",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23743,7 +28139,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zinc",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23757,7 +28153,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "éco-sac wc",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23771,7 +28167,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écologie",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23785,51 +28181,9 @@ THEME_KEYWORDS = {
     ],
     "ressources_solutions_indirectes": [
         {
-            "keyword": "agriculture durable",
-            "category": "Air",
-            "high_risk_of_False_positive": True,
-            "crisis_climate": False,
-            "crisis_biodiversity": False,
-            "crisis_resource": True,
-            "solution": True,
-            "consequence": False,
-            "cause": False,
-            "general_concepts": False,
-            "statement": False,
-            "language": "fr"
-        },
-        {
-            "keyword": "agriculture durable",
-            "category": "Eau",
-            "high_risk_of_False_positive": True,
-            "crisis_climate": False,
-            "crisis_biodiversity": False,
-            "crisis_resource": True,
-            "solution": True,
-            "consequence": False,
-            "cause": False,
-            "general_concepts": False,
-            "statement": False,
-            "language": "fr"
-        },
-        {
-            "keyword": "agriculture durable",
-            "category": "Forêt",
-            "high_risk_of_False_positive": True,
-            "crisis_climate": False,
-            "crisis_biodiversity": False,
-            "crisis_resource": True,
-            "solution": True,
-            "consequence": False,
-            "cause": False,
-            "general_concepts": False,
-            "statement": False,
-            "language": "fr"
-        },
-        {
-            "keyword": "agriculture durable",
+            "keyword": "agriculteur bio",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23843,7 +28197,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture durable",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23857,7 +28211,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture durable",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23871,7 +28225,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture durable",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23885,7 +28239,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture durable",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "agriculture durable",
+            "category": "Air",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "agriculture durable",
+            "category": "Eau",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "agriculture durable",
+            "category": "Forêt",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "agriculture durable",
+            "category": "Sols",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23899,7 +28309,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "approche systémique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23913,7 +28323,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "approche systémique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23927,7 +28337,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "arbre",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23941,7 +28351,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "arbre",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23955,7 +28365,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "atténuation",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23969,7 +28379,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "atténuation",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23983,7 +28393,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "barrage",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -23997,7 +28407,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "barrage",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24011,7 +28421,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bio",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24025,7 +28435,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bio",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24039,7 +28449,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "biodégradable",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24053,7 +28463,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "biodégradable",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24067,7 +28477,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bon pour la santé",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24081,7 +28491,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bon pour la santé",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24095,7 +28505,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer nos comportements",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24109,7 +28519,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer nos comportements",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24123,7 +28533,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "compost",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24137,7 +28547,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "compost",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24151,7 +28561,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "compostage",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24165,7 +28575,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "compostage",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24179,7 +28589,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "composter",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24193,7 +28603,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "composter",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24207,7 +28617,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "compostés",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24221,7 +28631,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "compostés",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24235,7 +28645,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "consigne",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24249,7 +28659,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "consigne",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24263,7 +28673,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "consommer autrement",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24277,7 +28687,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "consommer autrement",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24291,7 +28701,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "durée de vie",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24305,7 +28715,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "durée de vie",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24319,7 +28729,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déconstruire",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24333,7 +28743,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déconstruire",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24347,7 +28757,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décroissance",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24361,7 +28771,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "décroissance",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24375,7 +28785,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espace vert",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24389,7 +28799,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "espace vert",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24403,7 +28813,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "falloir ralentir",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24417,7 +28827,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "falloir ralentir",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24431,7 +28841,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "habitude durable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24445,7 +28855,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "habitude durable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24459,7 +28869,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "industrie verte",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24473,7 +28883,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "industrie verte",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24487,7 +28897,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "jachère",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24501,7 +28911,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "jachère",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24515,7 +28925,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "manger mieux",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24529,7 +28939,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "manger mieux",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24543,7 +28953,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mousseur",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24557,7 +28967,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mousseur",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24571,7 +28981,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "méga bassine",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24585,7 +28995,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "méga bassine",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24599,7 +29009,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nucléaire",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24613,7 +29023,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nucléaire",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24627,7 +29037,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plantation",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24641,7 +29051,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plantation",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24655,7 +29065,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus d'oxygène",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24669,7 +29079,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus d'oxygène",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24683,7 +29093,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus durable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24697,7 +29107,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plus durable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24711,7 +29121,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polyculture élevage",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24725,7 +29135,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polyculture élevage",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24739,7 +29149,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polyculture élevage",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24753,7 +29163,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polyculture élevage",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24767,7 +29177,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polyculture élevage",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24781,7 +29191,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polyculture élevage",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24795,7 +29205,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polyculture élevage",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24809,7 +29219,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "polyculture élevage",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24823,7 +29233,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pratique vertueuse",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24837,7 +29247,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pratique vertueuse",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24851,7 +29261,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "produits en vrac",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24865,7 +29275,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "produits en vrac",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24879,7 +29289,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "produits locaux",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24893,7 +29303,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "produits locaux",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24907,7 +29317,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "préserver",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24921,7 +29331,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "préserver",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24935,7 +29345,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rationnement",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24949,7 +29359,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rationnement",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24963,7 +29373,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "rationner",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24977,7 +29387,35 @@ THEME_KEYWORDS = {
         {
             "keyword": "rationner",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "recyclable",
+            "category": "Economie circulaire",
+            "high_risk_of_false_positive": True,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "recycle",
+            "category": "Economie circulaire",
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -24991,7 +29429,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replantation",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25005,7 +29443,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replantation",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25019,7 +29457,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replantation",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25033,7 +29471,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replantation",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25047,7 +29485,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replantation",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25061,7 +29499,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replantation",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25075,7 +29513,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replantation",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25089,7 +29527,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replantation",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25103,7 +29541,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replanter",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25117,7 +29555,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replanter",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25131,7 +29569,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replanter",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25145,7 +29583,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replanter",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25159,7 +29597,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replanter",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25173,7 +29611,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replanter",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25187,7 +29625,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replanter",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25201,7 +29639,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "replanter",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25215,7 +29653,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "responsable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25229,7 +29667,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "responsable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25243,7 +29681,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restreindre",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25257,7 +29695,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restreindre",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25271,7 +29709,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restreindre",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25285,7 +29723,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restreindre",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25299,7 +29737,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restriction",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25313,7 +29751,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restriction",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25327,7 +29765,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réacteur nucléaire",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25341,7 +29779,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réacteur nucléaire",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25355,7 +29793,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réparation",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25369,7 +29807,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réparation",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25383,7 +29821,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "se nourrir mieux",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25397,7 +29835,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "se nourrir mieux",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25411,7 +29849,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "toilette sèche",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25425,7 +29863,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "toilette sèche",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25439,7 +29877,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "toilette à double débit",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25453,7 +29891,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "toilette à double débit",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25467,7 +29905,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tri",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25481,7 +29919,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tri",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25495,7 +29933,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "trier",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25509,7 +29947,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "trier",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25523,7 +29961,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vertueux",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25537,7 +29975,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vertueux",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25551,7 +29989,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vrac",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25565,7 +30003,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vrac",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25579,7 +30017,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végan",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25593,7 +30031,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végan",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25607,7 +30045,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végan",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25621,7 +30059,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végan",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25635,7 +30073,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végan",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25649,7 +30087,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végan",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25663,7 +30101,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végan",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25677,7 +30115,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végan",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25691,7 +30129,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarien",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25705,7 +30143,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarien",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25719,7 +30157,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarien",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25733,7 +30171,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarien",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25747,7 +30185,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarien",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25761,7 +30199,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarien",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25775,7 +30213,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarien",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25789,7 +30227,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarien",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25803,7 +30241,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarienne",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25817,7 +30255,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarienne",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25831,7 +30269,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarienne",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25845,7 +30283,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarienne",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25859,7 +30297,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarienne",
             "category": "Air",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25873,7 +30311,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarienne",
             "category": "Eau",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25887,7 +30325,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarienne",
             "category": "Forêt",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25901,7 +30339,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "végétarienne",
             "category": "Sols",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25915,7 +30353,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écolo",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25929,7 +30367,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écolo",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25943,7 +30381,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie d'énergie",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25957,7 +30395,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie d'énergie",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25971,7 +30409,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie de carburant",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25985,7 +30423,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie de carburant",
             "category": "Energie",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -25999,7 +30437,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "épargne citoyenne",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26013,7 +30451,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "épargne citoyenne",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": True,
+            "high_risk_of_false_positive": True,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26029,7 +30467,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "acv",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26043,7 +30481,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ademe",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26057,7 +30495,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture bio",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26071,7 +30509,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture bio",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26085,7 +30523,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture bio",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26099,7 +30537,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture bio",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26113,7 +30551,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture biologique",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26127,7 +30565,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture biologique",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26141,7 +30579,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture biologique",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26155,7 +30593,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture biologique",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26169,7 +30607,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture de conservation",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26183,7 +30621,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture de conservation",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26197,7 +30635,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture de conservation",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26211,7 +30649,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture de conservation",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26225,7 +30663,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture plus verte",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26239,7 +30677,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture plus verte",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26253,7 +30691,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture plus verte",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26267,7 +30705,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agriculture plus verte",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26281,7 +30719,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologie",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26295,7 +30733,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologie",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26309,7 +30747,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologie",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26323,7 +30761,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologie",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26337,7 +30775,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologique",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26351,7 +30789,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologique",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26365,7 +30803,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologique",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26379,7 +30817,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologique",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26393,7 +30831,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agro écologique",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26407,7 +30845,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroforesterie",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26421,7 +30859,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroécologie",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26435,7 +30873,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroécologie",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26449,7 +30887,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroécologie",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26463,7 +30901,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "agroécologie",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26477,7 +30915,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "amélioration des pratiques d’élevage",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26491,7 +30929,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "amélioration des pratiques d’élevage",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26505,7 +30943,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "amélioration des pratiques d’élevage",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26519,7 +30957,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "amélioration des pratiques d’élevage",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26533,7 +30971,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "analyse de cycle de vie",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26547,7 +30985,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "anti gaspi",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26561,7 +30999,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "antigaspi",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26575,7 +31013,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "antigaspillage",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26589,7 +31027,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "aquaculture durable",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26603,7 +31041,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "baisse de consommation d'eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26617,7 +31055,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bio inspiration",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26631,7 +31069,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "biocarburant",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26645,7 +31083,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "biodéchets",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26659,7 +31097,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "biogaz",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26673,7 +31111,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bioinspiration",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26687,7 +31125,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "biomasse",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26701,7 +31139,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "biomimétisme",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26715,7 +31153,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bioplastique",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26729,7 +31167,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bon pour la planète",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26743,7 +31181,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "bonne nouvelle pour la planète",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26757,7 +31195,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "carburant de synthèse",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26771,7 +31209,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "centrale hydroélectrique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26785,7 +31223,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer de modèle agricole",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26799,7 +31237,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer de modèle économique",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26813,7 +31251,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "changer nos habitudes alimentaires",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26827,7 +31265,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "circuits courts",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26841,7 +31279,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "conservation de la nature",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26855,7 +31293,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "consommation plus responsable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26869,7 +31307,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "consommation responsable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26883,7 +31321,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "descente énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26897,7 +31335,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "désalinisation des eaux",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26911,7 +31349,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "droit environnemental",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26925,7 +31363,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "déchet valorisé",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26939,7 +31377,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "décroissance énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "défense de l'environnement",
+            "category": "Concepts généraux",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "défense de la nature",
+            "category": "Concepts généraux",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "défenseur de l'environnement",
+            "category": "Concepts généraux",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "défenseur de la nature",
+            "category": "Concepts généraux",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26953,7 +31447,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "dépollution",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26967,7 +31461,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "efficacité énergétique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26981,7 +31475,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "efficacité énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "emballage sans plastique",
+            "category": "Economie circulaire",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -26995,7 +31503,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "epr",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27009,7 +31517,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "fin de l'abondance",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27023,7 +31531,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "foncière forestière",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27037,7 +31545,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "foresterie urbaine",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27051,7 +31559,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gaspiller moins",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27065,7 +31573,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion de la ressource en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27079,7 +31587,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion durable des forêts",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "gestion durable des ressources",
+            "category": "Concepts généraux",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27093,7 +31615,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion durable des terres cultivables",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27107,7 +31629,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion durable des terres cultivables",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27121,7 +31643,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion durable des terres cultivables",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27135,7 +31657,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "gestion durable des terres cultivables",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27149,7 +31671,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "géothermie",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27163,7 +31685,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hydrogène vert",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27177,7 +31699,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "hydroélectricité",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27191,7 +31713,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "indice de réparabilité",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27205,7 +31727,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "intérêt environnemental",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27219,7 +31741,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "jeter moins",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27233,7 +31755,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "journée de la terre",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27247,7 +31769,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "journée mondiale de la vie sauvage",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27261,7 +31783,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "lutte contre le gaspillage",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27275,7 +31797,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "lutte contre le gaspillage d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27289,7 +31811,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "malus écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27303,7 +31825,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "matériaux biosourcés",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27317,7 +31839,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "matériaux recyclables",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27331,7 +31853,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "matériaux recyclés",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27345,7 +31867,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "maîtrise de la demande",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27359,7 +31881,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "moins consommer",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27373,7 +31895,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "moins gaspiller",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27387,7 +31909,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "moins jeter",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27401,7 +31923,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "mutation écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27415,7 +31937,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nettoyage des océans",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27429,7 +31951,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "nettoyage des plages",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "nocif pour l'environnement",
+            "category": "Concepts généraux",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27443,7 +31979,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "nous adapter à un futur incertain",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27457,7 +31993,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "panneau solaire",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27471,7 +32007,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "panneaux solaires",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27485,7 +32021,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "parc éolien",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27499,7 +32035,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "partage des ressources",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27513,7 +32049,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "permaculture",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27527,7 +32063,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "permaculture",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27541,7 +32077,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "permaculture",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27555,7 +32091,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "permaculture",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27569,7 +32105,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "photovoltaïque",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27583,7 +32119,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planification écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27597,7 +32133,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "planter des arbres",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27611,7 +32147,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "plastique recyclé",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27625,7 +32161,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "poubelle jaune",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27639,7 +32175,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prise de conscience environnementale",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27653,7 +32189,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "prise de conscience écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27667,7 +32203,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "protection des cours d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préservation de la nature",
+            "category": "Concepts généraux",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27681,7 +32231,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "préservation de la ressource en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préservation des forêts",
+            "category": "Forêt",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27695,7 +32259,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "préservation des sols",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27709,7 +32273,63 @@ THEME_KEYWORDS = {
         {
             "keyword": "préserver l'eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver la forêt",
+            "category": "Forêt",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver la nature",
+            "category": "Concepts généraux",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver les forêts",
+            "category": "Forêt",
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "préserver les sols",
+            "category": "Sols",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27723,7 +32343,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "pêche durable",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27737,7 +32357,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "quota de pêche",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27751,7 +32371,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "recyclage",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27765,7 +32385,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "recyclant",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27779,7 +32399,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "recycler",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27793,7 +32413,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "recyclerie",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27807,7 +32427,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "reduire les emballages",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27821,7 +32441,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "repair cafés",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27835,7 +32455,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "respect de l’environnement",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27849,7 +32469,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "respectueux de l’environnement",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27863,7 +32483,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "ressource renouvelable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27877,7 +32497,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "restriction d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27891,7 +32511,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "retenue collinaire",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27905,7 +32525,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "revégétaliser",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27919,7 +32539,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "récupérateur d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27933,7 +32553,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "récupérer l'eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27947,7 +32567,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction de la consommation",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27961,7 +32581,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction de la demande en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27975,7 +32595,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction des déchets",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -27989,7 +32609,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction du gaspillage alimentaire",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28003,7 +32623,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction du gaspillage alimentaire",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28017,7 +32637,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction du gaspillage alimentaire",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28031,7 +32651,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction du gaspillage alimentaire",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28045,7 +32665,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduction du gaspillage énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28059,7 +32679,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire la consommation d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28073,7 +32693,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire la production de plastique",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28087,7 +32707,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire le cheptel",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28101,7 +32721,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire le cheptel",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28115,7 +32735,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire le cheptel",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28129,7 +32749,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire l’élevage intensif",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28143,7 +32763,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire l’élevage intensif",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28157,7 +32777,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire l’élevage intensif",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28171,7 +32791,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire l’élevage intensif",
             "category": "Sols",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28185,7 +32805,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réduire sa consommation de viande",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28199,7 +32819,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réemploi",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28213,7 +32833,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réparabilité",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28227,7 +32847,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réseau de chaleur",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28241,7 +32861,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réseaux de chaleur",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28255,7 +32875,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réserve d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28269,7 +32889,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réutilisation des eaux",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28283,7 +32903,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "réutilisation des ressources",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28297,7 +32917,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "sauvegarde de la ressource en eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "sciences de l'environnement",
+            "category": "Concepts généraux",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28311,7 +32945,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "semaine du développement durable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28325,7 +32959,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sobriété",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28339,7 +32973,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sobriété énergétique",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28353,7 +32987,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "société écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28367,7 +33001,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sortie des énergies fossiles",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28381,7 +33015,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sortie du charbon",
             "category": "Air",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28395,7 +33029,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sortie du charbon",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28409,7 +33043,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "sortie du charbon",
             "category": "Métaux et minerais",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28423,7 +33057,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "stockage d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28437,7 +33071,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "stocker l'eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28451,7 +33085,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "système alimentaire équitable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28465,7 +33099,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "sécurité environnementale",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "transformation des pratiques agricoles",
+            "category": "Sols",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28479,7 +33127,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "transition en dehors des énergies fossiles",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28493,7 +33141,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tri des ordures",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28507,7 +33155,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tri sélectif",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28521,7 +33169,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tri à la source",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28535,7 +33183,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tva verte",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28549,7 +33197,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "tévéa verte",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28563,7 +33211,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "un environnement alimentaire sain",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28577,7 +33225,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "valorisation des déchets",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28591,7 +33239,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "verdir la politique agricole",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28605,7 +33253,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "vertueux pour la planète",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28619,7 +33267,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "ville écologique",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "zfe",
+            "category": "Air",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28633,7 +33295,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "zone naturelle protégée",
             "category": "Forêt",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "zone à faible émission",
+            "category": "Air",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28647,7 +33323,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zéro déchet",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28661,7 +33337,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zéro emballage",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28675,7 +33351,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "zéro plastique",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28689,7 +33365,21 @@ THEME_KEYWORDS = {
         {
             "keyword": "éco conception",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
+            "crisis_climate": False,
+            "crisis_biodiversity": False,
+            "crisis_resource": True,
+            "solution": True,
+            "consequence": False,
+            "cause": False,
+            "general_concepts": False,
+            "statement": False,
+            "language": "fr"
+        },
+        {
+            "keyword": "éco organisme",
+            "category": "Concepts généraux",
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28703,7 +33393,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "éco responsable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28717,7 +33407,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écoconception",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28731,7 +33421,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écologie industrielle",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28745,7 +33435,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie circulaire",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28759,7 +33449,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie du réemploi",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28773,7 +33463,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie d’eau",
             "category": "Eau",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28787,7 +33477,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie d’énergie",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28801,7 +33491,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économie qui répare",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28815,7 +33505,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "économiser de l’énergie",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28829,7 +33519,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "écoresponsable",
             "category": "Concepts généraux",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28843,7 +33533,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "énergie durable",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28857,7 +33547,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "énergie renouvelable",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28871,7 +33561,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "énergie solaire",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28885,7 +33575,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "énergie verte",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28899,7 +33589,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "éolien",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28913,7 +33603,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "éolienne",
             "category": "Energie",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,
@@ -28927,7 +33617,7 @@ THEME_KEYWORDS = {
         {
             "keyword": "éviter le plastique",
             "category": "Economie circulaire",
-            "high_risk_of_False_positive": False,
+            "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
             "crisis_resource": True,

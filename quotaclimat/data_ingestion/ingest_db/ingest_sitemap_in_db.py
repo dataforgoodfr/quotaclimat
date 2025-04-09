@@ -15,7 +15,7 @@ import asyncio
 from quotaclimat.data_ingestion.scrap_sitemap import \
     query_one_sitemap_and_transform, get_sitemap_list
 
-sentry_init()
+
 
 async def batch_sitemap(exit_event):
     create_tables()
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     # create logger with 'spam_application'
     logger = logging.getLogger()
     logger.setLevel(level=os.getenv('LOGLEVEL', 'INFO').upper())
-
+    sentry_init()
     # create console handler with a higher log level
     if (logger.hasHandlers()):
         logger.handlers.clear()

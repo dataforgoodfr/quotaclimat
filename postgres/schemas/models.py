@@ -10,6 +10,7 @@ from postgres.database_connection import connect_to_db, get_db_session
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 import os
 import json
+from json import JSONDecodeError
 
 Base = declarative_base()
 
@@ -85,7 +86,7 @@ class Keywords(Base):
     channel_program = Column(String, nullable=True) #  arcom - alembic handles this
     channel_program_type = Column(String, nullable=True) # arcom - (magazine, journal etc) alembic handles this
     channel_radio = Column(Boolean, nullable=True)
-    start = Column(DateTime())
+    start = Column(DateTime(), primary_key=True)
     plaintext= Column(Text)
     theme=Column(JSON) #keyword.py  # ALTER TABLE keywords ALTER theme TYPE json USING to_json(theme);
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")) # ALTER TABLE ONLY keywords ALTER COLUMN created_at SET DEFAULT (now() at time zone 'utc');
@@ -174,10 +175,12 @@ def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
 
+
 def get_keyword(id: str, session = None):
     if session is None:
         session = get_db_session()
-    return session.get(Keywords, id)
+        
+    return session.query(Keywords).filter_by(id=id).one_or_none()
 
 def get_stop_word(id: str):
     session = get_db_session()
@@ -362,27 +365,32 @@ def update_dictionary(engine, theme_keywords):
 
 
 def empty_tables(session = None, stop_word = True):
-    if(os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost"):
+    if( (os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost") and os.environ.get("ENV") != "prod"):
         logging.warning("""Doing: Empty table Stop_Word / Keywords""")
         if stop_word:
             session.query(Stop_Word).delete()
         session.query(Keywords).delete()
+        
         session.commit()
         logging.warning("""Done: Empty table Stop_Word / Keywords""")
 
 
 def drop_tables(conn = None):
     
-    if(os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost"):
+    if( (os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost") and os.environ.get("ENV") != "prod"):
         logging.warning("""Drop table keyword / Program_Metadata / Channel_Metadata in the PostgreSQL database""")
         try:
             if conn is None :
                 engine = connect_to_db()
             else:
                 engine = conn
+            logging.info(f"Drop all {Keywords.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Keywords.__table__])
+            logging.info(f"Drop all {Channel_Metadata.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Channel_Metadata.__table__])
+            logging.info(f"Drop all {Program_Metadata.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Program_Metadata.__table__])
+            logging.info(f"Drop all {Stop_Word.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Stop_Word.__table__])
 
             logging.info(f"Table keyword / Program_Metadata / Channel_Metadata deletion done")

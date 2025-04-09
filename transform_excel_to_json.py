@@ -13,17 +13,19 @@ THEME_KEYWORDS = {}
 for excel_file_path in excels_files:
     print(f"Reading {excel_file_path}")
     df = pd.read_excel(excel_file_path, sheet_name='Catégorisation Finale')
-
+    df = df.dropna(subset=['keyword'])
     df['category'] = df['Secteur'].fillna('')
     df['crise'] = df['Crise'].fillna('') 
 
     # Iterate over the rows of the DataFrame
     for index, row in df.iterrows():
-        theme_name = row['Category_legacy'].strip()
+        
+        print(f"Processing row {index + 1} - {row['keyword']}")
+        theme_name = row['Category_legacy'] #.strip()
         keyword = row['keyword'].lower().strip()
         category = row['category'].strip()
-
-        high_risk_of_false_positive = row['HRFP']
+        print(f"row['HRFP'] is {row['HRFP']} for {keyword} so must be {row['HRFP'] == 1.0}")
+        high_risk_of_false_positive = row['HRFP'] == 1.0
         crisis_climate = row['crise'] == "Climat"
         crisis_biodiversity = row['crise'] == "Biodiversité"
         crisis_resource = row['crise'] == "Ressources"
@@ -36,7 +38,7 @@ for excel_file_path in excels_files:
 
         # Check if the theme_name already exists in THEME_KEYWORDS
         if(theme_name not in THEME_KEYWORDS):
-            print(f"Adding theme {theme_name}")
+            print(f"Adding theme {row['Category_legacy']} - {theme_name}")
             THEME_KEYWORDS[theme_name] = []
 
         # filter # keyword with # (paused or removed)
@@ -73,9 +75,9 @@ with open(output_file, 'w', encoding='utf-8') as f:
 with open(output_file, 'r', encoding='utf-8') as f:
     content = f.read()
 
-    # Replace JSON boolean values with Python boolean values
-    content = content.replace('true', 'True')
-    content = content.replace('false', 'False')
+    # # Replace JSON boolean values with Python boolean values
+    content = content.replace('true,', 'True,')
+    content = content.replace('false,', 'False,')
 
 # Write the modified content back to a Python file
 with open(output_file, 'w', encoding='utf-8') as f:

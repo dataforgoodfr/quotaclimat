@@ -1,5 +1,7 @@
 import logging
 
+from sqlalchemy import Engine
+
 from quotaclimat.data_processing.mediatree.stop_word.main import *
 from postgres.schemas.models import get_db_session, connect_to_db, drop_tables
 from quotaclimat.data_processing.mediatree.api_import_utils.db import *
@@ -14,7 +16,7 @@ session = get_db_session(conn)
 
 
 def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
-        conn = connect_to_db()
+        conn: Engine = connect_to_db()
         create_tables(conn)
         session = get_db_session(conn)
         start = pd.to_datetime("2025-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
@@ -58,6 +60,8 @@ def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
         assert expected_max_date.last_day_saved == keywordStats.last_day_saved
         assert keywordStats.number_of_previous_days_from_yesterday > 1
         delete_keywords_id(session, pk)
+        session.commit()
+        session.close()
 
 
 def test_get_delay_date():

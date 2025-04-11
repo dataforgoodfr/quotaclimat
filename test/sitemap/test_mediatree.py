@@ -111,7 +111,7 @@ def test_parse_reponse_subtitle():
         "program_metadata_id" : None,
     }])
 
-    expected_result['start'] = pd.to_datetime(expected_result['start'], unit='s').dt.tz_localize('UTC')
+    expected_result['start'] = pd.to_datetime(expected_result['start'], unit='s').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
     df = parse_reponse_subtitle(json_response, channel = None, channel_program = channel_program, channel_program_type = "")
     debug_df(df)
 
@@ -167,7 +167,7 @@ def test_save_to_pg_keyword_normal():
         ,"number_of_keywords": 1
     }])
 
-    df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC')#.dt.tz_convert('Europe/Paris')
+    df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
     assert save_to_pg(df, keywords_table, conn) == 1
 
     # check the value is well existing

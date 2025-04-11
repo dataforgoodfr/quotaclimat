@@ -77,8 +77,11 @@ def read_folder_from_s3(date, channel: str):
                                     "secret": SECRET_KEY,
                                     "endpoint_url": ENDPOINT_URL,
                                 })
+    
+    if str(df['start'].dt.tz) == 'UTC':
+        logging.warning(f"Timezone is UTC, converting to Europe/Paris")
+        df['start'] = df['start'].dt.tz_convert('Europe/Paris')
 
-    logging.info(f"read {len(df)} rows from S3")
     return df
 
 

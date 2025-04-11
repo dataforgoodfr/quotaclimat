@@ -157,7 +157,7 @@ def test_stop_word_get_all_repetitive_context_advertising_for_a_keyword_not_enou
 def test_stop_word_get_repetitive_context_advertising():
         conn = connect_to_db()
         session = get_db_session(conn)
-        start_date = datetime(2025, 1, 14, 15, 29, 59, 329453, tzinfo=zoneinfo.ZoneInfo(key='Europe/Paris'))
+        start_date = datetime(2025, 1, 14, 15, 29, 59, 329453, tzinfo=zoneinfo.ZoneInfo(key='UTC'))
         top_keywords = pd.DataFrame(
         [
             {

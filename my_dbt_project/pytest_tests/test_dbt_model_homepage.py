@@ -31,7 +31,7 @@ def run_dbt_command(command_args):
 
 def seed_dbt():
     """Run dbt seed once before any test."""
-    commands = ["seed", "--select", "program_metadata","--select", "keywords", "--full-refresh"]
+    commands = ["seed", "--select", "program_metadata","--select", "keywords","--select", "dictionary", "--full-refresh"]
     logging.info(f"pytest running dbt seed : {commands}")
     run_dbt_command(commands)
 
@@ -95,7 +95,19 @@ def test_core_query_thematics_keywords_values(db_connection):
 
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT channel_title, week, crise_type, theme, category, keyword, count
+            SELECT channel_title, week, crise_type, theme, category, keyword, count,
+            high_risk_of_false_positive,
+            solution,
+            consequence,
+            cause,
+            general_concepts,
+            statement,
+            crisis_climate,
+            crisis_biodiversity,
+            crisis_resource,
+            categories,
+            themes,
+            language
             FROM public.core_query_thematics_keywords
             WHERE channel_title = 'TF1' AND keyword = 'eau'
             ORDER BY channel_title DESC
@@ -103,7 +115,28 @@ def test_core_query_thematics_keywords_values(db_connection):
         """)
         row = cur.fetchone()
 
-        expected = ('TF1', datetime.date(2025, 1, 27), 'Crise climatique', 'changement_climatique_constat', 'Transversal', 'eau', 4)
+        expected=   (
+        'TF1',
+        datetime.date(2025, 1, 27),
+        'Crise climatique',
+        'changement_climatique_constat',
+        'Transversal',
+        'eau',
+        4,
+        True,
+        False,
+        False,
+        False,
+        True,
+        False,
+        False,
+        True,
+        False,
+        None,
+        '["changement_climatique_constat_indirectes" '
+        '"biodiversite_concepts_generaux_indirectes"]',
+        'fr')
+        
         assert row == expected, f"Unexpected values: {row}"
 
 def test_core_query_environmental_shares_values(db_connection):

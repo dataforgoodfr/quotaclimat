@@ -79,3 +79,24 @@ seeds:
             {% else %}
             -- safeguard: skip DELETE in prod
             {% endif %}
+
+    dictionary:
+        table: dictionary
+        enabled: "{{ target.name != 'prod' }}" # safe guard
+        pre-hook:
+          - >
+            {% if target.name != 'prod' %}
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'dictionary'
+              ) THEN
+                EXECUTE 'DELETE FROM public.dictionary';
+              END IF;
+            END
+            $$;
+            {% else %}
+            -- safeguard: skip DELETE in prod
+            {% endif %}

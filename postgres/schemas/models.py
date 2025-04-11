@@ -122,6 +122,17 @@ class Keywords(Base):
     number_of_biodiversite_causes_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_causes_directes integer;
     number_of_biodiversite_consequences_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_consequences integer;
     number_of_biodiversite_solutions_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_solutions_directes integer;
+    number_of_changement_climatique_constat_all_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_changement_climatique_constat integer;
+    number_of_changement_climatique_causes_all_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_changement_climatique_causes_directes integer;
+    number_of_changement_climatique_consequences_all_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_changement_climatique_consequences integer;
+    number_of_attenuation_climatique_solutions_all_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_attenuation_climatique_solutions_directes integer;
+    number_of_adaptation_climatique_solutions_all_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_adaptation_climatique_solutions_directes integer;
+    number_of_ressources_all_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_ressources_naturelles_concepts_generaux integer;
+    number_of_ressources_solutions_all_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_ressources_solutions integer;
+    number_of_biodiversite_concepts_generaux_all_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_concepts_generaux integer;
+    number_of_biodiversite_causes_all_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_causes_directes integer;
+    number_of_biodiversite_consequences_all_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_consequences integer;
+    number_of_biodiversite_solutions_all_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_solutions_directes integer;
 
     program_metadata_id = Column(Text, ForeignKey('program_metadata.id'), nullable=True)
     program_metadata = relationship("Program_Metadata", foreign_keys=[program_metadata_id])

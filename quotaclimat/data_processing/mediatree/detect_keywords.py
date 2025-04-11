@@ -151,7 +151,7 @@ def get_detected_keywords(plaitext_without_stopwords: str, keywords_dict):
 @sentry_sdk.trace
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime, stop_words: List[str] = []):
     keywords_with_timestamp = []
-    number_of_elements_in_array = 28
+    number_of_elements_in_array = 39
     default_window_in_seconds = DEFAULT_WINDOW_DURATION
     plaintext = replace_word_with_context(text=plaintext, word=MEDIATREE_TRANSCRIPTION_PROBLEM, length_to_remove=0)
     plaitext_without_stopwords = remove_stopwords(plaintext=plaintext, stopwords=stop_words)
@@ -234,6 +234,25 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             count_high_risk_false_positive=False)
         number_of_biodiversite_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_solutions"], \
             count_high_risk_false_positive=False)
+        
+        # Count all words (direct and indirect) as if they were direct
+        keywords_with_timestamp_all_hrfp = keywords_with_timestamp.copy()
+        keywords_with_timestamp_all_hrfp = list(map(
+            lambda keyword_info: {**keyword_info, 'theme': remove_indirect(keyword_info['theme'])} # Treat all indirect words as direct
+            , keywords_with_timestamp_all_hrfp
+        ))
+
+        number_of_changement_climatique_constat_all_hrfp = count_keywords_duration_overlap(keywords_with_timestamp_all_hrfp, start,theme=["changement_climatique_constat"])
+        number_of_changement_climatique_causes_all_hrfp = count_keywords_duration_overlap(keywords_with_timestamp_all_hrfp, start,theme=["changement_climatique_causes"])
+        number_of_changement_climatique_consequences_all_hrfp = count_keywords_duration_overlap(keywords_with_timestamp_all_hrfp, start,theme=["changement_climatique_consequences"])
+        number_of_attenuation_climatique_solutions_all_hrfp = count_keywords_duration_overlap(keywords_with_timestamp_all_hrfp, start,theme=["attenuation_climatique_solutions"])
+        number_of_adaptation_climatique_solutions_all_hrfp = count_keywords_duration_overlap(keywords_with_timestamp_all_hrfp, start,theme=["adaptation_climatique_solutions"])
+        number_of_ressources_all_hrfp = count_keywords_duration_overlap(keywords_with_timestamp_all_hrfp, start,theme=["ressources"])
+        number_of_ressources_solutions_all_hrfp = count_keywords_duration_overlap(keywords_with_timestamp_all_hrfp, start,theme=["ressources_solutions"])
+        number_of_biodiversite_concepts_generaux_all_hrfp = count_keywords_duration_overlap(keywords_with_timestamp_all_hrfp, start,theme=["biodiversite_concepts_generaux"])
+        number_of_biodiversite_causes_all_hrfp = count_keywords_duration_overlap(keywords_with_timestamp_all_hrfp, start,theme=["biodiversite_causes"])
+        number_of_biodiversite_consequences_all_hrfp = count_keywords_duration_overlap(keywords_with_timestamp_all_hrfp, start,theme=["biodiversite_consequences"])
+        number_of_biodiversite_solutions_all_hrfp = count_keywords_duration_overlap(keywords_with_timestamp_all_hrfp, start,theme=["biodiversite_solutions"])
 
         return [ # Change number_of_elements_in_array if a new element is added here
             theme
@@ -264,6 +283,17 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             ,number_of_biodiversite_causes_no_hrfp
             ,number_of_biodiversite_consequences_no_hrfp
             ,number_of_biodiversite_solutions_no_hrfp
+            ,number_of_changement_climatique_constat_all_hrfp
+            ,number_of_changement_climatique_causes_all_hrfp
+            ,number_of_changement_climatique_consequences_all_hrfp
+            ,number_of_attenuation_climatique_solutions_all_hrfp
+            ,number_of_adaptation_climatique_solutions_all_hrfp
+            ,number_of_ressources_all_hrfp
+            ,number_of_ressources_solutions_all_hrfp
+            ,number_of_biodiversite_concepts_generaux_all_hrfp
+            ,number_of_biodiversite_causes_all_hrfp
+            ,number_of_biodiversite_consequences_all_hrfp
+            ,number_of_biodiversite_solutions_all_hrfp
         ]
     else:
         logging.debug("Empty keywords")
@@ -339,6 +369,17 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = []) -> pd.
                  ,"number_of_biodiversite_causes_no_hrfp"
                  ,"number_of_biodiversite_consequences_no_hrfp"
                  ,"number_of_biodiversite_solutions_no_hrfp"
+                 ,"number_of_changement_climatique_constat_all_hrfp"
+                 ,"number_of_changement_climatique_causes_all_hrfp"
+                 ,"number_of_changement_climatique_consequences_all_hrfp"
+                 ,"number_of_attenuation_climatique_solutions_all_hrfp"
+                 ,"number_of_adaptation_climatique_solutions_all_hrfp"
+                 ,"number_of_ressources_all_hrfp"
+                 ,"number_of_ressources_solutions_all_hrfp"
+                 ,"number_of_biodiversite_concepts_generaux_all_hrfp"
+                 ,"number_of_biodiversite_causes_all_hrfp"
+                 ,"number_of_biodiversite_consequences_all_hrfp"
+                 ,"number_of_biodiversite_solutions_all_hrfp"
                 ]
             ] = df[['plaintext','srt', 'start']]\
                 .swifter.apply(\

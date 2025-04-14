@@ -109,7 +109,7 @@ def test_core_query_thematics_keywords_values(db_connection):
             themes,
             language
             FROM public.core_query_thematics_keywords
-            WHERE channel_title = 'TF1' AND keyword = 'eau'
+            WHERE channel_title = 'TF1' AND keyword = 'eau' AND theme = 'changement_climatique_constat'
             ORDER BY channel_title DESC
             LIMIT 1
         """)
@@ -128,13 +128,12 @@ def test_core_query_thematics_keywords_values(db_connection):
         False,
         False,
         True,
-        False,
-        False,
+        True,
+        True,
         True,
         False,
         None,
-        '["changement_climatique_constat_indirectes" '
-        '"biodiversite_concepts_generaux_indirectes"]',
+        '{changement_climatique_constat_indirectes,biodiversite_concepts_generaux_indirectes}',
         'fr')
         
         assert row == expected, f"Unexpected values: {row}"

@@ -89,13 +89,13 @@ def test_core_query_thematics_keywords_count(db_connection):
     count = cur.fetchone()[0]
     cur.close()
 
-    assert count == 108, "count error"
+    assert count == 60, "count error"
 
 def test_core_query_thematics_keywords_values(db_connection):
 
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT channel_title, week, crise_type, theme, category, keyword, count,
+            SELECT channel_title, week, keyword, count,
             high_risk_of_false_positive,
             solution,
             consequence,
@@ -118,11 +118,8 @@ def test_core_query_thematics_keywords_values(db_connection):
         expected=   (
         'TF1',
         datetime.date(2025, 1, 27),
-        'Crise climatique',
-        'changement_climatique_constat',
-        'Transversal',
         'eau',
-        4,
+        6,
         True,
         False,
         False,

@@ -21,23 +21,13 @@ SELECT
     d.categories,
     d.themes,
     d.language,
-
-    -- Crise type selon le thème --> Legacy with added dictionary join on 11/04/2025
-    CASE
-        WHEN LOWER(kw ->> 'theme') LIKE '%climat%' THEN 'Crise climatique'
-        WHEN LOWER(kw ->> 'theme') LIKE '%biodiversite%' THEN 'Crise de la biodiversité'
-        WHEN LOWER(kw ->> 'theme') LIKE '%ressource%' THEN 'Crise des ressources'
-        ELSE 'Autre'
-    END AS crise_type,
-
-    kw ->> 'theme' AS theme,
-    COALESCE(NULLIF(TRIM(kw ->> 'category'), ''), 'Transversal') AS category,
+    -- kw ->> 'theme' AS theme, -- LEGACY replaces with themes
+    -- COALESCE(NULLIF(TRIM(kw ->> 'category'), ''), 'Transversal') AS category, -- LEGACY replaces with categories
     kw ->> 'keyword' AS keyword,
-
     COUNT(*) AS count
 
 FROM public.keywords k
-LEFT JOIN public.program_metadata pm 
+LEFT JOIN public.program_metadata pm  -- TODO: join on program_metadata_id
     ON k.channel_program = pm.channel_program 
     AND k.channel_name = pm.channel_name
     AND (
@@ -73,17 +63,10 @@ GROUP BY
     d.categories,
     d.themes,
     d.language,
-    CASE
-        WHEN LOWER(kw ->> 'theme') LIKE '%climat%' THEN 'Crise climatique'
-        WHEN LOWER(kw ->> 'theme') LIKE '%biodiversite%' THEN 'Crise de la biodiversité'
-        WHEN LOWER(kw ->> 'theme') LIKE '%ressource%' THEN 'Crise des ressources'
-        ELSE 'Autre'
-    END,
-    kw ->> 'theme',
-    COALESCE(NULLIF(TRIM(kw ->> 'category'), ''), 'Transversal'),
+    -- kw ->> 'theme', -- LEGACY replaces with themes
+    -- COALESCE(NULLIF(TRIM(kw ->> 'category'), ''), 'Transversal'),  -- LEGACY replaces with categories
     kw ->> 'keyword'
 
 ORDER BY
     pm.channel_title,
-    week,
-    crise_type
+    week

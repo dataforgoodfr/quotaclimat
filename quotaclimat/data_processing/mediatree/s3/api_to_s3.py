@@ -69,7 +69,8 @@ def get_param_api(token, type_sub, start_epoch, channel, end_epoch):
     }
 
 
-def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", channel_program_type = "", program_metadata_id = None) -> Optional[pd.DataFrame]:
+def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", channel_program_type = ""
+                           , program_metadata_id = None, country: CountryMediaTree = FRANCE) -> Optional[pd.DataFrame]:
     with sentry_sdk.start_transaction(op="task", name="parse_reponse_subtitle"):
         total_results = parse_total_results(response_sub)
         logging.getLogger("modin.logging.default").setLevel(logging.WARNING)
@@ -88,7 +89,7 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             pd.set_option('display.max_columns', None)
             logging.debug("setting timestamp")
 
-            timezone = 'Europe/Paris'
+            timezone = country.timezone
             new_df['timestamp'] = new_df.apply(lambda x: pd.to_datetime(x['start'], unit='s',utc=True).tz_convert(timezone), axis=1)
             logging.debug("timestamp was set")
 
@@ -104,15 +105,16 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             )
 
             logging.debug("setting channel_title")
-            new_df['channel_title'] = new_df.apply(lambda x: get_channel_title_for_name(x['channel_name']), axis=1)
+            new_df['channel_title'] = new_df.apply(lambda x: get_channel_title_for_name(x['channel_name'], country=country), axis=1)
             
             logging.debug(f"setting program {channel_program}")
             # weird error if not using this way: (ValueError) format number 1 of "20h30 le samedi" is not recognized
             new_df['channel_program'] = new_df.apply(lambda x: channel_program, axis=1)
             new_df['channel_program_type'] = new_df.apply(lambda x: channel_program_type, axis=1)
             new_df['program_metadata_id'] = new_df.apply(lambda x: program_metadata_id, axis=1)
+            
             logging.debug("programs were set")
-           
+            new_df['country'] = new_df.apply(lambda x: country.name, axis=1)
             return new_df
         else:
             logging.warning(f"No result (total_results = 0) for this channel {channel} - {channel_program}")
@@ -150,11 +152,11 @@ def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch
         raise Exception
     
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
-def get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type, program_metadata_id):
+def get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type, program_metadata_id, country: CountryMediaTree = FRANCE):
     try:
         response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch)
 
-        return parse_reponse_subtitle(response_sub, channel, channel_program, channel_program_type, program_metadata_id)
+        return parse_reponse_subtitle(response_sub, channel, channel_program, channel_program_type, program_metadata_id, country=country)
     except Exception as err:
         logging.error("Retry - get_df_api:(%s) %s" % (type(err).__name__, err))
         raise Exception
@@ -178,7 +180,7 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, co
     logging.info(f"Saving DF with {len(df)} elements to S3 for {date} and channel {channel}")
 
     # to create partitions
-    object_key = get_bucket_key(date=date, channel=channel, country_code=country.code)
+    object_key = get_bucket_key(date=date, channel=channel, country=country)
     logging.debug(f"Uploading partition: {object_key}")
 
     try:
@@ -187,7 +189,7 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, co
         df['month'] = date.month
         df['day'] = date.day
         df['channel'] = channel
-        df['country'] = country.code
+        df['country'] = country.name
 
         df = df._to_pandas() # collect data accross ray workers to avoid multiple subfolders
         based_path = "s3/parquet"
@@ -199,7 +201,7 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, co
                        ,partition_cols=partition_cols)
 
         #saving full_path folder parquet to s3
-        s3_path = f"{get_bucket_key_folder(date, channel, country_code=country.code)}"
+        s3_path = f"{get_bucket_key_folder(date, channel, country=country)}"
         local_folder = f"{based_path}/{s3_path}"
         upload_folder_to_s3(local_folder, BUCKET_NAME, s3_path,s3_client=s3_client)
         
@@ -229,7 +231,7 @@ async def get_and_save_api_data(exit_event):
                                                                                             minus_days=number_of_previous_days,\
                                                                                             timezone=country.timezone)
 
-                day_range: pd.DatetimeIndex = get_date_range(start_date_to_query, end_date, number_of_previous_days)
+                day_range: pd.DatetimeIndex = get_date_range(start_date_to_query, end_date, number_of_previous_days, country=country)
                 logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
                 for day in day_range:
                     token = refresh_token(token, day)
@@ -241,16 +243,19 @@ async def get_and_save_api_data(exit_event):
                         if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client, country=country):
                             try:
                                 programs_for_this_day = get_programs_for_this_day(day.tz_localize(timezone), channel, df_programs, timezone=timezone)
+                                if programs_for_this_day is None:
+                                    logging.info(f"No program for {day} and {channel}, skipping")
+                                    continue
 
                                 for program in programs_for_this_day.itertuples(index=False):
                                     start_epoch = program.start
                                     end_epoch = program.end
                                     channel_program = str(program.program_name)
                                     channel_program_type = str(program.program_type)
-                                    program_metadata_id = str(program.id)
+                                    program_metadata_id = program.id
                                     logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
                                     df = get_df_api(token, type_sub, start_epoch, channel, end_epoch, \
-                                                    channel_program, channel_program_type,program_metadata_id=program_metadata_id)
+                                                    channel_program, channel_program_type,program_metadata_id=program_metadata_id, country=country)
 
                                     if(df is not None):
                                         df_res = pd.concat([df_res, df ], ignore_index=True)

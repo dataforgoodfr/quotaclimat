@@ -6,8 +6,9 @@ from zoneinfo import ZoneInfo
 import modin.pandas as pd
 import os 
 from pandas.tseries.offsets import MonthEnd
+from quotaclimat.data_processing.mediatree.i8n.country import CountryMediaTree, FRANCE
 
-timezone_paris='Europe/Paris'
+timezone_paris=FRANCE.timezone
 EPOCH__5MIN_MARGIN = 300
 EPOCH__1MIN_MARGIN = 60 # to add margin for program
 
@@ -64,12 +65,12 @@ def get_min_hour(date: datetime):
 def get_max_hour(date: datetime):
     return datetime.combine(date, time.max)
 
-def get_datetime_yesterday(days=1):
-    midnight_today = get_min_hour(get_now())
+def get_datetime_yesterday(days=1, timezone=timezone_paris):
+    midnight_today = get_min_hour(get_now(timezone=timezone_paris))
     return midnight_today - timedelta(days=days)
 
 def get_yesterday(days=1, timezone=timezone_paris):
-    yesterday = get_datetime_yesterday(days=1)
+    yesterday = get_datetime_yesterday(days=1,timezone=timezone)
     yesterday_timestamp = yesterday.timestamp()
 
     return int(yesterday_timestamp)
@@ -107,7 +108,7 @@ def get_start_end_date_env_variable_with_default(start_date:int, minus_days:int=
         return (get_yesterday(timezone=timezone), None)
 
 # Get range of 2 date by week from start to end
-def get_date_range(start_date_to_query, end_epoch, minus_days:int=1):
+def get_date_range(start_date_to_query, end_epoch, minus_days:int=1, country: CountryMediaTree = FRANCE):
     if end_epoch is not None:
         logging.info(f"Getting date range from {pd.to_datetime(start_date_to_query, unit='s').normalize()}\
                       - {pd.to_datetime(end_epoch, unit='s').normalize()}")
@@ -121,7 +122,7 @@ def get_date_range(start_date_to_query, end_epoch, minus_days:int=1):
         return range
     else:
         logging.info(f"Default date range from yesterday to {minus_days} day(s) - (env var NUMBER_OF_PREVIOUS_DAYS)")
-        range = pd.date_range(end=get_datetime_yesterday(), periods=minus_days, freq="D")
+        range = pd.date_range(end=get_datetime_yesterday(timezone=country.timezone), periods=minus_days, freq="D")
         return range
 
 def is_it_tuesday(date):
@@ -141,9 +142,9 @@ def get_timestamp_from_yyyymmdd(time: str) -> pd.Timestamp:
         return pd.Timestamp(pd.to_datetime(time)).tz_localize("Europe/Paris")
     
 
-def get_last_X_days(days, from_date = None) -> datetime:
+def get_last_X_days(days, from_date = None, country= FRANCE) -> datetime:
     if from_date is None:
-        end_date = get_now()
+        end_date = get_now(timezone=country.timezone)
     else:
         end_date = from_date
 

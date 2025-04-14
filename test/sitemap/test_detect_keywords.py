@@ -11,7 +11,7 @@ localhost = get_localhost()
 original_timestamp = 1706437079004
 start = datetime.fromtimestamp(original_timestamp / 1000, timezone.utc)
 
-array_of_none = [None] * 28
+array_of_none = [None] * 29
 
 subtitles = [{
         "duration_ms": 34,
@@ -131,7 +131,7 @@ def test_one_theme_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp, country) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
     assert set(themes_output) == set(themes)
     # assert compare_unordered_lists_of_dicts(keywords_output, keywords)
 
@@ -205,7 +205,7 @@ def test_two_themes_one_hrfp_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp, country) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
     
     logging.info(f"Test got keywords_output: {keywords_output}")
     assert set(themes_output) == set(themes)
@@ -342,7 +342,7 @@ def test_long_sentence_theme_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp, country) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
 
     assert set(themes_output) == set(themes)
     # assert compare_unordered_lists_of_dicts(keywords_output, keywords)
@@ -431,7 +431,7 @@ def test_three_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp, country) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
 
     assert set(themes_output)== themes
     logging.info(f"Got keywords:  {keywords_output}")
@@ -512,7 +512,7 @@ def test_long_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp, country) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
     assert set(themes_output) == set(themes)
     # too hard to maintain
     #assert compare_unordered_lists_of_dicts(keywords_output, keywords)
@@ -695,6 +695,7 @@ def test_lower_case_filter_and_tag_by_theme():
         ,"number_of_biodiversite_causes_no_hrfp": 0
         ,"number_of_biodiversite_consequences_no_hrfp": 0
         ,"number_of_biodiversite_solutions_no_hrfp":0
+        ,"country": "france"
     }])
 
     # List of words to filter on
@@ -759,6 +760,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         ,"number_of_biodiversite_causes_no_hrfp": 0
         ,"number_of_biodiversite_consequences_no_hrfp": 0
         ,"number_of_biodiversite_solutions_no_hrfp":0
+        ,"country": "france"
     }])
 
     # List of words to filter on
@@ -866,6 +868,7 @@ def test_complexe_filter_and_tag_by_theme():
         ,"number_of_biodiversite_causes_no_hrfp": 0
         ,"number_of_biodiversite_consequences_no_hrfp": 0
         ,"number_of_biodiversite_solutions_no_hrfp":0
+        ,"country": "france"
     }])
 
     # List of words to filter on

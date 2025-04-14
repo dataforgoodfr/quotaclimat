@@ -15,13 +15,13 @@ def test_get_bucket_key_france():
     friday_6h26 = 1726719981
     date = pd.to_datetime(friday_6h26, unit='s', utc=True)
     channel = "tf1"
-    assert get_bucket_key(date, channel, country_code=FRANCE.code) == "year=2024/month=9/day=19/channel=tf1/*.parquet"
+    assert get_bucket_key(date, channel, country=FRANCE) == "year=2024/month=9/day=19/channel=tf1/*.parquet"
 
 def test_get_bucket_key_country():
     friday_6h26 = 1726719981
     date = pd.to_datetime(friday_6h26, unit='s', utc=True)
     channel = "tf1"
-    assert get_bucket_key(date, channel, country_code=GERMANY.code) == f"country={GERMANY.code}/year=2024/month=9/day=19/channel=tf1/*.parquet"
+    assert get_bucket_key(date, channel, country=GERMANY) == f"country={GERMANY.name}/year=2024/month=9/day=19/channel=tf1/*.parquet"
 
 def test_get_bucket_key_first_of_the_month():
     first_december = 1733040125
@@ -40,14 +40,14 @@ def test_get_bucket_key_first_of_the_month_france():
     date = pd.to_datetime(first_december, unit='s', utc=True)
     channel = "tf1"
     key_folder = f"year=2024/month=12/day=1/channel=tf1/"
-    assert get_bucket_key_folder(date, channel, country_code=FRANCE.code) == key_folder
+    assert get_bucket_key_folder(date, channel, country=FRANCE) == key_folder
 
 def test_get_bucket_key_first_of_the_month_brazil():
     first_december = 1733040125
     date = pd.to_datetime(first_december, unit='s', utc=True)
     channel = "tf1"
-    key_folder = f"country={BRAZIL.code}/year=2024/month=12/day=1/channel=tf1/"
-    assert get_bucket_key_folder(date, channel, country_code=BRAZIL.code) == key_folder
+    key_folder = f"country={BRAZIL.name}/year=2024/month=12/day=1/channel=tf1/"
+    assert get_bucket_key_folder(date, channel, country=BRAZIL) == key_folder
 
 def test_get_partition_s3_france_legacy():
     assert get_partition_s3(FRANCE) == ['year', 'month', 'day', 'channel']

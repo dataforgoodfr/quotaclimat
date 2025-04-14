@@ -351,6 +351,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], countr
                  ,"number_of_biodiversite_causes_no_hrfp"
                  ,"number_of_biodiversite_consequences_no_hrfp"
                  ,"number_of_biodiversite_solutions_no_hrfp"
+                 ,'country'
                 ]
             ] = df[['plaintext','srt', 'start']]\
                 .swifter.apply(\

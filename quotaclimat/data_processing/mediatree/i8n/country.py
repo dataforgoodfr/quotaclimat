@@ -17,13 +17,13 @@ CountryCode = Union[FranceCode, GermanyCode, BelgiumCode, BrazilCode, AllCode]
 
 def get_country_name_from_code(code: CountryCode) -> str:
     match code:
-        case FRANCE.code:
+        case "fra":
             return 'france'
-        case GERMANY.code:
+        case "deu":
             return 'germany'
-        case BRAZIL.code:
+        case "bra":
             return 'brazil'
-        case BELGIUM.code:
+        case "bel":
             return 'belgium'
         # case SPAIN.code:
         #     return 'spain'
@@ -50,11 +50,10 @@ def get_country_name_from_code(code: CountryCode) -> str:
 
 
 def get_keyword_column_name(language: str) -> str:
-    if language == FRANCE.language:
+    if language == "french":
         return "keyword"
     else:
         return "keyword_" + language
-
 class CountryMediaTree:   
     def __init__(self, code: CountryCode, language: str, channels: List[str], programs: Optional[List[str]], timezone: str):
         """
@@ -202,36 +201,18 @@ def get_channel_title_for_name(channel_name: str, country: CountryMediaTree = FR
 
     elif country.code == GERMANY_CODE:
         match channel_name:
-            case "ard":
-                return "ARD"
-            case "zdf":
-                return "ZDF"
-            case "rtl":
+            case "daserste":
+                return "Das Erste"
+            case "zdf-neo":
+                return "ZDFneo"
+            case "rtl-television":
                 return "RTL"
             case "sat1":
-                return "SAT.1"
+                return "Sat.1"
             case "prosieben":
                 return "ProSieben"
-            case "vox":
-                return "VOX"
-            case "kabel1":
+            case "kabel-eins":
                 return "Kabel Eins"
-            case "n24":
-                return "WELT (ex-N24)"
-            case "ntv":
-                return "n-tv"
-            case "deutschlandfunk":
-                return "Deutschlandfunk"
-            case "br":
-                return "Bayerischer Rundfunk"
-            case "wdr":
-                return "Westdeutscher Rundfunk"
-            case "swr":
-                return "Südwestrundfunk"
-            case "mdr":
-                return "Mitteldeutscher Rundfunk"
-            case "ndr":
-                return "Norddeutscher Rundfunk"
             case _:
                 logging.error(f"Unknown channel name: {country.code} {channel_name}")
                 return ""
@@ -244,18 +225,12 @@ def get_channel_title_for_name(channel_name: str, country: CountryMediaTree = FR
                 return "TV Record"
             case "sbt":
                 return "SBT"
-            case "band":
+            case "redebandeirantes":
                 return "Band"
             case "jovempan":
                 return "Jovem Pan"
             case "cnnbrasil":
                 return "CNN Brasil"
-            case "redevida":
-                return "Rede Vida"
-            case "gazeta":
-                return "TV Gazeta"
-            case "cultura":
-                return "TV Cultura"
             case _:
                 logging.error(f"Unknown channel name: {country.code} {channel_name}")
                 return ""

@@ -165,7 +165,7 @@ def process_subtitle(row, df_program):
                                                                                 )
         row['channel_program'] = str(channel_program)
         row['channel_program_type'] = str(channel_program_type)
-        row['program_metadata_id'] = str(id)
+        row['program_metadata_id'] = id
         return row
 
 def merge_program_subtitle(df_subtitle: pd.DataFrame, df_program: pd.DataFrame):
@@ -186,19 +186,24 @@ def get_programs_for_this_day(day: datetime, channel_name: str, df_program: pd.D
     logging.debug(f"programs_of_a_day {programs_of_a_day}")
     programs_of_a_day = set_day_with_hour(programs_of_a_day, day)
     logging.debug(f"after programs_of_a_day set_day_with_hour {programs_of_a_day}")
-    programs_of_a_day[['start', 'end']] = programs_of_a_day.apply(lambda row: pd.Series({
-        'start': get_epoch_from_datetime(row['start'].tz_localize(timezone)),
-        'end': get_epoch_from_datetime(row['end'].tz_localize(timezone))
-    }), axis=1)
-    logging.info(f"Program of {channel_name} : {programs_of_a_day}")
-    return programs_of_a_day
+
+    if programs_of_a_day.empty:
+        logging.warning(f"No programs found for {channel_name} on {day}")
+        return None
+    else:
+        programs_of_a_day[['start', 'end']] = programs_of_a_day.apply(lambda row: pd.Series({
+            'start': get_epoch_from_datetime(row['start'].tz_localize(timezone)),
+            'end': get_epoch_from_datetime(row['end'].tz_localize(timezone))
+        }), axis=1)
+        logging.info(f"Program of {channel_name} : {programs_of_a_day}")
+        return programs_of_a_day
 
 def apply_update_program(row, df_programs):
     return get_a_program_with_start_timestamp(df_program=df_programs, start_time=row['start'], channel_name=row['channel_name'])
 
 def update_programs_and_filter_out_of_scope_programs_from_df(df: pd.DataFrame, df_programs: pd.DataFrame) -> pd.DataFrame :
     try:
-        if df_programs not None:
+        if df_programs is not None:
             df[['channel_program', 'channel_program_type', 'program_metadata_id']] = df.apply(
                 lambda row: apply_update_program(row, df_programs),
                 axis=1,

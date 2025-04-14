@@ -40,21 +40,21 @@ def get_s3_client():
     )
     return s3_client
 
-def get_bucket_key(date, channel, filename:str="*", suffix:str="parquet", country_code : CountryCode = FRANCE_CODE):
+def get_bucket_key(date, channel, filename:str="*", suffix:str="parquet", country: CountryMediaTree = FRANCE):
     (year, month, day) = (date.year, date.month, date.day)
-    if country_code == FRANCE_CODE:
-        logging.debug(f"france does not have country partition - {country_code} - {FRANCE_CODE}")
+    if country.code == FRANCE_CODE:
+        logging.debug(f"france does not have country partition - {country.code} - {FRANCE_CODE}")
         return f'year={year}/month={month:1}/day={day:1}/channel={channel}/{filename}.{suffix}'
     else:
-        logging.debug(f"country_code is not france : {country_code}")
-        return f'country={country_code}/year={year}/month={month:1}/day={day:1}/channel={channel}/{filename}.{suffix}'
+        logging.debug(f"country_code is not france : {country.code} / {country.name}")
+        return f'country={country.name}/year={year}/month={month:1}/day={day:1}/channel={channel}/{filename}.{suffix}'
 
-def get_bucket_key_folder(date, channel, country_code : CountryCode = FRANCE.code):
+def get_bucket_key_folder(date, channel, country: CountryMediaTree = FRANCE):
     (year, month, day) = (date.year, date.month, date.day)
-    if country_code == FRANCE_CODE:
+    if country.code == FRANCE_CODE:
         return f'year={year}/month={month:1}/day={day:1}/channel={channel}/'
     else: # no country for old france
-        return f'country={country_code}/year={year}/month={month:1}/day={day:1}/channel={channel}/'
+        return f'country={country.name}/year={year}/month={month:1}/day={day:1}/channel={channel}/'
 
 # Function to upload folder to S3
 def upload_folder_to_s3(local_folder, bucket_name, base_s3_path, s3_client):
@@ -74,7 +74,7 @@ def upload_folder_to_s3(local_folder, bucket_name, base_s3_path, s3_client):
             shutil.rmtree(local_folder)
             logging.info(f"Deleted local folder: {local_folder}")
 
-def read_folder_from_s3(date, channel: str, country: str = FRANCE):
+def read_folder_from_s3(date, channel: str, country: CountryMediaTree = FRANCE):
     s3_path: str = get_bucket_key_folder(date=date, channel=channel, country=country)
     s3_key: tuple[str] = f"s3://{BUCKET_NAME}/{s3_path}"
     logging.info(f"Reading S3 folder {s3_key}")
@@ -87,14 +87,14 @@ def read_folder_from_s3(date, channel: str, country: str = FRANCE):
                                 })
     
     if str(df['start'].dt.tz) == 'UTC':
-        logging.warning(f"Timezone is UTC, converting to Europe/Paris")
-        df['start'] = df['start'].dt.tz_convert('Europe/Paris')
+        logging.warning(f"Timezone is UTC, converting to {country.timezone}")
+        df['start'] = df['start'].dt.tz_convert(country.timezone)
 
     return df
 
 
 def check_if_object_exists_in_s3(day, channel, s3_client, country: CountryMediaTree = FRANCE) -> bool:
-    folder_prefix = get_bucket_key_folder(day, channel, country_code=country.code)  # Adjust this to return the folder path
+    folder_prefix = get_bucket_key_folder(day, channel, country=country)  # Adjust this to return the folder path
     
     logging.debug(f"Checking if folder exists: {folder_prefix}")
     try:
@@ -119,7 +119,7 @@ def transform_raw_keywords(
     ) -> Optional[pd.DataFrame]: 
     try:
         if(df is not None):
-            df: pd.DataFrame = filter_and_tag_by_theme(df=df, stop_words=stop_words, country)    
+            df: pd.DataFrame = filter_and_tag_by_theme(df=df, stop_words=stop_words, country=country)    
             df['keywords_with_timestamp'] = df['keywords_with_timestamp'].apply(lambda x: x.tolist() if isinstance(x, np.ndarray) else x)
             df['srt'] = df['srt'].apply(lambda x: x.tolist() if isinstance(x, np.ndarray) else x)
             

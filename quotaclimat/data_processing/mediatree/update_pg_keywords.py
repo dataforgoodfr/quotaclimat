@@ -43,8 +43,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                                         ,country=country)
     stop_words = list(map(lambda stop: stop.context, stop_words_objects))
     top_keyword_of_stop_words = get_top_keyword_of_stop_words(stop_word_keyword_only,
-                                                               stop_words_objects=stop_words_objects,
-                                                               country=country)
+                                                               stop_words_objects=stop_words_objects)
 
     total_updates = get_total_count_saved_keywords(session, start_date, end_date, channel, empty_program_only, \
                                                         keywords_to_includes=top_keyword_of_stop_words, 
@@ -99,7 +98,8 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     ,number_of_biodiversite_concepts_generaux_no_hrfp \
                     ,number_of_biodiversite_causes_no_hrfp \
                     ,number_of_biodiversite_consequences_no_hrfp \
-                    ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words)
+                    ,number_of_biodiversite_solutions_no_hrfp \
+                    ,country = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words)
                 except Exception as err:
                         logging.error(f"continuing loop but met error : {err}")
                         continue

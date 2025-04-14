@@ -136,10 +136,10 @@ def get_all_repetitive_context_advertising_for_a_keyword(
     after_context += len(keyword) # should include the keyword length
 
     if from_date is None:
-        start_date = get_last_X_days(duration)
-        end_date = get_now()
+        start_date = get_last_X_days(duration, country=country)
+        end_date = get_now(timezone=country.timezone)
     else:
-        start_date = get_last_X_days(duration, from_date)
+        start_date = get_last_X_days(duration, from_date, country=country)
         end_date = from_date
     try:
         logging.info(f"Getting context for keyword {keyword} for last {duration} days from {end_date}")
@@ -174,7 +174,7 @@ def get_all_repetitive_context_advertising_for_a_keyword(
                 WHERE "public"."keywords"."start" >= timestamp with time zone {start_date}
                 AND "public"."keywords"."start" < timestamp with time zone {end_date_sql}
                 AND "public"."keywords"."number_of_keywords" > 0
-                AND "public"."keywords"."country" IS LIKE {country.name}
+                AND "public"."keywords"."country" = '{country.name}'
                 AND jsonb_pretty("keywords_with_timestamp"::jsonb) LIKE CONCAT('%"keyword": "', '{escaped_keyword}', '",%')
                 ORDER BY "public"."keywords"."number_of_keywords" DESC
             ) tmp
@@ -198,7 +198,7 @@ def get_all_repetitive_context_advertising_for_a_keyword(
             row["keyword"] = keyword
             row["channel_title"] = channel_title
             row["start_date"] = end_date
-            row["country"] = country.name
+            # row["country"] = country.name # No need
         
         logging.debug(f"result: {result}")
         return result
@@ -209,12 +209,12 @@ def get_all_repetitive_context_advertising_for_a_keyword(
 
 def get_top_keywords_by_channel(session, duration: int = 7, top: int = 5, from_date : datetime = None\
                                 ,min_number_of_keywords:int = 10, country=FRANCE) -> pd.DataFrame:
-    start_date = get_last_X_days(duration)
+    start_date = get_last_X_days(duration, country=country)
     if from_date is None:
-        start_date = get_last_X_days(duration)
-        end_date = get_now()
+        start_date = get_last_X_days(duration, country=country)
+        end_date = get_now(timezone=country.timezone)
     else:
-        start_date = get_last_X_days(duration, from_date)
+        start_date = get_last_X_days(duration, from_date, country=country)
         end_date = from_date
 
     try:
@@ -246,7 +246,7 @@ def get_top_keywords_by_channel(session, duration: int = 7, top: int = 5, from_d
                     "json_keywords_with_timestamp" ->> 'theme' NOT LIKE '%indirect%'
                     AND "public"."keywords"."start" >= timestamp with time zone {start_date}
                     AND "public"."keywords"."start" < timestamp with time zone {end_date}
-                    AND "public"."keywords"."country" IS LIKE {country.name}
+                    AND "public"."keywords"."country" = '{country.name}'
             ) tmp
             GROUP BY "keyword", "theme", "channel_title"
             HAVING count(*) >= {min_number_of_keywords}

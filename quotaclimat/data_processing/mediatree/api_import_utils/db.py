@@ -15,7 +15,7 @@ class KeywordLastStats(NamedTuple):
 
 # Security nets to catch up delays from production servers errors
 
-def get_last_date_and_number_of_delay_saved_in_keywords(session: Session, days_filter: int = 30, country = FRANCE.name) -> KeywordLastStats:
+def get_last_date_and_number_of_delay_saved_in_keywords(session: Session, days_filter: int = 30, country = FRANCE) -> KeywordLastStats:
     logging.debug(f"get_last_date_and_number_of_delay_saved_in_keywords")
     try:
         source_subquery = (

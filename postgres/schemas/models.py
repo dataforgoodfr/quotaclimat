@@ -75,7 +75,7 @@ class Program_Metadata(Base):
     radio = Column(Boolean, nullable=True)
     program_grid_start = Column(DateTime(), nullable=True)
     program_grid_end = Column(DateTime(), nullable=True)
-    country = Column(Text, nullable=False, default=FRANCE.name) 
+    country = Column(Text, nullable=True, default=FRANCE.name)
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')"), nullable=True)
     updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
 
@@ -128,7 +128,7 @@ class Keywords(Base):
     program_metadata_id = Column(Text, ForeignKey('program_metadata.id'), nullable=True)
     program_metadata = relationship("Program_Metadata", foreign_keys=[program_metadata_id])
 
-    country = Column(Text, nullable=False, default=FRANCE.name)
+    country = Column(Text, nullable=True, default=FRANCE.name)
     
 class Channel_Metadata(Base):
     __tablename__ = channel_metadata_table
@@ -150,7 +150,7 @@ class Stop_Word(Base):
     start_date = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
     validated = Column(Boolean, nullable=True, default=True)
-    country = Column(Text, nullable=False, default=FRANCE.name) # TODO PK for country
+    country = Column(Text, nullable=True, default=FRANCE.name) # TODO PK for country
 
 class Dictionary(Base):
     __tablename__ = "dictionary"
@@ -284,6 +284,7 @@ def update_program_metadata(engine):
                 'end': item['end'],
                 'program_grid_start': datetime.strptime(item['program_grid_start'], '%Y-%m-%d'),
                 'program_grid_end': datetime.strptime(item['program_grid_end'], '%Y-%m-%d'),
+                'country': item.get('country', FRANCE.name)
             }
 
             # Check if the record exists
@@ -360,8 +361,7 @@ def update_dictionary(engine, theme_keywords):
                 'crisis_biodiversity': item.get('crisis_biodiversity', True),
                 'crisis_resource': item.get('crisis_resource', True),
                 'categories': categories if categories else None,  # Use None if categories is empty
-                'themes': themes,
-                'language': item.get('language', 'fr')
+                'themes': themes
             }
             
             session.merge(Dictionary(**dictionary_entry))
@@ -406,6 +406,7 @@ def drop_tables(conn = None):
             Base.metadata.drop_all(bind=engine, tables=[Program_Metadata.__table__])
             logging.info(f"Drop all {Stop_Word.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Stop_Word.__table__])
+            Base.metadata.drop_all(bind=engine, tables=[Dictionary.__table__])
 
             logging.info(f"Table keyword / Program_Metadata / Channel_Metadata deletion done")
         except (Exception) as error:

@@ -38,12 +38,15 @@ logging.getLogger('worker').setLevel(logging.ERROR)
 async def update_pg_data(exit_event):
     try:
         start_date = os.environ.get("START_DATE_UPDATE", None)
+        country_code: str = os.environ.get("COUNTRY", FRANCE_CODE)
+        logging.info(f"Country used is (default {FRANCE_CODE}) : {country_code}")
+        country: CountryMediaTree = get_country_from_code(country_code=country_code)
         if start_date is None:
             number_of_days_to_update = int(os.environ.get("NUMBER_OF_DAYS", 7))
-            tmp_start_date = get_date_now_minus_days(start=get_now(), minus_days=number_of_days_to_update)
+            tmp_start_date = get_date_now_minus_days(start=get_now(timezone=country.timezone), minus_days=number_of_days_to_update)
             logging.info(f"START_DATE_UPDATE is None, using today minus NUMBER_OF_DAYS : {number_of_days_to_update}")
             start_date = tmp_start_date
-            end_date = get_now()
+            end_date = get_now(timezone=country.timezone)
         else:
             logging.info(f"START_DATE_UPDATE is {start_date}")
             tmp_end_date = get_end_of_month(start_date)
@@ -70,7 +73,9 @@ async def update_pg_data(exit_event):
         
         session = get_db_session()
         update_keywords(session, batch_size=batch_size, start_date=start_date, program_only=program_only, end_date=end_date,\
-                        channel=channel, empty_program_only=empty_program_only,stop_word_keyword_only=stop_word_keyword_only, biodiversity_only=biodiversity_only)
+                        channel=channel, empty_program_only=empty_program_only
+                        ,stop_word_keyword_only=stop_word_keyword_only, biodiversity_only=biodiversity_only
+                        ,country=country)
         exit_event.set()
     except Exception as err:
         logging.fatal("Could not update_pg_data %s:(%s)" % (type(err).__name__, err))

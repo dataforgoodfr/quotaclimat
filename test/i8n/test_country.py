@@ -36,4 +36,4 @@ def test_get_channel_title_for_name():
       assert get_channel_title_for_name("tf1") == "TF1"
 
 def test_get_channel_title_for_name_germany():
-      assert get_channel_title_for_name("ard", GERMANY) == "ARD"
+      assert get_channel_title_for_name("rtl-television", GERMANY) == "RTL"

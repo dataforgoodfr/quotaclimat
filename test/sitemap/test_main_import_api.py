@@ -110,5 +110,5 @@ def test_third_row_api_import():
 def test_get_api_stop():
         conn = connect_to_db()
         session = get_db_session(conn)
-        stopwords = get_stop_words(session)      
+        stopwords = get_stop_words(session, country=None)    
         assert type(stopwords[0]) == str

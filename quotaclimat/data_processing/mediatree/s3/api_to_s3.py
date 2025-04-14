@@ -87,7 +87,9 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             logging.debug("Schema from API before formatting :\n%s", new_df.dtypes)
             pd.set_option('display.max_columns', None)
             logging.debug("setting timestamp")
-            new_df['timestamp'] = new_df.apply(lambda x: pd.to_datetime(x['start'], unit='s', utc=True), axis=1)
+
+            timezone = 'Europe/Paris'
+            new_df['timestamp'] = new_df.apply(lambda x: pd.to_datetime(x['start'], unit='s',utc=True).tz_convert(timezone), axis=1)
             logging.debug("timestamp was set")
 
             logging.debug("droping start column")

@@ -112,7 +112,7 @@ def get_matching_program_hour(df_program: pd.DataFrame, start_time: pd.Timestamp
         return matching_rows
     
 def get_matching_program_weekday(df_program: pd.DataFrame, start_time: pd.Timestamp, channel_name: str):
-    logging.info(f"get_matching_program_weekday {start_time} {channel_name}")
+    logging.debug(f"get_matching_program_weekday {start_time} {channel_name}")
 
     start_weekday = get_day_of_week(start_time)
     logging.debug(f"start_weekday {start_weekday}")

@@ -355,6 +355,11 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = []) -> pd.
 
 def add_primary_key(row):
     try:
+
+        if str(row['start'].tzinfo) == 'Europe/Paris':
+            # legacy
+            logging.info("PK must be UTC - Timezone is Europe/Paris, converting to UTC")
+            row['start'] = row['start'].tz_convert('UTC')
         hash_id = get_consistent_hash(str(row["start"]) + row["channel_name"])
         return hash_id
 

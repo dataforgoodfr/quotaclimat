@@ -8,7 +8,21 @@ SELECT
     pm.channel_title,
     DATE_TRUNC('week', k.start)::date AS week,
 
-    -- Crise type selon le thème (calculé dans SELECT)
+    -- Dictionary metadata
+    d.high_risk_of_false_positive,
+    d.solution,
+    d.consequence,
+    d.cause,
+    d.general_concepts,
+    d.statement,
+    d.crisis_climate,
+    d.crisis_biodiversity,
+    d.crisis_resource,
+    d.categories,
+    d.themes,
+    d.language,
+
+    -- Crise type selon le thème --> Legacy with added dictionary join on 11/04/2025
     CASE
         WHEN LOWER(kw ->> 'theme') LIKE '%climat%' THEN 'Crise climatique'
         WHEN LOWER(kw ->> 'theme') LIKE '%biodiversite%' THEN 'Crise de la biodiversité'
@@ -34,15 +48,31 @@ LEFT JOIN public.program_metadata pm
     )
     AND CAST(k.start AS date) BETWEEN CAST(pm.program_grid_start AS date) AND CAST(pm.program_grid_end AS date)
 
--- On déplie les mots-clés
+-- Expand keywords
 , json_array_elements(k.keywords_with_timestamp::json) AS kw
 
--- Exclusion des thèmes indirects
+-- Join dictionary on keyword
+LEFT JOIN public.dictionary d
+    ON d."keyword" = kw ->> 'keyword'
+
+-- Exclude indirect themes
 WHERE LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
 
 GROUP BY
     pm.channel_title,
     DATE_TRUNC('week', k.start)::date,
+    d.high_risk_of_false_positive,
+    d.solution,
+    d.consequence,
+    d.cause,
+    d.general_concepts,
+    d.statement,
+    d.crisis_climate,
+    d.crisis_biodiversity,
+    d.crisis_resource,
+    d.categories,
+    d.themes,
+    d.language,
     CASE
         WHEN LOWER(kw ->> 'theme') LIKE '%climat%' THEN 'Crise climatique'
         WHEN LOWER(kw ->> 'theme') LIKE '%biodiversite%' THEN 'Crise de la biodiversité'

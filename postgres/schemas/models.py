@@ -8,6 +8,7 @@ import pandas as pd
 from sqlalchemy import text
 from postgres.database_connection import connect_to_db, get_db_session
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
+from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
 import os
 import json
 from json import JSONDecodeError
@@ -74,6 +75,7 @@ class Program_Metadata(Base):
     radio = Column(Boolean, nullable=True)
     program_grid_start = Column(DateTime(), nullable=True)
     program_grid_end = Column(DateTime(), nullable=True)
+    country = Column(Text, nullable=True, default=FRANCE.name)
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')"), nullable=True)
     updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
 
@@ -125,6 +127,8 @@ class Keywords(Base):
 
     program_metadata_id = Column(Text, ForeignKey('program_metadata.id'), nullable=True)
     program_metadata = relationship("Program_Metadata", foreign_keys=[program_metadata_id])
+
+    country = Column(Text, nullable=True, default=FRANCE.name)
     
 class Channel_Metadata(Base):
     __tablename__ = channel_metadata_table
@@ -133,8 +137,6 @@ class Channel_Metadata(Base):
     channel_title = Column(String, nullable=False)
     duration_minutes= Column(Integer)
     weekday= Column(Integer)  
-
-
 
 class Stop_Word(Base):
     __tablename__ = stop_word_table
@@ -148,6 +150,7 @@ class Stop_Word(Base):
     start_date = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
     validated = Column(Boolean, nullable=True, default=True)
+    country = Column(Text, nullable=True, default=FRANCE.name) # TODO PK for country
 
 class Dictionary(Base):
     __tablename__ = "dictionary"
@@ -169,8 +172,19 @@ class Dictionary(Base):
     categories = Column(ARRAY(String), nullable=True)  # example ["Concepts généraux", "Sols"]
     themes = Column(ARRAY(String), nullable=True) # example ["changement_climatique_constat", "ressources"]
 
-    language = Column(String, nullable=False)
-    
+    # all translation of the original keyword
+    keyword_english = Column(String, nullable=True)
+    keyword_german = Column(String, nullable=True)
+    keyword_spanish = Column(String, nullable=True)
+    keyword_portuguese = Column(String, nullable=True)
+    keyword_polish = Column(String, nullable=True)
+    keyword_danish = Column(String, nullable=True)
+    keyword_italian = Column(String, nullable=True)
+    keyword_arabic = Column(String, nullable=True)
+    keyword_greek = Column(String, nullable=True)
+    keyword_dutch = Column(String, nullable=True)
+    keyword_latvian = Column(String, nullable=True)
+
 def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
@@ -270,6 +284,7 @@ def update_program_metadata(engine):
                 'end': item['end'],
                 'program_grid_start': datetime.strptime(item['program_grid_start'], '%Y-%m-%d'),
                 'program_grid_end': datetime.strptime(item['program_grid_end'], '%Y-%m-%d'),
+                'country': item.get('country', FRANCE.name)
             }
 
             # Check if the record exists
@@ -378,8 +393,7 @@ def update_dictionary(engine, theme_keywords):
                 'crisis_biodiversity': crisis_biodiversity,
                 'crisis_resource': crisis_resource,
                 'categories': categories if categories else None,  # Use None if categories is empty
-                'themes': themes,
-                'language': item.get('language', 'fr')
+                'themes': themes
             }
             
             session.merge(Dictionary(**dictionary_entry))
@@ -424,6 +438,7 @@ def drop_tables(conn = None):
             Base.metadata.drop_all(bind=engine, tables=[Program_Metadata.__table__])
             logging.info(f"Drop all {Stop_Word.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Stop_Word.__table__])
+            Base.metadata.drop_all(bind=engine, tables=[Dictionary.__table__])
 
             logging.info(f"Table keyword / Program_Metadata / Channel_Metadata deletion done")
         except (Exception) as error:

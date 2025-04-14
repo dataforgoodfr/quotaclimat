@@ -114,11 +114,12 @@ def check_if_object_exists_in_s3(day, channel, s3_client, country: CountryMediaT
 def transform_raw_keywords(
         df: pd.DataFrame
         ,stop_words: list[str] = []
-        ,df_programs = None
+        ,df_programs = None,
+        country=FRANCE
     ) -> Optional[pd.DataFrame]: 
     try:
         if(df is not None):
-            df: pd.DataFrame = filter_and_tag_by_theme(df=df, stop_words=stop_words)    
+            df: pd.DataFrame = filter_and_tag_by_theme(df=df, stop_words=stop_words, country)    
             df['keywords_with_timestamp'] = df['keywords_with_timestamp'].apply(lambda x: x.tolist() if isinstance(x, np.ndarray) else x)
             df['srt'] = df['srt'].apply(lambda x: x.tolist() if isinstance(x, np.ndarray) else x)
             

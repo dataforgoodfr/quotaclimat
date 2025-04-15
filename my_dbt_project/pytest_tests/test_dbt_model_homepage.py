@@ -102,9 +102,11 @@ def test_core_query_thematics_keywords_values(db_connection):
             cause,
             general_concepts,
             statement,
-            crisis_climate,
-            crisis_biodiversity,
-            crisis_resource,
+            is_solution,
+            is_consequence,
+            is_cause,
+            is_general_concepts,
+            is_statement,
             categories,
             themes,
             language
@@ -115,7 +117,7 @@ def test_core_query_thematics_keywords_values(db_connection):
         """)
         row = cur.fetchone()
 
-        expected=   (
+        expected= (
         'TF1',
         datetime.date(2025, 1, 27),
         'Crise climatique',
@@ -129,13 +131,15 @@ def test_core_query_thematics_keywords_values(db_connection):
         False,
         True,
         True,
-        True,
-        True,
         False,
+        False,
+        False,
+        False,
+        True,
         None,
         '{changement_climatique_constat_indirectes,biodiversite_concepts_generaux_indirectes}',
         'fr')
-        
+
         assert row == expected, f"Unexpected values: {row}"
 
 def test_core_query_environmental_shares_values(db_connection):

@@ -15,14 +15,30 @@ SELECT
     d.cause,
     d.general_concepts,
     d.statement,
-    d.crisis_climate,
-    d.crisis_biodiversity,
-    d.crisis_resource,
     d.categories,
     d.themes,
     d.language,
-
-    -- Crise type selon le thème --> Legacy with added dictionary join on 11/04/2025
+    CASE
+        WHEN LOWER(kw ->> 'theme') LIKE '%solution%' THEN TRUE
+        ELSE FALSE
+    END AS is_solution,
+    CASE
+        WHEN LOWER(kw ->> 'theme') LIKE '%consequence%' THEN TRUE
+        ELSE FALSE
+    END AS is_consequence,
+    CASE
+        WHEN LOWER(kw ->> 'theme') LIKE '%cause%' THEN TRUE
+        ELSE FALSE
+    END AS is_cause,
+    CASE
+        WHEN LOWER(kw ->> 'theme') LIKE '%concepts_generaux%' THEN TRUE
+        ELSE FALSE
+    END AS is_general_concepts,
+    CASE
+        WHEN LOWER(kw ->> 'theme') LIKE '%constat%' THEN TRUE
+        ELSE FALSE
+    END AS is_statement,
+    -- Crise type selon le thème
     CASE
         WHEN LOWER(kw ->> 'theme') LIKE '%climat%' THEN 'Crise climatique'
         WHEN LOWER(kw ->> 'theme') LIKE '%biodiversite%' THEN 'Crise de la biodiversité'
@@ -67,12 +83,29 @@ GROUP BY
     d.cause,
     d.general_concepts,
     d.statement,
-    d.crisis_climate,
-    d.crisis_biodiversity,
-    d.crisis_resource,
     d.categories,
     d.themes,
     d.language,
+    CASE
+        WHEN LOWER(kw ->> 'theme') LIKE '%solution%' THEN TRUE
+        ELSE FALSE
+    END,
+    CASE
+        WHEN LOWER(kw ->> 'theme') LIKE '%consequence%' THEN TRUE
+        ELSE FALSE
+    END,
+    CASE
+        WHEN LOWER(kw ->> 'theme') LIKE '%cause%' THEN TRUE
+        ELSE FALSE
+    END,
+    CASE
+        WHEN LOWER(kw ->> 'theme') LIKE '%concepts_generaux%' THEN TRUE
+        ELSE FALSE
+    END,
+    CASE
+        WHEN LOWER(kw ->> 'theme') LIKE '%constat%' THEN TRUE
+        ELSE FALSE
+    END,
     CASE
         WHEN LOWER(kw ->> 'theme') LIKE '%climat%' THEN 'Crise climatique'
         WHEN LOWER(kw ->> 'theme') LIKE '%biodiversite%' THEN 'Crise de la biodiversité'

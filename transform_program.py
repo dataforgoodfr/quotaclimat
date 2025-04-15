@@ -22,7 +22,7 @@ def calculate_duration(start_time, end_time):
 
 output_file_path = "postgres/program_metadata.json"
 
-# TODO i8n
+
 channel_mapping = {
     # 🇫🇷 France
     "tf1": {
@@ -251,6 +251,7 @@ programs = []
 
 channels_programs = channels_programs + channels_programs_brazil + channels_programs_germany
 for program_data in channels_programs:
+    
     start_time = program_data['start']
     end_time = program_data['end']
     duration_minutes = calculate_duration(start_time, end_time)
@@ -263,6 +264,7 @@ for program_data in channels_programs:
 
     # Map channel_name to channel_title
     channel_name = program_data['channel_name']
+    print(f"program channel_name {program_data['channel_name']} - channel_mapping[channel_name]['title']")
     if channel_name in channel_mapping:
         program_data['channel_title'] = channel_mapping[channel_name]['title']
         program_data['public'] = channel_mapping[channel_name]['public']

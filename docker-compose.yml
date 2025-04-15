@@ -185,7 +185,7 @@ services:
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project
       ENV: docker # change me to prod for real cases
-      LOGLEVEL: DEBUG # Change me to info (debug, info, warning, error) to have less log
+      LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log
       PYTHONPATH: /app
       POSTGRES_USER: user
       POSTGRES_DB: barometre

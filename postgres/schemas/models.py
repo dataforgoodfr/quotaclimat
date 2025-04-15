@@ -173,17 +173,7 @@ class Dictionary(Base):
     themes = Column(ARRAY(String), nullable=True) # example ["changement_climatique_constat", "ressources"]
 
     # all translation of the original keyword
-    keyword_english = Column(String, nullable=True)
-    keyword_german = Column(String, nullable=True)
-    keyword_spanish = Column(String, nullable=True)
-    keyword_portuguese = Column(String, nullable=True)
-    keyword_polish = Column(String, nullable=True)
-    keyword_danish = Column(String, nullable=True)
-    keyword_italian = Column(String, nullable=True)
-    keyword_arabic = Column(String, nullable=True)
-    keyword_greek = Column(String, nullable=True)
-    keyword_dutch = Column(String, nullable=True)
-    keyword_latvian = Column(String, nullable=True)
+    language = Column(String, nullable=True)
 
 def get_sitemap(id: str):
     session = get_db_session()
@@ -361,7 +351,8 @@ def update_dictionary(engine, theme_keywords):
                 'crisis_biodiversity': item.get('crisis_biodiversity', True),
                 'crisis_resource': item.get('crisis_resource', True),
                 'categories': categories if categories else None,  # Use None if categories is empty
-                'themes': themes
+                'themes': themes,
+                'language': item.get('language', None)
             }
             
             session.merge(Dictionary(**dictionary_entry))

@@ -49,11 +49,6 @@ def get_country_name_from_code(code: CountryCode) -> str:
             raise ValueError(f"Unsupported country/language code: {code}")
 
 
-def get_keyword_column_name(language: str) -> str:
-    if language == "french":
-        return "keyword"
-    else:
-        return "keyword_" + language
 class CountryMediaTree:   
     def __init__(self, code: CountryCode, language: str, channels: List[str], programs: Optional[List[str]], timezone: str):
         """
@@ -67,7 +62,6 @@ class CountryMediaTree:
         self.code = code
         self.name = get_country_name_from_code(code)
         self.language = language
-        self.keyword_column = get_keyword_column_name(language) # from keyword sql table
         self.channels = channels
         self.programs = programs
         self.timezone = timezone

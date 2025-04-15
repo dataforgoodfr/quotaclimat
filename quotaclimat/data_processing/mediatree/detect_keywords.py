@@ -117,24 +117,26 @@ def replace_word_with_context(text: str, word = "groupe verlaine", length_to_rem
     
     return result
 
-def remove_stopwords(plaintext: str, stopwords: list[str]) -> str:
+def remove_stopwords(plaintext: str, stopwords: list[str], country = FRANCE) -> str:
     logging.debug(f"Removing stopwords {plaintext}")
 
     if len(stopwords) == 0:
         logging.warning("Stop words list empty")
         return plaintext
-    
-    if "groupe verlaine" in plaintext:
-        logging.info(f"special groupe verlaine case")
-        plaintext = replace_word_with_context(plaintext, word="groupe verlaine")
 
-    if "industries point com" in plaintext:
-        logging.info(f"special industries point com case")
-        plaintext = replace_word_with_context(plaintext, word="industries point com", length_to_remove=150)
+    # TODO: should be remove and only rely on stop words list, was added due to S2T issues
+    if country == FRANCE:
+        if "groupe verlaine" in plaintext:
+            logging.info(f"special groupe verlaine case")
+            plaintext = replace_word_with_context(plaintext, word="groupe verlaine")
 
-    if "fleuron industrie" in plaintext:
-        logging.info(f"special fleuron industrie com case")
-        plaintext = replace_word_with_context(plaintext, word="fleuron industrie", length_to_remove=150)
+        if "industries point com" in plaintext:
+            logging.info(f"special industries point com case")
+            plaintext = replace_word_with_context(plaintext, word="industries point com", length_to_remove=150)
+
+        if "fleuron industrie" in plaintext:
+            logging.info(f"special fleuron industrie com case")
+            plaintext = replace_word_with_context(plaintext, word="fleuron industrie", length_to_remove=150)
 
     for word in stopwords:
         plaintext = plaintext.replace(word, '')
@@ -142,18 +144,18 @@ def remove_stopwords(plaintext: str, stopwords: list[str]) -> str:
     return plaintext
 
 def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
-    return {"keyword": keyword_dict[country.keyword_column],
+    return {"keyword": keyword_dict["keyword"],
             "category": keyword_dict["category"] # TODO I8N category name ?
     }
 
 def get_detected_keywords(plaitext_without_stopwords: str, keywords_dict, country=FRANCE):
     matching_words = []
-    
-    # only keep translated keywords 
-    keywords_dict = list(filter(lambda x: x[country.keyword_column] is not None, keywords_dict))
 
+    logging.info(f"Keeping only {country.language} keywords...")
+    keywords_dict = list(filter(lambda x: x["language"] == country.language, keywords_dict))
+    logging.info(f"Got {len(keywords_dict)} keywords")
     for keyword_dict in keywords_dict:
-        if is_word_in_sentence(keyword_dict[country.keyword_column], plaitext_without_stopwords):
+        if is_word_in_sentence(keyword_dict["keyword"], plaitext_without_stopwords):
             matching_words.append(get_keyword_matching_json(keyword_dict, country=country))
 
     return matching_words
@@ -165,7 +167,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     number_of_elements_in_array = 29
     default_window_in_seconds = DEFAULT_WINDOW_DURATION
     plaintext = replace_word_with_context(text=plaintext, word=MEDIATREE_TRANSCRIPTION_PROBLEM, length_to_remove=0)
-    plaitext_without_stopwords = remove_stopwords(plaintext=plaintext, stopwords=stop_words)
+    plaitext_without_stopwords = remove_stopwords(plaintext=plaintext, stopwords=stop_words, country=country)
     logging.debug(f"display datetime start {start}")
 
     for theme, keywords_dict in THEME_KEYWORDS.items():
@@ -368,7 +370,6 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], countr
 
 def add_primary_key(row):
     try:
-
         if str(row['start'].tzinfo) == 'Europe/Paris':
             # legacy
             logging.info("PK must be UTC - Timezone is Europe/Paris, converting to UTC")

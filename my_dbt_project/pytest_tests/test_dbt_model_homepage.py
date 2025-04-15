@@ -45,10 +45,25 @@ def run_core_query_thematics_keywords():
     run_dbt_command(["run", "--models", "core_query_thematics_keywords", "--full-refresh"])
 
 @pytest.fixture(scope="module", autouse=True)
+def run_core_query_thematics_keywords_i8n():
+    """Run dbt for the thematics model once before related tests."""
+    logging.info("pytest running dbt core_query_thematics_keywords_i8n")
+    run_dbt_command(["run", "--models", "core_query_thematics_keywords_i8n", "--full-refresh"])
+
+@pytest.fixture(scope="module", autouse=True)
 def run_core_query_environmental_shares():
     """Run dbt for the environmental shares model once before related tests."""
     commands = ["run", "--models", "core_query_environmental_shares", "--full-refresh"]
     logging.info(f"pytest running dbt core_query_environmental_shares {commands}")
+
+    run_dbt_command(commands)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def run_core_query_environmental_shares_i8n():
+    """Run dbt for the environmental shares model once before related tests."""
+    commands = ["run", "--models", "core_query_environmental_shares_i8n", "--full-refresh"]
+    logging.info(f"pytest running dbt core_query_environmental_shares_i8n {commands}")
 
     run_dbt_command(commands)
 
@@ -107,7 +122,6 @@ def test_core_query_thematics_keywords_values(db_connection):
             crisis_resource,
             categories,
             themes,
-            language
             FROM public.core_query_thematics_keywords
             WHERE channel_title = 'TF1' AND keyword = 'eau'
             ORDER BY channel_title DESC

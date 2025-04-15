@@ -20,7 +20,7 @@ SELECT
     d.crisis_resource,
     d.categories,
     d.themes,
-
+    d.country,
     -- Crise type selon le thème --> Legacy with added dictionary join on 11/04/2025
     CASE
         WHEN LOWER(kw ->> 'theme') LIKE '%climat%' THEN 'Crise climatique'
@@ -56,7 +56,6 @@ LEFT JOIN public.dictionary d
 
 -- Exclude indirect themes
 WHERE LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
-AND "country" = 'france'
 
 GROUP BY
     pm.channel_title,
@@ -72,6 +71,7 @@ GROUP BY
     d.crisis_resource,
     d.categories,
     d.themes,
+    d.country,
     CASE
         WHEN LOWER(kw ->> 'theme') LIKE '%climat%' THEN 'Crise climatique'
         WHEN LOWER(kw ->> 'theme') LIKE '%biodiversite%' THEN 'Crise de la biodiversité'

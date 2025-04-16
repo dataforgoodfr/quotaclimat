@@ -99,8 +99,7 @@ SELECT
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% ressources solutions",
-  "country" AS "country"
+  ) AS "% ressources solutions"
 FROM
   (
     SELECT
@@ -112,7 +111,6 @@ FROM
       "source"."Program Metadata - Channel Name__public" AS "Program Metadata - Channel Name__public",
       "source"."Program Metadata - Channel Name__infocontinue" AS "Program Metadata - Channel Name__infocontinue",
       "source"."Program Metadata - Channel Name__radio" AS "Program Metadata - Channel Name__radio",
-      "country" AS "country",
       SUM("source"."crise_env_minutes") AS "sum",
       SUM("source"."climat_total_minutes") AS "sum_2",
       SUM("source"."biodiversite_total_minutes") AS "sum_3",
@@ -204,7 +202,6 @@ FROM
           "Program Metadata - Channel Name"."channel_title" AS "Program Metadata - Channel Name__channel_title",
           "Program Metadata - Channel Name"."channel_program" AS "Program Metadata - Channel Name__channel_program",
           "Program Metadata - Channel Name"."channel_program_type" AS "Program Metadata - Channel Name__channel_program_type"
-          "public"."keywords"."country" AS "country"
         FROM
           "public"."keywords"
           INNER JOIN "public"."program_metadata" AS "Program Metadata - Channel Name" ON (
@@ -256,6 +253,7 @@ FROM
               ) AS timestamp
             )
           )
+          WHERE "public"."keywords"."country" = 'france'
       ) AS "source"
    
 GROUP BY
@@ -266,8 +264,7 @@ GROUP BY
       "source"."Program Metadata - Channel Name__channel_program_type",
       "source"."Program Metadata - Channel Name__public",
       "source"."Program Metadata - Channel Name__infocontinue",
-      "source"."Program Metadata - Channel Name__radio",
-      "country"
+      "source"."Program Metadata - Channel Name__radio"
    
 ORDER BY
       CAST("source"."start" AS date) ASC,
@@ -284,8 +281,7 @@ GROUP BY
   "source"."Program Metadata - Channel Name__channel_title",
   "source"."Program Metadata - Channel Name__public",
   "source"."Program Metadata - Channel Name__infocontinue",
-  "source"."Program Metadata - Channel Name__radio",
-  "country"
+  "source"."Program Metadata - Channel Name__radio"
 ORDER BY
   DATE_TRUNC('week', CAST("source"."start" AS timestamp)) ASC,
   "source"."Program Metadata - Channel Name__channel_title" ASC,

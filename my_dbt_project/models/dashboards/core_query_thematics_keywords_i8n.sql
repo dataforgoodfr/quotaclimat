@@ -20,7 +20,8 @@ SELECT
     d.crisis_resource,
     d.categories,
     d.themes,
-    d.country,
+    d.language,
+    k.country,
     -- Crise type selon le thème --> Legacy with added dictionary join on 11/04/2025
     CASE
         WHEN LOWER(kw ->> 'theme') LIKE '%climat%' THEN 'Crise climatique'
@@ -71,7 +72,8 @@ GROUP BY
     d.crisis_resource,
     d.categories,
     d.themes,
-    d.country,
+    d.language,
+    k.country,
     CASE
         WHEN LOWER(kw ->> 'theme') LIKE '%climat%' THEN 'Crise climatique'
         WHEN LOWER(kw ->> 'theme') LIKE '%biodiversite%' THEN 'Crise de la biodiversité'

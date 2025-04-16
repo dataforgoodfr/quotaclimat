@@ -121,7 +121,7 @@ def test_core_query_thematics_keywords_values(db_connection):
             crisis_biodiversity,
             crisis_resource,
             categories,
-            themes,
+            themes
             FROM public.core_query_thematics_keywords
             WHERE channel_title = 'TF1' AND keyword = 'eau'
             ORDER BY channel_title DESC
@@ -147,9 +147,54 @@ def test_core_query_thematics_keywords_values(db_connection):
         True,
         False,
         None,
-        '["changement_climatique_constat_indirectes" '
-        '"biodiversite_concepts_generaux_indirectes"]',
-        'fr')
+        '{biodiversite_concepts_generaux_indirectes,changement_climatique_constat_indirectes}')
+        
+        assert row == expected, f"Unexpected values: {row}"
+
+def test_core_query_thematics_keywords_values_i8n(db_connection):
+
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT channel_title, week, crise_type, theme, category, keyword, count,
+            high_risk_of_false_positive,
+            solution,
+            consequence,
+            cause,
+            general_concepts,
+            statement,
+            crisis_climate,
+            crisis_biodiversity,
+            crisis_resource,
+            categories,
+            themes,
+            country
+            FROM public.core_query_thematics_keywords_i8n
+            WHERE channel_title = 'TF1' AND keyword = 'eau'
+            ORDER BY channel_title DESC
+            LIMIT 1
+        """)
+        row = cur.fetchone()
+
+        expected=   (
+        'TF1',
+        datetime.date(2025, 1, 27),
+        'Crise climatique',
+        'changement_climatique_constat',
+        'Transversal',
+        'eau',
+        4,
+        True,
+        False,
+        False,
+        False,
+        True,
+        False,
+        False,
+        True,
+        False,
+        None,
+        '{biodiversite_concepts_generaux_indirectes,changement_climatique_constat_indirectes}'
+        ,"france")
         
         assert row == expected, f"Unexpected values: {row}"
 
@@ -185,4 +230,39 @@ def test_core_query_environmental_shares_values(db_connection):
         """)
         row = cur.fetchone()
         expected = (datetime.datetime(2025, 1, 27, 0, 0), 'TF1', False, False, False, 0.1333333333333333, 0.1111111111111111, 0.007407407407407407, 0.0, 0.007407407407407407, 0.0, 0.0962962962962963, 0.06666666666666665, 0.06666666666666665, 0.0, 0.0, 0.0, 0.059259259259259255, 0.059259259259259255, 0.022222222222222223)
+        assert row == expected, f"Unexpected values: {row}"
+
+def test_core_query_environmental_shares_values_i8n(db_connection):
+
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT
+            "public"."core_query_environmental_shares"."start" AS "start",
+            "public"."core_query_environmental_shares"."Program Metadata - Channel Name__channel_title" AS "Program Metadata - Channel Name__channel_title",
+            "public"."core_query_environmental_shares"."Program Metadata - Channel Name__public" AS "Program Metadata - Channel Name__public",
+            "public"."core_query_environmental_shares"."Program Metadata - Channel Name__infocontinue" AS "Program Metadata - Channel Name__infocontinue",
+            "public"."core_query_environmental_shares"."Program Metadata - Channel Name__radio" AS "Program Metadata - Channel Name__radio",
+            "public"."core_query_environmental_shares"."% environnement total" AS "% environnement total",
+            "public"."core_query_environmental_shares"."% climat" AS "% climat",
+            "public"."core_query_environmental_shares"."% climat cause" AS "% climat cause",
+            "public"."core_query_environmental_shares"."% climat solutions adaptation " AS "% climat solutions adaptation ",
+            "public"."core_query_environmental_shares"."% climat consequences" AS "% climat consequences",
+            "public"."core_query_environmental_shares"."% climat solutions attenuation" AS "% climat solutions attenuation",
+            "public"."core_query_environmental_shares"."% climat constat" AS "% climat constat",
+            "public"."core_query_environmental_shares"."% biodiversite" AS "% biodiversite",
+            "public"."core_query_environmental_shares"."% biodiversité constat" AS "% biodiversité constat",
+            "public"."core_query_environmental_shares"."% biodiversité solutions" AS "% biodiversité solutions",
+            "public"."core_query_environmental_shares"."% biodiversité conséquences" AS "% biodiversité conséquences",
+            "public"."core_query_environmental_shares"."% biodiversité causes" AS "% biodiversité causes",
+            "public"."core_query_environmental_shares"."% ressources" AS "% ressources",
+            "public"."core_query_environmental_shares"."% ressources constat" AS "% ressources constat",
+            "public"."core_query_environmental_shares"."% ressources solutions" AS "% ressources solutions"
+            ,"public"."country"
+            FROM
+                "public"."core_query_environmental_shares_i8n"
+            WHERE "Program Metadata - Channel Name__channel_title" = 'TF1'
+            LIMIT 1
+        """)
+        row = cur.fetchone()
+        expected = (datetime.datetime(2025, 1, 27, 0, 0), 'TF1', False, False, False, 0.1333333333333333, 0.1111111111111111, 0.007407407407407407, 0.0, 0.007407407407407407, 0.0, 0.0962962962962963, 0.06666666666666665, 0.06666666666666665, 0.0, 0.0, 0.0, 0.059259259259259255, 0.059259259259259255, 0.022222222222222223, "france")
         assert row == expected, f"Unexpected values: {row}"

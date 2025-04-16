@@ -56,7 +56,8 @@ LEFT JOIN public.dictionary d
 
 -- Exclude indirect themes
 WHERE LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
-AND "country" = 'france'
+-- france only for default view
+AND k."country" = 'france'
 
 GROUP BY
     pm.channel_title,

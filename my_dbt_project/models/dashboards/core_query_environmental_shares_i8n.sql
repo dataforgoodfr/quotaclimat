@@ -15,91 +15,91 @@ SELECT
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% environnement total",
+  ) "% environnement total",
   CAST(SUM("source"."sum_2") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% climat",
+  ) "% climat",
   CAST(SUM("source"."sum_8") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% climat cause",
+  ) "% climat cause",
   CAST(SUM("source"."sum_5") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% climat solutions adaptation ",
+  ) "% climat solutions adaptation ",
   CAST(SUM("source"."sum_7") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% climat consequences",
+  ) "% climat consequences",
   CAST(SUM("source"."sum_6") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% climat solutions attenuation",
+  ) "% climat solutions attenuation",
   CAST(SUM("source"."sum_9") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% climat constat",
+  ) "% climat constat",
   CAST(SUM("source"."sum_3") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% biodiversite",
+  ) "% biodiversite",
   CAST(SUM("source"."sum_13") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% biodiversité constat",
+  ) "% biodiversité constat",
   CAST(SUM("source"."sum_10") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% biodiversité solutions",
+  ) "% biodiversité solutions",
   CAST(SUM("source"."sum_11") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% biodiversité conséquences",
+  ) "% biodiversité conséquences",
   CAST(SUM("source"."sum_12") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% biodiversité causes",
+  ) "% biodiversité causes",
   CAST(SUM("source"."sum_4") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% ressources",
+  ) "% ressources",
   CAST(SUM("source"."sum_4") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% ressources constat",
+  ) "% ressources constat",
   CAST(SUM("source"."sum_14") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"
     ),
     0
-  ) AS "% ressources solutions",
+  ) "% ressources solutions",
   "source"."country" AS "country"
 FROM
   (

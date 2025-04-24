@@ -25,7 +25,7 @@ MEDIATREE_TRANSCRIPTION_PROBLEM = "<unk> "
 DEFAULT_WINDOW_DURATION = int(os.environ.get("DEFAULT_WINDOW_DURATION", 20))
 
 
-def get_keyword_with_timestamp(theme: str, category: str, keyword : str, cts_in_ms: timestamp):
+def get_keyword_with_timestamp(theme: str, category: str, keyword : str, cts_in_ms: int):
     return {
             "keyword" : keyword,
             "timestamp" : cts_in_ms,

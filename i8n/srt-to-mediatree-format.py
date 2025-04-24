@@ -13,6 +13,17 @@ from quotaclimat.data_processing.mediatree.s3.s3_utils import upload_folder_to_s
 # /app/ cd i8n/
 # /app/i8n# poetry run python3 srt-to-mediatree-format.py
 
+def split_words_on_apostrophes(text):
+    split_words = []
+    for word in text.split():
+        if "'" in word and not word.startswith("'"):
+            left, right = word.split("'", 1)
+            split_words.append(f"{left}'")
+            split_words.append(right)
+        else:
+            split_words.append(word)
+    return split_words
+
 def parse_csv_without_headers(file_path):
     """
     Parse CSV file without headers with the format:
@@ -119,7 +130,7 @@ def create_mediatree_data_for_partition(windows_data):
         channel_name = items[0]['channel_name']
         
         # Process words for SRT
-        words = combined_plaintext.split()
+        words = split_words_on_apostrophes(combined_plaintext)
         srt_entries = []
         
         # Convert window_start to milliseconds for cts_in_ms
@@ -135,7 +146,7 @@ def create_mediatree_data_for_partition(windows_data):
         
         # Create window entry
         window_entry = {
-            "srt": str(srt_entries),  # Convert to string for Parquet compatibility
+            "srt": srt_entries,
             "channel_name": channel_name,
             "channel_title": channel_name,
             "start": window_start,
@@ -230,10 +241,12 @@ def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree
 
 if __name__ == "__main__":
     # Replace with your actual folder path
-    folder_path = "csa-belge"
-    bucket = "mediatree"
+    year = 2025
+    folder_path = f"csa-belge/{year}"
+    # folder_path = "csa-belge/2025"
+    bucket = "test-bucket-mediatree"
     output_dir = "mediatree_output"
     s3_root_folder = "country=belgium"
-    # process_csv_folder_to_partitioned_parquet(folder_path, output_dir)
+    process_csv_folder_to_partitioned_parquet(folder_path, output_dir)
     s3_client = get_s3_client()
     upload_folder_to_s3(output_dir,bucket, s3_root_folder, s3_client=s3_client)

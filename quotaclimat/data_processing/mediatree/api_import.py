@@ -95,7 +95,7 @@ def get_stop_words(session, validated_only=True, context_only=True, filter_days:
         if result_len > 0:
             logging.info(f"Got {len(result)} stop words")
         else:
-            logging.error("No stop words from sql tables")
+            logging.warning("No stop words from sql tables")
 
         return result
     except Exception as err:
@@ -165,7 +165,7 @@ async def get_and_save_s3_data_to_pg(exit_event):
                                 save_to_pg(df, keywords_table, conn)
                                 del df
                             else:
-                                logging.info("Nothing to save to Postgresql")
+                                logging.info(f"Nothing to save to Postgresql for {day} - {channel} - {country.name}")
                         except Exception as err:
                             logging.error(f"continuing loop fpr but met error with {channel} - day {day}: {err}")
                             continue

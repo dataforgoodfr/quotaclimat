@@ -114,6 +114,7 @@ COUNTRIES = {
     FRANCE.code: FRANCE,
     GERMANY.code: GERMANY,
     BRAZIL.code: BRAZIL,
+    BELGIUM.code: BELGIUM,
 }
 
 ALL_COUNTRIES_CODE : AllCode = "all"
@@ -126,7 +127,7 @@ def get_all_countries():
 
 def validate_country_code(code: str) -> CountryCode:
     """Validate that a string is a valid country code."""
-    if code in (FRANCE_CODE, GERMANY_CODE, BRAZIL_CODE, ALL_COUNTRIES_CODE):
+    if code in (FRANCE_CODE, GERMANY_CODE, BRAZIL_CODE, BELGIUM_CODE, ALL_COUNTRIES_CODE):
         return code
     raise ValueError(f"Invalid country code: {code}")
 
@@ -141,6 +142,7 @@ def get_channels(country_code=FRANCE.code) -> List[str]:
         return [default_channel]
     else: #prod  - all channels
         logging.warning(f"All channels are used for {country_code}")
+        # TODO : channels belgium
         country = get_country_from_code(country_code)
         if country:
             return country.channels

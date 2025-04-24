@@ -1858,3 +1858,17 @@ def test_count_different_window_number_40():
         }
     ]
     assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, 40),start) == 3
+
+
+@pytest.mark.parametrize("input_text,expected", [
+    ("c'est", "est"),
+    ("d'avion", "avion"),
+    ("ceci", "ceci"),
+    ("d'erreur", "erreur"),
+    ("", ""),
+    ("'", "'"),
+    ("' ", ""),
+])
+def test_clean_text_right_of_apostrophe(input_text, expected):
+    result = clean_text_right_of_apostrophe(input_text)
+    assert result == expected

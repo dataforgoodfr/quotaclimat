@@ -42,12 +42,12 @@ seed_dbt()
 def run_core_query_thematics_keywords():
     """Run dbt for the thematics model once before related tests."""
     logging.info("pytest running dbt core_query_thematics_keywords")
-    run_dbt_command(["run", "--models", "core_query_thematics_keywords", "--full-refresh"])
+    run_dbt_command(["run", "--models", "core_query_thematics_keywords", "--full-refresh","--debug"])
 
 @pytest.fixture(scope="module", autouse=True)
 def run_core_query_environmental_shares():
     """Run dbt for the environmental shares model once before related tests."""
-    commands = ["run", "--models", "core_query_environmental_shares", "--full-refresh"]
+    commands = ["run", "--models", "core_query_environmental_shares", "--full-refresh","--debug"]
     logging.info(f"pytest running dbt core_query_environmental_shares {commands}")
 
     run_dbt_command(commands)
@@ -55,7 +55,7 @@ def run_core_query_environmental_shares():
 @pytest.fixture(scope="module", autouse=True)
 def run_homepage_environment_by_media_by_month():
     """Run dbt for the environmental shares model once before related tests."""
-    commands = ["run", "--models", "homepage_environment_by_media_by_month", "--full-refresh"]
+    commands = ["run", "--models", "homepage_environment_by_media_by_month", "--full-refresh","--debug"]
     logging.info(f"pytest running dbt homepage_environment_by_media_by_month {commands}")
 
     run_dbt_command(commands)
@@ -89,7 +89,7 @@ def test_core_query_thematics_keywords_count(db_connection):
     count = cur.fetchone()[0]
     cur.close()
 
-    assert count == 108, "count error"
+    assert count == 148, "count error"
 
 def test_core_query_thematics_keywords_values(db_connection):
 

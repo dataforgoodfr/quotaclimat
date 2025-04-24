@@ -43,7 +43,7 @@ seed_dbt()
 def run_core_query_thematics_keywords():
     """Run dbt for the thematics model once before related tests."""
     logging.info("pytest running dbt core_query_thematics_keywords")
-    run_dbt_command(["run", "--models", "core_query_thematics_keywords", "--full-refresh"])
+    run_dbt_command(["run", "--models", "core_query_thematics_keywords", "--full-refresh","--debug"])
 
 @pytest.fixture(scope="module", autouse=True)
 def run_core_query_thematics_keywords_i8n():
@@ -54,7 +54,7 @@ def run_core_query_thematics_keywords_i8n():
 @pytest.fixture(scope="module", autouse=True)
 def run_core_query_environmental_shares():
     """Run dbt for the environmental shares model once before related tests."""
-    commands = ["run", "--models", "core_query_environmental_shares", "--full-refresh"]
+    commands = ["run", "--models", "core_query_environmental_shares", "--full-refresh","--debug"]
     logging.info(f"pytest running dbt core_query_environmental_shares {commands}")
 
     run_dbt_command(commands)
@@ -71,7 +71,7 @@ def run_core_query_environmental_shares_i8n():
 @pytest.fixture(scope="module", autouse=True)
 def run_homepage_environment_by_media_by_month():
     """Run dbt for the environmental shares model once before related tests."""
-    commands = ["run", "--models", "homepage_environment_by_media_by_month", "--full-refresh"]
+    commands = ["run", "--models", "homepage_environment_by_media_by_month", "--full-refresh","--debug"]
     logging.info(f"pytest running dbt homepage_environment_by_media_by_month {commands}")
 
     run_dbt_command(commands)
@@ -105,7 +105,7 @@ def test_core_query_thematics_keywords_count(db_connection):
     count = cur.fetchone()[0]
     cur.close()
 
-    assert count == 108, "count error"
+    assert count == 148, "count error"
 
 def test_core_query_thematics_keywords_values(db_connection):
 
@@ -118,19 +118,21 @@ def test_core_query_thematics_keywords_values(db_connection):
             cause,
             general_concepts,
             statement,
-            crisis_climate,
-            crisis_biodiversity,
-            crisis_resource,
+            is_solution,
+            is_consequence,
+            is_cause,
+            is_general_concepts,
+            is_statement,
             categories,
             themes
             FROM public.core_query_thematics_keywords
-            WHERE channel_title = 'TF1' AND keyword = 'eau'
+            WHERE channel_title = 'TF1' AND keyword = 'eau' AND theme = 'changement_climatique_constat'
             ORDER BY channel_title DESC
             LIMIT 1
         """)
         row = cur.fetchone()
 
-        expected=   (
+        expected= (
         'TF1',
         datetime.date(2025, 1, 27),
         'Crise climatique',
@@ -143,10 +145,12 @@ def test_core_query_thematics_keywords_values(db_connection):
         False,
         False,
         True,
+        True,
+        False,
+        False,
         False,
         False,
         True,
-        False,
         None,
         '{biodiversite_concepts_generaux_indirectes,changement_climatique_constat_indirectes}')
         

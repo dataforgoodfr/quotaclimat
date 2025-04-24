@@ -326,10 +326,32 @@ def update_dictionary(engine, theme_keywords):
                     keyword_map[keyword] = {
                         'themes': set([theme]),  # Using sets to ensure uniqueness
                         'categories': set([category]) if category else set(),
-                        'data': item
+                        'data': item,
+                        'high_risk_of_false_positive': item.get('high_risk_of_false_positive'),
+                        'solution': item.get('solution'),
+                        'consequence': item.get('consequence'),
+                        'cause': item.get('cause'),
+                        'general_concepts': item.get('general_concepts'),
+                        'statement': item.get('statement'),
+                        'crisis_climate': item.get('crisis_climate'),
+                        'crisis_biodiversity': item.get('crisis_biodiversity'),
+                        'crisis_resource': item.get('crisis_resource'),
                     }
                 else:
                     # Already seen this keyword, update unique themes and categories
+                    keyword_map[keyword]['themes'].add(theme)
+
+                    # apply OR logic if already exists
+                    keyword_map[keyword]['high_risk_of_false_positive'] = keyword_map[keyword]['high_risk_of_false_positive'] or item.get('high_risk_of_false_positive')
+                    keyword_map[keyword]['solution'] = keyword_map[keyword]['solution'] or item.get('solution')
+                    keyword_map[keyword]['consequence'] = keyword_map[keyword]['consequence'] or item.get('consequence')
+                    keyword_map[keyword]['cause'] = keyword_map[keyword]['cause'] or item.get('cause')
+                    keyword_map[keyword]['general_concepts'] = keyword_map[keyword]['general_concepts'] or item.get('general_concepts')
+                    keyword_map[keyword]['statement'] = keyword_map[keyword]['statement'] or item.get('statement')
+                    keyword_map[keyword]['crisis_climate'] = keyword_map[keyword]['crisis_climate'] or item.get('crisis_climate')
+                    keyword_map[keyword]['crisis_biodiversity'] = keyword_map[keyword]['crisis_biodiversity'] or item.get('crisis_biodiversity')
+                    keyword_map[keyword]['crisis_resource'] = keyword_map[keyword]['crisis_resource'] or item.get('crisis_resource')
+
                     keyword_map[keyword]['themes'].add(theme)
                     if category:
                         keyword_map[keyword]['categories'].add(category)
@@ -339,17 +361,27 @@ def update_dictionary(engine, theme_keywords):
             item = data['data']
             themes = list(data['themes'])  # Convert set to list
             categories = list(data['categories'])  # Convert set to list
+            high_risk_of_false_positive = data['high_risk_of_false_positive']
+            solution = data['solution']
+            consequence = data['consequence']
+            cause = data['cause']
+            general_concepts = data['general_concepts']
+            statement = data['statement']
+            crisis_climate = data['crisis_climate']
+            crisis_biodiversity = data['crisis_biodiversity']
+            crisis_resource = data['crisis_resource']
+
             dictionary_entry = {
                 'keyword': keyword,
-                'high_risk_of_false_positive': item.get('high_risk_of_false_positive', True),
-                'solution': item.get('solution', False),
-                'consequence': item.get('consequence', False),
-                'cause': item.get('cause', False),
-                'general_concepts': item.get('general_concepts', False),
-                'statement': item.get('statement', False),
-                'crisis_climate': item.get('crisis_climate', True),
-                'crisis_biodiversity': item.get('crisis_biodiversity', True),
-                'crisis_resource': item.get('crisis_resource', True),
+                'high_risk_of_false_positive': high_risk_of_false_positive,
+                'solution': solution,
+                'consequence': consequence,
+                'cause': cause,
+                'general_concepts': general_concepts,
+                'statement': statement,
+                'crisis_climate': crisis_climate,
+                'crisis_biodiversity': crisis_biodiversity,
+                'crisis_resource': crisis_resource,
                 'categories': categories if categories else None,  # Use None if categories is empty
                 'themes': themes,
                 'language': item.get('language', None)

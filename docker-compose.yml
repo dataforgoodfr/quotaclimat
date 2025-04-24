@@ -32,6 +32,8 @@ services:
         condition: service_healthy
 
   testconsole:
+    ports:
+      - 8080:8080
     build:
       context: ./
       dockerfile: Dockerfile

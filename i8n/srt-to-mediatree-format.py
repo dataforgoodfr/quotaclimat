@@ -7,11 +7,13 @@ import pyarrow.parquet as pq
 from datetime import datetime
 from collections import defaultdict
 from quotaclimat.data_processing.mediatree.s3.s3_utils import upload_folder_to_s3, get_s3_client
-
+from zoneinfo import ZoneInfo
 
 # execute me with docker compose up testconsole -d / exec run bash
 # /app/ cd i8n/
 # /app/i8n# poetry run python3 srt-to-mediatree-format.py
+
+timezone = "Europe/Brussels"
 
 def split_words_on_apostrophes(text):
     split_words = []
@@ -42,7 +44,7 @@ def parse_csv_without_headers(file_path):
                     program_name = row[1]
                     start_time = row[2]
                     plaintext = row[3]
-                    
+
                     data.append({
                         'channel_name': channel_name,
                         'program_name': program_name,
@@ -61,8 +63,11 @@ def parse_csv_without_headers(file_path):
 def convert_datetime_to_timestamp(date_str):
     """Convert date string to UNIX timestamp"""
     try:
-        dt = datetime.strptime(date_str, "%d/%m/%Y %H:%M:%S")
-        return int(dt.timestamp()), dt
+        
+        dt: datetime = datetime.strptime(date_str, "%d/%m/%Y %H:%M:%S")
+        aware_dt = dt.replace(tzinfo=ZoneInfo(timezone))
+        # print(f"  Converting date: '{date_str}' to datetime : {aware_dt} - aware_dt.timestamp(): {aware_dt.timestamp()} - dt.timestamp(): {dt.timestamp()}")
+        return int(aware_dt.timestamp()), aware_dt
     except ValueError:
         print(f"  ERROR converting date: '{date_str}' - Invalid format")
         return 0, None
@@ -162,6 +167,7 @@ def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree
     Process all CSV files in a folder to mediatree format
     with partitioning by year/month/day/channel and output as Parquet
     """
+    
     print(f"\n{'='*50}")
     print(f"Starting processing of CSV files in: {folder_path}")
     print(f"{'='*50}\n")
@@ -240,13 +246,17 @@ def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree
     print(f"{'='*50}\n")
 
 if __name__ == "__main__":
-    # Replace with your actual folder path
-    year = 2025
-    folder_path = f"csa-belge/{year}"
-    # folder_path = "csa-belge/2025"
-    bucket = "test-bucket-mediatree"
+    folder_path_2024 = f"csa-belge/2024"
+    folder_path_2025 = f"csa-belge/2025"
+
+    bucket = "mediatree"
     output_dir = "mediatree_output"
     s3_root_folder = "country=belgium"
-    process_csv_folder_to_partitioned_parquet(folder_path, output_dir)
+
+    print(f"Using timezone: {timezone}")
+    print(f"Using bucket: {bucket}")
+    print(f"Using s3_root_folder: {s3_root_folder}")
+    # process_csv_folder_to_partitioned_parquet(folder_path_2024, output_dir)
+    process_csv_folder_to_partitioned_parquet(folder_path_2025, output_dir)
     s3_client = get_s3_client()
     upload_folder_to_s3(output_dir,bucket, s3_root_folder, s3_client=s3_client)

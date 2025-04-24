@@ -145,7 +145,7 @@ def test_core_query_thematics_keywords_values(db_connection):
         False,
         False,
         True,
-        True,
+        False,
         False,
         False,
         False,

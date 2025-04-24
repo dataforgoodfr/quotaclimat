@@ -10,6 +10,7 @@ from quotaclimat.data_processing.mediatree.s3.s3_utils import upload_folder_to_s
 
 
 # execute me with docker compose up testconsole -d / exec run bash
+# /app/ cd i8n/
 # /app/i8n# poetry run python3 srt-to-mediatree-format.py
 
 def parse_csv_without_headers(file_path):
@@ -230,8 +231,9 @@ def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree
 if __name__ == "__main__":
     # Replace with your actual folder path
     folder_path = "csa-belge"
-    bucket = "haca-csa-belge"
-    output_dir = "mediatree_output"  #
-    process_csv_folder_to_partitioned_parquet(folder_path, output_dir)
-    # s3_client = get_s3_client()
-    # upload_folder_to_s3(output_dir,bucket, "", s3_client=s3_client)
+    bucket = "mediatree"
+    output_dir = "mediatree_output"
+    s3_root_folder = "country=belgium"
+    # process_csv_folder_to_partitioned_parquet(folder_path, output_dir)
+    s3_client = get_s3_client()
+    upload_folder_to_s3(output_dir,bucket, s3_root_folder, s3_client=s3_client)

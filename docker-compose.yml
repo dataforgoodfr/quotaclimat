@@ -70,7 +70,8 @@ services:
       - ./alembic:/app/alembic
       - ./alembic.ini:/app/alembic.ini
       - ./my_dbt_project:/app/my_dbt_project
-      - ./i8n:/app/
+      - ./transform_program.py:/app/transform_program.py
+      - ./i8n:/app/i8n
     depends_on:
       nginxtest:
         condition: service_healthy

@@ -25,7 +25,7 @@ MEDIATREE_TRANSCRIPTION_PROBLEM = "<unk> "
 DEFAULT_WINDOW_DURATION = int(os.environ.get("DEFAULT_WINDOW_DURATION", 20))
 
 
-def get_keyword_with_timestamp(theme: str, category: str, keyword : str, cts_in_ms: int):
+def get_keyword_with_timestamp(theme: str, category: str, keyword : str, cts_in_ms: timestamp):
     return {
             "keyword" : keyword,
             "timestamp" : cts_in_ms,
@@ -33,33 +33,15 @@ def get_keyword_with_timestamp(theme: str, category: str, keyword : str, cts_in_
             "category": category
     }
 
-# to clean "c'est" - "d'avion" - "d'un" word from srt and to keep only est, avion, un
-def clean_text_right_of_apostrophe(text):
-    if "'" in text and len(text) > 1:
-        words = text.split()
-        cleaned_words = []
-        for word in words:
-            if "'" in word:
-                parts = word.split("'")
-                # keep only the part after the last apostrophe
-                cleaned_words.append(parts[-1])
-            else:
-                cleaned_words.append(word)
-        return " ".join(cleaned_words)
-    else:
-        return text
-
 def find_matching_subtitle(subtitles, keyword):
     for item in subtitles:
-        logging.warning(f"Testing {item} with {keyword} full subtitle is {subtitles}")
-        if is_word_in_sentence(keyword, clean_text_right_of_apostrophe(item.get("text", ""))):
+        logging.debug(f"Testing {item} with {keyword} full subtitle is {subtitles}")
+        if is_word_in_sentence(keyword, item.get("text", "")):
             logging.debug(f"match found {item} with {keyword}")
             return item
 
     logging.warning(f"SRT match not found - default timestamp is now 0, possible error inside srt which is acceptable {e} - {keyword} - {subtitles}")
     return None
-
-
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], theme: str) -> List[dict]:
     result = []

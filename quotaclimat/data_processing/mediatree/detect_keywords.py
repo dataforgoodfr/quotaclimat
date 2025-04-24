@@ -171,7 +171,7 @@ def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
 def get_detected_keywords(plaitext_without_stopwords: str, keywords_dict, country=FRANCE):
     matching_words = []
 
-    logging.info(f"Keeping only {country.language} keywords...")
+    logging.debug(f"Keeping only {country.language} keywords...")
     keywords_dict = list(filter(lambda x: x["language"] == country.language, keywords_dict))
     logging.info(f"Got {len(keywords_dict)} keywords")
     for keyword_dict in keywords_dict:
@@ -192,6 +192,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
 
     for theme, keywords_dict in THEME_KEYWORDS.items():
         logging.debug(f"searching {theme} for {keywords_dict}")
+        logging.info(f"Keeping only {country.language} keywords...")
         matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict, country=country)
        
         if matching_words:

@@ -35,7 +35,7 @@ def parse_csv_without_headers(file_path):
     row_count = 0
     
     try:
-        with open(file_path, 'r', encoding='utf-8', errors='replace') as csv_file:
+        with open(file_path, 'r', encoding='cp1252', errors='replace') as csv_file: # encoding='cp1252'
             csv_reader = csv.reader(csv_file, delimiter=';')
             for row in csv_reader:
                 row_count += 1
@@ -94,6 +94,7 @@ def group_by_window_and_partition(data, window_minutes=2):
             month = dt.month
             day = dt.day
             channel = item['channel_name']
+            item['start'] = dt
             
             # Add to partitioned data
             partitions[year][month][day][channel].append(item)
@@ -133,6 +134,7 @@ def create_mediatree_data_for_partition(windows_data):
         
         # Get channel info from the first item
         channel_name = items[0]['channel_name']
+        start = items[0]['start']
         
         # Process words for SRT
         words = split_words_on_apostrophes(combined_plaintext)
@@ -154,7 +156,7 @@ def create_mediatree_data_for_partition(windows_data):
             "srt": srt_entries,
             "channel_name": channel_name,
             "channel_title": channel_name,
-            "start": window_start,
+            "start": start,
             "plaintext": combined_plaintext
         }
         
@@ -256,7 +258,7 @@ if __name__ == "__main__":
     print(f"Using timezone: {timezone}")
     print(f"Using bucket: {bucket}")
     print(f"Using s3_root_folder: {s3_root_folder}")
-    # process_csv_folder_to_partitioned_parquet(folder_path_2024, output_dir)
-    process_csv_folder_to_partitioned_parquet(folder_path_2025, output_dir)
+    process_csv_folder_to_partitioned_parquet(folder_path_2024, output_dir)
+    #process_csv_folder_to_partitioned_parquet(folder_path_2025, output_dir)
     s3_client = get_s3_client()
     upload_folder_to_s3(output_dir,bucket, s3_root_folder, s3_client=s3_client)

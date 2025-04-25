@@ -87,6 +87,10 @@ for excel_file_path in excels_files:
             if (translated_keyword == None):
                 logging.info(f"No translation for {keyword_french.keyword}")
                 continue
+
+            if (translated_keyword.language != french.lower()):
+                high_risk_of_false_positive = False
+
             if ("#" not in translated_keyword.keyword):
                 THEME_KEYWORDS[theme_name].append(
                     {

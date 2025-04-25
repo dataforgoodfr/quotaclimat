@@ -5,6 +5,8 @@ from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from datetime import datetime, timezone
+from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
+
 
 import pandas as pd
 localhost = get_localhost()
@@ -543,11 +545,11 @@ def test_long_get_themes_keywords_duration():
 
 def test_stop_word_get_themes_keywords_duration():
     plaintext = "haute isolation thermique fabriqué en france pizza"
-    assert get_themes_keywords_duration(plaintext, subtitles, start) == array_of_none
+    assert get_themes_keywords_duration(plaintext, subtitles, start, stop_words=STOP_WORDS) == array_of_none
    
 def test_train_stop_word_get_themes_keywords_duration():
     plaintext = "en train de fabrique en france pizza"
-    assert get_themes_keywords_duration(plaintext, subtitles, start) == array_of_none
+    assert get_themes_keywords_duration(plaintext, subtitles, start, stop_words=STOP_WORDS) == array_of_none
    
 
 def test_get_cts_in_ms_for_keywords():

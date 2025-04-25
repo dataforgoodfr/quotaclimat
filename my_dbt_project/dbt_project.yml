@@ -60,6 +60,7 @@ seeds:
           {% endif %}
       post-hook:
        - "ALTER TABLE keywords ADD PRIMARY KEY (id,start)"
+       - "ALTER TABLE keywords ALTER COLUMN program_metadata_id TYPE text"
 
     program_metadata:
         table: program_metadata

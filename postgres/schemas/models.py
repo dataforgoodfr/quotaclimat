@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer, Table, MetaData, ForeignKey
+from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer, Table, MetaData, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
@@ -155,7 +155,7 @@ class Stop_Word(Base):
 class Dictionary(Base):
     __tablename__ = "dictionary"
     
-    keyword = Column(String, primary_key=True)
+    keyword = Column(String, nullable=False)
 
     high_risk_of_false_positive = Column(Boolean, nullable=True, default=True)
 
@@ -173,7 +173,10 @@ class Dictionary(Base):
     themes = Column(ARRAY(String), nullable=True) # example ["changement_climatique_constat", "ressources"]
 
     # all translation of the original keyword
-    language = Column(String, nullable=True)
+    language = Column(String, nullable=False)
+    __table_args__ = (
+        PrimaryKeyConstraint('keyword', 'language', name='pk_keyword_language'),
+    )
 
 def get_sitemap(id: str):
     session = get_db_session()
@@ -320,10 +323,11 @@ def update_dictionary(engine, theme_keywords):
             for item in keywords_list:
                 keyword = item['keyword']
                 category = item.get('category')
-                
-                if keyword not in keyword_map:
+                language = item.get('language')
+                keyword_language_key = (keyword, language)
+                if keyword_language_key not in keyword_map:
                     # First time seeing this keyword
-                    keyword_map[keyword] = {
+                    keyword_map[keyword_language_key] = {
                         'themes': set([theme]),  # Using sets to ensure uniqueness
                         'categories': set([category]) if category else set(),
                         'data': item,
@@ -339,25 +343,25 @@ def update_dictionary(engine, theme_keywords):
                     }
                 else:
                     # Already seen this keyword, update unique themes and categories
-                    keyword_map[keyword]['themes'].add(theme)
+                    keyword_map[keyword_language_key]['themes'].add(theme)
 
                     # apply OR logic if already exists
-                    keyword_map[keyword]['high_risk_of_false_positive'] = keyword_map[keyword]['high_risk_of_false_positive'] or item.get('high_risk_of_false_positive')
-                    keyword_map[keyword]['solution'] = keyword_map[keyword]['solution'] or item.get('solution')
-                    keyword_map[keyword]['consequence'] = keyword_map[keyword]['consequence'] or item.get('consequence')
-                    keyword_map[keyword]['cause'] = keyword_map[keyword]['cause'] or item.get('cause')
-                    keyword_map[keyword]['general_concepts'] = keyword_map[keyword]['general_concepts'] or item.get('general_concepts')
-                    keyword_map[keyword]['statement'] = keyword_map[keyword]['statement'] or item.get('statement')
-                    keyword_map[keyword]['crisis_climate'] = keyword_map[keyword]['crisis_climate'] or item.get('crisis_climate')
-                    keyword_map[keyword]['crisis_biodiversity'] = keyword_map[keyword]['crisis_biodiversity'] or item.get('crisis_biodiversity')
-                    keyword_map[keyword]['crisis_resource'] = keyword_map[keyword]['crisis_resource'] or item.get('crisis_resource')
+                    keyword_map[keyword_language_key]['high_risk_of_false_positive'] = keyword_map[keyword_language_key]['high_risk_of_false_positive'] or item.get('high_risk_of_false_positive')
+                    keyword_map[keyword_language_key]['solution'] = keyword_map[keyword_language_key]['solution'] or item.get('solution')
+                    keyword_map[keyword_language_key]['consequence'] = keyword_map[keyword_language_key]['consequence'] or item.get('consequence')
+                    keyword_map[keyword_language_key]['cause'] = keyword_map[keyword_language_key]['cause'] or item.get('cause')
+                    keyword_map[keyword_language_key]['general_concepts'] = keyword_map[keyword_language_key]['general_concepts'] or item.get('general_concepts')
+                    keyword_map[keyword_language_key]['statement'] = keyword_map[keyword_language_key]['statement'] or item.get('statement')
+                    keyword_map[keyword_language_key]['crisis_climate'] = keyword_map[keyword_language_key]['crisis_climate'] or item.get('crisis_climate')
+                    keyword_map[keyword_language_key]['crisis_biodiversity'] = keyword_map[keyword_language_key]['crisis_biodiversity'] or item.get('crisis_biodiversity')
+                    keyword_map[keyword_language_key]['crisis_resource'] = keyword_map[keyword_language_key]['crisis_resource'] or item.get('crisis_resource')
 
-                    keyword_map[keyword]['themes'].add(theme)
+                    keyword_map[keyword_language_key]['themes'].add(theme)
                     if category:
-                        keyword_map[keyword]['categories'].add(category)
+                        keyword_map[keyword_language_key]['categories'].add(category)
         
         # Second pass: Create dictionary entries with unique themes and categories as lists
-        for keyword, data in keyword_map.items():
+        for (keyword, language), data in keyword_map.items():
             item = data['data']
             themes = list(data['themes'])  # Convert set to list
             categories = list(data['categories'])  # Convert set to list
@@ -384,7 +388,7 @@ def update_dictionary(engine, theme_keywords):
                 'crisis_resource': crisis_resource,
                 'categories': categories if categories else None,  # Use None if categories is empty
                 'themes': themes,
-                'language': item.get('language', None)
+                'language': language
             }
             
             session.merge(Dictionary(**dictionary_entry))
@@ -429,6 +433,7 @@ def drop_tables(conn = None):
             Base.metadata.drop_all(bind=engine, tables=[Program_Metadata.__table__])
             logging.info(f"Drop all {Stop_Word.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Stop_Word.__table__])
+            logging.info(f"Drop all {Dictionary.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Dictionary.__table__])
 
             logging.info(f"Table keyword / Program_Metadata / Channel_Metadata deletion done")

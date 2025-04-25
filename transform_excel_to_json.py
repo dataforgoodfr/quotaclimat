@@ -5,8 +5,9 @@ import logging
 from quotaclimat.data_processing.mediatree.i8n.country import *
 
 # Need to import these files - slack #metabase-keywords
-excels_files = ["document-experts/Dictionnaire - OME.xlsx"]
 i8n_dictionary = "document-experts/Dictionnaire_Multilingue.xlsx"
+excels_files = ["document-experts/Dictionnaire - OME.xlsx", i8n_dictionary]
+
 output_file = "quotaclimat/data_processing/mediatree/keyword/keyword.py"
 
 # Excel columns - must be lower to match country.py norms
@@ -28,31 +29,31 @@ class TranslatedKeyword:
         self.language = language
         self.keyword = keyword
 
+
+
 # Initialize the THEME_KEYWORDS dictionary
 THEME_KEYWORDS = {}
 for excel_file_path in excels_files:
     print(f"Reading {excel_file_path}")
-    df = pd.read_excel(excel_file_path, sheet_name='Catégorisation Finale')
-    df = df.dropna(subset=['keyword'])
-    i18n_df = pd.read_excel(i8n_dictionary)
-    i18n_df[french] = i18n_df[french].str.lower().str.strip()  # Normalize for matching
-
-    df['category'] = df['Secteur'].fillna('')
-    df['crise'] = df['Crise'].fillna('') 
-
-    # merge between i8n_dictionary and df based on keyword and French to get German, Spanish etc.
-    df = df.merge(i18n_df, how='left', left_on='keyword', right_on='French')
-    
+    if "Dictionnaire - OME" in excel_file_path:
+        df = pd.read_excel(excel_file_path, sheet_name='Catégorisation Finale')
+        df = df.dropna(subset=['keyword'])
+        df['category'] = df['Secteur'].fillna('')
+        df['crise'] = df['Crise'].fillna('')
+        df['Category_legacy'] = df['Category_legacy'].fillna('')
+    else:
+        df = pd.read_excel(i8n_dictionary)
+        df['Secteur'] = pd.NA
+        df['crise'] = pd.NA
+        df['Category_legacy'] = 'changement_climatique_constat'
+        df['category'] = ''
     # Iterate over the rows of the DataFrame
     for index, row in df.iterrows():
-        
-        print(f"Processing row {index + 1} - {row['keyword']}")
+        print(f"Processing row {index + 1} - {row}")
         theme_name = row['Category_legacy'] #.strip()
-        keyword_french = TranslatedKeyword(french.lower(), row['keyword'].lower().strip())
         category = row['category'].strip()
-        print(f"row['HRFP'] is {row['HRFP']} for {keyword_french.keyword} so must be {row['HRFP'] == 1.0}")
-        high_risk_of_false_positive = row['HRFP'] == 1.0
-
+        keyword_french =  None if pd.isna(row.get('keyword')) else TranslatedKeyword(french.lower(),row.get('keyword').lower().strip()) 
+        
         # get for each language the translation, it can be None (pandas return NaN...)
         # TODO i8n: each translated keyword should be independant (we still use metadata of the french translation)
         keyword_english = None if pd.isna(row.get(english)) else TranslatedKeyword(english.lower(),row.get(english)) 
@@ -67,16 +68,6 @@ for excel_file_path in excels_files:
         keyword_dutch = None if pd.isna(row.get(dutch)) else TranslatedKeyword(dutch.lower(),row.get(dutch)) 
         keyword_latvian = None if pd.isna(row.get(latvian)) else TranslatedKeyword(latvian.lower(),row.get(latvian)) 
 
-        crisis_climate = row['crise'] == "Climat"
-        crisis_biodiversity = row['crise'] == "Biodiversité"
-        crisis_resource = row['crise'] == "Ressources"
-
-        solution = "solution" in theme_name
-        consequence = "consequence " in theme_name
-        cause = "cause" in theme_name
-        general_concepts = "concepts_generaux" in theme_name
-        statement = "constat" in theme_name
-
         # Check if the theme_name already exists in THEME_KEYWORDS
         if(theme_name not in THEME_KEYWORDS):
             print(f"Adding theme {row['Category_legacy']} - {theme_name}")
@@ -85,11 +76,30 @@ for excel_file_path in excels_files:
         # filter # keyword with # (paused or removed)
         for translated_keyword in keywords_list:
             if (translated_keyword == None):
-                logging.info(f"No translation for {keyword_french.keyword}")
                 continue
 
             if (translated_keyword.language != french.lower()):
                 high_risk_of_false_positive = False
+                crisis_climate = False
+                crisis_biodiversity = False
+                crisis_resource = False
+                high_risk_of_false_positive = False
+                solution = False
+                consequence = False
+                cause = False
+                general_concepts = False
+                statement = False
+            else:
+                # metadata only for French keywords
+                crisis_climate = row['crise'] == "Climat"
+                crisis_biodiversity = row['crise'] == "Biodiversité"
+                crisis_resource = row['crise'] == "Ressources"
+                high_risk_of_false_positive = row['HRFP'] == 1.0
+                solution = "solution" in theme_name
+                consequence = "consequence " in theme_name
+                cause = "cause" in theme_name
+                general_concepts = "concepts_generaux" in theme_name
+                statement = "constat" in theme_name
 
             if ("#" not in translated_keyword.keyword):
                 THEME_KEYWORDS[theme_name].append(

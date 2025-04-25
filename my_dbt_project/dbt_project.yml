@@ -58,6 +58,8 @@ seeds:
           {% else %}
           -- safeguard: skip DELETE in prod
           {% endif %}
+      post-hook:
+       - "ALTER TABLE keywords ADD PRIMARY KEY (id,start)"
 
     program_metadata:
         table: program_metadata

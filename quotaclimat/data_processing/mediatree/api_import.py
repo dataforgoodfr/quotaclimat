@@ -156,16 +156,16 @@ async def get_and_save_s3_data_to_pg(exit_event):
                         try:
                             logging.info("Querying day %s for channel %s" % (day, channel))
                             df_channel_for_a_day = read_folder_from_s3(date=day, channel=channel, country=country)
+                            if(df_channel_for_a_day is not None):
+                                df = transform_raw_keywords(df=df_channel_for_a_day, stop_words=stop_words,\
+                                                            df_programs=df_programs, country=country)
 
-                            df = transform_raw_keywords(df=df_channel_for_a_day, stop_words=stop_words,\
-                                                         df_programs=df_programs, country=country)
-
-                            if(df is not None):
-                                logging.debug(f"Memory df {df.memory_usage()}")
-                                save_to_pg(df, keywords_table, conn)
-                                del df
-                            else:
-                                logging.info(f"Nothing to save to Postgresql for {day} - {channel} - {country.name}")
+                                if(df is not None):
+                                    logging.debug(f"Memory df {df.memory_usage()}")
+                                    save_to_pg(df, keywords_table, conn)
+                                    del df
+                                else:
+                                    logging.info(f"Nothing to save to Postgresql for {day} - {channel} - {country.name}")
                         except Exception as err:
                             logging.error(f"continuing loop fpr but met error with {channel} - day {day}: {err}")
                             continue

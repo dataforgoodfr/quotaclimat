@@ -140,8 +140,8 @@ def replace_word_with_context(text: str, word = "groupe verlaine", length_to_rem
 def remove_stopwords(plaintext: str, stopwords: list[str], country = FRANCE) -> str:
     logging.debug(f"Removing stopwords {plaintext}")
 
-    if len(stopwords) == 0:
-        logging.warning("Stop words list empty")
+    if len(stopwords) == 0 and country == FRANCE:
+        logging.warning(f"Stop words list empty for {country.name}")
         return plaintext
 
     # TODO: should be remove and only rely on stop words list, was added due to S2T issues
@@ -164,8 +164,9 @@ def remove_stopwords(plaintext: str, stopwords: list[str], country = FRANCE) -> 
     return plaintext
 
 def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
-    return {"keyword": keyword_dict["keyword"],
-            "category": keyword_dict["category"] # TODO I8N category name ?
+    return {
+            "keyword": keyword_dict["keyword"],
+            "category": keyword_dict["category"]
     }
 
 def get_detected_keywords(plaitext_without_stopwords: str, keywords_dict, country=FRANCE):
@@ -173,7 +174,7 @@ def get_detected_keywords(plaitext_without_stopwords: str, keywords_dict, countr
 
     logging.debug(f"Keeping only {country.language} keywords...")
     keywords_dict = list(filter(lambda x: x["language"] == country.language, keywords_dict))
-    logging.info(f"Got {len(keywords_dict)} keywords")
+    logging.debug(f"Got {len(keywords_dict)} keywords")
     for keyword_dict in keywords_dict:
         if is_word_in_sentence(keyword_dict["keyword"], plaitext_without_stopwords):
             matching_words.append(get_keyword_matching_json(keyword_dict, country=country))
@@ -190,9 +191,10 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     plaitext_without_stopwords = remove_stopwords(plaintext=plaintext, stopwords=stop_words, country=country)
     logging.debug(f"display datetime start {start}")
 
+    logging.debug(f"Keeping only {country.language} keywords...")
+    
     for theme, keywords_dict in THEME_KEYWORDS.items():
         logging.debug(f"searching {theme} for {keywords_dict}")
-        logging.info(f"Keeping only {country.language} keywords...")
         matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict, country=country)
        
         if matching_words:

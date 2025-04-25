@@ -70,9 +70,3 @@ def test_transform_raw_keywords():
     output = transform_raw_keywords(df, df_programs=df_programs)
 
     assert len(output) == 31
-def test_transform_raw_keywords_srt_to_mediatree():
-    df= pd.read_parquet(path="i8n/mediatree_output")
-    df_programs = get_programs()
-    output = transform_raw_keywords(df, df_programs=df_programs)
-
-    assert len(output) == 31

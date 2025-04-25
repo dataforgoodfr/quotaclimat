@@ -100,3 +100,6 @@ seeds:
             {% else %}
             -- safeguard: skip DELETE in prod
             {% endif %}
+        post-hook:
+          - "ALTER TABLE dictionary ALTER COLUMN categories TYPE varchar[] USING string_to_array(trim(both '{}' from categories), ',')"
+          - "ALTER TABLE dictionary ALTER COLUMN themes TYPE varchar[] USING string_to_array(trim(both '{}' from themes), ',')"

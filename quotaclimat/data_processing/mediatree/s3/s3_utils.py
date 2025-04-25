@@ -79,18 +79,22 @@ def read_folder_from_s3(date, channel: str, country: CountryMediaTree = FRANCE):
     s3_key: tuple[str] = f"s3://{BUCKET_NAME}/{s3_path}"
     logging.info(f"Reading S3 folder {s3_key}")
 
-    df = pd.read_parquet(path=s3_key,
-                                 storage_options={
-                                    "key": ACCESS_KEY,
-                                    "secret": SECRET_KEY,
-                                    "endpoint_url": ENDPOINT_URL,
-                                })
-    
-    if str(df['start'].dt.tz) == 'UTC':
-        logging.warning(f"Timezone is UTC, converting to {country.timezone}")
-        df['start'] = df['start'].dt.tz_convert(country.timezone)
+    try:
+        df = pd.read_parquet(path=s3_key,
+                                    storage_options={
+                                        "key": ACCESS_KEY,
+                                        "secret": SECRET_KEY,
+                                        "endpoint_url": ENDPOINT_URL,
+                                    })
+        
+        if str(df['start'].dt.tz) == 'UTC':
+            logging.warning(f"Timezone is UTC, converting to {country.timezone}")
+            df['start'] = df['start'].dt.tz_convert(country.timezone)
 
-    return df
+        return df
+    except Exception as e:
+        logging.warning(f"Error reading S3 folder {s3_key}: {e}")
+        return None
 
 
 def check_if_object_exists_in_s3(day, channel, s3_client, country: CountryMediaTree = FRANCE) -> bool:

@@ -91,10 +91,7 @@ LEFT JOIN public.program_metadata pm ON k.channel_program = pm.channel_program
    -- Unnest categories array into one line per category
     LEFT JOIN LATERAL UNNEST(
         COALESCE(
-            string_to_array(
-                TRIM(BOTH '{}' FROM d.categories), 
-                ','
-            ),
+            d.categories,
             ARRAY['Transversal']
         )
     ) AS category ON TRUE

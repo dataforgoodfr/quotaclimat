@@ -40,7 +40,7 @@ def find_matching_subtitle(subtitles, keyword):
             logging.debug(f"match found {item} with {keyword}")
             return item
 
-    logging.warning(f"SRT match not found - default timestamp is now 0, possible error inside srt which is acceptable {e} - {keyword} - {subtitles}")
+    logging.warning(f"SRT match not found - default timestamp is now 0, possible error inside srt which is acceptable - {keyword} - {subtitles}")
     return None
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], theme: str) -> List[dict]:

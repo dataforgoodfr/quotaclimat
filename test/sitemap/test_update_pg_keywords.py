@@ -825,6 +825,7 @@ def test_update_only_keywords_that_includes_some_keywords():
                 "context": plaintext_stop_word,
                 "count": 20,
                 "id" : get_consistent_hash(plaintext_stop_word),
+                "country": "france"
             },
             {
                 "keyword_id": "fake_id",
@@ -834,6 +835,7 @@ def test_update_only_keywords_that_includes_some_keywords():
                 "context": "lacieux selon les experts question climatique en fait elle dépasse la question",
                 "count": 19,
                 "id" : get_consistent_hash("lacieux selon les experts question climatique en fait elle dépasse la question"),
+                "country": "france"
             }
         ]
     save_append_stop_word(conn, stop_word_to_save)

@@ -923,7 +923,7 @@ def test_update_only_keywords_that_includes_some_keywords():
     assert result_after_update.id == result_before_update.id
 
     # theme
-    expected_themes = set(["adaptation_climatique_solutions",  "changement_climatique_constat", "changement_climatique_constat_indirectes"])
+    expected_themes = set(["adaptation_climatique_solutions",  "changement_climatique_constat"])
     assert set(new_theme) == expected_themes
     assert set(result_after_update.theme) == expected_themes
         

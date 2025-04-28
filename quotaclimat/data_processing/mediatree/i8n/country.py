@@ -89,6 +89,7 @@ BELGIUM = CountryMediaTree(code=BELGIUM_CODE,channels=BELGIUM_CHANNELS, timezone
 GERMANY_CODE: GermanyCode ="deu"
 GERMANY_CHANNELS= ["daserste"
     ,"zdf-neo"
+    ,"zdf"
     ,"rtl-television"
     ,"sat1"
     ,"prosieben"
@@ -201,6 +202,8 @@ def get_channel_title_for_name(channel_name: str, country: CountryMediaTree = FR
                 return "Das Erste"
             case "zdf-neo":
                 return "ZDFneo"
+            case "zdf":
+                return "ZDF"
             case "rtl-television":
                 return "RTL"
             case "sat1":

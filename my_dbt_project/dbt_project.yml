@@ -58,6 +58,9 @@ seeds:
           {% else %}
           -- safeguard: skip DELETE in prod
           {% endif %}
+      post-hook:
+       - "ALTER TABLE keywords ADD PRIMARY KEY (id,start)"
+       - "ALTER TABLE keywords ALTER COLUMN program_metadata_id TYPE text"
 
     program_metadata:
         table: program_metadata
@@ -100,3 +103,6 @@ seeds:
             {% else %}
             -- safeguard: skip DELETE in prod
             {% endif %}
+        post-hook:
+          - "ALTER TABLE dictionary ALTER COLUMN categories TYPE TEXT[] USING string_to_array(trim(both '{}' from categories), ',')"
+          - "ALTER TABLE dictionary ALTER COLUMN themes TYPE TEXT[] USING string_to_array(trim(both '{}' from themes), ',')"

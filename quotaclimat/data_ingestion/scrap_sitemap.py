@@ -9,7 +9,7 @@ import advertools as adv
 import pandas as pd
 
 from quotaclimat.data_ingestion.config_sitemap import (SITEMAP_CONFIG, SITEMAP_TEST_CONFIG, SITEMAP_DOCKER_CONFIG, MEDIA_CONFIG)
-from postgres.schemas.models import get_sitemap_cols
+
 from quotaclimat.data_ingestion.scrap_html.scrap_description_article import get_meta_news, agent
 import asyncio
 import hashlib
@@ -18,6 +18,22 @@ import hashlib
 # TODO: add slack login
 # TODO: add data models
 
+def get_sitemap_cols():
+
+    cols = [
+        "publication_name",
+        "news_title",
+        "download_date",
+        "news_publication_date",
+        "news_keywords",
+        "section",
+        "image_caption",
+        "media_type",
+        "url",
+        "news_description",
+        "id",
+    ]
+    return cols
 
 def get_sitemap_list():
     dev_env=os.environ.get("ENV") == "dev" or os.environ.get("ENV") == "docker"

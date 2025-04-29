@@ -1,7 +1,7 @@
 from logging.config import fileConfig
 
 from sqlalchemy import create_engine
-from postgres.schemas.models import Base
+from postgres.schemas.base import Base
 from alembic import context
 
 import re

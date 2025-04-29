@@ -5,7 +5,7 @@
 }}
 
     SELECT
-      pm.channel_title,
+      COALESCE(pm.channel_title, k.channel_name) AS channel_title,
       DATE_TRUNC('week', k.start) :: date AS week,
       -- Dictionary metadata
       d.high_risk_of_false_positive,
@@ -101,7 +101,7 @@ WHERE
       LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
    
 GROUP BY
-      pm.channel_title,
+      COALESCE(pm.channel_title, k.channel_name),
       DATE_TRUNC('week', k.start) :: date,
       d.high_risk_of_false_positive,
       d.solution,
@@ -154,6 +154,6 @@ GROUP BY
 	    category
    
 ORDER BY
-      pm.channel_title,
+      channel_title,
       week,
       crise_type

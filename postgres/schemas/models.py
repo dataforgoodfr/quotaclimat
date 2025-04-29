@@ -6,32 +6,14 @@ from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
 from sqlalchemy import text
+from postgres.schemas.base import Base
 from postgres.database_connection import connect_to_db, get_db_session
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
+from quotaclimat.data_processing.mediatree.time_monitored.models import Time_Monitored
 import os
 import json
 from json import JSONDecodeError
-
-Base = declarative_base()
-
-
-def get_sitemap_cols():
-
-    cols = [
-        "publication_name",
-        "news_title",
-        "download_date",
-        "news_publication_date",
-        "news_keywords",
-        "section",
-        "image_caption",
-        "media_type",
-        "url",
-        "news_description",
-        "id",
-    ]
-    return cols
 
 
 sitemap_table = "sitemap_table"
@@ -205,7 +187,7 @@ def get_last_month_sitemap_id(engine):
 
 def create_tables(conn=None):
     """Create tables in the PostgreSQL database"""
-    logging.info("create sitemap, keywords , stop_word tables, dictionnary - update channel_metadata")
+    logging.info("create sitemap, keywords , time_monitored, stop_word tables, dictionnary - update channel_metadata")
     try:
         if conn is None :
             engine = connect_to_db()
@@ -435,6 +417,8 @@ def drop_tables(conn = None):
             Base.metadata.drop_all(bind=engine, tables=[Stop_Word.__table__])
             logging.info(f"Drop all {Dictionary.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Dictionary.__table__])
+            logging.info(f"Drop all {Time_Monitored.__tablename__}")
+            Base.metadata.drop_all(bind=engine, tables=[Time_Monitored.__table__])
 
             logging.info(f"Table keyword / Program_Metadata / Channel_Metadata deletion done")
         except (Exception) as error:

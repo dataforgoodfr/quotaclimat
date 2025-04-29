@@ -3,7 +3,7 @@ import logging
 import asyncio
 import sys
 import os
-from quotaclimat.data_processing.mediatree.i8n.country import CountryMediaTree
+
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import *
@@ -18,8 +18,8 @@ from quotaclimat.data_processing.mediatree.i8n.country import *
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, get_db_session
 from postgres.schemas.models import keywords_table
-
-from typing import List, Optional
+from quotaclimat.data_processing.mediatree.time_monitored.models import save_time_monitored
+from typing import List
 from tenacity import *
 import sentry_sdk
 from sentry_sdk.crons import monitor
@@ -157,6 +157,9 @@ async def get_and_save_s3_data_to_pg(exit_event):
                             logging.info("Querying day %s for channel %s" % (day, channel))
                             df_channel_for_a_day = read_folder_from_s3(date=day, channel=channel, country=country)
                             if(df_channel_for_a_day is not None):
+                                # count how many rows are in the dataframe and save it to postgresql inside a new table called time_monitor
+                                save_time_monitored(number_of_rows=len(df_channel_for_a_day),day=day, channel=channel, country=country.name,session=session)
+
                                 df = transform_raw_keywords(df=df_channel_for_a_day, stop_words=stop_words,\
                                                             df_programs=df_programs, country=country)
 
@@ -166,6 +169,7 @@ async def get_and_save_s3_data_to_pg(exit_event):
                                     del df
                                 else:
                                     logging.info(f"Nothing to save to Postgresql for {day} - {channel} - {country.name}")
+                                    save_time_monitored(number_of_rows=0,day=day, channel=channel, country=country.name,session=session)
                         except Exception as err:
                             logging.error(f"continuing loop fpr but met error with {channel} - day {day}: {err}")
                             continue

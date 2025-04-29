@@ -6,6 +6,7 @@ import json
 from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime, EPOCH__5MIN_MARGIN, EPOCH__1MIN_MARGIN, get_timestamp_from_yyyymmdd,format_hour_minute
 from quotaclimat.data_processing.mediatree.channel_program_data import channels_programs
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
+from quotaclimat.data_processing.mediatree.i8n.country import *
 
 def generate_program_id(channel_name, weekday, program_name, program_grid_start) -> str:
     data_str = f"{channel_name}-{weekday}-{program_name}-{program_grid_start}"
@@ -13,25 +14,28 @@ def generate_program_id(channel_name, weekday, program_name, program_grid_start)
     logging.debug(f"adding for {data_str} pk {pk}")
     return pk
 
-def get_programs():
+def get_programs(country: CountryMediaTree = FRANCE):
     logging.debug("Getting program tv/radio...")
     try:
-        logging.info(f"Reading channels_programs")
-        df_programs = pd.DataFrame(channels_programs)
+        logging.debug(f"Reading channels_programs of {country}")
+        if country.programs is not None:
+            df_programs = pd.DataFrame(country.programs)
 
-        df_programs[['start', 'end', 'program_grid_start', 'program_grid_end', 'program_grid_start_str']] = df_programs.apply(lambda x: pd.Series({
-            'start': format_hour_minute(x['start']),
-            'end': format_hour_minute(x['end']),
-            'program_grid_start': get_timestamp_from_yyyymmdd(x['program_grid_start']),
-            'program_grid_end': get_timestamp_from_yyyymmdd(x['program_grid_end']),
-            'program_grid_start_str': x['program_grid_start']
-        }), axis=1)
-
+            df_programs[['start', 'end', 'program_grid_start', 'program_grid_end', 'program_grid_start_str']] = df_programs.apply(lambda x: pd.Series({
+                'start': format_hour_minute(x['start']),
+                'end': format_hour_minute(x['end']),
+                'program_grid_start': get_timestamp_from_yyyymmdd(x['program_grid_start']),
+                'program_grid_end': get_timestamp_from_yyyymmdd(x['program_grid_end']),
+                'program_grid_start_str': x['program_grid_start']
+            }), axis=1)
+            return df_programs
+        else:
+            logging.warning(f"Programs is empty for {country}")
+            return None
     except (Exception) as error:
         logging.error(f"Could not read channel_program_data.py {error}")
         raise Exception
-    
-    return df_programs
+
 
 def add_channel_program(df: pd.DataFrame): 
     logging.info("Adding channel program")
@@ -161,7 +165,7 @@ def process_subtitle(row, df_program):
                                                                                 )
         row['channel_program'] = str(channel_program)
         row['channel_program_type'] = str(channel_program_type)
-        row['program_metadata_id'] = str(id)
+        row['program_metadata_id'] = id
         return row
 
 def merge_program_subtitle(df_subtitle: pd.DataFrame, df_program: pd.DataFrame):
@@ -174,7 +178,7 @@ def set_day_with_hour(programs_of_a_day, day: datetime):
     programs_of_a_day['end'] = programs_of_a_day['end'].apply(lambda dt: dt.replace(year=day.year, month=day.month, day=day.day))
     return programs_of_a_day
 
-def get_programs_for_this_day(day: datetime, channel_name: str, df_program: pd.DataFrame):
+def get_programs_for_this_day(day: datetime, channel_name: str, df_program: pd.DataFrame, timezone = FRANCE.timezone):
     logging.debug(f"get_programs_for_this_day {day} {channel_name}")
     start_time = pd.Timestamp(day)
 
@@ -182,72 +186,35 @@ def get_programs_for_this_day(day: datetime, channel_name: str, df_program: pd.D
     logging.debug(f"programs_of_a_day {programs_of_a_day}")
     programs_of_a_day = set_day_with_hour(programs_of_a_day, day)
     logging.debug(f"after programs_of_a_day set_day_with_hour {programs_of_a_day}")
-    programs_of_a_day[['start', 'end']] = programs_of_a_day.apply(lambda row: pd.Series({
-        'start': get_epoch_from_datetime(row['start'].tz_localize("Europe/Paris")),
-        'end': get_epoch_from_datetime(row['end'].tz_localize("Europe/Paris"))
-    }), axis=1)
-    logging.info(f"Program of {channel_name} : {programs_of_a_day}")
-    return programs_of_a_day
 
-def get_channel_title_for_name(channel_name: str) -> str:
-    match channel_name:  
-        case "tf1":
-            return "TF1"
-        case "france2":
-            return "France 2"
-        case "fr3-idf":
-            return "France 3-idf"
-        case "m6":
-            return "M6"
-        case "arte":
-            return "Arte"
-        case "d8":
-            return "C8"
-        case "bfmtv":
-            return "BFM TV"
-        case "lci":
-            return "LCI"
-        case "franceinfotv":
-            return "France Info TV"
-        case "itele":
-            return "CNews"
-        case "europe1":
-            return "Europe 1"
-        case "france-culture":
-            return "France Culture"
-        case "france-inter":
-            return "France Inter"
-        case "sud-radio":
-            return "Sud Radio"
-        case "rmc":
-            return "RMC"
-        case "rtl":
-            return "RTL"
-        case "france24":
-            return "France 24"
-        case "france-info":
-            return "FranceinfoRadio"
-        case "rfi":
-            return "RFI"
-        case _:
-            logging.error(f"Channel_name unknown {channel_name}")
-            return ""
-
+    if programs_of_a_day.empty:
+        logging.warning(f"No programs found for {channel_name} on {day}")
+        return None
+    else:
+        programs_of_a_day[['start', 'end']] = programs_of_a_day.apply(lambda row: pd.Series({
+            'start': get_epoch_from_datetime(row['start'].tz_localize(timezone)),
+            'end': get_epoch_from_datetime(row['end'].tz_localize(timezone))
+        }), axis=1)
+        logging.info(f"Program of {channel_name} : {programs_of_a_day}")
+        return programs_of_a_day
 
 def apply_update_program(row, df_programs):
     return get_a_program_with_start_timestamp(df_program=df_programs, start_time=row['start'], channel_name=row['channel_name'])
 
 def update_programs_and_filter_out_of_scope_programs_from_df(df: pd.DataFrame, df_programs: pd.DataFrame) -> pd.DataFrame :
     try:
-        df[['channel_program', 'channel_program_type', 'program_metadata_id']] = df.apply(
-            lambda row: apply_update_program(row, df_programs),
-            axis=1,
-            result_type='expand'
-        )
-        
-        logging.debug("drop out of perimeters rows")
-        df = df.dropna(subset=['channel_program'], how='any') # any is for None values
-        df.drop(columns=['id'], inplace=True, errors='ignore') # as replaced by program_metadata_id
+        if df_programs is not None:
+            df[['channel_program', 'channel_program_type', 'program_metadata_id']] = df.apply(
+                lambda row: apply_update_program(row, df_programs),
+                axis=1,
+                result_type='expand'
+            )
+            
+            logging.debug("drop out of perimeters rows")
+            df = df.dropna(subset=['channel_program'], how='any') # any is for None values
+            df.drop(columns=['id'], inplace=True, errors='ignore') # as replaced by program_metadata_id
+        else: 
+            logging.info(f"Not updating programs because df is none")
         return df
     except Exception as err:
         logging.error(f"Could not update_programs_and_filter_out_of_scope_programs_from_df {err}")

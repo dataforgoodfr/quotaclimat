@@ -12,6 +12,7 @@ from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.channel_program import *
 from quotaclimat.data_processing.mediatree.api_import import *
 from quotaclimat.data_processing.mediatree.s3.s3_utils import *
+from quotaclimat.data_processing.mediatree.i8n.country import *
 
 import shutil
 from typing import List, Optional
@@ -68,7 +69,8 @@ def get_param_api(token, type_sub, start_epoch, channel, end_epoch):
     }
 
 
-def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", channel_program_type = "", program_metadata_id = None) -> Optional[pd.DataFrame]:
+def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", channel_program_type = ""
+                           , program_metadata_id = None, country: CountryMediaTree = FRANCE) -> Optional[pd.DataFrame]:
     with sentry_sdk.start_transaction(op="task", name="parse_reponse_subtitle"):
         total_results = parse_total_results(response_sub)
         logging.getLogger("modin.logging.default").setLevel(logging.WARNING)
@@ -87,7 +89,7 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             pd.set_option('display.max_columns', None)
             logging.debug("setting timestamp")
 
-            timezone = 'Europe/Paris'
+            timezone = country.timezone
             new_df['timestamp'] = new_df.apply(lambda x: pd.to_datetime(x['start'], unit='s',utc=True).tz_convert(timezone), axis=1)
             logging.debug("timestamp was set")
 
@@ -103,18 +105,19 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             )
 
             logging.debug("setting channel_title")
-            new_df['channel_title'] = new_df.apply(lambda x: get_channel_title_for_name(x['channel_name']), axis=1)
-
+            new_df['channel_title'] = new_df.apply(lambda x: get_channel_title_for_name(x['channel_name'], country=country), axis=1)
+            
             logging.debug(f"setting program {channel_program}")
             # weird error if not using this way: (ValueError) format number 1 of "20h30 le samedi" is not recognized
             new_df['channel_program'] = new_df.apply(lambda x: channel_program, axis=1)
             new_df['channel_program_type'] = new_df.apply(lambda x: channel_program_type, axis=1)
             new_df['program_metadata_id'] = new_df.apply(lambda x: program_metadata_id, axis=1)
+            
             logging.debug("programs were set")
-           
+            new_df['country'] = new_df.apply(lambda x: country.name, axis=1)
             return new_df
         else:
-            logging.warning("No result (total_results = 0) for this channel")
+            logging.warning(f"No result (total_results = 0) for this channel {channel} - {channel_program}")
             return None
 
 def parse_raw_json(response):
@@ -149,11 +152,11 @@ def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch
         raise Exception
     
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
-def get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type, program_metadata_id):
+def get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type, program_metadata_id, country: CountryMediaTree = FRANCE):
     try:
         response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch)
 
-        return parse_reponse_subtitle(response_sub, channel, channel_program, channel_program_type, program_metadata_id)
+        return parse_reponse_subtitle(response_sub, channel, channel_program, channel_program_type, program_metadata_id, country=country)
     except Exception as err:
         logging.error("Retry - get_df_api:(%s) %s" % (type(err).__name__, err))
         raise Exception
@@ -164,12 +167,20 @@ def refresh_token(token, date):
         return get_auth_token(password=password, user_name=USER)
     else:
         return token
-    
-def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client):
+
+def get_partition_s3(country: CountryMediaTree = FRANCE) -> list[str]:
+    if country.code != FRANCE.code:
+        partition_cols = ['country','year', 'month', 'day', 'channel']
+    else:
+        partition_cols = ['year', 'month', 'day', 'channel'] # legacy for france
+
+    return partition_cols
+
+def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, country: CountryMediaTree = FRANCE):
     logging.info(f"Saving DF with {len(df)} elements to S3 for {date} and channel {channel}")
 
     # to create partitions
-    object_key = get_bucket_key(date, channel)
+    object_key = get_bucket_key(date=date, channel=channel, country=country)
     logging.debug(f"Uploading partition: {object_key}")
 
     try:
@@ -178,15 +189,19 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client):
         df['month'] = date.month
         df['day'] = date.day
         df['channel'] = channel
+        df['country'] = country.name
 
         df = df._to_pandas() # collect data accross ray workers to avoid multiple subfolders
         based_path = "s3/parquet"
+
+        partition_cols = get_partition_s3(country)
+       
         df.to_parquet(based_path,
                        compression='gzip'
-                       ,partition_cols=['year', 'month', 'day', 'channel'])
+                       ,partition_cols=partition_cols)
 
         #saving full_path folder parquet to s3
-        s3_path = f"{get_bucket_key_folder(date, channel)}"
+        s3_path = f"{get_bucket_key_folder(date, channel, country=country)}"
         local_folder = f"{based_path}/{s3_path}"
         upload_folder_to_s3(local_folder, BUCKET_NAME, s3_path,s3_client=s3_client)
         
@@ -203,46 +218,58 @@ async def get_and_save_api_data(exit_event):
             type_sub = 's2t'
             start_date = int(os.environ.get("START_DATE", 0))
             number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 7))
-            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
-            df_programs = get_programs()
-            channels = get_channels()
-            
-            day_range = get_date_range(start_date_to_query, end_date, number_of_previous_days)
-            logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
-            for day in day_range:
-                token = refresh_token(token, day)
-                
-                for channel in channels:
-                    df_res = pd.DataFrame()
+            country_code: str = os.environ.get("COUNTRY", FRANCE_CODE)
+            logging.info(f"Country used is (default {FRANCE_CODE}) : {country_code}")
+            countries = get_countries_array(country_code=country_code, no_belgium=True)
+
+            for country in countries:
+                logging.info(f"Country : {country}")
+                df_programs = get_programs(country)
+                channels = country.channels
+                timezone = country.timezone
+                (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, \
+                                                                                            minus_days=number_of_previous_days,\
+                                                                                            timezone=country.timezone)
+
+                day_range: pd.DatetimeIndex = get_date_range(start_date_to_query, end_date, number_of_previous_days, country=country)
+                logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
+                for day in day_range:
+                    token = refresh_token(token, day)
                     
-                    # if object already exists, skip
-                    if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client):
-                        try:
-                            programs_for_this_day = get_programs_for_this_day(day.tz_localize("Europe/Paris"), channel, df_programs)
+                    for channel in channels:
+                        df_res = pd.DataFrame()
+                        
+                        # if object already exists, skip
+                        if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client, country=country):
+                            try:
+                                programs_for_this_day = get_programs_for_this_day(day.tz_localize(timezone), channel, df_programs, timezone=timezone)
+                                if programs_for_this_day is None:
+                                    logging.info(f"No program for {day} and {channel}, skipping")
+                                    continue
 
-                            for program in programs_for_this_day.itertuples(index=False):
-                                start_epoch = program.start
-                                end_epoch = program.end
-                                channel_program = str(program.program_name)
-                                channel_program_type = str(program.program_type)
-                                program_metadata_id = str(program.id)
-                                logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
-                                df = get_df_api(token, type_sub, start_epoch, channel, end_epoch, \
-                                                channel_program, channel_program_type,program_metadata_id=program_metadata_id)
+                                for program in programs_for_this_day.itertuples(index=False):
+                                    start_epoch = program.start
+                                    end_epoch = program.end
+                                    channel_program = str(program.program_name)
+                                    channel_program_type = str(program.program_type)
+                                    program_metadata_id = program.id
+                                    logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
+                                    df = get_df_api(token, type_sub, start_epoch, channel, end_epoch, \
+                                                    channel_program, channel_program_type,program_metadata_id=program_metadata_id, country=country)
 
-                                if(df is not None):
-                                    df_res = pd.concat([df_res, df ], ignore_index=True)
-                                else:
-                                    logging.info("Nothing to extract")
+                                    if(df is not None):
+                                        df_res = pd.concat([df_res, df ], ignore_index=True)
+                                    else:
+                                        logging.info(f"Nothing to extract for {channel} {channel_program} - {start_epoch} - {end_epoch}")
 
-                            # save to S3
-                            save_to_s3(df_res, channel, day, s3_client=s3_client)
-                            
-                        except Exception as err:
-                            logging.error(f"continuing loop but met error : {err}")
-                            continue
-                    else:
-                        logging.info(f"Object already exists for {day} and {channel}, skipping")
+                                # save to S3
+                                save_to_s3(df_res, channel, day, s3_client=s3_client, country=country)
+                                
+                            except Exception as err:
+                                logging.error(f"continuing loop but met error : {err}")
+                                continue
+                        else:
+                            logging.info(f"Object already exists for {day} and {channel}, skipping")
             exit_event.set()
         except Exception as err:
             logging.fatal("get_and_save_api_data (%s) %s" % (type(err).__name__, err))

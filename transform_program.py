@@ -6,7 +6,9 @@ import sys
 import logging
 from quotaclimat.data_processing.mediatree.channel_program_data import channels_programs
 from quotaclimat.data_processing.mediatree.channel_program import generate_program_id
-
+from quotaclimat.data_processing.mediatree.i8n.germany.channel_program  import channels_programs_germany
+from quotaclimat.data_processing.mediatree.i8n.brazil.channel_program import channels_programs_brazil
+from quotaclimat.data_processing.mediatree.i8n.country import *
 logging.basicConfig(level = logging.INFO)
 
 # Function to calculate duration in minutes between two time strings
@@ -20,128 +22,236 @@ def calculate_duration(start_time, end_time):
 
 output_file_path = "postgres/program_metadata.json"
 
-# Detailed information for each channel
+
 channel_mapping = {
-    "bfmtv": {
-        "title": "BFM TV",
+    # 🇫🇷 France
+    "tf1": {
+        "title": "TF1",
         "public": False,
-        "infocontinue": True
-        ,"radio": False
-    },
-    "d8": {
-        "title": "C8",
-        "public": False,
-        "infocontinue": False
-        ,"radio": False
-    },
-    "europe1": {
-        "title": "Europe 1",
-        "public": False,
-        "infocontinue": False
-        ,"radio": True
-    },
-    "fr3-idf": {
-        "title": "France 3-idf",
-        "public": True,
-        "infocontinue": False
-        ,"radio": False
-    },
-    "france-culture": {
-        "title": "France Culture",
-        "public": True,
-        "infocontinue": False
-        ,"radio": True
-    },
-    "france-info": {
-        "title": "FranceinfoRadio",
-        "public": True,
-        "infocontinue": True
-        ,"radio": True
-    },
-    "france-inter": {
-        "title": "France Inter",
-        "public": True,
-        "infocontinue": False
-        ,"radio": True
+        "infocontinue": False,
+        "radio": False,
+        "country": FRANCE.name
     },
     "france2": {
         "title": "France 2",
         "public": True,
-        "infocontinue": False
-        ,"radio": False
+        "infocontinue": False,
+        "radio": False,
+        "country": FRANCE.name
     },
-    "france24": {
-        "title": "France 24",
+    "fr3-idf": {
+        "title": "France 3-idf",
         "public": True,
-        "infocontinue": True
-        ,"radio": False
-    },
-    "franceinfotv": {
-        "title": "France Info TV",
-        "public": True,
-        "infocontinue": True
-        ,"radio": False
-    },
-    "itele": {
-        "title": "CNews",
-        "public": False,
-        "infocontinue": True
-        ,"radio": False
-    },
-    "lci": {
-        "title": "LCI",
-        "public": False,
-        "infocontinue": True
-        ,"radio": False
+        "infocontinue": False,
+        "radio": False,
+        "country": FRANCE.name
     },
     "m6": {
         "title": "M6",
         "public": False,
-        "infocontinue": False
-        ,"radio": False
-    },
-    "rfi": {
-        "title": "RFI",
-        "public": True,
-        "infocontinue": False
-        ,"radio": True
-    },
-    "rmc": {
-        "title": "RMC",
-        "public": False,
-        "infocontinue": False
-        ,"radio": True
-    },
-    "rtl": {
-        "title": "RTL",
-        "public": False,
-        "infocontinue": False
-        ,"radio": True
-    },
-    "sud-radio": {
-        "title": "Sud Radio",
-        "public": False,
-        "infocontinue": False
-        ,"radio": True
-    },
-    "tf1": {
-        "title": "TF1",
-        "public": False,
-        "infocontinue": False
-        ,"radio": False
+        "infocontinue": False,
+        "radio": False,
+        "country": FRANCE.name
     },
     "arte": {
         "title": "Arte",
         "public": True,
-        "infocontinue": False
-        ,"radio": False
+        "infocontinue": False,
+        "radio": False,
+        "country": FRANCE.name
+    },
+    "d8": {
+        "title": "C8",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": FRANCE.name
+    },
+    "bfmtv": {
+        "title": "BFM TV",
+        "public": False,
+        "infocontinue": True,
+        "radio": False,
+        "country": FRANCE.name
+    },
+    "lci": {
+        "title": "LCI",
+        "public": False,
+        "infocontinue": True,
+        "radio": False,
+        "country": FRANCE.name
+    },
+    "franceinfotv": {
+        "title": "France Info TV",
+        "public": True,
+        "infocontinue": True,
+        "radio": False,
+        "country": FRANCE.name
+    },
+    "itele": {
+        "title": "CNews",
+        "public": False,
+        "infocontinue": True,
+        "radio": False,
+        "country": FRANCE.name
+    },
+    "europe1": {
+        "title": "Europe 1",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": FRANCE.name
+    },
+    "france-culture": {
+        "title": "France Culture",
+        "public": True,
+        "infocontinue": False,
+        "radio": True,
+        "country": FRANCE.name
+    },
+    "france-inter": {
+        "title": "France Inter",
+        "public": True,
+        "infocontinue": False,
+        "radio": True,
+        "country": FRANCE.name
+    },
+    "sud-radio": {
+        "title": "Sud Radio",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": FRANCE.name
+    },
+    "rmc": {
+        "title": "RMC",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": FRANCE.name
+    },
+    "rtl": {
+        "title": "RTL",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": FRANCE.name
+    },
+    "france24": {
+        "title": "France 24",
+        "public": True,
+        "infocontinue": True,
+        "radio": False,
+        "country": FRANCE.name
+    },
+    "france-info": {
+        "title": "FranceinfoRadio",
+        "public": True,
+        "infocontinue": True,
+        "radio": True,
+        "country": FRANCE.name
+    },
+    "rfi": {
+        "title": "RFI",
+        "public": True,
+        "infocontinue": False,
+        "radio": True,
+        "country": FRANCE.name
+    },
+
+    # 🇩🇪 Germany
+    "daserste": {
+        "title": "Das Erste",
+        "public": True,
+        "infocontinue": False,
+        "radio": False,
+        "country": GERMANY.name
+    },
+    "zdf-neo": {
+        "title": "ZDFneo",
+        "public": True,
+        "infocontinue": False,
+        "radio": False,
+        "country": GERMANY.name
+    },
+    "rtl-television": {
+        "title": "RTL",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": GERMANY.name
+    },
+    "sat1": {
+        "title": "Sat.1",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": GERMANY.name
+    },
+    "prosieben": {
+        "title": "ProSieben",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": GERMANY.name
+    },
+    "kabel-eins": {
+        "title": "Kabel Eins",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": GERMANY.name
+    },
+
+    # 🇧🇷 Brazil
+    "tvglobo": {
+        "title": "TV Globo",
+        "public": True,
+        "infocontinue": False,
+        "radio": False,
+        "country": BRAZIL.name
+    },
+    "tvrecord": {
+        "title": "TV Record",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": BRAZIL.name
+    },
+    "sbt": {
+        "title": "SBT",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": BRAZIL.name
+    },
+    "redebandeirantes": {
+        "title": "Band",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": BRAZIL.name
+    },
+    "jovempan": {
+        "title": "Jovem Pan",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": BRAZIL.name
+    },
+    "cnnbrasil": {
+        "title": "CNN Brasil",
+        "public": False,
+        "infocontinue": True,
+        "radio": False,
+        "country": BRAZIL.name
     }
 }
-
-
 programs = []
 
+channels_programs = channels_programs + channels_programs_brazil + channels_programs_germany
 for program_data in channels_programs:
+    
     start_time = program_data['start']
     end_time = program_data['end']
     duration_minutes = calculate_duration(start_time, end_time)
@@ -154,11 +264,13 @@ for program_data in channels_programs:
 
     # Map channel_name to channel_title
     channel_name = program_data['channel_name']
+    print(f"program channel_name {program_data['channel_name']} - channel_mapping[channel_name]['title']")
     if channel_name in channel_mapping:
         program_data['channel_title'] = channel_mapping[channel_name]['title']
         program_data['public'] = channel_mapping[channel_name]['public']
         program_data['infocontinue'] = channel_mapping[channel_name]['infocontinue']
         program_data['radio'] = channel_mapping[channel_name]['radio']
+        program_data['country'] = channel_mapping[channel_name]['country']
     else:
         logging.error(f"Unknown channel_name {channel_name}")
         program_data['channel_title'] = channel_name  # Default to channel_name if mapping not found

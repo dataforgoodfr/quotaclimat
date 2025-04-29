@@ -106,3 +106,24 @@ seeds:
         post-hook:
           - "ALTER TABLE dictionary ALTER COLUMN categories TYPE TEXT[] USING string_to_array(trim(both '{}' from categories), ',')"
           - "ALTER TABLE dictionary ALTER COLUMN themes TYPE TEXT[] USING string_to_array(trim(both '{}' from themes), ',')"
+
+    time_monitored:
+        table: time_monitored
+        enabled: "{{ target.name != 'prod' }}" # safe guard
+        pre-hook:
+          - >
+            {% if target.name != 'prod' %}
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'time_monitored'
+              ) THEN
+                EXECUTE 'DELETE FROM public.time_monitored';
+              END IF;
+            END
+            $$;
+            {% else %}
+            -- safeguard: skip DELETE in prod
+            {% endif %}

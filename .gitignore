@@ -2,6 +2,8 @@ secrets/pwd_api.txt
 secrets/username_api.txt
 secrets/*
 s3/*
+i8n/mediatree_output/
+i8n/csa-belge/
 documents-experts/*
 llm/
 cc-bio.json

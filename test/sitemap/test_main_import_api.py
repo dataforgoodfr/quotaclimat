@@ -1,5 +1,7 @@
 import logging
 
+from modin.pandas.dataframe import DataFrame
+
 from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 
 from postgres.insert_data import (clean_data,
@@ -110,5 +112,29 @@ def test_third_row_api_import():
 def test_get_api_stop():
         conn = connect_to_db()
         session = get_db_session(conn)
-        stopwords = get_stop_words(session)      
+        stopwords = get_stop_words(session, country=None)    
         assert type(stopwords[0]) == str
+
+def test_transform_raw_keywords_srt_to_mediatree():
+    conn = connect_to_db()
+
+    channel = "LAUNE"
+    primary_key = "df0d86983f0c4ed074800f5cdabbd577671b90845fb6208a5de1ae3802fb10e0"
+    df: DataFrame= pd.read_parquet(path=f"i8n/mediatree_output/year=2024/month=10/day=1/channel={channel}")
+    df_programs = get_programs()
+    output = transform_raw_keywords(df, df_programs=df_programs,country=BELGIUM)
+
+    output_dict = output.to_dict(orient='records')
+    filtered = output[output["id"] == primary_key]
+    row_dict = filtered.iloc[0].to_dict()
+    assert row_dict["country"] == "belgium"
+    assert row_dict["channel_name"] == channel
+
+    assert len(output) == 29
+    save_to_pg(df=output,conn=conn, table=keywords_table)
+    specific_keyword = get_keyword(primary_key)
+    assert set(specific_keyword.theme) == set([
+        'changement_climatique_causes_indirectes',
+    ])
+
+    assert specific_keyword.number_of_keywords == 0

@@ -80,7 +80,7 @@ jobs:
         run: |
           set -o pipefail
           source .venv/bin/activate
-          poetry run pytest -k 'test_update_pg_keywords' test/
+          poetry run pytest -vv -k 'test_update_pg_keywords' test/
         env:
           ENV: dev
           POSTGRES_USER: user
@@ -131,7 +131,7 @@ jobs:
         run: |
           set -o pipefail
           source .venv/bin/activate
-          poetry run pytest -k 'stop_word' test/
+          poetry run pytest -vv -k 'stop_word' test/
         env:
           ENV: dev
           POSTGRES_USER: user
@@ -239,7 +239,7 @@ jobs:
         run: |
           set -o pipefail
           source .venv/bin/activate
-          poetry run pytest -k 'not test_update_pg_keywords and not stop_word' test/ --junitxml=pytest.xml \
+          poetry run pytest -vv -k 'not test_update_pg_keywords and not stop_word' test/ --junitxml=pytest.xml \
            --cov-report=term-missing:skip-covered \
            --cov=quotaclimat --cov=postgres test/ | \
            tee pytest-coverage.txt

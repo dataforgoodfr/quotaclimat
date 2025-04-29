@@ -6,6 +6,7 @@ from postgres.schemas.models import keywords_table
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from typing import List, Optional
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
+from quotaclimat.data_processing.mediatree.i8n.country import *
 import re
 import swifter
 from itertools import groupby
@@ -21,27 +22,47 @@ dask.config.set({'dataframe.query-planning': True})
 
 indirectes = 'indirectes'
 MEDIATREE_TRANSCRIPTION_PROBLEM = "<unk> "
-DEFAULT_WINDOW_DURATION = 20
+DEFAULT_WINDOW_DURATION = int(os.environ.get("DEFAULT_WINDOW_DURATION", 20))
+
+
+def get_keyword_with_timestamp(theme: str, category: str, keyword : str, cts_in_ms: int):
+    return {
+            "keyword" : keyword,
+            "timestamp" : cts_in_ms,
+            "theme" : theme,
+            "category": category
+    }
+
+def find_matching_subtitle(subtitles, keyword):
+    for item in subtitles:
+        logging.debug(f"Testing {item} with {keyword} full subtitle is {subtitles}")
+        if is_word_in_sentence(keyword, item.get("text", "")):
+            logging.debug(f"match found {item} with {keyword}")
+            return item
+
+    logging.warning(f"SRT match not found - default timestamp is now 0, possible error inside srt which is acceptable - {keyword} - {subtitles}")
+    return None
 
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], theme: str) -> List[dict]:
     result = []
 
-    logging.debug(f"Looking for timecode for {keywords}")
+    logging.debug(f"Looking for timecode for {keywords} inside subtitle_duration {subtitle_duration}")
     for multiple_keyword in keywords:
         category = multiple_keyword["category"]
         all_keywords = multiple_keyword["keyword"].split() # case with multiple words such as 'economie circulaire'
-        match = next((item for item in subtitle_duration if is_word_in_sentence(all_keywords[0], item.get('text'))), None)  
-        logging.debug(f"match found {match} with {all_keywords[0].lower()}")     
-        if match is not None:
-            logging.debug(f'Result added due to this match {match} based on {all_keywords[0]}')
-            result.append(
-                {
-                    "keyword" :multiple_keyword["keyword"].lower(),
-                    "timestamp" : match['cts_in_ms'],
-                    "theme" : theme,
-                    "category": category
-                })
 
+        match = match = find_matching_subtitle(subtitle_duration, all_keywords[0])
+
+        if match is not None:
+            cts_in_ms = match['cts_in_ms']
+        else:
+            cts_in_ms = 0
+
+        result.append(get_keyword_with_timestamp(theme=theme,
+                                                 category=category, 
+                                                 keyword=multiple_keyword["keyword"].lower(),
+                                                 cts_in_ms=cts_in_ms)
+        )
     logging.debug(f"Timecode found {result}")
     return result
 
@@ -116,50 +137,66 @@ def replace_word_with_context(text: str, word = "groupe verlaine", length_to_rem
     
     return result
 
-def remove_stopwords(plaintext: str, stopwords: list[str]) -> str:
+def remove_stopwords(plaintext: str, stopwords: list[str], country = FRANCE) -> str:
     logging.debug(f"Removing stopwords {plaintext}")
 
     if len(stopwords) == 0:
-        logging.warning("Stop words list empty")
+        if country == FRANCE:
+            logging.warning(f"Stop words list empty for {country.name}")
         return plaintext
-    
-    if "groupe verlaine" in plaintext:
-        logging.info(f"special groupe verlaine case")
-        plaintext = replace_word_with_context(plaintext, word="groupe verlaine")
 
-    if "industries point com" in plaintext:
-        logging.info(f"special industries point com case")
-        plaintext = replace_word_with_context(plaintext, word="industries point com", length_to_remove=150)
+    # TODO: should be remove and only rely on stop words list, was added due to S2T issues
+    if country == FRANCE:
+        if "groupe verlaine" in plaintext:
+            logging.info(f"special groupe verlaine case")
+            plaintext = replace_word_with_context(plaintext, word="groupe verlaine")
 
-    if "fleuron industrie" in plaintext:
-        logging.info(f"special fleuron industrie com case")
-        plaintext = replace_word_with_context(plaintext, word="fleuron industrie", length_to_remove=150)
+        if "industries point com" in plaintext:
+            logging.info(f"special industries point com case")
+            plaintext = replace_word_with_context(plaintext, word="industries point com", length_to_remove=150)
+
+        if "fleuron industrie" in plaintext:
+            logging.info(f"special fleuron industrie com case")
+            plaintext = replace_word_with_context(plaintext, word="fleuron industrie", length_to_remove=150)
 
     for word in stopwords:
         plaintext = plaintext.replace(word, '')
     
     return plaintext
 
-def get_detected_keywords(plaitext_without_stopwords: str, keywords_dict):
+def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
+    return {
+            "keyword": keyword_dict["keyword"],
+            "category": keyword_dict["category"]
+    }
+
+def get_detected_keywords(plaitext_without_stopwords: str, keywords_dict, country=FRANCE):
     matching_words = []
+
+    logging.debug(f"Keeping only {country.language} keywords...")
+    keywords_dict = list(filter(lambda x: x["language"] == country.language, keywords_dict))
+    logging.debug(f"Got {len(keywords_dict)} keywords")
     for keyword_dict in keywords_dict:
         if is_word_in_sentence(keyword_dict["keyword"], plaitext_without_stopwords):
-            matching_words.append({"keyword": keyword_dict["keyword"], "category": keyword_dict["category"]})
+            matching_words.append(get_keyword_matching_json(keyword_dict, country=country))
 
     return matching_words
 
 @sentry_sdk.trace
-def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime, stop_words: List[str] = []):
+def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime,
+                                stop_words: List[str] = [], country=FRANCE):
     keywords_with_timestamp = []
-    number_of_elements_in_array = 28
+    number_of_elements_in_array = 29
     default_window_in_seconds = DEFAULT_WINDOW_DURATION
     plaintext = replace_word_with_context(text=plaintext, word=MEDIATREE_TRANSCRIPTION_PROBLEM, length_to_remove=0)
-    plaitext_without_stopwords = remove_stopwords(plaintext=plaintext, stopwords=stop_words)
+    plaitext_without_stopwords = remove_stopwords(plaintext=plaintext, stopwords=stop_words, country=country)
     logging.debug(f"display datetime start {start}")
 
+    logging.debug(f"Keeping only {country.language} keywords...")
+    
     for theme, keywords_dict in THEME_KEYWORDS.items():
         logging.debug(f"searching {theme} for {keywords_dict}")
-        matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict)
+        matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict, country=country)
        
         if matching_words:
             logging.debug(f"theme found : {theme} with word {matching_words}")
@@ -264,6 +301,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             ,number_of_biodiversite_causes_no_hrfp
             ,number_of_biodiversite_consequences_no_hrfp
             ,number_of_biodiversite_solutions_no_hrfp
+            ,country.name
         ]
     else:
         logging.debug("Empty keywords")
@@ -302,7 +340,7 @@ def log_min_max_date(df):
     logging.info(f"Date min : {min_date}, max : {max_date}")
 
 
-def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = []) -> pd.DataFrame :
+def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], country=FRANCE) -> pd.DataFrame :
         with sentry_sdk.start_transaction(op="task", name="filter_and_tag_by_theme"):
             count_before_filtering = len(df)
             logging.info(f"{count_before_filtering} subtitles to filter by keywords and tag with themes")
@@ -339,10 +377,11 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = []) -> pd.
                  ,"number_of_biodiversite_causes_no_hrfp"
                  ,"number_of_biodiversite_consequences_no_hrfp"
                  ,"number_of_biodiversite_solutions_no_hrfp"
+                 ,'country'
                 ]
             ] = df[['plaintext','srt', 'start']]\
                 .swifter.apply(\
-                    lambda row: get_themes_keywords_duration(*row, stop_words=stop_words),\
+                    lambda row: get_themes_keywords_duration(*row, stop_words=stop_words, country=country),\
                         axis=1,
                         result_type='expand'
                 )
@@ -355,7 +394,6 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = []) -> pd.
 
 def add_primary_key(row):
     try:
-
         if str(row['start'].tzinfo) == 'Europe/Paris':
             # legacy
             logging.info("PK must be UTC - Timezone is Europe/Paris, converting to UTC")

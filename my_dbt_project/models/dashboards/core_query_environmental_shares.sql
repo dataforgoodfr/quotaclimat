@@ -253,6 +253,7 @@ FROM
               ) AS timestamp
             )
           )
+          WHERE "public"."keywords"."country" = 'france'
       ) AS "source"
    
 GROUP BY

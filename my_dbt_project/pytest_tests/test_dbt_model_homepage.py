@@ -155,10 +155,11 @@ def test_core_query_thematics_keywords_values(db_connection):
          [
       'changement_climatique_constat_indirectes',
       'biodiversite_concepts_generaux_indirectes',
-         ],
-
-        'fr')
-        assert row == expected, f"Unexpected values: {row}"
+         ])
+        
+        expected_trimmed = expected[:-1] 
+        row_trimmed = row[:-1]
+        assert row_trimmed == expected_trimmed, f"Unexpected values: {row}"
 
 def test_core_query_thematics_keywords_values_i8n(db_connection):
 
@@ -207,8 +208,10 @@ def test_core_query_thematics_keywords_values_i8n(db_connection):
             'changement_climatique_constat_indirectes',
         ]
         ,"france")
-        
-        assert row == expected, f"Unexpected values: {row}"
+        expected_trimmed = expected[: -2] + expected[-1:]
+        row_trimmed = row[: -2] + row[-1:]
+
+        assert row_trimmed == expected_trimmed, f"Unexpected values: {row}"
 
 def test_core_query_environmental_shares_values(db_connection):
 

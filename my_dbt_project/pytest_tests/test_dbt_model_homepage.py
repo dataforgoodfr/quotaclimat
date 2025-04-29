@@ -152,11 +152,12 @@ def test_core_query_thematics_keywords_values(db_connection):
         False,
         True,
         None,
-        [
-            'biodiversite_concepts_generaux_indirectes',
-            'changement_climatique_constat_indirectes',
-        ])
-        
+         [
+      'changement_climatique_constat_indirectes',
+      'biodiversite_concepts_generaux_indirectes',
+         ],
+
+        'fr')
         assert row == expected, f"Unexpected values: {row}"
 
 def test_core_query_thematics_keywords_values_i8n(db_connection):

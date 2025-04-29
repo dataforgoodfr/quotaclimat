@@ -120,11 +120,15 @@ COUNTRIES = {
 
 ALL_COUNTRIES_CODE : AllCode = "all"
 # belgium not included in mediatree
-ALL_COUNTRIES = [FRANCE, BRAZIL, GERMANY]
+ALL_COUNTRIES = [GERMANY, FRANCE, BRAZIL, BELGIUM]
 
-def get_all_countries():
+def get_all_countries(no_belgium = False):
     logging.info(f"Getting all countries : {ALL_COUNTRIES}")
-    return ALL_COUNTRIES
+    if no_belgium:
+        logging.info(f"Removing belgium from all countries")
+        return [country for country in ALL_COUNTRIES if country.code != BELGIUM_CODE]
+    else:
+        return ALL_COUNTRIES
 
 def validate_country_code(code: str) -> CountryCode:
     """Validate that a string is a valid country code."""
@@ -239,11 +243,11 @@ def get_channel_title_for_name(channel_name: str, country: CountryMediaTree = FR
         return ""
 
 
-def get_countries_array(country_code: str):
+def get_countries_array(country_code: str, no_belgium = True):
     if validate_country_code(country_code):
         if country_code == ALL_COUNTRIES_CODE:
-            logging.info(f"Getting all countries {country_code}")
-            countries = get_all_countries()
+            logging.info(f"Getting all countries {country_code} without belgium {no_belgium}")
+            countries = get_all_countries(no_belgium)
         else:
             logging.info(f"Getting one country only {country_code}")
             countries = [get_country_from_code(country_code = country_code)]

@@ -220,7 +220,7 @@ async def get_and_save_api_data(exit_event):
             number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 7))
             country_code: str = os.environ.get("COUNTRY", FRANCE_CODE)
             logging.info(f"Country used is (default {FRANCE_CODE}) : {country_code}")
-            countries = get_countries_array(country_code=country_code)
+            countries = get_countries_array(country_code=country_code, no_belgium=True)
 
             for country in countries:
                 logging.info(f"Country : {country}")

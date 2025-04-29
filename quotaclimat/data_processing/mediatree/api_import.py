@@ -138,7 +138,7 @@ async def get_and_save_s3_data_to_pg(exit_event):
             countries: List[CountryMediaTree] = get_countries_array(country_code=country_code)
 
             for country in countries:
-                logging.info(f"Getting info for country : {country}...")
+                logging.info(f"Getting info for country : {country.name}...")
 
                 # TODO : should we only trust data from S3 ?
                 df_programs = get_programs(country=country) # memory bumps ? should be lazy instead of being copied on each worker

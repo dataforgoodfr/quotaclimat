@@ -111,7 +111,7 @@ WITH grouped_data AS (
                   "public"."keywords"."channel_name" = "Program Metadata - Channel Name"."channel_name"
                 )
               
-    AND (
+                AND (
                   "public"."keywords"."channel_program" = "Program Metadata - Channel Name"."channel_program"
                 )
                 AND (
@@ -148,7 +148,7 @@ WITH grouped_data AS (
                     "Program Metadata - Channel Name"."program_grid_end" AS date
                   )
                 )
-            WHERE "public"."keywords"."country" = 'france'
+            WHERE "public"."keywords"."country" = 'france' AND  "Program Metadata - Channel Name"."country" = 'france'
             ) AS "source"
         
   GROUP BY

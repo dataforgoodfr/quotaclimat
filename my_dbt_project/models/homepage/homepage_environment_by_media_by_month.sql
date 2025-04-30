@@ -148,6 +148,7 @@ WITH grouped_data AS (
                     "Program Metadata - Channel Name"."program_grid_end" AS date
                   )
                 )
+            WHERE "public"."keywords"."country" = 'france'
             ) AS "source"
         
   GROUP BY

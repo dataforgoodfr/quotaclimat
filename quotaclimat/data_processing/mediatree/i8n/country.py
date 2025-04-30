@@ -80,7 +80,7 @@ FRANCE = CountryMediaTree(code=FRANCE_CODE,channels=FRANCE_CHANNELS, timezone=FR
 
 
 BELGIUM_CODE : BelgiumCode = "bel"
-BELGIUM_CHANNELS= ["CANALZ","RTL","LAUNE"]
+BELGIUM_CHANNELS= ["CANALZ","RTL","LAUNE","LN24","LATROIS"]
 BELGIUM_TZ = "Europe/Bruxelles"
 BELGIUM_LANGUAGE = "french" # TODO: flemish based on channel ?
 channels_programs_belgium = None # TODO

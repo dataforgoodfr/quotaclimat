@@ -337,8 +337,8 @@ async def main():
             
 
             country_code: str = os.environ.get("COUNTRY", FRANCE_CODE)
-            countries: CountryMediaTree = get_countries_array(country_code=country_code)[0]
-            logging.info(f"country: {country.name}")
+            countries: List[CountryMediaTree] = get_countries_array(country_code=country_code)
+            logging.info(f"country: {countries}")
 
             stop_word_context_total_length = int(os.environ.get("CONTEXT_TOTAL_LENGTH", 80))
             logging.info(f"Ad context total length (CONTEXT_TOTAL_LENGTH): {stop_word_context_total_length}")

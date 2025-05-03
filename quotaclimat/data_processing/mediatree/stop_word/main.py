@@ -76,13 +76,14 @@ def get_all_stop_word(session: Session, offset: int = 0, batch_size: int = 50000
 
     return session.execute(statement).fetchall()
 
-def save_append_stop_word(conn, stop_word_list: list):
+def save_append_stop_word(conn, stop_word_list: list, country = FRANCE):
     logging.info(f"Saving stop word {stop_word_list} list to the database")
     try:
         if len(stop_word_list) == 0:
             logging.warning("No stop word to save")
         else:
             stop_word_list_df = pd.DataFrame(stop_word_list)
+            stop_word_list_df["country"] = country.name
             # remove duplicates from df
             stop_word_list_df = stop_word_list_df.drop_duplicates(subset="context")
             save_to_pg(
@@ -303,7 +304,7 @@ async def manage_stop_word(exit_event = None, conn = None, duration: int = 7, fr
             # # stop_word_list = stop_word_list[stop_word_list["already_known"] == False]
 
             # save the stop word list to the database
-            save_append_stop_word(conn, stop_word_list=stop_word_list)
+            save_append_stop_word(conn, stop_word_list=stop_word_list, country=country)
             if exit_event is not None:
                 exit_event.set()
     except Exception as err:
@@ -333,10 +334,11 @@ async def main():
 
             number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 7))
             logging.info(f"Number of previous days (NUMBER_OF_PREVIOUS_DAYS): {number_of_previous_days}")
+            
 
             country_code: str = os.environ.get("COUNTRY", FRANCE_CODE)
             countries: List[CountryMediaTree] = get_countries_array(country_code=country_code)
-
+            logging.info(f"country: {countries[0].name} - ({country_code})")
 
             stop_word_context_total_length = int(os.environ.get("CONTEXT_TOTAL_LENGTH", 80))
             logging.info(f"Ad context total length (CONTEXT_TOTAL_LENGTH): {stop_word_context_total_length}")
@@ -346,12 +348,12 @@ async def main():
 
             from_date = os.environ.get("START_DATE", None)
             logging.info(f"Start date (START_DATE): {from_date}")
-            # Start batch job
+
             asyncio.create_task(manage_stop_word(exit_event=event_finish, conn=conn, duration=number_of_previous_days,\
                                                   from_date=from_date, \
                                                   min_number_of_repetition=min_number_of_repetition, \
                                                   stop_word_context_total_length = stop_word_context_total_length,
-                                                  country=country))
+                                                  countries=countries))
 
             # Wait for both tasks to complete
             await event_finish.wait()

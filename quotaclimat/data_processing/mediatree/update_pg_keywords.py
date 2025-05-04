@@ -99,7 +99,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     ,number_of_biodiversite_causes_no_hrfp \
                     ,number_of_biodiversite_consequences_no_hrfp \
                     ,number_of_biodiversite_solutions_no_hrfp \
-                    ,country = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words)
+                    ,country_name = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words)
                 except Exception as err:
                         logging.error(f"continuing loop but met error : {err}")
                         continue

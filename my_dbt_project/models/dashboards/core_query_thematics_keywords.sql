@@ -98,6 +98,7 @@ LEFT JOIN public.program_metadata pm ON k.channel_program = pm.channel_program
 
 WHERE
       LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
+      AND k."country" = 'france'
    
 GROUP BY
       pm.channel_title,

@@ -5,6 +5,9 @@ s3/*
 i8n/mediatree_output/
 i8n/csa-belge/
 documents-experts/*
+i8n/mediatree_output
+i8n/csa-belge
+
 llm/
 cc-bio.json
 *.xlsx

@@ -10,6 +10,7 @@ from quotaclimat.data_processing.mediatree.s3.s3_utils import upload_folder_to_s
 from zoneinfo import ZoneInfo
 
 # execute me with docker compose up testconsole -d / exec run bash
+# docker compose exec testconsole bash
 # /app/ cd i8n/
 # /app/i8n# poetry run python3 srt-to-mediatree-format.py
 
@@ -142,11 +143,14 @@ def create_mediatree_data_for_partition(windows_data):
         
         # Convert window_start to milliseconds for cts_in_ms
         base_timestamp_ms = window_start * 1000
-        
+        num_words = len(words)
+        window_duration_ms = 2 * 60 * 1000  # 2 minutes in milliseconds
+        word_duration_ms = window_duration_ms // num_words
+
         for i, word in enumerate(words):
             srt_entry = {
                 "duration_ms": 31,
-                "cts_in_ms": base_timestamp_ms + (i * 31),  # Each word is 31ms apart
+                "cts_in_ms": base_timestamp_ms + (i * word_duration_ms),
                 "text": word
             }
             srt_entries.append(srt_entry)

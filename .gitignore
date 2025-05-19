@@ -6,6 +6,8 @@ documents-experts/*
 i8n/mediatree_output
 i8n/csa-belge
 
+i8n/germany_big.parquet
+test/i8n
 llm/
 cc-bio.json
 *.xlsx

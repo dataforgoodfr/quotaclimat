@@ -1,5 +1,7 @@
 import logging
 
+from sqlalchemy import Engine
+
 from quotaclimat.data_processing.mediatree.stop_word.main import *
 from postgres.schemas.models import get_db_session, connect_to_db, drop_tables
 from quotaclimat.data_processing.mediatree.api_import_utils.db import *
@@ -14,7 +16,7 @@ session = get_db_session(conn)
 
 
 def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
-        conn = connect_to_db()
+        conn: Engine = connect_to_db()
         create_tables(conn)
         session = get_db_session(conn)
         start = pd.to_datetime("2025-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
@@ -43,10 +45,12 @@ def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
         "number_of_biodiversite_solutions_directes" : wrong_value,
         "channel_program_type": "to change",
         "channel_program":"to change"
+        ,"program_metadata_id":"336643dc7fa09ac7335a4ceba43270ed3f553be3383a9b3b6e3cced101f2a87a"
         ,"channel_title":"channel_title"
         ,"number_of_keywords_climat": wrong_value
         ,"number_of_keywords_biodiversite": wrong_value
         ,"number_of_keywords_ressources": wrong_value
+        ,"country" :"france"
         }])
 
         save_to_pg(df, keywords_table, conn)
@@ -57,6 +61,8 @@ def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
         assert expected_max_date.last_day_saved == keywordStats.last_day_saved
         assert keywordStats.number_of_previous_days_from_yesterday > 1
         delete_keywords_id(session, pk)
+        session.commit()
+        session.close()
 
 
 def test_get_delay_date():

@@ -1,5 +1,7 @@
 import logging
 
+from modin.pandas.dataframe import DataFrame
+
 from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 
 from postgres.insert_data import (clean_data,
@@ -18,7 +20,7 @@ import time as t
 
 
 def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
-#     create_tables()  
+    create_tables(conn)  
     empty_tables(get_db_session(conn), stop_word=False)
     logging.info(f"reading {json_file_path}")
     with open(json_file_path, 'r') as file:
@@ -48,8 +50,8 @@ def insert_stop_word(conn):
 
 def test_main_api_import():
         conn = connect_to_db()
-        drop_tables()
-        create_tables()
+        drop_tables(conn)
+        create_tables(conn)
         insert_stop_word(conn)
         len_df = insert_mediatree_json(conn, json_file_path="test/sitemap/light.json")
 
@@ -61,7 +63,7 @@ def test_main_api_import():
 def test_first_row_api_import():
         primary_key = "29d2b1f8267b206cb62e475b960de3247e835273f396af012f5ce21bf3056472"
         
-        specific_keyword = get_keyword(primary_key)
+        specific_keyword =  get_keyword(primary_key)
         logging.info(f"Getting {primary_key} :\n {specific_keyword}")
         assert set(specific_keyword.theme) == set([
               'biodiversite_concepts_generaux_indirectes',
@@ -94,6 +96,7 @@ def test_second_row_api_import():
 
 def test_third_row_api_import():
         primary_key = "32cb864fe56a4436151bcf78c385a7cc4226316e0563a298ac6988d1b8ee955b"
+
         specific_keyword = get_keyword(primary_key)
         assert set(specific_keyword.theme) == set([
         "biodiversite_solutions_indirectes",
@@ -109,5 +112,29 @@ def test_third_row_api_import():
 def test_get_api_stop():
         conn = connect_to_db()
         session = get_db_session(conn)
-        stopwords = get_stop_words(session)      
+        stopwords = get_stop_words(session, country=None)    
         assert type(stopwords[0]) == str
+
+def test_transform_raw_keywords_srt_to_mediatree():
+    conn = connect_to_db()
+
+    channel = "LAUNE"
+    primary_key = "df0d86983f0c4ed074800f5cdabbd577671b90845fb6208a5de1ae3802fb10e0"
+    df: DataFrame= pd.read_parquet(path=f"i8n/mediatree_output/year=2024/month=10/day=1/channel={channel}")
+    df_programs = get_programs()
+    output = transform_raw_keywords(df, df_programs=df_programs,country=BELGIUM)
+
+    output_dict = output.to_dict(orient='records')
+    filtered = output[output["id"] == primary_key]
+    row_dict = filtered.iloc[0].to_dict()
+    assert row_dict["country"] == "belgium"
+    assert row_dict["channel_name"] == channel
+
+    assert len(output) == 29
+    save_to_pg(df=output,conn=conn, table=keywords_table)
+    specific_keyword = get_keyword(primary_key)
+    assert set(specific_keyword.theme) == set([
+        'changement_climatique_causes_indirectes',
+    ])
+
+    assert specific_keyword.number_of_keywords == 0

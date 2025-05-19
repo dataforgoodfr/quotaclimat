@@ -12,11 +12,10 @@ import datetime
 
 localhost = get_localhost()
 
+@pytest.fixture(scope="module")
 def init_tables(): 
     drop_tables()
     create_tables()
-
-init_tables()
 
 plaintext1="test1"
 plaintext2="test2"
@@ -93,6 +92,8 @@ def test_parse_reponse_subtitle():
         "start" : 1704798000,
         "channel_program" : channel_program,
         "channel_program_type" : "",
+        "program_metadata_id" : None
+        ,"country":"france"
     },
     {
         "srt": [{
@@ -108,9 +109,11 @@ def test_parse_reponse_subtitle():
         "start" : 1704798120,
         "channel_program" : channel_program,
         "channel_program_type" : "",
+        "program_metadata_id" : None,
+        "country":"france"
     }])
 
-    expected_result['start'] = pd.to_datetime(expected_result['start'], unit='s').dt.tz_localize('UTC')
+    expected_result['start'] = pd.to_datetime(expected_result['start'], unit='s').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
     df = parse_reponse_subtitle(json_response, channel = None, channel_program = channel_program, channel_program_type = "")
     debug_df(df)
 
@@ -126,6 +129,7 @@ def test_get_channels():
 def test_save_to_pg_keyword_normal():
     conn = connect_to_db()
     primary_key = "test_save_to_pg_keyword"
+    start = 1706437079006
     keywords_with_timestamp = [{
                 "keyword" : 'habitabilité de la planète',
                 "timestamp": 1706437079006, 
@@ -155,7 +159,7 @@ def test_save_to_pg_keyword_normal():
     channel_title = "M6"
     df = pd.DataFrame([{
         "id" : primary_key,
-        "start": 1706437079006,
+        "start": start,
         "plaintext": "cheese pizza habitabilité de la planète conditions de vie sur terre animal",
         "channel_name": channel_name,
         "channel_title": channel_title,
@@ -165,10 +169,11 @@ def test_save_to_pg_keyword_normal():
         ,"number_of_keywords": 1
     }])
 
-    df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC')#.dt.tz_convert('Europe/Paris')
+    df['start'] = pd.to_datetime(df['start'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('Europe/Paris')
     assert save_to_pg(df, keywords_table, conn) == 1
 
     # check the value is well existing
+
     result = get_keyword(primary_key)
 
     assert result.id == primary_key
@@ -180,6 +185,7 @@ def test_save_to_pg_keyword_normal():
     assert result.number_of_keywords == 1
     assert result.start == datetime.datetime(2024, 1, 28, 10, 17, 59, 6000)
 
+# TODO check timestamp format when creating PK 
 def test_save_to_pg_keyword_parquet():
     conn = connect_to_db()
     thrusday_morning = 1712815351 #Thu Apr 11 2024 08:02:31 GMT+0200
@@ -188,4 +194,4 @@ def test_save_to_pg_keyword_parquet():
     df= pd.read_parquet(path="test/s3/one-day-one-channel.parquet")
     df = transform_raw_keywords(df, df_programs=df_programs)
 
-    assert save_to_pg(df, keywords_table, conn) == 26
+    assert save_to_pg(df, keywords_table, conn) == 31

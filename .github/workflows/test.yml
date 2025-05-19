@@ -5,7 +5,7 @@ on:
 
 env:
   PYTHON_VERSION: '3.12'
-  POETRY_VERSION: '2.1.1'
+  POETRY_VERSION: '2.1.2'
 
 jobs:
  
@@ -80,7 +80,7 @@ jobs:
         run: |
           set -o pipefail
           source .venv/bin/activate
-          poetry run pytest -k 'test_update_pg_keywords'
+          poetry run pytest -vv -k 'test_update_pg_keywords' test/
         env:
           ENV: dev
           POSTGRES_USER: user
@@ -131,7 +131,7 @@ jobs:
         run: |
           set -o pipefail
           source .venv/bin/activate
-          poetry run pytest -k 'stop_word'
+          poetry run pytest -vv -k 'stop_word' test/
         env:
           ENV: dev
           POSTGRES_USER: user
@@ -140,6 +140,59 @@ jobs:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
 
+  dbt:
+    needs: build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: user
+          POSTGRES_DB: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+          installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: pytest dbt
+        run: |
+          set -o pipefail
+          source .venv/bin/activate
+          poetry run dbt debug
+          poetry run pytest --log-level DEBUG -vv my_dbt_project/pytest_tests
+        env:
+          ENV: dev
+          POSTGRES_USER: user
+          POSTGRES_DB: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: 5432
+          DBT_PROJECT_DIR: my_dbt_project
+          DBT_PROFILES_DIR: my_dbt_project/dbt
 
   test_everything_else:
     needs: build
@@ -186,7 +239,7 @@ jobs:
         run: |
           set -o pipefail
           source .venv/bin/activate
-          poetry run pytest -k 'not test_update_pg_keywords and not stop_word' --junitxml=pytest.xml \
+          poetry run pytest -vv -k 'not test_update_pg_keywords and not stop_word' test/ --junitxml=pytest.xml \
            --cov-report=term-missing:skip-covered \
            --cov=quotaclimat --cov=postgres test/ | \
            tee pytest-coverage.txt
@@ -197,21 +250,6 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-
-      - name: pytest dbt models
-        run: |
-          set -o pipefail
-          source .venv/bin/activate
-          poetry run pytest my_dbt_project/pytest_tests\ /
-        env:
-          ENV: dev
-          POSTGRES_USER: user
-          POSTGRES_DB: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-          DBT_PROJECT_DIR: my_dbt_project
-          DBT_PROFILES_DIR: my_dbt_project/dbt
 
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4

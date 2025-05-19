@@ -1,5 +1,5 @@
 #from https://medium.com/@albertazzir/blazing-fast-python-docker-builds-with-poetry-a78a66f5aed0
-FROM python:3.12.7 as builder
+FROM python:3.12.9 as builder
 
 ENV VIRTUAL_ENV=/app/.venv
 
@@ -12,12 +12,12 @@ WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
 
-RUN pip install poetry==2.0.1
+RUN pip install poetry==2.1.2
 
 RUN poetry install --no-root
 
 # The runtime image, used to just run the code provided its virtual environment
-FROM python:3.12.7-slim as runtime
+FROM python:3.12.9-slim as runtime
 
 WORKDIR /app
 

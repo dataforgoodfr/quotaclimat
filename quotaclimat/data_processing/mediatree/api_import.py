@@ -3,6 +3,7 @@ import logging
 import asyncio
 import sys
 import os
+
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import *
@@ -13,11 +14,12 @@ from quotaclimat.data_processing.mediatree.channel_program import *
 from quotaclimat.data_processing.mediatree.stop_word.main import get_all_stop_word
 from quotaclimat.data_processing.mediatree.api_import_utils.db import get_last_date_and_number_of_delay_saved_in_keywords, KeywordLastStats, get_delay_date
 from quotaclimat.data_processing.mediatree.s3.s3_utils import read_folder_from_s3, transform_raw_keywords
+from quotaclimat.data_processing.mediatree.i8n.country import *
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, get_db_session
 from postgres.schemas.models import keywords_table
-
-from typing import List, Optional
+from quotaclimat.data_processing.mediatree.time_monitored.models import save_time_monitored
+from typing import List
 from tenacity import *
 import sentry_sdk
 from sentry_sdk.crons import monitor
@@ -28,7 +30,7 @@ logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
 logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
 logging.getLogger('distributed').setLevel(logging.ERROR)
 logging.getLogger('worker').setLevel(logging.ERROR)
-sentry_init()
+
 
 # reapply word detector logic to all saved keywords
 # use when word detection is changed
@@ -36,12 +38,15 @@ sentry_init()
 async def update_pg_data(exit_event):
     try:
         start_date = os.environ.get("START_DATE_UPDATE", None)
+        country_code: str = os.environ.get("COUNTRY", FRANCE_CODE)
+        logging.info(f"Country used is (default {FRANCE_CODE}) : {country_code}")
+        country: CountryMediaTree = get_country_from_code(country_code=country_code)
         if start_date is None:
             number_of_days_to_update = int(os.environ.get("NUMBER_OF_DAYS", 7))
-            tmp_start_date = get_date_now_minus_days(start=get_now(), minus_days=number_of_days_to_update)
+            tmp_start_date = get_date_now_minus_days(start=get_now(timezone=country.timezone), minus_days=number_of_days_to_update)
             logging.info(f"START_DATE_UPDATE is None, using today minus NUMBER_OF_DAYS : {number_of_days_to_update}")
             start_date = tmp_start_date
-            end_date = get_now()
+            end_date = get_now(timezone=country.timezone)
         else:
             logging.info(f"START_DATE_UPDATE is {start_date}")
             tmp_end_date = get_end_of_month(start_date)
@@ -68,30 +73,19 @@ async def update_pg_data(exit_event):
         
         session = get_db_session()
         update_keywords(session, batch_size=batch_size, start_date=start_date, program_only=program_only, end_date=end_date,\
-                        channel=channel, empty_program_only=empty_program_only,stop_word_keyword_only=stop_word_keyword_only, biodiversity_only=biodiversity_only)
+                        channel=channel, empty_program_only=empty_program_only
+                        ,stop_word_keyword_only=stop_word_keyword_only, biodiversity_only=biodiversity_only
+                        ,country=country)
         exit_event.set()
     except Exception as err:
         logging.fatal("Could not update_pg_data %s:(%s)" % (type(err).__name__, err))
         ray.shutdown()
         sys.exit(1)
 
-def get_channels():
-    if(os.environ.get("ENV") == "docker" or os.environ.get("CHANNEL") is not None):
-        default_channel = os.environ.get("CHANNEL") or "france2"
-        logging.warning(f"Only one channel of env var CHANNEL {default_channel} (default to france2) is used")
-
-        channels = [default_channel]
-    else: #prod  - all channels
-        logging.warning("All channels are used")
-        return ["tf1", "france2", "fr3-idf", "m6", "arte", "bfmtv", "lci", "franceinfotv", "itele",
-        "europe1", "france-culture", "france-inter", "sud-radio", "rmc", "rtl", "france24", "france-info", "rfi"]
-
-    return channels
-
-def get_stop_words(session, validated_only=True, context_only=True, filter_days: int = None) -> list[Stop_Word]:
-    logging.info("Getting Stop words...")
+def get_stop_words(session, validated_only=True, context_only=True, filter_days: int = None, country=FRANCE) -> list[Stop_Word]:
+    logging.info(f"Getting Stop words for {country} with days filter of {filter_days} days...")
     try:
-        stop_words = get_all_stop_word(session, validated_only=validated_only, filter_days=filter_days)
+        stop_words = get_all_stop_word(session, validated_only=validated_only, filter_days=filter_days, country=country)
         if(context_only):
             result = list(map(lambda stop: stop.context, stop_words))
         else:
@@ -101,17 +95,17 @@ def get_stop_words(session, validated_only=True, context_only=True, filter_days:
         if result_len > 0:
             logging.info(f"Got {len(result)} stop words")
         else:
-            logging.error("No stop words from sql tables")
+            logging.warning("No stop words from sql tables")
 
         return result
     except Exception as err:
         logging.error(f"Stop word error {err}")
         raise Exception
 
-def get_start_time_to_query_from(session)      :
+def get_start_time_to_query_from(session, country=FRANCE)      :
     normal_delay_in_days = 1
-    lastSavedKeywordsDate: KeywordLastStats = get_last_date_and_number_of_delay_saved_in_keywords(session)
-    logging.info(f"last saved date for keywords is {lastSavedKeywordsDate.last_day_saved}, with a delay of  \
+    lastSavedKeywordsDate: KeywordLastStats = get_last_date_and_number_of_delay_saved_in_keywords(session,country=country)
+    logging.info(f"last saved date for keywords for {country.name} is {lastSavedKeywordsDate.last_day_saved}, with a delay of  \
                  {lastSavedKeywordsDate.number_of_previous_days_from_yesterday} days compared to yesterday")
     
     start_date = int(os.environ.get("START_DATE", 0))
@@ -139,32 +133,46 @@ async def get_and_save_s3_data_to_pg(exit_event):
             conn = connect_to_db()
             session = get_db_session(conn)
             
-            df_programs = get_programs() # memory bumps ? should be lazy instead of being copied on each worker
-            channels = get_channels()
-            
-            stop_words = get_stop_words(session, validated_only=True)
-            
-            (start_date, number_of_previous_days) = get_start_time_to_query_from(session)
-            (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
-            day_range = get_date_range(start_date_to_query, end_date, number_of_previous_days)
-            logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
-            for day in day_range:
-                for channel in channels:
-                    try:
-                        logging.info("Querying day %s for channel %s" % (day, channel))
-                        df_channel_for_a_day = read_folder_from_s3(date=day, channel=channel)
+            country_code: str = os.environ.get("COUNTRY", FRANCE_CODE)
+            logging.info(f"Country used is (default {FRANCE_CODE}) : {country_code}")
+            countries: List[CountryMediaTree] = get_countries_array(country_code=country_code)
 
-                        df = transform_raw_keywords(df=df_channel_for_a_day, stop_words=stop_words, df_programs=df_programs)
+            for country in countries:
+                logging.info(f"Getting info for country : {country.name}...")
 
-                        if(df is not None):
-                            logging.debug(f"Memory df {df.memory_usage()}")
-                            save_to_pg(df, keywords_table, conn)
-                            del df
-                        else:
-                            logging.info("Nothing to save to Postgresql")
-                    except Exception as err:
-                        logging.error(f"continuing loop fpr but met error with {channel} - day {day}: {err}")
-                        continue
+                # TODO : should we only trust data from S3 ?
+                df_programs = get_programs(country=country) # memory bumps ? should be lazy instead of being copied on each worker
+                channels = country.channels
+
+            
+                stop_words = get_stop_words(session, validated_only=True, country=country)
+                
+                (start_date, number_of_previous_days) = get_start_time_to_query_from(session, country=country)
+                (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, minus_days=number_of_previous_days)
+                day_range = get_date_range(start_date_to_query, end_date, number_of_previous_days)
+                logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
+                for day in day_range:
+                    for channel in channels:
+                        try:
+                            logging.info("Querying day %s for channel %s" % (day, channel))
+                            df_channel_for_a_day = read_folder_from_s3(date=day, channel=channel, country=country)
+                            if(df_channel_for_a_day is not None):
+                                # count how many rows are in the dataframe and save it to postgresql inside a new table called time_monitor
+                                save_time_monitored(number_of_rows=len(df_channel_for_a_day),day=day, channel=channel, country=country.name,session=session)
+
+                                df = transform_raw_keywords(df=df_channel_for_a_day, stop_words=stop_words,\
+                                                            df_programs=df_programs, country=country)
+
+                                if(df is not None):
+                                    logging.debug(f"Memory df {df.memory_usage()}")
+                                    save_to_pg(df, keywords_table, conn)
+                                    del df
+                                else:
+                                    logging.info(f"Nothing to save to Postgresql for {day} - {channel} - {country.name}")
+                                    save_time_monitored(number_of_rows=0,day=day, channel=channel, country=country.name,session=session)
+                        except Exception as err:
+                            logging.error(f"continuing loop fpr but met error with {channel} - day {day}: {err}")
+                            continue
             exit_event.set()
         except Exception as err:
             logging.fatal("get_and_save_s3_data (%s) %s" % (type(err).__name__, err))
@@ -175,6 +183,7 @@ async def main():
     with monitor(monitor_slug='mediatree'): #https://docs.sentry.io/platforms/python/crons/
         try:
             logging.info("Start api mediatree import from S3")
+            sentry_init()
             create_tables()
 
             event_finish = asyncio.Event()

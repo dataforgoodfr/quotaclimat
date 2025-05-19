@@ -280,11 +280,17 @@ Otherwise, default is yesterday midnight date (default cron job).
 #### Production safety nets
 As Scaleway Serverless service can be down, if some dates are missing until today, it will start back from the latest date saved until today.
 
-**As pandas to_sql does not enable upsert (update/insert)**, if we want to update already saved rows, we have to delete first the rows and then start the program with `START_DATE` :
-```
-DELETE FROM keywords
-WHERE start BETWEEN '2024-05-01' AND '2024-05-30';
-```
+### Replay data
+When dictionary change, we have to replay our data to update already saved data.
+**As pandas to_sql with a little tweak can use upsert (update/insert)**, if we want to update already saved rows, we have to use :
+* `START_DATE` 
+* `NUMBER_OF_PREVIOUS_DAYS` 
+
+For example to replay data from 2024-05-30 to 2024-05-01 we do from docker compose job "mediatree" (or scaleway job):
+* `START_DATE` with unix timestamp of 2024-05-30 (1717020556)
+* `NUMBER_OF_PREVIOUS_DAYS` to 30 to get back to 2024-05-01.
+
+**Warning**: it might take several hours.
 
 ### Based on channel
 Use env variable `CHANNEL` like in docker compose (string: tf1)
@@ -396,7 +402,9 @@ Program data will not be updated to avoid lock concurrent issues when using `UPD
 **With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.**
 
 # Mediatre to S3
-For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway).
+For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway) with partition :
+* country/year/month/day/channel
+If France, country code is None for legacy purposes.
 
 Env variable used :
 * START_DATE (integer) (unixtimestamp such as mediatree service)
@@ -405,6 +413,8 @@ Env variable used :
 * BUCKET : Scaleway Access key
 * BUCKET_SECRET : Scaleway Secret key
 * BUCKET_NAME
+* DEFAULT_WINDOW_DURATION: int (default=20), the time window to divide the mediatree's 2 minute chunk (must be 120 secondes / DEFAULT_WINDOW_DURATION == 0)
+* COUNTRY : 3 letter country code (default = fra - [Source](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3)), see country.py to see them all - to get all countries the code is "all". 
 
 # Stop words
 To prevent advertising keywords to blow up statistics, we remove stop words based on the number of times a keyword is said in the same context.
@@ -440,17 +450,21 @@ poetry version minor
 ```
 
 ## Materialized view - dbt
-Using [DBT](https://www.getdbt.com/), used via docker :
+We can define some slow queries to make them efficient with materialized views using [DBT](https://www.getdbt.com/), used via docker :
 ```
 docker compose up testconsole -d
 docker compose exec testconsole bash
 > dbt debug  # check if this works
-> dbt run
+# caution: this seed will reinit the keywords and program_metadata tables
+> dbt seed --select program_metadata --select keywords --full-refresh  # will empty your local db - order is important
+> dbt run --models homepage_environment_by_media_by_month # change by your file name
+> poetry run pytest --log-level DEBUG -vv my_dbt_project/pytest_tests # unit test 
 ```
 
-We can define some slow queries to make them efficient with materialized views.
+**Protips**: [Explore these data with postgres data using Metabase locally](https://github.com/dataforgoodfr/quotaclimat?tab=readme-ov-file#explore-postgres-data-using-metabase---a-bi-tool)
 
-To update monthly our materialized view in production we have to use this command that is run on every deployement of api-import (daily)
+### DBT production
+To update monthly our materialized view in production we have to use this command ([automatically done inside our docker-entrypoint](https://github.com/dataforgoodfr/quotaclimat/blob/main/docker-entrypoint.sh#L17)) that is run on every deployement of api-import (daily) :
 ```
 poetry run dbt run
 ```
@@ -465,5 +479,6 @@ poetry run flake8 .
 There is a debt regarding the cleanest of the code right now. Let's just not make it worth for now.
 
 ## Thanks
+* [Paul Leclercq] (https://www.epauler.fr/)
 * [Eleven-Strategy](https://www.welcometothejungle.com/fr/companies/eleven-strategy)
 * [Kevin Tessier](https://kevintessier.fr)

@@ -1,5 +1,5 @@
 import logging
-
+import pytest
 from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 
 from quotaclimat.data_ingestion.scrap_sitemap import (get_consistent_hash)
@@ -13,7 +13,11 @@ from quotaclimat.data_processing.mediatree.stop_word.main import *
 logging.getLogger().setLevel(logging.INFO)
 original_timestamp = 1706271523 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
 start = pd.to_datetime("2024-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
-create_tables()
+start_tf1 = pd.to_datetime("2024-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
+
+@pytest.fixture(scope="module", autouse=True)
+def init_tables(): 
+    create_tables()
 
 wrong_value = 0
 m6 = "m6"
@@ -161,8 +165,8 @@ def test_delete_keywords():
             ,0
             )
     session.commit()
-    assert get_keyword(primary_key) == None
     session.close()
+    assert get_keyword(primary_key) == None
 
 def test_first_update_keywords():
     conn = connect_to_db()
@@ -209,7 +213,8 @@ def test_first_update_keywords():
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
         "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value,
+        "country": "france"
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 1
@@ -245,7 +250,8 @@ def test_first_update_keywords():
         ,number_of_biodiversite_concepts_generaux_no_hrfp \
         ,number_of_biodiversite_causes_no_hrfp \
         ,number_of_biodiversite_consequences_no_hrfp \
-        ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start)
+        ,number_of_biodiversite_solutions_no_hrfp \
+        ,country = get_themes_keywords_duration(plaintext, srt, start)
 
     assert result_after_update.id == result_before_update.id
 
@@ -337,10 +343,11 @@ def test_update_only_one_channel():
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
         "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value,
+        "country": "france"
     }, {
         "id" : primary_key_tf1,
-        "start": start,
+        "start": start_tf1,
         "plaintext": plaintext,
         "channel_name": tf1,
         "channel_radio": False,
@@ -375,7 +382,8 @@ def test_update_only_one_channel():
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
         "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value,
+        "country": "france"
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 2
@@ -415,7 +423,8 @@ def test_update_only_one_channel():
         ,number_of_biodiversite_concepts_generaux_no_hrfp \
         ,number_of_biodiversite_causes_no_hrfp \
         ,number_of_biodiversite_consequences_no_hrfp \
-        ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start)
+        ,number_of_biodiversite_solutions_no_hrfp \
+        ,country = get_themes_keywords_duration(plaintext, srt, start)
 
     conn.dispose()
     session.close()
@@ -465,7 +474,6 @@ def test_update_only_program():
 
     # insert data
     primary_key_m6 = "test_save_to_pg_keyword_only_program_m6"
-   
     df = pd.DataFrame([{
         "id" : primary_key_m6,
         "start": start,
@@ -489,6 +497,7 @@ def test_update_only_program():
         "number_of_biodiversite_solutions_directes" : wrong_value,
         "channel_program_type": "to change",
         "channel_program":"to change"
+        ,"program_metadata_id": None
         ,"channel_title":None
         ,"number_of_keywords_climat": wrong_value
         ,"number_of_keywords_biodiversite": wrong_value
@@ -503,7 +512,8 @@ def test_update_only_program():
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
         "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value,
+        "country": "france"
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 1
@@ -537,6 +547,7 @@ def test_update_only_program():
     # program - only when UPDATE_PROGRAM_ONLY for speed issues
     assert result_after_update_m6.channel_program == "1245 le mag"
     assert result_after_update_m6.channel_program_type == "Information - Magazine"
+    assert result_after_update_m6.program_metadata_id == "8ebdc0a5f4d85072658d4ef7fe16fcc13c89a4d94606ea80b27f6326c80417c3"
 
     #channel_title
     assert result_after_update_m6.channel_title == "M6"
@@ -589,10 +600,11 @@ def test_update_only_program_with_only_one_channel():
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
         "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value,
+        "country": "france"
     }, {
         "id" : primary_key_tf1,
-        "start": start,
+        "start": start_tf1,
         "plaintext": plaintext,
         "channel_name": tf1,
         "channel_radio": False,
@@ -627,7 +639,8 @@ def test_update_only_program_with_only_one_channel():
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
         "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value,
+        "country": "france"
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 2
@@ -671,6 +684,7 @@ def test_update_only_program_with_only_one_channel():
     ## TF1 should have changed because of channel=tf1
     assert result_after_update_tf1.channel_program == "JT 13h"
     assert result_after_update_tf1.channel_program_type == "Information - Journal"
+    assert result_after_update_tf1.program_metadata_id == "0d752edd6b8a4d9456184e6bf3c97bf5ec40708ac909954ca67004a8aee4cef2"
 
     #channel_title
     assert result_after_update_m6.channel_title == None
@@ -727,10 +741,11 @@ def test_update_only_empty_program():
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
         "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value,
+        "country": "france"
     }, {
         "id" : primary_key_tf1,
-        "start": start,
+        "start": start_tf1,
         "plaintext": plaintext,
         "channel_name": tf1,
         "channel_radio": False,
@@ -765,7 +780,8 @@ def test_update_only_empty_program():
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
         "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value,
+        "country": "france"
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 2
@@ -809,6 +825,7 @@ def test_update_only_keywords_that_includes_some_keywords():
                 "context": plaintext_stop_word,
                 "count": 20,
                 "id" : get_consistent_hash(plaintext_stop_word),
+                "country": "france"
             },
             {
                 "keyword_id": "fake_id",
@@ -818,6 +835,7 @@ def test_update_only_keywords_that_includes_some_keywords():
                 "context": "lacieux selon les experts question climatique en fait elle dépasse la question",
                 "count": 19,
                 "id" : get_consistent_hash("lacieux selon les experts question climatique en fait elle dépasse la question"),
+                "country": "france"
             }
         ]
     save_append_stop_word(conn, stop_word_to_save)
@@ -864,7 +882,8 @@ def test_update_only_keywords_that_includes_some_keywords():
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
         "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value,
+        "country": "france"
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 1
@@ -900,7 +919,8 @@ def test_update_only_keywords_that_includes_some_keywords():
         ,number_of_biodiversite_concepts_generaux_no_hrfp \
         ,number_of_biodiversite_causes_no_hrfp \
         ,number_of_biodiversite_consequences_no_hrfp \
-        ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start)
+        ,number_of_biodiversite_solutions_no_hrfp \
+        ,country = get_themes_keywords_duration(plaintext, srt, start)
     
     assert result_after_update.id == result_before_update.id
 
@@ -1015,6 +1035,7 @@ def test_update_nothing_because_no_keywords_are_included():
                 "context": " avait promis de lancer un plan de conditions de vie sur terre euh hélas pas pu climat tout s' est pa",
                 "count": 20,
                 "id" : get_consistent_hash(" avait promis de lancer un plan de replantation euh hélas pas pu climat tout s' est pa"),
+                "country": "france"
             },
             {
                 "keyword_id": "fake_id",
@@ -1024,6 +1045,7 @@ def test_update_nothing_because_no_keywords_are_included():
                 "context": "lacieux selon les experts question climatique en fait elle dépasse la question",
                 "count": 19,
                 "id" : get_consistent_hash("lacieux selon les experts question climatique en fait elle dépasse la question"),
+                "country": "france"
             }
         ]
     save_append_stop_word(conn, stop_word_to_save)
@@ -1070,7 +1092,8 @@ def test_update_nothing_because_no_keywords_are_included():
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
         "number_of_biodiversite_causes_no_hrfp":  wrong_value,
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value,
+        "country": "france"
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 1
@@ -1130,10 +1153,11 @@ def test_update_only_biodiversity():
         "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
         "number_of_biodiversite_causes_no_hrfp":  5, # should update because of this
         "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
-        "number_of_biodiversite_solutions_no_hrfp" : wrong_value
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value,
+        "country": "france"
     }, {
         "id" : primary_key_tf1,
-        "start": start,
+        "start": start_tf1,
         "plaintext": plaintext,
         "channel_name": tf1,
         "channel_radio": False,
@@ -1168,7 +1192,8 @@ def test_update_only_biodiversity():
         "number_of_biodiversite_concepts_generaux_no_hrfp":  0,
         "number_of_biodiversite_causes_no_hrfp":  0,
         "number_of_biodiversite_consequences_no_hrfp":  0,
-        "number_of_biodiversite_solutions_no_hrfp": 0
+        "number_of_biodiversite_solutions_no_hrfp": 0,
+        "country": "france"
     }])
 
     assert save_to_pg(df, keywords_table, conn) == 2

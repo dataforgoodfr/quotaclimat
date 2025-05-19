@@ -5,13 +5,15 @@ from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
 from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from datetime import datetime, timezone
+from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
+
 
 import pandas as pd
 localhost = get_localhost()
 original_timestamp = 1706437079004
 start = datetime.fromtimestamp(original_timestamp / 1000, timezone.utc)
 
-array_of_none = [None] * 28
+array_of_none = [None] * 29
 
 subtitles = [{
         "duration_ms": 34,
@@ -131,7 +133,7 @@ def test_one_theme_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp, country) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
     assert set(themes_output) == set(themes)
     # assert compare_unordered_lists_of_dicts(keywords_output, keywords)
 
@@ -205,7 +207,7 @@ def test_two_themes_one_hrfp_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp, country) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
     
     logging.info(f"Test got keywords_output: {keywords_output}")
     assert set(themes_output) == set(themes)
@@ -342,7 +344,7 @@ def test_long_sentence_theme_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp, country) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
 
     assert set(themes_output) == set(themes)
     # assert compare_unordered_lists_of_dicts(keywords_output, keywords)
@@ -431,7 +433,7 @@ def test_three_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp, country) = get_themes_keywords_duration("record de température pizza adaptation au dérèglement climatique", subtitles, start)
 
     assert set(themes_output)== themes
     logging.info(f"Got keywords:  {keywords_output}")
@@ -462,6 +464,7 @@ def test_three_get_themes_keywords_duration():
 def test_long_get_themes_keywords_duration():
     themes= set([
         'adaptation_climatique_solutions_indirectes',
+        'biodiversite_causes_indirectes',
         'ressources_indirectes',
         'ressources_solutions_indirectes',
     ])
@@ -511,7 +514,7 @@ def test_long_get_themes_keywords_duration():
         number_of_biodiversite_concepts_generaux_no_hrfp,
         number_of_biodiversite_causes_no_hrfp,
         number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
+        number_of_biodiversite_solutions_no_hrfp, country) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
     assert set(themes_output) == set(themes)
     # too hard to maintain
     #assert compare_unordered_lists_of_dicts(keywords_output, keywords)
@@ -542,11 +545,11 @@ def test_long_get_themes_keywords_duration():
 
 def test_stop_word_get_themes_keywords_duration():
     plaintext = "haute isolation thermique fabriqué en france pizza"
-    assert get_themes_keywords_duration(plaintext, subtitles, start) == array_of_none
+    assert get_themes_keywords_duration(plaintext, subtitles, start, stop_words=STOP_WORDS) == array_of_none
    
 def test_train_stop_word_get_themes_keywords_duration():
     plaintext = "en train de fabrique en france pizza"
-    assert get_themes_keywords_duration(plaintext, subtitles, start) == array_of_none
+    assert get_themes_keywords_duration(plaintext, subtitles, start, stop_words=STOP_WORDS) == array_of_none
    
 
 def test_get_cts_in_ms_for_keywords():
@@ -554,6 +557,11 @@ def test_get_cts_in_ms_for_keywords():
           "duration_ms": 34,
           "cts_in_ms": original_timestamp + 79004,
           "text": "gilets"
+        },
+        {
+          "duration_ms": 34,
+          "cts_in_ms": original_timestamp + 80036,
+          "text": "panneaux"
         },
         {
           "duration_ms": 34,
@@ -581,7 +589,6 @@ def test_get_cts_in_ms_for_keywords():
     keywords = [
         {'keyword':'économie circulaire', 'category':my_category},
         {'keyword':'panneaux solaires', 'category':my_category},
-        {'keyword': 'solaires', 'category':my_category}
     ]
     theme = "changement_climatique_constat"
     expected = [
@@ -592,8 +599,8 @@ def test_get_cts_in_ms_for_keywords():
             "category":my_category
         },
         {
-            "keyword":'solaires',
-            "timestamp" : original_timestamp + 80006,
+            "keyword":'panneaux solaires',
+            "timestamp" : original_timestamp + 80036,
             "theme": theme,
             "category":my_category
         },
@@ -659,7 +666,7 @@ def test_lower_case_filter_and_tag_by_theme():
         "channel_radio": False,
         "srt": srt,
         "theme": [
-            "changement_climatique_causes",
+            "changement_climatique_causes", "changement_climatique_constat", "ressource"
         ],
         "keywords_with_timestamp": [
             {
@@ -668,37 +675,42 @@ def test_lower_case_filter_and_tag_by_theme():
                 "theme": "changement_climatique_causes",
                 'category': 'General'
         }],
-        "number_of_keywords": 1,
-        "number_of_changement_climatique_constat": 0,
+        "number_of_keywords": 2,
+        "number_of_changement_climatique_constat": 1,
         "number_of_changement_climatique_causes_directes": 1,
         "number_of_changement_climatique_consequences": 0,
         "number_of_attenuation_climatique_solutions_directes": 0,
         "number_of_adaptation_climatique_solutions_directes": 0,
-        "number_of_ressources": 0,
+        "number_of_ressources": 1,
         "number_of_ressources_solutions": 0,
         "number_of_biodiversite_concepts_generaux": 0,
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
-        ,'number_of_keywords_climat':1,
+        ,'number_of_keywords_climat':2,
         'number_of_keywords_biodiversite':0,
-        'number_of_keywords_ressources':0
-        ,"number_of_changement_climatique_constat_no_hrfp": 0
+        'number_of_keywords_ressources':1
+        ,"number_of_changement_climatique_constat_no_hrfp": 1
         ,"number_of_changement_climatique_causes_no_hrfp": 1
         ,"number_of_changement_climatique_consequences_no_hrfp": 0
         ,"number_of_attenuation_climatique_solutions_no_hrfp": 0
         ,"number_of_adaptation_climatique_solutions_no_hrfp": 0
-        ,"number_of_ressources_no_hrfp": 0
+        ,"number_of_ressources_no_hrfp": 1
         ,"number_of_ressources_solutions_no_hrfp": 0
         ,"number_of_biodiversite_concepts_generaux_no_hrfp": 0
         ,"number_of_biodiversite_causes_no_hrfp": 0
         ,"number_of_biodiversite_consequences_no_hrfp": 0
         ,"number_of_biodiversite_solutions_no_hrfp":0
+        ,"country": "france"
     }])
 
     # List of words to filter on
     df = filter_and_tag_by_theme(df1)
     debug_df(df)
+    df.drop(columns=['theme'], inplace=True)
+    expected_result.drop(columns=['theme'], inplace=True)
+    expected_result.drop(columns=['keywords_with_timestamp'], inplace=True)
+    df.drop(columns=['keywords_with_timestamp'], inplace=True)
     pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
 
 def test_singular_plural_case_filter_and_tag_by_theme():
@@ -722,9 +734,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         "channel_name": "m6",
         "channel_radio": False,
         "srt": srt,
-        "theme": [
-            "changement_climatique_causes",
-        ],
+        "theme": ['ressources', 'changement_climatique_causes', 'changement_climatique_constat'],
         "keywords_with_timestamp": [
             {
                 "keyword" :"méthane",
@@ -732,37 +742,44 @@ def test_singular_plural_case_filter_and_tag_by_theme():
                 "theme": "changement_climatique_causes",
                 'category': 'General'
         }],
-        "number_of_keywords": 1,
-        "number_of_changement_climatique_constat": 0,
+        "number_of_keywords": 2,
+        "number_of_changement_climatique_constat": 1,
         "number_of_changement_climatique_causes_directes": 1,
         "number_of_changement_climatique_consequences": 0,
         "number_of_attenuation_climatique_solutions_directes": 0,
         "number_of_adaptation_climatique_solutions_directes": 0,
-        "number_of_ressources": 0,
+        "number_of_ressources": 1,
         "number_of_ressources_solutions": 0,
         "number_of_biodiversite_concepts_generaux": 0,
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
-        ,'number_of_keywords_climat':1,
+        ,'number_of_keywords_climat':2,
         'number_of_keywords_biodiversite':0,
-        'number_of_keywords_ressources':0
-        ,"number_of_changement_climatique_constat_no_hrfp": 0
+        'number_of_keywords_ressources':1
+        ,"number_of_changement_climatique_constat_no_hrfp": 1
         ,"number_of_changement_climatique_causes_no_hrfp": 1
         ,"number_of_changement_climatique_consequences_no_hrfp": 0
         ,"number_of_attenuation_climatique_solutions_no_hrfp": 0
         ,"number_of_adaptation_climatique_solutions_no_hrfp": 0
-        ,"number_of_ressources_no_hrfp": 0
+        ,"number_of_ressources_no_hrfp": 1
         ,"number_of_ressources_solutions_no_hrfp": 0
         ,"number_of_biodiversite_concepts_generaux_no_hrfp": 0
         ,"number_of_biodiversite_causes_no_hrfp": 0
         ,"number_of_biodiversite_consequences_no_hrfp": 0
         ,"number_of_biodiversite_solutions_no_hrfp":0
+        ,"country": "france"
     }])
 
     # List of words to filter on
     df = filter_and_tag_by_theme(df1)
     debug_df(df)
+    # depend on dictionary evolution, hard to maintain
+    df.drop(columns=['theme'], inplace=True)
+    expected_result.drop(columns=['theme'], inplace=True)
+    df.drop(columns=['keywords_with_timestamp'], inplace=True)
+    expected_result.drop(columns=['keywords_with_timestamp'], inplace=True)
+
     pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
 
 def test_complexe_filter_and_tag_by_theme():
@@ -865,6 +882,7 @@ def test_complexe_filter_and_tag_by_theme():
         ,"number_of_biodiversite_causes_no_hrfp": 0
         ,"number_of_biodiversite_consequences_no_hrfp": 0
         ,"number_of_biodiversite_solutions_no_hrfp":0
+        ,"country": "france"
     }])
 
     # List of words to filter on

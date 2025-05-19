@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 
-from postgres.schemas.models import get_sitemap_cols
+from quotaclimat.data_ingestion.scrap_sitemap import get_sitemap_cols
 
 
 def parse_section(section: str):

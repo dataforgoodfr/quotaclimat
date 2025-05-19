@@ -18,3 +18,136 @@ models:
         description: "Channel_Title"
         tests:
           - not_null
+
+
+  - name: core_query_environmental_shares
+    description: >
+      Environmental shares data pulled from core_query_environmental_shares, 
+      including climate and biodiversity metrics by program/channel.
+    columns:
+      - name: start
+        description: Start date or timestamp of the observation.
+      - name: channel_title
+        description: 'Original: Program Metadata - Channel Name__channel_title'
+      - name: public
+        description: 'Original: Program Metadata - Channel Name__public'
+      - name: infocontinue
+        description: 'Original: Program Metadata - Channel Name__infocontinue'
+      - name: radio
+        description: 'Original: Program Metadata - Channel Name__radio'
+      - name: environnement_total_pct
+        description: 'Original: % environnement total'
+      - name: climat_pct
+        description: 'Original: % climat'
+      - name: climat_cause_pct
+        description: 'Original: % climat cause'
+      - name: climat_solutions_adaptation_pct
+        description: 'Original: % climat solutions adaptation '
+      - name: climat_consequences_pct
+        description: 'Original: % climat consequences'
+      - name: climat_solutions_attenuation_pct
+        description: 'Original: % climat solutions attenuation'
+      - name: climat_constat_pct
+        description: 'Original: % climat constat'
+      - name: biodiversite_pct
+        description: 'Original: % biodiversite'
+      - name: biodiversite_constat_pct
+        description: 'Original: % biodiversité constat'
+      - name: biodiversite_solutions_pct
+        description: 'Original: % biodiversité solutions'
+      - name: biodiversite_consequences_pct
+        description: 'Original: % biodiversité conséquences'
+      - name: biodiversite_causes_pct
+        description: 'Original: % biodiversité causes'
+      - name: ressources_pct
+        description: 'Original: % ressources'
+      - name: ressources_constat_pct
+        description: 'Original: % ressources constat'
+      - name: ressources_solutions_pct
+        description: 'Original: % ressources solutions'
+
+  - name: core_query_environmental_shares_i8n
+    description: >
+      International Environmental shares data pulled from core_query_environmental_shares, 
+      including climate and biodiversity metrics by program/channel.
+    columns:
+      - name: start
+        description: Start date or timestamp of the observation.
+      - name: channel_title
+        description: 'Original: Program Metadata - Channel Name__channel_title'
+      - name: public
+        description: 'Original: Program Metadata - Channel Name__public'
+      - name: infocontinue
+        description: 'Original: Program Metadata - Channel Name__infocontinue'
+      - name: radio
+        description: 'Original: Program Metadata - Channel Name__radio'
+      - name: environnement_total_pct
+        description: 'Original: % environnement total'
+      - name: climat_pct
+        description: 'Original: % climat'
+      - name: climat_cause_pct
+        description: 'Original: % climat cause'
+      - name: climat_solutions_adaptation_pct
+        description: 'Original: % climat solutions adaptation '
+      - name: climat_consequences_pct
+        description: 'Original: % climat consequences'
+      - name: climat_solutions_attenuation_pct
+        description: 'Original: % climat solutions attenuation'
+      - name: climat_constat_pct
+        description: 'Original: % climat constat'
+      - name: biodiversite_pct
+        description: 'Original: % biodiversite'
+      - name: biodiversite_constat_pct
+        description: 'Original: % biodiversité constat'
+      - name: biodiversite_solutions_pct
+        description: 'Original: % biodiversité solutions'
+      - name: biodiversite_consequences_pct
+        description: 'Original: % biodiversité conséquences'
+      - name: biodiversite_causes_pct
+        description: 'Original: % biodiversité causes'
+      - name: ressources_pct
+        description: 'Original: % ressources'
+      - name: ressources_constat_pct
+        description: 'Original: % ressources constat'
+      - name: ressources_solutions_pct
+        description: 'Original: % ressources solutions'
+
+  - name: core_query_thematics_keywords
+    description: >
+      Thematic keyword analysis by channel and week, 
+      including crisis type, theme, and keyword frequency.
+    columns:
+      - name: channel_title
+        description: Title of the broadcast channel.
+      - name: week
+        description: Week of the observation (likely in YYYY-WW format).
+      - name: crise_type
+        description: Type of crisis being referenced.
+      - name: theme
+        description: Thematic category associated with the keyword.
+      - name: category
+        description: Sub-category or secondary classification for the keyword.
+      - name: keyword
+        description: The keyword identified in the broadcast or transcript.
+      - name: count
+        description: Count of lines or mentions related to the keyword.
+
+  - name: core_query_thematics_keywords_i8n
+    description: >
+      International thematic keyword analysis by channel and week, 
+      including crisis type, theme, and keyword frequency.
+    columns:
+      - name: channel_title
+        description: Title of the broadcast channel.
+      - name: week
+        description: Week of the observation (likely in YYYY-WW format).
+      - name: crise_type
+        description: Type of crisis being referenced.
+      - name: theme
+        description: Thematic category associated with the keyword.
+      - name: category
+        description: Sub-category or secondary classification for the keyword.
+      - name: keyword
+        description: The keyword identified in the broadcast or transcript.
+      - name: count
+        description: Count of lines or mentions related to the keyword.

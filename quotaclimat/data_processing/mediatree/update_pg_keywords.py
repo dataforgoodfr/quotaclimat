@@ -10,7 +10,7 @@ from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.api_import import get_stop_words
 from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp, get_channel_title_for_name
 from sqlalchemy import func, select, and_, or_
-
+from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
 
 def get_keyword_else_context(stop_word_object: Stop_Word):
     if stop_word_object.keyword is not None:
@@ -33,16 +33,22 @@ def get_top_keyword_of_stop_words(stop_word_keyword_only: bool, stop_words_objec
 def update_keywords(session: Session, batch_size: int = 50000, start_date : str = "2023-04-01", program_only=False, \
                     end_date: str = "2023-04-30", channel: str = "", empty_program_only=False, \
                         stop_word_keyword_only = False, \
-                        biodiversity_only = False) -> list:
-    df_programs = get_programs()
+                        biodiversity_only = False,
+                        country=FRANCE) -> list:
+
     filter_days_stop_word = int(os.environ.get("FILTER_DAYS_STOP_WORD", 30))
     logging.info(f"FILTER_DAYS_STOP_WORD is used to get only last {filter_days_stop_word} days of new stop words - to improve update speed")
-    stop_words_objects = get_stop_words(session, validated_only=True, context_only=False, filter_days=filter_days_stop_word)
+    stop_words_objects = get_stop_words(session, validated_only=True, context_only=False, 
+                                        filter_days=filter_days_stop_word
+                                        ,country=country)
     stop_words = list(map(lambda stop: stop.context, stop_words_objects))
-    top_keyword_of_stop_words = get_top_keyword_of_stop_words(stop_word_keyword_only, stop_words_objects=stop_words_objects)
+    top_keyword_of_stop_words = get_top_keyword_of_stop_words(stop_word_keyword_only,
+                                                               stop_words_objects=stop_words_objects)
 
     total_updates = get_total_count_saved_keywords(session, start_date, end_date, channel, empty_program_only, \
-                                                        keywords_to_includes=top_keyword_of_stop_words, biodiversity_only=biodiversity_only)
+                                                        keywords_to_includes=top_keyword_of_stop_words, 
+                                                        biodiversity_only=biodiversity_only,
+                                                        country=country)
 
     if total_updates == 0:
         logging.error("No rows to update - change your START_DATE_UPDATE")
@@ -51,12 +57,12 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
         logging.info(f"Fixing batch size ({batch_size}) to {total_updates} because too high compared to saved elements")
         batch_size = total_updates
 
-    logging.info(f"Updating {total_updates} saved keywords from {start_date} date to {end_date} for channel {channel} - batch size {batch_size} - totals rows")
+    logging.info(f"Updating {country.name} - {total_updates} saved keywords from {start_date} date to {end_date} for channel {channel} - batch size {batch_size} - totals rows")
     
     for i in range(0, total_updates, batch_size):
         current_batch_saved_keywords = get_keywords_columns(session, i, batch_size, start_date, end_date, channel, \
                                                             empty_program_only, keywords_to_includes=top_keyword_of_stop_words, \
-                                                            biodiversity_only=biodiversity_only)
+                                                            biodiversity_only=biodiversity_only, country=country)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {total_updates}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name, channel_title in current_batch_saved_keywords:
             if channel_title is None:
@@ -92,7 +98,8 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     ,number_of_biodiversite_concepts_generaux_no_hrfp \
                     ,number_of_biodiversite_causes_no_hrfp \
                     ,number_of_biodiversite_consequences_no_hrfp \
-                    ,number_of_biodiversite_solutions_no_hrfp = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words)
+                    ,number_of_biodiversite_solutions_no_hrfp \
+                    ,country_name = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words)
                 except Exception as err:
                         logging.error(f"continuing loop but met error : {err}")
                         continue
@@ -142,19 +149,28 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                 ,number_of_biodiversite_solutions_no_hrfp
                 )
             else: # Program only mode
-                logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
+                logging.debug(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
                 if(os.environ.get("ENV") == "prod"): # weird bug i don't want to know about
                     start_tz = pd.Timestamp(start).tz_localize("UTC").tz_convert("Europe/Paris")
                 else:
                     start_tz = pd.Timestamp(start).tz_convert("Europe/Paris")
                 logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - converted tz : {start_tz}")
-                program_name, program_name_type = get_a_program_with_start_timestamp(df_programs, start_tz, channel_name)
-                update_keyword_row_program(session
-                    ,keyword_id
-                    ,channel_program=program_name
-                    ,channel_program_type=program_name_type
-                    ,channel_title=channel_title
-                )
+                df_programs = get_programs()
+                program_name, program_name_type, program_metadata_id = \
+                      get_a_program_with_start_timestamp(df_program=df_programs, start_time=start_tz, channel_name=channel_name)
+                
+                logging.info(f"new data for keyword_id ({keyword_id}): program_name ({program_name}) - program_name_type ({program_name_type}) - program_metadata_id ({program_metadata_id})")
+                try:
+                    update_keyword_row_program(session
+                        ,keyword_id
+                        ,channel_program=program_name
+                        ,channel_program_type=program_name_type
+                        ,channel_title=channel_title
+                        ,program_metadata_id=program_metadata_id
+                    )
+                except Exception as err:
+                    logging.error(f"update_keyword_row_program - continuing loop but met error : {err}")
+                    continue
         logging.info(f"bulk update done {i} out of {total_updates} - (max offset {total_updates})")
         session.commit()
 
@@ -163,7 +179,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
 
 def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30",\
                          channel: str = "", empty_program_only: bool = False, keywords_to_includes: list[str] = [], \
-                         biodiversity_only = False) -> list:
+                         biodiversity_only = False, country = FRANCE) -> list:
     logging.debug(f"Getting {batch_size} elements from offset {offset}")
     query = session.query(
             Keywords.id,
@@ -178,7 +194,8 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
         ).filter(
         and_(
             func.date(Keywords.start) >= start_date, 
-            func.date(Keywords.start) <= end_date
+            func.date(Keywords.start) <= end_date,
+            Keywords.country == country.name
         )
     ).order_by(Keywords.start, Keywords.channel_name, Keywords.plaintext)
 
@@ -214,13 +231,15 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
         .all()
 
 def get_total_count_saved_keywords(session: Session, start_date : str, end_date : str, channel: str, empty_program_only: bool,\
-                                    keywords_to_includes= [], biodiversity_only = False) -> int:
+                                    keywords_to_includes= [], biodiversity_only = False, country= FRANCE) -> int:
         statement = select(func.count()).filter(
             and_(func.date(Keywords.start) >= start_date, func.date(Keywords.start) <= end_date)
         ).select_from(Keywords)
         
         if channel != "":
             statement = statement.filter(Keywords.channel_name == channel)
+        
+        statement = statement.filter(Keywords.country == country.name)
         
         if empty_program_only:
             statement = statement.filter(
@@ -326,17 +345,24 @@ def update_keyword_row(session: Session,
 
 def delete_keywords_id(session, id):
     session.query(Keywords).filter(Keywords.id == id).delete()
+    session.commit()
 
 def update_keyword_row_program(session: Session, 
                        keyword_id: int,
                         channel_program: str,
                         channel_program_type: str,
-                        channel_title: str):
-    session.query(Keywords).filter(Keywords.id == keyword_id).update(
-        {
-            Keywords.channel_program: channel_program,
-            Keywords.channel_program_type: channel_program_type,
-            Keywords.channel_title: channel_title,
-        },
-        synchronize_session=False
-    )
+                        channel_title: str,
+                        program_metadata_id: str):
+    try:
+        session.query(Keywords).filter(Keywords.id == keyword_id).update(
+            {
+                Keywords.channel_program: channel_program,
+                Keywords.channel_program_type: channel_program_type,
+                Keywords.channel_title: channel_title,
+                Keywords.program_metadata_id: program_metadata_id,
+            },
+            synchronize_session=False
+        )
+    except Exception as err:
+        logging.error(f"update_keyword_row_program error for k_id {keyword_id} {channel_title} {channel_program} program metadata id {program_metadata_id} : {err}")
+        raise Exception

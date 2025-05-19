@@ -35,7 +35,95 @@ models:
     homepage:
       +materialized: view
 
+# delete tables when seed are executed to have a clean start
 seeds:
   my_dbt_project:
     keywords:
       table: keywords
+      enabled: "{{ target.name != 'prod' }}" # safe guard
+      pre-hook:
+        - >
+          {% if target.name != 'prod' %}
+          DO $$
+          BEGIN
+            IF EXISTS (
+              SELECT FROM information_schema.tables 
+              WHERE table_schema = 'public' 
+              AND table_name = 'keywords'
+            ) THEN
+              EXECUTE 'DELETE FROM public.keywords';
+            END IF;
+          END
+          $$;
+          {% else %}
+          -- safeguard: skip DELETE in prod
+          {% endif %}
+      post-hook:
+       - "ALTER TABLE keywords ADD PRIMARY KEY (id,start)"
+       - "ALTER TABLE keywords ALTER COLUMN program_metadata_id TYPE text"
+
+    program_metadata:
+        table: program_metadata
+        enabled: "{{ target.name != 'prod' }}" # safe guard
+        pre-hook:
+          - >
+            {% if target.name != 'prod' %}
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'program_metadata'
+              ) THEN
+                EXECUTE 'DELETE FROM public.program_metadata';
+              END IF;
+            END
+            $$;
+            {% else %}
+            -- safeguard: skip DELETE in prod
+            {% endif %}
+
+    dictionary:
+        table: dictionary
+        enabled: "{{ target.name != 'prod' }}" # safe guard
+        pre-hook:
+          - >
+            {% if target.name != 'prod' %}
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'dictionary'
+              ) THEN
+                EXECUTE 'DELETE FROM public.dictionary';
+              END IF;
+            END
+            $$;
+            {% else %}
+            -- safeguard: skip DELETE in prod
+            {% endif %}
+        post-hook:
+          - "ALTER TABLE dictionary ALTER COLUMN categories TYPE TEXT[] USING string_to_array(trim(both '{}' from categories), ',')"
+          - "ALTER TABLE dictionary ALTER COLUMN themes TYPE TEXT[] USING string_to_array(trim(both '{}' from themes), ',')"
+
+    time_monitored:
+        table: time_monitored
+        enabled: "{{ target.name != 'prod' }}" # safe guard
+        pre-hook:
+          - >
+            {% if target.name != 'prod' %}
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'time_monitored'
+              ) THEN
+                EXECUTE 'DELETE FROM public.time_monitored';
+              END IF;
+            END
+            $$;
+            {% else %}
+            -- safeguard: skip DELETE in prod
+            {% endif %}

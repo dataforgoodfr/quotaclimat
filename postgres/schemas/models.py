@@ -1,34 +1,19 @@
 import logging
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer, Table, MetaData, ForeignKey
+from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer, Table, MetaData, ForeignKey, PrimaryKeyConstraint
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
+from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
 from sqlalchemy import text
+from postgres.schemas.base import Base
 from postgres.database_connection import connect_to_db, get_db_session
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
+from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
+from quotaclimat.data_processing.mediatree.time_monitored.models import Time_Monitored
 import os
 import json
-
-Base = declarative_base()
-
-
-def get_sitemap_cols():
-
-    cols = [
-        "publication_name",
-        "news_title",
-        "download_date",
-        "news_publication_date",
-        "news_keywords",
-        "section",
-        "image_caption",
-        "media_type",
-        "url",
-        "news_description",
-        "id",
-    ]
-    return cols
+from json import JSONDecodeError
 
 
 sitemap_table = "sitemap_table"
@@ -55,6 +40,27 @@ class Sitemap(Base):
     news_description= Column(Text) # ALTER TABLE sitemap_table add news_description text;
     updated_on = Column(DateTime(), default=datetime.now, onupdate=datetime.now)
 
+
+class Program_Metadata(Base):
+    __tablename__ = program_metadata_table
+    id = Column(Text, primary_key=True)
+    channel_name = Column(String, nullable=False)
+    channel_title = Column(String, nullable=False)
+    duration_minutes= Column(Integer)
+    weekday= Column(Integer)
+    start= Column(String, nullable=False)
+    end= Column(String, nullable=False)
+    channel_program= Column(String, nullable=False)
+    channel_program_type= Column(String, nullable=False)
+    public = Column(Boolean, nullable=True)
+    infocontinue = Column(Boolean, nullable=True)
+    radio = Column(Boolean, nullable=True)
+    program_grid_start = Column(DateTime(), nullable=True)
+    program_grid_end = Column(DateTime(), nullable=True)
+    country = Column(Text, nullable=True, default=FRANCE.name)
+    created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')"), nullable=True)
+    updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
+
 class Keywords(Base):
     __tablename__ = keywords_table
 
@@ -64,7 +70,7 @@ class Keywords(Base):
     channel_program = Column(String, nullable=True) #  arcom - alembic handles this
     channel_program_type = Column(String, nullable=True) # arcom - (magazine, journal etc) alembic handles this
     channel_radio = Column(Boolean, nullable=True)
-    start = Column(DateTime())
+    start = Column(DateTime(), primary_key=True)
     plaintext= Column(Text)
     theme=Column(JSON) #keyword.py  # ALTER TABLE keywords ALTER theme TYPE json USING to_json(theme);
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")) # ALTER TABLE ONLY keywords ALTER COLUMN created_at SET DEFAULT (now() at time zone 'utc');
@@ -100,6 +106,11 @@ class Keywords(Base):
     number_of_biodiversite_causes_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_causes_directes integer;
     number_of_biodiversite_consequences_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_consequences integer;
     number_of_biodiversite_solutions_no_hrfp= Column(Integer)  # ALTER TABLE keywords ADD number_of_biodiversite_solutions_directes integer;
+
+    program_metadata_id = Column(Text, ForeignKey('program_metadata.id'), nullable=True)
+    program_metadata = relationship("Program_Metadata", foreign_keys=[program_metadata_id])
+
+    country = Column(Text, nullable=True, default=FRANCE.name)
     
 class Channel_Metadata(Base):
     __tablename__ = channel_metadata_table
@@ -108,24 +119,6 @@ class Channel_Metadata(Base):
     channel_title = Column(String, nullable=False)
     duration_minutes= Column(Integer)
     weekday= Column(Integer)  
-
-
-class Program_Metadata(Base):
-    __tablename__ = program_metadata_table
-    id = Column(Text, primary_key=True)
-    channel_name = Column(String, nullable=False)
-    channel_title = Column(String, nullable=False)
-    duration_minutes= Column(Integer)
-    weekday= Column(Integer)
-    start= Column(String, nullable=False)
-    end= Column(String, nullable=False)
-    channel_program= Column(String, nullable=False)
-    channel_program_type= Column(String, nullable=False)
-    public = Column(Boolean, nullable=True)
-    infocontinue = Column(Boolean, nullable=True)
-    radio = Column(Boolean, nullable=True)
-    program_grid_start = Column(DateTime(), nullable=True)
-    program_grid_end = Column(DateTime(), nullable=True)
 
 class Stop_Word(Base):
     __tablename__ = stop_word_table
@@ -139,11 +132,12 @@ class Stop_Word(Base):
     start_date = Column(DateTime(timezone=True), nullable=True)
     updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
     validated = Column(Boolean, nullable=True, default=True)
+    country = Column(Text, nullable=True, default=FRANCE.name) # TODO PK for country
 
 class Dictionary(Base):
     __tablename__ = "dictionary"
     
-    keyword = Column(String, primary_key=True)
+    keyword = Column(String, nullable=False)
 
     high_risk_of_false_positive = Column(Boolean, nullable=True, default=True)
 
@@ -160,16 +154,22 @@ class Dictionary(Base):
     categories = Column(ARRAY(String), nullable=True)  # example ["Concepts généraux", "Sols"]
     themes = Column(ARRAY(String), nullable=True) # example ["changement_climatique_constat", "ressources"]
 
+    # all translation of the original keyword
     language = Column(String, nullable=False)
-    
+    __table_args__ = (
+        PrimaryKeyConstraint('keyword', 'language', name='pk_keyword_language'),
+    )
+
 def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
 
+
 def get_keyword(id: str, session = None):
     if session is None:
         session = get_db_session()
-    return session.get(Keywords, id)
+        
+    return session.query(Keywords).filter_by(id=id).one_or_none()
 
 def get_stop_word(id: str):
     session = get_db_session()
@@ -187,7 +187,7 @@ def get_last_month_sitemap_id(engine):
 
 def create_tables(conn=None):
     """Create tables in the PostgreSQL database"""
-    logging.info("create sitemap, keywords , stop_word tables, dictionnary - update channel_metadata")
+    logging.info("create sitemap, keywords , time_monitored, stop_word tables, dictionnary - update channel_metadata")
     try:
         if conn is None :
             engine = connect_to_db()
@@ -233,44 +233,58 @@ def update_channel_metadata(engine):
         logging.info("Updated channel metadata")
 
 def update_program_metadata(engine):
-    logging.info("Update program metadata")
+    logging.info("Updating program metadata")
     Session = sessionmaker(bind=engine)
     session = Session()
     current_dir = os.path.dirname(os.path.abspath(__file__))
     json_file_path = os.path.join(current_dir, '..', 'program_metadata.json')
+
     try:
         with open(json_file_path, 'r') as f:
             data = json.load(f)
-            
-            # full overwrite
-            logging.warning("Program_Metadata table! Full overwrite (delete/recreate)")
-            session.query(Program_Metadata).delete()
-            session.commit()
 
-            for item in data:
-                metadata = {
-                    'id': item['id'],
-                    'channel_name': item['channel_name'],
-                    'channel_title': item['channel_title'],
-                    'infocontinue': item['infocontinue'],
-                    'public': item['public'],
-                    'radio': item['radio'],
-                    'duration_minutes': int(item['duration']),
-                    'weekday': int(item['weekday']),
-                    'channel_program': item['program_name'],
-                    'channel_program_type': item['program_type'],
-                    'start': item['start'],
-                    'end': item['end'],
-                    'program_grid_start': datetime.strptime(item['program_grid_start'], '%Y-%m-%d'),
-                    'program_grid_end': datetime.strptime(item['program_grid_end'], '%Y-%m-%d'),
-                }
-                session.merge(Program_Metadata(**metadata))
-            
-            # Commit all changes at once after processing all items
-            session.commit()
-            logging.info("Updated program metadata")
-    except (Exception) as error:
-        logging.error(f"Error : Update program metadata {error}")
+        for item in data:
+            metadata = {
+                'id': item['id'],
+                'channel_name': item['channel_name'],
+                'channel_title': item['channel_title'],
+                'infocontinue': item['infocontinue'],
+                'public': item['public'],
+                'radio': item['radio'],
+                'duration_minutes': int(item['duration']),
+                'weekday': int(item['weekday']),
+                'channel_program': item['program_name'],
+                'channel_program_type': item['program_type'],
+                'start': item['start'],
+                'end': item['end'],
+                'program_grid_start': datetime.strptime(item['program_grid_start'], '%Y-%m-%d'),
+                'program_grid_end': datetime.strptime(item['program_grid_end'], '%Y-%m-%d'),
+                'country': item.get('country', FRANCE.name)
+            }
+
+            # Check if the record exists
+            existing_record = session.get(Program_Metadata, item['id'])
+            if existing_record:
+                for key, value in metadata.items():
+                    setattr(existing_record, key, value)
+            else:
+                logging.warning(f"New programs : {item['channel_title']} - {item['program_name']} - {item['id']}")
+                session.add(Program_Metadata(**metadata))
+
+        session.commit()
+        logging.info("Program metadata updated successfully")
+
+    except (OSError, JSONDecodeError) as file_error:
+        logging.error(f"Error reading JSON file: {file_error}")
+        session.rollback()
+    except SQLAlchemyError as db_error:
+        logging.error(f"Database error while updating program metadata: {db_error}")
+        session.rollback()
+    except Exception as error:
+        logging.error(f"Unexpected error while updating program metadata: {error}")
+        session.rollback()
+    finally:
+        session.close()
 
 def update_dictionary(engine, theme_keywords):
     logging.info("Updating dictionary data")
@@ -291,39 +305,72 @@ def update_dictionary(engine, theme_keywords):
             for item in keywords_list:
                 keyword = item['keyword']
                 category = item.get('category')
-                
-                if keyword not in keyword_map:
+                language = item.get('language')
+                keyword_language_key = (keyword, language)
+                if keyword_language_key not in keyword_map:
                     # First time seeing this keyword
-                    keyword_map[keyword] = {
+                    keyword_map[keyword_language_key] = {
                         'themes': set([theme]),  # Using sets to ensure uniqueness
                         'categories': set([category]) if category else set(),
-                        'data': item
+                        'data': item,
+                        'high_risk_of_false_positive': item.get('high_risk_of_false_positive'),
+                        'solution': item.get('solution'),
+                        'consequence': item.get('consequence'),
+                        'cause': item.get('cause'),
+                        'general_concepts': item.get('general_concepts'),
+                        'statement': item.get('statement'),
+                        'crisis_climate': item.get('crisis_climate'),
+                        'crisis_biodiversity': item.get('crisis_biodiversity'),
+                        'crisis_resource': item.get('crisis_resource'),
                     }
                 else:
                     # Already seen this keyword, update unique themes and categories
-                    keyword_map[keyword]['themes'].add(theme)
+                    keyword_map[keyword_language_key]['themes'].add(theme)
+
+                    # apply OR logic if already exists
+                    keyword_map[keyword_language_key]['high_risk_of_false_positive'] = keyword_map[keyword_language_key]['high_risk_of_false_positive'] or item.get('high_risk_of_false_positive')
+                    keyword_map[keyword_language_key]['solution'] = keyword_map[keyword_language_key]['solution'] or item.get('solution')
+                    keyword_map[keyword_language_key]['consequence'] = keyword_map[keyword_language_key]['consequence'] or item.get('consequence')
+                    keyword_map[keyword_language_key]['cause'] = keyword_map[keyword_language_key]['cause'] or item.get('cause')
+                    keyword_map[keyword_language_key]['general_concepts'] = keyword_map[keyword_language_key]['general_concepts'] or item.get('general_concepts')
+                    keyword_map[keyword_language_key]['statement'] = keyword_map[keyword_language_key]['statement'] or item.get('statement')
+                    keyword_map[keyword_language_key]['crisis_climate'] = keyword_map[keyword_language_key]['crisis_climate'] or item.get('crisis_climate')
+                    keyword_map[keyword_language_key]['crisis_biodiversity'] = keyword_map[keyword_language_key]['crisis_biodiversity'] or item.get('crisis_biodiversity')
+                    keyword_map[keyword_language_key]['crisis_resource'] = keyword_map[keyword_language_key]['crisis_resource'] or item.get('crisis_resource')
+
+                    keyword_map[keyword_language_key]['themes'].add(theme)
                     if category:
-                        keyword_map[keyword]['categories'].add(category)
+                        keyword_map[keyword_language_key]['categories'].add(category)
         
         # Second pass: Create dictionary entries with unique themes and categories as lists
-        for keyword, data in keyword_map.items():
+        for (keyword, language), data in keyword_map.items():
             item = data['data']
             themes = list(data['themes'])  # Convert set to list
             categories = list(data['categories'])  # Convert set to list
+            high_risk_of_false_positive = data['high_risk_of_false_positive']
+            solution = data['solution']
+            consequence = data['consequence']
+            cause = data['cause']
+            general_concepts = data['general_concepts']
+            statement = data['statement']
+            crisis_climate = data['crisis_climate']
+            crisis_biodiversity = data['crisis_biodiversity']
+            crisis_resource = data['crisis_resource']
+
             dictionary_entry = {
                 'keyword': keyword,
-                'high_risk_of_false_positive': item.get('high_risk_of_false_positive', True),
-                'solution': item.get('solution', False),
-                'consequence': item.get('consequence', False),
-                'cause': item.get('cause', False),
-                'general_concepts': item.get('general_concepts', False),
-                'statement': item.get('statement', False),
-                'crisis_climate': item.get('crisis_climate', True),
-                'crisis_biodiversity': item.get('crisis_biodiversity', True),
-                'crisis_resource': item.get('crisis_resource', True),
+                'high_risk_of_false_positive': high_risk_of_false_positive,
+                'solution': solution,
+                'consequence': consequence,
+                'cause': cause,
+                'general_concepts': general_concepts,
+                'statement': statement,
+                'crisis_climate': crisis_climate,
+                'crisis_biodiversity': crisis_biodiversity,
+                'crisis_resource': crisis_resource,
                 'categories': categories if categories else None,  # Use None if categories is empty
                 'themes': themes,
-                'language': item.get('language', 'fr')
+                'language': language
             }
             
             session.merge(Dictionary(**dictionary_entry))
@@ -341,28 +388,37 @@ def update_dictionary(engine, theme_keywords):
 
 
 def empty_tables(session = None, stop_word = True):
-    if(os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost"):
+    if( (os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost") and os.environ.get("ENV") != "prod"):
         logging.warning("""Doing: Empty table Stop_Word / Keywords""")
         if stop_word:
             session.query(Stop_Word).delete()
         session.query(Keywords).delete()
+        
         session.commit()
         logging.warning("""Done: Empty table Stop_Word / Keywords""")
 
 
 def drop_tables(conn = None):
     
-    if(os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost"):
+    if( (os.environ.get("POSTGRES_HOST") == "postgres_db" or os.environ.get("POSTGRES_HOST") == "localhost") and os.environ.get("ENV") != "prod"):
         logging.warning("""Drop table keyword / Program_Metadata / Channel_Metadata in the PostgreSQL database""")
         try:
             if conn is None :
                 engine = connect_to_db()
             else:
                 engine = conn
+            logging.info(f"Drop all {Keywords.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Keywords.__table__])
+            logging.info(f"Drop all {Channel_Metadata.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Channel_Metadata.__table__])
+            logging.info(f"Drop all {Program_Metadata.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Program_Metadata.__table__])
+            logging.info(f"Drop all {Stop_Word.__tablename__}")
             Base.metadata.drop_all(bind=engine, tables=[Stop_Word.__table__])
+            logging.info(f"Drop all {Dictionary.__tablename__}")
+            Base.metadata.drop_all(bind=engine, tables=[Dictionary.__table__])
+            logging.info(f"Drop all {Time_Monitored.__tablename__}")
+            Base.metadata.drop_all(bind=engine, tables=[Time_Monitored.__table__])
 
             logging.info(f"Table keyword / Program_Metadata / Channel_Metadata deletion done")
         except (Exception) as error:

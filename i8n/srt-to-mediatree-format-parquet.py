@@ -1,31 +1,25 @@
-import csv
+import sys
 import os
 import time
 import pandas as pd
-import pyarrow as pa
-import pyarrow.parquet as pq
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import defaultdict
-from quotaclimat.data_processing.mediatree.s3.s3_utils import upload_folder_to_s3, get_s3_client
+from quotaclimat.data_processing.mediatree.s3.s3_utils import upload_folder_to_s3, get_s3_client, read_file_from_s3
+from quotaclimat.data_processing.mediatree.i8n.country import GERMANY, get_channel_title_for_name
 from zoneinfo import ZoneInfo
+import time
 from quotaclimat.utils.logger import getLogger
+from quotaclimat.utils.sentry import sentry_init
 import logging
-# execute me with docker compose up testconsole -d / exec run bash
-# docker compose exec testconsole bash
-# /app/ cd i8n/
-# /app/i8n# poetry run python3 srt-to-mediatree-format.py
 
-timezone = "Europe/Berlin"
-
-
-def convert_real_datetime_to_timestamp(dt: datetime) -> tuple[int, datetime]:
+def convert_real_datetime_to_timestamp(dt: datetime, timezone: str) -> tuple[int, datetime]:
     if dt.tzinfo is None:
-        print(f"Datetime is naive (no timezone): {dt}")
-        return 0, None
+        logging.warning(f"Datetime is naive (no timezone): {dt} - it should be in {timezone}, replacing it...")
+        dt = dt.replace(tzinfo=ZoneInfo(timezone))
 
     return int(dt.timestamp()), dt
 
-def convert_datetime_to_timestamp(date_str):
+def convert_datetime_to_timestamp(date_str, timezone):
     """Convert date string to UNIX timestamp"""
     try:
         
@@ -37,11 +31,11 @@ def convert_datetime_to_timestamp(date_str):
         logging.info(f"  ERROR converting date: '{date_str}' - Invalid format")
         return 0, None
 
-def group_by_window_and_partition(data, window_minutes=2, start_column_name='datetime'):
-    """
+def group_by_window_and_partition(data, window_minutes=2, start_column_name='datetime', timezone='Europe/Berlin'):
+    logging.info("""
     Group data into time windows of specified minutes
     and organize by year/month/day/channel partitions
-    """
+    """)
     # First level: year/month/day/channel
     partitions = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list))))
     # Then for each partition: windows
@@ -52,7 +46,7 @@ def group_by_window_and_partition(data, window_minutes=2, start_column_name='dat
     logging.info(f"Grouping {len(data)} entries into {window_minutes}-minute windows with partitioning")
     
     for item in data:
-        timestamp, dt = convert_real_datetime_to_timestamp(item[start_column_name])
+        timestamp, dt = convert_real_datetime_to_timestamp(item[start_column_name], timezone)
         if timestamp > 0 and dt:  # Skip invalid timestamps
             # Create partition keys
             year = dt.year
@@ -99,10 +93,14 @@ def create_mediatree_data_for_partition(windows_data, language='german'):
         
         # Get channel info from the first item
         channel_name = items[0]['channel_name']
+        channel_title = items[0]['channel_title']
         start = items[0]['start']
         
         # Process words for SRT
-        words = split_words_on_apostrophes(combined_plaintext)
+        if language == 'french':
+            words = split_words_on_apostrophes(combined_plaintext)
+        else:
+            words = combined_plaintext.split()
         srt_entries = []
         
         # Convert window_start to milliseconds for cts_in_ms
@@ -123,7 +121,7 @@ def create_mediatree_data_for_partition(windows_data, language='german'):
         window_entry = {
             "srt": srt_entries,
             "channel_name": channel_name,
-            "channel_title": channel_name,
+            "channel_title": channel_title,
             "start": start,
             "plaintext": combined_plaintext
         }
@@ -132,28 +130,15 @@ def create_mediatree_data_for_partition(windows_data, language='german'):
     
     return result
 
-def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree_output"):
-    """
-    Process all CSV files in a folder to mediatree format
-    with partitioning by year/month/day/channel and output as Parquet
-    """
-    
-    logging.info(f"\n{'='*50}")
-    logging.info(f"Starting processing of parquet files in: {folder_path}")
-    logging.info(f"{'='*50}\n")
-    
+def process_csv_folder_to_partitioned_parquet(df, output_dir="mediatree_output", timezone='Europe/Berlin'):
+    logging.info(f"Creating 2 minute windows..")
     start_time = time.time()
-    all_data = []
+    logging.info(f"converting {len(df)} rows DF to dict...")
+    all_data = df.to_dict(orient="records")
+    logging.info(f"converted")
     
-    # Check if folder exists
-    if not os.path.exists(folder_path):
-        logging.error(f"ERROR: Folder {folder_path} does not exist")
-        return None
-    
-    # Get list of parquet files
-
     # Group data by 2-minute windows with partitioning
-    windows_by_partition = group_by_window_and_partition(all_data)
+    windows_by_partition = group_by_window_and_partition(all_data, timezone=timezone)
     
     # Create loal output directory if it doesn't exist
     if not os.path.exists(output_dir):
@@ -178,7 +163,7 @@ def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree
                     mediatree_data = create_mediatree_data_for_partition(windows_data, language='german')
                     df_out = pd.DataFrame(mediatree_data)
                     output_file = os.path.join(partition_dir, "data.parquet")
-                    df_out.to_parquet(output_file)
+                    df_out.to_parquet(output_file) # enable us to do it small part by small part
                     logging.info(f"Partition {partition_count}: {partition_dir}")
     
     elapsed_time = time.time() - start_time
@@ -206,56 +191,102 @@ def map_channel_name(channel_name: str) -> str:
             return "kabel-eins"
         case _:
             return ""
+        
+def map_channel_title(channel_name: str,  country=GERMANY) -> str:
+    logging.debug(f"Mapping channel title for {channel_name}")
+    return map_channel_name(channel_name)
 
-def read_and_parse_parquet(path):
-    df = pd.read_parquet(path)
+def read_and_parse_parquet(path, timezone, date, bucket_name):
+    logging.info(f"Reading parquet file: {path}...")
+    start = time.time()
+    if bucket_name.startswith("local"):
+        logging.info(f"Reading local parquet file: {path}")
+        df = pd.read_parquet(path)
+    else:
+        df = read_file_from_s3(path, bucket_name=bucket_name)
+    logging.info(f"Reading parquet done, applying changes...")
+    
+    #filter out rows where datetime > date
+    logging.info(f"filter by date {date} - rows {len(df)}...")
+    df = df[df['datetime'] >= date]
+
+    logging.info(f"filter by date done. {len(df)} rows")
+    logging.info("adding datetime")
     df['datetime'] = df['datetime'].apply(
-    lambda dt: dt if dt.tzinfo is not None else pd.Series([dt]).dt.tz_localize("Europe/Berlin", ambiguous='NaT')[0]
+    lambda dt: dt if dt.tzinfo is not None else pd.Series([dt]).dt.tz_localize(timezone, ambiguous='NaT')[0]
     )
-    df['plaintext'] = df['text']
-    df['channel_name'] = df['channel'].apply(map_channel_name)
-    df['channel_title'] = df['channel']
-    df.drop(columns=['channel', 'text'], inplace=True)
-    df['channel'] = df['channel_name']
     df['year'] = df['datetime'].dt.year
     df['month'] = df['datetime'].dt.month
     df['day'] = df['datetime'].dt.day
+    logging.info("day,month,year done")
 
+    logging.info(f"text to plaintext...")
+    df['plaintext'] = df['text']
+    logging.info(f"text is now plaintext")
+    logging.info(f"map_channel_name...")
+    df['channel_title'] = df['channel']
+    logging.info(f"map_channel_name done")
+    df['channel_name'] = df['channel_title'].apply(map_channel_title)
+    logging.info(f"dropping text...")
+    df.drop(columns=['text'], inplace=True)
+    logging.info(f"drop text done")
+    df['channel'] = df['channel_name']
+
+    end = time.time()
+    logging.info(f"Loaded parquet in {end - start:.2f} seconds")
     return df
+
 if __name__ == "__main__":
-    getLogger()
-    logging.info("Starting srt parquet to mediatree parquet format")
-    path = os.getenv("PATH_PARQUET", "germany_big.parquet" )
-    timezone = os.getenv("TIMEZONE", "Europe/Berlin" )
-   
-    bucket = os.getenv("BUCKET", "mediatree")
-    output_dir: str = os.getenv("OUTPUT_DIR", "mediatree_output")
-    s3_root_folder = os.getenv("S3_ROOT_FOLDER", "country=belgium")
-    date = os.getenv("DATE", None)
-    number_of_previous_days = os.getenv("NUMBER_OF_PREVIOUS_DAYS", 7)
+    try:
+        getLogger()
+        sentry_init()
+        logging.info("Starting srt parquet to mediatree parquet format")
+        path = os.getenv("PATH_PARQUET", "raw_data.parquet")
+        timezone = os.getenv("TIMEZONE", "Europe/Berlin")
+    
+        bucket = os.getenv("BUCKET_NAME", "germany")
+        bucket_output = os.getenv("BUCKET_OUTPUT", "test-bucket-mediatree")
+        output_dir: str = os.getenv("OUTPUT_DIR", "mediatree_output_test")
+        s3_root_folder = os.getenv("S3_ROOT_FOLDER", "country=germany")
+        date = os.getenv("DATE", None)
+        if date is None:
+            logging.info("No date provided, using today's date")
+            date = datetime.now().strftime("%Y-%m-%d")
+        else:
+            logging.info(f"Using date from env : {date}")
+        date_datetime = datetime.strptime(date, "%Y-%m-%d")
+        number_of_previous_days = int(os.getenv("NUMBER_OF_PREVIOUS_DAYS", 7))
+            # date_datetime - 7 days
+        date_datetime_minus_7_days = date_datetime - timedelta(days=number_of_previous_days)
 
-    date_column = "datetime"
-    logging.info(f"Using timezone: {timezone}")
-    logging.info(f"Using bucket: {bucket}")
-    logging.info(f"Using s3_root_folder: {s3_root_folder}")
-    logging.info(f"date: {date} - number_of_previous_days: {number_of_previous_days}")
+        date_column = "datetime" # parquet column name
+        logging.info(f"Using timezone: {timezone}")
+        logging.info(f"Using bucket input : {bucket} and bucket output: {bucket_output} with s3_root_folder {s3_root_folder}")
+        logging.info(f"Using s3_root_folder: {s3_root_folder}")
+        logging.info(f"date: {date} - reading number_of_previous_days: {number_of_previous_days}, so : {date_datetime_minus_7_days}")
 
+        df = read_and_parse_parquet(path, timezone=timezone, date=date_datetime_minus_7_days, bucket_name=bucket)
 
-    df = read_and_parse_parquet(path)
-    # partition by year month day 
-    tmp_output_path = "tmp_output"
-    df.to_parquet(tmp_output_path, partition_cols=['year', 'month', 'day'])
-    df_tmp = pd.read_parquet(tmp_output_path)
+        start_time = time.time()
+        for day in df['day'].unique():
+            logging.info(f"Processing day: {day} of month {df['month'].unique()} of year {df['year'].unique()}")
+            df_day = df[df['day'] == day]
+            process_csv_folder_to_partitioned_parquet(df_day, output_dir, timezone=timezone)
+        end_time = time.time()
+        logging.warning(f"Processing done inside {output_dir} in {end_time - start_time:.2f} seconds")
 
-    # keep 7 days from date
-    date_datetime = datetime.strptime(date, "%Y-%m-%d")
-    # date_datetime - 7 days
-    date_datetime_minus_7_days = date_datetime - timedelta(days=number_of_previous_days)
-    df_filtered_by_date = df_tmp[df_tmp['date_column'] >= date_datetime_minus_7_days]
+        # check data quality of the output dir
+        logging.info(f"Checking data quality of the output dir...")
+        df_check = pd.read_parquet(output_dir)
+        logging.info(f"Data quality check done. {len(df_check)} rows")
+        logging.info(f"First head: {df_check.head(10)}")
+        logging.info(f"Columns: {df_check.columns}")
 
-    process_csv_folder_to_partitioned_parquet(df_filtered_by_date, output_dir)
-    #process_csv_folder_to_partitioned_parquet(folder_path_2025, output_dir)
-
-    df.to_parquet("final_output", partition_cols=['year', 'month', 'day', 'channel'])
-    # s3_client = get_s3_client()
-    # upload_folder_to_s3(output_dir,bucket, s3_root_folder, s3_client=s3_client)
+        logging.info(f"Uploading to s3...")
+        s3_client = get_s3_client()
+        upload_folder_to_s3(output_dir, bucket_output, s3_root_folder, s3_client=s3_client)
+        logging.info(f"Uploading to s3 done")
+        sys.exit(0)
+    except Exception as e:
+        logging.error(f"Error: {e}")
+        sys.exit(1)

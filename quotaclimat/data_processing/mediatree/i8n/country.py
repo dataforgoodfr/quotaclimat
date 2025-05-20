@@ -156,6 +156,7 @@ def get_channels(country_code=FRANCE.code) -> List[str]:
         return []
     
 def get_channel_title_for_name(channel_name: str, country: CountryMediaTree = FRANCE) -> str:
+    logging.debug(f"Getting channel title for {channel_name} in {country.code}")
     if country.code == FRANCE_CODE:
         match channel_name:
             case "tf1":

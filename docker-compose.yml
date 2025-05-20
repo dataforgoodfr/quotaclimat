@@ -54,7 +54,8 @@ services:
       MEDIATREE_USER : /run/secrets/username_api
       MEDIATREE_PASSWORD: /run/secrets/pwd_api
       BUCKET: /run/secrets/bucket
-      BUCKET_NAME: test-bucket-mediatree
+      BUCKET_NAME: germany
+      BUCKET_OUTPUT: test-bucket-mediatree
       BUCKET_SECRET: /run/secrets/bucket_secret
       MODIN_CPUS: 4 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
     tty: true # colorize terminal
@@ -300,6 +301,7 @@ services:
 
 
   srt:
+    shm_size: 6gb
     build:
       context: ./
       dockerfile: Dockerfile_api_import
@@ -311,14 +313,17 @@ services:
       PORT_HS: 5050 # healthcheck
       HEALTHCHECK_SERVER: "0.0.0.0"
       # SENTRY_DSN: prod_only
-      # NUMBER_OF_PREVIOUS_DAYS: 7
-      # DATE: YYYY-MM-DD # to test batch import 
-      # NUMBER_OF_PREVIOUS_DAYS: 30 # to query mediatree api only - not used for update
+      DATE: "2025-05-01"
+      NUMBER_OF_PREVIOUS_DAYS: 2 # to query mediatree api only - not used for update
       MODIN_ENGINE: ray
       BUCKET: /run/secrets/bucket
-      BUCKET_NAME: mediatree
+      BUCKET_NAME: germany
+      BUCKET_OUTPUT: test-bucket-mediatree
       BUCKET_SECRET: /run/secrets/bucket_secret
-    mem_limit: "1G"
+      PATH_PARQUET: raw_data.parquet
+      TIMEZONE: Europe/Berlin
+      S3_ROOT_FOLDER: country=germany
+      MODIN_CPUS: 4
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/

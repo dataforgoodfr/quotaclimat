@@ -74,9 +74,19 @@ def upload_folder_to_s3(local_folder, bucket_name, base_s3_path, s3_client):
             # shutil.rmtree(local_folder)
             # logging.info(f"Deleted local folder: {local_folder}")
 
-def read_folder_from_s3(date, channel: str, country: CountryMediaTree = FRANCE):
+def read_file_from_s3(path, bucket_name = BUCKET_NAME):
+    s3_key: tuple[str] = f"s3://{bucket_name}/{path}"
+    logging.info(f"Reading S3 file {s3_key}...")
+    return pd.read_parquet(path=s3_key,
+                                    storage_options={
+                                        "key": ACCESS_KEY,
+                                        "secret": SECRET_KEY,
+                                        "endpoint_url": ENDPOINT_URL,
+                                        })
+
+def read_folder_from_s3(date, channel: str, country: CountryMediaTree = FRANCE, bucket_name = BUCKET_NAME):
     s3_path: str = get_bucket_key_folder(date=date, channel=channel, country=country)
-    s3_key: tuple[str] = f"s3://{BUCKET_NAME}/{s3_path}"
+    s3_key: tuple[str] = f"s3://{bucket_name}/{s3_path}"
     logging.info(f"Reading S3 folder {s3_key}")
 
     try:

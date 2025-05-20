@@ -226,6 +226,9 @@ async def get_and_save_api_data(exit_event):
                 logging.info(f"Country : {country}")
                 df_programs = get_programs(country)
                 channels = country.channels
+                if country == GERMANY:
+                    logging.warning(f"Removing channels daserste and zdf-neo and using GERMANY_CHANNELS_MEDIATREE as import via SRT")
+                    channels = GERMANY_CHANNELS_MEDIATREE
                 timezone = country.timezone
                 (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, \
                                                                                             minus_days=number_of_previous_days,\

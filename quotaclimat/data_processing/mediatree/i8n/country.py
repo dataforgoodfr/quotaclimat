@@ -87,9 +87,15 @@ channels_programs_belgium = None # TODO
 BELGIUM = CountryMediaTree(code=BELGIUM_CODE,channels=BELGIUM_CHANNELS, timezone=BELGIUM_TZ, language=BELGIUM_LANGUAGE, programs=channels_programs_belgium)
 
 GERMANY_CODE: GermanyCode ="deu"
-GERMANY_CHANNELS= ["daserste"
+GERMANY_CHANNELS= ["daserste" # from srt import
     ,"zdf-neo"
-    ,"zdf"
+    ,"zdf" # from srt import
+    ,"rtl-television"
+    ,"sat1"
+    ,"prosieben"
+    ,"kabel-eins"]
+GERMANY_CHANNELS_MEDIATREE= [ # imported via mediatree api only
+    "zdf-neo"
     ,"rtl-television"
     ,"sat1"
     ,"prosieben"

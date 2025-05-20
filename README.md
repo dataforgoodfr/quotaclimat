@@ -469,6 +469,20 @@ To update monthly our materialized view in production we have to use this comman
 poetry run dbt run
 ```
 
+### SRT to Mediatree Format
+Some Speech to Text data come from other sources than Mediatree, so we have to transform those source into the mediatree format to process them.
+
+#### Run
+```
+docker compose up srt
+```
+or
+```bash
+docker compose up testconsole -d
+docker compose exec testconsole bash
+/app/ cd i8n/
+/app/i8n# poetry run python3 srt-to-mediatree-format-parquet.py
+```
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
 ```bash

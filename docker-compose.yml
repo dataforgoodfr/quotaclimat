@@ -54,7 +54,8 @@ services:
       MEDIATREE_USER : /run/secrets/username_api
       MEDIATREE_PASSWORD: /run/secrets/pwd_api
       BUCKET: /run/secrets/bucket
-      BUCKET_NAME: test-bucket-mediatree
+      BUCKET_NAME: germany
+      BUCKET_OUTPUT: test-bucket-mediatree
       BUCKET_SECRET: /run/secrets/bucket_secret
       MODIN_CPUS: 4 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
     tty: true # colorize terminal
@@ -297,6 +298,40 @@ services:
       depends_on:
         postgres_db:
           condition: service_healthy
+
+
+  srt:
+    shm_size: 6gb
+    build:
+      context: ./
+      dockerfile: Dockerfile_api_import
+    entrypoint: ["python", "i8n/srt-to-mediatree-format-parquet.py"]
+    environment:
+      ENV: docker # change me to prod for real cases
+      LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log
+      PYTHONPATH: /app
+      PORT_HS: 5050 # healthcheck
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      # SENTRY_DSN: prod_only
+      DATE: "2025-05-01"
+      NUMBER_OF_PREVIOUS_DAYS: 2 # to query mediatree api only - not used for update
+      MODIN_ENGINE: ray
+      BUCKET: /run/secrets/bucket
+      BUCKET_NAME: germany
+      BUCKET_OUTPUT: test-bucket-mediatree
+      BUCKET_SECRET: /run/secrets/bucket_secret
+      PATH_PARQUET: raw_data.parquet
+      TIMEZONE: Europe/Berlin
+      S3_ROOT_FOLDER: country=germany
+      MODIN_CPUS: 4
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./test/:/app/test/
+      - ./i8n:/app/i8n
+    secrets:
+       - bucket
+       - bucket_secret
 
 secrets: # https://docs.docker.com/compose/use-secrets/
   pwd_api:

@@ -39,6 +39,7 @@ COPY alembic/ ./alembic
 COPY alembic.ini ./alembic.ini
 COPY transform_program.py ./transform_program.py
 COPY my_dbt_project/ ./my_dbt_project
+COPY i8n/ ./i8n
 ENV DBT_PROFILES_DIR=/app/my_dbt_project/dbt
 ENV DBT_PROJECT_DIR=/app/my_dbt_project
 

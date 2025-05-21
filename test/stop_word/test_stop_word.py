@@ -57,7 +57,8 @@ def test_stop_word_get_top_keywords_by_channel():
     
     
     top_keywords = get_top_keywords_by_channel(session, duration=3000, top=5, min_number_of_keywords=1)
-    # top_keywords.drop(columns=["theme"], inplace=True) # can be several themes, so dropping theme for tests
+    top_keywords.drop(columns=["theme"], inplace=True) # can be several themes, so dropping theme for tests
+    excepted_df.drop(columns=["theme"], inplace=True) # can be several themes, so dropping theme for tests
 
     assert len(top_keywords) != 0
     pd.testing.assert_frame_equal(top_keywords, excepted_df)

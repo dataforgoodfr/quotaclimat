@@ -121,6 +121,8 @@ models:
         description: Title of the broadcast channel.
       - name: week
         description: Week of the observation (likely in YYYY-WW format).
+      - name: sum_duration_minutes_week
+        description: Number of program minutes for the week
       - name: crise_type
         description: Type of crisis being referenced.
       - name: theme
@@ -130,7 +132,7 @@ models:
       - name: keyword
         description: The keyword identified in the broadcast or transcript.
       - name: count
-        description: Count of lines or mentions related to the keyword.
+        description: Count of lines or mentions related to the keyword
 
   - name: core_query_thematics_keywords_i8n
     description: >

@@ -476,20 +476,24 @@ def transform_false_positive_keywords_to_positive(keywords_with_timestamp: List[
     return keywords_with_timestamp
 
 def get_window_number(keyword_timestamp_ms: int, start: datetime, window_size_seconds: int, max_number_of_windows : int) -> int:
-    start_ms = int(start.timestamp() * 1000)
-    if keyword_timestamp_ms < start_ms:
-        logging.warning(f"Keyword timestamp {keyword_timestamp_ms} is before start {start_ms} - changing to start")
-        keyword_timestamp_ms = start
+    try:
+        start_ms = int(start.timestamp() * 1000)
+        if keyword_timestamp_ms < start_ms:
+            logging.warning(f"Keyword timestamp {keyword_timestamp_ms} is before start {start_ms} - changing to start")
+            keyword_timestamp_ms = start_ms
 
-    window_size_ms = window_size_seconds * 1000
-    window_number = int ((keyword_timestamp_ms - start_ms) // window_size_ms)
+        window_size_ms = window_size_seconds * 1000
+        window_number = int ((keyword_timestamp_ms - start_ms) // window_size_ms)
 
-    # security nets in case we have a timestamp after 2 min of the start
-    if window_number > max_number_of_windows:
-        logging.error(f"window_number {window_number} is greater than max_number_of_windows {max_number_of_windows} - kwtimestamp {keyword_timestamp_ms} - return max window_number {max_number_of_windows}")
-        window_number = max_number_of_windows
+        # security nets in case we have a timestamp after 2 min of the start
+        if window_number > max_number_of_windows:
+            logging.error(f"window_number {window_number} is greater than max_number_of_windows {max_number_of_windows} - kwtimestamp {keyword_timestamp_ms} - return max window_number {max_number_of_windows}")
+            window_number = max_number_of_windows
 
-    return window_number
+        return window_number
+    except Exception as e:
+        logging.error(f"Error in get_window_number {e} - kwtimestamp {keyword_timestamp_ms} - start {start}")
+        raise e
 
 def tag_wanted_duration_second_window_number(keywords_with_timestamp: List[dict], start, duration_seconds: int = 20) -> List[dict]:
     window_size_seconds = get_keyword_time_separation_ms(duration_seconds=duration_seconds)

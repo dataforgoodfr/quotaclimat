@@ -675,7 +675,7 @@ def test_lower_case_filter_and_tag_by_theme():
                 "theme": "changement_climatique_causes",
                 'category': 'General'
         }],
-        "number_of_keywords": 2,
+        "number_of_keywords": 1,
         "number_of_changement_climatique_constat": 1,
         "number_of_changement_climatique_causes_directes": 1,
         "number_of_changement_climatique_consequences": 0,
@@ -687,7 +687,7 @@ def test_lower_case_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
-        ,'number_of_keywords_climat':2,
+        ,'number_of_keywords_climat':1,
         'number_of_keywords_biodiversite':0,
         'number_of_keywords_ressources':1
         ,"number_of_changement_climatique_constat_no_hrfp": 1

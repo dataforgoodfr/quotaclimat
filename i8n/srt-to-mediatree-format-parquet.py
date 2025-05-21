@@ -2,6 +2,7 @@ import sys
 import os
 import time
 import pandas as pd
+from sentry_sdk.crons import monitor
 from datetime import datetime, timedelta
 from collections import defaultdict
 from quotaclimat.data_processing.mediatree.s3.s3_utils import upload_folder_to_s3, get_s3_client, read_file_from_s3
@@ -237,56 +238,57 @@ def read_and_parse_parquet(path, timezone, date, bucket_name):
     return df
 
 if __name__ == "__main__":
-    try:
-        getLogger()
-        sentry_init()
-        logging.info("Starting srt parquet to mediatree parquet format")
-        path = os.getenv("PATH_PARQUET", "raw_data.parquet")
-        timezone = os.getenv("TIMEZONE", "Europe/Berlin")
-    
-        bucket = os.getenv("BUCKET_NAME", "germany")
-        bucket_output = os.getenv("BUCKET_OUTPUT", "test-bucket-mediatree")
-        output_dir: str = os.getenv("OUTPUT_DIR", "mediatree_output_test")
-        s3_root_folder = os.getenv("S3_ROOT_FOLDER", "country=germany")
-        date = os.getenv("DATE", None)
-        if date is None:
-            logging.info("No date provided, using today's date")
-            date = datetime.now().strftime("%Y-%m-%d")
-        else:
-            logging.info(f"Using date from env : {date}")
-        date_datetime = datetime.strptime(date, "%Y-%m-%d")
-        number_of_previous_days = int(os.getenv("NUMBER_OF_PREVIOUS_DAYS", 7))
-            # date_datetime - 7 days
-        date_datetime_minus_7_days = date_datetime - timedelta(days=number_of_previous_days)
+    with monitor(monitor_slug='srt-germany-to-mediatree'): #https://docs.sentry.io/platforms/python/crons/
+        try:
+            getLogger()
+            sentry_init()
+            logging.info("Starting srt parquet to mediatree parquet format")
+            path = os.getenv("PATH_PARQUET", "raw_data.parquet")
+            timezone = os.getenv("TIMEZONE", "Europe/Berlin")
+        
+            bucket = os.getenv("BUCKET_NAME", "germany")
+            bucket_output = os.getenv("BUCKET_OUTPUT", "test-bucket-mediatree")
+            output_dir: str = os.getenv("OUTPUT_DIR", "mediatree_output_test")
+            s3_root_folder = os.getenv("S3_ROOT_FOLDER", "country=germany")
+            date = os.getenv("DATE", None)
+            if date is None:
+                logging.info("No date provided, using today's date")
+                date = datetime.now().strftime("%Y-%m-%d")
+            else:
+                logging.info(f"Using date from env : {date}")
+            date_datetime = datetime.strptime(date, "%Y-%m-%d")
+            number_of_previous_days = int(os.getenv("NUMBER_OF_PREVIOUS_DAYS", 7))
+                # date_datetime - 7 days
+            date_datetime_minus_7_days = date_datetime - timedelta(days=number_of_previous_days)
 
-        date_column = "datetime" # parquet column name
-        logging.info(f"Using timezone: {timezone}")
-        logging.info(f"Using bucket input : {bucket} and bucket output: {bucket_output} with s3_root_folder {s3_root_folder}")
-        logging.info(f"Using s3_root_folder: {s3_root_folder}")
-        logging.info(f"date: {date} - reading number_of_previous_days: {number_of_previous_days}, so : {date_datetime_minus_7_days}")
+            date_column = "datetime" # parquet column name
+            logging.info(f"Using timezone: {timezone}")
+            logging.info(f"Using bucket input : {bucket} and bucket output: {bucket_output} with s3_root_folder {s3_root_folder}")
+            logging.info(f"Using s3_root_folder: {s3_root_folder}")
+            logging.info(f"date: {date} - reading number_of_previous_days: {number_of_previous_days}, so : {date_datetime_minus_7_days}")
 
-        df = read_and_parse_parquet(path, timezone=timezone, date=date_datetime_minus_7_days, bucket_name=bucket)
+            df = read_and_parse_parquet(path, timezone=timezone, date=date_datetime_minus_7_days, bucket_name=bucket)
 
-        start_time = time.time()
-        for day in df['day'].unique():
-            logging.info(f"Processing day: {day} of month {df['month'].unique()} of year {df['year'].unique()}")
-            df_day = df[df['day'] == day]
-            process_csv_folder_to_partitioned_parquet(df_day, output_dir, timezone=timezone)
-        end_time = time.time()
-        logging.warning(f"Processing done inside {output_dir} in {end_time - start_time:.2f} seconds")
+            start_time = time.time()
+            for day in df['day'].unique():
+                logging.info(f"Processing day: {day} of month {df['month'].unique()} of year {df['year'].unique()}")
+                df_day = df[df['day'] == day]
+                process_csv_folder_to_partitioned_parquet(df_day, output_dir, timezone=timezone)
+            end_time = time.time()
+            logging.warning(f"Processing done inside {output_dir} in {end_time - start_time:.2f} seconds")
 
-        # check data quality of the output dir
-        logging.info(f"Checking data quality of the output dir...")
-        df_check = pd.read_parquet(output_dir)
-        logging.info(f"Data quality check done. {len(df_check)} rows")
-        logging.info(f"First head: {df_check.head(10)}")
-        logging.info(f"Columns: {df_check.columns}")
+            # check data quality of the output dir
+            logging.info(f"Checking data quality of the output dir...")
+            df_check = pd.read_parquet(output_dir)
+            logging.info(f"Data quality check done. {len(df_check)} rows")
+            logging.info(f"First head: {df_check.head(10)}")
+            logging.info(f"Columns: {df_check.columns}")
 
-        logging.info(f"Uploading to s3...")
-        s3_client = get_s3_client()
-        upload_folder_to_s3(output_dir, bucket_output, s3_root_folder, s3_client=s3_client)
-        logging.info(f"Uploading to s3 done")
-        sys.exit(0)
-    except Exception as e:
-        logging.error(f"Error: {e}")
-        sys.exit(1)
+            logging.info(f"Uploading to s3...")
+            s3_client = get_s3_client()
+            upload_folder_to_s3(output_dir, bucket_output, s3_root_folder, s3_client=s3_client)
+            logging.info(f"Uploading to s3 done")
+            sys.exit(0)
+        except Exception as e:
+            logging.error(f"Error: {e}")
+            sys.exit(1)

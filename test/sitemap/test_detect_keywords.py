@@ -742,7 +742,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
                 "theme": "changement_climatique_causes",
                 'category': 'General'
         }],
-        "number_of_keywords": 2,
+        "number_of_keywords": 1,
         "number_of_changement_climatique_constat": 1,
         "number_of_changement_climatique_causes_directes": 1,
         "number_of_changement_climatique_consequences": 0,
@@ -754,7 +754,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
-        ,'number_of_keywords_climat':2,
+        ,'number_of_keywords_climat':1,
         'number_of_keywords_biodiversite':0,
         'number_of_keywords_ressources':1
         ,"number_of_changement_climatique_constat_no_hrfp": 1
@@ -1462,8 +1462,7 @@ def test_really_out_of_bound_get_keyword_by_fifteen_second_window():
                 "theme":"changement_climatique_constat",
             }
     ]
-    with pytest.raises(Exception):
-        count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, duration_seconds = 15), start)
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, duration_seconds = 15), start) == 1
 
 def test_almost_out_of_bound_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [

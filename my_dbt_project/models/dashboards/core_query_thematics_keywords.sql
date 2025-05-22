@@ -1,9 +1,8 @@
 {{ config(
-    materialized='incremental'
-    ,unique_key=['start','channel_title']
+    materialized='incremental',
+    unique_key=['week','channel_title']
   )
 }}
-
 with RECURSIVE weekly_expansion AS (
 -- Base case: get initial week_start for each row
 SELECT
@@ -200,7 +199,7 @@ keywords_query as (
 	      ELSE 'Autre'
 	  END,
 	  kw ->> 'theme',
-	  COALESCE(NULLIF(TRIM(kw ->> 'category'), ''), 'Transversal'),
+	  -- COALESCE(NULLIF(TRIM(kw ->> 'category'), ''), 'Transversal'),
 	  kw ->> 'keyword',
 		    category,
 		    pm.weekday
@@ -208,8 +207,7 @@ keywords_query as (
 	      pm.channel_title,
 	      week,
 	      crise_type
-),
-keyword_counts as (
+)
 select 
   kq.channel_title,
   kq.week,
@@ -234,8 +232,14 @@ select
   kq.crise_type,
   kq.theme,
   kq.keyword,
-  sum(kq.count) as count
+  kq.count,
+  sum(pd.sum_duration_minutes) sum_duration_minutes
 from keywords_query kq
+left join program_durations pd
+on
+	kq.channel_title=pd.channel_title
+and
+	kq.week=pd.week_start::date
 group by 
   kq.channel_title,
   kq.week,
@@ -259,70 +263,9 @@ group by
   kq.category,
   kq.crise_type,
   kq.theme,
-  kq.keyword
+  kq.keyword,
+  kq.count
 ORDER by
   kq.channel_title,
   kq.week,
   kq.crise_type
-)
-select 
-  kc.channel_title,
-  kc.week,
-  kc.high_risk_of_false_positive,
-  kc.solution,
-  kc.consequence,
-  kc.cause,
-  kc.general_concepts,
-  kc.statement,
-  kc.crisis_climate,
-  kc.crisis_biodiversity,
-  kc.crisis_resource,
-  kc.categories,
-  kc.themes,
-  kc.language,
-  kc.is_solution,
-  kc.is_consequence,
-  kc.is_cause,
-  kc.is_general_concepts,
-  kc.is_statement,
-  kc.category,
-  kc.crise_type,
-  kc.theme,
-  kc.keyword,
-  kc.count,
-  sum(pd.sum_duration_minutes) as sum_duration_minutes
-from keyword_counts kc
-left join program_durations pd
-on
-	kc.channel_title=pd.channel_title
-and
-	kc.week=pd.week_start::date
-group by 
-kc.channel_title,
-  kc.week,
-  kc.high_risk_of_false_positive,
-  kc.solution,
-  kc.consequence,
-  kc.cause,
-  kc.general_concepts,
-  kc.statement,
-  kc.crisis_climate,
-  kc.crisis_biodiversity,
-  kc.crisis_resource,
-  kc.categories,
-  kc.themes,
-  kc.language,
-  kc.is_solution,
-  kc.is_consequence,
-  kc.is_cause,
-  kc.is_general_concepts,
-  kc.is_statement,
-  kc.category,
-  kc.crise_type,
-  kc.theme,
-  kc.keyword,
-  kc.count
-ORDER by
-  kc.channel_title,
-  kc.week,
-  kc.crise_type

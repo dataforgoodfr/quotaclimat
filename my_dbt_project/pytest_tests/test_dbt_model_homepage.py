@@ -111,7 +111,7 @@ def test_core_query_thematics_keywords_values(db_connection):
 
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT channel_title, week, sum_duration_minutes_week, crise_type, theme, category, keyword, count,
+            SELECT channel_title, week, sum_duration_minutes, crise_type, theme, category, keyword, count,
             high_risk_of_false_positive,
             solution,
             consequence,
@@ -134,8 +134,8 @@ def test_core_query_thematics_keywords_values(db_connection):
 
         expected= (
         'TF1',
-        1650,
         datetime.date(2025, 1, 27),
+        1650,
         'Crise climatique',
         'changement_climatique_constat',
         'Transversal',

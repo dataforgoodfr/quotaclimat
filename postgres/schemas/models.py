@@ -141,23 +141,13 @@ class Dictionary(Base):
 
     high_risk_of_false_positive = Column(Boolean, nullable=True, default=True)
 
-    solution = Column(Boolean, nullable=True, default=False)
-    consequence = Column(Boolean, nullable=True, default=False)
-    cause = Column(Boolean, nullable=True, default=False)
-    general_concepts = Column(Boolean, nullable=True, default=False) # biodiversity only
-    statement = Column(Boolean, nullable=True, default=False) # climate only
-
-    crisis_climate = Column(Boolean, nullable=True, default=True)
-    crisis_biodiversity = Column(Boolean, nullable=True, default=True)
-    crisis_resource = Column(Boolean, nullable=True, default=True)
-    
-    categories = Column(ARRAY(String), nullable=True)  # example ["Concepts généraux", "Sols"]
-    themes = Column(ARRAY(String), nullable=True) # example ["changement_climatique_constat", "ressources"]
+    category = Column(String, nullable=False) # example "Concepts généraux" - can be empty string
+    theme = Column(String, nullable=False) # the actual "changement_climatique_constat"
 
     # all translation of the original keyword
     language = Column(String, nullable=False)
     __table_args__ = (
-        PrimaryKeyConstraint('keyword', 'language', name='pk_keyword_language'),
+        PrimaryKeyConstraint('keyword', 'language', 'category', 'theme', name='pk_keyword_language_category_theme'),
     )
 
 def get_sitemap(id: str):
@@ -297,87 +287,26 @@ def update_dictionary(engine, theme_keywords):
         session.query(Dictionary).delete()
         session.commit()
         
-        # Dictionary to collect keywords and their unique themes/categories
-        keyword_map = {}
-        
-        # First pass: Build a mapping of keywords to their unique themes and categories
         for theme, keywords_list in theme_keywords.items():
             for item in keywords_list:
                 keyword = item['keyword']
-                category = item.get('category')
+                category = item.get('category', '')
                 language = item.get('language')
-                keyword_language_key = (keyword, language)
-                if keyword_language_key not in keyword_map:
-                    # First time seeing this keyword
-                    keyword_map[keyword_language_key] = {
-                        'themes': set([theme]),  # Using sets to ensure uniqueness
-                        'categories': set([category]) if category else set(),
-                        'data': item,
-                        'high_risk_of_false_positive': item.get('high_risk_of_false_positive'),
-                        'solution': item.get('solution'),
-                        'consequence': item.get('consequence'),
-                        'cause': item.get('cause'),
-                        'general_concepts': item.get('general_concepts'),
-                        'statement': item.get('statement'),
-                        'crisis_climate': item.get('crisis_climate'),
-                        'crisis_biodiversity': item.get('crisis_biodiversity'),
-                        'crisis_resource': item.get('crisis_resource'),
-                    }
-                else:
-                    # Already seen this keyword, update unique themes and categories
-                    keyword_map[keyword_language_key]['themes'].add(theme)
+                high_risk_of_false_positive = item.get('high_risk_of_false_positive', False)
 
-                    # apply OR logic if already exists
-                    keyword_map[keyword_language_key]['high_risk_of_false_positive'] = keyword_map[keyword_language_key]['high_risk_of_false_positive'] or item.get('high_risk_of_false_positive')
-                    keyword_map[keyword_language_key]['solution'] = keyword_map[keyword_language_key]['solution'] or item.get('solution')
-                    keyword_map[keyword_language_key]['consequence'] = keyword_map[keyword_language_key]['consequence'] or item.get('consequence')
-                    keyword_map[keyword_language_key]['cause'] = keyword_map[keyword_language_key]['cause'] or item.get('cause')
-                    keyword_map[keyword_language_key]['general_concepts'] = keyword_map[keyword_language_key]['general_concepts'] or item.get('general_concepts')
-                    keyword_map[keyword_language_key]['statement'] = keyword_map[keyword_language_key]['statement'] or item.get('statement')
-                    keyword_map[keyword_language_key]['crisis_climate'] = keyword_map[keyword_language_key]['crisis_climate'] or item.get('crisis_climate')
-                    keyword_map[keyword_language_key]['crisis_biodiversity'] = keyword_map[keyword_language_key]['crisis_biodiversity'] or item.get('crisis_biodiversity')
-                    keyword_map[keyword_language_key]['crisis_resource'] = keyword_map[keyword_language_key]['crisis_resource'] or item.get('crisis_resource')
+                entry = Dictionary(
+                    keyword=keyword,
+                    language=language,
+                    category=category,
+                    theme=theme,
+                    high_risk_of_false_positive=high_risk_of_false_positive,
+                )
 
-                    keyword_map[keyword_language_key]['themes'].add(theme)
-                    if category:
-                        keyword_map[keyword_language_key]['categories'].add(category)
-        
-        # Second pass: Create dictionary entries with unique themes and categories as lists
-        for (keyword, language), data in keyword_map.items():
-            item = data['data']
-            themes = list(data['themes'])  # Convert set to list
-            categories = list(data['categories'])  # Convert set to list
-            high_risk_of_false_positive = data['high_risk_of_false_positive']
-            solution = data['solution']
-            consequence = data['consequence']
-            cause = data['cause']
-            general_concepts = data['general_concepts']
-            statement = data['statement']
-            crisis_climate = data['crisis_climate']
-            crisis_biodiversity = data['crisis_biodiversity']
-            crisis_resource = data['crisis_resource']
+                session.merge(entry)
 
-            dictionary_entry = {
-                'keyword': keyword,
-                'high_risk_of_false_positive': high_risk_of_false_positive,
-                'solution': solution,
-                'consequence': consequence,
-                'cause': cause,
-                'general_concepts': general_concepts,
-                'statement': statement,
-                'crisis_climate': crisis_climate,
-                'crisis_biodiversity': crisis_biodiversity,
-                'crisis_resource': crisis_resource,
-                'categories': categories if categories else None,  # Use None if categories is empty
-                'themes': themes,
-                'language': language
-            }
-            
-            session.merge(Dictionary(**dictionary_entry))
-        
         # Commit all changes
         session.commit()
-        logging.info(f"Updated dictionary data successfully with {len(keyword_map)} entries")
+        logging.info(f"Updated dictionary data successfully with {len(theme_keywords)} entries")
         
     except Exception as error:
         logging.error(f"Error updating dictionary data: {error}")

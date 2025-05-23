@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental'
-    ,unique_key=['start','channel_title']
+    ,unique_key=['week','channel_title']
   )
 }}
 
@@ -9,8 +9,7 @@
       DATE_TRUNC('week', k.start) :: date AS week,
       -- Dictionary metadata
       d.high_risk_of_false_positive,
-      d.category,
-      d.theme,
+      COALESCE(NULLIF(d.category, ''), 'Transversal') AS category,
       d.language,
       CASE
         WHEN LOWER(kw ->> 'theme') LIKE '%solution%' THEN TRUE
@@ -88,8 +87,7 @@ GROUP BY
       DATE_TRUNC('week', k.start) :: date,
       -- Dictionary metadata
       d.high_risk_of_false_positive,
-      d.category,
-      d.theme,
+      COALESCE(NULLIF(d.category, ''), 'Transversal'),
       d.language,
       CASE
           WHEN LOWER(kw ->> 'theme') LIKE '%solution%' THEN TRUE

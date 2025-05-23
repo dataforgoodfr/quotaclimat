@@ -306,7 +306,7 @@ def update_dictionary(engine, theme_keywords):
 
         # Commit all changes
         session.commit()
-        logging.info(f"Updated dictionary data successfully with {len(theme_keywords)} entries")
+        logging.info(f"Updated dictionary data successfully with {len(theme_keywords)} themes")
         
     except Exception as error:
         logging.error(f"Error updating dictionary data: {error}")

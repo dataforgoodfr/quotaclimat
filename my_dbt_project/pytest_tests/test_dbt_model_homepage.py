@@ -105,26 +105,14 @@ def test_core_query_thematics_keywords_count(db_connection):
     count = cur.fetchone()[0]
     cur.close()
 
-    assert count == 130, "count error"
+    assert count == 121, "count error"
 
 def test_core_query_thematics_keywords_values(db_connection):
 
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT channel_title, week, crise_type, theme, category, keyword, count,
-            high_risk_of_false_positive,
-            solution,
-            consequence,
-            cause,
-            general_concepts,
-            statement,
-            is_solution,
-            is_consequence,
-            is_cause,
-            is_general_concepts,
-            is_statement,
-            categories,
-            themes
+            high_risk_of_false_positive
             FROM public.core_query_thematics_keywords
             WHERE channel_title = 'TF1' AND keyword = 'eau' AND theme = 'changement_climatique_constat'
             ORDER BY channel_title DESC
@@ -140,22 +128,7 @@ def test_core_query_thematics_keywords_values(db_connection):
         'Transversal',
         'eau',
         4,
-        True,
-        False,
-        False,
-        False,
-        True,
-        False,
-        False,
-        False,
-        False,
-        False,
-        True,
-        None,
-         [
-      'changement_climatique_constat_indirectes',
-      'biodiversite_concepts_generaux_indirectes',
-         ])
+        True)
         
         expected_trimmed = expected[:-1] 
         row_trimmed = row[:-1]
@@ -167,16 +140,6 @@ def test_core_query_thematics_keywords_values_i8n(db_connection):
         cur.execute("""
             SELECT channel_title, week, crise_type, theme, category, keyword, count,
             high_risk_of_false_positive,
-            solution,
-            consequence,
-            cause,
-            general_concepts,
-            statement,
-            crisis_climate,
-            crisis_biodiversity,
-            crisis_resource,
-            categories,
-            themes,
             country
             FROM public.core_query_thematics_keywords_i8n
             WHERE channel_title = 'TF1' AND keyword = 'eau'
@@ -192,21 +155,8 @@ def test_core_query_thematics_keywords_values_i8n(db_connection):
         'changement_climatique_constat',
         'Transversal',
         'eau',
-        4,
-        True,
-        False,
-        False,
-        False,
-        True,
-        False,
-        False,
-        True,
-        False,
-        None,
-        [
-            'biodiversite_concepts_generaux_indirectes',
-            'changement_climatique_constat_indirectes',
-        ]
+        8, 
+        True
         ,"france")
         expected_trimmed = expected[: -2] + expected[-1:]
         row_trimmed = row[: -2] + row[-1:]

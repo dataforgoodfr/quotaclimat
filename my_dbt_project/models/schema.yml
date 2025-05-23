@@ -151,3 +151,5 @@ models:
         description: The keyword identified in the broadcast or transcript.
       - name: count
         description: Count of lines or mentions related to the keyword.
+      - name: country
+        description: country

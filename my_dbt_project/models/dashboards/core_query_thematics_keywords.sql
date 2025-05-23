@@ -103,6 +103,7 @@ WHERE
 GROUP BY
       pm.channel_title,
       DATE_TRUNC('week', k.start) :: date,
+      -- Dictionary metadata
       d.high_risk_of_false_positive,
       d.solution,
       d.consequence,
@@ -148,7 +149,6 @@ GROUP BY
         ELSE 'Autre'
       END,
       kw ->> 'theme',
-      COALESCE(NULLIF(TRIM(kw ->> 'category'), ''), 'Transversal'),
       kw ->> 'keyword',
 	    category
    

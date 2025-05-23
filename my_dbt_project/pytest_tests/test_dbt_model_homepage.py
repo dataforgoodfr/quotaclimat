@@ -105,7 +105,7 @@ def test_core_query_thematics_keywords_count(db_connection):
     count = cur.fetchone()[0]
     cur.close()
 
-    assert count == 121, "count error"
+    assert count == 103, "count error"
 
 def test_core_query_thematics_keywords_values(db_connection):
 
@@ -155,7 +155,7 @@ def test_core_query_thematics_keywords_values_i8n(db_connection):
         'changement_climatique_constat',
         'Transversal',
         'eau',
-        8, 
+        4, 
         True
         ,"france")
         expected_trimmed = expected[: -2] + expected[-1:]

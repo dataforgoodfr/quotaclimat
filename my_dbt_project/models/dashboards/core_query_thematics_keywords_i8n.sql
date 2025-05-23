@@ -76,7 +76,7 @@ LEFT JOIN public.program_metadata pm ON k.channel_program = pm.channel_program
       AND CAST(pm.program_grid_end AS date) -- Expand keywords
 ,
       json_array_elements(k.keywords_with_timestamp :: json) AS kw -- Join dictionary on keyword
-      LEFT JOIN public.dictionary d ON d."keyword" = kw ->> 'keyword' -- Exclude indirect themes
+      LEFT JOIN public.dictionary d ON d."keyword" = kw ->> 'keyword' AND d."theme" = kw ->> 'theme'
 WHERE
       LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
    

@@ -10,7 +10,6 @@
       -- Dictionary metadata
       d.high_risk_of_false_positive,
       COALESCE(NULLIF(d.category, ''), 'Transversal') AS category,
-      d.language,
       CASE
         WHEN LOWER(kw ->> 'theme') LIKE '%solution%' THEN TRUE
         ELSE FALSE
@@ -88,7 +87,6 @@ GROUP BY
       -- Dictionary metadata
       d.high_risk_of_false_positive,
       COALESCE(NULLIF(d.category, ''), 'Transversal'),
-      d.language,
       CASE
           WHEN LOWER(kw ->> 'theme') LIKE '%solution%' THEN TRUE
           ELSE FALSE

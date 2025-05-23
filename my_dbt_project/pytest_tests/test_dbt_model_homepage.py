@@ -105,7 +105,7 @@ def test_core_query_thematics_keywords_count(db_connection):
     count = cur.fetchone()[0]
     cur.close()
 
-    assert count == 148, "count error"
+    assert count == 130, "count error"
 
 def test_core_query_thematics_keywords_values(db_connection):
 

@@ -32,7 +32,6 @@
           WHEN LOWER(kw ->> 'theme') LIKE '%constat%' THEN TRUE
           ELSE FALSE
       END AS is_statement,
-	    category, --from dictionary table
       -- Crise type selon le thème
       CASE
         WHEN LOWER(kw ->> 'theme') LIKE '%climat%' THEN 'Crise climatique'
@@ -41,7 +40,6 @@
         ELSE 'Autre'
       END AS crise_type,
       kw ->> 'theme' AS theme,
-     -- COALESCE(NULLIF(TRIM(kw ->> 'category'), ''), 'Transversal') AS category, --legacy category would can be not up to date.
       kw ->> 'keyword' AS keyword,
       COUNT(*) AS count
     FROM
@@ -88,6 +86,7 @@ WHERE
 GROUP BY
       pm.channel_title,
       DATE_TRUNC('week', k.start) :: date,
+      -- Dictionary metadata
       d.high_risk_of_false_positive,
       d.category,
       d.theme,

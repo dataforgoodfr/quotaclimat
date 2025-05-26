@@ -120,7 +120,8 @@ GROUP BY
         ELSE 'Autre'
       END,
       kw ->> 'theme',
-      kw ->> 'keyword'
+      kw ->> 'keyword',
+	    category
    
 ORDER BY
       channel_title,

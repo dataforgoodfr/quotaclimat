@@ -5,7 +5,7 @@
 }}
 
     SELECT
-      pm.channel_title,
+      COALESCE(pm.channel_title, k.channel_title) AS channel_title,
       DATE_TRUNC('week', k.start) :: date AS week,
       -- Dictionary metadata
       d.high_risk_of_false_positive,
@@ -82,7 +82,7 @@ WHERE
       
    
 GROUP BY
-      pm.channel_title,
+      COALESCE(pm.channel_title, k.channel_title),
       DATE_TRUNC('week', k.start) :: date,
       -- Dictionary metadata
       d.high_risk_of_false_positive,
@@ -123,6 +123,6 @@ GROUP BY
       kw ->> 'keyword'
    
 ORDER BY
-      pm.channel_title,
+      channel_title,
       week,
       crise_type

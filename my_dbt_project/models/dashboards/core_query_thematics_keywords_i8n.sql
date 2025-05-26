@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental'
-    ,unique_key=['start','channel_title']
+    ,unique_key=['week','channel_title']
   )
 }}
 

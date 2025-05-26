@@ -30,6 +30,36 @@ def get_top_keyword_of_stop_words(stop_word_keyword_only: bool, stop_words_objec
 
     return top_keyword_of_stop_words
 
+
+def update_program_only(keyword_id: int, start: str, channel_name: str, channel_title: str, session: Session, country = FRANCE):
+    logging.debug(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
+    # TODO: pd.Timestamp(start) should be localized to country timezone
+    start_tz = pd.Timestamp(start)
+    logging.info(f"start timezone : {start_tz.tzinfo} - timestamp {start_tz} - original {start}- {type(start_tz)}")
+    # start_tz = pd.Timestamp(start).tz_localize(country.timezone) #.tz_convert("Europe/Paris")
+    logging.info(f"tz_localize Europe/Paris start timezone : {start_tz.tzinfo} - timestamp {start_tz} - original {start}- {type(start_tz)}")
+    # TODO
+    # if(os.environ.get("ENV") == "prod"): # weird bug i don't want to know about
+    #     start_tz = pd.Timestamp(start).tz_localize("UTC").tz_convert("Europe/Paris")
+    # else:
+    #     start_tz = pd.Timestamp(start).tz_convert("Europe/Paris")
+    logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - converted tz : {start_tz}")
+    df_programs = get_programs()
+    program_name, program_name_type, program_metadata_id = \
+            get_a_program_with_start_timestamp(df_program=df_programs, start_time=start_tz, channel_name=channel_name)
+    
+    logging.info(f"new data for keyword_id ({keyword_id}): program_name ({program_name}) - program_name_type ({program_name_type}) - program_metadata_id ({program_metadata_id})")
+    try:
+        update_keyword_row_program(session
+            ,keyword_id
+            ,channel_program=program_name
+            ,channel_program_type=program_name_type
+            ,channel_title=channel_title
+            ,program_metadata_id=program_metadata_id
+        )
+    except Exception as err:
+        logging.error(f"update_keyword_row_program - continuing loop but met error : {err}")
+   
 def update_keywords(session: Session, batch_size: int = 50000, start_date : str = "2023-04-01", program_only=False, \
                     end_date: str = "2023-04-30", channel: str = "", empty_program_only=False, \
                         stop_word_keyword_only = False, \
@@ -149,27 +179,17 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                 ,number_of_biodiversite_solutions_no_hrfp
                 )
             else: # Program only mode
-                logging.debug(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
-                if(os.environ.get("ENV") == "prod"): # weird bug i don't want to know about
-                    start_tz = pd.Timestamp(start).tz_localize("UTC").tz_convert("Europe/Paris")
-                else:
-                    start_tz = pd.Timestamp(start).tz_convert("Europe/Paris")
-                logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - converted tz : {start_tz}")
-                df_programs = get_programs()
-                program_name, program_name_type, program_metadata_id = \
-                      get_a_program_with_start_timestamp(df_program=df_programs, start_time=start_tz, channel_name=channel_name)
-                
-                logging.info(f"new data for keyword_id ({keyword_id}): program_name ({program_name}) - program_name_type ({program_name_type}) - program_metadata_id ({program_metadata_id})")
                 try:
-                    update_keyword_row_program(session
-                        ,keyword_id
-                        ,channel_program=program_name
-                        ,channel_program_type=program_name_type
-                        ,channel_title=channel_title
-                        ,program_metadata_id=program_metadata_id
+                    update_program_only(
+                        keyword_id=keyword_id,
+                        start=start,
+                        channel_name=channel_name,
+                        channel_title=channel_title,
+                        session=session,
+                        country=country
                     )
                 except Exception as err:
-                    logging.error(f"update_keyword_row_program - continuing loop but met error : {err}")
+                    logging.error(f"update_program_only - continuing loop but met error : {err}")
                     continue
         logging.info(f"bulk update done {i} out of {total_updates} - (max offset {total_updates})")
         session.commit()
@@ -180,13 +200,13 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
 def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30",\
                          channel: str = "", empty_program_only: bool = False, keywords_to_includes: list[str] = [], \
                          biodiversity_only = False, country = FRANCE) -> list:
-    logging.debug(f"Getting {batch_size} elements from offset {offset}")
+    logging.info(f"Getting {batch_size} elements from offset {offset} with timezone {country.timezone}")
     query = session.query(
             Keywords.id,
             Keywords.plaintext,
             Keywords.keywords_with_timestamp,
             Keywords.number_of_keywords,
-            func.timezone('UTC', Keywords.start).label('start'),
+            func.timezone(country.timezone, Keywords.start).label('start'), # TODO why UTC was used here ?
             Keywords.srt,
             Keywords.theme,
             Keywords.channel_name,

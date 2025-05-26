@@ -171,6 +171,7 @@ services:
       timeout: 5s
       retries: 5
     environment:
+      TZ: Europe/Paris # to match prod settings
       POSTGRES_USER: user
       POSTGRES_DB: barometre
       POSTGRES_PASSWORD: password

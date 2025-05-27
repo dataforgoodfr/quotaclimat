@@ -675,7 +675,7 @@ def test_lower_case_filter_and_tag_by_theme():
                 "theme": "changement_climatique_causes",
                 'category': 'General'
         }],
-        "number_of_keywords": 2,
+        "number_of_keywords": 1,
         "number_of_changement_climatique_constat": 1,
         "number_of_changement_climatique_causes_directes": 1,
         "number_of_changement_climatique_consequences": 0,
@@ -687,7 +687,7 @@ def test_lower_case_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
-        ,'number_of_keywords_climat':2,
+        ,'number_of_keywords_climat':1,
         'number_of_keywords_biodiversite':0,
         'number_of_keywords_ressources':1
         ,"number_of_changement_climatique_constat_no_hrfp": 1
@@ -742,7 +742,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
                 "theme": "changement_climatique_causes",
                 'category': 'General'
         }],
-        "number_of_keywords": 2,
+        "number_of_keywords": 1,
         "number_of_changement_climatique_constat": 1,
         "number_of_changement_climatique_causes_directes": 1,
         "number_of_changement_climatique_consequences": 0,
@@ -754,7 +754,7 @@ def test_singular_plural_case_filter_and_tag_by_theme():
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
         "number_of_biodiversite_solutions_directes" :0
-        ,'number_of_keywords_climat':2,
+        ,'number_of_keywords_climat':1,
         'number_of_keywords_biodiversite':0,
         'number_of_keywords_ressources':1
         ,"number_of_changement_climatique_constat_no_hrfp": 1
@@ -1439,6 +1439,21 @@ def test_edge_out_of_bound_get_keyword_by_fifteen_second_window():
     
     assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, duration_seconds = 15), start) == 1
 
+
+
+def test_get_keyword_by_twenty_second_window_early_keyword():
+    start =  datetime.fromtimestamp(1747073880)
+    keywords_with_timestamp = [{"keyword":"jardin","timestamp":1747073977089,"theme":"adaptation_climatique_solutions_indirectes","category":"Ecosystème"},{"keyword":"prairie","timestamp":1747073949000,"theme":"attenuation_climatique_solutions_indirectes","category":"Ecosystème"},{"keyword":"agriculture conventionnelle","timestamp":1747073904043,"theme":"biodiversite_causes","category":"General"},{"keyword":"pesticide","timestamp":1747073968032,"theme":"biodiversite_causes","category":"Pollution"},{"keyword":"intrants","timestamp":1747073907033,"theme":"biodiversite_causes","category":"Pollution","hrfp":True},{"keyword":"biodiversité","timestamp":1747073891072,"theme":"biodiversite_concepts_generaux","category":""},{"keyword":"espèce locale","timestamp":1747073980053,"theme":"biodiversite_concepts_generaux","category":""},{"keyword":"milieux naturels","timestamp":1747073915006,"theme":"biodiversite_concepts_generaux","category":""},{"keyword":"ver de terre","timestamp":1747073885068,"theme":"biodiversite_concepts_generaux","category":""},{"keyword":"bactérie","timestamp":1747073879080,"theme":"biodiversite_concepts_generaux","category":"","hrfp":True},{"keyword":"habitat","timestamp":1747073925029,"theme":"biodiversite_concepts_generaux","category":"","hrfp":True},{"keyword":"insecte","timestamp":1747073882060,"theme":"biodiversite_concepts_generaux","category":"","hrfp":True},{"keyword":"pelouse","timestamp":1747073944000,"theme":"biodiversite_concepts_generaux","category":"","hrfp":True},{"keyword":"jardin","timestamp":1747073977089,"theme":"biodiversite_solutions","category":"Ecosystème","hrfp":True},{"keyword":"prairie","timestamp":1747073949000,"theme":"biodiversite_solutions","category":"Ecosystème","hrfp":True},{"keyword":"agriculture conventionnelle","timestamp":1747073904043,"theme":"changement_climatique_causes","category":"Agriculture"},{"keyword":"climat","timestamp":1747073920033,"theme":"changement_climatique_constat","category":"","hrfp":True},{"keyword":"agriculture conventionnelle","timestamp":1747073904043,"theme":"ressources","category":"Air"},{"keyword":"agriculture conventionnelle","timestamp":1747073904043,"theme":"ressources","category":"Eau"},{"keyword":"agriculture conventionnelle","timestamp":1747073904043,"theme":"ressources","category":"Sols"},{"keyword":"pesticide","timestamp":1747073968032,"theme":"ressources","category":"Air"},{"keyword":"pesticide","timestamp":1747073968032,"theme":"ressources","category":"Eau"},{"keyword":"pesticide","timestamp":1747073968032,"theme":"ressources","category":"Sols"},{"keyword":"intrants","timestamp":1747073907033,"theme":"ressources","category":"Eau","hrfp":True},{"keyword":"intrants","timestamp":1747073907033,"theme":"ressources","category":"Sols","hrfp":True},{"keyword":"bio","timestamp":1747073958040,"theme":"ressources_solutions","category":"Concepts généraux","hrfp":True},{"keyword":"bio","timestamp":1747073958040,"theme":"ressources_solutions","category":"Concepts généraux","hrfp":True}]
+    
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, duration_seconds = 20), start) == 6
+
+
+def test_get_keyword_by_twenty_second_window_late_keywird():
+    start =  datetime.fromtimestamp(1744209960)
+    keywords_with_timestamp = [{"keyword":"barrage","timestamp":1744210038033,"theme":"adaptation_climatique_solutions","category":"Eau","hrfp":True},{"keyword":"parc","timestamp":1744209987074,"theme":"adaptation_climatique_solutions","category":"Ecosystème","hrfp":True},{"keyword":"verdure","timestamp":1744210064094,"theme":"adaptation_climatique_solutions_indirectes","category":""},{"keyword":"éolienne","timestamp":1744209959072,"theme":"attenuation_climatique_solutions","category":"Energie"},{"keyword":"parc","timestamp":1744209987074,"theme":"attenuation_climatique_solutions","category":"Ecosystème","hrfp":True},{"keyword":"responsable","timestamp":1744209960006,"theme":"attenuation_climatique_solutions","category":"General","hrfp":True},{"keyword":"restriction","timestamp":1744210026030,"theme":"attenuation_climatique_solutions","category":"General","hrfp":True},{"keyword":"verdure","timestamp":1744210064094,"theme":"attenuation_climatique_solutions_indirectes","category":""},{"keyword":"barrage","timestamp":1744210038033,"theme":"biodiversite_causes_indirectes","category":"Destruction des habitats"},{"keyword":"sécheresse","timestamp":1744210015073,"theme":"biodiversite_causes_indirectes","category":"General"},{"keyword":"eau","timestamp":1744210009061,"theme":"biodiversite_concepts_generaux_indirectes","category":""},{"keyword":"montagne","timestamp":1744210003049,"theme":"biodiversite_concepts_generaux_indirectes","category":""},{"keyword":"rivière","timestamp":1744210035083,"theme":"biodiversite_concepts_generaux_indirectes","category":""},{"keyword":"terre","timestamp":1744210061056,"theme":"biodiversite_concepts_generaux_indirectes","category":""},{"keyword":"restriction","timestamp":1744210026030,"theme":"biodiversite_consequences_indirectes","category":""},{"keyword":"espèce protégée","timestamp":1744209964014,"theme":"biodiversite_solutions","category":"Ecosystème"},{"keyword":"parc","timestamp":1744209987074,"theme":"biodiversite_solutions","category":"Ecosystème","hrfp":True},{"keyword":"responsable","timestamp":1744209960006,"theme":"biodiversite_solutions","category":"General","hrfp":True},{"keyword":"restriction","timestamp":1744210026030,"theme":"biodiversite_solutions_indirectes","category":"General"},{"keyword":"verdure","timestamp":1744210064094,"theme":"biodiversite_solutions_indirectes","category":""},{"keyword":"sécheresse","timestamp":1744210015073,"theme":"changement_climatique_consequences","category":""},{"keyword":"restriction","timestamp":1744210026030,"theme":"changement_climatique_consequences","category":"General","hrfp":True},{"keyword":"eau","timestamp":1744210009061,"theme":"changement_climatique_constat","category":"","hrfp":True},{"keyword":"terre","timestamp":1744210061056,"theme":"changement_climatique_constat_indirectes","category":""},{"keyword":"réserve d'eau","timestamp":1744210043008,"theme":"ressources","category":"Eau"},{"keyword":"sécheresse","timestamp":1744210015073,"theme":"ressources","category":"Eau"},{"keyword":"barrage","timestamp":1744210038033,"theme":"ressources","category":"Energie","hrfp":True},{"keyword":"restriction","timestamp":1744210026030,"theme":"ressources","category":"Concepts généraux","hrfp":True},{"keyword":"terre","timestamp":1744210061056,"theme":"ressources","category":"Concepts généraux","hrfp":True},{"keyword":"terre","timestamp":1744210061056,"theme":"ressources","category":"Sols","hrfp":True},{"keyword":"barrage","timestamp":1744210038033,"theme":"ressources_solutions","category":"Eau","hrfp":True},{"keyword":"barrage","timestamp":1744210038033,"theme":"ressources_solutions","category":"Eau","hrfp":True},{"keyword":"responsable","timestamp":1744209960006,"theme":"ressources_solutions","category":"Concepts généraux","hrfp":True},{"keyword":"responsable","timestamp":1744209960006,"theme":"ressources_solutions","category":"Concepts généraux","hrfp":True},{"keyword":"restriction","timestamp":1744210026030,"theme":"ressources_solutions","category":"Concepts généraux","hrfp":True},{"keyword":"restriction","timestamp":1744210026030,"theme":"ressources_solutions","category":"Concepts généraux","hrfp":True},{"keyword":"éolienne","timestamp":1744209959072,"theme":"ressources_solutions","category":"Energie"}]
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, duration_seconds = 20), start) == 6
+
+
 def test_really_out_of_bound_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [
             {
@@ -1447,8 +1462,7 @@ def test_really_out_of_bound_get_keyword_by_fifteen_second_window():
                 "theme":"changement_climatique_constat",
             }
     ]
-    with pytest.raises(Exception):
-        count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, duration_seconds = 15), start)
+    assert count_different_window_number(tag_wanted_duration_second_window_number(keywords_with_timestamp, start, duration_seconds = 15), start) == 1
 
 def test_almost_out_of_bound_get_keyword_by_fifteen_second_window():
     keywords_with_timestamp = [

@@ -475,14 +475,35 @@ def transform_false_positive_keywords_to_positive(keywords_with_timestamp: List[
 
     return keywords_with_timestamp
 
+def get_window_number(keyword_timestamp_ms: int, start: datetime, window_size_seconds: int, max_number_of_windows : int) -> int:
+    try:
+        start_ms = int(start.timestamp() * 1000)
+        if keyword_timestamp_ms < start_ms:
+            logging.warning(f"Keyword timestamp {keyword_timestamp_ms} is before start {start_ms} - changing to start")
+            keyword_timestamp_ms = start_ms
+
+        window_size_ms = window_size_seconds * 1000
+        window_number = int ((keyword_timestamp_ms - start_ms) // window_size_ms)
+
+        # security nets in case we have a timestamp after 2 min of the start
+        if window_number > max_number_of_windows:
+            logging.error(f"window_number {window_number} is greater than max_number_of_windows {max_number_of_windows} - kwtimestamp {keyword_timestamp_ms} - return max window_number {max_number_of_windows}")
+            window_number = max_number_of_windows
+
+        return window_number
+    except Exception as e:
+        logging.error(f"Error in get_window_number {e} - kwtimestamp {keyword_timestamp_ms} - start {start}")
+        raise e
+
 def tag_wanted_duration_second_window_number(keywords_with_timestamp: List[dict], start, duration_seconds: int = 20) -> List[dict]:
     window_size_seconds = get_keyword_time_separation_ms(duration_seconds=duration_seconds)
     total_seconds_in_window = get_chunk_duration_api()
     number_of_windows = int(total_seconds_in_window // window_size_seconds)
     logging.debug(f"number_of_windows { number_of_windows} - window_size_seconds {window_size_seconds} using duration_seconds {duration_seconds}")
     for keyword_info in keywords_with_timestamp:
-        window_number = int( (keyword_info['timestamp'] - start.timestamp() * 1000) // (window_size_seconds))
-        logging.debug(f"Window number {window_number} out of {number_of_windows} - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
+
+        window_number = get_window_number(keyword_info['timestamp'], start, duration_seconds, number_of_windows)
+        logging.info(f"Window number {window_number} out of {number_of_windows} - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")
         if window_number >= number_of_windows and window_number >= 0:
             if(window_number == number_of_windows): # give some slack to mediatree subtitle edge case
                 logging.warning(f"Edge cases around 2 minutes - still counting for one - kwtimestamp {keyword_info['timestamp']} - start {start.timestamp() * 1000}")

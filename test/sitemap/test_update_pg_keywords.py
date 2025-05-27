@@ -1296,3 +1296,10 @@ def test_update_program_only():
     # 6 has changed
     assert result_after_update_m6.channel_program == "1245 le mag"
     assert result_after_update_m6.channel_program_type == "Information - Magazine"
+
+
+def test_get_timestamp_without_tz():
+    assert get_timestamp_with_tz(start="2024-01-01T12:00:00") == pd.Timestamp("2024-01-01T12:00:00+00:00", tz="UTC")
+
+def test_get_timestamp_with_tz():
+    assert get_timestamp_with_tz(start="2024-01-01T12:00:00+00:00") == pd.Timestamp("2024-01-01T12:00:00+00:00", tz="UTC")

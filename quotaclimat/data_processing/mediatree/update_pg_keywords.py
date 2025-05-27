@@ -31,16 +31,24 @@ def get_top_keyword_of_stop_words(stop_word_keyword_only: bool, stop_words_objec
     return top_keyword_of_stop_words
 
 
+def get_timestamp_with_tz(start: str, country = FRANCE) -> pd.Timestamp:
+    try:
+        start_tz = pd.Timestamp(start)
+        logging.info(f"start timezone : {start_tz.tzinfo} - timestamp {start_tz} - original {start}- {type(start_tz)}")
+        if start_tz.tzinfo is None:
+            logging.warning(f"start timezone is None, localizing to UTC")
+            start_tz = start_tz.tz_localize("UTC")
+        
+        start_tz = start_tz.tz_convert(country.timezone)
+        return start_tz
+    except Exception as err:
+        logging.error(f"Error converting start {start} to timestamp with timezone {country.timezone} : {err}")
+        raise ValueError(f"Error converting start {start} to timestamp with timezone {country.timezone} : {err}")
+
 def update_program_only(keyword_id: int, start: str, channel_name: str, channel_title: str, session: Session, country = FRANCE):
     logging.debug(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
 
-    start_tz = pd.Timestamp(start)
-    logging.debug(f"start timezone : {start_tz.tzinfo} - timestamp {start_tz} - original {start}- {type(start_tz)}")
-
-    if start.tzinfo is None: # legacy: should not happen
-        start_tz = pd.Timestamp(start).tz_localize("UTC")
-
-    start_tz = pd.Timestamp(start).tz_convert(country.timezone)
+    start_tz = get_timestamp_with_tz(start=start, country=country)
     logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - converted tz : {start_tz}")
     df_programs = get_programs()
     program_name, program_name_type, program_metadata_id = \

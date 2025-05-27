@@ -35,15 +35,12 @@ def update_program_only(keyword_id: int, start: str, channel_name: str, channel_
     logging.debug(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
 
     start_tz = pd.Timestamp(start)
-    logging.info(f"start timezone : {start_tz.tzinfo} - timestamp {start_tz} - original {start}- {type(start_tz)}")
-    # come from UTC from the DB
+    logging.debug(f"start timezone : {start_tz.tzinfo} - timestamp {start_tz} - original {start}- {type(start_tz)}")
+
+    if start.tzinfo is None: # legacy: should not happen
+        start_tz = pd.Timestamp(start).tz_localize("UTC")
+
     start_tz = pd.Timestamp(start).tz_convert(country.timezone)
-    logging.info(f"tz_localize Europe/Paris start timezone : {start_tz.tzinfo} - timestamp {start_tz} - original {start}- {type(start_tz)}")
-    # TODO
-    # if(os.environ.get("ENV") == "prod"): # weird bug i don't want to know about
-    #     start_tz = pd.Timestamp(start).tz_localize("UTC").tz_convert("Europe/Paris")
-    # else:
-    #     start_tz = pd.Timestamp(start).tz_convert("Europe/Paris")
     logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - converted tz : {start_tz}")
     df_programs = get_programs()
     program_name, program_name_type, program_metadata_id = \
@@ -211,7 +208,7 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
             Keywords.plaintext,
             Keywords.keywords_with_timestamp,
             Keywords.number_of_keywords,
-            func.timezone('UTC', Keywords.start).label('start'), #  func.timezone always return UTC
+            Keywords.start,
             Keywords.srt,
             Keywords.theme,
             Keywords.channel_name,

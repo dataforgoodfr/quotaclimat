@@ -11,12 +11,14 @@ import pandas as pd
 from quotaclimat.data_processing.mediatree.stop_word.main import *
 
 logging.getLogger().setLevel(logging.INFO)
-original_timestamp = 1706271523 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
-start = pd.to_datetime("2024-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
-start_tf1 = pd.to_datetime("2024-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
+# original_timestamp = 1706271523 * 1000 # Fri Jan 26 2024 12:18:43 GMT+0000
+start = pd.to_datetime("2024-01-26 12:18:43", utc=True).tz_convert('Europe/Paris')
+original_timestamp = start.timestamp() * 1000
+start_tf1 = pd.to_datetime("2024-01-26 12:18:43", utc=True).tz_convert('Europe/Paris')
 
 @pytest.fixture(scope="module", autouse=True)
 def init_tables(): 
+    drop_tables()
     create_tables()
 
 wrong_value = 0

@@ -95,6 +95,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                                                             biodiversity_only=biodiversity_only, country=country)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {total_updates}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name, channel_title in current_batch_saved_keywords:
+            logging.error(f"start {start} - type {type(start)}")
             if channel_title is None:
                 logging.warning(f"channel_title none, set it using channel_name {channel_name}")
                 channel_title = get_channel_title_for_name(channel_name)
@@ -130,54 +131,58 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     ,number_of_biodiversite_consequences_no_hrfp \
                     ,number_of_biodiversite_solutions_no_hrfp \
                     ,country_name = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words)
-                except Exception as err:
-                        logging.error(f"continuing loop but met error : {err}")
-                        continue
-                
-                if(number_of_keywords != new_number_of_keywords or
-                    keywords_with_timestamp != new_keywords_with_timestamp or
-                    theme != matching_themes
-                    ):
-                    logging.info(f"Difference detected for themes for ID {keyword_id} -  {theme} - {matching_themes} \
-                                \nnumber_of_keywords {number_of_keywords} - {new_number_of_keywords}\
-                                \nkeywords_with_timestamp : {keywords_with_timestamp}\
-                                \n new_nkeywords_with_timestamp : {new_keywords_with_timestamp}"
-                    )
-                else:
-                    logging.debug("No difference")
 
-                update_keyword_row(session,
-                keyword_id,
-                new_number_of_keywords,
-                new_keywords_with_timestamp,
-                matching_themes
-                ,number_of_changement_climatique_constat
-                ,number_of_changement_climatique_causes_directes
-                ,number_of_changement_climatique_consequences
-                ,number_of_attenuation_climatique_solutions_directes
-                ,number_of_adaptation_climatique_solutions_directes
-                ,number_of_ressources
-                ,number_of_ressources_solutions
-                ,number_of_biodiversite_concepts_generaux
-                ,number_of_biodiversite_causes_directes
-                ,number_of_biodiversite_consequences
-                ,number_of_biodiversite_solutions_directes
-                ,channel_title
-                ,new_number_of_keywords_climat
-                ,new_number_of_keywords_biodiversite
-                ,new_number_of_keywords_ressources
-                ,number_of_changement_climatique_constat_no_hrfp
-                ,number_of_changement_climatique_causes_no_hrfp
-                ,number_of_changement_climatique_consequences_no_hrfp
-                ,number_of_attenuation_climatique_solutions_no_hrfp
-                ,number_of_adaptation_climatique_solutions_no_hrfp
-                ,number_of_ressources_no_hrfp
-                ,number_of_ressources_solutions_no_hrfp
-                ,number_of_biodiversite_concepts_generaux_no_hrfp
-                ,number_of_biodiversite_causes_no_hrfp
-                ,number_of_biodiversite_consequences_no_hrfp
-                ,number_of_biodiversite_solutions_no_hrfp
-                )
+                    
+                    if(number_of_keywords != new_number_of_keywords or
+                        keywords_with_timestamp != new_keywords_with_timestamp or
+                        theme != matching_themes
+                        ):
+                        logging.info(f"Difference detected for themes for ID {keyword_id} -  {theme} - {matching_themes} \
+                                    \nnumber_of_keywords {number_of_keywords} - {new_number_of_keywords}\
+                                    \nkeywords_with_timestamp : {keywords_with_timestamp}\
+                                    \n new_nkeywords_with_timestamp : {new_keywords_with_timestamp}"
+                        )
+                    else:
+                        logging.debug("No difference")
+                except Exception as err:
+                    logging.error(f"get_themes_keywords_duration - continuing loop but met error : {err}")
+                    continue
+                try:
+                    update_keyword_row(session,
+                    keyword_id,
+                    new_number_of_keywords,
+                    new_keywords_with_timestamp,
+                    matching_themes
+                    ,number_of_changement_climatique_constat
+                    ,number_of_changement_climatique_causes_directes
+                    ,number_of_changement_climatique_consequences
+                    ,number_of_attenuation_climatique_solutions_directes
+                    ,number_of_adaptation_climatique_solutions_directes
+                    ,number_of_ressources
+                    ,number_of_ressources_solutions
+                    ,number_of_biodiversite_concepts_generaux
+                    ,number_of_biodiversite_causes_directes
+                    ,number_of_biodiversite_consequences
+                    ,number_of_biodiversite_solutions_directes
+                    ,channel_title
+                    ,new_number_of_keywords_climat
+                    ,new_number_of_keywords_biodiversite
+                    ,new_number_of_keywords_ressources
+                    ,number_of_changement_climatique_constat_no_hrfp
+                    ,number_of_changement_climatique_causes_no_hrfp
+                    ,number_of_changement_climatique_consequences_no_hrfp
+                    ,number_of_attenuation_climatique_solutions_no_hrfp
+                    ,number_of_adaptation_climatique_solutions_no_hrfp
+                    ,number_of_ressources_no_hrfp
+                    ,number_of_ressources_solutions_no_hrfp
+                    ,number_of_biodiversite_concepts_generaux_no_hrfp
+                    ,number_of_biodiversite_causes_no_hrfp
+                    ,number_of_biodiversite_consequences_no_hrfp
+                    ,number_of_biodiversite_solutions_no_hrfp
+                    )
+                except Exception as err:
+                    logging.error(f"update_keyword_row - continuing loop but met error : {err}")
+                    continue
             else: # Program only mode
                 try:
                     update_program_only(
@@ -206,7 +211,7 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
             Keywords.plaintext,
             Keywords.keywords_with_timestamp,
             Keywords.number_of_keywords,
-            func.timezone(country.timezone, Keywords.start).label('start'), # TODO why UTC was used here ?
+            func.timezone('UTC', Keywords.start).label('start'), #  func.timezone always return UTC
             Keywords.srt,
             Keywords.theme,
             Keywords.channel_name,

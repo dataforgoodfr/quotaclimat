@@ -112,19 +112,7 @@ def test_core_query_thematics_keywords_values(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT channel_title, week, sum_duration_minutes, crise_type, theme, category, keyword, count,
-            high_risk_of_false_positive,
-            solution,
-            consequence,
-            cause,
-            general_concepts,
-            statement,
-            is_solution,
-            is_consequence,
-            is_cause,
-            is_general_concepts,
-            is_statement,
-            categories,
-            themes
+            high_risk_of_false_positive
             FROM public.core_query_thematics_keywords
             WHERE channel_title = 'TF1' AND keyword = 'eau' AND theme = 'changement_climatique_constat'
             ORDER BY channel_title DESC

@@ -33,10 +33,11 @@ def get_top_keyword_of_stop_words(stop_word_keyword_only: bool, stop_words_objec
 
 def update_program_only(keyword_id: int, start: str, channel_name: str, channel_title: str, session: Session, country = FRANCE):
     logging.debug(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
-    # TODO: pd.Timestamp(start) should be localized to country timezone
+
     start_tz = pd.Timestamp(start)
     logging.info(f"start timezone : {start_tz.tzinfo} - timestamp {start_tz} - original {start}- {type(start_tz)}")
-    # start_tz = pd.Timestamp(start).tz_localize(country.timezone) #.tz_convert("Europe/Paris")
+    # come from UTC from the DB
+    start_tz = pd.Timestamp(start).tz_convert(country.timezone)
     logging.info(f"tz_localize Europe/Paris start timezone : {start_tz.tzinfo} - timestamp {start_tz} - original {start}- {type(start_tz)}")
     # TODO
     # if(os.environ.get("ENV") == "prod"): # weird bug i don't want to know about
@@ -95,7 +96,6 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                                                             biodiversity_only=biodiversity_only, country=country)
         logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {total_updates}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name, channel_title in current_batch_saved_keywords:
-            logging.error(f"start {start} - type {type(start)}")
             if channel_title is None:
                 logging.warning(f"channel_title none, set it using channel_name {channel_name}")
                 channel_title = get_channel_title_for_name(channel_name)

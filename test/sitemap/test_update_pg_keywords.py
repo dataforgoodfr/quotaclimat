@@ -1206,7 +1206,7 @@ def test_update_only_biodiversity():
     result_before_update_tf1 = get_keyword(primary_key_tf1, session)
 
     # Should only biodiversity_only
-    update_keywords(session, batch_size=50, start_date="2024-01-01", program_only = False, end_date="2024-01-30",\
+    update_keywords(session, batch_size=50, start_date="2024-01-01", program_only = True, end_date="2024-01-30",\
                      biodiversity_only=True
                    )
     session.commit()

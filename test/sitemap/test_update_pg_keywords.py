@@ -11,12 +11,14 @@ import pandas as pd
 from quotaclimat.data_processing.mediatree.stop_word.main import *
 
 logging.getLogger().setLevel(logging.INFO)
-original_timestamp = 1706271523 * 1000 # Sun Jan 28 2024 13:18:54 GMT+0100
-start = pd.to_datetime("2024-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
-start_tf1 = pd.to_datetime("2024-01-26 12:18:54", utc=True).tz_convert('Europe/Paris')
+# original_timestamp = 1706271523 * 1000 # Fri Jan 26 2024 12:18:43 GMT+0000
+start = pd.to_datetime("2024-01-26 12:18:43", utc=True).tz_convert('Europe/Paris')
+original_timestamp = start.timestamp() * 1000
+start_tf1 = pd.to_datetime("2024-01-26 12:18:43", utc=True).tz_convert('Europe/Paris')
 
 @pytest.fixture(scope="module", autouse=True)
 def init_tables(): 
+    drop_tables()
     create_tables()
 
 wrong_value = 0
@@ -1207,6 +1209,7 @@ def test_update_only_biodiversity():
     update_keywords(session, batch_size=50, start_date="2024-01-01", program_only = True, end_date="2024-01-30",\
                      biodiversity_only=True
                    )
+    session.commit()
     result_after_update_m6 = get_keyword(primary_key_m6, session)
     result_after_update_tf1 = get_keyword(primary_key_tf1, session)
     conn.dispose()
@@ -1222,3 +1225,81 @@ def test_update_only_biodiversity():
     assert result_before_update_tf1.channel_program == "to change"
     assert result_after_update_tf1.channel_program_type == "to change"
     assert result_before_update_tf1.channel_program_type == "to change"
+
+
+def test_update_program_only():
+    conn = connect_to_db()
+    
+    wrong_value = 0
+    # insert data
+    primary_key_m6 = "test_save_to_pg_keyword_only_program_m6"
+    df = pd.DataFrame([{
+        "id" : primary_key_m6,
+        "start": start,
+        "plaintext": plaintext,
+        "channel_name": m6,
+        "channel_radio": False,
+        "theme": themes,
+        "keywords_with_timestamp": keywords_with_timestamp,
+        "srt": srt,
+        "number_of_keywords": wrong_value, # wrong data to reapply our custom logic for "new_value"
+        "number_of_changement_climatique_constat":  wrong_value,
+        "number_of_changement_climatique_causes_directes":  wrong_value,
+        "number_of_changement_climatique_consequences":  wrong_value,
+        "number_of_attenuation_climatique_solutions_directes":  wrong_value,
+        "number_of_adaptation_climatique_solutions_directes":  wrong_value,
+        "number_of_ressources":  wrong_value,
+        "number_of_ressources_solutions":  wrong_value,
+        "number_of_biodiversite_concepts_generaux":  wrong_value,
+        "number_of_biodiversite_causes_directes":  wrong_value,
+        "number_of_biodiversite_consequences":  wrong_value,
+        "number_of_biodiversite_solutions_directes" : wrong_value,
+        "channel_program_type": "",
+        "channel_program":"" # Empty --> it's going to change
+        ,"channel_title":None
+        ,"number_of_keywords_climat": wrong_value
+        ,"number_of_keywords_biodiversite": wrong_value
+        ,"number_of_keywords_ressources": wrong_value
+        ,"number_of_changement_climatique_constat_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_causes_no_hrfp":  wrong_value,
+        "number_of_changement_climatique_consequences_no_hrfp":  wrong_value,
+        "number_of_attenuation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_adaptation_climatique_solutions_no_hrfp":  wrong_value,
+        "number_of_ressources_no_hrfp":  wrong_value,
+        "number_of_ressources_solutions_no_hrfp":  wrong_value,
+        "number_of_biodiversite_concepts_generaux_no_hrfp":  wrong_value,
+        "number_of_biodiversite_causes_no_hrfp":  5, # should update because of this
+        "number_of_biodiversite_consequences_no_hrfp":  wrong_value,
+        "number_of_biodiversite_solutions_no_hrfp" : wrong_value,
+        "country": "france"
+    }])
+
+    assert save_to_pg(df, keywords_table, conn) == 1
+    
+    session = get_db_session(conn)
+
+    # Should only biodiversity_only
+    update_program_only(
+        keyword_id=primary_key_m6,
+        start=start,
+        channel_name=m6,
+        channel_title="M6",
+        session=session,
+        country=FRANCE
+    )
+    session.commit()
+    result_after_update_m6 = get_keyword(primary_key_m6, session)
+    
+    conn.dispose()
+    session.close()
+
+    # 6 has changed
+    assert result_after_update_m6.channel_program == "1245 le mag"
+    assert result_after_update_m6.channel_program_type == "Information - Magazine"
+
+
+def test_get_timestamp_without_tz():
+    assert get_timestamp_with_tz(start="2024-01-01T12:00:00") == pd.Timestamp("2024-01-01T12:00:00+00:00", tz="UTC")
+
+def test_get_timestamp_with_tz():
+    assert get_timestamp_with_tz(start="2024-01-01T12:00:00+00:00") == pd.Timestamp("2024-01-01T12:00:00+00:00", tz="UTC")

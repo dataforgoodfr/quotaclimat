@@ -276,38 +276,42 @@ def update_program_metadata(engine):
     finally:
         session.close()
 
+
 def update_dictionary(engine, theme_keywords):
     logging.info("Updating dictionary data")
     Session = sessionmaker(bind=engine)
     session = Session()
-    
+
     try:
-        # Full overwrite approach
+        seen = set()
         logging.warning("Dictionary table! Full overwrite (delete/recreate)")
         session.query(Dictionary).delete()
         session.commit()
-        
+        logging.info("Deleted all entries in the dictionary table")
+
+        bulk_data = []
         for theme, keywords_list in theme_keywords.items():
             for item in keywords_list:
-                keyword = item['keyword']
-                category = item.get('category', '')
-                language = item.get('language')
-                high_risk_of_false_positive = item.get('high_risk_of_false_positive', False)
-
-                entry = Dictionary(
-                    keyword=keyword,
-                    language=language,
-                    category=category,
-                    theme=theme,
-                    high_risk_of_false_positive=high_risk_of_false_positive,
+                entry_tuple = (
+                    item['keyword'],
+                    item.get('language'),
+                    item.get('category', ''),
+                    theme
                 )
-
-                session.merge(entry)
-
-        # Commit all changes
+                if entry_tuple not in seen:
+                    seen.add(entry_tuple)
+                    bulk_data.append({
+                        "keyword": item['keyword'],
+                        "language": item.get('language'),
+                        "category": item.get('category', ''),
+                        "theme": theme,
+                        "high_risk_of_false_positive": item.get('high_risk_of_false_positive', False),
+                    })
+        session.bulk_insert_mappings(Dictionary, bulk_data)
         session.commit()
-        logging.info(f"Updated dictionary data successfully with {len(theme_keywords)} themes")
-        
+        logging.info(f"Inserted {len(bulk_data)} dictionary records successfully")
+
+
     except Exception as error:
         logging.error(f"Error updating dictionary data: {error}")
         session.rollback()

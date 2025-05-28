@@ -5,7 +5,7 @@ on:
 
 env:
   PYTHON_VERSION: '3.12'
-  POETRY_VERSION: '2.1.2'
+  POETRY_VERSION: '2.1.3'
 
 jobs:
  
@@ -36,7 +36,6 @@ jobs:
       - name: poetry install
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction
-
 
   test_first_update_keywords:
     needs: build

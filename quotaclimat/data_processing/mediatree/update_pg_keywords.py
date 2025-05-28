@@ -30,6 +30,42 @@ def get_top_keyword_of_stop_words(stop_word_keyword_only: bool, stop_words_objec
 
     return top_keyword_of_stop_words
 
+
+def get_timestamp_with_tz(start: str, country = FRANCE) -> pd.Timestamp:
+    try:
+        start_tz = pd.Timestamp(start)
+        logging.info(f"start timezone : {start_tz.tzinfo} - timestamp {start_tz} - original {start}- {type(start_tz)}")
+        if start_tz.tzinfo is None:
+            logging.warning(f"start timezone is None, localizing to UTC")
+            start_tz = start_tz.tz_localize("UTC")
+        
+        start_tz = start_tz.tz_convert(country.timezone)
+        return start_tz
+    except Exception as err:
+        logging.error(f"Error converting start {start} to timestamp with timezone {country.timezone} : {err}")
+        raise ValueError(f"Error converting start {start} to timestamp with timezone {country.timezone} : {err}")
+
+def update_program_only(keyword_id: int, start: str, channel_name: str, channel_title: str, session: Session, country = FRANCE):
+    logging.debug(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
+
+    start_tz = get_timestamp_with_tz(start=start, country=country)
+    logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - converted tz : {start_tz}")
+    df_programs = get_programs()
+    program_name, program_name_type, program_metadata_id = \
+            get_a_program_with_start_timestamp(df_program=df_programs, start_time=start_tz, channel_name=channel_name)
+    
+    logging.info(f"new data for keyword_id ({keyword_id}): program_name ({program_name}) - program_name_type ({program_name_type}) - program_metadata_id ({program_metadata_id})")
+    try:
+        update_keyword_row_program(session
+            ,keyword_id
+            ,channel_program=program_name
+            ,channel_program_type=program_name_type
+            ,channel_title=channel_title
+            ,program_metadata_id=program_metadata_id
+        )
+    except Exception as err:
+        logging.error(f"update_keyword_row_program - continuing loop but met error : {err}")
+   
 def update_keywords(session: Session, batch_size: int = 50000, start_date : str = "2023-04-01", program_only=False, \
                     end_date: str = "2023-04-30", channel: str = "", empty_program_only=False, \
                         stop_word_keyword_only = False, \
@@ -100,76 +136,70 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     ,number_of_biodiversite_consequences_no_hrfp \
                     ,number_of_biodiversite_solutions_no_hrfp \
                     ,country_name = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words)
-                except Exception as err:
-                        logging.error(f"continuing loop but met error : {err}")
-                        continue
-                
-                if(number_of_keywords != new_number_of_keywords or
-                    keywords_with_timestamp != new_keywords_with_timestamp or
-                    theme != matching_themes
-                    ):
-                    logging.info(f"Difference detected for themes for ID {keyword_id} -  {theme} - {matching_themes} \
-                                \nnumber_of_keywords {number_of_keywords} - {new_number_of_keywords}\
-                                \nkeywords_with_timestamp : {keywords_with_timestamp}\
-                                \n new_nkeywords_with_timestamp : {new_keywords_with_timestamp}"
-                    )
-                else:
-                    logging.debug("No difference")
 
-                update_keyword_row(session,
-                keyword_id,
-                new_number_of_keywords,
-                new_keywords_with_timestamp,
-                matching_themes
-                ,number_of_changement_climatique_constat
-                ,number_of_changement_climatique_causes_directes
-                ,number_of_changement_climatique_consequences
-                ,number_of_attenuation_climatique_solutions_directes
-                ,number_of_adaptation_climatique_solutions_directes
-                ,number_of_ressources
-                ,number_of_ressources_solutions
-                ,number_of_biodiversite_concepts_generaux
-                ,number_of_biodiversite_causes_directes
-                ,number_of_biodiversite_consequences
-                ,number_of_biodiversite_solutions_directes
-                ,channel_title
-                ,new_number_of_keywords_climat
-                ,new_number_of_keywords_biodiversite
-                ,new_number_of_keywords_ressources
-                ,number_of_changement_climatique_constat_no_hrfp
-                ,number_of_changement_climatique_causes_no_hrfp
-                ,number_of_changement_climatique_consequences_no_hrfp
-                ,number_of_attenuation_climatique_solutions_no_hrfp
-                ,number_of_adaptation_climatique_solutions_no_hrfp
-                ,number_of_ressources_no_hrfp
-                ,number_of_ressources_solutions_no_hrfp
-                ,number_of_biodiversite_concepts_generaux_no_hrfp
-                ,number_of_biodiversite_causes_no_hrfp
-                ,number_of_biodiversite_consequences_no_hrfp
-                ,number_of_biodiversite_solutions_no_hrfp
-                )
-            else: # Program only mode
-                logging.debug(f"Updating program for keyword {keyword_id} - {channel_name} - original tz : {start}")
-                if(os.environ.get("ENV") == "prod"): # weird bug i don't want to know about
-                    start_tz = pd.Timestamp(start).tz_localize("UTC").tz_convert("Europe/Paris")
-                else:
-                    start_tz = pd.Timestamp(start).tz_convert("Europe/Paris")
-                logging.info(f"Updating program for keyword {keyword_id} - {channel_name} - converted tz : {start_tz}")
-                df_programs = get_programs()
-                program_name, program_name_type, program_metadata_id = \
-                      get_a_program_with_start_timestamp(df_program=df_programs, start_time=start_tz, channel_name=channel_name)
-                
-                logging.info(f"new data for keyword_id ({keyword_id}): program_name ({program_name}) - program_name_type ({program_name_type}) - program_metadata_id ({program_metadata_id})")
+                    
+                    if(number_of_keywords != new_number_of_keywords or
+                        keywords_with_timestamp != new_keywords_with_timestamp or
+                        theme != matching_themes
+                        ):
+                        logging.info(f"Difference detected for themes for ID {keyword_id} -  {theme} - {matching_themes} \
+                                    \nnumber_of_keywords {number_of_keywords} - {new_number_of_keywords}\
+                                    \nkeywords_with_timestamp : {keywords_with_timestamp}\
+                                    \n new_nkeywords_with_timestamp : {new_keywords_with_timestamp}"
+                        )
+                    else:
+                        logging.debug("No difference")
+                except Exception as err:
+                    logging.error(f"get_themes_keywords_duration - continuing loop but met error : {err}")
+                    continue
                 try:
-                    update_keyword_row_program(session
-                        ,keyword_id
-                        ,channel_program=program_name
-                        ,channel_program_type=program_name_type
-                        ,channel_title=channel_title
-                        ,program_metadata_id=program_metadata_id
+                    update_keyword_row(session,
+                    keyword_id,
+                    new_number_of_keywords,
+                    new_keywords_with_timestamp,
+                    matching_themes
+                    ,number_of_changement_climatique_constat
+                    ,number_of_changement_climatique_causes_directes
+                    ,number_of_changement_climatique_consequences
+                    ,number_of_attenuation_climatique_solutions_directes
+                    ,number_of_adaptation_climatique_solutions_directes
+                    ,number_of_ressources
+                    ,number_of_ressources_solutions
+                    ,number_of_biodiversite_concepts_generaux
+                    ,number_of_biodiversite_causes_directes
+                    ,number_of_biodiversite_consequences
+                    ,number_of_biodiversite_solutions_directes
+                    ,channel_title
+                    ,new_number_of_keywords_climat
+                    ,new_number_of_keywords_biodiversite
+                    ,new_number_of_keywords_ressources
+                    ,number_of_changement_climatique_constat_no_hrfp
+                    ,number_of_changement_climatique_causes_no_hrfp
+                    ,number_of_changement_climatique_consequences_no_hrfp
+                    ,number_of_attenuation_climatique_solutions_no_hrfp
+                    ,number_of_adaptation_climatique_solutions_no_hrfp
+                    ,number_of_ressources_no_hrfp
+                    ,number_of_ressources_solutions_no_hrfp
+                    ,number_of_biodiversite_concepts_generaux_no_hrfp
+                    ,number_of_biodiversite_causes_no_hrfp
+                    ,number_of_biodiversite_consequences_no_hrfp
+                    ,number_of_biodiversite_solutions_no_hrfp
                     )
                 except Exception as err:
-                    logging.error(f"update_keyword_row_program - continuing loop but met error : {err}")
+                    logging.error(f"update_keyword_row - continuing loop but met error : {err}")
+                    continue
+            else: # Program only mode
+                try:
+                    update_program_only(
+                        keyword_id=keyword_id,
+                        start=start,
+                        channel_name=channel_name,
+                        channel_title=channel_title,
+                        session=session,
+                        country=country
+                    )
+                except Exception as err:
+                    logging.error(f"update_program_only - continuing loop but met error : {err}")
                     continue
         logging.info(f"bulk update done {i} out of {total_updates} - (max offset {total_updates})")
         session.commit()
@@ -180,13 +210,13 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
 def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30",\
                          channel: str = "", empty_program_only: bool = False, keywords_to_includes: list[str] = [], \
                          biodiversity_only = False, country = FRANCE) -> list:
-    logging.debug(f"Getting {batch_size} elements from offset {offset}")
+    logging.info(f"Getting {batch_size} elements from offset {offset} with timezone {country.timezone}")
     query = session.query(
             Keywords.id,
             Keywords.plaintext,
             Keywords.keywords_with_timestamp,
             Keywords.number_of_keywords,
-            func.timezone('UTC', Keywords.start).label('start'),
+            Keywords.start,
             Keywords.srt,
             Keywords.theme,
             Keywords.channel_name,

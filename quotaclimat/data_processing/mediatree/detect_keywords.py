@@ -36,9 +36,13 @@ def get_keyword_with_timestamp(theme: str, category: str, keyword : str, cts_in_
 def find_matching_subtitle(subtitles, keyword):
     for item in subtitles:
         logging.debug(f"Testing {item} with {keyword} full subtitle is {subtitles}")
-        if is_word_in_sentence(keyword, item.get("text", "")):
-            logging.debug(f"match found {item} with {keyword}")
-            return item
+        try:
+            if is_word_in_sentence(keyword, item.get("text", "")):
+                logging.debug(f"match found {item} with {keyword}")
+                return item
+        except Exception as e: 
+            logging.error(f"Error in find_matching_subtitle for keyword {keyword} - item {item} - subtitles {subtitles} - {e}")
+            raise e
 
     logging.warning(f"SRT match not found - default timestamp is now 0, possible error inside srt which is acceptable - {keyword} - {subtitles}")
     return None
@@ -193,131 +197,140 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     logging.debug(f"display datetime start {start}")
 
     logging.debug(f"Keeping only {country.language} keywords...")
-    
-    for theme, keywords_dict in THEME_KEYWORDS.items():
-        logging.debug(f"searching {theme} for {keywords_dict}")
-        matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict, country=country)
-       
-        if matching_words:
-            logging.debug(f"theme found : {theme} with word {matching_words}")
-
-            # look for cts_in_ms inside matching_words (['keyword':'economie circulaire', 'category':'air'}] from subtitle_duration 
-            keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme)
-            if(len(keywords_to_add) == 0):
-                logging.debug(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")
-            keywords_with_timestamp.extend(keywords_to_add)
-    
-    if len(keywords_with_timestamp) > 0:
-        # count false positive near of default_window_in_seconds of positive keywords
-        keywords_with_timestamp_default = get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds=default_window_in_seconds)
-        filtered_keywords_with_timestamp = filter_indirect_words(keywords_with_timestamp_default)
-
-        theme= get_themes(keywords_with_timestamp_default)
-        keywords_with_timestamp= clean_metadata(keywords_with_timestamp_default)
-        number_of_keywords= count_keywords_duration_overlap(filtered_keywords_with_timestamp, start)
+    try:
+        for theme, keywords_dict in THEME_KEYWORDS.items():
+            logging.debug(f"searching {theme} for {keywords_dict}")
+            matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict, country=country)
         
-        themes_climat = ["changement_climatique_constat",
-                        "changement_climatique_causes",
-                        "changement_climatique_consequences",
-                        "attenuation_climatique_solutions",
-                        "adaptation_climatique_solutions"
-        ]
-        number_of_keywords_climat= count_keywords_duration_overlap(filtered_keywords_with_timestamp, start, theme=themes_climat)
-        themes_biodiversite = [
-            "biodiversite_concepts_generaux",
-            "biodiversite_causes",
-            "biodiversite_consequences",
-            "biodiversite_solutions",
-        ]
-        number_of_keywords_biodiversite= count_keywords_duration_overlap(filtered_keywords_with_timestamp, start, themes_biodiversite)
-
-        themes_ressources = ["ressources",
-                "ressources_solutions",
-        ]
-        number_of_keywords_ressources= count_keywords_duration_overlap(filtered_keywords_with_timestamp, start, themes_ressources)
-
-        number_of_changement_climatique_constat = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_constat"])
-        number_of_changement_climatique_causes = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_causes"])
-        number_of_changement_climatique_consequences = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_consequences"])
-        number_of_attenuation_climatique_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["attenuation_climatique_solutions"])
-        number_of_adaptation_climatique_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["adaptation_climatique_solutions"])
-        number_of_ressources = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["ressources"])
-        number_of_ressources_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["ressources_solutions"])
-        number_of_biodiversite_concepts_generaux = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_concepts_generaux"])
-        number_of_biodiversite_causes = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_causes"])
-        number_of_biodiversite_consequences = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_consequences"])
-        number_of_biodiversite_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_solutions"])
+            if matching_words:
+                logging.info(f"theme found : {theme} with word {matching_words}")
+                try:
+                    # look for cts_in_ms inside matching_words (['keyword':'economie circulaire', 'category':'air'}] from subtitle_duration 
+                    keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme)
+                    if(len(keywords_to_add) == 0):
+                        logging.debug(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")
+                    keywords_with_timestamp.extend(keywords_to_add)
+                except Exception as e: 
+                    logging.error(f"Error in get_cts_in_ms_for_keywords for theme {theme} - matching_words {matching_words} - subtitle_duration {subtitle_duration} - {e}")
+                    raise e
         
-        # No high risk of false positive counters
-        number_of_changement_climatique_constat_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_constat"], \
-            count_high_risk_false_positive=False)
-        number_of_changement_climatique_causes_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_causes"], \
-            count_high_risk_false_positive=False)
-        number_of_changement_climatique_consequences_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_consequences"], \
-            count_high_risk_false_positive=False)
-        number_of_attenuation_climatique_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["attenuation_climatique_solutions"], \
-            count_high_risk_false_positive=False)
-        number_of_adaptation_climatique_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["adaptation_climatique_solutions"], \
-            count_high_risk_false_positive=False)
-        number_of_ressources_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["ressources"], \
-            count_high_risk_false_positive=False)
-        number_of_ressources_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["ressources_solutions"], \
-            count_high_risk_false_positive=False)
-        number_of_biodiversite_concepts_generaux_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_concepts_generaux"], \
-            count_high_risk_false_positive=False)
-        number_of_biodiversite_causes_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_causes"], \
-            count_high_risk_false_positive=False)
-        number_of_biodiversite_consequences_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_consequences"], \
-            count_high_risk_false_positive=False)
-        number_of_biodiversite_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_solutions"], \
-            count_high_risk_false_positive=False)
+        if len(keywords_with_timestamp) > 0:
+            # count false positive near of default_window_in_seconds of positive keywords
+            keywords_with_timestamp_default = get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds=default_window_in_seconds)
+            filtered_keywords_with_timestamp = filter_indirect_words(keywords_with_timestamp_default)
 
-        return [ # Change number_of_elements_in_array if a new element is added here
-            theme
-            ,keywords_with_timestamp 
-            ,number_of_keywords
-            ,number_of_changement_climatique_constat
-            ,number_of_changement_climatique_causes
-            ,number_of_changement_climatique_consequences
-            ,number_of_attenuation_climatique_solutions
-            ,number_of_adaptation_climatique_solutions
-            ,number_of_ressources
-            ,number_of_ressources_solutions
-            ,number_of_biodiversite_concepts_generaux
-            ,number_of_biodiversite_causes
-            ,number_of_biodiversite_consequences
-            ,number_of_biodiversite_solutions
-            ,number_of_keywords_climat
-            ,number_of_keywords_biodiversite
-            ,number_of_keywords_ressources
-            ,number_of_changement_climatique_constat_no_hrfp
-            ,number_of_changement_climatique_causes_no_hrfp
-            ,number_of_changement_climatique_consequences_no_hrfp
-            ,number_of_attenuation_climatique_solutions_no_hrfp
-            ,number_of_adaptation_climatique_solutions_no_hrfp
-            ,number_of_ressources_no_hrfp
-            ,number_of_ressources_solutions_no_hrfp
-            ,number_of_biodiversite_concepts_generaux_no_hrfp
-            ,number_of_biodiversite_causes_no_hrfp
-            ,number_of_biodiversite_consequences_no_hrfp
-            ,number_of_biodiversite_solutions_no_hrfp
-            ,country.name
-        ]
-    else:
-        logging.debug("Empty keywords")
-        return [None] * number_of_elements_in_array
+            theme= get_themes(keywords_with_timestamp_default)
+            keywords_with_timestamp= clean_metadata(keywords_with_timestamp_default)
+            number_of_keywords= count_keywords_duration_overlap(filtered_keywords_with_timestamp, start)
+            
+            themes_climat = ["changement_climatique_constat",
+                            "changement_climatique_causes",
+                            "changement_climatique_consequences",
+                            "attenuation_climatique_solutions",
+                            "adaptation_climatique_solutions"
+            ]
+            number_of_keywords_climat= count_keywords_duration_overlap(filtered_keywords_with_timestamp, start, theme=themes_climat)
+            themes_biodiversite = [
+                "biodiversite_concepts_generaux",
+                "biodiversite_causes",
+                "biodiversite_consequences",
+                "biodiversite_solutions",
+            ]
+            number_of_keywords_biodiversite= count_keywords_duration_overlap(filtered_keywords_with_timestamp, start, themes_biodiversite)
+
+            themes_ressources = ["ressources",
+                    "ressources_solutions",
+            ]
+            number_of_keywords_ressources= count_keywords_duration_overlap(filtered_keywords_with_timestamp, start, themes_ressources)
+
+            number_of_changement_climatique_constat = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_constat"])
+            number_of_changement_climatique_causes = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_causes"])
+            number_of_changement_climatique_consequences = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_consequences"])
+            number_of_attenuation_climatique_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["attenuation_climatique_solutions"])
+            number_of_adaptation_climatique_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["adaptation_climatique_solutions"])
+            number_of_ressources = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["ressources"])
+            number_of_ressources_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["ressources_solutions"])
+            number_of_biodiversite_concepts_generaux = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_concepts_generaux"])
+            number_of_biodiversite_causes = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_causes"])
+            number_of_biodiversite_consequences = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_consequences"])
+            number_of_biodiversite_solutions = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_solutions"])
+            
+            # No high risk of false positive counters
+            number_of_changement_climatique_constat_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_constat"], \
+                count_high_risk_false_positive=False)
+            number_of_changement_climatique_causes_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_causes"], \
+                count_high_risk_false_positive=False)
+            number_of_changement_climatique_consequences_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["changement_climatique_consequences"], \
+                count_high_risk_false_positive=False)
+            number_of_attenuation_climatique_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["attenuation_climatique_solutions"], \
+                count_high_risk_false_positive=False)
+            number_of_adaptation_climatique_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["adaptation_climatique_solutions"], \
+                count_high_risk_false_positive=False)
+            number_of_ressources_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["ressources"], \
+                count_high_risk_false_positive=False)
+            number_of_ressources_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["ressources_solutions"], \
+                count_high_risk_false_positive=False)
+            number_of_biodiversite_concepts_generaux_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_concepts_generaux"], \
+                count_high_risk_false_positive=False)
+            number_of_biodiversite_causes_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_causes"], \
+                count_high_risk_false_positive=False)
+            number_of_biodiversite_consequences_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_consequences"], \
+                count_high_risk_false_positive=False)
+            number_of_biodiversite_solutions_no_hrfp = count_keywords_duration_overlap(filtered_keywords_with_timestamp, start,theme=["biodiversite_solutions"], \
+                count_high_risk_false_positive=False)
+
+            return [ # Change number_of_elements_in_array if a new element is added here
+                theme
+                ,keywords_with_timestamp 
+                ,number_of_keywords
+                ,number_of_changement_climatique_constat
+                ,number_of_changement_climatique_causes
+                ,number_of_changement_climatique_consequences
+                ,number_of_attenuation_climatique_solutions
+                ,number_of_adaptation_climatique_solutions
+                ,number_of_ressources
+                ,number_of_ressources_solutions
+                ,number_of_biodiversite_concepts_generaux
+                ,number_of_biodiversite_causes
+                ,number_of_biodiversite_consequences
+                ,number_of_biodiversite_solutions
+                ,number_of_keywords_climat
+                ,number_of_keywords_biodiversite
+                ,number_of_keywords_ressources
+                ,number_of_changement_climatique_constat_no_hrfp
+                ,number_of_changement_climatique_causes_no_hrfp
+                ,number_of_changement_climatique_consequences_no_hrfp
+                ,number_of_attenuation_climatique_solutions_no_hrfp
+                ,number_of_adaptation_climatique_solutions_no_hrfp
+                ,number_of_ressources_no_hrfp
+                ,number_of_ressources_solutions_no_hrfp
+                ,number_of_biodiversite_concepts_generaux_no_hrfp
+                ,number_of_biodiversite_causes_no_hrfp
+                ,number_of_biodiversite_consequences_no_hrfp
+                ,number_of_biodiversite_solutions_no_hrfp
+                ,country.name
+            ]
+        else:
+            logging.debug("Empty keywords")
+            return [None] * number_of_elements_in_array
+    except Exception as e:
+        logging.error(f"Error in get_themes_keywords_duration: {e} - plaintext: {plaintext} - start: {start}")
+        raise e
 
 def get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds: int = 20):
     logging.debug(f"Using duration_seconds {duration_seconds}")
-
+    try:
     # Shallow copy to avoid unnecessary deep copying (wip: for memory leak)
-    keywords_with_timestamp_copy = [item.copy() for item in keywords_with_timestamp]
+        keywords_with_timestamp_copy = [item.copy() for item in keywords_with_timestamp]
 
-    keywords_with_timestamp_copy = tag_wanted_duration_second_window_number(keywords_with_timestamp_copy, start, duration_seconds=duration_seconds)
-    keywords_with_timestamp_copy = transform_false_positive_keywords_to_positive(keywords_with_timestamp_copy, start)
-    keywords_with_timestamp_copy = filter_keyword_with_same_timestamp(keywords_with_timestamp_copy)
+        keywords_with_timestamp_copy = tag_wanted_duration_second_window_number(keywords_with_timestamp_copy, start, duration_seconds=duration_seconds)
+        keywords_with_timestamp_copy = transform_false_positive_keywords_to_positive(keywords_with_timestamp_copy, start)
+        keywords_with_timestamp_copy = filter_keyword_with_same_timestamp(keywords_with_timestamp_copy)
 
-    return keywords_with_timestamp_copy
+        return keywords_with_timestamp_copy
+    except Exception as e:
+        logging.error(f"Error in get_keywords_with_timestamp_with_false_positive: {e} - keywords_with_timestamp: {keywords_with_timestamp} - start: {start}")
+        raise e
 
 def get_themes(keywords_with_timestamp: List[dict]) -> List[str]:
     return list(set([kw['theme'] for kw in keywords_with_timestamp]))

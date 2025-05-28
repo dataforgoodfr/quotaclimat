@@ -111,7 +111,7 @@ def test_core_query_thematics_keywords_values(db_connection):
 
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT channel_title, week, crise_type, theme, category, keyword, count,
+            SELECT channel_title, week, sum_duration_minutes, crise_type, theme, category, keyword, count,
             high_risk_of_false_positive
             FROM public.core_query_thematics_keywords
             WHERE channel_title = 'TF1' AND keyword = 'eau' AND theme = 'changement_climatique_constat'
@@ -123,12 +123,39 @@ def test_core_query_thematics_keywords_values(db_connection):
         expected= (
         'TF1',
         datetime.date(2025, 1, 27),
+        1650,
         'Crise climatique',
         'changement_climatique_constat',
         'Transversal',
         'eau',
         4,
         True)
+        
+        expected_trimmed = expected[:-1] 
+        row_trimmed = row[:-1]
+        assert row_trimmed == expected_trimmed, f"Unexpected values: {row}"
+
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT channel_title, week, sum_duration_minutes, crise_type, theme, category, keyword, count,
+            high_risk_of_false_positive
+            FROM public.core_query_thematics_keywords
+            WHERE channel_title = 'Arte' AND keyword = 'responsable' AND theme = 'biodiversite_solutions'
+            ORDER BY channel_title DESC
+            LIMIT 1
+        """)
+        row = cur.fetchone()
+
+        expected= (
+        'Arte',
+        datetime.date(2025, 1, 27),
+        455,
+        'Crise de la biodiversité',
+        'biodiversite_solutions',
+        'Transversal',
+        'responsable',
+        1,
+        None)
         
         expected_trimmed = expected[:-1] 
         row_trimmed = row[:-1]

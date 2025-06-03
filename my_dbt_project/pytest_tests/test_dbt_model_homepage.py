@@ -29,7 +29,7 @@ def run_dbt_command(command_args):
     print(result.stdout)  # Print dbt logs for debugging
     assert result.returncode == 0, f"dbt command failed: {result.stderr}"
 
-
+@pytest.fixture(scope="module", autouse=True)
 def seed_dbt():
     """Run dbt seed once before any test."""
     commands = ["seed", "--select", "program_metadata","--select", "time_monitored","--select", "keywords","--select", "dictionary", "--full-refresh"]
@@ -37,7 +37,7 @@ def seed_dbt():
     run_dbt_command(commands)
 
 
-seed_dbt()
+# seed_dbt()
 
 @pytest.fixture(scope="module", autouse=True)
 def run_core_query_thematics_keywords():
@@ -49,7 +49,7 @@ def run_core_query_thematics_keywords():
 def run_core_query_thematics_keywords_i8n():
     """Run dbt for the thematics model once before related tests."""
     logging.info("pytest running dbt core_query_thematics_keywords_i8n")
-    run_dbt_command(["run", "--models", "core_query_thematics_keywords_i8n", "--full-refresh"])
+    run_dbt_command(["run", "--models", "core_query_thematics_keywords_i8n", "--full-refresh","--debug"])
 
 @pytest.fixture(scope="module", autouse=True)
 def run_core_query_environmental_shares():
@@ -107,12 +107,12 @@ def test_core_query_thematics_keywords_count(db_connection):
 
     assert count == 103, "count error"
 
-def test_core_query_thematics_keywords_values(db_connection):
+def test_core_query_thematics_keywords_values_tf1(db_connection):
 
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT channel_title, week, crise_type, theme, category, keyword, count,
-            high_risk_of_false_positive
+            high_risk_of_false_positive, sum_duration_minutes
             FROM public.core_query_thematics_keywords
             WHERE channel_title = 'TF1' AND keyword = 'eau' AND theme = 'changement_climatique_constat'
             ORDER BY channel_title DESC
@@ -128,7 +128,36 @@ def test_core_query_thematics_keywords_values(db_connection):
         'Transversal',
         'eau',
         4,
-        True)
+        True,
+        490)
+        
+        expected_trimmed = expected[:-1] 
+        row_trimmed = row[:-1]
+        assert row_trimmed == expected_trimmed, f"Unexpected values: {row}"
+
+def test_core_query_thematics_keywords_values_arte(db_connection):
+
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT channel_title, week, crise_type, theme, category, keyword, count,
+            high_risk_of_false_positive, sum_duration_minutes
+            FROM public.core_query_thematics_keywords
+            WHERE channel_title = 'Arte' AND keyword = 'eau' AND theme = 'changement_climatique_constat'
+            ORDER BY channel_title DESC
+            LIMIT 1
+        """)
+        row = cur.fetchone()
+
+        expected= (
+        'Arte',
+        datetime.date(2025, 1, 27),
+        'Crise climatique',
+        'changement_climatique_constat',
+        'Transversal',
+        'eau',
+        2,
+        True,
+        65)
         
         expected_trimmed = expected[:-1] 
         row_trimmed = row[:-1]

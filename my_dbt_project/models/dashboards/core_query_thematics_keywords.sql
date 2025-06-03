@@ -4,7 +4,41 @@
   )
 }}
 
-WITH keyword_occurrences AS (
+
+WITH program_durations AS (
+  SELECT
+    pm.channel_title,
+    pm.channel_program,
+    CAST(pm.program_grid_start AS date) AS program_start,
+    CAST(pm.program_grid_end AS date) AS program_end,
+    pm.duration_minutes
+  FROM public.program_metadata pm
+  WHERE pm.country = 'france'
+),
+
+program_weeks AS (
+  SELECT
+    pd.channel_title,
+    pd.channel_program,
+    pd.duration_minutes,
+    generate_series(
+      date_trunc('week', pd.program_start),
+      date_trunc('week', pd.program_end),
+      interval '1 week'
+    )::date AS week
+  FROM program_durations pd
+),
+
+weekly_program_durations AS (
+  SELECT
+    channel_title,
+    week,
+    SUM(DISTINCT duration_minutes) AS weekly_duration_minutes
+  FROM program_weeks
+  GROUP BY channel_title, week
+),
+
+keyword_occurrences AS (
   SELECT DISTINCT
     COALESCE(pm.channel_title, k.channel_title) AS channel_title,
     DATE_TRUNC('week', k.start)::date AS week,
@@ -44,6 +78,7 @@ WITH keyword_occurrences AS (
     AND k.country = 'france'
 )
 
+
 SELECT
   ko.channel_title,
   ko.week,
@@ -57,10 +92,13 @@ SELECT
   ko.crise_type,
   ko.theme,
   ko.keyword,
-  COUNT(*) AS count
+  COUNT(*) AS count,
+  COALESCE(wpd.weekly_duration_minutes, 0) AS sum_duration_minutes
 FROM keyword_occurrences ko
 LEFT JOIN public.dictionary d
   ON d.keyword = ko.keyword AND d.theme = ko.theme
+LEFT JOIN weekly_program_durations wpd
+  ON wpd.channel_title = ko.channel_title AND wpd.week = ko.week
 GROUP BY
   ko.channel_title,
   ko.week,
@@ -73,6 +111,7 @@ GROUP BY
   ko.is_statement,
   ko.crise_type,
   ko.theme,
-  ko.keyword
+  ko.keyword,
+  wpd.weekly_duration_minutes
 ORDER BY
   ko.channel_title, ko.week, ko.crise_type

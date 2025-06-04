@@ -129,7 +129,7 @@ def test_core_query_thematics_keywords_values_tf1(db_connection):
         'eau',
         4,
         True,
-        490)
+        1650)
         
         expected_trimmed = expected[:-1] 
         row_trimmed = row[:-1]
@@ -157,7 +157,7 @@ def test_core_query_thematics_keywords_values_arte(db_connection):
         'eau',
         2,
         True,
-        65)
+        455)
         
         expected_trimmed = expected[:-1] 
         row_trimmed = row[:-1]
@@ -178,10 +178,10 @@ def test_core_query_thematics_keywords_values_arte_zinc(db_connection):
         rows = cur.fetchall()
 
         expected = [
-            ('biodiversite_causes', 'Pollution', 1, 65),
-            ('ressources', 'Air', 1, 65),
-            ('ressources', 'Eau', 1, 65),
-            ('ressources', 'Sols', 1, 65),
+            ('biodiversite_causes', 'Pollution', 1, 455),
+            ('ressources', 'Air', 1, 455),
+            ('ressources', 'Eau', 1, 455),
+            ('ressources', 'Sols', 1, 455),
         ]
 
         assert rows == expected, f"Unexpected zinc rows: {rows}"

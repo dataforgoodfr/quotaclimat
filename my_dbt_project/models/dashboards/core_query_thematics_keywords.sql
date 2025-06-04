@@ -11,6 +11,7 @@ WITH program_durations AS (
   SELECT
     pm.channel_title,
     pm.channel_program,
+    pm.weekday,
     CAST(pm.program_grid_start AS date) AS program_start,
     CAST(pm.program_grid_end AS date) AS program_end,
     pm.duration_minutes
@@ -23,21 +24,33 @@ program_weeks AS (
     pd.channel_title,
     pd.channel_program,
     pd.duration_minutes,
+    pd.weekday,
     generate_series(
       date_trunc('week', pd.program_start),
       date_trunc('week', pd.program_end),
       interval '1 week'
-    )::date AS week
+    )::date AS week_start
   FROM program_durations pd
+),
+
+program_airings AS (
+  SELECT
+    channel_title,
+    channel_program,
+    duration_minutes,
+    -- calculate actual airing date per week + weekday offset
+    (week_start + (weekday - 1) * INTERVAL '1 day')::date AS airing_date,
+    week_start
+  FROM program_weeks
 ),
 
 weekly_program_durations AS (
   SELECT
     channel_title,
-    week,
-    SUM(DISTINCT duration_minutes) AS weekly_duration_minutes
-  FROM program_weeks
-  GROUP BY channel_title, week
+    week_start AS week,
+    SUM(duration_minutes) AS weekly_duration_minutes
+  FROM program_airings
+  GROUP BY channel_title, week_start
 ),
 
 keyword_occurrences AS (

@@ -67,7 +67,7 @@ SELECT
   COUNT(*) AS count
 FROM keyword_occurrences ko
 LEFT JOIN public.dictionary d
-  ON d.keyword = ko.keyword AND d.theme = ko.theme
+  ON d.keyword = ko.keyword AND d.theme LIKE ko.theme || '%' -- ensure matc with indirect theme inside the dictionary table
 GROUP BY
   ko.country,
   ko.channel_title,

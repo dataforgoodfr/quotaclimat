@@ -96,7 +96,8 @@ SELECT
   COALESCE(wpd.weekly_duration_minutes, 0) AS sum_duration_minutes
 FROM keyword_occurrences ko
 LEFT JOIN public.dictionary d
-  ON d.keyword = ko.keyword AND d.theme = ko.theme
+  ON d.keyword = ko.keyword AND d.theme LIKE ko.theme || '%' -- ensure matc with indirect theme inside the dictionary table
+
 LEFT JOIN weekly_program_durations wpd
   ON wpd.channel_title = ko.channel_title AND wpd.week = ko.week
 GROUP BY

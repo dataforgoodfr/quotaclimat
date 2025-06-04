@@ -29,7 +29,7 @@ def run_dbt_command(command_args):
     print(result.stdout)  # Print dbt logs for debugging
     assert result.returncode == 0, f"dbt command failed: {result.stderr}"
 
-@pytest.fixture(scope="module", autouse=True)
+# @pytest.fixture(scope="module", autouse=True)
 def seed_dbt():
     """Run dbt seed once before any test."""
     commands = ["seed", "--select", "program_metadata","--select", "time_monitored","--select", "keywords","--select", "dictionary", "--full-refresh"]
@@ -37,7 +37,7 @@ def seed_dbt():
     run_dbt_command(commands)
 
 
-# seed_dbt()
+seed_dbt()
 
 @pytest.fixture(scope="module", autouse=True)
 def run_core_query_thematics_keywords():
@@ -105,7 +105,7 @@ def test_core_query_thematics_keywords_count(db_connection):
     count = cur.fetchone()[0]
     cur.close()
 
-    assert count == 103, "count error"
+    assert count == 108, "count error"
 
 def test_core_query_thematics_keywords_values_tf1(db_connection):
 

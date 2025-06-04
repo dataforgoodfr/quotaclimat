@@ -466,8 +466,10 @@ docker compose exec testconsole bash
 ### DBT production
 To update monthly our materialized view in production we have to use this command ([automatically done inside our docker-entrypoint](https://github.com/dataforgoodfr/quotaclimat/blob/main/docker-entrypoint.sh#L17)) that is run on every deployement of api-import (daily) :
 ```
-poetry run dbt run
+poetry run dbt run --full-refresh
 ```
+
+If we change the DBT code, we have to relaunch this command to have a refreshed view (or wait the next daily cron).
 
 ### SRT to Mediatree Format
 Some Speech to Text data come from other sources than Mediatree, so we have to transform those source into the mediatree format to process them.

@@ -10,6 +10,7 @@ SELECT
   "source"."Program Metadata - Channel Name__public" AS "Program Metadata - Channel Name__public",
   "source"."Program Metadata - Channel Name__infocontinue" AS "Program Metadata - Channel Name__infocontinue",
   "source"."Program Metadata - Channel Name__radio" AS "Program Metadata - Channel Name__radio",
+  SUM("source"."Program Metadata - Channel Name__duration_minutes") AS "sum_duration_minutes",
   CAST(SUM("source"."sum") AS float) / NULLIF(
     SUM(
       "source"."Program Metadata - Channel Name__duration_minutes"

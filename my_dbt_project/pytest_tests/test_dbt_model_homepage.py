@@ -225,6 +225,7 @@ def test_core_query_environmental_shares_values(db_connection):
             "public"."core_query_environmental_shares"."Program Metadata - Channel Name__public" AS "Program Metadata - Channel Name__public",
             "public"."core_query_environmental_shares"."Program Metadata - Channel Name__infocontinue" AS "Program Metadata - Channel Name__infocontinue",
             "public"."core_query_environmental_shares"."Program Metadata - Channel Name__radio" AS "Program Metadata - Channel Name__radio",
+            "public"."core_query_environmental_shares"."sum_duration_minutes" AS "sum_duration_minutes",
             ROUND(CAST("public"."core_query_environmental_shares"."% environnement total" AS numeric),4) AS "% environnement total",
             ROUND(CAST("public"."core_query_environmental_shares"."% climat" AS numeric),4) AS "% climat",
             ROUND(CAST("public"."core_query_environmental_shares"."% climat cause" AS numeric),4) AS "% climat cause",
@@ -249,7 +250,7 @@ def test_core_query_environmental_shares_values(db_connection):
 
          
 
-        expected = (datetime.datetime(2025, 1, 27, 0, 0), 'TF1', False, False, False, Decimal('0.1333'),Decimal('0.1111'),Decimal('0.0074'),Decimal('0.0000'),Decimal('0.0074'),Decimal('0.0000'),Decimal('0.0963'),Decimal('0.0667'),Decimal('0.0667'),Decimal('0.0000'),Decimal('0.0000'),Decimal('0.0000'),Decimal('0.0593'),Decimal('0.0593'),Decimal('0.0222'))
+        expected = (datetime.datetime(2025, 1, 27, 0, 0), 'TF1', False, False, False, 45, Decimal('0.1333'),Decimal('0.1111'),Decimal('0.0074'),Decimal('0.0000'),Decimal('0.0074'),Decimal('0.0000'),Decimal('0.0963'),Decimal('0.0667'),Decimal('0.0667'),Decimal('0.0000'),Decimal('0.0000'),Decimal('0.0000'),Decimal('0.0593'),Decimal('0.0593'),Decimal('0.0222'))
         assert row == expected, f"Unexpected values: {row}"
 
 def test_core_query_environmental_shares_values_i8n(db_connection):
@@ -259,6 +260,7 @@ def test_core_query_environmental_shares_values_i8n(db_connection):
             SELECT
             "public"."core_query_environmental_shares_i8n"."start" AS "start",
             "public"."core_query_environmental_shares_i8n"."channel_title" AS "channel_title",
+            "public"."core_query_environmental_shares_i8n"."sum_duration_minutes" AS "sum_duration_minutes",
             ROUND(CAST("public"."core_query_environmental_shares_i8n"."% environnement total" AS numeric),4) AS "% environnement total",
             ROUND(CAST("public"."core_query_environmental_shares_i8n"."% climat" AS numeric),4) AS "% climat",
             ROUND(CAST("public"."core_query_environmental_shares_i8n"."% climat cause" AS numeric),4) AS "% climat cause",
@@ -281,6 +283,6 @@ def test_core_query_environmental_shares_values_i8n(db_connection):
             LIMIT 1
         """)
         row = cur.fetchone()
-        expected = (datetime.datetime(2025, 1, 27, 0, 0), 'TF1', Decimal('0.0233'), Decimal('0.0194'), Decimal('0.0013'), Decimal('0.0000'), Decimal('0.0013'), Decimal('0.0000'), Decimal('0.0168'), Decimal('0.0116'), Decimal('0.0116'), Decimal('0.0000'), Decimal('0.0000'), Decimal('0.0000'), Decimal('0.0103'), Decimal('0.0103'), Decimal('0.0039'), 'france')
+        expected = (datetime.datetime(2025, 1, 27, 0, 0), 'TF1', 258, Decimal('0.0233'), Decimal('0.0194'), Decimal('0.0013'), Decimal('0.0000'), Decimal('0.0013'), Decimal('0.0000'), Decimal('0.0168'), Decimal('0.0116'), Decimal('0.0116'), Decimal('0.0000'), Decimal('0.0000'), Decimal('0.0000'), Decimal('0.0103'), Decimal('0.0103'), Decimal('0.0039'), 'france')
         # expected = (datetime.datetime(2025, 1, 27, 0, 0), 'TF1', Decimal('0.1333'),Decimal('0.1111'),Decimal('0.0074'),Decimal('0.0000'),Decimal('0.0074'),Decimal('0.0000'),Decimal('0.0963'),Decimal('0.0667'),Decimal('0.0667'),Decimal('0.0000'),Decimal('0.0000'),Decimal('0.0000'),Decimal('0.0593'),Decimal('0.0593'),Decimal('0.0222'), "france")
         assert row == expected, f"Unexpected values: {row}"

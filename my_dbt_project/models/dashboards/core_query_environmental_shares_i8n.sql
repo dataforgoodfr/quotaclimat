@@ -8,6 +8,7 @@ SELECT
   DATE_TRUNC('week', CAST("source"."start" AS timestamp)) AS "start",
   "source"."channel_name" AS "channel_name",
   "source"."channel_title" AS "channel_title",
+  SUM("source"."time_monitored__duration_minutes") AS "sum_duration_minutes",
   CAST(SUM("source"."sum") AS float) / NULLIF(
     SUM(
       "source"."time_monitored__duration_minutes"

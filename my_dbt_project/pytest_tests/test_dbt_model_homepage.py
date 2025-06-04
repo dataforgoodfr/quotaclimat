@@ -163,6 +163,29 @@ def test_core_query_thematics_keywords_values_arte(db_connection):
         row_trimmed = row[:-1]
         assert row_trimmed == expected_trimmed, f"Unexpected values: {row}"
 
+
+# zinc is indirect in the dictionary table, it's a good test to check direct join between keywords and dictionary
+def test_core_query_thematics_keywords_values_arte_zinc(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT theme, category, count, sum_duration_minutes
+            FROM public.core_query_thematics_keywords
+            WHERE channel_title = 'Arte'
+              AND keyword = 'zinc'
+              AND week = '2025-01-27'
+            ORDER BY theme, category
+        """)
+        rows = cur.fetchall()
+
+        expected = [
+            ('biodiversite_causes', 'Pollution', 1, 65),
+            ('ressources', 'Air', 1, 65),
+            ('ressources', 'Eau', 1, 65),
+            ('ressources', 'Sols', 1, 65),
+        ]
+
+        assert rows == expected, f"Unexpected zinc rows: {rows}"
+
 def test_core_query_thematics_keywords_values_i8n(db_connection):
 
     with db_connection.cursor() as cur:

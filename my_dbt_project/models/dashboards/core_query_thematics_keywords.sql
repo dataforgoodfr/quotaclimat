@@ -4,6 +4,8 @@
   )
 }}
 
+-- Core Query Thematics Keywords makes only sense when looking for keywords,theme, and category together (otherwise duplicates
+-- as a keyword inside keyword_with_timestamp is present 4 times, if the keyword has 4 themes)
 
 WITH program_durations AS (
   SELECT

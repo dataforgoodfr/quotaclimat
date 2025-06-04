@@ -29,7 +29,7 @@ def run_dbt_command(command_args):
     print(result.stdout)  # Print dbt logs for debugging
     assert result.returncode == 0, f"dbt command failed: {result.stderr}"
 
-
+# @pytest.fixture(scope="module", autouse=True)
 def seed_dbt():
     """Run dbt seed once before any test."""
     commands = ["seed", "--select", "program_metadata","--select", "time_monitored","--select", "keywords","--select", "dictionary", "--full-refresh"]
@@ -49,7 +49,7 @@ def run_core_query_thematics_keywords():
 def run_core_query_thematics_keywords_i8n():
     """Run dbt for the thematics model once before related tests."""
     logging.info("pytest running dbt core_query_thematics_keywords_i8n")
-    run_dbt_command(["run", "--models", "core_query_thematics_keywords_i8n", "--full-refresh"])
+    run_dbt_command(["run", "--models", "core_query_thematics_keywords_i8n", "--full-refresh","--debug"])
 
 @pytest.fixture(scope="module", autouse=True)
 def run_core_query_environmental_shares():
@@ -105,14 +105,14 @@ def test_core_query_thematics_keywords_count(db_connection):
     count = cur.fetchone()[0]
     cur.close()
 
-    assert count == 103, "count error"
+    assert count == 108, "count error"
 
-def test_core_query_thematics_keywords_values(db_connection):
+def test_core_query_thematics_keywords_values_tf1(db_connection):
 
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT channel_title, week, sum_duration_minutes, crise_type, theme, category, keyword, count,
-            high_risk_of_false_positive
+            SELECT channel_title, week, crise_type, theme, category, keyword, count,
+            high_risk_of_false_positive, sum_duration_minutes
             FROM public.core_query_thematics_keywords
             WHERE channel_title = 'TF1' AND keyword = 'eau' AND theme = 'changement_climatique_constat'
             ORDER BY channel_title DESC
@@ -123,24 +123,26 @@ def test_core_query_thematics_keywords_values(db_connection):
         expected= (
         'TF1',
         datetime.date(2025, 1, 27),
-        1650,
         'Crise climatique',
         'changement_climatique_constat',
         'Transversal',
         'eau',
         4,
-        True)
+        True,
+        1650)
         
         expected_trimmed = expected[:-1] 
         row_trimmed = row[:-1]
         assert row_trimmed == expected_trimmed, f"Unexpected values: {row}"
 
+def test_core_query_thematics_keywords_values_arte(db_connection):
+
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT channel_title, week, sum_duration_minutes, crise_type, theme, category, keyword, count,
-            high_risk_of_false_positive
+            SELECT channel_title, week, crise_type, theme, category, keyword, count,
+            high_risk_of_false_positive, sum_duration_minutes
             FROM public.core_query_thematics_keywords
-            WHERE channel_title = 'Arte' AND keyword = 'responsable' AND theme = 'biodiversite_solutions'
+            WHERE channel_title = 'Arte' AND keyword = 'eau' AND theme = 'changement_climatique_constat'
             ORDER BY channel_title DESC
             LIMIT 1
         """)
@@ -149,17 +151,40 @@ def test_core_query_thematics_keywords_values(db_connection):
         expected= (
         'Arte',
         datetime.date(2025, 1, 27),
-        455,
-        'Crise de la biodiversité',
-        'biodiversite_solutions',
+        'Crise climatique',
+        'changement_climatique_constat',
         'Transversal',
-        'responsable',
-        1,
-        None)
+        'eau',
+        2,
+        True,
+        455)
         
         expected_trimmed = expected[:-1] 
         row_trimmed = row[:-1]
         assert row_trimmed == expected_trimmed, f"Unexpected values: {row}"
+
+
+# zinc is indirect in the dictionary table, it's a good test to check direct join between keywords and dictionary
+def test_core_query_thematics_keywords_values_arte_zinc(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT theme, category, count, sum_duration_minutes
+            FROM public.core_query_thematics_keywords
+            WHERE channel_title = 'Arte'
+              AND keyword = 'zinc'
+              AND week = '2025-01-27'
+            ORDER BY theme, category
+        """)
+        rows = cur.fetchall()
+
+        expected = [
+            ('biodiversite_causes', 'Pollution', 1, 455),
+            ('ressources', 'Air', 1, 455),
+            ('ressources', 'Eau', 1, 455),
+            ('ressources', 'Sols', 1, 455),
+        ]
+
+        assert rows == expected, f"Unexpected zinc rows: {rows}"
 
 def test_core_query_thematics_keywords_values_i8n(db_connection):
 

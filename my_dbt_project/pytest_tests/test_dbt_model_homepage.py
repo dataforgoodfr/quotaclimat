@@ -1,10 +1,12 @@
-import pytest
-import psycopg2
-import os
-import subprocess
 import datetime
 import logging
+import os
+import subprocess
 from decimal import *
+
+import psycopg2
+import pytest
+
 
 @pytest.fixture(scope="module")
 def db_connection():
@@ -76,6 +78,39 @@ def run_homepage_environment_by_media_by_month():
 
     run_dbt_command(commands)
 
+@pytest.fixture(scope="module", autouse=True)
+def run_thematic_query_ocean():
+    """Run dbt for the environmental shares model once before related tests."""
+    commands = ["run", "--models", "thematic_query_ocean", "--full-refresh","--debug"]
+    logging.info(f"pytest running dbt thematic_query_ocean {commands}")
+
+    run_dbt_command(commands)
+
+def test_thematic_query_ocean(db_connection):
+    """Test the materialized view using dbt and pytest."""
+
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT *
+            FROM public.thematic_query_ocean
+            LIMIT 1
+        """)
+        row = cur.fetchone()
+
+        expected=   (
+        'TF1',
+        datetime.date(2025, 1, 27),
+        'Crise climatique',
+        'changement_climatique_constat',
+        'Transversal',
+        'eau',
+        4, 
+        True
+        ,"france")
+        expected_trimmed = expected[: -2] + expected[-1:]
+        row_trimmed = row[: -2] + row[-1:]
+
+        assert row_trimmed == expected_trimmed, f"Unexpected values: {row}"
 
 def test_homepage_environment_by_media_by_month(db_connection):
     """Test the materialized view using dbt and pytest."""

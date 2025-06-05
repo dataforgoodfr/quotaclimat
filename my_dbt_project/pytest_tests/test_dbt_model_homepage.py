@@ -101,12 +101,12 @@ def test_thematic_query_ocean(db_connection):
         """)
         row = cur.fetchone()
 
-        expected=   (
-        'fca19832a859a1d118fa97697773675417e4632629f7a3d76b7a21b38cc8e8f1'
+        expected= (
+        'fca19832a859a1d118fa97697773675417e4632629f7a3d76b7a21b38cc8e8f1',
         datetime.date(2025, 2, 1, 19, 38),
         'TF1',
         "france")
-        
+
         expected_trimmed = expected[: -2] + expected[-1:]
         row_trimmed = row[: -2] + row[-1:]
 

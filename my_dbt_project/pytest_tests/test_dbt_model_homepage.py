@@ -107,10 +107,7 @@ def test_thematic_query_ocean(db_connection):
         'TF1',
         "france")
 
-        expected_trimmed = expected[: -2] + expected[-1:]
-        row_trimmed = row[: -2] + row[-1:]
-
-        assert row_trimmed == expected_trimmed, f"Unexpected values: {row}"
+        assert row == expected, f"Unexpected values: {row}"
 
 def test_homepage_environment_by_media_by_month(db_connection):
     """Test the materialized view using dbt and pytest."""

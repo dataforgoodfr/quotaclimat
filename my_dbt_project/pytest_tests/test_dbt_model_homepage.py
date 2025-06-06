@@ -100,10 +100,11 @@ def test_thematic_query_ocean(db_connection):
             LIMIT 1
         """)
         row = cur.fetchone()
+        print(row)
 
         expected= (
         'fca19832a859a1d118fa97697773675417e4632629f7a3d76b7a21b38cc8e8f1',
-        datetime.date(2025, 2, 1, 19, 38),
+        datetime.datetime(2025, 2, 1, 19, 38),
         'TF1',
         "france")
 

@@ -187,6 +187,20 @@ docker compose up mediatree
 docker compose up test
 ```
 
+### docker secrets
+inside the "secrets" folder, you should have these 4 files, you can put dummy values or ask Quota Climat team for the real ones.
+```
+secrets: # https://docs.docker.com/compose/use-secrets/
+  pwd_api:
+    file: secrets/pwd_api.txt
+  username_api:
+    file: secrets/username_api.txt
+  bucket:
+    file: secrets/scw_bucket.txt
+  bucket_secret:
+    file: secrets/scw_bucket_secret.txt
+```
+
 If you add a new dependency, don't forget to rebuild
 ```
 docker compose build test # or ingest_to_db, mediatree etc

@@ -142,9 +142,15 @@ async def get_and_save_s3_data_to_pg(exit_event):
 
                 # TODO : should we only trust data from S3 ?
                 df_programs = get_programs(country=country) # memory bumps ? should be lazy instead of being copied on each worker
-                channels = country.channels
 
-            
+                channel = os.environ.get("CHANNEL", "")
+                if channel != "":
+                    logging.warning(f"Using channel name {channel} only from env variable CHANNEL")
+                    channels = [channel]
+                else:
+                    logging.info(f"Using all channels for country {country.name} from config")
+                    channels = country.channels
+
                 stop_words = get_stop_words(session, validated_only=True, country=country)
                 
                 (start_date, number_of_previous_days) = get_start_time_to_query_from(session, country=country)

@@ -16,7 +16,6 @@ from zoneinfo import ZoneInfo
 
 timezone = "Europe/Brussels"
 
-
 def split_words_on_apostrophes(text):
     split_words = []
     for word in text.split():
@@ -28,7 +27,7 @@ def split_words_on_apostrophes(text):
             split_words.append(word)
     return split_words
 
-def parse_csv_without_headers(file_path):
+def parse_csv_without_headers(file_path, encoding='utf-8'):
     """
     Parse CSV file without headers with the format:
     channel_name, channel_program_name, start, plaintext
@@ -37,7 +36,7 @@ def parse_csv_without_headers(file_path):
     row_count = 0
     
     try:
-        with open(file_path, 'r', encoding='cp1252', errors='replace') as csv_file: # encoding='cp1252'
+        with open(file_path, 'r', encoding=encoding, errors='replace') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=';')
             for row in csv_reader:
                 row_count += 1
@@ -46,6 +45,9 @@ def parse_csv_without_headers(file_path):
                     program_name = row[1]
                     start_time = row[2]
                     plaintext = row[3]
+
+                    if "Ã©" in plaintext:
+                        raise ValueError(f"Invalid character in plaintext at row {row_count}: {plaintext}")
 
                     data.append({
                         'channel_name': channel_name,
@@ -59,6 +61,7 @@ def parse_csv_without_headers(file_path):
         print(f"  Successfully parsed {len(data)} rows from {file_path}")
     except Exception as e:
         print(f"  ERROR processing file {file_path}: {e}")
+        raise e
     
     return data
 
@@ -169,7 +172,7 @@ def create_mediatree_data_for_partition(windows_data):
     
     return result
 
-def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree_output"):
+def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree_output", encoding='utf-8'):
     """
     Process all CSV files in a folder to mediatree format
     with partitioning by year/month/day/channel and output as Parquet
@@ -195,7 +198,7 @@ def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree
     for i, filename in enumerate(csv_files):
         file_path = os.path.join(folder_path, filename)
         print(f"\nProcessing file {i+1}/{len(csv_files)}: {filename}")
-        file_data = parse_csv_without_headers(file_path)
+        file_data = parse_csv_without_headers(file_path, encoding=encoding)
         all_data.extend(file_data)
         print(f"  Total data rows so far: {len(all_data)}")
     
@@ -254,7 +257,9 @@ def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree
 
 if __name__ == "__main__":
     folder_path_2024 = f"csa-belge/2024"
+    encoding_2024 = f"cp1252"
     folder_path_2025 = f"csa-belge/2025"
+    encoding_2025 = f"utf-8"
 
     bucket = "mediatree"
     output_dir = "mediatree_output"
@@ -263,7 +268,7 @@ if __name__ == "__main__":
     print(f"Using timezone: {timezone}")
     print(f"Using bucket: {bucket}")
     print(f"Using s3_root_folder: {s3_root_folder}")
-    process_csv_folder_to_partitioned_parquet(folder_path_2024, output_dir)
-    #process_csv_folder_to_partitioned_parquet(folder_path_2025, output_dir)
+    # process_csv_folder_to_partitioned_parquet(folder_path_2024, output_dir)
+    process_csv_folder_to_partitioned_parquet(folder_path_2025, output_dir,encoding=encoding_2025)
     s3_client = get_s3_client()
     upload_folder_to_s3(output_dir,bucket, s3_root_folder, s3_client=s3_client)

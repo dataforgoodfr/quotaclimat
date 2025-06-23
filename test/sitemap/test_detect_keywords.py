@@ -1,14 +1,14 @@
-import pytest
-
-from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
-
-from quotaclimat.data_processing.mediatree.utils import *
-from quotaclimat.data_processing.mediatree.detect_keywords import *
 from datetime import datetime, timezone
-from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
-
 
 import pandas as pd
+import pytest
+from test_utils import (compare_unordered_lists_of_dicts, debug_df,
+                        get_localhost)
+
+from quotaclimat.data_processing.mediatree.detect_keywords import *
+from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
+from quotaclimat.data_processing.mediatree.utils import *
+
 localhost = get_localhost()
 original_timestamp = 1706437079004
 start = datetime.fromtimestamp(original_timestamp / 1000, timezone.utc)
@@ -179,7 +179,7 @@ def test_two_themes_one_hrfp_get_themes_keywords_duration():
          'theme': 'changement_climatique_constat'
         }
     ]
-    themes = ['changement_climatique_constat', 'attenuation_climatique_solutions', 'ressources_solutions']
+    themes = ['changement_climatique_constat', 'biodiversite_solutions', 'attenuation_climatique_solutions', 'ressources_solutions']
 
     (themes_output, keywords_output, 
         number_of_keywords,
@@ -215,7 +215,7 @@ def test_two_themes_one_hrfp_get_themes_keywords_duration():
 
     assert number_of_keywords == 1
     assert number_of_keywords_climat == 1
-    assert number_of_keywords_biodiversite == 0
+    assert number_of_keywords_biodiversite == 1
     assert number_of_keywords_ressources == 1
     assert number_of_changement_climatique_constat == 1
     assert number_of_changement_climatique_causes_directes == 0
@@ -227,7 +227,7 @@ def test_two_themes_one_hrfp_get_themes_keywords_duration():
     assert number_of_biodiversite_concepts_generaux == 0
     assert number_of_biodiversite_causes_directes == 0
     assert number_of_biodiversite_consequences == 0
-    assert number_of_biodiversite_solutions_directes == 0
+    assert number_of_biodiversite_solutions_directes == 1
     assert number_of_changement_climatique_constat_no_hrfp == 1
     assert number_of_changement_climatique_causes_no_hrfp == 0
     assert number_of_changement_climatique_consequences_no_hrfp == 0
@@ -238,7 +238,7 @@ def test_two_themes_one_hrfp_get_themes_keywords_duration():
     assert number_of_biodiversite_concepts_generaux_no_hrfp == 0
     assert number_of_biodiversite_causes_no_hrfp == 0
     assert number_of_biodiversite_consequences_no_hrfp == 0
-    assert number_of_biodiversite_solutions_no_hrfp == 0
+    assert number_of_biodiversite_solutions_no_hrfp == 1
 
 
 def test_long_sentence_theme_get_themes_keywords_duration():
@@ -840,6 +840,7 @@ def test_complexe_filter_and_tag_by_theme():
         "srt": srt,
         "theme": [
             "attenuation_climatique_solutions",
+            'biodiversite_solutions',
             "changement_climatique_constat"
         ],
         "keywords_with_timestamp": [
@@ -867,7 +868,7 @@ def test_complexe_filter_and_tag_by_theme():
         "number_of_biodiversite_concepts_generaux": 0,
         "number_of_biodiversite_causes_directes": 0,
         "number_of_biodiversite_consequences": 0,
-        "number_of_biodiversite_solutions_directes" :0
+        "number_of_biodiversite_solutions_directes" :1
         ,'number_of_keywords_climat':1,
         'number_of_keywords_biodiversite':0,
         'number_of_keywords_ressources':0

@@ -711,7 +711,7 @@ def test_lower_case_filter_and_tag_by_theme():
     expected_result.drop(columns=['theme'], inplace=True)
     expected_result.drop(columns=['keywords_with_timestamp'], inplace=True)
     df.drop(columns=['keywords_with_timestamp'], inplace=True)
-    pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
+    pd.testing.assert_frame_equal(df._to_pandas().reset_index(drop=True), expected_result._to_pandas().reset_index(drop=True))
 
 def test_singular_plural_case_filter_and_tag_by_theme():
     srt = [{
@@ -780,7 +780,8 @@ def test_singular_plural_case_filter_and_tag_by_theme():
     df.drop(columns=['keywords_with_timestamp'], inplace=True)
     expected_result.drop(columns=['keywords_with_timestamp'], inplace=True)
 
-    pd.testing.assert_frame_equal(df.reset_index(drop=True), expected_result.reset_index(drop=True))
+
+    pd.testing.assert_frame_equal(df._to_pandas().reset_index(drop=True), expected_result._to_pandas().reset_index(drop=True))
 
 def test_complexe_filter_and_tag_by_theme():
     original_timestamp_first_keyword = original_timestamp + 6

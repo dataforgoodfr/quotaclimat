@@ -94,8 +94,8 @@ GERMANY_CHANNELS= ["daserste" # from srt import
     ,"prosieben"
     ,"kabel-eins"]
 GERMANY_CHANNELS_MEDIATREE= [ # imported via mediatree api only
-    "zdf-neo"
-    ,"rtl-television"
+    # "zdf-neo",
+    "rtl-television"
     ,"sat1"
     ,"prosieben"
     ,"kabel-eins"]

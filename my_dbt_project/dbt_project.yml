@@ -103,6 +103,28 @@ seeds:
             {% else %}
             -- safeguard: skip DELETE in prod
             {% endif %}
+
+    keyword_macro_category:
+        table: keyword_macro_category
+        enabled: "{{ target.name != 'prod' }}" # safe guard
+        pre-hook:
+          - >
+            {% if target.name != 'prod' %}
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'keyword_macro_category'
+              ) THEN
+                EXECUTE 'DELETE FROM public.keyword_macro_category';
+              END IF;
+            END
+            $$;
+            {% else %}
+            -- safeguard: skip DELETE in prod
+            {% endif %}
+
     time_monitored:
         table: time_monitored
         enabled: "{{ target.name != 'prod' }}" # safe guard

@@ -1,0 +1,1828 @@
+keyword,is_empty,general,agriculture,transport,batiments,energie,industrie,eau,ecosysteme,economie_ressources
+ministère de la transition écologique,true,false,false,false,false,false,false,false,false,false
+40 degrés,false,true,false,false,false,false,false,false,false,false
+50 degrés,false,true,false,false,false,false,false,false,false,false
+a69,false,false,false,true,false,false,false,false,false,false
+abeille,false,false,true,false,false,false,false,false,true,false
+abondance,false,true,false,false,false,false,false,false,false,false
+absorption du carbone,false,true,false,false,false,false,false,false,false,false
+accès à l’eau,false,false,false,false,false,false,false,true,false,false
+accord de kunming,false,false,false,false,false,false,false,false,true,false
+accord de kunming-montréal,false,false,false,false,false,false,false,false,true,false
+accord de paris,false,true,false,false,false,false,false,false,false,false
+accueillir la faune,false,false,false,false,false,false,false,false,true,false
+acide,false,true,false,false,false,false,false,false,false,false
+acidification,false,false,false,false,false,false,false,false,true,false
+acidification des oceans,false,false,false,false,false,false,false,false,true,false
+acidification des océans,false,false,false,false,false,false,false,true,true,false
+acidification des sols,false,false,false,false,false,false,false,true,true,false
+acidification du milieu marin,false,false,true,false,false,false,false,false,true,false
+activisme climatique,false,false,false,false,false,false,false,true,true,false
+activiste pour le climat,false,true,false,false,false,false,false,false,false,false
+activité industrielle,false,true,false,false,false,false,false,false,false,false
+acv,false,false,false,false,false,true,true,false,false,true
+adaptation au changement climatique,true,false,false,false,false,false,false,false,false,false
+adaptation au dérèglement climatique,false,true,false,false,false,false,false,false,false,false
+adaptation au réchauffement climatique,false,true,false,false,false,false,false,false,false,false
+adaptation climatique,false,true,false,false,false,false,false,false,false,false
+ademe,false,true,false,false,false,false,false,false,false,false
+agence de l'eau,false,true,false,false,false,false,false,false,false,false
+agence de l'environnement,false,true,false,false,false,false,false,false,false,false
+agence environnementale,false,false,false,false,false,false,false,true,false,false
+agences régionales de santé,true,false,false,false,false,false,false,false,false,false
+agir pour le climat,true,false,false,false,false,false,false,false,false,false
+agression mécanique,false,true,false,false,false,false,false,false,false,false
+agribusiness,false,true,false,false,false,false,false,false,false,false
+agricole,true,false,false,false,false,false,false,false,false,false
+agriculteur,false,false,true,false,false,false,true,false,false,false
+agriculteur bio,false,false,true,false,false,false,false,false,false,false
+agriculture,false,false,true,false,false,false,false,false,false,false
+agriculture bio,false,false,true,false,false,false,false,false,false,false
+agriculture bio ,false,false,true,false,false,false,false,false,false,false
+agriculture biologique,false,false,true,false,false,false,false,false,true,true
+agriculture conventionnelle,true,false,false,false,false,false,false,false,false,false
+agriculture de conservation,false,false,true,false,false,false,false,false,true,true
+agriculture de conservation des sols,false,false,true,false,false,false,false,false,true,true
+agriculture durable,false,false,true,false,false,false,false,false,false,false
+agriculture extensive,false,false,true,false,false,false,false,false,false,false
+agriculture industrielle,true,false,false,false,false,false,false,false,false,false
+agriculture intensive,false,false,true,false,false,false,false,false,true,true
+agriculture plus respectueuse de l’environnement ,false,false,true,false,false,false,false,false,true,false
+agriculture plus verte,false,false,true,false,false,false,true,false,false,false
+agriculture régénératrice,false,false,true,false,false,false,false,true,true,false
+agriculture urbaine,true,false,false,false,false,false,false,false,false,false
+agro écologie,false,false,true,false,false,false,false,false,false,false
+agro écologique,false,false,true,false,false,false,false,false,true,false
+agro-industrie,true,false,false,false,false,false,false,false,false,false
+agro-industriel,false,false,true,false,false,false,false,false,true,false
+agro-pastoralisme,false,false,true,false,false,false,false,false,true,false
+agroalimentaire,false,false,true,false,false,false,true,false,false,false
+agroécologie,false,false,true,false,false,false,true,false,false,false
+agroécologique,true,false,false,false,false,false,false,false,false,false
+agroforesterie,false,false,true,false,false,false,true,false,false,true
+agroforestier ,false,false,true,false,false,false,false,false,true,false
+air frais,true,false,false,false,false,false,false,false,false,false
+aire marine protégée,false,false,true,false,false,false,false,false,true,false
+aire naturelle protégée,true,false,false,false,false,false,false,false,false,false
+aires protégées,false,true,false,false,false,false,false,false,false,false
+ajustement carbone,false,false,false,false,false,false,false,false,true,false
+aléas climatiques,false,false,false,false,false,false,false,false,true,false
+algues vertes,false,false,false,false,false,false,false,false,true,false
+alimentation,false,false,false,false,false,true,true,false,false,true
+alimentation variée,false,true,false,false,false,false,false,false,false,false
+aliments transformés,false,false,true,false,false,false,false,true,true,false
+alternative,false,false,true,false,false,false,false,false,false,true
+alternative durable,true,false,false,false,false,false,false,false,false,false
+amélioration des pratiques d'élevage,false,false,true,false,false,false,true,false,false,false
+amélioration des pratiques d’élevage,false,true,false,false,false,false,false,false,false,false
+amélioration des pratiques d’élevage ,false,true,false,false,false,false,false,false,false,false
+amélioration des pratiques d’élevages,false,false,true,false,false,false,false,false,false,false
+améliorer la fonctionnalité des sols,false,false,true,false,false,false,false,false,false,false
+améliorer les systèmes d'alerte et d'évacuation,true,false,false,false,false,false,false,false,false,false
+aménagement du territoire,false,false,true,false,false,false,false,false,false,false
+aménagement paysager,true,false,false,false,false,false,false,false,false,false
+aménagement résilient,false,false,false,true,true,false,false,false,false,false
+amnésie environnementale,false,true,false,false,false,false,false,false,false,false
+amoureux de la nature,true,false,false,false,false,false,false,false,false,false
+amphibien,false,false,false,false,true,true,false,false,false,true
+analyse de cycle de vie,false,false,false,false,false,false,false,false,true,false
+anguille,false,false,false,false,false,false,false,false,true,false
+animaux sauvages,false,false,false,false,false,false,false,false,true,false
+année la plus chaude,false,false,false,false,false,false,false,false,false,true
+anomalie de températures,false,false,false,false,false,false,false,false,true,false
+anthropocène,false,false,false,false,false,false,false,false,true,false
+anti gaspi,false,true,false,false,false,false,false,false,false,false
+anti gaspillage,false,true,false,false,false,false,false,false,false,false
+anti-écolo,false,true,false,false,false,false,false,false,false,false
+antigaspi,false,false,false,false,false,false,false,false,false,true
+antigaspillage,false,false,true,false,false,false,true,false,false,true
+appauvrissement des sols,false,true,false,false,false,false,false,false,false,false
+approche systémique,false,false,false,false,false,false,false,false,false,true
+aquaculture durable,false,false,false,false,false,false,false,false,false,true
+arbre,false,false,true,false,false,false,false,false,true,false
+arbre de pluie,false,true,false,false,false,false,false,false,false,false
+arbre planté,false,true,false,false,false,false,false,false,false,false
+arbre remarquable,false,false,true,false,false,false,false,true,false,true
+arnica,false,false,false,false,false,false,false,false,true,false
+arrêt des centrales nucléaires,true,false,false,false,false,false,false,false,false,false
+arrêter de prendre l'avion,false,false,false,false,false,false,false,false,true,false
+arrêter la déforestation,false,false,false,false,false,false,false,false,true,false
+ars ,false,false,false,false,false,false,false,false,true,false
+arsenic,false,false,false,false,false,true,false,false,false,false
+artificialisation des milieux naturels,false,false,false,true,false,true,false,false,false,false
+artificialisation des sols,true,false,false,false,false,false,false,false,false,false
+asséché,true,false,false,false,false,false,false,false,false,false
+asséchée,false,false,false,false,false,false,false,true,true,true
+assèchement des zones humides,false,false,false,false,true,false,false,false,true,false
+assécher,false,false,true,false,true,false,false,false,true,false
+assolement ,false,false,false,false,false,false,false,true,true,false
+atmosphère ,false,false,false,false,false,false,false,true,true,false
+atteinte à la biodiversité,false,false,false,false,false,false,false,true,true,false
+atténuation,false,false,false,false,false,false,false,true,true,false
+atténuation du changement climatique,false,false,false,false,false,false,false,true,true,false
+attirer les pollinisateurs,false,false,true,false,false,false,false,true,true,false
+augmentation des précipitations,true,false,false,false,false,false,false,false,false,false
+augmentation des risques de sécheresse,true,false,false,false,false,false,false,false,false,false
+augmentation des températures,false,false,false,false,false,false,false,false,true,false
+automobile,false,true,false,false,false,false,false,false,false,false
+autorité de santé,false,true,false,false,false,false,false,false,false,false
+autoroutes,false,true,false,false,false,false,false,false,false,false
+aviation,true,false,false,false,false,false,false,false,false,false
+avihonte,false,false,false,false,false,false,false,true,false,false
+avion,false,false,false,false,false,false,false,true,false,false
+avion à hydrogène,false,true,false,false,false,false,false,false,false,false
+avion vert,false,false,false,true,false,false,false,false,false,false
+azote,false,true,false,false,false,false,false,false,false,false
+bactérie,false,false,false,true,false,false,false,false,false,false
+baisse de consommation d'eau,false,false,false,true,false,false,false,false,false,false
+baisse de production agricole,false,true,false,false,false,false,false,false,false,false
+baisse des émissions,false,false,false,true,false,false,false,false,false,false
+baisse des émissions de carbone,false,false,false,true,false,true,true,false,false,false
+baisse des émissions de gaz à effet de serre,false,false,false,true,false,true,true,false,false,false
+baisse des récoltes,false,false,true,false,false,false,false,false,false,false
+baisse des rendements agricoles,false,false,true,false,false,false,false,true,true,false
+baisse des températures,false,false,false,false,false,false,false,true,false,false
+baisse du stockage du carbone dans les sols,false,false,true,false,false,false,false,false,false,false
+baisse du trafic aérien,true,false,false,false,false,false,false,false,false,false
+baleine échouée,false,true,false,false,false,false,false,false,false,false
+bande enherbée,false,true,false,false,false,false,false,false,false,false
+bande fleurie,false,false,true,false,false,false,false,false,false,false
+banquise,false,false,true,false,false,false,false,false,false,false
+bardage en bois,false,true,false,false,false,false,false,false,false,false
+barrage,false,false,true,false,false,false,false,false,true,false
+barrière naturelle,false,false,false,true,false,true,false,false,false,false
+barrière végétale,false,false,false,false,false,false,false,false,true,false
+bas carbone,true,false,false,false,false,false,false,false,false,false
+bâtiment,true,false,false,false,false,false,false,false,false,false
+bâtiment à énergie positive,false,false,false,false,false,false,false,false,true,false
+batterie,false,false,false,false,true,false,false,false,false,true
+besoin énergétique,false,false,false,false,false,true,false,true,false,false
+béton bas carbone,true,false,false,false,false,false,false,false,false,false
+bétonisation,false,false,false,false,true,false,false,false,true,false
+bétonner,false,true,false,false,false,false,false,false,false,false
+bétonner les sols,false,false,false,false,true,false,false,false,false,false
+bien être animal,true,false,false,false,false,false,false,false,false,false
+bien-être animal,false,false,false,false,false,true,false,false,false,false
+bien-être de la nature,false,false,false,false,false,true,false,false,false,false
+bien-être des animaux,false,false,false,false,true,false,true,false,false,true
+bienfait de la nature,false,false,false,false,true,false,false,false,true,false
+bienfaits de la nature,false,false,false,false,true,false,false,false,false,false
+bilan carbone,false,false,false,false,true,false,false,false,true,false
+bio,false,false,true,false,false,false,false,false,true,false
+bio capacité,false,false,true,false,false,false,false,false,true,false
+bio inspiration,false,false,false,false,false,false,false,false,true,false
+biocapacité ,false,false,true,false,false,false,false,false,true,false
+biocarburant,true,false,false,false,false,false,false,false,false,false
+biochar,false,false,false,false,false,false,false,false,true,false
+bioclimatique,false,false,false,false,false,true,true,false,false,false
+biocontrôle,false,false,true,false,false,false,false,false,false,false
+biodéchets,false,false,false,false,false,false,false,false,true,true
+biodégradable,false,false,false,false,false,false,false,false,true,false
+biodiversité,true,false,false,false,false,false,false,false,false,false
+biodiversité en danger,false,true,false,false,false,false,false,false,false,false
+biodynamie,false,true,false,false,false,false,false,false,false,false
+bioérosion,false,false,true,false,false,true,false,false,false,true
+biogaz,false,false,false,false,true,true,false,false,false,false
+bioinspiration,true,false,false,false,false,false,false,false,false,false
+biologiste,false,false,false,false,false,false,false,false,false,true
+biomasse,false,false,false,false,false,false,true,false,false,true
+biomimétisme,false,false,false,false,false,false,false,false,true,false
+bioplastique,false,false,false,false,false,false,false,false,true,false
+bios géo chimique,true,false,false,false,false,false,false,false,false,false
+blanchissement des coraux,false,false,false,false,false,false,false,false,true,false
+bloc d’immeubles,false,false,true,false,false,true,true,false,false,false
+bocage,false,false,false,false,false,false,false,false,true,false
+bois d’oeuvre,false,false,false,false,false,false,false,false,true,false
+bois énergie,false,false,true,false,false,true,true,false,false,false
+bois-énergie,false,false,false,false,false,false,false,false,true,false
+bon pour la planète,false,false,false,false,false,false,true,false,false,true
+bon pour la santé,false,false,false,false,false,false,true,false,false,true
+bonne nouvelle pour la planète,false,false,false,false,false,true,true,false,true,false
+bonnes pratiques agricoles,false,false,false,false,false,false,false,false,true,false
+bonus automobile,false,false,false,false,true,false,false,false,false,false
+bonus climatique,false,false,true,false,false,false,false,false,true,false
+bonus écologique,false,false,false,false,true,false,true,false,false,true
+bonus-malus écologique,false,false,false,false,true,false,true,false,false,true
+borne de recharge,true,false,false,false,false,false,false,false,false,false
+borne électrique,true,false,false,false,false,false,false,false,false,false
+bouquet énergétique,false,true,false,false,false,false,false,false,false,false
+bouteille en plastique,false,true,false,false,false,false,false,false,false,false
+braconnage,false,true,false,false,false,false,false,false,false,false
+braconnier,true,false,false,false,false,false,false,false,false,false
+bruit routier,false,false,false,true,false,false,false,false,false,true
+bus,false,false,false,false,false,true,false,false,false,true
+bus électrique,false,false,false,true,false,false,false,false,false,true
+c'est écolo,false,false,false,true,false,true,false,false,false,true
+cadmium,false,false,false,true,false,true,false,false,false,false
+calotte,false,false,false,true,false,true,false,false,false,false
+calotte du groenland,false,false,false,false,false,true,false,false,false,false
+calotte glacière,false,false,false,false,false,false,true,true,false,true
+calotte polaire,false,false,false,false,false,false,false,false,true,false
+camion électrique,false,false,false,false,false,false,false,false,true,false
+camion xxl,false,false,false,true,false,false,false,false,false,false
+cancer,false,false,false,true,false,false,false,false,false,false
+cancérigène,false,false,false,true,false,true,false,false,false,false
+cancérogène,true,false,false,false,false,false,false,false,false,false
+canicule,false,false,false,false,false,false,true,false,true,true
+canicule marine,false,false,false,false,false,false,false,false,true,false
+capacité planétaire,false,false,false,false,false,false,false,false,true,false
+capital biodiversité,false,false,false,false,false,false,false,false,true,false
+capitalisme ,false,false,false,false,false,false,false,false,true,false
+capitaliste,false,false,false,true,false,true,true,false,false,false
+captage et stockage,false,false,false,true,false,false,true,false,false,false
+capteur de carbone,false,true,false,false,false,false,false,false,false,false
+capture et séquestration de carbone,false,true,false,false,false,false,false,false,false,false
+capturer le carbone,false,false,true,false,false,false,true,false,false,true
+carburant,false,false,true,false,false,false,true,false,false,true
+carburant d'aviation durable,false,true,false,false,false,false,false,false,false,false
+carburant d'origine non fossile,false,false,false,false,false,false,false,false,true,false
+carburant de synthèse ,false,true,false,false,false,false,false,false,false,false
+carburant durable ,false,true,false,false,false,false,false,false,false,false
+castor,true,false,false,false,false,false,false,false,false,false
+catastophe écologique,true,false,false,false,false,false,false,false,false,false
+catastrophe  ,true,false,false,false,false,false,false,false,false,false
+catastrophe climatique,false,false,false,false,false,true,true,false,false,false
+catastrophe écologique,false,false,false,false,false,true,true,false,false,false
+centrale hydroélectrique,false,false,false,false,false,true,true,false,false,false
+centrale nucléaire,false,false,false,false,false,true,true,false,false,false
+cerf,false,false,false,false,false,true,false,false,false,false
+cerné par les eaux,false,false,false,true,false,true,false,false,false,false
+chaleur extrême,false,false,false,true,false,true,true,false,false,false
+chaleur record,true,false,false,false,false,false,false,false,false,false
+chalut,true,false,false,false,false,false,false,false,false,false
+chalutage,false,false,false,false,false,false,false,false,true,false
+chalutier,false,true,false,false,false,false,false,false,false,false
+champignon,true,false,false,false,false,false,false,false,false,false
+changement d'affectation des terres,false,true,false,false,false,false,false,false,false,false
+changement d’usage des terres,false,true,false,false,false,false,false,false,false,false
+changement de chaudière,false,false,false,false,false,true,false,true,false,false
+changement de mode agronomique,false,false,false,false,false,true,true,false,false,false
+changement des pratiques,false,false,false,false,false,false,false,false,true,false
+changement transformateur,false,false,false,false,false,false,false,true,false,false
+changements transformateurs,false,true,false,false,false,false,false,false,false,false
+changer de modèle agricole,false,true,false,false,false,false,false,false,false,false
+changer de modèle économique,false,false,false,false,false,false,false,false,true,true
+changer les pratiques agricoles,false,false,false,false,false,false,false,false,true,true
+changer les pratiques de pêche ,false,false,false,true,false,false,false,false,true,false
+changer leurs habitudes,false,false,true,false,false,false,false,false,true,false
+changer nos comportements,true,false,false,false,false,false,false,false,false,false
+changer nos habitudes,false,false,true,false,false,false,false,false,true,true
+changer nos habitudes alimentaires,false,false,false,false,true,true,false,false,false,false
+chant des oiseaux,true,false,false,false,false,false,false,false,false,false
+charbon,true,false,false,false,false,false,false,false,false,false
+chardonneret,false,true,false,false,false,false,false,false,false,false
+chasse,true,false,false,false,false,false,false,false,false,false
+chasseur,false,false,true,false,false,false,false,false,false,false
+châtaignier,false,true,false,false,false,false,false,false,false,false
+chauffage,true,false,false,false,false,false,false,false,false,false
+chauffage au fuel,true,false,false,false,false,false,false,false,false,false
+chauffage au gaz,false,true,false,false,false,false,false,false,false,false
+chauve-souris,false,true,false,false,false,false,false,false,false,false
+chêne,false,true,false,false,false,false,false,false,false,false
+chenille processionnaire,false,false,true,false,false,false,false,false,false,true
+chevreuil,false,false,false,false,false,false,false,false,true,false
+chlordécone,false,false,false,false,false,true,false,false,false,false
+cigogne,false,false,false,false,false,false,false,false,true,false
+ciment de nouvelle génération,false,false,false,false,false,false,false,false,true,false
+ciment durable,false,false,false,false,false,false,false,false,true,false
+cinquante degrés,false,false,false,false,false,false,false,false,true,false
+circuits courts,false,false,false,false,false,true,false,false,false,false
+civelle,false,false,false,false,false,true,false,false,false,false
+climat,false,false,false,false,false,true,false,false,false,false
+climatique,false,false,false,false,false,false,false,false,true,false
+climatique extrême,false,false,false,false,false,false,false,false,true,false
+climatisation,false,false,false,false,false,false,false,false,true,false
+climatologue,false,false,false,false,false,false,false,false,true,false
+climatoscepticisme,false,false,true,false,false,false,false,true,true,false
+climatosceptique,false,false,false,false,false,false,false,false,true,false
+co deux,false,false,false,false,true,false,true,false,false,true
+co2,false,false,false,false,true,false,true,false,false,true
+cobalt,false,true,false,false,false,false,false,false,false,false
+coléoptères,false,false,true,false,false,false,false,false,false,false
+combustibles fossiles,false,false,false,false,false,false,false,false,true,false
+commerce illégal d’espèces,false,true,false,false,false,false,false,false,false,false
+compactage des sols,false,true,false,false,false,false,false,false,false,false
+compagnie gazière,false,true,false,false,false,false,false,false,false,false
+compagnie pétrolière,false,false,false,false,true,true,false,false,false,false
+compensation des atteintes à la biodiversité,false,true,false,false,false,false,false,false,false,false
+complexe agro-industriel,false,true,false,false,false,false,false,false,false,false
+compost,false,true,false,false,false,false,false,false,false,false
+compostable,false,true,false,false,false,false,false,false,false,false
+compostage,false,true,false,false,false,false,false,false,false,false
+composter,false,false,false,false,false,false,false,false,false,true
+compostés,false,false,false,false,false,false,false,false,true,false
+condition dégradée d’habitation,false,false,false,false,false,true,true,false,false,true
+conditions de vie sur terre,false,false,false,false,false,false,false,false,true,true
+conférence climat,false,false,true,false,false,false,false,false,false,false
+conférence des nations unies sur l' océan,false,false,false,false,false,true,true,false,false,false
+conférence des nations unies sur l'océan,false,false,false,false,false,true,true,false,false,false
+conférence des nations unies sur le climat,true,false,false,false,false,false,false,false,false,false
+conférence des nations unies sur les changements climatiques,false,false,true,false,false,false,true,false,false,false
+conférence des nations unies sur les océans,false,false,false,false,false,false,false,false,false,true
+conférence des parties,false,false,false,false,false,false,false,false,false,true
+conflit d’usage de l’eau,false,false,true,false,false,false,false,false,false,true
+conflits d’usage de l’eau,false,false,false,false,false,false,false,false,false,true
+connectivité des espaces naturels,false,false,false,false,false,false,false,false,false,true
+conservation d'espèces,false,false,false,false,true,false,false,false,false,false
+conservation de la nature,false,true,false,false,false,false,false,false,false,false
+conservation des habitats,false,true,false,false,false,false,false,false,false,false
+conservation des milieux,true,false,false,false,false,false,false,false,false,false
+conservation environnementale,true,false,false,false,false,false,false,false,false,false
+conservation marine,false,true,false,false,false,false,false,false,false,false
+conservatoire du littoral,false,true,false,false,false,false,false,false,false,false
+conserver la nature,true,false,false,false,false,false,false,false,false,false
+conserver les milieux,false,true,false,false,false,false,false,false,false,false
+consigne ,false,false,false,false,false,false,false,true,false,false
+consommation de plastique,false,false,false,false,false,false,false,true,false,false
+consommation énergétique,true,false,false,false,false,false,false,false,false,false
+consommation plus responsable,true,false,false,false,false,false,false,false,false,false
+consommation responsable,false,false,false,false,false,false,false,false,true,false
+consommer autrement,true,false,false,false,false,false,false,false,false,false
+contaminé,true,false,false,false,false,false,false,false,false,false
+contaminée,true,false,false,false,false,false,false,false,false,false
+continuité écologique,false,false,false,false,false,false,false,true,true,false
+continuité végétale,true,false,false,false,false,false,false,false,false,false
+contre l'effondrement de la biodiversité,false,false,false,false,false,false,false,false,true,false
+contre l'érosion de la biodiversité,true,false,false,false,false,false,false,false,false,false
+contre la déforestation,true,false,false,false,false,false,false,false,false,false
+contre la surpêche,false,false,false,false,false,false,true,false,false,true
+contre les émissions de carbone,false,false,false,false,false,true,false,false,false,false
+contre les pesticides,false,false,false,false,false,false,false,false,false,true
+convention des nations unies sur la diversité biologique,false,true,false,false,false,false,false,false,false,false
+convention des nations unies sur le climat,false,false,false,false,false,false,false,false,false,true
+convention pour l'environnement,false,true,false,false,false,false,false,false,false,false
+convention sur la diversité biologique,false,true,false,false,false,false,false,false,false,false
+cop 15,false,false,false,false,false,false,false,false,true,false
+cop 16,false,false,false,false,false,false,false,false,true,false
+cop biodiversité,true,false,false,false,false,false,false,false,false,false
+cop de montréal,true,false,false,false,false,false,false,false,false,false
+cop dix sept,true,false,false,false,false,false,false,false,false,false
+cop quinze,true,false,false,false,false,false,false,false,false,false
+cop seize,true,false,false,false,false,false,false,false,false,false
+cop sur la biodiversité,false,true,false,false,false,false,false,false,false,false
+cop trente,true,false,false,false,false,false,false,false,false,false
+cop vingt-et-un,false,false,false,false,false,false,false,false,true,false
+cop vingt-huit,false,true,false,false,false,false,false,false,false,false
+cop vingt-neuf,true,false,false,false,false,false,false,false,false,false
+cop vingt-sept,false,false,false,false,false,false,false,false,true,false
+cop vingt-six,false,true,false,false,false,false,false,false,false,false
+cop15,false,true,false,false,false,false,false,false,false,false
+cop21,false,false,false,false,false,false,false,false,true,false
+cop26,false,true,false,false,false,false,false,false,false,false
+cop27,false,true,false,false,false,false,false,false,false,false
+cop28,false,true,false,false,false,false,false,false,false,false
+cop29,false,true,false,false,false,false,false,false,false,false
+cop30,false,false,false,false,false,false,false,false,true,false
+corail,false,true,false,false,false,false,false,false,false,false
+coraux,false,true,false,false,false,false,false,false,false,false
+corridor écologique,false,true,false,false,false,false,false,false,false,false
+couloir migratoire,false,true,false,false,false,false,false,false,false,false
+coupe rase,false,true,false,false,false,false,false,false,false,false
+cours d'eau,false,true,false,false,false,false,false,false,false,false
+cours d'eau restauré,false,true,false,false,false,false,false,false,false,false
+couvert végétal,false,true,false,false,false,false,false,false,false,false
+couverts végétaux,false,true,false,false,false,false,false,false,false,false
+covoiturage,false,true,false,false,false,false,false,false,false,false
+création d'habitat,false,true,false,false,false,false,false,false,false,false
+création de mares,false,true,false,false,false,false,false,false,false,false
+création de nouveaux habitats,false,true,false,false,false,false,false,false,false,false
+crédit biodiversité,false,false,false,false,false,false,false,false,true,false
+crédit carbone,false,false,false,false,false,false,false,false,true,false
+crée des habitats,false,false,false,false,false,false,false,false,true,false
+crée des mares,true,false,false,false,false,false,false,false,false,false
+créer des habitats,false,false,false,false,false,false,false,false,true,false
+créer des mares,false,false,false,false,false,false,false,true,true,false
+crise climatique,true,false,false,false,false,false,false,false,false,false
+crise d'extinction de masse,true,false,false,false,false,false,false,false,false,false
+crise de la biodiversité,true,false,false,false,false,false,false,false,false,false
+crise du lien,false,false,false,true,false,false,false,false,false,false
+crise écologique,true,false,false,false,false,false,false,false,false,false
+crise environnementale,true,false,false,false,false,false,false,false,false,false
+crise planétaire,true,false,false,false,false,false,false,false,false,false
+crit'air,true,false,false,false,false,false,false,false,false,false
+croissance bleue,false,true,false,false,false,false,false,false,false,false
+croissance verte,true,false,false,false,false,false,false,false,false,false
+crue,true,false,false,false,false,false,false,false,false,false
+crue centennale,true,false,false,false,false,false,false,false,false,false
+crustacé,true,false,false,false,false,false,false,false,false,false
+cuivre,false,true,false,false,false,false,false,false,false,false
+culture diversifiée,false,false,false,false,false,false,false,false,true,false
+culture intermédiaire,false,false,false,false,false,false,false,false,true,false
+cycle de l’eau,false,true,false,false,false,false,false,false,false,false
+cycle du carbone,false,true,false,false,false,false,false,false,false,false
+cycles biogéochimiques,false,true,false,false,false,false,false,false,false,false
+cyclone,false,true,false,false,false,false,false,false,false,false
+d'ici 2050,false,false,false,true,false,false,false,false,false,false
+dauphin,false,true,false,false,false,false,false,false,false,false
+dauphin échoué,false,false,false,false,false,true,true,false,false,true
+débusage,false,false,false,false,false,false,false,true,false,false
+décarbonation,false,false,false,false,false,false,false,true,false,false
+décarboné,false,false,false,false,false,false,false,false,true,false
+décarbonée,false,false,false,false,false,false,false,false,false,true
+décarboner,true,false,false,false,false,false,false,false,false,false
+décès à cause de la chaleur,true,false,false,false,false,false,false,false,false,false
+décharge sauvage,false,false,false,false,false,false,false,true,false,false
+décharges,false,false,false,false,false,true,false,false,false,false
+déchet,false,true,false,false,false,false,false,false,false,false
+déchet ,false,false,false,false,false,false,false,false,true,false
+déchet de canne à sucre,false,true,false,false,false,false,false,false,false,false
+déchet toxique,false,false,false,false,false,false,false,false,true,false
+déchet valorisé,false,false,false,false,false,false,false,false,true,false
+déchèterie,true,false,false,false,false,false,false,false,false,false
+déchets toxiques,false,true,false,false,false,false,false,false,false,false
+déchetterie,false,true,false,false,false,false,false,false,false,false
+déclin de la biodiversité,false,true,false,false,false,false,false,false,false,false
+déclin du vivant,false,true,false,false,false,false,false,false,false,false
+déconstruire,false,true,false,false,false,false,false,false,false,false
+décroissance,false,false,false,false,false,false,false,false,true,true
+décroissance énergétique,false,false,false,false,false,false,false,false,false,true
+deep sea mining,false,false,false,false,false,false,false,false,false,true
+défense de l'environnement,true,false,false,false,false,false,false,false,false,false
+défense de la nature,false,false,true,false,false,false,false,false,false,true
+défenseur de l'environnement,false,false,false,false,false,false,true,false,false,true
+défenseur de la nature,false,false,false,false,false,false,false,false,false,true
+défi climatique,false,false,false,false,false,false,false,false,false,true
+défi de notre siècle,false,false,false,false,false,false,false,false,false,true
+déficit de pluie,false,false,false,false,false,false,false,false,false,true
+déforestation,false,false,false,false,false,false,false,false,true,false
+dégradation de l'habitat,false,false,false,false,false,false,false,false,true,false
+dégradation des ecosystèmes,false,true,false,false,false,false,false,false,false,false
+dégradation des puits de carbone,false,true,false,false,false,false,false,false,false,false
+dégradation des sols,false,true,false,false,false,false,false,false,false,false
+dégrader,false,false,false,false,false,true,false,false,false,true
+déluge,false,true,false,false,false,false,false,false,false,false
+dengue,false,true,false,false,false,false,false,false,false,false
+dépassement des limites planétaires,false,false,false,false,false,false,false,false,true,false
+déperdition de chaleur,false,true,false,false,false,false,false,false,false,false
+dépérissement,false,false,false,false,false,false,false,false,true,false
+dépolluant,false,true,false,false,false,false,false,false,false,false
+dépollué,false,true,false,false,false,false,false,false,false,false
+dépolluer,false,false,false,false,false,false,false,true,false,false
+dépollution,false,false,true,false,false,false,false,false,true,true
+dépôt sauvage,false,false,true,false,false,false,false,false,true,true
+désalinisation des eaux,false,false,false,false,true,false,false,false,true,false
+descente énergétique,false,false,false,false,false,false,false,false,true,false
+désertification,false,false,false,false,false,true,false,false,true,false
+désimperméabilisant,false,false,true,false,false,false,false,false,true,false
+désimperméabilisé ,false,true,false,false,false,false,false,false,false,false
+désimperméabilisée,false,false,false,false,false,false,false,true,false,false
+désimperméabiliser,false,false,false,false,false,false,false,false,true,false
+désobéissance civile,false,true,false,false,false,false,false,false,false,false
+dessalement de l’eau de mer,false,false,false,false,true,false,false,false,false,false
+déstabilisation atmosphérique,false,false,false,false,false,false,false,false,true,false
+destruction de la biodiversité,true,false,false,false,false,false,false,false,false,false
+destruction de la planète,true,false,false,false,false,false,false,false,false,false
+destruction des habitats naturels,false,false,false,false,false,false,false,true,true,true
+destruction des milieux naturels,false,true,false,false,false,false,false,false,false,false
+dévastation ,false,true,false,false,false,false,false,false,false,false
+développement de la planète,false,false,false,false,false,false,false,false,true,true
+développement durable,false,false,false,false,false,true,false,true,false,false
+développement naturel,false,false,false,false,false,true,false,true,false,false
+diagnostic de performance energétique,false,false,false,false,false,true,false,false,false,false
+diesel,false,false,true,false,false,false,false,true,true,false
+digue,true,false,false,false,false,false,false,false,false,false
+diminuer les émissions de carbone,true,false,false,false,false,false,false,false,false,false
+diminuer les émissions de gaz à effet de serre,true,false,false,false,false,false,false,false,false,false
+diminution de la banquise,true,false,false,false,false,false,false,false,false,false
+diminution des glaciers,false,true,false,false,false,false,false,false,false,false
+diminution des rendements agricoles,false,false,false,false,false,false,false,true,false,false
+disparition des coraux,false,true,false,false,false,false,false,false,false,false
+disparition des espèces,false,false,false,false,false,false,false,false,true,false
+disparition des forêts,false,false,false,false,false,false,false,false,true,false
+disparition des glaciers,false,false,false,false,false,false,false,false,true,false
+disparition des haies,false,false,false,false,false,false,false,false,true,false
+disparition des insectes,true,false,false,false,false,false,false,false,false,false
+disparition des oiseaux,false,true,false,false,false,false,false,false,false,false
+disparition des récifs coralliens,false,true,false,false,false,false,false,false,false,false
+disparition du vivant,true,false,false,false,false,false,false,false,false,false
+diversification des cultures,false,false,false,false,true,true,false,false,false,false
+diversification des habitats,false,false,false,true,false,true,false,false,false,false
+diversifier la végétation,false,false,false,false,false,false,false,true,true,false
+diversifier les cultures,false,true,false,false,false,false,false,false,false,false
+diversifier les espèces,false,true,false,false,false,false,false,false,false,false
+diversifier les végétaux,false,false,false,false,false,false,false,false,true,false
+diversité bioculturelle,false,false,false,false,false,false,false,false,true,false
+diversité biologique,false,false,true,false,false,false,false,false,false,false
+diversité des espèces,false,false,false,false,false,false,false,false,true,false
+diversité des essences,false,false,false,false,false,false,false,false,true,false
+diversité des êtres vivants,false,false,false,false,false,false,false,false,true,false
+diversité du vivant,false,false,false,false,false,false,false,false,true,false
+diversité génétique,false,false,true,false,false,false,false,false,true,false
+droit de l’environnement,false,false,true,false,false,false,false,false,true,false
+droit environnemental,false,false,false,false,false,false,false,false,true,false
+dune,false,false,false,false,false,false,false,false,true,false
+durée de vie,false,false,false,false,false,false,false,false,true,false
+dyoxide de carbone,true,false,false,false,false,false,false,false,false,false
+eau,true,false,false,false,false,false,false,false,false,false
+eau absorbée,true,false,false,false,false,false,false,false,false,false
+eau boueuse,true,false,false,false,false,false,false,false,false,false
+eau de pluie,true,false,false,false,false,false,false,false,false,false
+eau de ruissellement,true,false,false,false,false,false,false,false,false,false
+eau douce,true,false,false,false,false,false,false,false,false,false
+eau potable,false,false,false,false,false,false,false,false,true,false
+eau verte,true,false,false,false,false,false,false,false,false,false
+eaux boueuses,true,false,false,false,false,false,false,false,false,false
+eaux de ruissellement,false,false,false,false,false,false,false,false,true,false
+eaux déchainées,false,false,false,false,false,false,false,false,true,false
+eaux douces,false,false,false,false,false,false,false,false,true,false
+eaux souterraines,false,true,false,false,false,false,false,false,false,false
+eaux usées traitées,false,true,false,false,false,false,false,false,false,false
+échouage,false,true,false,false,false,false,false,false,false,false
+éco conception,false,false,false,false,false,false,false,false,true,false
+éco geste,false,false,false,false,false,false,false,false,false,true
+éco organisme,false,true,false,false,false,false,false,false,false,false
+éco responsable,false,false,false,false,false,false,false,true,false,false
+éco-anxiété,false,false,false,false,false,false,false,true,false,false
+éco-pâturage,false,false,false,false,false,false,false,true,false,false
+eco-prêt à taux 0,false,false,false,false,false,false,false,true,false,false
+eco-prêt à taux zéro,false,false,false,false,false,false,false,true,false,false
+éco-sac wc,false,false,false,false,false,false,false,true,true,false
+écocide,false,false,false,false,false,false,false,true,false,false
+écoconception,true,false,false,false,false,false,false,false,false,false
+écolo,false,false,false,false,false,false,false,true,false,false
+écologie,false,false,false,false,false,false,false,true,false,false
+écologie industrielle,false,false,false,false,false,false,false,true,false,false
+écologique,false,false,false,false,false,false,false,true,false,false
+écologiste,false,false,false,false,false,false,false,true,false,false
+ecomobilité,false,false,false,false,false,false,false,true,false,true
+économie bleue,false,false,false,false,false,false,false,false,true,false
+économie circulaire,false,false,false,false,true,false,true,false,false,true
+économie d’eau,false,true,false,false,false,false,false,false,false,false
+économie d'énergie,false,false,false,false,false,false,true,false,false,true
+économie d’énergie,false,true,false,false,false,false,false,false,false,false
+économie de carburant,false,true,false,false,false,false,false,false,false,false
+économie du réemploi,true,false,false,false,false,false,false,false,false,false
+économie maritime,false,false,false,false,true,true,false,false,false,true
+économie qui répare,false,false,false,false,true,true,false,false,false,false
+économiser de l’énergie,false,false,false,false,false,false,false,false,false,true
+économiser l'eau,false,true,false,false,false,false,false,false,false,false
+écoresponsable,false,false,false,false,true,false,true,false,false,true
+écosystème,false,true,false,false,false,false,false,false,false,false
+écosystème aquatique,false,true,false,false,false,false,false,false,false,false
+écosystème dégradé,false,false,false,false,false,false,true,false,false,true
+écosystème forestier,false,true,false,false,false,false,false,false,false,false
+écosystème marin,false,true,false,false,false,false,false,false,false,false
+écosystème montagnard,false,false,false,true,false,false,false,false,false,false
+écosystèmes dégradés,false,false,false,false,false,false,true,true,false,true
+écosystémique,false,false,false,false,false,false,true,false,false,true
+écotaxe,false,false,false,false,false,false,false,true,false,true
+écotourisme,true,false,false,false,false,false,false,false,false,false
+écrevisse,true,false,false,false,false,false,false,false,false,false
+éducation au changement climatique,true,false,false,false,false,false,false,false,false,false
+effet de serre,false,false,false,true,false,true,true,false,false,false
+efficacité énergétique,false,false,false,false,false,false,false,false,false,true
+effondrement de la falaise,false,false,false,true,false,false,true,false,false,true
+éléphant,false,false,false,false,false,false,true,false,false,true
+élevage,true,false,false,false,false,false,false,false,false,false
+élevage bovine,false,false,false,false,false,false,false,true,false,true
+élevage intensif,false,true,false,false,false,false,false,false,false,false
+élévation de la température,true,false,false,false,false,false,false,false,false,false
+élévation des températures,true,false,false,false,false,false,false,false,false,false
+élévation du niveau de la mer,true,false,false,false,false,false,false,false,false,false
+élévation du niveau des océans,true,false,false,false,false,false,false,false,false,false
+élévation du niveau marin,true,false,false,false,false,false,false,false,false,false
+éliminer les polluants,true,false,false,false,false,false,false,false,false,false
+emballage,true,false,false,false,false,false,false,false,false,false
+emballage en plastique,false,false,false,false,false,false,false,false,true,false
+emballage plastique,false,false,false,true,false,false,false,false,false,true
+emballage sans plastique,false,false,false,false,false,false,false,false,true,true
+émimine les polluants,false,false,false,false,false,false,false,false,true,false
+émission de carbone,false,false,false,false,false,true,false,false,true,false
+émissions anthropiques,false,false,false,false,false,true,false,false,false,false
+émissions importées,false,false,false,false,true,true,true,false,false,false
+émissions liées à la consommation,false,false,false,false,false,false,false,false,true,false
+emissions mondiales ,false,false,false,false,false,false,false,false,true,false
+émissions mondiales de co deux,false,false,true,false,false,false,false,false,false,false
+émissions mondiales de co2,false,false,true,false,false,false,false,false,false,false
+émissions territoriales,false,false,true,false,false,false,false,true,true,false
+empèche la régénération,false,true,false,false,false,false,false,false,false,false
+emporté par les eaux,false,true,false,false,false,false,false,false,false,false
+empreinte biodiversité ,false,false,false,false,false,false,false,true,false,false
+empreinte carbone,false,false,false,false,false,false,false,true,false,false
+empreinte plastique,false,false,false,false,false,false,false,true,false,false
+en consommant moins,true,false,false,false,false,false,false,false,false,false
+énergie,false,false,false,false,false,false,true,false,false,true
+énergie durable,false,false,false,false,false,false,true,false,false,true
+énergie renouvelable,false,false,false,false,false,false,true,false,false,true
+énergie solaire,false,false,false,false,false,false,true,false,false,true
+énergie verte,true,false,false,false,false,false,false,false,false,false
+énergies fossiles,false,true,false,false,false,false,false,false,false,false
+englouti par les eaux ,false,true,false,false,false,false,false,false,false,false
+engrais azoté,false,false,false,false,false,true,true,false,false,false
+engrais chimique,false,false,false,false,false,true,false,false,false,true
+engrais de synthèse,true,false,false,false,false,false,false,false,false,false
+engrais phosphaté,false,true,false,false,false,false,false,false,false,false
+enjeu environnemental,false,true,false,false,false,false,false,false,false,false
+ensauvagement,false,true,false,false,false,false,false,false,false,false
+environnement,true,false,false,false,false,false,false,false,false,false
+environnemental,false,false,false,false,false,false,false,true,false,false
+environnementale,true,false,false,false,false,false,false,false,false,false
+environnementaux,false,true,false,false,false,false,false,false,false,false
+éolien,false,false,false,false,false,false,true,false,false,true
+éolienne,false,false,false,false,false,true,false,false,false,true
+épandage,true,false,false,false,false,false,false,false,false,false
+épargne citoyenne,true,false,false,false,false,false,false,false,false,false
+épicéa,true,false,false,false,false,false,false,false,false,false
+epr,true,false,false,false,false,false,false,false,false,false
+épuisement des ressources,true,false,false,false,false,false,false,false,false,false
+equilibre dynamique,true,false,false,false,false,false,false,false,false,false
+équilibre pour la faune et la flore,true,false,false,false,false,false,false,false,false,false
+érosion,false,false,true,false,false,false,false,true,true,false
+érosion côtière,false,false,true,false,false,false,false,false,false,false
+érosion de la biodiversité,false,false,true,false,false,false,false,true,true,false
+érosion des côtes,false,false,true,false,false,false,false,true,false,true
+érosion des sols,false,true,false,false,false,false,false,false,false,false
+érosion du littoral,true,false,false,false,false,false,false,false,false,false
+érosion éolienne,false,true,false,false,false,false,false,false,false,false
+érosion hydrique,false,true,false,false,false,false,false,false,false,false
+espace naturel,false,true,false,false,false,false,false,false,false,false
+espace vert,false,true,false,false,false,false,false,false,false,false
+espèce,false,false,false,false,false,true,false,false,false,false
+espèce animale,false,false,false,false,false,true,false,false,false,false
+espèce en voie de disparition,false,false,true,false,false,false,false,true,true,false
+espèce envahissante,false,false,false,false,false,false,false,false,false,true
+espèce éteinte,false,false,false,false,true,false,false,false,true,false
+espèce exotique envahissante,false,false,false,false,false,true,true,false,false,false
+espèce invasive,false,false,false,false,false,true,true,false,false,false
+espèce locale,false,false,false,false,false,false,false,false,false,true
+espèce menacée,false,true,false,false,false,false,false,false,false,false
+espèce menacée d’extinction,false,false,false,false,false,false,false,false,true,false
+espèce migratrice,false,false,false,false,false,false,false,false,true,false
+espèce nuisible,false,false,false,false,false,false,false,false,true,false
+espèce protégée,false,false,false,false,false,false,false,false,true,false
+espèce végétale,false,false,false,false,false,false,false,false,true,false
+espèces auxiliaires,false,false,true,false,false,false,false,false,true,false
+espèces en danger,false,false,false,false,false,false,false,false,true,false
+essence,false,false,true,false,false,false,false,false,true,false
+essence locale,false,false,true,false,false,false,false,false,true,false
+étalement urbain,false,false,false,false,false,false,false,false,true,false
+étang,false,false,false,false,true,false,false,false,true,false
+été le plus chaud,false,false,false,false,false,false,false,false,true,false
+éteindre l'éclairage public,false,false,false,false,false,false,false,false,true,false
+éteindre la lumière,false,false,false,false,false,false,false,false,true,false
+étiquetage unique des aliments,false,false,false,false,false,false,false,false,true,false
+étouffer,false,false,false,false,false,false,false,false,true,false
+eutrophisation,false,false,false,false,false,false,false,false,true,false
+éviter le plastique,false,false,false,false,false,false,false,false,true,false
+expert du climat,false,false,false,false,false,false,false,false,true,false
+experte du climat,false,false,false,false,false,false,false,false,true,false
+exploitation fonds marins,false,false,false,false,false,false,false,false,true,false
+exploitation gazière,false,false,false,false,false,false,false,false,true,false
+exploitation minière,true,false,false,false,false,false,false,false,false,false
+exploitation non durable,false,false,false,false,false,false,false,false,true,false
+exploitation pétrolière,false,false,true,false,false,false,false,false,true,false
+exploitation raisonnée,true,false,false,false,false,false,false,false,false,false
+exploration minière,false,false,false,false,false,false,false,false,true,false
+exposition des salariés,false,false,false,true,false,true,false,false,false,false
+extinction,true,false,false,false,false,false,false,false,false,false
+extraction,false,false,false,false,true,false,false,false,true,false
+extractivisme,false,false,false,false,false,false,false,true,true,false
+extractivisme ,false,true,false,false,false,false,false,false,false,false
+extractiviste,false,false,false,false,false,true,false,false,false,true
+facture énergétique,false,false,false,false,false,true,false,false,false,true
+faire baisser la température,false,false,true,false,false,false,false,false,false,true
+falloir ralentir,false,true,false,false,false,false,false,false,false,false
+fauche tardive,false,false,false,false,false,false,false,false,true,false
+faune,false,false,false,false,false,false,false,false,false,true
+faune sauvage,false,true,false,false,false,false,false,false,false,false
+favorise la biodiversité,false,true,false,false,false,false,false,false,false,false
+favoriser la biodiversité,false,false,false,false,false,true,false,false,true,true
+favoriser la diversité végétale,false,false,false,false,false,true,true,false,false,false
+ferme-usine,false,false,false,false,false,false,true,false,false,true
+fertilité des sols,true,false,false,false,false,false,false,false,false,false
+feux,false,false,false,false,false,true,true,false,false,true
+feux de forêt,false,false,true,false,false,false,false,false,true,true
+filets de pêche,false,false,false,false,false,false,true,false,false,true
+filets maillants,false,false,false,false,false,false,true,false,false,false
+filtrer l'eau,false,false,false,false,false,false,false,false,true,false
+fin de l'abondance,false,false,false,false,false,false,true,false,false,true
+fin de la vente des voitures thermiques,false,true,false,false,false,false,true,false,false,true
+fioul,true,false,false,false,false,false,false,false,false,false
+fiscalité environnementale,false,false,false,false,false,true,true,false,false,true
+flamant rose,false,false,false,false,false,true,false,false,false,false
+flore,false,false,false,false,false,true,false,false,true,false
+fluor,false,false,false,false,false,true,false,false,false,true
+flygskam,true,false,false,false,false,false,false,false,false,false
+fne,false,false,false,false,false,false,false,false,true,false
+fnh,false,false,false,false,false,false,false,false,true,false
+foncière forestière,true,false,false,false,false,false,false,false,false,false
+fondation pour la nature et l'homme,true,false,false,false,false,false,false,false,false,false
+fongicide,true,false,false,false,false,false,false,false,false,false
+fonte de la banquise,false,false,true,false,false,false,true,false,false,false
+fonte des calottes glacières,false,false,true,false,false,false,false,false,true,false
+fonte des glaces,false,false,false,false,false,true,false,false,true,false
+fonte des glaciers,false,false,false,false,false,false,false,false,true,false
+fonte du permafrost,false,false,false,false,false,false,false,false,true,true
+forage pétrolier,false,false,false,false,false,false,false,false,true,false
+foresterie urbaine,true,false,false,false,false,false,false,false,false,false
+forestier,false,true,false,false,false,false,false,false,false,false
+forestière,false,false,false,true,false,true,true,false,false,false
+forêt,false,false,false,false,false,true,false,false,false,false
+forêt boréale,false,true,false,false,false,false,false,false,false,false
+forêt brûle,false,false,false,false,false,false,false,false,true,false
+forêt d'algues,false,false,false,false,false,false,false,false,true,false
+forêt détruit,false,false,false,false,false,false,true,true,false,false
+forêt détruite,false,false,false,true,false,false,false,false,false,false
+forêt mosaïque,false,false,false,false,false,false,false,false,true,false
+forêt ravagé,false,false,false,false,false,false,false,false,true,false
+forêt ravagée,false,false,false,false,false,false,false,false,true,true
+forêt tropicale,false,false,false,false,false,true,false,false,true,true
+forêt urbaine,false,false,true,false,false,false,false,false,true,false
+forêts brûlent,false,false,false,false,false,false,false,false,true,false
+forêts ont été détruites,false,false,false,false,false,false,false,false,true,false
+forte chaleur,false,false,false,false,false,false,false,false,true,false
+forte pluie,false,false,false,false,false,false,false,false,true,false
+fortes chaleurs,false,false,false,false,false,false,false,false,true,false
+fourmi,false,false,false,false,false,true,false,false,false,false
+fragmentation des habitats,false,false,false,false,true,false,false,false,true,false
+fraîcheur,false,false,false,false,false,false,false,false,true,false
+france nature environnement,false,false,false,false,false,false,false,false,true,false
+frelon,false,false,false,false,false,false,false,false,true,false
+fret ferroviaire,false,false,false,false,false,false,false,false,true,false
+fuel,false,false,false,false,false,false,false,false,true,false
+fuel lourd,false,false,false,false,false,false,false,false,true,false
+fuite d'eau,false,false,false,false,false,false,false,false,true,false
+fumée industrielle,false,false,false,false,false,false,false,false,true,false
+fumées industrielles,false,false,false,false,false,false,false,false,true,false
+fumier,false,false,false,false,false,false,false,false,true,false
+gâchis,false,false,false,false,false,false,false,false,true,false
+gâchis alimentaire,false,false,false,false,false,false,false,false,true,false
+gaspillage,false,false,false,false,true,false,false,false,true,false
+gaspillage alimentaire,false,false,false,false,false,true,false,false,true,false
+gaspiller moins,false,false,false,false,false,false,false,false,true,false
+gaz,false,true,false,false,false,false,false,false,false,false
+gaz à effet de serre,false,false,false,false,false,false,false,true,false,false
+gaz carbonique,false,true,false,false,false,false,false,false,false,false
+gaz de schiste,false,false,false,false,false,false,false,false,true,false
+gaz naturel,true,false,false,false,false,false,false,false,false,false
+gel printanier,false,true,false,false,false,false,false,false,false,false
+genepi,false,false,false,false,false,true,false,false,true,true
+générations à venir,false,false,false,false,false,true,false,false,true,true
+générations futures,false,false,false,false,false,false,false,false,true,false
+géothermie,false,false,false,true,false,false,true,false,false,false
+geste écolo,false,false,false,false,false,true,false,false,false,false
+geste écologique,false,false,false,false,false,true,false,false,false,false
+gestion de l'eau,false,false,false,false,false,false,false,true,false,false
+gestion de la ressource en eau,false,false,false,false,false,true,true,false,false,false
+gestion des écosystèmes,false,false,false,false,false,false,true,false,false,false
+gestion des milieux aquatiques,true,false,false,false,false,false,false,false,false,false
+gestion des sols,false,false,false,false,false,false,false,false,false,true
+gestion du littoral,false,false,true,false,false,false,false,false,false,true
+gestion durable des forêts,false,false,false,false,false,false,false,false,false,true
+gestion durable des ressources,false,false,true,false,false,false,false,false,false,true
+gestion durable des terres cultivables,false,false,false,false,false,false,false,false,false,true
+gestion écologique,false,false,false,false,false,true,false,false,false,false
+gestion extensive,false,false,false,true,false,true,true,false,false,false
+gestion forestière,false,true,false,false,false,false,false,false,false,false
+gestion sylvicole durable,false,false,false,false,false,true,false,false,false,false
+giec,false,false,false,false,false,true,false,false,false,false
+gigantisme,false,false,false,false,false,false,false,false,true,false
+gisement,false,false,false,false,false,false,false,false,true,false
+glacier,false,true,false,false,false,false,false,false,false,false
+glissement de terrain,false,true,false,false,false,false,false,false,false,false
+glyphosate,false,true,false,false,false,false,false,false,false,false
+green deal,false,false,false,false,true,true,false,false,false,false
+greenpeace,true,false,false,false,false,false,false,false,false,false
+greenwashing,false,true,false,false,false,false,false,false,false,false
+guêpe,false,false,false,false,false,false,false,true,false,false
+gypaète barbu,false,false,false,false,false,false,false,true,false,true
+habitabilité de la planète,false,false,false,false,false,false,false,true,false,true
+habitat,true,false,false,false,false,false,false,false,false,false
+habitat naturel,false,false,false,false,false,false,false,true,true,false
+habiter le monde,false,false,true,false,false,false,false,false,true,false
+habitude durable,false,false,false,false,false,false,false,true,true,false
+halieutique,false,false,false,false,false,false,false,false,true,true
+hausse de la température du globe,false,true,false,false,false,false,false,false,false,false
+hausse des températures,false,false,true,false,false,false,false,false,false,true
+hausse du niveau de la mer,true,false,false,false,false,false,false,false,false,false
+hausse du niveau des océans,true,false,false,false,false,false,false,false,false,false
+hausse du niveau marin,false,false,false,false,false,false,false,false,true,false
+haut conseil pour le climat,true,false,false,false,false,false,false,false,false,false
+herbicide,false,true,false,false,false,false,false,false,false,false
+hérisson,false,true,false,false,false,false,false,false,false,false
+hêtre,false,false,false,false,false,false,false,false,false,true
+hirondelle,false,false,false,false,false,false,false,false,true,false
+honte de prendre l'avion,false,false,false,false,false,false,false,false,true,false
+hot spot de biodiversité,false,false,true,false,false,false,false,true,true,false
+hôtel à insectes,false,true,false,false,false,false,false,false,false,false
+huile de friture usagé,false,true,false,false,false,false,false,false,false,false
+huile de palme,false,true,false,false,false,false,false,false,false,false
+humus,false,true,false,false,false,false,false,false,false,false
+hydroélectricité,false,false,false,false,false,false,false,false,true,false
+hydrogène ,false,false,false,false,false,false,false,false,true,false
+hydrogène vert,false,true,false,false,false,false,false,false,false,false
+hydrologue,false,false,false,false,true,false,false,false,false,false
+hydroponie,false,false,false,false,false,false,false,false,true,false
+il n'y a plus de saison,false,false,false,false,true,true,false,false,true,false
+îlot de chaleur,false,true,false,false,false,false,false,false,false,false
+îlot de fraîcheur,false,false,false,false,false,false,false,false,true,true
+impact carbone,false,true,false,false,false,false,false,false,false,false
+impact des emballages plastiques,false,true,false,false,false,false,false,false,false,false
+impact environnemental,false,false,false,false,false,false,false,true,false,false
+impact environnementale ,false,false,false,false,false,false,false,true,false,false
+impact négatif,false,false,false,false,false,false,false,true,false,false
+impact positif ,false,true,false,false,false,false,false,false,false,false
+impact sur l'environnement,false,false,true,false,false,false,false,true,true,false
+impact sur la santé ,false,false,false,false,false,false,false,false,true,false
+imperméabilisation des sols,false,false,false,false,false,false,false,false,true,false
+importante précipitation,false,false,false,false,false,false,false,false,true,false
+inaction climatique,false,false,false,true,false,true,false,false,false,false
+incendie,false,false,false,false,false,false,false,false,true,false
+incendie de forêt,true,false,false,false,false,false,false,false,false,false
+incendies,false,false,false,false,false,true,false,false,false,true
+incinérateur,false,true,false,false,false,false,false,false,false,false
+indice de réparabilité,false,false,true,false,false,false,false,false,true,false
+industrialisation,false,false,false,false,false,true,false,false,false,false
+industrie,true,false,false,false,false,false,false,false,false,false
+industrie de la pêche,false,false,false,false,false,true,true,false,false,false
+industrie extractive,false,false,false,false,false,false,false,true,false,false
+industrie minière,true,false,false,false,false,false,false,false,false,false
+industrie pétrolière,false,true,false,false,false,false,false,false,false,false
+industrie verte,false,false,false,false,true,false,false,false,false,false
+inégalité,false,false,false,false,true,false,false,false,true,false
+infrastructure résiliente,false,true,false,false,false,false,false,false,false,false
+infrastructures routières,false,false,false,false,false,false,false,false,false,true
+inondable,false,true,false,false,false,false,false,false,false,false
+inondation,true,false,false,false,false,false,false,false,false,false
+inondations à répétition,false,true,false,false,false,false,false,false,false,false
+insecte,true,false,false,false,false,false,false,false,false,false
+insecte pollinisateur,false,true,false,false,false,false,false,false,false,false
+insectes auxiliaires,true,false,false,false,false,false,false,false,false,false
+insécurité alimentaire,false,true,false,false,false,false,false,false,false,false
+insuffisance climatique,false,false,false,false,false,false,false,true,false,false
+intégrité écologique,false,true,false,false,false,false,false,false,false,false
+intensification du cycle de l’eau,false,true,false,false,false,false,false,false,false,false
+interaction avec le vivant,false,false,false,false,false,false,false,false,true,false
+intercités,false,false,false,false,false,true,false,false,true,false
+interdiction de pêcher,false,false,false,false,false,true,true,false,false,true
+interdiction des pesticides,false,false,false,false,false,false,false,false,false,true
+interdiction du chalutage,false,false,false,false,false,false,true,false,false,false
+interdire le chalutage,false,false,false,false,false,false,true,false,false,false
+intérêt environnemental,false,false,false,false,false,false,true,false,true,true
+intrant chimique,false,false,false,false,false,false,true,false,false,false
+intrants,false,false,false,false,false,false,true,false,false,false
+invendus,false,false,false,false,false,true,true,false,false,false
+ipbes,false,false,false,false,false,true,true,false,false,true
+irrigation,false,true,false,false,false,false,false,false,false,false
+isard,false,true,false,false,false,false,false,false,false,false
+isf climatique,false,false,false,true,false,false,false,false,false,false
+isolation,false,false,false,false,false,false,false,true,false,false
+isolation par l'extérieur,false,false,false,false,false,false,false,true,false,false
+isolation thermique,false,false,false,false,false,false,false,true,false,false
+isoler la façade,false,false,true,false,false,false,false,false,true,false
+isoler les fenêtres,true,false,false,false,false,false,false,false,false,false
+izard,true,false,false,false,false,false,false,false,false,false
+jachère,false,false,true,false,false,false,false,false,false,false
+jamais un tel phénomène,false,true,false,false,false,false,false,false,false,false
+jardin,false,false,false,false,false,false,false,false,true,false
+jardin partagé,false,false,false,false,false,false,false,true,false,false
+jeter,false,false,false,false,false,false,false,false,true,false
+jeter moins,false,false,false,true,false,false,false,false,false,false
+jour du dépassement,true,false,false,false,false,false,false,false,false,false
+jour le plus chaud,true,false,false,false,false,false,false,false,false,false
+journée de la biodiversité,true,false,false,false,false,false,false,false,false,false
+journée de la terre,true,false,false,false,false,false,false,false,false,false
+journée internationale de la biodiversité,false,true,false,false,false,false,false,false,false,false
+journée mondiale de l'océan,false,true,false,false,false,false,false,false,false,false
+journée mondiale de la diversité biologique,false,false,true,false,false,false,true,false,false,false
+journée mondiale de la vie sauvage,false,false,true,false,false,false,true,false,false,true
+journée mondiale des océans,false,false,false,false,false,false,false,false,false,true
+kérosène,false,false,false,false,false,false,false,false,true,false
+l'eau est monté,false,false,true,false,false,false,false,true,false,false
+l'eau qui est monté,false,false,false,false,false,false,false,false,true,false
+l'été le plus chaud,false,false,false,false,false,false,false,false,false,true
+l'hiver le plus chaud,false,false,false,false,true,true,false,false,false,false
+l'hiver le plus sec,false,false,false,false,true,true,false,false,false,false
+la planète se réchauffe,false,false,false,false,true,true,false,false,false,false
+la roya,false,false,false,false,true,false,false,false,false,false
+label ab,false,false,false,false,true,true,false,false,false,false
+label bio,false,false,false,false,false,false,false,false,true,false
+label éco,false,false,true,false,false,false,false,false,true,false
+label écologique,false,true,false,false,false,false,false,false,false,false
+label hve,false,false,false,false,false,false,false,false,true,false
+lac,true,false,false,false,false,false,false,false,false,false
+le climat du futur,false,false,false,false,false,false,false,false,false,true
+le vivant,false,false,false,false,false,false,false,false,false,true
+leasing électrique,false,true,false,false,false,false,false,false,false,false
+leasing social,false,true,false,false,false,false,false,false,false,false
+les eaux se réchauffent,false,false,false,false,false,false,false,false,true,false
+les eaux sont montées,false,false,false,false,false,true,false,false,true,true
+les soulèvements de la terre,false,false,false,false,false,true,false,false,true,true
+libre évolution,true,false,false,false,false,false,false,false,false,false
+lien au vivant ,false,false,false,false,false,false,false,true,true,false
+lien avec le vivant,true,false,false,false,false,false,false,false,false,false
+lieu de ponte,false,false,false,false,false,false,false,false,true,false
+ligne tgv,false,false,false,false,false,false,false,false,true,false
+lignite,false,false,false,false,false,false,false,true,true,false
+ligue de protection des oiseaux,false,false,false,true,false,true,false,false,false,false
+ligue pour la protection des oiseaux,false,false,false,false,false,false,false,true,false,false
+limiter l’érosion des côtes,false,false,false,false,false,false,false,true,false,false
+limiter la hausse des températures,false,true,false,false,false,false,false,false,false,false
+limiter la production,false,true,false,false,false,false,false,false,false,false
+limiter les émissions de carbone,false,false,false,false,false,false,false,true,false,false
+limites planétaires,false,true,false,false,false,false,false,false,false,false
+liste rouge de l'uicn,false,true,false,false,false,false,false,false,false,false
+liste rouge mondiale des espèces menacées,false,false,true,false,false,false,false,false,false,false
+lithium ,false,false,true,false,false,false,false,false,false,true
+littoral,false,true,false,false,false,false,false,false,false,false
+logement mal isolé,false,true,false,false,false,false,false,false,false,false
+loup,false,false,true,false,false,false,false,false,true,false
+lpo,false,false,false,false,false,false,false,true,true,false
+lutte biologique,false,true,false,false,false,false,false,false,false,false
+lutte contre l'érosion,false,false,false,false,false,false,false,false,true,false
+lutte contre la déforestation,false,false,false,true,false,true,false,false,false,false
+lutte contre la pollution ,false,false,false,false,true,false,false,false,false,true
+lutte contre le gaspillage,false,false,false,false,false,false,false,true,false,false
+lutte contre le gaspillage alimentaire,false,false,false,false,false,false,false,true,false,false
+lutte contre le gaspillage d’eau,false,false,true,false,false,false,false,false,true,false
+lutte contre le gaspillage énergétique,false,false,true,false,false,false,false,false,true,false
+lutter contre l’érosion,false,false,false,false,false,false,false,false,true,false
+lutter contre la déforestation,true,false,false,false,false,false,false,false,false,false
+lutter contre la pollution,false,false,false,false,false,false,false,false,true,false
+lynx,false,false,false,false,false,false,false,false,true,false
+ma prime rénov,false,false,false,true,false,false,false,false,false,false
+macro déchet plastique,false,false,false,false,false,true,false,false,false,false
+made in france,false,false,false,false,false,false,false,false,true,false
+maison autonome,true,false,false,false,false,false,false,false,false,false
+maison passive,false,false,false,false,false,false,false,false,true,false
+maîtrise de la demande,false,true,false,false,false,false,false,false,false,false
+maladaptation,true,false,false,false,false,false,false,false,false,false
+malade,false,true,false,false,false,false,false,false,false,false
+maladie,false,true,false,false,false,false,false,false,false,false
+maladies infectieuses,false,false,false,false,false,false,false,false,true,false
+maladies transmises par des insectes,false,false,false,false,false,false,false,false,true,false
+malbouffe,true,false,false,false,false,false,false,false,false,false
+malle adaptation,false,false,false,false,false,false,false,true,true,false
+malus écologique,false,false,false,false,true,false,false,false,false,false
+mammifère,false,false,false,false,false,false,false,false,true,false
+mammifère échoué,false,false,false,false,false,false,false,false,true,false
+mammifère marin,true,false,false,false,false,false,false,false,false,false
+mammifère terrestre,true,false,false,false,false,false,false,false,false,false
+manganèse,true,false,false,false,false,false,false,false,false,false
+manger bio,true,false,false,false,false,false,false,false,false,false
+manger mieux,false,false,false,false,false,false,false,false,false,true
+mangrove,false,false,true,false,false,false,false,false,false,true
+manifestation pour le climat,false,false,false,false,false,false,false,true,false,true
+manipuler la terre,false,true,false,false,false,false,false,false,false,false
+manque d'eau,false,false,true,false,false,false,false,true,true,false
+manque d’eau,true,false,false,false,false,false,false,false,false,false
+manquer d'eau,true,false,false,false,false,false,false,false,false,false
+maprimerénov,false,false,false,false,false,false,false,false,true,false
+marais,false,false,false,false,true,true,false,false,false,false
+marche à pied,false,false,false,false,false,false,true,false,false,true
+marche du siècle,false,false,false,false,false,false,true,false,false,false
+marche pour le climat,false,false,false,false,true,true,false,false,false,false
+mare,false,false,false,false,true,true,false,false,false,false
+marécage,false,false,false,false,false,false,false,false,false,true
+marée noire,false,true,false,false,false,false,false,false,false,false
+marmotte,false,true,false,false,false,false,false,false,false,false
+massacre des terres,false,true,false,false,false,false,false,false,false,false
+matériau isolant,false,true,false,false,false,false,false,false,false,false
+matériaux biosourcés,false,false,false,false,false,false,false,false,true,false
+matériaux isolants,false,false,true,false,false,false,true,false,false,false
+matériaux plus vertueux,false,true,false,false,false,false,false,false,false,false
+matériaux polluants,false,false,false,true,false,false,false,false,false,true
+matériaux recyclables,false,false,false,false,false,false,false,false,true,false
+matériaux recyclés,false,false,false,false,false,false,false,false,true,false
+matière critique,false,false,false,false,false,false,false,false,true,false
+matière première,false,false,false,false,false,false,false,false,true,false
+mauvaise gestion,false,false,false,false,false,false,false,false,false,true
+mauvaise nouvelle pour la planète,false,false,true,false,false,false,false,false,false,true
+mauvaise nouvelle pour le climat,false,false,true,false,false,false,false,false,false,false
+mauvaise santé des sols,false,false,false,false,false,false,false,true,true,false
+mega bassine,false,false,false,false,false,true,false,false,true,false
+méga bassine ,false,false,true,false,false,false,false,false,true,false
+méga-camions,false,false,false,false,false,false,false,true,false,false
+méga-orage,false,false,false,false,false,false,false,true,false,false
+mégot,false,false,false,false,false,false,false,true,false,false
+menacées de disparition,false,false,false,false,true,true,false,false,false,false
+mer,false,false,false,false,false,false,false,true,true,false
+mésange,false,false,false,true,false,false,false,false,false,false
+mesure environnementale,false,false,false,false,false,true,false,false,true,true
+métabolite,false,false,false,false,false,true,false,false,true,false
+métal critique,false,false,false,false,false,false,false,true,true,false
+métal rare,false,false,false,false,false,false,false,true,true,false
+métaux critiques,false,false,false,false,false,false,false,true,true,false
+métaux lourds,false,false,false,false,false,false,false,false,true,false
+métaux rares,false,false,true,false,false,false,false,false,true,true
+météo des forêts,false,false,false,false,true,false,false,false,false,true
+météorologique extrême,false,false,false,false,true,false,true,false,false,true
+méthane,false,false,false,false,true,false,false,false,false,true
+méthanisation,false,false,false,false,true,false,true,false,false,true
+méthaniseur,false,false,false,false,false,false,true,false,false,false
+micro déchet plastique,false,false,false,false,true,false,true,false,false,true
+micro-organisme,false,false,false,false,true,false,true,false,false,true
+micro-plastique,false,false,false,false,false,false,false,false,false,true
+microbe,false,false,false,false,false,false,false,false,false,true
+microplastique,false,true,false,false,false,false,false,false,false,false
+micropolluant,false,true,false,false,false,false,false,false,false,false
+migrant climatique,false,true,false,false,false,false,false,false,false,false
+migration climatique,false,false,true,false,false,false,false,false,false,false
+migration des espèces,false,false,false,false,false,false,false,true,false,false
+milieu artificiel,true,false,false,false,false,false,false,false,false,false
+milieu d'eau douce,false,false,false,true,false,false,false,false,false,false
+milieu forestier,false,false,false,false,false,false,false,false,true,false
+milieu fragmenté,false,false,false,false,false,false,false,false,true,true
+milieu humide,false,false,false,false,false,false,false,false,true,true
+milieu montagnard,false,false,false,false,false,false,false,false,true,false
+milieu naturel,false,true,false,false,false,false,false,false,false,false
+milieux humides,false,false,false,false,false,false,false,false,true,false
+milieux naturels,false,true,false,false,false,false,false,false,false,false
+militant écologiste,false,true,false,false,false,false,false,false,false,false
+militante écologiste,false,false,false,false,false,false,true,false,false,true
+millimètre d'eau,false,false,false,false,false,false,true,false,false,true
+minerais,false,false,false,false,false,false,true,false,false,true
+minerais critiques,false,true,false,false,false,false,false,false,false,false
+minerais stratégiques,false,false,false,false,false,false,true,false,false,true
+mines,false,false,false,false,false,false,false,false,true,false
+ministre de la transition écologique,false,true,false,false,false,false,false,false,false,false
+miscanthus,false,false,false,false,false,true,false,false,false,false
+mix électrique,false,false,true,false,false,true,true,false,false,false
+mix énergétique,false,false,true,false,false,true,true,false,false,false
+mnhn,false,false,false,false,false,false,false,true,true,true
+mobilité douce,false,false,false,false,false,false,false,false,true,false
+mobilité durable,false,false,false,false,false,false,false,true,true,true
+modèle agricole,false,false,false,false,false,false,false,false,true,false
+modifier nos fonds marins,false,false,false,false,false,false,false,true,true,true
+moineau,false,true,false,false,false,false,false,false,false,false
+moins consommer,false,true,false,false,false,false,false,false,false,false
+moins de béton,false,true,false,false,false,false,false,false,false,false
+moins de fertilisant,false,false,false,false,false,false,false,false,true,false
+moins de produits phytosanitaires,false,false,false,false,true,false,false,false,true,false
+moins de viande,false,false,false,false,false,false,false,true,true,false
+moins gaspiller,false,false,false,false,false,false,false,false,true,false
+moins jeter,true,false,false,false,false,false,false,false,false,false
+moins polluant,false,false,false,false,false,false,false,true,true,false
+moins polluer,false,false,false,false,false,false,false,false,true,false
+moins prendre l'avion,true,false,false,false,false,false,false,false,false,false
+mois le plus chaud,false,false,false,false,false,false,false,true,true,false
+mollusque,false,false,false,false,false,false,false,false,true,false
+montagne,false,true,false,false,false,false,false,false,false,false
+montée des eaux,false,true,false,false,false,false,false,false,false,false
+montée du niveau de la mer,false,false,false,false,false,false,false,true,false,false
+montée du niveau des océans,false,false,false,false,false,false,true,false,false,true
+mort à cause de la canicule,false,false,false,false,false,false,true,false,false,true
+mort à cause de la chaleur,false,false,false,false,false,false,true,false,false,true
+mort liées à la canicule,false,false,false,false,false,false,true,false,false,true
+mort liées à la chaleur,false,true,false,false,false,false,false,false,false,false
+mortalité des forêts,false,true,false,false,false,false,false,false,false,false
+mortalité forestière,false,false,true,false,false,true,false,false,false,true
+morte à cause de la canicule,false,false,false,false,false,true,false,false,false,false
+morte à cause de la chaleur,false,false,false,false,false,true,false,false,false,false
+mousseur,false,false,false,false,false,false,false,false,true,false
+moustique,false,false,false,true,false,false,false,false,false,false
+moustique tigre,false,false,false,true,false,false,false,false,false,false
+multinationale agroalimentaire,false,false,true,false,false,false,false,false,false,false
+muséum d'histoire naturelle,false,false,false,false,false,false,false,false,true,false
+mutation écologique,false,false,false,false,false,false,false,false,true,false
+mycorhize,false,false,false,false,false,false,false,false,false,true
+nano plastique,true,false,false,false,false,false,false,false,false,false
+nappe d'eau,false,false,true,false,false,false,false,false,false,false
+nappe phréatique,true,false,false,false,false,false,false,false,false,false
+nature,false,false,true,false,false,false,false,false,true,true
+nature empoisonée,false,false,false,false,false,false,false,false,false,true
+nature empoisonnée,false,false,false,false,false,false,false,false,false,true
+nature en ville,false,true,false,false,false,false,false,false,false,false
+naturel,false,true,false,false,false,false,false,false,false,false
+naturelle,false,false,false,true,false,true,false,false,false,false
+néonicotinoïde,false,true,false,false,false,false,false,false,false,false
+net zéro émission,false,false,false,false,false,false,false,false,true,false
+nettoyage des fonds marins,false,false,false,false,false,false,false,false,true,false
+nettoyage des océans,false,false,false,false,false,false,false,true,false,false
+nettoyage des plages,false,false,false,false,false,false,false,true,false,false
+neutralité carbone,false,false,false,false,false,false,false,true,false,false
+neutralité climatique,false,true,false,false,false,false,false,false,false,false
+nexus,false,true,false,false,false,false,false,false,false,false
+nickel,false,true,false,false,false,false,false,false,false,false
+nidification,false,true,false,false,false,false,false,false,false,false
+nocif pour l'environnement,false,false,false,false,false,false,false,false,true,false
+non humain,false,false,false,false,false,false,false,false,true,false
+non intervention,false,false,false,false,false,false,false,false,true,false
+non labour,false,true,false,false,false,false,false,false,false,false
+non régression environnemental,false,true,false,false,false,false,false,false,false,false
+norme,false,false,false,false,false,false,false,false,false,true
+nous adapter à un futur incertain,false,false,false,false,false,false,false,false,true,false
+nouvelles techniques génomiques,false,false,false,false,false,false,false,false,true,false
+nucléaire,false,false,true,false,false,false,true,false,false,true
+objectif climatique,false,false,false,false,false,false,false,false,true,false
+océan,false,true,false,false,false,false,false,false,false,false
+océanographe,false,false,true,false,false,false,false,false,true,false
+ofb,false,false,false,false,false,false,false,true,true,true
+office français de la biodiversité,false,false,false,false,false,false,false,true,false,false
+office national des forêts,false,false,false,false,false,false,false,true,false,false
+ogm,false,false,false,false,false,false,false,false,true,false
+oiseau,false,false,false,false,false,false,false,false,true,false
+ombre,false,true,false,false,false,false,false,false,false,false
+ombrière,true,false,false,false,false,false,false,false,false,false
+oms,false,false,false,false,false,true,false,false,true,false
+one health,false,false,false,false,false,false,false,false,true,false
+or noir,false,false,true,false,false,false,false,false,true,false
+organisation mondiale de la santé,false,true,false,false,false,false,false,false,false,false
+organisme génétiquement modifiée,false,false,false,false,false,false,false,true,true,true
+organisme vivant,false,false,false,false,false,false,false,true,true,true
+ouragan,false,false,false,false,false,false,false,true,true,true
+ours,false,false,false,false,false,false,false,false,true,true
+ours polaire,false,false,false,false,false,false,false,false,true,true
+ozone,false,false,false,false,false,true,true,false,false,false
+pacte rse,false,true,false,false,false,false,false,false,false,false
+pacte vert,false,true,false,false,false,false,false,false,false,false
+paillage,false,false,false,false,false,false,true,false,false,true
+paillage naturel,false,false,false,false,false,false,false,false,true,false
+paille en plastique,false,true,false,false,false,false,false,false,false,false
+palangre,false,false,false,false,false,false,false,false,true,false
+panneau solaire,true,false,false,false,false,false,false,false,false,false
+panneaux solaires,true,false,false,false,false,false,false,false,false,false
+papillon,true,false,false,false,false,false,false,false,false,false
+parc,false,true,false,false,false,false,false,false,false,false
+parc éolien,false,true,false,false,false,false,false,false,false,false
+parc national,false,true,false,false,false,false,false,false,false,false
+parc naturel,false,false,true,false,false,false,false,false,true,false
+parc naturel marin,false,false,false,false,false,true,true,false,false,false
+parc photovoltaïque,false,true,false,false,false,false,false,false,false,false
+parc régional,false,false,false,false,false,true,false,true,true,false
+parc régionaux,false,false,false,false,false,false,false,true,true,false
+parcs nationaux,false,false,false,false,false,false,false,false,true,false
+partage des ressources,false,false,false,false,false,false,false,false,true,false
+pas très écolo,false,false,false,false,false,false,false,false,true,false
+pass rail,false,false,true,false,false,false,false,false,false,false
+passer à l'électrique,false,false,false,false,false,false,false,false,true,false
+passoire énergétique,false,true,false,false,false,false,false,false,false,false
+passoire thermique,true,false,false,false,false,false,false,false,false,false
+pathologie,false,true,false,false,false,false,false,false,false,false
+patrimoine naturel,false,true,false,false,false,false,false,false,false,false
+patrimoine paysager,false,false,false,false,false,true,false,false,false,false
+pâturage extensif,false,true,false,false,false,false,false,false,false,false
+pâturage tournant ,false,false,true,false,false,false,false,false,false,false
+pêche artisanale,false,false,false,false,false,false,false,false,true,false
+pêche au large,false,false,false,false,false,false,false,false,true,false
+pêche côtière,false,false,false,false,false,false,false,false,true,false
+pêche durable,false,false,false,false,false,false,false,false,true,false
+pêche industrielle,false,false,false,false,false,true,false,false,false,false
+pêche professionnelle,true,false,false,false,false,false,false,false,false,false
+pêche responsable,false,true,false,false,false,false,false,false,false,false
+pêcheur,false,true,false,false,false,false,false,false,false,false
+pelouse,true,false,false,false,false,false,false,false,false,false
+pénurie  ,false,false,true,false,false,false,false,false,false,false
+pénurie d'eau,false,false,false,false,false,false,false,false,false,true
+pénurie d’eau,false,false,true,false,false,false,false,false,true,false
+pénurie de neige,false,false,false,false,true,true,true,false,false,false
+performance énergétique,false,false,false,false,true,true,true,false,false,false
+période la plus chaude,false,false,false,false,false,false,false,false,true,false
+permaculture,false,false,false,false,true,false,false,false,true,false
+permafrost,false,false,false,false,false,true,false,false,false,false
+perméabilisation des sols,false,false,false,false,false,false,false,false,true,false
+permet à l'eau de s'infiltrer,false,false,false,false,false,false,false,false,true,false
+permettre à l'eau de s'infiltrer,false,false,false,false,false,false,false,false,true,false
+personnalité juridique des éléments naturels,false,false,false,false,false,true,false,false,false,false
+perte agricole,true,false,false,false,false,false,false,false,false,false
+perte d’habitats,true,false,false,false,false,false,false,false,false,false
+perte de biodiversité,true,false,false,false,false,false,false,false,false,false
+perte nette de biodiversité,false,false,false,false,false,false,false,false,false,true
+perturbateur endocrinien,false,true,false,false,false,false,false,false,false,false
+perturbation des écosystèmes,false,false,false,true,false,false,false,false,false,false
+perturbation des habitats,false,false,false,true,false,true,false,false,false,false
+perturbation du cycle de l’eau,false,false,false,false,true,false,false,false,false,false
+pesticide,false,false,false,false,true,false,false,false,false,false
+pesticide résiduel,false,true,false,false,false,false,false,false,false,false
+petite pêche,false,false,false,false,false,false,false,false,true,false
+pétrole,true,false,false,false,false,false,false,false,false,false
+pfas,true,false,false,false,false,false,false,false,false,false
+pfoa,true,false,false,false,false,false,false,false,false,false
+pfos,false,false,true,false,false,false,false,false,true,false
+photosynthèse,false,false,true,false,false,false,false,false,true,false
+photovoltaïque,false,false,true,false,false,false,false,false,true,false
+piégé par les eaux,false,false,false,false,false,false,false,false,true,true
+pigeon,false,false,true,false,false,false,false,false,true,false
+pins,false,false,true,false,false,false,false,false,true,false
+plage de ponte,false,false,true,false,false,false,false,false,true,false
+plan biodiversité,false,false,true,false,false,false,false,false,true,false
+plan de prévention des risques littoraux,false,false,false,false,false,false,false,false,true,false
+plan national d’action,true,false,false,false,false,false,false,false,false,false
+plan national santé environnement,false,false,false,false,false,false,false,true,false,false
+plancton,false,false,false,false,false,false,false,true,false,false
+planétaire,false,false,false,false,false,false,false,false,true,false
+planète,false,false,false,false,true,true,false,false,false,false
+planification écologique,false,true,false,false,false,false,false,false,false,false
+plantant des arbres,false,false,true,false,false,false,false,false,true,true
+plantation,false,false,false,false,false,false,false,false,true,false
+plantation d'arbres,false,false,true,false,false,false,false,false,true,false
+plantation des haies,true,false,false,false,false,false,false,false,false,false
+plantation en pleine terre,true,false,false,false,false,false,false,false,false,false
+plante des arbres,false,true,false,false,false,false,false,false,false,false
+planté des arbres,false,false,true,false,false,false,false,false,false,false
+plante exotique envahissante,false,false,false,false,false,false,false,false,true,false
+plante exotique invasive,false,false,false,false,false,false,false,false,true,false
+plante exotique très invasive,true,false,false,false,false,false,false,false,false,false
+plantent des arbres,false,false,true,false,false,false,true,false,false,false
+planter des arbres,true,false,false,false,false,false,false,false,false,false
+planter des haies,false,false,false,false,false,false,false,false,true,false
+plastique,false,false,false,false,false,false,false,true,true,false
+plastique recyclé,false,false,true,false,false,false,false,false,false,false
+plessage,false,false,true,false,false,false,false,false,false,false
+plomb,false,false,true,false,false,false,false,false,true,false
+pluie extrême,false,false,false,false,false,true,false,false,false,false
+pluie intense,false,false,false,false,false,false,true,false,false,false
+pluie torrentielle,false,false,false,false,false,false,true,false,false,false
+plus chaud que la normale,false,false,false,false,false,false,true,false,false,false
+plus chaude que la normale,false,false,false,false,false,false,true,false,false,false
+plus d'oxygène,false,false,false,false,false,false,true,false,false,false
+plus d’oxygène,false,false,false,false,false,false,false,false,true,false
+plus de saisons,false,false,false,false,true,true,true,false,false,false
+plus durable,false,false,false,false,false,false,false,true,false,false
+plus naturel,false,false,false,false,false,false,false,false,true,false
+plus naturelle,false,false,false,false,false,false,false,false,true,false
+plus sec que la normale,false,false,false,false,false,false,false,false,true,false
+pluviométrie importante,true,false,false,false,false,false,false,false,false,false
+pna,false,false,false,false,false,false,false,false,true,false
+poid lourd électrique,true,false,false,false,false,false,false,false,false,false
+point chaud de biodiversité,true,false,false,false,false,false,false,false,false,false
+poisson,false,false,false,false,false,false,false,false,true,false
+politique climatique,false,true,false,false,false,false,false,false,false,false
+politique de gestion des déchets,false,true,false,false,false,false,false,false,false,false
+politique environnementale,false,true,false,false,false,false,false,false,false,false
+politiques climatiques,false,false,true,false,false,false,false,false,true,false
+pollinisateur,false,false,true,false,false,false,false,false,false,false
+pollinisation,false,false,true,false,false,false,false,false,true,false
+polliniser,true,false,false,false,false,false,false,false,false,false
+polluant,true,false,false,false,false,false,false,false,false,false
+pollue,false,false,false,false,false,false,false,false,true,false
+pollué,false,false,false,false,false,false,false,false,true,false
+polluée,false,false,false,false,false,false,false,false,true,false
+polluer,false,false,false,false,false,false,false,false,true,false
+pollueur,false,false,false,false,false,false,false,false,true,false
+pollueur payeur,false,false,false,false,false,false,false,false,true,false
+pollution,false,false,false,false,false,false,false,false,true,false
+pollution à l’ozone,true,false,false,false,false,false,false,false,false,false
+pollution atmosphérique,false,false,false,false,false,false,false,false,false,true
+pollution aux particules fines,false,false,false,false,false,false,true,false,false,true
+pollution chimique,true,false,false,false,false,false,false,false,false,false
+pollution de l’air,false,false,false,false,false,false,false,false,false,true
+pollution de l'air ,false,false,false,false,false,false,false,true,false,false
+pollution de l'eau,false,false,false,false,false,false,false,true,false,false
+pollution de l’eau,false,false,false,false,false,false,false,true,false,false
+pollution de la mer,false,true,false,false,false,false,false,false,false,false
+pollution des nappes,false,true,false,false,false,false,false,false,false,false
+pollution des sols,false,true,false,false,false,false,false,false,false,false
+pollution émise localement,false,false,false,false,false,true,false,false,true,false
+pollution environnementale,false,true,false,false,false,false,false,false,false,false
+pollution industrielle,false,true,false,false,false,false,false,false,false,false
+pollution plastique,true,false,false,false,false,false,false,false,false,false
+pollution record,true,false,false,false,false,false,false,false,false,false
+pollution sonore,false,false,false,false,false,false,false,true,false,false
+polyculture élevage,false,false,false,false,false,false,false,true,false,false
+pompe à chaleur,true,false,false,false,false,false,false,false,false,false
+pont thermique,false,false,false,true,false,true,true,false,false,false
+posidonie,false,false,false,false,false,false,false,false,true,false
+poubelle jaune,false,false,false,false,false,false,false,false,true,false
+poumon vert,false,true,false,false,false,false,false,false,false,false
+poussière,true,false,false,false,false,false,false,false,false,false
+prairie,false,true,false,false,false,false,false,false,false,false
+prairie permanente,false,true,false,false,false,false,false,false,false,false
+pratique extensive,false,false,false,false,false,false,false,false,true,false
+pratique vertueuse,false,false,false,false,false,false,false,false,true,false
+pratiques agricoles durables,false,false,false,false,false,false,false,false,true,false
+pratiques vertueuses,false,true,false,false,false,false,false,false,false,false
+préjudice écologique,false,true,false,false,false,false,false,false,false,false
+prendre l'avion,false,true,false,false,false,false,false,false,false,false
+préservation d'espèce,false,true,false,false,false,false,false,false,false,false
+préservation de la biodiversité,false,true,false,false,false,false,false,false,false,false
+préservation de la nature,false,true,false,false,false,false,false,false,false,false
+préservation de la ressource en eau,false,true,false,false,false,false,false,false,false,false
+préservation de la végétation ,false,true,false,false,false,false,false,false,false,false
+préservation des écosystèmes,false,true,false,false,false,false,false,false,false,false
+préservation des espaces naturels,false,true,false,false,false,false,false,false,false,false
+préservation des espèces,false,true,false,false,false,false,false,false,false,false
+préservation des forêts,false,true,false,false,false,false,false,false,false,false
+préservation des milieux,false,false,false,false,false,false,true,false,false,false
+préservation des prairies,false,true,false,false,false,false,false,false,false,false
+préservation des sols,true,false,false,false,false,false,false,false,false,false
+préserver,false,false,false,false,false,false,false,true,false,false
+préserver l'eau,false,false,false,false,false,false,false,true,false,false
+préserver l’existant,false,false,false,false,false,false,false,true,false,false
+préserver la biodiversité,false,false,false,false,false,false,false,true,false,false
+préserver la forêt,false,false,true,false,false,false,false,false,false,false
+préserver la nature,false,false,false,false,false,true,true,false,false,false
+préserver les écosystèmes,false,true,false,false,false,false,false,false,false,false
+préserver les espèces,false,false,false,false,false,false,true,false,false,false
+préserver les fonds marins,false,false,false,false,false,false,false,false,false,true
+préserver les forêts,false,true,false,false,false,false,false,false,false,false
+préserver les haies,false,true,false,false,false,false,false,false,false,false
+préserver les milieux,false,false,true,false,false,false,false,false,false,false
+préserver les sols,false,false,false,false,true,true,false,false,false,false
+pression,false,false,false,false,true,false,false,false,false,false
+pression sur les milieux naturels,false,false,false,false,false,false,false,false,true,false
+prévention des catastrophes naturelles,false,false,false,false,false,false,false,false,false,true
+prévention des inondations,false,false,false,false,false,false,false,false,true,false
+prime à la casse,true,false,false,false,false,false,false,false,false,false
+principe de précaution,false,false,true,false,false,false,false,false,true,false
+printemps le plus pluvieux,true,false,false,false,false,false,false,false,false,false
+prise de conscience écologique,true,false,false,false,false,false,false,false,false,false
+prise de conscience environnementale,false,true,false,false,false,false,false,false,false,false
+problème de sécurité alimentaire,false,false,true,false,false,false,false,false,false,false
+problème sanitaire,false,true,false,false,false,false,false,false,false,false
+productivisme,true,false,false,false,false,false,false,false,false,false
+productiviste,false,false,false,true,false,false,false,false,false,false
+produire en europe,false,false,false,false,false,false,false,false,true,false
+produit chimique,false,false,false,false,false,false,false,false,true,false
+produit phytosanitaire,false,false,false,false,false,false,false,false,true,false
+produit toxique,false,false,false,false,false,false,false,true,false,true
+produits en vrac,true,false,false,false,false,false,false,false,false,false
+produits locaux,true,false,false,false,false,false,false,false,false,false
+produits verts,true,false,false,false,false,false,false,false,false,false
+prolifération ,true,false,false,false,false,false,false,false,false,false
+prolifération d'espèces,false,false,false,false,false,false,false,false,true,false
+prolifération de moustiques,false,false,false,false,false,false,false,false,true,false
+prolifération des moustiques,true,false,false,false,false,false,false,false,false,false
+protection d'espèces,false,false,true,false,false,false,false,false,true,false
+protection de l'environnement,false,true,false,false,false,false,false,false,false,false
+protection de la barrière de corail,false,true,false,false,false,false,false,false,false,false
+protection de la biodiversité,false,false,false,false,false,false,false,true,false,false
+protection de la faune et de la flore,true,false,false,false,false,false,false,false,false,false
+protection de la mangrove,false,false,false,false,false,false,false,false,true,false
+protection de la nature,false,false,false,false,false,false,false,false,true,false
+protection de la planète,false,false,false,false,false,false,false,false,true,false
+protection des coraux,true,false,false,false,false,false,false,false,false,false
+protection des côtes,true,false,false,false,false,false,false,false,false,false
+protection des cours d’eau,false,false,false,false,false,false,false,false,true,false
+protection des écosystèmes,false,false,false,false,false,false,false,false,true,false
+protection des espèces,true,false,false,false,false,false,false,false,false,false
+protection des fonds marins,true,false,false,false,false,false,false,false,false,false
+protection des forêts,false,false,true,false,false,false,false,false,true,false
+protection des habitats,false,true,false,false,false,false,false,false,false,false
+protection des milieux,false,false,false,false,false,false,false,false,true,false
+protection des océans,false,false,false,false,false,false,false,true,true,false
+protection des oiseaux,false,false,false,false,false,false,false,true,false,false
+protection des tourbières,false,false,false,true,false,false,false,false,false,true
+protection des zones côtières,false,true,false,false,false,false,false,false,false,false
+protection des zones humides,false,true,false,false,false,false,false,false,false,false
+protection du récif corallien,false,true,false,false,false,false,false,false,false,false
+protection du vivant,false,true,false,false,false,false,false,false,false,false
+protection environnementale,false,false,true,false,false,false,false,false,false,false
+protège les oiseaux,false,true,false,false,false,false,false,false,false,false
+protéger la biodiversité,false,false,false,false,false,false,true,false,false,false
+protéger la faune et la flore,false,false,false,false,false,false,true,false,false,false
+protéger la nature,false,false,false,false,false,false,true,false,false,true
+protéger le littoral,false,false,false,false,false,false,true,false,false,false
+protéger le vivant,false,false,true,false,false,false,false,false,true,false
+protéger les espèces,false,false,false,false,false,false,true,false,false,false
+protéger les fonds marins,false,false,false,false,false,false,false,false,false,true
+protéger les forêts,false,false,true,false,false,false,false,false,false,false
+protéger les habitats,false,false,false,false,false,false,true,false,false,true
+protéger les milieux,true,false,false,false,false,false,false,false,false,false
+protéger les oiseaux,true,false,false,false,false,false,false,false,false,false
+protéger les sols,false,false,false,false,false,false,false,false,true,false
+protocole de montréal,false,false,false,false,false,false,false,false,true,false
+ptfe,true,false,false,false,false,false,false,false,false,false
+puit de pétrole,false,true,false,false,false,false,false,false,false,false
+puits carbone,false,false,false,false,false,false,false,false,true,false
+puits de carbone,true,false,false,false,false,false,false,false,false,false
+qualité de l'eau,true,false,false,false,false,false,false,false,false,false
+qualité de l’eau,false,false,false,false,false,false,false,false,true,false
+quarante degrés,false,false,false,false,false,false,false,false,true,false
+quota de pêche,false,true,false,false,false,false,false,false,false,false
+raréfaction de l’eau,false,false,false,false,false,false,false,false,true,false
+raréfaction de la ressource en eau,false,false,false,false,false,false,false,false,true,false
+rareté de la ressource en eau,false,false,false,false,false,false,false,true,true,false
+rareté saisonnière de la ressource en eau,false,false,false,false,false,false,false,true,true,false
+rationnement ,true,false,false,false,false,false,false,false,false,false
+rationner,false,false,false,false,false,false,false,false,true,false
+ré ensauvagement,true,false,false,false,false,false,false,false,false,false
+réacteur nucléaire,true,false,false,false,false,false,false,false,false,false
+reboisement,false,false,false,false,false,false,false,false,true,false
+reboiser,true,false,false,false,false,false,false,false,false,false
+recharge,false,false,false,false,false,false,false,true,true,false
+réchauffement,false,false,false,false,false,false,false,false,true,false
+réchauffement de l’atmosphère,false,false,false,false,false,false,false,true,true,false
+réchauffement des océans,false,false,false,false,false,false,false,false,true,false
+réchauffement des températures,false,false,false,false,false,false,false,false,true,false
+réchauffement planétaire,false,false,false,false,false,false,false,false,true,false
+récif,false,false,false,false,false,false,false,false,true,false
+récif corallien,false,false,false,false,false,false,false,false,true,false
+record de température,true,false,false,false,false,false,false,false,false,false
+recul du trait de côte,true,false,false,false,false,false,false,false,false,false
+récupérateur d'eau,true,false,false,false,false,false,false,false,false,false
+récupérateur d’eau,true,false,false,false,false,false,false,false,false,false
+récupérer l'eau,false,false,false,false,false,false,false,false,true,false
+récupérer l'eau ,true,false,false,false,false,false,false,false,false,false
+récupérer le plastique,false,false,false,false,false,false,false,false,true,false
+recyclable,true,false,false,false,false,false,false,false,false,false
+recyclage,true,false,false,false,false,false,false,false,false,false
+recyclant,true,false,false,false,false,false,false,false,false,false
+recycle,false,false,false,false,false,false,false,false,true,false
+recycler,true,false,false,false,false,false,false,false,false,false
+recycler ,true,false,false,false,false,false,false,false,false,false
+recyclerie,true,false,false,false,false,false,false,false,false,false
+red ensauvagement,false,true,false,false,false,false,false,false,false,false
+réduction de l’empreinte biodiversité,false,false,false,false,false,false,true,false,false,false
+réduction de l’usage des insecticides,false,false,false,false,false,false,true,false,false,false
+réduction de l’usage des pesticides,false,false,false,false,false,true,false,false,false,false
+réduction de la consommation,false,false,false,false,false,true,false,false,true,false
+réduction de la consommation ,false,false,false,false,false,true,false,false,true,false
+réduction de la demande en eau,false,false,false,false,false,false,false,true,false,false
+réduction des déchets,false,false,false,false,false,false,false,true,false,false
+réduction des émissions de carbone,false,true,false,false,false,false,false,false,false,false
+réduction des émissions de gaz à effet de serre,true,false,false,false,false,false,false,false,false,false
+réduction des gaspillages énergétiques,false,false,false,false,false,false,false,true,false,false
+réduction des pesticides,false,false,false,false,false,false,false,true,false,false
+réduction des risques naturels,false,false,false,false,false,false,false,true,false,false
+réduction du cheptel,false,false,false,false,false,false,false,true,false,false
+réduction du gaspillage alimentaire,true,false,false,false,false,false,false,false,false,false
+réduction du gaspillage énergétique,false,false,false,false,false,false,false,false,false,true
+réduire l’élevage intensif,false,false,false,false,false,false,false,false,true,false
+réduire l'usage des pesticides,false,false,false,false,false,true,true,false,false,false
+réduire la consommation,true,false,false,false,false,false,false,false,false,false
+réduire la consommation d’eau,true,false,false,false,false,false,false,false,false,false
+réduire la pollution ,false,false,false,true,false,true,false,false,false,false
+réduire la pollution plastique,false,true,false,false,false,false,false,false,false,false
+réduire la production de plastique,false,true,false,false,false,false,false,false,false,false
+réduire le cheptel,false,false,false,false,false,false,false,false,true,false
+réduire le trafic aérien,false,true,false,false,false,false,false,false,false,false
+reduire les emballages,false,true,false,false,false,false,false,false,false,false
+réduire les émissions d’azote,false,false,false,false,false,false,false,false,true,false
+réduire les émissions de carbone,false,false,false,false,false,false,false,false,true,false
+réduire les émissions de gaz à effet de serre,false,true,false,false,false,false,false,false,false,false
+réduire sa consommation de viande,true,false,false,false,false,false,false,false,false,false
+réemploi,false,false,false,false,true,false,false,true,false,true
+reforestation,false,false,false,false,false,false,false,true,false,false
+réfugié climatique,false,false,false,false,false,false,false,true,false,true
+régénération,true,false,false,false,false,false,false,false,false,false
+régénération naturelle,true,false,false,false,false,false,false,false,false,false
+regénérer les écosystèmes,true,false,false,false,false,false,false,false,false,false
+réglementation environnementale ,false,false,false,false,false,false,false,false,false,true
+régulation biologique,false,false,false,false,false,false,false,false,false,true
+régulation de la surpêche,false,false,false,false,false,false,true,false,false,true
+régulation des crues,false,false,false,false,false,false,false,false,false,true
+régulation naturelle,false,false,false,false,false,false,true,false,false,true
+réguler les températures,true,false,false,false,false,false,false,false,false,false
+réhabiliter les cours d'eau ,false,false,false,false,false,false,false,false,false,true
+réhabiliter les milieux humides,false,false,false,false,false,false,false,false,true,false
+réintroduction,true,false,false,false,false,false,false,false,false,false
+réintroduction d'espèce,true,false,false,false,false,false,false,false,false,false
+réintroduction des espèces,true,false,false,false,false,false,false,false,false,false
+rejet polluant,false,false,false,false,false,false,false,false,false,true
+rejets industriels,true,false,false,false,false,false,false,false,false,false
+relation au vivant ,false,false,false,false,false,false,false,true,false,true
+relocaliser la production,false,false,false,false,false,false,false,false,false,true
+reméandrage,false,true,false,false,false,false,false,false,false,false
+remise à ciel ouvert,false,true,false,false,false,false,false,false,false,false
+remplacer les énergies fossiles ,false,true,false,false,false,false,false,false,false,false
+renard,true,false,false,false,false,false,false,false,false,false
+renaturation,true,false,false,false,false,false,false,false,false,false
+renaturer,false,false,true,false,false,false,false,false,true,false
+renaturer ,false,false,true,false,false,false,false,false,false,true
+renforcer les digues,false,false,false,false,true,true,true,false,false,false
+renforcer les dunes,false,false,true,false,false,false,false,false,true,false
+rénovation,true,false,false,false,false,false,false,false,false,false
+rénovation des batiments,false,false,false,false,false,false,false,false,false,true
+rénovation énergétique,false,false,false,false,false,false,false,true,false,true
+rénovation thermique,false,false,false,false,false,false,false,true,false,true
+repair cafés,true,false,false,false,false,false,false,false,false,false
+réparabilité,true,false,false,false,false,false,false,false,false,false
+réparation,false,false,false,false,false,false,false,false,false,true
+replantation,false,false,true,false,false,false,false,false,true,false
+replanté,false,false,true,false,false,false,false,false,true,false
+replante ,false,false,false,true,false,true,false,false,false,false
+replanter,false,false,false,false,false,false,false,false,false,true
+replanter ,false,false,true,false,false,true,true,false,false,false
+réseau de chaleur,false,true,false,false,false,false,false,false,false,false
+réseaux de chaleur,false,true,false,false,false,false,false,false,false,false
+réserve d’eau,false,false,true,false,false,false,false,false,true,true
+réserve d'eau ,false,false,false,false,true,false,true,false,false,true
+réserve de biosphère,false,false,false,false,false,false,false,false,true,false
+réserve de chasse,false,true,false,false,false,false,false,false,false,false
+réserve naturelle,true,false,false,false,false,false,false,false,false,false
+réserve sauvage,true,false,false,false,false,false,false,false,false,false
+réservoir d'hydrogène,true,false,false,false,false,false,false,false,false,false
+réservoir de biodiversité,true,false,false,false,false,false,false,false,false,false
+résilience des écosystèmes,true,false,false,false,false,false,false,false,false,false
+résistance thermique,true,false,false,false,false,false,false,false,false,false
+résistant à la sécheresse,true,false,false,false,false,false,false,false,false,false
+résistante à la sécheresse,true,false,false,false,false,false,false,false,false,false
+respect de l’environnement,false,false,false,false,true,true,false,false,false,false
+respecte la nature,true,false,false,false,false,false,false,false,false,false
+respecter la nature,true,false,false,false,false,false,false,false,false,false
+respectueuse de l'environnement,true,false,false,false,false,false,false,false,false,false
+respectueuse de la nature,false,false,false,false,false,false,false,false,true,false
+respectueux de l'environnement,true,false,false,false,false,false,false,false,false,false
+respectueux de l’environnement,false,false,false,false,false,false,true,false,false,false
+respectueux de la nature,false,false,false,false,false,false,true,false,false,false
+responsable,true,false,false,false,false,false,false,false,false,false
+ressource en eau,false,false,false,false,false,false,true,false,false,true
+ressource énergétique,true,false,false,false,false,false,false,false,false,false
+ressource minérale,true,false,false,false,false,false,false,false,false,false
+ressource naturelle,true,false,false,false,false,false,false,false,false,false
+ressource planétaire,false,false,false,false,false,false,false,false,true,false
+ressource renouvelable,true,false,false,false,false,false,false,false,false,false
+ressource stratégique,false,false,false,false,false,false,false,false,true,false
+ressources planétaires,true,false,false,false,false,false,false,false,false,false
+restauration d'habitat,false,false,false,false,false,false,false,true,false,false
+restauration de la biodiversité,false,false,false,false,false,false,false,false,true,false
+restauration de la nature,false,false,false,false,true,true,false,false,false,false
+restauration de la végétation ,false,false,false,false,true,true,false,false,false,false
+restauration de mares,false,false,false,false,true,true,false,false,false,false
+restauration des coraux,false,false,false,false,true,true,false,false,false,false
+restauration des cours d'eau ,false,false,false,false,false,false,false,false,false,true
+restauration des écosystèmes,false,false,false,false,false,false,false,false,false,true
+restauration des forêts,false,false,false,false,false,false,false,false,false,true
+restauration des habitats,false,false,true,false,false,false,false,false,true,false
+restauration des milieux,true,false,false,false,false,false,false,false,false,false
+restauration des tourbières,true,false,false,false,false,false,false,false,false,false
+restauration des zones humides,false,false,true,false,false,false,false,false,true,false
+restauration du récif corallien,true,false,false,false,false,false,false,false,false,false
+restauration écologique,false,false,false,false,true,true,false,false,false,false
+restauré des mares,false,false,false,false,true,true,false,false,false,false
+restaurer l'environnement,false,false,false,false,true,true,false,false,false,false
+restaurer la biodiversité,false,false,false,false,true,true,false,false,false,false
+restaurer la forêt,false,false,false,false,false,false,false,true,false,false
+restaurer la nature,true,false,false,false,false,false,false,false,false,false
+restaurer la plage,false,false,false,false,false,false,false,false,true,false
+restaurer la qualité de l’air,false,false,false,false,false,false,false,false,true,false
+restaurer la qualité des sols,false,false,false,false,false,false,false,false,true,false
+restaurer la rivière,false,false,false,false,false,false,false,false,true,false
+restaurer les cours d'eau ,false,false,false,true,false,true,true,false,false,false
+restaurer les forêts,true,false,false,false,false,false,false,false,false,false
+restaurer les habitats,true,false,false,false,false,false,false,false,false,false
+restaurer les haies,false,false,false,false,true,true,false,false,false,false
+restaurer les mares,false,false,true,false,false,false,false,true,true,false
+restaurer les milieux,false,false,true,false,false,false,false,true,true,false
+restaurer les récifs coralliens,false,true,false,false,false,false,false,false,false,false
+restaurer les rivières,false,true,false,false,false,false,false,false,false,false
+restaurer les terres,false,true,false,false,false,false,false,false,false,false
+restaurer les tourbières,false,true,false,false,false,false,false,false,false,false
+restes alimentaires,false,true,false,false,false,false,false,false,false,false
+restes de cantine,false,true,false,false,false,false,false,false,false,false
+restreindre,false,true,false,false,false,false,false,false,false,false
+restriction,false,true,false,false,false,false,false,false,false,false
+restriction d’eau,false,true,false,false,false,false,false,false,false,false
+rétablir des habitats,false,true,false,false,false,false,false,false,false,false
+rétablissement d'espèces,false,true,false,false,false,false,false,false,false,false
+retenue collinaire,false,true,false,false,false,false,false,false,false,false
+retrait gonflement des argiles,false,false,false,false,false,false,false,true,false,false
+réutilisation des eaux,false,false,false,false,false,true,false,false,false,false
+réutilisation des eaux usées traitées,false,false,false,false,false,false,false,false,false,true
+réutilisation des ressources,false,false,false,false,false,false,false,false,false,true
+revégétalisation,false,true,false,false,false,false,false,false,false,false
+revégétaliser,false,false,false,false,false,false,false,false,false,true
+revue nature,false,false,false,false,false,false,false,false,false,true
+revue nature climate change,false,true,false,false,false,false,false,false,false,false
+risque sanitaire,false,false,false,false,false,false,false,false,true,false
+rivière,false,false,false,false,false,false,false,false,true,false
+rouge gorge,false,false,false,false,false,false,false,false,true,false
+ruisselement ,false,false,false,false,false,false,false,false,true,false
+ruissellement de l'eau,false,false,false,false,false,false,false,false,true,false
+ruissellement des eaux,false,false,false,false,false,false,false,false,true,false
+saf,false,false,false,false,false,false,false,false,true,false
+salinisation des nappes,false,false,false,false,false,false,false,false,true,false
+salinisation des sols,false,false,false,false,false,false,false,false,true,false
+sanglier,false,false,false,false,false,false,false,false,true,false
+sans émettre de co deux,false,false,false,false,false,false,false,false,true,false
+sans émettre de co2,false,false,false,false,false,false,false,true,true,false
+sans pesticide,false,false,false,false,false,false,false,true,true,false
+santé animale,false,false,false,false,false,false,false,true,true,false
+santé des sols,false,false,false,false,false,false,false,false,true,false
+santé environnementale,false,false,false,false,false,false,false,true,true,false
+santé humaine,false,false,false,false,false,false,false,false,true,false
+santé publique,false,false,false,false,false,false,false,false,true,false
+santé végétale,false,false,false,false,false,false,false,false,true,false
+sapin,false,false,false,false,false,false,false,false,true,false
+sargasse,false,false,false,false,false,false,false,false,true,false
+saumon,false,false,false,false,false,false,false,false,true,false
+sauvegarde de la ressource en eau,false,false,true,false,false,false,false,false,true,false
+sauver des espèces,false,false,false,false,false,false,false,false,true,false
+sciences de l'environnement,false,false,false,false,false,false,false,true,true,false
+sciences du vivant,false,false,false,false,false,false,false,false,true,false
+sciences participatives,false,false,false,false,false,false,false,false,true,false
+scope un et deux,false,false,false,false,false,false,false,false,true,false
+se débarrasser des énergies fossiles ,false,false,false,false,false,false,false,false,true,false
+se décarboner,false,false,false,false,false,false,false,false,true,false
+se déplacer en vélo ,false,false,false,false,false,false,false,true,true,false
+se nourrir mieux,false,false,false,false,false,false,false,true,true,false
+se régénère,false,false,false,false,false,false,false,false,true,false
+se régénérer,false,false,false,false,false,false,false,false,true,false
+sécheresse,false,false,true,false,false,false,false,false,false,true
+secteur tertiaire,false,false,true,false,false,false,false,false,false,true
+sécurité alimentaire,false,true,false,false,false,false,false,false,false,false
+sécurité environnementale ,false,true,false,false,false,false,false,false,false,false
+semaine du développement durable,false,false,false,false,false,false,false,true,false,false
+semence diversifiée,false,false,false,false,false,false,false,false,true,false
+semis direct,false,false,false,false,false,false,false,false,true,false
+septième continent,false,false,true,false,false,false,false,true,false,false
+séquestration du carbone,false,false,false,false,true,false,false,false,false,false
+séquestrer le carbone,false,false,false,false,false,false,false,true,false,false
+serres chauffées,false,false,false,false,false,false,false,true,false,true
+service environnemental ,false,false,false,false,false,false,false,false,false,true
+service rendu par la nature,false,false,false,false,true,false,false,false,true,false
+services écosystémiques,false,false,false,false,true,false,false,false,true,false
+services environnementaux,false,true,false,false,false,false,false,false,false,false
+seuil de réchauffement,false,true,false,false,false,false,false,false,false,false
+sevrage aux énergies fossiles,false,true,false,false,false,false,false,false,false,false
+sevrage des énergies fossiles,false,true,false,false,false,false,false,false,false,false
+silicium,false,false,false,false,false,false,false,true,false,false
+site de ponte,false,false,false,false,false,false,false,false,true,false
+site minier,true,false,false,false,false,false,false,false,false,false
+sixième extinction de masse,false,false,false,false,false,false,false,true,false,false
+sobriété,false,false,false,false,false,false,false,true,false,false
+sobriété énergétique,false,true,false,false,false,false,false,false,false,false
+sobriété foncière,false,false,false,false,false,false,false,true,false,false
+société écologique,false,false,true,false,false,false,false,false,false,false
+sol,false,false,false,false,false,false,false,false,true,false
+sol appauvri,false,true,false,false,false,false,false,false,false,false
+sol dégradé,false,true,false,false,false,false,false,false,false,false
+sol pollué,false,false,true,false,false,false,false,false,false,false
+sol vivant,false,false,false,false,false,false,false,false,true,false
+solidarité écologique,false,false,true,false,false,false,false,false,false,false
+sols pollués,false,true,false,false,false,false,false,false,false,false
+solution s'inspirant de la nature,false,true,false,false,false,false,false,false,false,false
+solutions basées sur la nature,false,true,false,false,false,false,false,false,false,false
+solutions fondées sur la nature,false,false,true,false,false,false,false,false,false,false
+solvant,false,false,false,false,false,false,false,false,true,false
+sommet sur la biodiversité,false,false,false,false,false,false,false,false,true,false
+sorgho,false,false,false,false,false,false,false,false,true,false
+sortie des énergies fossiles,false,false,false,false,false,false,false,true,false,true
+sortie des pesticides,false,false,false,false,false,false,false,false,true,false
+sortie du charbon,false,true,false,false,false,false,false,false,false,false
+sous l'eau,false,true,false,false,false,false,false,false,false,false
+sous les eaux,false,true,false,false,false,false,false,false,false,false
+soutenabilité environnementale,false,false,false,false,false,true,true,false,false,false
+spécialiste de la biodiversité,true,false,false,false,false,false,false,false,false,false
+spécialiste des questions environnementales,false,true,false,false,false,false,false,false,false,false
+stockage d’eau,false,false,false,true,false,false,false,false,false,false
+stockage du carbone,false,false,true,false,false,false,false,false,false,false
+stockage du carbone dans les sols,true,false,false,false,false,false,false,false,false,false
+stockage du co deux,true,false,false,false,false,false,false,false,false,false
+stocker l'eau,false,false,false,false,false,false,false,true,false,false
+stocker le carbone,false,true,false,false,false,false,false,false,false,false
+stratégie nationale biodiversité ,false,false,true,false,false,false,false,false,false,false
+stress hydrique,true,false,false,false,false,false,false,false,false,false
+stress thermique,false,true,false,false,false,false,false,false,false,false
+submergé par les eaux,false,true,false,false,false,false,false,false,false,false
+submersion,false,false,true,false,false,false,false,false,false,false
+submersion marine,false,false,true,false,false,false,false,false,false,false
+substance chimique,false,false,false,false,false,false,false,false,false,true
+suffoquer,false,true,false,false,false,false,false,false,false,false
+super-poids lourds,false,false,false,false,false,false,false,false,true,false
+suppression des systèmes de drainage,false,false,true,false,false,true,false,false,false,false
+suppression du béton,true,false,false,false,false,false,false,false,false,false
+surchauffe,false,false,false,false,false,false,false,false,true,false
+surconsommation,false,false,false,false,false,false,false,false,true,false
+surexploitation,true,false,false,false,false,false,false,false,false,false
+surexploitation des ressources,false,true,false,false,false,false,false,false,false,false
+surexploitation des ressources ,true,false,false,false,false,false,false,false,false,false
+surpâturage,true,false,false,false,false,false,false,false,false,false
+surpêche,false,false,false,false,false,false,false,false,false,true
+suv,false,false,false,false,false,false,false,false,true,false
+système alimentaire équitable,false,false,false,false,false,false,true,false,false,false
+système d'alerte,false,false,false,false,false,false,false,false,true,false
+tassement des sols,false,false,false,false,false,true,false,false,false,true
+taxe carbone,false,false,false,false,false,true,false,false,false,true
+té heu air,true,false,false,false,false,false,false,false,false,false
+techniques culturales simplifiées ,false,true,false,false,false,false,false,false,false,false
+technologie verte,false,false,true,false,false,false,false,false,false,false
+tégévé,false,false,true,false,false,false,false,false,true,false
+température,false,false,true,false,false,false,false,false,true,false
+température extrême,false,false,true,false,false,false,false,false,true,false
+température record,false,false,true,false,false,false,false,false,true,false
+températures plus hautes,true,false,false,false,false,false,false,false,false,false
+tempête xynthia,false,false,true,false,false,false,false,false,true,false
+ter,false,false,false,false,false,false,false,false,true,false
+termites,false,false,false,false,false,false,false,false,true,false
+terre,false,false,false,false,false,false,false,false,true,false
+terre rare,false,false,false,false,false,false,false,false,true,false
+tévéa verte,false,false,false,false,false,false,true,false,false,false
+tgv,true,false,false,false,false,false,false,false,false,false
+the metals company,false,true,false,false,false,false,false,false,false,false
+toilette à double débit,false,false,true,false,false,false,false,false,false,false
+toilette sèche,true,false,false,false,false,false,false,false,false,false
+toit-jardin,false,false,true,false,false,false,false,false,true,false
+tonte tardive ,false,false,false,false,false,true,true,false,false,false
+tortue,false,false,false,false,false,false,false,true,false,false
+tortue marine,false,false,false,false,false,false,false,true,false,false
+tourbe,false,true,false,false,false,false,false,false,false,false
+tourbières,false,true,false,false,false,false,false,false,false,false
+tourisme de masse,false,true,false,false,false,false,false,false,false,false
+toxique,false,false,false,false,false,false,false,true,false,false
+toxique ,false,true,false,false,false,false,false,false,false,false
+trafic d’espèces,false,false,true,false,false,false,false,false,true,false
+trafic routier,false,false,false,false,false,true,true,false,false,false
+train,false,false,false,false,false,false,false,true,false,false
+trains régionaux,false,true,false,false,false,false,false,false,false,false
+trame blanche,false,false,false,false,false,false,false,true,true,false
+trame bleu,false,false,false,false,false,false,false,true,false,false
+trame brune,true,false,false,false,false,false,false,false,false,false
+trame noire,false,false,false,false,false,false,false,true,false,false
+trame verte,false,false,false,false,false,false,false,true,false,false
+trame verte et bleu,false,false,false,false,false,false,false,true,false,false
+tramway,false,false,false,false,false,false,true,false,false,false
+transformation des pratiques agricoles,false,true,false,false,false,false,false,false,false,false
+transformation écologique,false,false,false,true,false,false,false,false,false,false
+transition agricole,true,false,false,false,false,false,false,false,false,false
+transition agro écologique,true,false,false,false,false,false,false,false,false,false
+transition agroécologique,false,true,false,false,false,false,false,false,false,false
+transition climatique,false,false,false,false,false,false,false,false,false,true
+transition écologique,false,false,false,false,false,false,false,false,false,true
+transition en dehors des énergies fossiles,false,false,false,false,false,false,false,false,false,true
+transition énergétique,true,false,false,false,false,false,false,false,false,false
+transition verte,false,false,true,false,false,false,false,false,false,false
+translocation ,false,false,true,false,false,false,false,false,true,false
+translocation des espèces,false,false,false,true,false,false,false,false,false,false
+transport,false,false,true,false,false,false,false,false,false,false
+transport aérien,false,true,false,false,false,false,false,false,false,false
+transport collectif,false,false,true,false,false,false,false,false,true,false
+transport décarboné,false,true,false,false,false,false,false,false,false,false
+transport en commun,false,true,false,false,false,false,false,false,false,false
+transport ferroviaire,true,false,false,false,false,false,false,false,false,false
+transport fluvial,false,true,false,false,false,false,false,false,false,false
+transport maritime,false,false,false,true,false,false,false,false,false,false
+transport routier,false,true,false,false,false,false,false,false,false,false
+transporteur,false,true,false,false,false,false,false,false,false,false
+très chaud,false,true,false,false,false,false,false,false,false,false
+tri,false,true,false,false,false,false,false,false,false,false
+tri à la source,false,false,false,false,false,false,false,false,true,false
+tri des ordures,false,false,false,true,false,false,false,false,false,false
+tri sélectif,false,false,false,false,false,false,false,false,true,false
+trier,false,true,false,false,false,false,false,false,false,false
+trier ses déchets,true,false,false,false,false,false,false,false,false,false
+trop d'eau,false,false,false,false,false,false,false,false,false,true
+trop grande chaleur,false,true,false,false,false,false,false,false,false,false
+truite,false,false,false,true,false,false,false,false,false,false
+tva verte,false,false,false,false,false,false,true,false,false,false
+uicn,false,false,false,false,false,false,false,false,false,true
+un climat qui change,false,false,false,false,false,false,false,false,false,true
+un environnement alimentaire sain,false,false,false,false,true,false,false,false,true,false
+une seule santé,true,false,false,false,false,false,false,false,false,false
+union internationale pour la conservation de la nature,false,false,false,false,false,false,false,false,true,false
+unoc,false,false,false,false,false,false,false,false,true,false
+uranium,false,false,false,false,false,false,false,false,true,false
+urbanisation,false,false,false,false,false,false,false,false,true,false
+urbanisme,false,true,false,false,false,false,false,false,false,false
+urgence écologique,false,true,false,false,false,false,false,false,false,false
+urine ,false,true,false,false,false,false,false,false,false,false
+usine,false,false,false,false,false,false,false,false,true,false
+vache,false,false,false,true,false,false,false,false,false,false
+vague de chaleur,false,false,false,true,false,false,false,false,false,false
+valorisation des déchets,false,false,false,true,false,false,false,false,false,false
+varier les végétaux,false,false,false,false,false,false,false,false,true,false
+variété rustique,false,false,false,false,false,false,false,false,true,false
+vautour,false,false,false,false,false,false,false,false,true,false
+végan,false,false,false,false,false,false,false,false,true,false
+végane,false,false,false,false,false,false,false,false,true,false
+végétalisation,false,false,false,false,false,false,false,false,true,false
+végétalisation des espaces urbains,false,false,false,true,false,false,false,false,false,false
+végétalisation des villes,false,false,true,false,false,false,false,false,false,false
+végétalisé,false,true,false,false,false,false,false,false,false,false
+végétalisée,false,false,true,false,false,false,false,false,false,false
+végétaliser,false,false,true,false,false,false,false,false,false,false
+végétarien,false,false,true,false,false,false,false,false,false,false
+végétarienne,false,true,false,false,false,false,false,false,false,false
+végétation,false,true,false,false,false,false,false,false,false,false
+végétaux,false,false,false,true,false,true,true,false,false,false
+végétaux variés,false,false,false,false,false,true,false,false,false,false
+véhicule électrique,false,true,false,false,false,false,false,false,false,false
+vélo,false,false,false,false,false,false,false,false,true,false
+ver de terre,false,false,false,false,false,false,false,false,true,false
+verdir,false,false,false,true,false,false,false,false,false,false
+verdir la politique agricole,false,false,false,true,false,false,false,false,false,false
+verdure,false,false,false,true,false,false,false,false,false,false
+vertueux,false,false,false,true,false,true,true,false,false,false
+vertueux pour la planète,false,false,false,true,false,false,false,false,false,false
+viande,false,false,false,true,false,false,false,false,false,false
+vie sous-marine,false,false,false,true,false,false,false,true,false,false
+ville durable,false,false,false,true,false,false,true,false,false,false
+ville écologique,false,false,false,true,false,false,false,false,false,false
+virus,false,false,false,true,false,false,false,false,false,false
+vison d'europe,false,true,false,false,false,false,false,false,false,false
+vivant,false,false,false,false,false,false,false,false,false,true
+voiture,false,false,false,false,false,false,false,false,false,true
+voiture thermique,false,false,false,false,false,false,false,false,false,true
+voitures électriques,false,false,false,false,false,false,false,false,false,true
+vol direct,false,false,false,false,false,false,false,false,false,true
+vol paris new york,false,false,false,false,false,false,false,false,false,true
+voyager,false,false,false,false,false,false,false,true,false,false
+vrac,false,true,false,false,false,false,false,false,false,false
+wwf,false,false,false,false,false,false,false,false,true,false
+zad,false,true,false,false,false,false,false,false,false,false
+zadisme,false,true,false,false,false,false,false,false,false,false
+zadiste,false,true,false,false,false,false,false,false,false,false
+zan,false,true,false,false,false,false,false,false,false,false
+zéro artificialisation,false,false,true,false,false,false,false,false,false,false
+zéro artificialisation nette,false,true,false,false,false,false,false,false,false,false
+zéro carbone,false,true,false,false,false,false,false,false,false,false
+zéro déchet,false,false,false,false,false,false,false,true,false,false
+zéro déforestation,false,false,false,false,false,true,false,false,false,true
+zéro emballage,false,false,false,false,true,false,false,false,false,false
+zéro émission nette ,false,false,false,false,true,false,false,false,false,false
+zéro plastique,false,true,false,false,false,false,false,false,false,false
+zfe,true,false,false,false,false,false,false,false,false,false
+zinc,false,false,false,false,false,false,true,false,false,false
+zone à faible émission,false,false,true,false,false,false,false,false,false,false
+zone de biodiversité,false,true,false,false,false,false,false,false,false,false
+zone de non prélèvement ,false,false,false,false,false,false,true,false,false,true
+zone humide,true,false,false,false,false,false,false,false,false,false
+zone inondable,false,false,true,false,false,false,false,false,false,false
+zone marine protégée,false,false,false,false,false,false,false,false,true,false
+zone natura deux mille,false,false,true,false,false,false,false,false,false,true
+zone naturelle protégée,false,false,true,false,false,false,false,false,true,true
+zone sauvage,false,false,false,false,true,false,false,false,true,false
+zones humides,false,false,false,false,true,false,false,false,true,false
+zoonose,false,false,false,false,true,false,false,false,true,false
+zoonotique,false,false,false,false,true,false,false,false,true,false

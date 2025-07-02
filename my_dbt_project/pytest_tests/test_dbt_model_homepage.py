@@ -34,7 +34,7 @@ def run_dbt_command(command_args):
 # @pytest.fixture(scope="module", autouse=True)
 def seed_dbt():
     """Run dbt seed once before any test."""
-    commands = ["seed", "--select", "program_metadata","--select", "time_monitored","--select", "keywords","--select", "dictionary", "--full-refresh"]
+    commands = ["seed", "--select", "program_metadata","--select", "time_monitored","--select", "keywords","--select", "dictionary","--select", "keyword_macro_category", "--full-refresh"]
     logging.info(f"pytest running dbt seed : {commands}")
     run_dbt_command(commands)
 
@@ -173,7 +173,16 @@ def test_core_query_thematics_keywords_values_arte(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT channel_title, week, crise_type, theme, category, keyword, count,
-            high_risk_of_false_positive, sum_duration_minutes
+            high_risk_of_false_positive, sum_duration_minutes,
+            general,
+            agriculture,
+            transport,
+            batiments,
+            energie,
+            industrie,
+            eau,
+            ecosysteme,
+            economie_ressources
             FROM public.core_query_thematics_keywords
             WHERE channel_title = 'Arte' AND keyword = 'eau' AND theme = 'changement_climatique_constat'
             ORDER BY channel_title DESC
@@ -190,7 +199,16 @@ def test_core_query_thematics_keywords_values_arte(db_connection):
         'eau',
         2,
         True,
-        455)
+        455,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False,
+        False)
         
         expected_trimmed = expected[:-1] 
         row_trimmed = row[:-1]
@@ -201,7 +219,16 @@ def test_core_query_thematics_keywords_values_arte(db_connection):
 def test_core_query_thematics_keywords_values_arte_zinc(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT theme, category, count, sum_duration_minutes
+            SELECT theme, category, count, sum_duration_minutes,
+            general,
+            agriculture,
+            transport,
+            batiments,
+            energie,
+            industrie,
+            eau,
+            ecosysteme,
+            economie_ressources
             FROM public.core_query_thematics_keywords
             WHERE channel_title = 'Arte'
               AND keyword = 'zinc'
@@ -211,10 +238,46 @@ def test_core_query_thematics_keywords_values_arte_zinc(db_connection):
         rows = cur.fetchall()
 
         expected = [
-            ('biodiversite_causes', 'Pollution', 1, 455),
-            ('ressources', 'Air', 1, 455),
-            ('ressources', 'Eau', 1, 455),
-            ('ressources', 'Sols', 1, 455),
+            ('biodiversite_causes', 'Pollution', 1, 455,
+                False,
+                False,
+                False,
+                False,
+                False,
+                True,
+                False,
+                False,
+                False),
+            ('ressources', 'Air', 1, 455,
+                False,
+                False,
+                False,
+                False,
+                False,
+                True,
+                False,
+                False,
+                False),
+            ('ressources', 'Eau', 1, 455,
+                False,
+                False,
+                False,
+                False,
+                False,
+                True,
+                False,
+                False,
+                False),
+            ('ressources', 'Sols', 1, 455,
+                False,
+                False,
+                False,
+                False,
+                False,
+                True,
+                False,
+                False,
+                False),
         ]
 
         assert rows == expected, f"Unexpected zinc rows: {rows}"

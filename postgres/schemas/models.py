@@ -9,6 +9,7 @@ from sqlalchemy import text
 from postgres.schemas.base import Base
 from postgres.database_connection import connect_to_db, get_db_session
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
+from quotaclimat.data_processing.mediatree.keyword.macro_category import MACRO_CATEGORIES
 from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
 from quotaclimat.data_processing.mediatree.time_monitored.models import Time_Monitored
 import os
@@ -150,6 +151,21 @@ class Dictionary(Base):
         PrimaryKeyConstraint('keyword', 'language', 'category', 'theme', name='pk_keyword_language_category_theme'),
     )
 
+
+class Keyword_Macro_Category(Base):
+    __tablename__ = "keyword_macro_category"
+    keyword = Column(String, primary_key=True) # linked to Dictionary.keyword
+    is_empty = Column(Boolean, nullable=True, default=False)
+    general = Column(Boolean, nullable=True, default=False)
+    agriculture = Column(Boolean, nullable=True, default=False)
+    transport = Column(Boolean, nullable=True, default=False)
+    batiments = Column(Boolean, nullable=True, default=False)     
+    energie = Column(Boolean, nullable=True, default=False)
+    industrie = Column(Boolean, nullable=True, default=False)
+    eau = Column(Boolean, nullable=True, default=False)
+    ecosysteme = Column(Boolean, nullable=True, default=False)
+    economie_ressources = Column(Boolean, nullable=True, default=False)
+
 def get_sitemap(id: str):
     session = get_db_session()
     return session.get(Sitemap, id)
@@ -186,7 +202,7 @@ def create_tables(conn=None):
 
         Base.metadata.create_all(engine, checkfirst=True)
         update_channel_metadata(engine)
-        update_dictionary(engine, theme_keywords=THEME_KEYWORDS)
+        update_dictionary(engine, theme_keywords=THEME_KEYWORDS, macro_categories=MACRO_CATEGORIES)
 
         if(os.environ.get("UPDATE") != "true"):
             update_program_metadata(engine)
@@ -277,17 +293,18 @@ def update_program_metadata(engine):
         session.close()
 
 
-def update_dictionary(engine, theme_keywords):
+def update_dictionary(engine, theme_keywords, macro_categories=MACRO_CATEGORIES):
     logging.info("Updating dictionary data")
     Session = sessionmaker(bind=engine)
     session = Session()
 
     try:
         seen = set()
-        logging.warning("Dictionary table! Full overwrite (delete/recreate)")
+        logging.warning("Dictionary and Keyword_Macro_Category table! Full overwrite (delete/recreate)")
         session.query(Dictionary).delete()
+        session.query(Keyword_Macro_Category).delete()
         session.commit()
-        logging.info("Deleted all entries in the dictionary table")
+        logging.info("Deleted all entries in the dictionary and Keyword_Macro_Category table")
 
         bulk_data = []
         for theme, keywords_list in theme_keywords.items():
@@ -311,7 +328,11 @@ def update_dictionary(engine, theme_keywords):
         session.commit()
         logging.info(f"Inserted {len(bulk_data)} dictionary records successfully")
 
-
+        # insert Keyword_Macro_Category 
+        logging.info(f"Inserting {len(macro_categories)} Keyword_Macro_Category data...")
+        session.bulk_insert_mappings(Keyword_Macro_Category, macro_categories)
+        session.commit()
+        logging.info(f"Inserted {len(macro_categories)} Keyword_Macro_Category records successfully")
     except Exception as error:
         logging.error(f"Error updating dictionary data: {error}")
         session.rollback()

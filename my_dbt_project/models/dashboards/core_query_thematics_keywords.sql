@@ -107,6 +107,15 @@ SELECT
   ko.crise_type,
   ko.theme,
   ko.keyword,
+  kmc.general,
+  kmc.agriculture,
+  kmc.transport,
+  kmc.batiments,
+  kmc.energie,
+  kmc.industrie,
+  kmc.eau,
+  kmc.ecosysteme,
+  kmc.economie_ressources,
   COUNT(*) AS count,
   COALESCE(wpd.weekly_duration_minutes, 0) AS sum_duration_minutes
 FROM keyword_occurrences ko
@@ -115,6 +124,8 @@ LEFT JOIN public.dictionary d
 
 LEFT JOIN weekly_program_durations wpd
   ON wpd.channel_title = ko.channel_title AND wpd.week = ko.week
+LEFT JOIN public.keyword_macro_category kmc
+  ON kmc.keyword = ko.keyword
 GROUP BY
   ko.channel_title,
   ko.week,
@@ -128,6 +139,15 @@ GROUP BY
   ko.crise_type,
   ko.theme,
   ko.keyword,
+  kmc.general,
+  kmc.agriculture,
+  kmc.transport,
+  kmc.batiments,
+  kmc.energie,
+  kmc.industrie,
+  kmc.eau,
+  kmc.ecosysteme,
+  kmc.economie_ressources,
   wpd.weekly_duration_minutes
 ORDER BY
   ko.channel_title, ko.week, ko.crise_type

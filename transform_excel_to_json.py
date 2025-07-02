@@ -3,12 +3,16 @@ import pandas as pd
 import json
 import logging
 from quotaclimat.data_processing.mediatree.i8n.country import *
+from postgres.schemas.models import Keyword_Macro_Category
 
 # Need to import these files - slack #metabase-keywords
 i8n_dictionary = "document-experts/Dictionnaire_Multilingue.xlsx"
-excels_files = ["document-experts/Dictionnaire - OME.xlsx", i8n_dictionary]
-
+french_dictionary = "document-experts/Dictionnaire - OME.xlsx"
+macro_category_file = "document-experts/Dictionnaire - OME.xlsx - Catégories Transversales.tsv"
+excels_files = [french_dictionary, i8n_dictionary]
+plain_keyword_sheet = 'Catégorisation Finale'
 output_file = "quotaclimat/data_processing/mediatree/keyword/keyword.py"
+output_file_macro_category = "quotaclimat/data_processing/mediatree/keyword/macro_category.py"
 
 # Excel columns - must be lower to match country.py norms
 french = 'French'
@@ -30,13 +34,58 @@ class TranslatedKeyword:
         self.keyword = keyword
 
 
+def set_up_macro_category():
+    logging.info(f"Reading macro categories from {macro_category_file}...")
+
+    df = pd.read_csv(macro_category_file, sep='\t', encoding='utf-8')
+    logging.info(df.columns)
+    records = []
+    expected_columns = [
+        "keyword", "is_empty", "general", "agriculture", "transport",
+        "batiments", "energie", "industrie", "eau", "ecosysteme", "economie_ressources"
+    ]
+
+    for _, row in df.iterrows():
+        keyword=row["keyword"]
+        if pd.isna(keyword) or keyword.startswith("#"):
+            continue
+        record = Keyword_Macro_Category(
+            keyword=row["keyword"],  # required
+            is_empty=bool(row.get("is_empty", False)),
+            general=bool(row.get("general", False)),
+            agriculture=bool(row.get("agriculture", False)),
+            transport=bool(row.get("transport", False)),
+            batiments=bool(row.get("batiments", False)),
+            energie=bool(row.get("energie", False)),
+            industrie=bool(row.get("industrie", False)),
+            eau=bool(row.get("eau", False)),
+            ecosysteme=bool(row.get("ecosysteme", False)),
+            economie_ressources=bool(row.get("economie_ressources", False))
+        )
+        logging.info(f"Processing record: {record.keyword}")
+        records.append(record)
+
+    logging.info(f"Macro categories is being written to {output_file_macro_category}...")
+    with open(output_file_macro_category, "w", encoding="utf-8") as f:
+        f.write("# Auto-generated from Excel file\n")
+        f.write("MACRO_CATEGORIES = [\n")
+        for record in records:
+            f.write("    {\n")
+            for col in expected_columns:
+                val = getattr(record, col)
+                val_str = f"\"{val}\"" if isinstance(val, str) else str(bool(val))
+                f.write(f"        \"{col}\": {val_str},\n")
+            f.write("    },\n")
+        f.write("]\n")
+        logging.info(f"{len(records)} macro categories written to {output_file_macro_category} successfully.")
+
 
 # Initialize the THEME_KEYWORDS dictionary
 THEME_KEYWORDS = {}
 for excel_file_path in excels_files:
     print(f"Reading {excel_file_path}")
     if "Dictionnaire - OME" in excel_file_path:
-        df = pd.read_excel(excel_file_path, sheet_name='Catégorisation Finale')
+        df = pd.read_excel(excel_file_path, sheet_name=plain_keyword_sheet)
         df = df.dropna(subset=['keyword'])
         df['category'] = df['Secteur'].fillna('')
         df['crise'] = df['Crise'].fillna('')
@@ -96,7 +145,7 @@ for excel_file_path in excels_files:
                 crisis_resource = row['crise'] == "Ressources"
                 high_risk_of_false_positive = row['HRFP'] == 1.0
                 solution = "solution" in theme_name
-                consequence = "consequence " in theme_name
+                consequence = "consequence" in theme_name
                 cause = "cause" in theme_name
                 general_concepts = "concepts_generaux" in theme_name
                 statement = "constat" in theme_name
@@ -146,3 +195,5 @@ with open(output_file, 'w', encoding='utf-8') as f:
     f.write(content)
     logging.info(f"Python dictionary written to {output_file}")
     print(f"Python dictionary written to {output_file}")
+
+set_up_macro_category()

@@ -65,11 +65,16 @@ def parse_csv_without_headers(file_path, encoding='utf-8'):
     
     return data
 
-def convert_datetime_to_timestamp(date_str):
+def convert_datetime_to_timestamp(date_str, date_format="%m/%d/%Y %H:%M:%S"):
     """Convert date string to UNIX timestamp"""
+    formats_T2_2025 = ["%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"]
+    if date_format in formats_T2_2025:
+        if len(date_str) == 19:
+            date_format = "%d/%m/%Y %H:%M:%S"
+        elif len(date_str) == 16:
+            date_format = "%d/%m/%Y %H:%M"
     try:
-        
-        dt: datetime = datetime.strptime(date_str, "%d/%m/%Y %H:%M:%S")
+        dt: datetime = datetime.strptime(date_str, date_format)
         aware_dt = dt.replace(tzinfo=ZoneInfo(timezone))
         # print(f"  Converting date: '{date_str}' to datetime : {aware_dt} - aware_dt.timestamp(): {aware_dt.timestamp()} - dt.timestamp(): {dt.timestamp()}")
         return int(aware_dt.timestamp()), aware_dt
@@ -77,7 +82,7 @@ def convert_datetime_to_timestamp(date_str):
         print(f"  ERROR converting date: '{date_str}' - Invalid format")
         return 0, None
 
-def group_by_window_and_partition(data, window_minutes=2):
+def group_by_window_and_partition(data, window_minutes=2, date_format="%d/%m/%Y %H:%M:%S"):
     """
     Group data into time windows of specified minutes
     and organize by year/month/day/channel partitions
@@ -92,7 +97,7 @@ def group_by_window_and_partition(data, window_minutes=2):
     print(f"Grouping {len(data)} entries into {window_minutes}-minute windows with partitioning")
     
     for item in data:
-        timestamp, dt = convert_datetime_to_timestamp(item['start_time'])
+        timestamp, dt = convert_datetime_to_timestamp(item['start_time'], date_format=date_format)
         if timestamp > 0 and dt:  # Skip invalid timestamps
             # Create partition keys
             year = dt.year
@@ -172,7 +177,7 @@ def create_mediatree_data_for_partition(windows_data):
     
     return result
 
-def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree_output", encoding='utf-8'):
+def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree_output", encoding='utf-8', date_format="%d/%m/%Y %H:%M:%S"):
     """
     Process all CSV files in a folder to mediatree format
     with partitioning by year/month/day/channel and output as Parquet
@@ -209,7 +214,7 @@ def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree
     print(f"\nTotal rows collected from all files: {len(all_data)}")
     
     # Group data by 2-minute windows with partitioning
-    windows_by_partition = group_by_window_and_partition(all_data)
+    windows_by_partition = group_by_window_and_partition(all_data, date_format=date_format)
     
     # Create output directory if it doesn't exist
     if not os.path.exists(output_dir):
@@ -258,17 +263,20 @@ def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree
 if __name__ == "__main__":
     folder_path_2024 = f"csa-belge/2024"
     encoding_2024 = f"cp1252"
-    folder_path_2025 = f"csa-belge/2025"
+    folder_path_2025 = f"csa-belge/2025/T2"
     encoding_2025 = f"utf-8"
+    date_format = "%m/%d/%Y %H:%M:%S"
+    date_format_2025_T2 = "%d/%m/%Y %H:%M" # no seconds sometimes, and reverse month day
 
     bucket = "mediatree"
     output_dir = "mediatree_output"
     s3_root_folder = "country=belgium"
 
     print(f"Using timezone: {timezone}")
+    print(f"Using date_format_2025_T2: {date_format_2025_T2}")
     print(f"Using bucket: {bucket}")
     print(f"Using s3_root_folder: {s3_root_folder}")
     # process_csv_folder_to_partitioned_parquet(folder_path_2024, output_dir)
-    process_csv_folder_to_partitioned_parquet(folder_path_2025, output_dir,encoding=encoding_2025)
+    # process_csv_folder_to_partitioned_parquet(folder_path_2025, output_dir,encoding=encoding_2024, date_format=date_format_2025_T2)
     s3_client = get_s3_client()
     upload_folder_to_s3(output_dir,bucket, s3_root_folder, s3_client=s3_client)

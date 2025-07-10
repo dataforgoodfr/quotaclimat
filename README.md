@@ -491,7 +491,8 @@ If we change the DBT code, we have to relaunch this command to have a refreshed 
 ### SRT to Mediatree Format
 Some Speech to Text data come from other sources than Mediatree, so we have to transform those source into the mediatree format to process them.
 
-#### Run
+#### Run germany
+Only for german data using parquet
 ```
 docker compose up srt
 ```
@@ -502,6 +503,17 @@ docker compose exec testconsole bash
 /app/ cd i8n/
 /app/i8n# poetry run python3 srt-to-mediatree-format-parquet.py
 ```
+#### Run belgium
+Only for belgian data using .csv
+
+Warning: this job is not automated as the process depending on getting the data is manual (emails), so we have to modify [the script here](https://github.com/dataforgoodfr/quotaclimat/blob/01e5ede5152d4113c68bcf994f13c7b2baa30dd6/i8n/srt-to-mediatree-format.py#L259-L262).
+```
+docker compose up testconsole -d
+docker compose exec testconsole bash
+/app/ cd i8n/
+/app/i8n# poetry run python3 srt-to-mediatree-format.py
+```
+
 ### Fix linting
 Before committing, make sure that the line of codes you wrote are conform to PEP8 standard by running:
 ```bash

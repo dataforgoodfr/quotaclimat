@@ -60883,7 +60883,7 @@ THEME_KEYWORDS = {
             "language": "french"
         },
         {
-            "keyword": "amélioration des pratiques d’élevage",
+            "keyword": "amélioration des pratiques d'élevage",
             "category": "Changements de pratiques et de réglementations",
             "high_risk_of_false_positive": False,
             "crisis_climate": False,
@@ -60897,7 +60897,7 @@ THEME_KEYWORDS = {
             "language": "french"
         },
         {
-            "keyword": "amélioration des pratiques d’élevages",
+            "keyword": "amélioration des pratiques d'élevages",
             "category": "Changements de pratiques et de réglementations",
             "high_risk_of_false_positive": False,
             "crisis_climate": False,
@@ -73285,8 +73285,8 @@ THEME_KEYWORDS = {
             "language": "french"
         },
         {
-            "keyword": "amélioration des pratiques d’élevage",
-            "category": "Air",
+            "keyword": "amélioration des pratiques d'élevage",
+            "category": "Sols",
             "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
@@ -73300,7 +73300,7 @@ THEME_KEYWORDS = {
         },
         {
             "keyword": "amélioration des pratiques d’élevage",
-            "category": "Sols",
+            "category": "Air",
             "high_risk_of_false_positive": False,
             "crisis_climate": False,
             "crisis_biodiversity": False,
@@ -76143,7 +76143,7 @@ THEME_KEYWORDS = {
             "language": "french"
         },
         {
-            "keyword": "amélioration des pratiques d’élevage",
+            "keyword": "amélioration des pratiques d'élevage",
             "category": "Agriculture",
             "high_risk_of_false_positive": False,
             "crisis_climate": True,

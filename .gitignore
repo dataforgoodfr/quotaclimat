@@ -153,3 +153,9 @@ notebooks/nlp/df_X_tfidf.pkl
 pgdata
 mb-data
 .idea
+
+# Advertising content
+advertising/secrets/*
+advertising/data/*
+advertising/checkpoints/*
+advertising/best_model/*

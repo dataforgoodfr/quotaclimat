@@ -1,9 +1,11 @@
 # to generate keywords.py file
-import pandas as pd
 import json
 import logging
-from quotaclimat.data_processing.mediatree.i8n.country import *
+
+import pandas as pd
+
 from postgres.schemas.models import Keyword_Macro_Category
+from quotaclimat.data_processing.mediatree.i8n.country import *
 
 # Need to import these files - slack #metabase-keywords
 i8n_dictionary = "document-experts/Dictionnaire_Multilingue.xlsx"
@@ -127,17 +129,29 @@ for excel_file_path in excels_files:
             if (translated_keyword == None):
                 continue
 
-            if (translated_keyword.language != french.lower()):
-                high_risk_of_false_positive = False
+            if translated_keyword.language.lower() not in [french.lower(), portuguese.lower()]:
                 crisis_climate = False
                 crisis_biodiversity = False
                 crisis_resource = False
-                high_risk_of_false_positive = False
+                high_risk_of_false_positive = row['HRFP'] == 1.0
                 solution = False
                 consequence = False
                 cause = False
                 general_concepts = False
                 statement = False
+
+            elif (translated_keyword.language == portuguese.lower()):
+                # special HRFP for Portuguese
+                crisis_climate = False
+                crisis_biodiversity = False
+                crisis_resource = False
+                high_risk_of_false_positive = row['HRFP_Portuguese'] == 1.0
+                solution = False
+                consequence = False
+                cause = False
+                general_concepts = False
+                statement = False
+
             else:
                 # metadata only for French keywords
                 crisis_climate = row['crise'] == "Climat"

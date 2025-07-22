@@ -35,6 +35,26 @@ class TranslatedKeyword:
         self.language = language
         self.keyword = keyword
 
+def process_i8n_dict(df_i8n : pd.DataFrame):
+
+    # split the dataframe into portuguese and non-portuguese
+    df_portuguese = df_i8n[['Portuguese', 'HRFP_Portuguese']].copy()
+    df_non_portuguese = df_i8n[[col for col in df_i8n.columns if col not in ['Portuguese', 'HRFP_Portuguese']]].copy().dropna()
+
+    # apply the HRFP_Portuguese and HRFP to the respective dataframes
+    df_portuguese['Category_legacy'] = df_portuguese['HRFP_Portuguese'].apply(
+        lambda x: 'changement_climatique_constat' if x == 0 else 'changement_climatique_constat_indirectes'
+    )
+    df_non_portuguese['Category_legacy'] = df_non_portuguese['HRFP'].apply(
+        lambda x: 'changement_climatique_constat' if x == 0 else 'changement_climatique_constat_indirectes'
+    )
+    df = pd.concat([df_non_portuguese, df_portuguese]).reset_index(drop=True)
+    df['Secteur'] = pd.NA
+    df['crise'] = pd.NA
+    df['category'] = ''
+    
+    return df
+
 
 def set_up_macro_category():
     logging.info(f"Reading macro categories from {macro_category_file}...")
@@ -94,10 +114,7 @@ for excel_file_path in excels_files:
         df['Category_legacy'] = df['Category_legacy'].fillna('')
     else:
         df = pd.read_excel(i8n_dictionary)
-        df['Secteur'] = pd.NA
-        df['crise'] = pd.NA
-        df['Category_legacy'] = 'changement_climatique_constat'
-        df['category'] = ''
+        df = process_i8n_dict(df)
     # Iterate over the rows of the DataFrame
     for index, row in df.iterrows():
         print(f"Processing row {index + 1} - {row}")

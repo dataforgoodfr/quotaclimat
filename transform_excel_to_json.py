@@ -1,9 +1,11 @@
 # to generate keywords.py file
-import pandas as pd
 import json
 import logging
-from quotaclimat.data_processing.mediatree.i8n.country import *
+
+import pandas as pd
+
 from postgres.schemas.models import Keyword_Macro_Category
+from quotaclimat.data_processing.mediatree.i8n.country import *
 
 # Need to import these files - slack #metabase-keywords
 i8n_dictionary = "document-experts/Dictionnaire_Multilingue.xlsx"
@@ -32,6 +34,26 @@ class TranslatedKeyword:
     def __init__(self, language: str, keyword: str):
         self.language = language
         self.keyword = keyword
+
+def process_i8n_dict(df_i8n : pd.DataFrame):
+
+    # split the dataframe into portuguese and non-portuguese
+    df_portuguese = df_i8n[['Portuguese', 'HRFP_Portuguese']].copy()
+    df_non_portuguese = df_i8n[[col for col in df_i8n.columns if col not in ['Portuguese', 'HRFP_Portuguese']]].copy().dropna()
+
+    # apply the HRFP_Portuguese and HRFP to the respective dataframes
+    df_portuguese['Category_legacy'] = df_portuguese['HRFP_Portuguese'].apply(
+        lambda x: 'changement_climatique_constat' if x == 0 else 'changement_climatique_constat_indirectes'
+    )
+    df_non_portuguese['Category_legacy'] = df_non_portuguese['HRFP'].apply(
+        lambda x: 'changement_climatique_constat' if x == 0 else 'changement_climatique_constat_indirectes'
+    )
+    df = pd.concat([df_non_portuguese, df_portuguese]).reset_index(drop=True)
+    df['Secteur'] = pd.NA
+    df['crise'] = pd.NA
+    df['category'] = ''
+    
+    return df
 
 
 def set_up_macro_category():
@@ -92,10 +114,7 @@ for excel_file_path in excels_files:
         df['Category_legacy'] = df['Category_legacy'].fillna('')
     else:
         df = pd.read_excel(i8n_dictionary)
-        df['Secteur'] = pd.NA
-        df['crise'] = pd.NA
-        df['Category_legacy'] = 'changement_climatique_constat'
-        df['category'] = ''
+        df = process_i8n_dict(df)
     # Iterate over the rows of the DataFrame
     for index, row in df.iterrows():
         print(f"Processing row {index + 1} - {row}")
@@ -127,17 +146,29 @@ for excel_file_path in excels_files:
             if (translated_keyword == None):
                 continue
 
-            if (translated_keyword.language != french.lower()):
-                high_risk_of_false_positive = False
+            if translated_keyword.language.lower() not in [french.lower(), portuguese.lower()]:
                 crisis_climate = False
                 crisis_biodiversity = False
                 crisis_resource = False
-                high_risk_of_false_positive = False
+                high_risk_of_false_positive = row['HRFP'] == 1.0
                 solution = False
                 consequence = False
                 cause = False
                 general_concepts = False
                 statement = False
+
+            elif (translated_keyword.language == portuguese.lower()):
+                # special HRFP for Portuguese
+                crisis_climate = False
+                crisis_biodiversity = False
+                crisis_resource = False
+                high_risk_of_false_positive = row['HRFP_Portuguese'] == 1.0
+                solution = False
+                consequence = False
+                cause = False
+                general_concepts = False
+                statement = False
+
             else:
                 # metadata only for French keywords
                 crisis_climate = row['crise'] == "Climat"

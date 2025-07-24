@@ -41,13 +41,18 @@ def process_i8n_dict(df_i8n : pd.DataFrame):
     df_portuguese = df_i8n[['Portuguese', 'HRFP_Portuguese']].copy()
     df_non_portuguese = df_i8n[[col for col in df_i8n.columns if col not in ['Portuguese', 'HRFP_Portuguese']]].copy().dropna()
 
-    # apply the HRFP_Portuguese and HRFP to the respective dataframes
-    df_portuguese['Category_legacy'] = df_portuguese['HRFP_Portuguese'].apply(
-        lambda x: 'changement_climatique_constat' if x == 0 else 'changement_climatique_constat_indirectes'
-    )
-    df_non_portuguese['Category_legacy'] = df_non_portuguese['HRFP'].apply(
-        lambda x: 'changement_climatique_constat' if x == 0 else 'changement_climatique_constat_indirectes'
-    )
+    # # apply the HRFP_Portuguese and HRFP to the respective dataframes
+    # df_portuguese['Category_legacy'] = df_portuguese['HRFP_Portuguese'].apply(
+    #     lambda x: 'changement_climatique_constat' if x == 0 else 'changement_climatique_constat_indirectes'
+    # )
+    # df_non_portuguese['Category_legacy'] = df_non_portuguese['HRFP'].apply(
+    #     lambda x: 'changement_climatique_constat' if x == 0 else 'changement_climatique_constat_indirectes'
+    # )
+
+    # TODO: remove this once we want to implement HRFP for i8n
+    df_portuguese['Category_legacy'] = 'changement_climatique_constat'
+    df_non_portuguese['Category_legacy'] = 'changement_climatique_constat'
+
     df = pd.concat([df_non_portuguese, df_portuguese]).reset_index(drop=True)
     df['Secteur'] = pd.NA
     df['crise'] = pd.NA

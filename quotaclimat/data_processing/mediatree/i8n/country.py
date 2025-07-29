@@ -149,7 +149,7 @@ SPAIN_TZ = "Europe/Madrid"
 SPAIN_LANGUAGE = "spanish"
 SPAIN = CountryMediaTree(code=SPAIN_CODE,channels=SPAIN_CHANNELS, timezone=SPAIN_TZ, language=SPAIN_LANGUAGE, programs=channels_programs_spain, titles=channel_titles_spain)
 
-POLAND_CODE: SpainCode="esp"
+POLAND_CODE: PolandCode="pol"
 POLAND_CHANNELS=[
     "tvp",
     "polsat",
@@ -179,7 +179,7 @@ ALL_COUNTRIES = [GERMANY, FRANCE, BRAZIL, BELGIUM, SPAIN, POLAND]
 def get_all_countries(no_belgium = False):
     logging.info(f"Getting all countries : {ALL_COUNTRIES}")
     if no_belgium:
-        logging.info(f"Removing belgium from all countries")
+        logging.info("Removing belgium from all countries")
         return [country for country in ALL_COUNTRIES if country.code != BELGIUM_CODE]
     else:
         return ALL_COUNTRIES

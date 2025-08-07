@@ -32,7 +32,15 @@ BelgiumCode = Literal["bel"]
 SpainCode = Literal["esp"]
 PolandCode = Literal["pol"]
 AllCode = Literal["all"]
-CountryCode = Union[FranceCode, GermanyCode, BelgiumCode, BrazilCode, AllCode]
+CountryCode = Union[
+    FranceCode,
+    GermanyCode,
+    BelgiumCode,
+    BrazilCode,
+    SpainCode,
+    PolandCode,
+    AllCode,
+]
 
 def get_country_name_from_code(code: CountryCode) -> str:
     match code:
@@ -151,12 +159,12 @@ SPAIN = CountryMediaTree(code=SPAIN_CODE,channels=SPAIN_CHANNELS, timezone=SPAIN
 
 POLAND_CODE: PolandCode="pol"
 POLAND_CHANNELS=[
-    "tvp",
-    "polsat",
-    "tvn",
-    "polskieradio",
-    "tofkm",
-    "radiozet",
+    # "tvp",
+    # "polsat",
+    # "tvn",
+    "polskie-radio",
+    # "tofkm",
+    "radio-zet",
     "eska",
 ]
 POLAND_TZ = "Europe/Warsaw"
@@ -168,13 +176,20 @@ COUNTRIES = {
     GERMANY.code: GERMANY,
     BRAZIL.code: BRAZIL,
     BELGIUM.code: BELGIUM,
-    SPAIN.code: SPAIN,
+    # SPAIN.code: SPAIN,
     POLAND.code: POLAND,
 }
 
 ALL_COUNTRIES_CODE : AllCode = "all"
 # belgium not included in mediatree
-ALL_COUNTRIES = [GERMANY, FRANCE, BRAZIL, BELGIUM, SPAIN, POLAND]
+ALL_COUNTRIES = [
+    GERMANY,
+    FRANCE,
+    BRAZIL,
+    BELGIUM,
+    # SPAIN,
+    POLAND,
+]
 
 def get_all_countries(no_belgium = False):
     logging.info(f"Getting all countries : {ALL_COUNTRIES}")
@@ -186,7 +201,7 @@ def get_all_countries(no_belgium = False):
 
 def validate_country_code(code: str) -> CountryCode:
     """Validate that a string is a valid country code."""
-    if code in (FRANCE_CODE, GERMANY_CODE, BRAZIL_CODE, BELGIUM_CODE, ALL_COUNTRIES_CODE):
+    if code in (FRANCE_CODE, GERMANY_CODE, BRAZIL_CODE, BELGIUM_CODE, POLAND_CODE, SPAIN_CODE, ALL_COUNTRIES_CODE):
         return code
     raise ValueError(f"Invalid country code: {code}")
 

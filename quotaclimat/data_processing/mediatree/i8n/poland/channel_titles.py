@@ -2,8 +2,8 @@ channel_titles_poland = {
     "tvp": "TVP",
     "polsat": "Polsat",
     "tvn": "TVN",
-    "polskieradio": "Polskie Radio",
+    "polskie-radio": "Polskie Radio",
     "tofkm": "TOFKM",
-    "radiozet": "Radio Zet",
+    "radio-zet": "Radio Zet",
     "eska": "Eska",
 }

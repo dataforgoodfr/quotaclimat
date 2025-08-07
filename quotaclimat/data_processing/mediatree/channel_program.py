@@ -4,7 +4,6 @@ import os
 from datetime import datetime
 import json
 from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime, EPOCH__5MIN_MARGIN, EPOCH__1MIN_MARGIN, get_timestamp_from_yyyymmdd,format_hour_minute
-from quotaclimat.data_processing.mediatree.channel_program_data import channels_programs
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 from quotaclimat.data_processing.mediatree.i8n.country import *
 

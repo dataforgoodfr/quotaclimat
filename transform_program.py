@@ -4,11 +4,20 @@ import json
 from datetime import datetime
 import sys
 import logging
-from quotaclimat.data_processing.mediatree.channel_program_data import channels_programs
 from quotaclimat.data_processing.mediatree.channel_program import generate_program_id
+from quotaclimat.data_processing.mediatree.i8n.france.channel_program import channels_programs_france
 from quotaclimat.data_processing.mediatree.i8n.germany.channel_program  import channels_programs_germany
 from quotaclimat.data_processing.mediatree.i8n.brazil.channel_program import channels_programs_brazil
-from quotaclimat.data_processing.mediatree.i8n.country import *
+from quotaclimat.data_processing.mediatree.i8n.poland.channel_program import channels_programs_poland
+
+from quotaclimat.data_processing.mediatree.i8n.country import (
+    FRANCE,
+    BRAZIL,
+    GERMANY,
+    POLAND,
+    # SPAIN,
+)
+
 logging.basicConfig(level = logging.INFO)
 
 # Function to calculate duration in minutes between two time strings
@@ -245,11 +254,42 @@ channel_mapping = {
         "infocontinue": True,
         "radio": False,
         "country": BRAZIL.name
-    }
+    },
+
+    # Poland
+
+    # "tvp": "TVP",
+    # "polsat": "Polsat",
+    # "tvn": "TVN",
+    # "polskie-radio": "Polskie Radio",
+    # "tofkm": "TOFKM",
+    # "radio-zet": "Radio Zet",
+    # "eska": "Eska",
+    "polskie-radio": {
+        "title": "Polskie Radio",
+        "public": True,
+        "infocontinue": False,
+        "radio": True,
+        "country": POLAND.name
+    },
+    "radio-zet": {
+        "title": "Radio Zet",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": POLAND.name
+    },
+    "eska": {
+        "title": "Eska",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": POLAND.name
+    },
 }
 programs = []
 
-channels_programs = channels_programs + channels_programs_brazil + channels_programs_germany
+channels_programs = channels_programs_france + channels_programs_brazil + channels_programs_germany + channels_programs_poland # + channels_programs_spain
 for program_data in channels_programs:
     
     start_time = program_data['start']

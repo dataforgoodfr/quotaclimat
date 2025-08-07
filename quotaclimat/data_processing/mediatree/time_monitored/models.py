@@ -16,6 +16,9 @@ import os
 import json
 from json import JSONDecodeError
 
+
+import traceback
+
 # The duration in minutes of media monitoring based on number of chunks of 2 minutes saved in S3
 class Time_Monitored(Base):
     __tablename__ = "time_monitored"
@@ -75,5 +78,6 @@ def save_time_monitored(number_of_rows : int, day: datetime, channel :str, count
         logging.info("Saved time monitored")
     except SQLAlchemyError as e:
         logging.error(f"Error saving time monitored data: {e}")
+        logging.error(traceback.format_exc())
     finally:
         session.close()

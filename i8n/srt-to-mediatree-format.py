@@ -49,6 +49,9 @@ def parse_csv_without_headers(file_path, encoding='utf-8'):
                     if "Ã©" in plaintext:
                         raise ValueError(f"Invalid character in plaintext at row {row_count}: {plaintext}")
 
+                    if channel_name == 'MONITORING':
+                        print(f"Wrong name inside source data: MONITORING - replacing with CANALZ")
+                        channel_name = "CANALZ"
                     data.append({
                         'channel_name': channel_name,
                         'program_name': program_name,
@@ -264,8 +267,10 @@ if __name__ == "__main__":
     folder_path_2024 = f"csa-belge/2024"
     encoding_2024 = f"cp1252"
     folder_path_2025 = f"csa-belge/2025/T2"
+    folder_path_2025_T3 = f"csa-belge/2025/T3"
     encoding_2025 = f"utf-8"
     date_format = "%m/%d/%Y %H:%M:%S"
+    date_format_2025_T3 = "%d/%m/%Y %H:%M:%S"
     date_format_2025_T2 = "%d/%m/%Y %H:%M" # no seconds sometimes, and reverse month day
 
     bucket = "mediatree"
@@ -273,10 +278,11 @@ if __name__ == "__main__":
     s3_root_folder = "country=belgium"
 
     print(f"Using timezone: {timezone}")
-    print(f"Using date_format_2025_T2: {date_format_2025_T2}")
+    print(f"Using date format: {date_format_2025_T3}")
     print(f"Using bucket: {bucket}")
     print(f"Using s3_root_folder: {s3_root_folder}")
     # process_csv_folder_to_partitioned_parquet(folder_path_2024, output_dir)
     # process_csv_folder_to_partitioned_parquet(folder_path_2025, output_dir,encoding=encoding_2024, date_format=date_format_2025_T2)
+    # process_csv_folder_to_partitioned_parquet(folder_path_2025_T3, output_dir,encoding=encoding_2024, date_format=date_format_2025_T3)
     s3_client = get_s3_client()
     upload_folder_to_s3(output_dir,bucket, s3_root_folder, s3_client=s3_client)

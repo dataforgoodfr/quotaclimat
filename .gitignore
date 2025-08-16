@@ -159,3 +159,4 @@ advertising/secrets/*
 advertising/data/*
 advertising/checkpoints/*
 advertising/best_model/*
+!advertising/data/.gitkeep

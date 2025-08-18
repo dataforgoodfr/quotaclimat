@@ -35,7 +35,7 @@ pytest-asyncio = "^0.23.5"
 swifter = "^1.4.0"
 tenacity = "^8.2.3"
 sentry-sdk = "^2.13.0"
-modin = {extras = ["ray"], version = "^0.32.0"}
+modin = {extras = ["ray"], version = "^0.35.0"}
 openpyxl = "^3.1.5"
 requests = "^2.32.3"
 thefuzz = "^0.22.1"

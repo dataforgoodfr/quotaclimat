@@ -215,7 +215,7 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, co
 
 def get_data_from_api(programs_for_this_day: pd.DataFrame, channel: str, country: str, token: str, type_sub: str):
     """
-    Performs api request for all the programs for a given channel/country combo. 
+    Performs api request for all the programs for a given channel/country/date combo. 
     """
     df_res = pd.DataFrame()
     for program in programs_for_this_day.itertuples(index=False):
@@ -249,6 +249,10 @@ def get_program_data_for_day_api(
         token: str, 
         type_sub: str
     ):
+    """
+    Obtains programs for the specified date and queries the API
+    for the data of the programs for a specific channel/country/date combo.
+    """
     programs_for_this_day = get_programs_for_this_day(day.tz_localize(timezone), channel, df_programs, timezone=timezone)
     if programs_for_this_day is None:
         logging.info(f"No program for {day} and {channel}, skipping")
@@ -297,6 +301,8 @@ async def get_and_save_api_data(exit_event):
                     for channel in channels:
                         
                         # if object already exists, skip
+                        # If the API_DATA_OVERWRITE environment variable is set to true, then overwrite data in s3 target.
+                        # Theoretically mediatree API should be idempotent, but often it is not stable.
                         if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client, country=country) or bool(os.getenv("API_DATA_OVERWRITE", False)):
                             try:
                                 df_res = get_program_data_for_day_api(

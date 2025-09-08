@@ -3,6 +3,7 @@ import asyncio
 from time import sleep
 import sys
 import os
+
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import *
@@ -209,6 +210,62 @@ def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, co
         logging.fatal("get_and_save_api_data (%s) %s" % (type(err).__name__, err))
         sys.exit(1)
 
+
+def get_data_from_api(programs_for_this_day: pd.DataFrame, channel: str, country: str, token: str, type_sub: str):
+    """
+    Performs api request for all the programs for a given channel/country/date combo. 
+    """
+    df_res = pd.DataFrame()
+    for program in programs_for_this_day.itertuples(index=False):
+        try:
+            start_epoch = program.start
+            end_epoch = program.end
+            channel_program = str(program.program_name)
+            channel_program_type = str(program.program_type)
+            program_metadata_id = program.id
+            logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
+            df = get_df_api(token, type_sub, start_epoch, channel, end_epoch, \
+                            channel_program, channel_program_type,program_metadata_id=program_metadata_id, country=country)
+
+            if (df is not None):
+                df_res = pd.concat([df_res, df ], ignore_index=True)
+            else:
+                logging.info(f"Nothing to extract for {channel} {channel_program} - {start_epoch} - {end_epoch}")
+        except Exception as e:
+            logging.error(f"Error retreiving data from API for channel: {channel}, channel_program: {channel_program}, start: {start_epoch},  end: {end_epoch}")
+            logging.error(e)
+            raise e
+    return df_res
+
+
+def get_program_data_for_day_api(
+        df_programs: pd.DataFrame, 
+        channel: str, 
+        country: str, 
+        day: datetime, 
+        timezone: str, 
+        token: str, 
+        type_sub: str
+    ):
+    """
+    Obtains programs for the specified date and queries the API
+    for the data of the programs for a specific channel/country/date combo.
+    """
+    programs_for_this_day = get_programs_for_this_day(day.tz_localize(timezone), channel, df_programs, timezone=timezone)
+    if programs_for_this_day is None:
+        logging.info(f"No program for {day} and {channel}, skipping")
+        return
+
+    df_res = get_data_from_api(
+        programs_for_this_day=programs_for_this_day,
+        channel=channel,
+        country=country,
+        token=token,
+        type_sub=type_sub,
+    )
+    return df_res
+
+
 async def get_and_save_api_data(exit_event):
     with sentry_sdk.start_transaction(op="task", name="get_and_save_api_data"):
         try:
@@ -240,31 +297,24 @@ async def get_and_save_api_data(exit_event):
                     token = refresh_token(token, day)
                     
                     for channel in channels:
-                        df_res = pd.DataFrame()
                         
                         # if object already exists, skip
-                        if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client, country=country):
+                        # If the API_DATA_OVERWRITE environment variable is set to true, then overwrite data in s3 target.
+                        # Theoretically mediatree API should be idempotent, but often it is not stable.
+                        if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client, country=country) or bool(os.getenv("API_DATA_OVERWRITE", False)):
                             try:
-                                programs_for_this_day = get_programs_for_this_day(day.tz_localize(timezone), channel, df_programs, timezone=timezone)
-                                if programs_for_this_day is None:
-                                    logging.info(f"No program for {day} and {channel}, skipping")
+                                df_res = get_program_data_for_day_api(
+                                    df_programs=df_programs,
+                                    channel=channel,
+                                    country=country,
+                                    day=day,
+                                    timezone=timezone,
+                                    token=token,
+                                    type_sub=type_sub,
+                                )
+
+                                if df_res is None:
                                     continue
-
-                                for program in programs_for_this_day.itertuples(index=False):
-                                    start_epoch = program.start
-                                    end_epoch = program.end
-                                    channel_program = str(program.program_name)
-                                    channel_program_type = str(program.program_type)
-                                    program_metadata_id = program.id
-                                    logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
-                                    df = get_df_api(token, type_sub, start_epoch, channel, end_epoch, \
-                                                    channel_program, channel_program_type,program_metadata_id=program_metadata_id, country=country)
-
-                                    if(df is not None):
-                                        df_res = pd.concat([df_res, df ], ignore_index=True)
-                                    else:
-                                        logging.info(f"Nothing to extract for {channel} {channel_program} - {start_epoch} - {end_epoch}")
-
                                 # save to S3
                                 save_to_s3(df_res, channel, day, s3_client=s3_client, country=country)
                                 

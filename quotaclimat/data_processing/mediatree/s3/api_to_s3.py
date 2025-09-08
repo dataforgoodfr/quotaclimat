@@ -3,8 +3,6 @@ import asyncio
 from time import sleep
 import sys
 import os
-from datetime import datetime
-from s3fs import S3FileSystem
 
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger

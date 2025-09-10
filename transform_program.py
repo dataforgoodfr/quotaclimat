@@ -9,13 +9,14 @@ from quotaclimat.data_processing.mediatree.i8n.france.channel_program import cha
 from quotaclimat.data_processing.mediatree.i8n.germany.channel_program  import channels_programs_germany
 from quotaclimat.data_processing.mediatree.i8n.brazil.channel_program import channels_programs_brazil
 from quotaclimat.data_processing.mediatree.i8n.poland.channel_program import channels_programs_poland
+from quotaclimat.data_processing.mediatree.i8n.spain.channel_program import channels_programs_spain
 
 from quotaclimat.data_processing.mediatree.i8n.country import (
     FRANCE,
     BRAZIL,
     GERMANY,
     POLAND,
-    # SPAIN,
+    SPAIN,
 )
 
 logging.basicConfig(level = logging.INFO)
@@ -257,14 +258,6 @@ channel_mapping = {
     },
 
     # Poland
-
-    # "tvp": "TVP",
-    # "polsat": "Polsat",
-    # "tvn": "TVN",
-    # "polskie-radio": "Polskie Radio",
-    # "tofkm": "TOFKM",
-    # "radio-zet": "Radio Zet",
-    # "eska": "Eska",
     "polskie-radio": {
         "title": "Polskie Radio",
         "public": True,
@@ -286,10 +279,67 @@ channel_mapping = {
         "radio": True,
         "country": POLAND.name
     },
+    "polsat": {
+        "title": "Polsat",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": POLAND.name
+    },
+    "tvn": {
+        "title": "TVN",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": POLAND.name
+    },
+    "tvp": {
+        "title": "TVP",
+        "public": True,
+        "infocontinue": False,
+        "radio": False,
+        "country": POLAND.name
+    },
+    # Spain
+    "antenna-3": {
+        "title": "Antenna 3",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": SPAIN.name
+    },
+    "rtve-24h": {
+        "title": "RTVE 24h",
+        "public": False,
+        "infocontinue": True,
+        "radio": False,
+        "country": SPAIN.name
+    },
+    "lasexta-news": {
+        "title": "LaSexta News",
+        "public": False,
+        "infocontinue": True,
+        "radio": False,
+        "country": SPAIN.name
+    },
+    "telecinco-news": {
+        "title": "Telecinco News",
+        "public": False,
+        "infocontinue": True,
+        "radio": False,
+        "country": SPAIN.name
+    },
+    "cuatro-news": {
+        "title": "Cuatro News",
+        "public": False,
+        "infocontinue": True,
+        "radio": False,
+        "country": SPAIN.name
+    },
 }
 programs = []
 
-channels_programs = channels_programs_france + channels_programs_brazil + channels_programs_germany + channels_programs_poland # + channels_programs_spain
+channels_programs = channels_programs_france + channels_programs_brazil + channels_programs_germany + channels_programs_poland + channels_programs_spain
 for program_data in channels_programs:
     
     start_time = program_data['start']

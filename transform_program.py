@@ -315,6 +315,14 @@ channel_mapping = {
         "radio": False,
         "country": SPAIN.name
     },
+    # Not available in mediatree for now.
+    # "rtve-la-1": {
+    #     "title": "RTVE La 1",
+    #     "public": False,
+    #     "infocontinue": True,
+    #     "radio": False,
+    #     "country": SPAIN.name
+    # },
     "lasexta-news": {
         "title": "LaSexta News",
         "public": False,

@@ -133,12 +133,13 @@ GERMANY_PROGRAMS: list[dict[str, str]] = channels_programs_germany
 GERMANY = CountryMediaTree(code=GERMANY_CODE,channels=GERMANY_CHANNELS, timezone=GERMANY_TZ, language=GERMANY_LANGUAGE, programs=channels_programs_germany, titles=channel_titles_germany)
 
 BRAZIL_CODE: BrazilCode="bra"
-BRAZIL_CHANNELS=["tvglobo"
-    ,"tvrecord"
-    ,"sbt"
-    ,"redebandeirantes"
-    ,"jovempan"
-    ,"cnnbrasil"
+BRAZIL_CHANNELS=[
+    "tvglobo",
+    "tvrecord",
+    "sbt",
+    "redebandeirantes",
+    "jovempan",
+    "cnnbrasil",
 ]
 BRAZIL_TZ = "America/Sao_Paulo"
 BRAZIL_LANGUAGE = "portuguese"
@@ -146,12 +147,12 @@ BRAZIL = CountryMediaTree(code=BRAZIL_CODE,channels=BRAZIL_CHANNELS, timezone=BR
 
 SPAIN_CODE: SpainCode="esp"
 SPAIN_CHANNELS=[
-    "antenna3",
-    "rtvela1",
-    "rtve24h",
-    "lasextanews",
-    "telecinconews",
-    "cuatronews",
+    "antenna-3",
+    "rtve-la-1",
+    "rtve-24h",
+    "lasexta-news",
+    "telecinco-news",
+    "cuatro-news",
 ]
 SPAIN_TZ = "Europe/Madrid"
 SPAIN_LANGUAGE = "spanish"
@@ -159,11 +160,11 @@ SPAIN = CountryMediaTree(code=SPAIN_CODE,channels=SPAIN_CHANNELS, timezone=SPAIN
 
 POLAND_CODE: PolandCode="pol"
 POLAND_CHANNELS=[
-    # "tvp",
-    # "polsat",
-    # "tvn",
+    "tvp",
+    "polsat",
+    "tvn",
     "polskie-radio",
-    # "tofkm",
+    "tofkm",
     "radio-zet",
     "eska",
 ]
@@ -176,7 +177,7 @@ COUNTRIES = {
     GERMANY.code: GERMANY,
     BRAZIL.code: BRAZIL,
     BELGIUM.code: BELGIUM,
-    # SPAIN.code: SPAIN,
+    SPAIN.code: SPAIN,
     POLAND.code: POLAND,
 }
 
@@ -187,7 +188,7 @@ ALL_COUNTRIES = [
     FRANCE,
     BRAZIL,
     BELGIUM,
-    # SPAIN,
+    SPAIN,
     POLAND,
 ]
 

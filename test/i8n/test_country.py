@@ -37,3 +37,21 @@ def test_get_channel_title_for_name():
 
 def test_get_channel_title_for_name_germany():
       assert get_channel_title_for_name("rtl-television", GERMANY) == "RTL"
+
+def test_get_channels_poland():
+      os.environ['ENV'] = 'prod'
+      channels = get_channels(country_code=POLAND.code)
+      assert channels == POLAND.channels
+      os.environ['ENV'] = 'docker'
+
+def test_get_channel_title_for_name_poland():
+      assert get_channel_title_for_name("tvp", POLAND) == "TVP"
+
+def test_get_channels_spain():
+      os.environ['ENV'] = 'prod'
+      channels = get_channels(country_code=SPAIN.code)
+      assert channels == SPAIN.channels
+      os.environ['ENV'] = 'docker'
+
+def test_get_channel_title_for_name_spain():
+      assert get_channel_title_for_name("antenna-3", SPAIN) == "Antenna 3"

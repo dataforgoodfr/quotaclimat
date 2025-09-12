@@ -147,12 +147,12 @@ BRAZIL = CountryMediaTree(code=BRAZIL_CODE,channels=BRAZIL_CHANNELS, timezone=BR
 
 SPAIN_CODE: SpainCode="esp"
 SPAIN_CHANNELS=[
-    "antenna3",
-    "rtvela1",
-    "rtve24h",
-    "lasextanews",
-    "telecinconews",
-    "cuatronews",
+    "antenna-3",
+    "rtve-la-1",
+    "rtve-24h",
+    "lasexta-news",
+    "telecinco-news",
+    "cuatro-news",
 ]
 SPAIN_TZ = "Europe/Madrid"
 SPAIN_LANGUAGE = "spanish"

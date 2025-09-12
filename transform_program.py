@@ -11,6 +11,7 @@ from quotaclimat.data_processing.mediatree.i8n.brazil.channel_program import cha
 from quotaclimat.data_processing.mediatree.i8n.poland.channel_program import channels_programs_poland
 from quotaclimat.data_processing.mediatree.i8n.spain.channel_program import channels_programs_spain
 
+
 from quotaclimat.data_processing.mediatree.i8n.country import (
     FRANCE,
     BRAZIL,
@@ -168,7 +169,6 @@ channel_mapping = {
         "radio": True,
         "country": FRANCE.name
     },
-
     # 🇩🇪 Germany
     "daserste": {
         "title": "Das Erste",
@@ -212,7 +212,6 @@ channel_mapping = {
         "radio": False,
         "country": GERMANY.name
     },
-
     # 🇧🇷 Brazil
     "tvglobo": {
         "title": "TV Globo",
@@ -256,7 +255,6 @@ channel_mapping = {
         "radio": False,
         "country": BRAZIL.name
     },
-
     # Poland
     "polskie-radio": {
         "title": "Polskie Radio",
@@ -298,6 +296,13 @@ channel_mapping = {
         "public": True,
         "infocontinue": False,
         "radio": False,
+        "country": POLAND.name
+    },
+    "tofkm": {
+        "title": "TOKFM",
+        "public": False,
+        "infocontinue": True,
+        "radio": True,
         "country": POLAND.name
     },
     # Spain

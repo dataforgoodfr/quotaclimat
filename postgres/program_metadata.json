@@ -3409,10 +3409,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 30,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "bd99acec00205c281567d3ebb4e98ee4e6a67d5d6ceb8877d6420fdd895b9c1b"
     },
     {
@@ -3425,10 +3426,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 25,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "bd99acec00205c281567d3ebb4e98ee4e6a67d5d6ceb8877d6420fdd895b9c1b"
     },
     {
@@ -3441,10 +3443,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 20,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "bd99acec00205c281567d3ebb4e98ee4e6a67d5d6ceb8877d6420fdd895b9c1b"
     },
     {
@@ -7095,10 +7098,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 30,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "dd8c20096c30d4d568a692e462c9835968826fcc77c26316f47f74d11f7ff6e0"
     },
     {
@@ -7111,10 +7115,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 25,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "dd8c20096c30d4d568a692e462c9835968826fcc77c26316f47f74d11f7ff6e0"
     },
     {
@@ -7127,10 +7132,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 20,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "dd8c20096c30d4d568a692e462c9835968826fcc77c26316f47f74d11f7ff6e0"
     },
     {
@@ -10781,10 +10787,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 30,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "66147efc6b2e48c5fc14312416c3fbe5dccacdd67d34a47172cf5e1fdca63594"
     },
     {
@@ -10797,10 +10804,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 25,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "66147efc6b2e48c5fc14312416c3fbe5dccacdd67d34a47172cf5e1fdca63594"
     },
     {
@@ -10813,10 +10821,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 20,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "66147efc6b2e48c5fc14312416c3fbe5dccacdd67d34a47172cf5e1fdca63594"
     },
     {
@@ -14501,10 +14510,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 30,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "caa4ffaed3f7ed778d7cf29650ef10d3644f124ca9401b6f323c27dd592a30fd"
     },
     {
@@ -14517,10 +14527,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 25,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "caa4ffaed3f7ed778d7cf29650ef10d3644f124ca9401b6f323c27dd592a30fd"
     },
     {
@@ -14533,10 +14544,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 20,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "caa4ffaed3f7ed778d7cf29650ef10d3644f124ca9401b6f323c27dd592a30fd"
     },
     {
@@ -18170,10 +18182,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 30,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "41b8412983037bf208bb0d127b57fa98910c81a26ba8dafc3d89695211c48101"
     },
     {
@@ -18186,10 +18199,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 25,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "41b8412983037bf208bb0d127b57fa98910c81a26ba8dafc3d89695211c48101"
     },
     {
@@ -18202,10 +18216,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 20,
-        "channel_title": "tokfm",
+        "channel_title": "TOKFM",
         "public": false,
-        "infocontinue": false,
-        "radio": false,
+        "infocontinue": true,
+        "radio": true,
+        "country": "poland",
         "id": "41b8412983037bf208bb0d127b57fa98910c81a26ba8dafc3d89695211c48101"
     },
     {

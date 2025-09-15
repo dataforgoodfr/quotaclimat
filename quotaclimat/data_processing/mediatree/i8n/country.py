@@ -164,7 +164,7 @@ POLAND_CHANNELS=[
     "polsat",
     "tvn",
     "polskie-radio",
-    "tofkm",
+    "tokfm",
     "radio-zet",
     "eska",
 ]

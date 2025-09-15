@@ -298,7 +298,7 @@ channel_mapping = {
         "radio": False,
         "country": POLAND.name
     },
-    "tofkm": {
+    "tokfm": {
         "title": "TOKFM",
         "public": False,
         "infocontinue": True,

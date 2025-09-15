@@ -6,4 +6,5 @@ channel_titles_poland = {
     "tofkm": "TOFKM",
     "radio-zet": "Radio Zet",
     "eska": "Eska",
+    "tokfm": "TOKFM",
 }

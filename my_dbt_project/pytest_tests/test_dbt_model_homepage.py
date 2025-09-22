@@ -144,6 +144,14 @@ def test_causal_links(db_connection):
 
         assert row == expected, f"Unexpected values: {row}"
 
+def test_homepage_environment_by_media_by_month(db_connection):
+    """Test the materialized view using dbt and pytest."""
+    cur = db_connection.cursor()
+    cur.execute("SELECT COUNT(*) FROM public.homepage_environment_by_media_by_month;")
+    count = cur.fetchone()[0]
+    cur.close()
+    assert count == 3, "count error"
+
 def test_core_query_environmental_shares(db_connection):
     """Test the materialized view using dbt and pytest."""
 
@@ -237,7 +245,6 @@ def test_core_query_thematics_keywords_values_arte(db_connection):
         expected_trimmed = expected[:-1] 
         row_trimmed = row[:-1]
         assert row_trimmed == expected_trimmed, f"Unexpected values: {row}"
-
 
 # zinc is indirect in the dictionary table, it's a good test to check direct join between keywords and dictionary
 def test_core_query_thematics_keywords_values_arte_zinc(db_connection):

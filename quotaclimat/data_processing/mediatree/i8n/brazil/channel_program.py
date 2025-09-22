@@ -1,4 +1,8 @@
 channels_programs_brazil = [
+    {"channel_name": "tvbrasil", "start": "12:45", "end": "13:30", "weekday": "weekday", "program_name": "", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "tvbrasil", "start": "19:00", "end": "20:00", "weekday": "weekday", "program_name": "", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "tvbrasil", "start": "19:00", "end": "20:00", "weekday": "5", "program_name": "", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    
     {"channel_name": "tvglobo", "start": "04:00", "end": "09:00", "weekday": "weekday", "program_name": "", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "tvglobo", "start": "11:45", "end": "13:45", "weekday": "weekday", "program_name": "", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "tvglobo", "start": "13:25", "end": "14:45", "weekday": "weekday", "program_name": "", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},

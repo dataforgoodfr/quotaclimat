@@ -213,6 +213,13 @@ channel_mapping = {
         "country": GERMANY.name
     },
     # 🇧🇷 Brazil
+    "tvbrasil": {
+        "title": "TV Brasil",
+        "public": True,
+        "infocontinue": False,
+        "radio": False,
+        "country": BRAZIL.name
+    },
     "tvglobo": {
         "title": "TV Globo",
         "public": True,

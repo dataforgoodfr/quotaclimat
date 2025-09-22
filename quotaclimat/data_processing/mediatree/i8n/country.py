@@ -134,6 +134,7 @@ GERMANY = CountryMediaTree(code=GERMANY_CODE,channels=GERMANY_CHANNELS, timezone
 
 BRAZIL_CODE: BrazilCode="bra"
 BRAZIL_CHANNELS=[
+    "tvbrasil",
     "tvglobo",
     "tvrecord",
     "sbt",

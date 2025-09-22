@@ -86,6 +86,14 @@ def run_thematic_query_ocean():
 
     run_dbt_command(commands)
 
+@pytest.fixture(scope="module", autouse=True)
+def run_causal_links():
+    """Run dbt for the causal links model once before related tests."""
+    commands = ["run", "--models", "core_query_causal_links", "--full-refresh","--debug"]
+    logging.info(f"pytest running dbt core_query_causal_links {commands}")
+
+    run_dbt_command(commands)
+
 def test_thematic_query_ocean(db_connection):
     """Test the materialized view using dbt and pytest."""
 
@@ -110,15 +118,31 @@ def test_thematic_query_ocean(db_connection):
 
         assert row == expected, f"Unexpected values: {row}"
 
-def test_homepage_environment_by_media_by_month(db_connection):
+def test_causal_links(db_connection):
     """Test the materialized view using dbt and pytest."""
 
-    cur = db_connection.cursor()
-    cur.execute("SELECT COUNT(*) FROM public.homepage_environment_by_media_by_month;")
-    count = cur.fetchone()[0]
-    cur.close()
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT
+                "public"."core_query_causal_links"."id",
+                "public"."core_query_causal_links"."start",
+                "public"."core_query_causal_links"."channel_title",
+                "public"."core_query_causal_links"."keyword",
+                "public"."core_query_causal_links"."nb_constats_climat_neighbor",
+            FROM public.core_query_causal_links
+            LIMIT 1
+        """)
+        row = cur.fetchone()
+        print(row)
 
-    assert count == 3, "count error"
+        expected= (
+        'fc608ddbd4b9d00c7f7bf0799086035787a06368834afb4d412cf4f827d699c9',
+        datetime.datetime(2023, 4, 29, 19, 48),
+        'Arte',
+        'feux',
+        0)
+
+        assert row == expected, f"Unexpected values: {row}"
 
 def test_core_query_environmental_shares(db_connection):
     """Test the materialized view using dbt and pytest."""

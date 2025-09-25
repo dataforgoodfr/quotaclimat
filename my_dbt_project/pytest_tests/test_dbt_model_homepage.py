@@ -128,7 +128,7 @@ def test_causal_links(db_connection):
                 "public"."core_query_causal_links"."start",
                 "public"."core_query_causal_links"."channel_title",
                 "public"."core_query_causal_links"."keyword",
-                "public"."core_query_causal_links"."nb_constats_climat_neighbor",
+                "public"."core_query_causal_links"."nb_constats_climat_neighbor"
             FROM public.core_query_causal_links
             LIMIT 1
         """)
@@ -136,11 +136,12 @@ def test_causal_links(db_connection):
         print(row)
 
         expected= (
-        'fc608ddbd4b9d00c7f7bf0799086035787a06368834afb4d412cf4f827d699c9',
-        datetime.datetime(2023, 4, 29, 19, 48),
+        '980adae36b1ac6ff7099ad6aaa51dd4efbff502461208978425c2a383aa2d72f',
+        datetime.datetime(2025, 2, 1, 19, 52),
         'Arte',
-        'feux',
-        0)
+        'crue',
+        1
+        )
 
         assert row == expected, f"Unexpected values: {row}"
 

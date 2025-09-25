@@ -30,5 +30,5 @@ SELECT
       AND k3.start BETWEEN public.keywords.start - interval '4 minutes' AND public.keywords.start + interval '4 minutes'
   ) AS nb_constats_biodiversite_neighbor
 FROM public.keywords
-CROSS JOIN LATERAL json_array_elements(public.keywords.keywords_with_timestamp) kw_consequence
+CROSS JOIN LATERAL json_array_elements(public.keywords.keywords_with_timestamp::json) kw_consequence
 WHERE LOWER(kw_consequence ->> 'theme') LIKE '%consequence%'

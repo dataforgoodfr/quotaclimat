@@ -1,6 +1,6 @@
 {{ config(
     materialized='incremental'
-    ,unique_key=['start','channel_title']
+    ,unique_key=['start','"Program Metadata - Channel Name__channel_title"']
   )
 }}
 

@@ -486,6 +486,9 @@ To update monthly our materialized view in production we have to use this comman
 poetry run dbt run --full-refresh
 ```
 
+#### Causal query - too slow
+Because this query is too massive, we set it month by month and avoid using a full-refresh. See units tests and docker-entrypoint.sh to see how.
+
 If we change the DBT code, we have to relaunch this command to have a refreshed view (or wait the next daily cron).
 
 ### SRT to Mediatree Format

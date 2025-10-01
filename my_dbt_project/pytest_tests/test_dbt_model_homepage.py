@@ -89,7 +89,7 @@ def run_thematic_query_ocean():
 @pytest.fixture(scope="module", autouse=True)
 def run_causal_links():
     """Run dbt for the causal links model once before related tests."""
-    commands = ["run", "--models", "core_query_causal_links", "--full-refresh","--debug"]
+    commands = ["run", "--models", "core_query_causal_links", "--vars", '{"process_month": "2025-02-01"}', "--full-refresh", "--debug"]
     logging.info(f"pytest running dbt core_query_causal_links {commands}")
 
     run_dbt_command(commands)

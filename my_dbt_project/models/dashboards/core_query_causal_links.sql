@@ -23,7 +23,7 @@ SELECT
     WHERE k2.channel_title = public.keywords.channel_title
       AND k2.number_of_changement_climatique_constat_no_hrfp > 0
       AND k2.start BETWEEN public.keywords.start - interval '4 minutes' AND public.keywords.start + interval '4 minutes'
-       and date_trunc('month', public.keywords.start) = '{{ var("process_month") }}'
+       and date_trunc('month', public.keywords.start) = cast('{{ var("process_month") }}' as date)
   ) AS nb_constats_climat_neighbor,
   (
     SELECT COUNT(*)
@@ -31,9 +31,9 @@ SELECT
     WHERE k3.channel_title = public.keywords.channel_title
       AND k3.number_of_biodiversite_concepts_generaux_no_hrfp > 0
       AND k3.start BETWEEN public.keywords.start - interval '4 minutes' AND public.keywords.start + interval '4 minutes'
-       and date_trunc('month', public.keywords.start) = '{{ var("process_month") }}'
+       and date_trunc('month', public.keywords.start) = cast('{{ var("process_month") }}' as date)
   ) AS nb_constats_biodiversite_neighbor
 FROM public.keywords
 CROSS JOIN LATERAL json_array_elements(public.keywords.keywords_with_timestamp::json) kw_consequence
 WHERE LOWER(kw_consequence ->> 'theme') LIKE '%consequence%'
-  and date_trunc('month', public.keywords.start) = '{{ var("process_month") }}'
+  and date_trunc('month', public.keywords.start) = cast('{{ var("process_month") }}' as date)

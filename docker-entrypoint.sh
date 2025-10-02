@@ -21,8 +21,11 @@ echo "apply dbt models"
      # drop and recreate materialized views with the most up-to-date data.
 
 echo "apply dbt incremental model core_query_causal_links for each month"
-for m in {2022-01..2025-09}; do
-  echo "Processing month: $m"
-  poetry run dbt run -m core_query_causal_links --vars "{\"process_month\": \"$m-01\"}"
+for m in $(seq 2022 2025); do
+  for mm in $(seq -w 1 12); do
+    date="$m-$mm-01"
+    echo "Processing month: $date"
+    poetry run dbt run --select core_query_causal_links --vars "{\"process_month\": \"$date\"}"
+  done
 done
 

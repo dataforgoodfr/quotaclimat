@@ -1,0 +1,331 @@
+import modin.pandas as pd
+import numpy as np
+import logging
+import os
+
+from quotaclimat.data_ingestion.labelstudio import models
+from quotaclimat.data_ingestion.labelstudio.configs import db_config
+from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
+from postgres.database_connection import connect_to_db, get_db_session
+from sqlalchemy import (
+    ARRAY,
+    JSON,
+    URL,
+    BigInteger,
+    Boolean,
+    Column,
+    DateTime,
+    Double,
+    ForeignKey,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    Text,
+    Uuid,
+    and_,
+    cast,
+    case,
+    create_engine,
+    func,
+    literal_column,
+    or_,
+    select,
+    text,
+)
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import Session
+from sqlalchemy.orm.decl_api import DeclarativeMeta
+from typing import Dict, Union
+
+
+def get_labelstudio_data(
+    table: DeclarativeMeta, config: Dict[str, Union[Dict[str, int]]], conn_kwargs={}
+):
+    """
+    Retrieve data from a Label Studio table with country mapping based on project IDs.
+
+    This function queries a specified table and adds a 'country' column that maps
+    project IDs to country names using the provided configuration. It connects to
+    the database, executes a SELECT statement with a CASE expression, and returns
+    all matching records.
+
+    Args:
+        table (DeclarativeMeta): SQLAlchemy table model class to query
+        config (Dict[str, Union[Dict[str, int]]]): Configuration dictionary containing:
+            - "database": Database name for connection
+            - "countries": Dictionary mapping project IDs (int) to country names (str)
+        conn_kwargs (Dict[str, Any], optional): Additional database connection parameters.
+            Defaults to empty dict.
+
+    Returns:
+        list: List of SQLAlchemy Row objects containing all table columns plus a
+              'country' column mapping project IDs to country names
+
+    Example:
+        config = {
+            "database": "labelstudio_db",
+            "countries": {
+                6: "france",
+                9: "brazil",
+                20: "germany"
+            }
+        }
+        results = get_labelstudio_data(LabelStudioTaskSource, config)
+        # Returns all columns from LabelStudioTaskSource plus a 'country' column
+
+    Raises:
+        Exception: Propagates any database execution errors that occur during query execution
+
+    Note:
+        - The function automatically handles database connection, session management,
+          and transaction rollback on errors
+        - Only records with project_id matching the configured countries are returned
+        - The 'country' column is added to all returned records based on project_id mapping
+    """
+    logging.info(f"Establish connection to database: {config['database']}")
+    conn_kwargs.update({"database": config["database"]})
+    conn = connect_to_db(**conn_kwargs)
+    session = get_db_session(engine=conn)
+
+    statement = select(
+        table.__table__.c,
+        case(
+            *[
+                (table.project_id == key, value)
+                for key, value in config["countries"].items()
+            ]
+        ).label("country"),
+    ).where(table.project_id.in_([key for key in config["countries"].keys()]))
+    logging.info(f"Executing query: {statement}")
+    try:
+        output = session.execute(statement).fetchall()
+    except Exception as e:
+        session.rollback()
+        raise e
+    finally:
+        session.close()
+    return output
+
+
+def create_hash_id(
+    df: pd.DataFrame, column_name: str, id_column: str = "id", position: int = 0
+):
+    """
+    Create a hash ID column by combining specified columns and applying a consistent hash function.
+
+    This function generates a new hash column by concatenating the values of the specified
+    ID column, project_id column, and country column, then applying a consistent hash
+    function to the concatenated string.
+
+    Args:
+        df (pd.DataFrame): Input DataFrame containing the data to process
+        column_name (str): Name of the new hash column to be created
+        id_column (str, optional): Name of the ID column to include in hash calculation.
+            Defaults to "id".
+        position (int, optional): The position of the new column in the dataframe.
+
+    Returns:
+        pd.DataFrame: DataFrame with the new hash column inserted at the beginning (index 0)
+
+    Example:
+        >>> df = pd.DataFrame({
+        ...     'id': [1, 2, 3],
+        ...     'project_id': [6, 9, 20],
+        ...     'country': ['france', 'brazil', 'germany']
+        ... })
+        >>> result_df = create_hash_id(df, 'hash_id')
+        >>> print(result_df)
+           hash_id      id  project_id    country
+        0  hash_value1   1         6      france
+        1  hash_value2   2         9      brazil
+        2  hash_value3   3         20      germany
+
+    Note:
+        - The function modifies the DataFrame in-place by inserting the new column at index 0
+        - The hash is generated by concatenating id_column, project_id, and country values
+        - Assumes 'project_id' and 'country' columns exist in the DataFrame
+        - The get_consistent_hash function must be defined and accessible in the scope
+    """
+    df.insert(
+        position,
+        column_name,
+        (df[id_column].astype(str) + df.project_id.astype(str) + df.country).apply(
+            get_consistent_hash
+        ),
+    )
+    return df
+
+
+def upsert_labelstudio_data_optimized(
+    session: Session, df: pd.DataFrame, table_class: DeclarativeMeta, primary_key: str
+):
+    """
+    Optimized upsert for large DataFrames using pandas and SQLAlchemy.
+
+    Args:
+        session: SQLAlchemy session
+        df (pd.DataFrame): DataFrame containing data to upsert
+        table_class: SQLAlchemy table class
+
+    Returns:
+        int: Number of records processed
+    """
+    try:
+        # convert nan to None
+        # Convert to dict and remove SQLAlchemy internal attributes if present
+        data_list = df.replace({np.nan: None}).to_dict("records")
+        for record in data_list:
+            record.pop("_sa_instance_state", None)
+            record.pop("_sa_registry", None)
+
+        # Use PostgreSQL ON CONFLICT
+        stmt = pg_insert(table_class)
+        stmt = stmt.values(data_list)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[primary_key], set_=dict(stmt.excluded)
+        )
+        session.execute(stmt)
+        session.commit()
+        return len(data_list)
+
+    except Exception as e:
+        session.rollback()
+        with open("errors.log", "w") as f:
+            f.write(f"Error during upsert: {e}")
+        raise
+
+
+def collect_task_data(config, conn_kwargs):
+    """
+    Collect task data from a single database configuration.
+    
+    Args:
+        config (dict): Database configuration
+        conn_kwargs (dict): Connection parameters
+    
+    Returns:
+        tuple: (task_df, task_completion_df) - DataFrames for tasks and completions
+    """
+    logging.info(f"Collecting TASK data from database: {config['database']}.")
+    task_data = get_labelstudio_data(
+        models.LabelStudioTaskSource, config=config, conn_kwargs=conn_kwargs
+    )
+    task_df = pd.DataFrame(task_data)
+    task_df = create_hash_id(task_df, "task_aggregate_id", "id")
+    
+    logging.info(
+        f"Collecting TASK COMPLETION data from database: {config['database']}."
+    )
+    task_completion_data = get_labelstudio_data(
+        models.LabelStudioTaskCompletionSource, config=config, conn_kwargs=conn_kwargs
+    )
+    task_completion_df = pd.DataFrame(task_completion_data)
+    
+    # Create hash IDs for task completions
+    task_completion_df = create_hash_id(
+        task_completion_df,
+        "task_aggregate_id",
+        "task_id",
+        task_completion_df.shape[-1] - 1,
+    )
+    task_completion_df = create_hash_id(
+        task_completion_df, "task_completion_aggregate_id", "id", 0
+    )
+    
+    return task_df, task_completion_df
+
+
+def collect_all_data(db_config, conn_kwargs):
+    """
+    Collect data from all database configurations.
+    
+    Args:
+        db_config (list): List of database configurations
+        conn_kwargs (dict): Connection parameters
+    
+    Returns:
+        tuple: (tasks_aggregate_df, task_completions_aggregate_df) - Combined DataFrames
+    """
+    tasks = []
+    task_completions = []
+    
+    for config in db_config:
+        task_df, task_completion_df = collect_task_data(config, conn_kwargs)
+        tasks.append(task_df)
+        task_completions.append(task_completion_df)
+    
+    tasks_aggregate_df = pd.concat(tasks, ignore_index=True)
+    task_completions_aggregate_df = pd.concat(task_completions, ignore_index=True)
+    
+    return tasks_aggregate_df, task_completions_aggregate_df
+
+
+def upsert_data_to_target(target_conn_kwargs, tasks_df, task_completions_df):
+    """
+    Upsert collected data to target database.
+    
+    Args:
+        target_conn_kwargs (dict): Target database connection parameters
+        tasks_df (pd.DataFrame): Tasks DataFrame
+        task_completions_df (pd.DataFrame): Task completions DataFrame
+    """
+    target_connection = connect_to_db(**target_conn_kwargs)
+    target_session = get_db_session(target_connection)
+    models.create_tables(target_connection)
+    
+    try:
+        upsert_labelstudio_data_optimized(
+            session=target_session,
+            df=tasks_df,
+            table_class=models.LabelStudioTaskAggregate,
+            primary_key="task_aggregate_id",
+        )
+        
+        upsert_labelstudio_data_optimized(
+            session=target_session,
+            df=task_completions_df,
+            table_class=models.LabelStudioTaskCompletionAggregate,
+            primary_key="task_completion_aggregate_id",
+        )
+        
+        logging.info("Data upsert completed successfully")
+        
+    except Exception as e:
+        logging.error(f"Error during data upsert: {e}")
+        raise
+    finally:
+        target_session.close()
+
+def main(conn_kwargs, target_conn_kwargs):
+    """
+    Main processing function that orchestrates the entire workflow.
+    
+    Args:
+        conn_kwargs (dict): Source database connection parameters
+        target_conn_kwargs (dict): Target database connection parameters
+    """
+    # Collect data from all sources
+    tasks_df, task_completions_df = collect_all_data(db_config, conn_kwargs)
+    
+    # Upsert data to target
+    upsert_data_to_target(target_conn_kwargs, tasks_df, task_completions_df)
+
+if __name__ == "__main__":
+    
+    conn_kwargs = dict(
+        user=os.getenv("SOURCE_POSTGRES_USER", "user"),
+        host=os.getenv("SOURCE_POSTGRES_HOST", "localhost"),
+        port=os.getenv("SOURCE_POSTGRES_PORT", 5432),
+        password=os.getenv("SOURCE_POSTGRES_PASSWORD", "password"),
+    )
+
+    target_conn_kwargs = dict(
+        user=os.getenv("SOURCE_POSTGRES_USER", "user"),
+        host=os.getenv("SOURCE_POSTGRES_HOST", "localhost"),
+        host=os.getenv("SOURCE_POSTGRES_DB", "barometre"),
+        port=os.getenv("SOURCE_POSTGRES_PORT", 5432),
+        password=os.getenv("SOURCE_POSTGRES_PASSWORD", "password"),
+    )
+
+    main(conn_kwargs, target_conn_kwargs)

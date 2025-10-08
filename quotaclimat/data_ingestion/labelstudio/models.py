@@ -84,7 +84,7 @@ class LabelStudioTaskCompletionSource(SourceBase):
 
 class LabelStudioTaskAggregate(TargetBase):
     __tablename__ = labelstudio_task_aggregate_table
-    task_aggregate_id = Column(String, nullable=True, primary_key=True)
+    task_aggregate_id = Column(String, nullable=False, primary_key=True)
     id = Column(Integer, nullable=False)
     data = Column(JSON, nullable=False)
     created_at = Column(DateTime, nullable=False)
@@ -108,6 +108,13 @@ class LabelStudioTaskAggregate(TargetBase):
 class LabelStudioTaskCompletionAggregate(TargetBase):
     __tablename__ = labelstudio_task_completion_aggregate_table
     task_completion_aggregate_id = Column(String, nullable=False, primary_key=True)
+    task_aggregate_id = Column(
+        String, ForeignKey(f"{labelstudio_task_aggregate_table}.task_aggregate_id"), nullable=False
+    )
+    labelstudio_task_aggregate = relationship(
+        "LabelStudioTaskAggregate", foreign_keys=[task_aggregate_id]
+    )
+    
     id = Column(Integer, nullable=False)
     result = Column(JSON, nullable=True)
     was_cancelled = Column(Boolean, nullable=False)
@@ -129,18 +136,12 @@ class LabelStudioTaskCompletionAggregate(TargetBase):
     draft_created_at = Column((DateTime()), nullable=True)
     import_id = Column(BigInteger, nullable=True)
     bulk_created = Column(Boolean, nullable=True, default=False)
-    task_aggregate_id = Column(
-        Text, ForeignKey(f"{labelstudio_task_aggregate_table}.task_aggregate_id"), nullable=False
-    )
-    labelstudio_task_aggregate = relationship(
-        "LabelStudioTaskAggregate", foreign_keys=[task_aggregate_id]
-    )
     country = Column(String, nullable=False)
 
 
 def create_tables(conn=None):
     """Create tables in the PostgreSQL database"""
-    logging.info("create sitemap, keywords , time_monitored, stop_word tables, dictionnary - update channel_metadata")
+    logging.info("create labelstudio_task_aggregate, labelstudio_task_completion_aggregate")
     try:
         if conn is None :
             engine = connect_to_db()

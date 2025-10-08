@@ -3460,10 +3460,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 45,
-        "channel_title": "tvbrasil",
-        "public": false,
+        "channel_title": "TV Brasil",
+        "public": true,
         "infocontinue": false,
         "radio": false,
+        "country": "brazil",
         "id": "46f37cd3d852b438323244add83334d05ddfe34e9a80811340e420a4ea51aaf2"
     },
     {
@@ -3476,10 +3477,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 60,
-        "channel_title": "tvbrasil",
-        "public": false,
+        "channel_title": "TV Brasil",
+        "public": true,
         "infocontinue": false,
         "radio": false,
+        "country": "brazil",
         "id": "46f37cd3d852b438323244add83334d05ddfe34e9a80811340e420a4ea51aaf2"
     },
     {
@@ -7181,10 +7183,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 45,
-        "channel_title": "tvbrasil",
-        "public": false,
+        "channel_title": "TV Brasil",
+        "public": true,
         "infocontinue": false,
         "radio": false,
+        "country": "brazil",
         "id": "ad0fddb9e9941b6cbd1f75fab27e00f71908c20f1acb6914155c9172b4a6b64d"
     },
     {
@@ -7197,10 +7200,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 60,
-        "channel_title": "tvbrasil",
-        "public": false,
+        "channel_title": "TV Brasil",
+        "public": true,
         "infocontinue": false,
         "radio": false,
+        "country": "brazil",
         "id": "ad0fddb9e9941b6cbd1f75fab27e00f71908c20f1acb6914155c9172b4a6b64d"
     },
     {
@@ -10902,10 +10906,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 45,
-        "channel_title": "tvbrasil",
-        "public": false,
+        "channel_title": "TV Brasil",
+        "public": true,
         "infocontinue": false,
         "radio": false,
+        "country": "brazil",
         "id": "6e9166f4f4fd001a77eb2999c7ffa3aa31a02b70db65a68cce7c7af1138ce498"
     },
     {
@@ -10918,10 +10923,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 60,
-        "channel_title": "tvbrasil",
-        "public": false,
+        "channel_title": "TV Brasil",
+        "public": true,
         "infocontinue": false,
         "radio": false,
+        "country": "brazil",
         "id": "6e9166f4f4fd001a77eb2999c7ffa3aa31a02b70db65a68cce7c7af1138ce498"
     },
     {
@@ -14657,10 +14663,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 45,
-        "channel_title": "tvbrasil",
-        "public": false,
+        "channel_title": "TV Brasil",
+        "public": true,
         "infocontinue": false,
         "radio": false,
+        "country": "brazil",
         "id": "fb62538f6401fbeae951132f916dc8d73319f5a070c3ebaaf66ad6d53715cbc0"
     },
     {
@@ -14673,10 +14680,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 60,
-        "channel_title": "tvbrasil",
-        "public": false,
+        "channel_title": "TV Brasil",
+        "public": true,
         "infocontinue": false,
         "radio": false,
+        "country": "brazil",
         "id": "fb62538f6401fbeae951132f916dc8d73319f5a070c3ebaaf66ad6d53715cbc0"
     },
     {
@@ -18361,10 +18369,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 45,
-        "channel_title": "tvbrasil",
-        "public": false,
+        "channel_title": "TV Brasil",
+        "public": true,
         "infocontinue": false,
         "radio": false,
+        "country": "brazil",
         "id": "58c35cb4b0090afbdaa18356f560e3977ee5f868dd86d999a49d0feee7cc513b"
     },
     {
@@ -18377,10 +18386,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 60,
-        "channel_title": "tvbrasil",
-        "public": false,
+        "channel_title": "TV Brasil",
+        "public": true,
         "infocontinue": false,
         "radio": false,
+        "country": "brazil",
         "id": "58c35cb4b0090afbdaa18356f560e3977ee5f868dd86d999a49d0feee7cc513b"
     },
     {
@@ -21300,10 +21310,11 @@
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
         "duration": 60,
-        "channel_title": "tvbrasil",
-        "public": false,
+        "channel_title": "TV Brasil",
+        "public": true,
         "infocontinue": false,
         "radio": false,
+        "country": "brazil",
         "id": "b2b8e874e49de7b7154b33ca57b4a66c54401e191d18c61342f81bfcb4687aea"
     },
     {

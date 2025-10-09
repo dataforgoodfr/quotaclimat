@@ -48,6 +48,7 @@ SELECT
 	*
 FROM (
 	select
+		labelstudio_task_aggregate.task_completion_aggregate_id AS task_completion_aggregate_id,
 		labelstudio_task_aggregate.task_aggregate_id AS task_aggregate_id,
 		labelstudio_task_aggregate.created_at AS created_at,
 		labelstudio_task_aggregate.updated_at AS updated_at,

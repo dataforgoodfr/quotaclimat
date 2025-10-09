@@ -8,30 +8,9 @@ from quotaclimat.data_ingestion.labelstudio.configs import db_config
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 from postgres.database_connection import connect_to_db, get_db_session
 from sqlalchemy import (
-    ARRAY,
-    JSON,
-    URL,
-    BigInteger,
-    Boolean,
-    Column,
-    DateTime,
-    Double,
-    ForeignKey,
-    Integer,
-    MetaData,
-    String,
-    Table,
-    Text,
-    Uuid,
-    and_,
-    cast,
     case,
-    create_engine,
     func,
-    literal_column,
-    or_,
     select,
-    text,
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
@@ -199,11 +178,11 @@ def upsert_labelstudio_data_optimized(
 def collect_task_data(config, conn_kwargs):
     """
     Collect task data from a single database configuration.
-    
+
     Args:
         config (dict): Database configuration
         conn_kwargs (dict): Connection parameters
-    
+
     Returns:
         tuple: (task_df, task_completion_df) - DataFrames for tasks and completions
     """
@@ -213,7 +192,7 @@ def collect_task_data(config, conn_kwargs):
     )
     task_df = pd.DataFrame(task_data)
     task_df = create_hash_id(task_df, "task_aggregate_id", "id")
-    
+
     logging.info(
         f"Collecting TASK COMPLETION data from database: {config['database']}."
     )
@@ -221,7 +200,7 @@ def collect_task_data(config, conn_kwargs):
         models.LabelStudioTaskCompletionSource, config=config, conn_kwargs=conn_kwargs
     )
     task_completion_df = pd.DataFrame(task_completion_data)
-    
+
     # Create hash IDs for task completions
     task_completion_df = create_hash_id(
         task_completion_df,
@@ -232,39 +211,39 @@ def collect_task_data(config, conn_kwargs):
     task_completion_df = create_hash_id(
         task_completion_df, "task_completion_aggregate_id", "id", 0
     )
-    
+
     return task_df, task_completion_df
 
 
 def collect_all_data(db_config, conn_kwargs):
     """
     Collect data from all database configurations.
-    
+
     Args:
         db_config (list): List of database configurations
         conn_kwargs (dict): Connection parameters
-    
+
     Returns:
         tuple: (tasks_aggregate_df, task_completions_aggregate_df) - Combined DataFrames
     """
     tasks = []
     task_completions = []
-    
+
     for config in db_config:
         task_df, task_completion_df = collect_task_data(config, conn_kwargs)
         tasks.append(task_df)
         task_completions.append(task_completion_df)
-    
+
     tasks_aggregate_df = pd.concat(tasks, ignore_index=True)
     task_completions_aggregate_df = pd.concat(task_completions, ignore_index=True)
-    
+
     return tasks_aggregate_df, task_completions_aggregate_df
 
 
 def upsert_data_to_target(target_conn_kwargs, tasks_df, task_completions_df):
     """
     Upsert collected data to target database.
-    
+
     Args:
         target_conn_kwargs (dict): Target database connection parameters
         tasks_df (pd.DataFrame): Tasks DataFrame
@@ -273,7 +252,7 @@ def upsert_data_to_target(target_conn_kwargs, tasks_df, task_completions_df):
     target_connection = connect_to_db(**target_conn_kwargs)
     target_session = get_db_session(target_connection)
     models.create_tables(target_connection)
-    
+
     try:
         upsert_labelstudio_data_optimized(
             session=target_session,
@@ -281,38 +260,39 @@ def upsert_data_to_target(target_conn_kwargs, tasks_df, task_completions_df):
             table_class=models.LabelStudioTaskAggregate,
             primary_key="task_aggregate_id",
         )
-        
+
         upsert_labelstudio_data_optimized(
             session=target_session,
             df=task_completions_df,
             table_class=models.LabelStudioTaskCompletionAggregate,
             primary_key="task_completion_aggregate_id",
         )
-        
+
         logging.info("Data upsert completed successfully")
-        
+
     except Exception as e:
         logging.error(f"Error during data upsert: {e}")
         raise
     finally:
         target_session.close()
 
+
 def main(conn_kwargs, target_conn_kwargs):
     """
     Main processing function that orchestrates the entire workflow.
-    
+
     Args:
         conn_kwargs (dict): Source database connection parameters
         target_conn_kwargs (dict): Target database connection parameters
     """
     # Collect data from all sources
     tasks_df, task_completions_df = collect_all_data(db_config, conn_kwargs)
-    
+
     # Upsert data to target
     upsert_data_to_target(target_conn_kwargs, tasks_df, task_completions_df)
 
+
 if __name__ == "__main__":
-    
     conn_kwargs = dict(
         user=os.getenv("SOURCE_POSTGRES_USER", "user"),
         host=os.getenv("SOURCE_POSTGRES_HOST", "localhost"),
@@ -323,7 +303,7 @@ if __name__ == "__main__":
     target_conn_kwargs = dict(
         user=os.getenv("SOURCE_POSTGRES_USER", "user"),
         host=os.getenv("SOURCE_POSTGRES_HOST", "localhost"),
-        host=os.getenv("SOURCE_POSTGRES_DB", "barometre"),
+        database=os.getenv("SOURCE_POSTGRES_DB", "barometre"),
         port=os.getenv("SOURCE_POSTGRES_PORT", 5432),
         password=os.getenv("SOURCE_POSTGRES_PASSWORD", "password"),
     )

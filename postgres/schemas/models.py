@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, String, Text, Boolean, ARRAY, JSON, Integer, Table, MetaData, ForeignKey, PrimaryKeyConstraint
+from sqlalchemy import BigInteger, Column, DateTime, Double, String, Text, Boolean, ARRAY, JSON, Integer, Table, MetaData, ForeignKey, PrimaryKeyConstraint, Uuid
 from sqlalchemy.orm import declarative_base, sessionmaker, relationship
 from sqlalchemy.exc import SQLAlchemyError
 import pandas as pd
@@ -24,6 +24,8 @@ keywords_table = "keywords"
 channel_metadata_table = "channel_metadata"
 program_metadata_table = "program_metadata"
 stop_word_table = "stop_word"
+
+
 
 class Sitemap(Base):
     __tablename__ = sitemap_table
@@ -165,6 +167,7 @@ class Keyword_Macro_Category(Base):
     eau = Column(Boolean, nullable=True, default=False)
     ecosysteme = Column(Boolean, nullable=True, default=False)
     economie_ressources = Column(Boolean, nullable=True, default=False)
+
 
 def get_sitemap(id: str):
     session = get_db_session()

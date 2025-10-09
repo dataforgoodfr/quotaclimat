@@ -301,11 +301,11 @@ if __name__ == "__main__":
     )
 
     target_conn_kwargs = dict(
-        user=os.getenv("SOURCE_POSTGRES_USER", "user"),
-        host=os.getenv("SOURCE_POSTGRES_HOST", "localhost"),
-        database=os.getenv("SOURCE_POSTGRES_DB", "barometre"),
-        port=os.getenv("SOURCE_POSTGRES_PORT", 5432),
-        password=os.getenv("SOURCE_POSTGRES_PASSWORD", "password"),
+        user=os.getenv("TARGET_POSTGRES_USER", "user"),
+        host=os.getenv("TARGET_POSTGRES_HOST", "localhost"),
+        database=os.getenv("TARGET_POSTGRES_DB", "barometre"),
+        port=os.getenv("TARGET_POSTGRES_PORT", 5432),
+        password=os.getenv("TARGET_POSTGRES_PASSWORD", "password"),
     )
 
     main(conn_kwargs, target_conn_kwargs)

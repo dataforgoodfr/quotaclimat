@@ -34,6 +34,7 @@ labelstudio_task_completion_source_table = "task_completion"
 labelstudio_task_aggregate_table = "labelstudio_task_aggregate"
 labelstudio_task_completion_aggregate_table = "labelstudio_task_completion_aggregate"
 
+
 class LabelStudioTaskSource(SourceBase):
     __tablename__ = labelstudio_task_source_table
     # column_name,data_type,character_maximum_length,column_default,is_nullable
@@ -109,12 +110,14 @@ class LabelStudioTaskCompletionAggregate(TargetBase):
     __tablename__ = labelstudio_task_completion_aggregate_table
     task_completion_aggregate_id = Column(String, nullable=False, primary_key=True)
     task_aggregate_id = Column(
-        String, ForeignKey(f"{labelstudio_task_aggregate_table}.task_aggregate_id"), nullable=False
+        String,
+        ForeignKey(f"{labelstudio_task_aggregate_table}.task_aggregate_id"),
+        nullable=False,
     )
     labelstudio_task_aggregate = relationship(
         "LabelStudioTaskAggregate", foreign_keys=[task_aggregate_id]
     )
-    
+
     id = Column(Integer, nullable=False)
     result = Column(JSON, nullable=True)
     was_cancelled = Column(Boolean, nullable=False)
@@ -141,18 +144,51 @@ class LabelStudioTaskCompletionAggregate(TargetBase):
 
 def create_tables(conn=None):
     """Create tables in the PostgreSQL database"""
-    logging.info("create labelstudio_task_aggregate, labelstudio_task_completion_aggregate")
+    logging.info(
+        "create labelstudio_task_aggregate, labelstudio_task_completion_aggregate"
+    )
     try:
-        if conn is None :
+        if conn is None:
             engine = connect_to_db()
         else:
             engine = conn
         TargetBase.metadata.create_all(engine, checkfirst=True)
 
         logging.info("Table creation done, if not already done.")
-    except (Exception) as error:
+    except Exception as error:
         logging.error(error)
     finally:
         if engine is not None:
             engine.dispose()
 
+
+def drop_tables(conn=None):
+    if (
+        os.environ.get("POSTGRES_HOST") == "postgres_db"
+        or os.environ.get("POSTGRES_HOST") == "localhost"
+    ) and os.environ.get("ENV") != "prod":
+        logging.warning(
+            """Drop table LabelStudioTaskAggregate / LabelStudioTaskCompletionAggregate in the PostgreSQL database"""
+        )
+        try:
+            if conn is None:
+                engine = connect_to_db()
+            else:
+                engine = conn
+            logging.info(f"Drop all {LabelStudioTaskAggregate.__tablename__}")
+            TargetBase.metadata.drop_all(
+                bind=engine, tables=[LabelStudioTaskAggregate.__table__]
+            )
+            logging.info(f"Drop all {LabelStudioTaskCompletionAggregate.__tablename__}")
+            TargetBase.metadata.drop_all(
+                bind=engine, tables=[LabelStudioTaskCompletionAggregate.__table__]
+            )
+
+            logging.info(
+                f"Table LabelStudioTaskAggregate/LabelStudioTaskCompletionAggregate deletion done"
+            )
+        except Exception as error:
+            logging.error(error)
+        finally:
+            if engine is not None:
+                engine.dispose()

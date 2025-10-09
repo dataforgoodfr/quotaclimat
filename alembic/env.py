@@ -2,6 +2,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import create_engine
 from postgres.schemas.base import Base
+from quotaclimat.data_ingestion.labelstudio.models import TargetBase
 from alembic import context
 
 import re
@@ -20,7 +21,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = Base.metadata
+target_metadata = [Base.metadata, TargetBase.metadata]
 
 # from https://stackoverflow.com/a/63672522/3535853
 # https://alembic.sqlalchemy.org/en/latest/cookbook.html#don-t-generate-any-drop-table-directives-with-autogenerate

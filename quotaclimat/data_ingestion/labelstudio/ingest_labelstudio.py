@@ -294,10 +294,10 @@ def main(conn_kwargs, target_conn_kwargs):
 
 if __name__ == "__main__":
     conn_kwargs = dict(
-        user=os.getenv("SOURCE_POSTGRES_USER", "user"),
-        host=os.getenv("SOURCE_POSTGRES_HOST", "localhost"),
-        port=int(os.getenv("SOURCE_POSTGRES_PORT", 5432)),
-        password=os.getenv("SOURCE_POSTGRES_PASSWORD", "password"),
+        user=os.getenv("LABELSTUDIO_INGESTION_POSTGRES_USER", "user"),
+        host=os.getenv("LABELSTUDIO_INGESTION_POSTGRES_HOST", "localhost"),
+        port=int(os.getenv("LABELSTUDIO_INGESTION_POSTGRES_PORT", 5432)),
+        password=os.getenv("LABELSTUDIO_INGESTION_POSTGRES_PASSWORD", "password"),
     )
 
     target_conn_kwargs = dict(

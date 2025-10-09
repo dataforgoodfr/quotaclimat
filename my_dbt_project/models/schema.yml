@@ -155,3 +155,73 @@ models:
         description: Count of lines or mentions related to the keyword.
       - name: country
         description: country
+
+  - name: task_global_completion
+    description: "Aggregates data between the labelstudio tasks and the labelstudio task completions."
+    columns:
+      - name: task_aggregate_id
+        description: "Unique ID for the aggregated task. Generated from a hash of task_id, project_id and country"
+      - name: created_at
+        description: "Creation timestamp"
+      - name: updated_at
+        description: "Update timestamp"
+      - name: is_labeled
+        description: "Boolean, has the task been labeled "
+      - name: project_id
+        description: "Project ID for the country in the original labelstudio instance."
+      - name: country
+        description: "name of the country of origin"
+      - name: data_item_id
+        description: "ID from keywords "
+      - name: data_item_channel
+        description: "Channel ID"
+      - name: data_item_channel_name
+        description: "Channel name lowercase"
+      - name: data_item_channel_title
+        description: "Name of Channel properly formatted"
+      - name: data_item_channel_program
+        description: "Name of program from which the chunk is extracted"
+      - name: data_item_channel_program_type
+        description: "Type of program (news, opinion, continuous news, talk show)"
+      - name: data_item_day
+        description: "Day of month"
+      - name: data_item_month
+        description: "Month of year"
+      - name: data_item_year
+        description: "Year of the segment"
+      - name: data_item_model_name
+        description: "Name of model used for the classification"
+      - name: data_item_model_reason
+        description: "Model reason for classification or model probability score"
+      - name: data_item_model_result
+        description: "Model classification"
+      - name: data_item_plaintext
+        description: "Segment transcript obtained from mediatree"
+      - name: data_item_plaintext_whisper
+        description: "Segment transcript obtained from the speech-to-text model."
+      - name: data_item_start
+        description: "Start timestamp for the segment"
+      - name: data_item_url_mediatree
+        description: "Mediatree url with link to the video"
+      - name: mesinfo_choice
+        description: "Choice between correct and incorrect. Note this applies to the model's classification: Correct = Misinformation and Incorrect = Not Misinformation"
+      - name: locuteur_choice
+        description: "Speaker types identified"
+      - name: mesinfo_correct
+        description: "One hot encoding mesinfo correct"
+      - name: mesinfo_incorrect
+        description: "One hot encoding mesinfo incorrect"
+      - name: speaker_journalist
+        description: "One hot encoding speaker journalist"
+      - name: speaker_commentator
+        description: "One hot encoding speaker commentator"
+      - name: speaker_guest
+        description: "One hot encoding speaker guest"
+      - name: speaker_politician
+        description: "One hot encoding speaker politician"
+      - name: speaker_audience
+        description: "One hot encoding speaker audience"
+      - name: speaker_unknown
+        description: "One hot encoding speaker unknown"
+      - name: "Annotation Version"
+        description: "Annotation version (first annotation=1, second annotation=2)"

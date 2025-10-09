@@ -296,16 +296,16 @@ if __name__ == "__main__":
     conn_kwargs = dict(
         user=os.getenv("SOURCE_POSTGRES_USER", "user"),
         host=os.getenv("SOURCE_POSTGRES_HOST", "localhost"),
-        port=os.getenv("SOURCE_POSTGRES_PORT", 5432),
+        port=int(os.getenv("SOURCE_POSTGRES_PORT", 5432)),
         password=os.getenv("SOURCE_POSTGRES_PASSWORD", "password"),
     )
 
     target_conn_kwargs = dict(
-        user=os.getenv("TARGET_POSTGRES_USER", "user"),
-        host=os.getenv("TARGET_POSTGRES_HOST", "localhost"),
-        database=os.getenv("TARGET_POSTGRES_DB", "barometre"),
-        port=os.getenv("TARGET_POSTGRES_PORT", 5432),
-        password=os.getenv("TARGET_POSTGRES_PASSWORD", "password"),
+        user=os.getenv("POSTGRES_USER", "user"),
+        host=os.getenv("POSTGRES_HOST", "localhost"),
+        database=os.getenv("POSTGRES_DB", "barometre"),
+        port=int(os.getenv("POSTGRES_PORT", 5432)),
+        password=os.getenv("POSTGRES_PASSWORD", "password"),
     )
 
     main(conn_kwargs, target_conn_kwargs)

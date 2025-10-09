@@ -145,3 +145,46 @@ seeds:
             {% else %}
             -- safeguard: skip DELETE in prod
             {% endif %}
+
+    labelstudio_task_aggregate:
+        table: labelstudio_task_aggregate
+        enabled: "{{ target.name != 'prod' }}" # safe guard
+        pre-hook:
+          - >
+            {% if target.name != 'prod' %}
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'time_monitored'
+              ) THEN
+                EXECUTE 'DELETE FROM public.time_monitored';
+              END IF;
+            END
+            $$;
+            {% else %}
+            -- safeguard: skip DELETE in prod
+            {% endif %}
+    
+    
+    labelstudio_task_completion_aggregate:
+        table: labelstudio_task_completion_aggregate
+        enabled: "{{ target.name != 'prod' }}" # safe guard
+        pre-hook:
+          - >
+            {% if target.name != 'prod' %}
+            DO $$
+            BEGIN
+              IF EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = 'time_monitored'
+              ) THEN
+                EXECUTE 'DELETE FROM public.time_monitored';
+              END IF;
+            END
+            $$;
+            {% else %}
+            -- safeguard: skip DELETE in prod
+            {% endif %}

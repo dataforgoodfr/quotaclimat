@@ -563,7 +563,9 @@ poetry run python -m quotaclimat.data_ingestion.labelstudio.ingest_labelstudio
 ```
 
 # Analytics
-In order to improve the performance of the dashboards hosted on Metabase, intermediate tables are calculated using `dbt` in the `analytics` schema. These can be found in `my_dbt_project/models/analytics`. These dbt models need to be run using the `--target analytics` command. You can test these locally using the test console:
+In order to improve the performance of the dashboards hosted on Metabase, intermediate tables are calculated using `dbt` in the `analytics` schema. These can be found in `my_dbt_project/models/analytics`. The idea is to add a second layer to our database where we will store the more elaborated data used for our visualization. A schema of this evolution is seen below:
+![Data tiers diagram](docs/images/data_tiers.png "Data Tiers")
+These dbt models need to be run using the `--target analytics` command. You can test these locally using the test console:
 ```bash
 docker compose up testconsole -d 
 docker compose exec testconsole bash

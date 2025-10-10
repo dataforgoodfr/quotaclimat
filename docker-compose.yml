@@ -46,6 +46,8 @@ services:
       # CHANNEL: "fr3-idf"
       LOGLEVEL: DEBUG
       PYTHONPATH: /app
+      LABELSTUDIO_INGESTION_POSTGRES_USER: user
+      LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: password
       POSTGRES_USER: user
       POSTGRES_DB: barometre
       POSTGRES_PASSWORD: password
@@ -193,6 +195,8 @@ services:
       ENV: docker # change me to prod for real cases
       LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log
       PYTHONPATH: /app
+      LABELSTUDIO_INGESTION_POSTGRES_USER: user
+      LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: password
       POSTGRES_USER: user
       POSTGRES_DB: barometre
       POSTGRES_PASSWORD: password

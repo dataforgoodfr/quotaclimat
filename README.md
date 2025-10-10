@@ -526,6 +526,54 @@ poetry run flake8 .
 ```
 There is a debt regarding the cleanest of the code right now. Let's just not make it worth for now.
 
+# Labelstudio
+For the Climate Safeguards project we ingest the data present in the Labelstudio databases into the Barometre database. This way we can analyse the annotations of the factcheckers and extract key insights. There are two main tables that we need to ingest:
+* `task`
+* `task_completion`
+The `task` table contains an item (a 2 minute segment) with some metadata and an ID, and the `task_completion` table contains the annotations for that task. As the Labelstudio databases are separate from each other, we create a `labelstudio_task_aggregate` table and `labelstudio_task_completion_aggregate` table to perform a union of all the tasks and annotations. We also create `task_aggregate_id` and `task_completion_aggregate_id` to uniquely identify each task and annotation based on a hash of the table's id, project_id column and country column.
+## SQLAlchemy models
+The models for the two tables can be found in `quotaclimat/data_ingestion/labelstudio/models.py`, any update to these models can be tracked with `alembic`, as the migration tool has been setup to track `TargetBase` as well as the already existing tables.
+## Source configuration
+The sources for the Labelstudio ingestion can be found in `quotaclimat/data_ingestion/labelstudio/configs.py`. The `db_config` variable consists of a list of record (python dictionaries) with the source database name and a mapping of the project ids to countries:
+```python
+db_config = [
+  {
+    "database": "<labelstudio_db>", 
+    "countries": {
+      1: "<country_1>", 
+      2: "<country_2>", 
+      3: "<country_3>",
+    }
+  },
+]
+```
+When a new source is added (if a new Labelstudio instance is deployed) it suffices to add the source to the record list. (This assumes that all sources are on the same DB instace, as is the case at the time of writing).
+## Local execution
+In order to execute the ingestion script locally you will need either have a working labelstudio locally, or to connect to the remote labelstudio with a read-only user.
+Set your credentials in the `docker-compose.yml` file:
+```
+LABELSTUDIO_INGESTION_POSTGRES_USER: <user>
+LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: <password>
+```
+and run the script via the test console:
+```bash
+docker compose up testconsole -d 
+docker compose exec testconsole bash
+poetry run python -m quotaclimat.data_ingestion.labelstudio.ingest_labelstudio
+```
+
+# Analytics
+In order to improve the performance of the dashboards hosted on Metabase, intermediate tables are calculated using `dbt` in the `analytics` schema. These can be found in `my_dbt_project/models/analytics`. The idea is to add a second layer to our database where we will store the more elaborated data used for our visualization. A schema of this evolution is seen below:
+![Data tiers diagram](docs/images/data_tiers.png "Data Tiers")
+These dbt models need to be run using the `--target analytics` command. You can test these locally using the test console:
+```bash
+docker compose up testconsole -d 
+docker compose exec testconsole bash
+# Seed the labelstudio tables
+poetry run dbt seed --select program_metadatalabelstudio_task_aggregate --select labelstudio_task_completion_aggregate
+# run the dbt model on the analytics target
+poetry run dbt run --target analytics --select task_global_completion
+```
 ## Thanks
 * [Paul Leclercq] (https://www.epauler.fr/)
 * [Eleven-Strategy](https://www.welcometothejungle.com/fr/companies/eleven-strategy)

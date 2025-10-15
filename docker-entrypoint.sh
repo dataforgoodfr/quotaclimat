@@ -12,7 +12,7 @@ if [[ $? -eq 0 ]]; then
 else
     echo "Command failed"
 fi
-if [ $REPARSE_CAUSAL_LINKS == 'true' ]; then
+if [ $REPARSE_CAUSAL_LINKS -eq 1 ]; then
   echo "Reparsing core_query_causal_links"
   for m in $(seq 2022 2025); do
     for mm in $(seq -w 1 12); do

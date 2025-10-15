@@ -9,6 +9,7 @@
 SELECT
   public.keywords.id,
   public.keywords.channel_title,
+  public.keywords.country,
   public.keywords.start,
   kw_consequence ->> 'keyword' AS keyword,
   CASE

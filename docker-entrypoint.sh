@@ -16,17 +16,12 @@ if [ $REPARSE_CAUSAL_LINKS -eq 1 ]; then
   echo "Reparsing core_query_causal_links"
   year_end=$(date +%d)
 
-  for m in $(seq 2025 2025); do
+  for m in $(seq 2022 2025); do
     start_reparse=0
     for mm in $(seq -w 1 12); do
       date="$m-$mm-01"
       echo "Processing month: $date"
-      if [ $start_reparse -eq 0 ]; then
-        poetry run dbt run --full-refresh --select core_query_causal_links --vars "{\"process_month\": \"$date\"}"
-        start_reparse=1
-      else
-        poetry run dbt run --select core_query_causal_links --vars "{\"process_month\": \"$date\"}"
-      fi
+      poetry run dbt run --select core_query_causal_links --vars "{\"process_month\": \"$date\"}"
     done
   done
 else

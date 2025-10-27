@@ -1,0 +1,70 @@
+name: Build & Deploy Print media image to Scaleway
+
+on:
+  push:
+    branches:
+      - main
+      - dev/print_media
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.12'
+  POETRY_VERSION: '2.1.3'
+
+jobs:
+  build-factiva:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+
+      - name: Poetry install & bump version
+        run: |
+          poetry install --only dev
+          poetry version patch
+          PROJECT_VERSION=$(poetry version --short)
+          echo "PROJECT_VERSION=$PROJECT_VERSION" >> $GITHUB_ENV
+          git config user.name barometre-github-actions
+          git config user.email barometre-github-actions@github.com
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          echo "Current branch: $CURRENT_BRANCH"
+          git add pyproject.toml
+          git commit -m "[no ci]: $PROJECT_VERSION bumping version"
+          git push origin "$CURRENT_BRANCH"
+
+      - name: Login to Scaleway Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: nologin
+          password: ${{ secrets.SCALEWAY_API_KEY }}
+          registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
+
+      - name: Build factiva image
+        run: docker build -f Dockerfile_factiva . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_import:${{ env.PROJECT_VERSION }}
+
+      - name: Tag factiva latest image
+        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_import:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_import:latest
+
+      - name: Push factiva Image
+        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_import
+
+      - name: Update Scaleway job definition with Factiva image
+        uses: jawher/action-scw@v2.34.0
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          SCW_ZONE: ${{ secrets.SCW_ZONE }}
+        with:
+          args: jobs definition update ${{ secrets.SCALEWAY_JOB_FACTIVA_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_import:${{ env.PROJECT_VERSION }}

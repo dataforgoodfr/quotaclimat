@@ -168,10 +168,11 @@ services:
     volumes:
       - './pgdata:/var/lib/postgresql/data' # persist data https://stackoverflow.com/a/41650891/3535853
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U user -d barometre"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
     environment:
       TZ: Europe/Paris # to match prod settings
       POSTGRES_USER: user
@@ -338,6 +339,42 @@ services:
     secrets:
        - bucket
        - bucket_secret
+
+  factiva:
+    container_name: factiva_ingestion
+    ports:
+      - 5001:5000
+    build:
+      context: ./
+      dockerfile: Dockerfile_factiva
+    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
+    environment:
+      ENV: docker # change me to prod for real cases
+      LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log
+      PYTHONPATH: /app
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      PORT: 5000
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      # Factiva specific configuration
+      FACTIVA_MOCK_MODE: "true"  # Set to false when using real Factiva API
+      FACTIVA_MOCK_MAX_EVENTS: "500"  # Number of events to generate in mock mode
+      FACTIVA_SUBSCRIPTION_ID: "test-subscription"
+      FACTIVA_SERVICE_ACCOUNT_ID: "test-account"
+      FACTIVA_MAX_MESSAGES: "50"  # Max messages to pull per request
+      FACTIVA_POLL_INTERVAL: "10"  # Seconds between polls
+      FACTIVA_BATCH_SIZE: "50"  # Batch size for DB commits
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./alembic:/app/alembic
+      - ./alembic.ini:/app/alembic.ini
+    depends_on:
+      postgres_db:
+        condition: service_healthy
 
 secrets: # https://docs.docker.com/compose/use-secrets/
   pwd_api:

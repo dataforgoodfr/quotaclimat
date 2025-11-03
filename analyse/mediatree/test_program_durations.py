@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import sys
 import time
@@ -132,11 +133,20 @@ def get_percentage_coverage(
 
 
 if __name__ == "__main__":
-    today = datetime.now().replace(
-        hour=0, minute=0, second=0, microsecond=0, tzinfo=ZoneInfo(timezones[country])
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--start-date", default=datetime.now(), type=str)
+    parser.add_argument("--n-days", default=7, type=int)
+
+    args = parser.parse_args()
+
+    if isinstance(args.start_date, str):
+        today = datetime.strptime(args.start_date, "%Y-%m-%s")
+    else:
+        today = datetime.now().replace(
+            hour=0, minute=0, second=0, microsecond=0, tzinfo=ZoneInfo(timezones[country])
+        )
     records = []
-    date_range = pd.date_range(end=today, periods=16, freq="D")
+    date_range = pd.date_range(end=today, periods=args.n_days, freq="D")
 
     for country, channel_programs in channel_programs_map.items():
         print(f"Testing for country: {country}")

@@ -55,8 +55,8 @@ channels_programs_poland = [
     {"channel_name": "polskie-radio", "start": "22:30", "end": "22:35", "weekday": "*", "program_name": "Informacje 22:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "polskie-radio", "start": "23:30", "end": "23:35", "weekday": "*", "program_name": "", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     
-    {"channel_name": "tokfm", "start": "16:00", "end": "16:30", "weekday": "weekday", "program_name": "TOK 360", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "tokfm", "start": "16:35", "end": "17:00", "weekday": "weekday", "program_name": "TOK 360", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "tokfm", "start": "16:00", "end": "16:30", "weekday": "weekday", "program_name": "TOK 360 16:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "tokfm", "start": "16:35", "end": "17:00", "weekday": "weekday", "program_name": "TOK 360 16:35", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "tokfm", "start": "18:00", "end": "18:20", "weekday": "weekday", "program_name": "TOK 360", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
 
     {"channel_name": "radio-zet", "start": "00:00", "end": "00:10", "weekday": "*", "program_name": "Radio Zet News 00:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},

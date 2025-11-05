@@ -117,8 +117,8 @@ env_shares as (
 	union all
 	select 
 		cqesin."start",
-		cqesin.channel_name,
 		cqesin.channel_title,
+		cqesin.channel_name,
 		cqesin.sum_duration_minutes,
 		cqesin."% climat" as weekly_perc_climat,
 		country

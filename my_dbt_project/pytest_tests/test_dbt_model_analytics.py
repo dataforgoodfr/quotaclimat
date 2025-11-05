@@ -64,7 +64,8 @@ def test_task_global_completion(db_connection):
                 "analytics"."task_global_completion"."task_completion_aggregate_id",
                 "analytics"."task_global_completion"."country",
                 "analytics"."task_global_completion"."data_item_channel_name",
-                "analytics"."task_global_completion"."mesinfo_choice"
+                "analytics"."task_global_completion"."mesinfo_choice",
+                "analytics"."task_global_completion"."sum_duration_minutes"
             FROM analytics.task_global_completion
             ORDER BY analytics.task_global_completion.task_completion_aggregate_id
             LIMIT 1
@@ -75,7 +76,8 @@ def test_task_global_completion(db_connection):
         '0e7ee7f70a223e21b10c0dad27464bebb8cc6a7f4bd5f5b7746c661a44ec7b45',
         "france",
         'europe1',
-        "Correct"
+        "Correct",
+        3090
     )
 
     assert row == expected, f"Unexpected values: {row}"

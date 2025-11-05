@@ -225,3 +225,7 @@ models:
         description: "One hot encoding speaker unknown"
       - name: "Annotation Version"
         description: "Annotation version (first annotation=1, second annotation=2)"
+      - name: sum_duration_minutes
+        description: "Total weekly durations (minutes) for the program being annotated"
+      - name: weekly_perc_climat
+        description: "% Time the of sum_duration_minutes being dedicated to climate change"

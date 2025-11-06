@@ -8,7 +8,7 @@ from postgres.schemas.models import Keyword_Macro_Category
 from quotaclimat.data_processing.mediatree.i8n.country import *
 
 # Need to import these files - slack #metabase-keywords
-i8n_dictionary = "document-experts/Dictionnaire_Multilingue.xlsx"
+i8n_dictionary = "document-experts/Dictionnaire_Multilingue_no_HRFP.xlsx"
 french_dictionary = "document-experts/Dictionnaire - OME.xlsx"
 macro_category_file = "document-experts/Dictionnaire - OME.xlsx - Catégories Transversales.tsv"
 excels_files = [french_dictionary, i8n_dictionary]
@@ -36,6 +36,7 @@ class TranslatedKeyword:
         self.keyword = keyword
 
 def process_i8n_dict(df_i8n : pd.DataFrame):
+    print(df_i8n.head())
 
     # split the dataframe into portuguese and non-portuguese
     df_portuguese = df_i8n[['Portuguese', 'HRFP_Portuguese']].copy()

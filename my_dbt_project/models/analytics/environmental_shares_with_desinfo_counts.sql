@@ -48,6 +48,7 @@ weekly_desinfo as (
 	 	sum(case when tgc.mesinfo_correct is null then 0 else tgc.mesinfo_correct end) total_mesinfo
 	from
 		{{ ref("task_global_completion") }} tgc
+    where tgc."Annotation Version"=1
 	group by
 		week_start,
 	 	tgc.data_item_channel_name,

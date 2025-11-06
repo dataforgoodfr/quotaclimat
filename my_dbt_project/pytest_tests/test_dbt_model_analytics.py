@@ -55,7 +55,7 @@ def seed_dbt_labelstudio():
 seed_dbt_labelstudio()
 
 @pytest.fixture(scope="module", autouse=True)
-def run_task_global_completion():
+def run_analytics():
     logging.info("Run dbt for the thematics model once before related tests.")
     run_dbt_command(
         [
@@ -64,6 +64,8 @@ def run_task_global_completion():
             "core_query_causal_links",
             "--exclude",
             "task_global_completion",
+            "--exclude",
+            "environmental_shares_with_desinfo_counts",
             "--full-refresh",
         ]
     )
@@ -73,6 +75,8 @@ def run_task_global_completion():
             "run",
             "--select",
             "task_global_completion",
+            "--select",
+            "environmental_shares_with_desinfo_counts",
             "--target",
             "analytics",
             "--full-refresh",
@@ -104,3 +108,26 @@ def test_task_global_completion(db_connection):
     )
 
     assert row == expected, f"Unexpected values: {row}"
+
+def test_environmental_shares_desinfo(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT
+                "analytics"."environmental_shares_with_desinfo_counts"."start",
+                "analytics"."environmental_shares_with_desinfo_counts"."channel_name",
+                "analytics"."environmental_shares_with_desinfo_counts"."sum_duration_minutes",
+                "analytics"."environmental_shares_with_desinfo_counts"."weekly_perc_climat",
+                "analytics"."environmental_shares_with_desinfo_counts"."total_mesinfo"
+            FROM analytics.environmental_shares_with_desinfo_counts
+            ORDER BY analytics.environmental_shares_with_desinfo_counts.start
+            LIMIT 1
+        """)
+        row = cur.fetchone()
+    expected = (
+        datetime.datetime(2025, 1, 27, 0, 0),
+        "arte",
+        65,
+        0.13846153846153847,
+        0,
+    )
+    assert row == expected

@@ -199,7 +199,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     plaitext_without_stopwords = remove_stopwords(plaintext=plaintext, stopwords=stop_words, country=country)
     logging.debug(f"display datetime start {start}")
 
-    logging.debug(f"Keeping only {country.language} keywords...")
+    logging.info(f"Keeping only {country.language} keywords...")
     try:
         for theme, keywords_dict in THEME_KEYWORDS.items():
             logging.debug(f"searching {theme} for {keywords_dict}")

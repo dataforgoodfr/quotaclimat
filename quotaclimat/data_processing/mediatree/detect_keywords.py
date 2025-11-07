@@ -1,3 +1,4 @@
+import json
 import logging
 
 from quotaclimat.data_processing.mediatree.utils import *
@@ -34,6 +35,8 @@ def get_keyword_with_timestamp(theme: str, category: str, keyword : str, cts_in_
     }
 
 def find_matching_subtitle(subtitles, keyword):
+    if isinstance(subtitles, str):
+        subtitles = json.loads(subtitles)
     for item in subtitles:
         logging.debug(f"Testing {item} with {keyword} full subtitle is {subtitles}")
         try:

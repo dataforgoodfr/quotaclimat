@@ -12,7 +12,7 @@ if [[ $? -eq 0 ]]; then
 else
     echo "Command failed"
 fi
-if [ $REPARSE_CAUSAL_LINKS -eq 1 ]; then
+if [[ "${REPARSE_CAUSAL_LINKS:-0}" -eq 1 ]]; then
   echo "Reparsing core_query_causal_links"
   year_end=$(date +%d)
 

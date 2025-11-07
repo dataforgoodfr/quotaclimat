@@ -257,6 +257,11 @@ With Sentry, with env variable `SENTRY_DSN`.
 
 Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
 
+### Send logs to Sentry
+By setting `SENTRY_LOGGING` to `"true"` we can send the job logs to sentry (as Scaleway Cockpit is not always reliable).
+
+Be aware that the first 5GB/month of logs are free, after that it's 0,5$/GB.
+
 ## Mediatree - Import data
 Mediatree Documentation API : https://keywords.mediatree.fr/docs/
 

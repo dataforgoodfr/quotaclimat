@@ -71,6 +71,8 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                         stop_word_keyword_only = False, \
                         biodiversity_only = False,
                         country=FRANCE) -> list:
+    
+    logging.info(f"Updating keywords for Country : {country.name}")
 
     filter_days_stop_word = int(os.environ.get("FILTER_DAYS_STOP_WORD", 30))
     logging.info(f"FILTER_DAYS_STOP_WORD is used to get only last {filter_days_stop_word} days of new stop words - to improve update speed")
@@ -135,7 +137,7 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                     ,number_of_biodiversite_causes_no_hrfp \
                     ,number_of_biodiversite_consequences_no_hrfp \
                     ,number_of_biodiversite_solutions_no_hrfp \
-                    ,country_name = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words)
+                    ,country_name = get_themes_keywords_duration(plaintext, srt, start, stop_words=stop_words, country=country)
 
                     
                     if(number_of_keywords != new_number_of_keywords or

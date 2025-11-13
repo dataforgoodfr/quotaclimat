@@ -1,6 +1,6 @@
 [project]
 name = "quotaclimat"
-version = "2.0.57"
+version = "2.0.69"
 description = ""
 authors = [
     {name = "Rambier Estelle", "email"="estelle.rambier@hotmail.fr"},
@@ -34,7 +34,7 @@ aiohttp = "^3.10.8"
 pytest-asyncio = "^0.23.5"
 swifter = "^1.4.0"
 tenacity = "^8.2.3"
-sentry-sdk = "^2.13.0"
+sentry-sdk = ">=2.53.0"
 modin = {extras = ["ray"], version = "^0.32.0"}
 openpyxl = "^3.1.5"
 requests = "^2.32.3"
@@ -42,6 +42,12 @@ thefuzz = "^0.22.1"
 dbt-core = "^1.9.2"
 dbt-postgres = "^1.9.0"
 ruff = "^0.13.3"
+graphviz = "^0.21"
+matplotlib = "^3.10.7"
+factiva-analytics = "^0.3.0"
+python-dotenv = "^1.2.1"
+google-cloud-pubsub = "^2.33.0"
+
 [build-system]
 requires = ["poetry-core>=1.1"]
 build-backend = "poetry.core.masonry.api"
@@ -59,3 +65,5 @@ isort = "^5.10.1"
 flake8 = "^4.0.1"
 invoke = "^1.7.3"
 deptry = "^0.20.0"
+graphviz = "^0.21"
+ipykernel = "^7.0.1"

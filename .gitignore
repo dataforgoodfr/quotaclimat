@@ -153,3 +153,5 @@ notebooks/nlp/df_X_tfidf.pkl
 pgdata
 mb-data
 .idea
+
+explo_factiva/*

@@ -375,6 +375,88 @@ services:
     depends_on:
       postgres_db:
         condition: service_healthy
+    secrets:
+      - pwd_api
+      - username_api
+      - bucket
+      - bucket_secret
+
+  factiva_to_s3:
+    container_name: factiva_to_s3
+    build:
+      context: ./
+      dockerfile: Dockerfile_factiva_to_s3
+    environment:
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      PORT_HS: 5050
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      FACTIVA_S3_BUCKET: "factiva"
+      FACTIVA_S3_PREFIX: "country_france"
+      FACTIVA_BATCH_SIZE: "100"
+      FACTIVA_MAX_EMPTY_PULLS: "3"
+      FACTIVA_EMPTY_PULL_WAIT: "5"
+      FACTIVA_PULL_TIMEOUT: "30"
+      FACTIVA_LOCAL_TMP: "/tmp/factiva"
+      FACTIVA_MOCK_MODE: "true"
+      FACTIVA_MOCK_SOURCE_DIR: "/app/test/factiva_mock"
+      FACTIVA_MOCK_FILE_PATTERN: "*.json"
+      FACTIVA_USERKEY_FILE: /run/secrets/stream_factiva
+      FACTIVA_SUBSCRIPTION_ID_FILE: /run/secrets/stream_subscription_main
+      BUCKET: /run/secrets/bucket
+      BUCKET_SECRET: /run/secrets/bucket_secret
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./test/:/app/test/
+    secrets:
+      - bucket
+      - bucket_secret
+      - stream_factiva
+      - stream_subscription_main
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
+  factiva_stats_to_s3:
+    container_name: factiva_stats_to_s3
+    ports:
+      - 5003:5000
+    build:
+      context: ./
+      dockerfile: Dockerfile_factiva_stats_to_s3
+    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
+    environment:
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      PORT: 5000
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      # Factiva API credentials (from secrets)
+      FACTIVA_USERKEY: /run/secrets/factiva_userkey
+      # Factiva stats configuration
+      FACTIVA_MINIMAL_WORD_COUNT: "10"
+      FACTIVA_LANGUAGE_CODE: "fr"
+      FACTIVA_FOLLOWED_SOURCES_PATH: "quotaclimat/data_ingestion/factiva/inputs/followed_sources.json"
+      FACTIVA_LOCAL_TMP: "/tmp/factiva_stats"
+      FACTIVA_DAYS_BEFORE_TODAY: "7"
+      FACTIVA_STATS_ANALYSIS_DURATION: "7"
+      # S3 configuration (Scaleway, from secrets)
+      FACTIVA_S3_BUCKET: "factiva"
+      FACTIVA_S3_PREFIX: "country_france"
+      BUCKET: /run/secrets/bucket
+      BUCKET_SECRET: /run/secrets/bucket_secret
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./test/:/app/test/
+      - ./tmp/factiva_stats:/tmp/factiva_stats
+    secrets:
+      - bucket
+      - bucket_secret
+      - factiva_userkey
+    depends_on:
+      postgres_db:
+        condition: service_healthy
 
 secrets: # https://docs.docker.com/compose/use-secrets/
   pwd_api:
@@ -385,3 +467,10 @@ secrets: # https://docs.docker.com/compose/use-secrets/
     file: secrets/scw_bucket.txt
   bucket_secret:
     file: secrets/scw_bucket_secret.txt
+  stream_factiva:
+    file: secrets/stream_factiva.txt
+  stream_subscription_main:
+    file: secrets/stream_subscription_main.txt
+  factiva_userkey:
+    file: secrets/factiva_userkey.txt
+

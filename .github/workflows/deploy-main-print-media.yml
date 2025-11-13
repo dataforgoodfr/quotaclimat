@@ -50,16 +50,16 @@ jobs:
           password: ${{ secrets.SCALEWAY_API_KEY }}
           registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
 
-      - name: Build factiva image
-        run: docker build -f Dockerfile_factiva . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_import:${{ env.PROJECT_VERSION }}
+      - name: Build factiva_stats_to_s3 image
+        run: docker build -f Dockerfile_factiva_stats_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:${{ env.PROJECT_VERSION }}
 
-      - name: Tag factiva latest image
-        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_import:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_import:latest
+      - name: Tag factiva_stats_to_s3 latest image
+        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:latest
 
-      - name: Push factiva Image
-        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_import
+      - name: Push factiva_stats_to_s3 Image
+        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3
 
-      - name: Update Scaleway job definition with Factiva image
+      - name: Update Scaleway job definition with Factiva Stats image
         uses: jawher/action-scw@v2.34.0
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
@@ -67,4 +67,4 @@ jobs:
           SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           SCW_ZONE: ${{ secrets.SCW_ZONE }}
         with:
-          args: jobs definition update ${{ secrets.SCALEWAY_JOB_FACTIVA_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_import:${{ env.PROJECT_VERSION }}
+          args: jobs definition update ${{ secrets.SCALEWAY_JOB_FACTIVA_STATS_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:${{ env.PROJECT_VERSION }}

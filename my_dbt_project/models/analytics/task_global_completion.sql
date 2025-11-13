@@ -8,6 +8,7 @@ WITH choice_annotations AS (
 	SELECT
 		public.labelstudio_task_completion_aggregate.task_completion_aggregate_id as task_completion_aggregate_id,
 		public.labelstudio_task_completion_aggregate.task_aggregate_id as task_aggregate_id,
+		public.labelstudio_task_completion_aggregate.created_at,
 		string_agg(CASE WHEN subquery.choices IN ('Correct', 'Incorrect') THEN subquery.choices END, ',' ORDER BY subquery.choices) AS mesinfo_choice,
 		string_agg(
 			CASE 
@@ -35,11 +36,11 @@ WITH choice_annotations AS (
 			elem ->> 'type' = 'choices'
 	) 
 	subquery ON true
-	GROUP BY task_completion_aggregate_id, task_aggregate_id
+	GROUP BY task_completion_aggregate_id, task_aggregate_id, created_at
 ),
 versioned_choices AS (
 	SELECT
-        ROW_NUMBER() OVER (PARTITION BY choice_annotations.task_aggregate_id ORDER BY choice_annotations.task_completion_aggregate_id) AS annotation_version,
+        ROW_NUMBER() OVER (PARTITION BY choice_annotations.task_aggregate_id ORDER BY choice_annotations.created_at) AS annotation_version,
 		choice_annotations.*
 	FROM 
 		choice_annotations 

@@ -36,7 +36,7 @@ WITH choice_annotations AS (
 			elem ->> 'type' = 'choices'
 	) 
 	subquery ON true
-	GROUP BY task_completion_aggregate_id, task_aggregate_id
+	GROUP BY task_completion_aggregate_id, task_aggregate_id, created_at
 ),
 versioned_choices AS (
 	SELECT

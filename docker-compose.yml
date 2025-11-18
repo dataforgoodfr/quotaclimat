@@ -434,12 +434,17 @@ services:
       # Factiva API credentials (from secrets)
       FACTIVA_USERKEY: /run/secrets/factiva_userkey
       # Factiva stats configuration
-      FACTIVA_MINIMAL_WORD_COUNT: "10"
+      FACTIVA_MINIMAL_WORD_COUNT: "0"
       FACTIVA_LANGUAGE_CODE: "fr"
       FACTIVA_FOLLOWED_SOURCES_PATH: "quotaclimat/data_ingestion/factiva/inputs/followed_sources.json"
       FACTIVA_LOCAL_TMP: "/tmp/factiva_stats"
       FACTIVA_DAYS_BEFORE_TODAY: "7"
       FACTIVA_STATS_ANALYSIS_DURATION: "7"
+      # New configuration variables
+      EXTRACT_STATS: "true"
+      SELECT_DATE: "false"
+      # START_DATE: "2025-11-16"  # Only used when SELECT_DATE=true
+      # END_DATE: "2025-11-16"    # Only used when SELECT_DATE=true
       # S3 configuration (Scaleway, from secrets)
       FACTIVA_S3_BUCKET: "factiva"
       FACTIVA_S3_PREFIX: "country_france"
@@ -454,6 +459,51 @@ services:
       - bucket
       - bucket_secret
       - factiva_userkey
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
+  s3_factiva_to_postgre:
+    container_name: s3_factiva_to_postgre
+    ports:
+      - 5004:5000
+    build:
+      context: ./
+      dockerfile: Dockerfile_s3_factiva_to_postgre
+    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
+    environment:
+      ENV: docker
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      PORT: 5000
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      # PostgreSQL configuration
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      # S3 configuration (Scaleway, from secrets)
+      S3_BUCKET_NAME: "factiva"
+      S3_REGION: "fr-par"
+      S3_ACCESS_KEY: /run/secrets/bucket
+      S3_SECRET_KEY: /run/secrets/bucket_secret
+      S3_ENDPOINT_URL: "https://s3.fr-par.scw.cloud"
+      S3_BASE_PREFIX: "country_france"
+      # Processing configuration
+      PROCESS_ARTICLES: "false"
+      PROCESS_STATS: "true"
+      LOOKBACK_DAYS: "30"
+      LOCAL_TMP_DIR: "/tmp/s3_factiva_to_postgre"
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./alembic_factiva:/app/alembic_factiva
+      - ./alembic_factiva.ini:/app/alembic_factiva.ini
+      - ./tmp/s3_factiva_to_postgre:/tmp/s3_factiva_to_postgre
+    secrets:
+      - bucket
+      - bucket_secret
     depends_on:
       postgres_db:
         condition: service_healthy

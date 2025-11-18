@@ -75,8 +75,10 @@ def submit_time_series(
         f"AND publication_datetime >= '{start_date} 00:00:00' "
         f"AND publication_datetime <= '{end_date} 23:59:59' "
         f"AND language_code = '{language_code}' "
-        f"AND word_count >= {minimal_word_count}"
     )
+
+    if minimal_word_count > 0:
+        where_clause += f" AND word_count >= {minimal_word_count}"
 
     # Add regex pattern if provided
     if regex_pattern:
@@ -161,8 +163,8 @@ def poll_time_series(
     analytics_id: str,
     user_key: Optional[str] = None,
     base_url: str = "https://api.dowjones.com",
-    max_attempts: int = 200,
-    wait_seconds: int = 10,
+    max_attempts: int = 20,
+    wait_seconds: int = 60,
     timeout: int = 30,
 ) -> Dict:
     """

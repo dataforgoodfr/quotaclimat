@@ -43,6 +43,7 @@ channel_metadata_table = "channel_metadata"
 program_metadata_table = "program_metadata"
 stop_word_table = "stop_word"
 factiva_articles_table = "factiva_articles"
+stats_factiva_articles_table = "stats_factiva_articles"
 
 
 class Sitemap(Base):
@@ -374,6 +375,59 @@ class Factiva_Article(Base):
     )
     is_deleted = Column(Boolean, default=False, nullable=False)  # Soft delete flag
 
+    # Keyword counts - non HRFP (high risk of false positive) - UNIQUE keywords only
+    number_of_changement_climatique_constat_no_hrfp = Column(Integer, nullable=True)
+    number_of_changement_climatique_causes_no_hrfp = Column(Integer, nullable=True)
+    number_of_changement_climatique_consequences_no_hrfp = Column(Integer, nullable=True)
+    number_of_attenuation_climatique_solutions_no_hrfp = Column(Integer, nullable=True)
+    number_of_adaptation_climatique_solutions_no_hrfp = Column(Integer, nullable=True)
+    number_of_ressources_constat_no_hrfp = Column(Integer, nullable=True)
+    number_of_ressources_solutions_no_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_concepts_generaux_no_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_causes_no_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_consequences_no_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_solutions_no_hrfp = Column(Integer, nullable=True)
+
+    # Aggregated counts by crisis type (sum of causal links)
+    number_of_climat_no_hrfp = Column(Integer, nullable=True)
+    number_of_ressources_no_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_no_hrfp = Column(Integer, nullable=True)
+
+    # Keyword lists by causal link - JSON arrays with ALL occurrences (including duplicates)
+    changement_climatique_constat_keywords = Column(JSON, nullable=True)
+    changement_climatique_causes_keywords = Column(JSON, nullable=True)
+    changement_climatique_consequences_keywords = Column(JSON, nullable=True)
+    attenuation_climatique_solutions_keywords = Column(JSON, nullable=True)
+    adaptation_climatique_solutions_keywords = Column(JSON, nullable=True)
+    ressources_constat_keywords = Column(JSON, nullable=True)
+    ressources_solutions_keywords = Column(JSON, nullable=True)
+    biodiversite_concepts_generaux_keywords = Column(JSON, nullable=True)
+    biodiversite_causes_keywords = Column(JSON, nullable=True)
+    biodiversite_consequences_keywords = Column(JSON, nullable=True)
+    biodiversite_solutions_keywords = Column(JSON, nullable=True)
+
+
+class Stats_Factiva_Article(Base):
+    __tablename__ = stats_factiva_articles_table
+
+    # Composite primary key on source_code and publication_datetime
+    source_code = Column(String, primary_key=True)
+    publication_datetime = Column(DateTime(timezone=True), primary_key=True)
+
+    # Article count
+    count = Column(Integer, nullable=False)
+
+    # Internal tracking
+    created_at = Column(
+        DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=datetime.now,
+        onupdate=text("now() at time zone 'Europe/Paris'"),
+        nullable=True,
+    )
+
 
 def get_sitemap(id: str):
     session = get_db_session()
@@ -395,6 +449,11 @@ def get_stop_word(id: str):
 def get_factiva_article(an: str):
     session = get_db_session()
     return session.get(Factiva_Article, an)
+
+
+def get_stats_factiva_article(source_code: str, publication_datetime: datetime):
+    session = get_db_session()
+    return session.get(Stats_Factiva_Article, (source_code, publication_datetime))
 
 
 def get_last_month_sitemap_id(engine):

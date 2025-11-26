@@ -398,10 +398,10 @@ services:
       FACTIVA_EMPTY_PULL_WAIT: "5"
       FACTIVA_PULL_TIMEOUT: "30"
       FACTIVA_LOCAL_TMP: "/tmp/factiva"
-      FACTIVA_MOCK_MODE: "true"
+      FACTIVA_MOCK_MODE: "false"
       FACTIVA_MOCK_SOURCE_DIR: "/app/test/factiva_mock"
       FACTIVA_MOCK_FILE_PATTERN: "*.json"
-      FACTIVA_USERKEY_FILE: /run/secrets/stream_factiva
+      FACTIVA_USERKEY_FILE: /run/secrets/factiva_userkey
       FACTIVA_SUBSCRIPTION_ID_FILE: /run/secrets/stream_subscription_main
       BUCKET: /run/secrets/bucket
       BUCKET_SECRET: /run/secrets/bucket_secret
@@ -412,7 +412,7 @@ services:
     secrets:
       - bucket
       - bucket_secret
-      - stream_factiva
+      - factiva_userkey
       - stream_subscription_main
     depends_on:
       postgres_db:
@@ -491,7 +491,7 @@ services:
       S3_ENDPOINT_URL: "https://s3.fr-par.scw.cloud"
       S3_BASE_PREFIX: "country_france"
       # Processing configuration
-      PROCESS_ARTICLES: "false"
+      PROCESS_ARTICLES: "true"
       PROCESS_STATS: "true"
       LOOKBACK_DAYS: "30"
       LOCAL_TMP_DIR: "/tmp/s3_factiva_to_postgre"

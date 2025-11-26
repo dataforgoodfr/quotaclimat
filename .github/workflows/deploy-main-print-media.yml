@@ -59,6 +59,24 @@ jobs:
       - name: Push factiva_stats_to_s3 Image
         run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3
 
+      - name: Build factiva_to_s3 image
+        run: docker build --no-cache -f Dockerfile_factiva_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:${{ env.PROJECT_VERSION }}
+
+      - name: Tag factiva_to_s3 latest image
+        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:latest
+
+      - name: Push factiva_to_s3 Image
+        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3
+
+      - name: Build s3_factiva_to_postgre image
+        run: docker build --no-cache -f Dockerfile_s3_factiva_to_postgre . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:${{ env.PROJECT_VERSION }}
+
+      - name: Tag s3_factiva_to_postgre latest image
+        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:latest
+
+      - name: Push s3_factiva_to_postgre Image
+        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre
+
       - name: Update Scaleway job definition with Factiva Stats image
         uses: jawher/action-scw@v2.34.0
         env:
@@ -68,3 +86,23 @@ jobs:
           SCW_ZONE: ${{ secrets.SCW_ZONE }}
         with:
           args: jobs definition update ${{ secrets.SCALEWAY_JOB_FACTIVA_STATS_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:${{ env.PROJECT_VERSION }}
+
+      - name: Update Scaleway job definition with Factiva to S3 image
+        uses: jawher/action-scw@v2.34.0
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          SCW_ZONE: ${{ secrets.SCW_ZONE }}
+        with:
+          args: jobs definition update ${{ secrets.SCALEWAY_JOB_FACTIVA_TO_S3_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:${{ env.PROJECT_VERSION }}
+
+      - name: Update Scaleway job definition with S3 Factiva to Postgre image
+        uses: jawher/action-scw@v2.34.0
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          SCW_ZONE: ${{ secrets.SCW_ZONE }}
+        with:
+          args: jobs definition update ${{ secrets.SCALEWAY_JOB_S3_FACTIVA_TO_POSTGRE_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:${{ env.PROJECT_VERSION }}

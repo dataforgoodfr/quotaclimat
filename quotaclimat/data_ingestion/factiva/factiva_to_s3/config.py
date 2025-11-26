@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 
 def _read_value_or_file(value: Optional[str]) -> Optional[str]:
@@ -15,13 +18,38 @@ def _read_value_or_file(value: Optional[str]) -> Optional[str]:
 
     path = Path(value)
     if path.exists():
-        return path.read_text(encoding="utf-8").strip()
+        try:
+            content = path.read_text(encoding="utf-8").strip()
+            logger.debug("Read secret from file: %s (length: %d)", path, len(content))
+            return content
+        except Exception as e:
+            logger.error("Failed to read file %s: %s", path, e)
+            raise
 
+    # If the value doesn't look like a file path, return it as-is
+    # But log a warning if it starts with /run/secrets/ (expected to be a file)
+    if value.startswith('/run/secrets/'):
+        logger.warning(
+            "Secret file path %s does not exist. This might indicate a Docker secrets mounting issue.",
+            value
+        )
+    
     return value.strip()
 
 
 def _read_from_env_or_file(env_key: str, file_env_key: Optional[str] = None, fallback_path: Optional[str] = None) -> Optional[str]:
-    """Read a secret either from an env var, an env var that points to a file or a fallback file."""
+    """
+    Read a secret either from an env var, an env var that points to a file or a fallback file.
+    
+    Priority order:
+    1. Direct env var (env_key) - used in PROD: set FACTIVA_USERKEY directly with the secret value
+    2. File path env var (file_env_key) - used in LOCAL: set FACTIVA_USERKEY_FILE pointing to /run/secrets/...
+    3. Fallback path (if provided)
+    
+    Examples:
+    - PROD: FACTIVA_USERKEY="my-secret-key" -> returns "my-secret-key"
+    - LOCAL: FACTIVA_USERKEY_FILE="/run/secrets/stream_factiva" -> reads file content
+    """
     raw_value = os.getenv(env_key)
     if raw_value:
         # Si la valeur ressemble à un chemin de fichier secret Docker, on la lit comme un fichier
@@ -29,14 +57,24 @@ def _read_from_env_or_file(env_key: str, file_env_key: Optional[str] = None, fal
             return _read_value_or_file(raw_value)
         return raw_value.strip()
 
+    # Local mode: use the variable that points to a file (ex: FACTIVA_USERKEY_FILE)
     if file_env_key:
-        file_value = _read_value_or_file(os.getenv(file_env_key))
-        if file_value:
-            return file_value
+        file_path = os.getenv(file_env_key)
+        if file_path:
+            logger.debug("Reading %s from file path specified in %s: %s", env_key, file_env_key, file_path)
+            file_value = _read_value_or_file(file_path)
+            if file_value:
+                return file_value
+            else:
+                logger.warning("File %s (from %s) exists but is empty or could not be read", file_path, file_env_key)
+        else:
+            logger.debug("Environment variable %s is not set", file_env_key)
 
     if fallback_path:
+        logger.debug("Trying fallback path for %s: %s", env_key, fallback_path)
         return _read_value_or_file(fallback_path)
 
+    logger.debug("No value found for %s", env_key)
     return None
 
 
@@ -79,6 +117,20 @@ class FactivaStreamConfig:
         if not subscription_id:
             raise ValueError(
                 "Factiva subscription id is missing. Set FACTIVA_SUBSCRIPTION_ID or FACTIVA_SUBSCRIPTION_ID_FILE."
+            )
+        
+        # Validate that user_key is not a file path (indicates file was not read)
+        if user_key.startswith('/run/secrets/'):
+            raise ValueError(
+                f"Factiva user key appears to be a file path ({user_key}) instead of the actual key. "
+                "The secret file may not exist or could not be read. Check Docker secrets configuration."
+            )
+        
+        # Validate that subscription_id is not a file path
+        if subscription_id.startswith('/run/secrets/'):
+            raise ValueError(
+                f"Factiva subscription id appears to be a file path ({subscription_id}) instead of the actual id. "
+                "The secret file may not exist or could not be read. Check Docker secrets configuration."
             )
 
         api_host = os.getenv("FACTIVA_API_HOST", "https://api.dowjones.com").strip()

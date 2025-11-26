@@ -250,12 +250,300 @@ def save_api_response(
             df.to_csv(csv_path, index=False, encoding="utf-8")
 
 
+def _build_factiva_where_clause(
+    source_codes: List[str],
+    language_code: Optional[str] = None,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    minimal_word_count: int = 0,
+    regex_pattern: Optional[str] = None,
+    stream_clause: Optional[bool] = False,
+) -> str:
+    """
+    Build a Factiva-compatible WHERE clause, appending filters only when provided.
+    """
+    if not source_codes:
+        raise ValueError("At least one source code must be provided")
+
+    clauses: List[str] = []
+
+    if language_code:
+        clauses.append(f"language_code = '{language_code}'")
+
+    source_codes_str = "', '".join(source_codes)
+    clauses.append(f"source_code IN ('{source_codes_str}')")
+
+    if start_date:
+        clauses.append(f"publication_datetime >= '{start_date} 00:00:00'")
+
+    if end_date:
+        clauses.append(f"publication_datetime <= '{end_date} 23:59:59'")
+
+    if minimal_word_count and minimal_word_count > 0:
+        clauses.append(f"word_count >= {minimal_word_count}")
+
+    if regex_pattern:
+        if stream_clause:
+            clauses.append(
+                "REGEXP_LIKE(CONCAT(title, ' ', IFNULL(snippet, ''), ' ', IFNULL(body, '')), "
+                f"'{regex_pattern.replace('(?i)', '')}', 'i')"
+            )
+        else:
+            clauses.append(
+                "REGEXP_CONTAINS(CONCAT(title, ' ', IFNULL(snippet, ''), ' ', IFNULL(body, '')), "
+                f"r'{regex_pattern}')"
+            )
+
+    if not clauses:
+        raise ValueError("Failed to build WHERE clause; no filters supplied")
+
+    return " AND ".join(clauses)
+
+
+def get_streams(
+    user_key: Optional[str] = None,
+    base_url: str = "https://api.dowjones.com",
+    timeout: int = 60,
+) -> Dict:
+    """
+    Retrieve the list of existing Streams for the authenticated account.
+
+    Args:
+        user_key: Factiva user key. If None, uses the FACTIVA_USERKEY environment variable
+        base_url: Base URL for the API (default: https://api.dowjones.com)
+        extended: When True, append extended=true to fetch richer stream metadata
+        timeout: HTTP requests timeout in seconds (default: 60)
+
+    Returns:
+        Dict with success flag, data payload, error message/details when applicable.
+    """
+    if user_key is None:
+        user_key = os.getenv("FACTIVA_USERKEY")
+        if user_key is None:
+            raise ValueError(
+                "User key not provided. Provide 'user_key' or set the FACTIVA_USERKEY environment variable"
+            )
+
+    headers = {
+        "user-key": user_key,
+        "Content-Type": "application/json",
+        "X-API-VERSION": "3.0",
+    }
+
+
+    print("Fetching Factiva Streams...")
+
+
+    try:
+        response = requests.get(
+            f"{base_url}/streams/",
+            headers=headers,
+            timeout=timeout,
+        )
+
+        if response.status_code != 200:
+            return {
+                "success": False,
+                "error": f"Error fetching streams: {response.status_code}",
+                "error_details": response.text,
+                "streams": None,
+            }
+
+        data = response.json()
+        print(f"Retrieved {len(data.get('data', []))} stream(s)")
+        return {
+            "success": True,
+            "streams": data,
+            "error": None,
+        }
+
+    except requests.RequestException as exc:
+        return {
+            "success": False,
+            "error": f"Request error while fetching streams: {exc}",
+            "error_details": None,
+            "streams": None,
+        }
+
+
+def get_stream_extended(
+    stream_id: str,
+    user_key: Optional[str] = None,
+    base_url: str = "https://api.dowjones.com",
+    timeout: int = 60,
+) -> Dict:
+    """
+    Retrieve the extended status of a specific Stream by its stream-id.
+
+    Args:
+        stream_id: The unique identifier of the stream
+        user_key: Factiva user key. If None, uses the FACTIVA_USERKEY environment variable
+        base_url: Base URL for the API (default: https://api.dowjones.com)
+        timeout: HTTP requests timeout in seconds (default: 60)
+
+    Returns:
+        Dict with success flag, extended stream data, error message/details when applicable.
+        Example successful response:
+        {
+            "success": True,
+            "stream_data": {...},  # Extended stream information
+            "error": None,
+        }
+
+    Example:
+        >>> result = get_stream_extended("my-stream-id-123")
+        >>> if result["success"]:
+        >>>     print(result["stream_data"])
+    """
+    if user_key is None:
+        user_key = os.getenv("FACTIVA_USERKEY")
+        if user_key is None:
+            raise ValueError(
+                "User key not provided. Provide 'user_key' or set the FACTIVA_USERKEY environment variable"
+            )
+
+    headers = {
+        "Content-Type": "application/json",
+        "user-key": user_key,
+        "X-API-VERSION": "3.0",
+    }
+
+    print(f"Fetching extended status for stream: {stream_id}")
+
+    try:
+        response = requests.get(
+            f"{base_url}/streams/{stream_id}?extended=true",
+            headers=headers,
+            timeout=timeout,
+        )
+
+        if response.status_code != 200:
+            return {
+                "success": False,
+                "error": f"Error fetching stream {stream_id}: {response.status_code}",
+                "error_details": response.text,
+                "stream_data": None,
+            }
+
+        data = response.json()
+        print(f"Successfully retrieved extended status for stream {stream_id}")
+        return {
+            "success": True,
+            "stream_data": data,
+            "error": None,
+        }
+
+    except requests.RequestException as exc:
+        return {
+            "success": False,
+            "error": f"Request error while fetching stream {stream_id}: {exc}",
+            "error_details": None,
+            "stream_data": None,
+        }
+
+
+def delete_stream(
+    stream_id: str,
+    subscription_id: Optional[str] = None,
+    user_key: Optional[str] = None,
+    base_url: str = "https://api.dowjones.com",
+    timeout: int = 60,
+) -> Dict:
+    """
+    Delete a Stream or a subscription from a Stream.
+
+    If subscription_id is provided, deletes the subscription.
+    If subscription_id is None, deletes the entire Stream.
+
+    Args:
+        stream_id: The unique identifier of the stream
+        subscription_id: The unique identifier of the subscription to delete.
+                        If None, deletes the entire stream (default: None)
+        user_key: Factiva user key. If None, uses the FACTIVA_USERKEY environment variable
+        base_url: Base URL for the API (default: https://api.dowjones.com)
+        timeout: HTTP requests timeout in seconds (default: 60)
+
+    Returns:
+        Dict with success flag, error message/details when applicable.
+        Example successful response:
+        {
+            "success": True,
+            "message": "Stream deleted successfully" or "Subscription deleted successfully",
+            "error": None,
+        }
+    """
+    if user_key is None:
+        user_key = os.getenv("FACTIVA_USERKEY")
+        if user_key is None:
+            raise ValueError(
+                "User key not provided. Provide 'user_key' or set the FACTIVA_USERKEY environment variable"
+            )
+
+    headers = {
+        "Content-Type": "application/json",
+        "user-key": user_key,
+        "X-API-VERSION": "3.0",
+    }
+
+    # Determine which endpoint to use
+    if subscription_id is None:
+        # Delete the entire stream
+        url = f"{base_url}/streams/{stream_id}/"
+        print(f"Deleting stream {stream_id}")
+        success_message = "Stream deleted successfully"
+        error_message_prefix = f"Error deleting stream {stream_id}"
+    else:
+        # Delete a subscription
+        url = f"{base_url}/streams/{stream_id}/subscriptions/{subscription_id}/"
+        print(f"Deleting subscription {subscription_id} from stream {stream_id}")
+        success_message = "Subscription deleted successfully"
+        error_message_prefix = f"Error deleting subscription {subscription_id}"
+
+    try:
+        response = requests.delete(
+            url,
+            headers=headers,
+            timeout=timeout,
+        )
+
+        if response.status_code == 204:
+            # 204 No Content is the typical success response for DELETE
+            print(success_message)
+            return {
+                "success": True,
+                "message": success_message,
+                "error": None,
+            }
+        elif response.status_code == 200:
+            # Some APIs return 200 OK for successful deletion
+            print(success_message)
+            return {
+                "success": True,
+                "message": success_message,
+                "error": None,
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"{error_message_prefix}: {response.status_code}",
+                "error_details": response.text,
+            }
+
+    except requests.RequestException as exc:
+        return {
+            "success": False,
+            "error": f"Request error while deleting: {exc}",
+            "error_details": None,
+        }
+
+
 def submit_snapshot_explain(
     source_codes: List[str],
     start_date: str,
     end_date: str,
     minimal_word_count: int,
     language_code: str,
+    stream_clause: Optional[bool] = False,
     regex_pattern: Optional[str] = None,
     user_key: Optional[str] = None,
     base_url: str = "https://api.dowjones.com",
@@ -292,25 +580,15 @@ def submit_snapshot_explain(
                 "User key not provided. Provide 'user_key' or set the FACTIVA_USERKEY environment variable"
             )
 
-    # Build the request
-    source_codes_str = "', '".join(source_codes)
-
-    # Build WHERE clause
-    where_clause = (
-        f"source_code IN ('{source_codes_str}') "
-        f"AND publication_datetime >= '{start_date} 00:00:00' "
-        f"AND publication_datetime <= '{end_date} 23:59:59' "
-        f"AND language_code = '{language_code}' "
-        f"AND word_count >= {minimal_word_count}"
+    where_clause = _build_factiva_where_clause(
+        source_codes=source_codes,
+        language_code=language_code,
+        start_date=start_date,
+        end_date=end_date,
+        minimal_word_count=minimal_word_count,
+        regex_pattern=regex_pattern,
+        stream_clause=stream_clause,
     )
-
-    # Add regex pattern if provided
-    if regex_pattern:
-        # Utiliser un raw string literal BigQuery r'...'; le pattern BigQuery ne contient plus d'apostrophes
-        where_clause += (
-            " AND REGEXP_CONTAINS(CONCAT(title, ' ', IFNULL(snippet, ''), ' ', IFNULL(body, '')), "
-            f"r'{regex_pattern}')"
-        )
 
     explain_query = {"query": {"where": where_clause}}
 
@@ -554,16 +832,14 @@ def create_streaming_instance(
                 "User key not provided. Provide 'user_key' or set the FACTIVA_USERKEY environment variable"
             )
 
-    # Build the WHERE clause for streaming
-    source_codes_str = "', '".join(source_codes)
-    where_clause = (
-        f"language_code = '{language_code}' "
-        f"AND source_code IN ('{source_codes_str}') "
-        f"AND publication_datetime >= '{start_date} 00:00:00' "
-        f"AND word_count >= {minimal_word_count} "
-        f"AND REGEXP_CONTAINS(CONCAT(title, ' ', IFNULL(snippet, ''), ' ', IFNULL(body, '')), r'{regex_pattern}')"
+    where_clause = _build_factiva_where_clause(
+        source_codes=source_codes,
+        language_code=language_code,
+        start_date=start_date,
+        minimal_word_count=minimal_word_count,
+        regex_pattern=regex_pattern,
+        stream_clause=True,
     )
-
 
     # Build the streaming query according to the new API format
     streaming_query = {
@@ -586,16 +862,43 @@ def create_streaming_instance(
     print(f"Start date: {start_date}")
     print(f"Language: {language_code}")
     print(f"Minimal word count: {minimal_word_count}")
-    print(f"Regex pattern: {regex_pattern}")
+    print(f"Regex pattern: {regex_pattern.replace('(?i)', '')}")
     print(f"Query: {streaming_query}")
 
     try:
-        response = requests.post(
+        # Create a session with improved SSL/TLS configuration
+        session = requests.Session()
+        
+        # Configure the session headers
+        session.headers.update(headers)
+        
+        # Create an HTTPAdapter with retry logic and SSL configuration
+        from requests.adapters import HTTPAdapter
+        from urllib3.util.retry import Retry
+        
+        retry_strategy = Retry(
+            total=3,
+            backoff_factor=1,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods=["POST"]
+        )
+        
+        adapter = HTTPAdapter(
+            max_retries=retry_strategy,
+            pool_connections=1,
+            pool_maxsize=1
+        )
+        session.mount("https://", adapter)
+        session.mount("http://", adapter)
+        
+        response = session.post(
             f"{base_url}/streams/",
-            headers=headers,
             json=streaming_query,
             timeout=timeout,
         )
+        
+        # Close the session after use
+        session.close()
         
         print(f"Response status code: {response.status_code}")
         

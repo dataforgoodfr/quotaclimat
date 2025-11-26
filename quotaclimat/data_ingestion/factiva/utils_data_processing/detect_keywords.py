@@ -1,4 +1,3 @@
-import logging
 import re
 from typing import List
 
@@ -86,13 +85,17 @@ def create_combined_regex_pattern(
     return combined_pattern
 
 
-def search_keywords_in_text(text: str, keywords_filtered: List[str]) -> List[str]:
+def search_keywords_in_text(
+    text: str, keywords_filtered: List[str], keep_duplicates: bool = False
+) -> List[str]:
     """
     Searches all keywords present in a text using a combined regex.
 
     Args:
         text: The text to search in
         keywords_filtered: List of keywords to look for
+        keep_duplicates: If True, returns all occurrences (with duplicates).
+                        If False, returns unique keywords only (default).
 
     Returns:
         List of keywords found in the text
@@ -109,8 +112,11 @@ def search_keywords_in_text(text: str, keywords_filtered: List[str]) -> List[str
     # Find all occurrences (case-insensitivity already in the pattern)
     matches = re.findall(pattern, text)
 
-    # Return the unique found keywords
-    return list(set(matches))
+    # Return unique or all occurrences based on parameter
+    if keep_duplicates:
+        return matches
+    else:
+        return list(set(matches))
 
 
 def is_keyword_in_text(keyword: str, text: str) -> bool:

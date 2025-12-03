@@ -118,6 +118,46 @@ class ProcessingConfig:
 
 
 @dataclass(slots=True)
+class UpdateConfig:
+    """Configuration for UPDATE mode (re-detect keywords on existing data)."""
+
+    enabled: bool
+    start_date: Optional[str]
+    end_date: Optional[str]
+    batch_size: int
+    source_codes: List[str]
+    biodiversity_only: bool
+    ressource_only: bool
+    climate_only: bool
+
+    @classmethod
+    def from_env(cls) -> "UpdateConfig":
+        enabled = os.getenv("UPDATE", "false").lower() == "true"
+        start_date = os.getenv("START_DATE_UPDATE")
+        end_date = os.getenv("END_DATE")
+        batch_size = int(os.getenv("BATCH_SIZE", "1000"))
+        
+        # SOURCE_CODE_UPDATE can be comma-separated list
+        source_codes_str = os.getenv("SOURCE_CODE_UPDATE", "")
+        source_codes = [s.strip() for s in source_codes_str.split(",") if s.strip()]
+        
+        biodiversity_only = os.getenv("BIODIVERSITY_ONLY", "false").lower() == "true"
+        ressource_only = os.getenv("RESSOURCE_ONLY", "false").lower() == "true"
+        climate_only = os.getenv("CLIMATE_ONLY", "false").lower() == "true"
+
+        return cls(
+            enabled=enabled,
+            start_date=start_date,
+            end_date=end_date,
+            batch_size=batch_size,
+            source_codes=source_codes,
+            biodiversity_only=biodiversity_only,
+            ressource_only=ressource_only,
+            climate_only=climate_only,
+        )
+
+
+@dataclass(slots=True)
 class ProcessingStats:
     """Statistics for the processing job."""
 
@@ -127,6 +167,9 @@ class ProcessingStats:
     sources_deleted: int = 0
     stats_processed: int = 0
     stats_upserted: int = 0
+    # For UPDATE mode
+    update_articles_processed: int = 0  # Articles processed for keyword update
+    update_articles_updated: int = 0    # Articles with actual keyword changes
     errors: int = 0
 
 
@@ -201,15 +244,24 @@ class ArticleProcessor:
     def get_unprocessed_article_files(self, lookback_days: int) -> List[str]:
         """Get list of unprocessed article files from the last N days."""
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+        now = datetime.now(timezone.utc)
         
         all_files = []
         
-        # Look through year/month folders
-        for year in range(cutoff_date.year, datetime.now(timezone.utc).year + 1):
-            for month in range(1, 13):
-                prefix = f"{self.config.base_prefix}/articles/year_{year}/month_{month:02d}/"
-                files = self.s3_client.list_files_in_prefix(prefix)
-                all_files.extend(files)
+        # Look through year/month folders - only scan months within the lookback period
+        current_date = cutoff_date.replace(day=1)  # Start from first day of cutoff month
+        end_date = now.replace(day=1)  # End at first day of current month
+        
+        while current_date <= end_date:
+            prefix = f"{self.config.base_prefix}/articles/year_{current_date.year}/month_{current_date.month:02d}/"
+            files = self.s3_client.list_files_in_prefix(prefix)
+            all_files.extend(files)
+            
+            # Move to next month
+            if current_date.month == 12:
+                current_date = current_date.replace(year=current_date.year + 1, month=1)
+            else:
+                current_date = current_date.replace(month=current_date.month + 1)
         
         # Filter for stream files without PROCESSED in name
         unprocessed = []
@@ -516,15 +568,24 @@ class StatsProcessor:
     def get_unprocessed_stats_files(self, lookback_days: int) -> List[str]:
         """Get list of unprocessed stats files from the last N days."""
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=lookback_days)
+        now = datetime.now(timezone.utc)
         
         all_files = []
         
-        # Look through year/month folders
-        for year in range(cutoff_date.year, datetime.now(timezone.utc).year + 1):
-            for month in range(1, 13):
-                prefix = f"{self.config.base_prefix}/nb_articles/year_{year}/month_{month:02d}/"
-                files = self.s3_client.list_files_in_prefix(prefix)
-                all_files.extend(files)
+        # Look through year/month folders - only scan months within the lookback period
+        current_date = cutoff_date.replace(day=1)  # Start from first day of cutoff month
+        end_date = now.replace(day=1)  # End at first day of current month
+        
+        while current_date <= end_date:
+            prefix = f"{self.config.base_prefix}/nb_articles/year_{current_date.year}/month_{current_date.month:02d}/"
+            files = self.s3_client.list_files_in_prefix(prefix)
+            all_files.extend(files)
+            
+            # Move to next month
+            if current_date.month == 12:
+                current_date = current_date.replace(year=current_date.year + 1, month=1)
+            else:
+                current_date = current_date.replace(month=current_date.month + 1)
         
         # Filter for stats files without PROCESSED in name
         unprocessed = []
@@ -652,22 +713,282 @@ class StatsProcessor:
             return None
 
 
+class ArticleUpdater:
+    """Update keywords on existing articles in PostgreSQL (UPDATE mode)."""
+
+    def __init__(self, update_config: UpdateConfig):
+        self.config = update_config
+        # Use custom JSON serializer to preserve Unicode characters in JSON columns
+        self.engine = connect_to_db(use_custom_json_serializer=True)
+
+    def get_total_count(self) -> int:
+        """Get total count of articles to update based on filters."""
+        from sqlalchemy import func
+        from sqlalchemy.orm import Session
+        
+        with Session(self.engine) as session:
+            query = session.query(func.count(Factiva_Article.an))
+            query = self._apply_filters(query)
+            return query.scalar() or 0
+
+    def _apply_filters(self, query):
+        """Apply filters based on configuration."""
+        
+        # Date filters on publication_datetime
+        if self.config.start_date:
+            try:
+                start_dt = date_parser.parse(self.config.start_date)
+                if start_dt.tzinfo is None:
+                    start_dt = start_dt.replace(tzinfo=timezone.utc)
+                query = query.filter(Factiva_Article.publication_datetime >= start_dt)
+            except Exception as e:
+                logging.warning(f"Could not parse START_DATE_UPDATE '{self.config.start_date}': {e}")
+        
+        if self.config.end_date:
+            try:
+                end_dt = date_parser.parse(self.config.end_date)
+                if end_dt.tzinfo is None:
+                    end_dt = end_dt.replace(tzinfo=timezone.utc)
+                query = query.filter(Factiva_Article.publication_datetime <= end_dt)
+            except Exception as e:
+                logging.warning(f"Could not parse END_DATE '{self.config.end_date}': {e}")
+        
+        # Source code filter
+        if self.config.source_codes:
+            query = query.filter(Factiva_Article.source_code.in_(self.config.source_codes))
+        
+        # Crisis type filters (only one can be active, or none)
+        if self.config.biodiversity_only:
+            query = query.filter(Factiva_Article.number_of_biodiversite_no_hrfp >= 1)
+        elif self.config.ressource_only:
+            query = query.filter(Factiva_Article.number_of_ressources_no_hrfp >= 1)
+        elif self.config.climate_only:
+            query = query.filter(Factiva_Article.number_of_climat_no_hrfp >= 1)
+        
+        # Only non-deleted articles
+        query = query.filter(Factiva_Article.is_deleted.is_(False))
+        
+        return query
+
+    def get_all_article_ids(self) -> List[str]:
+        """Get ALL article IDs matching filters BEFORE any updates.
+        
+        This is crucial because filters like CLIMATE_ONLY may change after updates,
+        causing OFFSET/LIMIT to skip or duplicate articles.
+        """
+        from sqlalchemy.orm import Session
+        
+        with Session(self.engine) as session:
+            query = session.query(Factiva_Article.an)
+            query = self._apply_filters(query)
+            query = query.order_by(Factiva_Article.publication_datetime, Factiva_Article.an)
+            
+            # Get all IDs as a flat list
+            result = query.all()
+            return [row[0] for row in result]
+
+    def get_articles_by_ids(self, article_ids: List[str]) -> List[Factiva_Article]:
+        """Get articles by their IDs."""
+        from sqlalchemy.orm import Session
+        
+        if not article_ids:
+            return []
+        
+        with Session(self.engine) as session:
+            query = session.query(Factiva_Article).filter(
+                Factiva_Article.an.in_(article_ids)
+            )
+            
+            # Detach from session to use outside
+            articles = query.all()
+            session.expunge_all()
+            return articles
+
+    def update_article_keywords(self, article: Factiva_Article) -> tuple[bool, bool]:
+        """Re-detect keywords for a single article and update in database if changes detected.
+        
+        Returns:
+            Tuple of (processed: bool, updated: bool)
+            - processed: True if article was processed without error
+            - updated: True if article had changes and was updated in DB
+        """
+        from sqlalchemy.orm import Session
+        
+        try:
+            # Build article text from stored content
+            article_text = self._build_article_text_from_db(article)
+            
+            # Re-detect keywords using the same function as import mode
+            keyword_data = extract_keyword_data_from_article(article_text)
+            
+            # Check for differences in keyword counts
+            has_changes = self._log_differences(article, keyword_data)
+            
+            if has_changes:
+                # Only UPDATE if there are actual changes (more efficient)
+                with Session(self.engine) as session:
+                    session.query(Factiva_Article).filter(
+                        Factiva_Article.an == article.an
+                    ).update(
+                        {
+                            **keyword_data,
+                            "updated_at": datetime.now(timezone.utc),
+                        },
+                        synchronize_session=False
+                    )
+                    session.commit()
+                
+                logging.info(f"Updated article {article.an} (keyword counts changed)")
+                return (True, True)  # processed=True, updated=True
+            else:
+                logging.debug(f"Skipped article {article.an} (no changes in keyword counts)")
+                return (True, False)  # processed=True, updated=False
+                
+        except Exception as e:
+            logging.error(f"Error processing article {article.an}: {e}")
+            return (False, False)  # processed=False, updated=False
+
+    def _build_article_text_from_db(self, article: Factiva_Article) -> str:
+        """Build combined text from article stored in database."""
+        text_parts = []
+        
+        if article.title:
+            text_parts.append(article.title)
+        if article.body:
+            text_parts.append(article.body)
+        if article.snippet:
+            text_parts.append(article.snippet)
+        if article.art:
+            text_parts.append(article.art)
+        
+        combined_text = " ".join(text_parts)
+        return combined_text.lower()
+
+    def _log_differences(self, article: Factiva_Article, new_keyword_data: dict) -> bool:
+        """Log all differences between current and new keyword data. Returns True if any difference found.
+        
+        We compare only the keyword lists (source of truth). All counts (individual and aggregated)
+        are derived from these lists, so if lists are identical, counts will be identical too.
+        """
+        differences = []
+        
+        # Compare keyword lists (source of truth)
+        # These are the actual keywords detected, so if they change, we need to update
+        list_fields = [
+            "changement_climatique_constat_keywords",
+            "changement_climatique_causes_keywords",
+            "changement_climatique_consequences_keywords",
+            "attenuation_climatique_solutions_keywords",
+            "adaptation_climatique_solutions_keywords",
+            "ressources_constat_keywords",
+            "ressources_solutions_keywords",
+            "biodiversite_concepts_generaux_keywords",
+            "biodiversite_causes_keywords",
+            "biodiversite_consequences_keywords",
+            "biodiversite_solutions_keywords",
+        ]
+        
+        for field in list_fields:
+            old_list = getattr(article, field, None) or []
+            new_list = new_keyword_data.get(field, [])
+            # Compare as sets to ignore order and handle duplicates
+            # This catches cases where same count but different keywords
+            if set(old_list) != set(new_list):
+                old_unique = sorted(set(old_list))
+                new_unique = sorted(set(new_list))
+                differences.append(f"{field}: {old_unique} -> {new_unique}")
+        
+        if differences:
+            logging.info(f"Differences detected for {article.an}:")
+            for diff in differences:
+                logging.info(f"  - {diff}")
+            return True
+        else:
+            logging.debug(f"No differences for {article.an}")
+            return False
+
+    def run_update(self) -> int:
+        """Run the keyword update process. Returns number of updated articles."""
+        logging.info("=" * 80)
+        logging.info("STARTING UPDATE MODE - Re-detecting keywords on existing articles")
+        logging.info("=" * 80)
+        
+        # Log configuration
+        logging.info("Configuration:")
+        logging.info(f"  START_DATE_UPDATE: {self.config.start_date or 'Not set (all dates)'}")
+        logging.info(f"  END_DATE: {self.config.end_date or 'Not set (all dates)'}")
+        logging.info(f"  BATCH_SIZE: {self.config.batch_size}")
+        logging.info(f"  SOURCE_CODE_UPDATE: {self.config.source_codes or 'Not set (all sources)'}")
+        logging.info(f"  BIODIVERSITY_ONLY: {self.config.biodiversity_only}")
+        logging.info(f"  RESSOURCE_ONLY: {self.config.ressource_only}")
+        logging.info(f"  CLIMATE_ONLY: {self.config.climate_only}")
+        
+        # IMPORTANT: Get ALL article IDs BEFORE any updates
+        # This prevents OFFSET issues when filters (CLIMATE_ONLY, etc.) change after updates
+        logging.info("Fetching all article IDs matching filters (before any updates)...")
+        all_article_ids = self.get_all_article_ids()
+        total_count = len(all_article_ids)
+        logging.info(f"Total articles to process: {total_count}")
+        
+        if total_count == 0:
+            logging.warning("No articles found matching the filters. Check your START_DATE_UPDATE and END_DATE.")
+            return 0
+        
+        # Process in batches using the fixed list of IDs
+        processed_count = 0  # Articles processed without error
+        updated_count = 0    # Articles with actual keyword changes
+        batch_size = self.config.batch_size
+        
+        for batch_start in range(0, total_count, batch_size):
+            batch_end = min(batch_start + batch_size, total_count)
+            batch_ids = all_article_ids[batch_start:batch_end]
+            
+            logging.info(f"Processing batch: articles {batch_start + 1}-{batch_end} (total: {total_count})")
+            
+            articles = self.get_articles_by_ids(batch_ids)
+            
+            for article in articles:
+                processed, updated = self.update_article_keywords(article)
+                if processed:
+                    processed_count += 1
+                if updated:
+                    updated_count += 1
+            
+            logging.info(f"Batch complete. Processed: {processed_count}, Updated: {updated_count}")
+        
+        logging.info("=" * 80)
+        logging.info("UPDATE MODE COMPLETE")
+        logging.info(f"  Articles processed for keyword update: {processed_count}")
+        logging.info(f"  Articles updated (keyword counts changed): {updated_count}")
+        logging.info("=" * 80)
+        
+        return (processed_count, updated_count)
+
+
 class S3ToPostgreProcessor:
     """Main processor for S3 to PostgreSQL data flow."""
 
     def __init__(
         self,
-        s3_config: S3Config,
-        processing_config: ProcessingConfig,
+        s3_config: Optional[S3Config],
+        processing_config: Optional[ProcessingConfig],
+        update_config: Optional[UpdateConfig] = None,
     ):
         self.s3_config = s3_config
         self.processing_config = processing_config
-        self.s3_client = S3Client(s3_config)
+        self.update_config = update_config
         self.stats = ProcessingStats()
         
-        # Create temp directory
-        self.tmp_dir = Path(processing_config.local_tmp_dir)
-        self.tmp_dir.mkdir(parents=True, exist_ok=True)
+        # Only create S3 client and temp dir if NOT in UPDATE mode
+        if update_config and update_config.enabled:
+            # UPDATE mode: no S3 needed
+            self.s3_client = None
+            self.tmp_dir = None
+        else:
+            # IMPORT mode: need S3 client and temp dir
+            self.s3_client = S3Client(s3_config)
+            self.tmp_dir = Path(processing_config.local_tmp_dir)
+            self.tmp_dir.mkdir(parents=True, exist_ok=True)
 
     async def run(self) -> None:
         """Execute the S3 to PostgreSQL processing."""
@@ -676,7 +997,13 @@ class S3ToPostgreProcessor:
 
     def _run_sync(self) -> None:
         """Synchronous processing logic."""
-        logging.info("Starting S3 to PostgreSQL processing job")
+        # Check if UPDATE mode is enabled
+        if self.update_config and self.update_config.enabled:
+            logging.info("UPDATE mode enabled - Re-detecting keywords on existing data")
+            self._run_update_mode()
+            return
+        
+        logging.info("Starting S3 to PostgreSQL processing job (normal import mode)")
         
         # Process articles
         if self.processing_config.process_articles:
@@ -772,16 +1099,37 @@ class S3ToPostgreProcessor:
             self.stats.errors += 1
             raise
 
+    def _run_update_mode(self) -> None:
+        """Run UPDATE mode - re-detect keywords on existing articles."""
+        try:
+            updater = ArticleUpdater(self.update_config)
+            processed, updated = updater.run_update()
+            self.stats.update_articles_processed = processed
+            self.stats.update_articles_updated = updated
+        except Exception as e:
+            logging.error(f"Error in update mode: {e}")
+            self.stats.errors += 1
+            raise
+
     def _log_summary(self) -> None:
         """Log summary statistics."""
         logging.info("=" * 80)
         logging.info("S3 TO POSTGRESQL PROCESSING SUMMARY")
-        logging.info(f"Article files processed: {self.stats.articles_processed}")
-        logging.info(f"Articles upserted      : {self.stats.articles_upserted}")
-        logging.info(f"Articles deleted       : {self.stats.articles_deleted}")
-        logging.info(f"Sources deleted        : {self.stats.sources_deleted}")
-        logging.info(f"Stats files processed  : {self.stats.stats_processed}")
-        logging.info(f"Stats records upserted : {self.stats.stats_upserted}")
+        
+        # Check if we were in UPDATE mode
+        if self.update_config and self.update_config.enabled:
+            logging.info("Mode                          : UPDATE (keyword re-detection)")
+            logging.info(f"Articles processed for update : {self.stats.update_articles_processed}")
+            logging.info(f"Articles updated              : {self.stats.update_articles_updated}")
+        else:
+            logging.info("Mode                   : IMPORT (S3 to PostgreSQL)")
+            logging.info(f"Article files processed: {self.stats.articles_processed}")
+            logging.info(f"Articles upserted      : {self.stats.articles_upserted}")
+            logging.info(f"Articles deleted       : {self.stats.articles_deleted}")
+            logging.info(f"Sources deleted        : {self.stats.sources_deleted}")
+            logging.info(f"Stats files processed  : {self.stats.stats_processed}")
+            logging.info(f"Stats records upserted : {self.stats.stats_upserted}")
+        
         logging.info(f"Errors                 : {self.stats.errors}")
         logging.info("=" * 80)
 
@@ -792,10 +1140,20 @@ async def main() -> None:
     logging.info("Launching S3 Factiva to PostgreSQL job")
     sentry_init()
 
-    s3_config = S3Config.from_env()
-    processing_config = ProcessingConfig.from_env()
+    # Load configurations
+    update_config = UpdateConfig.from_env()
     
-    processor = S3ToPostgreProcessor(s3_config, processing_config)
+    if update_config.enabled:
+        logging.info("UPDATE mode detected - will re-detect keywords on existing data")
+        # In UPDATE mode, we don't need S3 config
+        s3_config = None
+        processing_config = None
+    else:
+        logging.info("Normal import mode - will process S3 files")
+        s3_config = S3Config.from_env()
+        processing_config = ProcessingConfig.from_env()
+    
+    processor = S3ToPostgreProcessor(s3_config, processing_config, update_config)
 
     health_task = asyncio.create_task(run_health_check_server())
     try:

@@ -490,11 +490,20 @@ services:
       S3_SECRET_KEY: /run/secrets/bucket_secret
       S3_ENDPOINT_URL: "https://s3.fr-par.scw.cloud"
       S3_BASE_PREFIX: "country_france"
-      # Processing configuration
+      # Processing configuration (normal import mode)
       PROCESS_ARTICLES: "true"
       PROCESS_STATS: "true"
       LOOKBACK_DAYS: "30"
       LOCAL_TMP_DIR: "/tmp/s3_factiva_to_postgre"
+      # UPDATE mode configuration (keyword re-detection)
+      # UPDATE: "true"                    # Enable UPDATE mode (re-detect keywords on existing data)
+      # # START_DATE_UPDATE: "2025-11-27"   # Filter on publication_datetime >= this date
+      # # END_DATE: "2025-11-27"            # Filter on publication_datetime <= this date
+      # BATCH_SIZE: "1000"                # Number of articles per batch
+      # # SOURCE_CODE_UPDATE: "LEMOND, FIGARO"  # Comma-separated list of source_code to filter
+      # # BIODIVERSITY_ONLY: "true"         # Only update articles with number_of_biodiversite_no_hrfp >= 1
+      # # RESSOURCE_ONLY: "true"            # Only update articles with number_of_ressources_no_hrfp >= 1
+      # # CLIMATE_ONLY: "true"              # Only update articles with number_of_climat_no_hrfp >= 1
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/

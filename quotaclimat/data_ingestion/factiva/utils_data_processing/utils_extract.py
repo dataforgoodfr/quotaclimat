@@ -537,6 +537,80 @@ def delete_stream(
         }
 
 
+def get_account_statistics(
+    user_key: Optional[str] = None,
+    base_url: str = "https://api.dowjones.com",
+    timeout: int = 60,
+) -> Dict:
+    """
+    Retrieve account statistics from the Factiva SNS Accounts API.
+
+    Args:
+        user_key: Factiva user key. If None, uses the FACTIVA_USERKEY environment variable
+        base_url: Base URL for the API (default: https://api.dowjones.com)
+        timeout: HTTP requests timeout in seconds (default: 60)
+
+    Returns:
+        Dict with success flag, account statistics data, error message/details when applicable.
+        Example successful response:
+        {
+            "success": True,
+            "account_statistics": {...},  # Account statistics information
+            "error": None,
+        }
+
+    Example:
+        >>> result = get_account_statistics()
+        >>> if result["success"]:
+        >>>     print(result["account_statistics"])
+    """
+    if user_key is None:
+        user_key = os.getenv("FACTIVA_USERKEY")
+        if user_key is None:
+            raise ValueError(
+                "User key not provided. Provide 'user_key' or set the FACTIVA_USERKEY environment variable"
+            )
+
+    headers = {
+        "Content-Type": "application/json",
+        "user-key": user_key,
+        "X-API-VERSION": "3.0",
+    }
+
+    print("Fetching account statistics...")
+
+    try:
+        response = requests.get(
+            f"{base_url}/sns-accounts/",
+            headers=headers,
+            timeout=timeout,
+        )
+
+        if response.status_code != 200:
+            return {
+                "success": False,
+                "error": f"Error fetching account statistics: {response.status_code}",
+                "error_details": response.text,
+                "account_statistics": None,
+            }
+
+        data = response.json()
+        print("Successfully retrieved account statistics")
+        return {
+            "success": True,
+            "account_statistics": data,
+            "error": None,
+        }
+
+    except requests.RequestException as exc:
+        return {
+            "success": False,
+            "error": f"Request error while fetching account statistics: {exc}",
+            "error_details": None,
+            "account_statistics": None,
+        }
+
+
 def submit_snapshot_explain(
     source_codes: List[str],
     start_date: str,

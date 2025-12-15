@@ -32,6 +32,9 @@ from quotaclimat.data_processing.factiva.s3_to_postgre.extract_keywords_factiva 
     build_article_text,
     extract_keyword_data_from_article,
 )
+from quotaclimat.data_processing.factiva.s3_to_postgre.update_dictionary_factiva import (
+    update_dictionary_factiva,
+)
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
@@ -872,20 +875,35 @@ class ArticleUpdater:
         """
         differences = []
         
-        # Compare keyword lists (source of truth)
+        # Compare keyword lists (source of truth) - both non-HRFP and HRFP
         # These are the actual keywords detected, so if they change, we need to update
         list_fields = [
+            # Non-HRFP lists
             "changement_climatique_constat_keywords",
             "changement_climatique_causes_keywords",
             "changement_climatique_consequences_keywords",
             "attenuation_climatique_solutions_keywords",
             "adaptation_climatique_solutions_keywords",
+            "changement_climatique_solutions_keywords",
             "ressources_constat_keywords",
             "ressources_solutions_keywords",
             "biodiversite_concepts_generaux_keywords",
             "biodiversite_causes_keywords",
             "biodiversite_consequences_keywords",
             "biodiversite_solutions_keywords",
+            # HRFP lists
+            "changement_climatique_constat_keywords_hrfp",
+            "changement_climatique_causes_keywords_hrfp",
+            "changement_climatique_consequences_keywords_hrfp",
+            "attenuation_climatique_solutions_keywords_hrfp",
+            "adaptation_climatique_solutions_keywords_hrfp",
+            "changement_climatique_solutions_keywords_hrfp",
+            "ressources_constat_keywords_hrfp",
+            "ressources_solutions_keywords_hrfp",
+            "biodiversite_concepts_generaux_keywords_hrfp",
+            "biodiversite_causes_keywords_hrfp",
+            "biodiversite_consequences_keywords_hrfp",
+            "biodiversite_solutions_keywords_hrfp",
         ]
         
         for field in list_fields:
@@ -897,6 +915,15 @@ class ArticleUpdater:
                 old_unique = sorted(set(old_list))
                 new_unique = sorted(set(new_list))
                 differences.append(f"{field}: {old_unique} -> {new_unique}")
+        
+        # Also check all_keywords field (compare as JSON)
+        old_all_keywords = getattr(article, "all_keywords", None) or []
+        new_all_keywords = new_keyword_data.get("all_keywords", [])
+        # Sort both lists for consistent comparison
+        old_sorted = sorted(old_all_keywords, key=lambda x: (x.get("keyword", ""), x.get("theme", ""), x.get("is_hrfp", False)))
+        new_sorted = sorted(new_all_keywords, key=lambda x: (x.get("keyword", ""), x.get("theme", ""), x.get("is_hrfp", False)))
+        if old_sorted != new_sorted:
+            differences.append(f"all_keywords: changed (old: {len(old_all_keywords)} entries, new: {len(new_all_keywords)} entries)")
         
         if differences:
             logging.info(f"Differences detected for {article.an}:")
@@ -997,6 +1024,28 @@ class S3ToPostgreProcessor:
 
     def _run_sync(self) -> None:
         """Synchronous processing logic."""
+        # Update Dictionary and Keyword_Macro_Category tables at the start (both modes)
+        # Controlled by UPDATE_DICTIONARY environment variable (default: true)
+        update_dictionary = os.getenv("UPDATE_DICTIONARY", "false").lower() == "true"
+        
+        if update_dictionary:
+            logging.info("=" * 80)
+            logging.info("UPDATING DICTIONARY AND KEYWORD_MACRO_CATEGORY TABLES")
+            logging.info("=" * 80)
+            try:
+                engine = connect_to_db(use_custom_json_serializer=True)
+                update_dictionary_factiva(engine)
+                engine.dispose()
+                logging.info("Dictionary and Keyword_Macro_Category tables updated successfully")
+            except Exception as e:
+                logging.error(f"Failed to update dictionary tables: {e}")
+                # Don't fail the entire job if dictionary update fails
+                # The job can still process articles with the existing dictionary
+        else:
+            logging.info("=" * 80)
+            logging.info("SKIPPING DICTIONARY UPDATE (UPDATE_DICTIONARY=false)")
+            logging.info("=" * 80)
+        
         # Check if UPDATE mode is enabled
         if self.update_config and self.update_config.enabled:
             logging.info("UPDATE mode enabled - Re-detecting keywords on existing data")

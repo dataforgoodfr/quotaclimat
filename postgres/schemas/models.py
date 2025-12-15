@@ -381,6 +381,7 @@ class Factiva_Article(Base):
     number_of_changement_climatique_consequences_no_hrfp = Column(Integer, nullable=True)
     number_of_attenuation_climatique_solutions_no_hrfp = Column(Integer, nullable=True)
     number_of_adaptation_climatique_solutions_no_hrfp = Column(Integer, nullable=True)
+    number_of_changement_climatique_solutions_no_hrfp = Column(Integer, nullable=True)  # Combined solutions
     number_of_ressources_constat_no_hrfp = Column(Integer, nullable=True)
     number_of_ressources_solutions_no_hrfp = Column(Integer, nullable=True)
     number_of_biodiversite_concepts_generaux_no_hrfp = Column(Integer, nullable=True)
@@ -388,23 +389,60 @@ class Factiva_Article(Base):
     number_of_biodiversite_consequences_no_hrfp = Column(Integer, nullable=True)
     number_of_biodiversite_solutions_no_hrfp = Column(Integer, nullable=True)
 
-    # Aggregated counts by crisis type (sum of causal links)
+    # Keyword counts - HRFP (high risk of false positive) - UNIQUE keywords only
+    number_of_changement_climatique_constat_hrfp = Column(Integer, nullable=True)
+    number_of_changement_climatique_causes_hrfp = Column(Integer, nullable=True)
+    number_of_changement_climatique_consequences_hrfp = Column(Integer, nullable=True)
+    number_of_attenuation_climatique_solutions_hrfp = Column(Integer, nullable=True)
+    number_of_adaptation_climatique_solutions_hrfp = Column(Integer, nullable=True)
+    number_of_changement_climatique_solutions_hrfp = Column(Integer, nullable=True)  # Combined solutions
+    number_of_ressources_constat_hrfp = Column(Integer, nullable=True)
+    number_of_ressources_solutions_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_concepts_generaux_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_causes_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_consequences_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_solutions_hrfp = Column(Integer, nullable=True)
+
+    # Aggregated counts by crisis type - non HRFP (sum of causal links)
     number_of_climat_no_hrfp = Column(Integer, nullable=True)
     number_of_ressources_no_hrfp = Column(Integer, nullable=True)
     number_of_biodiversite_no_hrfp = Column(Integer, nullable=True)
 
-    # Keyword lists by causal link - JSON arrays with ALL occurrences (including duplicates)
+    # Aggregated counts by crisis type - HRFP (sum of causal links)
+    number_of_climat_hrfp = Column(Integer, nullable=True)
+    number_of_ressources_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_hrfp = Column(Integer, nullable=True)
+
+    # Keyword lists by causal link - non HRFP - JSON arrays with ALL occurrences (including duplicates)
     changement_climatique_constat_keywords = Column(JSON, nullable=True)
     changement_climatique_causes_keywords = Column(JSON, nullable=True)
     changement_climatique_consequences_keywords = Column(JSON, nullable=True)
     attenuation_climatique_solutions_keywords = Column(JSON, nullable=True)
     adaptation_climatique_solutions_keywords = Column(JSON, nullable=True)
+    changement_climatique_solutions_keywords = Column(JSON, nullable=True)  # Combined solutions
     ressources_constat_keywords = Column(JSON, nullable=True)
     ressources_solutions_keywords = Column(JSON, nullable=True)
     biodiversite_concepts_generaux_keywords = Column(JSON, nullable=True)
     biodiversite_causes_keywords = Column(JSON, nullable=True)
     biodiversite_consequences_keywords = Column(JSON, nullable=True)
     biodiversite_solutions_keywords = Column(JSON, nullable=True)
+
+    # Keyword lists by causal link - HRFP - JSON arrays with ALL occurrences (including duplicates)
+    changement_climatique_constat_keywords_hrfp = Column(JSON, nullable=True)
+    changement_climatique_causes_keywords_hrfp = Column(JSON, nullable=True)
+    changement_climatique_consequences_keywords_hrfp = Column(JSON, nullable=True)
+    attenuation_climatique_solutions_keywords_hrfp = Column(JSON, nullable=True)
+    adaptation_climatique_solutions_keywords_hrfp = Column(JSON, nullable=True)
+    changement_climatique_solutions_keywords_hrfp = Column(JSON, nullable=True)  # Combined solutions
+    ressources_constat_keywords_hrfp = Column(JSON, nullable=True)
+    ressources_solutions_keywords_hrfp = Column(JSON, nullable=True)
+    biodiversite_concepts_generaux_keywords_hrfp = Column(JSON, nullable=True)
+    biodiversite_causes_keywords_hrfp = Column(JSON, nullable=True)
+    biodiversite_consequences_keywords_hrfp = Column(JSON, nullable=True)
+    biodiversite_solutions_keywords_hrfp = Column(JSON, nullable=True)
+
+    # All keywords with full metadata (keyword, theme, category, count_keyword, is_hrfp)
+    all_keywords = Column(JSON, nullable=True)
 
 
 class Stats_Factiva_Article(Base):

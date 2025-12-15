@@ -44,6 +44,9 @@ dbt-postgres = "^1.9.0"
 ruff = "^0.13.3"
 graphviz = "^0.21"
 matplotlib = "^3.10.7"
+plotly = "^6.5.0"
+nbformat = "^5.10.4"
+kaleido = "^1.2.0"
 [build-system]
 requires = ["poetry-core>=1.1"]
 build-backend = "poetry.core.masonry.api"

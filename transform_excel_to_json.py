@@ -72,7 +72,8 @@ def set_up_macro_category():
         "keyword", "is_empty", "general", "agriculture", "transport",
         "batiments", "energie", "industrie", "eau", "ecosysteme", "economie_ressources"
     ]
-
+    df["keyword"] = df["keyword"].str.strip()
+    df = df.drop_duplicates()
     for _, row in df.iterrows():
         keyword=row["keyword"]
         if pd.isna(keyword) or keyword.startswith("#"):
@@ -106,6 +107,8 @@ def set_up_macro_category():
             f.write("    },\n")
         f.write("]\n")
         logging.info(f"{len(records)} macro categories written to {output_file_macro_category} successfully.")
+    print(df["keyword"].value_counts()[df["keyword"].value_counts()==2])
+
 
 
 # Initialize the THEME_KEYWORDS dictionary

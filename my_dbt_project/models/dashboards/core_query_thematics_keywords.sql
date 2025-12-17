@@ -1,6 +1,7 @@
 {{ config(
-    materialized='incremental'
-    ,unique_key=['week','channel_title']
+    materialized='incremental',
+    unique_key=['week','channel_title'],
+    on_schema_change='append_new_columns'
   )
 }}
 
@@ -18,7 +19,6 @@ WITH program_durations AS (
   FROM public.program_metadata pm
   WHERE pm.country = 'france'
 ),
-
 program_weeks AS (
   SELECT
     pd.channel_title,
@@ -32,7 +32,6 @@ program_weeks AS (
     )::date AS week_start
   FROM program_durations pd
 ),
-
 program_airings AS (
   SELECT
     channel_title,
@@ -43,7 +42,6 @@ program_airings AS (
     week_start
   FROM program_weeks
 ),
-
 weekly_program_durations AS (
   SELECT
     channel_title,
@@ -52,7 +50,6 @@ weekly_program_durations AS (
   FROM program_airings
   GROUP BY channel_title, week_start
 ),
-
 keyword_occurrences AS (
   SELECT DISTINCT
     COALESCE(pm.channel_title, k.channel_title) AS channel_title,
@@ -92,8 +89,6 @@ keyword_occurrences AS (
     LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
     AND k.country = 'france'
 )
-
-
 SELECT
   ko.channel_title,
   ko.week,
@@ -121,11 +116,10 @@ SELECT
 FROM keyword_occurrences ko
 LEFT JOIN public.dictionary d
   ON d.keyword = ko.keyword AND d.theme LIKE ko.theme || '%' -- ensure matc with indirect theme inside the dictionary table
-
 LEFT JOIN weekly_program_durations wpd
   ON wpd.channel_title = ko.channel_title AND wpd.week = ko.week
 LEFT JOIN public.keyword_macro_category kmc
-  ON kmc.keyword = ko.keyword
+  ON kmc.keyword ilike ko.keyword
 GROUP BY
   ko.channel_title,
   ko.week,

@@ -638,7 +638,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "agriculture plus respectueuse de l’environnement ",
+        "keyword": "agriculture plus respectueuse de l’environnement",
         "is_empty": False,
         "general": False,
         "agriculture": True,
@@ -807,7 +807,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "agroforestier ",
+        "keyword": "agroforestier",
         "is_empty": False,
         "general": False,
         "agriculture": True,
@@ -1002,7 +1002,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "amélioration des pratiques d’élevage ",
+        "keyword": "amélioration des pratiques d’élevage",
         "is_empty": False,
         "general": False,
         "agriculture": True,
@@ -1444,7 +1444,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "ars ",
+        "keyword": "ars",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -1548,7 +1548,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "assolement ",
+        "keyword": "assolement",
         "is_empty": False,
         "general": False,
         "agriculture": True,
@@ -1561,7 +1561,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "atmosphère ",
+        "keyword": "atmosphère",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -2302,7 +2302,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": True,
     },
     {
-        "keyword": "biocapacité ",
+        "keyword": "biocapacité",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -3056,7 +3056,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "capitalisme ",
+        "keyword": "capitalisme",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -3173,7 +3173,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "carburant de synthèse ",
+        "keyword": "carburant de synthèse",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -3186,7 +3186,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "carburant durable ",
+        "keyword": "carburant durable",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -3225,7 +3225,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "catastrophe  ",
+        "keyword": "catastrophe",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -3537,7 +3537,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "changer les pratiques de pêche ",
+        "keyword": "changer les pratiques de pêche",
         "is_empty": False,
         "general": False,
         "agriculture": True,
@@ -4499,7 +4499,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "consigne ",
+        "keyword": "consigne",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -5721,7 +5721,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": True,
     },
     {
-        "keyword": "déchet ",
+        "keyword": "déchet",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -6241,7 +6241,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "désimperméabilisé ",
+        "keyword": "désimperméabilisé",
         "is_empty": False,
         "general": False,
         "agriculture": True,
@@ -6371,7 +6371,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "dévastation ",
+        "keyword": "dévastation",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -7944,7 +7944,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "emissions mondiales ",
+        "keyword": "emissions mondiales",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -8022,7 +8022,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "empreinte biodiversité ",
+        "keyword": "empreinte biodiversité",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -8152,7 +8152,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "englouti par les eaux ",
+        "keyword": "englouti par les eaux",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -9062,7 +9062,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "extractivisme ",
+        "keyword": "extractivisme",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -9478,7 +9478,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "fontaine ",
+        "keyword": "fontaine",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -10856,7 +10856,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "hydrogène ",
+        "keyword": "hydrogène",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -11051,7 +11051,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "impact environnementale ",
+        "keyword": "impact environnementale",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -11077,7 +11077,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "impact positif ",
+        "keyword": "impact positif",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -11103,7 +11103,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "impact sur la santé ",
+        "keyword": "impact sur la santé",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -12325,7 +12325,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "lien au vivant ",
+        "keyword": "lien au vivant",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -12611,7 +12611,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "lutte contre la pollution ",
+        "keyword": "lutte contre la pollution",
         "is_empty": False,
         "general": False,
         "agriculture": True,
@@ -13378,7 +13378,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "méga bassine ",
+        "keyword": "méga bassine",
         "is_empty": False,
         "general": False,
         "agriculture": True,
@@ -15562,7 +15562,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "pâturage tournant ",
+        "keyword": "pâturage tournant",
         "is_empty": False,
         "general": False,
         "agriculture": True,
@@ -15692,7 +15692,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "pénurie  ",
+        "keyword": "pénurie",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -16953,7 +16953,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "pollution de l'air ",
+        "keyword": "pollution de l'air",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -17356,7 +17356,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "préservation de la végétation ",
+        "keyword": "préservation de la végétation",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -17928,7 +17928,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "prolifération ",
+        "keyword": "prolifération",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -18643,7 +18643,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "rationnement ",
+        "keyword": "rationnement",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -18968,7 +18968,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": True,
     },
     {
-        "keyword": "recycler ",
+        "keyword": "recycler",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -19059,7 +19059,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": True,
     },
     {
-        "keyword": "réduction de la consommation ",
+        "keyword": "réduction de la consommation",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -19254,7 +19254,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": True,
     },
     {
-        "keyword": "réduire la pollution ",
+        "keyword": "réduire la pollution",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -19462,7 +19462,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "réglementation environnementale ",
+        "keyword": "réglementation environnementale",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -19540,7 +19540,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "réhabiliter les cours d'eau ",
+        "keyword": "réhabiliter les cours d'eau",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -19631,7 +19631,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "relation au vivant ",
+        "keyword": "relation au vivant",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -19683,7 +19683,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "remplacer les énergies fossiles ",
+        "keyword": "remplacer les énergies fossiles",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -19735,7 +19735,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "renaturer ",
+        "keyword": "renaturer",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -19891,7 +19891,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "replante ",
+        "keyword": "replante",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -19917,7 +19917,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "replanter ",
+        "keyword": "replanter",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -19969,7 +19969,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "réserve d'eau ",
+        "keyword": "réserve d'eau",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -20385,7 +20385,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "restauration de la végétation ",
+        "keyword": "restauration de la végétation",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -20424,7 +20424,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "restauration des cours d'eau ",
+        "keyword": "restauration des cours d'eau",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -20658,7 +20658,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "restaurer les cours d'eau ",
+        "keyword": "restaurer les cours d'eau",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -21035,7 +21035,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "ruisselement ",
+        "keyword": "ruisselement",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -21360,7 +21360,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "se débarrasser des énergies fossiles ",
+        "keyword": "se débarrasser des énergies fossiles",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -21386,7 +21386,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "se déplacer en vélo ",
+        "keyword": "se déplacer en vélo",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -21542,7 +21542,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "sécurité environnementale ",
+        "keyword": "sécurité environnementale",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -21646,7 +21646,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "service environnemental ",
+        "keyword": "service environnemental",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -22257,7 +22257,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "stratégie nationale biodiversité ",
+        "keyword": "stratégie nationale biodiversité",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -22569,7 +22569,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "techniques culturales simplifiées ",
+        "keyword": "techniques culturales simplifiées",
         "is_empty": False,
         "general": False,
         "agriculture": True,
@@ -22816,7 +22816,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "tonte tardive ",
+        "keyword": "tonte tardive",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -22907,7 +22907,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "toxique ",
+        "keyword": "toxique",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -23219,7 +23219,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "translocation ",
+        "keyword": "translocation",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -23648,7 +23648,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "urine ",
+        "keyword": "urine",
         "is_empty": False,
         "general": False,
         "agriculture": True,
@@ -24363,7 +24363,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": True,
     },
     {
-        "keyword": "zéro émission nette ",
+        "keyword": "zéro émission nette",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -24441,7 +24441,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "zone de non prélèvement ",
+        "keyword": "zone de non prélèvement",
         "is_empty": False,
         "general": False,
         "agriculture": False,

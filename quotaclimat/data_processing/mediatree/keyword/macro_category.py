@@ -3758,7 +3758,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "Chimie verte",
+        "keyword": "chimie verte",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -3797,7 +3797,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "Ciment bas carbone",
+        "keyword": "ciment bas carbone",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -3901,7 +3901,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "Cleantech",
+        "keyword": "cleantech",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -7632,7 +7632,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "Électrification",
+        "keyword": "électrification",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -11285,7 +11285,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "Industrie manufacturière",
+        "keyword": "industrie manufacturière",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -11363,7 +11363,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "Industriel",
+        "keyword": "industriel",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -16706,7 +16706,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "Politique industrielle",
+        "keyword": "politique industrielle",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -17759,7 +17759,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "Production",
+        "keyword": "production",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -19995,7 +19995,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "Résilience industrielle",
+        "keyword": "résilience industrielle",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -22088,7 +22088,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "Stockage d'énergie",
+        "keyword": "stockage d'énergie",
         "is_empty": False,
         "general": False,
         "agriculture": False,
@@ -22517,7 +22517,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "Technologies propres",
+        "keyword": "technologies propres",
         "is_empty": False,
         "general": True,
         "agriculture": False,
@@ -23089,7 +23089,7 @@ MACRO_CATEGORIES = [
         "economie_ressources": False,
     },
     {
-        "keyword": "Transition industrielle",
+        "keyword": "transition industrielle",
         "is_empty": False,
         "general": False,
         "agriculture": False,

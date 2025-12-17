@@ -79,7 +79,7 @@ def set_up_macro_category():
         if pd.isna(keyword) or keyword.startswith("#"):
             continue
         record = Keyword_Macro_Category(
-            keyword=row["keyword"].strip(),  # required
+            keyword=row["keyword"].lower().strip(),  # required
             is_empty=bool(row.get("is_empty", False)),
             general=bool(row.get("general", False)),
             agriculture=bool(row.get("agriculture", False)),

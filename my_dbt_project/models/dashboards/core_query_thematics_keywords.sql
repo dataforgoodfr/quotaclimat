@@ -119,7 +119,7 @@ LEFT JOIN public.dictionary d
 LEFT JOIN weekly_program_durations wpd
   ON wpd.channel_title = ko.channel_title AND wpd.week = ko.week
 LEFT JOIN public.keyword_macro_category kmc
-  ON kmc.keyword ilike ko.keyword
+  ON kmc.keyword = ko.keyword
 GROUP BY
   ko.channel_title,
   ko.week,

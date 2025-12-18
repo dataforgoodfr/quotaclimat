@@ -1,0 +1,5 @@
+target/
+dbt_packages/
+logs/
+*.pyc
+.user.yml

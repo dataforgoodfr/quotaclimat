@@ -6,6 +6,7 @@ from typing import Dict, List
 
 from quotaclimat.data_ingestion.factiva.utils_data_processing.detect_keywords import (
     search_keywords_in_text,
+    search_keywords_with_canonical_forms,
 )
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 
@@ -90,12 +91,19 @@ def find_keywords_in_text(text: str, keywords_info: List[Dict]) -> List[Dict]:
     """
     Find ALL occurrences of keywords in text (including duplicates) with their metadata.
     
+    This function uses named capture groups to return CANONICAL forms from the dictionary,
+    ensuring that categories are always preserved even for plural forms.
+    
+    Example:
+        If text contains "canicules" and dictionary has {"keyword": "canicule", "category": "X"}:
+        Returns [{"keyword": "canicule", "category": "X"}]  # Preserved!
+    
     Args:
         text: The text to search in
         keywords_info: List of dicts with 'keyword' and 'category' keys
         
     Returns:
-        List of dicts with found keywords and their categories (with duplicates)
+        List of dicts with found keywords (canonical forms) and their categories (with duplicates)
     """
     if not text or not keywords_info:
         return []
@@ -103,8 +111,8 @@ def find_keywords_in_text(text: str, keywords_info: List[Dict]) -> List[Dict]:
     # Extract just the keyword strings for search
     keyword_strings = [k["keyword"] for k in keywords_info]
     
-    # Find all occurrences
-    found_keywords = search_keywords_in_text(text, keyword_strings, keep_duplicates=True)
+    # Find all occurrences using named groups (returns CANONICAL forms)
+    found_keywords = search_keywords_with_canonical_forms(text, keyword_strings, keep_duplicates=True)
     
     # Create a mapping from keyword to category
     keyword_to_category = {k["keyword"]: k["category"] for k in keywords_info}
@@ -203,6 +211,11 @@ def extract_keyword_data_from_article(article_text: str) -> Dict:
         "number_of_climat_hrfp": 0,
         "number_of_ressources_hrfp": 0,
         "number_of_biodiversite_hrfp": 0,
+        # Aggregated counts for ALL crises combined
+        "number_of_crises_no_hrfp": 0,
+        "crises_keywords": [],
+        "number_of_crises_hrfp": 0,
+        "crises_keywords_hrfp": [],
         # Non-HRFP keyword lists (all occurrences including duplicates)
         "changement_climatique_constat_keywords": [],
         "changement_climatique_causes_keywords": [],
@@ -352,63 +365,95 @@ def extract_keyword_data_from_article(article_text: str) -> Dict:
     
     # Calculate combined climate solutions (attenuation + adaptation)
     # Non-HRFP
-    combined_solutions_no_hrfp = set()
-    combined_solutions_no_hrfp.update(result["attenuation_climatique_solutions_keywords"])
-    combined_solutions_no_hrfp.update(result["adaptation_climatique_solutions_keywords"])
-    result["changement_climatique_solutions_keywords"] = list(combined_solutions_no_hrfp)
-    result["number_of_changement_climatique_solutions_no_hrfp"] = len(combined_solutions_no_hrfp)
+    combined_solutions_no_hrfp = []
+    combined_solutions_no_hrfp.extend(result["attenuation_climatique_solutions_keywords"])
+    combined_solutions_no_hrfp.extend([keyword for keyword in result["adaptation_climatique_solutions_keywords"] 
+    if keyword not in combined_solutions_no_hrfp])
+    result["changement_climatique_solutions_keywords"] = combined_solutions_no_hrfp
+    result["number_of_changement_climatique_solutions_no_hrfp"] = len(set(combined_solutions_no_hrfp))
     
     # HRFP
-    combined_solutions_hrfp = set()
-    combined_solutions_hrfp.update(result["attenuation_climatique_solutions_keywords_hrfp"])
-    combined_solutions_hrfp.update(result["adaptation_climatique_solutions_keywords_hrfp"])
-    result["changement_climatique_solutions_keywords_hrfp"] = list(combined_solutions_hrfp)
-    result["number_of_changement_climatique_solutions_hrfp"] = len(combined_solutions_hrfp)
+    combined_solutions_hrfp = []
+    combined_solutions_hrfp.extend(result["attenuation_climatique_solutions_keywords_hrfp"])
+    combined_solutions_hrfp.extend([keyword for keyword in result["adaptation_climatique_solutions_keywords_hrfp"] 
+    if keyword not in combined_solutions_hrfp])
+    result["changement_climatique_solutions_keywords_hrfp"] = combined_solutions_hrfp
+    result["number_of_changement_climatique_solutions_hrfp"] = len(set(combined_solutions_hrfp))
     
     # Calculate aggregated counts by crisis type
     # Climat non-HRFP = constat + causes + consequences + solutions
-    climat_keywords_no_hrfp = set()
-    climat_keywords_no_hrfp.update(result["changement_climatique_constat_keywords"])
-    climat_keywords_no_hrfp.update(result["changement_climatique_causes_keywords"])
-    climat_keywords_no_hrfp.update(result["changement_climatique_consequences_keywords"])
-    climat_keywords_no_hrfp.update(result["changement_climatique_solutions_keywords"])
-    result["number_of_climat_no_hrfp"] = len(climat_keywords_no_hrfp)
+    climat_keywords_no_hrfp = []
+    climat_keywords_no_hrfp.extend(result["changement_climatique_constat_keywords"])
+    climat_keywords_no_hrfp.extend(result["changement_climatique_causes_keywords"])
+    climat_keywords_no_hrfp.extend(result["changement_climatique_consequences_keywords"])
+    climat_keywords_no_hrfp.extend(result["changement_climatique_solutions_keywords"])
+    result["number_of_climat_no_hrfp"] = len(set(climat_keywords_no_hrfp))
     
     # Climat HRFP
-    climat_keywords_hrfp = set()
-    climat_keywords_hrfp.update(result["changement_climatique_constat_keywords_hrfp"])
-    climat_keywords_hrfp.update(result["changement_climatique_causes_keywords_hrfp"])
-    climat_keywords_hrfp.update(result["changement_climatique_consequences_keywords_hrfp"])
-    climat_keywords_hrfp.update(result["changement_climatique_solutions_keywords_hrfp"])
-    result["number_of_climat_hrfp"] = len(climat_keywords_hrfp)
+    climat_keywords_hrfp = []
+    climat_keywords_hrfp.extend(result["changement_climatique_constat_keywords_hrfp"])
+    climat_keywords_hrfp.extend(result["changement_climatique_causes_keywords_hrfp"])
+    climat_keywords_hrfp.extend(result["changement_climatique_consequences_keywords_hrfp"])
+    climat_keywords_hrfp.extend(result["changement_climatique_solutions_keywords_hrfp"])
+    result["number_of_climat_hrfp"] = len(set(climat_keywords_hrfp))
     
     # Ressources non-HRFP
-    ressources_keywords_no_hrfp = set()
-    ressources_keywords_no_hrfp.update(result["ressources_constat_keywords"])
-    ressources_keywords_no_hrfp.update(result["ressources_solutions_keywords"])
-    result["number_of_ressources_no_hrfp"] = len(ressources_keywords_no_hrfp)
+    ressources_keywords_no_hrfp = []
+    ressources_keywords_no_hrfp.extend(result["ressources_constat_keywords"])
+    ressources_keywords_no_hrfp.extend(result["ressources_solutions_keywords"])
+    result["number_of_ressources_no_hrfp"] = len(set(ressources_keywords_no_hrfp))
     
     # Ressources HRFP
-    ressources_keywords_hrfp = set()
-    ressources_keywords_hrfp.update(result["ressources_constat_keywords_hrfp"])
-    ressources_keywords_hrfp.update(result["ressources_solutions_keywords_hrfp"])
-    result["number_of_ressources_hrfp"] = len(ressources_keywords_hrfp)
+    ressources_keywords_hrfp = []
+    ressources_keywords_hrfp.extend(result["ressources_constat_keywords_hrfp"])
+    ressources_keywords_hrfp.extend(result["ressources_solutions_keywords_hrfp"])
+    result["number_of_ressources_hrfp"] = len(set(ressources_keywords_hrfp))
     
     # Biodiversité non-HRFP
-    biodiversite_keywords_no_hrfp = set()
-    biodiversite_keywords_no_hrfp.update(result["biodiversite_concepts_generaux_keywords"])
-    biodiversite_keywords_no_hrfp.update(result["biodiversite_causes_keywords"])
-    biodiversite_keywords_no_hrfp.update(result["biodiversite_consequences_keywords"])
-    biodiversite_keywords_no_hrfp.update(result["biodiversite_solutions_keywords"])
-    result["number_of_biodiversite_no_hrfp"] = len(biodiversite_keywords_no_hrfp)
+    biodiversite_keywords_no_hrfp = []
+    biodiversite_keywords_no_hrfp.extend(result["biodiversite_concepts_generaux_keywords"])
+    biodiversite_keywords_no_hrfp.extend(result["biodiversite_causes_keywords"])
+    biodiversite_keywords_no_hrfp.extend(result["biodiversite_consequences_keywords"])
+    biodiversite_keywords_no_hrfp.extend(result["biodiversite_solutions_keywords"])
+    result["number_of_biodiversite_no_hrfp"] = len(set(biodiversite_keywords_no_hrfp))
     
     # Biodiversité HRFP
-    biodiversite_keywords_hrfp = set()
-    biodiversite_keywords_hrfp.update(result["biodiversite_concepts_generaux_keywords_hrfp"])
-    biodiversite_keywords_hrfp.update(result["biodiversite_causes_keywords_hrfp"])
-    biodiversite_keywords_hrfp.update(result["biodiversite_consequences_keywords_hrfp"])
-    biodiversite_keywords_hrfp.update(result["biodiversite_solutions_keywords_hrfp"])
-    result["number_of_biodiversite_hrfp"] = len(biodiversite_keywords_hrfp)
+    biodiversite_keywords_hrfp = []
+    biodiversite_keywords_hrfp.extend(result["biodiversite_concepts_generaux_keywords_hrfp"])
+    biodiversite_keywords_hrfp.extend(result["biodiversite_causes_keywords_hrfp"])
+    biodiversite_keywords_hrfp.extend(result["biodiversite_consequences_keywords_hrfp"])
+    biodiversite_keywords_hrfp.extend(result["biodiversite_solutions_keywords_hrfp"])
+    result["number_of_biodiversite_hrfp"] = len(set(biodiversite_keywords_hrfp))
+    
+    # Calculate aggregated counts for ALL crises combined (non-HRFP)
+    # Start with climat keywords (all occurrences including duplicates)
+    all_crises_keywords_no_hrfp_list = list(climat_keywords_no_hrfp)
+    
+    # Add biodiversité keywords that are not already in the list
+    all_crises_keywords_no_hrfp_list.extend([keyword for keyword in biodiversite_keywords_no_hrfp 
+    if keyword not in all_crises_keywords_no_hrfp_list])
+    
+    # Add ressources keywords that are not already in the list
+    all_crises_keywords_no_hrfp_list.extend([keyword for keyword in ressources_keywords_no_hrfp 
+    if keyword not in all_crises_keywords_no_hrfp_list])
+    
+    result["number_of_crises_no_hrfp"] = len(set(all_crises_keywords_no_hrfp_list))
+    result["crises_keywords"] = all_crises_keywords_no_hrfp_list
+    
+    # Calculate aggregated counts for ALL crises combined (HRFP)
+    # Start with climat keywords (all occurrences including duplicates)
+    all_crises_keywords_hrfp_list = list(climat_keywords_hrfp)
+    
+    # Add biodiversité keywords that are not already in the list
+    all_crises_keywords_hrfp_list.extend([keyword for keyword in biodiversite_keywords_hrfp 
+    if keyword not in all_crises_keywords_hrfp_list])
+    
+    # Add ressources keywords that are not already in the list
+    all_crises_keywords_hrfp_list.extend([keyword for keyword in ressources_keywords_hrfp 
+    if keyword not in all_crises_keywords_hrfp_list])
+    
+    result["number_of_crises_hrfp"] = len(set(all_crises_keywords_hrfp_list))
+    result["crises_keywords_hrfp"] = all_crises_keywords_hrfp_list
     
     # Build all_keywords with count_keyword for each unique keyword
     # Count occurrences of each (keyword, theme, category, is_hrfp) combination

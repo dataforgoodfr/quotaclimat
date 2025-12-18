@@ -44,6 +44,7 @@ program_metadata_table = "program_metadata"
 stop_word_table = "stop_word"
 factiva_articles_table = "factiva_articles"
 stats_factiva_articles_table = "stats_factiva_articles"
+source_classification_table = "source_classification"
 
 
 class Sitemap(Base):
@@ -291,6 +292,14 @@ class Keyword_Macro_Category(Base):
     economie_ressources = Column(Boolean, nullable=True, default=False)
 
 
+class Source_Classification(Base):
+    __tablename__ = source_classification_table
+    
+    source_type = Column(String, nullable=False)  # PQN, PQR, Magazine, Web
+    source_name = Column(String, nullable=False)  # Le Monde, Le Figaro, etc.
+    source_code = Column(String, primary_key=True)  # LEMOND, FIGARO, etc.
+
+
 class Factiva_Article(Base):
     __tablename__ = factiva_articles_table
 
@@ -413,6 +422,14 @@ class Factiva_Article(Base):
     number_of_ressources_hrfp = Column(Integer, nullable=True)
     number_of_biodiversite_hrfp = Column(Integer, nullable=True)
 
+    # Aggregated counts for ALL crises combined - non HRFP (unique keywords across all crises)
+    number_of_crises_no_hrfp = Column(Integer, nullable=True)
+    crises_keywords = Column(JSON, nullable=True)  # All unique keywords from all crises (non-HRFP)
+    
+    # Aggregated counts for ALL crises combined - HRFP (unique keywords across all crises)
+    number_of_crises_hrfp = Column(Integer, nullable=True)
+    crises_keywords_hrfp = Column(JSON, nullable=True)  # All unique keywords from all crises (HRFP)
+
     # Keyword lists by causal link - non HRFP - JSON arrays with ALL occurrences (including duplicates)
     changement_climatique_constat_keywords = Column(JSON, nullable=True)
     changement_climatique_causes_keywords = Column(JSON, nullable=True)
@@ -443,6 +460,12 @@ class Factiva_Article(Base):
 
     # All keywords with full metadata (keyword, theme, category, count_keyword, is_hrfp)
     all_keywords = Column(JSON, nullable=True)
+    
+    # Duplicate detection status
+    # - "NOT_DUP": Article is not a duplicate
+    # - "DUP_UNIQUE_VERSION": The unique version to keep among duplicates (most recent modification_datetime)
+    # - "DUP": A duplicate article (should be excluded from analysis)
+    duplicate_status = Column(String, nullable=True, default="NOT_DUP")
 
 
 class Stats_Factiva_Article(Base):

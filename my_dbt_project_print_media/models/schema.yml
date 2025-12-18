@@ -1,0 +1,40 @@
+version: 2
+
+sources:
+  - name: public
+    database: "{{ target.database }}"
+    schema: public
+    tables:
+      - name: factiva_articles
+        description: "Factiva articles with keyword extraction and crisis classification"
+      - name: stats_factiva_articles
+        description: "Statistics on article counts by source and publication datetime"
+      - name: source_classification
+        description: "Classification of sources by type (PQN, PQR, Magazines, Web)"
+
+models:
+  - name: print_media_crises_indicators
+    description: "Print media crises indicators aggregated by day and source"
+    columns:
+      - name: publication_day
+        description: "Publication day (converted from publication_datetime)"
+      - name: source_code
+        description: "Source code (e.g., LEMOND, FIGARO)"
+      - name: source_name
+        description: "Human-readable source name"
+      - name: source_type
+        description: "Source type (PQN, PQR, Magazines, Web)"
+      - name: count_total_articles
+        description: "Total number of articles for this day/source"
+      - name: count_climat
+        description: "Number of articles labeled as climate crisis"
+      - name: count_biodiversite
+        description: "Number of articles labeled as biodiversity crisis"
+      - name: count_ressources
+        description: "Number of articles labeled as resources crisis"
+      - name: count_at_least_one_crise
+        description: "Number of articles labeled with at least one crisis"
+      - name: created_at
+        description: "Timestamp when record was created"
+      - name: updated_at
+        description: "Timestamp when record was last updated"

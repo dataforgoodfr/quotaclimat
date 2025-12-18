@@ -11,6 +11,7 @@ import asyncio
 import json
 import logging
 import os
+import subprocess
 import sys
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -872,6 +873,8 @@ class ArticleUpdater:
         
         We compare only the keyword lists (source of truth). All counts (individual and aggregated)
         are derived from these lists, so if lists are identical, counts will be identical too.
+        
+        Special case: If any field is NULL or empty in the database, force update to populate all fields.
         """
         differences = []
         
@@ -904,8 +907,19 @@ class ArticleUpdater:
             "biodiversite_causes_keywords_hrfp",
             "biodiversite_consequences_keywords_hrfp",
             "biodiversite_solutions_keywords_hrfp",
+            # Aggregated crisis lists
+            "crises_keywords",
+            "crises_keywords_hrfp",
         ]
         
+        # First check if any field is NULL - if so, force update
+        for field in list_fields:
+            old_value = getattr(article, field, None)
+            if old_value is None:
+                logging.info(f"Force update for {article.an}: field '{field}' is NULL")
+                return True
+        
+        # If no NULL/empty fields, check for actual differences
         for field in list_fields:
             old_list = getattr(article, field, None) or []
             new_list = new_keyword_data.get(field, [])
@@ -1050,35 +1064,50 @@ class S3ToPostgreProcessor:
         if self.update_config and self.update_config.enabled:
             logging.info("UPDATE mode enabled - Re-detecting keywords on existing data")
             self._run_update_mode()
-            return
-        
-        logging.info("Starting S3 to PostgreSQL processing job (normal import mode)")
-        
-        # Process articles
-        if self.processing_config.process_articles:
-            logging.info("=" * 80)
-            logging.info("PROCESSING ARTICLES")
-            logging.info("=" * 80)
-            self._process_articles()
         else:
-            logging.info("Skipping article processing (PROCESS_ARTICLES=false)")
+            # IMPORT mode: process S3 files
+            logging.info("Starting S3 to PostgreSQL processing job (normal import mode)")
+            
+            # Process articles
+            if self.processing_config.process_articles:
+                logging.info("=" * 80)
+                logging.info("PROCESSING ARTICLES")
+                logging.info("=" * 80)
+                self._process_articles()
+            else:
+                logging.info("Skipping article processing (PROCESS_ARTICLES=false)")
+            
+            # Process stats
+            if self.processing_config.process_stats:
+                logging.info("=" * 80)
+                logging.info("PROCESSING STATISTICS")
+                logging.info("=" * 80)
+                self._process_stats()
+            else:
+                logging.info("Skipping stats processing (PROCESS_STATS=false)")
         
-        # Process stats
-        if self.processing_config.process_stats:
+        # Duplicate detection processing
+        # This recalculates duplicate_status for all articles before DBT runs
+        detect_duplicates = os.getenv("DETECT_DUPLICATES", "true").lower() == "true"
+        if detect_duplicates:
             logging.info("=" * 80)
-            logging.info("PROCESSING STATISTICS")
+            logging.info("DUPLICATE DETECTION PROCESSING")
             logging.info("=" * 80)
-            self._process_stats()
+            self._detect_and_mark_duplicates()
         else:
-            logging.info("Skipping stats processing (PROCESS_STATS=false)")
+            logging.info("Skipping duplicate detection (DETECT_DUPLICATES=false)")
         
-        # TODO: DBT models processing
-        # This will combine the two tables (factiva_articles and stats_factiva_articles)
-        # using DBT transformations
-        logging.info("=" * 80)
-        logging.info("TODO: DBT MODELS PROCESSING")
-        logging.info("This will be implemented later to combine article and stats data")
-        logging.info("=" * 80)
+        # DBT models processing
+        # This combines factiva_articles, stats_factiva_articles, and source_classification
+        # to calculate environmental indicators
+        run_dbt = os.getenv("RUN_DBT", "true").lower() == "true"
+        if run_dbt:
+            logging.info("=" * 80)
+            logging.info("DBT MODELS PROCESSING")
+            logging.info("=" * 80)
+            self._run_dbt_models()
+        else:
+            logging.info("Skipping DBT models processing (RUN_DBT=false)")
 
     def _process_articles(self) -> None:
         """Process article files from S3."""
@@ -1159,6 +1188,180 @@ class S3ToPostgreProcessor:
             logging.error(f"Error in update mode: {e}")
             self.stats.errors += 1
             raise
+
+    def _detect_and_mark_duplicates(self) -> None:
+        """
+        Detect and mark duplicate articles in the factiva_articles table.
+        
+        Duplicates are identified by matching:
+        - source_code
+        - title
+        - snippet
+        - body
+        - word_count
+        
+        For each group of duplicates:
+        - One article (most recent modification_datetime, then by AN) gets "DUP_UNIQUE_VERSION"
+        - All others get "DUP"
+        - Non-duplicates get "NOT_DUP"
+        """
+        try:
+            logging.info("Starting duplicate detection for all articles...")
+            engine = connect_to_db(use_custom_json_serializer=True)
+            
+            # SQL query to detect duplicates and assign status
+            # Uses window functions to identify duplicates and rank them
+            duplicate_detection_query = text("""
+                WITH duplicate_groups AS (
+                    -- Group articles by duplicate criteria and count duplicates
+                    SELECT 
+                        an,
+                        source_code,
+                        title,
+                        snippet,
+                        body,
+                        word_count,
+                        modification_datetime,
+                        COUNT(*) OVER (
+                            PARTITION BY 
+                                source_code,
+                                COALESCE(title, ''),
+                                COALESCE(snippet, ''),
+                                COALESCE(body, ''),
+                                COALESCE(word_count, 0)
+                        ) AS duplicate_count,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY 
+                                source_code,
+                                COALESCE(title, ''),
+                                COALESCE(snippet, ''),
+                                COALESCE(body, ''),
+                                COALESCE(word_count, 0)
+                            ORDER BY 
+                                modification_datetime DESC NULLS LAST,
+                                an ASC
+                        ) AS duplicate_rank
+                    FROM factiva_articles
+                    WHERE is_deleted = FALSE
+                ),
+                duplicate_status_assignment AS (
+                    -- Assign duplicate status based on count and rank
+                    SELECT 
+                        an,
+                        CASE 
+                            WHEN duplicate_count = 1 THEN 'NOT_DUP'
+                            WHEN duplicate_count > 1 AND duplicate_rank = 1 THEN 'DUP_UNIQUE_VERSION'
+                            ELSE 'DUP'
+                        END AS new_duplicate_status
+                    FROM duplicate_groups
+                )
+                -- Update the factiva_articles table
+                UPDATE factiva_articles fa
+                SET 
+                    duplicate_status = dsa.new_duplicate_status,
+                    updated_at = NOW()
+                FROM duplicate_status_assignment dsa
+                WHERE fa.an = dsa.an
+                    AND (fa.duplicate_status IS DISTINCT FROM dsa.new_duplicate_status)
+            """)
+            
+            with engine.begin() as conn:
+                result = conn.execute(duplicate_detection_query)
+                updated_count = result.rowcount
+                
+            logging.info(f"Duplicate detection complete. Updated {updated_count} articles.")
+            
+            # Log statistics about duplicates
+            stats_query = text("""
+                SELECT 
+                    duplicate_status,
+                    COUNT(*) as count
+                FROM factiva_articles
+                WHERE is_deleted = FALSE
+                GROUP BY duplicate_status
+                ORDER BY duplicate_status
+            """)
+            
+            with engine.begin() as conn:
+                stats_result = conn.execute(stats_query)
+                stats = stats_result.fetchall()
+                
+            logging.info("Duplicate status distribution:")
+            for status, count in stats:
+                logging.info(f"  {status or 'NULL'}: {count:,} articles")
+            
+            engine.dispose()
+            
+        except Exception as e:
+            logging.error(f"Error detecting duplicates: {e}")
+            self.stats.errors += 1
+            # Don't raise - allow the job to continue
+
+    def _run_dbt_models(self) -> None:
+        """Run DBT models to calculate environmental indicators."""
+        try:
+            # Get DBT project directory for print media
+            dbt_project_dir = os.path.join(os.getcwd(), "my_dbt_project_print_media")
+            
+            # Check if DBT project exists
+            if not os.path.exists(dbt_project_dir):
+                logging.error(f"DBT project directory not found: {dbt_project_dir}")
+                return
+            
+            # Get environment variables for DBT configuration
+            multiplier_climat = os.getenv("MULTIPLIER_HRFP_CLIMAT", "0")
+            multiplier_biodiv = os.getenv("MULTIPLIER_HRFP_BIODIV", "0")
+            multiplier_ressource = os.getenv("MULTIPLIER_HRFP_RESSOURCE", "0")
+            threshold_biod_clim_ress = os.getenv("THRESHOLD_BIOD_CLIM_RESS", "3,2,2")
+            
+            logging.info("Running DBT models with configuration:")
+            logging.info(f"  MULTIPLIER_HRFP_CLIMAT: {multiplier_climat}")
+            logging.info(f"  MULTIPLIER_HRFP_BIODIV: {multiplier_biodiv}")
+            logging.info(f"  MULTIPLIER_HRFP_RESSOURCE: {multiplier_ressource}")
+            logging.info(f"  THRESHOLD_BIOD_CLIM_RESS: {threshold_biod_clim_ress}")
+            
+            # Build DBT command
+            # Run only the print_media_crises_indicators model
+            # Use --full-refresh to ensure all changes are captured (articles, stats, thresholds)
+            dbt_command = [
+                "dbt", "run",
+                "--full-refresh",
+                "--select", "print_media_crises_indicators",
+                "--project-dir", dbt_project_dir,
+            ]
+            
+            logging.info(f"Executing DBT command: {' '.join(dbt_command)}")
+            
+            # Run DBT command
+            result = subprocess.run(
+                dbt_command,
+                capture_output=True,
+                text=True,
+                env={
+                    **os.environ,
+                    "MULTIPLIER_HRFP_CLIMAT": multiplier_climat,
+                    "MULTIPLIER_HRFP_BIODIV": multiplier_biodiv,
+                    "MULTIPLIER_HRFP_RESSOURCE": multiplier_ressource,
+                    "THRESHOLD_BIOD_CLIM_RESS": threshold_biod_clim_ress,
+                }
+            )
+            
+            # Log output
+            if result.stdout:
+                logging.info(f"DBT stdout:\n{result.stdout}")
+            if result.stderr:
+                logging.warning(f"DBT stderr:\n{result.stderr}")
+            
+            # Check if command succeeded
+            if result.returncode != 0:
+                logging.error(f"DBT command failed with return code {result.returncode}")
+                self.stats.errors += 1
+            else:
+                logging.info("DBT models executed successfully")
+                
+        except Exception as e:
+            logging.error(f"Error running DBT models: {e}")
+            self.stats.errors += 1
 
     def _log_summary(self) -> None:
         """Log summary statistics."""

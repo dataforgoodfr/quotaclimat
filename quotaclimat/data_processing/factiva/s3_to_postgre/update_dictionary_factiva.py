@@ -1,39 +1,48 @@
-"""Update Dictionary and Keyword_Macro_Category tables for Factiva job."""
+"""Update Dictionary, Keyword_Macro_Category, and Source_Classification tables for Factiva job."""
 
 import logging
 
 from sqlalchemy.orm import sessionmaker
 
-from postgres.schemas.models import Dictionary, Keyword_Macro_Category
+from postgres.schemas.models import (
+    Dictionary,
+    Keyword_Macro_Category,
+    Source_Classification,
+)
+from quotaclimat.data_ingestion.factiva.inputs.classification_source import (
+    SOURCE_CLASSIFICATION,
+)
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from quotaclimat.data_processing.mediatree.keyword.macro_category import (
     MACRO_CATEGORIES,
 )
 
 
-def update_dictionary_factiva(engine, theme_keywords=THEME_KEYWORDS, macro_categories=MACRO_CATEGORIES):
+def update_dictionary_factiva(engine, theme_keywords=THEME_KEYWORDS, macro_categories=MACRO_CATEGORIES, source_classification=SOURCE_CLASSIFICATION):
     """
-    Update Dictionary and Keyword_Macro_Category tables for Factiva job.
+    Update Dictionary, Keyword_Macro_Category, and Source_Classification tables for Factiva job.
     
     Args:
         engine: SQLAlchemy engine
         theme_keywords: Dictionary of theme keywords (default: THEME_KEYWORDS)
         macro_categories: List of macro category dictionaries (default: MACRO_CATEGORIES)
+        source_classification: Dictionary of source classifications (default: SOURCE_CLASSIFICATION)
     """
-    logging.info("Updating dictionary and keyword_macro_category tables for Factiva job")
+    logging.info("Updating dictionary, keyword_macro_category, and source_classification tables for Factiva job")
     Session = sessionmaker(bind=engine)
     session = Session()
 
     try:
         seen = set()
         logging.warning(
-            "Dictionary and Keyword_Macro_Category tables! Full overwrite (delete/recreate)"
+            "Dictionary, Keyword_Macro_Category, and Source_Classification tables! Full overwrite (delete/recreate)"
         )
         session.query(Dictionary).delete()
         session.query(Keyword_Macro_Category).delete()
+        session.query(Source_Classification).delete()
         session.commit()
         logging.info(
-            "Deleted all entries in the dictionary and Keyword_Macro_Category tables"
+            "Deleted all entries in the dictionary, Keyword_Macro_Category, and Source_Classification tables"
         )
 
         # Insert Dictionary data
@@ -71,6 +80,25 @@ def update_dictionary_factiva(engine, theme_keywords=THEME_KEYWORDS, macro_categ
         session.commit()
         logging.info(
             f"Inserted {len(macro_categories)} Keyword_Macro_Category records successfully"
+        )
+
+        # Insert Source_Classification data
+        source_classification_data = []
+        for source_type, sources in source_classification.items():
+            for source in sources:
+                source_classification_data.append({
+                    "source_type": source_type,
+                    "source_name": source["source_name"],
+                    "source_code": source["source_code"],
+                })
+        
+        logging.info(
+            f"Inserting {len(source_classification_data)} Source_Classification records..."
+        )
+        session.bulk_insert_mappings(Source_Classification, source_classification_data)
+        session.commit()
+        logging.info(
+            f"Inserted {len(source_classification_data)} Source_Classification records successfully"
         )
     except Exception as error:
         logging.error(f"Error updating dictionary data for Factiva job: {error}")

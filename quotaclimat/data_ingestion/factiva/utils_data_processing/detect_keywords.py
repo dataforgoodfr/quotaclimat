@@ -1,5 +1,6 @@
 import re
-from typing import List
+from itertools import product
+from typing import Dict, List, Tuple
 
 
 def format_word_regex(word: str) -> str:
@@ -144,3 +145,127 @@ def is_keyword_in_text(keyword: str, text: str) -> bool:
 
     # Search (case-insensitivity already in the pattern)
     return bool(re.search(pattern, text))
+
+
+def generate_variant_forms(keyword: str) -> List[str]:
+    """
+    Generates all possible variant forms (singular/plural) for a keyword.
+    
+    This generates the actual forms that format_word_regex would match,
+    so we can create a reverse mapping: matched_form → canonical_form.
+    
+    Args:
+        keyword: Canonical keyword (e.g., "canicule")
+        
+    Returns:
+        List of possible forms (e.g., ["canicule", "canicules"])
+    """
+    variants = []
+    words = keyword.split(" ")
+    
+    # Generate all combinations of singular/plural for multi-word keywords
+    word_variants = []
+    for word in words:
+        # Handle apostrophe variants (d'eau → d'eau or d' eau)
+        if "'" in word:
+            # Both with and without space after apostrophe
+            word_variants.append([word, word.replace("'", "' ")])
+        elif not word.endswith('s') and not word.endswith('x') and not word.endswith('à'):
+            # Add s for plural
+            word_variants.append([word, word + "s"])
+        elif word.endswith('s') or word.endswith('x'):
+            # Already ends with s/x - singular only (format_word_regex makes it optional)
+            word_variants.append([word])
+        else:
+            # Ends with à or other - no plural
+            word_variants.append([word])
+    
+    # Generate all combinations
+    for combination in product(*word_variants):
+        variant = " ".join(combination)
+        variants.append(variant.lower())
+    
+    return variants
+
+
+def create_variant_to_canonical_mapping(keywords_filtered: List[str]) -> Dict[str, str]:
+    """
+    Creates a mapping from all possible variant forms to canonical forms.
+    
+    This allows fast O(1) lookup after regex matching to retrieve the canonical form.
+    
+    Args:
+        keywords_filtered: List of canonical keywords from the dictionary
+        
+    Returns:
+        Dict mapping variant forms to canonical forms
+        Example: {"canicule": "canicule", "canicules": "canicule", ...}
+    """
+    variant_to_canonical = {}
+    
+    for canonical_keyword in keywords_filtered:
+        variants = generate_variant_forms(canonical_keyword)
+        for variant in variants:
+            # Lowercase for case-insensitive matching
+            variant_lower = variant.lower()
+            if variant_lower not in variant_to_canonical:
+                variant_to_canonical[variant_lower] = canonical_keyword
+            # If collision (same variant for different canonical), keep first one
+            # This should be rare with real-world keywords
+    
+    return variant_to_canonical
+
+
+def search_keywords_with_canonical_forms(
+    text: str, keywords_filtered: List[str], keep_duplicates: bool = False
+) -> List[str]:
+    """
+    Searches keywords in text and returns CANONICAL forms (from dictionary).
+    
+    Fast implementation using pre-computed variant mapping instead of named groups.
+    Performance: O(m) for regex + O(n) for lookups where n = number of matches (usually << 5900)
+    
+    Args:
+        text: The text to search in
+        keywords_filtered: List of canonical keywords from the dictionary
+        keep_duplicates: If True, returns all occurrences (with duplicates).
+                        If False, returns unique keywords only (default).
+    
+    Returns:
+        List of CANONICAL keywords found (matching the dictionary forms)
+    
+    Example:
+        >>> search_keywords_with_canonical_forms("Les canicules augmentent", ["canicule"])
+        ["canicule"]  # Returns canonical form, not "canicules"
+    """
+    if not keywords_filtered or not text:
+        return []
+    
+    # Step 1: Create variant → canonical mapping (pre-compute once per call)
+    variant_to_canonical = create_variant_to_canonical_mapping(keywords_filtered)
+    
+    # Step 2: Use fast classic regex (no named groups!)
+    pattern = create_combined_regex_pattern(keywords_filtered)
+    
+    if not pattern:
+        return []
+    
+    # Step 3: Find all matches (fast regex)
+    matches = re.findall(pattern, text)
+    
+    # Step 4: Map each match to its canonical form (fast O(1) dict lookup)
+    canonical_matches = []
+    for match in matches:
+        match_lower = match.lower()
+        canonical_form = variant_to_canonical.get(match_lower)
+        if canonical_form:
+            canonical_matches.append(canonical_form)
+        else:
+            # Fallback: keep original if no mapping found
+            canonical_matches.append(match)
+    
+    # Return unique or all occurrences based on parameter
+    if keep_duplicates:
+        return canonical_matches
+    else:
+        return list(set(canonical_matches))

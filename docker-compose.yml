@@ -340,47 +340,6 @@ services:
        - bucket
        - bucket_secret
 
-  factiva:
-    container_name: factiva_ingestion
-    ports:
-      - 5001:5000
-    build:
-      context: ./
-      dockerfile: Dockerfile_factiva
-    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
-    environment:
-      ENV: docker # change me to prod for real cases
-      LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log
-      PYTHONPATH: /app
-      POSTGRES_USER: user
-      POSTGRES_DB: barometre
-      POSTGRES_PASSWORD: password
-      POSTGRES_HOST: postgres_db
-      POSTGRES_PORT: 5432
-      PORT: 5000
-      HEALTHCHECK_SERVER: "0.0.0.0"
-      # Factiva specific configuration
-      FACTIVA_MOCK_MODE: "true"  # Set to false when using real Factiva API
-      FACTIVA_MOCK_MAX_EVENTS: "500"  # Number of events to generate in mock mode
-      FACTIVA_SUBSCRIPTION_ID: "test-subscription"
-      FACTIVA_SERVICE_ACCOUNT_ID: "test-account"
-      FACTIVA_MAX_MESSAGES: "50"  # Max messages to pull per request
-      FACTIVA_POLL_INTERVAL: "10"  # Seconds between polls
-      FACTIVA_BATCH_SIZE: "50"  # Batch size for DB commits
-    volumes:
-      - ./quotaclimat/:/app/quotaclimat/
-      - ./postgres/:/app/postgres/
-      - ./alembic:/app/alembic
-      - ./alembic.ini:/app/alembic.ini
-    depends_on:
-      postgres_db:
-        condition: service_healthy
-    secrets:
-      - pwd_api
-      - username_api
-      - bucket
-      - bucket_secret
-
   factiva_to_s3:
     container_name: factiva_to_s3
     build:
@@ -496,9 +455,21 @@ services:
       LOOKBACK_DAYS: "30"
       LOCAL_TMP_DIR: "/tmp/s3_factiva_to_postgre"
       # Dictionary update configuration
-      UPDATE_DICTIONARY: "false"         # Update Dictionary and Keyword_Macro_Category tables (default: true)
+      UPDATE_DICTIONARY: "true"         # Update Dictionary, Keyword_Macro_Category, and Source_Classification tables (default: true)
+      # Duplicate detection configuration
+      DETECT_DUPLICATES: "true"          # Detect and mark duplicate articles before DBT processing (default: true)
+      # DBT configuration
+      RUN_DBT: "true"                    # Run DBT models after processing (default: true)
+      DBT_PROFILES_DIR: /app/my_dbt_project_print_media/dbt
+      DBT_PROJECT_DIR: /app/my_dbt_project_print_media
+      # HRFP multipliers for crisis scoring (default: 0 = no HRFP consideration)
+      MULTIPLIER_HRFP_CLIMAT: "0"        # Multiplier for climate HRFP keywords
+      MULTIPLIER_HRFP_BIODIV: "0"        # Multiplier for biodiversity HRFP keywords
+      MULTIPLIER_HRFP_RESSOURCE: "0"     # Multiplier for resource HRFP keywords
+      # Thresholds for crisis labeling (format: "biodiv,climat,ressource")
+      THRESHOLD_BIOD_CLIM_RESS: "3,2,2"  # Thresholds for biodiversity, climate, resource
       # UPDATE mode configuration (keyword re-detection)
-      # UPDATE: "true"                    # Enable UPDATE mode (re-detect keywords on existing data)
+      UPDATE: "false"                    # Enable UPDATE mode (re-detect keywords on existing data)
       # # START_DATE_UPDATE: "2025-11-27"   # Filter on publication_datetime >= this date
       # # END_DATE: "2025-11-27"            # Filter on publication_datetime <= this date
       # BATCH_SIZE: "1000"                # Number of articles per batch
@@ -511,6 +482,7 @@ services:
       - ./postgres/:/app/postgres/
       - ./alembic_factiva:/app/alembic_factiva
       - ./alembic_factiva.ini:/app/alembic_factiva.ini
+      - ./my_dbt_project_print_media:/app/my_dbt_project_print_media
       - ./tmp/s3_factiva_to_postgre:/tmp/s3_factiva_to_postgre
     secrets:
       - bucket

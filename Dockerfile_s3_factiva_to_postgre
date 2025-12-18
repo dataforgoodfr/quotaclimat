@@ -31,6 +31,7 @@ COPY postgres ./postgres
 COPY pyproject.toml ./pyproject.toml
 COPY alembic_factiva/ ./alembic_factiva
 COPY alembic_factiva.ini ./alembic_factiva.ini
+COPY my_dbt_project_print_media/ ./my_dbt_project_print_media
 
 # Create tmp directory for temporary files
 RUN mkdir -p /tmp/s3_factiva_to_postgre

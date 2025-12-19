@@ -7,11 +7,12 @@
 Factiva Environmental Indicators Model
 
 This model calculates environmental crisis indicators for Factiva articles by:
-1. Joining factiva_articles, stats_factiva_articles, and source_classification
+1. Starting from source_classification to ensure ALL sources appear
 2. Computing crisis scores based on keyword counts and HRFP multipliers
 3. Comparing scores to thresholds to determine crisis labeling
 4. Aggregating counts by day and source
 5. Excluding duplicate articles and source-days with any duplicates
+6. Showing 0s for sources with no articles on a given day
 
 Materialization Strategy:
 - materialized='incremental' with unique_key for flexibility
@@ -28,6 +29,10 @@ Duplicate Handling:
 - If 0 DUP: All articles are considered normally
 - If exactly 1 DUP: The DUP article is excluded, source-day is kept, count_total_articles is reduced by 1 (min 0)
 - If 2+ DUP: The entire source-day is COMPLETELY EXCLUDED from all calculations
+
+Date Filtering:
+- Only shows days that are 4+ days old (e.g., if today is Dec 19, shows Dec 15 and earlier)
+- This allows time for data completeness and duplicate detection
 
 Environment Variables:
 - MULTIPLIER_HRFP_CLIMAT (default: 0): Multiplier for climate HRFP keywords
@@ -53,6 +58,26 @@ multipliers AS (
         CAST('{{ env_var("MULTIPLIER_HRFP_RESSOURCE", "0") }}' AS FLOAT) AS multiplier_ressource
 ),
 
+-- Get all distinct publication days from stats_factiva_articles (4+ days old only)
+-- This ensures we have ALL days that have data, even if no articles in factiva_articles
+all_publication_days AS (
+    SELECT DISTINCT
+        DATE(publication_datetime) AS publication_day
+    FROM {{ source('public', 'stats_factiva_articles') }}
+    WHERE DATE(publication_datetime) <= CURRENT_DATE - INTERVAL '4 days'
+),
+
+-- Create a complete grid of all source-days combinations
+all_source_days AS (
+    SELECT
+        pd.publication_day,
+        sc.source_code,
+        sc.source_name,
+        sc.source_type
+    FROM all_publication_days pd
+    CROSS JOIN {{ source('public', 'source_classification') }} sc
+),
+
 -- In incremental mode, identify days/sources that need recalculation
 {% if is_incremental() %}
 days_to_recalculate AS (
@@ -62,23 +87,25 @@ days_to_recalculate AS (
         FROM {{ this }}
     )
     
-    -- Find days/sources with updated articles
+    -- Find days/sources with updated articles (4+ days old only)
     SELECT DISTINCT
         DATE(fa.publication_datetime) AS publication_day,
         fa.source_code
     FROM {{ source('public', 'factiva_articles') }} fa
     CROSS JOIN last_update
     WHERE fa.updated_at > last_update.max_updated_at
+        AND DATE(fa.publication_datetime) <= CURRENT_DATE - INTERVAL '4 days'
     
     UNION
     
-    -- Find days/sources with updated stats
+    -- Find days/sources with updated stats (4+ days old only)
     SELECT DISTINCT
         DATE(sfa.publication_datetime) AS publication_day,
         sfa.source_code
     FROM {{ source('public', 'stats_factiva_articles') }} sfa
     CROSS JOIN last_update
     WHERE sfa.updated_at > last_update.max_updated_at
+        AND DATE(sfa.publication_datetime) <= CURRENT_DATE - INTERVAL '4 days'
 ),
 {% endif %}
 
@@ -91,6 +118,7 @@ source_day_duplicate_counts AS (
     FROM {{ source('public', 'factiva_articles') }} fa
     WHERE fa.is_deleted = FALSE
         AND fa.publication_datetime IS NOT NULL
+        AND DATE(fa.publication_datetime) <= CURRENT_DATE - INTERVAL '4 days'
     GROUP BY DATE(fa.publication_datetime), fa.source_code
 ),
 
@@ -150,6 +178,8 @@ article_scores AS (
     CROSS JOIN multipliers m
     WHERE fa.is_deleted = FALSE
         AND fa.publication_datetime IS NOT NULL
+        -- Only consider days that are 4+ days old
+        AND DATE(fa.publication_datetime) <= CURRENT_DATE - INTERVAL '4 days'
         -- Exclude source-days with 2+ DUP completely
         AND (DATE(fa.publication_datetime), fa.source_code) NOT IN (
             SELECT publication_day, source_code FROM source_days_to_exclude
@@ -193,74 +223,70 @@ article_labels AS (
     CROSS JOIN thresholds t
 ),
 
--- Aggregate by day and source
+-- Aggregate by day and source (from articles only)
 daily_aggregates AS (
     SELECT
         al.publication_day,
         al.source_code,
-        al.source_name,
-        al.source_type,
         
         -- Count articles by crisis type
         SUM(al.is_climat) AS count_climat,
         SUM(al.is_biodiversite) AS count_biodiversite,
         SUM(al.is_ressources) AS count_ressources,
-        SUM(al.is_at_least_one_crise) AS count_at_least_one_crise,
-        
-        -- Metadata
-        CURRENT_TIMESTAMP AS created_at,
-        CURRENT_TIMESTAMP AS updated_at
+        SUM(al.is_at_least_one_crise) AS count_at_least_one_crise
         
     FROM article_labels al
     GROUP BY 
         al.publication_day,
-        al.source_code,
-        al.source_name,
-        al.source_type
+        al.source_code
+),
+
+-- Aggregate stats by day (sum all hourly stats to daily)
+daily_stats AS (
+    SELECT
+        DATE(sfa.publication_datetime) AS publication_day,
+        sfa.source_code,
+        SUM(sfa.count) AS count_total_articles
+    FROM {{ source('public', 'stats_factiva_articles') }} sfa
+    WHERE DATE(sfa.publication_datetime) <= CURRENT_DATE - INTERVAL '4 days'
+    GROUP BY 
+        DATE(sfa.publication_datetime),
+        sfa.source_code
 )
 
--- Final output: join with stats to get total article count
+-- Final output: Start from all_source_days and LEFT JOIN everything
 SELECT
-    da.publication_day,
-    da.source_code,
-    da.source_name,
-    da.source_type,
+    asd.publication_day,
+    asd.source_code,
+    asd.source_name,
+    asd.source_type,
     
     -- Get total article count from stats (aggregated to day level)
     -- If source-day has exactly 1 DUP, subtract 1 from count (minimum 0)
     CASE 
-        WHEN (da.publication_day, da.source_code) IN (SELECT publication_day, source_code FROM source_days_with_one_dup)
-        THEN GREATEST(COALESCE(SUM(sfa.count), 0) - 1, 0)
-        ELSE COALESCE(SUM(sfa.count), 0)
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM source_days_with_one_dup)
+        THEN GREATEST(COALESCE(ds.count_total_articles, 0) - 1, 0)
+        ELSE COALESCE(ds.count_total_articles, 0)
     END AS count_total_articles,
     
-    -- Crisis counts
-    da.count_climat,
-    da.count_biodiversite,
-    da.count_ressources,
-    da.count_at_least_one_crise,
+    -- Crisis counts (0 if no articles)
+    COALESCE(da.count_climat, 0) AS count_climat,
+    COALESCE(da.count_biodiversite, 0) AS count_biodiversite,
+    COALESCE(da.count_ressources, 0) AS count_ressources,
+    COALESCE(da.count_at_least_one_crise, 0) AS count_at_least_one_crise,
     
     -- Metadata
-    da.created_at,
-    da.updated_at
+    CURRENT_TIMESTAMP AS created_at,
+    CURRENT_TIMESTAMP AS updated_at
     
-FROM daily_aggregates da
-LEFT JOIN {{ source('public', 'stats_factiva_articles') }} sfa
-    ON da.source_code = sfa.source_code
-    AND DATE(sfa.publication_datetime) = da.publication_day
-
-GROUP BY
-    da.publication_day,
-    da.source_code,
-    da.source_name,
-    da.source_type,
-    da.count_climat,
-    da.count_biodiversite,
-    da.count_ressources,
-    da.count_at_least_one_crise,
-    da.created_at,
-    da.updated_at
+FROM all_source_days asd
+LEFT JOIN daily_aggregates da
+    ON asd.publication_day = da.publication_day
+    AND asd.source_code = da.source_code
+LEFT JOIN daily_stats ds
+    ON asd.publication_day = ds.publication_day
+    AND asd.source_code = ds.source_code
 
 ORDER BY
-    da.publication_day DESC,
-    da.source_code ASC
+    asd.publication_day DESC,
+    asd.source_code ASC

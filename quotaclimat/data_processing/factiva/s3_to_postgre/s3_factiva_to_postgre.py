@@ -25,7 +25,7 @@ from sqlalchemy import text
 from sqlalchemy.dialects.postgresql import insert
 
 from postgres.database_connection import connect_to_db
-from postgres.schemas.models import Factiva_Article, Stats_Factiva_Article
+from postgres.schemas.factiva_models import Factiva_Article, Stats_Factiva_Article
 from quotaclimat.data_ingestion.factiva.utils_data_processing.utils_extract import (
     load_json_values,
 )

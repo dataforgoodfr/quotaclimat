@@ -4,7 +4,7 @@ import logging
 
 from sqlalchemy.orm import sessionmaker
 
-from postgres.schemas.models import (
+from postgres.schemas.factiva_models import (
     Dictionary,
     Keyword_Macro_Category,
     Source_Classification,
@@ -42,7 +42,7 @@ def update_dictionary_factiva(engine, theme_keywords=THEME_KEYWORDS, macro_categ
         session.query(Source_Classification).delete()
         session.commit()
         logging.info(
-            "Deleted all entries in the dictionary, Keyword_Macro_Category, and Source_Classification tables"
+            "Deleted all entries in the dictionary, keyword_macro_category, and source_classification tables"
         )
 
         # Insert Dictionary data

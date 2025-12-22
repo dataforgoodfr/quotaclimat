@@ -7,4 +7,12 @@ channel_titles_poland = {
     "radio-zet": "Radio Zet",
     "eska": "Eska",
     "tokfm": "TOKFM",
+    "TV Republika": "tv-republika",
+    "TV Trwa": "tv-trwam",
+    "Radio Maryj": "radio-maryja",
+    "TVS": "tvs",
+    "wPolsce2": "wpolsce24",
+    # "TV Plus":
+    # "Fokus TV":
 }
+

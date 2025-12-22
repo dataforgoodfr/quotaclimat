@@ -312,6 +312,41 @@ channel_mapping = {
         "radio": True,
         "country": POLAND.name
     },
+    "tv-republika": {
+        "title": "TV Republika",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": POLAND.name
+    },
+    "tv-trwam": {
+        "title": "TV Trwa",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": POLAND.name
+    },
+    "radio-maryja": {
+        "title": "Radio Maryj",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": POLAND.name
+    },
+    "tvs": {
+        "title": "TVS",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": POLAND.name
+    },
+    "wpolsce24": {
+        "title": "wPolsce24",
+        "public": False,
+        "infocontinue": True,
+        "radio": False,
+        "country": POLAND.name
+    },
     # Spain
     "antenna-3": {
         "title": "Antenna 3",

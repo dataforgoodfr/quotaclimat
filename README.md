@@ -575,7 +575,7 @@ These dbt models need to be run using the `--target analytics` command. You can 
 docker compose up testconsole -d 
 docker compose exec testconsole bash
 # Seed the labelstudio tables
-poetry run dbt seed --select program_metadatalabelstudio_task_aggregate --select labelstudio_task_completion_aggregate
+poetry run dbt seed --select program_metadata --select labelstudio_task_aggregate --select labelstudio_task_completion_aggregate
 # run the dbt model on the analytics target
 poetry run dbt run --target analytics --select task_global_completion
 ```

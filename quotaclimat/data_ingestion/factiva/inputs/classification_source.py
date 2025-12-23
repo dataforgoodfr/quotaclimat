@@ -298,5 +298,11 @@ SOURCE_CLASSIFICATION = {
             "source_name": "Sudouest.fr",
             "source_code": "SDUFR"
         }
+    ],
+    "Agence Presse": [
+        {
+            "source_name": "Agence France Presse",
+            "source_code": "AFPFR"
+        }
     ]
 }

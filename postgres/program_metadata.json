@@ -2131,7 +2131,7 @@
         "weekday": 1,
         "program_name": "Aktualnosci Dnia 04:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "Radio Maryj",
@@ -2139,7 +2139,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "084df59dbc3550f80055a473ef1de6c55055960ebc919a087e50a9f56208e2af"
+        "id": "2d2e79bf999d7200863e51a2b6a91f4ca3e6537418350e3c9f0f1e84379b9482"
     },
     {
         "channel_name": "radio-maryja",
@@ -2148,7 +2148,7 @@
         "weekday": 1,
         "program_name": "Aktualnosci Dnia 13:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 50,
         "channel_title": "Radio Maryj",
@@ -2156,7 +2156,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "b951a11625ee18b7ad7c04a78c846f9d8d20ad3167c48d34db19a56fbaf64305"
+        "id": "2af9f0972283c7916d7134089e1e1a5c0ecfc37b1940f6f49280f3700c06aacb"
     },
     {
         "channel_name": "radio-maryja",
@@ -2165,7 +2165,7 @@
         "weekday": 1,
         "program_name": "Aktualnosci Dnia 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "Radio Maryj",
@@ -2173,7 +2173,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "eafc9dc24d6a822d710cd9e518e11f92aaff3ed03f64348565f7118133d4e4ac"
+        "id": "de886b2c9025bcd847661df93e56491ba2e0ac2ccff3caf8ec5aa123571a9355"
     },
     {
         "channel_name": "radio-maryja",
@@ -2182,7 +2182,7 @@
         "weekday": 1,
         "program_name": "Serwis Informacjny 06:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 7,
         "channel_title": "Radio Maryj",
@@ -2190,7 +2190,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "43a270ed4a2fed2f9a3c18824c0487b2b634c91a45f159ece5db66abfad68638"
+        "id": "de3a2aebf8bb34069bc37510029f5bbe646ff28f766d0cc1c561183dd10a68d5"
     },
     {
         "channel_name": "radio-maryja",
@@ -2199,7 +2199,7 @@
         "weekday": 1,
         "program_name": "Serwis Informacjny 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -2207,7 +2207,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "78b200a91ee18c08a813ee86d607f9b7aa302059d4c54a58407c3bd93ea77e1e"
+        "id": "ca2a8eb4b21f3a42688e2d76f4dc6510cdb4127889b68599ad88291f414c1618"
     },
     {
         "channel_name": "radio-maryja",
@@ -2216,7 +2216,7 @@
         "weekday": 1,
         "program_name": "Serwis Informacjny 10:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "Radio Maryj",
@@ -2224,7 +2224,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "41b1cd40445579bf79405c9da4d205f927b31f2133b50a918f453356916e7a4b"
+        "id": "d022e67d04534c1cbf6ce1ed14aaab25244916a870b74f7f910a0360232b4e69"
     },
     {
         "channel_name": "radio-maryja",
@@ -2233,7 +2233,7 @@
         "weekday": 1,
         "program_name": "Serwis Informacjny 11:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -2241,7 +2241,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "3009bc4ea064c3d5d0b1309ab78e62f2eb4c00a02dd035b8d52c875007b7e9e8"
+        "id": "501bdbe6ae925299a086a7050c018303c59af4a079960d360d78b236ffce56b2"
     },
     {
         "channel_name": "radio-maryja",
@@ -2250,7 +2250,7 @@
         "weekday": 1,
         "program_name": "Serwis Informacjny 12:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 7,
         "channel_title": "Radio Maryj",
@@ -2258,7 +2258,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "06bb32aba3ea5ff3e5b03bd4ca7314b543b2d52f383bad6994508be5fbeec8b9"
+        "id": "5d6bf18c034cc0a256207374f8768b2e3e651c60c6a3db22a0f54506b5fb6e23"
     },
     {
         "channel_name": "radio-maryja",
@@ -2267,7 +2267,7 @@
         "weekday": 1,
         "program_name": "Serwis Informacjny 13:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -2275,7 +2275,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "13fd42a0a3d37164871af1e6b188a04caa334ebd0191a62985a2a82b78c6edbe"
+        "id": "9bba46c6c129f06b3d18a82901d07e5a21a548251c44369c942c77c0982fa49e"
     },
     {
         "channel_name": "radio-maryja",
@@ -2284,7 +2284,7 @@
         "weekday": 1,
         "program_name": "Serwis Informacjny 14:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -2292,7 +2292,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "30e2f0580d65b4de51e41f1257b4621091af1bd2ece77034a2a015173ff45c6e"
+        "id": "976068c808e1250ee84c7e031dd56d09ef2559ebc7bfa02c3e30c3bb8d4c7bda"
     },
     {
         "channel_name": "radio-maryja",
@@ -2301,7 +2301,7 @@
         "weekday": 1,
         "program_name": "Serwis Informacjny 17:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -2309,7 +2309,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "6ac3bd71771a88405caeb9d22bf114669c0a61b91c61607dcaf433f4bab8f00a"
+        "id": "f83cde391e58cb932f3035092980fde0bedaca44b1accfd946f796fa66c660a9"
     },
     {
         "channel_name": "radio-maryja",
@@ -2318,7 +2318,7 @@
         "weekday": 1,
         "program_name": "Serwis Informacjny 20:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "Radio Maryj",
@@ -2326,7 +2326,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "4866ca27841096a320067eb9e6019089d8f4945a66b182de2765a55984f4b037"
+        "id": "3a64cec98a6f9bf1468357accba8dd4c04089d4f4ccf119b1e1a9a7059d9ceee"
     },
     {
         "channel_name": "radio-maryja",
@@ -2335,7 +2335,7 @@
         "weekday": 1,
         "program_name": "Serwis Informacjny 23:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 59,
         "channel_title": "Radio Maryj",
@@ -2343,7 +2343,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "6aa30220b936e6b52d70bdc44dc4f16fbaea802ed36f49a6ecb550f17445cc87"
+        "id": "f14e8186ffbc6d66fd745e83527f5947fb34437cbe092bebdf4718963297a6e1"
     },
     {
         "channel_name": "radio-maryja",
@@ -2352,7 +2352,7 @@
         "weekday": 1,
         "program_name": "Feleiton Sprobuj pomyslec",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -2360,7 +2360,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "56df86b7af27ce1ce0bb2f9fd25bdfee74ca152bd3b3dd2dcc2558052e82aab9"
+        "id": "71a6f3fb27d263f1c8bc298a48f5b5ba5f25d28a7add3a1e9adbef2c19b4b4ac"
     },
     {
         "channel_name": "radio-maryja",
@@ -2369,7 +2369,7 @@
         "weekday": 1,
         "program_name": "Rozmowy niedokonczone: Polityka w Polsce i wobec Polski",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 125,
         "channel_title": "Radio Maryj",
@@ -2377,7 +2377,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "8d4280b9d02ae6e99383ef3321118909d4cff6d8c513427530d13c4a1c27495a"
+        "id": "b5e83a9b7f188010eab72fb8f863f3f1bf65044d35755633c54b858114682c8b"
     },
     {
         "channel_name": "radio-zet",
@@ -3712,7 +3712,7 @@
         "weekday": 1,
         "program_name": "Agro Info",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TV Republika",
@@ -3720,7 +3720,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "7e2c8234c3ad59487a25255dbfcd6ee202dce6606a5f517250b6b964c1ad1265"
+        "id": "1b564fd53dff05ad648f9f8583af8b1af4eb2d9954169eb46eb9cd7160d07573"
     },
     {
         "channel_name": "tv-republika",
@@ -3729,7 +3729,7 @@
         "weekday": 1,
         "program_name": "Republika Dzien 12:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -3737,7 +3737,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "aab02793c3330c1116c893ec41ece3863f1b78e13b0c734d362fd91b0e003d53"
+        "id": "a599137ebcbc24d81f8ae0658b024587efaede004a9f7a95d33c963011754799"
     },
     {
         "channel_name": "tv-republika",
@@ -3746,7 +3746,7 @@
         "weekday": 1,
         "program_name": "Republika Dzien 13:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Republika",
@@ -3754,7 +3754,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "c0213fc9dc5d2600cf1ade11c486d550fa35f9fc10fba12c24bef466cf3816b2"
+        "id": "a47e8ef2591f6c41afbad66b209d1f36967ee541922ef7a674aa24e1ff5e79ff"
     },
     {
         "channel_name": "tv-republika",
@@ -3763,7 +3763,7 @@
         "weekday": 1,
         "program_name": "Republika Dzien 14:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Republika",
@@ -3771,7 +3771,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "04ba02210ac845770e7582f3f326be50427f8d09d216a50703f935309bc3bdad"
+        "id": "1741a641fa82c881d3720d35efb42d49a336e2e1744bdf1f1e3b39e11d926b02"
     },
     {
         "channel_name": "tv-republika",
@@ -3780,7 +3780,7 @@
         "weekday": 1,
         "program_name": "Republika Dzien 15:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -3788,7 +3788,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "d64d595d414d6698cb3e65b516212effa2146caaf81021386edfdf45b2d38c96"
+        "id": "b3d98174294947bea4f291620c34e33cde3818728c16b34b6d431c89f971c129"
     },
     {
         "channel_name": "tv-republika",
@@ -3797,7 +3797,7 @@
         "weekday": 1,
         "program_name": "Republika Dzien 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -3805,7 +3805,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "4cb9c650cc367ae0192ac0d7513a868127c4e1127ae682fcd773f04850c13777"
+        "id": "25c049a0c301a27c47f2e8c022537b4b2c1b465c331cae4828536c4752a8f157"
     },
     {
         "channel_name": "tv-republika",
@@ -3814,7 +3814,7 @@
         "weekday": 1,
         "program_name": "Express Republiki",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -3822,7 +3822,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "926749f3a0bc23e0ec4af2932d0c05a65bd0dfb082a0f8ec952a108360f7c9ca"
+        "id": "d91cddfc43b41564ebf05a672d95b7b7aafb24803b221751554c5962004eaa7d"
     },
     {
         "channel_name": "tv-republika",
@@ -3831,7 +3831,7 @@
         "weekday": 1,
         "program_name": "Dzisiaj",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 80,
         "channel_title": "TV Republika",
@@ -3839,7 +3839,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "9e7f82917a14239d1b657bed246aaaafd6463c88d5f557157c81b3421f394d33"
+        "id": "e7360efb3ce08313f11c5d537c08696c7b290bbf053bca8880cb37bb75f76182"
     },
     {
         "channel_name": "tv-trwam",
@@ -3848,7 +3848,7 @@
         "weekday": 1,
         "program_name": "Informacje Dnia 00:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -3856,7 +3856,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "a270635d7b5575ab19733aa2aae333c26b846f2922a2c7f25904bd440db1034b"
+        "id": "e727788d2c155841be5d98e29501768d9dec27a5e2697cefdc8ce16e50be76ca"
     },
     {
         "channel_name": "tv-trwam",
@@ -3865,7 +3865,7 @@
         "weekday": 1,
         "program_name": "Informacje Dnia 03:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -3873,7 +3873,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "8c38a69ba115fa80fc2c3d122779f21c25110440d15fc3055bc99befaa2f66fa"
+        "id": "2ea2321e5ff7c429abdaf8b515da088b5b4c2d7367fefe0376ce8bcfcf131ebc"
     },
     {
         "channel_name": "tv-trwam",
@@ -3882,7 +3882,7 @@
         "weekday": 1,
         "program_name": "Informacje Dnia 04:20",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -3890,7 +3890,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "3a42f53b169f743144c3cd24813ed41045d4983da14ed256fd92e196d045f2e9"
+        "id": "7f9de78081e3a9d19537c7e5824f79bbc1047fae49944cddcad3d6756002be80"
     },
     {
         "channel_name": "tv-trwam",
@@ -3899,7 +3899,7 @@
         "weekday": 1,
         "program_name": "Informacje Dnia 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Trwa",
@@ -3907,7 +3907,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "03f502f626e2d5aeb9279e57f70aeadfda31a7715172253e6cb6e275774c9335"
+        "id": "09c6a821f96ce8ae49639deb377e1bac39ae66b7a45ce05d823fa2ac57e705cc"
     },
     {
         "channel_name": "tv-trwam",
@@ -3916,7 +3916,7 @@
         "weekday": 1,
         "program_name": "Informacje Dnia 10:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Trwa",
@@ -3924,7 +3924,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "6146c38cd4bbbfd28fa2392163d132edd9676362c9db71755adfdffb8108a8d2"
+        "id": "ccd774368ab2e1fec40b44b0c1f9ada6f4884ea744323c187df2f2c34eac621e"
     },
     {
         "channel_name": "tv-trwam",
@@ -3933,7 +3933,7 @@
         "weekday": 1,
         "program_name": "Informacje Dnia 12:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 17,
         "channel_title": "TV Trwa",
@@ -3941,7 +3941,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "54b23391db7ae6305f45a857f0334f7bd00c29802e0504af8577e4c1e30de467"
+        "id": "d13d2f3fafa0a8118b24c8273d744bcfa7daefc6fe5f574a9ff9d6bcbe224582"
     },
     {
         "channel_name": "tv-trwam",
@@ -3950,7 +3950,7 @@
         "weekday": 1,
         "program_name": "Informacje Dnia 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Trwa",
@@ -3958,7 +3958,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "7892ccd561060075425388e61aa1af96ee1bdae07e2f534fdf08f42dc3081336"
+        "id": "488693365b76dc016f4dab438ff201a38051323462d546120f3443802231f333"
     },
     {
         "channel_name": "tv-trwam",
@@ -3967,7 +3967,7 @@
         "weekday": 1,
         "program_name": "Informacje Dnia 18:05",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Trwa",
@@ -3975,7 +3975,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "f464b89af124080b776c31c97f4afcb78c296549db29ccc227314be40a87d79e"
+        "id": "6b3b9862e92fa7eac5436d18591af3186a112357b521a687e82575ec9ad4b909"
     },
     {
         "channel_name": "tv-trwam",
@@ -3984,7 +3984,7 @@
         "weekday": 1,
         "program_name": "Informacje Dnia 20:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -3992,7 +3992,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "5a2baed6ae54135c61a06bc9b6e3967d67af895d9f6f6229dcb6dc4dfa9ec18f"
+        "id": "d22095f95fa8aba33691b977fac7590cad8cf9b5b63445654af6c32f25a366ec"
     },
     {
         "channel_name": "tv-trwam",
@@ -4001,7 +4001,7 @@
         "weekday": 1,
         "program_name": "Informacje Dnia 22:20",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -4009,7 +4009,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "58145a34b6d263726860393a7e50c67f229d778738c887aa1846b7a8edf0a6fd"
+        "id": "7d7d9c3f53b1d710eb7e8199010399bb6ad42af712a2773a6a0ea7f9e7ff5baf"
     },
     {
         "channel_name": "tvbrasil",
@@ -4222,7 +4222,7 @@
         "weekday": 1,
         "program_name": "Dzisiaj w regionie",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TVS",
@@ -4230,7 +4230,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "9feb9dde4171dba8ba22b60f9ee3e3766386e9e9298689fc710ee2e7a190b91a"
+        "id": "b435477e8aad59cf96e1315b717efee561cbf65fecfc8fc5616bb33440899b08"
     },
     {
         "channel_name": "tvs",
@@ -4239,7 +4239,7 @@
         "weekday": 1,
         "program_name": "Dzisiaj w regionie",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TVS",
@@ -4247,7 +4247,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "9feb9dde4171dba8ba22b60f9ee3e3766386e9e9298689fc710ee2e7a190b91a"
+        "id": "b435477e8aad59cf96e1315b717efee561cbf65fecfc8fc5616bb33440899b08"
     },
     {
         "channel_name": "wpolsce24",
@@ -4256,7 +4256,7 @@
         "weekday": 1,
         "program_name": "Tele-Ekspres 01:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "wPolsce24",
@@ -4264,7 +4264,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "f7bc7e1bd619c0ffa49896535595ae8a73c17d634fc3755ca4674094c3483bf6"
+        "id": "1734752f1e033ed7d5d9cd38d5a2fbf15d78041c4f3c903ee7923975bee06c00"
     },
     {
         "channel_name": "wpolsce24",
@@ -4273,7 +4273,7 @@
         "weekday": 1,
         "program_name": "Tele-Ekspres 16:45",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "wPolsce24",
@@ -4281,7 +4281,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "44cce22e6d25e34386f3424de989eb4d08b77a666e30b053ae0613b0beb166b6"
+        "id": "e11951ec43f5f704ac42b88f1e0a7e48a4dde9e717e21611ee07c85ea79761da"
     },
     {
         "channel_name": "wpolsce24",
@@ -4290,7 +4290,7 @@
         "weekday": 1,
         "program_name": "Wiadomosci Poranne",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 30,
         "channel_title": "wPolsce24",
@@ -4298,7 +4298,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "b84e0843d68da73a9e719668a9d202702ec47a635829c2f8eb4478e053c01b73"
+        "id": "a3224493991298806b30da0e2fa8e22ee2f5ab94d014804556bae83196ab4515"
     },
     {
         "channel_name": "wpolsce24",
@@ -4307,7 +4307,7 @@
         "weekday": 1,
         "program_name": "Wiadomosci 00:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -4315,7 +4315,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "2087fe3f47fc1410948f61b45e964c85a05805b5cbb8691a69f358ff10d46b27"
+        "id": "f3c15100a7bf311ed1fc626eacac61651a5338a597399b22a45196d55dad471a"
     },
     {
         "channel_name": "wpolsce24",
@@ -4324,7 +4324,7 @@
         "weekday": 1,
         "program_name": "Wiadomosci 07:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "wPolsce24",
@@ -4332,7 +4332,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "99946506962b1300b6a59f9bd09ff7396e27c7b391f92696b5915c108892446e"
+        "id": "bc6a2c184bc162429e930f1c30718f48eb52e79e5b5c7a0e9f41242cd912e042"
     },
     {
         "channel_name": "wpolsce24",
@@ -4341,7 +4341,7 @@
         "weekday": 1,
         "program_name": "Wiadomosci 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -4349,7 +4349,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "fd00b0859c8e49d79a3ab25054acfa518ea69aee1ca28d7612d3ba2ae47442aa"
+        "id": "c748edfdb9cce734b90e4a1ae10cdf056b1b8ca692e4960e20155adfdfac778c"
     },
     {
         "channel_name": "wpolsce24",
@@ -4358,7 +4358,7 @@
         "weekday": 1,
         "program_name": "Wiadomosci 09:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -4366,7 +4366,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "5d9662b5092d4d53c61271a0f2dc5e5b5da1cfa2bd3ab19a372a29da185b1917"
+        "id": "a50ee36e36c9b5fd03475611b3c9eac9e377508ce6d023eca5de8985fd46c8d3"
     },
     {
         "channel_name": "wpolsce24",
@@ -4375,7 +4375,7 @@
         "weekday": 1,
         "program_name": "Wiadomosci 19:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 30,
         "channel_title": "wPolsce24",
@@ -4383,7 +4383,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "b56a4893a83256325555814a99b85a048d396cfa9e034e711040b39f87493246"
+        "id": "405b8f8e80dd09adcc9ef27d28a4a1ca0325801154377502a0070e2da00e1b68"
     },
     {
         "channel_name": "wpolsce24",
@@ -4392,7 +4392,7 @@
         "weekday": 1,
         "program_name": "Wiadomosci 23:45",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 14,
         "channel_title": "wPolsce24",
@@ -4400,7 +4400,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "b3c4190eeeeffccc5f216e57979879b14ad59ffb06277c99ed5b6b54157f8749"
+        "id": "e8834a95d39a9815e46012744fb57778cb567d911e478e04f61ac49f66e52446"
     },
     {
         "channel_name": "wpolsce24",
@@ -4409,7 +4409,7 @@
         "weekday": 1,
         "program_name": "Wiadomosci Agro",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -4417,7 +4417,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "3f5c6aa84e07cac0decd5c81d993da378738528d2a83e35a8e566a12a858572d"
+        "id": "cff206a0c19412ccf51ab46d28dd39f713bd1f6c7a4bab8d11ff9a13f7b286b7"
     },
     {
         "channel_name": "wpolsce24",
@@ -4426,7 +4426,7 @@
         "weekday": 1,
         "program_name": "Wiadomosci Gospodarka",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -4434,7 +4434,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "8990c25b89e9419a0fe16666b249f68be84a7a4da93f38fa6f18ea2490aa10e1"
+        "id": "1fd709492087030fb707b827ac30d6fc21afa731ba33889a9479f20983684f7a"
     },
     {
         "channel_name": "wpolsce24",
@@ -4443,7 +4443,7 @@
         "weekday": 1,
         "program_name": "Kontra",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 110,
         "channel_title": "wPolsce24",
@@ -4451,7 +4451,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "87ea90edb98943a79a82ec6d40964d484a53bf4a6b5cf4b1e14c5bbb7fb74174"
+        "id": "ef51a64316f3608c7bd1cad03fbed13496a6ec40a9a00a0b54408d0de2708ab6"
     },
     {
         "channel_name": "wpolsce24",
@@ -4460,7 +4460,7 @@
         "weekday": 1,
         "program_name": "Rapport Wiadomosci 12:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "wPolsce24",
@@ -4468,7 +4468,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "234be7b49317fa08358bac22c304bc19f0780e91db670f3282b6250ad797b22a"
+        "id": "f9eee137408a61990091c14e4a8b9c11a87356d96547fde534c94207ac4f9fcd"
     },
     {
         "channel_name": "wpolsce24",
@@ -4477,7 +4477,7 @@
         "weekday": 1,
         "program_name": "Rapport Wiadomosci 15:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "wPolsce24",
@@ -4485,7 +4485,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "ece6e08be8cc9513d72462c7d2e304786172760c39ae9a4541d6b355ad15612e"
+        "id": "6e909d3ffb429e87affa3840eb0c05b65002ae213d39d4144e84df8aa9267954"
     },
     {
         "channel_name": "wpolsce24",
@@ -4494,7 +4494,7 @@
         "weekday": 1,
         "program_name": "Piatka Pereiri",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -4502,7 +4502,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "65fbdda2820f08932c82b6fcc44aec8eda55b099408089e8eb0e85f2ac3aaf1b"
+        "id": "10c23c55a9517f3f3822da9b209f525afe1303c136922cf507caf14f9b7afae7"
     },
     {
         "channel_name": "wpolsce24",
@@ -4511,7 +4511,7 @@
         "weekday": 1,
         "program_name": "Piatka Pochwata",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -4519,7 +4519,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "61d735854ab95af1e57ee5db450793bb774125d34506a43ce1941e4f083ce753"
+        "id": "816a418d8afb2d3cc687eb07537b1d11d1e689786ec924397d0ae1940aadb9e7"
     },
     {
         "channel_name": "wpolsce24",
@@ -4528,7 +4528,7 @@
         "weekday": 1,
         "program_name": "Minela 20:05 (Marek Pyza)",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 45,
         "channel_title": "wPolsce24",
@@ -4536,7 +4536,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "df326c547c30ae23889737952f87bceda40b37cbe9c0cae9484dde1f9450856d"
+        "id": "bba2dfc7351b41e2b2570fbf2adfc746331778a009472ea42ee8fd5d5d49b84b"
     },
     {
         "channel_name": "wpolsce24",
@@ -4545,7 +4545,7 @@
         "weekday": 1,
         "program_name": "Minela 20:05 (Magdalena Ogorek)",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 50,
         "channel_title": "wPolsce24",
@@ -4553,7 +4553,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "14edf1efa041c24779e3bc1b7192bf612856815bda373be42d427a23c8ce2043"
+        "id": "1c866507e73952fda2e2ac2e427631be3ce757dd29708d996f9add20da8a7fdb"
     },
     {
         "channel_name": "zdf-neo",
@@ -6755,7 +6755,7 @@
         "weekday": 2,
         "program_name": "Aktualnosci Dnia 04:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "Radio Maryj",
@@ -6763,7 +6763,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "222f8cacd87dcb9efbc4f38112465fbb5fc8209f37ec96d8f60d0551ab8cb712"
+        "id": "770b49b55b38a025a3143308f7c0bd82607c288fce67377d2fa74912faa0124d"
     },
     {
         "channel_name": "radio-maryja",
@@ -6772,7 +6772,7 @@
         "weekday": 2,
         "program_name": "Aktualnosci Dnia 13:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 50,
         "channel_title": "Radio Maryj",
@@ -6780,7 +6780,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "3359b5a52119b47224597ea728d5b666a7544d91d08c4a844ffd1526fe21bd49"
+        "id": "3bbb4638d259d3c7589a6684bb36b923d39544ce068807b278628f2a7ebe641d"
     },
     {
         "channel_name": "radio-maryja",
@@ -6789,7 +6789,7 @@
         "weekday": 2,
         "program_name": "Aktualnosci Dnia 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "Radio Maryj",
@@ -6797,7 +6797,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "e7be6c413a5197fa351ce754bfae56962b4f0488b51f5d2df0442ddc53b73b03"
+        "id": "367f84a7deaa108b1a2cf627ed710201ce8994c59acd73f7c4e1ef0e2c36c2b2"
     },
     {
         "channel_name": "radio-maryja",
@@ -6806,7 +6806,7 @@
         "weekday": 2,
         "program_name": "Serwis Informacjny 06:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 7,
         "channel_title": "Radio Maryj",
@@ -6814,7 +6814,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "572bae9210bc1c8513b8754f198bb8c3893555039b6fefb73f432041253e009b"
+        "id": "48b149f183880e1c8d16d02bde1ff8865dfbfbb8d8bf98966c67fc24e36bf744"
     },
     {
         "channel_name": "radio-maryja",
@@ -6823,7 +6823,7 @@
         "weekday": 2,
         "program_name": "Serwis Informacjny 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -6831,7 +6831,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "6c9543641de9c6ebdff50b69fa988ff456f03f1060923f6818566ef0ecc00e41"
+        "id": "9d18a18719d34e673aeb360ee400beebc065772b5d10ce6fa959166ecd6f4591"
     },
     {
         "channel_name": "radio-maryja",
@@ -6840,7 +6840,7 @@
         "weekday": 2,
         "program_name": "Serwis Informacjny 10:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "Radio Maryj",
@@ -6848,7 +6848,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "dfcdd96b02b8be0220dd74e78c552ee03b46bded0dcf1e4b529017cadb41aa75"
+        "id": "cfdbb757a57800a1b82b2cbc9d2b70e252549ac84272e8cab06bce3a4cb5d547"
     },
     {
         "channel_name": "radio-maryja",
@@ -6857,7 +6857,7 @@
         "weekday": 2,
         "program_name": "Serwis Informacjny 11:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -6865,7 +6865,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "5184065d77a41d15bf1bd804979d083c1d6cf6f095bc2c654ef454154692f153"
+        "id": "bc53ba35fc348a26c312552f5e05e049cc4cbdd5c14315c7d783a524390473c1"
     },
     {
         "channel_name": "radio-maryja",
@@ -6874,7 +6874,7 @@
         "weekday": 2,
         "program_name": "Serwis Informacjny 12:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 7,
         "channel_title": "Radio Maryj",
@@ -6882,7 +6882,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "dc3bac60e49537a101171f6a1b5a690d9205ab081896c871dd60ddbe9e54d806"
+        "id": "d6cd3fceff9e74f0426b425d26f338316b9bb5a666edff2d277b4f061c54145a"
     },
     {
         "channel_name": "radio-maryja",
@@ -6891,7 +6891,7 @@
         "weekday": 2,
         "program_name": "Serwis Informacjny 13:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -6899,7 +6899,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "6075b11c371fadf896984bafdd0d624e20636d5b625255b941653d9790a5fd51"
+        "id": "7c6232b02f6b412dc1a51c9a7b3635b5d6a1a8b16d010e669af54bc1d5d654c7"
     },
     {
         "channel_name": "radio-maryja",
@@ -6908,7 +6908,7 @@
         "weekday": 2,
         "program_name": "Serwis Informacjny 14:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -6916,7 +6916,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "6c9a7f0e14f9c747625bac6dd3e3b24d62e9f775571ffc0730ff28c7b87f134a"
+        "id": "2ec6a6cca7fc00d1c12dee65753b289bf6eb04fbe96797fde55db671d659e256"
     },
     {
         "channel_name": "radio-maryja",
@@ -6925,7 +6925,7 @@
         "weekday": 2,
         "program_name": "Serwis Informacjny 17:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -6933,7 +6933,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "63a1058dca5dbdb29ba1ebea2ca2c4e089f6c4ca496872af9f4487aa291600d0"
+        "id": "ba9c988a81d25de23eab419f21274efa2ca9a036731161f686daae97d7239171"
     },
     {
         "channel_name": "radio-maryja",
@@ -6942,7 +6942,7 @@
         "weekday": 2,
         "program_name": "Serwis Informacjny 20:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "Radio Maryj",
@@ -6950,7 +6950,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "98036833e5ff4d756e1dabd84ec605b06a63384b2ed865cc8c6a0b3e46fe0891"
+        "id": "153c415f0516a438e517859b756e929d59bf9746f4d969d44279d9e1ceaf0a73"
     },
     {
         "channel_name": "radio-maryja",
@@ -6959,7 +6959,7 @@
         "weekday": 2,
         "program_name": "Serwis Informacjny 23:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 59,
         "channel_title": "Radio Maryj",
@@ -6967,7 +6967,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "d55bcdca90443d6e7501e134e493939651c677a75127f3faf5173827f604e1da"
+        "id": "d511d1355357b57db5f92acd8b8261c5d539eaa4847252bcb2cd146f47c2fd84"
     },
     {
         "channel_name": "radio-maryja",
@@ -6976,7 +6976,7 @@
         "weekday": 2,
         "program_name": "Feleiton Sprobuj pomyslec",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -6984,7 +6984,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "653dc6f46432352283e8df7777014e08c222734749428f728f463211d18efa5b"
+        "id": "04f057403f461cb733dd3767bb78dd908860fc87cdf1168e5b16d9897541bc54"
     },
     {
         "channel_name": "radio-maryja",
@@ -6993,7 +6993,7 @@
         "weekday": 2,
         "program_name": "Rozmowy niedokonczone: Polityka w Polsce i wobec Polski",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 125,
         "channel_title": "Radio Maryj",
@@ -7001,7 +7001,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "043d3b124d8c26bd5ff3425efa2a584b17e9a4879c07eb50796468a7f56a8199"
+        "id": "947540ec7a655e60d49a89f7973ec8f815be6b7e8b1fc935e05fcdfd8b323077"
     },
     {
         "channel_name": "radio-zet",
@@ -8336,7 +8336,7 @@
         "weekday": 2,
         "program_name": "Agro Info",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TV Republika",
@@ -8344,7 +8344,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "9529012abb3e0bedded417b741a75d8397a38bff184318fa4e043258302fde79"
+        "id": "ae46f25d32f70d673e7ac1bed8da021d5587a4f7ce19a4091bbd4fdbbaef25c0"
     },
     {
         "channel_name": "tv-republika",
@@ -8353,7 +8353,7 @@
         "weekday": 2,
         "program_name": "Republika Dzien 12:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -8361,7 +8361,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "5efa3276960307de17943803f65e6a9de2a8043ac126af631812cc6c9b1b6973"
+        "id": "7a72e6ebd967c229c75998b714a26290c12b006bbffabee1674fb70add119c24"
     },
     {
         "channel_name": "tv-republika",
@@ -8370,7 +8370,7 @@
         "weekday": 2,
         "program_name": "Republika Dzien 13:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Republika",
@@ -8378,7 +8378,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "e73145cdb8aa546005930f2a1d6ef0ba768b70f246029461efca91145757f1b9"
+        "id": "77544ab1c62d284f5c2041cab8bbbbd74c631a829a70f6fd9852dd27eeb8d116"
     },
     {
         "channel_name": "tv-republika",
@@ -8387,7 +8387,7 @@
         "weekday": 2,
         "program_name": "Republika Dzien 14:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Republika",
@@ -8395,7 +8395,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "268986ddde2907ea6ebc1561ec13998b464d184e993b69fd1df526610eb00811"
+        "id": "656971ca6d413132e47f6d4cfab6a168d620febb0a4775cf691f49ebf0d567ad"
     },
     {
         "channel_name": "tv-republika",
@@ -8404,7 +8404,7 @@
         "weekday": 2,
         "program_name": "Republika Dzien 15:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -8412,7 +8412,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "6f2e9dc1f7ff209296007594614ae1ca0976cdc9450925ae9725ab09688763e9"
+        "id": "ac779c40d16570ee1a50c6a261104674d1e8eba1903b6010f6d1598eab082188"
     },
     {
         "channel_name": "tv-republika",
@@ -8421,7 +8421,7 @@
         "weekday": 2,
         "program_name": "Republika Dzien 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -8429,7 +8429,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "c6e9869f37da44bfd338aedbe307682dcccf983011414f9a2b824fc65ee84e50"
+        "id": "59a2cdc05f200cb4ab2afbc5e9ca60a395c6e9c891ae7f252115ca32771b23be"
     },
     {
         "channel_name": "tv-republika",
@@ -8438,7 +8438,7 @@
         "weekday": 2,
         "program_name": "Express Republiki",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -8446,7 +8446,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "f3d1502e1aeb91d20a64db2000f53781ddeb196a4971485e9361db2c58dec532"
+        "id": "0a892de4648676defef874e760c43d611624d953b53ed3baf48d6cc7c6b1fbf9"
     },
     {
         "channel_name": "tv-republika",
@@ -8455,7 +8455,7 @@
         "weekday": 2,
         "program_name": "Dzisiaj",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 80,
         "channel_title": "TV Republika",
@@ -8463,7 +8463,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "0131976de07e43a7b43c78d572090eb248310fe9ab258519cb1da9a235b943c9"
+        "id": "d7a7a1d323c2a87f2149a3eba33a1af5d7103a0130dbb1a894bfbc51f64dba82"
     },
     {
         "channel_name": "tv-trwam",
@@ -8472,7 +8472,7 @@
         "weekday": 2,
         "program_name": "Informacje Dnia 00:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -8480,7 +8480,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "497ac161643b97ceac81dc41b97312377dde1c49a8c418d4daa5dcf434865c77"
+        "id": "9aeee5c8170fcccdef0899c62064da0ef47a28d198090091b5e67c925722b8c8"
     },
     {
         "channel_name": "tv-trwam",
@@ -8489,7 +8489,7 @@
         "weekday": 2,
         "program_name": "Informacje Dnia 03:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -8497,7 +8497,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "0e0d48e850bfce61994ff6da2e4aa5584fc51d5b8f9878b9de583e66c930d737"
+        "id": "385a5d62cfe24558e18f625ea0a65da8807fee579297f95cdb56ed740a5b067a"
     },
     {
         "channel_name": "tv-trwam",
@@ -8506,7 +8506,7 @@
         "weekday": 2,
         "program_name": "Informacje Dnia 04:20",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -8514,7 +8514,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "5f1ca13a3f29c06d2e480fa405aaa5306d78d1c58a5603982e51b8cc870d1424"
+        "id": "f6284a770c9140040ca188478e5fdb9c37ac424d9a5ee553b48e6394cb0a13d1"
     },
     {
         "channel_name": "tv-trwam",
@@ -8523,7 +8523,7 @@
         "weekday": 2,
         "program_name": "Informacje Dnia 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Trwa",
@@ -8531,7 +8531,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "dd76a6aca721c3d592c499b0b9c962479339fb5e806fadd4f8994e36418c8440"
+        "id": "88de197e673631baf528519e3f14aba2377d6646c04ce753ff7c79dd1092865c"
     },
     {
         "channel_name": "tv-trwam",
@@ -8540,7 +8540,7 @@
         "weekday": 2,
         "program_name": "Informacje Dnia 10:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Trwa",
@@ -8548,7 +8548,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "6176a65cf7cf2c2e1ce3a0c3c3151e75a6f1f78f353d368bb208d1f24f710a29"
+        "id": "4b3373591d4e35776026615ca8830937507d7efa98a7cd6d5db46e33677313a9"
     },
     {
         "channel_name": "tv-trwam",
@@ -8557,7 +8557,7 @@
         "weekday": 2,
         "program_name": "Informacje Dnia 12:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 17,
         "channel_title": "TV Trwa",
@@ -8565,7 +8565,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "b6d20139dd602cacf4b535186e3f0f1d344db21797d0d4319229cac34bb04b98"
+        "id": "e4ed00148f83963c0838c78553f96fb7c22b15bfd9ff562653a4751e0c66f973"
     },
     {
         "channel_name": "tv-trwam",
@@ -8574,7 +8574,7 @@
         "weekday": 2,
         "program_name": "Informacje Dnia 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Trwa",
@@ -8582,7 +8582,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "e09bcf6951570a7486968815da756a7342d8327646ae415b1d326543015d7fdb"
+        "id": "d17bd48c36627b80eaac124d2884b68c5031b58dd04fdf06645c6db1084095ed"
     },
     {
         "channel_name": "tv-trwam",
@@ -8591,7 +8591,7 @@
         "weekday": 2,
         "program_name": "Informacje Dnia 18:05",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Trwa",
@@ -8599,7 +8599,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "688d88786461d32ceb8366dedc4877990dec16edf8966f211657090da1bb5ea1"
+        "id": "b50c1b0cabf3bd1e96e87f9712f03184bba3eb26e8d8605bd11d3b233f452875"
     },
     {
         "channel_name": "tv-trwam",
@@ -8608,7 +8608,7 @@
         "weekday": 2,
         "program_name": "Informacje Dnia 20:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -8616,7 +8616,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "99c2fc723d87eca846deea44eccd3e9873903290178759af46200eeae4159533"
+        "id": "96ddf40ddd9f370ecedbbfd2496c3b3f0008e6df33830027964c900679a8dd0d"
     },
     {
         "channel_name": "tv-trwam",
@@ -8625,7 +8625,7 @@
         "weekday": 2,
         "program_name": "Informacje Dnia 22:20",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -8633,7 +8633,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "17d251e426a5e79d624a8affcead3abda76286ad1d162935488ea91d43f62182"
+        "id": "20e88a20f46be1147edad3f8e21699cdd55863926e7c04dc08e9543687581523"
     },
     {
         "channel_name": "tvbrasil",
@@ -8846,7 +8846,7 @@
         "weekday": 2,
         "program_name": "Dzisiaj w regionie",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TVS",
@@ -8854,7 +8854,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "a60b8e8d59593a1d5cd019f09db487d2ad0730935531f103e44419802e16aba6"
+        "id": "a445660b5eae9120aa399cbfc64a96a863ced5d8df8a77a09fa5fd7e9c4aa40b"
     },
     {
         "channel_name": "tvs",
@@ -8863,7 +8863,7 @@
         "weekday": 2,
         "program_name": "Dzisiaj w regionie",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TVS",
@@ -8871,7 +8871,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "a60b8e8d59593a1d5cd019f09db487d2ad0730935531f103e44419802e16aba6"
+        "id": "a445660b5eae9120aa399cbfc64a96a863ced5d8df8a77a09fa5fd7e9c4aa40b"
     },
     {
         "channel_name": "wpolsce24",
@@ -8880,7 +8880,7 @@
         "weekday": 2,
         "program_name": "Tele-Ekspres 01:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "wPolsce24",
@@ -8888,7 +8888,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "139fdf12cabdbbbc560bc588b5401cf71710e206eeafc345bd1331f560e66d70"
+        "id": "6eb9b4851e11e3c0fdd8d805430d7ed814a973e5d8066262825bf166a916600b"
     },
     {
         "channel_name": "wpolsce24",
@@ -8897,7 +8897,7 @@
         "weekday": 2,
         "program_name": "Tele-Ekspres 16:45",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "wPolsce24",
@@ -8905,7 +8905,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "b97ad593e4f8c518bba4ad065ef6682b0b1c0ca8c4148840f2e3b4253c1deb55"
+        "id": "9388d64735361f0a4d14de8f4e7c3c69af7fe73cd6aeb4dde13416fc3a62056f"
     },
     {
         "channel_name": "wpolsce24",
@@ -8914,7 +8914,7 @@
         "weekday": 2,
         "program_name": "Wiadomosci Poranne",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 30,
         "channel_title": "wPolsce24",
@@ -8922,7 +8922,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "31a746f0672ee289d7eb8c9db679fc6081bb0b9cad9a53de43ecc3892cc20b0f"
+        "id": "ae4b8c1d2ceb1d80044f7bc3f48a2ebcb43ef37e8a661f97eda8dd2e53ddb9e0"
     },
     {
         "channel_name": "wpolsce24",
@@ -8931,7 +8931,7 @@
         "weekday": 2,
         "program_name": "Wiadomosci 00:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -8939,7 +8939,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "ae6246a0ed00e54fede6b23690502c467d32a4b5440a5ecf54de1966882b5fa0"
+        "id": "1cf3300bed1b14b6886f6bdf6d87a26675ded8e50b8bda36c7d08f76b458e665"
     },
     {
         "channel_name": "wpolsce24",
@@ -8948,7 +8948,7 @@
         "weekday": 2,
         "program_name": "Wiadomosci 07:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "wPolsce24",
@@ -8956,7 +8956,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "33bfb17955a1d006f284a076b3ca579dd92de7feea5d8faa276254a06cbe8425"
+        "id": "9775ef9a6336b0ba8e36375ab2810dbbc2c2f62ac2b34aa625aae872e18c05dd"
     },
     {
         "channel_name": "wpolsce24",
@@ -8965,7 +8965,7 @@
         "weekday": 2,
         "program_name": "Wiadomosci 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -8973,7 +8973,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "01003e397d595d0c10027749f37fe287b1261d4fc8659ae5fa85310a684fca06"
+        "id": "69e85e972236b0eb6c18151047a19b62ce7f8ed2b767172b8641001ef1991125"
     },
     {
         "channel_name": "wpolsce24",
@@ -8982,7 +8982,7 @@
         "weekday": 2,
         "program_name": "Wiadomosci 09:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -8990,7 +8990,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "45e929c24f909f3bfe4be37dbdaaad70440fab92883bea70c1931cfd60bf8781"
+        "id": "cd5f260a7a6a6a006b9681794bec939b7ccca00d88816ad5217f4b77e78bf001"
     },
     {
         "channel_name": "wpolsce24",
@@ -8999,7 +8999,7 @@
         "weekday": 2,
         "program_name": "Wiadomosci 19:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 30,
         "channel_title": "wPolsce24",
@@ -9007,7 +9007,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "0d9593867026201ce93a0b3277860deaf7ec29adf7c552c2d6e16a89ec35e1b7"
+        "id": "6a2dbce6fd12b43e93e7fd9368f0f8ba1bf9a6ecc4ea8cc3716ae7aeb7b31758"
     },
     {
         "channel_name": "wpolsce24",
@@ -9016,7 +9016,7 @@
         "weekday": 2,
         "program_name": "Wiadomosci 23:45",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 14,
         "channel_title": "wPolsce24",
@@ -9024,7 +9024,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "7c310548b6ab2574d0840d90b3332c0b71b219ce2ae0117a32c5b13b3dc8aedf"
+        "id": "06ebaffc2e4bb08bb9cf7abdb97cdb3d4a94701ab1f22f424f5d120302e78210"
     },
     {
         "channel_name": "wpolsce24",
@@ -9033,7 +9033,7 @@
         "weekday": 2,
         "program_name": "Wiadomosci Agro",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -9041,7 +9041,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "b2ceed7019217d63fbd286f01b41a8ca608264a60f065ca23e0a0da707d1307f"
+        "id": "7d72497caf7ae6a1c4fda7cfea50ed7eb5221b173ba81990d469cfd253008e1f"
     },
     {
         "channel_name": "wpolsce24",
@@ -9050,7 +9050,7 @@
         "weekday": 2,
         "program_name": "Wiadomosci Gospodarka",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -9058,7 +9058,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "237e81df2d7a061b90c4de3844ee42b86c7f56eba435ea75090cec7291d8a292"
+        "id": "7fdc7b214bfc55cd9aa6f167baf62c34d103e12673544edf6ac20f2b4023d274"
     },
     {
         "channel_name": "wpolsce24",
@@ -9067,7 +9067,7 @@
         "weekday": 2,
         "program_name": "Kontra",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 110,
         "channel_title": "wPolsce24",
@@ -9075,7 +9075,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "13a4d81d24e01a7c3d2ff18dd94a7d795337717a917746725c5eeb14be495347"
+        "id": "de7bd4f473f732a04af603c084f307b12b7eaa5c1b8f6b701ea58986addf8f76"
     },
     {
         "channel_name": "wpolsce24",
@@ -9084,7 +9084,7 @@
         "weekday": 2,
         "program_name": "Rapport Wiadomosci 12:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "wPolsce24",
@@ -9092,7 +9092,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "33f5664b10e0a864d4cc077f0f05adfbcdb40a852c464b93555576a2a9007b09"
+        "id": "a28ae850d3a20d9d8b33e8041c806975e83075b1f110ce787d97ad0228479d2e"
     },
     {
         "channel_name": "wpolsce24",
@@ -9101,7 +9101,7 @@
         "weekday": 2,
         "program_name": "Rapport Wiadomosci 15:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "wPolsce24",
@@ -9109,7 +9109,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "9df753b7ddc2ff72bb3910b0ba8f0270c034b65b84682477cb0441f95adf437c"
+        "id": "11f7a5a9ddea07962d09c9193488a050f5412051a43b06d118a91045b7955817"
     },
     {
         "channel_name": "wpolsce24",
@@ -9118,7 +9118,7 @@
         "weekday": 2,
         "program_name": "Piatka Pereiri",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -9126,7 +9126,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "29fd83a2103cea6876c50c967046457daa555871342f095ea7eee4bd897efd84"
+        "id": "5fbd2de54d278d30aa523c190399fd3fbea2d89f4c17ef95a018d596814c6646"
     },
     {
         "channel_name": "wpolsce24",
@@ -9135,7 +9135,7 @@
         "weekday": 2,
         "program_name": "Piatka Pochwata",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -9143,7 +9143,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "014f6ef7140863d8c589d5ad18fce21adad4173b20c5a1a333fc2cba97b000c2"
+        "id": "77fc62f59d3740ba2eec07de8e909f168e6414eefd16e10766ee7ef4d10a941a"
     },
     {
         "channel_name": "wpolsce24",
@@ -9152,7 +9152,7 @@
         "weekday": 2,
         "program_name": "Minela 20:05 (Marek Pyza)",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 45,
         "channel_title": "wPolsce24",
@@ -9160,7 +9160,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "9f08911b40b0d850e3e0d64d05207a727f658e8d98679d2b170554516e28669f"
+        "id": "2c5d7e7cfdf2c24bed6d89fcfa734ad53d500cd76344edfc9a7101f87053f116"
     },
     {
         "channel_name": "wpolsce24",
@@ -9169,7 +9169,7 @@
         "weekday": 2,
         "program_name": "Minela 20:05 (Magdalena Ogorek)",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 50,
         "channel_title": "wPolsce24",
@@ -9177,7 +9177,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "5650cbfbdaecf8c2fa9979cf61cdc588b9bfb9561a56485c6c11f78deb9d6989"
+        "id": "0c32882e10a1d66562d1ec70f9f3bcb41b91ab5d331bc537a0642925d3d73585"
     },
     {
         "channel_name": "zdf-neo",
@@ -11379,7 +11379,7 @@
         "weekday": 3,
         "program_name": "Aktualnosci Dnia 04:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "Radio Maryj",
@@ -11387,7 +11387,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "f31a5d890260e7fc091797748abf171bd7a809cffe79fbb4fe537bec6a191b85"
+        "id": "79f7ea512f3a1a8a6d1ec42c33d7160ecfe1753890fd042fef122b198f0f3ad1"
     },
     {
         "channel_name": "radio-maryja",
@@ -11396,7 +11396,7 @@
         "weekday": 3,
         "program_name": "Aktualnosci Dnia 13:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 50,
         "channel_title": "Radio Maryj",
@@ -11404,7 +11404,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "ffbefa1ef99da59efedba6e3d7670b9bdc3323a8c4324da8c19217a94995d857"
+        "id": "7151e908fe8b67ad01d45307f43a34989a83ac18ac95f7e7bc6038a1eccc99aa"
     },
     {
         "channel_name": "radio-maryja",
@@ -11413,7 +11413,7 @@
         "weekday": 3,
         "program_name": "Aktualnosci Dnia 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "Radio Maryj",
@@ -11421,7 +11421,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "3e0ce3f80c3a982f3293ce473dc26d2f5668ce357b3c96bfe49a23a8892e7ce8"
+        "id": "637af5788cf683cc6f1b28344c696c08636949e49ed8bb3ae787d867e4d17911"
     },
     {
         "channel_name": "radio-maryja",
@@ -11430,7 +11430,7 @@
         "weekday": 3,
         "program_name": "Serwis Informacjny 06:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 7,
         "channel_title": "Radio Maryj",
@@ -11438,7 +11438,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "d7932a92101648fc22f0a8fd59a0c1b8f0db0621b43b84012547a87b0ddf7bef"
+        "id": "da97a0c07b5195222d2b84c990eaa1d174cf5fa1b444f7bb8ecb1fa078cfefa6"
     },
     {
         "channel_name": "radio-maryja",
@@ -11447,7 +11447,7 @@
         "weekday": 3,
         "program_name": "Serwis Informacjny 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -11455,7 +11455,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "08575334f5f9d0cae8e28145918a13be6e05e43e75f591a6f93a31d3979c9552"
+        "id": "a562e107c6e976f441687fea8320257f49882de93998fd56fcf42dbf13127079"
     },
     {
         "channel_name": "radio-maryja",
@@ -11464,7 +11464,7 @@
         "weekday": 3,
         "program_name": "Serwis Informacjny 10:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "Radio Maryj",
@@ -11472,7 +11472,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "a29856341805420fa211da442af54de032a467942773aea32c4c1eaa60315e6d"
+        "id": "1260fd0a9dcb26620be35dacea15eab41189745679d3439322a25e14f16e5f4f"
     },
     {
         "channel_name": "radio-maryja",
@@ -11481,7 +11481,7 @@
         "weekday": 3,
         "program_name": "Serwis Informacjny 11:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -11489,7 +11489,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "114c127270eead253f9570638ff0c12cd1cb9275746e51d884d87c37917cd139"
+        "id": "4f3326e29848304aa0cbe429a70e47db94d5f9d67c24d8989609a2dffb446ce9"
     },
     {
         "channel_name": "radio-maryja",
@@ -11498,7 +11498,7 @@
         "weekday": 3,
         "program_name": "Serwis Informacjny 12:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 7,
         "channel_title": "Radio Maryj",
@@ -11506,7 +11506,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "d208847097a8d92ec51fc495ab79d93cfe30aad943b24763cbd47c3527b91a08"
+        "id": "c996cf5e040149339b98b4f5edea33cca0a990d052dbce9da9a43129ec447405"
     },
     {
         "channel_name": "radio-maryja",
@@ -11515,7 +11515,7 @@
         "weekday": 3,
         "program_name": "Serwis Informacjny 13:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -11523,7 +11523,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "08a33fe653d52fa8a85094066be9bbac3c9ea2881572a1ff322bdf4394df8aaa"
+        "id": "defcb816f570b2dabeba38c30cd71a1e5f7d259d31d635a31603b7433155d55f"
     },
     {
         "channel_name": "radio-maryja",
@@ -11532,7 +11532,7 @@
         "weekday": 3,
         "program_name": "Serwis Informacjny 14:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -11540,7 +11540,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "7c39f07867737d40d2b11e2d340f26ce2b582b31b6e1ed3f0b4e0825c75cb240"
+        "id": "9b56fb54e1f508f73bb6f0d125e220deaef5442518fcbffe283e66674cfea068"
     },
     {
         "channel_name": "radio-maryja",
@@ -11549,7 +11549,7 @@
         "weekday": 3,
         "program_name": "Serwis Informacjny 17:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -11557,7 +11557,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "815763091d93f48ea84f44de1b548524d1f3d702b07967220e6753ccccb5a959"
+        "id": "37a69bee4bf5c3314ee621f3066a8f8fedf57d6c8667e86715ef63306e6cd886"
     },
     {
         "channel_name": "radio-maryja",
@@ -11566,7 +11566,7 @@
         "weekday": 3,
         "program_name": "Serwis Informacjny 20:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "Radio Maryj",
@@ -11574,7 +11574,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "d29f10ea4e79ccd380f5b22049399d64317dec3d6d0b19a8f344d9cc5db9a9a5"
+        "id": "7498d6a05d8d08dd69adbb79ad10ebf32c48675bb835fc474ca0b084ca80b91a"
     },
     {
         "channel_name": "radio-maryja",
@@ -11583,7 +11583,7 @@
         "weekday": 3,
         "program_name": "Serwis Informacjny 23:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 59,
         "channel_title": "Radio Maryj",
@@ -11591,7 +11591,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "8979228fcc880facd941cc3549af640bdc192aa4b4c794e34525cf2dfb827a1c"
+        "id": "de4327fef8f83bcf00e22f370b0fa41dcf2318cca1db7fb416c6f45fb02f4e24"
     },
     {
         "channel_name": "radio-maryja",
@@ -11600,7 +11600,7 @@
         "weekday": 3,
         "program_name": "Feleiton Sprobuj pomyslec",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -11608,7 +11608,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "30118f365f9c9f1e2c9aa4624eeca6c3d9ebdd09567fceb8ecb696a753dc4cae"
+        "id": "986bd2710f69437b54696c93312731b98af2250ce0d73b0225dccaf1e214a82d"
     },
     {
         "channel_name": "radio-maryja",
@@ -11617,7 +11617,7 @@
         "weekday": 3,
         "program_name": "Rozmowy niedokonczone: Polityka w Polsce i wobec Polski",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 125,
         "channel_title": "Radio Maryj",
@@ -11625,7 +11625,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "c090ec1715870c05162fcdb0b42615f289b3c9120c6b6081d01a7ddf3782a3e8"
+        "id": "0221989ab5f7611bdc0616d352c29c3454b681a928e872371c1ae2dc31beda21"
     },
     {
         "channel_name": "radio-zet",
@@ -12960,7 +12960,7 @@
         "weekday": 3,
         "program_name": "Agro Info",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TV Republika",
@@ -12968,7 +12968,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "8a520d753106122682591b0e6e16bfe31159b3b6d4fa678a73682325b1562b52"
+        "id": "6236b5d1a26f6ea7ab9b403481434797535ce0219eac2fabb7dbcf1a041699ff"
     },
     {
         "channel_name": "tv-republika",
@@ -12977,7 +12977,7 @@
         "weekday": 3,
         "program_name": "Republika Dzien 12:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -12985,7 +12985,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "b7aae945bf9d26aab47d8f1f695733486d346d6a64b926064d4b94afd99308b1"
+        "id": "17f46596adcf2c3764f04e1b7581711563f2ffaca66cedc2a00c84d4f71c45b3"
     },
     {
         "channel_name": "tv-republika",
@@ -12994,7 +12994,7 @@
         "weekday": 3,
         "program_name": "Republika Dzien 13:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Republika",
@@ -13002,7 +13002,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "398041cf74901e3673ffa714810849c23bc48c00e855b68e18085681a6776126"
+        "id": "88a2a803e037b4b976ffa81c0e1e0e67c6e11c55d7735519c6e40a362ee7efa7"
     },
     {
         "channel_name": "tv-republika",
@@ -13011,7 +13011,7 @@
         "weekday": 3,
         "program_name": "Republika Dzien 14:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Republika",
@@ -13019,7 +13019,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "596a21770f659b03778ea8f68ae59e39f61ac8cf549d1c75a026a390cdf1258d"
+        "id": "e0e3454664fe295fac75d06e02270346e68ab5cd72cefb39e8b604347142ed5c"
     },
     {
         "channel_name": "tv-republika",
@@ -13028,7 +13028,7 @@
         "weekday": 3,
         "program_name": "Republika Dzien 15:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -13036,7 +13036,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "45f61b2d52c58ae0919522bb3181b6b28298b02177e9bf1c903ed169a142d6d3"
+        "id": "570f507fae5a1b89f8f6ec7b0b6bacb8adac9e2ed1a8d6079918fce6ec803bc1"
     },
     {
         "channel_name": "tv-republika",
@@ -13045,7 +13045,7 @@
         "weekday": 3,
         "program_name": "Republika Dzien 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -13053,7 +13053,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "2280bef85d03644ae1069331c4d5359284e57f64e1746327061e0ec82c022cd1"
+        "id": "d41cd45ee2ef46025162526fec168055e7728a561af7021a6d2c7e26d69560f3"
     },
     {
         "channel_name": "tv-republika",
@@ -13062,7 +13062,7 @@
         "weekday": 3,
         "program_name": "Express Republiki",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -13070,7 +13070,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "be5f031225ba650e89f6990a4c9396a2b023f2d5a9d077e71028b240ae3173c9"
+        "id": "eafd173e43ce0c61415434259a080573eda9809166814f236292a9ace1cbf46d"
     },
     {
         "channel_name": "tv-republika",
@@ -13079,7 +13079,7 @@
         "weekday": 3,
         "program_name": "Dzisiaj",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 80,
         "channel_title": "TV Republika",
@@ -13087,7 +13087,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "d9ecf9a831be410795c22d43c6c9c6dd83f864e403f5562d81ce92ec4a96b839"
+        "id": "ea92a83c3ea73bd1eaacc40b94f31c77c15099522bf942e9e5a73a18bbe72bb5"
     },
     {
         "channel_name": "tv-trwam",
@@ -13096,7 +13096,7 @@
         "weekday": 3,
         "program_name": "Informacje Dnia 00:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -13104,7 +13104,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "d4b7e7159ba48086920dd4064e3032ef9229f6352ab335528f7fb3f89dc855e0"
+        "id": "56c818eb675d59b49bec524dcac00f1512ff5faff0fb7b4a90d2183124f80ec0"
     },
     {
         "channel_name": "tv-trwam",
@@ -13113,7 +13113,7 @@
         "weekday": 3,
         "program_name": "Informacje Dnia 03:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -13121,7 +13121,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "eea2637e20f82984486cf409792a9e44f0ef5844c142f53d20568e73bca06b3d"
+        "id": "a6f3931e63f7a22d65ad6754ab896678fd93e3ebfd50ffbba6977c4ee7a21184"
     },
     {
         "channel_name": "tv-trwam",
@@ -13130,7 +13130,7 @@
         "weekday": 3,
         "program_name": "Informacje Dnia 04:20",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -13138,7 +13138,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "c007b76d8350738161b46cfbb03c65bd503070ad30a6a373086dd73678be724c"
+        "id": "48226de7a3de4c4156852a34bd026439b25c121651777e629903c7eb137cc749"
     },
     {
         "channel_name": "tv-trwam",
@@ -13147,7 +13147,7 @@
         "weekday": 3,
         "program_name": "Informacje Dnia 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Trwa",
@@ -13155,7 +13155,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "d9e52873bf37501645715f389a644ce60321e324fc8007f1da3dde6026eb6ff7"
+        "id": "89fb2b8b47c3f9164dd232267360b9079933c2dbae6284c82df0f69626a6a7c1"
     },
     {
         "channel_name": "tv-trwam",
@@ -13164,7 +13164,7 @@
         "weekday": 3,
         "program_name": "Informacje Dnia 10:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Trwa",
@@ -13172,7 +13172,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "8f2404fdc5b6f1b039c6f3cf4bef262c8e97f8509519aaef38cedacc6ac6a3f8"
+        "id": "1338c8214e2b4d1c8a64793ba7d67a749dcb614f01a1f693b16a63a84aa5c5c6"
     },
     {
         "channel_name": "tv-trwam",
@@ -13181,7 +13181,7 @@
         "weekday": 3,
         "program_name": "Informacje Dnia 12:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 17,
         "channel_title": "TV Trwa",
@@ -13189,7 +13189,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "8def830b9f4c75d47e61d538b3ffd15da2e9906f4becc202706655263b757c72"
+        "id": "5948a808a31e7667ff6e5901aef24f136061d6861a00afbc3437a84515ff0ab0"
     },
     {
         "channel_name": "tv-trwam",
@@ -13198,7 +13198,7 @@
         "weekday": 3,
         "program_name": "Informacje Dnia 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Trwa",
@@ -13206,7 +13206,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "14cabb2e744fca8b9872fec191c987151bf4154f0383d8cb6c850b197a6f9abf"
+        "id": "e62db07f81970bb92f21e9cdb6a857080d53557544a82224324ac459af4a79c0"
     },
     {
         "channel_name": "tv-trwam",
@@ -13215,7 +13215,7 @@
         "weekday": 3,
         "program_name": "Informacje Dnia 18:05",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Trwa",
@@ -13223,7 +13223,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "3051520f007783758ed78570830952a4f1e879a2b84a9a5b0e3e416a939161aa"
+        "id": "1af54d344b71aeabdbe24e61696adf40ec07f083d36d462b6de925660f9ac17f"
     },
     {
         "channel_name": "tv-trwam",
@@ -13232,7 +13232,7 @@
         "weekday": 3,
         "program_name": "Informacje Dnia 20:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -13240,7 +13240,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "11a5ef0c557813b34e7d3c3c6338f00d58ec83e1719881b4579ef630c31cde43"
+        "id": "1a23fd2e84d91fe24553a2df4f83ea33ea89a8b4d731edf25d22661b5ca23a29"
     },
     {
         "channel_name": "tv-trwam",
@@ -13249,7 +13249,7 @@
         "weekday": 3,
         "program_name": "Informacje Dnia 22:20",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -13257,7 +13257,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "722492aa0c6aee848bcce11b6f3f271aee2a4e9ebe8b9494cc2ab83a21ee5c52"
+        "id": "dc481aec347c6e914a62337c30a9fffb998468bf85e3852add83caf25da250d5"
     },
     {
         "channel_name": "tvbrasil",
@@ -13470,7 +13470,7 @@
         "weekday": 3,
         "program_name": "Dzisiaj w regionie",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TVS",
@@ -13478,7 +13478,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "7dbe823f372f21e23eefec0115912b5a57c9f904ce0c9be9425db4aff29f63c8"
+        "id": "d4c21833b64964ccb59f62b9e7d86c871de25aaa4b5965ab9addcb2825c0c1e7"
     },
     {
         "channel_name": "tvs",
@@ -13487,7 +13487,7 @@
         "weekday": 3,
         "program_name": "Dzisiaj w regionie",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TVS",
@@ -13495,7 +13495,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "7dbe823f372f21e23eefec0115912b5a57c9f904ce0c9be9425db4aff29f63c8"
+        "id": "d4c21833b64964ccb59f62b9e7d86c871de25aaa4b5965ab9addcb2825c0c1e7"
     },
     {
         "channel_name": "wpolsce24",
@@ -13504,7 +13504,7 @@
         "weekday": 3,
         "program_name": "Tele-Ekspres 01:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "wPolsce24",
@@ -13512,7 +13512,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "47ac955183e9a36fdc43c1092294495e66043a7680000375108c0f74e040d34e"
+        "id": "0bd560e64ce629cd15cc337ec14766f3a05f37f87d9f12eabb47e808521b538a"
     },
     {
         "channel_name": "wpolsce24",
@@ -13521,7 +13521,7 @@
         "weekday": 3,
         "program_name": "Tele-Ekspres 16:45",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "wPolsce24",
@@ -13529,7 +13529,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "1a2874731ea343298048e8715081bc444819bb182d91bc4b33e181841237e871"
+        "id": "9ab45f6beb8f6526df8838b959aa5d53b968226715058aafbbc61ed2070547cf"
     },
     {
         "channel_name": "wpolsce24",
@@ -13538,7 +13538,7 @@
         "weekday": 3,
         "program_name": "Wiadomosci Poranne",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 30,
         "channel_title": "wPolsce24",
@@ -13546,7 +13546,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "da1a70a5d0bc3108a29cc1ccfa99c2253b11e78fa24b4b533cd4c06e872569d1"
+        "id": "3f7bde5bb4f5737d074e80ba677618431c973d4bfc1551802138aecf8a1164d0"
     },
     {
         "channel_name": "wpolsce24",
@@ -13555,7 +13555,7 @@
         "weekday": 3,
         "program_name": "Wiadomosci 00:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -13563,7 +13563,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "c69ff201f71583843d3cf3ffcd10289e987aec9b2ff9ccf2691219ee81badb6d"
+        "id": "6c5a7258d4818ddd1b43c647930b7498c68415aa98725da6244ac4c8c9b0ded4"
     },
     {
         "channel_name": "wpolsce24",
@@ -13572,7 +13572,7 @@
         "weekday": 3,
         "program_name": "Wiadomosci 07:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "wPolsce24",
@@ -13580,7 +13580,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "60dabd6b2644ee992c7edb5022e60b55a82a9d8503df84583b21cf9fc16f65bb"
+        "id": "0381f0f5c97c2320686ee1866487c10714b45df4fa320258b79f7d1988796c43"
     },
     {
         "channel_name": "wpolsce24",
@@ -13589,7 +13589,7 @@
         "weekday": 3,
         "program_name": "Wiadomosci 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -13597,7 +13597,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "4937d2fcc9a4574f4cd40a4b83bd698765357c257f37259961181dc64874cc2e"
+        "id": "ebf2226457c636bc11ebaec91cceffbcd3fdb61902e1945c670130d08f830194"
     },
     {
         "channel_name": "wpolsce24",
@@ -13606,7 +13606,7 @@
         "weekday": 3,
         "program_name": "Wiadomosci 09:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -13614,7 +13614,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "33a4354bf79889d3fc0e6c426c497be26f9810870910fec15eac2656e8f05aaa"
+        "id": "2346e760d11ab18f98ea0f15b198da860c620b00969536c83a3b2c5cbc1f1df5"
     },
     {
         "channel_name": "wpolsce24",
@@ -13623,7 +13623,7 @@
         "weekday": 3,
         "program_name": "Wiadomosci 19:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 30,
         "channel_title": "wPolsce24",
@@ -13631,7 +13631,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "69ec4b402ee523ccea7101a42aa0d928454abb13f58a7901046c2f0ebee7d8ce"
+        "id": "8271abf551ca0a13f172c4e50cd6ef3f4b975a5b0b3bc5600361749d9d1c9d12"
     },
     {
         "channel_name": "wpolsce24",
@@ -13640,7 +13640,7 @@
         "weekday": 3,
         "program_name": "Wiadomosci 23:45",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 14,
         "channel_title": "wPolsce24",
@@ -13648,7 +13648,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "fb3e881a7b726c3e5817d45c208fafd7cf322da52eb2e4854f856fc7b43abc43"
+        "id": "ff4af9646aefa035781114d51adf66d774535fba30a286fc0cca543c9348af0d"
     },
     {
         "channel_name": "wpolsce24",
@@ -13657,7 +13657,7 @@
         "weekday": 3,
         "program_name": "Wiadomosci Agro",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -13665,7 +13665,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "d1641a8914f28d6b12ae30631d6a3efd870db8b0fddd31c199f58a99cbdd1cec"
+        "id": "693183c5ea5801bcdd25bbfaac06fc4f70f1cfe4451c8f3942fc4c58b56a8fea"
     },
     {
         "channel_name": "wpolsce24",
@@ -13674,7 +13674,7 @@
         "weekday": 3,
         "program_name": "Wiadomosci Gospodarka",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -13682,7 +13682,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "465ab7dfc82ba89f6319461c0bed374d3279fbc45468593ab7b3e93199bcab43"
+        "id": "f2067022677778b7399dbd4d0bfa09827be9dd2729285820eca7ea7b2169b264"
     },
     {
         "channel_name": "wpolsce24",
@@ -13691,7 +13691,7 @@
         "weekday": 3,
         "program_name": "Kontra",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 110,
         "channel_title": "wPolsce24",
@@ -13699,7 +13699,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "d499645818e596ba62bb85f6b87bab478f651a6c69098aa58df101de7fb44d98"
+        "id": "ded5fb7dc8911bd09d63293e8665b149899c693c74b00bae56c938f09a8af446"
     },
     {
         "channel_name": "wpolsce24",
@@ -13708,7 +13708,7 @@
         "weekday": 3,
         "program_name": "Rapport Wiadomosci 12:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "wPolsce24",
@@ -13716,7 +13716,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "edd2588cddb3cb703599a37bf8712ce1abbdd6b50587668e39bd392c4ce5a4b5"
+        "id": "39902af74d43cc24761b10c5b72edbe97740708fe16e946ffffe2469491eb9a6"
     },
     {
         "channel_name": "wpolsce24",
@@ -13725,7 +13725,7 @@
         "weekday": 3,
         "program_name": "Rapport Wiadomosci 15:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "wPolsce24",
@@ -13733,7 +13733,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "6d4f9d21ddce87a610a7c9ec512a405ecdc6746ac037abcb360bdd789b3b09d9"
+        "id": "d3e4af2c1222c6c2134e7e51edc4355c34b8e4b902e8f1d479b824a80455b3c5"
     },
     {
         "channel_name": "wpolsce24",
@@ -13742,7 +13742,7 @@
         "weekday": 3,
         "program_name": "Piatka Pereiri",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -13750,7 +13750,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "1a6e0cc0a6aa1dda9a0bbe2873a19556816f183cbda5e132cd0555576f4e5e36"
+        "id": "3aeb9d8f10151751619504b31707857521817d3e095afb65dc0331cf1b46657a"
     },
     {
         "channel_name": "wpolsce24",
@@ -13759,7 +13759,7 @@
         "weekday": 3,
         "program_name": "Piatka Pochwata",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -13767,7 +13767,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "bfa4251781e2b034017feb3d44d32195ee1ab46f991c4d9be098e015a8a3717e"
+        "id": "92a5b89431f1e1db7f52154eef67fc5538e5f40c48995383a042a56e93de1727"
     },
     {
         "channel_name": "wpolsce24",
@@ -13776,7 +13776,7 @@
         "weekday": 3,
         "program_name": "Minela 20:05 (Marek Pyza)",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 45,
         "channel_title": "wPolsce24",
@@ -13784,7 +13784,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "7e8dbc2c4a0828fc64ad659f7ee26912bdbf7f69b85e5e0d75654caac3d5ba62"
+        "id": "91b08083c9c356c0fb7f9cd55313f08e448000d2e470ea86143813615cfc2863"
     },
     {
         "channel_name": "wpolsce24",
@@ -13793,7 +13793,7 @@
         "weekday": 3,
         "program_name": "Minela 20:05 (Magdalena Ogorek)",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 50,
         "channel_title": "wPolsce24",
@@ -13801,7 +13801,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "8b821a91367f0e805cd469e99470f4b430fa47aaf4d3d518f0de561b165ad785"
+        "id": "903c3c14dc33ec8ed12b3b51e6394caf506c722232bae22534706806e371b852"
     },
     {
         "channel_name": "zdf-neo",
@@ -16037,7 +16037,7 @@
         "weekday": 4,
         "program_name": "Aktualnosci Dnia 04:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "Radio Maryj",
@@ -16045,7 +16045,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "5856352a10a6032bafd44c50b76ce4cfe5e7bdefd03fa04f5f6ce5fbfd5e0a47"
+        "id": "0ea9e4e11d4487b401f7c96428e8bb1d96e5577f72fd09169622aa7525c1d809"
     },
     {
         "channel_name": "radio-maryja",
@@ -16054,7 +16054,7 @@
         "weekday": 4,
         "program_name": "Aktualnosci Dnia 13:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 50,
         "channel_title": "Radio Maryj",
@@ -16062,7 +16062,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "6dcb9d683463f0df3820f9e98f713d3d4fcb28d283cfe2afbc8d3d96f0481d7a"
+        "id": "51747d307e3205153665253eba98cd48eac35cbfdebcbadda9bcbc9f6f1fb9be"
     },
     {
         "channel_name": "radio-maryja",
@@ -16071,7 +16071,7 @@
         "weekday": 4,
         "program_name": "Aktualnosci Dnia 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "Radio Maryj",
@@ -16079,7 +16079,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "5ac6dbd8c28ded4b774cb8fb12dc68892f8d0e1aa718131b82af6b558957f67a"
+        "id": "4288031bd46bc1a13456875fb34ababa960540186481685ff363c7c131e9bd5a"
     },
     {
         "channel_name": "radio-maryja",
@@ -16088,7 +16088,7 @@
         "weekday": 4,
         "program_name": "Serwis Informacjny 06:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 7,
         "channel_title": "Radio Maryj",
@@ -16096,7 +16096,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "fbd6d6f5d4d58877ddcd4b323f9cddfd9a7fc89a883042bf9d2b1f6aee6dfb68"
+        "id": "34ff5c2271337b6581f24c10621c5713932b6e5d6cff217a0840551dba770e1b"
     },
     {
         "channel_name": "radio-maryja",
@@ -16105,7 +16105,7 @@
         "weekday": 4,
         "program_name": "Serwis Informacjny 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -16113,7 +16113,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "53d6a138154be9c4988e1ed3b7bc8c686eaadaf2c9741b4b0a451ea426ae897b"
+        "id": "db74a9beac877c32565668947e41fcf3d7fef2788a59b3b5ec6fe1d34d96c70e"
     },
     {
         "channel_name": "radio-maryja",
@@ -16122,7 +16122,7 @@
         "weekday": 4,
         "program_name": "Serwis Informacjny 10:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "Radio Maryj",
@@ -16130,7 +16130,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "0235e05433e047372085b91d39f531d3370fa22393a2de3ea380c281dbdac25b"
+        "id": "0c9b1c2c8b4d5af934284c445358bbfd3bd39797e5fbe3fc367afd3e7bd881c9"
     },
     {
         "channel_name": "radio-maryja",
@@ -16139,7 +16139,7 @@
         "weekday": 4,
         "program_name": "Serwis Informacjny 11:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -16147,7 +16147,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "0f81366c4f43bcd8ce3c03ae9a41aea80f469506026dd0c98f46109d4b508216"
+        "id": "05c26caefc160b011fc8d2aef331fb9fcf5ffedd358573092d537239b80b642f"
     },
     {
         "channel_name": "radio-maryja",
@@ -16156,7 +16156,7 @@
         "weekday": 4,
         "program_name": "Serwis Informacjny 12:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 7,
         "channel_title": "Radio Maryj",
@@ -16164,7 +16164,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "4c1e1f37d53904c5031837acd8af802fc52cdcaaf5d9974458e426f33ced03c3"
+        "id": "583c42fbb8394e190bc4c3a43db6caec190405963094d32dfb744526d7a1586b"
     },
     {
         "channel_name": "radio-maryja",
@@ -16173,7 +16173,7 @@
         "weekday": 4,
         "program_name": "Serwis Informacjny 13:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -16181,7 +16181,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "4bd93abfded3b5ad2ec6117f8ff84c7cf50fc2e338e68737841aa967d93bd27c"
+        "id": "73bcc96c1d4c85ee19aa385bdef1c947a0ab56eff8ea5c95373015789f2514e2"
     },
     {
         "channel_name": "radio-maryja",
@@ -16190,7 +16190,7 @@
         "weekday": 4,
         "program_name": "Serwis Informacjny 14:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -16198,7 +16198,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "53801b41fef50b7baab64bb221520f11277886534c7696154fbd50ecfce9a73d"
+        "id": "0007cd4127c3c8dcb666c53b7ce8452a8684664b76e5177739e141385e8e1f79"
     },
     {
         "channel_name": "radio-maryja",
@@ -16207,7 +16207,7 @@
         "weekday": 4,
         "program_name": "Serwis Informacjny 17:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -16215,7 +16215,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "f95e67a53ccc58780549ee9723f0de109d0d53e7a53f677f39cba6b9e537ff42"
+        "id": "2ad335596487d93d43567cd93965905cbfd2a3dc7306faccadc27607f5bd9853"
     },
     {
         "channel_name": "radio-maryja",
@@ -16224,7 +16224,7 @@
         "weekday": 4,
         "program_name": "Serwis Informacjny 20:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "Radio Maryj",
@@ -16232,7 +16232,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "fd51c47bcc58472b0ee48c2f65648f7af4a74b0e38f8f994aac1d22bea801771"
+        "id": "043ff66380d4c354494fcb48cd20191865b9dddfec838d17e0cd8ed0db9257fe"
     },
     {
         "channel_name": "radio-maryja",
@@ -16241,7 +16241,7 @@
         "weekday": 4,
         "program_name": "Serwis Informacjny 23:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 59,
         "channel_title": "Radio Maryj",
@@ -16249,7 +16249,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "90c79616634d9405f37d593415c0f34be167193b881e4ea9de5fafae35854243"
+        "id": "c38c2e2277fe0eebeea3ecfb86447436084fe8b6336845fd87ef648b33bccf7d"
     },
     {
         "channel_name": "radio-maryja",
@@ -16258,7 +16258,7 @@
         "weekday": 4,
         "program_name": "Feleiton Sprobuj pomyslec",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -16266,7 +16266,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "975437588b6637759b11bc40803b5302e6fe99eebc926c56145e771a84fd4b74"
+        "id": "f9b7f5435bb7d307b568f938350e0f67930af18ea6395c2884c3122dc40af94d"
     },
     {
         "channel_name": "radio-maryja",
@@ -16275,7 +16275,7 @@
         "weekday": 4,
         "program_name": "Rozmowy niedokonczone: Polityka w Polsce i wobec Polski",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 125,
         "channel_title": "Radio Maryj",
@@ -16283,7 +16283,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "02a1ad157f42d9a6ca873c42ea034f4050b87e060c2a1534872d6b5cabb7451d"
+        "id": "0ef20ebcbe6e6e03f70f413a9030d152a46a5afab1d534c10bc9af16939214df"
     },
     {
         "channel_name": "radio-zet",
@@ -17618,7 +17618,7 @@
         "weekday": 4,
         "program_name": "Agro Info",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TV Republika",
@@ -17626,7 +17626,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "bf957865ab9b9ce35833a8c2a4eacecbf3328bbd377aaa10ae158a0c2de4157d"
+        "id": "fe587f9950a4aa3cb4e7a9e5cb2e2e13895da7974f0b47bdc4072efa10399ee8"
     },
     {
         "channel_name": "tv-republika",
@@ -17635,7 +17635,7 @@
         "weekday": 4,
         "program_name": "Republika Dzien 12:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -17643,7 +17643,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "6741185eec84d921554545f193ebebd00d6f3d263a710427cc42e6295c3a7e28"
+        "id": "ff6de12acca9947cbbc72431b71aea43b665ef3fe554967cf9b07bd38fc4b5f2"
     },
     {
         "channel_name": "tv-republika",
@@ -17652,7 +17652,7 @@
         "weekday": 4,
         "program_name": "Republika Dzien 13:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Republika",
@@ -17660,7 +17660,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "d2555fcf835526f708046c9413bf53a1c0a85d15d6e90798d4424cfed5cb78f5"
+        "id": "86760e449d415e1d4231c3be26a660454a5e7a369d673159ec7e6dd36093ec8c"
     },
     {
         "channel_name": "tv-republika",
@@ -17669,7 +17669,7 @@
         "weekday": 4,
         "program_name": "Republika Dzien 14:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Republika",
@@ -17677,7 +17677,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "9c7dc09dbd73362959a35c2210e4d9c0ebc0861d5bcfb4b040f0c82e4085ec90"
+        "id": "009f695bf84949d81f3f2bd341791bd04709914ef2cdcaa264e2cac7cdf9b359"
     },
     {
         "channel_name": "tv-republika",
@@ -17686,7 +17686,7 @@
         "weekday": 4,
         "program_name": "Republika Dzien 15:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -17694,7 +17694,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "50b6ef9b1b750b5f51f654ff1a4834f0e074c9d70cdcd1806ae3733ba7948b23"
+        "id": "84d023fdf9ea2651d5586d2162f5364318028e461e1c1edf16c60ed2b27e4cc1"
     },
     {
         "channel_name": "tv-republika",
@@ -17703,7 +17703,7 @@
         "weekday": 4,
         "program_name": "Republika Dzien 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -17711,7 +17711,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "773dccc46a548292af44692d8e32d4ab86b6e10ef03c6218cdb9c7bbc4f9d4f2"
+        "id": "030d58a661f86ea306bb75e09a3bd0e086a2ab7d17dd071fcc24ec0f5daecdbd"
     },
     {
         "channel_name": "tv-republika",
@@ -17720,7 +17720,7 @@
         "weekday": 4,
         "program_name": "Express Republiki",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -17728,7 +17728,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "c7f1ecb43f34e2e296b819d35086330bb8dae242625641839fe7f3eadefdfb3f"
+        "id": "104e08ab75ccb476baf445ec42d3e46a756900f0fcc86a3641e85db4a3340c37"
     },
     {
         "channel_name": "tv-republika",
@@ -17737,7 +17737,7 @@
         "weekday": 4,
         "program_name": "Dzisiaj",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 80,
         "channel_title": "TV Republika",
@@ -17745,7 +17745,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "af8b1df7cbfcc86eca80b00901a3cac854007bfece48a0647744337eba715b62"
+        "id": "43b47435d322ed50b3188b7a47159287160a9c2e681ddeac38e0497ca088e949"
     },
     {
         "channel_name": "tv-trwam",
@@ -17754,7 +17754,7 @@
         "weekday": 4,
         "program_name": "Informacje Dnia 00:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -17762,7 +17762,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "608f29a1fe76272575162a5724bfcfacb12db00256d17e9b531fbaa2746b4edd"
+        "id": "35a8176e86cf01f71b66e6040199cb24c7d8521afa3d74a0641959ea653a7214"
     },
     {
         "channel_name": "tv-trwam",
@@ -17771,7 +17771,7 @@
         "weekday": 4,
         "program_name": "Informacje Dnia 03:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -17779,7 +17779,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "1e08beccd7455797f6b7fdc715dddc514dfdedd5cc50f7b735695c8daa9eb90a"
+        "id": "db37221f5005682e0b3820b0aea44b6a60ef9019ccdb4f820adbbaa0b1b03899"
     },
     {
         "channel_name": "tv-trwam",
@@ -17788,7 +17788,7 @@
         "weekday": 4,
         "program_name": "Informacje Dnia 04:20",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -17796,7 +17796,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "843ff723c35782e8a67c4dd67c8a7834c42abb89eae329b93d7931474dfe8584"
+        "id": "d21b1288fbb2620ae59cbd0e0c5df72cc65114e50dc0698f587390df875d4e0b"
     },
     {
         "channel_name": "tv-trwam",
@@ -17805,7 +17805,7 @@
         "weekday": 4,
         "program_name": "Informacje Dnia 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Trwa",
@@ -17813,7 +17813,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "71ebf58ed7afdc6b96f6ac4cdf18cdbc7ece5f5210e1114ea44804741c133843"
+        "id": "9c5fb287bdead6a2f8fb59b070fbd533d6c39de095dbe233f020f631f9757160"
     },
     {
         "channel_name": "tv-trwam",
@@ -17822,7 +17822,7 @@
         "weekday": 4,
         "program_name": "Informacje Dnia 10:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Trwa",
@@ -17830,7 +17830,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "ffc0b2286d3932223fdb75ecd06006658919a9f7da13601115169298f623ee99"
+        "id": "147838c5c67c204e29c378ddae4057f5453d49fef587c30170fb6e0353389ada"
     },
     {
         "channel_name": "tv-trwam",
@@ -17839,7 +17839,7 @@
         "weekday": 4,
         "program_name": "Informacje Dnia 12:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 17,
         "channel_title": "TV Trwa",
@@ -17847,7 +17847,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "985c4e94c9ffa429fc171e38f2aa83b4782baf3be0d36d8530322d7a317c36ed"
+        "id": "b0ca5e1d7cda6a7b2686c0aecc300360ed9ab994102b7818cc519a7792ce687f"
     },
     {
         "channel_name": "tv-trwam",
@@ -17856,7 +17856,7 @@
         "weekday": 4,
         "program_name": "Informacje Dnia 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Trwa",
@@ -17864,7 +17864,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "5db72ebb38c9c3295cab8a7862e54ccf373065ebaa1a456268b03007d08acd19"
+        "id": "d572443a43fa02cd3f829120dfb8d73deb25d6e02a37cce35d32f55064058c47"
     },
     {
         "channel_name": "tv-trwam",
@@ -17873,7 +17873,7 @@
         "weekday": 4,
         "program_name": "Informacje Dnia 18:05",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Trwa",
@@ -17881,7 +17881,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "1561b684b9423d23053c0f2bf03248bf3bc02fdb1a867cbda0a27f7d56934d90"
+        "id": "6033a49ef0f5afebc0a3b373a88bb998023b2ff753ddb238874267c4e2745f82"
     },
     {
         "channel_name": "tv-trwam",
@@ -17890,7 +17890,7 @@
         "weekday": 4,
         "program_name": "Informacje Dnia 20:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -17898,7 +17898,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "172df60be95928441244c60c6a73cbb2eccedfa2ac1a36bd600621fab994d1c6"
+        "id": "758b5d521657995629f8ec9c1fc43fb3d80d9968609d34c3c68bf0a2aff2f9bf"
     },
     {
         "channel_name": "tv-trwam",
@@ -17907,7 +17907,7 @@
         "weekday": 4,
         "program_name": "Informacje Dnia 22:20",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -17915,7 +17915,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "95f5fab0a4154844f80ce30bb4dd84b226693bb9af9527ab0fa55ddc01388d4d"
+        "id": "dd8c2678c5b9b38468b0013fd4fd60594e9571a3f7061255be6d1b5a3f286baa"
     },
     {
         "channel_name": "tvbrasil",
@@ -18128,7 +18128,7 @@
         "weekday": 4,
         "program_name": "Dzisiaj w regionie",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TVS",
@@ -18136,7 +18136,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "e40b1c99085172404632151627d5f4695ab4b2712dfea9a2df5a2c0e717f3ec5"
+        "id": "e36da34798d14570159d49786f89fc85c05d7fb3852f86a41561d0d943056d5b"
     },
     {
         "channel_name": "tvs",
@@ -18145,7 +18145,7 @@
         "weekday": 4,
         "program_name": "Dzisiaj w regionie",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TVS",
@@ -18153,7 +18153,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "e40b1c99085172404632151627d5f4695ab4b2712dfea9a2df5a2c0e717f3ec5"
+        "id": "e36da34798d14570159d49786f89fc85c05d7fb3852f86a41561d0d943056d5b"
     },
     {
         "channel_name": "wpolsce24",
@@ -18162,7 +18162,7 @@
         "weekday": 4,
         "program_name": "Tele-Ekspres 01:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "wPolsce24",
@@ -18170,7 +18170,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "02bca28230fbacef242c146d3c4901e1c21312f2df6716419f97931e46901559"
+        "id": "8f8503ef18aa9c89d8b5a9d9a0a6904aec91061a905b191309abd50f5c4912ce"
     },
     {
         "channel_name": "wpolsce24",
@@ -18179,7 +18179,7 @@
         "weekday": 4,
         "program_name": "Tele-Ekspres 16:45",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "wPolsce24",
@@ -18187,7 +18187,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "766f1754c20d75bf7688f3fb88b840d753cd523d142cf62e1b7b28333ad2256a"
+        "id": "9b8414bc77807c64c9f917cb360ed63421f9218e4b8ebdf5f89750a12407aeed"
     },
     {
         "channel_name": "wpolsce24",
@@ -18196,7 +18196,7 @@
         "weekday": 4,
         "program_name": "Wiadomosci Poranne",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 30,
         "channel_title": "wPolsce24",
@@ -18204,7 +18204,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "4be28ca6513417adf1b73b978297bc521bcaff4c814add4e7151a335da7d5d4b"
+        "id": "14289d0dbfbff77401abb62af147ee21c6ad5b3b579cf48c255f80c4156a454d"
     },
     {
         "channel_name": "wpolsce24",
@@ -18213,7 +18213,7 @@
         "weekday": 4,
         "program_name": "Wiadomosci 00:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -18221,7 +18221,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "f02cb66b856d53c0754b3ab6a8e927708b652cb9726b8664c24f1262445af796"
+        "id": "1aa018681bcc11aa904dbe6a04157a197a47ad665819199a8857794e076fe4e0"
     },
     {
         "channel_name": "wpolsce24",
@@ -18230,7 +18230,7 @@
         "weekday": 4,
         "program_name": "Wiadomosci 07:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "wPolsce24",
@@ -18238,7 +18238,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "b42993abcf1df1f37078f3689bcb949f60a804a82ea5e2fbaac8d48bf6de2516"
+        "id": "85fb4b773b824d9f5a2f2030eb08145521b93ea60806469226c9fad0b724aa58"
     },
     {
         "channel_name": "wpolsce24",
@@ -18247,7 +18247,7 @@
         "weekday": 4,
         "program_name": "Wiadomosci 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -18255,7 +18255,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "0f0b89a52124302083eb87ff16a0c1b11eb5fefb2560fb3ce4e8ec0adb20aecb"
+        "id": "c4ed9f4f7245050e240517547189a480f970599113074411086f3283658ec9c4"
     },
     {
         "channel_name": "wpolsce24",
@@ -18264,7 +18264,7 @@
         "weekday": 4,
         "program_name": "Wiadomosci 09:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -18272,7 +18272,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "892456ae22fc7e5e3e29ea73b5e3f456b62b7d2337a5745224d09744cae3366f"
+        "id": "12b64866ebea1ce2558ad1f4b07d56d5afe76b9e98903d0498f5dc07c67a3285"
     },
     {
         "channel_name": "wpolsce24",
@@ -18281,7 +18281,7 @@
         "weekday": 4,
         "program_name": "Wiadomosci 19:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 30,
         "channel_title": "wPolsce24",
@@ -18289,7 +18289,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "53512b4dc978d1beb3896441dbacb908f9787626c953d986280a7eaa1d301418"
+        "id": "0d55642430f6c81e90ea7d75effb728daf5ed983472507d4d6a19c4521cec7fd"
     },
     {
         "channel_name": "wpolsce24",
@@ -18298,7 +18298,7 @@
         "weekday": 4,
         "program_name": "Wiadomosci 23:45",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 14,
         "channel_title": "wPolsce24",
@@ -18306,7 +18306,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "571c0c9f8acc06d0e6b7e9963d56351ac13731a29f89b17d722f56ef050bb579"
+        "id": "992fba5f1160e93f5122ec0c1b79cd004426942d09d62b38944ec2a1883c7a70"
     },
     {
         "channel_name": "wpolsce24",
@@ -18315,7 +18315,7 @@
         "weekday": 4,
         "program_name": "Wiadomosci Agro",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -18323,7 +18323,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "3e3cf1c97d5ed80d76ce4db353bbff63ac7e72b86538b3aae7f3350594f6d344"
+        "id": "eb8690856ff28f70a7b2efc2f8dc5d77853966ac4017b7b90456e0adc470928c"
     },
     {
         "channel_name": "wpolsce24",
@@ -18332,7 +18332,7 @@
         "weekday": 4,
         "program_name": "Wiadomosci Gospodarka",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -18340,7 +18340,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "175444c744f40d83c9476169c5793e92930641e24ac516029e92befcb81fe777"
+        "id": "d4af3ea5999d6f82aa6a426c3e15dcd02634c475c4d3f5285e1ed884276ed807"
     },
     {
         "channel_name": "wpolsce24",
@@ -18349,7 +18349,7 @@
         "weekday": 4,
         "program_name": "Kontra",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 110,
         "channel_title": "wPolsce24",
@@ -18357,7 +18357,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "1a281c4bec00e3bb75631bc204037c0121c87ff37116c59192516074f83dec2c"
+        "id": "7cfb10384a96f57b77b14712c7a0d8d47ca02a621f1419b4dd31a56d6b77c910"
     },
     {
         "channel_name": "wpolsce24",
@@ -18366,7 +18366,7 @@
         "weekday": 4,
         "program_name": "Rapport Wiadomosci 12:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "wPolsce24",
@@ -18374,7 +18374,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "d94e52f0952f7d697267b6898a1858635b284db31237c6d10ed0b8272da06830"
+        "id": "45c040aa9a507d09302f7e5a319f2aca4ee9278d22ea47646d7fab758073d6b3"
     },
     {
         "channel_name": "wpolsce24",
@@ -18383,7 +18383,7 @@
         "weekday": 4,
         "program_name": "Rapport Wiadomosci 15:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "wPolsce24",
@@ -18391,7 +18391,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "bd67c630cfd6dc50179d7bb718d5093ddd8d85eec971c696ffa4030d38149df5"
+        "id": "652699592feabc1ec6751916bba6572b4aa76554c7b2aa9233c963d675020b0f"
     },
     {
         "channel_name": "wpolsce24",
@@ -18400,7 +18400,7 @@
         "weekday": 4,
         "program_name": "Piatka Pereiri",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -18408,7 +18408,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "91ba8f3e3dde3bd1e265258ae4663d4f7cae3c55d85936fff0dfd0a5f87573ee"
+        "id": "00c00c1cbe6560285071bc96f379ffac43c168a6c7115065026c258e81b6c774"
     },
     {
         "channel_name": "wpolsce24",
@@ -18417,7 +18417,7 @@
         "weekday": 4,
         "program_name": "Piatka Pochwata",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -18425,7 +18425,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "e4360f1ae8d8c11053ce7fd991b6deb2eb1e7043e63b0f57b9272ef0b199a7fc"
+        "id": "e396a4bbd5f5a26abc6c2375bf7c6c31d803f4f8e21b93fc6ac2f11c3de6ce3f"
     },
     {
         "channel_name": "wpolsce24",
@@ -18434,7 +18434,7 @@
         "weekday": 4,
         "program_name": "Minela 20:05 (Marek Pyza)",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 45,
         "channel_title": "wPolsce24",
@@ -18442,7 +18442,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "26305e4e01bf417045a8f34342f1506a10ad706f40b2a051396b1815474b11dd"
+        "id": "d3fd63d6bd59693223778400a3df531735d1550ce7e67e037634ab41c95a921b"
     },
     {
         "channel_name": "wpolsce24",
@@ -18451,7 +18451,7 @@
         "weekday": 4,
         "program_name": "Minela 20:05 (Magdalena Ogorek)",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 50,
         "channel_title": "wPolsce24",
@@ -18459,7 +18459,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "aae709c6df8be5e7fbe57f8b50a379ca319bc8c1174ef73205f81e873ff49b6f"
+        "id": "d44e32b6c59e3b0cb8d304ed7c4742b622513573386e31db2c1b65fe1f6c9953"
     },
     {
         "channel_name": "zdf-neo",
@@ -20644,7 +20644,7 @@
         "weekday": 5,
         "program_name": "Aktualnosci Dnia 04:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "Radio Maryj",
@@ -20652,7 +20652,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "6df09fa024af6108e4999bcebb6a916227269ab82fb321f020bcff0b0f3f78e3"
+        "id": "87087f4d12522d04d5f5e6d0bdcda5b164e1f1fad8ada6f87d7dad6005d50a6a"
     },
     {
         "channel_name": "radio-maryja",
@@ -20661,7 +20661,7 @@
         "weekday": 5,
         "program_name": "Aktualnosci Dnia 13:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 50,
         "channel_title": "Radio Maryj",
@@ -20669,7 +20669,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "ffd950bea391f5978e5367019c2c4e149edb1dd86a55fc453d9b51c6fed45224"
+        "id": "3e186980b9f551459e3defd1ed33cb3cddeda439cf23e4739844558a664d619e"
     },
     {
         "channel_name": "radio-maryja",
@@ -20678,7 +20678,7 @@
         "weekday": 5,
         "program_name": "Aktualnosci Dnia 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "Radio Maryj",
@@ -20686,7 +20686,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "ab2ccb447c4640cba68dbfa5a7f7d0b38c3b787ec5f0e06d26b00293a55db1f0"
+        "id": "e250f864c4c471434216c822a313f8295b798621f190c1652a1a722497d5a57f"
     },
     {
         "channel_name": "radio-maryja",
@@ -20695,7 +20695,7 @@
         "weekday": 5,
         "program_name": "Serwis Informacjny 06:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 7,
         "channel_title": "Radio Maryj",
@@ -20703,7 +20703,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "e0bf203012aeba4a6df2889f797a63134ce792c5b50328bd7488619bcfa3f074"
+        "id": "db23e775dbdb5460efbec6a7851021afe45f292c3a56b448a1abc7be3ff7ba3d"
     },
     {
         "channel_name": "radio-maryja",
@@ -20712,7 +20712,7 @@
         "weekday": 5,
         "program_name": "Serwis Informacjny 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -20720,7 +20720,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "696861a685165ee983fcfe7946d2f848c29ac5486f946d318a56d23ca77e52e7"
+        "id": "4fe85a881ddc05079a4cf0d85f68a0474da7fcc4d4c7223b1b0af470ac20860e"
     },
     {
         "channel_name": "radio-maryja",
@@ -20729,7 +20729,7 @@
         "weekday": 5,
         "program_name": "Serwis Informacjny 10:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "Radio Maryj",
@@ -20737,7 +20737,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "a35344a6edadde936340ed8eb0ad347b249d6b0d16cef4db73ea12b22e393d3a"
+        "id": "69a4f851eae7ccd67d4f590362b08a12fc6c6c631812be1c1ab2d576810d9f19"
     },
     {
         "channel_name": "radio-maryja",
@@ -20746,7 +20746,7 @@
         "weekday": 5,
         "program_name": "Serwis Informacjny 11:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -20754,7 +20754,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "58673aaeb6e69ac1072008e7458bc01df2d0f6cb8e84fbdb0bf349aea2475c4a"
+        "id": "0259422e0b3c22b310a52b482aa3392d0668ba4f8113136de92b34259b1538c9"
     },
     {
         "channel_name": "radio-maryja",
@@ -20763,7 +20763,7 @@
         "weekday": 5,
         "program_name": "Serwis Informacjny 12:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 7,
         "channel_title": "Radio Maryj",
@@ -20771,7 +20771,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "f1001d202a804b10860f379e9251d77db26f5523d88c489d933fca2538e59baa"
+        "id": "144f69210e9264b50b9b11d9b064c1a396e2f6429796f8701701dbf0f3414651"
     },
     {
         "channel_name": "radio-maryja",
@@ -20780,7 +20780,7 @@
         "weekday": 5,
         "program_name": "Serwis Informacjny 13:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -20788,7 +20788,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "d6cb7cf2c3ab52582c15eb81cd1bdfff7cc71ade27a997651ae10c8f23eb6ae4"
+        "id": "051ecb6b43942f5e3ca4fd42990874e3e2ca8a94c3a96f167e26a354a5f04e14"
     },
     {
         "channel_name": "radio-maryja",
@@ -20797,7 +20797,7 @@
         "weekday": 5,
         "program_name": "Serwis Informacjny 14:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -20805,7 +20805,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "59adbc4d000ea688bf021c3d219ff6be61221926fb56cfeee44b972be551c76c"
+        "id": "997c4da0c4d75c27835f8148ca8fde4169cc1ef72a002db5e942e85e8159f210"
     },
     {
         "channel_name": "radio-maryja",
@@ -20814,7 +20814,7 @@
         "weekday": 5,
         "program_name": "Serwis Informacjny 17:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -20822,7 +20822,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "ab4a4f3c8c91b05fbfd48300d321d53630caca9f9db2bf4277a3b844190fd34a"
+        "id": "e002e584547aa746a15a64c7cf9a0207069b72bce74b429edf7ce098d0566863"
     },
     {
         "channel_name": "radio-maryja",
@@ -20831,7 +20831,7 @@
         "weekday": 5,
         "program_name": "Serwis Informacjny 20:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "Radio Maryj",
@@ -20839,7 +20839,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "2d50946022c7044c502d3f1ec35ffb009aae11461cd65d385ec536740cb7913e"
+        "id": "3daf3e52d1a3989df66ab1804e9c8838bc4f057d15759e2ab53edd65b5035603"
     },
     {
         "channel_name": "radio-maryja",
@@ -20848,7 +20848,7 @@
         "weekday": 5,
         "program_name": "Serwis Informacjny 23:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 59,
         "channel_title": "Radio Maryj",
@@ -20856,7 +20856,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "8f8ac1ffb6f49ea6602f7a73d292470e9453d657036418e95f4da1a3c0defe96"
+        "id": "10f1484fa3ae193f714c926bfa904a8301fa3e912d0653c9e8b231cd3aecaa9c"
     },
     {
         "channel_name": "radio-maryja",
@@ -20865,7 +20865,7 @@
         "weekday": 5,
         "program_name": "Feleiton Sprobuj pomyslec",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "Radio Maryj",
@@ -20873,7 +20873,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "06f5ac5a7d372eb19a692a9e5248f652fee70b4e0126d19e452680b060062fd1"
+        "id": "78b71989a05c85702fae875206cac92a712a92a718dc6cd4c5830873eb3535ba"
     },
     {
         "channel_name": "radio-maryja",
@@ -20882,7 +20882,7 @@
         "weekday": 5,
         "program_name": "Rozmowy niedokonczone: Polityka w Polsce i wobec Polski",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 125,
         "channel_title": "Radio Maryj",
@@ -20890,7 +20890,7 @@
         "infocontinue": false,
         "radio": true,
         "country": "poland",
-        "id": "5944cb53aabdb289c76bd4020db786766ef1380ce7a8b7fae517f9c0ac27987f"
+        "id": "27ca9cfd71486475ab3f63c8dcc4c477d684eeb1e18ad3113542525943c6bf16"
     },
     {
         "channel_name": "radio-zet",
@@ -22225,7 +22225,7 @@
         "weekday": 5,
         "program_name": "Agro Info",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TV Republika",
@@ -22233,7 +22233,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "7c183e4f44825174bc8e4eadb3c920caa9fd18ebc702ae0c3432cc156fb87a30"
+        "id": "8025087fce86a80613ede9c88230d81c3fe4bdf2811da314ae3b007b926659b0"
     },
     {
         "channel_name": "tv-republika",
@@ -22242,7 +22242,7 @@
         "weekday": 5,
         "program_name": "Republika Dzien 12:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -22250,7 +22250,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "5324a1f1827141a9cf6d4f882cadecc497d2861c9441b07d5512cba65735eeee"
+        "id": "851c649fae622ebd564eb17c3e99b03a80bf9b10a3518caebd26061b9c8a7337"
     },
     {
         "channel_name": "tv-republika",
@@ -22259,7 +22259,7 @@
         "weekday": 5,
         "program_name": "Republika Dzien 13:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Republika",
@@ -22267,7 +22267,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "4ada8f60249969e4428c5196525aad69fca6b16b7a2f042709d7d7d384cad120"
+        "id": "a88f78c43ce50de20ce68355c7b768b24e6679b9f20720f5f06fe6700ef2ee4e"
     },
     {
         "channel_name": "tv-republika",
@@ -22276,7 +22276,7 @@
         "weekday": 5,
         "program_name": "Republika Dzien 14:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Republika",
@@ -22284,7 +22284,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "82ba8b59bce5d817cb04293b065b663c549da9a81b6ca8f4db4f6dde0b5c51dc"
+        "id": "66ccb44a977ec2bb9b9c9e2e3aff158ccd009f7907f2b82dcab19239f54a9877"
     },
     {
         "channel_name": "tv-republika",
@@ -22293,7 +22293,7 @@
         "weekday": 5,
         "program_name": "Republika Dzien 15:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -22301,7 +22301,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "5e23cefbae1ae5547f638f7583253b411e41b6a423ad15b3db1cab7b0c81d8a6"
+        "id": "9041a02920cde10fe21b1e05c8a9fc58d5ec6222ae780c5b0d4e8f6d004662e6"
     },
     {
         "channel_name": "tv-republika",
@@ -22310,7 +22310,7 @@
         "weekday": 5,
         "program_name": "Republika Dzien 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -22318,7 +22318,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "dd3bfe10fa255c9b40f95afc290a97900b497509e196a572b4a5bb39c6cc56dd"
+        "id": "fb9aff33e5b49e4adff72b25305ab337a817ce33473eee7892cac52a76ecaf23"
     },
     {
         "channel_name": "tv-republika",
@@ -22327,7 +22327,7 @@
         "weekday": 5,
         "program_name": "Express Republiki",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -22335,7 +22335,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "457d4cc89434dc816c8a54f80320a0767b2067791b031fd6ab7290e080d44666"
+        "id": "6bcb8850e3b49cec8621233a5a7f76dc24b43e2f62ece5b91f76efb7cf6e2452"
     },
     {
         "channel_name": "tv-republika",
@@ -22344,7 +22344,7 @@
         "weekday": 5,
         "program_name": "Dzisiaj",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 80,
         "channel_title": "TV Republika",
@@ -22352,7 +22352,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "c04690ae29d83b4e7ecc1d53114b3742222462960bf9ebddc918899d12551096"
+        "id": "fb6c2480c83ba3c02dd9ead737d5089343878c31aca94d800663d6b9bd860626"
     },
     {
         "channel_name": "tv-trwam",
@@ -22361,7 +22361,7 @@
         "weekday": 5,
         "program_name": "Informacje Dnia 00:10",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -22369,7 +22369,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "dc2798342ce530d5c4e80f2f03582e4760440d68b1795271b8a1405f0878893a"
+        "id": "65c09d939501ee515ac4e9a81278795293788996d73a4c1e889da8ba29a9a205"
     },
     {
         "channel_name": "tv-trwam",
@@ -22378,7 +22378,7 @@
         "weekday": 5,
         "program_name": "Informacje Dnia 03:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -22386,7 +22386,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "3c2c23cecec7c6fac8ebced9f6044be3fa8169947a6591181f594ba97686b038"
+        "id": "4d9d4454ba2675701ec2aa073536267d616c1f74d71532a0bc82d8c9a2276ba2"
     },
     {
         "channel_name": "tv-trwam",
@@ -22395,7 +22395,7 @@
         "weekday": 5,
         "program_name": "Informacje Dnia 04:20",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -22403,7 +22403,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "79bc5e8fb305fcc174710fc05d3a6b873f27802069baefb49a41d5744903fad2"
+        "id": "e1a9106365fdd982d2012089cfe5373b749ca7a6cfdcb72510f1c5336aa0f1a8"
     },
     {
         "channel_name": "tv-trwam",
@@ -22412,7 +22412,7 @@
         "weekday": 5,
         "program_name": "Informacje Dnia 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Trwa",
@@ -22420,7 +22420,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "db69091d2e36155f53d96b684d74dbb6580963a9f26b61b4eb610642d9d6a12f"
+        "id": "8ff55394c07ebbbd3a544fb02b34fff7115029e9c7c33ca739ca3be22712036b"
     },
     {
         "channel_name": "tv-trwam",
@@ -22429,7 +22429,7 @@
         "weekday": 5,
         "program_name": "Informacje Dnia 10:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Trwa",
@@ -22437,7 +22437,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "bb5a2f8cf22d01ac2e722bab0f1649d110b1d89d3a34af7c75e2452789d5de1d"
+        "id": "5418ad4c775eeedb44befccf94836683ccc33e57d02801d45a55caad9f503b51"
     },
     {
         "channel_name": "tv-trwam",
@@ -22446,7 +22446,7 @@
         "weekday": 5,
         "program_name": "Informacje Dnia 12:03",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 17,
         "channel_title": "TV Trwa",
@@ -22454,7 +22454,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "07b6934fdc508d211501a162f3c450153b7ee8d452b592be97d86464d7b7ae67"
+        "id": "d39afd1b088242f65c9f0293ae9217417fc7436526c58cbcccd8eed4c678caef"
     },
     {
         "channel_name": "tv-trwam",
@@ -22463,7 +22463,7 @@
         "weekday": 5,
         "program_name": "Informacje Dnia 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Trwa",
@@ -22471,7 +22471,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "960dea78c56aec18ced990e82f65947337861bd979a249647ff69bd70afea158"
+        "id": "11c79446a005140b1db7b0cfbb0694f3ea72f9621e5bef7755a2b52e0913a3ab"
     },
     {
         "channel_name": "tv-trwam",
@@ -22480,7 +22480,7 @@
         "weekday": 5,
         "program_name": "Informacje Dnia 18:05",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Trwa",
@@ -22488,7 +22488,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "280a9777ab88ca5ab324dbd15141d163de65284c3fda3ffd500399ab82bd3241"
+        "id": "cda2f6d00608af2b31265eb89c2fdd2c1eea42a349c14523e08825dd951aaad9"
     },
     {
         "channel_name": "tv-trwam",
@@ -22497,7 +22497,7 @@
         "weekday": 5,
         "program_name": "Informacje Dnia 20:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -22505,7 +22505,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "3d6cd65ef00d94607720d7fd53312a9e6706b3c100c3c037fc2224da59ce52f1"
+        "id": "0d16bf63e0427d5a9199805a438502f347048ed3a99ccc83d663cb9d1132c421"
     },
     {
         "channel_name": "tv-trwam",
@@ -22514,7 +22514,7 @@
         "weekday": 5,
         "program_name": "Informacje Dnia 22:20",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "TV Trwa",
@@ -22522,7 +22522,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "a049308c007e0e70caaa75f28bbbec39f713b182102d034c64ce31e71b411126"
+        "id": "a2bbfbc9e254b4eab29e4ec0db6909905aaa04b4db632062404c32a521d71408"
     },
     {
         "channel_name": "tvbrasil",
@@ -22735,7 +22735,7 @@
         "weekday": 5,
         "program_name": "Dzisiaj w regionie",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TVS",
@@ -22743,7 +22743,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "a19f8971697ad06890b825252c4ab9068d88711b171673dbeaf58d67cb40c214"
+        "id": "e8340574bc97a954d9bb59e5120b7cd551f80ef79b16fd9fe9253558f8f1ce2f"
     },
     {
         "channel_name": "tvs",
@@ -22752,7 +22752,7 @@
         "weekday": 5,
         "program_name": "Dzisiaj w regionie",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TVS",
@@ -22760,7 +22760,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "a19f8971697ad06890b825252c4ab9068d88711b171673dbeaf58d67cb40c214"
+        "id": "e8340574bc97a954d9bb59e5120b7cd551f80ef79b16fd9fe9253558f8f1ce2f"
     },
     {
         "channel_name": "wpolsce24",
@@ -22769,7 +22769,7 @@
         "weekday": 5,
         "program_name": "Tele-Ekspres 01:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "wPolsce24",
@@ -22777,7 +22777,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "96e322370a03d3227001519b16d71aaffce409eb6b6af3fa1c52e742c4f30ddd"
+        "id": "7427c1f9c03e1caa9f6113202a34699866991688e21430e9ed5def92649acaf6"
     },
     {
         "channel_name": "wpolsce24",
@@ -22786,7 +22786,7 @@
         "weekday": 5,
         "program_name": "Tele-Ekspres 16:45",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "wPolsce24",
@@ -22794,7 +22794,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "72b2c51f8e96bec7a9f8ebe71608a9222064ce45e3165d9e25c7ad29ea873a05"
+        "id": "43336b22a58cd82acff88f5d41656a3e47a35a0f6c0213580b680fb5d7302618"
     },
     {
         "channel_name": "wpolsce24",
@@ -22803,7 +22803,7 @@
         "weekday": 5,
         "program_name": "Wiadomosci Poranne",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 30,
         "channel_title": "wPolsce24",
@@ -22811,7 +22811,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "c6ae299d28462714f72cde975672a5261362f6e103ee3e22fb971ccf04260008"
+        "id": "8c05d88b4f706c6f7fd42a1a1321e361f56b3d8f55ba7c80a2c8a1f0cab12bea"
     },
     {
         "channel_name": "wpolsce24",
@@ -22820,7 +22820,7 @@
         "weekday": 5,
         "program_name": "Wiadomosci 00:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -22828,7 +22828,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "216bf1f88b18e84ba04fa5a8252e6c18f18a7de152ef05d127b8e2b60332bcc2"
+        "id": "dff4646c4c9e50c7677f938785099b1293242d8f8bf1c63daf0c16d59588c160"
     },
     {
         "channel_name": "wpolsce24",
@@ -22837,7 +22837,7 @@
         "weekday": 5,
         "program_name": "Wiadomosci 07:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "wPolsce24",
@@ -22845,7 +22845,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "272221c25589afc5ce68dcf326eded204cd79d0c18650c7be4447174f73e4929"
+        "id": "c08c1896bc7e3f6ffa24d02fadad42d773240e3ab418e3209df2a41b0d93c021"
     },
     {
         "channel_name": "wpolsce24",
@@ -22854,7 +22854,7 @@
         "weekday": 5,
         "program_name": "Wiadomosci 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -22862,7 +22862,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "9ff4e87c16a5e92c1b246b8ceee5ca2441055f117272c304a23b9a10faa1eb62"
+        "id": "27736bfc22133c16a2829a0a83678cb8d5800ab394bdd5772506618634fdf9ea"
     },
     {
         "channel_name": "wpolsce24",
@@ -22871,7 +22871,7 @@
         "weekday": 5,
         "program_name": "Wiadomosci 09:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -22879,7 +22879,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "f06fe761dfbb2307cd3b79362d51598d5dc3342f587030f232f6ea5ba6823a79"
+        "id": "59564095beafc076db4e7ede642f26701fe65628c32b247d86088d6129b66bdc"
     },
     {
         "channel_name": "wpolsce24",
@@ -22888,7 +22888,7 @@
         "weekday": 5,
         "program_name": "Wiadomosci 19:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 30,
         "channel_title": "wPolsce24",
@@ -22896,7 +22896,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "07532a8786f2576b8db5f593ae1c3308644d52f7fb3d13f16d3b81d56ec4332c"
+        "id": "5266f00a8f9aae99505042983bebd15b40eb65ae18a1adcb8e6f2347b360855b"
     },
     {
         "channel_name": "wpolsce24",
@@ -22905,7 +22905,7 @@
         "weekday": 5,
         "program_name": "Wiadomosci 23:45",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 14,
         "channel_title": "wPolsce24",
@@ -22913,7 +22913,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "5c78ae6fa5db3ebf3babb56dc5c36de96dabade9a5b1546d403048827a933af2"
+        "id": "904fb8dfa8edfdad53d553ae262e7278f352ece718400c0d34b7657602ed9c34"
     },
     {
         "channel_name": "wpolsce24",
@@ -22922,7 +22922,7 @@
         "weekday": 5,
         "program_name": "Wiadomosci Agro",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -22930,7 +22930,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "ecfa339d71319c36afab61862cfb745e23be59d677df877dd1ede0d9fc9be1e5"
+        "id": "9019db016c00f0cdb12df980960f6f567cab9770ea0ce6fd9bdc6eee3e793960"
     },
     {
         "channel_name": "wpolsce24",
@@ -22939,7 +22939,7 @@
         "weekday": 5,
         "program_name": "Wiadomosci Gospodarka",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -22947,7 +22947,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "3aaabf30423dce8f22353d6f423f6376bb505daf797ddcc2ce4649407bce2fda"
+        "id": "c5ca8e448f1883a963f0141dd84627380d6ee79750dd5f827a048839f05aa443"
     },
     {
         "channel_name": "wpolsce24",
@@ -22956,7 +22956,7 @@
         "weekday": 5,
         "program_name": "Kontra",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 110,
         "channel_title": "wPolsce24",
@@ -22964,7 +22964,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "dbf793073ade9eadde6f29881449f3a542ad55dcf3aa6f05cf865984f89dd2ae"
+        "id": "112231fa9748ac0cbc93b45fe0a0880783004fcbf69aed82f1f3cb9b1441b7bd"
     },
     {
         "channel_name": "wpolsce24",
@@ -22973,7 +22973,7 @@
         "weekday": 5,
         "program_name": "Rapport Wiadomosci 12:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "wPolsce24",
@@ -22981,7 +22981,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "d02deb62e6d88f9fa90603a97e805150da8d244d7b0ca3ee1b60de9350c2d647"
+        "id": "96a391ee3a01030f1e31702ac533014e8be2dfd1f9171394ced6f78f1d771075"
     },
     {
         "channel_name": "wpolsce24",
@@ -22990,7 +22990,7 @@
         "weekday": 5,
         "program_name": "Rapport Wiadomosci 15:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "wPolsce24",
@@ -22998,7 +22998,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "b98124d297b2febf360e4d8e3e1c7d44ad45441f48a9a3e2a082bd1e3caeac16"
+        "id": "9fb8652621cfe5a026476dbc4458b8df64257e243225b6ee6913c27f6d8b94bc"
     },
     {
         "channel_name": "wpolsce24",
@@ -23007,7 +23007,7 @@
         "weekday": 5,
         "program_name": "Piatka Pereiri",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -23015,7 +23015,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "6d66cc703c5d8ac1097b7f2aa240722a4eec7696d015d9f3e88c0189d609678e"
+        "id": "4f5423ef58a0c96de9ac9471de10dc2ba2c75855a9e9e66cfb9aedfec6013aa5"
     },
     {
         "channel_name": "wpolsce24",
@@ -23024,7 +23024,7 @@
         "weekday": 5,
         "program_name": "Piatka Pochwata",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 25,
         "channel_title": "wPolsce24",
@@ -23032,7 +23032,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "e282d5298450d319559d5b422db5d77f5602936cfb3e49539bd67de461946335"
+        "id": "9c23de61e9f6c2e8a23517b0d64cd53b7e058abcff1b661293ee637817a51833"
     },
     {
         "channel_name": "wpolsce24",
@@ -23041,7 +23041,7 @@
         "weekday": 5,
         "program_name": "Minela 20:05 (Marek Pyza)",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 45,
         "channel_title": "wPolsce24",
@@ -23049,7 +23049,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "7ffce9b1151a82467552c73721fbecbff46785b3884a9d3f4b500b2193a8d4cd"
+        "id": "3a4f2369a5701a186b316c0554b9316017c4989d431213dd1da8f1df760a2632"
     },
     {
         "channel_name": "wpolsce24",
@@ -23058,7 +23058,7 @@
         "weekday": 5,
         "program_name": "Minela 20:05 (Magdalena Ogorek)",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 50,
         "channel_title": "wPolsce24",
@@ -23066,7 +23066,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "87a87124f1a122424d8a2984ae932581c96d075ff63a9f3f9cfd467c9c5272c2"
+        "id": "0e1aa9a7a48f978058ff83c6cf3ee79af8910a19b210511bfb1e9fe2f55620b3"
     },
     {
         "channel_name": "zdf-neo",
@@ -25812,7 +25812,7 @@
         "weekday": 6,
         "program_name": "Republika Dzien 14:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "TV Republika",
@@ -25820,7 +25820,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "f0f0c2222d408de687d7ceb80905b7436780b39f0fd0febb31a0a0f4f426072b"
+        "id": "36e6b84d3422d2a9a3292153c4af9842c22b494ebb96af5474719fbe70c4e27c"
     },
     {
         "channel_name": "tv-republika",
@@ -25829,7 +25829,7 @@
         "weekday": 6,
         "program_name": "Republika Dzien 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -25837,7 +25837,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "7de29d849c00702f94fcc32c2e471d857f51142c72502279103feae4f087d185"
+        "id": "f0ee8e345770e3d512d6367296254f215f534b21d4643036914d0822d1af8ee9"
     },
     {
         "channel_name": "tv-republika",
@@ -25846,7 +25846,7 @@
         "weekday": 6,
         "program_name": "Express Republiki",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -25854,7 +25854,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "5e273723554806d16dfbea377211fcebb71a2bf8f577ec6aeb8f3c2cad00fd85"
+        "id": "0d1ab9f50f880a2f180d61f749e1a92332976fb94196e1968163d21dbf73d5cc"
     },
     {
         "channel_name": "tv-republika",
@@ -25863,7 +25863,7 @@
         "weekday": 6,
         "program_name": "Dzisiaj",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 80,
         "channel_title": "TV Republika",
@@ -25871,7 +25871,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "21de33bfe13279f1720e06ab0937c46964103ff8802c72fc3d4f1a1acb800b41"
+        "id": "57c1479d74fef48e66818e210b6ea447004ff59b7255bee30dfe6479d53eb7a3"
     },
     {
         "channel_name": "tvbrasil",
@@ -26050,7 +26050,7 @@
         "weekday": 6,
         "program_name": "Tele-Ekspres 01:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "wPolsce24",
@@ -26058,7 +26058,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "c0d20c3157297a202681517ca7c715f60db1eca43d6915ad247ebd4d456ea6de"
+        "id": "f884c79845704bee8f58a6ddeb62fcec25d94a59a4264bfb7916dc4b5a929782"
     },
     {
         "channel_name": "wpolsce24",
@@ -26067,7 +26067,7 @@
         "weekday": 6,
         "program_name": "Tele-Ekspres 16:45",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 20,
         "channel_title": "wPolsce24",
@@ -26075,7 +26075,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "93573f144cfddeada3d74d5e3e166657f6ae5f72215ed29312c234aeacb34175"
+        "id": "2de52c2d958c6e4fa2d1a6eb3214946c9ddb4c6165a346dc6b93f089d9f8a96f"
     },
     {
         "channel_name": "wpolsce24",
@@ -26084,7 +26084,7 @@
         "weekday": 6,
         "program_name": "Wiadomosci Poranne",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 50,
         "channel_title": "wPolsce24",
@@ -26092,7 +26092,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "f677e7ea10881de5eb76d8dd60bdb58fec8dd203ddaf071bd6d860ef6bb2ae0b"
+        "id": "ad2d3b96ed7520905a0f7bd1dfffc9b708d0ff345deb2d2a2f8f10b6a3e1171f"
     },
     {
         "channel_name": "wpolsce24",
@@ -26101,7 +26101,7 @@
         "weekday": 6,
         "program_name": "Wiadomosci 19:30",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 30,
         "channel_title": "wPolsce24",
@@ -26109,7 +26109,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "538488605121bacf71ee86bfa1ee190ab277149ea0b0556ceec639bf41a66c09"
+        "id": "e60872db1de53e6a52e778bc16f36a33a4f6a355aaac9d1b6faf88887ad365db"
     },
     {
         "channel_name": "wpolsce24",
@@ -26118,7 +26118,7 @@
         "weekday": 6,
         "program_name": "Wiadomosci Flash 07:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -26126,7 +26126,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "d6fd2aadb293f6b6bc38281de0712f962ef3c6411d28a541e3c5374d103dc064"
+        "id": "66d017097b0567850594703d8ff215ed2ee9362b1c8329c12c7b40f6c1f0bcb6"
     },
     {
         "channel_name": "wpolsce24",
@@ -26135,7 +26135,7 @@
         "weekday": 6,
         "program_name": "Wiadomosci Flash 08:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -26143,7 +26143,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "21c7a94bd35c03c02b6f85ac100056b2c2f42d1046b99115b0193c30fca20a72"
+        "id": "326f9ba23e57aa2a5be7ad651025f06b7e082a48b8b044096cd7a2fe173415d3"
     },
     {
         "channel_name": "wpolsce24",
@@ -26152,7 +26152,7 @@
         "weekday": 6,
         "program_name": "Wiadomosci Flash 09:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "wPolsce24",
@@ -26160,7 +26160,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "d11d04456f1e99f0ef7b9677c6f7edb7525fd571077d92ec84fd6d0cd0998037"
+        "id": "25057ba12ec5864367522e723717e4f710531e8bf6db8e4daf59b90a20d89988"
     },
     {
         "channel_name": "wpolsce24",
@@ -26169,7 +26169,7 @@
         "weekday": 6,
         "program_name": "Wiadomosci Flash 13:55",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 10,
         "channel_title": "wPolsce24",
@@ -26177,7 +26177,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "6e5072a04e40d36ae48192698b3ee1a7485556e59de7bfe99a1a4e7b576793c8"
+        "id": "48e6b15ea7626c5658fe6ad940688266765618039f193c6319a87cc51c5e54e9"
     },
     {
         "channel_name": "wpolsce24",
@@ -26186,7 +26186,7 @@
         "weekday": 6,
         "program_name": "Ostra Szpila",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 80,
         "channel_title": "wPolsce24",
@@ -26194,7 +26194,7 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "f298b58fb612ba4ef835e5042693d47a4f7444463f102d80f5b28a188ab230f4"
+        "id": "31cffaab360d9a55cc0b2a83454625e3179a5770aee23e6830a98f42dd861f92"
     },
     {
         "channel_name": "arte",
@@ -29144,7 +29144,7 @@
         "weekday": 7,
         "program_name": "Republika Dzien 14:55",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 5,
         "channel_title": "TV Republika",
@@ -29152,7 +29152,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "58885818067a55cd8ebf77de73599054c4a32ea5b3443ad6306e76ba2ba93d94"
+        "id": "6ca53c6e5fc83360835357986ccf541b2f14b41034acc122fb6408f41adfd848"
     },
     {
         "channel_name": "tv-republika",
@@ -29161,7 +29161,7 @@
         "weekday": 7,
         "program_name": "Republika Dzien 16:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -29169,7 +29169,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "c5b552a4e2bb9a58d2dace0c6afdeea3b0f57f0d4747b9a761d54fb460bce04f"
+        "id": "7f06e6e2dbb11274ee0c7759fdde666e00620a70cb288ae2acf50396a6b088e7"
     },
     {
         "channel_name": "tv-republika",
@@ -29178,7 +29178,7 @@
         "weekday": 7,
         "program_name": "Republika Dzien 18:00",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -29186,7 +29186,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "447a5ab52afd83d5f4ea31a0a4a545237209cdd5d467af659f974eec513f2696"
+        "id": "7775e80f2afddb6a4c49c3266a3457b4583ce6bad8cb83d15443161f17e6d035"
     },
     {
         "channel_name": "tv-republika",
@@ -29195,7 +29195,7 @@
         "weekday": 7,
         "program_name": "Express Republiki",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 15,
         "channel_title": "TV Republika",
@@ -29203,7 +29203,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "81d92290a28c50a799a8c6e089260476d60e562ece18f5c0bf31180cb6a75ada"
+        "id": "5047867a08c44842464e1350b57503115a9cf3688e35356c3f3f1a34908830d3"
     },
     {
         "channel_name": "tv-republika",
@@ -29212,7 +29212,7 @@
         "weekday": 7,
         "program_name": "Dzisiaj",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 60,
         "channel_title": "TV Republika",
@@ -29220,7 +29220,7 @@
         "infocontinue": false,
         "radio": false,
         "country": "poland",
-        "id": "0243807dc9938e98ad7581fd25b31313cd7c12e5e75c1d1424cf46315d57fe7a"
+        "id": "facf68a39514c8e59b17d4890cad3f9eee147c43c0ba1337dbf3eacba0e07af1"
     },
     {
         "channel_name": "tvglobo",
@@ -29331,7 +29331,7 @@
         "weekday": 7,
         "program_name": "Wiadomosci Poranne",
         "program_type": "",
-        "program_grid_start": "2023-04-01",
+        "program_grid_start": "2025-12-20",
         "program_grid_end": "2100-01-01",
         "duration": 50,
         "channel_title": "wPolsce24",
@@ -29339,6 +29339,6 @@
         "infocontinue": true,
         "radio": false,
         "country": "poland",
-        "id": "bd34ff189b201548524f30f2ec84fb9ec7d61a9c03a17118d171db7b0ecb2c1e"
+        "id": "6344385aa575357a1a5e2afcfca1cc6d770c0c842cd40fad0672b90fb2968315"
     }
 ]

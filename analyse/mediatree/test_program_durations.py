@@ -319,7 +319,7 @@ async def get_percentage_coverage_async(
 
 
 async def async_get_percentage_coverage_for_day(
-    day, country, channel_programs, connector_limit=50
+    day, country, channel_programs, connector_limit=50, excluded_channels=[]
 ):
     records = []
     post_arguments = {
@@ -359,6 +359,7 @@ async def async_get_percentage_coverage_for_day(
             and channel_program["channel_name"] != "d8"
             and channel_program["channel_name"] != "daserste"
             and channel_program["channel_name"] != "zdf-neo"
+            and not channel_program["channel_name"] in excluded_channels
         ):
             if not channel_program["channel_name"] == "daserste":
                 valid_channel_programs.append(channel_program)
@@ -390,6 +391,7 @@ if __name__ == "__main__":
     parser.add_argument("--n-days", default=7, type=int)
     parser.add_argument("--tcp-connectionlimit", default=20, type=int)
     parser.add_argument("--use-async", action=argparse.BooleanOptionalAction)
+    parser.add_argument('--exclude', action='append', default=[])
 
     args = parser.parse_args()
 
@@ -420,6 +422,7 @@ if __name__ == "__main__":
                         country,
                         channel_programs,
                         connector_limit=50,
+                        excluded_channels=args.exclude,
                     )
                 )
                 records.extend(_records)

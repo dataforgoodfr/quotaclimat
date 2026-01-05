@@ -1313,12 +1313,18 @@ class S3ToPostgreProcessor:
             multiplier_biodiv = os.getenv("MULTIPLIER_HRFP_BIODIV", "0")
             multiplier_ressource = os.getenv("MULTIPLIER_HRFP_RESSOURCE", "0")
             threshold_biod_clim_ress = os.getenv("THRESHOLD_BIOD_CLIM_RESS", "3,2,2")
+            threshold_biod_causal = os.getenv("THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT", "1,1,1,1")
+            threshold_clim_causal = os.getenv("THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT", "2,1,1,1")
+            threshold_ress_causal = os.getenv("THRESHOLD_RESS_CONST_SOLUT", "1,1")
             
             logging.info("Running DBT models with configuration:")
             logging.info(f"  MULTIPLIER_HRFP_CLIMAT: {multiplier_climat}")
             logging.info(f"  MULTIPLIER_HRFP_BIODIV: {multiplier_biodiv}")
             logging.info(f"  MULTIPLIER_HRFP_RESSOURCE: {multiplier_ressource}")
             logging.info(f"  THRESHOLD_BIOD_CLIM_RESS: {threshold_biod_clim_ress}")
+            logging.info(f"  THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT: {threshold_biod_causal}")
+            logging.info(f"  THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT: {threshold_clim_causal}")
+            logging.info(f"  THRESHOLD_RESS_CONST_SOLUT: {threshold_ress_causal}")
             
             # Build DBT command
             # Run only the print_media_crises_indicators model
@@ -1343,6 +1349,9 @@ class S3ToPostgreProcessor:
                     "MULTIPLIER_HRFP_BIODIV": multiplier_biodiv,
                     "MULTIPLIER_HRFP_RESSOURCE": multiplier_ressource,
                     "THRESHOLD_BIOD_CLIM_RESS": threshold_biod_clim_ress,
+                    "THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT": threshold_biod_causal,
+                    "THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT": threshold_clim_causal,
+                    "THRESHOLD_RESS_CONST_SOLUT": threshold_ress_causal,
                 }
             )
             

@@ -87,7 +87,7 @@ SELECT
     ),
     0
   ) "% ressources",
-  CAST(SUM("source"."sum_4") AS float) / NULLIF(
+  CAST(SUM("source"."sum_15") AS float) / NULLIF(
     SUM(
       "source"."time_monitored__duration_minutes"
     ),
@@ -111,7 +111,7 @@ FROM
       SUM("source"."crise_env_minutes") AS "sum",
       SUM("source"."climat_total_minutes") AS "sum_2",
       SUM("source"."biodiversite_total_minutes") AS "sum_3",
-      SUM("source"."ressource_minutes") AS "sum_4",
+      SUM("source"."ressource_total_minutes") AS "sum_4",
       SUM("source"."climat_adaptation_minutes") AS "sum_5",
       SUM("source"."climat_attenuation_minutes") AS "sum_6",
       SUM("source"."climat_consequence_minutes") AS "sum_7",

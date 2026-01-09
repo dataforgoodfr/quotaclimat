@@ -1327,16 +1327,17 @@ class S3ToPostgreProcessor:
             logging.info(f"  THRESHOLD_RESS_CONST_SOLUT: {threshold_ress_causal}")
             
             # Build DBT command
-            # Run only the print_media_crises_indicators model
+            # Run all print_media_crises_indicators models (daily, weekly, monthly)
             # Use --full-refresh to ensure all changes are captured (articles, stats, thresholds)
             dbt_command = [
                 "dbt", "run",
                 "--full-refresh",
-                "--select", "print_media_crises_indicators",
+                "--select", "print_media_crises_indicators+",
                 "--project-dir", dbt_project_dir,
             ]
             
             logging.info(f"Executing DBT command: {' '.join(dbt_command)}")
+            logging.info("Running 3 models: daily, weekly, and monthly aggregations")
             
             # Run DBT command
             result = subprocess.run(

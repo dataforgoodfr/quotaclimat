@@ -177,30 +177,47 @@ def get_partition_s3(country: CountryMediaTree = FRANCE) -> list[str]:
 
     return partition_cols
 
-def save_to_s3(df: pd.DataFrame, channel: str, date: pd.Timestamp, s3_client, country: CountryMediaTree = FRANCE):
+def save_to_s3(
+        df: pd.DataFrame,
+        channel: str, 
+        date: pd.Timestamp, 
+        s3_client, 
+        country: CountryMediaTree = FRANCE, 
+        set_filename: str = None
+    ):
     logging.info(f"Saving DF with {len(df)} elements to S3 for {date} and channel {channel}")
 
     # to create partitions
     object_key = get_bucket_key(date=date, channel=channel, country=country)
     logging.debug(f"Uploading partition: {object_key}")
+    based_path = "s3/parquet"
 
     try:
+        if country==FRANCE: # You need this for france because of legacy partitioning either way
+            df['country'] = country.name
         # add partition columns year, month, day to dataframe
-        df['year'] = date.year
-        df['month'] = date.month
-        df['day'] = date.day
-        df['channel'] = channel
-        df['country'] = country.name
+        if not set_filename:
+            df['year'] = date.year
+            df['month'] = date.month
+            df['day'] = date.day
+            df['channel'] = channel
 
-        df = df._to_pandas() # collect data accross ray workers to avoid multiple subfolders
-        based_path = "s3/parquet"
+            df = df._to_pandas() # collect data accross ray workers to avoid multiple subfolders
 
-        partition_cols = get_partition_s3(country)
-       
-        df.to_parquet(based_path,
-                       compression='gzip'
-                       ,partition_cols=partition_cols)
-
+            partition_cols = get_partition_s3(country)
+        
+            df.to_parquet(
+                based_path,
+                compression='gzip',
+                partition_cols=partition_cols
+            )
+        else:
+            df = df._to_pandas()
+            df.to_parquet(
+                os.path.join(based_path, set_filename),
+                compression='gzip',
+            )
+            
         #saving full_path folder parquet to s3
         s3_path = f"{get_bucket_key_folder(date, channel, country=country)}"
         local_folder = f"{based_path}/{s3_path}"
@@ -316,7 +333,15 @@ async def get_and_save_api_data(exit_event):
                                 if df_res is None:
                                     continue
                                 # save to S3
-                                save_to_s3(df_res, channel, day, s3_client=s3_client, country=country)
+                                
+                                # This returns None is there is no object in s3 for that date/channel/country combo
+                                # If there is a hit it returns the object key. This allows us to overwrite with the same filename
+                                # On s3 if we have to catch up data.
+                                set_filename = get_object_key_if_exists(day, channel,s3_client=s3_client, country=country)
+
+                                # If set_filename is not None, it will correspond to an object key, this way we will save and 
+                                # Upload the data overwriting the old object key to avoid duplication.
+                                save_to_s3(df_res, channel, day, s3_client=s3_client, country=country, set_filename=set_filename)
                                 
                             except Exception as err:
                                 logging.error(f"continuing loop but met error : {err}")

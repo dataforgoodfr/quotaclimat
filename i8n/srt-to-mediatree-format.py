@@ -207,9 +207,9 @@ def process_csv_folder_to_partitioned_parquet(folder_path, output_dir="mediatree
         file_path = os.path.join(folder_path, filename)
         print(f"\nProcessing file {i+1}/{len(csv_files)}: {filename}")
         file_data = parse_csv_without_headers(file_path, encoding=encoding)
+        # print(file_data)
         all_data.extend(file_data)
         print(f"  Total data rows so far: {len(all_data)}")
-    
     if not all_data:
         print("ERROR: No valid data found in CSV files")
         return None
@@ -268,8 +268,10 @@ if __name__ == "__main__":
     encoding_2024 = f"cp1252"
     folder_path_2025 = f"csa-belge/2025/T2"
     folder_path_2025_T3 = f"csa-belge/2025/T3"
+    folder_path_2025_T4 = f"csa-belge/2025/T4"
     encoding_2025 = f"utf-8"
     date_format = "%m/%d/%Y %H:%M:%S"
+    date_format_2025_T4 = "%d/%m/%Y %H:%M:%S"
     date_format_2025_T3 = "%d/%m/%Y %H:%M:%S"
     date_format_2025_T2 = "%d/%m/%Y %H:%M" # no seconds sometimes, and reverse month day
 
@@ -278,11 +280,12 @@ if __name__ == "__main__":
     s3_root_folder = "country=belgium"
 
     print(f"Using timezone: {timezone}")
-    print(f"Using date format: {date_format_2025_T3}")
+    print(f"Using date format: {date_format_2025_T4}")
     print(f"Using bucket: {bucket}")
     print(f"Using s3_root_folder: {s3_root_folder}")
     # process_csv_folder_to_partitioned_parquet(folder_path_2024, output_dir)
     # process_csv_folder_to_partitioned_parquet(folder_path_2025, output_dir,encoding=encoding_2024, date_format=date_format_2025_T2)
     # process_csv_folder_to_partitioned_parquet(folder_path_2025_T3, output_dir,encoding=encoding_2024, date_format=date_format_2025_T3)
+    process_csv_folder_to_partitioned_parquet(folder_path_2025_T4, output_dir,encoding=encoding_2024, date_format=date_format_2025_T4)
     s3_client = get_s3_client()
     upload_folder_to_s3(output_dir,bucket, s3_root_folder, s3_client=s3_client)

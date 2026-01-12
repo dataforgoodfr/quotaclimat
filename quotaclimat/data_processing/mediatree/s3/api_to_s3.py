@@ -337,7 +337,10 @@ async def get_and_save_api_data(exit_event):
                                 # This returns None is there is no object in s3 for that date/channel/country combo
                                 # If there is a hit it returns the object key. This allows us to overwrite with the same filename
                                 # On s3 if we have to catch up data.
-                                set_filename = get_object_key_if_exists(day, channel,s3_client=s3_client, country=country)
+                                if bool(os.getenv("API_DATA_OVERWRITE", False)):
+                                    set_filename = get_object_key_if_exists(day, channel,s3_client=s3_client, country=country)
+                                else:
+                                    set_filename = None # No need if not overwriting api data
 
                                 # If set_filename is not None, it will correspond to an object key, this way we will save and 
                                 # Upload the data overwriting the old object key to avoid duplication.

@@ -28,8 +28,15 @@ max_day AS (
 weekly_aggregates AS (
     SELECT
         DATE_TRUNC('week', pci.publication_day)::DATE AS publication_week,
-        pci.source_code,
-        pci.source_name,
+        -- Aggregate La Tribune (TRDS) into La Tribune.fr (TBNWEB)
+        CASE 
+            WHEN pci.source_code = 'TRDS' THEN 'TBNWEB'
+            ELSE pci.source_code
+        END AS source_code,
+        CASE 
+            WHEN pci.source_code = 'TRDS' THEN 'La Tribune.fr'
+            ELSE pci.source_name
+        END AS source_name,
         pci.source_type,
         
         -- Sum all counts across the week
@@ -71,8 +78,14 @@ weekly_aggregates AS (
     
     GROUP BY 
         DATE_TRUNC('week', pci.publication_day)::DATE,
-        pci.source_code,
-        pci.source_name,
+        CASE 
+            WHEN pci.source_code = 'TRDS' THEN 'TBNWEB'
+            ELSE pci.source_code
+        END,
+        CASE 
+            WHEN pci.source_code = 'TRDS' THEN 'La Tribune.fr'
+            ELSE pci.source_name
+        END,
         pci.source_type
 )
 

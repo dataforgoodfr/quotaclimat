@@ -28,8 +28,15 @@ max_day AS (
 monthly_aggregates AS (
     SELECT
         DATE_TRUNC('month', pci.publication_day)::DATE AS publication_month,
-        pci.source_code,
-        pci.source_name,
+        -- Aggregate La Tribune (TRDS) into La Tribune.fr (TBNWEB)
+        CASE 
+            WHEN pci.source_code = 'TRDS' THEN 'TBNWEB'
+            ELSE pci.source_code
+        END AS source_code,
+        CASE 
+            WHEN pci.source_code = 'TRDS' THEN 'La Tribune.fr'
+            ELSE pci.source_name
+        END AS source_name,
         pci.source_type,
         
         -- Sum all counts across the month
@@ -71,8 +78,14 @@ monthly_aggregates AS (
     
     GROUP BY 
         DATE_TRUNC('month', pci.publication_day)::DATE,
-        pci.source_code,
-        pci.source_name,
+        CASE 
+            WHEN pci.source_code = 'TRDS' THEN 'TBNWEB'
+            ELSE pci.source_code
+        END,
+        CASE 
+            WHEN pci.source_code = 'TRDS' THEN 'La Tribune.fr'
+            ELSE pci.source_name
+        END,
         pci.source_type
 )
 

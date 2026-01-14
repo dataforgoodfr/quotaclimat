@@ -1,7 +1,7 @@
 """Process Factiva data from S3 and load into PostgreSQL.
 
 This script handles two types of data:
-1. Article JSON files (stream data) - processed into factiva_articles table with keyword extraction
+1. Article JSON files (stream and snapshot_extract data) - processed into factiva_articles table with keyword extraction
 2. Statistics JSON files (stats data) - processed into stats_factiva_articles table
 """
 
@@ -267,14 +267,14 @@ class ArticleProcessor:
             else:
                 current_date = current_date.replace(month=current_date.month + 1)
         
-        # Filter for stream files without PROCESSED in name
+        # Filter for stream or snapshot_extract files without PROCESSED in name
         unprocessed = []
         for file_key in all_files:
             filename = file_key.split("/")[-1]
             
-            # Must be a stream file and not already processed
-            if "_stream.json" in filename and "PROCESSED" not in filename:
-                # Extract date from filename (format: YYYY_MM_DD_HH_MM_SS_N_stream.json)
+            # Must be a stream or snapshot_extract file and not already processed
+            if ("_stream.json" in filename or "_snapshot_extract.json" in filename) and "PROCESSED" not in filename:
+                # Extract date from filename (format: YYYY_MM_DD_HH_MM_SS_N_stream.json or YYYY_MM_DD_HH_MM_SS_N_snapshot_extract.json)
                 try:
                     date_str = "_".join(filename.split("_")[:6])
                     file_date = datetime.strptime(date_str, "%Y_%m_%d_%H_%M_%S")
@@ -334,7 +334,14 @@ class ArticleProcessor:
                         deleted_count += 1
             
             # Rename file in S3 to mark as processed
-            new_filename = filename.replace("_stream.json", "_stream_PROCESSED.json")
+            if "_stream.json" in filename:
+                new_filename = filename.replace("_stream.json", "_stream_PROCESSED.json")
+            elif "_snapshot_extract.json" in filename:
+                new_filename = filename.replace("_snapshot_extract.json", "_snapshot_extract_PROCESSED.json")
+            else:
+                # Fallback: just add _PROCESSED before .json
+                new_filename = filename.replace(".json", "_PROCESSED.json")
+            
             new_s3_key = s3_key.replace(filename, new_filename)
             self.s3_client.rename_file(s3_key, new_s3_key)
             

@@ -223,10 +223,6 @@ SOURCE_CLASSIFICATION = {
             "source_code": "LEHUFF"
         },
         {
-            "source_name": "Atlantico",
-            "source_code": "ATLANT"
-        },
-        {
             "source_name": "Les Echos.fr",
             "source_code": "ECHOFR"
         },

@@ -193,7 +193,7 @@ def save_to_s3(
     based_path = "s3/parquet"
 
     try:
-        if country==FRANCE: # You need this for france because of legacy partitioning either way
+        if country==FRANCE and set_filename: # You need this for france because of legacy partitioning either way
             df['country'] = country.name
         # add partition columns year, month, day to dataframe
         if not set_filename:
@@ -201,6 +201,7 @@ def save_to_s3(
             df['month'] = date.month
             df['day'] = date.day
             df['channel'] = channel
+            df['country'] = country.name
 
             df = df._to_pandas() # collect data accross ray workers to avoid multiple subfolders
 

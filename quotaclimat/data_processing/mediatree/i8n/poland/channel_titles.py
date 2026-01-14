@@ -11,7 +11,7 @@ channel_titles_poland = {
     "tv-trwam": "TV Trwa",
     "radio-maryja": "Radio Maryj",
     "tvs": "TVS",
-    "wpolsce24": "wPolsce2",
+    "wpolsce24": "wPolsce24",
     # "TV Plus"
     # "Fokus TV"
 }

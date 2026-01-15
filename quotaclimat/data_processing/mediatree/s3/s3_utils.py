@@ -123,6 +123,22 @@ def check_if_object_exists_in_s3(day, channel, s3_client, country: CountryMediaT
         logging.error(f"Error while checking folder in S3: {folder_prefix}\n{e}")
         return False
     
+def get_object_key_if_exists(day, channel, s3_client, country: CountryMediaTree = FRANCE) -> bool:
+    folder_prefix = get_bucket_key_folder(day, channel, country=country)  # Adjust this to return the folder path
+    
+    logging.debug(f"Checking if folder exists: {folder_prefix}")
+    try:
+        response = s3_client.list_objects_v2(Bucket=BUCKET_NAME, Prefix=folder_prefix, MaxKeys=1)
+        if "Contents" in response:
+            logging.info(f"Folder exists in S3: {folder_prefix}, returning first key")
+            return response["Contents"][0]["Key"]
+        else:
+            logging.info(f"Folder does not exist in S3: {folder_prefix}, returning None")
+            return None
+    except Exception as e:
+        logging.error(f"Error while checking folder in S3: {folder_prefix}\n{e}")
+        return None
+    
 # Data extraction function definition
 # https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
 def transform_raw_keywords(

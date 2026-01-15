@@ -96,4 +96,108 @@ channels_programs_poland = [
     {"channel_name": "eska", "start": "15:00", "end": "15:10", "weekday": "*", "program_name": "Informacje 15:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "eska", "start": "16:00", "end": "16:10", "weekday": "*", "program_name": "Informacje 16:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "eska", "start": "17:00", "end": "17:10", "weekday": "*", "program_name": "Informacje", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    
+    {"channel_name": "tv-republika", "start": "06:00", "end": "06:05", "weekday": "weekday", "program_name": "Agro Info", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-republika", "start": "12:30", "end": "12:45", "weekday": "weekday", "program_name": "Republika Dzien 12:30", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-republika", "start": "13:30", "end": "13:40", "weekday": "weekday", "program_name": "Republika Dzien 13:30", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-republika", "start": "14:00", "end": "14:10", "weekday": "weekday", "program_name": "Republika Dzien 14:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-republika", "start": "15:00", "end": "15:15", "weekday": "weekday", "program_name": "Republika Dzien 15:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-republika", "start": "16:00", "end": "16:15", "weekday": "weekday", "program_name": "Republika Dzien 16:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "tv-republika", "start": "14:00", "end": "14:10", "weekday": "5", "program_name": "Republika Dzien 14:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-republika", "start": "16:00", "end": "16:15", "weekday": "5", "program_name": "Republika Dzien 16:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "tv-republika", "start": "14:55", "end": "15:00", "weekday": "6", "program_name": "Republika Dzien 14:55", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-republika", "start": "16:00", "end": "16:15", "weekday": "6", "program_name": "Republika Dzien 16:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-republika", "start": "18:00", "end": "18:15", "weekday": "6", "program_name": "Republika Dzien 18:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "tv-republika", "start": "16:55", "end": "17:10", "weekday": "*", "program_name": "Express Republiki", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "tv-republika", "start": "19:00", "end": "20:20", "weekday": "weekday", "program_name": "Dzisiaj", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-republika", "start": "19:00", "end": "20:20", "weekday": "5", "program_name": "Dzisiaj", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-republika", "start": "19:00", "end": "20:00", "weekday": "6", "program_name": "Dzisiaj", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+
+    {"channel_name": "tv-trwam", "start": "00:10", "end": "00:30", "weekday": "weekday", "program_name": "Informacje Dnia 00:10", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-trwam", "start": "03:00", "end": "03:20", "weekday": "weekday", "program_name": "Informacje Dnia 03:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-trwam", "start": "04:20", "end": "04:40", "weekday": "weekday", "program_name": "Informacje Dnia 04:20", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-trwam", "start": "08:00", "end": "08:15", "weekday": "weekday", "program_name": "Informacje Dnia 08:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-trwam", "start": "10:00", "end": "10:15", "weekday": "weekday", "program_name": "Informacje Dnia 10:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-trwam", "start": "12:03", "end": "12:20", "weekday": "weekday", "program_name": "Informacje Dnia 12:03", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-trwam", "start": "16:00", "end": "16:10", "weekday": "weekday", "program_name": "Informacje Dnia 16:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-trwam", "start": "18:05", "end": "18:15", "weekday": "weekday", "program_name": "Informacje Dnia 18:05", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-trwam", "start": "20:00", "end": "20:20", "weekday": "weekday", "program_name": "Informacje Dnia 20:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-trwam", "start": "21:20", "end": "21:40", "weekday": "weekday", "program_name": "Informacje Dnia 22:20", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "radio-maryja", "start": "04:10", "end": "05:10", "weekday": "weekday", "program_name": "Aktualnosci Dnia 04:10", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "radio-maryja", "start": "13:10", "end": "14:00", "weekday": "weekday", "program_name": "Aktualnosci Dnia 13:10", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "radio-maryja", "start": "16:00", "end": "16:15", "weekday": "weekday", "program_name": "Aktualnosci Dnia 16:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "radio-maryja", "start": "06:03", "end": "06:10", "weekday": "weekday", "program_name": "Serwis Informacjny 06:03", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "radio-maryja", "start": "08:00", "end": "08:10", "weekday": "weekday", "program_name": "Serwis Informacjny 08:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "radio-maryja", "start": "10:00", "end": "10:05", "weekday": "weekday", "program_name": "Serwis Informacjny 10:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "radio-maryja", "start": "11:00", "end": "11:10", "weekday": "weekday", "program_name": "Serwis Informacjny 11:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "radio-maryja", "start": "12:03", "end": "12:10", "weekday": "weekday", "program_name": "Serwis Informacjny 12:03", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "radio-maryja", "start": "13:00", "end": "13:10", "weekday": "weekday", "program_name": "Serwis Informacjny 13:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "radio-maryja", "start": "14:00", "end": "14:10", "weekday": "weekday", "program_name": "Serwis Informacjny 14:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "radio-maryja", "start": "17:00", "end": "17:10", "weekday": "weekday", "program_name": "Serwis Informacjny 17:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "radio-maryja", "start": "20:00", "end": "20:20", "weekday": "weekday", "program_name": "Serwis Informacjny 20:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "radio-maryja", "start": "23:00", "end": "23:59", "weekday": "weekday", "program_name": "Serwis Informacjny 23:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "radio-maryja", "start": "07:50", "end": "08:00", "weekday": "weekday", "program_name": "Feleiton Sprobuj pomyslec", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "radio-maryja", "start": "21:30", "end": "23:35", "weekday": "weekday", "program_name": "Rozmowy niedokonczone: Polityka w Polsce i wobec Polski", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "wpolsce24", "start": "01:30", "end": "01:45", "weekday": "weekday", "program_name": "Tele-Ekspres 01:30", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "16:45", "end": "17:05", "weekday": "weekday", "program_name": "Tele-Ekspres 16:45", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "wpolsce24", "start": "01:30", "end": "01:45", "weekday": "5", "program_name": "Tele-Ekspres 01:30", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "16:45", "end": "17:05", "weekday": "5", "program_name": "Tele-Ekspres 16:45", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+
+    {"channel_name": "wpolsce24", "start": "06:00", "end": "06:30", "weekday": "weekday", "program_name": "Wiadomosci Poranne", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "06:00", "end": "06:50", "weekday": "weekend", "program_name": "Wiadomosci Poranne", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "wpolsce24", "start": "00:00", "end": "00:25", "weekday": "weekday", "program_name": "Wiadomosci 00:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "07:00", "end": "07:10", "weekday": "weekday", "program_name": "Wiadomosci 07:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "08:00", "end": "08:05", "weekday": "weekday", "program_name": "Wiadomosci 08:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "09:00", "end": "09:05", "weekday": "weekday", "program_name": "Wiadomosci 09:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "19:30", "end": "20:00", "weekday": "weekday", "program_name": "Wiadomosci 19:30", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "23:45", "end": "23:59", "weekday": "weekday", "program_name": "Wiadomosci 23:45", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "wpolsce24", "start": "07:30", "end": "07:35", "weekday": "weekday", "program_name": "Wiadomosci Agro", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "wpolsce24", "start": "09:30", "end": "09:35", "weekday": "weekday", "program_name": "Wiadomosci Gospodarka", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "wpolsce24", "start": "10:00", "end": "11:50", "weekday": "weekday", "program_name": "Kontra", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "wpolsce24", "start": "12:00", "end": "13:00", "weekday": "weekday", "program_name": "Rapport Wiadomosci 12:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "15:00", "end": "16:00", "weekday": "weekday", "program_name": "Rapport Wiadomosci 15:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+
+    {"channel_name": "wpolsce24", "start": "13:00", "end": "13:25", "weekday": "weekday", "program_name": "Piatka Pereiri", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+
+    {"channel_name": "wpolsce24", "start": "13:25", "end": "13:50", "weekday": "weekday", "program_name": "Piatka Pochwata", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "wpolsce24", "start": "20:05", "end": "20:50", "weekday": "weekday", "program_name": "Minela 20:05 (Marek Pyza)", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "20:50", "end": "21:40", "weekday": "weekday", "program_name": "Minela 20:05 (Magdalena Ogorek)", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "wpolsce24", "start": "19:30", "end": "20:00", "weekday": "5", "program_name": "Wiadomosci 19:30", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "wpolsce24", "start": "07:00", "end": "07:05", "weekday": "5", "program_name": "Wiadomosci Flash 07:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "08:00", "end": "08:05", "weekday": "5", "program_name": "Wiadomosci Flash 08:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "09:00", "end": "09:05", "weekday": "5", "program_name": "Wiadomosci Flash 09:00", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "wpolsce24", "start": "13:55", "end": "14:05", "weekday": "5", "program_name": "Wiadomosci Flash 13:55", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "wpolsce24", "start": "10:30", "end": "11:50", "weekday": "5", "program_name": "Ostra Szpila", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "tvs", "start": "10:00", "end": "10:05", "weekday": "0", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tvs", "start": "10:00", "end": "10:05", "weekday": "1", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tvs", "start": "10:00", "end": "10:05", "weekday": "2", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tvs", "start": "10:00", "end": "10:05", "weekday": "3", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tvs", "start": "10:08", "end": "10:13", "weekday": "4", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "tvs", "start": "11:35", "end": "11:40", "weekday": "0", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tvs", "start": "11:35", "end": "11:40", "weekday": "1", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tvs", "start": "11:35", "end": "11:40", "weekday": "2", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tvs", "start": "11:35", "end": "11:40", "weekday": "3", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tvs", "start": "11:10", "end": "11:15", "weekday": "4", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
 ]
+

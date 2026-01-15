@@ -38,6 +38,7 @@ monthly_aggregates AS (
             ELSE pci.source_name
         END AS source_name,
         pci.source_type,
+        pci.source_owner,
         
         -- Sum all counts across the month
         SUM(pci.count_total_articles) AS count_total_articles,
@@ -86,7 +87,8 @@ monthly_aggregates AS (
             WHEN pci.source_code = 'TRDS' THEN 'La Tribune.fr'
             ELSE pci.source_name
         END,
-        pci.source_type
+        pci.source_type,
+        pci.source_owner
 )
 
 SELECT
@@ -94,6 +96,7 @@ SELECT
     source_code,
     source_name,
     source_type,
+    source_owner,
     count_total_articles,
     count_climat,
     count_biodiversite,

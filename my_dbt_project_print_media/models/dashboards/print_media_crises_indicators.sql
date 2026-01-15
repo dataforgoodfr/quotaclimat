@@ -99,7 +99,8 @@ all_source_days AS (
         pd.publication_day,
         sc.source_code,
         sc.source_name,
-        sc.source_type
+        sc.source_type,
+        sc.source_owner
     FROM all_publication_days pd
     CROSS JOIN {{ source('public', 'source_classification') }} sc
 ),
@@ -170,6 +171,7 @@ article_scores AS (
         fa.source_code,
         sc.source_name,
         sc.source_type,
+        sc.source_owner,
         
         -- Calculate climate score (aggregated)
         CASE 
@@ -445,6 +447,7 @@ SELECT
     asd.source_code,
     asd.source_name,
     asd.source_type,
+    asd.source_owner,
     
     -- Get total article count from stats (aggregated to day level)
     -- If source-day has exactly 1 DUP, subtract 1 from count (minimum 0)

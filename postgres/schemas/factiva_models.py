@@ -32,6 +32,7 @@ class Source_Classification(FactivaBase):
     source_type = Column(String, nullable=False)  # PQN, PQR, Magazine, Web
     source_name = Column(String, nullable=False)  # Le Monde, Le Figaro, etc.
     source_code = Column(String, primary_key=True)  # LEMOND, FIGARO, etc.
+    source_owner = Column(String, nullable=True)  # LVMH, Dassault, etc.
 
 
 class Factiva_Article(FactivaBase):

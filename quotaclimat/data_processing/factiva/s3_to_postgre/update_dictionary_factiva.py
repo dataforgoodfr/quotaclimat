@@ -90,6 +90,7 @@ def update_dictionary_factiva(engine, theme_keywords=THEME_KEYWORDS, macro_categ
                     "source_type": source_type,
                     "source_name": source["source_name"],
                     "source_code": source["source_code"],
+                    "source_owner": source.get("source_owner"),
                 })
         
         logging.info(

@@ -465,28 +465,11 @@ def test_long_get_themes_keywords_duration():
     themes= set([
         'adaptation_climatique_solutions_indirectes',
         'biodiversite_causes_indirectes',
+        'biodiversite_consequences_indirectes',
         'ressources_indirectes',
         'ressources_solutions_indirectes',
     ])
-    keywords= [
-        {
-            'category': 'Eau',
-            'keyword': 'barrage',
-            'theme': 'adaptation_climatique_solutions_indirectes',
-            'timestamp': 1706437079102,
-        },
-        {
-            'category': 'Energie',
-            'keyword': 'barrage',
-            'theme': 'ressources_indirectes',
-            'timestamp': 1706437079102,
-        },
-        {
-            'category': 'Eau',
-            'keyword': 'barrage',
-            'theme': 'ressources_solutions_indirectes',
-            'timestamp': 1706437079102,
-    }]
+
 
     (themes_output, keywords_output, 
         number_of_keywords,
@@ -516,13 +499,7 @@ def test_long_get_themes_keywords_duration():
         number_of_biodiversite_consequences_no_hrfp,
         number_of_biodiversite_solutions_no_hrfp, country) = get_themes_keywords_duration("il rencontre aussi une crise majeure de la pénurie de l' offre laetitia jaoude des barrages sauvages", subtitles, start)
     
-    print("xxxxx")
-    print(themes_output)
-    print(keywords_output)
-    print("xxxxx")
     assert set(themes_output) == set(themes)
-    # too hard to maintain
-    #assert compare_unordered_lists_of_dicts(keywords_output, keywords)
     assert number_of_keywords == 0
     assert number_of_changement_climatique_constat == 0
     assert number_of_changement_climatique_causes_directes == 0

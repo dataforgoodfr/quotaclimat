@@ -103,7 +103,6 @@ def test_transform_raw_keywords_srt_to_mediatree():
     df: DataFrame= pd.read_parquet(path=f"i8n/mediatree_output/year=2024/month=10/day=1/channel={channel}")
     df_programs = get_programs()
     output = transform_raw_keywords(df, df_programs=df_programs,country=BELGIUM)
-    print(output)
 
     output_dict = output.to_dict(orient='records')
     filtered = output[output["id"] == primary_key]
@@ -111,9 +110,7 @@ def test_transform_raw_keywords_srt_to_mediatree():
     assert row_dict["country"] == "belgium"
     assert row_dict["channel_name"] == channel
 
-    print(output_dict)
-
-    assert len(output) == 29
+    assert len(output) == 30
     save_to_pg(df=output,conn=conn, table=keywords_table)
     specific_keyword = get_keyword(primary_key)
     assert set(specific_keyword.theme) == set([

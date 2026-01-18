@@ -1,22 +1,23 @@
 import logging
+import time as t
 
 from modin.pandas.dataframe import DataFrame
+from test_utils import (compare_unordered_lists_of_dicts, debug_df,
+                        get_localhost)
 
-from quotaclimat.data_processing.mediatree.update_pg_keywords import *
-
-from postgres.insert_data import (clean_data,
-                                  insert_data_in_sitemap_table)
-
-from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db, drop_tables, empty_tables
-from postgres.insert_data import save_to_pg
-from quotaclimat.data_processing.mediatree.detect_keywords import *
+from postgres.insert_data import (clean_data, insert_data_in_sitemap_table,
+                                  save_to_pg)
+from postgres.schemas.models import (connect_to_db, create_tables, drop_tables,
+                                     empty_tables, get_db_session, get_keyword)
 from quotaclimat.data_processing.mediatree.api_import import *
+from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
-from quotaclimat.data_processing.mediatree.stop_word.main import save_append_stop_word
-from quotaclimat.data_processing.mediatree.s3.api_to_s3 import parse_reponse_subtitle
-from test_utils import get_localhost, debug_df, compare_unordered_lists_of_dicts
-
-import time as t
+from quotaclimat.data_processing.mediatree.s3.api_to_s3 import \
+    parse_reponse_subtitle
+from quotaclimat.data_processing.mediatree.stop_word.main import (
+    get_stop_words, save_append_stop_word)
+from quotaclimat.data_processing.mediatree.update_pg_keywords import \
+    get_keywords_columns
 
 
 def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
@@ -103,8 +104,10 @@ def test_transform_raw_keywords_srt_to_mediatree():
     df: DataFrame= pd.read_parquet(path=f"i8n/mediatree_output/year=2024/month=10/day=1/channel={channel}")
     df_programs = get_programs()
     output = transform_raw_keywords(df, df_programs=df_programs,country=BELGIUM)
+    print(output)
 
     output_dict = output.to_dict(orient='records')
+    print(output_dict)
     filtered = output[output["id"] == primary_key]
     row_dict = filtered.iloc[0].to_dict()
     assert row_dict["country"] == "belgium"

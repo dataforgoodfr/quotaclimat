@@ -107,6 +107,7 @@ def set_up_macro_category():
             f.write("    },\n")
         f.write("]\n")
         logging.info(f"{len(records)} macro categories written to {output_file_macro_category} successfully.")
+    print("Verification des doublons de mots clé")
     print(df["keyword"].value_counts()[df["keyword"].value_counts()==2])
 
 

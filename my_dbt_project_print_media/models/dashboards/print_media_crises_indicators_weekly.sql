@@ -61,7 +61,15 @@ weekly_aggregates AS (
         
         -- Resource causal links
         SUM(pci.count_ressources_constat) AS count_ressources_constat,
-        SUM(pci.count_ressources_solution) AS count_ressources_solution
+        SUM(pci.count_ressources_solution) AS count_ressources_solution,
+        
+        -- Combined climate causal links
+        SUM(pci.count_climat_cause_consequence) AS count_climat_cause_consequence,
+        SUM(pci.count_climat_constat_consequence) AS count_climat_constat_consequence,
+        
+        -- Combined biodiversity causal links
+        SUM(pci.count_biodiversite_cause_consequence) AS count_biodiversite_cause_consequence,
+        SUM(pci.count_biodiversite_constat_consequence) AS count_biodiversite_constat_consequence
         
     FROM {{ ref('print_media_crises_indicators') }} pci
     CROSS JOIN max_day md
@@ -112,6 +120,10 @@ SELECT
     count_biodiversite_solution,
     count_ressources_constat,
     count_ressources_solution,
+    count_climat_cause_consequence,
+    count_climat_constat_consequence,
+    count_biodiversite_cause_consequence,
+    count_biodiversite_constat_consequence,
     CURRENT_TIMESTAMP AS created_at,
     CURRENT_TIMESTAMP AS updated_at
     

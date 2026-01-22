@@ -6,13 +6,12 @@
 /*
 Factiva Environmental Indicators Model
 
-This model calculates environmental crisis indicators for Factiva articles by:
-1. Starting from source_classification to ensure ALL sources appear
-2. Computing crisis scores based on keyword counts and HRFP multipliers
-3. Comparing scores to thresholds to determine crisis labeling
-4. Aggregating counts by day and source
-5. Excluding duplicate articles and source-days with any duplicates
-6. Showing 0s for sources with no articles on a given day
+This model aggregates environmental crisis indicators for Factiva articles by:
+1. Using pre-calculated prediction flags (predict_*) from factiva_articles table
+2. Handling duplicate articles (excluding DUP, adjusting counts for source-days with duplicates)
+3. Aggregating counts by day and source
+4. Starting from source_classification to ensure ALL sources appear
+5. Showing 0s for sources with no articles on a given day
 
 Materialization Strategy:
 - materialized='incremental' with unique_key for flexibility
@@ -20,9 +19,14 @@ Materialization Strategy:
 - Can be run without --full-refresh for faster incremental updates if needed
 
 The --full-refresh flag ensures all changes are captured:
-- Article updates (keywords, classifications, duplicate status)
+- Article updates (prediction flags, duplicate status)
 - Stats updates (article counts)
-- Threshold changes (MULTIPLIER_*, THRESHOLD_*)
+
+Prediction Flags:
+- Prediction flags are PRE-CALCULATED in factiva_articles by Python code
+- Python code replicates the exact logic from the previous version of this SQL model
+- Flags are calculated based on keyword scores, HRFP multipliers, article length segments, and thresholds
+- This simplification dramatically improves query performance
 
 Duplicate Handling:
 - Articles with duplicate_status = 'DUP' are NEVER included in calculations
@@ -33,59 +37,10 @@ Duplicate Handling:
 Date Filtering:
 - Only shows days that are 4+ days old (e.g., if today is Dec 19, shows Dec 15 and earlier)
 - This allows time for data completeness and duplicate detection
-
-Environment Variables:
-- MULTIPLIER_HRFP_CLIMAT (default: 0): Multiplier for climate HRFP keywords
-- MULTIPLIER_HRFP_BIODIV (default: 0): Multiplier for biodiversity HRFP keywords
-- MULTIPLIER_HRFP_RESSOURCE (default: 0): Multiplier for resource HRFP keywords
-- THRESHOLD_BIOD_CLIM_RESS (default: "1,1,1"): Thresholds for biodiv, climat, ressource (format: "x,y,z")
-- THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT (default: "1,1,1,1"): Thresholds for biodiversity causal links (format: "constat,cause,consequence,solution")
-- THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT (default: "2,1,1,1"): Thresholds for climate causal links (format: "constat,cause,consequence,solution")
-- THRESHOLD_RESS_CONST_SOLUT (default: "1,1"): Thresholds for resource causal links (format: "constat,solution")
-
-Causal Link Labeling Logic:
-For an article to be counted in a causal link (e.g., count_climat_constat), TWO conditions must be met:
-1. The causal link score must meet its threshold (e.g., score_climat_constat >= threshold_climat_constat)
-2. The global crisis score must meet its threshold (e.g., score_climat >= threshold_climat)
 */
 
 WITH 
--- Parse environment variables for thresholds
-thresholds AS (
-    SELECT
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_BIOD_CLIM_RESS", "1,1,1") }}', ',', 1) AS FLOAT) AS threshold_biodiv,
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_BIOD_CLIM_RESS", "1,1,1") }}', ',', 2) AS FLOAT) AS threshold_climat,
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_BIOD_CLIM_RESS", "1,1,1") }}', ',', 3) AS FLOAT) AS threshold_ressource
-),
-
--- Parse environment variables for causal link thresholds
-causal_thresholds AS (
-    SELECT
-        -- Biodiversity causal links: constat, cause, consequence, solution
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT", "1,1,1,1") }}', ',', 1) AS FLOAT) AS threshold_biodiv_constat,
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT", "1,1,1,1") }}', ',', 2) AS FLOAT) AS threshold_biodiv_cause,
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT", "1,1,1,1") }}', ',', 3) AS FLOAT) AS threshold_biodiv_consequence,
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT", "1,1,1,1") }}', ',', 4) AS FLOAT) AS threshold_biodiv_solution,
-        -- Climate causal links: constat, cause, consequence, solution
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT", "2,1,1,1") }}', ',', 1) AS FLOAT) AS threshold_climat_constat,
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT", "2,1,1,1") }}', ',', 2) AS FLOAT) AS threshold_climat_cause,
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT", "2,1,1,1") }}', ',', 3) AS FLOAT) AS threshold_climat_consequence,
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT", "2,1,1,1") }}', ',', 4) AS FLOAT) AS threshold_climat_solution,
-        -- Resource causal links: constat, solution
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_RESS_CONST_SOLUT", "1,1") }}', ',', 1) AS FLOAT) AS threshold_ressources_constat,
-        CAST(SPLIT_PART('{{ env_var("THRESHOLD_RESS_CONST_SOLUT", "1,1") }}', ',', 2) AS FLOAT) AS threshold_ressources_solution
-),
-
--- Parse environment variables for HRFP multipliers
-multipliers AS (
-    SELECT
-        CAST('{{ env_var("MULTIPLIER_HRFP_CLIMAT", "0") }}' AS FLOAT) AS multiplier_climat,
-        CAST('{{ env_var("MULTIPLIER_HRFP_BIODIV", "0") }}' AS FLOAT) AS multiplier_biodiv,
-        CAST('{{ env_var("MULTIPLIER_HRFP_RESSOURCE", "0") }}' AS FLOAT) AS multiplier_ressource
-),
-
 -- Get all distinct publication days from stats_factiva_articles (4+ days old only)
--- This ensures we have ALL days that have data, even if no articles in factiva_articles
 all_publication_days AS (
     SELECT DISTINCT
         DATE(publication_datetime) AS publication_day
@@ -163,130 +118,43 @@ source_days_with_one_dup AS (
     WHERE dup_count = 1
 ),
 
--- Calculate scores for each article
-article_scores AS (
+-- Aggregate articles using pre-calculated prediction flags
+daily_aggregates AS (
     SELECT
-        fa.an,
         DATE(fa.publication_datetime) AS publication_day,
         fa.source_code,
-        sc.source_name,
-        sc.source_type,
-        sc.source_owner,
         
-        -- Calculate climate score (aggregated)
-        CASE 
-            WHEN m.multiplier_climat = 0 THEN 
-                COALESCE(fa.number_of_climat_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_climat_no_hrfp, 0) + 
-                (m.multiplier_climat * COALESCE(fa.number_of_climat_hrfp, 0))
-        END AS score_climat,
+        -- Count articles by crisis type (using prediction flags)
+        COUNT(*) FILTER (WHERE fa.predict_climat) AS count_climat,
+        COUNT(*) FILTER (WHERE fa.predict_biodiversite) AS count_biodiversite,
+        COUNT(*) FILTER (WHERE fa.predict_ressources) AS count_ressources,
+        COUNT(*) FILTER (WHERE fa.predict_at_least_one_crise) AS count_at_least_one_crise,
         
-        -- Calculate biodiversity score (aggregated)
-        CASE 
-            WHEN m.multiplier_biodiv = 0 THEN 
-                COALESCE(fa.number_of_biodiversite_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_biodiversite_no_hrfp, 0) + 
-                (m.multiplier_biodiv * COALESCE(fa.number_of_biodiversite_hrfp, 0))
-        END AS score_biodiversite,
+        -- Count articles by climate causal links (using prediction flags)
+        COUNT(*) FILTER (WHERE fa.predict_climat_constat) AS count_climat_constat,
+        COUNT(*) FILTER (WHERE fa.predict_climat_cause) AS count_climat_cause,
+        COUNT(*) FILTER (WHERE fa.predict_climat_consequence) AS count_climat_consequence,
+        COUNT(*) FILTER (WHERE fa.predict_climat_solution) AS count_climat_solution,
         
-        -- Calculate resource score (aggregated)
-        CASE 
-            WHEN m.multiplier_ressource = 0 THEN 
-                COALESCE(fa.number_of_ressources_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_ressources_no_hrfp, 0) + 
-                (m.multiplier_ressource * COALESCE(fa.number_of_ressources_hrfp, 0))
-        END AS score_ressources,
+        -- Count articles by biodiversity causal links (using prediction flags)
+        COUNT(*) FILTER (WHERE fa.predict_biodiversite_constat) AS count_biodiversite_constat,
+        COUNT(*) FILTER (WHERE fa.predict_biodiversite_cause) AS count_biodiversite_cause,
+        COUNT(*) FILTER (WHERE fa.predict_biodiversite_consequence) AS count_biodiversite_consequence,
+        COUNT(*) FILTER (WHERE fa.predict_biodiversite_solution) AS count_biodiversite_solution,
         
-        -- Calculate climate causal link scores
-        CASE 
-            WHEN m.multiplier_climat = 0 THEN 
-                COALESCE(fa.number_of_changement_climatique_constat_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_changement_climatique_constat_no_hrfp, 0) + 
-                (m.multiplier_climat * COALESCE(fa.number_of_changement_climatique_constat_hrfp, 0))
-        END AS score_climat_constat,
+        -- Count articles by resource causal links (using prediction flags)
+        COUNT(*) FILTER (WHERE fa.predict_ressources_constat) AS count_ressources_constat,
+        COUNT(*) FILTER (WHERE fa.predict_ressources_solution) AS count_ressources_solution,
         
-        CASE 
-            WHEN m.multiplier_climat = 0 THEN 
-                COALESCE(fa.number_of_changement_climatique_causes_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_changement_climatique_causes_no_hrfp, 0) + 
-                (m.multiplier_climat * COALESCE(fa.number_of_changement_climatique_causes_hrfp, 0))
-        END AS score_climat_cause,
+        -- Count articles with combined climate causal links
+        COUNT(*) FILTER (WHERE fa.predict_climat_cause AND fa.predict_climat_consequence) AS count_climat_cause_consequence,
+        COUNT(*) FILTER (WHERE fa.predict_climat_constat AND fa.predict_climat_consequence) AS count_climat_constat_consequence,
         
-        CASE 
-            WHEN m.multiplier_climat = 0 THEN 
-                COALESCE(fa.number_of_changement_climatique_consequences_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_changement_climatique_consequences_no_hrfp, 0) + 
-                (m.multiplier_climat * COALESCE(fa.number_of_changement_climatique_consequences_hrfp, 0))
-        END AS score_climat_consequence,
-        
-        CASE 
-            WHEN m.multiplier_climat = 0 THEN 
-                COALESCE(fa.number_of_changement_climatique_solutions_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_changement_climatique_solutions_no_hrfp, 0) + 
-                (m.multiplier_climat * COALESCE(fa.number_of_changement_climatique_solutions_hrfp, 0))
-        END AS score_climat_solution,
-        
-        -- Calculate biodiversity causal link scores
-        CASE 
-            WHEN m.multiplier_biodiv = 0 THEN 
-                COALESCE(fa.number_of_biodiversite_concepts_generaux_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_biodiversite_concepts_generaux_no_hrfp, 0) + 
-                (m.multiplier_biodiv * COALESCE(fa.number_of_biodiversite_concepts_generaux_hrfp, 0))
-        END AS score_biodiv_constat,
-        
-        CASE 
-            WHEN m.multiplier_biodiv = 0 THEN 
-                COALESCE(fa.number_of_biodiversite_causes_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_biodiversite_causes_no_hrfp, 0) + 
-                (m.multiplier_biodiv * COALESCE(fa.number_of_biodiversite_causes_hrfp, 0))
-        END AS score_biodiv_cause,
-        
-        CASE 
-            WHEN m.multiplier_biodiv = 0 THEN 
-                COALESCE(fa.number_of_biodiversite_consequences_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_biodiversite_consequences_no_hrfp, 0) + 
-                (m.multiplier_biodiv * COALESCE(fa.number_of_biodiversite_consequences_hrfp, 0))
-        END AS score_biodiv_consequence,
-        
-        CASE 
-            WHEN m.multiplier_biodiv = 0 THEN 
-                COALESCE(fa.number_of_biodiversite_solutions_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_biodiversite_solutions_no_hrfp, 0) + 
-                (m.multiplier_biodiv * COALESCE(fa.number_of_biodiversite_solutions_hrfp, 0))
-        END AS score_biodiv_solution,
-        
-        -- Calculate resource causal link scores
-        CASE 
-            WHEN m.multiplier_ressource = 0 THEN 
-                COALESCE(fa.number_of_ressources_constat_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_ressources_constat_no_hrfp, 0) + 
-                (m.multiplier_ressource * COALESCE(fa.number_of_ressources_constat_hrfp, 0))
-        END AS score_ressources_constat,
-        
-        CASE 
-            WHEN m.multiplier_ressource = 0 THEN 
-                COALESCE(fa.number_of_ressources_solutions_no_hrfp, 0)
-            ELSE 
-                COALESCE(fa.number_of_ressources_solutions_no_hrfp, 0) + 
-                (m.multiplier_ressource * COALESCE(fa.number_of_ressources_solutions_hrfp, 0))
-        END AS score_ressources_solution
+        -- Count articles with combined biodiversity causal links
+        COUNT(*) FILTER (WHERE fa.predict_biodiversite_cause AND fa.predict_biodiversite_consequence) AS count_biodiversite_cause_consequence,
+        COUNT(*) FILTER (WHERE fa.predict_biodiversite_constat AND fa.predict_biodiversite_consequence) AS count_biodiversite_constat_consequence
         
     FROM {{ source('public', 'factiva_articles') }} fa
-    INNER JOIN {{ source('public', 'source_classification') }} sc
-        ON fa.source_code = sc.source_code
-    CROSS JOIN multipliers m
     WHERE fa.is_deleted = FALSE
         AND fa.publication_datetime IS NOT NULL
         -- Only consider days that are 4+ days old
@@ -300,132 +168,14 @@ article_scores AS (
     
     {% if is_incremental() %}
         -- In incremental mode, recalculate ALL articles for days/sources that had updates
-        -- This ensures aggregates are correct even if only 1 article or 1 stat changed
-        -- Monitors both factiva_articles.updated_at AND stats_factiva_articles.updated_at
         AND (DATE(fa.publication_datetime), fa.source_code) IN (
             SELECT publication_day, source_code FROM days_to_recalculate
         )
     {% endif %}
-),
-
--- Label articles based on thresholds
-article_labels AS (
-    SELECT
-        a.*,
-        t.threshold_climat,
-        t.threshold_biodiv,
-        t.threshold_ressource,
-        
-        -- Determine if article meets threshold for each crisis (aggregated)
-        CASE WHEN a.score_climat >= t.threshold_climat THEN 1 ELSE 0 END AS is_climat,
-        CASE WHEN a.score_biodiversite >= t.threshold_biodiv THEN 1 ELSE 0 END AS is_biodiversite,
-        CASE WHEN a.score_ressources >= t.threshold_ressource THEN 1 ELSE 0 END AS is_ressources,
-        
-        -- Determine if article has at least one crisis
-        CASE 
-            WHEN a.score_climat >= t.threshold_climat 
-                OR a.score_biodiversite >= t.threshold_biodiv 
-                OR a.score_ressources >= t.threshold_ressource 
-            THEN 1 
-            ELSE 0 
-        END AS is_at_least_one_crise,
-        
-        -- Determine if article meets threshold for each climate causal link
-        -- Double condition: causal link threshold AND global crisis threshold
-        CASE 
-            WHEN a.score_climat_constat >= ct.threshold_climat_constat 
-                AND a.score_climat >= t.threshold_climat 
-            THEN 1 ELSE 0 
-        END AS is_climat_constat,
-        CASE 
-            WHEN a.score_climat_cause >= ct.threshold_climat_cause 
-                AND a.score_climat >= t.threshold_climat 
-            THEN 1 ELSE 0 
-        END AS is_climat_cause,
-        CASE 
-            WHEN a.score_climat_consequence >= ct.threshold_climat_consequence 
-                AND a.score_climat >= t.threshold_climat 
-            THEN 1 ELSE 0 
-        END AS is_climat_consequence,
-        CASE 
-            WHEN a.score_climat_solution >= ct.threshold_climat_solution 
-                AND a.score_climat >= t.threshold_climat 
-            THEN 1 ELSE 0 
-        END AS is_climat_solution,
-        
-        -- Determine if article meets threshold for each biodiversity causal link
-        -- Double condition: causal link threshold AND global crisis threshold
-        CASE 
-            WHEN a.score_biodiv_constat >= ct.threshold_biodiv_constat 
-                AND a.score_biodiversite >= t.threshold_biodiv 
-            THEN 1 ELSE 0 
-        END AS is_biodiversite_constat,
-        CASE 
-            WHEN a.score_biodiv_cause >= ct.threshold_biodiv_cause 
-                AND a.score_biodiversite >= t.threshold_biodiv 
-            THEN 1 ELSE 0 
-        END AS is_biodiversite_cause,
-        CASE 
-            WHEN a.score_biodiv_consequence >= ct.threshold_biodiv_consequence 
-                AND a.score_biodiversite >= t.threshold_biodiv 
-            THEN 1 ELSE 0 
-        END AS is_biodiversite_consequence,
-        CASE 
-            WHEN a.score_biodiv_solution >= ct.threshold_biodiv_solution 
-                AND a.score_biodiversite >= t.threshold_biodiv 
-            THEN 1 ELSE 0 
-        END AS is_biodiversite_solution,
-        
-        -- Determine if article meets threshold for each resource causal link
-        -- Double condition: causal link threshold AND global crisis threshold
-        CASE 
-            WHEN a.score_ressources_constat >= ct.threshold_ressources_constat 
-                AND a.score_ressources >= t.threshold_ressource 
-            THEN 1 ELSE 0 
-        END AS is_ressources_constat,
-        CASE 
-            WHEN a.score_ressources_solution >= ct.threshold_ressources_solution 
-                AND a.score_ressources >= t.threshold_ressource 
-            THEN 1 ELSE 0 
-        END AS is_ressources_solution
-        
-    FROM article_scores a
-    CROSS JOIN thresholds t
-    CROSS JOIN causal_thresholds ct
-),
-
--- Aggregate by day and source (from articles only)
-daily_aggregates AS (
-    SELECT
-        al.publication_day,
-        al.source_code,
-        
-        -- Count articles by crisis type
-        SUM(al.is_climat) AS count_climat,
-        SUM(al.is_biodiversite) AS count_biodiversite,
-        SUM(al.is_ressources) AS count_ressources,
-        SUM(al.is_at_least_one_crise) AS count_at_least_one_crise,
-        
-        -- Count articles by climate causal links
-        SUM(al.is_climat_constat) AS count_climat_constat,
-        SUM(al.is_climat_cause) AS count_climat_cause,
-        SUM(al.is_climat_consequence) AS count_climat_consequence,
-        SUM(al.is_climat_solution) AS count_climat_solution,
-        
-        -- Count articles by biodiversity causal links
-        SUM(al.is_biodiversite_constat) AS count_biodiversite_constat,
-        SUM(al.is_biodiversite_cause) AS count_biodiversite_cause,
-        SUM(al.is_biodiversite_consequence) AS count_biodiversite_consequence,
-        SUM(al.is_biodiversite_solution) AS count_biodiversite_solution,
-        
-        -- Count articles by resource causal links
-        SUM(al.is_ressources_constat) AS count_ressources_constat,
-        SUM(al.is_ressources_solution) AS count_ressources_solution
-        
-    FROM article_labels al
+    
     GROUP BY 
-        al.publication_day,
-        al.source_code
+        DATE(fa.publication_datetime),
+        fa.source_code
 ),
 
 -- Aggregate stats by day (sum all hourly stats to daily)
@@ -478,6 +228,14 @@ SELECT
     -- Resource causal link counts (0 if no articles)
     COALESCE(da.count_ressources_constat, 0) AS count_ressources_constat,
     COALESCE(da.count_ressources_solution, 0) AS count_ressources_solution,
+    
+    -- Combined climate causal link counts (0 if no articles)
+    COALESCE(da.count_climat_cause_consequence, 0) AS count_climat_cause_consequence,
+    COALESCE(da.count_climat_constat_consequence, 0) AS count_climat_constat_consequence,
+    
+    -- Combined biodiversity causal link counts (0 if no articles)
+    COALESCE(da.count_biodiversite_cause_consequence, 0) AS count_biodiversite_cause_consequence,
+    COALESCE(da.count_biodiversite_constat_consequence, 0) AS count_biodiversite_constat_consequence,
     
     -- Metadata
     CURRENT_TIMESTAMP AS created_at,

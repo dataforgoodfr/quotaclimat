@@ -201,6 +201,33 @@ class Factiva_Article(FactivaBase):
     # - "DUP_UNIQUE_VERSION": The unique version to keep among duplicates (most recent modification_datetime)
     # - "DUP": A duplicate article (should be excluded from analysis)
     duplicate_status = Column(String, nullable=True, default="NOT_DUP")
+    
+    # Prediction flags - Pre-calculated crisis and causal link predictions
+    # These flags are calculated based on keyword scores, HRFP multipliers, article length segments,
+    # and threshold comparisons (same logic as in dbt print_media_crises_indicators)
+    # Updated on every processing run (not just for new articles)
+    
+    # Global crisis predictions (aggregated)
+    predict_at_least_one_crise = Column(Boolean, nullable=True)
+    predict_climat = Column(Boolean, nullable=True)
+    predict_biodiversite = Column(Boolean, nullable=True)
+    predict_ressources = Column(Boolean, nullable=True)
+    
+    # Climate causal link predictions
+    predict_climat_constat = Column(Boolean, nullable=True)
+    predict_climat_cause = Column(Boolean, nullable=True)
+    predict_climat_consequence = Column(Boolean, nullable=True)
+    predict_climat_solution = Column(Boolean, nullable=True)
+    
+    # Biodiversity causal link predictions
+    predict_biodiversite_constat = Column(Boolean, nullable=True)
+    predict_biodiversite_cause = Column(Boolean, nullable=True)
+    predict_biodiversite_consequence = Column(Boolean, nullable=True)
+    predict_biodiversite_solution = Column(Boolean, nullable=True)
+    
+    # Resource causal link predictions
+    predict_ressources_constat = Column(Boolean, nullable=True)
+    predict_ressources_solution = Column(Boolean, nullable=True)
 
 
 class Stats_Factiva_Article(FactivaBase):

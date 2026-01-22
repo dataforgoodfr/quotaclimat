@@ -466,12 +466,19 @@ services:
       MULTIPLIER_HRFP_CLIMAT: "0"        # Multiplier for climate HRFP keywords
       MULTIPLIER_HRFP_BIODIV: "0"        # Multiplier for biodiversity HRFP keywords
       MULTIPLIER_HRFP_RESSOURCE: "0"     # Multiplier for resource HRFP keywords
-      # Thresholds for crisis labeling (format: "biodiv,climat,ressource")
-      THRESHOLD_BIOD_CLIM_RESS: "3,2,2"  # Thresholds for biodiversity, climate, resource
+      # Article length-based thresholds configuration
+      CONSIDER_ARTICLE_LENGTH: "true"   # Enable article length-based thresholds (default: false)
+      WORD_COUNT_THRESHOLD: "600"            # Article length segments (e.g., "350-600" or "350-600-900")
+      # Thresholds for crisis labeling
+      # If CONSIDER_ARTICLE_LENGTH=false: single threshold (format: "biodiv,climat,ressource")
+      # If CONSIDER_ARTICLE_LENGTH=true: multiple thresholds per length segment (format: "b1,c1,r1 - b2,c2,r2 - b3,c3,r3")
+      THRESHOLD_BIOD_CLIM_RESS: "2,2,2 - 3,2,2"  # Thresholds for biodiversity, climate, resource
       # Thresholds for causal links labeling
-      THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT: "1,1,1,1"  # Biodiversity causal links: constat, cause, consequence, solution
-      THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT: "2,1,1,1"  # Climate causal links: constat, cause, consequence, solution
-      THRESHOLD_RESS_CONST_SOLUT: "1,1"                  # Resource causal links: constat, solution
+      # If CONSIDER_ARTICLE_LENGTH=false: single threshold per causal link
+      # If CONSIDER_ARTICLE_LENGTH=true: multiple thresholds separated by " - "
+      THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT: "2,1,1,1 - 2,1,1,1"  # Biodiversity causal links: constat, cause, consequence, solution
+      THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT: "2,1,1,1 - 2,1,1,1"  # Climate causal links: constat, cause, consequence, solution
+      THRESHOLD_RESS_CONST_SOLUT: "1,1 - 1,1"                  # Resource causal links: constat, solution
       # UPDATE mode configuration (keyword re-detection)
       UPDATE: "false"                    # Enable UPDATE mode (re-detect keywords on existing data)
       # # START_DATE_UPDATE: "2025-11-27"   # Filter on publication_datetime >= this date

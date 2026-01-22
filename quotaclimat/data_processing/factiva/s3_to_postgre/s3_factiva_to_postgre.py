@@ -1013,6 +1013,248 @@ class ArticleUpdater:
         return (processed_count, updated_count)
 
 
+def calculate_prediction_flags(engine) -> int:
+    """
+    Calculate and update prediction flags for ALL articles in factiva_articles.
+    
+    This function replicates the logic from dbt print_media_crises_indicators.sql:
+    - Calculate scores from keyword counts with HRFP multipliers
+    - Determine article length segment
+    - Extract thresholds based on segment
+    - Compare scores to thresholds
+    - Set boolean flags for crisis and causal link predictions
+    
+    OPTIMIZED VERSION: Uses a single SQL UPDATE statement for maximum performance.
+    
+    Returns the number of articles updated.
+    """
+    logging.info("Starting prediction flag calculation for all articles (SQL optimized)...")
+    
+    # Load environment variables (same as dbt)
+    multiplier_climat = float(os.getenv("MULTIPLIER_HRFP_CLIMAT", "0"))
+    multiplier_biodiv = float(os.getenv("MULTIPLIER_HRFP_BIODIV", "0"))
+    multiplier_ressource = float(os.getenv("MULTIPLIER_HRFP_RESSOURCE", "0"))
+    
+    consider_article_length = os.getenv("CONSIDER_ARTICLE_LENGTH", "false").lower() == "true"
+    wc_thresholds = os.getenv("WORD_COUNT_THRESHOLD", "").replace(" ", "")
+    
+    # Threshold strings (format: "x,y,z" or "x1,y1,z1 - x2,y2,z2 - ...")
+    t_bcr = os.getenv("THRESHOLD_BIOD_CLIM_RESS", "2,2,2")
+    t_biod = os.getenv("THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT", "2,1,1,1")
+    t_clim = os.getenv("THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT", "2,1,1,1")
+    t_ress = os.getenv("THRESHOLD_RESS_CONST_SOLUT", "1,1")
+    
+    logging.info("Configuration:")
+    logging.info(f"  MULTIPLIER_HRFP_CLIMAT: {multiplier_climat}")
+    logging.info(f"  MULTIPLIER_HRFP_BIODIV: {multiplier_biodiv}")
+    logging.info(f"  MULTIPLIER_HRFP_RESSOURCE: {multiplier_ressource}")
+    logging.info(f"  CONSIDER_ARTICLE_LENGTH: {consider_article_length}")
+    logging.info(f"  WORD_COUNT_THRESHOLD: {wc_thresholds}")
+    logging.info(f"  THRESHOLD_BIOD_CLIM_RESS: {t_bcr}")
+    logging.info(f"  THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT: {t_biod}")
+    logging.info(f"  THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT: {t_clim}")
+    logging.info(f"  THRESHOLD_RESS_CONST_SOLUT: {t_ress}")
+    
+    # Build SQL for segment index calculation
+    if not consider_article_length or not wc_thresholds:
+        segment_sql = "1"
+    else:
+        wc_list = wc_thresholds.split("-")
+        if len(wc_list) == 1:
+            # Single threshold: 2 segments
+            segment_sql = f"CASE WHEN COALESCE(word_count, 0) < {wc_list[0]} THEN 1 ELSE 2 END"
+        elif len(wc_list) == 2:
+            # Two thresholds: 3 segments
+            segment_sql = f"""CASE
+                WHEN COALESCE(word_count, 0) < {wc_list[0]} THEN 1
+                WHEN COALESCE(word_count, 0) < {wc_list[1]} THEN 2
+                ELSE 3
+            END"""
+        else:
+            # Three thresholds: 4 segments
+            segment_sql = f"""CASE
+                WHEN COALESCE(word_count, 0) < {wc_list[0]} THEN 1
+                WHEN COALESCE(word_count, 0) < {wc_list[1]} THEN 2
+                WHEN COALESCE(word_count, 0) < {wc_list[2]} THEN 3
+                ELSE 4
+            END"""
+    
+    # Helper function to generate threshold extraction SQL
+    def threshold_sql(threshold_str: str, position: int) -> str:
+        """Generate SQL to extract threshold based on segment_idx."""
+        segments = [seg.strip().split(",") for seg in threshold_str.split("-")]
+        
+        if len(segments) == 1:
+            # No segmentation: use the single threshold
+            return str(float(segments[0][position]))
+        else:
+            # Multiple segments: use CASE statement
+            cases = []
+            for idx, seg in enumerate(segments, 1):
+                cases.append(f"WHEN segment_idx = {idx} THEN {float(seg[position])}")
+            return f"CASE {' '.join(cases)} ELSE {float(segments[0][position])} END"
+    
+    # Single UPDATE query with all logic in SQL (most performant)
+    update_query = text(f"""
+        WITH article_calculations AS (
+            SELECT
+                an,
+                -- Calculate segment
+                ({segment_sql}) AS segment_idx,
+                
+                -- Calculate scores (aggregated)
+                CASE 
+                    WHEN {multiplier_climat} = 0 THEN COALESCE(number_of_climat_no_hrfp, 0)
+                    ELSE COALESCE(number_of_climat_no_hrfp, 0) + ({multiplier_climat} * COALESCE(number_of_climat_hrfp, 0))
+                END AS score_climat,
+                
+                CASE 
+                    WHEN {multiplier_biodiv} = 0 THEN COALESCE(number_of_biodiversite_no_hrfp, 0)
+                    ELSE COALESCE(number_of_biodiversite_no_hrfp, 0) + ({multiplier_biodiv} * COALESCE(number_of_biodiversite_hrfp, 0))
+                END AS score_biodiv,
+                
+                CASE 
+                    WHEN {multiplier_ressource} = 0 THEN COALESCE(number_of_ressources_no_hrfp, 0)
+                    ELSE COALESCE(number_of_ressources_no_hrfp, 0) + ({multiplier_ressource} * COALESCE(number_of_ressources_hrfp, 0))
+                END AS score_ressources,
+                
+                -- Calculate climate causal link scores
+                CASE 
+                    WHEN {multiplier_climat} = 0 THEN COALESCE(number_of_changement_climatique_constat_no_hrfp, 0)
+                    ELSE COALESCE(number_of_changement_climatique_constat_no_hrfp, 0) + ({multiplier_climat} * COALESCE(number_of_changement_climatique_constat_hrfp, 0))
+                END AS score_climat_constat,
+                
+                CASE 
+                    WHEN {multiplier_climat} = 0 THEN COALESCE(number_of_changement_climatique_causes_no_hrfp, 0)
+                    ELSE COALESCE(number_of_changement_climatique_causes_no_hrfp, 0) + ({multiplier_climat} * COALESCE(number_of_changement_climatique_causes_hrfp, 0))
+                END AS score_climat_cause,
+                
+                CASE 
+                    WHEN {multiplier_climat} = 0 THEN COALESCE(number_of_changement_climatique_consequences_no_hrfp, 0)
+                    ELSE COALESCE(number_of_changement_climatique_consequences_no_hrfp, 0) + ({multiplier_climat} * COALESCE(number_of_changement_climatique_consequences_hrfp, 0))
+                END AS score_climat_consequence,
+                
+                CASE 
+                    WHEN {multiplier_climat} = 0 THEN COALESCE(number_of_changement_climatique_solutions_no_hrfp, 0)
+                    ELSE COALESCE(number_of_changement_climatique_solutions_no_hrfp, 0) + ({multiplier_climat} * COALESCE(number_of_changement_climatique_solutions_hrfp, 0))
+                END AS score_climat_solution,
+                
+                -- Calculate biodiversity causal link scores
+                CASE 
+                    WHEN {multiplier_biodiv} = 0 THEN COALESCE(number_of_biodiversite_concepts_generaux_no_hrfp, 0)
+                    ELSE COALESCE(number_of_biodiversite_concepts_generaux_no_hrfp, 0) + ({multiplier_biodiv} * COALESCE(number_of_biodiversite_concepts_generaux_hrfp, 0))
+                END AS score_biodiv_constat,
+                
+                CASE 
+                    WHEN {multiplier_biodiv} = 0 THEN COALESCE(number_of_biodiversite_causes_no_hrfp, 0)
+                    ELSE COALESCE(number_of_biodiversite_causes_no_hrfp, 0) + ({multiplier_biodiv} * COALESCE(number_of_biodiversite_causes_hrfp, 0))
+                END AS score_biodiv_cause,
+                
+                CASE 
+                    WHEN {multiplier_biodiv} = 0 THEN COALESCE(number_of_biodiversite_consequences_no_hrfp, 0)
+                    ELSE COALESCE(number_of_biodiversite_consequences_no_hrfp, 0) + ({multiplier_biodiv} * COALESCE(number_of_biodiversite_consequences_hrfp, 0))
+                END AS score_biodiv_consequence,
+                
+                CASE 
+                    WHEN {multiplier_biodiv} = 0 THEN COALESCE(number_of_biodiversite_solutions_no_hrfp, 0)
+                    ELSE COALESCE(number_of_biodiversite_solutions_no_hrfp, 0) + ({multiplier_biodiv} * COALESCE(number_of_biodiversite_solutions_hrfp, 0))
+                END AS score_biodiv_solution,
+                
+                -- Calculate resource causal link scores
+                CASE 
+                    WHEN {multiplier_ressource} = 0 THEN COALESCE(number_of_ressources_constat_no_hrfp, 0)
+                    ELSE COALESCE(number_of_ressources_constat_no_hrfp, 0) + ({multiplier_ressource} * COALESCE(number_of_ressources_constat_hrfp, 0))
+                END AS score_ressources_constat,
+                
+                CASE 
+                    WHEN {multiplier_ressource} = 0 THEN COALESCE(number_of_ressources_solutions_no_hrfp, 0)
+                    ELSE COALESCE(number_of_ressources_solutions_no_hrfp, 0) + ({multiplier_ressource} * COALESCE(number_of_ressources_solutions_hrfp, 0))
+                END AS score_ressources_solution
+                
+            FROM factiva_articles
+            WHERE is_deleted = FALSE
+        ),
+        article_with_thresholds AS (
+            SELECT
+                ac.*,
+                -- Extract thresholds based on segment
+                {threshold_sql(t_bcr, 0)} AS threshold_biodiv,
+                {threshold_sql(t_bcr, 1)} AS threshold_climat,
+                {threshold_sql(t_bcr, 2)} AS threshold_ressource,
+                {threshold_sql(t_biod, 0)} AS threshold_biodiv_constat,
+                {threshold_sql(t_biod, 1)} AS threshold_biodiv_cause,
+                {threshold_sql(t_biod, 2)} AS threshold_biodiv_consequence,
+                {threshold_sql(t_biod, 3)} AS threshold_biodiv_solution,
+                {threshold_sql(t_clim, 0)} AS threshold_climat_constat,
+                {threshold_sql(t_clim, 1)} AS threshold_climat_cause,
+                {threshold_sql(t_clim, 2)} AS threshold_climat_consequence,
+                {threshold_sql(t_clim, 3)} AS threshold_climat_solution,
+                {threshold_sql(t_ress, 0)} AS threshold_ressources_constat,
+                {threshold_sql(t_ress, 1)} AS threshold_ressources_solution
+            FROM article_calculations ac
+        ),
+        article_predictions AS (
+            SELECT
+                awt.an,
+                -- Global crisis predictions
+                (awt.score_climat >= awt.threshold_climat) AS predict_climat,
+                (awt.score_biodiv >= awt.threshold_biodiv) AS predict_biodiv,
+                (awt.score_ressources >= awt.threshold_ressource) AS predict_ressources,
+                (
+                    awt.score_climat >= awt.threshold_climat OR
+                    awt.score_biodiv >= awt.threshold_biodiv OR
+                    awt.score_ressources >= awt.threshold_ressource
+                ) AS predict_at_least_one_crise,
+                
+                -- Climate causal link predictions (require both causal threshold AND global crisis threshold)
+                (awt.score_climat_constat >= awt.threshold_climat_constat AND awt.score_climat >= awt.threshold_climat) AS predict_climat_constat,
+                (awt.score_climat_cause >= awt.threshold_climat_cause AND awt.score_climat >= awt.threshold_climat) AS predict_climat_cause,
+                (awt.score_climat_consequence >= awt.threshold_climat_consequence AND awt.score_climat >= awt.threshold_climat) AS predict_climat_consequence,
+                (awt.score_climat_solution >= awt.threshold_climat_solution AND awt.score_climat >= awt.threshold_climat) AS predict_climat_solution,
+                
+                -- Biodiversity causal link predictions
+                (awt.score_biodiv_constat >= awt.threshold_biodiv_constat AND awt.score_biodiv >= awt.threshold_biodiv) AS predict_biodiv_constat,
+                (awt.score_biodiv_cause >= awt.threshold_biodiv_cause AND awt.score_biodiv >= awt.threshold_biodiv) AS predict_biodiv_cause,
+                (awt.score_biodiv_consequence >= awt.threshold_biodiv_consequence AND awt.score_biodiv >= awt.threshold_biodiv) AS predict_biodiv_consequence,
+                (awt.score_biodiv_solution >= awt.threshold_biodiv_solution AND awt.score_biodiv >= awt.threshold_biodiv) AS predict_biodiv_solution,
+                
+                -- Resource causal link predictions
+                (awt.score_ressources_constat >= awt.threshold_ressources_constat AND awt.score_ressources >= awt.threshold_ressource) AS predict_ressources_constat,
+                (awt.score_ressources_solution >= awt.threshold_ressources_solution AND awt.score_ressources >= awt.threshold_ressource) AS predict_ressources_solution
+                
+            FROM article_with_thresholds awt
+        )
+        UPDATE factiva_articles fa
+        SET
+            predict_at_least_one_crise = ap.predict_at_least_one_crise,
+            predict_climat = ap.predict_climat,
+            predict_biodiversite = ap.predict_biodiv,
+            predict_ressources = ap.predict_ressources,
+            predict_climat_constat = ap.predict_climat_constat,
+            predict_climat_cause = ap.predict_climat_cause,
+            predict_climat_consequence = ap.predict_climat_consequence,
+            predict_climat_solution = ap.predict_climat_solution,
+            predict_biodiversite_constat = ap.predict_biodiv_constat,
+            predict_biodiversite_cause = ap.predict_biodiv_cause,
+            predict_biodiversite_consequence = ap.predict_biodiv_consequence,
+            predict_biodiversite_solution = ap.predict_biodiv_solution,
+            predict_ressources_constat = ap.predict_ressources_constat,
+            predict_ressources_solution = ap.predict_ressources_solution,
+            updated_at = NOW()
+        FROM article_predictions ap
+        WHERE fa.an = ap.an
+    """)
+    
+    # Execute single UPDATE query (processes all articles at once)
+    logging.info("Executing optimized SQL UPDATE (single query for all articles)...")
+    with engine.begin() as conn:
+        result = conn.execute(update_query)
+        updated_count = result.rowcount
+    
+    logging.info(f"Prediction flag calculation complete. Updated {updated_count:,} articles.")
+    return updated_count
+
+
 class S3ToPostgreProcessor:
     """Main processor for S3 to PostgreSQL data flow."""
 
@@ -1103,6 +1345,18 @@ class S3ToPostgreProcessor:
             self._detect_and_mark_duplicates()
         else:
             logging.info("Skipping duplicate detection (DETECT_DUPLICATES=false)")
+        
+        # Prediction flags calculation
+        # This calculates and updates prediction flags for ALL articles based on keyword scores,
+        # HRFP multipliers, article length segments, and thresholds (same logic as dbt)
+        calculate_predictions = os.getenv("CALCULATE_PREDICTIONS", "true").lower() == "true"
+        if calculate_predictions:
+            logging.info("=" * 80)
+            logging.info("PREDICTION FLAGS CALCULATION")
+            logging.info("=" * 80)
+            self._calculate_prediction_flags()
+        else:
+            logging.info("Skipping prediction flags calculation (CALCULATE_PREDICTIONS=false)")
         
         # DBT models processing
         # This combines factiva_articles, stats_factiva_articles, and source_classification
@@ -1304,8 +1558,36 @@ class S3ToPostgreProcessor:
             self.stats.errors += 1
             # Don't raise - allow the job to continue
 
+    def _calculate_prediction_flags(self) -> None:
+        """
+        Calculate and update prediction flags for ALL articles.
+        
+        This calculates crisis and causal link predictions based on:
+        - Keyword scores with HRFP multipliers
+        - Article length segments
+        - Threshold comparisons
+        
+        Same logic as dbt print_media_crises_indicators.sql
+        Uses optimized SQL for maximum performance (single UPDATE query).
+        """
+        try:
+            engine = connect_to_db(use_custom_json_serializer=True)
+            updated_count = calculate_prediction_flags(engine)
+            logging.info(f"Updated prediction flags for {updated_count:,} articles")
+            engine.dispose()
+        except Exception as e:
+            logging.error(f"Error calculating prediction flags: {e}")
+            self.stats.errors += 1
+            # Don't raise - allow the job to continue
+
     def _run_dbt_models(self) -> None:
-        """Run DBT models to calculate environmental indicators."""
+        """
+        Run DBT models to aggregate environmental indicators.
+        
+        Note: Prediction flags are now pre-calculated in factiva_articles table,
+        so DBT models no longer need threshold/multiplier configuration variables.
+        DBT simply aggregates the boolean flags by day and source.
+        """
         try:
             # Get DBT project directory for print media
             dbt_project_dir = os.path.join(os.getcwd(), "my_dbt_project_print_media")
@@ -1315,27 +1597,9 @@ class S3ToPostgreProcessor:
                 logging.error(f"DBT project directory not found: {dbt_project_dir}")
                 return
             
-            # Get environment variables for DBT configuration
-            multiplier_climat = os.getenv("MULTIPLIER_HRFP_CLIMAT", "0")
-            multiplier_biodiv = os.getenv("MULTIPLIER_HRFP_BIODIV", "0")
-            multiplier_ressource = os.getenv("MULTIPLIER_HRFP_RESSOURCE", "0")
-            threshold_biod_clim_ress = os.getenv("THRESHOLD_BIOD_CLIM_RESS", "3,2,2")
-            threshold_biod_causal = os.getenv("THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT", "1,1,1,1")
-            threshold_clim_causal = os.getenv("THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT", "2,1,1,1")
-            threshold_ress_causal = os.getenv("THRESHOLD_RESS_CONST_SOLUT", "1,1")
-            
-            logging.info("Running DBT models with configuration:")
-            logging.info(f"  MULTIPLIER_HRFP_CLIMAT: {multiplier_climat}")
-            logging.info(f"  MULTIPLIER_HRFP_BIODIV: {multiplier_biodiv}")
-            logging.info(f"  MULTIPLIER_HRFP_RESSOURCE: {multiplier_ressource}")
-            logging.info(f"  THRESHOLD_BIOD_CLIM_RESS: {threshold_biod_clim_ress}")
-            logging.info(f"  THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT: {threshold_biod_causal}")
-            logging.info(f"  THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT: {threshold_clim_causal}")
-            logging.info(f"  THRESHOLD_RESS_CONST_SOLUT: {threshold_ress_causal}")
-            
             # Build DBT command
             # Run all print_media_crises_indicators models (daily, weekly, monthly)
-            # Use --full-refresh to ensure all changes are captured (articles, stats, thresholds)
+            # Use --full-refresh to ensure all changes are captured (articles, stats, prediction flags)
             dbt_command = [
                 "dbt", "run",
                 "--full-refresh",
@@ -1345,22 +1609,13 @@ class S3ToPostgreProcessor:
             
             logging.info(f"Executing DBT command: {' '.join(dbt_command)}")
             logging.info("Running 3 models: daily, weekly, and monthly aggregations")
+            logging.info("Note: DBT now uses pre-calculated prediction flags (no threshold config needed)")
             
-            # Run DBT command
+            # Run DBT command (no special env vars needed - dbt uses flags directly)
             result = subprocess.run(
                 dbt_command,
                 capture_output=True,
                 text=True,
-                env={
-                    **os.environ,
-                    "MULTIPLIER_HRFP_CLIMAT": multiplier_climat,
-                    "MULTIPLIER_HRFP_BIODIV": multiplier_biodiv,
-                    "MULTIPLIER_HRFP_RESSOURCE": multiplier_ressource,
-                    "THRESHOLD_BIOD_CLIM_RESS": threshold_biod_clim_ress,
-                    "THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT": threshold_biod_causal,
-                    "THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT": threshold_clim_causal,
-                    "THRESHOLD_RESS_CONST_SOLUT": threshold_ress_causal,
-                }
             )
             
             # Log output

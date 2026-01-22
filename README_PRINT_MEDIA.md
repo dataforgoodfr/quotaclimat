@@ -33,12 +33,13 @@ This includes:
 The print media pipeline uses several PostgreSQL tables defined in [`postgres/schemas/factiva_models.py`](postgres/schemas/factiva_models.py):
 
 #### 1. `factiva_articles`
-**Main table storing article data and keyword analysis results.**
+**Main table storing article data, keyword analysis, and prediction flags.**
 
 - **Article metadata**: title, body, snippet, byline, source information, publication dates
 - **Factiva metadata**: accession number (AN - primary key), document type, action (add/rep/del)
-- **Keyword counts**: Separated by crisis type (climate, biodiversity, resources) and HRFP vs non-HRFP (seeHRFP section below)
+- **Keyword counts**: Separated by crisis type (climate, biodiversity, resources) and HRFP vs non-HRFP (see HRFP section below)
 - **Keyword lists**: JSON arrays containing all detected keywords with metadata
+- **Prediction flags**: Pre-calculated boolean columns (`predict_climat`, `predict_biodiversite`, etc.) indicating if article meets crisis/causal link thresholds. Calculated using keyword scores, HRFP multipliers, article length segments, and configurable thresholds. Updated on every processing run.
 - **Duplicate detection**: `duplicate_status` field marks article duplicates (issue with Factiva API) for exclusion from analysis
 - **Soft deletion**: `is_deleted` flag for handling deletion events
 
@@ -68,11 +69,10 @@ The print media pipeline uses several PostgreSQL tables defined in [`postgres/sc
 
 Defined in [`my_dbt_project_print_media/models/dashboards/print_media_crises_indicators.sql`](my_dbt_project_print_media/models/dashboards/print_media_crises_indicators.sql)
 
-This DBT model:
-- Calculates scores for each article based on keyword counts and HRFP multipliers
-- Compares scores to configurable thresholds to determine crisis labeling
-- Aggregates counts by day and source
+This DBT model (simplified):
+- **Aggregates** pre-calculated prediction flags from `factiva_articles` by temporal granularity and source
 - Handles duplicate articles (excludes them from calculations)
+- **Note**: Crisis labeling logic runs in Python (optimized SQL) before DBT, not in DBT itself
 - Filters to 4+ day old data for data completeness
 - Outputs daily counts of articles by crisis type and causal links
 
@@ -209,10 +209,17 @@ Docker images are built and deployed via **GitHub Actions**: [`.github/workflows
    - The most recent version (by modification_datetime) is kept as unique version
    - DBT model excludes duplicates from indicator calculations
 
-5. **DBT Models Execution**:
+5. **Prediction Flags Calculation** (new):
+   - Pre-calculates crisis predictions for ALL articles using optimized SQL
+   - Computes scores from keyword counts + HRFP multipliers
+   - Determines article length segment (short/medium/long/very long)
+   - Compares scores to configurable thresholds (per segment)
+   - Updates 15 boolean flags: `predict_climat`, `predict_biodiversite`, `predict_ressources`, and causal links
+   - Triggered on every run
+
+6. **DBT Models Execution** (simplified):
    - Runs `print_media_crises_indicators` model with `--full-refresh`
-   - Applies configurable thresholds and HRFP multipliers
-   - Generates daily indicators for dashboards
+   - Aggregates pre-calculated prediction flags by temporal granularity and source
 
 6. **UPDATE Mode** (optional):
    - Re-detects keywords on existing articles in PostgreSQL
@@ -229,6 +236,7 @@ Docker images are built and deployed via **GitHub Actions**: [`.github/workflows
 - `LOOKBACK_DAYS`: Days to look back for unprocessed files (default: 30)
 - `UPDATE_DICTIONARY`: Update dictionary tables before processing (default: false)
 - `DETECT_DUPLICATES`: Run duplicate detection (default: true)
+- `CALCULATE_PREDICTIONS`: Calculate prediction flags for all articles (default: true)
 - `RUN_DBT`: Run DBT models after processing (default: true)
 
 *UPDATE mode (keyword re-detection)*:
@@ -240,14 +248,21 @@ Docker images are built and deployed via **GitHub Actions**: [`.github/workflows
 - `RESSOURCE_ONLY`: Only update articles with resource keywords (default: false)
 - `CLIMATE_ONLY`: Only update articles with climate keywords (default: false)
 
-*DBT configuration*:
+*Prediction calculation configuration* (used in step 5):
 - `MULTIPLIER_HRFP_CLIMAT`: Multiplier for climate HRFP keywords
 - `MULTIPLIER_HRFP_BIODIV`: Multiplier for biodiversity HRFP keywords
 - `MULTIPLIER_HRFP_RESSOURCE`: Multiplier for resource HRFP keywords
+- `CONSIDER_ARTICLE_LENGTH`: Enable length-based thresholds (default: false)
+- `WORD_COUNT_THRESHOLD`: Word count segments (e.g., "350-600" or "350-600-900")
 - `THRESHOLD_BIOD_CLIM_RESS`: Thresholds for biodiv, climat, ressource
+  * Single threshold: "3,2,2" (when CONSIDER_ARTICLE_LENGTH=false)
+  * Multi-threshold: "3,2,2 - 4,3,3 - 5,4,4" (when CONSIDER_ARTICLE_LENGTH=true)
 - `THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT`: Biodiversity causal link thresholds
+  * Single: "1,1,1,1" or Multi: "1,1,1,1 - 2,2,2,2 - 3,3,3,3"
 - `THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT`: Climate causal link thresholds
+  * Single: "2,1,1,1" or Multi: "2,1,1,1 - 3,2,2,2 - 4,3,3,3"
 - `THRESHOLD_RESS_CONST_SOLUT`: Resource causal link thresholds
+  * Single: "1,1" or Multi: "1,1 - 2,2 - 3,3"
 
 **Entrypoint script**: [`docker-entrypoint-s3-factiva-to-postgre.sh`](docker-entrypoint-s3-factiva-to-postgre.sh)
 - Runs Alembic migrations before starting the Python job
@@ -328,16 +343,17 @@ The results from these notebooks inform the threshold values used in production:
     └──────────────────────────┬──────────────────────────────────┘
                                │
                                ▼
-                  ┌─────────────────────────┐
-                  │ s3_factiva_to_postgre   │
-                  │       (Job 3)           │
-                  │                         │
-                  │ 1. Download files       │
-                  │ 2. Extract keywords     │
-                  │ 3. Upsert to PostgreSQL │
-                  │ 4. Detect duplicates    │
-                  │ 5. Run DBT models       │
-                  └────────┬────────────────┘
+                  ┌──────────────────────────────┐
+                  │ s3_factiva_to_postgre        │
+                  │       (Job 3)                │
+                  │                              │
+                  │ 1. Download files            │
+                  │ 2. Extract keywords          │
+                  │ 3. Upsert to PostgreSQL      │
+                  │ 4. Detect duplicates         │
+                  │ 5. Calculate predictions     │
+                  │ 6. Run DBT models            │
+                  └────────┬─────────────────────┘
                            │
                            ▼
             ┌──────────────────────────────────────────┐
@@ -345,7 +361,7 @@ The results from these notebooks inform the threshold values used in production:
             │                                          │
             │  ┌────────────────────────────────────┐ │
             │  │  factiva_articles                  │ │
-            │  │  (articles + keyword analysis)     │ │
+            │  │  (articles + keywords + flags)     │ │
             │  └────────────────────────────────────┘ │
             │                                          │
             │  ┌────────────────────────────────────┐ │
@@ -369,6 +385,7 @@ The results from these notebooks inform the threshold values used in production:
 ---
 
 ## Key Concepts
+
 
 ### HRFP (High Risk of False Positive)
 

@@ -10,17 +10,18 @@ WITH program_durations AS (
   SELECT
     pm.channel_title,
     pm.channel_program,
+    pm.country,
     pm.weekday,
     CAST(pm.program_grid_start AS date) AS program_start,
     CAST(pm.program_grid_end AS date) AS program_end,
     pm.duration_minutes
   FROM public.program_metadata pm
-  WHERE pm.country = 'france'
 ),
 program_weeks AS (
   SELECT
     pd.channel_title,
     pd.channel_program,
+    pd.country,
     pd.duration_minutes,
     pd.weekday,
     generate_series(
@@ -34,6 +35,7 @@ program_airings AS (
   SELECT
     channel_title,
     channel_program,
+    country,
     duration_minutes,
     -- calculate actual airing date per week + weekday offset
     (week_start + (weekday - 1) * INTERVAL '1 day')::date AS airing_date,
@@ -43,10 +45,23 @@ program_airings AS (
 weekly_program_durations AS (
   SELECT
     channel_title,
+    country,
     week_start AS week,
     SUM(duration_minutes) AS weekly_duration_minutes
   FROM program_airings
-  GROUP BY channel_title, week_start
+  GROUP BY channel_title, country, week_start
+  union all
+  select 
+		tm.channel_name channel_title,
+		tm.country,
+		date_trunc('week', tm."start")::date week,
+		SUM(tm.duration_minutes) weekly_duration_minutes
+	from time_monitored tm 
+	where tm.country='belgium'
+	group by
+		channel_title,
+		tm.country,
+		week
 ),
 keyword_occurrences AS (
   SELECT DISTINCT
@@ -88,7 +103,6 @@ keyword_occurrences AS (
   WHERE
     LOWER(kw ->> 'theme') NOT LIKE '%indirect%'
 )
-
 SELECT
   ko.channel_title,
   ko.country,
@@ -118,7 +132,7 @@ FROM keyword_occurrences ko
 LEFT JOIN public.dictionary d
   ON d.keyword = ko.keyword AND d.theme LIKE ko.theme || '%' -- ensure matc with indirect theme inside the dictionary table
 LEFT JOIN weekly_program_durations wpd
-  ON wpd.channel_title = ko.channel_title AND wpd.week = ko.week
+  ON wpd.channel_title = ko.channel_title AND wpd.week = ko.week AND wpd.country = ko.country
 LEFT JOIN public.keyword_macro_category kmc
   ON kmc.keyword = ko.keyword
 GROUP BY

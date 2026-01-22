@@ -1024,11 +1024,9 @@ def calculate_prediction_flags(engine) -> int:
     - Compare scores to thresholds
     - Set boolean flags for crisis and causal link predictions
     
-    OPTIMIZED VERSION: Uses a single SQL UPDATE statement for maximum performance.
-    
     Returns the number of articles updated.
     """
-    logging.info("Starting prediction flag calculation for all articles (SQL optimized)...")
+    logging.info("Starting prediction flag calculation for all articles...")
     
     # Load environment variables (same as dbt)
     multiplier_climat = float(os.getenv("MULTIPLIER_HRFP_CLIMAT", "0"))
@@ -1239,14 +1237,13 @@ def calculate_prediction_flags(engine) -> int:
             predict_biodiversite_consequence = ap.predict_biodiv_consequence,
             predict_biodiversite_solution = ap.predict_biodiv_solution,
             predict_ressources_constat = ap.predict_ressources_constat,
-            predict_ressources_solution = ap.predict_ressources_solution,
-            updated_at = NOW()
+            predict_ressources_solution = ap.predict_ressources_solution
         FROM article_predictions ap
         WHERE fa.an = ap.an
     """)
     
     # Execute single UPDATE query (processes all articles at once)
-    logging.info("Executing optimized SQL UPDATE (single query for all articles)...")
+    logging.info("Executing SQL UPDATE...")
     with engine.begin() as conn:
         result = conn.execute(update_query)
         updated_count = result.rowcount
@@ -1568,7 +1565,7 @@ class S3ToPostgreProcessor:
         - Threshold comparisons
         
         Same logic as dbt print_media_crises_indicators.sql
-        Uses optimized SQL for maximum performance (single UPDATE query).
+        Uses SQL (single UPDATE query).
         """
         try:
             engine = connect_to_db(use_custom_json_serializer=True)

@@ -54,7 +54,7 @@ weekly_program_durations AS (
   select 
 		tm.channel_name channel_title,
 		tm.country,
-		date_trunc('week', tm."start")::date week,
+		DATE_TRUNC('week', tm.start)::date as week,
 		SUM(tm.duration_minutes) weekly_duration_minutes
 	from time_monitored tm 
 	where tm.country='belgium'

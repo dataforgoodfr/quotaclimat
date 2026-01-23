@@ -316,7 +316,7 @@ SOURCE_CLASSIFICATION = {
             "source_name": "La Tribune",
             "source_code": "TRDS",
             "source_owner": "CMA CGM",
-            "media_all": ""
+            "media_all": "La Tribune"
         },
         {
             "source_name": "La Tribune.fr",

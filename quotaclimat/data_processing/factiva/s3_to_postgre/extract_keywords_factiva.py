@@ -246,8 +246,7 @@ def extract_keyword_data_from_article(article_text: str) -> Dict:
         "all_keywords": [],
     }
     
-    # Map theme names to keys (using base theme names without suffixes)
-    # The get_keywords_by_theme_and_hrfp() function already combines themes with their _indirectes variants
+    # Map theme names to keys
     theme_to_keys = {
         "changement_climatique_constat": {
             "count_no_hrfp": "number_of_changement_climatique_constat_no_hrfp",
@@ -320,48 +319,107 @@ def extract_keyword_data_from_article(article_text: str) -> Dict:
     # Storage for all_keywords construction
     all_keywords_data = []
     
-    # Find keywords for each theme (both HRFP and non-HRFP)
+    # Mappings: keyword → list of (theme, category, is_hrfp)
+    keyword_to_metadata_no_hrfp = {}
+    keyword_to_metadata_hrfp = {}
+    
+    # Collect all non-HRFP keywords
+    all_keywords_no_hrfp = []
     for theme, keywords_dict in keywords_by_theme.items():
-        keys = theme_to_keys.get(theme)
-        if not keys:
-            logging.debug(f"Skipping theme {theme} - no mapping found")
-            continue
-        
-        # Process non-HRFP keywords
         if keywords_dict.get("non_hrfp"):
-            found_keywords = find_keywords_in_text(article_text, keywords_dict["non_hrfp"])
-            result[keys["list_no_hrfp"]] = extract_keyword_strings(found_keywords)
-            result[keys["count_no_hrfp"]] = count_unique_keywords(found_keywords)
-            
-            # Add to all_keywords_data
-            for kw_dict in found_keywords:
-                all_keywords_data.append({
-                    "keyword": kw_dict["keyword"],
+            for kw in keywords_dict["non_hrfp"]:
+                keyword_str = kw["keyword"]
+                
+                # A keyword can belong to multiple themes - store all mappings
+                if keyword_str not in keyword_to_metadata_no_hrfp:
+                    keyword_to_metadata_no_hrfp[keyword_str] = []
+                    all_keywords_no_hrfp.append(kw)
+                
+                keyword_to_metadata_no_hrfp[keyword_str].append({
                     "theme": theme,
-                    "category": kw_dict["category"],
-                    "is_hrfp": False
+                    "category": kw["category"]
                 })
-            
-            if result[keys["count_no_hrfp"]] > 0:
-                logging.debug(f"Found {result[keys['count_no_hrfp']]} unique non-HRFP keywords for theme {theme}")
-        
-        # Process HRFP keywords
+    
+    # Collect all HRFP keywords
+    all_keywords_hrfp = []
+    for theme, keywords_dict in keywords_by_theme.items():
         if keywords_dict.get("hrfp"):
-            found_keywords = find_keywords_in_text(article_text, keywords_dict["hrfp"])
-            result[keys["list_hrfp"]] = extract_keyword_strings(found_keywords)
-            result[keys["count_hrfp"]] = count_unique_keywords(found_keywords)
-            
-            # Add to all_keywords_data
-            for kw_dict in found_keywords:
-                all_keywords_data.append({
-                    "keyword": kw_dict["keyword"],
+            for kw in keywords_dict["hrfp"]:
+                keyword_str = kw["keyword"]
+                
+                # A keyword can belong to multiple themes - store all mappings
+                if keyword_str not in keyword_to_metadata_hrfp:
+                    keyword_to_metadata_hrfp[keyword_str] = []
+                    all_keywords_hrfp.append(kw)  # Add to search list (once)
+                
+                keyword_to_metadata_hrfp[keyword_str].append({
                     "theme": theme,
-                    "category": kw_dict["category"],
-                    "is_hrfp": True
+                    "category": kw["category"]
                 })
+    
+    # ONE regex search for ALL non-HRFP keywords (with overlap filtering)
+    if all_keywords_no_hrfp:
+        found_keywords_no_hrfp = find_keywords_in_text(article_text, all_keywords_no_hrfp)
+        
+        # Distribute found keywords to their theme(s)
+        for kw_dict in found_keywords_no_hrfp:
+            keyword_str = kw_dict["keyword"]
+            metadata_list = keyword_to_metadata_no_hrfp.get(keyword_str, [])
             
-            if result[keys["count_hrfp"]] > 0:
-                logging.debug(f"Found {result[keys['count_hrfp']]} unique HRFP keywords for theme {theme}")
+            # Add this keyword to ALL themes it belongs to
+            for metadata in metadata_list:
+                theme = metadata["theme"]
+                category = metadata["category"]
+                
+                keys = theme_to_keys.get(theme)
+                if keys:
+                    # Add to keyword list for this theme
+                    result[keys["list_no_hrfp"]].append(keyword_str)
+                    
+                    # Add to all_keywords_data
+                    all_keywords_data.append({
+                        "keyword": keyword_str,
+                        "theme": theme,
+                        "category": category,
+                        "is_hrfp": False
+                    })
+    
+    # ONE regex search for ALL HRFP keywords (with overlap filtering)
+    if all_keywords_hrfp:
+        found_keywords_hrfp = find_keywords_in_text(article_text, all_keywords_hrfp)
+        
+        # Distribute found keywords to their theme(s)
+        for kw_dict in found_keywords_hrfp:
+            keyword_str = kw_dict["keyword"]
+            metadata_list = keyword_to_metadata_hrfp.get(keyword_str, [])
+            
+            # Add this keyword to ALL themes it belongs to
+            for metadata in metadata_list:
+                theme = metadata["theme"]
+                category = metadata["category"]
+                
+                keys = theme_to_keys.get(theme)
+                if keys:
+                    # Add to keyword list for this theme
+                    result[keys["list_hrfp"]].append(keyword_str)
+                    
+                    # Add to all_keywords_data
+                    all_keywords_data.append({
+                        "keyword": keyword_str,
+                        "theme": theme,
+                        "category": category,
+                        "is_hrfp": True
+                    })
+    
+    # Calculate counts for each theme (unique keywords)
+    for theme, keys in theme_to_keys.items():
+        result[keys["count_no_hrfp"]] = len(set(result[keys["list_no_hrfp"]]))
+        result[keys["count_hrfp"]] = len(set(result[keys["list_hrfp"]]))
+        
+        if result[keys["count_no_hrfp"]] > 0:
+            logging.debug(f"Found {result[keys['count_no_hrfp']]} unique non-HRFP keywords for theme {theme}")
+        if result[keys["count_hrfp"]] > 0:
+            logging.debug(f"Found {result[keys['count_hrfp']]} unique HRFP keywords for theme {theme}")
     
     # Calculate combined climate solutions (attenuation + adaptation)
     # Non-HRFP

@@ -30,6 +30,9 @@ def create_combined_regex_pattern(
     """
     Creates a large combined regex pattern from a list of keywords.
     Handles line start and is case-insensitive.
+    
+    Keywords are sorted by length (descending) to ensure longer 
+    keywords are matched before shorter ones that might be substrings.
 
     Args:
         keywords_filtered: List of keywords to transform into a regex
@@ -41,10 +44,14 @@ def create_combined_regex_pattern(
     if not keywords_filtered:
         return ""
 
+    # Sort keywords by length (descending) to match longest first
+    # This prevents shorter keywords from matching when they're part of longer ones
+    sorted_keywords = sorted(keywords_filtered, key=len, reverse=True)
+
     # Transform each keyword (which may contain multiple words)
     transformed_keywords = []
 
-    for keyword in keywords_filtered:
+    for keyword in sorted_keywords:
         # Split multi-word keywords and apply format_word_regex to each word
         words = keyword.split(" ")
         transformed_words = [format_word_regex(word) for word in words]
@@ -91,6 +98,8 @@ def search_keywords_in_text(
 ) -> List[str]:
     """
     Searches all keywords present in a text using a combined regex.
+    When multiple keywords overlap (e.g., "effet de serre" inside "gaz à effet de serre"),
+    only the LONGEST match is kept.
 
     Args:
         text: The text to search in
@@ -110,14 +119,48 @@ def search_keywords_in_text(
     if not pattern:
         return []
 
-    # Find all occurrences (case-insensitivity already in the pattern)
-    matches = re.findall(pattern, text)
+    # Find all matches WITH positions (using finditer instead of findall)
+    all_matches = []
+    for match_obj in re.finditer(pattern, text):
+        matched_text = match_obj.group(0)
+        start_pos = match_obj.start()
+        end_pos = match_obj.end()
+        all_matches.append({
+            'text': matched_text,
+            'start': start_pos,
+            'end': end_pos
+        })
+    
+    # Filter overlapping matches - keep only the longest ones
+    # Sort by length (descending) to process longest matches first
+    all_matches.sort(key=lambda x: x['end'] - x['start'], reverse=True)
+    
+    # Keep track of used positions to detect overlaps
+    accepted_matches = []
+    used_ranges = []
+    
+    for match in all_matches:
+        start = match['start']
+        end = match['end']
+        
+        # Check if this match overlaps with any already accepted match
+        is_overlapping = False
+        for used_start, used_end in used_ranges:
+            # Two ranges overlap if: start < used_end AND end > used_start
+            if start < used_end and end > used_start:
+                is_overlapping = True
+                break
+        
+        # If no overlap, accept this match
+        if not is_overlapping:
+            accepted_matches.append(match['text'])
+            used_ranges.append((start, end))
 
     # Return unique or all occurrences based on parameter
     if keep_duplicates:
-        return matches
+        return accepted_matches
     else:
-        return list(set(matches))
+        return list(set(accepted_matches))
 
 
 def is_keyword_in_text(keyword: str, text: str) -> bool:
@@ -223,6 +266,9 @@ def search_keywords_with_canonical_forms(
     Searches keywords in text and returns CANONICAL forms (from dictionary).
     
     Fast implementation using pre-computed variant mapping instead of named groups.
+    When multiple keywords overlap (e.g., "effet de serre" inside "gaz à effet de serre"),
+    only the LONGEST match is kept.
+    
     Performance: O(m) for regex + O(n) for lookups where n = number of matches (usually << 5900)
     
     Args:
@@ -237,6 +283,9 @@ def search_keywords_with_canonical_forms(
     Example:
         >>> search_keywords_with_canonical_forms("Les canicules augmentent", ["canicule"])
         ["canicule"]  # Returns canonical form, not "canicules"
+        
+        >>> search_keywords_with_canonical_forms("gaz à effet de serre", ["effet de serre", "gaz à effet de serre"])
+        ["gaz à effet de serre"]  # Only longest match is kept
     """
     if not keywords_filtered or not text:
         return []
@@ -250,12 +299,46 @@ def search_keywords_with_canonical_forms(
     if not pattern:
         return []
     
-    # Step 3: Find all matches (fast regex)
-    matches = re.findall(pattern, text)
+    # Step 3: Find all matches WITH positions
+    all_matches = []
+    for match_obj in re.finditer(pattern, text):
+        matched_text = match_obj.group(0)
+        start_pos = match_obj.start()
+        end_pos = match_obj.end()
+        all_matches.append({
+            'text': matched_text,
+            'start': start_pos,
+            'end': end_pos
+        })
     
-    # Step 4: Map each match to its canonical form (fast O(1) dict lookup)
+    # Step 4: Filter overlapping matches - keep only the longest ones
+    # Sort by length (descending) to process longest matches first
+    all_matches.sort(key=lambda x: x['end'] - x['start'], reverse=True)
+    
+    # Keep track of used positions to detect overlaps
+    accepted_matches = []
+    used_ranges = []
+    
+    for match in all_matches:
+        start = match['start']
+        end = match['end']
+        
+        # Check if this match overlaps with any already accepted match
+        is_overlapping = False
+        for used_start, used_end in used_ranges:
+            # Two ranges overlap if: start < used_end AND end > used_start
+            if start < used_end and end > used_start:
+                is_overlapping = True
+                break
+        
+        # If no overlap, accept this match
+        if not is_overlapping:
+            accepted_matches.append(match['text'])
+            used_ranges.append((start, end))
+    
+    # Step 5: Map each accepted match to its canonical form (fast O(1) dict lookup)
     canonical_matches = []
-    for match in matches:
+    for match in accepted_matches:
         match_lower = match.lower()
         canonical_form = variant_to_canonical.get(match_lower)
         if canonical_form:

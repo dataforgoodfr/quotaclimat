@@ -186,6 +186,10 @@ daily_stats AS (
         SUM(sfa.count) AS count_total_articles
     FROM {{ source('public', 'stats_factiva_articles') }} sfa
     WHERE DATE(sfa.publication_datetime) <= CURRENT_DATE - INTERVAL '4 days'
+        -- Exclude source-days with 2+ DUP completely
+        AND (DATE(sfa.publication_datetime), sfa.source_code) NOT IN (
+            SELECT publication_day, source_code FROM source_days_to_exclude
+        )
     GROUP BY 
         DATE(sfa.publication_datetime),
         sfa.source_code
@@ -248,6 +252,10 @@ LEFT JOIN daily_aggregates da
 LEFT JOIN daily_stats ds
     ON asd.publication_day = ds.publication_day
     AND asd.source_code = ds.source_code
+-- Exclude source-days with 2+ DUP from final output
+WHERE (asd.publication_day, asd.source_code) NOT IN (
+    SELECT publication_day, source_code FROM source_days_to_exclude
+)
 
 ORDER BY
     asd.publication_day DESC,

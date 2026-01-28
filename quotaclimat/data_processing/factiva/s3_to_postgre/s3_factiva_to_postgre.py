@@ -1594,6 +1594,9 @@ class S3ToPostgreProcessor:
                 logging.error(f"DBT project directory not found: {dbt_project_dir}")
                 return
             
+            # Get MINIMAL_WORD_COUNT from environment for DBT
+            minimal_word_count = os.getenv("MINIMAL_WORD_COUNT", "0")
+            
             # Build DBT command
             # Run all print_media_crises_indicators models (daily, weekly, monthly)
             # Use --full-refresh to ensure all changes are captured (articles, stats, prediction flags)
@@ -1607,12 +1610,14 @@ class S3ToPostgreProcessor:
             logging.info(f"Executing DBT command: {' '.join(dbt_command)}")
             logging.info("Running 3 models: daily, weekly, and monthly aggregations")
             logging.info("Note: DBT now uses pre-calculated prediction flags (no threshold config needed)")
+            logging.info(f"MINIMAL_WORD_COUNT passed to DBT: {minimal_word_count}")
             
-            # Run DBT command (no special env vars needed - dbt uses flags directly)
+            # Run DBT command
             result = subprocess.run(
                 dbt_command,
                 capture_output=True,
                 text=True,
+                env=os.environ.copy(),  # Pass all environment variables including MINIMAL_WORD_COUNT
             )
             
             # Log output

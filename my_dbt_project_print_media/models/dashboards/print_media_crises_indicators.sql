@@ -8,7 +8,7 @@ Factiva Environmental Indicators Model
 
 This model aggregates environmental crisis indicators for Factiva articles by:
 1. Using pre-calculated prediction flags (predict_*) from factiva_articles table
-2. Handling duplicate articles (excluding DUP, adjusting counts for source-days with duplicates)
+2. Handling duplicate articles and outlier days
 3. Aggregating counts by day and source
 4. Starting from source_classification to ensure ALL sources appear
 5. Showing 0s for sources with no articles on a given day
@@ -29,10 +29,11 @@ Prediction Flags:
 - This simplification dramatically improves query performance
 
 Duplicate Handling:
-- Articles with duplicate_status = 'DUP' are NEVER included in calculations
-- If 0 DUP: All articles are considered normally
-- If exactly 1 DUP: The DUP article is excluded, source-day is kept, count_total_articles is reduced by 1 (min 0)
-- If 2+ DUP: The entire source-day is COMPLETELY EXCLUDED from all calculations
+- If 0-15 DUP: Source-day is kept, ALL articles are counted (including DUP articles)
+- If > 15 DUP: Source-day is an OUTLIER - all counts are replaced by the median of that source (calculated from valid days with <= 15 DUP)
+
+Word Count Filtering:
+- Only articles with word_count >= MINIMAL_WORD_COUNT are included in crisis counts
 
 Date Filtering:
 - Only shows days that are 4+ days old (e.g., if today is Dec 19, shows Dec 15 and earlier)
@@ -104,21 +105,14 @@ source_day_duplicate_counts AS (
     GROUP BY DATE(fa.publication_datetime), fa.source_code
 ),
 
--- Identify source-days to completely exclude (2+ DUP)
-source_days_to_exclude AS (
+-- Identify outlier source-days (> 15 DUP)
+outlier_source_days AS (
     SELECT publication_day, source_code
     FROM source_day_duplicate_counts
-    WHERE dup_count >= 2
+    WHERE dup_count > 15
 ),
 
--- Identify source-days with exactly 1 DUP (need to adjust count_total_articles)
-source_days_with_one_dup AS (
-    SELECT publication_day, source_code
-    FROM source_day_duplicate_counts
-    WHERE dup_count = 1
-),
-
--- Aggregate articles using pre-calculated prediction flags
+-- Aggregate articles using pre-calculated prediction flags (non-outlier days only)
 daily_aggregates AS (
     SELECT
         DATE(fa.publication_datetime) AS publication_day,
@@ -159,12 +153,13 @@ daily_aggregates AS (
         AND fa.publication_datetime IS NOT NULL
         -- Only consider days that are 4+ days old
         AND DATE(fa.publication_datetime) <= CURRENT_DATE - INTERVAL '4 days'
-        -- Exclude source-days with 2+ DUP completely
+        -- Exclude outlier source-days (> 15 DUP)
         AND (DATE(fa.publication_datetime), fa.source_code) NOT IN (
-            SELECT publication_day, source_code FROM source_days_to_exclude
+            SELECT publication_day, source_code FROM outlier_source_days
         )
-        -- Exclude individual articles marked as DUP (but keep their source-day if only 1 DUP)
-        AND (fa.duplicate_status IS NULL OR fa.duplicate_status != 'DUP')
+        -- NOTE: DUP articles are NOT excluded - they are counted normally for non-outlier days
+        -- Only include articles with sufficient word count for crisis counts
+        AND COALESCE(fa.word_count, 0) >= {{ env_var('MINIMAL_WORD_COUNT', '0') | int }}
     
     {% if is_incremental() %}
         -- In incremental mode, recalculate ALL articles for days/sources that had updates
@@ -178,7 +173,7 @@ daily_aggregates AS (
         fa.source_code
 ),
 
--- Aggregate stats by day (sum all hourly stats to daily)
+-- Aggregate stats by day (sum all hourly stats to daily) - non-outlier days only
 daily_stats AS (
     SELECT
         DATE(sfa.publication_datetime) AS publication_day,
@@ -186,13 +181,59 @@ daily_stats AS (
         SUM(sfa.count) AS count_total_articles
     FROM {{ source('public', 'stats_factiva_articles') }} sfa
     WHERE DATE(sfa.publication_datetime) <= CURRENT_DATE - INTERVAL '4 days'
-        -- Exclude source-days with 2+ DUP completely
+        -- Exclude outlier source-days (> 15 DUP)
         AND (DATE(sfa.publication_datetime), sfa.source_code) NOT IN (
-            SELECT publication_day, source_code FROM source_days_to_exclude
+            SELECT publication_day, source_code FROM outlier_source_days
         )
     GROUP BY 
         DATE(sfa.publication_datetime),
         sfa.source_code
+),
+
+-- Calculate medians for each source from valid days (< 15 DUP)
+-- These medians will be used to replace counts for outlier days (> 15 DUP)
+source_medians AS (
+    SELECT
+        da.source_code,
+        
+        -- Median of count_total_articles from stats
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY ds.count_total_articles) AS median_count_total_articles,
+        
+        -- Medians of crisis counts
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_climat) AS median_count_climat,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite) AS median_count_biodiversite,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_ressources) AS median_count_ressources,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_at_least_one_crise) AS median_count_at_least_one_crise,
+        
+        -- Medians of climate causal links
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_climat_constat) AS median_count_climat_constat,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_climat_cause) AS median_count_climat_cause,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_climat_consequence) AS median_count_climat_consequence,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_climat_solution) AS median_count_climat_solution,
+        
+        -- Medians of biodiversity causal links
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite_constat) AS median_count_biodiversite_constat,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite_cause) AS median_count_biodiversite_cause,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite_consequence) AS median_count_biodiversite_consequence,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite_solution) AS median_count_biodiversite_solution,
+        
+        -- Medians of resource causal links
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_ressources_constat) AS median_count_ressources_constat,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_ressources_solution) AS median_count_ressources_solution,
+        
+        -- Medians of combined climate causal links
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_climat_cause_consequence) AS median_count_climat_cause_consequence,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_climat_constat_consequence) AS median_count_climat_constat_consequence,
+        
+        -- Medians of combined biodiversity causal links
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite_cause_consequence) AS median_count_biodiversite_cause_consequence,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite_constat_consequence) AS median_count_biodiversite_constat_consequence
+        
+    FROM daily_aggregates da
+    INNER JOIN daily_stats ds 
+        ON da.publication_day = ds.publication_day 
+        AND da.source_code = ds.source_code
+    GROUP BY da.source_code
 )
 
 -- Final output: Start from all_source_days and LEFT JOIN everything
@@ -203,43 +244,134 @@ SELECT
     asd.source_type,
     asd.source_owner,
     
-    -- Get total article count from stats (aggregated to day level)
-    -- If source-day has exactly 1 DUP, subtract 1 from count (minimum 0)
+    -- Flag to indicate if this row uses median values (outlier day with > 15 DUP)
     CASE 
-        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM source_days_with_one_dup)
-        THEN GREATEST(COALESCE(ds.count_total_articles, 0) - 1, 0)
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN TRUE
+        ELSE FALSE
+    END AS outlier,
+    
+    -- Get total article count from stats
+    -- If outlier day (> 15 DUP): use median, otherwise use actual count
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_total_articles, 0)
         ELSE COALESCE(ds.count_total_articles, 0)
     END AS count_total_articles,
     
-    -- Crisis counts (aggregated, 0 if no articles)
-    COALESCE(da.count_climat, 0) AS count_climat,
-    COALESCE(da.count_biodiversite, 0) AS count_biodiversite,
-    COALESCE(da.count_ressources, 0) AS count_ressources,
-    COALESCE(da.count_at_least_one_crise, 0) AS count_at_least_one_crise,
+    -- Crisis counts - use median for outlier days, actual counts otherwise
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_climat, 0)
+        ELSE COALESCE(da.count_climat, 0)
+    END AS count_climat,
     
-    -- Climate causal link counts (0 if no articles)
-    COALESCE(da.count_climat_constat, 0) AS count_climat_constat,
-    COALESCE(da.count_climat_cause, 0) AS count_climat_cause,
-    COALESCE(da.count_climat_consequence, 0) AS count_climat_consequence,
-    COALESCE(da.count_climat_solution, 0) AS count_climat_solution,
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_biodiversite, 0)
+        ELSE COALESCE(da.count_biodiversite, 0)
+    END AS count_biodiversite,
     
-    -- Biodiversity causal link counts (0 if no articles)
-    COALESCE(da.count_biodiversite_constat, 0) AS count_biodiversite_constat,
-    COALESCE(da.count_biodiversite_cause, 0) AS count_biodiversite_cause,
-    COALESCE(da.count_biodiversite_consequence, 0) AS count_biodiversite_consequence,
-    COALESCE(da.count_biodiversite_solution, 0) AS count_biodiversite_solution,
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_ressources, 0)
+        ELSE COALESCE(da.count_ressources, 0)
+    END AS count_ressources,
     
-    -- Resource causal link counts (0 if no articles)
-    COALESCE(da.count_ressources_constat, 0) AS count_ressources_constat,
-    COALESCE(da.count_ressources_solution, 0) AS count_ressources_solution,
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_at_least_one_crise, 0)
+        ELSE COALESCE(da.count_at_least_one_crise, 0)
+    END AS count_at_least_one_crise,
     
-    -- Combined climate causal link counts (0 if no articles)
-    COALESCE(da.count_climat_cause_consequence, 0) AS count_climat_cause_consequence,
-    COALESCE(da.count_climat_constat_consequence, 0) AS count_climat_constat_consequence,
+    -- Climate causal link counts - use median for outlier days
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_climat_constat, 0)
+        ELSE COALESCE(da.count_climat_constat, 0)
+    END AS count_climat_constat,
     
-    -- Combined biodiversity causal link counts (0 if no articles)
-    COALESCE(da.count_biodiversite_cause_consequence, 0) AS count_biodiversite_cause_consequence,
-    COALESCE(da.count_biodiversite_constat_consequence, 0) AS count_biodiversite_constat_consequence,
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_climat_cause, 0)
+        ELSE COALESCE(da.count_climat_cause, 0)
+    END AS count_climat_cause,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_climat_consequence, 0)
+        ELSE COALESCE(da.count_climat_consequence, 0)
+    END AS count_climat_consequence,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_climat_solution, 0)
+        ELSE COALESCE(da.count_climat_solution, 0)
+    END AS count_climat_solution,
+    
+    -- Biodiversity causal link counts - use median for outlier days
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_biodiversite_constat, 0)
+        ELSE COALESCE(da.count_biodiversite_constat, 0)
+    END AS count_biodiversite_constat,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_biodiversite_cause, 0)
+        ELSE COALESCE(da.count_biodiversite_cause, 0)
+    END AS count_biodiversite_cause,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_biodiversite_consequence, 0)
+        ELSE COALESCE(da.count_biodiversite_consequence, 0)
+    END AS count_biodiversite_consequence,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_biodiversite_solution, 0)
+        ELSE COALESCE(da.count_biodiversite_solution, 0)
+    END AS count_biodiversite_solution,
+    
+    -- Resource causal link counts - use median for outlier days
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_ressources_constat, 0)
+        ELSE COALESCE(da.count_ressources_constat, 0)
+    END AS count_ressources_constat,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_ressources_solution, 0)
+        ELSE COALESCE(da.count_ressources_solution, 0)
+    END AS count_ressources_solution,
+    
+    -- Combined climate causal link counts - use median for outlier days
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_climat_cause_consequence, 0)
+        ELSE COALESCE(da.count_climat_cause_consequence, 0)
+    END AS count_climat_cause_consequence,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_climat_constat_consequence, 0)
+        ELSE COALESCE(da.count_climat_constat_consequence, 0)
+    END AS count_climat_constat_consequence,
+    
+    -- Combined biodiversity causal link counts - use median for outlier days
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_biodiversite_cause_consequence, 0)
+        ELSE COALESCE(da.count_biodiversite_cause_consequence, 0)
+    END AS count_biodiversite_cause_consequence,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_biodiversite_constat_consequence, 0)
+        ELSE COALESCE(da.count_biodiversite_constat_consequence, 0)
+    END AS count_biodiversite_constat_consequence,
     
     -- Metadata
     CURRENT_TIMESTAMP AS created_at,
@@ -252,10 +384,8 @@ LEFT JOIN daily_aggregates da
 LEFT JOIN daily_stats ds
     ON asd.publication_day = ds.publication_day
     AND asd.source_code = ds.source_code
--- Exclude source-days with 2+ DUP from final output
-WHERE (asd.publication_day, asd.source_code) NOT IN (
-    SELECT publication_day, source_code FROM source_days_to_exclude
-)
+LEFT JOIN source_medians sm
+    ON asd.source_code = sm.source_code
 
 ORDER BY
     asd.publication_day DESC,

@@ -1,13 +1,14 @@
 import logging
-import pytest
+import zoneinfo
 
 import pandas as pd
-
-from quotaclimat.data_processing.mediatree.stop_word.main import *
-from postgres.schemas.models import get_db_session, connect_to_db, drop_tables
+import pytest
 from test_main_import_api import insert_mediatree_json
+
+from postgres.schemas.models import connect_to_db, drop_tables, get_db_session
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
-import zoneinfo
+from quotaclimat.data_processing.mediatree.stop_word.main import *
+
 conn = connect_to_db()
 session = get_db_session(conn)
 
@@ -29,6 +30,11 @@ def test_stop_word_get_top_keywords_by_channel():
                 "theme": "ressources_solutions",
                 "channel_title": "France 2",
                 "count": 160,
+            },{
+                "keyword": "changement climatique",
+                "theme": "changement_climatique_constat",
+                "channel_title": "France 2",
+                "count": 20,
             },{
                 "keyword": "climatique",
                 "theme": "changement_climatique_constat",
@@ -54,7 +60,6 @@ def test_stop_word_get_top_keywords_by_channel():
             }
         ]
     )
-    
     
     top_keywords = get_top_keywords_by_channel(session, duration=3000, top=5, min_number_of_keywords=1)
     top_keywords.drop(columns=["theme"], inplace=True) # can be several themes, so dropping theme for tests

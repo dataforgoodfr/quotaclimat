@@ -34,6 +34,7 @@ class Source_Classification(FactivaBase):
     source_code = Column(String, primary_key=True)  # LEMOND, FIGARO, etc.
     source_owner = Column(String, nullable=True)  # LVMH, Dassault, etc.
     media_all = Column(String, nullable=True)
+    source_region = Column(String, nullable=True)
 
 
 class Factiva_Article(FactivaBase):

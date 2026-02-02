@@ -39,6 +39,7 @@ weekly_aggregates AS (
         END AS source_name,
         pci.source_type,
         pci.source_owner,
+        pci.source_region,
         
         -- Sum all counts across the week
         SUM(pci.count_total_articles) AS count_total_articles,
@@ -96,7 +97,8 @@ weekly_aggregates AS (
             ELSE pci.source_name
         END,
         pci.source_type,
-        pci.source_owner
+        pci.source_owner,
+        pci.source_region
 )
 
 SELECT
@@ -105,6 +107,7 @@ SELECT
     source_name,
     source_type,
     source_owner,
+    source_region,
     count_total_articles,
     count_climat,
     count_biodiversite,

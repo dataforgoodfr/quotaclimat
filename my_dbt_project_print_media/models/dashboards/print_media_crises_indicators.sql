@@ -56,7 +56,8 @@ all_source_days AS (
         sc.source_code,
         sc.source_name,
         sc.source_type,
-        sc.source_owner
+        sc.source_owner,
+        sc.source_region
     FROM all_publication_days pd
     CROSS JOIN {{ source('public', 'source_classification') }} sc
 ),
@@ -243,6 +244,7 @@ SELECT
     asd.source_name,
     asd.source_type,
     asd.source_owner,
+    asd.source_region,
     
     -- Flag to indicate if this row uses median values (outlier day with > 15 DUP)
     CASE 

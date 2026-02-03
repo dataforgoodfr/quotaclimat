@@ -314,9 +314,9 @@ def test_all_keywords_count_keyword():
     canicule_entries = [kw for kw in result["all_keywords"] if kw["keyword"] == "canicule"]
     assert len(canicule_entries) == 3
     
-    # Each entry should have count_keyword = 3 (3 occurrences in text)
+    # Each entry should have count_keyword = 4 (4 occurrences in text)
     for entry in canicule_entries:
-        assert entry["count_keyword"] == 4, # 4 occurrences of canicules in text
+        assert entry["count_keyword"] == 4
 
 
 def test_overlapping_longest_only_in_extraction():

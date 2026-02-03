@@ -5,7 +5,6 @@ from collections import Counter
 from typing import Dict, List
 
 from quotaclimat.data_ingestion.factiva.utils_data_processing.detect_keywords import (
-    search_keywords_in_text,
     search_keywords_with_canonical_forms,
 )
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
@@ -91,19 +90,19 @@ def find_keywords_in_text(text: str, keywords_info: List[Dict]) -> List[Dict]:
     """
     Find ALL occurrences of keywords in text (including duplicates) with their metadata.
     
-    This function uses named capture groups to return CANONICAL forms from the dictionary,
+    This function returns CANONICAL forms from the dictionary,
     ensuring that categories are always preserved even for plural forms.
     
     Example:
         If text contains "canicules" and dictionary has {"keyword": "canicule", "category": "X"}:
-        Returns [{"keyword": "canicule", "category": "X"}]  # Preserved!
+        Returns [{"keyword": "canicule", "category": "X", "start": 0, "end": 9}]  # Preserved with positions!
     
     Args:
         text: The text to search in
         keywords_info: List of dicts with 'keyword' and 'category' keys
         
     Returns:
-        List of dicts with found keywords (canonical forms) and their categories (with duplicates)
+        List of dicts with found keywords (canonical forms), categories, and positions (with duplicates)
     """
     if not text or not keywords_info:
         return []
@@ -111,18 +110,25 @@ def find_keywords_in_text(text: str, keywords_info: List[Dict]) -> List[Dict]:
     # Extract just the keyword strings for search
     keyword_strings = [k["keyword"] for k in keywords_info]
     
-    # Find all occurrences using named groups (returns CANONICAL forms)
-    found_keywords = search_keywords_with_canonical_forms(text, keyword_strings, keep_duplicates=True)
+    # Find all occurrences WITH POSITIONS using search_keywords_with_canonical_forms
+    found_keywords_with_positions = search_keywords_with_canonical_forms(
+        text, 
+        keyword_strings, 
+        keep_duplicates=True,
+        return_positions=True
+    )
     
     # Create a mapping from keyword to category
     keyword_to_category = {k["keyword"]: k["category"] for k in keywords_info}
     
-    # Build result with categories
+    # Build result with categories and positions
     result = []
-    for keyword in found_keywords:
+    for item in found_keywords_with_positions:
         result.append({
-            "keyword": keyword,
-            "category": keyword_to_category.get(keyword, "")
+            "keyword": item["keyword"],
+            "category": keyword_to_category.get(item["keyword"], ""),
+            "start": item["start"],
+            "end": item["end"]
         })
     
     return result
@@ -152,6 +158,62 @@ def extract_keyword_strings(keyword_list: List[Dict]) -> List[str]:
         List of keyword strings
     """
     return [k["keyword"] for k in keyword_list]
+
+
+def filter_hrfp_overlapping_with_non_hrfp(
+    keywords_with_positions_non_hrfp: List[Dict],
+    keywords_with_positions_hrfp: List[Dict]
+) -> List[Dict]:
+    """
+    Filter out HRFP keywords that overlap with non-HRFP keywords.
+    
+    When a non-HRFP keyword overlaps with an HRFP keyword (same text position),
+    the non-HRFP has priority and the HRFP is removed.
+    
+    Example:
+        text = "le réchauffement climatique est un réchauffement"
+        non_hrfp = [{"keyword": "réchauffement climatique", "start": 3, "end": 27, ...}]
+        hrfp = [{"keyword": "réchauffement", "start": 3, "end": 16, ...},  # OVERLAPS with non-HRFP -> REMOVED
+                {"keyword": "réchauffement", "start": 35, "end": 48, ...}]  # No overlap -> KEPT
+        
+        Result: Only the second "réchauffement" is kept (no overlap)
+    
+    Args:
+        keywords_with_positions_non_hrfp: List of non-HRFP keywords with positions
+        keywords_with_positions_hrfp: List of HRFP keywords with positions
+        
+    Returns:
+        Filtered list of HRFP keywords (only those that don't overlap with non-HRFP)
+    """
+    if not keywords_with_positions_hrfp:
+        return []
+    
+    if not keywords_with_positions_non_hrfp:
+        # No non-HRFP keywords, so no filtering needed
+        return keywords_with_positions_hrfp
+    
+    # Extract position ranges for non-HRFP keywords
+    non_hrfp_ranges = [(kw["start"], kw["end"]) for kw in keywords_with_positions_non_hrfp]
+    
+    # Filter HRFP keywords: keep only those that don't overlap with any non-HRFP
+    filtered_hrfp = []
+    for hrfp_kw in keywords_with_positions_hrfp:
+        hrfp_start = hrfp_kw["start"]
+        hrfp_end = hrfp_kw["end"]
+        
+        # Check if this HRFP keyword overlaps with any non-HRFP keyword
+        is_overlapping = False
+        for non_hrfp_start, non_hrfp_end in non_hrfp_ranges:
+            # Two ranges overlap if: start < non_hrfp_end AND end > non_hrfp_start
+            if hrfp_start < non_hrfp_end and hrfp_end > non_hrfp_start:
+                is_overlapping = True
+                break
+        
+        # Keep this HRFP keyword only if it doesn't overlap with any non-HRFP
+        if not is_overlapping:
+            filtered_hrfp.append(hrfp_kw)
+    
+    return filtered_hrfp
 
 
 def extract_keyword_data_from_article(article_text: str) -> Dict:
@@ -357,12 +419,13 @@ def extract_keyword_data_from_article(article_text: str) -> Dict:
                     "category": kw["category"]
                 })
     
-    # ONE regex search for ALL non-HRFP keywords (with overlap filtering)
+    # ONE regex search for ALL non-HRFP keywords (with overlap filtering + positions)
+    found_keywords_no_hrfp_with_positions = []
     if all_keywords_no_hrfp:
-        found_keywords_no_hrfp = find_keywords_in_text(article_text, all_keywords_no_hrfp)
+        found_keywords_no_hrfp_with_positions = find_keywords_in_text(article_text, all_keywords_no_hrfp)
         
         # Distribute found keywords to their theme(s)
-        for kw_dict in found_keywords_no_hrfp:
+        for kw_dict in found_keywords_no_hrfp_with_positions:
             keyword_str = kw_dict["keyword"]
             metadata_list = keyword_to_metadata_no_hrfp.get(keyword_str, [])
             
@@ -384,12 +447,20 @@ def extract_keyword_data_from_article(article_text: str) -> Dict:
                         "is_hrfp": False
                     })
     
-    # ONE regex search for ALL HRFP keywords (with overlap filtering)
+    # ONE regex search for ALL HRFP keywords (with overlap filtering + positions)
+    # THEN filter out HRFP keywords that overlap with non-HRFP keywords
     if all_keywords_hrfp:
-        found_keywords_hrfp = find_keywords_in_text(article_text, all_keywords_hrfp)
+        found_keywords_hrfp_raw = find_keywords_in_text(article_text, all_keywords_hrfp)
+        
+        # Filter out HRFP keywords that overlap with non-HRFP keywords
+        # Non-HRFP always has priority over HRFP when they overlap
+        found_keywords_hrfp_filtered = filter_hrfp_overlapping_with_non_hrfp(
+            found_keywords_no_hrfp_with_positions,
+            found_keywords_hrfp_raw
+        )
         
         # Distribute found keywords to their theme(s)
-        for kw_dict in found_keywords_hrfp:
+        for kw_dict in found_keywords_hrfp_filtered:
             keyword_str = kw_dict["keyword"]
             metadata_list = keyword_to_metadata_hrfp.get(keyword_str, [])
             

@@ -1,6 +1,6 @@
 import re
 from itertools import product
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 
 def format_word_regex(word: str) -> str:
@@ -260,8 +260,8 @@ def create_variant_to_canonical_mapping(keywords_filtered: List[str]) -> Dict[st
 
 
 def search_keywords_with_canonical_forms(
-    text: str, keywords_filtered: List[str], keep_duplicates: bool = False
-) -> List[str]:
+    text: str, keywords_filtered: List[str], keep_duplicates: bool = False, return_positions: bool = False
+) -> List:
     """
     Searches keywords in text and returns CANONICAL forms (from dictionary).
     
@@ -276,9 +276,12 @@ def search_keywords_with_canonical_forms(
         keywords_filtered: List of canonical keywords from the dictionary
         keep_duplicates: If True, returns all occurrences (with duplicates).
                         If False, returns unique keywords only (default).
+        return_positions: If True, returns list of dicts with positions [{"keyword": "...", "start": X, "end": Y}, ...].
+                         If False, returns list of strings ["keyword1", "keyword2", ...] (default, backward compatible).
     
     Returns:
-        List of CANONICAL keywords found (matching the dictionary forms)
+        If return_positions=False: List of CANONICAL keyword strings (default, backward compatible)
+        If return_positions=True: List of dicts with structure [{"keyword": "...", "start": X, "end": Y}, ...]
     
     Example:
         >>> search_keywords_with_canonical_forms("Les canicules augmentent", ["canicule"])
@@ -286,6 +289,9 @@ def search_keywords_with_canonical_forms(
         
         >>> search_keywords_with_canonical_forms("gaz à effet de serre", ["effet de serre", "gaz à effet de serre"])
         ["gaz à effet de serre"]  # Only longest match is kept
+        
+        >>> search_keywords_with_canonical_forms("Les canicules augmentent", ["canicule"], return_positions=True)
+        [{"keyword": "canicule", "start": 4, "end": 13}]  # With positions
     """
     if not keywords_filtered or not text:
         return []
@@ -333,22 +339,46 @@ def search_keywords_with_canonical_forms(
         
         # If no overlap, accept this match
         if not is_overlapping:
-            accepted_matches.append(match['text'])
+            accepted_matches.append(match)
             used_ranges.append((start, end))
     
     # Step 5: Map each accepted match to its canonical form (fast O(1) dict lookup)
     canonical_matches = []
     for match in accepted_matches:
-        match_lower = match.lower()
+        match_lower = match['text'].lower()
         canonical_form = variant_to_canonical.get(match_lower)
         if canonical_form:
-            canonical_matches.append(canonical_form)
+            if return_positions:
+                canonical_matches.append({
+                    "keyword": canonical_form,
+                    "start": match['start'],
+                    "end": match['end']
+                })
+            else:
+                canonical_matches.append(canonical_form)
         else:
             # Fallback: keep original if no mapping found
-            canonical_matches.append(match)
+            if return_positions:
+                canonical_matches.append({
+                    "keyword": match['text'],
+                    "start": match['start'],
+                    "end": match['end']
+                })
+            else:
+                canonical_matches.append(match['text'])
     
     # Return unique or all occurrences based on parameter
     if keep_duplicates:
         return canonical_matches
     else:
-        return list(set(canonical_matches))
+        if return_positions:
+            # Remove duplicates based on keyword (keep first occurrence)
+            seen_keywords = set()
+            unique_matches = []
+            for match in canonical_matches:
+                if match["keyword"] not in seen_keywords:
+                    seen_keywords.add(match["keyword"])
+                    unique_matches.append(match)
+            return unique_matches
+        else:
+            return list(set(canonical_matches))

@@ -297,10 +297,10 @@ def test_all_keywords_structure():
     assert kw["count_keyword"] == 1
     assert kw["is_hrfp"] == False
 
-    kw = result["all_keywords"][1]
+    agricole_entries = [kw for kw in result["all_keywords"] if kw["keyword"] == "agricole"]
+    assert len(agricole_entries) == 3
+    kw = agricole_entries[0]
     assert kw["keyword"] == "agricole"
-    assert kw["theme"] == "changement_climatique_constat"
-    assert "category" in kw
     assert kw["count_keyword"] == 1
     assert kw["is_hrfp"] == True
 

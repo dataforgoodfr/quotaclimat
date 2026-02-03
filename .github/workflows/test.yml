@@ -139,6 +139,38 @@ jobs:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
 
+  test_print_media_keywords:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+          installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: pytest run print_media keyword detection tests
+        run: |
+          set -o pipefail
+          source .venv/bin/activate
+          poetry run pytest -vv test/print_media/test_print_media_detect_keywords.py
+        env:
+          ENV: dev
+
   dbt:
     needs: build
     runs-on: ubuntu-latest
@@ -238,7 +270,9 @@ jobs:
         run: |
           set -o pipefail
           source .venv/bin/activate
-          poetry run pytest -vv -k 'not test_update_pg_keywords and not stop_word' test/ --junitxml=pytest.xml \
+          poetry run pytest -vv -k 'not test_update_pg_keywords and not stop_word' \
+           --ignore=test/print_media/test_print_media_detect_keywords.py \
+           test/ --junitxml=pytest.xml \
            --cov-report=term-missing:skip-covered \
            --cov=quotaclimat --cov=postgres test/ | \
            tee pytest-coverage.txt
@@ -287,7 +321,7 @@ jobs:
         run: poetry check --lock
 
   coverage_and_reporting:
-    needs: [test_first_update_keywords, test_everything_else, stop_word, verify_poetry_lock]
+    needs: [test_first_update_keywords, test_everything_else, stop_word, test_print_media_keywords, verify_poetry_lock]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

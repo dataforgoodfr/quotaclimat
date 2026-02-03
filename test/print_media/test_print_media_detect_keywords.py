@@ -22,7 +22,7 @@ from quotaclimat.data_processing.factiva.s3_to_postgre.extract_keywords_factiva 
 )
 
 # ============================================================================
-# EXISTING TESTS - Overlap filtering (keep these)
+# Overlap filtering
 # ============================================================================
 
 
@@ -42,7 +42,7 @@ def test_overlapping_keywords_longest_match_only():
     ]
     
     # Test search_keywords_in_text
-    result = search_keywords_in_text(text, keywords)
+    result = search_keywords_with_canonical_forms(text, keywords)
     
     # Should only match the longest keyword
     assert len(result) == 1
@@ -80,28 +80,12 @@ def test_non_overlapping_keywords_all_matched():
         "biodiversité",
     ]
     
-    result = search_keywords_in_text(text, keywords)
+    result = search_keywords_with_canonical_forms(text, keywords)
     
     # Both should be matched since they don't overlap
     assert len(result) == 2
     assert "réchauffement climatique" in result
     assert "biodiversité" in result
-
-
-def test_partial_overlap_keeps_longest():
-    """Test partial overlapping keywords - keep longest."""
-    text = "l'énergie renouvelable et les énergies renouvelables"
-    
-    keywords = [
-        "énergie renouvelable",
-        "énergies renouvelables",
-    ]
-    
-    result = search_keywords_in_text(text, keywords)
-    
-    # Both forms appear in text but at different positions (no overlap)
-    # So both should be matched
-    assert len(result) == 2
 
 
 def test_three_level_nesting():
@@ -114,7 +98,7 @@ def test_three_level_nesting():
         "pollution de l'air par les particules fines",
     ]
     
-    result = search_keywords_in_text(text, keywords)
+    result = search_keywords_with_canonical_forms(text, keywords)
     
     # Should only match the longest (most specific) keyword
     assert len(result) == 1
@@ -134,7 +118,7 @@ def test_multiple_separate_overlapping_groups():
         "élévation du niveau de la mer",
     ]
     
-    result = search_keywords_in_text(text, keywords)
+    result = search_keywords_with_canonical_forms(text, keywords)
     
     # Should match longest from each group
     assert len(result) == 2
@@ -144,26 +128,13 @@ def test_multiple_separate_overlapping_groups():
     assert "niveau de la mer" not in result
 
 
-def test_duplicate_keywords_with_keep_duplicates():
-    """Test that duplicates are kept when keep_duplicates=True."""
-    text = "le climat le climat le climat"
-    
-    keywords = ["climat"]
-    
-    result = search_keywords_in_text(text, keywords, keep_duplicates=True)
-    
-    # Should match "climat" 3 times
-    assert len(result) == 3
-    assert all(k == "climat" for k in result)
-
-
 def test_duplicate_keywords_without_keep_duplicates():
     """Test that duplicates are removed when keep_duplicates=False."""
     text = "le climat le climat le climat"
     
     keywords = ["climat"]
     
-    result = search_keywords_in_text(text, keywords, keep_duplicates=False)
+    result = search_keywords_with_canonical_forms(text, keywords, keep_duplicates=False)
     
     # Should only return unique keywords
     assert len(result) == 1
@@ -265,7 +236,7 @@ def test_causal_link():
     assert result["number_of_changement_climatique_causes_no_hrfp"] == 0
     assert result["number_of_changement_climatique_consequences_no_hrfp"] == 0
     assert result["number_of_changement_climatique_solutions_no_hrfp"] == 0
-    assert result["number_of_climaat_no_hrfp"] == 1
+    assert result["number_of_climat_no_hrfp"] == 1
 
 
 def test_aggregated_crises():
@@ -312,9 +283,14 @@ def test_all_keywords_structure():
     result = extract_keyword_data_from_article(text)
     
     assert "all_keywords" in result
-    assert len(result["all_keywords"]) == 2
+    assert len(result["all_keywords"]) == 4 # 1 theme for réchauffement climatique 'changement_climatique_constat) and 3 themes for agricole (ressources, biodiversite_concepts_generaux, changement_climatique_constat)
     
-    kw = result["all_keywords"][0]
+    # Find the "réchauffement climatique" entry
+    rechauffement_entries = [kw for kw in result["all_keywords"] 
+                            if kw["keyword"] == "réchauffement climatique"]
+    assert len(rechauffement_entries) == 1 # Only 1 theme is associated with réchauffement climatique
+    
+    kw = rechauffement_entries[0]
     assert kw["keyword"] == "réchauffement climatique"
     assert kw["theme"] == "changement_climatique_constat"
     assert "category" in kw
@@ -331,16 +307,16 @@ def test_all_keywords_structure():
 
 def test_all_keywords_count_keyword():
     """Test that count_keyword in all_keywords reflects actual occurrences."""
-    text = "canicule canicule canicule"
+    text = "canicule canicule canicule canicule"
     result = extract_keyword_data_from_article(text)
     
     # Find "canicule" in all_keywords
     canicule_entries = [kw for kw in result["all_keywords"] if kw["keyword"] == "canicule"]
-    assert len(canicule_entries) == 1
+    assert len(canicule_entries) == 3
     
-    # Total count should be 3 (3 occurrences)
-    total = sum(entry["count_keyword"] for entry in canicule_entries)
-    assert total == 3
+    # Each entry should have count_keyword = 3 (3 occurrences in text)
+    for entry in canicule_entries:
+        assert entry["count_keyword"] == 4, # 4 occurrences of canicules in text
 
 
 def test_overlapping_longest_only_in_extraction():

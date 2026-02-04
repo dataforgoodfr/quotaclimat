@@ -1252,6 +1252,246 @@ def calculate_prediction_flags(engine) -> int:
     return updated_count
 
 
+def calculate_sector_keywords_counts(engine) -> int:
+    """
+    Calculate and update sector keywords and counts for ALL articles in factiva_articles.
+    
+    This function:
+    - Extracts unique keywords from all_keywords JSON field
+    - Joins with keyword_macro_category table to determine sector membership
+    - Groups keywords by sector (handling multi-sector keywords)
+    - Updates sector_unique_keywords and number_of_sector_keywords columns
+    
+    Sector mappings:
+    - agriculture -> Agriculture & Alimentation
+    - transport -> Mobilité
+    - batiments -> Bâtiments & Aménagement
+    - economie_ressources -> Economie Circulaire
+    - energie -> Energie
+    - industrie -> Industrie
+    - eau -> Eau
+    - ecosysteme -> Ecosystème
+    
+    Returns the number of articles updated.
+    """
+    logging.info("Starting sector keyword and count calculation for all articles...")
+    
+    # Single UPDATE query with all sector logic in SQL
+    update_query = text("""
+        WITH article_keywords AS (
+            -- Extract all keywords from all_keywords JSON field
+            SELECT
+                fa.an,
+                jsonb_array_elements(COALESCE(fa.all_keywords::jsonb, '[]'::jsonb)) AS keyword_obj
+            FROM factiva_articles fa
+            WHERE fa.is_deleted = FALSE
+        ),
+        unique_keywords_per_article AS (
+            -- Get unique keywords per article (remove duplicates from multiple themes)
+            SELECT DISTINCT
+                an,
+                (keyword_obj->>'keyword')::text AS keyword
+            FROM article_keywords
+            WHERE keyword_obj->>'keyword' IS NOT NULL
+        ),
+        keywords_with_sectors AS (
+            -- Join with keyword_macro_category to get sector information
+            SELECT
+                uk.an,
+                uk.keyword,
+                kmc.agriculture,
+                kmc.transport,
+                kmc.batiments,
+                kmc.economie_ressources,
+                kmc.energie,
+                kmc.industrie,
+                kmc.eau,
+                kmc.ecosysteme
+            FROM unique_keywords_per_article uk
+            LEFT JOIN keyword_macro_category kmc ON uk.keyword = kmc.keyword
+        ),
+        sector_aggregations AS (
+            -- Aggregate keywords by sector for each article
+            SELECT
+                an,
+                -- Agriculture & Alimentation
+                jsonb_agg(keyword) FILTER (WHERE agriculture = TRUE) AS agriculture_alimentation_keywords,
+                COUNT(keyword) FILTER (WHERE agriculture = TRUE) AS count_agriculture_alimentation,
+                
+                -- Mobilité (from transport)
+                jsonb_agg(keyword) FILTER (WHERE transport = TRUE) AS mobilite_keywords,
+                COUNT(keyword) FILTER (WHERE transport = TRUE) AS count_mobilite,
+                
+                -- Bâtiments & Aménagement
+                jsonb_agg(keyword) FILTER (WHERE batiments = TRUE) AS batiments_amenagement_keywords,
+                COUNT(keyword) FILTER (WHERE batiments = TRUE) AS count_batiments_amenagement,
+                
+                -- Economie Circulaire
+                jsonb_agg(keyword) FILTER (WHERE economie_ressources = TRUE) AS economie_circulaire_keywords,
+                COUNT(keyword) FILTER (WHERE economie_ressources = TRUE) AS count_economie_circulaire,
+                
+                -- Energie
+                jsonb_agg(keyword) FILTER (WHERE energie = TRUE) AS energie_keywords,
+                COUNT(keyword) FILTER (WHERE energie = TRUE) AS count_energie,
+                
+                -- Industrie
+                jsonb_agg(keyword) FILTER (WHERE industrie = TRUE) AS industrie_keywords,
+                COUNT(keyword) FILTER (WHERE industrie = TRUE) AS count_industrie,
+                
+                -- Eau
+                jsonb_agg(keyword) FILTER (WHERE eau = TRUE) AS eau_keywords,
+                COUNT(keyword) FILTER (WHERE eau = TRUE) AS count_eau,
+                
+                -- Ecosystème
+                jsonb_agg(keyword) FILTER (WHERE ecosysteme = TRUE) AS ecosysteme_keywords,
+                COUNT(keyword) FILTER (WHERE ecosysteme = TRUE) AS count_ecosysteme
+                
+            FROM keywords_with_sectors
+            GROUP BY an
+        )
+        UPDATE factiva_articles fa
+        SET
+            -- Agriculture & Alimentation
+            agriculture_alimentation_unique_keywords = sa.agriculture_alimentation_keywords,
+            number_of_agriculture_alimentation_keywords = sa.count_agriculture_alimentation,
+            
+            -- Mobilité
+            mobilite_unique_keywords = sa.mobilite_keywords,
+            number_of_mobilite_keywords = sa.count_mobilite,
+            
+            -- Bâtiments & Aménagement
+            batiments_amenagement_unique_keywords = sa.batiments_amenagement_keywords,
+            number_of_batiments_amenagement_keywords = sa.count_batiments_amenagement,
+            
+            -- Economie Circulaire
+            economie_circulaire_unique_keywords = sa.economie_circulaire_keywords,
+            number_of_economie_circulaire_keywords = sa.count_economie_circulaire,
+            
+            -- Energie
+            energie_unique_keywords = sa.energie_keywords,
+            number_of_energie_keywords = sa.count_energie,
+            
+            -- Industrie
+            industrie_unique_keywords = sa.industrie_keywords,
+            number_of_industrie_keywords = sa.count_industrie,
+            
+            -- Eau
+            eau_unique_keywords = sa.eau_keywords,
+            number_of_eau_keywords = sa.count_eau,
+            
+            -- Ecosystème
+            ecosysteme_unique_keywords = sa.ecosysteme_keywords,
+            number_of_ecosysteme_keywords = sa.count_ecosysteme
+            
+        FROM sector_aggregations sa
+        WHERE fa.an = sa.an
+    """)
+    
+    # Execute single UPDATE query (processes all articles at once)
+    logging.info("Executing SQL UPDATE for sector keywords and counts...")
+    with engine.begin() as conn:
+        result = conn.execute(update_query)
+        updated_count = result.rowcount
+    
+    logging.info(f"Sector keyword and count calculation complete. Updated {updated_count:,} articles.")
+    return updated_count
+
+
+def calculate_sector_predictions(engine) -> int:
+    """
+    Calculate and update sector prediction flags for ALL articles in factiva_articles.
+    
+    This function:
+    - Reads sector thresholds from environment variable THRESHOLD_AGRI_MOBI_BATI_ECON_ENERG_INDU_EAU_ECOS (format: "a,b,c,d,e,f,g,h")
+      where a=agriculture_alimentation, b=mobilite, c=batiments_amenagement, d=economie_circulaire,
+      e=energie, f=industrie, g=eau, h=ecosysteme
+    - Compares keyword counts to thresholds
+    - Sets prediction flag to TRUE only if:
+      1. Keyword count >= threshold for that sector
+      2. predict_at_least_one_crise = TRUE (article is crisis-related)
+    
+    Returns the number of articles updated.
+    """
+    logging.info("Starting sector prediction calculation for all articles...")
+    
+    # Load threshold configuration from environment
+    threshold_sectors = os.getenv("THRESHOLD_AGRI_MOBI_BATI_ECON_ENERG_INDU_EAU_ECOS", "1,1,1,1,1,1,1,1")
+    thresholds = [float(x.strip()) for x in threshold_sectors.split(",")]
+    
+    # Ensure we have exactly 8 thresholds
+    if len(thresholds) != 8:
+        logging.warning(f"THRESHOLD_SECTORS should have 8 values, got {len(thresholds)}. Using defaults.")
+        thresholds = [1.0] * 8
+    
+    t_agriculture = thresholds[0]
+    t_mobilite = thresholds[1]
+    t_batiments = thresholds[2]
+    t_economie = thresholds[3]
+    t_energie = thresholds[4]
+    t_industrie = thresholds[5]
+    t_eau = thresholds[6]
+    t_ecosysteme = thresholds[7]
+    
+    logging.info("Sector threshold configuration:")
+    logging.info(f"  Agriculture & Alimentation: {t_agriculture}")
+    logging.info(f"  Mobilité: {t_mobilite}")
+    logging.info(f"  Bâtiments & Aménagement: {t_batiments}")
+    logging.info(f"  Economie Circulaire: {t_economie}")
+    logging.info(f"  Energie: {t_energie}")
+    logging.info(f"  Industrie: {t_industrie}")
+    logging.info(f"  Eau: {t_eau}")
+    logging.info(f"  Ecosystème: {t_ecosysteme}")
+    
+    # Single UPDATE query with sector prediction logic
+    update_query = text(f"""
+        UPDATE factiva_articles
+        SET
+            -- Sector predictions require BOTH threshold AND crisis prediction
+            predict_agriculture_alimentation = (
+                COALESCE(number_of_agriculture_alimentation_keywords, 0) >= {t_agriculture}
+                AND COALESCE(predict_at_least_one_crise, FALSE) = TRUE
+            ),
+            predict_mobilite = (
+                COALESCE(number_of_mobilite_keywords, 0) >= {t_mobilite}
+                AND COALESCE(predict_at_least_one_crise, FALSE) = TRUE
+            ),
+            predict_batiments_amenagement = (
+                COALESCE(number_of_batiments_amenagement_keywords, 0) >= {t_batiments}
+                AND COALESCE(predict_at_least_one_crise, FALSE) = TRUE
+            ),
+            predict_economie_circulaire = (
+                COALESCE(number_of_economie_circulaire_keywords, 0) >= {t_economie}
+                AND COALESCE(predict_at_least_one_crise, FALSE) = TRUE
+            ),
+            predict_energie = (
+                COALESCE(number_of_energie_keywords, 0) >= {t_energie}
+                AND COALESCE(predict_at_least_one_crise, FALSE) = TRUE
+            ),
+            predict_industrie = (
+                COALESCE(number_of_industrie_keywords, 0) >= {t_industrie}
+                AND COALESCE(predict_at_least_one_crise, FALSE) = TRUE
+            ),
+            predict_eau = (
+                COALESCE(number_of_eau_keywords, 0) >= {t_eau}
+                AND COALESCE(predict_at_least_one_crise, FALSE) = TRUE
+            ),
+            predict_ecosysteme = (
+                COALESCE(number_of_ecosysteme_keywords, 0) >= {t_ecosysteme}
+                AND COALESCE(predict_at_least_one_crise, FALSE) = TRUE
+            )
+        WHERE is_deleted = FALSE
+    """)
+    
+    # Execute single UPDATE query (processes all articles at once)
+    logging.info("Executing SQL UPDATE for sector predictions...")
+    with engine.begin() as conn:
+        result = conn.execute(update_query)
+        updated_count = result.rowcount
+    
+    logging.info(f"Sector prediction calculation complete. Updated {updated_count:,} articles.")
+    return updated_count
+
+
 class S3ToPostgreProcessor:
     """Main processor for S3 to PostgreSQL data flow."""
 
@@ -1354,6 +1594,23 @@ class S3ToPostgreProcessor:
             self._calculate_prediction_flags()
         else:
             logging.info("Skipping prediction flags calculation (CALCULATE_PREDICTIONS=false)")
+        
+        # Sector keywords and counts calculation
+        # This extracts unique keywords by sector from all_keywords field
+        calculate_sectors = os.getenv("CALCULATE_SECTORS", "true").lower() == "true"
+        if calculate_sectors:
+            logging.info("=" * 80)
+            logging.info("SECTOR KEYWORDS AND COUNTS CALCULATION")
+            logging.info("=" * 80)
+            self._calculate_sector_keywords_counts()
+            
+            # Sector predictions calculation (only runs if sector keywords were calculated)
+            logging.info("=" * 80)
+            logging.info("SECTOR PREDICTIONS CALCULATION")
+            logging.info("=" * 80)
+            self._calculate_sector_predictions()
+        else:
+            logging.info("Skipping sector calculations (CALCULATE_SECTORS=false)")
         
         # DBT models processing
         # This combines factiva_articles, stats_factiva_articles, and source_classification
@@ -1574,6 +1831,46 @@ class S3ToPostgreProcessor:
             engine.dispose()
         except Exception as e:
             logging.error(f"Error calculating prediction flags: {e}")
+            self.stats.errors += 1
+            # Don't raise - allow the job to continue
+    
+    def _calculate_sector_keywords_counts(self) -> None:
+        """
+        Calculate and update sector keywords and counts for ALL articles.
+        
+        This extracts unique keywords from all_keywords field and assigns them
+        to sectors based on keyword_macro_category table.
+        
+        Uses SQL (single UPDATE query with JSON processing).
+        """
+        try:
+            engine = connect_to_db(use_custom_json_serializer=True)
+            updated_count = calculate_sector_keywords_counts(engine)
+            logging.info(f"Updated sector keywords and counts for {updated_count:,} articles")
+            engine.dispose()
+        except Exception as e:
+            logging.error(f"Error calculating sector keywords and counts: {e}")
+            self.stats.errors += 1
+            # Don't raise - allow the job to continue
+    
+    def _calculate_sector_predictions(self) -> None:
+        """
+        Calculate and update sector prediction flags for ALL articles.
+        
+        This sets sector predictions based on:
+        - Keyword counts per sector
+        - Sector-specific thresholds
+        - Requires predict_at_least_one_crise = TRUE
+        
+        Uses SQL (single UPDATE query).
+        """
+        try:
+            engine = connect_to_db(use_custom_json_serializer=True)
+            updated_count = calculate_sector_predictions(engine)
+            logging.info(f"Updated sector predictions for {updated_count:,} articles")
+            engine.dispose()
+        except Exception as e:
+            logging.error(f"Error calculating sector predictions: {e}")
             self.stats.errors += 1
             # Don't raise - allow the job to continue
 

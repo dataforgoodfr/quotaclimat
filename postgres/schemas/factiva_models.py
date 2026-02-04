@@ -230,6 +230,36 @@ class Factiva_Article(FactivaBase):
     # Resource causal link predictions
     predict_ressources_constat = Column(Boolean, nullable=True)
     predict_ressources_solution = Column(Boolean, nullable=True)
+    
+    # Sector keyword lists - JSON arrays of unique keywords per sector
+    agriculture_alimentation_unique_keywords = Column(JSON, nullable=True)
+    mobilite_unique_keywords = Column(JSON, nullable=True)
+    batiments_amenagement_unique_keywords = Column(JSON, nullable=True)
+    economie_circulaire_unique_keywords = Column(JSON, nullable=True)
+    energie_unique_keywords = Column(JSON, nullable=True)
+    industrie_unique_keywords = Column(JSON, nullable=True)
+    eau_unique_keywords = Column(JSON, nullable=True)
+    ecosysteme_unique_keywords = Column(JSON, nullable=True)
+    
+    # Sector keyword counts - number of unique keywords per sector
+    number_of_agriculture_alimentation_keywords = Column(Integer, nullable=True)
+    number_of_mobilite_keywords = Column(Integer, nullable=True)
+    number_of_batiments_amenagement_keywords = Column(Integer, nullable=True)
+    number_of_economie_circulaire_keywords = Column(Integer, nullable=True)
+    number_of_energie_keywords = Column(Integer, nullable=True)
+    number_of_industrie_keywords = Column(Integer, nullable=True)
+    number_of_eau_keywords = Column(Integer, nullable=True)
+    number_of_ecosysteme_keywords = Column(Integer, nullable=True)
+    
+    # Sector predictions
+    predict_agriculture_alimentation = Column(Boolean, nullable=True)
+    predict_mobilite = Column(Boolean, nullable=True)
+    predict_batiments_amenagement = Column(Boolean, nullable=True)
+    predict_economie_circulaire = Column(Boolean, nullable=True)
+    predict_energie = Column(Boolean, nullable=True)
+    predict_industrie = Column(Boolean, nullable=True)
+    predict_eau = Column(Boolean, nullable=True)
+    predict_ecosysteme = Column(Boolean, nullable=True)
 
 
 class Stats_Factiva_Article(FactivaBase):

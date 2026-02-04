@@ -490,6 +490,7 @@ services:
       # # BIODIVERSITY_ONLY: "true"         # Only update articles with number_of_biodiversite_no_hrfp >= 1
       # # RESSOURCE_ONLY: "true"            # Only update articles with number_of_ressources_no_hrfp >= 1
       # # CLIMATE_ONLY: "true"              # Only update articles with number_of_climat_no_hrfp >= 1
+      THRESHOLD_AGRI_MOBI_BATI_ECON_ENERG_INDU_EAU_ECOS: "2,2,2,1,1,2,1,2"  # Thresholds for each sector (agriculture_alimentation,mobilite,batiments_amenagement,economie_circulaire,energie,industrie,eau,ecosysteme)
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/

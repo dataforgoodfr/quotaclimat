@@ -421,7 +421,7 @@ if __name__ == "__main__":
                         day,
                         country,
                         channel_programs,
-                        connector_limit=50,
+                        connector_limit=30,
                         excluded_channels=args.exclude,
                     )
                 )

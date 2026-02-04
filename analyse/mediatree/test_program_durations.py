@@ -431,10 +431,7 @@ if __name__ == "__main__":
 
     df = pd.DataFrame.from_records(records)
     print(
-        df.date.dt.replace(
-            hour=df.date.start.str.split(":").str[0],
-            minute=df.date.start.str.split(":").str[1]
-        )
+        pd.to_datetime(df.date + " " + df.start, format="%Y-%m-%d %H:%M")
     )
     df_group = df.groupby(["date", "country", "channel_name"]).agg(
         {"coverage": "mean", "total_results": "sum", "total_minutes": "sum"}

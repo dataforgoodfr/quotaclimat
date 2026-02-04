@@ -430,10 +430,8 @@ if __name__ == "__main__":
                 records.extend(get_coverages_for_day(day, country, channel_programs))
 
     df = pd.DataFrame.from_records(records)
-    print(
-        pd.to_datetime(df.date + " " + df.start, format="%Y-%m-%d %H:%M")
-    )
-    df_group = df.groupby(["date", "country", "channel_name"]).agg(
+    df["timestamp"] = pd.to_datetime(df.date + " " + df.start, format="%Y-%m-%d %H:%M")
+    df_group = df.groupby(["timestamp", "country", "channel_name"]).agg(
         {"coverage": "mean", "total_results": "sum", "total_minutes": "sum"}
     )
     print(df_group.head())

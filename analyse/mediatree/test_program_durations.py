@@ -56,17 +56,17 @@ channels_programs_germany = [
 
 channel_programs_map = {
     "poland": channels_programs_poland,
-    "spain": channels_programs_spain,
-    "brazil": channels_programs_brazil,
-    "france": channels_programs_france,
-    "germany": channels_programs_germany,
+    # "spain": channels_programs_spain,
+    # "brazil": channels_programs_brazil,
+    # "france": channels_programs_france,
+    # "germany": channels_programs_germany,
 }
 timezones = {
     "poland": "Europe/Warsaw",
-    "spain": "Europe/Madrid",
-    "germany": "Europe/Berlin",
-    "brazil": "America/Sao_Paulo",
-    "france": "Europe/Paris",
+    # "spain": "Europe/Madrid",
+    # "germany": "Europe/Berlin",
+    # "brazil": "America/Sao_Paulo",
+    # "france": "Europe/Paris",
 }
 
 

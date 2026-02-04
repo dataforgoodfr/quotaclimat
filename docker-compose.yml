@@ -339,6 +339,16 @@ services:
        - bucket
        - bucket_secret
 
+  duck_db:
+    build:
+      context: ./
+      dockerfile: duckdb.Dockerfile
+    volumes:
+      - "./:/workspace"
+    working_dir: "/workspace"
+    depends_on:
+      - postgres_db
+
 secrets: # https://docs.docker.com/compose/use-secrets/
   pwd_api:
     file: secrets/pwd_api.txt

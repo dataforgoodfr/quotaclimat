@@ -98,6 +98,8 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
     logging.info(f"Updating {country.name} - {total_updates} saved keywords from {start_date} date to {end_date} for channel {channel} - batch size {batch_size} - totals rows")
     
     for i in range(0, total_updates, batch_size):
+        # This re_executes the query every time getting rows with an offset=i and gets batch_size records
+        # So first iteration from 0 to batch_size, second iteration from batch_size to 2*batch_size and so on
         current_batch_saved_keywords = get_keywords_columns(session, i, batch_size, start_date, end_date, channel, \
                                                             empty_program_only, keywords_to_includes=top_keyword_of_stop_words, \
                                                             biodiversity_only=biodiversity_only, country=country)

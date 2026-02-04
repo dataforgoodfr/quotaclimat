@@ -47,6 +47,8 @@ matplotlib = "^3.10.7"
 plotly = "^6.5.0"
 nbformat = "^5.10.4"
 kaleido = "^1.2.0"
+duckdb = "^1.4.4"
+polars = "^1.37.1"
 [build-system]
 requires = ["poetry-core>=1.1"]
 build-backend = "poetry.core.masonry.api"

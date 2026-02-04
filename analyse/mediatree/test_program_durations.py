@@ -430,7 +430,12 @@ if __name__ == "__main__":
                 records.extend(get_coverages_for_day(day, country, channel_programs))
 
     df = pd.DataFrame.from_records(records)
-    print(df)
+    print(
+        df.date.dt.replace(
+            hour=df.date.start.str.split(":").str[0],
+            minute=df.date.start.str.split(":").str[1]
+        )
+    )
     df_group = df.groupby(["date", "country", "channel_name"]).agg(
         {"coverage": "mean", "total_results": "sum", "total_minutes": "sum"}
     )

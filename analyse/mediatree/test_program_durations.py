@@ -56,17 +56,17 @@ channels_programs_germany = [
 
 channel_programs_map = {
     "poland": channels_programs_poland,
-    "spain": channels_programs_spain,
-    "brazil": channels_programs_brazil,
-    "france": channels_programs_france,
-    "germany": channels_programs_germany,
+    # "spain": channels_programs_spain,
+    # "brazil": channels_programs_brazil,
+    # "france": channels_programs_france,
+    # "germany": channels_programs_germany,
 }
 timezones = {
     "poland": "Europe/Warsaw",
-    "spain": "Europe/Madrid",
-    "germany": "Europe/Berlin",
-    "brazil": "America/Sao_Paulo",
-    "france": "Europe/Paris",
+    # "spain": "Europe/Madrid",
+    # "germany": "Europe/Berlin",
+    # "brazil": "America/Sao_Paulo",
+    # "france": "Europe/Paris",
 }
 
 
@@ -421,7 +421,7 @@ if __name__ == "__main__":
                         day,
                         country,
                         channel_programs,
-                        connector_limit=50,
+                        connector_limit=30,
                         excluded_channels=args.exclude,
                     )
                 )
@@ -430,7 +430,8 @@ if __name__ == "__main__":
                 records.extend(get_coverages_for_day(day, country, channel_programs))
 
     df = pd.DataFrame.from_records(records)
-    df_group = df.groupby(["date", "country", "channel_name"]).agg(
+    df["timestamp"] = pd.to_datetime(df.date + " " + df.start, format="%Y-%m-%d %H:%M")
+    df_group = df.groupby(["timestamp", "country", "channel_name"]).agg(
         {"coverage": "mean", "total_results": "sum", "total_minutes": "sum"}
     )
     print(df_group.head())

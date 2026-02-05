@@ -70,7 +70,17 @@ weekly_aggregates AS (
         
         -- Combined biodiversity causal links
         SUM(pci.count_biodiversite_cause_consequence) AS count_biodiversite_cause_consequence,
-        SUM(pci.count_biodiversite_constat_consequence) AS count_biodiversite_constat_consequence
+        SUM(pci.count_biodiversite_constat_consequence) AS count_biodiversite_constat_consequence,
+        
+        -- Sector counts
+        SUM(pci.count_agriculture_alimentation) AS count_agriculture_alimentation,
+        SUM(pci.count_mobilite) AS count_mobilite,
+        SUM(pci.count_batiments_amenagement) AS count_batiments_amenagement,
+        SUM(pci.count_economie_circulaire) AS count_economie_circulaire,
+        SUM(pci.count_energie) AS count_energie,
+        SUM(pci.count_industrie) AS count_industrie,
+        SUM(pci.count_eau) AS count_eau,
+        SUM(pci.count_ecosysteme) AS count_ecosysteme
         
     FROM {{ ref('print_media_crises_indicators') }} pci
     CROSS JOIN max_day md
@@ -127,6 +137,14 @@ SELECT
     count_climat_constat_consequence,
     count_biodiversite_cause_consequence,
     count_biodiversite_constat_consequence,
+    count_agriculture_alimentation,
+    count_mobilite,
+    count_batiments_amenagement,
+    count_economie_circulaire,
+    count_energie,
+    count_industrie,
+    count_eau,
+    count_ecosysteme,
     CURRENT_TIMESTAMP AS created_at,
     CURRENT_TIMESTAMP AS updated_at
     

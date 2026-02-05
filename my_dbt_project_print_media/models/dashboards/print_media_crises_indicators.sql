@@ -147,7 +147,17 @@ daily_aggregates AS (
         
         -- Count articles with combined biodiversity causal links
         COUNT(*) FILTER (WHERE fa.predict_biodiversite_cause AND fa.predict_biodiversite_consequence) AS count_biodiversite_cause_consequence,
-        COUNT(*) FILTER (WHERE fa.predict_biodiversite_constat AND fa.predict_biodiversite_consequence) AS count_biodiversite_constat_consequence
+        COUNT(*) FILTER (WHERE fa.predict_biodiversite_constat AND fa.predict_biodiversite_consequence) AS count_biodiversite_constat_consequence,
+        
+        -- Count articles by sector (using prediction flags)
+        COUNT(*) FILTER (WHERE fa.predict_agriculture_alimentation) AS count_agriculture_alimentation,
+        COUNT(*) FILTER (WHERE fa.predict_mobilite) AS count_mobilite,
+        COUNT(*) FILTER (WHERE fa.predict_batiments_amenagement) AS count_batiments_amenagement,
+        COUNT(*) FILTER (WHERE fa.predict_economie_circulaire) AS count_economie_circulaire,
+        COUNT(*) FILTER (WHERE fa.predict_energie) AS count_energie,
+        COUNT(*) FILTER (WHERE fa.predict_industrie) AS count_industrie,
+        COUNT(*) FILTER (WHERE fa.predict_eau) AS count_eau,
+        COUNT(*) FILTER (WHERE fa.predict_ecosysteme) AS count_ecosysteme
         
     FROM {{ source('public', 'factiva_articles') }} fa
     WHERE fa.is_deleted = FALSE
@@ -158,7 +168,6 @@ daily_aggregates AS (
         AND (DATE(fa.publication_datetime), fa.source_code) NOT IN (
             SELECT publication_day, source_code FROM outlier_source_days
         )
-        -- NOTE: DUP articles are NOT excluded - they are counted normally for non-outlier days
         -- Only include articles with sufficient word count for crisis counts
         AND COALESCE(fa.word_count, 0) >= {{ env_var('MINIMAL_WORD_COUNT', '0') | int }}
     
@@ -228,7 +237,17 @@ source_medians AS (
         
         -- Medians of combined biodiversity causal links
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite_cause_consequence) AS median_count_biodiversite_cause_consequence,
-        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite_constat_consequence) AS median_count_biodiversite_constat_consequence
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite_constat_consequence) AS median_count_biodiversite_constat_consequence,
+        
+        -- Medians of sector counts
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_agriculture_alimentation) AS median_count_agriculture_alimentation,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_mobilite) AS median_count_mobilite,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_batiments_amenagement) AS median_count_batiments_amenagement,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_economie_circulaire) AS median_count_economie_circulaire,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_energie) AS median_count_energie,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_industrie) AS median_count_industrie,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_eau) AS median_count_eau,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_ecosysteme) AS median_count_ecosysteme
         
     FROM daily_aggregates da
     INNER JOIN daily_stats ds 
@@ -374,6 +393,55 @@ SELECT
         THEN COALESCE(sm.median_count_biodiversite_constat_consequence, 0)
         ELSE COALESCE(da.count_biodiversite_constat_consequence, 0)
     END AS count_biodiversite_constat_consequence,
+    
+    -- Sector counts - use median for outlier days
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_agriculture_alimentation, 0)
+        ELSE COALESCE(da.count_agriculture_alimentation, 0)
+    END AS count_agriculture_alimentation,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_mobilite, 0)
+        ELSE COALESCE(da.count_mobilite, 0)
+    END AS count_mobilite,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_batiments_amenagement, 0)
+        ELSE COALESCE(da.count_batiments_amenagement, 0)
+    END AS count_batiments_amenagement,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_economie_circulaire, 0)
+        ELSE COALESCE(da.count_economie_circulaire, 0)
+    END AS count_economie_circulaire,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_energie, 0)
+        ELSE COALESCE(da.count_energie, 0)
+    END AS count_energie,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_industrie, 0)
+        ELSE COALESCE(da.count_industrie, 0)
+    END AS count_industrie,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_eau, 0)
+        ELSE COALESCE(da.count_eau, 0)
+    END AS count_eau,
+    
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_ecosysteme, 0)
+        ELSE COALESCE(da.count_ecosysteme, 0)
+    END AS count_ecosysteme,
     
     -- Metadata
     CURRENT_TIMESTAMP AS created_at,

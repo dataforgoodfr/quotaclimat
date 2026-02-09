@@ -51,7 +51,7 @@ jobs:
           registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
 
       - name: Build factiva_stats_to_s3 image
-        run: docker build --no-cache -f Dockerfile_factiva_stats_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:${{ env.PROJECT_VERSION }}
+        run: docker build -f Dockerfile_factiva_stats_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:${{ env.PROJECT_VERSION }}
 
       - name: Tag factiva_stats_to_s3 latest image
         run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:latest
@@ -60,7 +60,7 @@ jobs:
         run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3
 
       - name: Build factiva_to_s3 image
-        run: docker build --no-cache -f Dockerfile_factiva_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:${{ env.PROJECT_VERSION }}
+        run: docker build -f Dockerfile_factiva_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:${{ env.PROJECT_VERSION }}
 
       - name: Tag factiva_to_s3 latest image
         run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:latest
@@ -69,7 +69,7 @@ jobs:
         run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3
 
       - name: Build s3_factiva_to_postgre image
-        run: docker build --no-cache -f Dockerfile_s3_factiva_to_postgre . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:${{ env.PROJECT_VERSION }}
+        run: docker build -f Dockerfile_s3_factiva_to_postgre . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:${{ env.PROJECT_VERSION }}
 
       - name: Tag s3_factiva_to_postgre latest image
         run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:latest

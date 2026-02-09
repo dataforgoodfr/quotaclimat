@@ -257,6 +257,11 @@ With Sentry, with env variable `SENTRY_DSN`.
 
 Learn more here : https://docs.sentry.io/platforms/python/configuration/options/
 
+### Send logs to Sentry
+By setting `SENTRY_LOGGING` to `"true"` we can send the job logs to sentry (as Scaleway Cockpit is not always reliable).
+
+Be aware that the first 5GB/month of logs are free, after that it's 0,5$/GB.
+
 ## Mediatree - Import data
 Mediatree Documentation API : https://keywords.mediatree.fr/docs/
 
@@ -570,7 +575,7 @@ These dbt models need to be run using the `--target analytics` command. You can 
 docker compose up testconsole -d 
 docker compose exec testconsole bash
 # Seed the labelstudio tables
-poetry run dbt seed --select program_metadatalabelstudio_task_aggregate --select labelstudio_task_completion_aggregate
+poetry run dbt seed --select program_metadata --select labelstudio_task_aggregate --select labelstudio_task_completion_aggregate
 # run the dbt model on the analytics target
 poetry run dbt run --target analytics --select task_global_completion
 ```

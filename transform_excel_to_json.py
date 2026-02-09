@@ -8,7 +8,7 @@ from postgres.schemas.models import Keyword_Macro_Category
 from quotaclimat.data_processing.mediatree.i8n.country import *
 
 # Need to import these files - slack #metabase-keywords
-i8n_dictionary = "document-experts/Dictionnaire_Multilingue.xlsx"
+i8n_dictionary = "document-experts/Dictionnaire_Multilingue_no_HRFP.xlsx"
 french_dictionary = "document-experts/Dictionnaire - OME.xlsx"
 macro_category_file = "document-experts/Dictionnaire - OME.xlsx - Catégories Transversales.tsv"
 excels_files = [french_dictionary, i8n_dictionary]
@@ -36,6 +36,7 @@ class TranslatedKeyword:
         self.keyword = keyword
 
 def process_i8n_dict(df_i8n : pd.DataFrame):
+    print(df_i8n.head())
 
     # split the dataframe into portuguese and non-portuguese
     df_portuguese = df_i8n[['Portuguese', 'HRFP_Portuguese']].copy()
@@ -71,13 +72,14 @@ def set_up_macro_category():
         "keyword", "is_empty", "general", "agriculture", "transport",
         "batiments", "energie", "industrie", "eau", "ecosysteme", "economie_ressources"
     ]
-
+    df["keyword"] = df["keyword"].str.strip()
+    df = df.drop_duplicates()
     for _, row in df.iterrows():
         keyword=row["keyword"]
         if pd.isna(keyword) or keyword.startswith("#"):
             continue
         record = Keyword_Macro_Category(
-            keyword=row["keyword"],  # required
+            keyword=row["keyword"].lower().strip(),  # required
             is_empty=bool(row.get("is_empty", False)),
             general=bool(row.get("general", False)),
             agriculture=bool(row.get("agriculture", False)),
@@ -105,6 +107,9 @@ def set_up_macro_category():
             f.write("    },\n")
         f.write("]\n")
         logging.info(f"{len(records)} macro categories written to {output_file_macro_category} successfully.")
+    print("Verification des doublons de mots clé")
+    print(df["keyword"].value_counts()[df["keyword"].value_counts()==2])
+
 
 
 # Initialize the THEME_KEYWORDS dictionary

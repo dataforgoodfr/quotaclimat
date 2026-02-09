@@ -225,3 +225,24 @@ models:
         description: "One hot encoding speaker unknown"
       - name: "Annotation Version"
         description: "Annotation version (first annotation=1, second annotation=2)"
+      - name: sum_duration_minutes
+        description: "Total weekly durations (minutes) for the program being annotated"
+      - name: weekly_perc_climat
+        description: "% Time the of sum_duration_minutes being dedicated to climate change"
+
+  - name: environmental_shares_with_desinfo_counts
+    columns:
+      - name: "start"
+        description: "Start of week timestamp."
+      - name: channel_title	
+        description: "Name of Channel properly formatted."
+      - name: channel_name	
+        description: "Name of Channel."
+      - name: sum_duration_minutes
+        description: "Total weekly durations (minutes) for the channel on a given week."
+      - name: weekly_perc_climat
+        description: "% Time the of sum_duration_minutes being dedicated to climate change."
+      - name: country
+        description: "Country of channel."
+      - name: total_mesinfo
+        description: "Total instances of misinformation detected."

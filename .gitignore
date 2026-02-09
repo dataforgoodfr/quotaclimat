@@ -156,3 +156,7 @@ mb-data
 .idea
 
 explo_factiva/*
+pgdump/
+analyse/mediatree/data
+analyse/mediatree/images
+*.tsv

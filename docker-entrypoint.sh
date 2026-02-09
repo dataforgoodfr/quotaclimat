@@ -12,7 +12,7 @@ if [[ $? -eq 0 ]]; then
 else
     echo "Command failed"
 fi
-if [ $REPARSE_CAUSAL_LINKS -eq 1 ]; then
+if [[ "${REPARSE_CAUSAL_LINKS:-0}" -eq 1 ]]; then
   echo "Reparsing core_query_causal_links"
   year_end=$(date +%d)
 
@@ -32,10 +32,15 @@ else
   poetry run python -m quotaclimat.data_ingestion.labelstudio.ingest_labelstudio
 
   echo "apply dbt models - except causal links and analytics tables"
-  poetry run dbt run --full-refresh --exclude core_query_causal_links --exclude task_global_completion
+  poetry run dbt run --full-refresh \
+    --exclude core_query_causal_links \
+    --exclude task_global_completion \
+    --exclude environmental_shares_with_desinfo_counts
 
   echo "apply dbt models to build analytics tables in 'analytics' schema."
-  poetry run dbt run --full-refresh --target analytics --select task_global_completion
+  poetry run dbt run --full-refresh --target analytics \
+    --select task_global_completion \
+    --select environmental_shares_with_desinfo_counts
 
   echo "Causal query case: Checking if today is the first of the month..."
   day=$(date +%d)

@@ -26,8 +26,11 @@ from sqlalchemy.dialects.postgresql import insert
 
 from postgres.database_connection import connect_to_db
 from postgres.schemas.factiva_models import Factiva_Article, Stats_Factiva_Article
+from quotaclimat.data_ingestion.factiva.inputs.classification_source import (
+    SOURCE_CLASSIFICATION,
+)
 from quotaclimat.data_ingestion.factiva.utils_data_processing.utils_extract import (
-    load_json_values,
+    load_source_classification,
 )
 from quotaclimat.data_processing.factiva.s3_to_postgre.extract_keywords_factiva import (
     build_article_text,
@@ -39,9 +42,6 @@ from quotaclimat.data_processing.factiva.s3_to_postgre.update_dictionary_factiva
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
-
-# Path to followed sources configuration
-FOLLOWED_SOURCES_PATH = "quotaclimat/data_ingestion/factiva/inputs/followed_sources.json"
 
 
 @dataclass(slots=True)
@@ -239,10 +239,10 @@ class ArticleProcessor:
         
         # Load followed sources
         try:
-            self.followed_sources = set(load_json_values(FOLLOWED_SOURCES_PATH))
+            self.followed_sources = set(load_source_classification(field_name='source_code', source_classification=SOURCE_CLASSIFICATION))
             logging.info(f"Loaded {len(self.followed_sources)} followed sources")
         except Exception as e:
-            logging.error(f"Failed to load followed sources from {FOLLOWED_SOURCES_PATH}: {e}")
+            logging.error(f"Failed to load followed sources from SOURCE_CLASSIFICATION: {e}")
             self.followed_sources = set()
 
     def get_unprocessed_article_files(self, lookback_days: int) -> List[str]:

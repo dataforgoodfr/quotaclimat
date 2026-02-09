@@ -395,7 +395,6 @@ services:
       # Factiva stats configuration
       FACTIVA_MINIMAL_WORD_COUNT: "0"
       FACTIVA_LANGUAGE_CODE: "fr"
-      FACTIVA_FOLLOWED_SOURCES_PATH: "quotaclimat/data_ingestion/factiva/inputs/followed_sources.json"
       FACTIVA_LOCAL_TMP: "/tmp/factiva_stats"
       FACTIVA_DAYS_BEFORE_TODAY: "7"
       FACTIVA_STATS_ANALYSIS_DURATION: "7"

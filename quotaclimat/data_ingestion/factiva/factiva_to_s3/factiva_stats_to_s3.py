@@ -24,11 +24,14 @@ from quotaclimat.data_ingestion.factiva.factiva_to_s3.s3_utils import (
     FactivaS3Uploader,
     ensure_directory,
 )
+from quotaclimat.data_ingestion.factiva.inputs.classification_source import (
+    SOURCE_CLASSIFICATION,
+)
 from quotaclimat.data_ingestion.factiva.utils_data_processing.detect_keywords import (
     create_combined_regex_pattern,
 )
 from quotaclimat.data_ingestion.factiva.utils_data_processing.utils_extract import (
-    load_json_values,
+    load_source_classification,
 )
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from quotaclimat.utils.healthcheck_config import run_health_check_server
@@ -43,7 +46,6 @@ class FactivaStatsConfig:
     user_key: str
     minimal_word_count: int
     language_code: str
-    followed_sources_path: str
     local_tmp_dir: str
     days_before_today: int
     analysis_period_duration: int
@@ -69,10 +71,6 @@ class FactivaStatsConfig:
 
         minimal_word_count = int(os.getenv("FACTIVA_MINIMAL_WORD_COUNT", "10"))
         language_code = os.getenv("FACTIVA_LANGUAGE_CODE", "fr")
-        followed_sources_path = os.getenv(
-            "FACTIVA_FOLLOWED_SOURCES_PATH",
-            "quotaclimat/data_ingestion/factiva/inputs/followed_sources.json",
-        )
         local_tmp_dir = os.getenv("FACTIVA_LOCAL_TMP", "/tmp/factiva_stats")
         days_before_today = int(os.getenv("FACTIVA_DAYS_BEFORE_TODAY", "7"))
         analysis_period_duration = int(os.getenv("FACTIVA_STATS_ANALYSIS_DURATION", "7"))
@@ -93,7 +91,6 @@ class FactivaStatsConfig:
             user_key=user_key,
             minimal_word_count=minimal_word_count,
             language_code=language_code,
-            followed_sources_path=followed_sources_path,
             local_tmp_dir=local_tmp_dir,
             days_before_today=days_before_today,
             analysis_period_duration=analysis_period_duration,
@@ -248,8 +245,8 @@ class FactivaStatsExporter:
         self._mark_id_as_processed(id_s3_key, analytics_id)
 
     def _load_source_codes(self) -> List[str]:
-        """Load source codes from the JSON file."""
-        return load_json_values(self._stats_config.followed_sources_path)
+        """Load source codes from the classification sources file."""
+        return list(set(load_source_classification(field_name='source_code', source_classification=SOURCE_CLASSIFICATION)))
 
     def _generate_keyword_regex(self) -> str:
         """Generate regex pattern from THEME_KEYWORDS."""

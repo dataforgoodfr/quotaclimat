@@ -28,15 +28,18 @@ from quotaclimat.data_ingestion.factiva.factiva_to_s3.s3_utils import (
     ensure_directory,
     find_json_files,
 )
+from quotaclimat.data_ingestion.factiva.inputs.classification_source import (
+    SOURCE_CLASSIFICATION,
+)
 from quotaclimat.data_ingestion.factiva.utils_data_processing.utils_extract import (
-    load_json_values,
+    load_source_classification,
 )
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
 
 MAX_ARTICLES_PER_FILE = 1000
-FOLLOWED_SOURCES_PATH = "quotaclimat/data_ingestion/factiva/inputs/followed_sources.json"
+
 
 
 @dataclass(slots=True)
@@ -140,11 +143,11 @@ class FactivaStreamExporter:
     def _load_followed_sources(self) -> set[str]:
         """Load the list of followed source codes from JSON file."""
         try:
-            sources = load_json_values(FOLLOWED_SOURCES_PATH)
+            sources = load_source_classification(field_name='source_code', source_classification=SOURCE_CLASSIFICATION)
             logging.info("Loaded %d followed sources for filtering", len(sources))
             return set(sources)
         except Exception as error:
-            logging.warning("Could not load followed sources from %s: %s", FOLLOWED_SOURCES_PATH, error)
+            logging.warning("Could not load followed sources from SOURCE_CLASSIFICATION: %s", error)
             return set()
 
     def _filter_articles_by_source(self, records: List[dict]) -> List[dict]:

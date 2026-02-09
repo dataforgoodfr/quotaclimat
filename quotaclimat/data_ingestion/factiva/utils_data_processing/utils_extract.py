@@ -2,15 +2,25 @@
 Utility functions for extracting data from the Factiva API
 """
 
+import gzip
 import io
 import json
 import os
+import tempfile
 import time
+from datetime import datetime
+from pathlib import Path
 from typing import Dict, List, Optional, Union
 
+import boto3
 import fastavro
 import pandas as pd
 import requests
+from botocore.config import Config as BotoConfig
+
+from quotaclimat.data_ingestion.factiva.inputs.classification_source import (
+    SOURCE_CLASSIFICATION,
+)
 
 
 def fetch_taxonomy_api(
@@ -859,6 +869,411 @@ def load_json_values(json_path: str) -> list:
     return list(data.values())
 
 
+def load_source_classification(
+    field_name: str, source_classification: Dict = None
+) -> List[str]:
+    """
+    Extract all values of a specific field from SOURCE_CLASSIFICATION.
+
+    Args:
+        field_name: Name of the field to extract (e.g., 'source_code', 'source_name', 
+            'source_owner', 'media_all', 'source_region')
+        source_classification: SOURCE_CLASSIFICATION dictionary containing categories
+            (PQN, PQR, Magazine, Web, Agence Presse) and their entries.
+            Defaults to SOURCE_CLASSIFICATION imported from the module.
+
+    Returns:
+        List of all values of the specified field across all categories.
+        Empty values ('') are excluded from the list.
+
+    Example:
+        >>> source_codes = load_source_classification('source_code')
+        >>> # Returns ['AUFRA', 'ECHOS', 'FIGARO', ...]
+    """
+    if source_classification is None:
+        source_classification = SOURCE_CLASSIFICATION
+    
+    values = []
+    for category, entries in source_classification.items():
+        for entry in entries:
+            value = entry.get(field_name, "")
+            if value:  # Exclude empty values
+                values.append(value)
+    return values
+
+
+def submit_snapshot_extraction(
+    source_codes: List[str],
+    start_date: str,
+    end_date: str,
+    minimal_word_count: int,
+    language_code: str,
+    regex_pattern: Optional[str] = None,
+    file_format: str = "json",
+    shards: Optional[int] = None,
+    user_key: Optional[str] = None,
+    base_url: str = "https://api.dowjones.com",
+    timeout: int = 300,
+) -> Dict:
+    """
+    Submit a Snapshot Extraction job to the Factiva API.
+
+    Args:
+        source_codes: List of source codes (e.g., ['LEMOND', 'LEFIG'])
+        start_date: Start date in format 'YYYY-MM-DD'
+        end_date: End date in format 'YYYY-MM-DD'
+        minimal_word_count: Minimum word count for articles
+        language_code: Language code (e.g., 'fr', 'en')
+        regex_pattern: Optional regex pattern to filter content
+        file_format: Output format ('json', 'avro', 'csv', 'parquet'). Default: 'json'
+        shards: Optional number of files to split the results into
+        user_key: Factiva user key. If None, uses the FACTIVA_USERKEY environment variable
+        base_url: Base URL for the API (default: https://api.dowjones.com)
+        timeout: HTTP requests timeout in seconds (default: 300)
+
+    Returns:
+        Dict: Dictionary containing:
+            - success: Boolean indicating if the submission was successful
+            - extraction_id: Extraction job ID (if success)
+            - error: Error message (if failure)
+            - error_details: Error details (if failure)
+            - full_response: Full API response
+
+    Raises:
+        ValueError: If the user key is not provided
+    """
+    # Retrieve user key
+    if user_key is None:
+        user_key = os.getenv("FACTIVA_USERKEY")
+        if user_key is None:
+            raise ValueError(
+                "User key not provided. Provide 'user_key' or set the FACTIVA_USERKEY environment variable"
+            )
+
+    where_clause = _build_factiva_where_clause(
+        source_codes=source_codes,
+        language_code=language_code,
+        start_date=start_date,
+        end_date=end_date,
+        minimal_word_count=minimal_word_count,
+        regex_pattern=regex_pattern,
+        stream_clause=False,
+    )
+
+    # Build the extraction query
+    extraction_query = {
+        "query": {
+            "where": where_clause,
+            "format": file_format.lower()
+        }
+    }
+    
+    # Add shards parameter if specified
+    if shards is not None:
+        extraction_query["query"]["shards"] = shards
+
+    # API headers
+    headers = {
+        "user-key": user_key,
+        "Content-Type": "application/json",
+        "X-API-VERSION": "3.0",
+    }
+
+    print("Submitting Snapshot Extraction job...")
+    print(f"Source codes: {source_codes}")
+    print(f"Date range: {start_date} to {end_date}")
+    print(f"Language: {language_code}")
+    print(f"Format: {file_format}")
+    print(f"Shards: {shards if shards else 'default'}")
+    print(f"Regex pattern: {regex_pattern if regex_pattern else 'None'}")
+    print(f"Query: {extraction_query}")
+
+    try:
+        response = requests.post(
+            f"{base_url}/extractions/documents",
+            headers=headers,
+            json=extraction_query,
+            timeout=timeout,
+        )
+
+        if response.status_code not in [200, 201]:
+            return {
+                "success": False,
+                "error": f"Error creating extraction: {response.status_code}",
+                "error_details": response.text,
+                "extraction_id": None,
+                "full_response": response.json() if response.text else None,
+            }
+
+        result = response.json()
+        extraction_id = result.get("data", {}).get("id")
+        print(f"Extraction job successfully created! Extraction ID: {extraction_id}")
+
+        return {
+            "success": True,
+            "extraction_id": extraction_id,
+            "error": None,
+            "error_details": None,
+            "full_response": result,
+        }
+
+    except requests.RequestException as e:
+        return {
+            "success": False,
+            "error": f"Request error while creating extraction: {str(e)}",
+            "error_details": None,
+            "extraction_id": None,
+            "full_response": None,
+        }
+
+
+def poll_snapshot_extraction(
+    extraction_id: str,
+    user_key: Optional[str] = None,
+    base_url: str = "https://api.dowjones.com",
+    max_attempts: int = 120,
+    wait_seconds: int = 30,
+    timeout: int = 30,
+    extended: bool = True,
+) -> Dict:
+    """
+    Poll a Snapshot Extraction job until its completion.
+
+    Args:
+        extraction_id: Extraction job ID to monitor
+        user_key: Factiva user key. If None, uses the FACTIVA_USERKEY environment variable
+        base_url: Base URL for the API (default: https://api.dowjones.com)
+        max_attempts: Maximum number of polling attempts (default: 120)
+        wait_seconds: Waiting time between attempts in seconds (default: 30)
+        timeout: HTTP requests timeout in seconds (default: 30)
+        extended: If True, request extended status information (default: True)
+
+    Returns:
+        Dict: Dictionary containing the results with the keys:
+            - success: Boolean indicating if the operation succeeded
+            - extraction_id: Extraction job ID
+            - status: Final status of the job
+            - files: List of file URIs to download (if success)
+            - article_count: Number of articles extracted (if extended=True and success)
+            - full_response: Full API response
+            - error: Error message (if failure)
+
+    Raises:
+        ValueError: If the user key is not provided
+    """
+    # Retrieve user key
+    if user_key is None:
+        user_key = os.getenv("FACTIVA_USERKEY")
+        if user_key is None:
+            raise ValueError(
+                "User key not provided. Provide 'user_key' or set the FACTIVA_USERKEY environment variable"
+            )
+
+    # API headers
+    headers = {
+        "user-key": user_key,
+        "Content-Type": "application/json",
+        "X-API-VERSION": "3.0",
+    }
+
+    # Build URL with extended parameter if requested
+    extended_param = "?extended=true" if extended else ""
+    url = f"{base_url}/extractions/documents/{extraction_id}{extended_param}"
+
+    print(f"Polling extraction job {extraction_id} (max {max_attempts} attempts, {wait_seconds}s interval)...")
+    if extended:
+        print("Extended status information will be retrieved")
+
+    for attempt in range(1, max_attempts + 1):
+        time.sleep(wait_seconds)
+
+        try:
+            status_response = requests.get(
+                url,
+                headers=headers,
+                timeout=timeout,
+            )
+
+            if status_response.status_code == 200:
+                status_data = status_response.json()
+                current_state = (
+                    status_data.get("data", {})
+                    .get("attributes", {})
+                    .get("state") or 
+                    status_data.get("data", {})
+                    .get("attributes", {})
+                    .get("current_state")
+                )
+
+                print(f"Attempt {attempt}/{max_attempts}: State = {current_state}")
+
+                if current_state == "JOB_STATE_DONE":
+                    files = (
+                        status_data.get("data", {})
+                        .get("attributes", {})
+                        .get("files", [])
+                    )
+                    article_count = (
+                        status_data.get("data", {})
+                        .get("attributes", {})
+                        .get("article_count")
+                    )
+                    
+                    print(f"✅ Extraction completed successfully!")
+                    print(f"Number of files: {len(files)}")
+                    if article_count:
+                        print(f"Number of articles: {article_count}")
+
+                    return {
+                        "success": True,
+                        "extraction_id": extraction_id,
+                        "status": "JOB_STATE_DONE",
+                        "files": files,
+                        "article_count": article_count,
+                        "full_response": status_data,
+                        "error": None,
+                    }
+                elif current_state == "JOB_STATE_FAILED":
+                    print("❌ The extraction job failed!")
+                    return {
+                        "success": False,
+                        "extraction_id": extraction_id,
+                        "status": "JOB_STATE_FAILED",
+                        "files": None,
+                        "article_count": None,
+                        "full_response": status_data,
+                        "error": "Job failed",
+                    }
+                # Else, keep polling (job in progress)
+
+            else:
+                print(
+                    f"Attempt {attempt}/{max_attempts}: HTTP error {status_response.status_code}"
+                )
+
+        except requests.RequestException as e:
+            print(f"Attempt {attempt}/{max_attempts}: Request error - {str(e)}")
+
+        # If this is the last attempt
+        if attempt == max_attempts:
+            return {
+                "success": False,
+                "error": f"The extraction job was not completed after {max_attempts} attempts",
+                "extraction_id": extraction_id,
+                "status": "TIMEOUT",
+                "files": None,
+                "article_count": None,
+                "full_response": None,
+            }
+
+    # Should not happen, but for safety
+    return {
+        "success": False,
+        "error": f"The extraction job was not completed after {max_attempts} attempts",
+        "extraction_id": extraction_id,
+        "status": "TIMEOUT",
+        "files": None,
+        "article_count": None,
+        "full_response": None,
+    }
+
+
+def download_snapshot_file(
+    file_uri: str,
+    output_path: str,
+    user_key: Optional[str] = None,
+    timeout: int = 600,
+    use_stream_delivery: bool = False,
+) -> Dict:
+    """
+    Download a single Snapshot file from Factiva API.
+
+    Args:
+        file_uri: URI of the file to download
+        output_path: Local path where to save the file
+        user_key: Factiva user key. If None, uses the FACTIVA_USERKEY environment variable
+        timeout: HTTP requests timeout in seconds (default: 600)
+        use_stream_delivery: If True, use X-DELIVERY-METHOD: stream header to avoid Google domains
+
+    Returns:
+        Dict: Dictionary containing:
+            - success: Boolean indicating if the download was successful
+            - file_path: Path to the downloaded file (if success)
+            - error: Error message (if failure)
+
+    Raises:
+        ValueError: If the user key is not provided
+    """
+    # Retrieve user key
+    if user_key is None:
+        user_key = os.getenv("FACTIVA_USERKEY")
+        if user_key is None:
+            raise ValueError(
+                "User key not provided. Provide 'user_key' or set the FACTIVA_USERKEY environment variable"
+            )
+
+    # API headers
+    headers = {
+        "user-key": user_key,
+        "X-API-VERSION": "3.0",
+    }
+    
+    # Add stream delivery header if requested
+    if use_stream_delivery:
+        headers["X-DELIVERY-METHOD"] = "stream"
+
+    print(f"Downloading file from: {file_uri}")
+    print(f"Saving to: {output_path}")
+
+    try:
+        response = requests.get(
+            file_uri,
+            headers=headers,
+            timeout=timeout,
+            stream=True,
+        )
+
+        if response.status_code != 200:
+            return {
+                "success": False,
+                "error": f"Error downloading file: HTTP {response.status_code}",
+                "error_details": response.text[:500],
+                "file_path": None,
+            }
+
+        # Create output directory if it doesn't exist
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        # Write file
+        with open(output_path, "wb") as f:
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:
+                    f.write(chunk)
+
+        file_size_mb = os.path.getsize(output_path) / (1024 * 1024)
+        print(f"✅ File downloaded successfully! Size: {file_size_mb:.2f} MB")
+
+        return {
+            "success": True,
+            "file_path": output_path,
+            "file_size_mb": file_size_mb,
+            "error": None,
+        }
+
+    except requests.RequestException as e:
+        return {
+            "success": False,
+            "error": f"Request error while downloading file: {str(e)}",
+            "file_path": None,
+        }
+    except IOError as e:
+        return {
+            "success": False,
+            "error": f"IO error while saving file: {str(e)}",
+            "file_path": None,
+        }
+
+
 def create_streaming_instance(
     source_codes: List[str],
     start_date: str,
@@ -939,103 +1354,401 @@ def create_streaming_instance(
     print(f"Regex pattern: {regex_pattern.replace('(?i)', '')}")
     print(f"Query: {streaming_query}")
 
+
+        
+    response = requests.post(
+        f"{base_url}/streams/",
+        json=streaming_query,
+        headers=headers,
+        timeout=timeout,
+    )
+    
+    
+    print(f"Response status code: {response.status_code}")
+    
+    if response.status_code == 201:
+        # Successful creation
+        response_data = response.json()
+        print("Streaming instance created successfully!")
+        
+        # Extract stream ID and subscription ID from response
+        stream_id = response_data.get("data", {}).get("id")
+        job_status = response_data.get("data", {}).get("attributes", {}).get("job_status")
+        
+        # Extract subscription ID
+        subscription_id = None
+        subscriptions = response_data.get("data", {}).get("relationships", {}).get("subscriptions", {}).get("data", [])
+        if subscriptions and len(subscriptions) > 0:
+            subscription_id = subscriptions[0].get("id")
+        
+        print(f"Stream ID: {stream_id}")
+        print(f"Job Status: {job_status}")
+        print(f"Subscription ID: {subscription_id}")
+        
+        return {
+            "success": True,
+            "stream_id": stream_id,
+            "subscription_id": subscription_id,
+            "job_status": job_status,
+            "full_response": response_data,
+        }
+    else:
+        # Error occurred
+        try:
+            error_data = response.json()
+            error_message = error_data.get("errors", [{}])[0].get("detail", "Unknown error")
+            error_code = error_data.get("errors", [{}])[0].get("code", "Unknown code")
+        except json.JSONDecodeError:
+            error_message = response.text
+            error_code = "JSON_DECODE_ERROR"
+        
+        print(f"Error creating streaming instance: {error_message}")
+        
+        return {
+            "success": False,
+            "error": error_message,
+            "error_code": error_code,
+            "status_code": response.status_code,
+            "full_response": response.text,
+        }
+
+
+def upload_snapshot_files_to_s3(
+    downloaded_files_dir: str,
+    first_article: int = 1,
+    last_article: int = 1,
+    delete_local_after_upload: bool = False,
+) -> Dict:
+    """
+    Extract snapshot .json.gz files, transform them to the expected format, and upload to S3.
+    
+    IMPORTANT: Each source .json.gz file is split into 20 separate JSON files for S3 upload.
+    This prevents uploading files that are too large.
+    
+    This function:
+    1. Reads .json.gz files from the downloaded directory
+    2. Extracts and decompresses them
+    3. Transforms JSONL format (one article per line) to {"data": [articles]} format and process timestamps (EPOCH to ISO format)
+    4. Splits each source file into 20 batches (to avoid large files)
+    5. Uploads to S3 at: country_france/articles/year_YYYY/month_MM/
+    6. Filenames: YYYY_MM_DD_HH_MM_SS_{file_number}_snapshot_extract.json
+    
+    Example: If you process 2 .json.gz files:
+    - File 1 → 20 S3 files (file_index 1-20)
+    - File 2 → 20 S3 files (file_index 21-40)
+    - Total: 40 files uploaded to S3
+    
+    Args:
+        downloaded_files_dir: Directory containing the downloaded .json.gz files
+        first_article: Number of the first source file to process (1-indexed, default: 1)
+        last_article: Number of the last source file to process (1-indexed, default: 1)
+        delete_local_after_upload: Whether to delete local .json.gz files after successful upload
+    
+    Returns:
+        Dict containing:
+            - success: Boolean indicating if the operation was successful
+            - uploaded_files: List of S3 keys for uploaded files (10 per source file)
+            - total_articles: Total number of articles processed
+            - error: Error message (if failure)
+    
+    Example:
+        # Process file 1 → uploads 20 files to S3 (file_index 1-10)
+        result = upload_snapshot_files_to_s3("data/factiva_snapshots/abc123/raw/", first_article=1, last_article=1)
+        
+        # Process files 2 and 3 → uploads 40 files to S3 (file_index 11-30)
+        result = upload_snapshot_files_to_s3("data/factiva_snapshots/abc123/raw/", first_article=2, last_article=3)
+    """
+    print(f"\n{'='*70}")
+    print(f"STARTING S3 UPLOAD PROCESS")
+    print(f"{'='*70}")
+    print(f"Processing files {first_article} to {last_article}")
+    print(f"Source directory: {downloaded_files_dir}")
+    
+    # Load S3 configuration from environment variables
     try:
-        # Create a session with improved SSL/TLS configuration
-        session = requests.Session()
-        
-        # Configure the session headers
-        session.headers.update(headers)
-        
-        # Create an HTTPAdapter with retry logic and SSL configuration
-        from requests.adapters import HTTPAdapter
-        from urllib3.util.retry import Retry
-        
-        retry_strategy = Retry(
-            total=3,
-            backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["POST"]
-        )
-        
-        adapter = HTTPAdapter(
-            max_retries=retry_strategy,
-            pool_connections=1,
-            pool_maxsize=1
-        )
-        session.mount("https://", adapter)
-        session.mount("http://", adapter)
-        
-        response = session.post(
-            f"{base_url}/streams/",
-            json=streaming_query,
-            timeout=timeout,
-        )
-        
-        # Close the session after use
-        session.close()
-        
-        print(f"Response status code: {response.status_code}")
-        
-        if response.status_code == 201:
-            # Successful creation
-            response_data = response.json()
-            print("Streaming instance created successfully!")
-            
-            # Extract stream ID and subscription ID from response
-            stream_id = response_data.get("data", {}).get("id")
-            job_status = response_data.get("data", {}).get("attributes", {}).get("job_status")
-            
-            # Extract subscription ID
-            subscription_id = None
-            subscriptions = response_data.get("data", {}).get("relationships", {}).get("subscriptions", {}).get("data", [])
-            if subscriptions and len(subscriptions) > 0:
-                subscription_id = subscriptions[0].get("id")
-            
-            print(f"Stream ID: {stream_id}")
-            print(f"Job Status: {job_status}")
-            print(f"Subscription ID: {subscription_id}")
-            
-            return {
-                "success": True,
-                "stream_id": stream_id,
-                "subscription_id": subscription_id,
-                "job_status": job_status,
-                "full_response": response_data,
-            }
-        else:
-            # Error occurred
-            try:
-                error_data = response.json()
-                error_message = error_data.get("errors", [{}])[0].get("detail", "Unknown error")
-                error_code = error_data.get("errors", [{}])[0].get("code", "Unknown code")
-            except json.JSONDecodeError:
-                error_message = response.text
-                error_code = "JSON_DECODE_ERROR"
-            
-            print(f"Error creating streaming instance: {error_message}")
-            
+        bucket_name = os.getenv("FACTIVA_S3_BUCKET")
+        if not bucket_name:
             return {
                 "success": False,
-                "error": error_message,
-                "error_code": error_code,
-                "status_code": response.status_code,
-                "full_response": response.text,
+                "error": "FACTIVA_S3_BUCKET environment variable not set",
+                "uploaded_files": [],
+                "total_articles": 0,
             }
-            
-    except requests.exceptions.Timeout:
-        error_msg = f"Request timeout after {timeout} seconds"
-        print(f"Error: {error_msg}")
-        return {
-            "success": False,
-            "error": error_msg,
-            "error_code": "TIMEOUT",
-        }
         
-    except requests.exceptions.RequestException as e:
-        error_msg = f"Request failed: {str(e)}"
-        print(f"Error: {error_msg}")
+        access_key = os.getenv("BUCKET")
+        secret_key = os.getenv("BUCKET_SECRET")
+        
+        if not access_key or not secret_key:
+            return {
+                "success": False,
+                "error": "BUCKET or BUCKET_SECRET environment variables not set",
+                "uploaded_files": [],
+                "total_articles": 0,
+            }
+        
+        endpoint_url = os.getenv("FACTIVA_S3_ENDPOINT", "https://s3.fr-par.scw.cloud")
+        region = os.getenv("FACTIVA_S3_REGION", "fr-par")
+        
+        print("\n📦 S3 Configuration:")
+        print(f"   Bucket: {bucket_name}")
+        print(f"   Region: {region}")
+        print(f"   Endpoint: {endpoint_url}")
+        
+    except Exception as e:
         return {
             "success": False,
-            "error": error_msg,
-            "error_code": "REQUEST_EXCEPTION",
+            "error": f"Error loading S3 configuration: {str(e)}",
+            "uploaded_files": [],
+            "total_articles": 0,
         }
+    
+    # Initialize S3 client
+    try:
+        session_config = BotoConfig(signature_version="s3v4")
+        s3_client = boto3.client(
+            "s3",
+            region_name=region,
+            aws_access_key_id=access_key,
+            aws_secret_access_key=secret_key,
+            endpoint_url=endpoint_url,
+            config=session_config,
+        )
+        print("✅ S3 client initialized successfully")
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error initializing S3 client: {str(e)}",
+            "uploaded_files": [],
+            "total_articles": 0,
+        }
+    
+    # Find all .json.gz files in the directory
+    source_dir = Path(downloaded_files_dir)
+    if not source_dir.exists():
+        return {
+            "success": False,
+            "error": f"Directory does not exist: {downloaded_files_dir}",
+            "uploaded_files": [],
+            "total_articles": 0,
+        }
+    
+    # Look for both .json.gz and .json files
+    all_gz_files = sorted(list(source_dir.glob("*.json.gz")) + list(source_dir.glob("*.json")))
+    
+    if not all_gz_files:
+        return {
+            "success": False,
+            "error": f"No .json.gz or .json files found in {downloaded_files_dir}",
+            "uploaded_files": [],
+            "total_articles": 0,
+        }
+    
+    print(f"\n📂 Found {len(all_gz_files)} file(s) in directory")
+    
+    # Validate file indices
+    if first_article < 1 or last_article < first_article or last_article > len(all_gz_files):
+        return {
+            "success": False,
+            "error": f"Invalid file range: first_article={first_article}, last_article={last_article}, available files={len(all_gz_files)}",
+            "uploaded_files": [],
+            "total_articles": 0,
+        }
+    
+    # Select files to process (convert to 0-indexed)
+    files_to_process = all_gz_files[first_article - 1:last_article]
+    
+    print("\n📋 Files to process:")
+    for idx, file_path in enumerate(files_to_process, first_article):
+        print(f"   {idx}. {file_path.name}")
+    
+    uploaded_files = []
+    total_articles = 0
+    global_file_index = 0  # Global counter for all uploaded files
+    
+    # Process each file
+    for source_file_num, file_path in enumerate(files_to_process, first_article):
+        print(f"\n{'='*70}")
+        print(f"PROCESSING SOURCE FILE {source_file_num}: {file_path.name}")
+        print(f"{'='*70}")
+        
+        try:
+            # Step 1: Extract and read the file (JSONL format)
+            print("  [1/5] Reading and extracting file...")
+            articles = []
+            
+            # Check if file is gzipped or plain JSON
+            is_gzipped = file_path.suffix == '.gz'
+            
+            if is_gzipped:
+                file_handle = gzip.open(file_path, 'rt', encoding='utf-8')
+            else:
+                file_handle = open(file_path, 'r', encoding='utf-8')
+            
+            try:
+                with file_handle:
+                    for line_num, line in enumerate(file_handle, 1):
+                        line = line.strip()
+                        if not line:
+                            continue
+                        
+                        try:
+                            article_data = json.loads(line)
+                            articles.append(article_data)
+                        except json.JSONDecodeError as e:
+                            print(f"  ⚠️  Warning: Could not parse line {line_num}: {str(e)[:100]}")
+                            continue
+            finally:
+                pass  # Context manager handles closing
+            
+            if not articles:
+                print(f"  ⚠️  Warning: No valid articles found in {file_path.name}, skipping")
+                continue
+            
+            file_size_mb = file_path.stat().st_size / (1024 * 1024)
+            print(f"  ✅ Extracted {len(articles):,} articles from {file_size_mb:.2f} MB file")
+            
+            # Step 2: Transform to expected format
+            print("  [2/5] Transforming articles to expected format...")
+            formatted_articles = []
+            
+            # List of timestamp fields to convert from EPOCH to ISO format
+            timestamp_fields = [
+                'ingestion_datetime',
+                'modification_datetime',
+                'modification_date',
+                'publication_date',
+                'publication_datetime',
+                'availability_datetime'
+            ]
+            
+            for article in articles:
+                # Get the article ID from "an" field
+                article_id = article.get("an", "unknown")
+                
+                # Convert EPOCH timestamps to ISO format (with timezone UTC)
+                for field in timestamp_fields:
+                    if field in article and article[field]:
+                        try:
+                            # Convert EPOCH milliseconds to seconds, then to datetime UTC
+                            epoch_ms = int(article[field])
+                            epoch_s = epoch_ms / 1000.0
+                            # Use utcfromtimestamp for compatibility (returns UTC datetime)
+                            dt = datetime.utcfromtimestamp(epoch_s)
+                            # Format as ISO 8601 with milliseconds and UTC timezone (Z suffix)
+                            article[field] = dt.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+                        except (ValueError, TypeError):
+                            # Keep original value if conversion fails
+                            pass
+                
+                # Create formatted article
+                formatted_article = {
+                    "id": article_id,
+                    "type": "article",
+                    "attributes": article
+                }
+                formatted_articles.append(formatted_article)
+            
+            print(f"  ✅ Transformed {len(formatted_articles):,} articles to standard format")
+            
+            # Step 3: Split into 20 batches
+            num_batches = 20
+            total_articles_in_file = len(formatted_articles)
+            batch_size = total_articles_in_file // num_batches
+            remainder = total_articles_in_file % num_batches
+            
+            print(f"  [3/5] Splitting into {num_batches} batches...")
+            print(f"      Total articles: {total_articles_in_file:,}")
+            print(f"      Articles per batch: ~{batch_size:,}")
+            
+            batches = []
+            start_idx = 0
+            for i in range(num_batches):
+                # Add one extra article to the first 'remainder' batches
+                current_batch_size = batch_size + (1 if i < remainder else 0)
+                end_idx = start_idx + current_batch_size
+                
+                batch = formatted_articles[start_idx:end_idx]
+                batches.append(batch)
+                start_idx = end_idx
+            
+            print(f"  ✅ Created {len(batches)} batches")
+            
+            # Step 4: Upload each batch to S3
+            print(f"  [4/5] Uploading {num_batches} batches to S3...")
+            
+            for batch_num, batch_articles in enumerate(batches, 1):
+                global_file_index += 1
+                
+                # Create final JSON structure for this batch
+                final_json = {
+                    "data": batch_articles
+                }
+                
+                # Generate filename with current timestamp and global index
+                now = datetime.now()
+                filename = f"{now.strftime('%Y_%m_%d_%H_%M_%S')}_{global_file_index}_snapshot_extract.json"
+                
+                # Build S3 key (path in S3)
+                year = now.year
+                month = now.month
+                s3_key = f"country_france/articles/year_{year}/month_{month:02d}/{filename}"
+                
+                # Create temporary file
+                with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', suffix='.json', delete=False) as temp_file:
+                    temp_file_path = temp_file.name
+                    json.dump(final_json, temp_file, ensure_ascii=False, indent=2)
+                
+                temp_file_size_mb = os.path.getsize(temp_file_path) / (1024 * 1024)
+                
+                # Upload to S3
+                try:
+                    s3_client.upload_file(temp_file_path, bucket_name, s3_key)
+                    uploaded_files.append(s3_key)
+                    total_articles += len(batch_articles)
+                    
+                    print(f"      ✅ Batch {batch_num}/20 uploaded (file_index={global_file_index}, {len(batch_articles):,} articles, {temp_file_size_mb:.2f} MB)")
+                except Exception as e:
+                    print(f"      ❌ Failed to upload batch {batch_num}: {str(e)}")
+                finally:
+                    # Clean up temporary file
+                    try:
+                        os.unlink(temp_file_path)
+                    except Exception as e:
+                        pass
+            
+            print(f"  ✅ All batches uploaded for {file_path.name}")
+            
+            # Step 5: Optionally delete local file after successful upload
+            if delete_local_after_upload:
+                try:
+                    file_path.unlink()
+                    print(f"  ✅ Deleted local file: {file_path.name}")
+                except Exception as e:
+                    print(f"  ⚠️  Warning: Could not delete local file: {str(e)}")
+            
+        except Exception as e:
+            print(f"  ❌ Error processing file {file_path.name}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            continue
+    
+    # Summary
+    print(f"\n{'='*70}")
+    print(f"UPLOAD PROCESS COMPLETED")
+    print(f"{'='*70}")
+    print(f"✅ Successfully uploaded: {len(uploaded_files)} file(s)")
+    print(f"📊 Total articles processed: {total_articles:,}")
+    
+    if uploaded_files:
+        print("\n📦 Uploaded files:")
+        for s3_key in uploaded_files:
+            print(f"   • s3://{bucket_name}/{s3_key}")
+    
+    return {
+        "success": True,
+        "uploaded_files": uploaded_files,
+        "total_articles": total_articles,
+        "error": None,
+    }
+        
+

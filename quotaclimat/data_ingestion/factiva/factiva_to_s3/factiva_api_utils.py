@@ -16,6 +16,7 @@ def submit_time_series(
     start_date: str,
     end_date: str,
     minimal_word_count: int,
+    maximal_word_count: int,
     language_code: str,
     regex_pattern: Optional[str] = None,
     frequency: str = "DAY",
@@ -79,6 +80,9 @@ def submit_time_series(
 
     if minimal_word_count > 0:
         where_clause += f" AND word_count >= {minimal_word_count}"
+
+    if maximal_word_count:
+        where_clause += f" AND word_count <= {maximal_word_count}"
 
     # Add regex pattern if provided
     if regex_pattern:

@@ -146,7 +146,7 @@ def replace_word_with_context(text: str, word = "groupe verlaine", length_to_rem
 
 def remove_stopwords(plaintext: str, stopwords: list[str], country = FRANCE) -> str:
     logging.debug(f"Removing stopwords {plaintext}")
-
+    plaintext = plaintext.lower()
     if len(stopwords) == 0:
         if country == FRANCE:
             logging.warning(f"Stop words list empty for {country.name}")

@@ -214,6 +214,7 @@ def save_to_s3(
             )
         else:
             df = df._to_pandas()
+            os.makedirs(os.path.dirname(os.path.join(based_path, set_filename)), exist_ok=True)
             df.to_parquet(
                 os.path.join(based_path, set_filename),
                 compression='gzip',

@@ -107,7 +107,25 @@ FRANCE = CountryMediaTree(code=FRANCE_CODE,channels=FRANCE_CHANNELS, timezone=FR
 
 
 BELGIUM_CODE : BelgiumCode = "bel"
-BELGIUM_CHANNELS= ["CANALZ","RTL","LAUNE","LN24","LATROIS"]
+BELGIUM_CHANNELS= [
+    "CANALZ",
+    "RTL",
+    "LAUNE",
+    "LN24",
+    "LATROIS",
+    "ACTV",
+    "CANALC",
+    "BX1",
+    "CANALZOOM",
+    "MATELE",
+    "NOTELE",
+    "RTC",
+    "TELEMB",
+    "TELESAMBRE",
+    "TVCOM",
+    "TVLUX",
+    "VEDIA",
+]
 BELGIUM_TZ = "Europe/Bruxelles"
 BELGIUM_LANGUAGE = "french" # TODO: flemish based on channel ?
 channels_programs_belgium = None # TODO
@@ -168,6 +186,11 @@ POLAND_CHANNELS=[
     "tokfm",
     "radio-zet",
     "eska",
+    "tv-republika",
+    "tv-trwam",
+    "radio-maryja",
+    "tvs",
+    "wpolsce24",
 ]
 POLAND_TZ = "Europe/Warsaw"
 POLAND_LANGUAGE = "polish"

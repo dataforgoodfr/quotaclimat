@@ -67,10 +67,12 @@ weekly_aggregates AS (
         -- Combined climate causal links
         SUM(pci.count_climat_cause_consequence) AS count_climat_cause_consequence,
         SUM(pci.count_climat_constat_consequence) AS count_climat_constat_consequence,
+        SUM(pci.count_climat_solution_consequence) AS count_climat_solution_consequence,
         
         -- Combined biodiversity causal links
         SUM(pci.count_biodiversite_cause_consequence) AS count_biodiversite_cause_consequence,
         SUM(pci.count_biodiversite_constat_consequence) AS count_biodiversite_constat_consequence,
+        SUM(pci.count_biodiversite_solution_consequence) AS count_biodiversite_solution_consequence,
         
         -- Sector counts
         SUM(pci.count_agriculture_alimentation) AS count_agriculture_alimentation,
@@ -135,8 +137,10 @@ SELECT
     count_ressources_solution,
     count_climat_cause_consequence,
     count_climat_constat_consequence,
+    count_climat_solution_consequence,
     count_biodiversite_cause_consequence,
     count_biodiversite_constat_consequence,
+    count_biodiversite_solution_consequence,
     count_agriculture_alimentation,
     count_mobilite,
     count_batiments_amenagement,

@@ -144,10 +144,12 @@ daily_aggregates AS (
         -- Count articles with combined climate causal links
         COUNT(*) FILTER (WHERE fa.predict_climat_cause AND fa.predict_climat_consequence) AS count_climat_cause_consequence,
         COUNT(*) FILTER (WHERE fa.predict_climat_constat AND fa.predict_climat_consequence) AS count_climat_constat_consequence,
+        COUNT(*) FILTER (WHERE fa.predict_climat_solution AND fa.predict_climat_consequence) AS count_climat_solution_consequence,
         
         -- Count articles with combined biodiversity causal links
         COUNT(*) FILTER (WHERE fa.predict_biodiversite_cause AND fa.predict_biodiversite_consequence) AS count_biodiversite_cause_consequence,
         COUNT(*) FILTER (WHERE fa.predict_biodiversite_constat AND fa.predict_biodiversite_consequence) AS count_biodiversite_constat_consequence,
+        COUNT(*) FILTER (WHERE fa.predict_biodiversite_solution AND fa.predict_biodiversite_consequence) AS count_biodiversite_solution_consequence,
         
         -- Count articles by sector (using prediction flags)
         COUNT(*) FILTER (WHERE fa.predict_agriculture_alimentation) AS count_agriculture_alimentation,
@@ -234,10 +236,12 @@ source_medians AS (
         -- Medians of combined climate causal links
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_climat_cause_consequence) AS median_count_climat_cause_consequence,
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_climat_constat_consequence) AS median_count_climat_constat_consequence,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_climat_solution_consequence) AS median_count_climat_solution_consequence,
         
         -- Medians of combined biodiversity causal links
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite_cause_consequence) AS median_count_biodiversite_cause_consequence,
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite_constat_consequence) AS median_count_biodiversite_constat_consequence,
+        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_biodiversite_solution_consequence) AS median_count_biodiversite_solution_consequence,
         
         -- Medians of sector counts
         PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY da.count_agriculture_alimentation) AS median_count_agriculture_alimentation,
@@ -380,6 +384,12 @@ SELECT
         THEN COALESCE(sm.median_count_climat_constat_consequence, 0)
         ELSE COALESCE(da.count_climat_constat_consequence, 0)
     END AS count_climat_constat_consequence,
+
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_climat_solution_consequence, 0)
+        ELSE COALESCE(da.count_climat_solution_consequence, 0)
+    END AS count_climat_solution_consequence,
     
     -- Combined biodiversity causal link counts - use median for outlier days
     CASE 
@@ -393,6 +403,12 @@ SELECT
         THEN COALESCE(sm.median_count_biodiversite_constat_consequence, 0)
         ELSE COALESCE(da.count_biodiversite_constat_consequence, 0)
     END AS count_biodiversite_constat_consequence,
+
+    CASE 
+        WHEN (asd.publication_day, asd.source_code) IN (SELECT publication_day, source_code FROM outlier_source_days)
+        THEN COALESCE(sm.median_count_biodiversite_solution_consequence, 0)
+        ELSE COALESCE(da.count_biodiversite_solution_consequence, 0)
+    END AS count_biodiversite_solution_consequence,
     
     -- Sector counts - use median for outlier days
     CASE 

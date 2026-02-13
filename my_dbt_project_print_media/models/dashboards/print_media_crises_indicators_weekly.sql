@@ -37,6 +37,7 @@ weekly_aggregates AS (
             WHEN pci.source_code = 'TRDS' THEN 'La Tribune.fr'
             ELSE pci.source_name
         END AS source_name,
+        pci.media_all,
         pci.source_type,
         pci.source_owner,
         pci.source_region,
@@ -108,6 +109,7 @@ weekly_aggregates AS (
             WHEN pci.source_code = 'TRDS' THEN 'La Tribune.fr'
             ELSE pci.source_name
         END,
+        pci.media_all,
         pci.source_type,
         pci.source_owner,
         pci.source_region
@@ -117,6 +119,7 @@ SELECT
     publication_week,
     source_code,
     source_name,
+    media_all,
     source_type,
     source_owner,
     source_region,

@@ -37,6 +37,7 @@ monthly_aggregates AS (
             WHEN ptk.source_code = 'TRDS' THEN 'La Tribune.fr'
             ELSE ptk.source_name
         END AS source_name,
+        ptk.media_all,
         ptk.source_type,
         ptk.keyword,
         ptk.sector,
@@ -73,6 +74,7 @@ monthly_aggregates AS (
             WHEN ptk.source_code = 'TRDS' THEN 'La Tribune.fr'
             ELSE ptk.source_name
         END,
+        ptk.media_all,
         ptk.source_type,
         ptk.keyword,
         ptk.sector,
@@ -83,6 +85,7 @@ SELECT
     publication_month,
     source_code,
     source_name,
+    media_all,
     source_type,
     keyword,
     sector,

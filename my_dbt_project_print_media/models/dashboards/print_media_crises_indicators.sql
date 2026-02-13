@@ -55,6 +55,7 @@ all_source_days AS (
         pd.publication_day,
         sc.source_code,
         sc.source_name,
+        sc.media_all,
         sc.source_type,
         sc.source_owner,
         sc.source_region
@@ -265,6 +266,7 @@ SELECT
     asd.publication_day,
     asd.source_code,
     asd.source_name,
+    asd.media_all,
     asd.source_type,
     asd.source_owner,
     asd.source_region,

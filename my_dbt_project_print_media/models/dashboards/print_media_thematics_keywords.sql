@@ -377,6 +377,7 @@ SELECT
     ca.source_code,
     sc.source_name,
     sc.source_type,
+    sc.media_all,
     ca.keyword,
     ca.sector,
     ca.nb_articles,

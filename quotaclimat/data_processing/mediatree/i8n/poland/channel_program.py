@@ -180,5 +180,9 @@ channels_programs_poland = [
     {"channel_name": "tvs", "start": "11:35", "end": "11:40", "weekday": "2", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
     {"channel_name": "tvs", "start": "11:35", "end": "11:40", "weekday": "3", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
     {"channel_name": "tvs", "start": "11:10", "end": "11:15", "weekday": "4", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "fokus-tv", "start": "07:20", "end": "07:30", "weekday": "weekday", "program_name": "Pod Iupa", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "tv-plus", "start": "09:00", "end": "09:55", "weekday": "5", "program_name": "Taki jest swiat", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
 ]
 

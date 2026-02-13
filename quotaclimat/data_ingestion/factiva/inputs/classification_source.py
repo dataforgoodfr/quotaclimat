@@ -120,13 +120,6 @@ SOURCE_CLASSIFICATION = {
             "source_region": ""
         },
         {
-            "source_name": "leParisien.fr",
-            "source_code": "PARIN",
-            "source_owner": "LVMH",
-            "media_all": "Le Parisien",
-            "source_region": ""
-        },
-        {
             "source_name": "lefigaro.fr",
             "source_code": "FIGPRE",
             "source_owner": "Dassault",
@@ -452,60 +445,67 @@ SOURCE_CLASSIFICATION = {
             "source_region": "Grand Est"
         },
         {
+            "source_name": "leParisien.fr",
+            "source_code": "PARIN",
+            "source_owner": "LVMH",
+            "media_all": "Le Parisien",
+            "source_region": "Île-de-France"
+        },
+        {
             "source_name": "Lamontagne.fr",
             "source_code": "MONTFR",
             "source_owner": "Groupe Centre France",
             "media_all": "La Montagne",
-            "source_region": ""
+            "source_region": "Auvergne-Rhône-Alpes"
         },
         {
             "source_name": "Larep.fr",
             "source_code": "REPFR",
             "source_owner": "Groupe Centre France",
             "media_all": "La République du Centre",
-            "source_region": ""
+            "source_region": "Centre-Val de Loire"
         },
         {
             "source_name": "Leberry.fr",
             "source_code": "BERFR",
             "source_owner": "Groupe Centre France",
             "media_all": "Le Berry Républicain",
-            "source_region": ""
+            "source_region": "Centre-Val de Loire"
         },
         {
             "source_name": "Lechorepublicain.fr",
             "source_code": "LECHOFR",
             "source_owner": "Groupe Centre France",
             "media_all": "L´Echo Républicain",
-            "source_region": ""
+            "source_region": "Centre-Val de Loire"
         },
         {
             "source_name": "Lejdc.fr",
             "source_code": "JDCFR",
             "source_owner": "Groupe Centre France",
             "media_all": "Le Journal du Centre",
-            "source_region": ""
+            "source_region": "Bourgogne-Franche-Comté"
         },
         {
             "source_name": "Lepopulaire.fr",
             "source_code": "POPFR",
             "source_owner": "Groupe Centre France",
             "media_all": "Le Populaire du Centre",
-            "source_region": ""
+            "source_region": "Nouvelle-Aquitaine"
         },
         {
             "source_name": "Lyonne.fr",
             "source_code": "LYONFR",
             "source_owner": "Groupe Centre France",
             "media_all": "L´Yonne Républicaine",
-            "source_region": ""
+            "source_region": "Bourgogne-Franche-Comté"
         },
         {
             "source_name": "Sudouest.fr",
             "source_code": "SDUFR",
             "source_owner": "Groupe Sud Ouest",
             "media_all": "Sud Ouest",
-            "source_region": ""
+            "source_region": "Nouvelle-Aquitaine"
         }
     ],
     "Agence Presse": [

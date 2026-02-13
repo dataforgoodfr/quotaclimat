@@ -191,7 +191,7 @@ POLAND_CHANNELS=[
     "radio-maryja",
     "tvs",
     "wpolsce24",
-    "tv-plus",
+    "tv-puls",
     "fokus-tv",
 ]
 POLAND_TZ = "Europe/Warsaw"

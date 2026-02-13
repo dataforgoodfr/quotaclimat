@@ -183,6 +183,6 @@ channels_programs_poland = [
     
     {"channel_name": "fokus-tv", "start": "07:20", "end": "07:30", "weekday": "weekday", "program_name": "Pod Iupa", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
     
-    {"channel_name": "tv-plus", "start": "09:00", "end": "09:55", "weekday": "5", "program_name": "Taki jest swiat", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    {"channel_name": "tv-puls", "start": "09:00", "end": "09:55", "weekday": "5", "program_name": "Taki jest swiat", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
 ]
 

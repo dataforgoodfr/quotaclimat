@@ -1876,7 +1876,7 @@ class S3ToPostgreProcessor:
 
     def _run_dbt_models(self) -> None:
         """
-        Run DBT models to aggregate environmental indicators.
+        Run DBT models to aggregate environmental indicators and keyword thematics.
         
         Note: Prediction flags are now pre-calculated in factiva_articles table,
         so DBT models no longer need threshold/multiplier configuration variables.
@@ -1894,41 +1894,86 @@ class S3ToPostgreProcessor:
             # Get MINIMAL_WORD_COUNT from environment for DBT
             minimal_word_count = os.getenv("MINIMAL_WORD_COUNT", "0")
             
-            # Build DBT command
-            # Run all print_media_crises_indicators models (daily, weekly, monthly)
+            # ========== Run print_media_crises_indicators models ==========
+            # Build DBT command for crises indicators (daily, weekly, monthly)
             # Use --full-refresh to ensure all changes are captured (articles, stats, prediction flags)
-            dbt_command = [
+            dbt_command_crises = [
                 "dbt", "run",
                 "--full-refresh",
                 "--select", "print_media_crises_indicators+",
                 "--project-dir", dbt_project_dir,
             ]
             
-            logging.info(f"Executing DBT command: {' '.join(dbt_command)}")
+            logging.info("=" * 80)
+            logging.info("RUNNING DBT MODELS: CRISES INDICATORS")
+            logging.info(f"Executing DBT command: {' '.join(dbt_command_crises)}")
             logging.info("Running 3 models: daily, weekly, and monthly aggregations")
             logging.info("Note: DBT now uses pre-calculated prediction flags (no threshold config needed)")
             logging.info(f"MINIMAL_WORD_COUNT passed to DBT: {minimal_word_count}")
             
-            # Run DBT command
-            result = subprocess.run(
-                dbt_command,
+            # Run DBT command for crises indicators
+            result_crises = subprocess.run(
+                dbt_command_crises,
                 capture_output=True,
                 text=True,
                 env=os.environ.copy(),  # Pass all environment variables including MINIMAL_WORD_COUNT
             )
             
             # Log output
-            if result.stdout:
-                logging.info(f"DBT stdout:\n{result.stdout}")
-            if result.stderr:
-                logging.warning(f"DBT stderr:\n{result.stderr}")
+            if result_crises.stdout:
+                logging.info(f"DBT stdout:\n{result_crises.stdout}")
+            if result_crises.stderr:
+                logging.warning(f"DBT stderr:\n{result_crises.stderr}")
             
             # Check if command succeeded
-            if result.returncode != 0:
-                logging.error(f"DBT command failed with return code {result.returncode}")
+            if result_crises.returncode != 0:
+                logging.error(f"DBT command failed with return code {result_crises.returncode}")
                 self.stats.errors += 1
             else:
-                logging.info("DBT models executed successfully")
+                logging.info("DBT crises indicators models executed successfully")
+            
+            # ========== Run print_media_thematics_keywords models ==========
+            # Build DBT command for thematics keywords (daily, weekly, monthly)
+            # Use --full-refresh to ensure all changes are captured
+            dbt_command_keywords = [
+                "dbt", "run",
+                "--full-refresh",
+                "--select", "print_media_thematics_keywords+",
+                "--project-dir", dbt_project_dir,
+            ]
+            
+            logging.info("=" * 80)
+            logging.info("RUNNING DBT MODELS: THEMATICS KEYWORDS")
+            logging.info(f"Executing DBT command: {' '.join(dbt_command_keywords)}")
+            logging.info("Running 3 models: daily, weekly, and monthly aggregations")
+            logging.info("Note: Keywords are extracted from all_keywords JSON and joined with keyword_macro_category")
+            logging.info(f"MINIMAL_WORD_COUNT passed to DBT: {minimal_word_count}")
+            
+            # Run DBT command for thematics keywords
+            result_keywords = subprocess.run(
+                dbt_command_keywords,
+                capture_output=True,
+                text=True,
+                env=os.environ.copy(),  # Pass all environment variables including MINIMAL_WORD_COUNT
+            )
+            
+            # Log output
+            if result_keywords.stdout:
+                logging.info(f"DBT stdout:\n{result_keywords.stdout}")
+            if result_keywords.stderr:
+                logging.warning(f"DBT stderr:\n{result_keywords.stderr}")
+            
+            # Check if command succeeded
+            if result_keywords.returncode != 0:
+                logging.error(f"DBT command failed with return code {result_keywords.returncode}")
+                self.stats.errors += 1
+            else:
+                logging.info("DBT thematics keywords models executed successfully")
+            
+            # Final summary
+            if result_crises.returncode == 0 and result_keywords.returncode == 0:
+                logging.info("=" * 80)
+                logging.info("ALL DBT MODELS EXECUTED SUCCESSFULLY")
                 
         except Exception as e:
             logging.error(f"Error running DBT models: {e}")

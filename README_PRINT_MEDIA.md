@@ -94,6 +94,36 @@ Defined in:
 - Sectors: `count_agriculture_alimentation`, `count_mobilite`, `count_energie`, etc.
 - Metadata: `outlier` flag (daily only), `count_total_articles`
 
+#### 6. `print_media_thematics_keywords` (DBT Models)
+**Keyword usage analysis by sector for dashboards at daily, weekly, and monthly granularities.**
+
+Defined in:
+- [`print_media_thematics_keywords.sql`](my_dbt_project_print_media/models/dashboards/print_media_thematics_keywords.sql) (daily)
+- [`print_media_thematics_keywords_weekly.sql`](my_dbt_project_print_media/models/dashboards/print_media_thematics_keywords_weekly.sql) (weekly)
+- [`print_media_thematics_keywords_monthly.sql`](my_dbt_project_print_media/models/dashboards/print_media_thematics_keywords_monthly.sql) (monthly)
+
+**Daily model** (`print_media_thematics_keywords`):
+- Extracts keywords from `all_keywords` JSON field in `factiva_articles`
+- Joins with `keyword_macro_category` to assign sectors (10 possible values: empty, General, Agriculture & Alimentation, Mobilité, Bâtiment & Aménagement, Energie, Industrie, Eau, Ecosystème, Economie circulaire)
+- Keywords with multiple sectors create separate rows (one per sector)
+- Aggregates by day × source × keyword × sector
+- Handles outlier days: replaces counts with keyword-sector-source specific medians when >15 duplicates detected
+- Filters to 4+ day old data and articles with `word_count >= MINIMAL_WORD_COUNT`
+- Manages `is_hrfp` flag: if keyword appears with both true/false, uses false
+
+**Weekly/Monthly models**:
+- Aggregate daily keyword data to weekly (Monday-Sunday) or monthly granularity
+- Only include complete periods
+- Merge La Tribune print (TRDS) into La Tribune.fr (TBNWEB)
+- Propagate outlier flag: TRUE if any day in period is outlier
+
+**Key columns**:
+- Temporal: `publication_day`/`publication_week`/`publication_month`
+- Source: `source_code`, `source_name`, `source_type`
+- Keyword: `keyword` (text), `sector` (sectoral category)
+- Counts: `nb_articles` (distinct article count), `nb_keyword_occurences` (total occurrences)
+- Metadata: `is_hrfp` (high risk false positive flag), `outlier` (outlier day/period flag)
+
 ### Database Migrations
 
 **Alembic** is used for database schema migrations in the `alembic_factiva/` directory.
@@ -150,7 +180,7 @@ Docker images are built and deployed via **GitHub Actions**: [`.github/workflows
 - `START_DATE` / `END_DATE`: Custom date range (when SELECT_DATE=true)
 - `FACTIVA_DAYS_BEFORE_TODAY`: Lookback days from today (default: 7)
 - `FACTIVA_STATS_ANALYSIS_DURATION`: Duration of analysis period (default: 7)
-- `FACTIVA_MINIMAL_WORD_COUNT`: Minimun number of keywords to consider in the query extraction (e.g., if FACTIVA_MINIMAL_WORD_COUNT is equal to 100, the job will compute the number of articles for each source with at least 100 words)
+- `FACTIVA_MINIMAL_WORD_COUNT`: Minimun number of keywords to consider in the query extraction (e.g., if FACTIVA_MINIMAL_WORD_COUNT is equal to 100, the job will compute the number of articles for each source with at least 100 words) - Must be aligned with MINIMAL_WORD_COUNT of job 3
 
 ---
 
@@ -243,8 +273,21 @@ Docker images are built and deployed via **GitHub Actions**: [`.github/workflows
    - Triggered on every run
 
 7. **DBT Models Execution**:
-   - Runs `print_media_crises_indicators` model with `--full-refresh`
+   - Runs two groups of DBT models with `--full-refresh`:
+   
+   **a) Crisis Indicators Models** (`print_media_crises_indicators+`):
    - Aggregates pre-calculated prediction flags by temporal granularity and source
+   - Daily, weekly, and monthly aggregations
+   - Handles outlier days (>15 duplicates) with median replacement
+   
+   **b) Thematics Keywords Models** (`print_media_thematics_keywords+`):
+   - Extracts keywords from `all_keywords` JSON field
+   - Joins with `keyword_macro_category` to assign sectors
+   - Aggregates keyword usage by day/week/month × source × keyword × sector
+   - Calculates `nb_articles` (distinct article count) and `nb_keyword_occurences` (total occurrences)
+   - Handles outlier days with keyword-sector-source specific medians
+   - Keywords with multiple sectors appear on separate rows
+   - Daily, weekly, and monthly aggregations
 
 8. **UPDATE Mode** (optional):
    - Re-detects keywords on existing articles in PostgreSQL
@@ -263,7 +306,7 @@ Docker images are built and deployed via **GitHub Actions**: [`.github/workflows
 - `DETECT_DUPLICATES`: Run duplicate detection (default: true)
 - `CALCULATE_PREDICTIONS`: Calculate prediction flags for all articles (default: true)
 - `CALCULATE_SECTORS`: Calculate sector keywords and predictions for all articles (default: true)
-- `RUN_DBT`: Run DBT models after processing (default: true)
+- `RUN_DBT`: Run DBT models after processing - executes both crisis indicators and thematics keywords models (default: true)
 
 *UPDATE mode (keyword re-detection)*:
 - `UPDATE`: Enable UPDATE mode (default: false)
@@ -280,6 +323,7 @@ Docker images are built and deployed via **GitHub Actions**: [`.github/workflows
 - `MULTIPLIER_HRFP_RESSOURCE`: Multiplier for resource HRFP keywords
 - `CONSIDER_ARTICLE_LENGTH`: Enable length-based thresholds (default: false)
 - `WORD_COUNT_THRESHOLD`: Word count segments (e.g., "350-600" or "350-600-900")
+- `MINIMAL_WORD_COUNT`: Minimun of words to consider in KPIs computation - must be aligned with FACTIVA_MINIMAL_WORD_COUNT of job 1
 - `THRESHOLD_BIOD_CLIM_RESS`: Thresholds for biodiv, climat, ressource
   * Single threshold: "3,2,2" (when CONSIDER_ARTICLE_LENGTH=false)
   * Multi-threshold: "3,2,2 - 4,3,3 - 5,4,4" (when CONSIDER_ARTICLE_LENGTH=true)

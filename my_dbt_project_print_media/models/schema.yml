@@ -11,6 +11,8 @@ sources:
         description: "Statistics on article counts by source and publication datetime"
       - name: source_classification
         description: "Classification of sources by type (PQN, PQR, Magazines, Web, Agence Presse)"
+      - name: keyword_macro_category
+        description: "Cross-sectoral keyword categories (agriculture, transport, energy, etc.)"
 
 models:
   - name: print_media_crises_indicators

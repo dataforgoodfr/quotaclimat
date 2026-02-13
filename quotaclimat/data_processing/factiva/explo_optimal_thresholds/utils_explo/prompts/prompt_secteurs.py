@@ -9,7 +9,7 @@ CONTEXTE
 - Un article peut relever de plusieurs secteurs.
 
 SECTEURS POSSIBLES
-Sélectionne un ou plusieurs secteurs parmi la liste suivante (libellés stricts) :
+Sélectionne un ou plusieurs secteurs de la transition écologique parmi la liste suivante (libellés stricts) :
 - Agriculture & alimentation
 - Bâtiment & aménagement
 - Économie circulaire
@@ -21,9 +21,23 @@ Sélectionne un ou plusieurs secteurs parmi la liste suivante (libellés stricts
 
 Si aucun secteur ne correspond clairement au contenu de l’article, retourne uniquement le secteur "Autre".
 
+
+DESCRIPTIONS DES SECTEURS
+Chaque secteur de la transition écologique peut se référer aux actions émetteurs de gaz à effet de serre ou des actions pollueurs, ainsi que leurs conséquences sur l’environnement, la santé, l’économie ou la société et les leviers d’action de la transition écologique. 
+Voici les thèmes liés à chacun des secteurs de la transition écologique : 
+- Agriculture & alimentation : agriculture et pêche, élevage ; qualité des sols ; alimentation.
+- Bâtiment & aménagement : construction et rénovation des logements, des bâtiments ; aménagement des villes.
+- Économie circulaire : recyclage ; valorisation des déchets. 
+- Mobilité : transports de personnes et de marchandises ; voitures, avions, trains, bateaux, bus, vélos sont des exemples ; sociétés de transports publiques et privées comme SNCF, RATP ; infrastructures routières ; carburants.
+- Eau : usages de l’eau ; cycle de l’eau ; pollution de l’eau ; disponibilité de l’eau.
+- Ecosystème : biodiversité ; espèces ; le vivant ; milieux naturels ; milieux aquatiques ; forêts ; océans, mers ; espaces naturels. 
+- Energie : énergie renouvelable, énergie non renouvelable ; énergies fossiles ; nucléaire ; chauffage ; raffinage ; carburants.
+- Industrie : secteurs industriels ; production. 
+
+
 RÈGLES DE CLASSIFICATION
 - Attribue un secteur uniquement s’il est explicitement traité.
-- Une simple mention marginale ne suffit pas.
+- Une simple mention ne suffit pas.
 - Plusieurs secteurs peuvent être attribués.
 - N’infère rien qui n’est pas présent dans le texte.
 

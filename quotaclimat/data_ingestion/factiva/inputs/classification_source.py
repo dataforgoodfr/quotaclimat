@@ -1,10 +1,10 @@
 SOURCE_CLASSIFICATION = {
-    "PQN": [
+    "Presse Nationale": [
         {
             "source_name": "Aujourd'hui en France",
             "source_code": "AUFRA",
             "source_owner": "LVMH",
-            "media_all": "",
+            "media_all": "Aujourd'hui en France",
             "source_region": ""
         },
         {
@@ -25,7 +25,7 @@ SOURCE_CLASSIFICATION = {
             "source_name": "L'Humanité",
             "source_code": "HUMAN",
             "source_owner": "L'Humanité",
-            "media_all": "",
+            "media_all": "L'Humanité",
             "source_region": ""
         },
         {
@@ -46,52 +46,206 @@ SOURCE_CLASSIFICATION = {
             "source_name": "Le Monde",
             "source_code": "LEMOND",
             "source_owner": "Le Monde",
-            "media_all": "",
+            "media_all": "Le Monde",
+            "source_region": ""
+        },
+        {
+            "source_name": "Le Figaro Magazine",
+            "source_code": "FIGMAG",
+            "source_owner": "Dassault",
+            "media_all": "Le Figaro Magazine",
+            "source_region": ""
+        },
+        {
+            "source_name": "Le Parisien Week-End - Aujourd'hui en France Week-End",
+            "source_code": "PARWEK",
+            "source_owner": "LVMH",
+            "media_all": "Le Parisien Week-End - Aujourd'hui en France Week-End",
+            "source_region": ""
+        },
+        {
+            "source_name": "Le Point",
+            "source_code": "LPOINT",
+            "source_owner": "Pinault",
+            "media_all": "Le Point",
+            "source_region": ""
+        },
+        {
+            "source_name": "L'Humanité Dimanche",
+            "source_code": "HUMAND",
+            "source_owner": "L'Humanité",
+            "media_all": "L'Humanité Dimanche",
+            "source_region": ""
+        },
+        {
+            "source_name": "L'Obs",
+            "source_code": "LENOV",
+            "source_owner": "Le Monde",
+            "media_all": "L'Obs",
+            "source_region": ""
+        },
+        {
+            "source_name": "M, le magazine du Monde",
+            "source_code": "MONDMAG",
+            "source_owner": "Le Monde",
+            "media_all": "M, le magazine du Monde",
+            "source_region": ""
+        },
+        {
+            "source_name": "Marianne",
+            "source_code": "MARIAN",
+            "source_owner": "Czech Media Invest",
+            "media_all": "Marianne",
+            "source_region": ""
+        },
+        {
+            "source_name": "20Minutes.fr",
+            "source_code": "VINMINFR",
+            "source_owner": "Groupe Rossel",
+            "media_all": "20Minutes.fr",
+            "source_region": ""
+        },
+        {
+            "source_name": "La-Croix.com",
+            "source_code": "CROICOM",
+            "source_owner": "Groupe Bayard",
+            "media_all": "La Croix",
+            "source_region": ""
+        },
+        {
+            "source_name": "Le HuffPost",
+            "source_code": "LEHUFF",
+            "source_owner": "Le Monde",
+            "media_all": "Le HuffPost",
+            "source_region": ""
+        },
+        {
+            "source_name": "leParisien.fr",
+            "source_code": "PARIN",
+            "source_owner": "LVMH",
+            "media_all": "Le Parisien",
+            "source_region": ""
+        },
+        {
+            "source_name": "lefigaro.fr",
+            "source_code": "FIGPRE",
+            "source_owner": "Dassault",
+            "media_all": "Le Figaro",
+            "source_region": ""
+        },
+        {
+            "source_name": "Le Point.fr",
+            "source_code": "POINFR",
+            "source_owner": "Pinault",
+            "media_all": "Le Point",
+            "source_region": ""
+        },
+        {
+            "source_name": "Lejdd.fr",
+            "source_code": "LEJD",
+            "source_owner": "Bolloré",
+            "media_all": "Lejdd.fr",
+            "source_region": ""
+        },
+        {
+            "source_name": "Nouvelobs.com",
+            "source_code": "NOBCOM",
+            "source_owner": "Le Monde",
+            "media_all": "L'Obs",
+            "source_region": ""
+        },
+        {
+            "source_name": "La Tribune",
+            "source_code": "TRDS",
+            "source_owner": "CMA CGM",
+            "media_all": "La Tribune",
+            "source_region": ""
+        },
+        {
+            "source_name": "La Tribune.fr",
+            "source_code": "TBNWEB",
+            "source_owner": "CMA CGM",
+            "media_all": "La Tribune",
+            "source_region": ""
+        },
+        {
+            "source_name": "Marianne.net",
+            "source_code": "MARNFR",
+            "source_owner": "Czech Media Invest",
+            "media_all": "Marianne",
+            "source_region": ""
+        },
+        {
+            "source_name": "mediapart.fr",
+            "source_code": "MEDAP",
+            "source_owner": "Mediapart",
+            "media_all": "mediapart.fr",
+            "source_region": ""
+        },
+        {
+            "source_name": "Libération.fr",
+            "source_code": "LBRTONL",
+            "source_owner": "Libération",
+            "media_all": "Libération",
+            "source_region": ""
+        },
+        {
+            "source_name": "Les Echos.fr",
+            "source_code": "ECHOFR",
+            "source_owner": "LVMH",
+            "media_all": "Les Echos",
+            "source_region": ""
+        },
+        {
+            "source_name": "France24.com",
+            "source_code": "HTFRFR",
+            "source_owner": "France Médias Monde",
+            "media_all": "France24.com",
             "source_region": ""
         }
     ],
 
-    "PQR": [
+    "Presse Régionale": [
         {
             "source_name": "Centre Presse",
             "source_code": "CNPRES",
             "source_owner": "La Dépêche du Midi",
-            "media_all": "",
+            "media_all": "Centre Presse",
             "source_region": "Nouvelle-Aquitaine"
         },
         {
             "source_name": "Corse-Matin",
             "source_code": "CORSMAT",
             "source_owner": "CMA CGM",
-            "media_all": "",
+            "media_all": "Corse-Matin",
             "source_region": "Corse"
         },
         {
             "source_name": "Courrier Picard",
             "source_code": "COUPIC",
             "source_owner": "Groupe Rossel",
-            "media_all": "",
+            "media_all": "Courrier Picard",
             "source_region": "Hauts-de-France"
         },
         {
             "source_name": "Dordogne Libre",
             "source_code": "DORLIB",
             "source_owner": "Groupe Sud Ouest",
-            "media_all": "",
+            "media_all": "Dordogne Libre",
             "source_region": "Nouvelle-Aquitaine"
         },
         {
             "source_name": "La Charente Libre",
             "source_code": "CHARLI",
             "source_owner": "Groupe Sud Ouest",
-            "media_all": "",
+            "media_all": "La Charente Libre",
             "source_region": "Nouvelle-Aquitaine"
         },
         {
             "source_name": "La Dépêche du Midi",
             "source_code": "DEPEMID",
             "source_owner": "La Dépêche du Midi",
-            "media_all": "",
+            "media_all": "La Dépêche du Midi",
             "source_region": "Occitanie"
         },
         {
@@ -105,28 +259,28 @@ SOURCE_CLASSIFICATION = {
             "source_name": "La Nouvelle République des Pyrénées",
             "source_code": "NOREPY",
             "source_owner": "La Dépêche du Midi",
-            "media_all": "",
+            "media_all": "La Nouvelle République des Pyrénées",
             "source_region": "Occitanie"
         },
         {
             "source_name": "La Nouvelle République du Centre Ouest",
             "source_code": "NOUREP",
             "source_owner": "Nouvelle République du Centre Ouest",
-            "media_all": "",
+            "media_all": "La Nouvelle République du Centre Ouest",
             "source_region": "Centre-Val de Loire"
         },
         {
             "source_name": "La Provence",
             "source_code": "LAPROV",
             "source_owner": "CMA CGM",
-            "media_all": "",
+            "media_all": "La Provence",
             "source_region": "Provence-Alpes-Côte d’Azur"
         },
         {
             "source_name": "La République des Pyrénées",
             "source_code": "PYREN",
             "source_owner": "Groupe Sud Ouest",
-            "media_all": "",
+            "media_all": "La République des Pyrénées",
             "source_region": "Nouvelle-Aquitaine"
         },
         {
@@ -140,14 +294,14 @@ SOURCE_CLASSIFICATION = {
             "source_name": "La Voix du Nord",
             "source_code": "VOINOR",
             "source_owner": "Groupe Rossel",
-            "media_all": "",
+            "media_all": "La Voix du Nord",
             "source_region": "Hauts-de-France"
         },
         {
             "source_name": "L'Aisne Nouvelle",
             "source_code": "LAINOUV",
             "source_owner": "Groupe Rossel",
-            "media_all": "",
+            "media_all": "L'Aisne Nouvelle",
             "source_region": "Hauts-de-France"
         },
         {
@@ -168,7 +322,7 @@ SOURCE_CLASSIFICATION = {
             "source_name": "L'Eclair des Pyrénées",
             "source_code": "ECPYR",
             "source_owner": "Groupe Sud Ouest",
-            "media_all": "",
+            "media_all": "L'Eclair des Pyrénées",
             "source_region": "Nouvelle-Aquitaine"
         },
         {
@@ -196,7 +350,7 @@ SOURCE_CLASSIFICATION = {
             "source_name": "Le Petit Bleu de Lot-et-Garonne",
             "source_code": "PEBLOGA",
             "source_owner": "La Dépêche du Midi",
-            "media_all": "",
+            "media_all": "Le Petit Bleu de Lot-et-Garonne",
             "source_region": "Nouvelle-Aquitaine"
         },
         {
@@ -210,70 +364,70 @@ SOURCE_CLASSIFICATION = {
             "source_name": "Le Progrès",
             "source_code": "PROGRS",
             "source_owner": "EBRA / Crédit Mutuel",
-            "media_all": "",
+            "media_all": "Le Progrès",
             "source_region": "Auvergne-Rhône-Alpes"
         },
         {
             "source_name": "Le Républicain Lorrain",
             "source_code": "REPLOR",
             "source_owner": "EBRA / Crédit Mutuel",
-            "media_all": "",
+            "media_all": "Le Républicain Lorrain",
             "source_region": "Grand Est"
         },
         {
             "source_name": "Le Télégramme",
             "source_code": "TELEG",
             "source_owner": "Le Télégramme",
-            "media_all": "",
+            "media_all": "Le Télégramme",
             "source_region": "Bretagne"
         },
         {
             "source_name": "L'Est Républicain",
             "source_code": "ESTREP",
             "source_owner": "EBRA / Crédit Mutuel",
-            "media_all": "",
+            "media_all": "L'Est Républicain",
             "source_region": "Grand Est"
         },
         {
             "source_name": "L'Indépendant",
             "source_code": "LINDEP",
             "source_owner": "La Dépêche du Midi",
-            "media_all": "",
+            "media_all": "L'Indépendant",
             "source_region": "Occitanie"
         },
         {
             "source_name": "L'Union / L'Ardennais",
             "source_code": "LUNARD",
             "source_owner": "Groupe Rossel",
-            "media_all": "",
+            "media_all": "L'Union / L'Ardennais",
             "source_region": "Grand Est"
         },
         {
             "source_name": "Midi Libre",
             "source_code": "MIDLIB",
             "source_owner": "La Dépêche du Midi",
-            "media_all": "",
+            "media_all": "Midi Libre",
             "source_region": "Occitanie"
         },
         {
             "source_name": "Nice-Matin",
             "source_code": "NIMAT",
             "source_owner": "Xavier Niel",
-            "media_all": "",
+            "media_all": "Nice-Matin",
             "source_region": "Provence-Alpes-Côte d’Azur"
         },
         {
             "source_name": "Nord Eclair",
             "source_code": "NORDEC",
             "source_owner": "Groupe Rossel",
-            "media_all": "",
+            "media_all": "Nord Eclair",
             "source_region": "Hauts-de-France"
         },
         {
             "source_name": "Nord Littoral",
             "source_code": "NORDLIT",
             "source_owner": "Groupe Rossel",
-            "media_all": "",
+            "media_all": "Nord Littoral",
             "source_region": "Hauts-de-France"
         },
         {
@@ -287,105 +441,15 @@ SOURCE_CLASSIFICATION = {
             "source_name": "Var-Matin",
             "source_code": "VARMAT",
             "source_owner": "Xavier Niel",
-            "media_all": "",
+            "media_all": "Var-Matin",
             "source_region": "Provence-Alpes-Côte d’Azur"
         },
         {
             "source_name": "Vosges Matin",
             "source_code": "VOSMAT",
             "source_owner": "EBRA / Crédit Mutuel",
-            "media_all": "",
+            "media_all": "Vosges Matin",
             "source_region": "Grand Est"
-        }
-    ],
-
-    "Magazine": [
-        {
-            "source_name": "Le Figaro Magazine",
-            "source_code": "FIGMAG",
-            "source_owner": "Dassault",
-            "media_all": "",
-            "source_region": ""
-        },
-        {
-            "source_name": "Le Parisien Week-End - Aujourd'hui en France Week-End",
-            "source_code": "PARWEK",
-            "source_owner": "LVMH",
-            "media_all": "",
-            "source_region": ""
-        },
-        {
-            "source_name": "Le Point",
-            "source_code": "LPOINT",
-            "source_owner": "Pinault",
-            "media_all": "Le Point",
-            "source_region": ""
-        },
-        {
-            "source_name": "L'Humanité Dimanche",
-            "source_code": "HUMAND",
-            "source_owner": "L'Humanité",
-            "media_all": "",
-            "source_region": ""
-        },
-        {
-            "source_name": "L'Obs",
-            "source_code": "LENOV",
-            "source_owner": "Le Monde",
-            "media_all": "L'Obs",
-            "source_region": ""
-        },
-        {
-            "source_name": "M, le magazine du Monde",
-            "source_code": "MONDMAG",
-            "source_owner": "Le Monde",
-            "media_all": "",
-            "source_region": ""
-        },
-        {
-            "source_name": "Marianne",
-            "source_code": "MARIAN",
-            "source_owner": "Czech Media Invest",
-            "media_all": "Marianne",
-            "source_region": ""
-        }
-    ],
-
-    "Web": [
-        {
-            "source_name": "20Minutes.fr",
-            "source_code": "VINMINFR",
-            "source_owner": "Groupe Rossel",
-            "media_all": "",
-            "source_region": ""
-        },
-        {
-            "source_name": "France24.com",
-            "source_code": "HTFRFR",
-            "source_owner": "France Médias Monde",
-            "media_all": "",
-            "source_region": ""
-        },
-        {
-            "source_name": "La Tribune",
-            "source_code": "TRDS",
-            "source_owner": "CMA CGM",
-            "media_all": "La Tribune",
-            "source_region": ""
-        },
-        {
-            "source_name": "La Tribune.fr",
-            "source_code": "TBNWEB",
-            "source_owner": "CMA CGM",
-            "media_all": "La Tribune",
-            "source_region": ""
-        },
-        {
-            "source_name": "La-Croix.com",
-            "source_code": "CROICOM",
-            "source_owner": "Groupe Bayard",
-            "media_all": "La Croix",
-            "source_region": ""
         },
         {
             "source_name": "Lamontagne.fr",
@@ -399,13 +463,6 @@ SOURCE_CLASSIFICATION = {
             "source_code": "REPFR",
             "source_owner": "Groupe Centre France",
             "media_all": "La République du Centre",
-            "source_region": ""
-        },
-        {
-            "source_name": "Le HuffPost",
-            "source_code": "LEHUFF",
-            "source_owner": "Le Monde",
-            "media_all": "",
             "source_region": ""
         },
         {
@@ -430,45 +487,10 @@ SOURCE_CLASSIFICATION = {
             "source_region": ""
         },
         {
-            "source_name": "Lejdd.fr",
-            "source_code": "LEJD",
-            "source_owner": "Bolloré",
-            "media_all": "",
-            "source_region": ""
-        },
-        {
-            "source_name": "lefigaro.fr",
-            "source_code": "FIGPRE",
-            "source_owner": "Dassault",
-            "media_all": "Le Figaro",
-            "source_region": ""
-        },
-        {
-            "source_name": "leParisien.fr",
-            "source_code": "PARIN",
-            "source_owner": "LVMH",
-            "media_all": "Le Parisien",
-            "source_region": ""
-        },
-        {
             "source_name": "Lepopulaire.fr",
             "source_code": "POPFR",
             "source_owner": "Groupe Centre France",
             "media_all": "Le Populaire du Centre",
-            "source_region": ""
-        },
-        {
-            "source_name": "Les Echos.fr",
-            "source_code": "ECHOFR",
-            "source_owner": "LVMH",
-            "media_all": "Les Echos",
-            "source_region": ""
-        },
-        {
-            "source_name": "Libération.fr",
-            "source_code": "LBRTONL",
-            "source_owner": "Libération",
-            "media_all": "Libération",
             "source_region": ""
         },
         {
@@ -479,48 +501,19 @@ SOURCE_CLASSIFICATION = {
             "source_region": ""
         },
         {
-            "source_name": "Marianne.net",
-            "source_code": "MARNFR",
-            "source_owner": "Czech Media Invest",
-            "media_all": "Marianne",
-            "source_region": ""
-        },
-        {
-            "source_name": "mediapart.fr",
-            "source_code": "MEDAP",
-            "source_owner": "Mediapart",
-            "media_all": "",
-            "source_region": ""
-        },
-        {
-            "source_name": "Nouvelobs.com",
-            "source_code": "NOBCOM",
-            "source_owner": "Le Monde",
-            "media_all": "L'Obs",
-            "source_region": ""
-        },
-        {
             "source_name": "Sudouest.fr",
             "source_code": "SDUFR",
             "source_owner": "Groupe Sud Ouest",
             "media_all": "Sud Ouest",
             "source_region": ""
-        },
-        {
-            "source_name": "Le Point.fr",
-            "source_code": "POINFR",
-            "source_owner": "Pinault",
-            "media_all": "Le Point",
-            "source_region": ""
         }
     ],
-
     "Agence Presse": [
         {
             "source_name": "Agence France Presse",
             "source_code": "AFPFR",
             "source_owner": "Agence France Presse",
-            "media_all": "",
+            "media_all": "Agence France Presse",
             "source_region": ""
         }
     ]

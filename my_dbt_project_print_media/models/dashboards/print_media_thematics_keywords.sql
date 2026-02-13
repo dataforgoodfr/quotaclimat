@@ -391,6 +391,9 @@ FROM combined_aggregates ca
 LEFT JOIN {{ source('public', 'source_classification') }} sc
     ON ca.source_code = sc.source_code
 
+-- Exclude France24.com
+WHERE ca.source_code <> 'HTFRFR'
+
 ORDER BY
     ca.publication_day DESC,
     ca.source_code ASC,

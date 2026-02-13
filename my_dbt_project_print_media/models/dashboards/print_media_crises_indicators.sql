@@ -474,6 +474,9 @@ LEFT JOIN daily_stats ds
     AND asd.source_code = ds.source_code
 LEFT JOIN source_medians sm
     ON asd.source_code = sm.source_code
+    
+-- Exclude France24.com
+WHERE asd.source_code <> 'HTFRFR'
 
 ORDER BY
     asd.publication_day DESC,

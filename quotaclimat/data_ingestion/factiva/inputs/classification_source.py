@@ -204,7 +204,7 @@ SOURCE_CLASSIFICATION = {
             "source_code": "CNPRES",
             "source_owner": "La Dépêche du Midi",
             "media_all": "Centre Presse",
-            "source_region": "Nouvelle-Aquitaine"
+            "source_region": "Occitanie"
         },
         {
             "source_name": "Corse-Matin",

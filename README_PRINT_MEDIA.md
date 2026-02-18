@@ -107,7 +107,8 @@ Defined in:
 - Joins with `keyword_macro_category` to assign sectors (10 possible values: empty, General, Agriculture & Alimentation, Mobilité, Bâtiment & Aménagement, Energie, Industrie, Eau, Ecosystème, Economie circulaire)
 - Keywords with multiple sectors create separate rows (one per sector)
 - Aggregates by day × source × keyword × sector
-- Handles outlier days: replaces counts with keyword-sector-source specific medians when >15 duplicates detected
+- Only keep non-duplicate articles
+- Only keep articles with at least one predicted crise
 - Filters to 4+ day old data and articles with `word_count >= MINIMAL_WORD_COUNT`
 - Manages `is_hrfp` flag: if keyword appears with both true/false, uses false
 
@@ -115,7 +116,6 @@ Defined in:
 - Aggregate daily keyword data to weekly (Monday-Sunday) or monthly granularity
 - Only include complete periods
 - Merge La Tribune print (TRDS) into La Tribune.fr (TBNWEB)
-- Propagate outlier flag: TRUE if any day in period is outlier
 
 **Key columns**:
 - Temporal: `publication_day`/`publication_week`/`publication_month`
@@ -285,7 +285,8 @@ Docker images are built and deployed via **GitHub Actions**: [`.github/workflows
    - Joins with `keyword_macro_category` to assign sectors
    - Aggregates keyword usage by day/week/month × source × keyword × sector
    - Calculates `nb_articles` (distinct article count) and `nb_keyword_occurences` (total occurrences)
-   - Handles outlier days with keyword-sector-source specific medians
+   - Only keep non-duplicate articles
+   - Only keep articles with at least one predicted crise
    - Keywords with multiple sectors appear on separate rows
    - Daily, weekly, and monthly aggregations
 
@@ -485,7 +486,7 @@ Articles can appear multiple times in the stream due to issue with Factiva API (
   - `DUP_UNIQUE_VERSION`: The version to keep (most recent modification_datetime)
   - `DUP`: Duplicate to exclude from analysis
 - **Impact on analysis**: 
-  - Source-days with 15+ DUP are completely excluded (we consider in that case the median of the metrics)
+  - Source-days with 15+ DUP are completely excluded from crises computations (we consider in that case the median of the metrics)
 
 ### Causal Links
 

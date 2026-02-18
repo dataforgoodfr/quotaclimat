@@ -11,6 +11,7 @@ This model aggregates the daily print_media_thematics_keywords by month:
 2. Sums all counts across the month
 3. Only includes COMPLETE months (where the last day of that month is covered in the daily data)
 4. publication_month = first day of the month
+5. Inherits filters from daily table (crisis prediction, no duplicates, word count, etc.)
 
 Materialization Strategy:
 - materialized='incremental' with unique_key for flexibility
@@ -43,12 +44,9 @@ monthly_aggregates AS (
         ptk.sector,
         ptk.is_hrfp,
         
-        -- Sum all counts across the month (includes both normal and outlier days)
+        -- Sum all counts across the month
         SUM(ptk.nb_articles) AS nb_articles,
-        SUM(ptk.nb_keyword_occurences) AS nb_keyword_occurences,
-        
-        -- Mark month as outlier if ANY day in the month is an outlier
-        BOOL_OR(ptk.outlier) AS outlier
+        SUM(ptk.nb_keyword_occurences) AS nb_keyword_occurences
         
     FROM {{ ref('print_media_thematics_keywords') }} ptk
     CROSS JOIN max_day md
@@ -92,7 +90,6 @@ SELECT
     nb_articles,
     nb_keyword_occurences,
     is_hrfp,
-    outlier,
     CURRENT_TIMESTAMP AS created_at,
     CURRENT_TIMESTAMP AS updated_at
     

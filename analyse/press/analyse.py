@@ -5,7 +5,7 @@ print(duckdb.__version__)
 
 dictionary_df = duckdb.sql("SELECT * FROM 'my_dbt_project/seeds/dictionary_new.csv'").df()
 print(dictionary_df.head())
-instagram_df = pd.read_csv('analyse/press/instagram_data.csv')
+instagram_df = pd.read_csv('analyse/press/data/input/instagram_data.csv')
 batch = instagram_df.head(1000)
 print("batch. ensuring lowercase. plaintext -> cleaned_text")
 batch = duckdb.sql("""
@@ -177,7 +177,14 @@ keywords_found = keywords_found.df()
 
 classifications = duckdb.sql("""
 SELECT
-    b.*,
+    b.file_name,
+    b.user_pk,
+    b.user_username,
+    b.user_full_name,
+    b.user_id,
+    b.like_count,
+    b.comment_count,
+    b.caption_text,
     coalesce(kf.matched_keywords, []) matched_keywords,
     coalesce(kf.positions, []) positions,
     coalesce(kf.themes, []) themes,
@@ -185,15 +192,20 @@ SELECT
     coalesce(kf.validated, false) validated 
 FROM batch b
 left join keywords_found kf on b.file_name = kf.document_id
+order by 
+validated desc,
+b.id
 """)
                              
 classifications.show()
+classifications.to_csv('analyse/press/data/output/instagram_data_classified.csv')
 classifications = classifications.df()
 
-duckdb.sql("""
+result = duckdb.sql("""
 SELECT
     distinct validated,
     count(*)
 FROM classifications
 group by validated
-""").show()
+""")
+result.show()

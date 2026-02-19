@@ -1,8 +1,6 @@
 import duckdb
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 print(duckdb.__version__)
-# duckdb.execute("INSTALL fts")
-# duckdb.execute("LOAD fts")
 WINDOW_SIZE = 20
 N_WINDOWS = 120 / WINDOW_SIZE
 
@@ -10,13 +8,18 @@ dictionary_df = duckdb.sql("SELECT * FROM 'my_dbt_project/seeds/dictionary_new.c
 keywords_df = duckdb.sql("SELECT * FROM 'my_dbt_project/seeds/keywords.csv'").df()
 stop_word = duckdb.sql("SELECT * FROM 'my_dbt_project/seeds/stop_word.csv'").df()
 
+print("keywords_df.cleaning text from <unk> tokens. plaintext -> cleaned_text")
 keywords_df = duckdb.sql("""
 SELECT
     *,
     regexp_replace(plaintext, '<unk>', '', 'g') AS cleaned_text
 FROM keywords_df                      
-""").df()
+""")
 
+keywords_df.show()
+keywords_df = keywords_df.df()
+
+print("filtered_keywords.removing stopwords. cleaned_text -> filtered_text")
 filtered_keywords = duckdb.sql("""
 WITH stopword_regex AS (
     SELECT
@@ -59,10 +62,13 @@ SELECT
     ) AS filtered_text
 FROM keywords_df kw
 CROSS JOIN stopword_regex s;
-""").df()#.to_table("filtered_keywords")
+""")#.to_table("filtered_keywords")
 
 
+filtered_keywords.show()
+filtered_keywords = filtered_keywords.df()
 
+print("keyword_found. finding all keywords. +keywords_found")
 keyword_found = duckdb.sql("""
 WITH keyword_regex AS (
     SELECT
@@ -84,8 +90,12 @@ SELECT
     regexp_extract_all(kw.filtered_text, kr.pattern) AS keywords_found
     FROM filtered_keywords kw
 CROSS JOIN keyword_regex kr
-""").df()
+""")
 
+keyword_found.show()
+keyword_found = keyword_found.df()
+
+print("keywords_with_themes.finding associated themes. join dictionary_df d on d.keyword in kf.keywords_found. +themes (non_unique)")
 keywords_with_themes = duckdb.sql("""
 select 
     kf.id,
@@ -117,8 +127,11 @@ group by
 order by
     kf.id        
 """
-).df()
+)
+keywords_with_themes.show()
+keywords_with_themes = keywords_with_themes.df()
 
+print("srt_words. Expand the json srt to get timestamps for every word. + word + timestamp")
 srt_words = duckdb.sql("""
     SELECT
         kwt.id,
@@ -127,8 +140,11 @@ srt_words = duckdb.sql("""
     FROM keywords_with_themes kwt,
          json_each(kwt.srt) AS j
     order by kwt.id
-""").df()
+""")
+srt_words.show()
+srt_words = srt_words.df()
 
+print("segment_start. get the segment start for each id by looking at the minimum word timestamp. + start_timestamp")
 segment_start = duckdb.sql("""
     SELECT
         sw.id,
@@ -137,7 +153,10 @@ segment_start = duckdb.sql("""
     group by sw.id
     order by sw.id
 """)
+segment_start.show()
+segment_start = segment_start.df()
 
+print("document_keywords. Unnest the distinct keywords found into one line per text/keywords combo. + keyword")
 document_keywords = duckdb.sql(
 """
 SELECT
@@ -148,7 +167,9 @@ FROM keywords_with_themes kwt,
     unnest(list_distinct(kwt.keywords_found)) AS k(keyword)
 order by kwt.id
 """
-).df()
+)
+document_keywords.show()
+document_keywords = document_keywords.df()
 
 # matched_keywords = duckdb.sql(
 # """
@@ -166,6 +187,7 @@ order by kwt.id
 #     s.timestamp
 # """
 # ).df()
+print("matched_keywords. join the keywords with srt words to get the timestamp of each word.")
 matched_keywords = duckdb.sql(
 """
 SELECT
@@ -182,7 +204,11 @@ order by
     kd.keyword,
     s.timestamp
 """
-).df()
+)
+matched_keywords.show()
+matched_keywords = matched_keywords.df()
+
+print("enriched_keywords.")
 
 enriched_keywords = duckdb.sql(
 f"""

@@ -160,3 +160,7 @@ pgdump/
 analyse/mediatree/data
 analyse/mediatree/images
 *.tsv
+
+analyse/press/data
+quotaclimat/data_ingestion/lemonde_ftp/ftp_data
+quotaclimat/data_ingestion/lemonde_ftp/examples

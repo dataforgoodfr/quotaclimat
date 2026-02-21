@@ -504,6 +504,54 @@ services:
       postgres_db:
         condition: service_healthy
 
+  ftp_server:
+      container_name: my-ftp-server
+      environment:
+          - PUBLIC_IP=192.168.0.1
+          - FTP_PASS=password123
+          - FTP_USER=quotaclimat
+      image: garethflowers/ftp-server
+      ports:
+          - "20-21:20-21/tcp"
+          - "40000-40009:40000-40009/tcp" # For passive mode
+      volumes:
+        - ./quotaclimat/data_ingestion/lemonde_ftp/ftp_data:/home/quotaclimat
+
+  lemonde_ftp_to_s3:
+    container_name: lemonde_ftp_to_s3
+    ports:
+      - 5003:5000
+    build:
+      context: ./
+      dockerfile: Dockerfile_api_to_s3
+    entrypoint: ["python", "quotaclimat/data_ingestion/lemonde_ftp/ftp_to_s3.py"]
+    environment:
+      FTP_HOST: ftp_server 
+      # Change to secret to use in prod
+      # FTP_HOST: /run/secrets/lemonde_ftp_host
+      FTP_USER: quotaclimat
+      FTP_PASS: password123
+      # Change to secret to use in prod
+      # FTP_PASS: /run/secrets/lemonde_ftp_pass
+      FTP_PORT: 21
+      S3_BUCKET_NAME: "test-bucket-mediatree"
+      S3_REGION: "fr-par"
+      S3_ACCESS_KEY: /run/secrets/bucket
+      S3_SECRET_KEY: /run/secrets/bucket_secret
+      START_DATE: "20260221"
+      NUMBER_DAYS_PRIOR: 7
+      OVERRIDE: "false"
+    # volumes:
+    #   - ./quotaclimat/data_ingestion/lemonde_ftp/data:/outputs
+    secrets:
+      - lemonde_ftp_host
+      - lemonde_ftp_pass
+      - bucket
+      - bucket_secret
+    depends_on:
+      ftp_server:
+        condition: service_healthy
+
 secrets: # https://docs.docker.com/compose/use-secrets/
   pwd_api:
     file: secrets/pwd_api.txt
@@ -519,4 +567,7 @@ secrets: # https://docs.docker.com/compose/use-secrets/
     file: secrets/stream_subscription_main.txt
   factiva_userkey:
     file: secrets/factiva_userkey.txt
-
+  lemonde_ftp_host:
+    file: secrets/lemonde_ftp_host.txt
+  lemonde_ftp_pass:
+    file: secrets/lemonde_ftp_pass.txt

@@ -504,7 +504,8 @@ services:
       postgres_db:
         condition: service_healthy
 
-  duck_db:
+  analyse_instagram_data:
+    entrypoint: ["poetry", "run", "python analyse/press/analyse.py"]
     build:
       context: ./
       dockerfile: duckdb.Dockerfile

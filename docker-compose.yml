@@ -523,7 +523,7 @@ services:
       - 5003:5000
     build:
       context: ./
-      dockerfile: Dockerfile_api_to_s3
+      dockerfile: Dockerfile_factiva_to_s3
     entrypoint: ["python", "quotaclimat/data_ingestion/lemonde_ftp/ftp_to_s3.py"]
     environment:
       FTP_HOST: ftp_server 

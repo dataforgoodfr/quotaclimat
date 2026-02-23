@@ -247,7 +247,7 @@ for idx in tqdm(range(n_batches), total=n_batches):
     result_dfs.append(classifications)
 
 result_df = pd.concat(result_dfs)
-result_df.to_csv('analyse/press/data/output/instagram_data_classified.csv')
+result_df.to_csv('analyse/press/data/output/instagram_data_classified.csv', index=False)
 
 result = duckdb.sql("""
 SELECT

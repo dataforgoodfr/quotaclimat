@@ -48,7 +48,6 @@ def connect_to_ftp():
         ftp = ftplib.FTP()
         ftp.connect(FTP_HOST, FTP_PORT)
         ftp.login(FTP_USER, FTP_PASS)
-        print(f"Connected to FTP server {FTP_HOST}")
         return ftp
     except Exception as e:
         print(f"Failed to connect to FTP server: {e}")

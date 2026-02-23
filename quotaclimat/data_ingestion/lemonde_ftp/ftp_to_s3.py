@@ -245,7 +245,7 @@ def parse_article_xml(article_path):
             # Extract all text content from the content section
             content_text = []
             for elem in content_elem.iter():
-                if elem.text and elem.tag != '{http://www.w3.org/1999/xhtml}div' and elem.tag != '{http://www.w3.org/1999/xhtml}p':
+                if elem.text and elem.tag != '{http://www.w3.org/1999/xhtml}div':
                     content_text.append(elem.text.strip())
             article_data['content'] = ' '.join(content_text)
         else:

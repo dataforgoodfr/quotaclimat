@@ -255,6 +255,11 @@ result_df.insert(
             get_consistent_hash
         ),
     )
+result_df.insert(
+        0,
+        "datetime",
+        pd.to_datetime(result_df.file_name.str.split("Z_").apply(lambda x: x[0])),
+    )
 result_df.to_csv('analyse/press/data/output/instagram_data_classified.csv', index=False)
 
 result = duckdb.sql("""

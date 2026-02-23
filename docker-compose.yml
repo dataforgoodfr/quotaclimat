@@ -505,7 +505,7 @@ services:
         condition: service_healthy
 
   analyse_instagram_data:
-    entrypoint: ["poetry", "run", "python analyse/press/analyse.py"]
+    entrypoint: ["poetry", "run", "python", "analyse/press/analyse.py"]
     build:
       context: ./
       dockerfile: duckdb.Dockerfile

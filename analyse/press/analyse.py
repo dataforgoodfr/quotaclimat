@@ -1,6 +1,7 @@
 import duckdb
 import pandas as pd
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
+from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 from tqdm import tqdm
 print(duckdb.__version__)
 
@@ -247,6 +248,13 @@ for idx in tqdm(range(n_batches), total=n_batches):
     result_dfs.append(classifications)
 
 result_df = pd.concat(result_dfs)
+result_df.insert(
+        0,
+        "id",
+        (result_df.file_name + result_df.user_pk.astype(str)).apply(
+            get_consistent_hash
+        ),
+    )
 result_df.to_csv('analyse/press/data/output/instagram_data_classified.csv', index=False)
 
 result = duckdb.sql("""

@@ -195,6 +195,13 @@ SOURCE_CLASSIFICATION = {
             "source_owner": "France Médias Monde",
             "media_all": "France24.com",
             "source_region": ""
+        },
+        {
+            "source_name": "Le Monde.fr",
+            "source_code": "LEMFR",
+            "source_owner": "Le Monde",
+            "media_all": "Le Monde",
+            "source_region": ""
         }
     ],
 

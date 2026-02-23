@@ -6,8 +6,10 @@ from tqdm import tqdm
 print(duckdb.__version__)
 
 dictionary_df = duckdb.sql("SELECT * FROM 'my_dbt_project/seeds/dictionary_new.csv'").df()
-print(dictionary_df.head())
 instagram_df = pd.read_csv('analyse/press/data/input/instagram_data.csv')
+reference_df = duckdb.sql("SELECT * FROM 'analyse/press/data/reference/Editorialisation.xlsx'").df()
+reference_df = duckdb.sql("SELECT ltrim(instagram, '@') username FROM reference_df").df()
+reference_df = reference_df.dropna().reset_index()
 
 batch_size = 10000
 n_batches = len(instagram_df) // batch_size + 1
@@ -256,12 +258,18 @@ result_df.insert(
         ),
     )
 result_df.insert(
-        0,
+        1,
         "datetime",
         pd.to_datetime(result_df.file_name.str.split("Z_").apply(lambda x: x[0])),
     )
+result_df.insert(
+        7,
+        "in_perimeter",
+        result_df.user_username.isin(reference_df.username),
+    )
+result_df = result_df.loc[result_df.datetime >= pd.to_datetime("2025-01-01")]
 result_df.to_csv('analyse/press/data/output/instagram_data_classified.csv', index=False)
-
+print(result_df.head())
 result = duckdb.sql("""
 SELECT
     distinct validated,

@@ -24,6 +24,7 @@ FactivaBase = declarative_base()
 source_classification_table = "source_classification"
 factiva_articles_table = "factiva_articles"
 stats_factiva_articles_table = "stats_factiva_articles"
+lemonde_ftp_articles_table = "lemonde_ftp_articles"
 
 
 class Source_Classification(FactivaBase):
@@ -260,6 +261,168 @@ class Factiva_Article(FactivaBase):
     predict_industrie = Column(Boolean, nullable=True)
     predict_eau = Column(Boolean, nullable=True)
     predict_ecosysteme = Column(Boolean, nullable=True)
+
+class LeMonde_FTP_Article(FactivaBase):
+    __tablename__ = lemonde_ftp_articles_table
+
+    # Primary key - Accession Number (Unique document ID)
+    an = Column(String, primary_key=True)
+
+    # Event metadata
+    document_type = Column(String, nullable=True)
+    action = Column(String, nullable=True)  # add, rep, del
+    event_type = Column(String, nullable=True)  # for bulk events like source_delete
+
+    # Article content
+    title = Column(Text, nullable=True)
+    body = Column(Text, nullable=True)
+    snippet = Column(Text, nullable=True)
+    art = Column(Text, nullable=True)  # Caption text and descriptions
+
+    # Author and attribution
+    byline = Column(Text, nullable=True)
+    credit = Column(Text, nullable=True)
+    dateline = Column(Text, nullable=True)
+
+    # Publication information
+    source_code = Column(String, nullable=True)
+    source_name = Column(Text, nullable=True)
+    publisher_name = Column(Text, nullable=True)
+    section = Column(Text, nullable=True)
+    copyright = Column(Text, nullable=True)
+
+    # Dates and timestamps
+    publication_date = Column(DateTime(timezone=True), nullable=True)
+    publication_datetime = Column(DateTime(timezone=True), nullable=True)
+    modification_date = Column(DateTime(timezone=True), nullable=True)
+    modification_datetime = Column(DateTime(timezone=True), nullable=True)
+    ingestion_datetime = Column(DateTime(timezone=True), nullable=True)
+    availability_datetime = Column(DateTime(timezone=True), nullable=True)
+
+    # Language and region
+    language_code = Column(String, nullable=True)
+    region_of_origin = Column(String, nullable=True)
+
+    # Metadata
+    word_count = Column(Integer, nullable=True)
+
+    # Codes - stored as comma-separated strings or JSON
+    company_codes = Column(Text, nullable=True)
+    company_codes_about = Column(Text, nullable=True)
+    company_codes_association = Column(Text, nullable=True)
+    company_codes_lineage = Column(Text, nullable=True)
+    company_codes_occur = Column(Text, nullable=True)
+    company_codes_relevance = Column(Text, nullable=True)
+    subject_codes = Column(Text, nullable=True)
+    region_codes = Column(Text, nullable=True)
+    industry_codes = Column(Text, nullable=True)
+    person_codes = Column(Text, nullable=True)
+    currency_codes = Column(Text, nullable=True)
+    market_index_codes = Column(Text, nullable=True)
+
+    # Additional metadata (v2.44+)
+    allow_translation = Column(Boolean, nullable=True)
+    attrib_code = Column(String, nullable=True)
+    authors = Column(JSON, nullable=True)  # Array of author names and IDs
+    clusters = Column(JSON, nullable=True)  # Array of similar article IDs
+    content_type_codes = Column(Text, nullable=True)
+    footprint_company_codes = Column(Text, nullable=True)
+    footprint_person_codes = Column(Text, nullable=True)
+    industry_classification_benchmark_codes = Column(Text, nullable=True)
+    newswires_codes = Column(Text, nullable=True)
+    org_type_codes = Column(Text, nullable=True)
+    pub_page = Column(String, nullable=True)
+    restrictor_codes = Column(Text, nullable=True)
+
+    # Internal tracking
+    created_at = Column(
+        DateTime(timezone=True), server_default=text("(now() at time zone 'utc')")
+    )
+    updated_at = Column(
+        DateTime(timezone=True),
+        default=datetime.now,
+        onupdate=text("now() at time zone 'Europe/Paris'"),
+        nullable=True,
+    )
+    is_deleted = Column(Boolean, default=False, nullable=False)  # Soft delete flag
+
+    # Keyword counts - non HRFP (high risk of false positive) - UNIQUE keywords only
+    number_of_changement_climatique_constat_no_hrfp = Column(Integer, nullable=True)
+    number_of_changement_climatique_causes_no_hrfp = Column(Integer, nullable=True)
+    number_of_changement_climatique_consequences_no_hrfp = Column(Integer, nullable=True)
+    number_of_attenuation_climatique_solutions_no_hrfp = Column(Integer, nullable=True)
+    number_of_adaptation_climatique_solutions_no_hrfp = Column(Integer, nullable=True)
+    number_of_changement_climatique_solutions_no_hrfp = Column(Integer, nullable=True)  # Combined solutions
+    number_of_ressources_constat_no_hrfp = Column(Integer, nullable=True)
+    number_of_ressources_solutions_no_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_concepts_generaux_no_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_causes_no_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_consequences_no_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_solutions_no_hrfp = Column(Integer, nullable=True)
+
+    # Keyword counts - HRFP (high risk of false positive) - UNIQUE keywords only
+    number_of_changement_climatique_constat_hrfp = Column(Integer, nullable=True)
+    number_of_changement_climatique_causes_hrfp = Column(Integer, nullable=True)
+    number_of_changement_climatique_consequences_hrfp = Column(Integer, nullable=True)
+    number_of_attenuation_climatique_solutions_hrfp = Column(Integer, nullable=True)
+    number_of_adaptation_climatique_solutions_hrfp = Column(Integer, nullable=True)
+    number_of_changement_climatique_solutions_hrfp = Column(Integer, nullable=True)  # Combined solutions
+    number_of_ressources_constat_hrfp = Column(Integer, nullable=True)
+    number_of_ressources_solutions_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_concepts_generaux_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_causes_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_consequences_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_solutions_hrfp = Column(Integer, nullable=True)
+
+    # Aggregated counts by crisis type - non HRFP (sum of causal links)
+    number_of_climat_no_hrfp = Column(Integer, nullable=True)
+    number_of_ressources_no_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_no_hrfp = Column(Integer, nullable=True)
+
+    # Aggregated counts by crisis type - HRFP (sum of causal links)
+    number_of_climat_hrfp = Column(Integer, nullable=True)
+    number_of_ressources_hrfp = Column(Integer, nullable=True)
+    number_of_biodiversite_hrfp = Column(Integer, nullable=True)
+
+    # Aggregated counts for ALL crises combined - non HRFP (unique keywords across all crises)
+    number_of_crises_no_hrfp = Column(Integer, nullable=True)
+    crises_keywords = Column(JSON, nullable=True)  # All unique keywords from all crises (non-HRFP)
+    
+    # Aggregated counts for ALL crises combined - HRFP (unique keywords across all crises)
+    number_of_crises_hrfp = Column(Integer, nullable=True)
+    crises_keywords_hrfp = Column(JSON, nullable=True)  # All unique keywords from all crises (HRFP)
+
+    # Keyword lists by causal link - non HRFP - JSON arrays with ALL occurrences (including duplicates)
+    changement_climatique_constat_keywords = Column(JSON, nullable=True)
+    changement_climatique_causes_keywords = Column(JSON, nullable=True)
+    changement_climatique_consequences_keywords = Column(JSON, nullable=True)
+    attenuation_climatique_solutions_keywords = Column(JSON, nullable=True)
+    adaptation_climatique_solutions_keywords = Column(JSON, nullable=True)
+    changement_climatique_solutions_keywords = Column(JSON, nullable=True)  # Combined solutions
+    ressources_constat_keywords = Column(JSON, nullable=True)
+    ressources_solutions_keywords = Column(JSON, nullable=True)
+    biodiversite_concepts_generaux_keywords = Column(JSON, nullable=True)
+    biodiversite_causes_keywords = Column(JSON, nullable=True)
+    biodiversite_consequences_keywords = Column(JSON, nullable=True)
+    biodiversite_solutions_keywords = Column(JSON, nullable=True)
+
+    # Keyword lists by causal link - HRFP - JSON arrays with ALL occurrences (including duplicates)
+    changement_climatique_constat_keywords_hrfp = Column(JSON, nullable=True)
+    changement_climatique_causes_keywords_hrfp = Column(JSON, nullable=True)
+    changement_climatique_consequences_keywords_hrfp = Column(JSON, nullable=True)
+    attenuation_climatique_solutions_keywords_hrfp = Column(JSON, nullable=True)
+    adaptation_climatique_solutions_keywords_hrfp = Column(JSON, nullable=True)
+    changement_climatique_solutions_keywords_hrfp = Column(JSON, nullable=True)  # Combined solutions
+    ressources_constat_keywords_hrfp = Column(JSON, nullable=True)
+    ressources_solutions_keywords_hrfp = Column(JSON, nullable=True)
+    biodiversite_concepts_generaux_keywords_hrfp = Column(JSON, nullable=True)
+    biodiversite_causes_keywords_hrfp = Column(JSON, nullable=True)
+    biodiversite_consequences_keywords_hrfp = Column(JSON, nullable=True)
+    biodiversite_solutions_keywords_hrfp = Column(JSON, nullable=True)
+
+    # All keywords with full metadata (keyword, theme, category, count_keyword, is_hrfp)
+    all_keywords = Column(JSON, nullable=True)
+
 
 
 class Stats_Factiva_Article(FactivaBase):

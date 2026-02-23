@@ -1,5 +1,6 @@
-# Dockerfile for S3 Factiva to PostgreSQL processor
-# Processes article and stats data from S3 into PostgreSQL
+# Dockerfile for Le Monde FTP complete pipeline
+# Step 1: Downloads articles from FTP to S3
+# Step 2: Processes articles from S3 to PostgreSQL (lemonde_ftp_articles + factiva_articles)
 
 FROM python:3.12.10 AS builder
 
@@ -31,10 +32,11 @@ COPY postgres ./postgres
 COPY pyproject.toml ./pyproject.toml
 COPY alembic_factiva/ ./alembic_factiva
 COPY alembic_factiva.ini ./alembic_factiva.ini
-COPY my_dbt_project_print_media/ ./my_dbt_project_print_media
 
 # Create tmp directory for temporary files
 RUN mkdir -p /tmp/s3_factiva_to_postgre
+RUN mkdir -p /tmp/s3_lemonde_to_postgre
+RUN mkdir -p /tmp/lemonde_ftp
 
 # Healthcheck port
 EXPOSE 5000

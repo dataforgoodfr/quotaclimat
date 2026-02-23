@@ -14,11 +14,20 @@ echo "Using config file: alembic_factiva.ini"
 python --version
 alembic --version || true
 
-# Run Alembic migrations
+# Run Alembic migrations (including lemonde_ftp_articles table)
 echo "Run migrations to ensure database is up to date"
 alembic -c alembic_factiva.ini upgrade head
 
 echo "============================================"
-echo "Starting S3 Factiva to PostgreSQL processor"
+echo "STEP 1: Downloading Le Monde articles from FTP to S3"
+echo "============================================"
 python quotaclimat/data_ingestion/lemonde_ftp/ftp_to_s3.py
-python quotaclimat/data_processing/lemonde_ftp/s3_to_postgre/s3_lemonde_to_postgre.py
+
+echo "============================================"
+echo "STEP 2: Processing Le Monde articles from S3 to PostgreSQL"
+echo "============================================"
+python quotaclimat/data_ingestion/lemonde_ftp/s3_to_postgre/s3_lemonde_to_postgre.py
+
+echo "============================================"
+echo "Le Monde FTP pipeline complete"
+echo "============================================"

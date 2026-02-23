@@ -81,7 +81,7 @@ SOURCE_CLASSIFICATION = {
             "source_name": "L'Obs",
             "source_code": "LENOV",
             "source_owner": "Le Monde",
-            "media_all": "L'Obs",
+            "media_all": "Le Nouvel Obs",
             "source_region": ""
         },
         {
@@ -102,7 +102,7 @@ SOURCE_CLASSIFICATION = {
             "source_name": "20Minutes.fr",
             "source_code": "VINMINFR",
             "source_owner": "Groupe Rossel",
-            "media_all": "20Minutes.fr",
+            "media_all": "20 Minutes",
             "source_region": ""
         },
         {
@@ -144,21 +144,21 @@ SOURCE_CLASSIFICATION = {
             "source_name": "Nouvelobs.com",
             "source_code": "NOBCOM",
             "source_owner": "Le Monde",
-            "media_all": "L'Obs",
+            "media_all": "Le Nouvel Obs",
             "source_region": ""
         },
         {
             "source_name": "La Tribune",
             "source_code": "TRDS",
             "source_owner": "CMA CGM",
-            "media_all": "La Tribune",
+            "media_all": "La Tribune.fr",
             "source_region": ""
         },
         {
             "source_name": "La Tribune.fr",
             "source_code": "TBNWEB",
             "source_owner": "CMA CGM",
-            "media_all": "La Tribune",
+            "media_all": "La Tribune.fr",
             "source_region": ""
         },
         {
@@ -172,7 +172,7 @@ SOURCE_CLASSIFICATION = {
             "source_name": "mediapart.fr",
             "source_code": "MEDAP",
             "source_owner": "Mediapart",
-            "media_all": "mediapart.fr",
+            "media_all": "Mediapart",
             "source_region": ""
         },
         {

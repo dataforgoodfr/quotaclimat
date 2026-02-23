@@ -33,6 +33,7 @@ SECTEURS_VALIDES = {
     "Ecosystème",
     "Energie",
     "Industrie",
+    "Transversal",
     "Autre",
 }
 

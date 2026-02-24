@@ -48,6 +48,9 @@ def connect_to_ftp():
         ftp = ftplib.FTP()
         ftp.connect(FTP_HOST, FTP_PORT)
         ftp.login(FTP_USER, FTP_PASS)
+        files = ftp.nlst()
+        print(files)
+        sys.exit(1)
         return ftp
     except Exception as e:
         print(f"Failed to connect to FTP server: {e}")
@@ -387,6 +390,9 @@ def main():
 
     # Download files
     downloaded_files = download_files(ftp, temp_dir)
+    upload_folder_to_s3(
+        temp_dir, bucket_name=S3_BUCKET, base_s3_path="raw", s3_client=s3_client
+    )
 
     # Extract files
     extracted_dirs = []
@@ -458,9 +464,6 @@ def main():
     )
     upload_folder_to_s3(
         stats_dir, bucket_name=S3_BUCKET, base_s3_path="country_france/nb_articles", s3_client=s3_client
-    )
-    upload_folder_to_s3(
-        temp_dir, bucket_name=S3_BUCKET, base_s3_path="raw", s3_client=s3_client
     )
     # Close FTP connection
     ftp.quit()

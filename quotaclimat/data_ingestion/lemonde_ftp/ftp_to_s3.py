@@ -459,6 +459,9 @@ def main():
     upload_folder_to_s3(
         stats_dir, bucket_name=S3_BUCKET, base_s3_path="country_france/nb_articles", s3_client=s3_client
     )
+    upload_folder_to_s3(
+        temp_dir, bucket_name=S3_BUCKET, base_s3_path="raw", s3_client=s3_client
+    )
     # Close FTP connection
     ftp.quit()
 

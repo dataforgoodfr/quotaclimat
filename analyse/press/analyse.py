@@ -180,11 +180,17 @@ for idx in tqdm(range(n_batches), total=n_batches):
         fm.start_pos,
         d.theme,
         d.high_risk_of_false_positive,
-        case when contains(d.theme, 'adaptation_climatique') then true else false end as is_adaptation_climatique,
-        case when contains(d.theme, 'attenuation_climatique') then true else false end as is_attenuation_climatique,
-        case when contains(d.theme, 'biodiversite') then true else false end as is_biodiversite,
-        case when contains(d.theme, 'changement_climatique') then true else false end as is_changement_climatique,
-        case when contains(d.theme, 'ressources') then true else false end as is_ressources
+        case when contains(d.theme, 'adaptation_climatique_solutions') then true else false end as is_adaptation_climatique_solutions,
+        case when contains(d.theme, 'attenuation_climatique_solutions') then true else false end as is_attenuation_climatique_solutions,
+        case when contains(d.theme, 'biodiversite_causes') then true else false end as is_biodiversite_causes,
+        case when contains(d.theme, 'biodiversite_concepts_generaux') then true else false end as is_biodiversite_concepts_generaux,
+        case when contains(d.theme, 'biodiversite_consequences') then true else false end as is_biodiversite_consequences,
+        case when contains(d.theme, 'biodiversite_solutions') then true else false end as is_biodiversite_solutions,
+        case when contains(d.theme, 'changement_climatique_causes') then true else false end as is_changement_climatique_causes,
+        case when contains(d.theme, 'changement_climatique_consequences') then true else false end as is_changement_climatique_consequences,
+        case when contains(d.theme, 'changement_climatique_constat') then true else false end as is_changement_climatique_constat,
+        case when contains(d.theme, 'ressources') then true else false end as is_ressources,
+        case when contains(d.theme, 'ressources_solutions') then true else false end as is_ressources_solutions
     FROM final_matches fm
     left join dictionary_hrfp d
         on d.keyword = fm.keyword
@@ -204,11 +210,17 @@ for idx in tqdm(range(n_batches), total=n_batches):
         list_distinct(list(kf.theme ORDER BY kf.theme)) themes,
         list_distinct(list(kf.high_risk_of_false_positive)) hrfp,
         not min(kf.high_risk_of_false_positive) validated,
-        max(kf.is_adaptation_climatique) is_adaptation_climatique,
-        max(kf.is_attenuation_climatique) is_attenuation_climatique,
-        max(kf.is_biodiversite) is_biodiversite,
-        max(kf.is_changement_climatique) is_changement_climatique,
-        max(kf.is_ressources) is_ressources
+        max(kf.is_adaptation_climatique_solutions) is_adaptation_climatique_solutions,
+        max(kf.is_attenuation_climatique_solutions) is_attenuation_climatique_solutions,
+        max(kf.is_biodiversite_causes) is_biodiversite_causes,
+        max(kf.is_biodiversite_concepts_generaux) is_biodiversite_concepts_generaux,
+        max(kf.is_biodiversite_consequences) is_biodiversite_consequences,
+        max(kf.is_biodiversite_solutions) is_biodiversite_solutions,
+        max(kf.is_changement_climatique_causes) is_changement_climatique_causes,
+        max(kf.is_changement_climatique_consequences) is_changement_climatique_consequences,
+        max(kf.is_changement_climatique_constat) is_changement_climatique_constat,
+        max(kf.is_ressources) is_ressources,
+        max(kf.is_ressources_solutions) is_ressources_solutions
     FROM keywords_found kf
     GROUP BY kf.document_id, kf.cleaned_text
     ORDER BY kf.document_id
@@ -232,11 +244,17 @@ for idx in tqdm(range(n_batches), total=n_batches):
         coalesce(kg.themes, []) themes,
         coalesce(kg.hrfp, []) hrfp,
         coalesce(kg.validated, false) validated,
-        coalesce(is_adaptation_climatique, false) is_adaptation_climatique,
-        coalesce(is_attenuation_climatique, false) is_attenuation_climatique,
-        coalesce(is_biodiversite, false) is_biodiversite,
-        coalesce(is_changement_climatique, false) is_changement_climatique,
-        coalesce(is_ressources, false) is_ressources
+        coalesce(is_adaptation_climatique_solutions, false) is_adaptation_climatique_solutions,
+        coalesce(is_attenuation_climatique_solutions, false) is_attenuation_climatique_solutions,
+        coalesce(is_biodiversite_causes, false) is_biodiversite_causes,
+        coalesce(is_biodiversite_concepts_generaux, false) is_biodiversite_concepts_generaux,
+        coalesce(is_biodiversite_consequences, false) is_biodiversite_consequences,
+        coalesce(is_biodiversite_solutions, false) is_biodiversite_solutions,
+        coalesce(is_changement_climatique_causes, false) is_changement_climatique_causes,
+        coalesce(is_changement_climatique_consequences, false) is_changement_climatique_consequences,
+        coalesce(is_changement_climatique_constat, false) is_changement_climatique_constat,
+        coalesce(is_ressources, false) is_ressources,
+        coalesce(is_ressources_solutions, false) is_ressources_solutions
     FROM batch b
     left join keywords_grouped kg on b.file_name = kg.document_id
     order by 

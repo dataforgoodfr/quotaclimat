@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 folders1=(
     medias_3294162846
     medias_3473138825
@@ -12,6 +13,7 @@ folders1=(
     medias_47682120
     medias_18208728
     medias_30161301136
+    medias_47682120
 )
 
 

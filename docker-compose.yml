@@ -504,7 +504,6 @@ services:
       postgres_db:
         condition: service_healthy
 
-<<<<<<< press-instagram-analysis
   analyse_instagram_data:
     entrypoint: ["poetry", "run", "python", "analyse/press/analyse.py"]
     build:
@@ -515,7 +514,6 @@ services:
     working_dir: "/workspace"
     depends_on:
       - postgres_db
-=======
   ftp_server:
       container_name: my-ftp-server
       environment:
@@ -563,7 +561,6 @@ services:
     depends_on:
       ftp_server:
         condition: service_healthy
->>>>>>> dev/print_media
 
 secrets: # https://docs.docker.com/compose/use-secrets/
   pwd_api:

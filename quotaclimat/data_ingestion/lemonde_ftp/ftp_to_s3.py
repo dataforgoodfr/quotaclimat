@@ -49,8 +49,6 @@ def connect_to_ftp():
         ftp.connect(FTP_HOST, FTP_PORT)
         ftp.login(FTP_USER, FTP_PASS)
         files = ftp.nlst()
-        print(files)
-        sys.exit(1)
         return ftp
     except Exception as e:
         print(f"Failed to connect to FTP server: {e}")

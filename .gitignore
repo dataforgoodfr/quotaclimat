@@ -161,6 +161,11 @@ analyse/mediatree/data
 analyse/mediatree/images
 *.tsv
 
+<<<<<<< press-instagram-analysis
+
+analyse/press/data
+=======
 analyse/press/data
 quotaclimat/data_ingestion/lemonde_ftp/ftp_data
 quotaclimat/data_ingestion/lemonde_ftp/examples
+>>>>>>> dev/print_media

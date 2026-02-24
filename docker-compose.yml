@@ -504,6 +504,16 @@ services:
       postgres_db:
         condition: service_healthy
 
+  analyse_instagram_data:
+    entrypoint: ["poetry", "run", "python", "analyse/press/analyse.py"]
+    build:
+      context: ./
+      dockerfile: duckdb.Dockerfile
+    volumes:
+      - "./:/workspace"
+    working_dir: "/workspace"
+    depends_on:
+      - postgres_db
   ftp_server:
       container_name: my-ftp-server
       environment:

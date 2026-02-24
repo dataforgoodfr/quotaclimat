@@ -49,6 +49,8 @@ def connect_to_ftp():
         ftp.connect(FTP_HOST, FTP_PORT)
         ftp.login(FTP_USER, FTP_PASS)
         files = ftp.nlst()
+        print(files)
+        sys.exit(1)
         return ftp
     except Exception as e:
         print(f"Failed to connect to FTP server: {e}")
@@ -385,6 +387,13 @@ def main():
 
     # Connect to FTP
     ftp = connect_to_ftp()
+    s3_client = boto3.client(
+        service_name="s3",
+        region_name=S3_REGION,
+        aws_access_key_id=S3_ACCESS_KEY,
+        aws_secret_access_key=S3_SECRET_KEY,
+        endpoint_url=f"https://s3.{S3_REGION}.scw.cloud",
+    )
 
     # Download files
     downloaded_files = download_files(ftp, temp_dir)
@@ -450,13 +459,7 @@ def main():
                         json.dump({"data": data}, f, ensure_ascii=False, indent=2)
 
 
-    s3_client = boto3.client(
-        service_name="s3",
-        region_name=S3_REGION,
-        aws_access_key_id=S3_ACCESS_KEY,
-        aws_secret_access_key=S3_SECRET_KEY,
-        endpoint_url=f"https://s3.{S3_REGION}.scw.cloud",
-    )
+    
     upload_folder_to_s3(
         output_dir, bucket_name=S3_BUCKET, base_s3_path="country_france/articles", s3_client=s3_client
     )

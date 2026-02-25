@@ -148,7 +148,51 @@ def download_files(ftp, local_dir):
     except Exception as e:
         print(f"Error downloading files: {e}")
         return []
+def download_s3_zips_by_date(
+    s3_client,
+    bucket_name,
+    base_prefix,
+    local_dir,
+):
+    """
+    Download S3 ZIP files matching pattern:
+    MOFR_MAIN_NonCom_YYYYMMDD_YYYYMMDDHHMMSS.zip
+    filtered by the first YYYYMMDD.
+    """
+    os.makedirs(local_dir, exist_ok=True)
+    end_date_obj = datetime.strptime(START_DATE, "%Y%m%d")
+    start_date_obj = end_date_obj - timedelta(days=NUMBER_DAYS_PRIOR)
+    paginator = s3_client.get_paginator("list_objects_v2")
 
+    for page in paginator.paginate(Bucket=bucket_name, Prefix=base_prefix):
+        if "Contents" not in page:
+            continue
+
+        for obj in page["Contents"]:
+            key = obj["Key"]
+
+            # Only consider zip files
+            if not key.endswith(".zip"):
+                continue
+
+            filename = os.path.basename(key)
+
+            try:
+                # Expected format:
+                # MOFR_MAIN_NonCom_20251101_20260224091223.zip
+                parts = filename.split("_")
+
+                date_part = parts[3]  # YYYYMMDD
+                file_date_obj = datetime.strptime(date_part, "%Y%m%d")
+
+                if start_date_obj <= file_date_obj <= end_date_obj:
+                    local_path = os.path.join(local_dir, filename)
+
+                    print(f"Downloading from S3: {key}")
+                    s3_client.download_file(bucket_name, key, local_path)
+
+            except (IndexError, ValueError) as e:
+                print(f"Skipping malformed filename {filename}: {e}")
 
 def extract_zip(zip_path, extract_to):
     """Extract a zip file to the specified directory"""
@@ -385,10 +429,12 @@ def main():
     temp_dir = "/tmp/ftp_downloads"
     output_dir = "/articles"
     stats_dir = "/stats"
+    reloaded_dir = "/reloaded"
 
     os.makedirs(temp_dir, exist_ok=True)
     os.makedirs(output_dir, exist_ok=True)
     os.makedirs(stats_dir, exist_ok=True)
+    os.makedirs(reloaded_dir, exist_ok=True)
 
     # Connect to FTP
     ftp = connect_to_ftp()
@@ -406,15 +452,33 @@ def main():
         temp_dir, bucket_name=S3_BUCKET, base_s3_path="raw", s3_client=s3_client
     )
 
-    # Extract files
-    extracted_dirs = []
-    for zip_file in downloaded_files:
-        extract_dir = zip_file.replace(".zip", "")
-        if extract_zip(zip_file, extract_dir):
-            extracted_dirs.append(extract_dir)
+    download_s3_zips_by_date(
+        s3_client=s3_client,
+        bucket_name=S3_BUCKET,
+        base_prefix="raw/",  # assuming you uploaded raw zips under "raw"
+        local_dir=reloaded_dir,
+    )
 
-    # Process extracted files
-    articles = process_downloaded_files(temp_dir)
+    # Extract reloaded ZIPs
+    for file in os.listdir(reloaded_dir):
+        if file.endswith(".zip"):
+            zip_path = os.path.join(reloaded_dir, file)
+            extract_dir = zip_path.replace(".zip", "")
+            extract_zip(zip_path, extract_dir)
+
+    # Process reloaded data
+    print("Reprocessing reloaded data...")
+    articles = process_downloaded_files(reloaded_dir)
+
+    # # Extract files
+    # extracted_dirs = []
+    # for zip_file in downloaded_files:
+    #     extract_dir = zip_file.replace(".zip", "")
+    #     if extract_zip(zip_file, extract_dir):
+    #         extracted_dirs.append(extract_dir)
+
+    # # Process extracted files
+    # articles = process_downloaded_files(temp_dir)
 
     # Save each article in partitioned directory based on its publication date
     saved_files = []

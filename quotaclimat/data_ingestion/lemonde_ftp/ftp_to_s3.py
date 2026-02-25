@@ -516,7 +516,7 @@ def main():
                 for batch_idx in range(n_batches):
                     data = articles[year][month][day]["data"][
                         batch_idx * ARTICLES_BATCH_SAVE : min(
-                            (batch_idx + 1) * ARTICLES_BATCH_SAVE, n_articles - 1
+                            (batch_idx + 1) * ARTICLES_BATCH_SAVE, n_articles
                         )
                     ]
                     filename = (

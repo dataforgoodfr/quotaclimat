@@ -226,26 +226,34 @@ def parse_article_xml(article_path):
         # Publication date
         pubdate_elem = metadata.find(".//emd:publicationdate", namespaces)
         article_data["publication_date"] = (
-            pubdate_elem.text + "T00:00:00.000Z" if pubdate_elem is not None else None
+            pubdate_elem.text + "T00:00:00.000Z"
+            if "-" in pubdate_elem.text
+            else pubdate_elem.text[:4] +"-"
+            + pubdate_elem.text[4:6] + "-"
+            + pubdate_elem.text[6:8]
+            + "T00:00:00.000Z"
         )
         article_data["publication_datetime"] = (
-            pubdate_elem.text + "T02:00:00.000Z" if pubdate_elem is not None else None
+            pubdate_elem.text + "T02:00:00.000Z"
+            if "-" in pubdate_elem.text
+            else pubdate_elem.text[:4] +"-"
+            + pubdate_elem.text[4:6] + "-"
+            + pubdate_elem.text[6:8]
+            + "T00:00:00.000Z"
         )
         article_data["modification_datetime"] = (
             datetime.now().strftime("%Y-%m-%d") + "T00:00:00.000Z"
-            if identifier_elem is not None
-            else None
         )
         article_data["modification_date"] = (
             datetime.now().strftime("%Y-%m-%d") + "T00:00:00.000Z"
-            if identifier_elem is not None
-            else None
         )
         article_data["ingestion_datetime"] = (
-            datetime.strptime(identifier_elem.text.split(":")[2], "%Y%m%d").strftime("%Y-%m-%d")
+            datetime.strptime(identifier_elem.text.split(":")[2], "%Y%m%d").strftime(
+                "%Y-%m-%d"
+            )
             + "T00:00:00.000Z"
             if identifier_elem is not None
-            else None
+            else article_data["publication_datetime"]
         )
         # Title
         title_elem = metadata.find(".//emd:title", namespaces)
@@ -448,20 +456,24 @@ def main():
                         )
                     ]
                     filename = (
-                        f"{year}_{month}_{day}_00_00_00_{batch_idx+1}_stream.json"
+                        f"{year}_{month}_{day}_00_00_00_{batch_idx + 1}_stream.json"
                     )
                     output_file = os.path.join(full_output_dir, filename)
                     # Save individual article to JSON file
                     with open(output_file, "w", encoding="utf-8") as f:
                         json.dump({"data": data}, f, ensure_ascii=False, indent=2)
 
-
-    
     upload_folder_to_s3(
-        output_dir, bucket_name=S3_BUCKET, base_s3_path="country_france/articles", s3_client=s3_client
+        output_dir,
+        bucket_name=S3_BUCKET,
+        base_s3_path="country_france/articles",
+        s3_client=s3_client,
     )
     upload_folder_to_s3(
-        stats_dir, bucket_name=S3_BUCKET, base_s3_path="country_france/nb_articles", s3_client=s3_client
+        stats_dir,
+        bucket_name=S3_BUCKET,
+        base_s3_path="country_france/nb_articles",
+        s3_client=s3_client,
     )
     # Close FTP connection
     ftp.quit()

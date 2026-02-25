@@ -232,17 +232,17 @@ def parse_article_xml(article_path):
             pubdate_elem.text + "T02:00:00.000Z" if pubdate_elem is not None else None
         )
         article_data["modification_datetime"] = (
-            datetime.now().strftime("%Y-%m-d") + "T00:00:00.000Z"
+            datetime.now().strftime("%Y-%m-%d") + "T00:00:00.000Z"
             if identifier_elem is not None
             else None
         )
         article_data["modification_date"] = (
-            datetime.now().strftime("%Y-%m-d") + "T00:00:00.000Z"
+            datetime.now().strftime("%Y-%m-%d") + "T00:00:00.000Z"
             if identifier_elem is not None
             else None
         )
         article_data["ingestion_datetime"] = (
-            datetime.strptime(identifier_elem.text.split(":")[2], "%Y%m%d").strftime("%Y-%m-d")
+            datetime.strptime(identifier_elem.text.split(":")[2], "%Y%m%d").strftime("%Y-%m-%d")
             + "T00:00:00.000Z"
             if identifier_elem is not None
             else None

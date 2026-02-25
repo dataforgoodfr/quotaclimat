@@ -36,6 +36,9 @@ from quotaclimat.data_processing.mediatree.i8n.spain.channel_program import (
 from quotaclimat.data_processing.mediatree.i8n.germany.channel_program import (
     channels_programs_germany,
 )
+from quotaclimat.data_processing.mediatree.i8n.belgium.channel_program import (
+    channels_programs_belgium,
+)
 
 channels_programs_poland = [
     dict(country="poland", **channel_program)
@@ -53,6 +56,10 @@ channels_programs_germany = [
     dict(country="germany", **channel_program)
     for channel_program in channels_programs_germany
 ]
+channels_programs_belgium = [
+    dict(country="belgium", **channel_program)
+    for channel_program in channels_programs_belgium
+]
 
 channel_programs_map = {
     "poland": channels_programs_poland,
@@ -60,6 +67,7 @@ channel_programs_map = {
     "brazil": channels_programs_brazil,
     "france": channels_programs_france,
     "germany": channels_programs_germany,
+    "belgium": channels_programs_belgium,
 }
 timezones = {
     "poland": "Europe/Warsaw",
@@ -67,6 +75,7 @@ timezones = {
     "germany": "Europe/Berlin",
     "brazil": "America/Sao_Paulo",
     "france": "Europe/Paris",
+    "belgium": "Europe/Brussels",
 }
 
 
@@ -421,7 +430,7 @@ if __name__ == "__main__":
                         day,
                         country,
                         channel_programs,
-                        connector_limit=50,
+                        connector_limit=30,
                         excluded_channels=args.exclude,
                     )
                 )
@@ -430,7 +439,8 @@ if __name__ == "__main__":
                 records.extend(get_coverages_for_day(day, country, channel_programs))
 
     df = pd.DataFrame.from_records(records)
-    df_group = df.groupby(["date", "country", "channel_name"]).agg(
+    df["timestamp"] = pd.to_datetime(df.date + " " + df.start, format="%Y-%m-%d %H:%M")
+    df_group = df.groupby(["timestamp", "country", "channel_name"]).agg(
         {"coverage": "mean", "total_results": "sum", "total_minutes": "sum"}
     )
     print(df_group.head())

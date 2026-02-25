@@ -5,12 +5,6 @@ channels_programs_poland = [
     
     {"channel_name": "tvn", "start": "19:00", "end": "19:30", "weekday": "*", "program_name": "Fatky", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     
-    {"channel_name": "polskie-radio", "start": "00:00", "end": "00:05", "weekday": "*", "program_name": "Informacje 00:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "polskie-radio", "start": "01:00", "end": "01:05", "weekday": "*", "program_name": "Informacje 01:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "polskie-radio", "start": "02:00", "end": "02:05", "weekday": "*", "program_name": "Informacje 02:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "polskie-radio", "start": "03:00", "end": "03:05", "weekday": "*", "program_name": "Informacje 03:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "polskie-radio", "start": "04:00", "end": "04:05", "weekday": "*", "program_name": "Informacje 04:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "polskie-radio", "start": "05:00", "end": "05:05", "weekday": "*", "program_name": "Informacje 05:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "polskie-radio", "start": "06:00", "end": "06:05", "weekday": "*", "program_name": "Informacje 06:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "polskie-radio", "start": "07:00", "end": "07:05", "weekday": "*", "program_name": "Informacje 07:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "polskie-radio", "start": "08:00", "end": "08:05", "weekday": "*", "program_name": "Informacje 08:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
@@ -30,12 +24,6 @@ channels_programs_poland = [
     {"channel_name": "polskie-radio", "start": "22:00", "end": "22:05", "weekday": "*", "program_name": "Informacje 22:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "polskie-radio", "start": "23:00", "end": "23:05", "weekday": "*", "program_name": "Informacje 23:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
 
-    {"channel_name": "polskie-radio", "start": "00:30", "end": "00:35", "weekday": "*", "program_name": "Informacje 00:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "polskie-radio", "start": "01:30", "end": "01:35", "weekday": "*", "program_name": "Informacje 01:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "polskie-radio", "start": "02:30", "end": "02:35", "weekday": "*", "program_name": "Informacje 02:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "polskie-radio", "start": "03:30", "end": "03:35", "weekday": "*", "program_name": "Informacje 03:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "polskie-radio", "start": "04:30", "end": "04:35", "weekday": "*", "program_name": "Informacje 04:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "polskie-radio", "start": "05:30", "end": "05:35", "weekday": "*", "program_name": "Informacje 05:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "polskie-radio", "start": "06:30", "end": "06:35", "weekday": "*", "program_name": "Informacje 06:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "polskie-radio", "start": "07:30", "end": "07:35", "weekday": "*", "program_name": "Informacje 07:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "polskie-radio", "start": "08:30", "end": "08:35", "weekday": "*", "program_name": "Informacje 08:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
@@ -53,18 +41,11 @@ channels_programs_poland = [
     {"channel_name": "polskie-radio", "start": "20:30", "end": "20:35", "weekday": "*", "program_name": "Informacje 20:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "polskie-radio", "start": "21:30", "end": "21:35", "weekday": "*", "program_name": "Informacje 21:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "polskie-radio", "start": "22:30", "end": "22:35", "weekday": "*", "program_name": "Informacje 22:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "polskie-radio", "start": "23:30", "end": "23:35", "weekday": "*", "program_name": "", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     
     {"channel_name": "tokfm", "start": "16:00", "end": "16:30", "weekday": "weekday", "program_name": "TOK 360 16:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "tokfm", "start": "16:35", "end": "17:00", "weekday": "weekday", "program_name": "TOK 360 16:35", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "tokfm", "start": "18:00", "end": "18:20", "weekday": "weekday", "program_name": "TOK 360", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
 
-    {"channel_name": "radio-zet", "start": "00:00", "end": "00:10", "weekday": "*", "program_name": "Radio Zet News 00:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "radio-zet", "start": "01:00", "end": "01:10", "weekday": "*", "program_name": "Radio Zet News 01:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "radio-zet", "start": "02:00", "end": "02:10", "weekday": "*", "program_name": "Radio Zet News 02:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "radio-zet", "start": "03:00", "end": "03:10", "weekday": "*", "program_name": "Radio Zet News 03:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "radio-zet", "start": "04:00", "end": "04:10", "weekday": "*", "program_name": "Radio Zet News 04:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "radio-zet", "start": "05:00", "end": "05:10", "weekday": "*", "program_name": "Radio Zet News 05:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "radio-zet", "start": "06:00", "end": "06:10", "weekday": "*", "program_name": "Radio Zet News 06:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "radio-zet", "start": "07:00", "end": "07:10", "weekday": "*", "program_name": "Radio Zet News 07:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "radio-zet", "start": "08:00", "end": "08:10", "weekday": "*", "program_name": "Radio Zet News 08:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
@@ -199,5 +180,9 @@ channels_programs_poland = [
     {"channel_name": "tvs", "start": "11:35", "end": "11:40", "weekday": "2", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
     {"channel_name": "tvs", "start": "11:35", "end": "11:40", "weekday": "3", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
     {"channel_name": "tvs", "start": "11:10", "end": "11:15", "weekday": "4", "program_name": "Dzisiaj w regionie", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "fokus-tv", "start": "07:20", "end": "07:30", "weekday": "weekday", "program_name": "Pod Iupa", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
+    
+    {"channel_name": "tv-puls", "start": "09:00", "end": "09:55", "weekday": "5", "program_name": "Taki jest swiat", "program_type": "","program_grid_start": "2025-12-20", "program_grid_end": "",},
 ]
 

@@ -234,7 +234,7 @@ class RuptureDetector:
 
         return "inconnu"
 
-    def run(self, path: str) -> List[Segment]:
+    def run(self, path: str) -> tuple[List[Segment], np.ndarray, dict, np.ndarray]:
         y = self.load(path)
         features = self.extract_features(y)
         novelty = self.compute_novelty(features["stack"])
@@ -267,7 +267,6 @@ def plot_results(
     hop_length=512,
     output_path="rupture_analyse.png",
 ):
-
     fig, axes = plt.subplots(3, 1, figsize=(18, 10), sharex=True)
     fig.patch.set_facecolor("#1a1a2e")
     for ax in axes:
@@ -314,8 +313,8 @@ def plot_results(
 
     # Légende
     legend_patches = [
-        mpatches.Patch(color=c, label=l.replace("_", " ").capitalize())
-        for l, c in LABEL_COLORS.items()
+        mpatches.Patch(color=c, label=lab.replace("_", " ").capitalize())
+        for lab, c in LABEL_COLORS.items()
     ]
     axes[0].legend(
         handles=legend_patches,
@@ -326,7 +325,7 @@ def plot_results(
         fontsize=8,
     )
 
-    plt.tight_layout(rect=[0, 0, 1, 0.97])
+    plt.tight_layout(rect=(0, 0, 1, 0.97))
     plt.savefig(
         output_path, dpi=150, bbox_inches="tight", facecolor=fig.get_facecolor()
     )

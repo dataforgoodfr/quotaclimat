@@ -18,6 +18,7 @@ from quotaclimat.data_processing.mediatree.i8n.country import (
     GERMANY,
     POLAND,
     SPAIN,
+    BELGIUM
 )
 
 logging.basicConfig(level = logging.INFO)
@@ -403,6 +404,35 @@ channel_mapping = {
         "infocontinue": True,
         "radio": False,
         "country": SPAIN.name
+    },
+    # Belgium-Wallonia
+    "la-premiere": {        
+        "title": "La Premi\u00e8re",
+        "public": True,
+        "infocontinue": False,
+        "radio": True,
+        "country": BELGIUM.name
+    },
+    "bel-rtl": {
+        "title": "BEL RTL",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": BELGIUM.name
+    },
+    "vivacite": {
+        "title": "Vivacit\u00e9",
+        "public": True,
+        "infocontinue": False,
+        "radio": True,
+        "country": BELGIUM.name
+    },
+    "ln-radio": {
+        "title": "LN RADIO",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": BELGIUM.name
     },
 }
 programs = []

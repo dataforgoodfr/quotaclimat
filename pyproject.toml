@@ -4,7 +4,9 @@ version = "2.1.1"
 description = ""
 authors = [
     {name = "Rambier Estelle", "email"="estelle.rambier@hotmail.fr"},
-    {name = "Paul Leclercq", "email"="paul@epauler.fr"}
+    {name = "Paul Leclercq", "email"="paul@epauler.fr"},
+    {name = "Giuseppe Guarino", "email"="giuseppe@dataforgood.fr"},
+    {name = "Vincent Mateos", "email"="vincent.mateos1@gmail.com"}
 ]
 readme = "README.md"
 

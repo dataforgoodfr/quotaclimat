@@ -347,6 +347,20 @@ channel_mapping = {
         "radio": False,
         "country": POLAND.name
     },
+    "tv-plus": {
+        "title": "TV Plus",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": POLAND.name
+    },
+    "fokus-tv": {
+        "title": "Fokus TV",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": POLAND.name
+    },
     # Spain
     "antenna-3": {
         "title": "Antenna 3",

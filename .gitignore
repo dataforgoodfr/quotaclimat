@@ -157,3 +157,5 @@ pgdump/
 analyse/mediatree/data
 analyse/mediatree/images
 *.tsv
+
+exports/

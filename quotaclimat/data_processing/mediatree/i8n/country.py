@@ -127,16 +127,16 @@ BELGIUM_CHANNELS= [
     "TVCOM",
     "TVLUX",
     "VEDIA",
-    "La Premi\u00e8re",
-    "BEL RTL",
-    "Vivacit\u00e9",
-    "LN RADIO",
+    "la-premiere",
+    "bel-rtl",
+    "vivacite",
+    "ln-radio",
 ]
 BELGIUM_CHANNELS_MEDIATREE = [
-    "La Premi\u00e8re",
-    "BEL RTL",
-    "Vivacit\u00e9",
-    "LN RADIO",
+    "la-premiere",
+    "bel-rtl",
+    "vivacite",
+    "ln-radio",
 ]
 BELGIUM_TZ = "Europe/Bruxelles"
 BELGIUM_LANGUAGE = "french"

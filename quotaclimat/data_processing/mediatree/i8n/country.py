@@ -132,6 +132,12 @@ BELGIUM_CHANNELS= [
     "Vivacit\u00e9",
     "LN RADIO",
 ]
+BELGIUM_CHANNELS_MEDIATREE = [
+    "La Premi\u00e8re",
+    "BEL RTL",
+    "Vivacit\u00e9",
+    "LN RADIO",
+]
 BELGIUM_TZ = "Europe/Bruxelles"
 BELGIUM_LANGUAGE = "french"
 BELGIUM = CountryMediaTree(code=BELGIUM_CODE,channels=BELGIUM_CHANNELS, timezone=BELGIUM_TZ, language=BELGIUM_LANGUAGE, programs=channels_programs_belgium)
@@ -276,3 +282,13 @@ def get_countries_array(country_code: str, no_belgium = True):
             countries = [get_country_from_code(country_code = country_code)]
 
     return countries
+
+
+def get_mediatree_channels(channels, country: CountryMediaTree):
+    if country == GERMANY:
+        logging.warning(f"Removing channels daserste and zdf-neo and using GERMANY_CHANNELS_MEDIATREE as import via SRT")
+        channels = GERMANY_CHANNELS_MEDIATREE
+    elif country == BELGIUM:
+        logging.warning(f"Removing channels for BELGIUM imported directly and leaving only BELGIUM_CHANNELS_MEDIATREE")
+        channels = BELGIUM_CHANNELS_MEDIATREE
+    return channels

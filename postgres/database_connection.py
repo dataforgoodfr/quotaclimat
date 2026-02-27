@@ -1,9 +1,16 @@
-import os
-from sqlalchemy import create_engine, URL, Engine
-from sqlalchemy.orm import sessionmaker, Session
+import json
 import logging
+import os
+
+from sqlalchemy import URL, Engine, create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 logging.basicConfig(level=logging.INFO)
+
+
+def _json_serializer(obj):
+    """Custom JSON serializer that preserves Unicode characters."""
+    return json.dumps(obj, ensure_ascii=False)
 
 
 def connect_to_db(
@@ -12,6 +19,7 @@ def connect_to_db(
     host: str = os.environ.get("POSTGRES_HOST", "localhost"),
     port: int = os.environ.get("POSTGRES_PORT", 5432),
     password: str = os.environ.get("POSTGRES_PASSWORD", "password"),
+    use_custom_json_serializer: bool = False,
 ):
     """
     Connect to the PostgreSQL database using environment variables or provided parameters.
@@ -38,7 +46,11 @@ def connect_to_db(
         password=password,
     )
 
-    engine = create_engine(url)
+    # Create engine, optionally with a custom JSON serializer that preserves Unicode characters
+    if use_custom_json_serializer:
+        engine = create_engine(url, json_serializer=_json_serializer)
+    else:
+        engine = create_engine(url)
 
     return engine
 

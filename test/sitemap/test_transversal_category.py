@@ -3,8 +3,9 @@ import os
 
 import pandas as pd
 
-from quotaclimat.data_processing.mediatree.keyword.macro_category import \
-    MACRO_CATEGORIES
+from quotaclimat.data_processing.mediatree.keyword.macro_category import (
+    MACRO_CATEGORIES,
+)
 
 
 def test_macro_category():

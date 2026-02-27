@@ -2,20 +2,22 @@ import logging
 import time as t
 
 from modin.pandas.dataframe import DataFrame
-from test_utils import (compare_unordered_lists_of_dicts, debug_df,
-                        get_localhost)
+from test_utils import compare_unordered_lists_of_dicts, debug_df, get_localhost
 
-from postgres.insert_data import (clean_data, insert_data_in_sitemap_table,
-                                  save_to_pg)
-from postgres.schemas.models import (connect_to_db, create_tables, drop_tables,
-                                     empty_tables, get_db_session, get_keyword)
+from postgres.insert_data import clean_data, insert_data_in_sitemap_table, save_to_pg
+from postgres.schemas.models import (
+    connect_to_db,
+    create_tables,
+    drop_tables,
+    empty_tables,
+    get_db_session,
+    get_keyword,
+)
 from quotaclimat.data_processing.mediatree.api_import import *
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
-from quotaclimat.data_processing.mediatree.s3.api_to_s3 import \
-    parse_reponse_subtitle
-from quotaclimat.data_processing.mediatree.stop_word.main import \
-    save_append_stop_word
+from quotaclimat.data_processing.mediatree.s3.api_to_s3 import parse_reponse_subtitle
+from quotaclimat.data_processing.mediatree.stop_word.main import save_append_stop_word
 from quotaclimat.data_processing.mediatree.update_pg_keywords import *
 
 

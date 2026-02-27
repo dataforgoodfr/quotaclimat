@@ -14,6 +14,7 @@ llm/
 cc-bio.json
 *.xlsx
 coverage_re
+**/data_explo/**
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -153,7 +154,14 @@ notebooks/nlp/df_X_tfidf.pkl
 pgdata
 mb-data
 .idea
+
+explo_factiva/*
 pgdump/
 analyse/mediatree/data
 analyse/mediatree/images
 *.tsv
+
+
+analyse/instagram/data
+quotaclimat/data_ingestion/lemonde_ftp/ftp_data
+quotaclimat/data_ingestion/lemonde_ftp/examples

@@ -1,13 +1,14 @@
 import logging
-import pytest
+import zoneinfo
 
 import pandas as pd
-
-from quotaclimat.data_processing.mediatree.stop_word.main import *
-from postgres.schemas.models import get_db_session, connect_to_db, drop_tables
+import pytest
 from test_main_import_api import insert_mediatree_json
+
+from postgres.schemas.models import connect_to_db, drop_tables, get_db_session
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
-import zoneinfo
+from quotaclimat.data_processing.mediatree.stop_word.main import *
+
 conn = connect_to_db()
 session = get_db_session(conn)
 

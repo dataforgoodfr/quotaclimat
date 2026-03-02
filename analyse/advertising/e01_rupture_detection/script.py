@@ -53,6 +53,12 @@ class Segment:
     def end_tc(self):
         return self.to_timecode(self.end_sec)
 
+    def to_dict(self):
+        d = asdict(self)
+        d["start_tc"] = self.start_tc
+        d["end_tc"] = self.end_tc
+        return d
+
 
 # ─────────────────────────────────────────────
 #  Détection de ruptures
@@ -72,19 +78,42 @@ class RuptureDetector:
 
     def __init__(
         self,
-        sr: int = 22050,  # Fréquence d'échantillonnage de travail
-        hop_length: int = 512,  # Pas entre frames (~23ms à 22050Hz)
-        n_mfcc: int = 20,  # Nombre de coefficients MFCC
-        novelty_smooth: int = 10,  # Lissage de la courbe de nouveauté (en frames)
-        min_segment_sec: float = 2.0,  # Durée minimale d'un segment (évite les micro-coupures)
-        sensitivity: float = 0.3,  # 0.0 = peu sensible (peu de ruptures) / 1.0 = très sensible
+        sr: int = 22050,
+        hop_length: int = 512,
+        n_mfcc: int = 20,
+        context_sec: float = 1.0,
+        # ↑ CLEF : durée analysée de chaque côté d'un point pour évaluer la rupture.
+        # Avant : hardcodé à 8 frames = 184ms → beaucoup trop court, capturait le bruit.
+        # 1.0s = bon équilibre général (radio/TV).
+        # Augmenter (1.5–3s) si trop de faux positifs.
+        # Diminuer (0.3–0.5s) seulement si tu cherches des micro-transitions.
+        novelty_smooth_sec: float = 0.5,
+        # ↑ Lissage temporel de la courbe de nouveauté.
+        # Avant : 10 frames = 230ms. 0.5s filtre mieux les fluctuations courtes.
+        # Augmenter (1–2s) si la courbe est encore trop bruitée.
+        min_segment_sec: float = 5.0,
+        # ↑ Durée minimale imposée entre deux ruptures.
+        # Relevé de 2s → 5s : les segments < 5s sont presque toujours du bruit.
+        # Mettre à 10–15s pour des émissions longues.
+        sensitivity: float = 0.25,
+        # ↑ Fraction des pics de nouveauté retenus comme ruptures.
+        # 0.1 = 10% des pics les plus intenses seulement (peu de segments).
+        # 0.5 = la moitié des pics (beaucoup de segments).
+        # Baissé de 0.3 → 0.25 par défaut.
+        max_ruptures: int = 0,
+        # ↑ Si > 0 : ne garder que les N ruptures les plus intenses, quelle que
+        # soit la sensitivity. Utile pour forcer un nombre max de segments.
+        # Ex : max_ruptures=50 garantit au plus 51 segments sur toute la durée.
     ):
         self.sr = sr
         self.hop_length = hop_length
         self.n_mfcc = n_mfcc
-        self.novelty_smooth = novelty_smooth
+        self.context_sec = context_sec
+        self.novelty_smooth_sec = novelty_smooth_sec
         self.min_segment_sec = min_segment_sec
         self.sensitivity = sensitivity
+        self.max_ruptures = max_ruptures
+        self._fps = sr / hop_length  # frames/sec ≈ 43 à sr=22050, hop=512
 
     def load(self, path: str) -> np.ndarray:
         print(f"[1/5] Chargement : {path}")
@@ -119,21 +148,30 @@ class RuptureDetector:
 
     def compute_novelty(self, stack: np.ndarray) -> np.ndarray:
         """
-        Courbe de nouveauté par matrice de similarité locale.
+        Courbe de nouveauté par similarité cosinus glissante.
 
-        On calcule la similarité cosinus entre des fenêtres glissantes
-        "passé proche" vs "futur proche". Un pic = rupture de contexte.
+        Pour chaque instant i, on compare :
+          - la moyenne des `kernel` frames qui précèdent  (passé proche)
+          - la moyenne des `kernel` frames qui suivent    (futur proche)
+        Dissimilarité cosinus → pic = rupture sonore.
+
+        kernel = context_sec × fps
+          ex : context_sec=1.0, fps≈43  →  kernel=43 frames = 1 seconde de contexte
+          avant : kernel hardcodé à 8 frames ≈ 184ms → trop court, capturait le bruit.
         """
         print("[3/5] Calcul de la courbe de nouveauté...")
 
         n_frames = stack.shape[1]
-        kernel = 8  # Taille de la fenêtre de contexte (en frames, ~0.2s)
+        kernel = max(4, int(self.context_sec * self._fps))
+
+        print(
+            f"      Fenêtre de contexte : {kernel} frames = {kernel / self._fps:.2f}s de chaque côté"
+        )
 
         novelty = np.zeros(n_frames)
 
-        # Normaliser chaque frame
         norms = np.linalg.norm(stack, axis=0, keepdims=True) + 1e-8
-        X = stack / norms  # shape : (features, frames)
+        X = stack / norms
 
         for i in range(kernel, n_frames - kernel):
             past = X[:, i - kernel : i].mean(axis=1)
@@ -141,36 +179,67 @@ class RuptureDetector:
             cos_sim = np.dot(past, future) / (
                 np.linalg.norm(past) * np.linalg.norm(future) + 1e-8
             )
-            novelty[i] = 1.0 - cos_sim  # 0 = continuité, 1 = rupture forte
+            novelty[i] = 1.0 - cos_sim
 
-        # Lissage pour éviter les faux positifs sur micro-fluctuations
-        novelty = uniform_filter1d(novelty, size=self.novelty_smooth)
+        # Lissage en secondes → frames
+        smooth_frames = max(3, int(self.novelty_smooth_sec * self._fps))
+        novelty = uniform_filter1d(novelty, size=smooth_frames)
+        print(
+            f"      Lissage             : {smooth_frames} frames = {smooth_frames / self._fps:.2f}s"
+        )
 
         return novelty
 
     def detect_boundaries(self, novelty: np.ndarray, duration_sec: float) -> np.ndarray:
-        """Trouve les pics de nouveauté = frontières naturelles."""
+        """
+        Trouve les pics de nouveauté = frontières naturelles.
+
+        Trois filtres successifs :
+          1. Seuil de hauteur (sensitivity)  → élimine les pics faibles
+          2. Distance minimale (min_segment_sec) → impose un écart entre pics
+          3. Top-N (max_ruptures)            → ne garde que les N plus intenses
+        """
         print("[4/5] Détection des frontières...")
 
-        frames_per_sec = self.sr / self.hop_length
-        min_dist_frames = int(self.min_segment_sec * frames_per_sec)
+        min_dist_frames = int(self.min_segment_sec * self._fps)
 
-        # Seuil adaptatif basé sur la distribution de la courbe
+        # Filtre 1 : seuil adaptatif sur la distribution de la courbe
+        # sensitivity=0.25 → seuil au percentile 75 → on garde le quart supérieur
         threshold = np.percentile(novelty, 100 * (1 - self.sensitivity))
+        print(
+            f"      Seuil sensitivity={self.sensitivity:.2f} → "
+            f"hauteur min {threshold:.4f} "
+            f"(percentile {100 * (1 - self.sensitivity):.0f})"
+        )
 
         peaks, props = find_peaks(
             novelty,
             height=threshold,
             distance=min_dist_frames,
         )
+        print(
+            f"      Après seuil + distance min ({self.min_segment_sec}s) : "
+            f"{len(peaks)} ruptures candidates"
+        )
 
-        # Convertir en secondes
-        boundaries_sec = peaks / frames_per_sec
+        # Filtre 2 : top-N ruptures les plus intenses (optionnel)
+        if self.max_ruptures > 0 and len(peaks) > self.max_ruptures:
+            # Trier par hauteur décroissante, garder les N meilleurs,
+            # puis re-trier par position temporelle pour reconstruire l'ordre
+            heights = props["peak_heights"]
+            top_idx = np.argsort(-heights)[: self.max_ruptures]
+            peaks = np.sort(peaks[top_idx])
+            print(
+                f"      Filtre top-{self.max_ruptures} appliqué → "
+                f"{len(peaks)} ruptures conservées"
+            )
 
-        # Ajouter début et fin
-        boundaries_sec = np.concatenate([[0.0], boundaries_sec, [duration_sec]])
+        # Convertir en secondes + ajouter début et fin
+        boundaries_sec = np.concatenate([[0.0], peaks / self._fps, [duration_sec]])
 
-        print(f"      {len(peaks)} ruptures détectées → {len(peaks) + 1} segments")
+        print(
+            f"      Résultat final : {len(peaks)} ruptures → {len(peaks) + 1} segments"
+        )
         return boundaries_sec
 
     def build_segments(self, boundaries: np.ndarray, features: dict) -> List[Segment]:
@@ -339,12 +408,7 @@ def plot_results(
 
 
 def export_json(segments: List[Segment], path: str):
-    data = []
-    for s in segments:
-        d = asdict(s)
-        d["start_tc"] = s.start_tc
-        d["end_tc"] = s.end_tc
-        data.append(d)
+    data = [s.to_dict() for s in segments]
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
     print(f"    Export JSON : {path}")
@@ -393,14 +457,33 @@ def main():
     parser.add_argument(
         "--sensitivity",
         type=float,
-        default=0.35,
-        help="Sensibilité 0.1 (peu) à 0.9 (très sensible) [défaut: 0.35]",
+        default=0.25,
+        help="Fraction des pics retenus, 0.1 (peu) à 0.5 (beaucoup) [défaut: 0.25]",
     )
     parser.add_argument(
         "--min-seg",
         type=float,
-        default=2.0,
-        help="Durée minimale d'un segment en secondes [défaut: 2.0]",
+        default=5.0,
+        help="Durée minimale d'un segment en secondes [défaut: 5.0]",
+    )
+    parser.add_argument(
+        "--context",
+        type=float,
+        default=1.0,
+        help="Secondes de contexte analysées de chaque côté d'un point [défaut: 1.0]",
+    )
+    parser.add_argument(
+        "--smooth",
+        type=float,
+        default=0.5,
+        help="Lissage de la courbe de nouveauté en secondes [défaut: 0.5]",
+    )
+    parser.add_argument(
+        "--max-ruptures",
+        type=int,
+        default=0,
+        dest="max_ruptures",
+        help="Garder seulement les N ruptures les plus intenses (0 = pas de limite) [défaut: 0]",
     )
     parser.add_argument(
         "--out-json",
@@ -420,6 +503,9 @@ def main():
     detector = RuptureDetector(
         sensitivity=args.sensitivity,
         min_segment_sec=args.min_seg,
+        context_sec=args.context,
+        novelty_smooth_sec=args.smooth,
+        max_ruptures=args.max_ruptures,
     )
 
     segments, novelty, features, y = detector.run(args.input)

@@ -170,6 +170,7 @@ def generate_player(
     segments: list[dict],
     annotations: list[dict] | None,
     output_path: str | Path,
+    params: dict | None = None,
 ):
     output_path = Path(output_path)
     annotations = annotations or []
@@ -230,6 +231,7 @@ def generate_player(
         **payload_media,
         "segments": segments,
         "annotations": annotations,
+        "params": params or {},
     }
 
     # Injection dans le template

@@ -115,6 +115,20 @@ class RuptureDetector:
         self.max_ruptures = max_ruptures
         self._fps = sr / hop_length  # frames/sec ≈ 43 à sr=22050, hop=512
 
+    def get_params(self) -> dict:
+        """Retourne les paramètres du détecteur sous forme de dict (pour l'embarquer dans le player)."""
+        return {
+            "sr": self.sr,
+            "hop_length": self.hop_length,
+            "fps": round(self._fps, 2),
+            "n_mfcc": self.n_mfcc,
+            "context_sec": self.context_sec,
+            "novelty_smooth_sec": self.novelty_smooth_sec,
+            "min_segment_sec": self.min_segment_sec,
+            "sensitivity": self.sensitivity,
+            "max_ruptures": self.max_ruptures,
+        }
+
     def load(self, path: str) -> np.ndarray:
         print(f"[1/5] Chargement : {path}")
         y, sr = librosa.load(path, sr=self.sr, mono=True)

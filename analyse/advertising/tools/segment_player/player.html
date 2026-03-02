@@ -787,6 +787,135 @@
         audio {
             display: none;
         }
+
+        /* ── Params button & popover ── */
+        .params-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-size: .7rem;
+            width: 24px;
+            height: 24px;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            transition: all .15s;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .params-btn:hover {
+            border-color: var(--amber-dim);
+            color: var(--amber);
+        }
+
+        .params-popover {
+            position: absolute;
+            top: calc(100% + 6px);
+            right: 0;
+            background: #13131e;
+            border: 1px solid var(--amber-dim);
+            border-radius: 4px;
+            padding: 10px 14px;
+            min-width: 230px;
+            z-index: 6000;
+            display: none;
+            pointer-events: none;
+            box-shadow: 0 4px 20px #00000066;
+        }
+
+        .params-btn:hover .params-popover {
+            display: block;
+        }
+
+        .params-popover-title {
+            font-size: .5rem;
+            color: var(--amber);
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            margin-bottom: 7px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .params-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 2px 0;
+            border-bottom: 1px dotted #1a1a2a;
+            font-size: .57rem;
+        }
+
+        .params-row:last-child { border-bottom: none; }
+
+        .params-row .pkey { color: var(--text-dim); }
+        .params-row .pval { color: var(--text); font-weight: 700; }
+
+        /* ── Segment summary panel in right column ── */
+        .summary-panel {
+            flex-shrink: 0;
+            max-height: 240px;
+            overflow-y: auto;
+            border-bottom: 1px solid var(--border);
+            padding: 10px 14px;
+        }
+
+        .summary-panel::-webkit-scrollbar { width: 3px; }
+        .summary-panel::-webkit-scrollbar-thumb { background: var(--muted); }
+
+        .summary-sect-title {
+            font-size: .5rem;
+            color: var(--text-dim);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 7px;
+        }
+
+        .summary-total {
+            font-size: .6rem;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+        }
+
+        .summary-total strong { color: var(--text); }
+
+        .summary-tbl-head {
+            display: flex;
+            font-size: .49rem;
+            color: var(--text-dim);
+            margin-bottom: 2px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .summary-label-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: .55rem;
+            padding: 2px 0;
+        }
+
+        .summary-sub-title {
+            font-size: .49rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin-top: 8px;
+            margin-bottom: 2px;
+        }
+
+        .summary-seg-row {
+            display: flex;
+            gap: 5px;
+            font-size: .53rem;
+            padding: 1px 0;
+            border-bottom: 1px dotted #1a1a2a;
+        }
     </style>
 </head>
 
@@ -796,6 +925,15 @@
         <h1>RUPTURE DETECTOR</h1>
         <span class="sub">by Quota Climat</span>
         <div class="status-dot" id="status-dot"></div>
+        <div class="params-btn" tabindex="0" title="Paramètres d'extraction">
+            ⚙
+            <div class="params-popover">
+                <div class="params-popover-title">Paramètres d'extraction</div>
+                <div id="params-content">
+                    <div class="params-row"><span class="pkey">—</span><span class="pval">non disponible</span></div>
+                </div>
+            </div>
+        </div>
     </header>
 
     <div class="root">
@@ -916,6 +1054,12 @@
                 <video id="right-video-el" muted></video>
             </div>
 
+            <!-- Segment summary -->
+            <div class="summary-panel" id="summary-panel" style="display:none">
+                <div class="summary-sect-title">Résumé segmentation</div>
+                <div id="summary-content"></div>
+            </div>
+
             <div class="panel-tabs">
                 <button class="tab-btn active" data-tab="detail">Détail</button>
                 <button class="tab-btn" data-tab="stats">Stats</button>
@@ -1028,6 +1172,7 @@
             isVideo: false,
             metricsVisible: { energy: true, centroid: true, zcr: true },
             metricRanges: {},
+            params: {},
         };
 
         // ═══════════════════════════════════════════════════════════════════
@@ -1085,6 +1230,7 @@
             const data = JSON.parse(raw);
             if (data.segments) loadSegments(data.segments);
             if (data.annotations) loadAnnotations(data.annotations);
+            if (data.params) populateParams(data.params);
 
             // ── Mode URL : le média n'est pas embarqué, le navigateur le charge ──
             if (data.media_url) {
@@ -1284,6 +1430,7 @@
             computeMetricRanges();
             renderSegmentList();
             drawTimeline(); drawMetrics(); drawStatsTab();
+            buildSummary();
         }
 
         function loadAnnotations(annots) {
@@ -1784,6 +1931,89 @@
     </div>`).join('');
             el.innerHTML += `<div class="stat-time-row" style="margin-top:6px">
     <span class="key">Total annotations</span><span class="val" style="color:var(--annot)">${total}</span></div>`;
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  PARAMS POPOVER
+        // ═══════════════════════════════════════════════════════════════════
+        function populateParams(params) {
+            if (!params || !Object.keys(params).length) return;
+            state.params = params;
+            const defs = [
+                ['sr',                'Sample rate',        v => v.toLocaleString('fr-FR') + ' Hz'],
+                ['hop_length',        'Hop length',         v => v + ' samples'],
+                ['fps',               'FPS (sr / hop)',     v => v.toFixed(2) + ' f/s'],
+                ['n_mfcc',            'MFCC',               v => v + ' coeff'],
+                ['context_sec',       'Contexte nouveauté', v => v + ' s'],
+                ['novelty_smooth_sec','Lissage nouveauté',  v => v + ' s'],
+                ['min_segment_sec',   'Segment minimum',    v => v + ' s'],
+                ['sensitivity',       'Sensitivity',        v => v.toFixed(2) + ' (' + (v * 100).toFixed(0) + '% pics)'],
+                ['max_ruptures',      'Max ruptures',       v => v === 0 ? '∞' : String(v)],
+            ];
+            const rows = defs.filter(([k]) => params[k] !== undefined);
+            if (!rows.length) return;
+            document.getElementById('params-content').innerHTML = rows
+                .map(([k, label, fmt]) =>
+                    `<div class="params-row"><span class="pkey">${label}</span><span class="pval">${fmt(params[k])}</span></div>`)
+                .join('');
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  SEGMENT SUMMARY
+        // ═══════════════════════════════════════════════════════════════════
+        function buildSummary() {
+            const segs = state.segments;
+            if (!segs.length) return;
+            const panel = document.getElementById('summary-panel');
+            panel.style.display = 'block';
+
+            const counts = {}, times = {};
+            for (const s of segs) {
+                counts[s.label] = (counts[s.label] || 0) + 1;
+                times[s.label] = (times[s.label] || 0) + s.duration_sec;
+            }
+            const total = segs.length;
+            const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+
+            let html = `<div class="summary-total">Total : <strong>${total}</strong> segments</div>`;
+
+            html += `<div class="summary-tbl-head">
+                <span style="flex:1">Label</span>
+                <span style="width:22px;text-align:right">Nb</span>
+                <span style="width:38px;text-align:right">%</span>
+                <span style="width:52px;text-align:right">Moy.</span>
+            </div>`;
+
+            html += sorted.map(([label, count]) => {
+                const mean = times[label] / count;
+                const pct = (count / total * 100).toFixed(1);
+                const col = segColor(label);
+                return `<div class="summary-label-row">
+                    <div style="width:3px;background:${col};align-self:stretch;border-radius:1px;flex-shrink:0"></div>
+                    <span style="flex:1;color:${col};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${label}</span>
+                    <span style="width:22px;text-align:right">${count}</span>
+                    <span style="width:38px;text-align:right;color:var(--text-dim)">${pct}%</span>
+                    <span style="width:52px;text-align:right;color:var(--text-dim)">${formatDur(mean)}</span>
+                </div>`;
+            }).join('');
+
+            const byDur = [...segs].sort((a, b) => a.duration_sec - b.duration_sec);
+
+            html += `<div class="summary-sub-title">⬇ 5 plus courts</div>`;
+            html += byDur.slice(0, 5).map(s => `<div class="summary-seg-row">
+                <span style="color:var(--text-dim);flex-shrink:0">${s.start_tc || secToTC(s.start_sec)}</span>
+                <span style="color:${segColor(s.label)};flex:1">${s.label}</span>
+                <span style="color:var(--text);flex-shrink:0">${formatDur(s.duration_sec)}</span>
+            </div>`).join('');
+
+            html += `<div class="summary-sub-title">⬆ 5 plus longs</div>`;
+            html += byDur.slice(-5).reverse().map(s => `<div class="summary-seg-row">
+                <span style="color:var(--text-dim);flex-shrink:0">${s.start_tc || secToTC(s.start_sec)}</span>
+                <span style="color:${segColor(s.label)};flex:1">${s.label}</span>
+                <span style="color:var(--text);flex-shrink:0">${formatDur(s.duration_sec)}</span>
+            </div>`).join('');
+
+            document.getElementById('summary-content').innerHTML = html;
         }
 
         // ═══════════════════════════════════════════════════════════════════

@@ -159,3 +159,4 @@ analyse/mediatree/images
 *.tsv
 
 exports/
+export.csv

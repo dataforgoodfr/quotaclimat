@@ -166,23 +166,19 @@ def encode_media(path: Path):
 
 def generate_player(
     media_input: str,
-    segments_path: str | Path,
-    csv_path: str | Path | None,
+    segments: list[dict],
+    annotations: list[dict] | None,
     output_path: str | Path,
 ):
-    segments_path = Path(segments_path)
     output_path = Path(output_path)
-    n_steps = 3 if csv_path else 2
+    annotations = annotations or []
+    n_steps = 3 if annotations else 2
     media_is_url = is_url(media_input)
 
-    # Vérifications communes
-    for p, label in [
-        (segments_path, "segments JSON"),
-        (TEMPLATE_PATH, "template HTML"),
-    ]:
-        if not p.exists():
-            print(f"[ERREUR] Fichier {label} introuvable : {p}")
-            sys.exit(1)
+    # Vérification template
+    if not TEMPLATE_PATH.exists():
+        print(f"[ERREUR] Fichier template HTML introuvable : {TEMPLATE_PATH}")
+        sys.exit(1)
 
     # ── Étape 1 : média ──────────────────────────────────────────────
     payload_media = {}
@@ -219,22 +215,14 @@ def generate_player(
             "media_name": media_path.name,
         }
 
-    # ── Étape 2 : segments JSON ───────────────────────────────────────
-    print(f"[2/{n_steps}] Chargement des segments : {segments_path.name}")
-    with open(segments_path, encoding="utf-8") as f:
-        segments = json.load(f)
+    # ── Étape 2 : segments ────────────────────────────────────────────
+    print(f"[2/{n_steps}] Segments fournis en entrée")
     print(f"  {len(segments)} segments")
 
-    # ── Étape 3 (optionnelle) : annotations CSV ───────────────────────
-    annotations = []
-    if csv_path:
-        csv_path = Path(csv_path)
-        if not csv_path.exists():
-            print(f"[ERREUR] Fichier CSV introuvable : {csv_path}")
-            sys.exit(1)
-        print(f"[3/3] Chargement des annotations CSV : {csv_path.name}")
-        annotations = load_csv(str(csv_path))
-        print(f"  {len(annotations)} annotations chargées")
+    # ── Étape 3 (optionnelle) : annotations ───────────────────────────
+    if annotations:
+        print("[3/3] Annotations fournies en entrée")
+        print(f"  {len(annotations)} annotations")
 
     # Construction du payload JSON
     payload = {
@@ -323,17 +311,41 @@ Format CSV :
     )
     args = parser.parse_args()
 
-    media = Path(args.media)
-    output = (
-        Path(args.output)
-        if args.output
-        else media.parent / (media.stem + "_report.html")
-    )
+    media_input = args.media
+    media_is_url = is_url(media_input)
+
+    if media_is_url:
+        base_name = Path(media_input.split("?")[0]).name or "media"
+        base_stem = Path(base_name).stem or "media"
+        output = Path(args.output) if args.output else Path(f"{base_stem}_report.html")
+    else:
+        media = Path(media_input)
+        output = (
+            Path(args.output)
+            if args.output
+            else media.parent / (media.stem + "_report.html")
+        )
+
+    segments_path = Path(args.segments)
+    if not segments_path.exists():
+        print(f"[ERREUR] Fichier segments JSON introuvable : {segments_path}")
+        sys.exit(1)
+
+    with open(segments_path, encoding="utf-8") as f:
+        segments = json.load(f)
+
+    annotations = []
+    if args.csv:
+        csv_path = Path(args.csv)
+        if not csv_path.exists():
+            print(f"[ERREUR] Fichier CSV introuvable : {csv_path}")
+            sys.exit(1)
+        annotations = load_csv(str(csv_path))
 
     generate_player(
-        media_input=str(media),
-        segments_path=args.segments,
-        csv_path=args.csv,
+        media_input=media_input,
+        segments=segments,
+        annotations=annotations,
         output_path=str(output),
     )
 

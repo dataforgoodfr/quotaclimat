@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rupture Detector — Audio Lab</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0f;
+            --panel: #10101a;
+            --border: #1e1e2e;
+            --amber: #f5a623;
+            --amber-dim: #7a5312;
+            --green: #00ff88;
+            --red: #ff3b5c;
+            --blue: #3b82f6;
+            --purple: #a855f7;
+            --muted: #3a3a52;
+            --text: #e8e8f0;
+            --text-dim: #6b6b8a;
+            --jingle: #ff3b5c;
+            --pub: #f5a623;
+            --emission: #00ff88;
+            --silence: #3a3a52;
+            --unknown: #6b6b8a;
+            --m-energy: #f5a623;
+            --m-centroid: #a78bfa;
+            --m-zcr: #34d399;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Space Mono', monospace;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+            pointer-events: none;
+            z-index: 1000;
+            opacity: .4;
+        }
+
+        /* ── Header ── */
+        header {
+            padding: 16px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        header h1 {
+            font-family: 'Syne', sans-serif;
+            font-weight: 800;
+            font-size: 1.2rem;
+            letter-spacing: -.02em;
+            color: var(--amber);
+        }
+
+        header span {
+            font-size: .65rem;
+            color: var(--text-dim);
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--muted);
+            margin-left: auto;
+            transition: background .3s;
+        }
+
+        .status-dot.active {
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+        }
+
+        /* ── Workspace ── */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            height: calc(100vh - 57px);
+            overflow: hidden;
+        }
+
+        /* ── Left column ── */
+        .left-col {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border-right: 1px solid var(--border);
+        }
+
+        /* Load zone */
+        .load-zone {
+            display: flex;
+            gap: 10px;
+            padding: 10px 24px;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+
+        .file-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 6px 12px;
+            color: var(--text-dim);
+            font-family: 'Space Mono', monospace;
+            font-size: .7rem;
+            cursor: pointer;
+            transition: all .2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-btn:hover {
+            border-color: var(--amber-dim);
+            color: var(--amber);
+        }
+
+        .file-btn.loaded {
+            border-color: var(--green);
+            color: var(--green);
+        }
+
+        .file-btn input[type=file] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .load-hint {
+            font-size: .6rem;
+            color: var(--text-dim);
+            letter-spacing: .05em;
+        }
+
+        /* Waveform */
+        .canvas-wrap {
+            position: relative;
+            flex-shrink: 0;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .canvas-wrap canvas {
+            display: block;
+            width: 100%;
+        }
+
+        .canvas-label {
+            position: absolute;
+            top: 6px;
+            left: 10px;
+            font-size: .55rem;
+            color: var(--text-dim);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            pointer-events: none;
+        }
+
+        #waveform-wrap {
+            height: 90px;
+            cursor: pointer;
+        }
+
+        #metrics-wrap {
+            height: 110px;
+            cursor: crosshair;
+        }
+
+        #timeline-wrap {
+            height: 50px;
+            cursor: pointer;
+        }
+
+        /* Playheads – shared class */
+        .playhead-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--amber);
+            box-shadow: 0 0 6px var(--amber);
+            pointer-events: none;
+            left: 0;
+        }
+
+        .time-label-abs {
+            position: absolute;
+            bottom: 4px;
+            left: 10px;
+            font-size: .55rem;
+            color: var(--text-dim);
+            pointer-events: none;
+        }
+
+        /* Metrics toggles */
+        .metrics-legend {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+            pointer-events: all;
+            z-index: 10;
+        }
+
+        .metric-toggle {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: .58rem;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 2px;
+            border: 1px solid transparent;
+            transition: all .15s;
+            user-select: none;
+        }
+
+        .metric-toggle .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .metric-toggle.off {
+            opacity: .3;
+        }
+
+        .metric-toggle:hover {
+            opacity: 1;
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 20px;
+            background: var(--panel);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .btn-play {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--amber);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .9rem;
+            transition: all .15s;
+            flex-shrink: 0;
+        }
+
+        .btn-play:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 14px var(--amber-dim);
+        }
+
+        .btn-play:active {
+            transform: scale(.95);
+        }
+
+        .btn-skip {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'Space Mono', monospace;
+            font-size: .6rem;
+            padding: 5px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .btn-skip:hover {
+            border-color: var(--amber-dim);
+            color: var(--amber);
+        }
+
+        .time-display {
+            font-size: .72rem;
+            color: var(--amber);
+            letter-spacing: .08em;
+            min-width: 130px;
+        }
+
+        .speed-select {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'Space Mono', monospace;
+            font-size: .62rem;
+            padding: 4px 6px;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+
+        .seg-counter {
+            margin-left: auto;
+            font-size: .6rem;
+            color: var(--text-dim);
+        }
+
+        .seg-counter span {
+            color: var(--amber);
+        }
+
+        /* Segment list */
+        .seg-list-wrap {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .seg-list-wrap::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .seg-list-wrap::-webkit-scrollbar-thumb {
+            background: var(--muted);
+        }
+
+        .seg-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 20px;
+            border-bottom: 1px solid #0f0f1a;
+            cursor: pointer;
+            transition: background .1s;
+        }
+
+        .seg-item:hover {
+            background: #13131f;
+        }
+
+        .seg-item.active {
+            background: #1a1a2e;
+            border-left: 2px solid var(--amber);
+            padding-left: 18px;
+        }
+
+        .seg-color-bar {
+            width: 3px;
+            border-radius: 2px;
+            align-self: stretch;
+            flex-shrink: 0;
+            min-height: 20px;
+        }
+
+        .seg-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .seg-tc {
+            font-size: .58rem;
+            color: var(--text-dim);
+            letter-spacing: .04em;
+        }
+
+        .seg-label {
+            font-size: .68rem;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 1px;
+        }
+
+        .seg-dur {
+            font-size: .58rem;
+            color: var(--text-dim);
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        /* Legend bar */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px 20px;
+            border-top: 1px solid var(--border);
+            background: var(--panel);
+            flex-shrink: 0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: .55rem;
+            color: var(--text-dim);
+        }
+
+        .legend-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 1px;
+            flex-shrink: 0;
+        }
+
+        /* ── Right panel ── */
+        .right-panel {
+            background: var(--panel);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px 0;
+            font-family: 'Space Mono', monospace;
+            font-size: .6rem;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all .15s;
+        }
+
+        .tab-btn.active {
+            color: var(--amber);
+            border-bottom-color: var(--amber);
+        }
+
+        .tab-content {
+            display: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .tab-content.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tab-content::-webkit-scrollbar {
+            width: 3px;
+        }
+
+        .tab-content::-webkit-scrollbar-thumb {
+            background: var(--muted);
+        }
+
+        /* Detail tab */
+        .detail-seg {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-label-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 2px;
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 4px 0;
+            border-bottom: 1px dotted #1e1e2e;
+            font-size: .65rem;
+        }
+
+        .detail-row .key {
+            color: var(--text-dim);
+        }
+
+        .detail-row .val {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .mini-wave-wrap {
+            padding: 14px 18px 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mini-wave-wrap label {
+            font-size: .55rem;
+            color: var(--text-dim);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        #mini-canvas {
+            width: 100%;
+            height: 55px;
+            display: block;
+            background: #0d0d17;
+            border-radius: 2px;
+            border: 1px solid var(--border);
+        }
+
+        /* Metrics sparklines */
+        .sparklines-wrap {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sparklines-wrap label {
+            font-size: .55rem;
+            color: var(--text-dim);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .sparkline-row {
+            margin-bottom: 8px;
+        }
+
+        .sparkline-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: .58rem;
+            margin-bottom: 3px;
+        }
+
+        .sparkline-name {}
+
+        .sparkline-val {
+            font-weight: 700;
+        }
+
+        .sparkline-bar-track {
+            height: 5px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .sparkline-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width .4s;
+        }
+
+        /* Stats tab */
+        .stats-wrap {
+            padding: 16px 18px;
+        }
+
+        .stats-wrap label {
+            font-size: .55rem;
+            color: var(--text-dim);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .stat-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .stat-bar-label {
+            width: 100px;
+            color: var(--text-dim);
+            flex-shrink: 0;
+            font-size: .58rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stat-bar-track {
+            flex: 1;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width .4s;
+        }
+
+        .stat-count {
+            width: 28px;
+            text-align: right;
+            color: var(--text-dim);
+            font-size: .58rem;
+        }
+
+        .stat-time-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: .6rem;
+            padding: 3px 0;
+            border-bottom: 1px dotted var(--border);
+        }
+
+        .stat-time-row .key {
+            color: var(--text-dim);
+        }
+
+        .stat-time-row .val {
+            color: var(--text);
+        }
+
+        /* Empty */
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--text-dim);
+            padding: 30px;
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 2rem;
+            opacity: .3;
+        }
+
+        .empty-state p {
+            font-size: .68rem;
+            line-height: 1.6;
+        }
+
+        /* Tooltip */
+        #tooltip {
+            position: fixed;
+            background: #1a1a2e;
+            border: 1px solid var(--amber-dim);
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: .62rem;
+            color: var(--text);
+            pointer-events: none;
+            display: none;
+            z-index: 9999;
+            white-space: nowrap;
+        }
+
+        audio {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>RUPTURE DETECTOR</h1>
+        <span>Audio Lab v2</span>
+        <div class="status-dot" id="status-dot"></div>
+    </header>
+
+    <div class="workspace">
+
+        <!-- ── LEFT COLUMN ── -->
+        <div class="left-col">
+
+            <!-- Load zone (caché si embedded) -->
+            <div class="load-zone" id="load-zone">
+                <label class="file-btn" id="btn-audio">
+                    <span>🎵</span>
+                    <span id="audio-label">Charger l'audio</span>
+                    <input type="file" accept="audio/*" id="input-audio">
+                </label>
+                <label class="file-btn" id="btn-json">
+                    <span>📋</span>
+                    <span id="json-label">Charger segments.json</span>
+                    <input type="file" accept=".json" id="input-json">
+                </label>
+                <span class="load-hint">← produits par rupture_detector.py</span>
+            </div>
+
+            <!-- Waveform -->
+            <div class="canvas-wrap" id="waveform-wrap">
+                <canvas id="waveform-canvas"></canvas>
+                <div class="playhead-line" id="playhead"></div>
+                <div class="canvas-label">Forme d'onde</div>
+                <div class="time-label-abs" id="time-label">00:00:00</div>
+            </div>
+
+            <!-- Metrics chart -->
+            <div class="canvas-wrap" id="metrics-wrap">
+                <canvas id="metrics-canvas"></canvas>
+                <div class="playhead-line" id="metrics-playhead"></div>
+                <div class="canvas-label">Métriques par segment</div>
+                <div class="metrics-legend" id="metrics-legend">
+                    <div class="metric-toggle" data-metric="energy" style="color:var(--m-energy)">
+                        <div class="dot" style="background:var(--m-energy)"></div>Énergie RMS
+                    </div>
+                    <div class="metric-toggle" data-metric="centroid" style="color:var(--m-centroid)">
+                        <div class="dot" style="background:var(--m-centroid)"></div>Centroïde
+                    </div>
+                    <div class="metric-toggle" data-metric="zcr" style="color:var(--m-zcr)">
+                        <div class="dot" style="background:var(--m-zcr)"></div>ZCR
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="canvas-wrap" id="timeline-wrap">
+                <canvas id="timeline-canvas"></canvas>
+                <div class="playhead-line" id="timeline-playhead"></div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls">
+                <button class="btn-play" id="btn-play">▶</button>
+                <button class="btn-skip" id="btn-prev">◀◀ seg</button>
+                <button class="btn-skip" id="btn-next">seg ▶▶</button>
+                <span class="time-display" id="time-display">00:00:00 / 00:00:00</span>
+                <select class="speed-select" id="speed-select">
+                    <option value="0.5">0.5×</option>
+                    <option value="1" selected>1×</option>
+                    <option value="1.5">1.5×</option>
+                    <option value="2">2×</option>
+                </select>
+                <span class="seg-counter" id="seg-counter">— / — seg</span>
+            </div>
+
+            <!-- Segment list -->
+            <div class="seg-list-wrap" id="seg-list">
+                <div class="empty-state" id="empty-main">
+                    <div class="empty-icon">📂</div>
+                    <p>Chargez un fichier audio et le fichier segments.json pour commencer.</p>
+                </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:var(--jingle)"></div>jingle
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:var(--pub)"></div>pub
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:var(--emission)"></div>émission
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:var(--silence)"></div>silence
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background:var(--unknown)"></div>inconnu
+                </div>
+            </div>
+        </div>
+
+        <!-- ── RIGHT PANEL ── -->
+        <div class="right-panel">
+            <div class="panel-tabs">
+                <button class="tab-btn active" data-tab="detail">Détail</button>
+                <button class="tab-btn" data-tab="stats">Stats</button>
+            </div>
+
+            <!-- Detail tab -->
+            <div class="tab-content active" id="tab-detail">
+                <div class="empty-state" id="empty-detail">
+                    <div class="empty-icon">🔍</div>
+                    <p>Cliquez sur un segment pour voir ses détails.</p>
+                </div>
+                <div id="detail-content" style="display:none">
+                    <div class="detail-seg">
+                        <div class="detail-label-badge" id="d-badge">—</div>
+                        <div class="detail-row"><span class="key">Début</span> <span class="val" id="d-start">—</span>
+                        </div>
+                        <div class="detail-row"><span class="key">Fin</span> <span class="val" id="d-end">—</span></div>
+                        <div class="detail-row"><span class="key">Durée</span> <span class="val" id="d-dur">—</span>
+                        </div>
+                        <div class="detail-row"><span class="key">Index</span> <span class="val" id="d-idx">—</span>
+                        </div>
+                    </div>
+                    <div class="mini-wave-wrap">
+                        <label>Forme d'onde du segment</label>
+                        <canvas id="mini-canvas"></canvas>
+                    </div>
+                    <div class="sparklines-wrap">
+                        <label>Métriques (position relative dans le corpus)</label>
+                        <div class="sparkline-row" id="sp-energy">
+                            <div class="sparkline-header">
+                                <span class="sparkline-name" style="color:var(--m-energy)">● Énergie RMS</span>
+                                <span class="sparkline-val" id="sp-energy-val" style="color:var(--m-energy)">—</span>
+                            </div>
+                            <div class="sparkline-bar-track">
+                                <div class="sparkline-bar-fill" id="sp-energy-bar"
+                                    style="background:var(--m-energy);width:0%"></div>
+                            </div>
+                        </div>
+                        <div class="sparkline-row" id="sp-centroid">
+                            <div class="sparkline-header">
+                                <span class="sparkline-name" style="color:var(--m-centroid)">● Centroïde spectral</span>
+                                <span class="sparkline-val" id="sp-centroid-val"
+                                    style="color:var(--m-centroid)">—</span>
+                            </div>
+                            <div class="sparkline-bar-track">
+                                <div class="sparkline-bar-fill" id="sp-centroid-bar"
+                                    style="background:var(--m-centroid);width:0%"></div>
+                            </div>
+                        </div>
+                        <div class="sparkline-row" id="sp-zcr">
+                            <div class="sparkline-header">
+                                <span class="sparkline-name" style="color:var(--m-zcr)">● Zero-Crossing Rate</span>
+                                <span class="sparkline-val" id="sp-zcr-val" style="color:var(--m-zcr)">—</span>
+                            </div>
+                            <div class="sparkline-bar-track">
+                                <div class="sparkline-bar-fill" id="sp-zcr-bar"
+                                    style="background:var(--m-zcr);width:0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats tab -->
+            <div class="tab-content" id="tab-stats">
+                <div class="stats-wrap">
+                    <label>Répartition des labels</label>
+                    <div id="stats-bars"></div>
+                </div>
+                <div class="stats-wrap" style="border-top:1px solid var(--border)">
+                    <label>Temps cumulé par type</label>
+                    <div id="stats-time"></div>
+                </div>
+                <div class="stats-wrap" style="border-top:1px solid var(--border)">
+                    <label>Durées</label>
+                    <div id="stats-dur"></div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div id="tooltip"></div>
+    <audio id="audio-el"></audio>
+
+    <!-- ── DONNÉES EMBARQUÉES (remplies par le générateur Python) ── -->
+    <script id="embedded-data" type="application/json">null</script>
+
+    <script>
+        // ═══════════════════════════════════════════════════════════════════
+        //  STATE
+        // ═══════════════════════════════════════════════════════════════════
+        const state = {
+            segments: [],
+            audioBuffer: null,
+            duration: 0,
+            currentSegIdx: -1,
+            playing: false,
+            audioCtx: null,
+            metricsVisible: { energy: true, centroid: true, zcr: true },
+            metricRanges: {},   // {energy:{min,max}, centroid:{min,max}, zcr:{min,max}}
+        };
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  DOM
+        // ═══════════════════════════════════════════════════════════════════
+        const audioEl = document.getElementById('audio-el');
+        const btnPlay = document.getElementById('btn-play');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const speedSel = document.getElementById('speed-select');
+        const timeDisplay = document.getElementById('time-display');
+        const timeLabel = document.getElementById('time-label');
+        const playhead = document.getElementById('playhead');
+        const metricsHead = document.getElementById('metrics-playhead');
+        const tlPlayhead = document.getElementById('timeline-playhead');
+        const statusDot = document.getElementById('status-dot');
+        const segCounter = document.getElementById('seg-counter');
+        const segList = document.getElementById('seg-list');
+        const waveCanvas = document.getElementById('waveform-canvas');
+        const metricsCanvas = document.getElementById('metrics-canvas');
+        const tlCanvas = document.getElementById('timeline-canvas');
+        const miniCanvas = document.getElementById('mini-canvas');
+        const tooltip = document.getElementById('tooltip');
+
+        const LABEL_COLORS = {
+            jingle_candidat: '#ff3b5c',
+            pub_candidat: '#f5a623',
+            emission_candidat: '#00ff88',
+            silence: '#3a3a52',
+            inconnu: '#6b6b8a',
+            '?': '#6b6b8a',
+        };
+        const METRIC_COLORS = { energy: '#f5a623', centroid: '#a78bfa', zcr: '#34d399' };
+        const segColor = l => LABEL_COLORS[l] || LABEL_COLORS['?'];
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  EMBEDDED DATA (generated by Python)
+        // ═══════════════════════════════════════════════════════════════════
+        (async () => {
+            const raw = document.getElementById('embedded-data').textContent.trim();
+            if (raw && raw !== 'null') {
+                const data = JSON.parse(raw);
+                if (data.segments) loadSegments(data.segments);
+                if (data.audio_b64) {
+                    document.getElementById('load-zone').style.display = 'none';
+                    const binary = atob(data.audio_b64);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                    const blob = new Blob([bytes], { type: data.audio_mime || 'audio/mpeg' });
+                    const url = URL.createObjectURL(blob);
+                    audioEl.src = url;
+                    state.audioCtx = new AudioContext();
+                    state.audioBuffer = await state.audioCtx.decodeAudioData(bytes.buffer);
+                    state.duration = state.audioBuffer.duration;
+                    drawWaveform(); drawTimeline(); drawMetrics();
+                    statusDot.classList.add('active');
+                }
+            }
+        })();
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  FILE INPUTS
+        // ═══════════════════════════════════════════════════════════════════
+        document.getElementById('input-audio').addEventListener('change', async (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            audioEl.src = URL.createObjectURL(file);
+            document.getElementById('audio-label').textContent = file.name;
+            document.getElementById('btn-audio').classList.add('loaded');
+            const arrBuf = await file.arrayBuffer();
+            state.audioCtx = state.audioCtx || new AudioContext();
+            state.audioBuffer = await state.audioCtx.decodeAudioData(arrBuf.slice(0));
+            state.duration = state.audioBuffer.duration;
+            drawWaveform(); drawTimeline(); drawMetrics();
+            statusDot.classList.add('active');
+        });
+
+        document.getElementById('input-json').addEventListener('change', async (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const text = await file.text();
+            loadSegments(JSON.parse(text));
+            document.getElementById('json-label').textContent = `${file.name} (${state.segments.length} seg.)`;
+            document.getElementById('btn-json').classList.add('loaded');
+        });
+
+        function loadSegments(segs) {
+            state.segments = segs;
+            document.getElementById('empty-main').style.display = 'none';
+            computeMetricRanges();
+            renderSegmentList();
+            drawTimeline();
+            drawMetrics();
+            drawStatsTab();
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  METRIC RANGES (for normalization)
+        // ═══════════════════════════════════════════════════════════════════
+        function computeMetricRanges() {
+            const segs = state.segments.filter(s =>
+                s.energy_mean != null && s.spectral_centroid != null && s.zcr_mean != null
+            );
+            if (!segs.length) return;
+            const minmax = (arr) => ({ min: Math.min(...arr), max: Math.max(...arr) });
+            state.metricRanges = {
+                energy: minmax(segs.map(s => s.energy_mean)),
+                centroid: minmax(segs.map(s => s.spectral_centroid)),
+                zcr: minmax(segs.map(s => s.zcr_mean)),
+            };
+        }
+
+        function normalize(val, range) {
+            if (!range || range.max === range.min) return 0.5;
+            return Math.max(0, Math.min(1, (val - range.min) / (range.max - range.min)));
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  CANVAS HELPERS
+        // ═══════════════════════════════════════════════════════════════════
+        function resizeCanvas(canvas, wrapId) {
+            const wrap = document.getElementById(wrapId);
+            const dpr = window.devicePixelRatio || 1;
+            const W = wrap.clientWidth, H = wrap.clientHeight;
+            canvas.width = W * dpr; canvas.height = H * dpr;
+            canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            return { ctx, W, H };
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  WAVEFORM
+        // ═══════════════════════════════════════════════════════════════════
+        function drawWaveform() {
+            const buf = state.audioBuffer; if (!buf) return;
+            const { ctx, W, H } = resizeCanvas(waveCanvas, 'waveform-wrap');
+            const data = buf.getChannelData(0);
+            const step = Math.floor(data.length / W);
+            const mid = H / 2, amp = H * 0.43;
+
+            ctx.fillStyle = '#0d0d17'; ctx.fillRect(0, 0, W, H);
+
+            // Grid
+            ctx.strokeStyle = '#1a1a28'; ctx.lineWidth = 1;
+            [H * .25, H * .5, H * .75].forEach(y => {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+            });
+
+            // Segment color overlays
+            if (state.segments.length && state.duration) {
+                for (const seg of state.segments) {
+                    ctx.fillStyle = segColor(seg.label) + '1a';
+                    const x1 = seg.start_sec / state.duration * W;
+                    const x2 = seg.end_sec / state.duration * W;
+                    ctx.fillRect(x1, 0, x2 - x1, H);
+                }
+            }
+
+            // Waveform
+            ctx.strokeStyle = '#2a5a8a'; ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (let x = 0; x < W; x++) {
+                let mn = 1, mx = -1;
+                for (let i = x * step; i < (x + 1) * step; i++) {
+                    if (data[i] < mn) mn = data[i];
+                    if (data[i] > mx) mx = data[i];
+                }
+                ctx.moveTo(x, mid + mn * amp); ctx.lineTo(x, mid + mx * amp);
+            }
+            ctx.stroke();
+
+            // Center line
+            ctx.strokeStyle = '#1e1e2e'; ctx.beginPath();
+            ctx.moveTo(0, mid); ctx.lineTo(W, mid); ctx.stroke();
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  METRICS CHART
+        // ═══════════════════════════════════════════════════════════════════
+        function drawMetrics() {
+            const segs = state.segments;
+            const { ctx, W, H } = resizeCanvas(metricsCanvas, 'metrics-wrap');
+
+            ctx.fillStyle = '#0b0b14'; ctx.fillRect(0, 0, W, H);
+
+            // H-grid
+            ctx.strokeStyle = '#1a1a28'; ctx.lineWidth = 1;
+            [.25, .5, .75].forEach(r => {
+                const y = H - r * H;
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+            });
+            // 0/1 labels
+            ctx.fillStyle = '#3a3a52'; ctx.font = '9px "Space Mono"';
+            ctx.fillText('1.0', 2, 11);
+            ctx.fillText('0.0', 2, H - 3);
+
+            if (!segs.length || !state.duration) return;
+
+            const metrics = [
+                { key: 'energy', getter: s => s.energy_mean, range: state.metricRanges.energy },
+                { key: 'centroid', getter: s => s.spectral_centroid, range: state.metricRanges.centroid },
+                { key: 'zcr', getter: s => s.zcr_mean, range: state.metricRanges.zcr },
+            ];
+
+            for (const m of metrics) {
+                if (!state.metricsVisible[m.key] || !m.range) continue;
+                const color = METRIC_COLORS[m.key];
+
+                // Draw as step function with fill
+                ctx.beginPath();
+                let first = true;
+                for (const seg of segs) {
+                    const val = m.getter(seg);
+                    if (val == null) continue;
+                    const n = normalize(val, m.range);
+                    const x1 = seg.start_sec / state.duration * W;
+                    const x2 = seg.end_sec / state.duration * W;
+                    const y = H - n * (H - 4) - 2;
+                    if (first) { ctx.moveTo(x1, y); first = false; }
+                    else ctx.lineTo(x1, y);
+                    ctx.lineTo(x2, y);
+                }
+                ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
+
+                // Soft fill under the step curve
+                ctx.beginPath();
+                first = true;
+                for (const seg of segs) {
+                    const val = m.getter(seg); if (val == null) continue;
+                    const n = normalize(val, m.range);
+                    const x1 = seg.start_sec / state.duration * W;
+                    const x2 = seg.end_sec / state.duration * W;
+                    const y = H - n * (H - 4) - 2;
+                    if (first) { ctx.moveTo(x1, H); ctx.lineTo(x1, y); first = false; }
+                    else { ctx.lineTo(x1, H); ctx.lineTo(x1, y); }
+                    ctx.lineTo(x2, y);
+                }
+                ctx.lineTo(W, H); ctx.closePath();
+                ctx.fillStyle = color + '18'; ctx.fill();
+            }
+
+            // Highlight active segment
+            if (state.currentSegIdx >= 0 && state.currentSegIdx < segs.length) {
+                const seg = segs[state.currentSegIdx];
+                const x1 = seg.start_sec / state.duration * W;
+                const x2 = seg.end_sec / state.duration * W;
+                ctx.fillStyle = '#ffffff0a';
+                ctx.fillRect(x1, 0, x2 - x1, H);
+                ctx.strokeStyle = '#ffffff22'; ctx.lineWidth = 1;
+                ctx.strokeRect(x1, 0, x2 - x1, H);
+            }
+
+            // Rupture markers (vertical ticks at boundaries)
+            ctx.strokeStyle = '#ffffff15'; ctx.lineWidth = 1;
+            for (let i = 1; i < segs.length; i++) {
+                const x = segs[i].start_sec / state.duration * W;
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  TIMELINE
+        // ═══════════════════════════════════════════════════════════════════
+        function drawTimeline() {
+            const { ctx, W, H } = resizeCanvas(tlCanvas, 'timeline-wrap');
+            ctx.fillStyle = '#0d0d17'; ctx.fillRect(0, 0, W, H);
+            if (!state.duration) return;
+
+            // Time ruler
+            const totalMin = state.duration / 60;
+            const step = totalMin < 5 ? 30 : totalMin < 30 ? 120 : totalMin < 120 ? 600 : 1800;
+            ctx.strokeStyle = '#1e1e2e'; ctx.fillStyle = '#2a2a42';
+            ctx.font = '8px "Space Mono"';
+            for (let t = 0; t < state.duration; t += step) {
+                const x = t / state.duration * W;
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+                if (x > 4) ctx.fillText(secToTC(t), x + 2, H - 3);
+            }
+
+            // Segments
+            for (let i = 0; i < state.segments.length; i++) {
+                const seg = state.segments[i];
+                const x1 = seg.start_sec / state.duration * W;
+                const x2 = seg.end_sec / state.duration * W;
+                const col = segColor(seg.label);
+                const act = i === state.currentSegIdx;
+                ctx.fillStyle = act ? col : col + 'aa';
+                ctx.fillRect(x1, act ? 0 : 6, Math.max(x2 - x1 - .5, 1), act ? H : H - 12);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  SEGMENT LIST
+        // ═══════════════════════════════════════════════════════════════════
+        function renderSegmentList() {
+            segList.innerHTML = '';
+            for (let i = 0; i < state.segments.length; i++) {
+                const seg = state.segments[i];
+                const color = segColor(seg.label);
+                const item = document.createElement('div');
+                item.className = 'seg-item'; item.dataset.idx = i;
+                item.innerHTML = `
+      <div class="seg-color-bar" style="background:${color}"></div>
+      <div class="seg-info">
+        <div class="seg-tc">${seg.start_tc || secToTC(seg.start_sec)}</div>
+        <div class="seg-label" style="color:${color}">${seg.label}</div>
+      </div>
+      <div class="seg-dur">${formatDur(seg.duration_sec)}</div>`;
+                item.addEventListener('click', () => seekToSegment(i));
+                segList.appendChild(item);
+            }
+            segCounter.innerHTML = `— / <span>${state.segments.length}</span> seg`;
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  SEEK & NAVIGATION
+        // ═══════════════════════════════════════════════════════════════════
+        function seekToSegment(idx) {
+            if (!audioEl.src) return;
+            const seg = state.segments[idx]; if (!seg) return;
+            state.currentSegIdx = idx;
+            audioEl.currentTime = seg.start_sec;
+            if (!state.playing) { audioEl.play(); state.playing = true; btnPlay.textContent = '⏸'; }
+            highlightSegItem(idx);
+            showDetail(seg, idx);
+            drawTimeline(); drawMetrics();
+            segCounter.innerHTML = `<span>${idx + 1}</span> / <span>${state.segments.length}</span> seg`;
+            drawMiniWave(seg);
+        }
+
+        function seekToTime(t) {
+            if (!audioEl.src) return;
+            audioEl.currentTime = t;
+            if (!state.playing) { audioEl.play(); state.playing = true; btnPlay.textContent = '⏸'; }
+        }
+
+        function highlightSegItem(idx) {
+            document.querySelectorAll('.seg-item').forEach((el, i) => el.classList.toggle('active', i === idx));
+            const item = document.querySelector(`.seg-item[data-idx="${idx}"]`);
+            if (item) item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+
+        function updateActiveSegment() {
+            const t = audioEl.currentTime;
+            const idx = state.segments.findIndex(s => t >= s.start_sec && t < s.end_sec);
+            if (idx !== -1 && idx !== state.currentSegIdx) {
+                state.currentSegIdx = idx;
+                highlightSegItem(idx);
+                showDetail(state.segments[idx], idx);
+                segCounter.innerHTML = `<span>${idx + 1}</span> / <span>${state.segments.length}</span> seg`;
+                drawMiniWave(state.segments[idx]);
+                drawMetrics();
+                drawTimeline();
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  PLAYBACK LOOP
+        // ═══════════════════════════════════════════════════════════════════
+        function rafLoop() {
+            if (!state.duration) return;
+            const t = audioEl.currentTime;
+            const pct = t / state.duration;
+            const Ww = document.getElementById('waveform-wrap').clientWidth;
+            const Mw = document.getElementById('metrics-wrap').clientWidth;
+            const Tw = document.getElementById('timeline-wrap').clientWidth;
+            playhead.style.left = pct * Ww + 'px';
+            metricsHead.style.left = pct * Mw + 'px';
+            tlPlayhead.style.left = pct * Tw + 'px';
+            timeLabel.textContent = secToTC(t);
+            timeDisplay.textContent = `${secToTC(t)} / ${secToTC(state.duration)}`;
+            updateActiveSegment();
+            requestAnimationFrame(rafLoop);
+        }
+
+        audioEl.addEventListener('play', () => { state.playing = true; btnPlay.textContent = '⏸'; requestAnimationFrame(rafLoop); });
+        audioEl.addEventListener('pause', () => { state.playing = false; btnPlay.textContent = '▶'; });
+        audioEl.addEventListener('ended', () => { state.playing = false; btnPlay.textContent = '▶'; });
+
+        btnPlay.addEventListener('click', () => { if (!audioEl.src) return; state.playing ? audioEl.pause() : audioEl.play(); });
+        btnPrev.addEventListener('click', () => seekToSegment(Math.max(0, state.currentSegIdx - 1)));
+        btnNext.addEventListener('click', () => seekToSegment(Math.min(state.segments.length - 1, state.currentSegIdx + 1)));
+        speedSel.addEventListener('change', () => { audioEl.playbackRate = parseFloat(speedSel.value); });
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  CANVAS CLICK / HOVER
+        // ═══════════════════════════════════════════════════════════════════
+        function canvasSeekHandler(wrapId) {
+            document.getElementById(wrapId).addEventListener('click', (e) => {
+                const rect = document.getElementById(wrapId).getBoundingClientRect();
+                seekToTime((e.clientX - rect.left) / rect.width * state.duration);
+            });
+        }
+        canvasSeekHandler('waveform-wrap');
+        canvasSeekHandler('timeline-wrap');
+        canvasSeekHandler('metrics-wrap');
+
+        // Tooltip on metrics + timeline
+        function addTooltipHover(wrapId) {
+            const el = document.getElementById(wrapId);
+            el.addEventListener('mousemove', (e) => {
+                if (!state.duration) return;
+                const rect = el.getBoundingClientRect();
+                const t = (e.clientX - rect.left) / rect.width * state.duration;
+                const seg = state.segments.find(s => t >= s.start_sec && t < s.end_sec);
+                tooltip.style.display = 'block';
+                tooltip.style.left = (e.clientX + 14) + 'px';
+                tooltip.style.top = (e.clientY - 32) + 'px';
+                if (seg) {
+                    const e_n = seg.energy_mean != null ? (normalize(seg.energy_mean, state.metricRanges.energy) * 100).toFixed(0) + '%' : '—';
+                    const c_n = seg.spectral_centroid != null ? Math.round(seg.spectral_centroid) + 'Hz' : '—';
+                    const z_n = seg.zcr_mean != null ? (seg.zcr_mean * 100).toFixed(2) + '%' : '—';
+                    tooltip.innerHTML = `<b style="color:${segColor(seg.label)}">${seg.label}</b>  ${secToTC(seg.start_sec)} → ${secToTC(seg.end_sec)}<br>
+        <span style="color:var(--m-energy)">E</span> ${e_n} &nbsp;
+        <span style="color:var(--m-centroid)">C</span> ${c_n} &nbsp;
+        <span style="color:var(--m-zcr)">Z</span> ${z_n}`;
+                } else {
+                    tooltip.textContent = secToTC(t);
+                }
+            });
+            el.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+        }
+        addTooltipHover('metrics-wrap');
+        addTooltipHover('timeline-wrap');
+        addTooltipHover('waveform-wrap');
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  METRICS TOGGLES
+        // ═══════════════════════════════════════════════════════════════════
+        document.querySelectorAll('.metric-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const m = btn.dataset.metric;
+                state.metricsVisible[m] = !state.metricsVisible[m];
+                btn.classList.toggle('off', !state.metricsVisible[m]);
+                drawMetrics();
+            });
+        });
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  TABS
+        // ═══════════════════════════════════════════════════════════════════
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  DETAIL PANEL
+        // ═══════════════════════════════════════════════════════════════════
+        function showDetail(seg, idx) {
+            document.getElementById('empty-detail').style.display = 'none';
+            document.getElementById('detail-content').style.display = 'block';
+            const color = segColor(seg.label);
+            const badge = document.getElementById('d-badge');
+            badge.textContent = seg.label;
+            badge.style.cssText = `background:${color}22;color:${color};border:1px solid ${color}44`;
+            document.getElementById('d-start').textContent = seg.start_tc || secToTC(seg.start_sec);
+            document.getElementById('d-end').textContent = seg.end_tc || secToTC(seg.end_sec);
+            document.getElementById('d-dur').textContent = formatDur(seg.duration_sec);
+            document.getElementById('d-idx').textContent = `#${seg.index ?? idx}`;
+
+            // Sparkline bars (normalized position in corpus)
+            const metrics = [
+                { id: 'energy', val: seg.energy_mean, range: state.metricRanges.energy, fmt: v => v.toFixed(4) },
+                { id: 'centroid', val: seg.spectral_centroid, range: state.metricRanges.centroid, fmt: v => Math.round(v) + ' Hz' },
+                { id: 'zcr', val: seg.zcr_mean, range: state.metricRanges.zcr, fmt: v => (v * 100).toFixed(3) + '%' },
+            ];
+            for (const m of metrics) {
+                const pct = m.val != null ? normalize(m.val, m.range) * 100 : 0;
+                document.getElementById(`sp-${m.id}-val`).textContent = m.val != null ? m.fmt(m.val) : '—';
+                document.getElementById(`sp-${m.id}-bar`).style.width = pct + '%';
+            }
+        }
+
+        function drawMiniWave(seg) {
+            if (!state.audioBuffer) return;
+            const buf = state.audioBuffer, sr = buf.sampleRate;
+            const data = buf.getChannelData(0);
+            const s0 = Math.floor(seg.start_sec * sr);
+            const s1 = Math.floor(seg.end_sec * sr);
+            const slice = data.slice(s0, s1);
+
+            const dpr = window.devicePixelRatio || 1;
+            const W = miniCanvas.parentElement.clientWidth - 36;
+            const H = 55;
+            miniCanvas.width = W * dpr; miniCanvas.height = H * dpr;
+            miniCanvas.style.width = W + 'px'; miniCanvas.style.height = H + 'px';
+            const ctx = miniCanvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            ctx.fillStyle = '#0d0d17'; ctx.fillRect(0, 0, W, H);
+
+            const step = Math.max(1, Math.floor(slice.length / W));
+            const mid = H / 2, amp = H * 0.42;
+            ctx.strokeStyle = segColor(seg.label); ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            for (let x = 0; x < W; x++) {
+                let mn = 1, mx = -1;
+                for (let i = x * step; i < (x + 1) * step; i++) {
+                    if (slice[i] < mn) mn = slice[i]; if (slice[i] > mx) mx = slice[i];
+                }
+                ctx.moveTo(x, mid + mn * amp); ctx.lineTo(x, mid + mx * amp);
+            }
+            ctx.stroke();
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  STATS TAB
+        // ═══════════════════════════════════════════════════════════════════
+        function drawStatsTab() {
+            const segs = state.segments;
+            const total = segs.length;
+            const counts = {}, times = {};
+            for (const s of segs) {
+                counts[s.label] = (counts[s.label] || 0) + 1;
+                times[s.label] = (times[s.label] || 0) + s.duration_sec;
+            }
+            const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+            const totalDur = segs.reduce((acc, s) => acc + s.duration_sec, 0);
+
+            // Count bars
+            const barsEl = document.getElementById('stats-bars');
+            barsEl.innerHTML = '';
+            for (const [label, count] of sorted) {
+                const pct = count / total * 100;
+                barsEl.innerHTML += `
+      <div class="stat-bar-row">
+        <div class="stat-bar-label" title="${label}" style="color:${segColor(label)}">${label}</div>
+        <div class="stat-bar-track">
+          <div class="stat-bar-fill" style="width:${pct}%;background:${segColor(label)}"></div>
+        </div>
+        <div class="stat-count">${count}</div>
+      </div>`;
+            }
+
+            // Time bars
+            const timeEl = document.getElementById('stats-time');
+            timeEl.innerHTML = '';
+            const timeSorted = Object.entries(times).sort((a, b) => b[1] - a[1]);
+            for (const [label, dur] of timeSorted) {
+                const pct = dur / totalDur * 100;
+                timeEl.innerHTML += `
+      <div class="stat-bar-row">
+        <div class="stat-bar-label" title="${label}" style="color:${segColor(label)}">${label}</div>
+        <div class="stat-bar-track">
+          <div class="stat-bar-fill" style="width:${pct}%;background:${segColor(label)}"></div>
+        </div>
+        <div class="stat-count" style="width:60px">${formatDur(dur)}</div>
+      </div>`;
+            }
+
+            // Duration stats
+            const durs = segs.map(s => s.duration_sec).sort((a, b) => a - b);
+            const mean = durs.reduce((a, b) => a + b, 0) / durs.length;
+            const median = durs[Math.floor(durs.length / 2)];
+            const durEl = document.getElementById('stats-dur');
+            durEl.innerHTML = [
+                ['Total', formatDur(totalDur)],
+                ['Segments', total],
+                ['Durée moyenne', formatDur(mean)],
+                ['Médiane', formatDur(median)],
+                ['Plus court', formatDur(durs[0])],
+                ['Plus long', formatDur(durs[durs.length - 1])],
+            ].map(([k, v]) => `
+    <div class="stat-time-row">
+      <span class="key">${k}</span>
+      <span class="val">${v}</span>
+    </div>`).join('');
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  HELPERS
+        // ═══════════════════════════════════════════════════════════════════
+        function secToTC(t) {
+            const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = (t % 60).toFixed(1).padStart(4, '0');
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${s}`;
+        }
+        function formatDur(s) {
+            if (s < 60) return s.toFixed(1) + 's';
+            if (s < 3600) return Math.floor(s / 60) + 'min ' + Math.round(s % 60) + 's';
+            return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'min';
+        }
+
+        window.addEventListener('resize', () => { drawWaveform(); drawTimeline(); drawMetrics(); });
+    </script>
+</body>
+
+</html>

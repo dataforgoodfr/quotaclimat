@@ -2,6 +2,9 @@ import csv
 import os
 from datetime import datetime
 from typing import Literal
+from zoneinfo import ZoneInfo
+
+zone_paris = ZoneInfo("Europe/Paris")
 
 EXPORT_FILE = os.path.join(os.path.dirname(__file__), "export.csv")
 DATE_FORMAT = "%d/%m/%Y %H:%M:%S"
@@ -30,8 +33,12 @@ def get_testimony_data(
 
         for row in csv_file:
             channel_name, type, start_time, end_time = row
-            start_date = datetime.strptime(start_time, DATE_FORMAT)
-            end_date = datetime.strptime(end_time, DATE_FORMAT)
+            start_date = datetime.strptime(start_time, DATE_FORMAT).replace(
+                tzinfo=zone_paris
+            )
+            end_date = datetime.strptime(end_time, DATE_FORMAT).replace(
+                tzinfo=zone_paris
+            )
 
             if channel_name == channel and (
                 (from_date <= start_date <= to_date)

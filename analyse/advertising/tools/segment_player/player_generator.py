@@ -41,6 +41,7 @@ import json
 import mimetypes
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 
 TEMPLATE_PATH = Path(__file__).parent / "player.html"
@@ -266,6 +267,22 @@ def generate_player(
     if annotations:
         print(f"   Annotations CSV : {len(annotations)}")
     print("\n   → Ouvrez dans Firefox ou Chrome pour l'analyse.\n")
+
+
+# ─────────────────────────────────────────────
+#  Helper to get correct annotation format
+# ─────────────────────────────────────────────
+
+
+def format_annotation(annotations: list[dict], from_date: datetime) -> list[dict]:
+    return [
+        {
+            "type": annotation["type"],
+            "start_sec": (annotation["start"] - from_date).total_seconds(),
+            "end_sec": (annotation["end"] - from_date).total_seconds(),
+        }
+        for annotation in annotations
+    ]
 
 
 # ─────────────────────────────────────────────

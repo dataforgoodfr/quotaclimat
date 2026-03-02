@@ -916,6 +916,21 @@
             padding: 1px 0;
             border-bottom: 1px dotted #1a1a2a;
         }
+        /* ── Zoom indicator ── */
+        .zoom-level {
+            font-size: .55rem;
+            color: var(--text-dim);
+            letter-spacing: .04em;
+            cursor: pointer;
+            white-space: nowrap;
+            user-select: none;
+            padding: 2px 5px;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            transition: all .15s;
+        }
+        .zoom-level:hover { border-color: var(--border); }
+        .zoom-level.zoomed { color: var(--amber); border-color: var(--amber-dim); }
     </style>
 </head>
 
@@ -1010,6 +1025,7 @@
                     <option value="1.5">1.5×</option>
                     <option value="2">2×</option>
                 </select>
+                <span class="zoom-level" id="zoom-level" title="Scroll = zoom · Ctrl+scroll = pan · Double-clic = reset">×1.0</span>
                 <span class="seg-counter" id="seg-counter">— / — seg</span>
             </div>
 
@@ -1173,6 +1189,8 @@
             metricsVisible: { energy: true, centroid: true, zcr: true },
             metricRanges: {},
             params: {},
+            viewStart: 0,
+            viewEnd: 0,
         };
 
         // ═══════════════════════════════════════════════════════════════════
@@ -1479,8 +1497,13 @@
         function drawWaveform() {
             const buf = state.audioBuffer; if (!buf) return;
             const { ctx, W, H } = setupCanvas(waveCanvas, 'waveform-wrap');
+            const { start: vStart, end: vEnd, span: vSpan } = getView();
+            const toX = t => (t - vStart) / vSpan * W;
+            const sr = buf.sampleRate;
+            const sStart = Math.floor(vStart * sr);
+            const sEnd = Math.min(Math.ceil(vEnd * sr), buf.length);
             const data = buf.getChannelData(0);
-            const step = Math.floor(data.length / W);
+            const step = Math.max(1, Math.floor((sEnd - sStart) / W));
             const mid = H / 2, amp = H * 0.43;
 
             ctx.fillStyle = '#0d0d17'; ctx.fillRect(0, 0, W, H);
@@ -1490,26 +1513,31 @@
             // Segment colour overlays
             if (state.segments.length && state.duration) {
                 for (const seg of state.segments) {
+                    if (seg.end_sec < vStart || seg.start_sec > vEnd) continue;
+                    const x1 = Math.max(toX(seg.start_sec), 0);
+                    const x2 = Math.min(toX(seg.end_sec), W);
                     ctx.fillStyle = segColor(seg.label) + '18';
-                    ctx.fillRect(seg.start_sec / state.duration * W, 0,
-                        (seg.end_sec - seg.start_sec) / state.duration * W, H);
+                    ctx.fillRect(x1, 0, x2 - x1, H);
                 }
             }
             // Annotation overlays
             for (const a of state.annotations) {
+                if (a.end_sec < vStart || a.start_sec > vEnd) continue;
+                const x1 = Math.max(toX(a.start_sec), 0);
+                const x2 = Math.min(toX(a.end_sec), W);
                 ctx.fillStyle = annotColor(a.type) + '18';
-                ctx.fillRect(a.start_sec / state.duration * W, 0,
-                    (a.end_sec - a.start_sec) / state.duration * W, H);
+                ctx.fillRect(x1, 0, x2 - x1, H);
             }
 
             ctx.strokeStyle = '#2a5a8a'; ctx.lineWidth = 1;
             ctx.beginPath();
             for (let x = 0; x < W; x++) {
+                const iStart = sStart + x * step;
                 let mn = 1, mx = -1;
-                for (let i = x * step; i < (x + 1) * step; i++) {
+                for (let i = iStart; i < iStart + step && i < sEnd; i++) {
                     if (data[i] < mn) mn = data[i]; if (data[i] > mx) mx = data[i];
                 }
-                ctx.moveTo(x, mid + mn * amp); ctx.lineTo(x, mid + mx * amp);
+                if (mn <= mx) { ctx.moveTo(x, mid + mn * amp); ctx.lineTo(x, mid + mx * amp); }
             }
             ctx.stroke();
             ctx.strokeStyle = '#1e1e2e'; ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(W, mid); ctx.stroke();
@@ -1528,6 +1556,10 @@
 
             if (!state.segments.length || !state.duration) return;
 
+            const { start: vStart, end: vEnd, span: vSpan } = getView();
+            const toX = t => (t - vStart) / vSpan * W;
+            const visSegs = state.segments.filter(s => s.end_sec > vStart && s.start_sec < vEnd);
+
             const metrics = [
                 { key: 'energy', getter: s => s.energy_mean, range: state.metricRanges.energy },
                 { key: 'centroid', getter: s => s.spectral_centroid, range: state.metricRanges.centroid },
@@ -1539,11 +1571,10 @@
                 const col = METRIC_COLORS[m.key];
                 ctx.beginPath();
                 let first = true;
-                for (const seg of state.segments) {
+                for (const seg of visSegs) {
                     const val = m.getter(seg); if (val == null) continue;
                     const n = normalize(val, m.range);
-                    const x1 = seg.start_sec / state.duration * W;
-                    const x2 = seg.end_sec / state.duration * W;
+                    const x1 = toX(seg.start_sec), x2 = toX(seg.end_sec);
                     const y = H - n * (H - 4) - 2;
                     if (first) { ctx.moveTo(x1, y); first = false; } else ctx.lineTo(x1, y);
                     ctx.lineTo(x2, y);
@@ -1551,10 +1582,10 @@
                 ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke();
                 // Fill
                 ctx.beginPath(); first = true;
-                for (const seg of state.segments) {
+                for (const seg of visSegs) {
                     const val = m.getter(seg); if (val == null) continue;
                     const n = normalize(val, m.range);
-                    const x1 = seg.start_sec / state.duration * W, x2 = seg.end_sec / state.duration * W;
+                    const x1 = toX(seg.start_sec), x2 = toX(seg.end_sec);
                     const y = H - n * (H - 4) - 2;
                     if (first) { ctx.moveTo(x1, H); ctx.lineTo(x1, y); first = false; } else { ctx.lineTo(x1, H); ctx.lineTo(x1, y); }
                     ctx.lineTo(x2, y);
@@ -1566,8 +1597,8 @@
             // Active segment highlight
             if (state.currentSegIdx >= 0) {
                 const seg = state.segments[state.currentSegIdx];
-                if (seg) {
-                    const x1 = seg.start_sec / state.duration * W, x2 = seg.end_sec / state.duration * W;
+                if (seg && seg.end_sec > vStart && seg.start_sec < vEnd) {
+                    const x1 = Math.max(toX(seg.start_sec), 0), x2 = Math.min(toX(seg.end_sec), W);
                     ctx.fillStyle = '#ffffff0a'; ctx.fillRect(x1, 0, x2 - x1, H);
                     ctx.strokeStyle = '#ffffff22'; ctx.lineWidth = 1; ctx.strokeRect(x1, 0, x2 - x1, H);
                 }
@@ -1575,7 +1606,8 @@
             // Rupture markers
             ctx.strokeStyle = '#ffffff12'; ctx.lineWidth = 1;
             for (let i = 1; i < state.segments.length; i++) {
-                const x = state.segments[i].start_sec / state.duration * W;
+                const x = toX(state.segments[i].start_sec);
+                if (x < 0 || x > W) continue;
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
             }
         }
@@ -1588,39 +1620,43 @@
             ctx.fillStyle = '#0d0d17'; ctx.fillRect(0, 0, W, H);
             if (!state.duration) return;
 
-            const hasAnnot = state.annotations.length > 0;
-            // Row split: if annotations exist, split in half
-            const rowH = hasAnnot ? Math.floor(H / 2) - 1 : H;
-            const row2Y = rowH + 2;  // top of annotation row
+            const { start: vStart, end: vEnd, span: vSpan } = getView();
+            const toX = t => (t - vStart) / vSpan * W;
 
-            // ── Row labels ──
+            const hasAnnot = state.annotations.length > 0;
+            const rowH = hasAnnot ? Math.floor(H / 2) - 1 : H;
+            const row2Y = rowH + 2;
+
+            // Row labels
             ctx.fillStyle = '#2a2a42'; ctx.font = '8px "Space Mono"';
             ctx.fillText('AUTO', 2, rowH - 4);
             if (hasAnnot) ctx.fillText('CSV', 2, H - 4);
 
-            // ── Divider ──
+            // Divider
             if (hasAnnot) {
                 ctx.strokeStyle = '#2a2a42'; ctx.lineWidth = 1;
                 ctx.beginPath(); ctx.moveTo(0, rowH + 1); ctx.lineTo(W, rowH + 1); ctx.stroke();
             }
 
-            // ── Time ruler (drawn on row 1 top) ──
-            const totalMin = state.duration / 60;
-            const step = totalMin < 5 ? 30 : totalMin < 30 ? 120 : totalMin < 120 ? 600 : 1800;
+            // Time ruler (zoom-aware step)
+            const visMin = vSpan / 60;
+            const step = visMin < 0.17 ? 5 : visMin < 0.5 ? 10 : visMin < 2 ? 30 : visMin < 5 ? 60 : visMin < 30 ? 120 : visMin < 120 ? 600 : 1800;
             ctx.strokeStyle = '#1e1e2e'; ctx.fillStyle = '#2a2a42';
             ctx.font = '7px "Space Mono"';
-            for (let t = 0; t < state.duration; t += step) {
-                const x = t / state.duration * W;
+            const firstTick = Math.ceil(vStart / step) * step;
+            for (let t = firstTick; t < vEnd; t += step) {
+                const x = toX(t);
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, rowH); ctx.stroke();
                 if (x > 22) ctx.fillText(secToTC(t), x + 2, 10);
             }
 
-            // ── Auto-detected segments ──
-            const PAD_L = 24; // leave space for label
+            // Auto-detected segments
+            const PAD_L = 24;
             for (let i = 0; i < state.segments.length; i++) {
                 const seg = state.segments[i];
-                const x1 = Math.max(seg.start_sec / state.duration * W, PAD_L);
-                const x2 = seg.end_sec / state.duration * W;
+                if (seg.end_sec < vStart || seg.start_sec > vEnd) continue;
+                const x1 = Math.max(toX(seg.start_sec), PAD_L);
+                const x2 = Math.min(toX(seg.end_sec), W);
                 if (x2 <= PAD_L) continue;
                 const col = segColor(seg.label);
                 const act = i === state.currentSegIdx;
@@ -1628,16 +1664,16 @@
                 ctx.fillRect(x1, act ? 0 : 6, Math.max(x2 - x1 - .5, 1), act ? rowH : rowH - 12);
             }
 
-            // ── CSV annotations ──
+            // CSV annotations
             if (hasAnnot) {
                 for (const a of state.annotations) {
-                    const x1 = Math.max(a.start_sec / state.duration * W, PAD_L);
-                    const x2 = a.end_sec / state.duration * W;
+                    if (a.end_sec < vStart || a.start_sec > vEnd) continue;
+                    const x1 = Math.max(toX(a.start_sec), PAD_L);
+                    const x2 = Math.min(toX(a.end_sec), W);
                     if (x2 <= PAD_L) continue;
                     const col = annotColor(a.type);
                     ctx.fillStyle = col + 'cc';
                     ctx.fillRect(x1, row2Y + 4, Math.max(x2 - x1 - .5, 1), rowH - 10);
-                    // Type label inside block if wide enough
                     if (x2 - x1 > 30) {
                         ctx.fillStyle = '#000000aa';
                         ctx.font = '7px "Space Mono"';
@@ -1713,13 +1749,31 @@
         function rafLoop() {
             if (!state.duration) return;
             const t = mediaEl().currentTime;
-            const pct = t / state.duration;
+            const { start: vStart, end: vEnd, span: vSpan } = getView();
             const Ww = document.getElementById('waveform-wrap').clientWidth;
             const Mw = document.getElementById('metrics-wrap').clientWidth;
             const Tw = document.getElementById('timeline-wrap').clientWidth;
-            playhead.style.left = pct * Ww + 'px';
-            metricsHead.style.left = pct * Mw + 'px';
-            tlPlayhead.style.left = pct * Tw + 'px';
+            if (t >= vStart && t <= vEnd) {
+                const pct = (t - vStart) / vSpan;
+                playhead.style.display = '';
+                metricsHead.style.display = '';
+                tlPlayhead.style.display = '';
+                playhead.style.left = pct * Ww + 'px';
+                metricsHead.style.left = pct * Mw + 'px';
+                tlPlayhead.style.left = pct * Tw + 'px';
+            } else {
+                // Playhead hors vue : auto-pan pour le suivre pendant la lecture
+                if (state.playing && vSpan < state.duration * 0.99) {
+                    const newStart = Math.max(0, Math.min(t - vSpan * 0.1, state.duration - vSpan));
+                    state.viewStart = newStart;
+                    state.viewEnd = newStart + vSpan;
+                    redrawAll();
+                    updateZoomIndicator();
+                }
+                playhead.style.display = 'none';
+                metricsHead.style.display = 'none';
+                tlPlayhead.style.display = 'none';
+            }
             timeLabel.textContent = secToTC(t);
             timeDisplay.textContent = `${secToTC(t)} / ${secToTC(state.duration)}`;
             updateActiveSeg();
@@ -1743,12 +1797,35 @@
             audioEl.playbackRate = r; videoEl.playbackRate = r;
         });
 
-        // Canvas click → seek
+        // Canvas interactions: click → seek, ctrl+wheel → zoom, wheel → pan, dblclick → reset
         ['waveform-wrap', 'timeline-wrap', 'metrics-wrap'].forEach(id => {
-            document.getElementById(id).addEventListener('click', (e) => {
+            const el = document.getElementById(id);
+            el.addEventListener('click', (e) => {
                 if (!state.duration) return;
-                const rect = document.getElementById(id).getBoundingClientRect();
-                seekToTime((e.clientX - rect.left) / rect.width * state.duration);
+                const rect = el.getBoundingClientRect();
+                const { start: vStart, span: vSpan } = getView();
+                seekToTime(vStart + (e.clientX - rect.left) / rect.width * vSpan);
+            });
+            el.addEventListener('wheel', (e) => {
+                if (!state.duration) return;
+                e.preventDefault();
+                const rect = el.getBoundingClientRect();
+                const { start: vStart, span: vSpan } = getView();
+                const mouseT = vStart + (e.clientX - rect.left) / rect.width * vSpan;
+                if (e.ctrlKey || e.metaKey || e.shiftKey) {
+                    // Ctrl/Shift + scroll = pan
+                    panView(vSpan * 0.15 * Math.sign(e.deltaY));
+                } else {
+                    // Scroll seul = zoom centré sur la souris
+                    zoomView(mouseT, e.deltaY > 0 ? 1.4 : 1 / 1.4);
+                }
+                redrawAll();
+                updateZoomIndicator();
+            }, { passive: false });
+            el.addEventListener('dblclick', () => {
+                resetZoom();
+                redrawAll();
+                updateZoomIndicator();
             });
         });
 
@@ -1760,7 +1837,8 @@
             el.addEventListener('mousemove', (e) => {
                 if (!state.duration) return;
                 const rect = el.getBoundingClientRect();
-                const t = (e.clientX - rect.left) / rect.width * state.duration;
+                const { start: vStart, span: vSpan } = getView();
+                const t = vStart + (e.clientX - rect.left) / rect.width * vSpan;
                 const seg = state.segments.find(s => t >= s.start_sec && t < s.end_sec);
                 const ann = state.annotations.find(a => t >= a.start_sec && t < a.end_sec);
 
@@ -2029,7 +2107,66 @@
             return Math.floor(s / 3600) + 'h ' + Math.floor((s % 3600) / 60) + 'min';
         }
 
-        window.addEventListener('resize', () => { drawWaveform(); drawTimeline(); drawMetrics(); });
+        window.addEventListener('resize', redrawAll);
+
+        // Spacebar → play/pause
+        document.addEventListener('keydown', (e) => {
+            if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+            if (e.code === 'Space') {
+                e.preventDefault();
+                const me = mediaEl(); if (!me.src) return;
+                state.playing ? me.pause() : me.play();
+            }
+        });
+
+        // Zoom indicator click → reset zoom
+        document.getElementById('zoom-level').addEventListener('click', () => {
+            resetZoom(); redrawAll(); updateZoomIndicator();
+        });
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  ZOOM / VIEW HELPERS
+        // ═══════════════════════════════════════════════════════════════════
+        function getView() {
+            const start = state.viewStart;
+            const end = state.viewEnd || state.duration || 1;
+            return { start, end, span: end - start };
+        }
+
+        function zoomView(centerTime, factor) {
+            const { start: vStart, end: vEnd, span: vSpan } = getView();
+            const newSpan = Math.min(Math.max(vSpan * factor, 2), state.duration);
+            const ratio = (centerTime - vStart) / vSpan;
+            let newStart = centerTime - ratio * newSpan;
+            let newEnd = newStart + newSpan;
+            if (newStart < 0) { newStart = 0; newEnd = newSpan; }
+            if (newEnd > state.duration) { newEnd = state.duration; newStart = state.duration - newSpan; }
+            state.viewStart = Math.max(0, newStart);
+            state.viewEnd = Math.min(state.duration, newEnd);
+        }
+
+        function panView(deltaTime) {
+            const { span: vSpan } = getView();
+            let newStart = state.viewStart + deltaTime;
+            let newEnd = newStart + vSpan;
+            if (newStart < 0) { newStart = 0; newEnd = vSpan; }
+            if (newEnd > state.duration) { newEnd = state.duration; newStart = state.duration - vSpan; }
+            state.viewStart = newStart;
+            state.viewEnd = newEnd;
+        }
+
+        function resetZoom() { state.viewStart = 0; state.viewEnd = 0; }
+
+        function redrawAll() { drawWaveform(); drawTimeline(); drawMetrics(); }
+
+        function updateZoomIndicator() {
+            const el = document.getElementById('zoom-level');
+            if (!el || !state.duration) return;
+            const { span } = getView();
+            const zoom = state.duration / span;
+            el.textContent = '×' + zoom.toFixed(zoom < 10 ? 1 : 0);
+            el.classList.toggle('zoomed', zoom > 1.05);
+        }
     </script>
 </body>
 

@@ -1,170 +1,340 @@
 """
-generate_report.py
-==================
-Génère un fichier HTML autonome et auto-suffisant contenant :
-  - Le player audio (rupture_player_v2.html)
-  - L'audio encodé en base64
-  - Les segments JSON
+generate_report.py  v2
+======================
+Génère un fichier HTML autonome contenant :
+  - Le player (rupture_player_v3.html)
+  - L'audio OU la vidéo encodé(e) en base64
+  - Les segments JSON  (obligatoire)
+  - Les annotations CSV  (optionnel)
 
 Usage :
-    python generate_report.py mon_flux.mp3 --segments segments.json
-    python generate_report.py mon_flux.wav --segments segments.json --output rapport.html
+    # Audio seul
+    python generate_report.py flux.mp3
+
+    # Vidéo
+    python generate_report.py enregistrement.mp4
+
+    # Avec annotations CSV
+    python generate_report.py flux.mp3 --csv annotations.csv
+
+    # Tout spécifier
+    python generate_report.py flux.mp4 --segments segments.json --csv pub_list.csv --output rapport.html
+
+Format CSV attendu (séparateur virgule ou point-virgule) :
+    type,start,end
+    PUBLICITE,00:12:30,00:13:00
+    PUBLICITE,00:25:10.5,00:25:40.0
+    JINGLE,00:00:05,00:00:12
+
+    Les temps peuvent être en HH:MM:SS, MM:SS ou en secondes décimales.
+    La première ligne est automatiquement détectée comme en-tête si elle
+    ne contient pas de valeurs temporelles valides.
 
 Dépendances : aucune (stdlib uniquement)
 """
 
 import argparse
 import base64
+import csv
+import io
 import json
 import mimetypes
+import re
 import sys
 from pathlib import Path
 
-TEMPLATE_PATH = Path(__file__).parent / "rupture_player_v2.html"
+TEMPLATE_PATH = Path(__file__).parent / "player.html"
+WARN_SIZE_MB = 80
+VIDEO_EXTS = {".mp4", ".mov", ".webm", ".mkv", ".avi"}
+VIDEO_PATTERN = re.compile(r"\.(mp4|mov|webm|mkv|avi)(\?|$)", re.IGNORECASE)
 
-# Taille max recommandée pour l'audio embarqué (en Mo)
-# Au-delà, le fichier HTML devient très lourd.
-WARN_SIZE_MB = 50
+
+def is_url(s: str) -> bool:
+    return s.startswith("http://") or s.startswith("https://")
 
 
-def embed(audio_path: str, segments_path: str, output_path: str):
-    audio_path = Path(audio_path)
-    segments_path = Path(segments_path)
-    output_path = Path(output_path)
+# ─────────────────────────────────────────────
+#  Parsing du CSV
+# ─────────────────────────────────────────────
 
-    # ── Vérifications ────────────────────────────────────────────
-    if not audio_path.exists():
-        print(f"[ERREUR] Fichier audio introuvable : {audio_path}")
-        sys.exit(1)
-    if not segments_path.exists():
-        print(f"[ERREUR] Fichier JSON introuvable : {segments_path}")
-        sys.exit(1)
-    if not TEMPLATE_PATH.exists():
-        print(f"[ERREUR] Template HTML introuvable : {TEMPLATE_PATH}")
-        print(
-            "         Assurez-vous que rupture_player_v2.html est dans le même dossier."
+
+def parse_time(s: str):
+    """Convertit une chaîne temps en secondes décimales, ou None si invalide."""
+    s = s.strip()
+    if not s:
+        return None
+    if ":" in s:
+        parts = s.split(":")
+        try:
+            if len(parts) == 3:
+                return float(parts[0]) * 3600 + float(parts[1]) * 60 + float(parts[2])
+            if len(parts) == 2:
+                return float(parts[0]) * 60 + float(parts[1])
+        except ValueError:
+            return None
+    try:
+        return float(s)
+    except ValueError:
+        return None
+
+
+def load_csv(path: str) -> list:
+    """
+    Charge un fichier CSV avec colonnes type, start, end.
+    Retourne une liste de dicts {type, start_sec, end_sec}.
+    """
+    with open(path, encoding="utf-8-sig") as f:
+        content = f.read()
+
+    sep = ";" if content.count(";") > content.count(",") else ","
+    reader = csv.reader(io.StringIO(content), delimiter=sep)
+    rows = [row for row in reader if any(c.strip() for c in row)]
+
+    if not rows:
+        return []
+
+    # Détecter si la première ligne est un en-tête
+    start_idx = 0
+    if len(rows[0]) >= 3 and parse_time(rows[0][1].strip()) is None:
+        start_idx = 1
+
+    annotations = []
+    for i, row in enumerate(rows[start_idx:], start=start_idx + 1):
+        if len(row) < 3:
+            continue
+        type_val = row[0].strip().strip('"').upper()
+        start_sec = parse_time(row[1])
+        end_sec = parse_time(row[2])
+        if start_sec is None or end_sec is None:
+            print(f"  [AVERTISSEMENT] Ligne {i} ignorée (temps invalides) : {row}")
+            continue
+        annotations.append(
+            {
+                "type": type_val,
+                "start_sec": start_sec,
+                "end_sec": end_sec,
+            }
         )
-        sys.exit(1)
 
-    audio_size_mb = audio_path.stat().st_size / (1024 * 1024)
-    if audio_size_mb > WARN_SIZE_MB:
-        print(f"[AVERTISSEMENT] Fichier audio volumineux : {audio_size_mb:.1f} Mo")
-        print(f"                Le HTML généré sera lourd ({audio_size_mb:.0f}+ Mo).")
-        print("                Envisagez de convertir en mp3 128k avant d'embarquer.")
+    return annotations
+
+
+# ─────────────────────────────────────────────
+#  Encodage média
+# ─────────────────────────────────────────────
+
+VIDEO_EXTS = {".mp4", ".mov", ".webm", ".mkv", ".avi"}
+
+
+def encode_media(path: Path):
+    """
+    Retourne (b64_string, mime_type, field_name, is_video).
+    field_name = 'video_b64' ou 'audio_b64'
+    """
+    size_mb = path.stat().st_size / (1024 * 1024)
+    is_video = path.suffix.lower() in VIDEO_EXTS
+
+    if size_mb > WARN_SIZE_MB:
+        print(f"  [AVERTISSEMENT] Fichier volumineux : {size_mb:.1f} Mo")
+        print(f"  Le HTML généré sera lourd ({size_mb:.0f}+ Mo).")
+        if is_video:
+            print(
+                "  Conseil : ffmpeg -i input.mp4 -vf scale=640:-1 -b:a 96k output.mp4"
+            )
+        else:
+            print("  Conseil : ffmpeg -i input.wav -b:a 128k output.mp3")
         answer = input("Continuer quand même ? [o/N] ").strip().lower()
         if answer not in ("o", "oui", "y", "yes"):
             print("Annulé.")
             sys.exit(0)
 
-    # ── Lecture et encodage de l'audio ───────────────────────────
-    print(f"[1/3] Encodage de l'audio : {audio_path.name} ({audio_size_mb:.1f} Mo)...")
-    with open(audio_path, "rb") as f:
-        audio_bytes = f.read()
+    mime = mimetypes.guess_type(str(path))[0]
+    if mime is None:
+        mime = "video/mp4" if is_video else "audio/mpeg"
 
-    audio_b64 = base64.b64encode(audio_bytes).decode("ascii")
-    audio_mime = mimetypes.guess_type(str(audio_path))[0] or "audio/mpeg"
+    with open(path, "rb") as f:
+        b64 = base64.b64encode(f.read()).decode("ascii")
 
-    print(f"      Type MIME : {audio_mime}")
-    print(f"      Taille base64 : {len(audio_b64) / (1024 * 1024):.1f} Mo")
+    field = "video_b64" if is_video else "audio_b64"
+    return b64, mime, field, is_video
 
-    # ── Lecture des segments ──────────────────────────────────────
-    print(f"[2/3] Chargement des segments : {segments_path.name}...")
-    with open(segments_path, "r", encoding="utf-8") as f:
+
+# ─────────────────────────────────────────────
+#  Génération
+# ─────────────────────────────────────────────
+
+
+def generate_player(
+    media_input: str,
+    segments_path: str | Path,
+    csv_path: str | Path | None,
+    output_path: str | Path,
+):
+    segments_path = Path(segments_path)
+    output_path = Path(output_path)
+    n_steps = 3 if csv_path else 2
+    media_is_url = is_url(media_input)
+
+    # Vérifications communes
+    for p, label in [
+        (segments_path, "segments JSON"),
+        (TEMPLATE_PATH, "template HTML"),
+    ]:
+        if not p.exists():
+            print(f"[ERREUR] Fichier {label} introuvable : {p}")
+            sys.exit(1)
+
+    # ── Étape 1 : média ──────────────────────────────────────────────
+    payload_media = {}
+
+    if media_is_url:
+        # Mode URL — on stocke juste l'URL, le navigateur charge le fichier
+        url = media_input
+        is_video = bool(VIDEO_PATTERN.search(url))
+        name = url.split("?")[0].rstrip("/").split("/")[-1] or "media"
+        print(f"[1/{n_steps}] URL média détectée : {url}")
+        print(f"  Type     : {'vidéo' if is_video else 'audio'}")
+        print("  Le fichier ne sera PAS embarqué dans le HTML.")
+        payload_media = {
+            "media_url": url,
+            "media_name": name,
+            "is_video": is_video,
+        }
+    else:
+        # Mode fichier local — encodage base64
+        media_path = Path(media_input)
+        if not media_path.exists():
+            print(f"[ERREUR] Fichier média introuvable : {media_path}")
+            sys.exit(1)
+        print(f"[1/{n_steps}] Encodage du média : {media_path.name}")
+        b64, mime, field, is_video = encode_media(media_path)
+        media_type = "vidéo" if is_video else "audio"
+        print(
+            f"  Type : {media_type}  ({mime})  taille base64 : {len(b64) / (1024 * 1024):.1f} Mo"
+        )
+        mime_key = "video_mime" if is_video else "audio_mime"
+        payload_media = {
+            field: b64,
+            mime_key: mime,
+            "media_name": media_path.name,
+        }
+
+    # ── Étape 2 : segments JSON ───────────────────────────────────────
+    print(f"[2/{n_steps}] Chargement des segments : {segments_path.name}")
+    with open(segments_path, encoding="utf-8") as f:
         segments = json.load(f)
+    print(f"  {len(segments)} segments")
 
-    print(f"      {len(segments)} segments trouvés")
+    # ── Étape 3 (optionnelle) : annotations CSV ───────────────────────
+    annotations = []
+    if csv_path:
+        csv_path = Path(csv_path)
+        if not csv_path.exists():
+            print(f"[ERREUR] Fichier CSV introuvable : {csv_path}")
+            sys.exit(1)
+        print(f"[3/3] Chargement des annotations CSV : {csv_path.name}")
+        annotations = load_csv(str(csv_path))
+        print(f"  {len(annotations)} annotations chargées")
 
-    # ── Construction du payload JSON ─────────────────────────────
-    payload = json.dumps(
-        {
-            "audio_b64": audio_b64,
-            "audio_mime": audio_mime,
-            "audio_name": audio_path.name,
-            "segments": segments,
-        },
-        ensure_ascii=False,
-        separators=(",", ":"),
-    )
+    # Construction du payload JSON
+    payload = {
+        **payload_media,
+        "segments": segments,
+        "annotations": annotations,
+    }
 
-    # ── Injection dans le template HTML ──────────────────────────
-    print(f"[3/3] Génération du rapport HTML : {output_path}...")
-    with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
+    # Injection dans le template
+    print(f"\nGénération du rapport HTML : {output_path}...")
+    with open(TEMPLATE_PATH, encoding="utf-8") as f:
         html = f.read()
 
-    # Remplacer le placeholder dans la balise script#embedded-data
     placeholder = '<script id="embedded-data" type="application/json">null</script>'
-    replacement = (
-        f'<script id="embedded-data" type="application/json">{payload}</script>'
-    )
-
     if placeholder not in html:
-        print("[ERREUR] Placeholder non trouvé dans le template HTML.")
-        print("         Vérifiez que rupture_player_v2.html contient la balise :")
-        print(f"         {placeholder}")
+        print("[ERREUR] Placeholder non trouvé dans le template.")
+        print("         Vérifiez que rupture_player_v3.html est dans le même dossier.")
         sys.exit(1)
 
-    html = html.replace(placeholder, replacement)
-
-    # Mise à jour du titre
+    payload_str = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    html = html.replace(
+        placeholder,
+        f'<script id="embedded-data" type="application/json">{payload_str}</script>',
+    )
     html = html.replace(
         "<title>Rupture Detector — Audio Lab</title>",
-        f"<title>{audio_path.stem} — Rupture Detector</title>",
+        f"<title>{Path(media_input.split('?')[0]).stem if not media_is_url else media_input.split('/')[-1].split('?')[0]} — Rupture Detector</title>",
     )
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
 
-    final_size_mb = output_path.stat().st_size / (1024 * 1024)
-    print(f"\n✓ Rapport généré : {output_path}")
-    print(f"  Taille finale  : {final_size_mb:.1f} Mo")
-    print(f"  Segments       : {len(segments)}")
-    print("\n  Ouvrez le fichier dans votre navigateur pour l'analyse.\n")
+    final_mb = output_path.stat().st_size / (1024 * 1024)
+    print(f"\n✓  Rapport généré  : {output_path}")
+    print(
+        f"   Taille HTML     : {final_mb:.1f} Mo{' (léger, média chargé à la volée)' if media_is_url else ''}"
+    )
+    if media_is_url:
+        print(f"   URL média       : {media_input}")
+    print(f"   Segments        : {len(segments)}")
+    if annotations:
+        print(f"   Annotations CSV : {len(annotations)}")
+    print("\n   → Ouvrez dans Firefox ou Chrome pour l'analyse.\n")
+
+
+# ─────────────────────────────────────────────
+#  Point d'entrée CLI
+# ─────────────────────────────────────────────
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Génère un rapport HTML autonome avec audio embarqué",
+        description="Génère un rapport HTML autonome (audio/vidéo + segments + annotations CSV)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Exemples :
-  python generate_report.py radio_lundi.mp3
-  python generate_report.py radio_lundi.mp3 --segments segments.json
-  python generate_report.py radio_lundi.mp3 --output rapport_lundi.html
+  python generate_report.py radio.mp3
+  python generate_report.py https://cdn.example.com/flux.mp3
+  python generate_report.py https://cdn.example.com/tv.mp4 --csv pub_list.csv
+  python generate_report.py tv.mp4 --segments segments.json --csv pub_list.csv --output rapport_tv.html
 
-Workflow complet :
-  1. python rupture_detector.py radio_lundi.mp3
-        → produit segments.json
+Format CSV :
+  type,start,end
+  PUBLICITE,00:12:30,00:13:00
+  JINGLE,00:00:05,00:00:12
 
-  2. python generate_report.py radio_lundi.mp3
-        → produit radio_lundi_report.html
-
-  3. Ouvrir radio_lundi_report.html dans Firefox ou Chrome
+  Les temps acceptent : HH:MM:SS  |  MM:SS  |  secondes décimales
+  Séparateur : virgule ou point-virgule (auto-détecté)
         """,
     )
-    parser.add_argument("audio", help="Fichier audio source (mp3, wav, flac, ogg...)")
+    parser.add_argument(
+        "media", help="Fichier audio/vidéo local OU URL https:// distante"
+    )
     parser.add_argument(
         "--segments",
         default="segments.json",
         help="Fichier JSON des segments [défaut: segments.json]",
     )
     parser.add_argument(
+        "--csv", default=None, help="Fichier CSV des annotations manuelles (optionnel)"
+    )
+    parser.add_argument(
         "--output",
         default=None,
-        help="Nom du fichier HTML de sortie [défaut: <audio_stem>_report.html]",
+        help="Nom du rapport HTML [défaut: <nom_media>_report.html]",
     )
     args = parser.parse_args()
 
-    audio_path = Path(args.audio)
-    output_path = (
+    media = Path(args.media)
+    output = (
         Path(args.output)
         if args.output
-        else audio_path.parent / (audio_path.stem + "_report.html")
+        else media.parent / (media.stem + "_report.html")
     )
 
-    embed(
-        audio_path=str(audio_path),
+    generate_player(
+        media_input=str(media),
         segments_path=args.segments,
-        output_path=str(output_path),
+        csv_path=args.csv,
+        output_path=str(output),
     )
 
 

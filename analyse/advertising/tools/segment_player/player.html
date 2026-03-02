@@ -27,6 +27,8 @@
             --emission: #00ff88;
             --silence: #3a3a52;
             --unknown: #6b6b8a;
+            --annot: #38bdf8;
+            /* CSV annotations — bleu ciel */
             --m-energy: #f5a623;
             --m-centroid: #a78bfa;
             --m-zcr: #34d399;
@@ -58,25 +60,26 @@
 
         /* ── Header ── */
         header {
-            padding: 16px 28px;
+            padding: 12px 28px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             gap: 16px;
+            flex-shrink: 0;
         }
 
         header h1 {
             font-family: 'Syne', sans-serif;
             font-weight: 800;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             letter-spacing: -.02em;
             color: var(--amber);
         }
 
-        header span {
-            font-size: .65rem;
+        header .sub {
+            font-size: .62rem;
             color: var(--text-dim);
-            letter-spacing: .12em;
+            letter-spacing: .1em;
             text-transform: uppercase;
         }
 
@@ -94,11 +97,11 @@
             box-shadow: 0 0 8px var(--green);
         }
 
-        /* ── Workspace ── */
-        .workspace {
+        /* ── Root layout ── */
+        .root {
             display: grid;
             grid-template-columns: 1fr 300px;
-            height: calc(100vh - 57px);
+            height: calc(100vh - 49px);
             overflow: hidden;
         }
 
@@ -113,8 +116,8 @@
         /* Load zone */
         .load-zone {
             display: flex;
-            gap: 10px;
-            padding: 10px 24px;
+            gap: 8px;
+            padding: 8px 20px;
             border-bottom: 1px solid var(--border);
             align-items: center;
             flex-wrap: wrap;
@@ -124,18 +127,19 @@
         .file-btn {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             background: var(--panel);
             border: 1px solid var(--border);
             border-radius: 3px;
-            padding: 6px 12px;
+            padding: 5px 10px;
             color: var(--text-dim);
             font-family: 'Space Mono', monospace;
-            font-size: .7rem;
+            font-size: .65rem;
             cursor: pointer;
             transition: all .2s;
             position: relative;
             overflow: hidden;
+            white-space: nowrap;
         }
 
         .file-btn:hover {
@@ -155,13 +159,51 @@
             cursor: pointer;
         }
 
-        .load-hint {
-            font-size: .6rem;
-            color: var(--text-dim);
-            letter-spacing: .05em;
+        .file-btn.csv-btn.loaded {
+            border-color: var(--annot);
+            color: var(--annot);
         }
 
-        /* Waveform */
+        /* ── Video panel ── */
+        #video-panel {
+            display: none;
+            flex-shrink: 0;
+            background: #000;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            max-height: 220px;
+            min-height: 80px;
+        }
+
+        #video-panel.visible {
+            display: block;
+        }
+
+        #video-el {
+            width: 100%;
+            height: 100%;
+            max-height: 220px;
+            object-fit: contain;
+            display: block;
+            background: #000;
+        }
+
+        .video-overlay-label {
+            position: absolute;
+            top: 6px;
+            left: 10px;
+            font-size: .52rem;
+            color: #ffffff88;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            pointer-events: none;
+            background: #00000055;
+            padding: 2px 6px;
+            border-radius: 2px;
+        }
+
+        /* Canvas wrappers */
         .canvas-wrap {
             position: relative;
             flex-shrink: 0;
@@ -176,9 +218,9 @@
 
         .canvas-label {
             position: absolute;
-            top: 6px;
+            top: 5px;
             left: 10px;
-            font-size: .55rem;
+            font-size: .52rem;
             color: var(--text-dim);
             letter-spacing: .1em;
             text-transform: uppercase;
@@ -186,28 +228,29 @@
         }
 
         #waveform-wrap {
-            height: 90px;
+            height: 80px;
             cursor: pointer;
         }
 
         #metrics-wrap {
-            height: 110px;
+            height: 100px;
             cursor: crosshair;
         }
 
         #timeline-wrap {
-            height: 50px;
+            height: 82px;
             cursor: pointer;
         }
 
-        /* Playheads – shared class */
+        /* 2 rows */
+
         .playhead-line {
             position: absolute;
             top: 0;
             bottom: 0;
             width: 2px;
             background: var(--amber);
-            box-shadow: 0 0 6px var(--amber);
+            box-shadow: 0 0 5px var(--amber);
             pointer-events: none;
             left: 0;
         }
@@ -216,7 +259,7 @@
             position: absolute;
             bottom: 4px;
             left: 10px;
-            font-size: .55rem;
+            font-size: .52rem;
             color: var(--text-dim);
             pointer-events: none;
         }
@@ -225,9 +268,9 @@
         .metrics-legend {
             position: absolute;
             top: 5px;
-            right: 10px;
+            right: 8px;
             display: flex;
-            gap: 8px;
+            gap: 6px;
             pointer-events: all;
             z-index: 10;
         }
@@ -235,45 +278,40 @@
         .metric-toggle {
             display: flex;
             align-items: center;
-            gap: 4px;
-            font-size: .58rem;
+            gap: 3px;
+            font-size: .55rem;
             cursor: pointer;
-            padding: 2px 6px;
+            padding: 2px 5px;
             border-radius: 2px;
-            border: 1px solid transparent;
             transition: all .15s;
             user-select: none;
         }
 
         .metric-toggle .dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
             border-radius: 50%;
             flex-shrink: 0;
         }
 
         .metric-toggle.off {
-            opacity: .3;
-        }
-
-        .metric-toggle:hover {
-            opacity: 1;
+            opacity: .25;
         }
 
         /* Controls */
         .controls {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 8px 20px;
+            gap: 10px;
+            padding: 7px 18px;
             background: var(--panel);
             border-bottom: 1px solid var(--border);
             flex-shrink: 0;
         }
 
         .btn-play {
-            width: 36px;
-            height: 36px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             background: var(--amber);
             border: none;
@@ -281,18 +319,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: .9rem;
+            font-size: .85rem;
             transition: all .15s;
             flex-shrink: 0;
         }
 
         .btn-play:hover {
-            transform: scale(1.08);
-            box-shadow: 0 0 14px var(--amber-dim);
-        }
-
-        .btn-play:active {
-            transform: scale(.95);
+            transform: scale(1.07);
+            box-shadow: 0 0 12px var(--amber-dim);
         }
 
         .btn-skip {
@@ -300,8 +334,8 @@
             border: 1px solid var(--border);
             color: var(--text-dim);
             font-family: 'Space Mono', monospace;
-            font-size: .6rem;
-            padding: 5px 8px;
+            font-size: .58rem;
+            padding: 4px 7px;
             border-radius: 3px;
             cursor: pointer;
             transition: all .15s;
@@ -313,10 +347,10 @@
         }
 
         .time-display {
-            font-size: .72rem;
+            font-size: .7rem;
             color: var(--amber);
-            letter-spacing: .08em;
-            min-width: 130px;
+            letter-spacing: .07em;
+            min-width: 128px;
         }
 
         .speed-select {
@@ -324,15 +358,15 @@
             border: 1px solid var(--border);
             color: var(--text-dim);
             font-family: 'Space Mono', monospace;
-            font-size: .62rem;
-            padding: 4px 6px;
+            font-size: .6rem;
+            padding: 3px 6px;
             border-radius: 3px;
             cursor: pointer;
         }
 
         .seg-counter {
             margin-left: auto;
-            font-size: .6rem;
+            font-size: .58rem;
             color: var(--text-dim);
         }
 
@@ -357,8 +391,8 @@
         .seg-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px 20px;
+            gap: 9px;
+            padding: 7px 18px;
             border-bottom: 1px solid #0f0f1a;
             cursor: pointer;
             transition: background .1s;
@@ -371,7 +405,7 @@
         .seg-item.active {
             background: #1a1a2e;
             border-left: 2px solid var(--amber);
-            padding-left: 18px;
+            padding-left: 16px;
         }
 
         .seg-color-bar {
@@ -379,7 +413,7 @@
             border-radius: 2px;
             align-self: stretch;
             flex-shrink: 0;
-            min-height: 20px;
+            min-height: 18px;
         }
 
         .seg-info {
@@ -388,13 +422,13 @@
         }
 
         .seg-tc {
-            font-size: .58rem;
+            font-size: .56rem;
             color: var(--text-dim);
-            letter-spacing: .04em;
+            letter-spacing: .03em;
         }
 
         .seg-label {
-            font-size: .68rem;
+            font-size: .65rem;
             font-weight: 700;
             white-space: nowrap;
             overflow: hidden;
@@ -403,18 +437,18 @@
         }
 
         .seg-dur {
-            font-size: .58rem;
+            font-size: .56rem;
             color: var(--text-dim);
             text-align: right;
             flex-shrink: 0;
         }
 
-        /* Legend bar */
+        /* Legend */
         .legend {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            padding: 8px 20px;
+            padding: 6px 18px;
             border-top: 1px solid var(--border);
             background: var(--panel);
             flex-shrink: 0;
@@ -424,7 +458,7 @@
             display: flex;
             align-items: center;
             gap: 4px;
-            font-size: .55rem;
+            font-size: .53rem;
             color: var(--text-dim);
         }
 
@@ -435,12 +469,41 @@
             flex-shrink: 0;
         }
 
+        .legend-sep {
+            width: 1px;
+            height: 12px;
+            background: var(--border);
+            margin: 0 2px;
+        }
+
         /* ── Right panel ── */
         .right-panel {
             background: var(--panel);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+        }
+
+        /* Video thumbnail in right panel (when embedded video) */
+        #right-video-wrap {
+            display: none;
+            flex-shrink: 0;
+            background: #000;
+            border-bottom: 1px solid var(--border);
+            height: 170px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #right-video-wrap.visible {
+            display: block;
+        }
+
+        #right-video-el {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
         }
 
         .panel-tabs {
@@ -451,9 +514,9 @@
 
         .tab-btn {
             flex: 1;
-            padding: 10px 0;
+            padding: 9px 0;
             font-family: 'Space Mono', monospace;
-            font-size: .6rem;
+            font-size: .58rem;
             letter-spacing: .08em;
             text-transform: uppercase;
             background: none;
@@ -488,30 +551,30 @@
             background: var(--muted);
         }
 
-        /* Detail tab */
+        /* Detail */
         .detail-seg {
-            padding: 16px 18px;
+            padding: 14px 16px;
             border-bottom: 1px solid var(--border);
         }
 
         .detail-label-badge {
             display: inline-block;
-            padding: 3px 10px;
+            padding: 2px 9px;
             border-radius: 2px;
-            font-size: .6rem;
+            font-size: .58rem;
             font-weight: 700;
             letter-spacing: .1em;
             text-transform: uppercase;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
         }
 
         .detail-row {
             display: flex;
             justify-content: space-between;
             align-items: baseline;
-            padding: 4px 0;
+            padding: 3px 0;
             border-bottom: 1px dotted #1e1e2e;
-            font-size: .65rem;
+            font-size: .62rem;
         }
 
         .detail-row .key {
@@ -523,37 +586,62 @@
             font-weight: 700;
         }
 
-        .mini-wave-wrap {
-            padding: 14px 18px 8px;
+        /* Annot matching */
+        .annot-match-wrap {
+            padding: 10px 16px;
             border-bottom: 1px solid var(--border);
         }
 
-        .mini-wave-wrap label {
-            font-size: .55rem;
-            color: var(--text-dim);
+        .annot-match-wrap label {
+            font-size: .52rem;
+            color: var(--annot);
             letter-spacing: .1em;
             text-transform: uppercase;
             display: block;
             margin-bottom: 6px;
         }
 
+        .annot-match-item {
+            font-size: .6rem;
+            color: var(--text-dim);
+            padding: 3px 0;
+        }
+
+        .annot-match-item span {
+            color: var(--annot);
+            font-weight: 700;
+        }
+
+        .mini-wave-wrap {
+            padding: 12px 16px 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mini-wave-wrap label {
+            font-size: .52rem;
+            color: var(--text-dim);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 5px;
+        }
+
         #mini-canvas {
             width: 100%;
-            height: 55px;
+            height: 50px;
             display: block;
             background: #0d0d17;
             border-radius: 2px;
             border: 1px solid var(--border);
         }
 
-        /* Metrics sparklines */
         .sparklines-wrap {
-            padding: 14px 18px;
+            padding: 12px 16px;
             border-bottom: 1px solid var(--border);
         }
 
         .sparklines-wrap label {
-            font-size: .55rem;
+            font-size: .52rem;
             color: var(--text-dim);
             letter-spacing: .1em;
             text-transform: uppercase;
@@ -562,24 +650,22 @@
         }
 
         .sparkline-row {
-            margin-bottom: 8px;
+            margin-bottom: 7px;
         }
 
         .sparkline-header {
             display: flex;
             justify-content: space-between;
-            font-size: .58rem;
-            margin-bottom: 3px;
+            font-size: .56rem;
+            margin-bottom: 2px;
         }
-
-        .sparkline-name {}
 
         .sparkline-val {
             font-weight: 700;
         }
 
         .sparkline-bar-track {
-            height: 5px;
+            height: 4px;
             background: var(--border);
             border-radius: 3px;
             overflow: hidden;
@@ -591,32 +677,32 @@
             transition: width .4s;
         }
 
-        /* Stats tab */
+        /* Stats */
         .stats-wrap {
-            padding: 16px 18px;
+            padding: 14px 16px;
         }
 
         .stats-wrap label {
-            font-size: .55rem;
+            font-size: .52rem;
             color: var(--text-dim);
             letter-spacing: .1em;
             text-transform: uppercase;
             display: block;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .stat-bar-row {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 6px;
+            gap: 7px;
+            margin-bottom: 5px;
         }
 
         .stat-bar-label {
-            width: 100px;
+            width: 95px;
             color: var(--text-dim);
             flex-shrink: 0;
-            font-size: .58rem;
+            font-size: .56rem;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -624,7 +710,7 @@
 
         .stat-bar-track {
             flex: 1;
-            height: 6px;
+            height: 5px;
             background: var(--border);
             border-radius: 3px;
             overflow: hidden;
@@ -637,16 +723,16 @@
         }
 
         .stat-count {
-            width: 28px;
+            width: 26px;
             text-align: right;
             color: var(--text-dim);
-            font-size: .58rem;
+            font-size: .56rem;
         }
 
         .stat-time-row {
             display: flex;
             justify-content: space-between;
-            font-size: .6rem;
+            font-size: .58rem;
             padding: 3px 0;
             border-bottom: 1px dotted var(--border);
         }
@@ -666,19 +752,19 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             color: var(--text-dim);
-            padding: 30px;
+            padding: 28px;
             text-align: center;
         }
 
         .empty-icon {
-            font-size: 2rem;
+            font-size: 1.8rem;
             opacity: .3;
         }
 
         .empty-state p {
-            font-size: .68rem;
+            font-size: .65rem;
             line-height: 1.6;
         }
 
@@ -689,12 +775,13 @@
             border: 1px solid var(--amber-dim);
             border-radius: 4px;
             padding: 5px 10px;
-            font-size: .62rem;
+            font-size: .6rem;
             color: var(--text);
             pointer-events: none;
             display: none;
             z-index: 9999;
             white-space: nowrap;
+            line-height: 1.5;
         }
 
         audio {
@@ -707,28 +794,38 @@
 
     <header>
         <h1>RUPTURE DETECTOR</h1>
-        <span>Audio Lab v2</span>
+        <span class="sub">Audio Lab v3</span>
         <div class="status-dot" id="status-dot"></div>
     </header>
 
-    <div class="workspace">
+    <div class="root">
 
-        <!-- ── LEFT COLUMN ── -->
+        <!-- ════════════════ LEFT COL ════════════════ -->
         <div class="left-col">
 
-            <!-- Load zone (caché si embedded) -->
+            <!-- Load zone -->
             <div class="load-zone" id="load-zone">
-                <label class="file-btn" id="btn-audio">
-                    <span>🎵</span>
-                    <span id="audio-label">Charger l'audio</span>
-                    <input type="file" accept="audio/*" id="input-audio">
+                <label class="file-btn" id="btn-media">
+                    <span>🎬</span>
+                    <span id="media-label">Audio / Vidéo</span>
+                    <input type="file" accept="audio/*,video/mp4,video/webm" id="input-media">
                 </label>
                 <label class="file-btn" id="btn-json">
                     <span>📋</span>
-                    <span id="json-label">Charger segments.json</span>
+                    <span id="json-label">segments.json</span>
                     <input type="file" accept=".json" id="input-json">
                 </label>
-                <span class="load-hint">← produits par rupture_detector.py</span>
+                <label class="file-btn csv-btn" id="btn-csv">
+                    <span>📌</span>
+                    <span id="csv-label">annotations.csv</span>
+                    <input type="file" accept=".csv,.txt" id="input-csv">
+                </label>
+            </div>
+
+            <!-- Video player (visible only for mp4/video) -->
+            <div id="video-panel">
+                <video id="video-el" preload="metadata"></video>
+                <div class="video-overlay-label" id="video-name-label">VIDEO</div>
             </div>
 
             <!-- Waveform -->
@@ -739,14 +836,14 @@
                 <div class="time-label-abs" id="time-label">00:00:00</div>
             </div>
 
-            <!-- Metrics chart -->
+            <!-- Metrics -->
             <div class="canvas-wrap" id="metrics-wrap">
                 <canvas id="metrics-canvas"></canvas>
                 <div class="playhead-line" id="metrics-playhead"></div>
                 <div class="canvas-label">Métriques par segment</div>
-                <div class="metrics-legend" id="metrics-legend">
+                <div class="metrics-legend">
                     <div class="metric-toggle" data-metric="energy" style="color:var(--m-energy)">
-                        <div class="dot" style="background:var(--m-energy)"></div>Énergie RMS
+                        <div class="dot" style="background:var(--m-energy)"></div>Énergie
                     </div>
                     <div class="metric-toggle" data-metric="centroid" style="color:var(--m-centroid)">
                         <div class="dot" style="background:var(--m-centroid)"></div>Centroïde
@@ -757,7 +854,7 @@
                 </div>
             </div>
 
-            <!-- Timeline -->
+            <!-- Timeline (2 rows: segments + annotations) -->
             <div class="canvas-wrap" id="timeline-wrap">
                 <canvas id="timeline-canvas"></canvas>
                 <div class="playhead-line" id="timeline-playhead"></div>
@@ -782,7 +879,7 @@
             <div class="seg-list-wrap" id="seg-list">
                 <div class="empty-state" id="empty-main">
                     <div class="empty-icon">📂</div>
-                    <p>Chargez un fichier audio et le fichier segments.json pour commencer.</p>
+                    <p>Chargez un fichier audio ou vidéo et le fichier segments.json pour commencer.</p>
                 </div>
             </div>
 
@@ -803,11 +900,22 @@
                 <div class="legend-item">
                     <div class="legend-dot" style="background:var(--unknown)"></div>inconnu
                 </div>
+                <div class="legend-sep"></div>
+                <div class="legend-item" id="annot-legend" style="display:none">
+                    <div class="legend-dot" style="background:var(--annot);border-radius:0"></div>
+                    <span style="color:var(--annot)">annotations CSV</span>
+                </div>
             </div>
         </div>
 
-        <!-- ── RIGHT PANEL ── -->
+        <!-- ════════════════ RIGHT PANEL ════════════════ -->
         <div class="right-panel">
+
+            <!-- Video mirror (shown when embedded video in report) -->
+            <div id="right-video-wrap">
+                <video id="right-video-el" muted></video>
+            </div>
+
             <div class="panel-tabs">
                 <button class="tab-btn active" data-tab="detail">Détail</button>
                 <button class="tab-btn" data-tab="stats">Stats</button>
@@ -830,15 +938,20 @@
                         <div class="detail-row"><span class="key">Index</span> <span class="val" id="d-idx">—</span>
                         </div>
                     </div>
+                    <!-- Annotations matching -->
+                    <div class="annot-match-wrap" id="annot-match-wrap" style="display:none">
+                        <label>📌 Annotations CSV correspondantes</label>
+                        <div id="annot-match-list"></div>
+                    </div>
                     <div class="mini-wave-wrap">
                         <label>Forme d'onde du segment</label>
                         <canvas id="mini-canvas"></canvas>
                     </div>
                     <div class="sparklines-wrap">
                         <label>Métriques (position relative dans le corpus)</label>
-                        <div class="sparkline-row" id="sp-energy">
+                        <div class="sparkline-row">
                             <div class="sparkline-header">
-                                <span class="sparkline-name" style="color:var(--m-energy)">● Énergie RMS</span>
+                                <span style="color:var(--m-energy)">● Énergie RMS</span>
                                 <span class="sparkline-val" id="sp-energy-val" style="color:var(--m-energy)">—</span>
                             </div>
                             <div class="sparkline-bar-track">
@@ -846,9 +959,9 @@
                                     style="background:var(--m-energy);width:0%"></div>
                             </div>
                         </div>
-                        <div class="sparkline-row" id="sp-centroid">
+                        <div class="sparkline-row">
                             <div class="sparkline-header">
-                                <span class="sparkline-name" style="color:var(--m-centroid)">● Centroïde spectral</span>
+                                <span style="color:var(--m-centroid)">● Centroïde spectral</span>
                                 <span class="sparkline-val" id="sp-centroid-val"
                                     style="color:var(--m-centroid)">—</span>
                             </div>
@@ -857,9 +970,9 @@
                                     style="background:var(--m-centroid);width:0%"></div>
                             </div>
                         </div>
-                        <div class="sparkline-row" id="sp-zcr">
+                        <div class="sparkline-row">
                             <div class="sparkline-header">
-                                <span class="sparkline-name" style="color:var(--m-zcr)">● Zero-Crossing Rate</span>
+                                <span style="color:var(--m-zcr)">● Zero-Crossing Rate</span>
                                 <span class="sparkline-val" id="sp-zcr-val" style="color:var(--m-zcr)">—</span>
                             </div>
                             <div class="sparkline-bar-track">
@@ -885,15 +998,19 @@
                     <label>Durées</label>
                     <div id="stats-dur"></div>
                 </div>
+                <div class="stats-wrap" style="border-top:1px solid var(--border)" id="annot-stats-wrap">
+                    <label style="color:var(--annot)">Annotations CSV</label>
+                    <div id="annot-stats"></div>
+                </div>
             </div>
-        </div>
 
+        </div>
     </div>
 
     <div id="tooltip"></div>
     <audio id="audio-el"></audio>
 
-    <!-- ── DONNÉES EMBARQUÉES (remplies par le générateur Python) ── -->
+    <!-- ── DONNÉES EMBARQUÉES ── -->
     <script id="embedded-data" type="application/json">null</script>
 
     <script>
@@ -902,19 +1019,23 @@
         // ═══════════════════════════════════════════════════════════════════
         const state = {
             segments: [],
+            annotations: [],   // [{type, start_sec, end_sec}]
             audioBuffer: null,
             duration: 0,
             currentSegIdx: -1,
             playing: false,
             audioCtx: null,
+            isVideo: false,
             metricsVisible: { energy: true, centroid: true, zcr: true },
-            metricRanges: {},   // {energy:{min,max}, centroid:{min,max}, zcr:{min,max}}
+            metricRanges: {},
         };
 
         // ═══════════════════════════════════════════════════════════════════
-        //  DOM
+        //  DOM refs
         // ═══════════════════════════════════════════════════════════════════
         const audioEl = document.getElementById('audio-el');
+        const videoEl = document.getElementById('video-el');
+        const rightVideoEl = document.getElementById('right-video-el');
         const btnPlay = document.getElementById('btn-play');
         const btnPrev = document.getElementById('btn-prev');
         const btnNext = document.getElementById('btn-next');
@@ -933,6 +1054,9 @@
         const miniCanvas = document.getElementById('mini-canvas');
         const tooltip = document.getElementById('tooltip');
 
+        // Active media element (audio or video)
+        const mediaEl = () => state.isVideo ? videoEl : audioEl;
+
         const LABEL_COLORS = {
             jingle_candidat: '#ff3b5c',
             pub_candidat: '#f5a623',
@@ -942,41 +1066,139 @@
             '?': '#6b6b8a',
         };
         const METRIC_COLORS = { energy: '#f5a623', centroid: '#a78bfa', zcr: '#34d399' };
+        const ANNOT_COLORS = {
+            PUBLICITE: '#38bdf8',
+            PUB: '#38bdf8',
+            JINGLE: '#fb7185',
+            EMISSION: '#4ade80',
+            HABILLAGE: '#c084fc',
+        };
         const segColor = l => LABEL_COLORS[l] || LABEL_COLORS['?'];
+        const annotColor = t => ANNOT_COLORS[t?.toUpperCase()] || '#38bdf8';
 
         // ═══════════════════════════════════════════════════════════════════
-        //  EMBEDDED DATA (generated by Python)
+        //  EMBEDDED DATA
         // ═══════════════════════════════════════════════════════════════════
         (async () => {
             const raw = document.getElementById('embedded-data').textContent.trim();
-            if (raw && raw !== 'null') {
-                const data = JSON.parse(raw);
-                if (data.segments) loadSegments(data.segments);
-                if (data.audio_b64) {
-                    document.getElementById('load-zone').style.display = 'none';
-                    const binary = atob(data.audio_b64);
-                    const bytes = new Uint8Array(binary.length);
-                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-                    const blob = new Blob([bytes], { type: data.audio_mime || 'audio/mpeg' });
-                    const url = URL.createObjectURL(blob);
+            if (!raw || raw === 'null') return;
+            const data = JSON.parse(raw);
+            if (data.segments) loadSegments(data.segments);
+            if (data.annotations) loadAnnotations(data.annotations);
+
+            // ── Mode URL : le média n'est pas embarqué, le navigateur le charge ──
+            if (data.media_url) {
+                document.getElementById('load-zone').style.display = 'none';
+                const url = data.media_url;
+                const isVid = data.is_video || /\.(mp4|mov|webm|mkv|avi)(\?|$)/i.test(url);
+                const name = data.media_name || url.split('/').pop();
+
+                // Pointer les éléments media vers l'URL directement
+                if (isVid) {
+                    activateVideo(url, name);
+                    document.getElementById('right-video-wrap').classList.add('visible');
+                    rightVideoEl.src = url;
+                } else {
                     audioEl.src = url;
+                }
+
+                // Récupérer l'audio pour décoder la forme d'onde
+                // (nécessite que le serveur autorise CORS ; sinon, lecture seule sans waveform)
+                setWaveformStatus('loading');
+                try {
+                    const resp = await fetch(url);
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    const arrBuf = await resp.arrayBuffer();
                     state.audioCtx = new AudioContext();
-                    state.audioBuffer = await state.audioCtx.decodeAudioData(bytes.buffer);
+                    state.audioBuffer = await state.audioCtx.decodeAudioData(arrBuf);
                     state.duration = state.audioBuffer.duration;
                     drawWaveform(); drawTimeline(); drawMetrics();
-                    statusDot.classList.add('active');
+                    setWaveformStatus('ok');
+                } catch (err) {
+                    // CORS ou réseau bloqué : on récupère la durée depuis l'élément media
+                    console.warn('Waveform non disponible (CORS ou réseau) :', err.message);
+                    setWaveformStatus('cors');
+                    await new Promise(r => {
+                        const me = isVid ? videoEl : audioEl;
+                        me.addEventListener('loadedmetadata', () => {
+                            state.duration = me.duration;
+                            drawTimeline(); drawMetrics();
+                            r();
+                        }, { once: true });
+                    });
                 }
+                statusDot.classList.add('active');
+                return;
+            }
+
+            // ── Mode base64 embarqué ──
+            if (data.audio_b64 || data.video_b64) {
+                document.getElementById('load-zone').style.display = 'none';
+                const isVid = !!data.video_b64;
+                const b64 = isVid ? data.video_b64 : data.audio_b64;
+                const mime = isVid ? (data.video_mime || 'video/mp4') : (data.audio_mime || 'audio/mpeg');
+                const binary = atob(b64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                const blob = new Blob([bytes], { type: mime });
+                const url = URL.createObjectURL(blob);
+                if (isVid) {
+                    activateVideo(url, data.media_name || 'video');
+                    document.getElementById('right-video-wrap').classList.add('visible');
+                    rightVideoEl.src = url;
+                } else {
+                    audioEl.src = url;
+                }
+                state.audioCtx = new AudioContext();
+                state.audioBuffer = await state.audioCtx.decodeAudioData(bytes.buffer);
+                state.duration = state.audioBuffer.duration;
+                drawWaveform(); drawTimeline(); drawMetrics();
+                statusDot.classList.add('active');
             }
         })();
+
+        // Indicateur de statut de la forme d'onde (mode URL)
+        function setWaveformStatus(status) {
+            const label = document.querySelector('#waveform-wrap .canvas-label');
+            if (!label) return;
+            if (status === 'loading') {
+                label.textContent = 'Forme d\'onde — chargement…';
+                label.style.color = 'var(--amber)';
+            } else if (status === 'cors') {
+                label.textContent = 'Forme d\'onde — non disponible (CORS)';
+                label.style.color = 'var(--red)';
+                // Waveform vide, timeline fonctionnelle
+                const { ctx, W, H } = setupCanvas(waveCanvas, 'waveform-wrap');
+                ctx.fillStyle = '#0d0d17'; ctx.fillRect(0, 0, W, H);
+                ctx.fillStyle = '#2a2a42'; ctx.font = '11px "Space Mono"';
+                ctx.textAlign = 'center';
+                ctx.fillText('Forme d\'onde non disponible — le serveur ne permet pas le chargement cross-origin.', W / 2, H / 2 - 8);
+                ctx.fillText('La lecture et la navigation par segments restent fonctionnelles.', W / 2, H / 2 + 10);
+                ctx.textAlign = 'left';
+            } else {
+                label.textContent = 'Forme d\'onde';
+                label.style.color = '';
+            }
+        }
 
         // ═══════════════════════════════════════════════════════════════════
         //  FILE INPUTS
         // ═══════════════════════════════════════════════════════════════════
-        document.getElementById('input-audio').addEventListener('change', async (e) => {
+        document.getElementById('input-media').addEventListener('change', async (e) => {
             const file = e.target.files[0]; if (!file) return;
-            audioEl.src = URL.createObjectURL(file);
-            document.getElementById('audio-label').textContent = file.name;
-            document.getElementById('btn-audio').classList.add('loaded');
+            const url = URL.createObjectURL(file);
+            const isVid = file.type.startsWith('video/') || file.name.endsWith('.mp4');
+            document.getElementById('media-label').textContent = file.name;
+            document.getElementById('btn-media').classList.add('loaded');
+
+            if (isVid) {
+                activateVideo(url, file.name);
+            } else {
+                audioEl.src = url;
+                state.isVideo = false;
+                document.getElementById('video-panel').classList.remove('visible');
+            }
+
             const arrBuf = await file.arrayBuffer();
             state.audioCtx = state.audioCtx || new AudioContext();
             state.audioBuffer = await state.audioCtx.decodeAudioData(arrBuf.slice(0));
@@ -989,36 +1211,102 @@
             const file = e.target.files[0]; if (!file) return;
             const text = await file.text();
             loadSegments(JSON.parse(text));
-            document.getElementById('json-label').textContent = `${file.name} (${state.segments.length} seg.)`;
+            document.getElementById('json-label').textContent = `${file.name} (${state.segments.length})`;
             document.getElementById('btn-json').classList.add('loaded');
         });
 
+        document.getElementById('input-csv').addEventListener('change', async (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const text = await file.text();
+            loadAnnotations(parseCSV(text));
+            document.getElementById('csv-label').textContent = `${file.name} (${state.annotations.length})`;
+            document.getElementById('btn-csv').classList.add('loaded');
+        });
+
+        // ─── Video activation ───────────────────────────────────────────
+        function activateVideo(url, name) {
+            state.isVideo = true;
+            videoEl.src = url;
+            document.getElementById('video-panel').classList.add('visible');
+            document.getElementById('video-name-label').textContent = name;
+            // Keep audio in sync with video for waveform decode
+            audioEl.src = url;
+        }
+
+        // ─── Sync right-panel video mirror ──────────────────────────────
+        videoEl.addEventListener('timeupdate', () => {
+            if (Math.abs(rightVideoEl.currentTime - videoEl.currentTime) > 0.3)
+                rightVideoEl.currentTime = videoEl.currentTime;
+        });
+        videoEl.addEventListener('play', () => rightVideoEl.play().catch(() => { }));
+        videoEl.addEventListener('pause', () => rightVideoEl.pause());
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  CSV PARSING
+        // ═══════════════════════════════════════════════════════════════════
+        function parseCSV(text) {
+            const lines = text.trim().split('\n').filter(l => l.trim());
+            // Detect if first line is header (non-numeric in col 1 or 2)
+            const first = lines[0].split(/[,;]/);
+            const startIdx = isNaN(parseTime(first[1]?.trim())) && first.length >= 3 ? 1 : 0;
+            const result = [];
+            for (let i = startIdx; i < lines.length; i++) {
+                const cols = lines[i].split(/[,;]/).map(c => c.trim().replace(/^"|"$/g, ''));
+                if (cols.length < 3) continue;
+                const [type, startRaw, endRaw] = cols;
+                const start_sec = parseTime(startRaw);
+                const end_sec = parseTime(endRaw);
+                if (isNaN(start_sec) || isNaN(end_sec)) continue;
+                result.push({ type: type.toUpperCase(), start_sec, end_sec });
+            }
+            return result;
+        }
+
+        function parseTime(s) {
+            if (!s) return NaN;
+            s = s.trim();
+            // HH:MM:SS or MM:SS
+            if (s.includes(':')) {
+                const parts = s.split(':').map(Number);
+                if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+                if (parts.length === 2) return parts[0] * 60 + parts[1];
+                return NaN;
+            }
+            return parseFloat(s);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  LOAD FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════════
         function loadSegments(segs) {
             state.segments = segs;
             document.getElementById('empty-main').style.display = 'none';
             computeMetricRanges();
             renderSegmentList();
+            drawTimeline(); drawMetrics(); drawStatsTab();
+        }
+
+        function loadAnnotations(annots) {
+            state.annotations = annots;
+            document.getElementById('annot-legend').style.display = annots.length ? 'flex' : 'none';
             drawTimeline();
-            drawMetrics();
-            drawStatsTab();
+            drawAnnotStats();
         }
 
         // ═══════════════════════════════════════════════════════════════════
-        //  METRIC RANGES (for normalization)
+        //  METRIC RANGES
         // ═══════════════════════════════════════════════════════════════════
         function computeMetricRanges() {
             const segs = state.segments.filter(s =>
-                s.energy_mean != null && s.spectral_centroid != null && s.zcr_mean != null
-            );
+                s.energy_mean != null && s.spectral_centroid != null && s.zcr_mean != null);
             if (!segs.length) return;
-            const minmax = (arr) => ({ min: Math.min(...arr), max: Math.max(...arr) });
+            const mm = arr => ({ min: Math.min(...arr), max: Math.max(...arr) });
             state.metricRanges = {
-                energy: minmax(segs.map(s => s.energy_mean)),
-                centroid: minmax(segs.map(s => s.spectral_centroid)),
-                zcr: minmax(segs.map(s => s.zcr_mean)),
+                energy: mm(segs.map(s => s.energy_mean)),
+                centroid: mm(segs.map(s => s.spectral_centroid)),
+                zcr: mm(segs.map(s => s.zcr_mean)),
             };
         }
-
         function normalize(val, range) {
             if (!range || range.max === range.min) return 0.5;
             return Math.max(0, Math.min(1, (val - range.min) / (range.max - range.min)));
@@ -1027,7 +1315,7 @@
         // ═══════════════════════════════════════════════════════════════════
         //  CANVAS HELPERS
         // ═══════════════════════════════════════════════════════════════════
-        function resizeCanvas(canvas, wrapId) {
+        function setupCanvas(canvas, wrapId) {
             const wrap = document.getElementById(wrapId);
             const dpr = window.devicePixelRatio || 1;
             const W = wrap.clientWidth, H = wrap.clientHeight;
@@ -1043,68 +1331,55 @@
         // ═══════════════════════════════════════════════════════════════════
         function drawWaveform() {
             const buf = state.audioBuffer; if (!buf) return;
-            const { ctx, W, H } = resizeCanvas(waveCanvas, 'waveform-wrap');
+            const { ctx, W, H } = setupCanvas(waveCanvas, 'waveform-wrap');
             const data = buf.getChannelData(0);
             const step = Math.floor(data.length / W);
             const mid = H / 2, amp = H * 0.43;
 
             ctx.fillStyle = '#0d0d17'; ctx.fillRect(0, 0, W, H);
-
-            // Grid
             ctx.strokeStyle = '#1a1a28'; ctx.lineWidth = 1;
-            [H * .25, H * .5, H * .75].forEach(y => {
-                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-            });
+            [.25, .5, .75].forEach(r => { ctx.beginPath(); ctx.moveTo(0, H * r); ctx.lineTo(W, H * r); ctx.stroke(); });
 
-            // Segment color overlays
+            // Segment colour overlays
             if (state.segments.length && state.duration) {
                 for (const seg of state.segments) {
-                    ctx.fillStyle = segColor(seg.label) + '1a';
-                    const x1 = seg.start_sec / state.duration * W;
-                    const x2 = seg.end_sec / state.duration * W;
-                    ctx.fillRect(x1, 0, x2 - x1, H);
+                    ctx.fillStyle = segColor(seg.label) + '18';
+                    ctx.fillRect(seg.start_sec / state.duration * W, 0,
+                        (seg.end_sec - seg.start_sec) / state.duration * W, H);
                 }
             }
+            // Annotation overlays
+            for (const a of state.annotations) {
+                ctx.fillStyle = annotColor(a.type) + '18';
+                ctx.fillRect(a.start_sec / state.duration * W, 0,
+                    (a.end_sec - a.start_sec) / state.duration * W, H);
+            }
 
-            // Waveform
             ctx.strokeStyle = '#2a5a8a'; ctx.lineWidth = 1;
             ctx.beginPath();
             for (let x = 0; x < W; x++) {
                 let mn = 1, mx = -1;
                 for (let i = x * step; i < (x + 1) * step; i++) {
-                    if (data[i] < mn) mn = data[i];
-                    if (data[i] > mx) mx = data[i];
+                    if (data[i] < mn) mn = data[i]; if (data[i] > mx) mx = data[i];
                 }
                 ctx.moveTo(x, mid + mn * amp); ctx.lineTo(x, mid + mx * amp);
             }
             ctx.stroke();
-
-            // Center line
-            ctx.strokeStyle = '#1e1e2e'; ctx.beginPath();
-            ctx.moveTo(0, mid); ctx.lineTo(W, mid); ctx.stroke();
+            ctx.strokeStyle = '#1e1e2e'; ctx.beginPath(); ctx.moveTo(0, mid); ctx.lineTo(W, mid); ctx.stroke();
         }
 
         // ═══════════════════════════════════════════════════════════════════
         //  METRICS CHART
         // ═══════════════════════════════════════════════════════════════════
         function drawMetrics() {
-            const segs = state.segments;
-            const { ctx, W, H } = resizeCanvas(metricsCanvas, 'metrics-wrap');
-
+            const { ctx, W, H } = setupCanvas(metricsCanvas, 'metrics-wrap');
             ctx.fillStyle = '#0b0b14'; ctx.fillRect(0, 0, W, H);
-
-            // H-grid
             ctx.strokeStyle = '#1a1a28'; ctx.lineWidth = 1;
-            [.25, .5, .75].forEach(r => {
-                const y = H - r * H;
-                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-            });
-            // 0/1 labels
-            ctx.fillStyle = '#3a3a52'; ctx.font = '9px "Space Mono"';
-            ctx.fillText('1.0', 2, 11);
-            ctx.fillText('0.0', 2, H - 3);
+            [.25, .5, .75].forEach(r => { const y = H - r * H; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); });
+            ctx.fillStyle = '#2a2a42'; ctx.font = '8px "Space Mono"';
+            ctx.fillText('1.0', 2, 11); ctx.fillText('0.0', 2, H - 3);
 
-            if (!segs.length || !state.duration) return;
+            if (!state.segments.length || !state.duration) return;
 
             const metrics = [
                 { key: 'energy', getter: s => s.energy_mean, range: state.metricRanges.energy },
@@ -1114,88 +1389,114 @@
 
             for (const m of metrics) {
                 if (!state.metricsVisible[m.key] || !m.range) continue;
-                const color = METRIC_COLORS[m.key];
-
-                // Draw as step function with fill
+                const col = METRIC_COLORS[m.key];
                 ctx.beginPath();
                 let first = true;
-                for (const seg of segs) {
-                    const val = m.getter(seg);
-                    if (val == null) continue;
-                    const n = normalize(val, m.range);
-                    const x1 = seg.start_sec / state.duration * W;
-                    const x2 = seg.end_sec / state.duration * W;
-                    const y = H - n * (H - 4) - 2;
-                    if (first) { ctx.moveTo(x1, y); first = false; }
-                    else ctx.lineTo(x1, y);
-                    ctx.lineTo(x2, y);
-                }
-                ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.stroke();
-
-                // Soft fill under the step curve
-                ctx.beginPath();
-                first = true;
-                for (const seg of segs) {
+                for (const seg of state.segments) {
                     const val = m.getter(seg); if (val == null) continue;
                     const n = normalize(val, m.range);
                     const x1 = seg.start_sec / state.duration * W;
                     const x2 = seg.end_sec / state.duration * W;
                     const y = H - n * (H - 4) - 2;
-                    if (first) { ctx.moveTo(x1, H); ctx.lineTo(x1, y); first = false; }
-                    else { ctx.lineTo(x1, H); ctx.lineTo(x1, y); }
+                    if (first) { ctx.moveTo(x1, y); first = false; } else ctx.lineTo(x1, y);
+                    ctx.lineTo(x2, y);
+                }
+                ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke();
+                // Fill
+                ctx.beginPath(); first = true;
+                for (const seg of state.segments) {
+                    const val = m.getter(seg); if (val == null) continue;
+                    const n = normalize(val, m.range);
+                    const x1 = seg.start_sec / state.duration * W, x2 = seg.end_sec / state.duration * W;
+                    const y = H - n * (H - 4) - 2;
+                    if (first) { ctx.moveTo(x1, H); ctx.lineTo(x1, y); first = false; } else { ctx.lineTo(x1, H); ctx.lineTo(x1, y); }
                     ctx.lineTo(x2, y);
                 }
                 ctx.lineTo(W, H); ctx.closePath();
-                ctx.fillStyle = color + '18'; ctx.fill();
+                ctx.fillStyle = col + '15'; ctx.fill();
             }
 
-            // Highlight active segment
-            if (state.currentSegIdx >= 0 && state.currentSegIdx < segs.length) {
-                const seg = segs[state.currentSegIdx];
-                const x1 = seg.start_sec / state.duration * W;
-                const x2 = seg.end_sec / state.duration * W;
-                ctx.fillStyle = '#ffffff0a';
-                ctx.fillRect(x1, 0, x2 - x1, H);
-                ctx.strokeStyle = '#ffffff22'; ctx.lineWidth = 1;
-                ctx.strokeRect(x1, 0, x2 - x1, H);
+            // Active segment highlight
+            if (state.currentSegIdx >= 0) {
+                const seg = state.segments[state.currentSegIdx];
+                if (seg) {
+                    const x1 = seg.start_sec / state.duration * W, x2 = seg.end_sec / state.duration * W;
+                    ctx.fillStyle = '#ffffff0a'; ctx.fillRect(x1, 0, x2 - x1, H);
+                    ctx.strokeStyle = '#ffffff22'; ctx.lineWidth = 1; ctx.strokeRect(x1, 0, x2 - x1, H);
+                }
             }
-
-            // Rupture markers (vertical ticks at boundaries)
-            ctx.strokeStyle = '#ffffff15'; ctx.lineWidth = 1;
-            for (let i = 1; i < segs.length; i++) {
-                const x = segs[i].start_sec / state.duration * W;
+            // Rupture markers
+            ctx.strokeStyle = '#ffffff12'; ctx.lineWidth = 1;
+            for (let i = 1; i < state.segments.length; i++) {
+                const x = state.segments[i].start_sec / state.duration * W;
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
             }
         }
 
         // ═══════════════════════════════════════════════════════════════════
-        //  TIMELINE
+        //  TIMELINE  (2 rows: segments on top, annotations below)
         // ═══════════════════════════════════════════════════════════════════
         function drawTimeline() {
-            const { ctx, W, H } = resizeCanvas(tlCanvas, 'timeline-wrap');
+            const { ctx, W, H } = setupCanvas(tlCanvas, 'timeline-wrap');
             ctx.fillStyle = '#0d0d17'; ctx.fillRect(0, 0, W, H);
             if (!state.duration) return;
 
-            // Time ruler
+            const hasAnnot = state.annotations.length > 0;
+            // Row split: if annotations exist, split in half
+            const rowH = hasAnnot ? Math.floor(H / 2) - 1 : H;
+            const row2Y = rowH + 2;  // top of annotation row
+
+            // ── Row labels ──
+            ctx.fillStyle = '#2a2a42'; ctx.font = '8px "Space Mono"';
+            ctx.fillText('AUTO', 2, rowH - 4);
+            if (hasAnnot) ctx.fillText('CSV', 2, H - 4);
+
+            // ── Divider ──
+            if (hasAnnot) {
+                ctx.strokeStyle = '#2a2a42'; ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(0, rowH + 1); ctx.lineTo(W, rowH + 1); ctx.stroke();
+            }
+
+            // ── Time ruler (drawn on row 1 top) ──
             const totalMin = state.duration / 60;
             const step = totalMin < 5 ? 30 : totalMin < 30 ? 120 : totalMin < 120 ? 600 : 1800;
             ctx.strokeStyle = '#1e1e2e'; ctx.fillStyle = '#2a2a42';
-            ctx.font = '8px "Space Mono"';
+            ctx.font = '7px "Space Mono"';
             for (let t = 0; t < state.duration; t += step) {
                 const x = t / state.duration * W;
-                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-                if (x > 4) ctx.fillText(secToTC(t), x + 2, H - 3);
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, rowH); ctx.stroke();
+                if (x > 22) ctx.fillText(secToTC(t), x + 2, 10);
             }
 
-            // Segments
+            // ── Auto-detected segments ──
+            const PAD_L = 24; // leave space for label
             for (let i = 0; i < state.segments.length; i++) {
                 const seg = state.segments[i];
-                const x1 = seg.start_sec / state.duration * W;
+                const x1 = Math.max(seg.start_sec / state.duration * W, PAD_L);
                 const x2 = seg.end_sec / state.duration * W;
+                if (x2 <= PAD_L) continue;
                 const col = segColor(seg.label);
                 const act = i === state.currentSegIdx;
                 ctx.fillStyle = act ? col : col + 'aa';
-                ctx.fillRect(x1, act ? 0 : 6, Math.max(x2 - x1 - .5, 1), act ? H : H - 12);
+                ctx.fillRect(x1, act ? 0 : 6, Math.max(x2 - x1 - .5, 1), act ? rowH : rowH - 12);
+            }
+
+            // ── CSV annotations ──
+            if (hasAnnot) {
+                for (const a of state.annotations) {
+                    const x1 = Math.max(a.start_sec / state.duration * W, PAD_L);
+                    const x2 = a.end_sec / state.duration * W;
+                    if (x2 <= PAD_L) continue;
+                    const col = annotColor(a.type);
+                    ctx.fillStyle = col + 'cc';
+                    ctx.fillRect(x1, row2Y + 4, Math.max(x2 - x1 - .5, 1), rowH - 10);
+                    // Type label inside block if wide enough
+                    if (x2 - x1 > 30) {
+                        ctx.fillStyle = '#000000aa';
+                        ctx.font = '7px "Space Mono"';
+                        ctx.fillText(a.type.substring(0, 8), x1 + 3, row2Y + rowH - 8);
+                    }
+                }
             }
         }
 
@@ -1223,53 +1524,48 @@
         }
 
         // ═══════════════════════════════════════════════════════════════════
-        //  SEEK & NAVIGATION
+        //  PLAYBACK
         // ═══════════════════════════════════════════════════════════════════
         function seekToSegment(idx) {
-            if (!audioEl.src) return;
             const seg = state.segments[idx]; if (!seg) return;
             state.currentSegIdx = idx;
-            audioEl.currentTime = seg.start_sec;
-            if (!state.playing) { audioEl.play(); state.playing = true; btnPlay.textContent = '⏸'; }
-            highlightSegItem(idx);
-            showDetail(seg, idx);
+            const me = mediaEl(); if (!me.src) return;
+            me.currentTime = seg.start_sec;
+            if (!state.playing) { me.play(); state.playing = true; btnPlay.textContent = '⏸'; }
+            highlightSeg(idx); showDetail(seg, idx);
             drawTimeline(); drawMetrics();
             segCounter.innerHTML = `<span>${idx + 1}</span> / <span>${state.segments.length}</span> seg`;
             drawMiniWave(seg);
         }
 
         function seekToTime(t) {
-            if (!audioEl.src) return;
-            audioEl.currentTime = t;
-            if (!state.playing) { audioEl.play(); state.playing = true; btnPlay.textContent = '⏸'; }
+            const me = mediaEl(); if (!me.src) return;
+            me.currentTime = t;
+            if (!state.playing) { me.play(); state.playing = true; btnPlay.textContent = '⏸'; }
         }
 
-        function highlightSegItem(idx) {
+        function highlightSeg(idx) {
             document.querySelectorAll('.seg-item').forEach((el, i) => el.classList.toggle('active', i === idx));
             const item = document.querySelector(`.seg-item[data-idx="${idx}"]`);
             if (item) item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
         }
 
-        function updateActiveSegment() {
-            const t = audioEl.currentTime;
+        function updateActiveSeg() {
+            const t = mediaEl().currentTime;
             const idx = state.segments.findIndex(s => t >= s.start_sec && t < s.end_sec);
             if (idx !== -1 && idx !== state.currentSegIdx) {
                 state.currentSegIdx = idx;
-                highlightSegItem(idx);
+                highlightSeg(idx);
                 showDetail(state.segments[idx], idx);
                 segCounter.innerHTML = `<span>${idx + 1}</span> / <span>${state.segments.length}</span> seg`;
                 drawMiniWave(state.segments[idx]);
-                drawMetrics();
-                drawTimeline();
+                drawMetrics(); drawTimeline();
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  PLAYBACK LOOP
-        // ═══════════════════════════════════════════════════════════════════
         function rafLoop() {
             if (!state.duration) return;
-            const t = audioEl.currentTime;
+            const t = mediaEl().currentTime;
             const pct = t / state.duration;
             const Ww = document.getElementById('waveform-wrap').clientWidth;
             const Mw = document.getElementById('metrics-wrap').clientWidth;
@@ -1279,60 +1575,69 @@
             tlPlayhead.style.left = pct * Tw + 'px';
             timeLabel.textContent = secToTC(t);
             timeDisplay.textContent = `${secToTC(t)} / ${secToTC(state.duration)}`;
-            updateActiveSegment();
+            updateActiveSeg();
             requestAnimationFrame(rafLoop);
         }
 
-        audioEl.addEventListener('play', () => { state.playing = true; btnPlay.textContent = '⏸'; requestAnimationFrame(rafLoop); });
-        audioEl.addEventListener('pause', () => { state.playing = false; btnPlay.textContent = '▶'; });
-        audioEl.addEventListener('ended', () => { state.playing = false; btnPlay.textContent = '▶'; });
-
-        btnPlay.addEventListener('click', () => { if (!audioEl.src) return; state.playing ? audioEl.pause() : audioEl.play(); });
+        // Hook both audio & video elements
+        [audioEl, videoEl].forEach(el => {
+            el.addEventListener('play', () => { state.playing = true; btnPlay.textContent = '⏸'; requestAnimationFrame(rafLoop); });
+            el.addEventListener('pause', () => { state.playing = false; btnPlay.textContent = '▶'; });
+            el.addEventListener('ended', () => { state.playing = false; btnPlay.textContent = '▶'; });
+        });
+        btnPlay.addEventListener('click', () => {
+            const me = mediaEl(); if (!me.src) return;
+            state.playing ? me.pause() : me.play();
+        });
         btnPrev.addEventListener('click', () => seekToSegment(Math.max(0, state.currentSegIdx - 1)));
         btnNext.addEventListener('click', () => seekToSegment(Math.min(state.segments.length - 1, state.currentSegIdx + 1)));
-        speedSel.addEventListener('change', () => { audioEl.playbackRate = parseFloat(speedSel.value); });
+        speedSel.addEventListener('change', () => {
+            const r = parseFloat(speedSel.value);
+            audioEl.playbackRate = r; videoEl.playbackRate = r;
+        });
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  CANVAS CLICK / HOVER
-        // ═══════════════════════════════════════════════════════════════════
-        function canvasSeekHandler(wrapId) {
-            document.getElementById(wrapId).addEventListener('click', (e) => {
-                const rect = document.getElementById(wrapId).getBoundingClientRect();
+        // Canvas click → seek
+        ['waveform-wrap', 'timeline-wrap', 'metrics-wrap'].forEach(id => {
+            document.getElementById(id).addEventListener('click', (e) => {
+                if (!state.duration) return;
+                const rect = document.getElementById(id).getBoundingClientRect();
                 seekToTime((e.clientX - rect.left) / rect.width * state.duration);
             });
-        }
-        canvasSeekHandler('waveform-wrap');
-        canvasSeekHandler('timeline-wrap');
-        canvasSeekHandler('metrics-wrap');
+        });
 
-        // Tooltip on metrics + timeline
-        function addTooltipHover(wrapId) {
-            const el = document.getElementById(wrapId);
+        // ═══════════════════════════════════════════════════════════════════
+        //  TOOLTIP
+        // ═══════════════════════════════════════════════════════════════════
+        ['waveform-wrap', 'timeline-wrap', 'metrics-wrap'].forEach(id => {
+            const el = document.getElementById(id);
             el.addEventListener('mousemove', (e) => {
                 if (!state.duration) return;
                 const rect = el.getBoundingClientRect();
                 const t = (e.clientX - rect.left) / rect.width * state.duration;
                 const seg = state.segments.find(s => t >= s.start_sec && t < s.end_sec);
+                const ann = state.annotations.find(a => t >= a.start_sec && t < a.end_sec);
+
                 tooltip.style.display = 'block';
                 tooltip.style.left = (e.clientX + 14) + 'px';
-                tooltip.style.top = (e.clientY - 32) + 'px';
+                tooltip.style.top = (e.clientY - 36) + 'px';
+
+                let html = '';
                 if (seg) {
-                    const e_n = seg.energy_mean != null ? (normalize(seg.energy_mean, state.metricRanges.energy) * 100).toFixed(0) + '%' : '—';
-                    const c_n = seg.spectral_centroid != null ? Math.round(seg.spectral_centroid) + 'Hz' : '—';
-                    const z_n = seg.zcr_mean != null ? (seg.zcr_mean * 100).toFixed(2) + '%' : '—';
-                    tooltip.innerHTML = `<b style="color:${segColor(seg.label)}">${seg.label}</b>  ${secToTC(seg.start_sec)} → ${secToTC(seg.end_sec)}<br>
-        <span style="color:var(--m-energy)">E</span> ${e_n} &nbsp;
-        <span style="color:var(--m-centroid)">C</span> ${c_n} &nbsp;
-        <span style="color:var(--m-zcr)">Z</span> ${z_n}`;
-                } else {
-                    tooltip.textContent = secToTC(t);
+                    const en = seg.energy_mean != null ? (normalize(seg.energy_mean, state.metricRanges.energy) * 100).toFixed(0) + '%' : '—';
+                    const cn = seg.spectral_centroid != null ? Math.round(seg.spectral_centroid) + 'Hz' : '—';
+                    const zn = seg.zcr_mean != null ? (seg.zcr_mean * 100).toFixed(2) + '%' : '—';
+                    html += `<b style="color:${segColor(seg.label)}">${seg.label}</b> &nbsp;${secToTC(seg.start_sec)}→${secToTC(seg.end_sec)}<br>`;
+                    html += `<span style="color:var(--m-energy)">E</span> ${en} &nbsp;<span style="color:var(--m-centroid)">C</span> ${cn} &nbsp;<span style="color:var(--m-zcr)">Z</span> ${zn}`;
                 }
+                if (ann) {
+                    if (html) html += '<hr style="border-color:#2a2a42;margin:3px 0">';
+                    html += `<span style="color:${annotColor(ann.type)}">📌 ${ann.type}</span> &nbsp;${secToTC(ann.start_sec)}→${secToTC(ann.end_sec)}`;
+                }
+                if (!html) html = secToTC(t);
+                tooltip.innerHTML = html;
             });
             el.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
-        }
-        addTooltipHover('metrics-wrap');
-        addTooltipHover('timeline-wrap');
-        addTooltipHover('waveform-wrap');
+        });
 
         // ═══════════════════════════════════════════════════════════════════
         //  METRICS TOGGLES
@@ -1373,13 +1678,32 @@
             document.getElementById('d-dur').textContent = formatDur(seg.duration_sec);
             document.getElementById('d-idx').textContent = `#${seg.index ?? idx}`;
 
-            // Sparkline bars (normalized position in corpus)
-            const metrics = [
+            // Matching annotations (overlap > 0)
+            const matchWrap = document.getElementById('annot-match-wrap');
+            const matchList = document.getElementById('annot-match-list');
+            const matches = state.annotations.filter(a =>
+                a.start_sec < seg.end_sec && a.end_sec > seg.start_sec);
+            if (matches.length) {
+                matchWrap.style.display = 'block';
+                matchList.innerHTML = matches.map(a => {
+                    const overlap = Math.min(a.end_sec, seg.end_sec) - Math.max(a.start_sec, seg.start_sec);
+                    return `<div class="annot-match-item">
+        <span style="color:${annotColor(a.type)}">${a.type}</span>
+        &nbsp;${secToTC(a.start_sec)}→${secToTC(a.end_sec)}
+        &nbsp;<span style="color:#6b6b8a">overlap ${formatDur(overlap)}</span>
+      </div>`;
+                }).join('');
+            } else {
+                matchWrap.style.display = 'none';
+            }
+
+            // Sparklines
+            const mets = [
                 { id: 'energy', val: seg.energy_mean, range: state.metricRanges.energy, fmt: v => v.toFixed(4) },
                 { id: 'centroid', val: seg.spectral_centroid, range: state.metricRanges.centroid, fmt: v => Math.round(v) + ' Hz' },
                 { id: 'zcr', val: seg.zcr_mean, range: state.metricRanges.zcr, fmt: v => (v * 100).toFixed(3) + '%' },
             ];
-            for (const m of metrics) {
+            for (const m of mets) {
                 const pct = m.val != null ? normalize(m.val, m.range) * 100 : 0;
                 document.getElementById(`sp-${m.id}-val`).textContent = m.val != null ? m.fmt(m.val) : '—';
                 document.getElementById(`sp-${m.id}-bar`).style.width = pct + '%';
@@ -1388,30 +1712,22 @@
 
         function drawMiniWave(seg) {
             if (!state.audioBuffer) return;
-            const buf = state.audioBuffer, sr = buf.sampleRate;
-            const data = buf.getChannelData(0);
-            const s0 = Math.floor(seg.start_sec * sr);
-            const s1 = Math.floor(seg.end_sec * sr);
+            const buf = state.audioBuffer, sr = buf.sampleRate, data = buf.getChannelData(0);
+            const s0 = Math.floor(seg.start_sec * sr), s1 = Math.floor(seg.end_sec * sr);
             const slice = data.slice(s0, s1);
-
             const dpr = window.devicePixelRatio || 1;
-            const W = miniCanvas.parentElement.clientWidth - 36;
-            const H = 55;
+            const W = miniCanvas.parentElement.clientWidth - 32, H = 50;
             miniCanvas.width = W * dpr; miniCanvas.height = H * dpr;
             miniCanvas.style.width = W + 'px'; miniCanvas.style.height = H + 'px';
             const ctx = miniCanvas.getContext('2d');
             ctx.scale(dpr, dpr);
             ctx.fillStyle = '#0d0d17'; ctx.fillRect(0, 0, W, H);
-
-            const step = Math.max(1, Math.floor(slice.length / W));
-            const mid = H / 2, amp = H * 0.42;
+            const step = Math.max(1, Math.floor(slice.length / W)), mid = H / 2, amp = H * 0.42;
             ctx.strokeStyle = segColor(seg.label); ctx.lineWidth = 1.2;
             ctx.beginPath();
             for (let x = 0; x < W; x++) {
                 let mn = 1, mx = -1;
-                for (let i = x * step; i < (x + 1) * step; i++) {
-                    if (slice[i] < mn) mn = slice[i]; if (slice[i] > mx) mx = slice[i];
-                }
+                for (let i = x * step; i < (x + 1) * step; i++) { if (slice[i] < mn) mn = slice[i]; if (slice[i] > mx) mx = slice[i]; }
                 ctx.moveTo(x, mid + mn * amp); ctx.lineTo(x, mid + mx * amp);
             }
             ctx.stroke();
@@ -1421,64 +1737,53 @@
         //  STATS TAB
         // ═══════════════════════════════════════════════════════════════════
         function drawStatsTab() {
-            const segs = state.segments;
-            const total = segs.length;
+            const segs = state.segments, total = segs.length;
             const counts = {}, times = {};
-            for (const s of segs) {
-                counts[s.label] = (counts[s.label] || 0) + 1;
-                times[s.label] = (times[s.label] || 0) + s.duration_sec;
-            }
+            for (const s of segs) { counts[s.label] = (counts[s.label] || 0) + 1; times[s.label] = (times[s.label] || 0) + s.duration_sec; }
             const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-            const totalDur = segs.reduce((acc, s) => acc + s.duration_sec, 0);
+            const totalDur = segs.reduce((a, s) => a + s.duration_sec, 0);
 
-            // Count bars
-            const barsEl = document.getElementById('stats-bars');
-            barsEl.innerHTML = '';
-            for (const [label, count] of sorted) {
+            document.getElementById('stats-bars').innerHTML = sorted.map(([label, count]) => {
                 const pct = count / total * 100;
-                barsEl.innerHTML += `
-      <div class="stat-bar-row">
-        <div class="stat-bar-label" title="${label}" style="color:${segColor(label)}">${label}</div>
-        <div class="stat-bar-track">
-          <div class="stat-bar-fill" style="width:${pct}%;background:${segColor(label)}"></div>
-        </div>
-        <div class="stat-count">${count}</div>
-      </div>`;
-            }
+                return `<div class="stat-bar-row">
+      <div class="stat-bar-label" style="color:${segColor(label)}" title="${label}">${label}</div>
+      <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${segColor(label)}"></div></div>
+      <div class="stat-count">${count}</div></div>`;
+            }).join('');
 
-            // Time bars
-            const timeEl = document.getElementById('stats-time');
-            timeEl.innerHTML = '';
             const timeSorted = Object.entries(times).sort((a, b) => b[1] - a[1]);
-            for (const [label, dur] of timeSorted) {
+            document.getElementById('stats-time').innerHTML = timeSorted.map(([label, dur]) => {
                 const pct = dur / totalDur * 100;
-                timeEl.innerHTML += `
-      <div class="stat-bar-row">
-        <div class="stat-bar-label" title="${label}" style="color:${segColor(label)}">${label}</div>
-        <div class="stat-bar-track">
-          <div class="stat-bar-fill" style="width:${pct}%;background:${segColor(label)}"></div>
-        </div>
-        <div class="stat-count" style="width:60px">${formatDur(dur)}</div>
-      </div>`;
-            }
+                return `<div class="stat-bar-row">
+      <div class="stat-bar-label" style="color:${segColor(label)}" title="${label}">${label}</div>
+      <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${pct}%;background:${segColor(label)}"></div></div>
+      <div class="stat-count" style="width:55px">${formatDur(dur)}</div></div>`;
+            }).join('');
 
-            // Duration stats
             const durs = segs.map(s => s.duration_sec).sort((a, b) => a - b);
             const mean = durs.reduce((a, b) => a + b, 0) / durs.length;
-            const median = durs[Math.floor(durs.length / 2)];
-            const durEl = document.getElementById('stats-dur');
-            durEl.innerHTML = [
-                ['Total', formatDur(totalDur)],
-                ['Segments', total],
-                ['Durée moyenne', formatDur(mean)],
-                ['Médiane', formatDur(median)],
-                ['Plus court', formatDur(durs[0])],
-                ['Plus long', formatDur(durs[durs.length - 1])],
-            ].map(([k, v]) => `
-    <div class="stat-time-row">
-      <span class="key">${k}</span>
-      <span class="val">${v}</span>
+            document.getElementById('stats-dur').innerHTML = [
+                ['Total', formatDur(totalDur)], ['Segments', total],
+                ['Durée moy.', formatDur(mean)], ['Médiane', formatDur(durs[Math.floor(durs.length / 2)])],
+                ['Plus court', formatDur(durs[0])], ['Plus long', formatDur(durs[durs.length - 1])],
+            ].map(([k, v]) => `<div class="stat-time-row"><span class="key">${k}</span><span class="val">${v}</span></div>`).join('');
+        }
+
+        function drawAnnotStats() {
+            const wrap = document.getElementById('annot-stats-wrap');
+            const el = document.getElementById('annot-stats');
+            if (!state.annotations.length) { wrap.style.display = 'none'; return; }
+            wrap.style.display = 'block';
+            const counts = {}, total = state.annotations.length;
+            for (const a of state.annotations) counts[a.type] = (counts[a.type] || 0) + 1;
+            el.innerHTML = Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([type, count]) => `
+    <div class="stat-bar-row">
+      <div class="stat-bar-label" style="color:${annotColor(type)}">${type}</div>
+      <div class="stat-bar-track"><div class="stat-bar-fill" style="width:${count / total * 100}%;background:${annotColor(type)}"></div></div>
+      <div class="stat-count">${count}</div>
     </div>`).join('');
+            el.innerHTML += `<div class="stat-time-row" style="margin-top:6px">
+    <span class="key">Total annotations</span><span class="val" style="color:var(--annot)">${total}</span></div>`;
         }
 
         // ═══════════════════════════════════════════════════════════════════

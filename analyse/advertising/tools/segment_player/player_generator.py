@@ -165,12 +165,29 @@ def encode_media(path: Path):
 # ─────────────────────────────────────────────
 
 
+def parse_start_time(s: str) -> float:
+    """
+    Parse un temps de début en secondes depuis minuit.
+    Formats acceptés : HH:MM:SS  |  YYYY-MM-DDTHH:MM:SS  |  YYYY-MM-DD HH:MM:SS
+    """
+    s = s.strip()
+    if "T" in s or (len(s) > 8 and s[4] == "-"):
+        dt = datetime.fromisoformat(s)
+    else:
+        from datetime import date, time as dtime
+        parts = s.split(":")
+        dt = datetime.combine(date.today(), dtime(int(parts[0]), int(parts[1]), int(float(parts[2]))))
+    return dt.hour * 3600 + dt.minute * 60 + dt.second + dt.microsecond / 1e6
+
+
 def generate_player(
     media_input: str,
     segments: list[dict],
     annotations: list[dict] | None,
     output_path: str | Path,
     params: dict | None = None,
+    novelty_peaks: list | None = None,
+    start_epoch: float | None = None,
 ):
     output_path = Path(output_path)
     annotations = annotations or []
@@ -232,6 +249,8 @@ def generate_player(
         "segments": segments,
         "annotations": annotations,
         "params": params or {},
+        "novelty_peaks": novelty_peaks or [],
+        "start_epoch": start_epoch or 0,
     }
 
     # Injection dans le template
@@ -328,6 +347,17 @@ Format CSV :
         default=None,
         help="Nom du rapport HTML [défaut: <nom_media>_report.html]",
     )
+    parser.add_argument(
+        "--novelty",
+        default=None,
+        help="Fichier JSON des pics de nouveauté (optionnel, généré par script.py --out-novelty)",
+    )
+    parser.add_argument(
+        "--start-time",
+        default=None,
+        dest="start_time",
+        help="Heure de début de l'enregistrement : HH:MM:SS ou YYYY-MM-DDTHH:MM:SS (affichage heure absolue dans le player)",
+    )
     args = parser.parse_args()
 
     media_input = args.media
@@ -361,11 +391,29 @@ Format CSV :
             sys.exit(1)
         annotations = load_csv(str(csv_path))
 
+    novelty_peaks = []
+    if args.novelty:
+        novelty_path = Path(args.novelty)
+        if not novelty_path.exists():
+            print(f"[ERREUR] Fichier novelty peaks introuvable : {novelty_path}")
+            sys.exit(1)
+        with open(novelty_path, encoding="utf-8") as f:
+            novelty_peaks = json.load(f)
+
+    start_epoch = parse_start_time(args.start_time) if args.start_time else None
+    if start_epoch is not None:
+        h = int(start_epoch // 3600)
+        m = int((start_epoch % 3600) // 60)
+        s = int(start_epoch % 60)
+        print(f"   Heure de début      : {h:02d}:{m:02d}:{s:02d}")
+
     generate_player(
         media_input=media_input,
         segments=segments,
         annotations=annotations,
         output_path=str(output),
+        novelty_peaks=novelty_peaks,
+        start_epoch=start_epoch,
     )
 
 

@@ -115,6 +115,20 @@ class RuptureDetector:
         self.max_ruptures = max_ruptures
         self._fps = sr / hop_length  # frames/sec ≈ 43 à sr=22050, hop=512
 
+    def get_novelty_peaks(self, novelty: np.ndarray) -> list:
+        """
+        Retourne tous les pics locaux de la courbe de nouveauté,
+        avec uniquement le filtre distance (min_segment_sec) —
+        avant le seuil sensitivity et le filtre max_ruptures.
+        Utile pour la visualisation interactive du choix des paramètres.
+        """
+        min_dist_frames = int(self.min_segment_sec * self._fps)
+        peaks, _ = find_peaks(novelty, distance=min_dist_frames)
+        return [
+            {"time_sec": round(float(p / self._fps), 4), "novelty": round(float(novelty[p]), 6)}
+            for p in peaks
+        ]
+
     def get_params(self) -> dict:
         """Retourne les paramètres du détecteur sous forme de dict (pour l'embarquer dans le player)."""
         return {
@@ -510,6 +524,11 @@ def main():
         help="Image de visualisation [défaut: rupture_analyse.png]",
     )
     parser.add_argument(
+        "--out-novelty",
+        default="novelty_peaks.json",
+        help="Fichier JSON des pics de nouveauté (pour le player) [défaut: novelty_peaks.json]",
+    )
+    parser.add_argument(
         "--no-plot", action="store_true", help="Désactiver la visualisation"
     )
     args = parser.parse_args()
@@ -524,8 +543,14 @@ def main():
 
     segments, novelty, features, y = detector.run(args.input)
 
+    novelty_peaks = detector.get_novelty_peaks(novelty)
+
     print_summary(segments)
     export_json(segments, args.out_json)
+
+    with open(args.out_novelty, "w", encoding="utf-8") as f:
+        json.dump(novelty_peaks, f, separators=(",", ":"))
+    print(f"    Export novelty peaks : {args.out_novelty} ({len(novelty_peaks)} pics)")
 
     if not args.no_plot:
         plot_results(

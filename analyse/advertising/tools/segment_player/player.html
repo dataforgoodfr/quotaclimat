@@ -350,8 +350,12 @@
             font-size: .7rem;
             color: var(--amber);
             letter-spacing: .07em;
+            cursor: pointer;
+            user-select: none;
             min-width: 128px;
+            transition: color .2s;
         }
+        .time-display.copied { color: #22c55e; }
 
         .speed-select {
             background: var(--panel);
@@ -855,6 +859,30 @@
         .params-row .pkey { color: var(--text-dim); }
         .params-row .pval { color: var(--text); font-weight: 700; }
 
+        /* ── Keyboard shortcuts popover ── */
+        .kbd-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 2px 0;
+            border-bottom: 1px dotted #1a1a2a;
+            font-size: .57rem;
+        }
+        .kbd-row:last-child { border-bottom: none; }
+        .kbd-row .kdesc { color: var(--text-dim); }
+        .kbd-keys { display: flex; gap: 3px; align-items: center; flex-shrink: 0; }
+        .kbd-key {
+            background: #1e1e32;
+            border: 1px solid #3a3a5a;
+            border-radius: 3px;
+            padding: 1px 5px;
+            font-size: .55rem;
+            color: var(--text);
+            white-space: nowrap;
+        }
+        .kbd-sep { color: var(--text-dim); font-size: .5rem; }
+
         /* ── Segment summary panel in right column ── */
         .summary-panel {
             flex-shrink: 0;
@@ -931,6 +959,51 @@
         }
         .zoom-level:hover { border-color: var(--border); }
         .zoom-level.zoomed { color: var(--amber); border-color: var(--amber-dim); }
+
+        /* ── Novelty panel ── */
+        #novelty-wrap {
+            height: 160px;
+            cursor: pointer;
+        }
+        .novelty-toggle {
+            position: absolute;
+            bottom: 5px;
+            right: 8px;
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'Space Mono', monospace;
+            font-size: .5rem;
+            letter-spacing: .06em;
+            padding: 2px 6px;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all .15s;
+            z-index: 10;
+        }
+        .novelty-toggle:hover { border-color: #e879f955; color: #e879f9; }
+        .novelty-toggle.active { border-color: #e879f9aa; color: #e879f9; }
+        .novelty-grp-btns {
+            position: absolute;
+            top: 5px;
+            right: 8px;
+            display: flex;
+            gap: 3px;
+            z-index: 10;
+        }
+        .novelty-grp-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            font-family: 'Space Mono', monospace;
+            font-size: .5rem;
+            padding: 2px 5px;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+        .novelty-grp-btn:hover { border-color: #e879f955; color: #e879f9; }
+        .novelty-grp-btn.active { border-color: #e879f9aa; color: #e879f9; background: #e879f910; }
     </style>
 </head>
 
@@ -940,6 +1013,19 @@
         <h1>RUPTURE DETECTOR</h1>
         <span class="sub">by Quota Climat</span>
         <div class="status-dot" id="status-dot"></div>
+        <div class="params-btn" tabindex="0" title="Raccourcis clavier">
+            ⌨
+            <div class="params-popover" style="min-width:260px">
+                <div class="params-popover-title">Raccourcis clavier</div>
+                <div class="kbd-row"><span class="kdesc">Lecture / pause</span><span class="kbd-keys"><span class="kbd-key">Espace</span></span></div>
+                <div class="kbd-row"><span class="kdesc">Avancer / reculer 10 s</span><span class="kbd-keys"><span class="kbd-key">←</span><span class="kbd-sep">/</span><span class="kbd-key">→</span></span></div>
+                <div class="kbd-row"><span class="kdesc">Avancer / reculer 100 ms</span><span class="kbd-keys"><span class="kbd-key">Ctrl</span><span class="kbd-sep">+</span><span class="kbd-key">←</span><span class="kbd-sep">/</span><span class="kbd-key">→</span></span></div>
+                <div class="kbd-row"><span class="kdesc">Zoom temporel</span><span class="kbd-keys"><span class="kbd-key">Scroll</span></span></div>
+                <div class="kbd-row"><span class="kdesc">Panoramique</span><span class="kbd-keys"><span class="kbd-key">Ctrl</span><span class="kbd-sep">+</span><span class="kbd-key">Scroll</span></span></div>
+                <div class="kbd-row"><span class="kdesc">Réinitialiser zoom</span><span class="kbd-keys"><span class="kbd-key">Double-clic</span></span></div>
+                <div class="kbd-row"><span class="kdesc">Afficher pics de nouveauté</span><span class="kbd-keys"><span class="kbd-key">⚡ novelty</span></span></div>
+            </div>
+        </div>
         <div class="params-btn" tabindex="0" title="Paramètres d'extraction">
             ⚙
             <div class="params-popover">
@@ -972,6 +1058,11 @@
                     <span>📌</span>
                     <span id="csv-label">annotations.csv</span>
                     <input type="file" accept=".csv,.txt" id="input-csv">
+                </label>
+                <label class="file-btn" id="btn-novelty">
+                    <span>⚡</span>
+                    <span id="novelty-file-label">novelty_peaks.json</span>
+                    <input type="file" accept=".json" id="input-novelty">
                 </label>
             </div>
 
@@ -1011,6 +1102,21 @@
             <div class="canvas-wrap" id="timeline-wrap">
                 <canvas id="timeline-canvas"></canvas>
                 <div class="playhead-line" id="timeline-playhead"></div>
+                <button class="novelty-toggle" id="novelty-toggle" style="display:none">⚡ novelty</button>
+            </div>
+
+            <!-- Novelty peaks (hidden by default) -->
+            <div class="canvas-wrap" id="novelty-wrap" style="display:none">
+                <canvas id="novelty-canvas"></canvas>
+                <div class="playhead-line" id="novelty-playhead"></div>
+                <div class="canvas-label">Pics de nouveauté</div>
+                <div class="novelty-grp-btns">
+                    <button class="novelty-grp-btn" data-g="1">1</button>
+                    <button class="novelty-grp-btn active" data-g="10">10</button>
+                    <button class="novelty-grp-btn" data-g="20">20</button>
+                    <button class="novelty-grp-btn" data-g="50">50</button>
+                    <button class="novelty-grp-btn" data-g="100">100</button>
+                </div>
             </div>
 
             <!-- Controls -->
@@ -1191,6 +1297,11 @@
             params: {},
             viewStart: 0,
             viewEnd: 0,
+            noveltyPeaks: [],
+            noveltyGroupSize: 10,
+            noveltyVisible: false,
+            noveltyHoverY: null,
+            startEpoch: 0,   // secondes depuis minuit pour l'affichage heure absolue
         };
 
         // ═══════════════════════════════════════════════════════════════════
@@ -1214,6 +1325,8 @@
         const waveCanvas = document.getElementById('waveform-canvas');
         const metricsCanvas = document.getElementById('metrics-canvas');
         const tlCanvas = document.getElementById('timeline-canvas');
+        const noveltyCanvas = document.getElementById('novelty-canvas');
+        const noveltyHead = document.getElementById('novelty-playhead');
         const miniCanvas = document.getElementById('mini-canvas');
         const tooltip = document.getElementById('tooltip');
 
@@ -1249,6 +1362,8 @@
             if (data.segments) loadSegments(data.segments);
             if (data.annotations) loadAnnotations(data.annotations);
             if (data.params) populateParams(data.params);
+            if (data.novelty_peaks && data.novelty_peaks.length) loadNoveltyPeaks(data.novelty_peaks);
+            if (data.start_epoch) state.startEpoch = data.start_epoch;
 
             // ── Mode URL : le média n'est pas embarqué, le navigateur le charge ──
             if (data.media_url) {
@@ -1385,6 +1500,14 @@
             loadAnnotations(parseCSV(text));
             document.getElementById('csv-label').textContent = `${file.name} (${state.annotations.length})`;
             document.getElementById('btn-csv').classList.add('loaded');
+        });
+
+        document.getElementById('input-novelty').addEventListener('change', async (e) => {
+            const file = e.target.files[0]; if (!file) return;
+            const text = await file.text();
+            loadNoveltyPeaks(JSON.parse(text));
+            document.getElementById('novelty-file-label').textContent = `${file.name} (${state.noveltyPeaks.length})`;
+            document.getElementById('btn-novelty').classList.add('loaded');
         });
 
         // ─── Video activation ───────────────────────────────────────────
@@ -1647,17 +1770,16 @@
             for (let t = firstTick; t < vEnd; t += step) {
                 const x = toX(t);
                 ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, rowH); ctx.stroke();
-                if (x > 22) ctx.fillText(secToTC(t), x + 2, 10);
+                if (x > 22) ctx.fillText(secToWall(t), x + 2, 10);
             }
 
             // Auto-detected segments
-            const PAD_L = 24;
             for (let i = 0; i < state.segments.length; i++) {
                 const seg = state.segments[i];
                 if (seg.end_sec < vStart || seg.start_sec > vEnd) continue;
-                const x1 = Math.max(toX(seg.start_sec), PAD_L);
+                const x1 = Math.max(toX(seg.start_sec), 0);
                 const x2 = Math.min(toX(seg.end_sec), W);
-                if (x2 <= PAD_L) continue;
+                if (x2 <= 0) continue;
                 const col = segColor(seg.label);
                 const act = i === state.currentSegIdx;
                 ctx.fillStyle = act ? col : col + 'aa';
@@ -1668,9 +1790,9 @@
             if (hasAnnot) {
                 for (const a of state.annotations) {
                     if (a.end_sec < vStart || a.start_sec > vEnd) continue;
-                    const x1 = Math.max(toX(a.start_sec), PAD_L);
+                    const x1 = Math.max(toX(a.start_sec), 0);
                     const x2 = Math.min(toX(a.end_sec), W);
-                    if (x2 <= PAD_L) continue;
+                    if (x2 <= 0) continue;
                     const col = annotColor(a.type);
                     ctx.fillStyle = col + 'cc';
                     ctx.fillRect(x1, row2Y + 4, Math.max(x2 - x1 - .5, 1), rowH - 10);
@@ -1680,6 +1802,128 @@
                         ctx.fillText(a.type.substring(0, 8), x1 + 3, row2Y + rowH - 8);
                     }
                 }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
+        //  NOVELTY PANEL
+        // ═══════════════════════════════════════════════════════════════════
+        function loadNoveltyPeaks(peaks) {
+            state.noveltyPeaks = peaks;
+            document.getElementById('novelty-toggle').style.display = '';
+            if (state.noveltyVisible) drawNoveltyChart();
+        }
+
+        function drawNoveltyChart() {
+            const peaks = state.noveltyPeaks;
+            if (!peaks || !peaks.length || !state.duration) return;
+            const { ctx, W, H } = setupCanvas(noveltyCanvas, 'novelty-wrap');
+            const { start: vStart, end: vEnd, span: vSpan } = getView();
+            const toX = t => (t - vStart) / vSpan * W;
+
+            ctx.fillStyle = '#09090f'; ctx.fillRect(0, 0, W, H);
+
+            const G = state.noveltyGroupSize;
+            const sorted = [...peaks].sort((a, b) => b.novelty - a.novelty);
+            const MAX_LINES = 20;
+            const numGroups = Math.min(MAX_LINES, Math.ceil(sorted.length / G));
+            if (!numGroups) return;
+
+            const groups = [];
+            for (let g = 0; g < numGroups; g++) {
+                const slice = sorted.slice(g * G, (g + 1) * G);
+                if (!slice.length) break;
+                groups.push({ peaks: slice, threshold: slice[slice.length - 1].novelty });
+            }
+
+            const PAD_TOP = 14;
+            const usableH = H - PAD_TOP;
+            const bandH = usableH / groups.length;
+
+            // Compute hover threshold from mouse Y
+            let hoverThreshold = null, countAbove = 0;
+            const hoverY = state.noveltyHoverY;
+            if (hoverY !== null && hoverY >= PAD_TOP && hoverY <= H) {
+                const frac = Math.max(0, Math.min(0.9999, (hoverY - PAD_TOP) / usableH));
+                const groupIdx = Math.min(Math.floor(frac * numGroups), numGroups - 1);
+                hoverThreshold = groups[groupIdx].threshold;
+                countAbove = sorted.filter(p => p.novelty >= hoverThreshold).length;
+            }
+
+            // Bars + threshold lines
+            groups.forEach((grp, i) => {
+                const lineY = PAD_TOP + ((i + 1) / groups.length) * usableH;
+
+                for (const peak of grp.peaks) {
+                    if (peak.time_sec < vStart || peak.time_sec > vEnd) continue;
+                    const x = Math.round(toX(peak.time_sec));
+                    if (hoverThreshold !== null) {
+                        if (peak.novelty >= hoverThreshold) {
+                            ctx.fillStyle = '#e879f9';
+                            ctx.fillRect(x - 1, lineY, 3, H - lineY);
+                        } else {
+                            ctx.fillStyle = 'rgba(232, 121, 249, 0.08)';
+                            ctx.fillRect(x - 1, lineY, 2, H - lineY);
+                        }
+                    } else {
+                        const alpha = Math.max(0.15, 0.9 - (i / groups.length) * 0.65);
+                        ctx.fillStyle = `rgba(232, 121, 249, ${alpha})`;
+                        ctx.fillRect(x - 1, lineY, 2, H - lineY);
+                    }
+                }
+
+                // Threshold line
+                const lineAlpha = Math.max(0.12, 0.55 - i * 0.02);
+                ctx.strokeStyle = `rgba(232, 121, 249, ${lineAlpha})`;
+                ctx.lineWidth = i === 0 ? 1.5 : 1;
+                ctx.setLineDash(i === 0 ? [] : [4, 3]);
+                ctx.beginPath(); ctx.moveTo(0, lineY); ctx.lineTo(W, lineY); ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Label
+                if (bandH >= 8) {
+                    const start = i * G + 1;
+                    const end = Math.min((i + 1) * G, sorted.length);
+                    ctx.fillStyle = '#3a3a5a';
+                    ctx.font = `${Math.min(7, bandH - 2)}px "Space Mono"`;
+                    ctx.textAlign = 'left';
+                    ctx.fillText(`top ${start}–${end}`, 4, lineY - 2);
+                    ctx.textAlign = 'right';
+                    ctx.fillText(`≥ ${grp.threshold.toFixed(4)}`, W - 4, lineY - 2);
+                    ctx.textAlign = 'left';
+                }
+            });
+
+            // Segment boundary markers
+            ctx.strokeStyle = '#ffffff0e'; ctx.lineWidth = 1; ctx.setLineDash([]);
+            for (const seg of state.segments) {
+                const x = toX(seg.start_sec);
+                if (x < 0 || x > W) continue;
+                ctx.beginPath(); ctx.moveTo(x, PAD_TOP); ctx.lineTo(x, H); ctx.stroke();
+            }
+
+            // ── Hover overlay ──
+            if (hoverThreshold !== null && hoverY >= PAD_TOP) {
+                // Dashed horizontal line
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 3]);
+                ctx.beginPath(); ctx.moveTo(0, hoverY); ctx.lineTo(W, hoverY); ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Badge: novelty value + rupture count
+                const label = `≥ ${hoverThreshold.toFixed(4)}  ·  ${countAbove} rupture${countAbove !== 1 ? 's' : ''}`;
+                ctx.font = '8px "Space Mono"';
+                const textW = ctx.measureText(label).width;
+                const bPad = 5, bH = 14, bX = 4;
+                const bY = hoverY > PAD_TOP + bH + 4 ? hoverY - bH - 2 : hoverY + 3;
+                ctx.fillStyle = '#13131eee';
+                ctx.fillRect(bX, bY, textW + bPad * 2, bH);
+                ctx.strokeStyle = 'rgba(232, 121, 249, 0.65)';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(bX, bY, textW + bPad * 2, bH);
+                ctx.fillStyle = '#e8e8f0';
+                ctx.fillText(label, bX + bPad, bY + 10);
             }
         }
 
@@ -1696,7 +1940,7 @@
                 item.innerHTML = `
       <div class="seg-color-bar" style="background:${color}"></div>
       <div class="seg-info">
-        <div class="seg-tc">${seg.start_tc || secToTC(seg.start_sec)}</div>
+        <div class="seg-tc">${secToWall(seg.start_sec)}</div>
         <div class="seg-label" style="color:${color}">${seg.label}</div>
       </div>
       <div class="seg-dur">${formatDur(seg.duration_sec)}</div>`;
@@ -1724,7 +1968,6 @@
         function seekToTime(t) {
             const me = mediaEl(); if (!me.src) return;
             me.currentTime = t;
-            if (!state.playing) { me.play(); state.playing = true; btnPlay.textContent = '⏸'; }
         }
 
         function highlightSeg(idx) {
@@ -1773,9 +2016,17 @@
                 playhead.style.display = 'none';
                 metricsHead.style.display = 'none';
                 tlPlayhead.style.display = 'none';
+                noveltyHead.style.display = 'none';
             }
-            timeLabel.textContent = secToTC(t);
-            timeDisplay.textContent = `${secToTC(t)} / ${secToTC(state.duration)}`;
+            if (state.noveltyVisible && t >= vStart && t <= vEnd) {
+                const NovW = document.getElementById('novelty-wrap').clientWidth;
+                noveltyHead.style.display = '';
+                noveltyHead.style.left = ((t - vStart) / vSpan) * NovW + 'px';
+            } else if (!state.noveltyVisible) {
+                noveltyHead.style.display = 'none';
+            }
+            timeLabel.textContent = secToWall(t);
+            timeDisplay.textContent = `${secToWall(t)} / ${secToWall(state.duration)}`;
             updateActiveSeg();
             requestAnimationFrame(rafLoop);
         }
@@ -1792,6 +2043,14 @@
         });
         btnPrev.addEventListener('click', () => seekToSegment(Math.max(0, state.currentSegIdx - 1)));
         btnNext.addEventListener('click', () => seekToSegment(Math.min(state.segments.length - 1, state.currentSegIdx + 1)));
+        timeDisplay.title = 'Cliquer pour copier l\'heure';
+        timeDisplay.addEventListener('click', () => {
+            const me = mediaEl(); if (!me.src) return;
+            navigator.clipboard.writeText(secToWall(me.currentTime)).then(() => {
+                timeDisplay.classList.add('copied');
+                setTimeout(() => timeDisplay.classList.remove('copied'), 900);
+            });
+        });
         speedSel.addEventListener('change', () => {
             const r = parseFloat(speedSel.value);
             audioEl.playbackRate = r; videoEl.playbackRate = r;
@@ -1851,14 +2110,14 @@
                     const en = seg.energy_mean != null ? (normalize(seg.energy_mean, state.metricRanges.energy) * 100).toFixed(0) + '%' : '—';
                     const cn = seg.spectral_centroid != null ? Math.round(seg.spectral_centroid) + 'Hz' : '—';
                     const zn = seg.zcr_mean != null ? (seg.zcr_mean * 100).toFixed(2) + '%' : '—';
-                    html += `<b style="color:${segColor(seg.label)}">${seg.label}</b> &nbsp;${secToTC(seg.start_sec)}→${secToTC(seg.end_sec)}<br>`;
+                    html += `<b style="color:${segColor(seg.label)}">${seg.label}</b> &nbsp;${secToWall(seg.start_sec)}→${secToWall(seg.end_sec)}<br>`;
                     html += `<span style="color:var(--m-energy)">E</span> ${en} &nbsp;<span style="color:var(--m-centroid)">C</span> ${cn} &nbsp;<span style="color:var(--m-zcr)">Z</span> ${zn}`;
                 }
                 if (ann) {
                     if (html) html += '<hr style="border-color:#2a2a42;margin:3px 0">';
-                    html += `<span style="color:${annotColor(ann.type)}">📌 ${ann.type}</span> &nbsp;${secToTC(ann.start_sec)}→${secToTC(ann.end_sec)}`;
+                    html += `<span style="color:${annotColor(ann.type)}">📌 ${ann.type}</span> &nbsp;${secToWall(ann.start_sec)}→${secToWall(ann.end_sec)}`;
                 }
-                if (!html) html = secToTC(t);
+                if (!html) html = secToWall(t);
                 tooltip.innerHTML = html;
             });
             el.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
@@ -1898,8 +2157,8 @@
             const badge = document.getElementById('d-badge');
             badge.textContent = seg.label;
             badge.style.cssText = `background:${color}22;color:${color};border:1px solid ${color}44`;
-            document.getElementById('d-start').textContent = seg.start_tc || secToTC(seg.start_sec);
-            document.getElementById('d-end').textContent = seg.end_tc || secToTC(seg.end_sec);
+            document.getElementById('d-start').textContent = secToWall(seg.start_sec);
+            document.getElementById('d-end').textContent = secToWall(seg.end_sec);
             document.getElementById('d-dur').textContent = formatDur(seg.duration_sec);
             document.getElementById('d-idx').textContent = `#${seg.index ?? idx}`;
 
@@ -1914,7 +2173,7 @@
                     const overlap = Math.min(a.end_sec, seg.end_sec) - Math.max(a.start_sec, seg.start_sec);
                     return `<div class="annot-match-item">
         <span style="color:${annotColor(a.type)}">${a.type}</span>
-        &nbsp;${secToTC(a.start_sec)}→${secToTC(a.end_sec)}
+        &nbsp;${secToWall(a.start_sec)}→${secToWall(a.end_sec)}
         &nbsp;<span style="color:#6b6b8a">overlap ${formatDur(overlap)}</span>
       </div>`;
                 }).join('');
@@ -2079,14 +2338,14 @@
 
             html += `<div class="summary-sub-title">⬇ 5 plus courts</div>`;
             html += byDur.slice(0, 5).map(s => `<div class="summary-seg-row">
-                <span style="color:var(--text-dim);flex-shrink:0">${s.start_tc || secToTC(s.start_sec)}</span>
+                <span style="color:var(--text-dim);flex-shrink:0">${secToWall(s.start_sec)}</span>
                 <span style="color:${segColor(s.label)};flex:1">${s.label}</span>
                 <span style="color:var(--text);flex-shrink:0">${formatDur(s.duration_sec)}</span>
             </div>`).join('');
 
             html += `<div class="summary-sub-title">⬆ 5 plus longs</div>`;
             html += byDur.slice(-5).reverse().map(s => `<div class="summary-seg-row">
-                <span style="color:var(--text-dim);flex-shrink:0">${s.start_tc || secToTC(s.start_sec)}</span>
+                <span style="color:var(--text-dim);flex-shrink:0">${secToWall(s.start_sec)}</span>
                 <span style="color:${segColor(s.label)};flex:1">${s.label}</span>
                 <span style="color:var(--text);flex-shrink:0">${formatDur(s.duration_sec)}</span>
             </div>`).join('');
@@ -2101,6 +2360,14 @@
             const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = (t % 60).toFixed(1).padStart(4, '0');
             return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${s}`;
         }
+        function secToWall(t) {
+            if (!state.startEpoch) return secToTC(t);
+            const total = Math.floor(state.startEpoch + t);
+            const h = Math.floor(total / 3600) % 24;
+            const m = Math.floor((total % 3600) / 60);
+            const s = total % 60;
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+        }
         function formatDur(s) {
             if (s < 60) return s.toFixed(1) + 's';
             if (s < 3600) return Math.floor(s / 60) + 'min ' + Math.round(s % 60) + 's';
@@ -2109,7 +2376,7 @@
 
         window.addEventListener('resize', redrawAll);
 
-        // Spacebar → play/pause
+        // Spacebar → play/pause, Arrow keys → seek
         document.addEventListener('keydown', (e) => {
             if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
             if (e.code === 'Space') {
@@ -2117,11 +2384,71 @@
                 const me = mediaEl(); if (!me.src) return;
                 state.playing ? me.pause() : me.play();
             }
+            if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+                e.preventDefault();
+                const me = mediaEl(); if (!me.src) return;
+                const sign = e.code === 'ArrowRight' ? 1 : -1;
+                const delta = e.ctrlKey ? sign * 0.1 : sign * 10;
+                me.currentTime = Math.max(0, Math.min(state.duration, me.currentTime + delta));
+            }
         });
 
         // Zoom indicator click → reset zoom
         document.getElementById('zoom-level').addEventListener('click', () => {
             resetZoom(); redrawAll(); updateZoomIndicator();
+        });
+
+        // Novelty toggle
+        document.getElementById('novelty-toggle').addEventListener('click', () => {
+            state.noveltyVisible = !state.noveltyVisible;
+            const wrap = document.getElementById('novelty-wrap');
+            const btn = document.getElementById('novelty-toggle');
+            wrap.style.display = state.noveltyVisible ? '' : 'none';
+            btn.classList.toggle('active', state.noveltyVisible);
+            if (state.noveltyVisible) drawNoveltyChart();
+        });
+
+        // Novelty group size buttons
+        document.querySelectorAll('.novelty-grp-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation(); // don't seek on click
+                state.noveltyGroupSize = parseInt(btn.dataset.g);
+                document.querySelectorAll('.novelty-grp-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                if (state.noveltyVisible) drawNoveltyChart();
+            });
+        });
+
+        // Novelty canvas click → seek (same as other canvases)
+        document.getElementById('novelty-wrap').addEventListener('click', (e) => {
+            if (e.target.closest('.novelty-grp-btns')) return;
+            if (!state.duration) return;
+            const rect = document.getElementById('novelty-wrap').getBoundingClientRect();
+            const { start: vStart, span: vSpan } = getView();
+            seekToTime(vStart + (e.clientX - rect.left) / rect.width * vSpan);
+        });
+        document.getElementById('novelty-wrap').addEventListener('wheel', (e) => {
+            if (!state.duration) return;
+            e.preventDefault();
+            const rect = document.getElementById('novelty-wrap').getBoundingClientRect();
+            const { start: vStart, span: vSpan } = getView();
+            const mouseT = vStart + (e.clientX - rect.left) / rect.width * vSpan;
+            if (e.ctrlKey || e.metaKey || e.shiftKey) { panView(vSpan * 0.15 * Math.sign(e.deltaY)); }
+            else { zoomView(mouseT, e.deltaY > 0 ? 1.4 : 1 / 1.4); }
+            redrawAll(); updateZoomIndicator();
+        }, { passive: false });
+        document.getElementById('novelty-wrap').addEventListener('dblclick', () => {
+            resetZoom(); redrawAll(); updateZoomIndicator();
+        });
+        document.getElementById('novelty-wrap').addEventListener('mousemove', (e) => {
+            if (!state.noveltyVisible || !state.noveltyPeaks.length) return;
+            const rect = document.getElementById('novelty-wrap').getBoundingClientRect();
+            state.noveltyHoverY = e.clientY - rect.top;
+            drawNoveltyChart();
+        });
+        document.getElementById('novelty-wrap').addEventListener('mouseleave', () => {
+            state.noveltyHoverY = null;
+            if (state.noveltyVisible) drawNoveltyChart();
         });
 
         // ═══════════════════════════════════════════════════════════════════
@@ -2157,7 +2484,10 @@
 
         function resetZoom() { state.viewStart = 0; state.viewEnd = 0; }
 
-        function redrawAll() { drawWaveform(); drawTimeline(); drawMetrics(); }
+        function redrawAll() {
+            drawWaveform(); drawTimeline(); drawMetrics();
+            if (state.noveltyVisible) drawNoveltyChart();
+        }
 
         function updateZoomIndicator() {
             const el = document.getElementById('zoom-level');

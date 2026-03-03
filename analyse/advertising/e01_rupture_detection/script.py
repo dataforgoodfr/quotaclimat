@@ -18,7 +18,7 @@ import librosa.display
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.ndimage import uniform_filter1d
+from scipy.ndimage import maximum_filter1d, uniform_filter1d
 from scipy.signal import find_peaks
 
 # ─────────────────────────────────────────────
@@ -104,6 +104,11 @@ class RuptureDetector:
         # ↑ Si > 0 : ne garder que les N ruptures les plus intenses, quelle que
         # soit la sensitivity. Utile pour forcer un nombre max de segments.
         # Ex : max_ruptures=50 garantit au plus 51 segments sur toute la durée.
+        silence_percentile: float = 5.0,
+        # ↑ Percentile d'énergie RMS en dessous duquel une frame est considérée
+        # comme silencieuse. 5 = 5% des frames les plus silencieuses du fichier.
+        # Augmenter (8–15) si les silences sont moins nets (parole continue).
+        # Baisser (1–3) si seuls les vrais blancs doivent compter.
     ):
         self.sr = sr
         self.hop_length = hop_length
@@ -113,6 +118,7 @@ class RuptureDetector:
         self.min_segment_sec = min_segment_sec
         self.sensitivity = sensitivity
         self.max_ruptures = max_ruptures
+        self.silence_percentile = silence_percentile
         self._fps = sr / hop_length  # frames/sec ≈ 43 à sr=22050, hop=512
 
     def get_novelty_peaks(self, novelty: np.ndarray) -> list:
@@ -125,7 +131,10 @@ class RuptureDetector:
         min_dist_frames = int(self.min_segment_sec * self._fps)
         peaks, _ = find_peaks(novelty, distance=min_dist_frames)
         return [
-            {"time_sec": round(float(p / self._fps), 4), "novelty": round(float(novelty[p]), 6)}
+            {
+                "time_sec": round(float(p / self._fps), 4),
+                "novelty": round(float(novelty[p]), 6),
+            }
             for p in peaks
         ]
 
@@ -141,6 +150,7 @@ class RuptureDetector:
             "min_segment_sec": self.min_segment_sec,
             "sensitivity": self.sensitivity,
             "max_ruptures": self.max_ruptures,
+            "silence_percentile": self.silence_percentile,
         }
 
     def load(self, path: str) -> np.ndarray:
@@ -174,30 +184,53 @@ class RuptureDetector:
             "zcr": zcr,
         }
 
-    def compute_novelty(self, stack: np.ndarray) -> np.ndarray:
+    def compute_novelty(self, stack: np.ndarray, energy: np.ndarray) -> np.ndarray:
         """
-        Courbe de nouveauté par similarité cosinus glissante.
+        Courbe de nouveauté en deux étapes complémentaires :
 
-        Pour chaque instant i, on compare :
-          - la moyenne des `kernel` frames qui précèdent  (passé proche)
-          - la moyenne des `kernel` frames qui suivent    (futur proche)
-        Dissimilarité cosinus → pic = rupture sonore.
+        1. SILENCE (critère primaire)
+           Les transitions pub/jingle/émission passent systématiquement par un
+           silence visible sur la forme d'onde. Seuls les instants silencieux
+           peuvent produire une forte nouveauté.
+           → silence_mask[i] = 1 si energy[i] < percentile(silence_percentile), 0 sinon.
+           → Dilaté légèrement pour couvrir les bords du silence.
 
-        kernel = context_sec × fps
-          ex : context_sec=1.0, fps≈43  →  kernel=43 frames = 1 seconde de contexte
-          avant : kernel hardcodé à 8 frames ≈ 184ms → trop court, capturait le bruit.
+        2. DISSIMILARITÉ COSINUS (critère secondaire)
+           Parmi les instants silencieux, mesure à quel point le contenu sonore
+           avant et après diffère. Permet de distinguer une vraie rupture
+           (pub→pub, jingle→émission) d'une simple pause au sein d'un même contenu.
+
+        novelty[i] = silence_mask[i] × cosine_dissimilarity[i]
+
+        Un instant sans silence aura novelty = 0, quelle que soit la dissimilarité
+        cosinus (les variations de timbre en cours d'émission sont ignorées).
         """
         print("[3/5] Calcul de la courbe de nouveauté...")
 
         n_frames = stack.shape[1]
         kernel = max(4, int(self.context_sec * self._fps))
-
         print(
             f"      Fenêtre de contexte : {kernel} frames = {kernel / self._fps:.2f}s de chaque côté"
         )
 
-        novelty = np.zeros(n_frames)
+        # ── 1. Masque silence ────────────────────────────────────────────────
+        silence_threshold = np.percentile(energy, self.silence_percentile)
+        silence_mask = (energy < silence_threshold).astype(float)
 
+        # Dilatation : élargit le masque autour de chaque silence (~100 ms)
+        # pour que le pic de nouveauté puisse tomber aux bords du silence.
+        dilation_frames = max(1, int(0.1 * self._fps))
+        silence_mask = maximum_filter1d(silence_mask, size=dilation_frames * 2 + 1)
+
+        n_silent = int(silence_mask.sum())
+        print(
+            f"      Seuil silence       : énergie < {silence_threshold:.5f} "
+            f"(percentile {self.silence_percentile}) "
+            f"→ {n_silent} frames silencieuses ({100 * n_silent / n_frames:.1f}%)"
+        )
+
+        # ── 2. Dissimilarité cosinus ─────────────────────────────────────────
+        cosine_dissim = np.zeros(n_frames)
         norms = np.linalg.norm(stack, axis=0, keepdims=True) + 1e-8
         X = stack / norms
 
@@ -207,9 +240,14 @@ class RuptureDetector:
             cos_sim = np.dot(past, future) / (
                 np.linalg.norm(past) * np.linalg.norm(future) + 1e-8
             )
-            novelty[i] = 1.0 - cos_sim
+            cosine_dissim[i] = 1.0 - cos_sim
 
-        # Lissage en secondes → frames
+        # ── 3. Combinaison : silence × dissimilarité ─────────────────────────
+        # Seuls les instants silencieux héritent d'une forte nouveauté ;
+        # la dissimilarité cosinus affine le score pour trouver les vraies ruptures.
+        novelty = silence_mask * cosine_dissim
+
+        # Lissage léger pour faciliter la détection de pics
         smooth_frames = max(3, int(self.novelty_smooth_sec * self._fps))
         novelty = uniform_filter1d(novelty, size=smooth_frames)
         print(
@@ -334,7 +372,7 @@ class RuptureDetector:
     def run(self, path: str) -> tuple[List[Segment], np.ndarray, dict, np.ndarray]:
         y = self.load(path)
         features = self.extract_features(y)
-        novelty = self.compute_novelty(features["stack"])
+        novelty = self.compute_novelty(features["stack"], features["energy"])
         duration = len(y) / self.sr
         boundaries = self.detect_boundaries(novelty, duration)
         segments = self.build_segments(boundaries, features)

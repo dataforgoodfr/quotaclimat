@@ -2409,15 +2409,17 @@
         //  HELPERS
         // ═══════════════════════════════════════════════════════════════════
         function secToTC(t) {
-            const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = (t % 60).toFixed(1).padStart(4, '0');
+            const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = (t % 60).toFixed(3).padStart(6, '0');
             return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${s}`;
         }
         function secToWall(t) {
             if (!state.startEpoch) return secToTC(t);
+            const absT = state.startEpoch + t;
+            const ms = String(Math.floor((absT % 1) * 1000)).padStart(3, '0');
             return new Intl.DateTimeFormat('fr-FR', {
                 timeZone: 'Europe/Paris',
                 hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
-            }).format(new Date((state.startEpoch + t) * 1000));
+            }).format(new Date(absT * 1000)) + '.' + ms;
         }
         function formatDur(s) {
             if (s < 60) return s.toFixed(1) + 's';

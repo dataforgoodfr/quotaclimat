@@ -577,7 +577,7 @@
             justify-content: space-between;
             align-items: baseline;
             padding: 3px 0;
-            border-bottom: 1px dotted #1e1e2e;
+            border-bottom: 1px dotted var(--border);
             font-size: .62rem;
         }
 
@@ -850,7 +850,7 @@
             justify-content: space-between;
             gap: 10px;
             padding: 2px 0;
-            border-bottom: 1px dotted #1a1a2a;
+            border-bottom: 1px dotted var(--border);
             font-size: .57rem;
         }
 
@@ -866,7 +866,7 @@
             align-items: center;
             gap: 10px;
             padding: 2px 0;
-            border-bottom: 1px dotted #1a1a2a;
+            border-bottom: 1px dotted var(--border);
             font-size: .57rem;
         }
         .kbd-row:last-child { border-bottom: none; }
@@ -942,7 +942,7 @@
             gap: 5px;
             font-size: .53rem;
             padding: 1px 0;
-            border-bottom: 1px dotted #1a1a2a;
+            border-bottom: 1px dotted var(--border);
         }
         /* ── Zoom indicator ── */
         .zoom-level {
@@ -1004,6 +1004,57 @@
         }
         .novelty-grp-btn:hover { border-color: #e879f955; color: #e879f9; }
         .novelty-grp-btn.active { border-color: #e879f9aa; color: #e879f9; background: #e879f910; }
+
+        /* ══════════════════════════════════════════════════════════
+           LIGHT THEME  (prefers-color-scheme: light)
+           Les canvases d'analyse restent sombres intentionnellement.
+           ══════════════════════════════════════════════════════════ */
+        @media (prefers-color-scheme: light) {
+            :root {
+                --bg: #f2f2f8;
+                --panel: #ffffff;
+                --border: #d8d8ec;
+                --amber: #b06200;
+                --amber-dim: #b06200;
+                --muted: #c0c0d8;
+                --text: #1a1a2e;
+                --text-dim: #6a6a8a;
+                --silence: #8a8aaa;
+                --unknown: #8a8aaa;
+            }
+
+            body::before { opacity: .08; }
+
+            /* Segment list items */
+            .seg-item { border-bottom-color: #eaeaf4; }
+            .seg-item:hover { background: #ededf8; }
+            .seg-item.active { background: #e4e4f5; }
+
+            /* Tooltip */
+            #tooltip {
+                background: #ffffff;
+                box-shadow: 0 2px 12px #00000022;
+            }
+
+            /* Params / shortcuts popover */
+            .params-popover {
+                background: #ffffff;
+                box-shadow: 0 4px 20px #00000018;
+            }
+
+            /* Keyboard key badges */
+            .kbd-key {
+                background: #eeeef8;
+                border-color: #c8c8e0;
+                color: var(--text);
+            }
+
+            /* Load zone */
+            .load-zone { border-bottom-color: var(--border); }
+
+            /* Zoom indicator */
+            .zoom-level.zoomed { color: var(--amber); border-color: var(--amber); }
+        }
     </style>
 </head>
 
@@ -1023,6 +1074,7 @@
                 <div class="kbd-row"><span class="kdesc">Zoom temporel</span><span class="kbd-keys"><span class="kbd-key">Scroll</span></span></div>
                 <div class="kbd-row"><span class="kdesc">Panoramique</span><span class="kbd-keys"><span class="kbd-key">Ctrl</span><span class="kbd-sep">+</span><span class="kbd-key">Scroll</span></span></div>
                 <div class="kbd-row"><span class="kdesc">Réinitialiser zoom</span><span class="kbd-keys"><span class="kbd-key">Double-clic</span></span></div>
+                <div class="kbd-row"><span class="kdesc">Copier l'heure actuelle</span><span class="kbd-keys"><span class="kbd-key">C</span></span></div>
                 <div class="kbd-row"><span class="kdesc">Afficher pics de nouveauté</span><span class="kbd-keys"><span class="kbd-key">⚡ novelty</span></span></div>
             </div>
         </div>
@@ -1359,11 +1411,11 @@
             const raw = document.getElementById('embedded-data').textContent.trim();
             if (!raw || raw === 'null') return;
             const data = JSON.parse(raw);
+            if (data.start_epoch) state.startEpoch = data.start_epoch;   // must be set before loadSegments
             if (data.segments) loadSegments(data.segments);
             if (data.annotations) loadAnnotations(data.annotations);
             if (data.params) populateParams(data.params);
             if (data.novelty_peaks && data.novelty_peaks.length) loadNoveltyPeaks(data.novelty_peaks);
-            if (data.start_epoch) state.startEpoch = data.start_epoch;
 
             // ── Mode URL : le média n'est pas embarqué, le navigateur le charge ──
             if (data.media_url) {
@@ -2362,11 +2414,10 @@
         }
         function secToWall(t) {
             if (!state.startEpoch) return secToTC(t);
-            const total = Math.floor(state.startEpoch + t);
-            const h = Math.floor(total / 3600) % 24;
-            const m = Math.floor((total % 3600) / 60);
-            const s = total % 60;
-            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+            return new Intl.DateTimeFormat('fr-FR', {
+                timeZone: 'Europe/Paris',
+                hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+            }).format(new Date((state.startEpoch + t) * 1000));
         }
         function formatDur(s) {
             if (s < 60) return s.toFixed(1) + 's';
@@ -2390,6 +2441,13 @@
                 const sign = e.code === 'ArrowRight' ? 1 : -1;
                 const delta = e.ctrlKey ? sign * 0.1 : sign * 10;
                 me.currentTime = Math.max(0, Math.min(state.duration, me.currentTime + delta));
+            }
+            if (e.key === 'c' && !e.ctrlKey && !e.metaKey) {
+                const me = mediaEl(); if (!me.src) return;
+                navigator.clipboard.writeText(secToWall(me.currentTime)).then(() => {
+                    const el = document.getElementById('time-current');
+                    if (el) { el.classList.add('copied'); setTimeout(() => el.classList.remove('copied'), 900); }
+                });
             }
         });
 

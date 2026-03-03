@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 zone_paris = ZoneInfo("Europe/Paris")
 
 DATE_FORMAT = "%d/%m/%Y %H:%M:%S"
-CHANNELS = Literal["TF1", "M6", "France 2", "France 3", "C8"]
+CHANNELS = Literal["TF1", "M6", "FRANCE 2", "FRANCE 3", "C8"]
 
 SOURCE_FILES = Literal["export.csv", "manual_pub_tagging.csv"]
 

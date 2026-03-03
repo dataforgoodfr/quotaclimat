@@ -109,6 +109,14 @@ class RuptureDetector:
         # comme silencieuse. 5 = 5% des frames les plus silencieuses du fichier.
         # Augmenter (8–15) si les silences sont moins nets (parole continue).
         # Baisser (1–3) si seuls les vrais blancs doivent compter.
+        cosine_weight: float = 1.0,
+        # ↑ Poids de la dissimilarité cosinus dans le calcul de nouveauté.
+        # novelty = silence_mask × (cosine_weight × cosine_dissim + (1 − cosine_weight))
+        # 0.0 = silence pur : tout silence déclenche une rupture, indépendamment
+        #       du contenu sonore avant/après. À utiliser pour diagnostiquer les
+        #       silences manqués ou si le contenu se ressemble beaucoup (pub→pub).
+        # 1.0 = comportement par défaut : le cosinus module l'intensité du pic.
+        # 0.3 = bon compromis si certaines vraies ruptures sont manquées.
     ):
         self.sr = sr
         self.hop_length = hop_length
@@ -119,6 +127,7 @@ class RuptureDetector:
         self.sensitivity = sensitivity
         self.max_ruptures = max_ruptures
         self.silence_percentile = silence_percentile
+        self.cosine_weight = cosine_weight
         self._fps = sr / hop_length  # frames/sec ≈ 43 à sr=22050, hop=512
 
     def get_novelty_peaks(self, novelty: np.ndarray) -> list:
@@ -151,6 +160,7 @@ class RuptureDetector:
             "sensitivity": self.sensitivity,
             "max_ruptures": self.max_ruptures,
             "silence_percentile": self.silence_percentile,
+            "cosine_weight": self.cosine_weight,
         }
 
     def load(self, path: str) -> np.ndarray:
@@ -242,10 +252,13 @@ class RuptureDetector:
             )
             cosine_dissim[i] = 1.0 - cos_sim
 
-        # ── 3. Combinaison : silence × dissimilarité ─────────────────────────
-        # Seuls les instants silencieux héritent d'une forte nouveauté ;
-        # la dissimilarité cosinus affine le score pour trouver les vraies ruptures.
-        novelty = silence_mask * cosine_dissim
+        # ── 3. Combinaison : silence × (cosinus pondéré) ────────────────────
+        # cosine_weight=0 → novelty = silence_mask  (tout silence = rupture)
+        # cosine_weight=1 → novelty = silence_mask × cosine_dissim (défaut)
+        # Valeurs intermédiaires → le cosinus module sans bloquer.
+        novelty = silence_mask * (
+            self.cosine_weight * cosine_dissim + (1.0 - self.cosine_weight)
+        )
 
         # Lissage léger pour faciliter la détection de pics
         smooth_frames = max(3, int(self.novelty_smooth_sec * self._fps))
@@ -552,6 +565,13 @@ def main():
         help="Garder seulement les N ruptures les plus intenses (0 = pas de limite) [défaut: 0]",
     )
     parser.add_argument(
+        "--cosine-weight",
+        type=float,
+        default=1.0,
+        dest="cosine_weight",
+        help="Poids du cosinus (0=silence pur, 1=cosinus plein) [défaut: 1.0]",
+    )
+    parser.add_argument(
         "--out-json",
         default="segments.json",
         help="Fichier JSON de sortie [défaut: segments.json]",
@@ -577,6 +597,7 @@ def main():
         context_sec=args.context,
         novelty_smooth_sec=args.smooth,
         max_ruptures=args.max_ruptures,
+        cosine_weight=args.cosine_weight,
     )
 
     segments, novelty, features, y = detector.run(args.input)

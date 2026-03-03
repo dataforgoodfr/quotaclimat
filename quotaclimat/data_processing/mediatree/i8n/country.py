@@ -138,9 +138,9 @@ BELGIUM_CHANNELS_MEDIATREE = [
     "vivacite",
     "ln-radio",
 ]
-BELGIUM_TZ = "Europe/Bruxelles"
+BELGIUM_TZ = "Europe/Brussels"
 BELGIUM_LANGUAGE = "french"
-BELGIUM = CountryMediaTree(code=BELGIUM_CODE,channels=BELGIUM_CHANNELS, timezone=BELGIUM_TZ, language=BELGIUM_LANGUAGE, programs=channels_programs_belgium)
+BELGIUM = CountryMediaTree(code=BELGIUM_CODE,channels=BELGIUM_CHANNELS, timezone=BELGIUM_TZ, language=BELGIUM_LANGUAGE, programs=channels_programs_belgium, titles=channel_titles_belgium)
 
 GERMANY_CODE: GermanyCode ="deu"
 GERMANY_CHANNELS= ["daserste" # from srt import

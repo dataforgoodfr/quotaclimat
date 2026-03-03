@@ -14,7 +14,6 @@ from dataclasses import asdict, dataclass
 from typing import List
 
 import librosa
-import librosa.display
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
@@ -351,36 +350,10 @@ class RuptureDetector:
                 spectral_centroid=c,
                 zcr_mean=z,
             )
-            seg.label = self._classify(seg)
+            seg.label = "SEGMENT"
             segments.append(seg)
 
         return segments
-
-    def _classify(self, seg: Segment) -> str:
-        """
-        Heuristiques simples — à affiner selon ta chaîne.
-        Ces seuils sont indicatifs, basés sur des distributions typiques.
-        La vraie classification fine se fera au moment du clustering (étape suivante).
-        """
-        dur = seg.duration_sec
-
-        # Silence / transition
-        if seg.energy_mean < 0.01:
-            return "silence"
-
-        # Jingle : court, énergique, souvent aigu (centroïde élevé)
-        if dur < 8 and seg.energy_mean > 0.05 and seg.spectral_centroid > 2500:
-            return "jingle_candidat"
-
-        # Pub : durée typique 15–90s, énergie modérée à forte
-        if 8 <= dur <= 100:
-            return "pub_candidat"
-
-        # Émission : long
-        if dur > 100:
-            return "emission_candidat"
-
-        return "inconnu"
 
     def run(self, path: str) -> tuple[List[Segment], np.ndarray, dict, np.ndarray]:
         y = self.load(path)

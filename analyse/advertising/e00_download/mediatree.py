@@ -73,9 +73,15 @@ class CachedMediatreeAPI:
     def _file_name(self, channel: str, from_date: datetime, to_date: datetime):
         from_date_utc = from_date.astimezone(tz=ZoneInfo("UTC"))
         to_date_utc = to_date.astimezone(tz=ZoneInfo("UTC"))
-        return f"{self.prefix}{channel}_{from_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}_{to_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}.mp3"
+        return f"{self.prefix}{channel}_{from_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}Z_{to_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}Z.mp3"
 
-    def download_export(self, channel: str, from_date: datetime, to_date: datetime, file_name: str | None = None):
+    def download_export(
+        self,
+        channel: str,
+        from_date: datetime,
+        to_date: datetime,
+        file_name: str | None = None,
+    ):
         if file_name is None:
             file_name = self._file_name(channel, from_date, to_date)
 

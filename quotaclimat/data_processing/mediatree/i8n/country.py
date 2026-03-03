@@ -22,7 +22,10 @@ from quotaclimat.data_processing.mediatree.i8n.spain import (
     channel_titles_spain,
     channels_programs_spain,
 )
-
+from quotaclimat.data_processing.mediatree.i8n.belgium import (
+    channel_titles_belgium,
+    channels_programs_belgium
+)
 # Define country codes as Literal types
 # from https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
 FranceCode = Literal["fra"]
@@ -105,7 +108,6 @@ FRANCE_TZ = "Europe/Paris"
 FRANCE_LANGUAGE = "french"
 FRANCE = CountryMediaTree(code=FRANCE_CODE,channels=FRANCE_CHANNELS, timezone=FRANCE_TZ, language=FRANCE_LANGUAGE, programs=channels_programs_france, titles=channel_titles_france)
 
-
 BELGIUM_CODE : BelgiumCode = "bel"
 BELGIUM_CHANNELS= [
     "CANALZ",
@@ -125,11 +127,20 @@ BELGIUM_CHANNELS= [
     "TVCOM",
     "TVLUX",
     "VEDIA",
+    "la-premiere",
+    "bel-rtl",
+    "vivacite",
+    "ln-radio",
 ]
-BELGIUM_TZ = "Europe/Bruxelles"
-BELGIUM_LANGUAGE = "french" # TODO: flemish based on channel ?
-channels_programs_belgium = None # TODO
-BELGIUM = CountryMediaTree(code=BELGIUM_CODE,channels=BELGIUM_CHANNELS, timezone=BELGIUM_TZ, language=BELGIUM_LANGUAGE, programs=channels_programs_belgium)
+BELGIUM_CHANNELS_MEDIATREE = [
+    "la-premiere",
+    "bel-rtl",
+    "vivacite",
+    "ln-radio",
+]
+BELGIUM_TZ = "Europe/Brussels"
+BELGIUM_LANGUAGE = "french"
+BELGIUM = CountryMediaTree(code=BELGIUM_CODE,channels=BELGIUM_CHANNELS, timezone=BELGIUM_TZ, language=BELGIUM_LANGUAGE, programs=channels_programs_belgium, titles=channel_titles_belgium)
 
 GERMANY_CODE: GermanyCode ="deu"
 GERMANY_CHANNELS= ["daserste" # from srt import
@@ -271,3 +282,13 @@ def get_countries_array(country_code: str, no_belgium = True):
             countries = [get_country_from_code(country_code = country_code)]
 
     return countries
+
+
+def get_mediatree_channels(channels, country: CountryMediaTree):
+    if country == GERMANY:
+        logging.warning(f"Removing channels daserste and zdf-neo and using GERMANY_CHANNELS_MEDIATREE as import via SRT")
+        channels = GERMANY_CHANNELS_MEDIATREE
+    elif country == BELGIUM:
+        logging.warning(f"Removing channels for BELGIUM imported directly and leaving only BELGIUM_CHANNELS_MEDIATREE")
+        channels = BELGIUM_CHANNELS_MEDIATREE
+    return channels

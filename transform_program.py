@@ -10,6 +10,7 @@ from quotaclimat.data_processing.mediatree.i8n.germany.channel_program  import c
 from quotaclimat.data_processing.mediatree.i8n.brazil.channel_program import channels_programs_brazil
 from quotaclimat.data_processing.mediatree.i8n.poland.channel_program import channels_programs_poland
 from quotaclimat.data_processing.mediatree.i8n.spain.channel_program import channels_programs_spain
+from quotaclimat.data_processing.mediatree.i8n.belgium.channel_program import channels_programs_belgium
 
 
 from quotaclimat.data_processing.mediatree.i8n.country import (
@@ -18,6 +19,7 @@ from quotaclimat.data_processing.mediatree.i8n.country import (
     GERMANY,
     POLAND,
     SPAIN,
+    BELGIUM
 )
 
 logging.basicConfig(level = logging.INFO)
@@ -347,7 +349,7 @@ channel_mapping = {
         "radio": False,
         "country": POLAND.name
     },
-    "tv-plus": {
+    "tv-puls": {
         "title": "TV Plus",
         "public": False,
         "infocontinue": False,
@@ -404,10 +406,39 @@ channel_mapping = {
         "radio": False,
         "country": SPAIN.name
     },
+    # Belgium-Wallonia
+    "la-premiere": {        
+        "title": "La Premi\u00e8re",
+        "public": True,
+        "infocontinue": False,
+        "radio": True,
+        "country": BELGIUM.name
+    },
+    "bel-rtl": {
+        "title": "BEL RTL",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": BELGIUM.name
+    },
+    "vivacite": {
+        "title": "Vivacit\u00e9",
+        "public": True,
+        "infocontinue": False,
+        "radio": True,
+        "country": BELGIUM.name
+    },
+    "ln-radio": {
+        "title": "LN RADIO",
+        "public": False,
+        "infocontinue": False,
+        "radio": True,
+        "country": BELGIUM.name
+    },
 }
 programs = []
 
-channels_programs = channels_programs_france + channels_programs_brazil + channels_programs_germany + channels_programs_poland + channels_programs_spain
+channels_programs = channels_programs_france + channels_programs_brazil + channels_programs_germany + channels_programs_poland + channels_programs_spain + channels_programs_belgium
 for program_data in channels_programs:
     
     start_time = program_data['start']
@@ -422,7 +453,7 @@ for program_data in channels_programs:
 
     # Map channel_name to channel_title
     channel_name = program_data['channel_name']
-    print(f"program channel_name {program_data['channel_name']} - channel_mapping[channel_name]['title']")
+    print(f"program channel_name {program_data['channel_name']} - {channel_mapping[channel_name]['title']}")
     if channel_name in channel_mapping:
         program_data['channel_title'] = channel_mapping[channel_name]['title']
         program_data['public'] = channel_mapping[channel_name]['public']

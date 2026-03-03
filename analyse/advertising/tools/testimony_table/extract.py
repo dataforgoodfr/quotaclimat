@@ -6,13 +6,17 @@ from zoneinfo import ZoneInfo
 
 zone_paris = ZoneInfo("Europe/Paris")
 
-EXPORT_FILE = os.path.join(os.path.dirname(__file__), "export.csv")
 DATE_FORMAT = "%d/%m/%Y %H:%M:%S"
 CHANNELS = Literal["TF1", "M6", "France 2", "France 3", "C8"]
 
+SOURCE_FILES = Literal["export.csv", "manual_pub_tagging.csv"]
+
 
 def get_testimony_data(
-    channel: CHANNELS, from_date: datetime, to_date: datetime
+    channel: CHANNELS,
+    from_date: datetime,
+    to_date: datetime,
+    source_file: SOURCE_FILES = "export.csv",
 ) -> list[dict]:
     """
     Get testimony data for a given channel and date range.
@@ -27,12 +31,13 @@ def get_testimony_data(
     """
     output = []
 
-    with open(EXPORT_FILE, "r") as file:
+    source_file_path = os.path.join(os.path.dirname(__file__), source_file)
+    with open(source_file_path, "r") as file:
         csv_file = csv.reader(file, delimiter=",")
         next(csv_file)  # Skip header
 
         for row in csv_file:
-            channel_name, type, start_time, end_time = row
+            channel_name, type, start_time, end_time, *_r = row
             start_date = datetime.strptime(start_time, DATE_FORMAT).replace(
                 tzinfo=zone_paris
             )

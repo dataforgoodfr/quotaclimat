@@ -268,7 +268,7 @@ class RuptureDetector:
 
         return novelty
 
-    def detect_boundaries(self, novelty: np.ndarray, duration_sec: float) -> np.ndarray:
+    def detect_peaks(self, novelty: np.ndarray) -> np.ndarray:
         """
         Trouve les pics de nouveauté = frontières naturelles.
 
@@ -312,18 +312,23 @@ class RuptureDetector:
                 f"{len(peaks)} ruptures conservées"
             )
 
-        # Convertir en secondes + ajouter début et fin
-        boundaries_sec = np.concatenate([[0.0], peaks / self._fps, [duration_sec]])
+        # Convertir en secondes
+        peaks_sec = peaks / self._fps
 
         print(
-            f"      Résultat final : {len(peaks)} ruptures → {len(peaks) + 1} segments"
+            f"      Résultat final : {len(peaks_sec)} ruptures → {len(peaks_sec) + 1} segments"
         )
-        return boundaries_sec
+        return peaks_sec
 
-    def build_segments(self, boundaries: np.ndarray, features: dict) -> List[Segment]:
+    def build_segments(
+        self, peaks: np.ndarray, features: dict, duration_sec: float
+    ) -> List[Segment]:
         """Construit les segments avec leurs descripteurs."""
         frames_per_sec = self.sr / self.hop_length
         segments = []
+
+        # Ajoute début et fin
+        boundaries = np.concatenate([[0.0], peaks, [duration_sec]])
 
         for i in range(len(boundaries) - 1):
             t_start = boundaries[i]
@@ -355,16 +360,18 @@ class RuptureDetector:
 
         return segments
 
-    def run(self, path: str) -> tuple[List[Segment], np.ndarray, dict, np.ndarray]:
+    def run(
+        self, path: str
+    ) -> tuple[List[Segment], np.ndarray, np.ndarray, dict, np.ndarray]:
         y = self.load(path)
         features = self.extract_features(y)
         novelty = self.compute_novelty(features["stack"], features["energy"])
         duration = len(y) / self.sr
-        boundaries = self.detect_boundaries(novelty, duration)
-        segments = self.build_segments(boundaries, features)
+        peaks = self.detect_peaks(novelty)
+        segments = self.build_segments(peaks, features, duration)
 
         print(f"[5/5] Segmentation terminée : {len(segments)} segments")
-        return segments, novelty, features, y
+        return segments, peaks, novelty, features, y
 
 
 # ─────────────────────────────────────────────
@@ -573,7 +580,7 @@ def main():
         cosine_weight=args.cosine_weight,
     )
 
-    segments, novelty, features, y = detector.run(args.input)
+    segments, peaks, novelty, features, y = detector.run(args.input)
 
     novelty_peaks = detector.get_novelty_peaks(novelty)
 

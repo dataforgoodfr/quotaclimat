@@ -1,3 +1,4 @@
+import asyncio
 import os
 from datetime import datetime, timedelta
 
@@ -54,22 +55,28 @@ def split_and_save_chunks(
     save_segment_groups_to_json(segment_boundaries, output_file)
 
 
-def split_week_in_segments(channel: str, week_start_date: datetime, output_folder: str):
+async def split_week_in_segments(
+    channel: str, week_start_date: datetime, output_folder: str
+):
     api = CachedMediatreeAPI()
+    semaphore = asyncio.Semaphore(5)  # Limite à 2 téléchargements simultanés
 
     for start_date, end_date in all_intervals_between(
         week_start_date, week_start_date + timedelta(days=7), timedelta(minutes=30)
     ):
-        export_file = api.download_export(
-            channel, start_date, end_date + timedelta(minutes=1)
-        )  # on ajoute une minute pour être sûr de couvrir toute la période
-        output_file = os.path.join(
-            output_folder,
-            f"{start_date.strftime('%Y-%m-%d_%H-%M-%S')}.json",
-        )
-        split_and_save_chunks(
-            export_file,
-            output_file,
-            start_time=start_date.timestamp(),
-            hard_stop=end_date.timestamp(),
-        )
+        async with semaphore:
+            export_file = await api.download_export(
+                channel, start_date, end_date + timedelta(minutes=1)
+            )  # on ajoute une minute pour être sûr de couvrir toute la période
+
+        if False:
+            output_file = os.path.join(
+                output_folder,
+                f"{start_date.strftime('%Y-%m-%d_%H-%M-%S')}.json",
+            )
+            split_and_save_chunks(
+                export_file,
+                output_file,
+                start_time=start_date.timestamp(),
+                hard_stop=end_date.timestamp(),
+            )

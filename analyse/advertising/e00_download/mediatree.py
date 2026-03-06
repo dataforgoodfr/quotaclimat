@@ -2,6 +2,7 @@ import os
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import httpx
 import requests
 from dotenv import load_dotenv
 
@@ -35,11 +36,16 @@ class MediatreeAPI:
         token = output["data"]["access_token"]
         return token
 
-    def get_single_export_url(
-        self, channel: str, from_date: datetime, to_date: datetime, media_format: str
+    async def get_single_export_url(
+        self,
+        client: httpx.AsyncClient,
+        channel: str,
+        from_date: datetime,
+        to_date: datetime,
+        media_format: str,
     ):
-        response = requests.get(
-            f"{MEDIATREE_API_URL}/export/single",
+        response = await client.get(
+            f"{MEDIATREE_API_URL}/export/single/",
             params={
                 "token": self.token,
                 "channel": channel,
@@ -48,20 +54,26 @@ class MediatreeAPI:
                 "media_format": media_format,
             },
         )
+        if response.status_code != 200:
+            raise Exception(f"Unexpected response status code: {response.status_code}")
         return response.json()["src"]
 
-    def download_export(
+    async def download_export(
         self, file_name, channel: str, from_date: datetime, to_date: datetime
     ):
-        single_export_url = self.get_single_export_url(
-            channel, from_date, to_date, "mp3"
-        )
+        # Opening a new client for each download. It would be better to open and close a single client for whole execution.
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(60.0, connect=60.0)
+        ) as client:
+            single_export_url = await self.get_single_export_url(
+                client, channel, from_date, to_date, "mp3"
+            )
 
-        response = requests.get(single_export_url)
+            response = await client.get(single_export_url)
 
-        os.makedirs(os.path.dirname(file_name), exist_ok=True)
-        with open(file_name, "wb") as f:
-            f.write(response.content)
+            os.makedirs(os.path.dirname(file_name), exist_ok=True)
+            with open(file_name, "wb") as f:
+                f.write(response.content)
 
 
 class CachedMediatreeAPI:
@@ -75,7 +87,7 @@ class CachedMediatreeAPI:
         to_date_utc = to_date.astimezone(tz=ZoneInfo("UTC"))
         return f"{self.prefix}{channel}_{from_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}Z_{to_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}Z.mp3"
 
-    def download_export(
+    async def download_export(
         self,
         channel: str,
         from_date: datetime,
@@ -89,15 +101,15 @@ class CachedMediatreeAPI:
 
         if not os.path.isfile(file_path):
             print(f"Downloading export for {channel} from {from_date} to {to_date}...")
-            self.api.download_export(file_path, channel, from_date, to_date)
+            await self.api.download_export(file_path, channel, from_date, to_date)
 
         return file_path
 
-    def export_channel_whole_week(self, channel: str, week_start_date: datetime):
+    async def export_channel_whole_week(self, channel: str, week_start_date: datetime):
         for start_date, end_date in all_intervals_between(
             week_start_date, week_start_date + timedelta(days=7), timedelta(hours=1)
         ):
-            self.download_export(channel, start_date, end_date)
+            await self.download_export(channel, start_date, end_date)
 
 
 def all_intervals_between(

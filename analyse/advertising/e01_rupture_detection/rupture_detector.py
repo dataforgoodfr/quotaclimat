@@ -13,6 +13,8 @@ import json
 from dataclasses import asdict, dataclass
 from typing import List
 
+import time
+
 import librosa
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -363,14 +365,30 @@ class RuptureDetector:
     def run(
         self, path: str
     ) -> tuple[List[Segment], np.ndarray, np.ndarray, dict, np.ndarray]:
+        t0 = time.perf_counter()
+
         y = self.load(path)
+        t1 = time.perf_counter()
+        print(f"      → {t1 - t0:.2f}s")
+
         features = self.extract_features(y)
+        t2 = time.perf_counter()
+        print(f"      → {t2 - t1:.2f}s")
+
         novelty = self.compute_novelty(features["stack"], features["energy"])
+        t3 = time.perf_counter()
+        print(f"      → {t3 - t2:.2f}s")
+
         duration = len(y) / self.sr
         peaks = self.detect_peaks(novelty)
-        segments = self.build_segments(peaks, features, duration)
+        t4 = time.perf_counter()
+        print(f"      → {t4 - t3:.2f}s")
 
-        print(f"[5/5] Segmentation terminée : {len(segments)} segments")
+        segments = self.build_segments(peaks, features, duration)
+        t5 = time.perf_counter()
+
+        print(f"[5/5] Segmentation terminée : {len(segments)} segments  → {t5 - t4:.2f}s")
+        print(f"      Durée totale : {t5 - t0:.2f}s")
         return segments, peaks, novelty, features, y
 
 

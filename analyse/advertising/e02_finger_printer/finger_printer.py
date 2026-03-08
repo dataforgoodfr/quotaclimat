@@ -166,8 +166,8 @@ class HashGenerator:
 @dataclass
 class Fingerprint:
     segment_index: int
-    start_sec: float
-    end_sec: float
+    start_epoch: float  # timestamp Unix absolu (secondes)
+    end_epoch: float    # timestamp Unix absolu (secondes)
     duration_sec: float
     label: str
     hashes: List[Tuple[str, int]] = field(default_factory=list)  # [(hash, t_ancrage)]
@@ -298,11 +298,13 @@ class FingerprintPipeline:
         self,
         audio_path: str,
         segments_json: str,
+        audio_start_epoch: float,
         similarity_threshold: float = 0.08,
         sr: int = 22050,
     ):
         self.audio_path = audio_path
         self.segments_json = segments_json
+        self.audio_start_epoch = audio_start_epoch  # epoch Unix du début du fichier audio
         self.sr = sr
         self.constellation = ConstellationMap(sr=sr)
         self.hasher = HashGenerator()
@@ -323,26 +325,32 @@ class FingerprintPipeline:
         fingerprints = []
 
         for seg in tqdm(segments, desc="Empreintes"):
-            t_start = seg["start_sec"]
-            t_end = seg["end_sec"]
+            start_epoch = seg["start_epoch"]
+            end_epoch = seg["end_epoch"]
+
+            # Convertir les timestamps absolus en offset relatif dans le fichier audio
+            t_start_rel = start_epoch - self.audio_start_epoch
+            t_end_rel = end_epoch - self.audio_start_epoch
 
             # Extraire l'audio du segment
-            s = int(t_start * self.sr)
-            e = int(t_end * self.sr)
+            s = int(t_start_rel * self.sr)
+            e = int(t_end_rel * self.sr)
             y_seg = y[s:e]
 
             if len(y_seg) < self.sr * 0.5:  # Ignorer < 0.5s
                 continue
+
+            duration_sec = end_epoch - start_epoch
 
             # Constellation → hashes
             peaks = self.constellation.extract(y_seg)
             hashes = self.hasher.generate(peaks)
 
             fp = Fingerprint(
-                segment_index=seg["index"],
-                start_sec=t_start,
-                end_sec=t_end,
-                duration_sec=seg["duration_sec"],
+                segment_index=seg.get("index", 0),
+                start_epoch=start_epoch,
+                end_epoch=end_epoch,
+                duration_sec=duration_sec,
                 label=seg.get("label", "?"),
                 hashes=hashes,
             )
@@ -357,7 +365,7 @@ class FingerprintPipeline:
 
         y = self.load_audio()
         segments = self.load_segments()
-        fingerprints = self.fingerprint_all(y, segments)
+        fingerprints = self.fingerprint_all(y, segments)  # utilise self.audio_start_epoch
         groups = self.clusterer.cluster(fingerprints, self.matcher)
 
         results = self.build_report(fingerprints, groups)
@@ -374,7 +382,7 @@ class FingerprintPipeline:
         report_groups = []
         for group_id, member_idxs in groups.items():
             members = [fingerprints[i] for i in member_idxs]
-            members.sort(key=lambda x: x.start_sec)
+            members.sort(key=lambda x: x.start_epoch)
 
             durations = [m.duration_sec for m in members]
 
@@ -390,9 +398,9 @@ class FingerprintPipeline:
                     "occurrences": [
                         {
                             "segment_index": m.segment_index,
-                            "start_sec": round(m.start_sec, 2),
-                            "end_sec": round(m.end_sec, 2),
-                            "start_tc": sec_to_tc(m.start_sec),
+                            "start_epoch": round(m.start_epoch, 2),
+                            "end_epoch": round(m.end_epoch, 2),
+                            "start_datetime": epoch_to_iso(m.start_epoch),
                             "duration_sec": round(m.duration_sec, 2),
                             "label": m.label,
                         }
@@ -448,11 +456,10 @@ def classify_group(count: int, mean_duration: float) -> str:
     return "CONTENU_REPETE"
 
 
-def sec_to_tc(t: float) -> str:
-    h = int(t // 3600)
-    m = int((t % 3600) // 60)
-    s = t % 60
-    return f"{h:02d}:{m:02d}:{s:06.3f}"
+def epoch_to_iso(t: float) -> str:
+    """Convertit un timestamp Unix en chaîne ISO 8601 (UTC)."""
+    from datetime import datetime, timezone
+    return datetime.fromtimestamp(t, tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
 
 # ─────────────────────────────────────────────────────────────
@@ -507,7 +514,7 @@ def plot_groups(
             ax.barh(
                 0,
                 occ["duration_sec"],
-                left=occ["start_sec"],
+                left=occ["start_epoch"],
                 height=0.8,
                 color=color,
                 alpha=0.7,
@@ -599,7 +606,7 @@ def print_report(report: dict):
         )
         # Afficher les 3 premières occurrences
         for occ in g["occurrences"][:3]:
-            print(f"    ↳ [{occ['start_tc']}]  {occ['duration_sec']:.1f}s")
+            print(f"    ↳ [{occ['start_datetime']}]  {occ['duration_sec']:.1f}s")
         if g["count"] > 3:
             print(f"    ↳ ... +{g['count'] - 3} autres occurrences")
 
@@ -643,11 +650,19 @@ def main():
         help="Image de visualisation [défaut: fingerprint_groupes.png]",
     )
     parser.add_argument("--no-plot", action="store_true")
+    parser.add_argument(
+        "--audio-start-epoch",
+        type=float,
+        required=True,
+        dest="audio_start_epoch",
+        help="Timestamp Unix (epoch) du début du fichier audio",
+    )
     args = parser.parse_args()
 
     pipeline = FingerprintPipeline(
         audio_path=args.audio,
         segments_json=args.segments,
+        audio_start_epoch=args.audio_start_epoch,
         similarity_threshold=args.threshold,
     )
 
@@ -662,7 +677,7 @@ def main():
 
     if not args.no_plot:
         # Durée totale = fin du dernier segment
-        total = max(fp.end_sec for fp in fingerprints) if fingerprints else 3600
+        total = max(fp.end_epoch for fp in fingerprints) if fingerprints else 3600
         plot_groups(report, total, args.out_plot)
 
     print("\nFait. Prochaine étape : analyse de fréquence et rapport final.\n")

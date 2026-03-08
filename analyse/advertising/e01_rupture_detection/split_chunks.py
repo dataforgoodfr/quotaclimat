@@ -33,8 +33,8 @@ def split_chunks(input_file: str, start_time: float):
 
     return [
         Segment(
-            start_sec=start_time + seg.start_sec,
-            end_sec=start_time + seg.end_sec,
+            start_epoch=start_time + seg.start_sec,
+            end_epoch=start_time + seg.end_sec,
         )
         for seg in segments
     ]
@@ -50,7 +50,7 @@ def split_and_save_chunks(
         segment_boundaries = [
             seg
             for (i, seg) in enumerate(segment_boundaries)
-            if i != 0 and seg.start_sec < hard_stop
+            if i != 0 and seg.start_epoch < hard_stop
         ]
     save_segment_groups_to_json(segment_boundaries, output_file)
 

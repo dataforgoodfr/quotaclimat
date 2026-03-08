@@ -35,11 +35,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 @dataclass
 class TextSegment:
-    """Un segment audio avec son texte transcrit."""
+    """Un segment audio avec son texte transcrit et timestamps absolus (epoch Unix)."""
 
     text: str
-    start_sec: float = 0.0
-    end_sec: float = 0.0
+    start_epoch: float = 0.0
+    end_epoch: float = 0.0
 
 
 @dataclass
@@ -64,8 +64,8 @@ class SegmentGroup:
             "canonical_text": self.canonical_text,
             "segments": [
                 {
-                    "start_sec": s.start_sec,
-                    "end_sec": s.end_sec,
+                    "start_epoch": s.start_epoch,
+                    "end_epoch": s.end_epoch,
                     "text": s.text,
                 }
                 for s in self.segments
@@ -321,11 +321,11 @@ def load_segments_from_json(path: str, text_key: str = "text") -> List[TextSegme
 
     Attend un tableau JSON avec au moins les champs :
         - `text` (ou la clé indiquée par text_key)
-        - `start_sec` / `end_sec` (optionnels)
+        - `start_epoch` / `end_epoch` (timestamps Unix absolus, optionnels)
 
     Exemple de fichier attendu :
     [
-      {"start_sec": 0.0, "end_sec": 32.5, "text": "..."},
+      {"start_epoch": 1741694400.0, "end_epoch": 1741694432.5, "text": "..."},
       ...
     ]
     """
@@ -338,8 +338,8 @@ def load_segments_from_json(path: str, text_key: str = "text") -> List[TextSegme
         segments.append(
             TextSegment(
                 text=text,
-                start_sec=float(item.get("start_sec", 0.0)),
-                end_sec=float(item.get("end_sec", 0.0)),
+                start_epoch=float(item.get("start_epoch", 0.0)),
+                end_epoch=float(item.get("end_epoch", 0.0)),
             )
         )
     return segments

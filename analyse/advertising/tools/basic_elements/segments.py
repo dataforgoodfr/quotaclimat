@@ -4,31 +4,39 @@ from dataclasses import dataclass
 
 @dataclass
 class Segment:
-    """Un segment audio."""
+    """Un segment audio avec timestamps absolus (epoch Unix en secondes)."""
 
-    start_sec: float = 0.0
-    end_sec: float = 0.0
+    start_epoch: float = 0.0
+    end_epoch: float = 0.0
+
+    @property
+    def duration_sec(self) -> float:
+        return self.end_epoch - self.start_epoch
 
     def to_dict(self) -> dict:
         return {
-            "s": self.start_sec,
-            "e": self.end_sec,
+            "start_epoch": self.start_epoch,
+            "end_epoch": self.end_epoch,
         }
 
 
 @dataclass
 class TextSegment:
-    """Un segment audio avec son texte transcrit."""
+    """Un segment audio avec son texte transcrit et timestamps absolus (epoch Unix)."""
 
     text: str
-    start_sec: float = 0.0
-    end_sec: float = 0.0
+    start_epoch: float = 0.0
+    end_epoch: float = 0.0
+
+    @property
+    def duration_sec(self) -> float:
+        return self.end_epoch - self.start_epoch
 
     def to_dict(self) -> dict:
         return {
-            "t": self.text,
-            "s": self.start_sec,
-            "e": self.end_sec,
+            "text": self.text,
+            "start_epoch": self.start_epoch,
+            "end_epoch": self.end_epoch,
         }
 
 

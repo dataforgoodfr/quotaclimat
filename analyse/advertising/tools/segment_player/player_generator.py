@@ -188,6 +188,7 @@ def generate_player(
     params: dict | None = None,
     novelty_peaks: list | None = None,
     start_epoch: float | None = None,
+    groups: list[dict] | None = None,
 ):
     output_path = Path(output_path)
     annotations = annotations or []
@@ -251,6 +252,7 @@ def generate_player(
         "params": params or {},
         "novelty_peaks": novelty_peaks or [],
         "start_epoch": start_epoch or 0,
+        "groups": groups or [],
     }
 
     # Injection dans le template

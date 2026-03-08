@@ -681,6 +681,91 @@
             transition: width .4s;
         }
 
+        /* Sibling occurrences section */
+        #siblings-wrap {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .siblings-sect-label {
+            font-size: .52rem;
+            color: var(--text-dim);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .group-badge {
+            display: inline-block;
+            font-size: .55rem;
+            padding: 2px 8px;
+            border-radius: 3px;
+            margin-bottom: 10px;
+            background: var(--amber)22;
+            color: var(--amber);
+            border: 1px solid var(--amber)44;
+        }
+
+        .sibling-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            background: #0d0d17;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: border-color .15s;
+        }
+
+        .sibling-item:hover { border-color: var(--amber-dim); }
+        .sibling-item.current-seg { border-color: var(--amber); opacity: .45; cursor: default; }
+        .sibling-item.active { border-color: var(--purple); }
+
+        .sibling-time { flex: 1; font-size: .6rem; }
+        .sibling-dur { font-size: .57rem; color: var(--text-dim); flex-shrink: 0; }
+
+        .sibling-play-btn {
+            background: none;
+            border: 1px solid var(--muted);
+            color: var(--text);
+            border-radius: 3px;
+            padding: 2px 7px;
+            font-size: .65rem;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .sibling-play-btn:hover { border-color: var(--amber); color: var(--amber); }
+
+        /* Right video header — shown when sibling video is active */
+        #right-video-header {
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            padding: 5px 10px;
+            background: #1a0a2e;
+            border-bottom: 1px solid var(--purple);
+            font-size: .58rem;
+            flex-shrink: 0;
+        }
+
+        #right-video-wrap.sibling-mode #right-video-header { display: flex; }
+        #right-video-title { color: var(--purple); }
+
+        #right-video-close {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            cursor: pointer;
+            font-size: .85rem;
+            padding: 0 3px;
+            line-height: 1;
+        }
+
+        #right-video-close:hover { color: var(--text); }
+
         /* Stats */
         .stats-wrap {
             padding: 14px 16px;
@@ -1223,8 +1308,12 @@
         <!-- ════════════════ RIGHT PANEL ════════════════ -->
         <div class="right-panel">
 
-            <!-- Video mirror (shown when embedded video in report) -->
+            <!-- Video mirror / sibling video -->
             <div id="right-video-wrap">
+                <div id="right-video-header">
+                    <span id="right-video-title">Occurrence similaire</span>
+                    <button id="right-video-close" title="Revenir au flux principal">✕</button>
+                </div>
                 <video id="right-video-el" muted></video>
             </div>
 
@@ -1299,6 +1388,13 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Occurrences similaires (repetition matching) -->
+                    <div id="siblings-wrap" style="display:none">
+                        <div class="siblings-sect-label">Occurrences similaires</div>
+                        <div id="siblings-group-badge"></div>
+                        <div id="siblings-list"></div>
+                    </div>
                 </div>
             </div>
 
@@ -1354,6 +1450,10 @@
             noveltyVisible: false,
             noveltyHoverY: null,
             startEpoch: 0,   // secondes depuis minuit pour l'affichage heure absolue
+            groups: [],
+            groupByEpoch: new Map(),   // Math.round(start_epoch) → group
+            siblingVideoMode: false,
+            mainVideoUrl: null,
         };
 
         // ═══════════════════════════════════════════════════════════════════
@@ -1416,6 +1516,7 @@
             if (data.annotations) loadAnnotations(data.annotations);
             if (data.params) populateParams(data.params);
             if (data.novelty_peaks && data.novelty_peaks.length) loadNoveltyPeaks(data.novelty_peaks);
+            if (data.groups && data.groups.length) loadGroups(data.groups);
 
             // ── Mode URL : le média n'est pas embarqué, le navigateur le charge ──
             if (data.media_url) {
@@ -1565,6 +1666,7 @@
         // ─── Video activation ───────────────────────────────────────────
         function activateVideo(url, name) {
             state.isVideo = true;
+            state.mainVideoUrl = url;
             videoEl.src = url;
             document.getElementById('video-panel').classList.add('visible');
             document.getElementById('video-name-label').textContent = name;
@@ -1572,13 +1674,16 @@
             audioEl.src = url;
         }
 
-        // ─── Sync right-panel video mirror ──────────────────────────────
+        // ─── Sync right-panel video mirror (disabled in sibling-video mode) ───
         videoEl.addEventListener('timeupdate', () => {
+            if (state.siblingVideoMode) return;
             if (Math.abs(rightVideoEl.currentTime - videoEl.currentTime) > 0.3)
                 rightVideoEl.currentTime = videoEl.currentTime;
         });
-        videoEl.addEventListener('play', () => rightVideoEl.play().catch(() => { }));
-        videoEl.addEventListener('pause', () => rightVideoEl.pause());
+        videoEl.addEventListener('play', () => { if (!state.siblingVideoMode) rightVideoEl.play().catch(() => { }); });
+        videoEl.addEventListener('pause', () => { if (!state.siblingVideoMode) rightVideoEl.pause(); });
+
+        document.getElementById('right-video-close').addEventListener('click', closeSiblingVideo);
 
         // ═══════════════════════════════════════════════════════════════════
         //  CSV PARSING
@@ -2200,6 +2305,142 @@
         });
 
         // ═══════════════════════════════════════════════════════════════════
+        //  REPETITION GROUPS
+        // ═══════════════════════════════════════════════════════════════════
+        function loadGroups(groups) {
+            state.groups = groups;
+            state.groupByEpoch.clear();
+            for (const grp of groups) {
+                const occs = grp.occurrences || grp.segments || [];
+                for (const occ of occs) {
+                    const epoch = occ.start_epoch ?? occ.s;
+                    if (epoch != null)
+                        state.groupByEpoch.set(Math.round(epoch), grp);
+                }
+            }
+        }
+
+        function findGroupForSeg(seg) {
+            if (!state.groups.length || !state.startEpoch) return null;
+            const segEpoch = Math.round(state.startEpoch + (seg.start_sec ?? 0));
+            return state.groupByEpoch.get(segEpoch) ?? null;
+        }
+
+        function formatDurFromEpoch(start, end) {
+            return formatDur(end - start);
+        }
+
+        function showSiblings(seg, idx) {
+            const wrap = document.getElementById('siblings-wrap');
+            const group = findGroupForSeg(seg);
+            if (!group) { wrap.style.display = 'none'; return; }
+
+            const occs = group.occurrences || group.segments || [];
+            if (occs.length <= 1) { wrap.style.display = 'none'; return; }
+
+            wrap.style.display = 'block';
+
+            // Badge de groupe
+            const badge = document.getElementById('siblings-group-badge');
+            const cls = group.classification || group.canonical_text?.slice(0, 30) || `Groupe #${group.group_id}`;
+            badge.innerHTML = `<span class="group-badge">${cls} · ${occs.length} occurrences</span>`;
+
+            // Liste des occurrences
+            const list = document.getElementById('siblings-list');
+            list.innerHTML = '';
+            const segEpoch = Math.round(state.startEpoch + (seg.start_sec ?? 0));
+
+            for (const occ of occs) {
+                const occEpoch = occ.start_epoch ?? occ.s ?? 0;
+                const isCurrent = Math.round(occEpoch) === segEpoch;
+                const dur = (occ.duration_sec != null) ? occ.duration_sec : (occ.end_epoch - occEpoch);
+                const hasMedia = !!(occ.media_url);
+
+                const item = document.createElement('div');
+                item.className = 'sibling-item' + (isCurrent ? ' current-seg' : '');
+                item.dataset.epoch = occEpoch;
+
+                const timeLabel = epochToWall(occEpoch);
+
+                item.innerHTML = `
+                    <div class="sibling-time">${timeLabel}</div>
+                    <div class="sibling-dur">${formatDur(dur)}</div>
+                    ${!isCurrent ? `<button class="sibling-play-btn" title="${hasMedia ? 'Voir dans le volet droit' : 'Aller à ce segment'}">▶</button>` : ''}
+                `;
+
+                if (!isCurrent) {
+                    item.querySelector('.sibling-play-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        list.querySelectorAll('.sibling-item').forEach(el => el.classList.remove('active'));
+                        item.classList.add('active');
+                        playSibling(occ);
+                    });
+                    item.addEventListener('click', () => {
+                        list.querySelectorAll('.sibling-item').forEach(el => el.classList.remove('active'));
+                        item.classList.add('active');
+                        playSibling(occ);
+                    });
+                }
+
+                list.appendChild(item);
+            }
+        }
+
+        function epochToWall(epoch) {
+            if (!epoch) return '—';
+            try {
+                return new Intl.DateTimeFormat('fr-FR', {
+                    timeZone: 'Europe/Paris',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+                }).format(new Date(epoch * 1000));
+            } catch { return String(epoch); }
+        }
+
+        function playSibling(occ) {
+            const mediaUrl = occ.media_url || null;
+            const wrap = document.getElementById('right-video-wrap');
+
+            if (mediaUrl && mediaUrl !== state.mainVideoUrl) {
+                // Source différente : charger dans le volet droit
+                state.siblingVideoMode = true;
+                wrap.classList.add('visible', 'sibling-mode');
+                document.getElementById('right-video-title').textContent =
+                    epochToWall(occ.start_epoch) + ' · ' + formatDur(occ.duration_sec ?? 0);
+
+                const startSec = occ.start_sec_in_media ??
+                    (state.startEpoch ? occ.start_epoch - state.startEpoch : 0);
+
+                rightVideoEl.src = mediaUrl;
+                rightVideoEl.addEventListener('loadedmetadata', function onLoad() {
+                    rightVideoEl.currentTime = Math.max(0, startSec);
+                    rightVideoEl.play().catch(() => { });
+                    rightVideoEl.removeEventListener('loadedmetadata', onLoad);
+                });
+            } else {
+                // Même source : chercher dans le player principal
+                const startSec = occ.start_sec_in_media ??
+                    (state.startEpoch ? occ.start_epoch - state.startEpoch : 0);
+                const me = mediaEl();
+                if (me.src) {
+                    me.currentTime = Math.max(0, startSec);
+                    if (!state.playing) { me.play(); state.playing = true; btnPlay.textContent = '⏸'; }
+                }
+            }
+        }
+
+        function closeSiblingVideo() {
+            state.siblingVideoMode = false;
+            const wrap = document.getElementById('right-video-wrap');
+            wrap.classList.remove('sibling-mode');
+            // Restore mirror of main video
+            if (state.mainVideoUrl) {
+                rightVideoEl.src = state.mainVideoUrl;
+                rightVideoEl.currentTime = videoEl.currentTime;
+                if (!videoEl.paused) rightVideoEl.play().catch(() => { });
+            }
+            document.querySelectorAll('.sibling-item').forEach(el => el.classList.remove('active'));
+        }
+
         //  DETAIL PANEL
         // ═══════════════════════════════════════════════════════════════════
         function showDetail(seg, idx) {
@@ -2244,6 +2485,9 @@
                 document.getElementById(`sp-${m.id}-val`).textContent = m.val != null ? m.fmt(m.val) : '—';
                 document.getElementById(`sp-${m.id}-bar`).style.width = pct + '%';
             }
+
+            // Sibling occurrences from repetition matching
+            showSiblings(seg, idx);
         }
 
         function drawMiniWave(seg) {

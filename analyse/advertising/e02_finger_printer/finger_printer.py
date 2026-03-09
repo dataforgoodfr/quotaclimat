@@ -178,6 +178,10 @@ class Fingerprint:
     audio_source: str = ""
     hashes: List[Tuple[str, int]] = field(default_factory=list)  # [(hash, t_ancrage)]
     hash_set: Set[str] = field(default_factory=set)  # Pour lookup rapide
+    # Features acoustiques pour pré-filtrage
+    rms: float = 0.0
+    spectral_centroid: float = 0.0
+    zcr: float = 0.0
 
     def build_hash_set(self):
         self.hash_set = {h for h, _ in self.hashes}
@@ -191,6 +195,9 @@ class Fingerprint:
             "label": self.label,
             "audio_source": self.audio_source,
             "hashes": self.hashes,  # List[Tuple[str, int]] → JSON array of [str, int]
+            "rms": self.rms,
+            "spectral_centroid": self.spectral_centroid,
+            "zcr": self.zcr,
         }
 
     @staticmethod
@@ -203,6 +210,9 @@ class Fingerprint:
             label=d["label"],
             audio_source=d["audio_source"],
             hashes=[(h, t) for h, t in d["hashes"]],
+            rms=d.get("rms", 0.0),
+            spectral_centroid=d.get("spectral_centroid", 0.0),
+            zcr=d.get("zcr", 0.0),
         )
         fp.build_hash_set()
         return fp
@@ -275,10 +285,48 @@ class RepetitionClusterer:
     Utilise un index inversé (hash → segments) pour éviter la comparaison
     exhaustive O(n²) : seules les paires partageant au moins
     `min_shared_hashes` hashes sont évaluées (comme Shazam côté indexation).
+
+    Un pré-filtre acoustique élimine les paires dont la durée, le RMS,
+    le centroide spectral ou le ZCR diffèrent trop, afin d'éviter les
+    faux positifs issus de coïncidences de hashes.
     """
 
-    def __init__(self, similarity_threshold: float = 0.08):
+    def __init__(
+        self,
+        similarity_threshold: float = 0.08,
+        duration_tolerance_sec: float = 0.3,
+        rms_tolerance: float = 0.05,
+        centroid_tolerance: float = 0.05,
+        zcr_tolerance: float = 0.1,
+    ):
         self.threshold = similarity_threshold
+        self.duration_tolerance_sec = duration_tolerance_sec
+        self.rms_tolerance = rms_tolerance
+        self.centroid_tolerance = centroid_tolerance
+        self.zcr_tolerance = zcr_tolerance
+
+    def _features_compatible(self, fp_a: "Fingerprint", fp_b: "Fingerprint") -> bool:
+        """Vérifie la cohérence acoustique de base avant le scoring complet."""
+        # Durée ±300ms
+        if abs(fp_a.duration_sec - fp_b.duration_sec) > self.duration_tolerance_sec:
+            return False
+
+        def rel_diff(a: float, b: float) -> float:
+            denom = max(abs(a), abs(b), 1e-8)
+            return abs(a - b) / denom
+
+        # Ne filtrer sur RMS/centroid/ZCR que si les features ont été calculées
+        if fp_a.rms > 0 and fp_b.rms > 0:
+            if rel_diff(fp_a.rms, fp_b.rms) > self.rms_tolerance:
+                return False
+        if fp_a.spectral_centroid > 0 and fp_b.spectral_centroid > 0:
+            if rel_diff(fp_a.spectral_centroid, fp_b.spectral_centroid) > self.centroid_tolerance:
+                return False
+        if fp_a.zcr > 0 and fp_b.zcr > 0:
+            if rel_diff(fp_a.zcr, fp_b.zcr) > self.zcr_tolerance:
+                return False
+
+        return True
 
     def cluster(
         self,
@@ -333,8 +381,21 @@ class RepetitionClusterer:
             f"  [vs {n * (n - 1) // 2} paires en O(n²)]"
         )
 
+        # Pré-filtrage acoustique : durée ±300ms + cohérence RMS/centroid/ZCR
+        filtered_candidates = [
+            (i, j)
+            for i, j in candidates
+            if self._features_compatible(fingerprints[i], fingerprints[j])
+        ]
+        n_prefiltered = len(candidates) - len(filtered_candidates)
+        if n_prefiltered:
+            print(
+                f"  Pré-filtre acoustique : {n_prefiltered} paires éliminées"
+                f" → {len(filtered_candidates)} restantes"
+            )
+
         matches = 0
-        for i, j in tqdm(candidates, desc="Comparaison fingerprints"):
+        for i, j in tqdm(filtered_candidates, desc="Comparaison fingerprints"):
             result = matcher.score(fingerprints[i], fingerprints[j])
             if result["score"] >= self.threshold:
                 union(i, j)
@@ -381,6 +442,7 @@ class FingerprintPipeline:
             f"sr={c.sr}|n_fft={c.n_fft}|hop={c.hop_length}|n_peaks={c.n_peaks}"
             f"|neighborhood={c.neighborhood}|min_amp={c.min_amplitude}"
             f"|fan_out={h.fan_out}|dt_max={h.time_delta_max}|dt_min={h.time_delta_min}"
+            f"|features=v1"  # Invalide les caches sans rms/centroid/zcr
         )
         return hashlib.md5(params.encode()).hexdigest()[:8]
 
@@ -421,6 +483,18 @@ class FingerprintPipeline:
             peaks = self.constellation.extract(y_seg)
             hashes = self.hasher.generate(peaks)
 
+            # Utiliser les features pré-calculées par le rupture_detector si disponibles
+            if seg.energy_mean and seg.spectral_centroid and seg.zcr:
+                rms = seg.energy_mean
+                centroid = seg.spectral_centroid
+                zcr = seg.zcr
+            else:
+                rms = float(np.sqrt(np.mean(y_seg**2)))
+                centroid = float(
+                    np.mean(librosa.feature.spectral_centroid(y=y_seg, sr=self.sr))
+                )
+                zcr = float(np.mean(librosa.feature.zero_crossing_rate(y_seg)))
+
             fp = Fingerprint(
                 segment_index=i,
                 start_sec=seg.start_sec,
@@ -429,6 +503,9 @@ class FingerprintPipeline:
                 label="",
                 audio_source=audio_path,
                 hashes=hashes,
+                rms=rms,
+                spectral_centroid=centroid,
+                zcr=zcr,
             )
             fp.build_hash_set()
             fingerprints.append(fp)

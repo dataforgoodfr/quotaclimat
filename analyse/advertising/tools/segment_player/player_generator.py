@@ -174,9 +174,13 @@ def parse_start_time(s: str) -> float:
     if "T" in s or (len(s) > 8 and s[4] == "-"):
         dt = datetime.fromisoformat(s)
     else:
-        from datetime import date, time as dtime
+        from datetime import date
+        from datetime import time as dtime
+
         parts = s.split(":")
-        dt = datetime.combine(date.today(), dtime(int(parts[0]), int(parts[1]), int(float(parts[2]))))
+        dt = datetime.combine(
+            date.today(), dtime(int(parts[0]), int(parts[1]), int(float(parts[2])))
+        )
     return dt.hour * 3600 + dt.minute * 60 + dt.second + dt.microsecond / 1e6
 
 
@@ -246,7 +250,13 @@ def generate_player(
             s = s - start_epoch
         if start_epoch and e is not None and e > 1e8:
             e = e - start_epoch
-        normalized_segments.append({**{k: v for k, v in seg.items() if k not in ("s", "e")}, "start_sec": s, "end_sec": e})
+        normalized_segments.append(
+            {
+                **{k: v for k, v in seg.items() if k not in ("s", "e")},
+                "start_sec": s,
+                "end_sec": e,
+            }
+        )
 
     print(f"[2/{n_steps}] Segments fournis en entrée")
     print(f"  {len(normalized_segments)} segments")
@@ -285,11 +295,20 @@ def generate_player(
     )
     if start_epoch:
         from zoneinfo import ZoneInfo
+
         dt = datetime.fromtimestamp(start_epoch, tz=ZoneInfo("Europe/Paris"))
-        channel_name = Path(media_input.split("?")[0]).stem.split("_")[0].upper() if not media_is_url else media_input.split("/")[-1].split("?")[0].split("_")[0].upper()
+        channel_name = (
+            Path(media_input.split("?")[0]).stem.split("_")[0].upper()
+            if not media_is_url
+            else media_input.split("/")[-1].split("?")[0].split("_")[0].upper()
+        )
         tab_title = f"{channel_name} — {dt.strftime('%d %b %Y %H:%M')}"
     else:
-        tab_title = Path(media_input.split("?")[0]).stem if not media_is_url else media_input.split("/")[-1].split("?")[0]
+        tab_title = (
+            Path(media_input.split("?")[0]).stem
+            if not media_is_url
+            else media_input.split("/")[-1].split("?")[0]
+        )
     html = html.replace(
         "<title>Rupture Detector — Audio Lab</title>",
         f"<title>{tab_title}</title>",
@@ -298,8 +317,8 @@ def generate_player(
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
 
-    final_mb = output_path.stat().st_size / (1024 * 1024)
-    print(f"\n✓  Rapport généré  : {output_path}")
+    final_mb = Path(output_path).stat().st_size / (1024 * 1024)
+    print(f"\n✓  Rapport généré  : {Path(output_path).absolute()}")
     print(
         f"   Taille HTML     : {final_mb:.1f} Mo{' (léger, média chargé à la volée)' if media_is_url else ''}"
     )

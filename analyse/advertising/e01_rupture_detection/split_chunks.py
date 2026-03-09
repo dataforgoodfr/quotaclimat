@@ -35,6 +35,9 @@ def split_chunks(input_file: str, start_time: float):
         Segment(
             start_sec=start_time + seg.start_sec,
             end_sec=start_time + seg.end_sec,
+            energy_mean=seg.energy_mean,
+            spectral_centroid=seg.spectral_centroid,
+            zcr=seg.zcr_mean,
         )
         for seg in segments
     ]

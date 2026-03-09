@@ -10,10 +10,9 @@ Dépendances :
 
 import argparse
 import json
+import time
 from dataclasses import asdict, dataclass
 from typing import List
-
-import time
 
 import librosa
 import matplotlib.patches as mpatches
@@ -387,7 +386,9 @@ class RuptureDetector:
         segments = self.build_segments(peaks, features, duration)
         t5 = time.perf_counter()
 
-        print(f"[5/5] Segmentation terminée : {len(segments)} segments  → {t5 - t4:.2f}s")
+        print(
+            f"[5/5] Segmentation terminée : {len(segments)} segments  → {t5 - t4:.2f}s"
+        )
         print(f"      Durée totale : {t5 - t0:.2f}s")
         return segments, peaks, novelty, features, y
 

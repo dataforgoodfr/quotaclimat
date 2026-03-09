@@ -15,7 +15,8 @@ import json
 import time
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
-from typing import Dict, List, Set, Tuple
+from pathlib import Path
+from typing import Dict, List, Optional, Set, Tuple
 
 import librosa
 import matplotlib.patches as mpatches
@@ -23,6 +24,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.ndimage import maximum_filter
 from tqdm import tqdm
+
+from analyse.advertising.tools.basic_elements.segments import (
+    load_segment_groups_from_json,
+)
 
 # ─────────────────────────────────────────────────────────────
 #  Constellation Map : extraction des pics dans le spectrogramme
@@ -45,7 +50,7 @@ class ConstellationMap:
         sr: int = 22050,
         n_fft: int = 2048,  # Taille FFT → résolution fréquence
         hop_length: int = 512,  # Pas → résolution temporelle (~23ms)
-        n_peaks: int = 20,  # Nombre de pics à garder par frame
+        n_peaks: int = 30,  # Nombre ABSOLU de pics à garder (indépendant de la durée)
         neighborhood: int = 15,  # Taille du filtre de maximum local (frames × bins)
         min_amplitude: float = 0.01,  # Seuil minimal d'amplitude
     ):
@@ -78,9 +83,9 @@ class ConstellationMap:
         if len(freq_idxs) == 0:
             return np.empty((0, 2), dtype=np.int32)
 
-        # Trier par amplitude décroissante et garder les N meilleurs
+        # Trier par amplitude décroissante et garder les N meilleurs (cap absolu)
         amplitudes = D_norm[freq_idxs, time_idxs]
-        order = np.argsort(-amplitudes)[: self.n_peaks * D_norm.shape[1] // 10]
+        order = np.argsort(-amplitudes)[: self.n_peaks]
 
         peaks = np.column_stack(
             [
@@ -170,11 +175,37 @@ class Fingerprint:
     end_sec: float
     duration_sec: float
     label: str
+    audio_source: str = ""
     hashes: List[Tuple[str, int]] = field(default_factory=list)  # [(hash, t_ancrage)]
     hash_set: Set[str] = field(default_factory=set)  # Pour lookup rapide
 
     def build_hash_set(self):
         self.hash_set = {h for h, _ in self.hashes}
+
+    def to_dict(self) -> dict:
+        return {
+            "segment_index": self.segment_index,
+            "start_sec": self.start_sec,
+            "end_sec": self.end_sec,
+            "duration_sec": self.duration_sec,
+            "label": self.label,
+            "audio_source": self.audio_source,
+            "hashes": self.hashes,  # List[Tuple[str, int]] → JSON array of [str, int]
+        }
+
+    @staticmethod
+    def from_dict(d: dict) -> "Fingerprint":
+        fp = Fingerprint(
+            segment_index=d["segment_index"],
+            start_sec=d["start_sec"],
+            end_sec=d["end_sec"],
+            duration_sec=d["duration_sec"],
+            label=d["label"],
+            audio_source=d["audio_source"],
+            hashes=[(h, t) for h, t in d["hashes"]],
+        )
+        fp.build_hash_set()
+        return fp
 
 
 # ─────────────────────────────────────────────────────────────
@@ -192,7 +223,7 @@ class FingerprintMatcher:
     doivent être cohérents (alignés sur la même droite t1 - t2 = constante).
     """
 
-    def __init__(self, min_matching_hashes: int = 5):
+    def __init__(self, min_matching_hashes: int = 2):
         self.min_matching_hashes = min_matching_hashes
 
     def score(self, fp_a: Fingerprint, fp_b: Fingerprint) -> dict:
@@ -240,7 +271,10 @@ class FingerprintMatcher:
 class RepetitionClusterer:
     """
     Groupe les segments ayant des fingerprints similaires.
-    Union-Find pour construire les groupes de manière efficace.
+
+    Utilise un index inversé (hash → segments) pour éviter la comparaison
+    exhaustive O(n²) : seules les paires partageant au moins
+    `min_shared_hashes` hashes sont évaluées (comme Shazam côté indexation).
     """
 
     def __init__(self, similarity_threshold: float = 0.08):
@@ -266,13 +300,41 @@ class RepetitionClusterer:
         def union(x, y):
             parent[find(x)] = find(y)
 
-        # Comparer toutes les paires
-        # (optimisation possible avec LSH pour de très grands corpus)
-        pairs = list(itertools.combinations(range(n), 2))
-        print(f"\n[Clustering] {n} segments → {len(pairs)} paires à comparer...")
+        # ── Index inversé : hash → liste d'indices de segments ──
+        print(f"\n[Clustering] {n} segments — construction de l'index inversé...")
+        hash_index: Dict[str, List[int]] = defaultdict(list)
+        for i, fp in enumerate(fingerprints):
+            for h in fp.hash_set:
+                hash_index[h].append(i)
+
+        # ── Compter les hashes partagés par paire (sans énumérer toutes les paires) ──
+        # Seuil max : on ignore les hashes présents dans plus de la moitié des segments
+        # (silence, fond musical constant…) mais on garde les hashes de pubs répétées
+        popular_threshold = max(50, n // 2)
+        shared_counts: Dict[Tuple[int, int], int] = defaultdict(int)
+        for bucket in hash_index.values():
+            if len(bucket) < 2:
+                continue
+            if len(bucket) > popular_threshold:
+                continue
+            for a, b in itertools.combinations(bucket, 2):
+                key = (a, b) if a < b else (b, a)
+                shared_counts[key] += 1
+
+        # ── Ne scorer que les paires au-dessus du seuil minimal ──
+        candidates = [
+            (i, j)
+            for (i, j), count in shared_counts.items()
+            if count >= matcher.min_matching_hashes
+        ]
+        print(
+            f"  {len(shared_counts)} paires candidates → "
+            f"{len(candidates)} retenues (≥ {matcher.min_matching_hashes} hashes communs)"
+            f"  [vs {n * (n - 1) // 2} paires en O(n²)]"
+        )
 
         matches = 0
-        for i, j in tqdm(pairs, desc="Comparaison fingerprints"):
+        for i, j in tqdm(candidates, desc="Comparaison fingerprints"):
             result = matcher.score(fingerprints[i], fingerprints[j])
             if result["score"] >= self.threshold:
                 union(i, j)
@@ -296,68 +358,108 @@ class RepetitionClusterer:
 class FingerprintPipeline:
     def __init__(
         self,
-        audio_path: str,
-        segments_json: str,
+        sources: List[
+            Tuple[str, str, float]
+        ],  # List of (audio_path, segments_json, start_time)
         similarity_threshold: float = 0.08,
         sr: int = 22050,
+        cache_dir: Optional[str] = ".fingerprint_cache",
     ):
-        self.audio_path = audio_path
-        self.segments_json = segments_json
+        self.sources = sources
         self.sr = sr
-        self.constellation = ConstellationMap(sr=sr)
+        self.constellation = ConstellationMap(sr=sr, n_peaks=5)
         self.hasher = HashGenerator()
         self.matcher = FingerprintMatcher()
         self.clusterer = RepetitionClusterer(similarity_threshold)
+        self.cache_dir = Path(cache_dir) if cache_dir else None
 
-    def load_audio(self) -> np.ndarray:
-        print(f"Chargement audio : {self.audio_path}")
-        y, _ = librosa.load(self.audio_path, sr=self.sr, mono=True)
+    def _params_hash(self) -> str:
+        """Hash des paramètres qui influent sur le calcul des fingerprints."""
+        c = self.constellation
+        h = self.hasher
+        params = (
+            f"sr={c.sr}|n_fft={c.n_fft}|hop={c.hop_length}|n_peaks={c.n_peaks}"
+            f"|neighborhood={c.neighborhood}|min_amp={c.min_amplitude}"
+            f"|fan_out={h.fan_out}|dt_max={h.time_delta_max}|dt_min={h.time_delta_min}"
+        )
+        return hashlib.md5(params.encode()).hexdigest()[:8]
+
+    def _cache_path(self, audio_path: str, segments_json: str) -> Path:
+        audio_stem = Path(audio_path).stem
+        key = hashlib.md5(f"{audio_path}|{segments_json}".encode()).hexdigest()[:8]
+        return self.cache_dir / f"{audio_stem}_{key}_{self._params_hash()}.json"
+
+    def load_audio(self, audio_path: str) -> np.ndarray:
+        print(f"Chargement audio : {audio_path}")
+        y, _ = librosa.load(audio_path, sr=self.sr, mono=True)
         return y
 
-    def load_segments(self) -> list:
-        with open(self.segments_json, encoding="utf-8") as f:
-            return json.load(f)
+    def fingerprint_source(
+        self, audio_path: str, segments_json: str, start_time: float
+    ) -> List[Fingerprint]:
+        # ── Cache ──
+        if self.cache_dir is not None:
+            cache_path = self._cache_path(audio_path, segments_json)
+            if cache_path.exists():
+                print(f"  [Cache] Chargement depuis {cache_path.name}")
+                with open(cache_path, encoding="utf-8") as f:
+                    return [Fingerprint.from_dict(d) for d in json.load(f)]
 
-    def fingerprint_all(self, y: np.ndarray, segments: list) -> List[Fingerprint]:
-        print(f"\n[Fingerprinting] {len(segments)} segments...")
+        y = self.load_audio(audio_path)
+        segments = load_segment_groups_from_json(segments_json)
+        print(f"\n[Fingerprinting] {len(segments)} segments ({audio_path})...")
         fingerprints = []
 
-        for seg in tqdm(segments, desc="Empreintes"):
-            t_start = seg["start_sec"]
-            t_end = seg["end_sec"]
-
-            # Extraire l'audio du segment
-            s = int(t_start * self.sr)
-            e = int(t_end * self.sr)
+        for i, seg in enumerate(tqdm(segments, desc="Empreintes")):
+            s = int((seg.start_sec - start_time) * self.sr)
+            e = int((seg.end_sec - start_time) * self.sr)
             y_seg = y[s:e]
 
             if len(y_seg) < self.sr * 0.5:  # Ignorer < 0.5s
                 continue
 
-            # Constellation → hashes
             peaks = self.constellation.extract(y_seg)
             hashes = self.hasher.generate(peaks)
 
             fp = Fingerprint(
-                segment_index=seg["index"],
-                start_sec=t_start,
-                end_sec=t_end,
-                duration_sec=seg["duration_sec"],
-                label=seg.get("label", "?"),
+                segment_index=i,
+                start_sec=seg.start_sec,
+                end_sec=seg.end_sec,
+                duration_sec=seg.end_sec - seg.start_sec,
+                label="",
+                audio_source=audio_path,
                 hashes=hashes,
             )
             fp.build_hash_set()
             fingerprints.append(fp)
 
         print(f"  {len(fingerprints)} empreintes générées")
+
+        # ── Sauvegarde en cache ──
+        if self.cache_dir is not None:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            with open(cache_path, "w", encoding="utf-8") as f:
+                json.dump([fp.to_dict() for fp in fingerprints], f)
+            print(f"  [Cache] Sauvegardé : {cache_path.name}")
+
+        return fingerprints
+
+    def fingerprints(self) -> List[Fingerprint]:
+        fingerprints = []
+        for audio_path, segments_json, start_time in self.sources:
+            fingerprints.extend(
+                self.fingerprint_source(audio_path, segments_json, start_time)
+            )
+        print(
+            f"\n[Total] {len(fingerprints)} empreintes sur {len(self.sources)} source(s)"
+        )
         return fingerprints
 
     def run(self) -> dict:
         t0 = time.time()
 
-        y = self.load_audio()
-        segments = self.load_segments()
-        fingerprints = self.fingerprint_all(y, segments)
+        fingerprints = self.fingerprints()
+
         groups = self.clusterer.cluster(fingerprints, self.matcher)
 
         results = self.build_report(fingerprints, groups)
@@ -390,6 +492,7 @@ class FingerprintPipeline:
                     "occurrences": [
                         {
                             "segment_index": m.segment_index,
+                            "audio_source": m.audio_source,
                             "start_sec": round(m.start_sec, 2),
                             "end_sec": round(m.end_sec, 2),
                             "start_tc": sec_to_tc(m.start_sec),
@@ -409,6 +512,66 @@ class FingerprintPipeline:
             "total_groups": len(groups),
             "groups": report_groups,
         }
+
+    @staticmethod
+    def diagnose(fingerprints: List[Fingerprint], top_n: int = 10) -> None:
+        """
+        Affiche des statistiques de diagnostic pour comprendre pourquoi le matching
+        échoue : distribution des hashes, paires avec le plus de hashes communs.
+
+        Utile pour calibrer min_matching_hashes et similarity_threshold.
+        """
+        if not fingerprints:
+            print("[Diagnostic] Aucun fingerprint.")
+            return
+
+        hash_counts = [len(fp.hashes) for fp in fingerprints]
+        print("\n" + "─" * 60)
+        print("  DIAGNOSTIC FINGERPRINTS")
+        print("─" * 60)
+        print(f"  Segments         : {len(fingerprints)}")
+        print(
+            f"  Hashes / segment : min={min(hash_counts)}  moy={np.mean(hash_counts):.0f}  max={max(hash_counts)}"
+        )
+        print(f"  Segments sans hash : {sum(1 for c in hash_counts if c == 0)}")
+
+        # Index inversé pour trouver les paires avec le plus de hashes communs
+        hash_index: Dict[str, List[int]] = defaultdict(list)
+        for i, fp in enumerate(fingerprints):
+            for h in fp.hash_set:
+                hash_index[h].append(i)
+
+        popular_threshold = max(50, len(fingerprints) // 2)
+        shared: Dict[Tuple[int, int], int] = defaultdict(int)
+        for bucket in hash_index.values():
+            if 2 <= len(bucket) <= popular_threshold:
+                for a, b in itertools.combinations(bucket, 2):
+                    key = (a, b) if a < b else (b, a)
+                    shared[key] += 1
+
+        if not shared:
+            print("\n  ⚠ Aucun hash partagé entre les segments.")
+            print(
+                "    → Vérifier que les fichiers audio contiennent bien du contenu répété."
+            )
+            print("─" * 60)
+            return
+
+        top_pairs = sorted(shared.items(), key=lambda x: -x[1])[:top_n]
+        print(f"\n  Top {top_n} paires par hashes communs :")
+        print(
+            f"  {'Seg A':>6}  {'Seg B':>6}  {'Communs':>8}  {'Score estimé':>13}  Sources"
+        )
+        print("  " + "─" * 56)
+        for (i, j), count in top_pairs:
+            fp_a, fp_b = fingerprints[i], fingerprints[j]
+            min_h = min(len(fp_a.hashes), len(fp_b.hashes)) + 1
+            est_score = round(count / min_h, 3)
+            same_src = "même" if fp_a.audio_source == fp_b.audio_source else "diff"
+            print(
+                f"  {i:>6}  {j:>6}  {count:>8}  {est_score:>13}  ({same_src} fichier)"
+            )
+        print("─" * 60)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -449,6 +612,14 @@ def classify_group(count: int, mean_duration: float) -> str:
 
 
 def sec_to_tc(t: float) -> str:
+    """Convertit des secondes en timecode. Si t ressemble à un timestamp Unix, le formate en datetime."""
+    import datetime
+
+    # Heuristique : si t > 1e9, c'est probablement un timestamp Unix (après 2001)
+    if t > 1e9:
+        return datetime.datetime.fromtimestamp(t, tz=datetime.timezone.utc).strftime(
+            "%Y-%m-%d %H:%M:%S UTC"
+        )
     h = int(t // 3600)
     m = int((t % 3600) // 60)
     s = t % 60
@@ -616,15 +787,27 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Fingerprinting et détection de répétitions dans un flux audio"
+        description="Fingerprinting et détection de répétitions dans un ou plusieurs flux audio",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Exemples :
+  # Source unique
+  finger_printer.py audio.mp3 --segments segments.json
+
+  # Sources multiples (audio et segments appariés par ordre)
+  finger_printer.py a1.mp3 a2.mp3 --segments s1.json s2.json
+""",
     )
     parser.add_argument(
-        "audio", help="Fichier audio source (même que pour rupture_detector.py)"
+        "audio",
+        nargs="+",
+        help="Fichier(s) audio source",
     )
     parser.add_argument(
         "--segments",
-        default="segments.json",
-        help="JSON produit par rupture_detector.py [défaut: segments.json]",
+        nargs="+",
+        default=["segments.json"],
+        help="JSON(s) produit(s) par rupture_detector.py, dans le même ordre que les audios [défaut: segments.json]",
     )
     parser.add_argument(
         "--threshold",
@@ -645,9 +828,16 @@ def main():
     parser.add_argument("--no-plot", action="store_true")
     args = parser.parse_args()
 
+    if len(args.audio) != len(args.segments):
+        parser.error(
+            f"Le nombre de fichiers audio ({len(args.audio)}) "
+            f"doit correspondre au nombre de fichiers segments ({len(args.segments)})"
+        )
+
+    sources = list(zip(args.audio, args.segments))
+
     pipeline = FingerprintPipeline(
-        audio_path=args.audio,
-        segments_json=args.segments,
+        sources=sources,
         similarity_threshold=args.threshold,
     )
 

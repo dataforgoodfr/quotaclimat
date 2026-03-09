@@ -69,14 +69,13 @@ async def split_week_in_segments(
                 channel, start_date, end_date + timedelta(minutes=1)
             )  # on ajoute une minute pour être sûr de couvrir toute la période
 
-        if False:
-            output_file = os.path.join(
-                output_folder,
-                f"{start_date.strftime('%Y-%m-%d_%H-%M-%S')}.json",
-            )
-            split_and_save_chunks(
-                export_file,
-                output_file,
-                start_time=start_date.timestamp(),
-                hard_stop=end_date.timestamp(),
-            )
+        output_file = os.path.join(
+            output_folder,
+            f"{start_date.strftime('%Y-%m-%d_%H-%M-%S')}.json",
+        )
+        split_and_save_chunks(
+            export_file,
+            output_file,
+            start_time=start_date.timestamp(),
+            hard_stop=end_date.timestamp(),
+        )

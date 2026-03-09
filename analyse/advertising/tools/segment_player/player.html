@@ -32,6 +32,7 @@
             --m-energy: #f5a623;
             --m-centroid: #a78bfa;
             --m-zcr: #34d399;
+            --m-rep: #fb923c;
         }
 
         * {
@@ -239,6 +240,11 @@
 
         #timeline-wrap {
             height: 82px;
+            cursor: pointer;
+        }
+
+        #rep-wrap {
+            height: 56px;
             cursor: pointer;
         }
 
@@ -723,7 +729,7 @@
         .sibling-item.current-seg { border-color: var(--amber); opacity: .45; cursor: default; }
         .sibling-item.active { border-color: var(--purple); }
 
-        .sibling-time { flex: 1; font-size: .6rem; }
+        .sibling-time { flex: 1; font-size: .6rem; color: white; }
         .sibling-dur { font-size: .57rem; color: var(--text-dim); flex-shrink: 0; }
 
         .sibling-play-btn {
@@ -1235,6 +1241,13 @@
                 </div>
             </div>
 
+            <!-- Repetition heatmap (hidden until groups are loaded) -->
+            <div class="canvas-wrap" id="rep-wrap" style="display:none">
+                <canvas id="rep-canvas"></canvas>
+                <div class="playhead-line" id="rep-playhead"></div>
+                <div class="canvas-label">Répétitions détectées</div>
+            </div>
+
             <!-- Timeline (2 rows: segments + annotations) -->
             <div class="canvas-wrap" id="timeline-wrap">
                 <canvas id="timeline-canvas"></canvas>
@@ -1424,6 +1437,22 @@
     <div id="tooltip"></div>
     <audio id="audio-el"></audio>
 
+    <!-- Popup isolée pour lecture d'une occurrence similaire -->
+    <dialog id="sibling-popup" style="
+        background:#12121e; border:1px solid #2a2a42; border-radius:10px;
+        padding:0; max-width:520px; width:92vw; color:#e0e0f0;
+    ">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #2a2a42;">
+            <span id="sibling-popup-title" style="font-size:.75rem;color:#a78bfa;font-family:'Space Mono',monospace"></span>
+            <button id="sibling-popup-close" style="
+                background:none;border:1px solid #3a3a52;color:#a0a0c0;
+                border-radius:4px;cursor:pointer;padding:2px 8px;font-size:.8rem;
+            ">✕</button>
+        </div>
+        <video id="sibling-popup-video" controls style="width:100%;display:block;max-height:320px;background:#000"></video>
+        <audio id="sibling-popup-audio" controls style="width:100%;display:none;padding:8px"></audio>
+    </dialog>
+
     <!-- ── DONNÉES EMBARQUÉES ── -->
     <script id="embedded-data" type="application/json">null</script>
 
@@ -1477,6 +1506,8 @@
         const waveCanvas = document.getElementById('waveform-canvas');
         const metricsCanvas = document.getElementById('metrics-canvas');
         const tlCanvas = document.getElementById('timeline-canvas');
+        const repCanvas = document.getElementById('rep-canvas');
+        const repHead = document.getElementById('rep-playhead');
         const noveltyCanvas = document.getElementById('novelty-canvas');
         const noveltyHead = document.getElementById('novelty-playhead');
         const miniCanvas = document.getElementById('mini-canvas');
@@ -1534,32 +1565,32 @@
                     audioEl.src = url;
                 }
 
-                // Récupérer l'audio pour décoder la forme d'onde
-                // (nécessite que le serveur autorise CORS ; sinon, lecture seule sans waveform)
+                // Étape 1 : afficher immédiatement timeline + répétitions depuis les métadonnées
                 setWaveformStatus('loading');
-                try {
-                    const resp = await fetch(url);
+                const me = isVid ? videoEl : audioEl;
+                await new Promise(r => {
+                    if (me.readyState >= 1) { state.duration = me.duration; r(); return; }
+                    me.addEventListener('loadedmetadata', () => { state.duration = me.duration; r(); }, { once: true });
+                });
+                drawTimeline(); drawMetrics(); drawRepetitions();
+                statusDot.classList.add('active');
+
+                // Étape 2 : télécharger l'audio en arrière-plan pour la forme d'onde
+                // (nécessite que le serveur autorise CORS ; sinon, lecture seule sans waveform)
+                fetch(url).then(resp => {
                     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-                    const arrBuf = await resp.arrayBuffer();
+                    return resp.arrayBuffer();
+                }).then(arrBuf => {
                     state.audioCtx = new AudioContext();
-                    state.audioBuffer = await state.audioCtx.decodeAudioData(arrBuf);
-                    state.duration = state.audioBuffer.duration;
-                    drawWaveform(); drawTimeline(); drawMetrics();
+                    return state.audioCtx.decodeAudioData(arrBuf);
+                }).then(audioBuf => {
+                    state.audioBuffer = audioBuf;
+                    drawWaveform();
                     setWaveformStatus('ok');
-                } catch (err) {
-                    // CORS ou réseau bloqué : on récupère la durée depuis l'élément media
+                }).catch(err => {
                     console.warn('Waveform non disponible (CORS ou réseau) :', err.message);
                     setWaveformStatus('cors');
-                    await new Promise(r => {
-                        const me = isVid ? videoEl : audioEl;
-                        me.addEventListener('loadedmetadata', () => {
-                            state.duration = me.duration;
-                            drawTimeline(); drawMetrics();
-                            r();
-                        }, { once: true });
-                    });
-                }
-                statusDot.classList.add('active');
+                });
                 return;
             }
 
@@ -1893,6 +1924,73 @@
         }
 
         // ═══════════════════════════════════════════════════════════════════
+        //  REPETITION HEATMAP
+        // ═══════════════════════════════════════════════════════════════════
+        function drawRepetitions() {
+            if (!state.groups.length || !state.segments.length) return;
+            const { ctx, W, H } = setupCanvas(repCanvas, 'rep-wrap');
+            ctx.fillStyle = '#0b0b14'; ctx.fillRect(0, 0, W, H);
+
+            if (!state.duration) return;
+            const { start: vStart, end: vEnd, span: vSpan } = getView();
+            const toX = t => (t - vStart) / vSpan * W;
+
+            // Max count among all repeated groups for normalization
+            const maxCount = Math.max(2, ...state.groups.filter(g => g.count > 1).map(g => g.count));
+
+            // Grid lines
+            ctx.strokeStyle = '#1a1a28'; ctx.lineWidth = 1;
+            [0.25, 0.5, 0.75, 1].forEach(r => {
+                const y = H - r * (H - 4) - 2;
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+            });
+
+            // Y-axis count labels
+            ctx.fillStyle = '#3a3a5a'; ctx.font = '7px "Space Mono"';
+            for (let c = 2; c <= maxCount; c++) {
+                const y = H - ((c - 1) / (maxCount - 1)) * (H - 16) - 4;
+                ctx.fillText(c + '×', 2, y);
+            }
+
+            const PAD_BOTTOM = 4;
+            const drawH = H - PAD_BOTTOM;
+
+            for (const seg of state.segments) {
+                if (seg.end_sec < vStart || seg.start_sec > vEnd) continue;
+                const grp = findGroupForSeg(seg);
+                if (!grp || grp.count <= 1) continue;
+
+                const x1 = Math.max(toX(seg.start_sec), 0);
+                const x2 = Math.min(toX(seg.end_sec), W);
+                if (x2 <= x1) continue;
+
+                // Height proportional to count
+                const norm = (grp.count - 1) / (maxCount - 1);  // 0 at count=2, 1 at maxCount
+                const barH = Math.max(4, norm * (drawH - 8) + 8);
+                const y = drawH - barH;
+
+                // Color: brighter/more saturated with higher count
+                const alpha = 0.5 + norm * 0.45;
+                ctx.fillStyle = `rgba(251,146,60,${alpha})`;
+                ctx.fillRect(x1, y, x2 - x1 - 0.5, barH);
+
+                // Highlight top edge
+                ctx.fillStyle = `rgba(253,186,116,${alpha})`;
+                ctx.fillRect(x1, y, x2 - x1 - 0.5, 1.5);
+            }
+
+            // Active segment highlight
+            if (state.currentSegIdx >= 0) {
+                const seg = state.segments[state.currentSegIdx];
+                if (seg && findGroupForSeg(seg)?.count > 1 && seg.end_sec > vStart && seg.start_sec < vEnd) {
+                    const x1 = Math.max(toX(seg.start_sec), 0), x2 = Math.min(toX(seg.end_sec), W);
+                    ctx.strokeStyle = '#ffffff44'; ctx.lineWidth = 1.5;
+                    ctx.strokeRect(x1, 0, x2 - x1, H);
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════
         //  TIMELINE  (2 rows: segments on top, annotations below)
         // ═══════════════════════════════════════════════════════════════════
         function drawTimeline() {
@@ -2153,14 +2251,17 @@
             const Ww = document.getElementById('waveform-wrap').clientWidth;
             const Mw = document.getElementById('metrics-wrap').clientWidth;
             const Tw = document.getElementById('timeline-wrap').clientWidth;
+            const Rw = document.getElementById('rep-wrap').clientWidth;
             if (t >= vStart && t <= vEnd) {
                 const pct = (t - vStart) / vSpan;
                 playhead.style.display = '';
                 metricsHead.style.display = '';
                 tlPlayhead.style.display = '';
+                repHead.style.display = '';
                 playhead.style.left = pct * Ww + 'px';
                 metricsHead.style.left = pct * Mw + 'px';
                 tlPlayhead.style.left = pct * Tw + 'px';
+                repHead.style.left = pct * Rw + 'px';
             } else {
                 // Playhead hors vue : auto-pan pour le suivre pendant la lecture
                 if (state.playing && vSpan < state.duration * 0.99) {
@@ -2173,6 +2274,7 @@
                 playhead.style.display = 'none';
                 metricsHead.style.display = 'none';
                 tlPlayhead.style.display = 'none';
+                repHead.style.display = 'none';
                 noveltyHead.style.display = 'none';
             }
             if (state.noveltyVisible && t >= vStart && t <= vEnd) {
@@ -2214,7 +2316,7 @@
         });
 
         // Canvas interactions: click → seek, ctrl+wheel → zoom, wheel → pan, dblclick → reset
-        ['waveform-wrap', 'timeline-wrap', 'metrics-wrap'].forEach(id => {
+        ['waveform-wrap', 'timeline-wrap', 'metrics-wrap', 'rep-wrap'].forEach(id => {
             const el = document.getElementById(id);
             el.addEventListener('click', (e) => {
                 if (!state.duration) return;
@@ -2248,7 +2350,7 @@
         // ═══════════════════════════════════════════════════════════════════
         //  TOOLTIP
         // ═══════════════════════════════════════════════════════════════════
-        ['waveform-wrap', 'timeline-wrap', 'metrics-wrap'].forEach(id => {
+        ['waveform-wrap', 'timeline-wrap', 'metrics-wrap', 'rep-wrap'].forEach(id => {
             const el = document.getElementById(id);
             el.addEventListener('mousemove', (e) => {
                 if (!state.duration) return;
@@ -2313,11 +2415,14 @@
             for (const grp of groups) {
                 const occs = grp.occurrences || grp.segments || [];
                 for (const occ of occs) {
-                    const epoch = occ.start_epoch ?? occ.s;
+                    const epoch = occ.start_epoch ?? occ.start_sec ?? occ.s;
                     if (epoch != null)
                         state.groupByEpoch.set(Math.round(epoch), grp);
                 }
             }
+            const hasRepeated = groups.some(g => g.count > 1);
+            document.getElementById('rep-wrap').style.display = hasRepeated ? '' : 'none';
+            if (hasRepeated) drawRepetitions();
         }
 
         function findGroupForSeg(seg) {
@@ -2351,7 +2456,7 @@
             const segEpoch = Math.round(state.startEpoch + (seg.start_sec ?? 0));
 
             for (const occ of occs) {
-                const occEpoch = occ.start_epoch ?? occ.s ?? 0;
+                const occEpoch = occ.start_epoch ?? occ.start_sec ?? occ.s ?? 0;
                 const isCurrent = Math.round(occEpoch) === segEpoch;
                 const dur = (occ.duration_sec != null) ? occ.duration_sec : (occ.end_epoch - occEpoch);
                 const hasMedia = !!(occ.media_url);
@@ -2361,11 +2466,14 @@
                 item.dataset.epoch = occEpoch;
 
                 const timeLabel = epochToWall(occEpoch);
+                const dateLabel = epochToDate(occEpoch);
 
                 item.innerHTML = `
-                    <div class="sibling-time">${timeLabel}</div>
+                    <div style="flex:1;min-width:0">
+                        <div class="sibling-time">${dateLabel} ${timeLabel}</div>
+                    </div>
                     <div class="sibling-dur">${formatDur(dur)}</div>
-                    ${!isCurrent ? `<button class="sibling-play-btn" title="${hasMedia ? 'Voir dans le volet droit' : 'Aller à ce segment'}">▶</button>` : ''}
+                    ${!isCurrent ? `<button class="sibling-play-btn" title="Ouvrir dans une popup">▶</button>` : ''}
                 `;
 
                 if (!isCurrent) {
@@ -2396,37 +2504,82 @@
             } catch { return String(epoch); }
         }
 
-        function playSibling(occ) {
-            const mediaUrl = occ.media_url || null;
-            const wrap = document.getElementById('right-video-wrap');
-
-            if (mediaUrl && mediaUrl !== state.mainVideoUrl) {
-                // Source différente : charger dans le volet droit
-                state.siblingVideoMode = true;
-                wrap.classList.add('visible', 'sibling-mode');
-                document.getElementById('right-video-title').textContent =
-                    epochToWall(occ.start_epoch) + ' · ' + formatDur(occ.duration_sec ?? 0);
-
-                const startSec = occ.start_sec_in_media ??
-                    (state.startEpoch ? occ.start_epoch - state.startEpoch : 0);
-
-                rightVideoEl.src = mediaUrl;
-                rightVideoEl.addEventListener('loadedmetadata', function onLoad() {
-                    rightVideoEl.currentTime = Math.max(0, startSec);
-                    rightVideoEl.play().catch(() => { });
-                    rightVideoEl.removeEventListener('loadedmetadata', onLoad);
-                });
-            } else {
-                // Même source : chercher dans le player principal
-                const startSec = occ.start_sec_in_media ??
-                    (state.startEpoch ? occ.start_epoch - state.startEpoch : 0);
-                const me = mediaEl();
-                if (me.src) {
-                    me.currentTime = Math.max(0, startSec);
-                    if (!state.playing) { me.play(); state.playing = true; btnPlay.textContent = '⏸'; }
-                }
-            }
+        function epochToDate(epoch) {
+            if (!epoch) return '';
+            try {
+                return new Intl.DateTimeFormat('fr-FR', {
+                    timeZone: 'Europe/Paris',
+                    day: '2-digit', month: 'short',
+                }).format(new Date(epoch * 1000));
+            } catch { return ''; }
         }
+
+        function playSibling(occ) {
+            const occEpoch = occ.start_epoch ?? occ.start_sec ?? 0;
+            const startSec = occ.start_sec_in_media ??
+                (state.startEpoch ? occEpoch - state.startEpoch : 0);
+
+            // Determine source URL: use provided media_url, or fall back to main player source
+            const mediaUrl = occ.media_url || state.mainVideoUrl ||
+                (state.isVideo ? videoEl.src : null);
+            const isVideo = !!(mediaUrl && /\.(mp4|mov|webm|mkv|avi)(\?|$)/i.test(mediaUrl));
+
+            const popup = document.getElementById('sibling-popup');
+            const popupVideo = document.getElementById('sibling-popup-video');
+            const popupAudio = document.getElementById('sibling-popup-audio');
+            const popupTitle = document.getElementById('sibling-popup-title');
+
+            popupTitle.textContent =
+                epochToDate(occEpoch) + ' ' + epochToWall(occEpoch) +
+                ' · ' + formatDur(occ.duration_sec ?? 0) +
+                (occ.audio_source ? '  —  ' + occ.audio_source.split('/').pop() : '');
+
+            // Stop previous playback
+            popupVideo.pause(); popupAudio.pause();
+            popupVideo.src = ''; popupAudio.src = '';
+
+            if (mediaUrl) {
+                if (isVideo) {
+                    popupVideo.style.display = 'block';
+                    popupAudio.style.display = 'none';
+                    popupVideo.src = mediaUrl;
+                    popupVideo.addEventListener('loadedmetadata', function onLoad() {
+                        popupVideo.currentTime = Math.max(0, startSec);
+                        popupVideo.play().catch(() => { });
+                        popupVideo.removeEventListener('loadedmetadata', onLoad);
+                    }, { once: true });
+                } else {
+                    popupAudio.style.display = 'block';
+                    popupVideo.style.display = 'none';
+                    popupAudio.src = mediaUrl;
+                    popupAudio.addEventListener('loadedmetadata', function onLoad() {
+                        popupAudio.currentTime = Math.max(0, startSec);
+                        popupAudio.play().catch(() => { });
+                        popupAudio.removeEventListener('loadedmetadata', onLoad);
+                    }, { once: true });
+                }
+            } else {
+                popupVideo.style.display = 'none';
+                popupAudio.style.display = 'none';
+            }
+
+            popup.showModal();
+        }
+
+        document.getElementById('sibling-popup-close').addEventListener('click', () => {
+            const popup = document.getElementById('sibling-popup');
+            document.getElementById('sibling-popup-video').pause();
+            document.getElementById('sibling-popup-audio').pause();
+            popup.close();
+        });
+        document.getElementById('sibling-popup').addEventListener('click', (e) => {
+            // Close on backdrop click
+            if (e.target === e.currentTarget) {
+                e.currentTarget.querySelector('video').pause();
+                e.currentTarget.querySelector('audio').pause();
+                e.currentTarget.close();
+            }
+        });
 
         function closeSiblingVideo() {
             state.siblingVideoMode = false;
@@ -2789,7 +2942,7 @@
         function resetZoom() { state.viewStart = 0; state.viewEnd = 0; }
 
         function redrawAll() {
-            drawWaveform(); drawTimeline(); drawMetrics();
+            drawWaveform(); drawTimeline(); drawMetrics(); drawRepetitions();
             if (state.noveltyVisible) drawNoveltyChart();
         }
 
@@ -2802,6 +2955,8 @@
             el.classList.toggle('zoomed', zoom > 1.05);
         }
     </script>
+
+
 </body>
 
 </html>

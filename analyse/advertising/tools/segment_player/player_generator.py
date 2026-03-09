@@ -236,8 +236,20 @@ def generate_player(
         }
 
     # ── Étape 2 : segments ────────────────────────────────────────────
+    # Normalize segments: convert {s, e} → {start_sec, end_sec} with relative seconds
+    normalized_segments = []
+    for seg in segments:
+        s = seg.get("start_sec", seg.get("s"))
+        e = seg.get("end_sec", seg.get("e"))
+        # If values are absolute epoch timestamps (> 1e8), convert to relative
+        if start_epoch and s is not None and s > 1e8:
+            s = s - start_epoch
+        if start_epoch and e is not None and e > 1e8:
+            e = e - start_epoch
+        normalized_segments.append({**{k: v for k, v in seg.items() if k not in ("s", "e")}, "start_sec": s, "end_sec": e})
+
     print(f"[2/{n_steps}] Segments fournis en entrée")
-    print(f"  {len(segments)} segments")
+    print(f"  {len(normalized_segments)} segments")
 
     # ── Étape 3 (optionnelle) : annotations ───────────────────────────
     if annotations:
@@ -247,7 +259,7 @@ def generate_player(
     # Construction du payload JSON
     payload = {
         **payload_media,
-        "segments": segments,
+        "segments": normalized_segments,
         "annotations": annotations,
         "params": params or {},
         "novelty_peaks": novelty_peaks or [],
@@ -271,9 +283,16 @@ def generate_player(
         placeholder,
         f'<script id="embedded-data" type="application/json">{payload_str}</script>',
     )
+    if start_epoch:
+        from zoneinfo import ZoneInfo
+        dt = datetime.fromtimestamp(start_epoch, tz=ZoneInfo("Europe/Paris"))
+        channel_name = Path(media_input.split("?")[0]).stem.split("_")[0].upper() if not media_is_url else media_input.split("/")[-1].split("?")[0].split("_")[0].upper()
+        tab_title = f"{channel_name} — {dt.strftime('%d %b %Y %H:%M')}"
+    else:
+        tab_title = Path(media_input.split("?")[0]).stem if not media_is_url else media_input.split("/")[-1].split("?")[0]
     html = html.replace(
         "<title>Rupture Detector — Audio Lab</title>",
-        f"<title>{Path(media_input.split('?')[0]).stem if not media_is_url else media_input.split('/')[-1].split('?')[0]} — Rupture Detector</title>",
+        f"<title>{tab_title}</title>",
     )
 
     with open(output_path, "w", encoding="utf-8") as f:

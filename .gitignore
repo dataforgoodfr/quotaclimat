@@ -160,3 +160,5 @@ analyse/mediatree/images
 
 exports/
 output.html
+.fingerprint_cache
+working_data

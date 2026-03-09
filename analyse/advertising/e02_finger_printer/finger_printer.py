@@ -320,7 +320,10 @@ class RepetitionClusterer:
             if rel_diff(fp_a.rms, fp_b.rms) > self.rms_tolerance:
                 return False
         if fp_a.spectral_centroid > 0 and fp_b.spectral_centroid > 0:
-            if rel_diff(fp_a.spectral_centroid, fp_b.spectral_centroid) > self.centroid_tolerance:
+            if (
+                rel_diff(fp_a.spectral_centroid, fp_b.spectral_centroid)
+                > self.centroid_tolerance
+            ):
                 return False
         if fp_a.zcr > 0 and fp_b.zcr > 0:
             if rel_diff(fp_a.zcr, fp_b.zcr) > self.zcr_tolerance:
@@ -358,13 +361,13 @@ class RepetitionClusterer:
         # ── Compter les hashes partagés par paire (sans énumérer toutes les paires) ──
         # Seuil max : on ignore les hashes présents dans plus de la moitié des segments
         # (silence, fond musical constant…) mais on garde les hashes de pubs répétées
-        popular_threshold = max(50, n // 2)
+        # popular_threshold = max(50, n // 2)
         shared_counts: Dict[Tuple[int, int], int] = defaultdict(int)
         for bucket in hash_index.values():
             if len(bucket) < 2:
                 continue
-            if len(bucket) > popular_threshold:
-                continue
+            # if len(bucket) > popular_threshold:
+            #     continue
             for a, b in itertools.combinations(bucket, 2):
                 key = (a, b) if a < b else (b, a)
                 shared_counts[key] += 1
@@ -425,12 +428,21 @@ class FingerprintPipeline:
         similarity_threshold: float = 0.08,
         sr: int = 22050,
         cache_dir: Optional[str] = ".fingerprint_cache",
+        min_matching_hashes: int = 2,
+        n_peaks_by_segment: int = 5,
+        neighborhood_peaks_filter: int = 15,
+        min_peak_amplitude: float = 0.01,
     ):
         self.sources = sources
         self.sr = sr
-        self.constellation = ConstellationMap(sr=sr, n_peaks=5)
+        self.constellation = ConstellationMap(
+            sr=sr,
+            n_peaks=n_peaks_by_segment,
+            neighborhood=neighborhood_peaks_filter,
+            min_amplitude=min_peak_amplitude,
+        )
         self.hasher = HashGenerator()
-        self.matcher = FingerprintMatcher()
+        self.matcher = FingerprintMatcher(min_matching_hashes=min_matching_hashes)
         self.clusterer = RepetitionClusterer(similarity_threshold)
         self.cache_dir = Path(cache_dir) if cache_dir else None
 

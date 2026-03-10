@@ -9,11 +9,11 @@ qui sont stockées dans les JSON de segments :
   - spectral_centroid (Hz)
   - zcr (zero-crossing rate)
   - peaks (constellation map) → on en extrait les 4 écarts temporels
-    entre les 5 premiers peaks (triés par temps)
+    entre les 5 premiers peaks (triés par temps) + les 5 freq_bin
 
 Principe :
   1. Charger les JSON de segments (pas d'audio)
-  2. Construire un vecteur feature [duration, rms, centroid, zcr, gap0..gap3]
+  2. Construire un vecteur feature [duration, rms, centroid, zcr, gap0..gap3, freq0..freq4]
      par segment
   3. Normaliser chaque feature sur l'ensemble du dataset
   4. Calculer la distance euclidienne entre toutes les paires → O(n²) mais très rapide
@@ -51,30 +51,41 @@ from analyse.advertising.e02_finger_printer.finger_printer import (
 # ─────────────────────────────────────────────────────────────
 
 
-N_PEAK_GAPS = 4  # nombre d'écarts temporels entre les 5 premiers peaks
-N_FEATURES = 4 + N_PEAK_GAPS  # duration, rms, centroid, zcr + 4 peak gaps
+N_TOP_PEAKS = 5  # nombre de peaks à considérer
+N_PEAK_GAPS = N_TOP_PEAKS - 1  # 4 écarts temporels entre les 5 premiers peaks
+N_PEAK_FREQS = N_TOP_PEAKS  # 5 fréquences (freq_bin) des 5 premiers peaks
+N_PEAK_FEATURES = N_PEAK_GAPS + N_PEAK_FREQS  # 9 features issues des peaks
+N_FEATURES = 4 + N_PEAK_FEATURES  # duration, rms, centroid, zcr + 4 gaps + 5 freqs
 
 
-def _compute_peak_gaps(peaks: list | None) -> np.ndarray:
+def _compute_peak_features(peaks: list | None) -> tuple[np.ndarray, np.ndarray]:
     """
-    Calcule les écarts temporels entre les 5 premiers peaks (triés par temps).
+    Extrait les features des 5 premiers peaks (triés par temps) :
+      - 4 écarts temporels successifs (time gaps)
+      - 5 fréquences (freq_bin)
 
-    Les peaks sont des [time_frame, freq_bin].  On trie les 5 premiers par
-    time_frame puis on calcule les 4 différences successives.
-    Retourne un array de taille N_PEAK_GAPS, rempli de 0 si pas assez de peaks.
+    Les peaks sont des [time_frame, freq_bin].  On prend les 5 premiers
+    (triés par amplitude desc dans le detector), puis on les trie par
+    time_frame pour calculer les gaps et ordonner les fréquences.
+
+    Retourne (gaps[4], freqs[5]), remplis de 0 si pas assez de peaks.
     """
     gaps = np.zeros(N_PEAK_GAPS, dtype=np.float64)
-    if peaks is None or len(peaks) < 2:
-        return gaps
+    freqs = np.zeros(N_PEAK_FREQS, dtype=np.float64)
+    if peaks is None or len(peaks) < 1:
+        return gaps, freqs
     # Prendre les 5 premiers (déjà triés par amplitude desc dans le detector)
-    top = peaks[:5]
+    top = peaks[:N_TOP_PEAKS]
     # Trier par time_frame (index 0 de chaque [time_frame, freq_bin])
     top_sorted = sorted(top, key=lambda p: p[0])
     times = [p[0] for p in top_sorted]
-    # Calculer les écarts (il y en a len(times)-1, au max 4)
+    # Fréquences dans l'ordre temporel
+    for i in range(len(top_sorted)):
+        freqs[i] = top_sorted[i][1]
+    # Écarts temporels (il y en a len(times)-1, au max 4)
     for i in range(min(len(times) - 1, N_PEAK_GAPS)):
         gaps[i] = times[i + 1] - times[i]
-    return gaps
+    return gaps, freqs
 
 
 @dataclass
@@ -97,6 +108,10 @@ class SegmentFeatures:
     peak_gaps: np.ndarray = field(
         default_factory=lambda: np.zeros(N_PEAK_GAPS, dtype=np.float64)
     )
+    # Fréquences (freq_bin) des 5 premiers peaks (dans l'ordre temporel)
+    peak_freqs: np.ndarray = field(
+        default_factory=lambda: np.zeros(N_PEAK_FREQS, dtype=np.float64)
+    )
 
     # Vecteur normalisé (rempli après normalisation globale)
     feature_vector: np.ndarray = field(
@@ -109,7 +124,7 @@ class SegmentFeatures:
 
     @property
     def has_peak_features(self) -> bool:
-        return np.any(self.peak_gaps > 0)
+        return np.any(self.peak_gaps > 0) or np.any(self.peak_freqs > 0)
 
     def to_dict(self) -> dict:
         return {
@@ -123,6 +138,7 @@ class SegmentFeatures:
             "spectral_centroid": self.spectral_centroid,
             "zcr": self.zcr,
             "peak_gaps": self.peak_gaps.tolist(),
+            "peak_freqs": self.peak_freqs.tolist(),
         }
 
 
@@ -142,11 +158,13 @@ class FeatureNormalizer:
       [2] spectral_centroid
       [3] zcr
       [4..7] peak_gaps (4 écarts temporels entre les 5 premiers peaks)
+      [8..12] peak_freqs (5 freq_bin des 5 premiers peaks, ordre temporel)
     """
 
     FEATURE_NAMES = [
         "duration", "rms", "centroid", "zcr",
         "peak_gap_0", "peak_gap_1", "peak_gap_2", "peak_gap_3",
+        "peak_freq_0", "peak_freq_1", "peak_freq_2", "peak_freq_3", "peak_freq_4",
     ]
 
     def __init__(self, percentile_low: float = 2.0, percentile_high: float = 98.0):
@@ -178,6 +196,7 @@ class FeatureNormalizer:
             [
                 [seg.duration_sec, seg.rms, seg.spectral_centroid, seg.zcr]
                 + seg.peak_gaps.tolist()
+                + seg.peak_freqs.tolist()
                 for seg in segments
             ],
             dtype=np.float64,
@@ -186,7 +205,7 @@ class FeatureNormalizer:
     def stats(self) -> None:
         print("\n  Features — plages effectives après normalisation :")
         for i, name in enumerate(self.FEATURE_NAMES):
-            print(f"    {name:<12} min={self.mins[i]:.4g}  range={self.ranges[i]:.4g}")
+            print(f"    {name:<14} min={self.mins[i]:.4g}  range={self.ranges[i]:.4g}")
 
 
 # ─────────────────────────────────────────────────────────────
@@ -203,7 +222,7 @@ class MetaSimilarity:
 
     Weights : permet de pondérer l'importance relative de chaque feature.
       Par défaut : duration=1.5, rms=1.0, centroid=1.0, zcr=0.8,
-                   peak_gaps=0.6 chacun
+                   peak_gaps=0.6 chacun, peak_freqs=0.6 chacun
     """
 
     def __init__(
@@ -211,10 +230,10 @@ class MetaSimilarity:
         weights: Optional[np.ndarray] = None,
         duration_hard_max_sec: float = 1.0,
     ):
-        # Poids par feature : [duration, rms, centroid, zcr, gap0..gap3]
+        # Poids par feature : [duration, rms, centroid, zcr, gap0..gap3, freq0..freq4]
         if weights is None:
             self.weights = np.array(
-                [1.5, 1.0, 1.0, 0.8] + [0.6] * N_PEAK_GAPS
+                [1.5, 1.0, 1.0, 0.8] + [0.6] * N_PEAK_FEATURES
             )
         else:
             self.weights = np.asarray(weights, dtype=float)
@@ -383,6 +402,7 @@ class MetaMatcherPipeline:
             raw: List[Segment] = load_segment_groups_from_json(segments_json)
             print(f"  {len(raw):>4} segments  ←  {segments_json}")
             for seg in raw:
+                peak_gaps, peak_freqs = _compute_peak_features(seg.peaks)
                 all_segments.append(
                     SegmentFeatures(
                         segment_index=idx,
@@ -393,7 +413,8 @@ class MetaMatcherPipeline:
                         rms=seg.energy_mean,
                         spectral_centroid=seg.spectral_centroid,
                         zcr=seg.zcr,
-                        peak_gaps=_compute_peak_gaps(seg.peaks),
+                        peak_gaps=peak_gaps,
+                        peak_freqs=peak_freqs,
                     )
                 )
                 idx += 1

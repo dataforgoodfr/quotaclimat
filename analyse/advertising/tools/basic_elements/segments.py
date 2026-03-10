@@ -9,9 +9,9 @@ class Segment:
     start_sec: float = 0.0
     end_sec: float = 0.0
     # Features acoustiques optionnelles (calculées par le rupture_detector)
-    energy_mean: float = 0.0       # RMS moyen
+    energy_mean: float = 0.0  # RMS moyen
     spectral_centroid: float = 0.0  # Centroïde spectral moyen (Hz)
-    zcr: float = 0.0               # Zero-crossing rate moyen
+    zcr: float = 0.0  # Zero-crossing rate moyen
 
     def to_dict(self) -> dict:
         d = {"s": self.start_sec, "e": self.end_sec}
@@ -22,6 +22,19 @@ class Segment:
         if self.zcr:
             d["zcr"] = self.zcr
         return d
+
+    def to_alternary_dict(self) -> dict:
+        """Représentation alternative, utilisée par le html notamment."""
+        return {
+            "start_sec": self.start_sec,
+            "end_sec": self.end_sec,
+            "duration_sec": self.end_sec - self.start_sec,
+            "energy_mean": (
+                self.energy_mean  # Énergie RMS moyenne (utile pour discriminer silence/parole/musique)
+            ),
+            "spectral_centroid": self.spectral_centroid,  # "Brillance" moyenne — grave vs aigu
+            "zcr_mean": self.zcr,  # Zero-crossing rate — parole vs musique
+        }
 
 
 @dataclass

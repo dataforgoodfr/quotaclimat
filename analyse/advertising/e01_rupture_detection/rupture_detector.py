@@ -18,7 +18,7 @@ import librosa
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.ndimage import maximum_filter1d, uniform_filter1d
+from scipy.ndimage import maximum_filter, maximum_filter1d, uniform_filter1d
 from scipy.signal import find_peaks
 
 # ─────────────────────────────────────────────
@@ -38,6 +38,7 @@ class Segment:
     spectral_centroid: float  # "Brillance" moyenne — grave vs aigu
     zcr_mean: float  # Zero-crossing rate — parole vs musique
     label: str = "?"  # Classification heuristique
+    peaks: list = None  # Constellation map : liste de [time_frame, freq_bin] relatifs au début du segment
 
     def to_timecode(self, t: float) -> str:
         h = int(t // 3600)
@@ -117,6 +118,16 @@ class RuptureDetector:
         #       silences manqués ou si le contenu se ressemble beaucoup (pub→pub).
         # 1.0 = comportement par défaut : le cosinus module l'intensité du pic.
         # 0.3 = bon compromis si certaines vraies ruptures sont manquées.
+        # ── Paramètres de la constellation map (pics spectraux) ──────────────
+        n_fft: int = 2048,
+        # ↑ Taille FFT pour le spectrogramme de la constellation. 2048 ≈ 93ms @ 22050Hz.
+        n_peaks: int = 30,
+        # ↑ Nombre maximum de pics spectraux retenus par segment (indépendant de la durée).
+        neighborhood: int = 15,
+        # ↑ Taille du filtre de maximum local dans le plan temps×fréquence.
+        #   Un pic est retenu uniquement s'il est le plus fort dans son voisinage.
+        min_amplitude: float = 0.01,
+        # ↑ Seuil minimal d'amplitude normalisée (0–1) pour qu'un point soit retenu.
     ):
         self.sr = sr
         self.hop_length = hop_length
@@ -128,6 +139,10 @@ class RuptureDetector:
         self.max_ruptures = max_ruptures
         self.silence_percentile = silence_percentile
         self.cosine_weight = cosine_weight
+        self.n_fft = n_fft
+        self.n_peaks = n_peaks
+        self.neighborhood = neighborhood
+        self.min_amplitude = min_amplitude
         self._fps = sr / hop_length  # frames/sec ≈ 43 à sr=22050, hop=512
 
     def get_novelty_peaks(self, novelty: np.ndarray) -> list:
@@ -321,10 +336,35 @@ class RuptureDetector:
         )
         return peaks_sec
 
+    def _extract_peaks(self, y_seg: np.ndarray) -> list:
+        """
+        Extrait la constellation map d'un segment audio.
+        Retourne une liste de [time_frame, freq_bin] relatifs au début du segment.
+        """
+        if len(y_seg) < self.sr * 0.5:
+            return []
+
+        D = np.abs(librosa.stft(y_seg, n_fft=self.n_fft, hop_length=self.hop_length))
+        D_log = librosa.amplitude_to_db(D, ref=np.max)
+        D_norm = (D_log - D_log.min()) / (D_log.max() - D_log.min() + 1e-8)
+
+        local_max = maximum_filter(D_norm, size=self.neighborhood)
+        is_peak = (D_norm == local_max) & (D_norm > self.min_amplitude)
+
+        freq_idxs, time_idxs = np.where(is_peak)
+        if len(freq_idxs) == 0:
+            return []
+
+        amplitudes = D_norm[freq_idxs, time_idxs]
+        order = np.argsort(-amplitudes)[: self.n_peaks]
+        return np.column_stack(
+            [time_idxs[order].astype(np.int32), freq_idxs[order].astype(np.int32)]
+        ).tolist()
+
     def build_segments(
-        self, peaks: np.ndarray, features: dict, duration_sec: float
+        self, peaks: np.ndarray, features: dict, duration_sec: float, y: np.ndarray
     ) -> List[Segment]:
-        """Construit les segments avec leurs descripteurs."""
+        """Construit les segments avec leurs descripteurs et leur constellation map."""
         frames_per_sec = self.sr / self.hop_length
         segments = []
 
@@ -343,9 +383,25 @@ class RuptureDetector:
             if f_end <= f_start:
                 continue
 
-            e = float(np.mean(features["energy"][f_start:f_end]))
-            c = float(np.mean(features["centroid"][f_start:f_end]))
-            z = float(np.mean(features["zcr"][f_start:f_end]))
+            energy_seg = features["energy"][f_start:f_end]
+            e = float(np.mean(energy_seg))
+
+            # Pour centroïde et ZCR : ignorer les frames silencieuses en début/fin
+            # (un blanc de quelques ms sinon tire le centroïde vers 0 et fausse le ZCR)
+            silence_thr = np.percentile(features["energy"], self.silence_percentile)
+            non_silent = np.where(energy_seg > silence_thr)[0]
+            if len(non_silent) >= 2:
+                fc_start = f_start + int(non_silent[0])
+                fc_end = f_start + int(non_silent[-1]) + 1
+            else:
+                fc_start, fc_end = f_start, f_end
+
+            c = float(np.mean(features["centroid"][fc_start:fc_end]))
+            z = float(np.mean(features["zcr"][fc_start:fc_end]))
+
+            s_start = int(t_start * self.sr)
+            s_end = int(t_end * self.sr)
+            seg_peaks = self._extract_peaks(y[s_start:s_end])
 
             seg = Segment(
                 index=i,
@@ -355,6 +411,7 @@ class RuptureDetector:
                 energy_mean=e,
                 spectral_centroid=c,
                 zcr_mean=z,
+                peaks=seg_peaks,
             )
             seg.label = "SEGMENT"
             segments.append(seg)
@@ -383,11 +440,11 @@ class RuptureDetector:
         t4 = time.perf_counter()
         print(f"      → {t4 - t3:.2f}s")
 
-        segments = self.build_segments(peaks, features, duration)
+        segments = self.build_segments(peaks, features, duration, y)
         t5 = time.perf_counter()
 
         print(
-            f"[5/5] Segmentation terminée : {len(segments)} segments  → {t5 - t4:.2f}s"
+            f"[5/5] Segmentation + extraction des pics terminée : {len(segments)} segments  → {t5 - t4:.2f}s"
         )
         print(f"      Durée totale : {t5 - t0:.2f}s")
         return segments, peaks, novelty, features, y

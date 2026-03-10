@@ -479,20 +479,31 @@ class FingerprintPipeline:
                 with open(cache_path, encoding="utf-8") as f:
                     return [Fingerprint.from_dict(d) for d in json.load(f)]
 
-        y = self.load_audio(audio_path)
         segments = load_segment_groups_from_json(segments_json)
         print(f"\n[Fingerprinting] {len(segments)} segments ({audio_path})...")
+
+        # Charger l'audio seulement si au moins un segment n'a pas de pics pré-calculés
+        needs_audio = any(seg.peaks is None for seg in segments)
+        y = self.load_audio(audio_path) if needs_audio else None
+
         fingerprints = []
 
         for i, seg in enumerate(tqdm(segments, desc="Empreintes")):
-            s = int((seg.start_sec - start_time) * self.sr)
-            e = int((seg.end_sec - start_time) * self.sr)
-            y_seg = y[s:e]
-
-            if len(y_seg) < self.sr * 0.5:  # Ignorer < 0.5s
+            duration_seg = seg.end_sec - seg.start_sec
+            if duration_seg < 0.5:  # Ignorer < 0.5s
                 continue
 
-            peaks = self.constellation.extract(y_seg)
+            if seg.peaks is not None:
+                peaks = (
+                    np.array(seg.peaks, dtype=np.int32)
+                    if seg.peaks
+                    else np.empty((0, 2), dtype=np.int32)
+                )
+            else:
+                s = int((seg.start_sec - start_time) * self.sr)
+                e = int((seg.end_sec - start_time) * self.sr)
+                peaks = self.constellation.extract(y[s:e])
+
             hashes = self.hasher.generate(peaks)
 
             # Utiliser les features pré-calculées par le rupture_detector si disponibles
@@ -501,6 +512,9 @@ class FingerprintPipeline:
                 centroid = seg.spectral_centroid
                 zcr = seg.zcr
             else:
+                s = int((seg.start_sec - start_time) * self.sr)
+                e = int((seg.end_sec - start_time) * self.sr)
+                y_seg = (y if y is not None else self.load_audio(audio_path))[s:e]
                 rms = float(np.sqrt(np.mean(y_seg**2)))
                 centroid = float(
                     np.mean(librosa.feature.spectral_centroid(y=y_seg, sr=self.sr))

@@ -12,6 +12,7 @@ class Segment:
     energy_mean: float = 0.0  # RMS moyen
     spectral_centroid: float = 0.0  # Centroïde spectral moyen (Hz)
     zcr: float = 0.0  # Zero-crossing rate moyen
+    peaks: list = None  # Constellation map : liste de [time_frame, freq_bin] relatifs au début du segment
 
     def to_dict(self) -> dict:
         d = {"s": self.start_sec, "e": self.end_sec}
@@ -21,6 +22,8 @@ class Segment:
             d["sc"] = self.spectral_centroid
         if self.zcr:
             d["zcr"] = self.zcr
+        if self.peaks is not None:
+            d["peaks"] = self.peaks
         return d
 
     def to_alternary_dict(self) -> dict:
@@ -70,6 +73,7 @@ def load_segment_groups_from_json(input_path: str) -> list[Segment]:
                 energy_mean=d.get("rms", 0.0),
                 spectral_centroid=d.get("sc", 0.0),
                 zcr=d.get("zcr", 0.0),
+                peaks=d.get("peaks", None),
             )
             for d in data
         ]

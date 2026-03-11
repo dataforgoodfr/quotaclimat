@@ -388,21 +388,21 @@ channel_mapping = {
     "lasexta-news": {
         "title": "LaSexta News",
         "public": False,
-        "infocontinue": True,
+        "infocontinue": False,
         "radio": False,
         "country": SPAIN.name
     },
     "telecinco-news": {
         "title": "Telecinco News",
         "public": False,
-        "infocontinue": True,
+        "infocontinue": False,
         "radio": False,
         "country": SPAIN.name
     },
     "cuatro-news": {
         "title": "Cuatro News",
         "public": False,
-        "infocontinue": True,
+        "infocontinue": False,
         "radio": False,
         "country": SPAIN.name
     },

@@ -283,7 +283,7 @@
         "duration": 55,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "18120893a5ef2ec7b700624a7b4de86933caf487174c91fe204f6af0d503bcd0"
@@ -300,7 +300,7 @@
         "duration": 40,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "26ba5d50133aa4f2ee33f6b93a246864de6ecdef0872c83a3444e1f43e5f4b35"
@@ -317,7 +317,7 @@
         "duration": 210,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "a27ce85b48cb2c27ff263fd48b7e2bb8ff47223742362aa463b8a6482f0e0246"
@@ -1320,7 +1320,7 @@
         "duration": 240,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "57840a3749d6f822dc421d2dba92e5a6180f18eb50c83d29b3309a71a1372b74"
@@ -1337,7 +1337,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "fdc83d416e93074ab13260271007a4080190c7482714285b9ff93b2b28ff3050"
@@ -1354,7 +1354,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "22dac1dbb2c24696845e2085f4bb10fd2b95760694fef50b9b2df19ca48814d9"
@@ -3802,7 +3802,7 @@
         "duration": 120,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "87dc5dc4ed314b5be5c95228a0fbe64f016ef1de2e4f9cdd9506a8250df21d20"
@@ -3819,7 +3819,7 @@
         "duration": 30,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "2ac1c4851c622ac64a6cdea4a7a6ae541513d8aea41d07216dce2ae3aebbf274"
@@ -3836,7 +3836,7 @@
         "duration": 40,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "4d973dc8a424fb486c304c3c4a89ca599422360e94ad938177f0769c427e1402"
@@ -5281,7 +5281,7 @@
         "duration": 55,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "ce5763396555937a557dec12a0a4959d17ec3610e3e58aee3e496c0721060de4"
@@ -5298,7 +5298,7 @@
         "duration": 40,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "031a033d7f51d967c9d2d44bb21c51ef3f5ac96df90ac5e78bce89b099b7e6ab"
@@ -5315,7 +5315,7 @@
         "duration": 210,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "87a8f0df6342e51ffb71a5f6964f886478c3f0cc06c07cd36cd4f2f3c3df2bca"
@@ -6318,7 +6318,7 @@
         "duration": 240,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "2e917ca481dccd350b5af93a0542491e14f378ac65ac506b9a79d0d1fb8652a8"
@@ -6335,7 +6335,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "a2465a8552d2457e434702bd888c6131109254eb9764a20e29fa2dbbf4bc154d"
@@ -6352,7 +6352,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "9a0cb9d4bb30bb936e9f4a7af97bf9dcf8765ae114ecf1c3238cc9d90c3c231e"
@@ -8800,7 +8800,7 @@
         "duration": 120,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "2a2ccb71e560b905aa54f10cf904f1e529f6d990584c1d67dd0aa5b8ce3c8a46"
@@ -8817,7 +8817,7 @@
         "duration": 30,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "6723f6ad2d15f64ef37ee65dd553266ba1e5252ca7e52c5b1557983b7a6fd15e"
@@ -8834,7 +8834,7 @@
         "duration": 40,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "2e96dde32f496e0af14cfc9fafe6d04caa00c136c53cc48392e91bc7dc1bf0af"
@@ -10279,7 +10279,7 @@
         "duration": 55,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "e5593854dfed6e928fdde8be8cd4c9df186fd88601f9764329c0bfcce38f5675"
@@ -10296,7 +10296,7 @@
         "duration": 40,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "2f8b24e6bec3f7455cbfaf66c11842e6e3b1a710e371a4efb6ea0f47e10dbc0a"
@@ -10313,7 +10313,7 @@
         "duration": 210,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "f17561b9c55edeaa51616e975be0aa7cc66f5db1f091624c08b9a3095e0706a1"
@@ -11316,7 +11316,7 @@
         "duration": 240,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "f3ed439d9e1e75e1e4d451c052db1bb94b2829b7966f502e9ba9612f858eb925"
@@ -11333,7 +11333,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "e956b3dd1749d1672ef897021a4e684d3e7079e7d791170a83661ba85b95ab34"
@@ -11350,7 +11350,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "65fb9bdca42cad8e1869782d775663aa68853683bfb3450043a80dfcbc0baa52"
@@ -13798,7 +13798,7 @@
         "duration": 120,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "49caa0ef003aea2952ba36d74d17acf21ac432735fdc6b946faa5cbf6edfb54e"
@@ -13815,7 +13815,7 @@
         "duration": 30,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "f9af2ee5f9856dfed10527753ae3eba3744fb72f701143752719282cfd2b140b"
@@ -13832,7 +13832,7 @@
         "duration": 40,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "aa716067bd7538961714598676cb39d41a0dab78ab1ebc0b44ae0071bbc619cf"
@@ -15277,7 +15277,7 @@
         "duration": 55,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "a9d438f659a38eee24efc8aa5e4c878d66d50de385cb87f8c75d493dcd195a9a"
@@ -15294,7 +15294,7 @@
         "duration": 40,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "47236d9d5350311b10836904d038efc5f2efb6d3d8fd6060959a12b2c6cd0d61"
@@ -15311,7 +15311,7 @@
         "duration": 210,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "54df5b9a488f89382f7d6e53638be0638cdf0d11e1e683e82e7aaa5e2fa7c3c9"
@@ -16348,7 +16348,7 @@
         "duration": 240,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "fe847337a72ac9cbe26d1017261a23535fdaa933824059671d4605475ee94d64"
@@ -16365,7 +16365,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "419833d46284ce21c0eefd464b47a8c051c0e614e96f9b673710c4c82543ccc2"
@@ -16382,7 +16382,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "b7380f4a0669f8e3289711e48cfe19dbb6815db4826e4fd62218e2deddd3d52d"
@@ -18830,7 +18830,7 @@
         "duration": 120,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "4bcdaadfd9da4fb7e62b224a1d87aac6e5a43202c8c963ed44d2923eae380159"
@@ -18847,7 +18847,7 @@
         "duration": 30,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "92230e143b367d766bb7dd55683663462559be75c8c15bec70565f7dc96ac951"
@@ -18864,7 +18864,7 @@
         "duration": 40,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "6355ea62ac03ec452572b2b0685c2bd10057fbc365e9d8aee89181ef239c21ca"
@@ -20309,7 +20309,7 @@
         "duration": 55,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "94e5cf3c6f9f992d90b7142f99866b321595bdc2556f8a31d5f76b4fa2c0c44c"
@@ -20326,7 +20326,7 @@
         "duration": 40,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "07f675b87c125b1e237a81825edf84641dafb7c6a3ca88fa7c27b54724fa509e"
@@ -20343,7 +20343,7 @@
         "duration": 210,
         "channel_title": "Cuatro News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "ee6d1517ce290aecf416bfa9d0d13ab49c3fcc369db07ebe7737ffc475b3e9f7"
@@ -21329,7 +21329,7 @@
         "duration": 240,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "aa4e29ed8b8d507d0c08a30f110b5429ed3c7759b256d064c9a693acdd0a14af"
@@ -21346,7 +21346,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "8f6083172dc577cbe0b6be268134fa95ebb8c64eed58f259db1c941382847e52"
@@ -21363,7 +21363,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "395827a32f402a59ade693dd236937d08115ab817f3f29e311cd641bf7dfaadd"
@@ -23811,7 +23811,7 @@
         "duration": 120,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "a7268c1e18932c405a0c9ac89abe52c188976b7938e35587125fb896d0716b27"
@@ -23828,7 +23828,7 @@
         "duration": 30,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "9d1a263719db4ff401e1be4d54555dc8766878ccaaaafd2d13224ece07fa84f4"
@@ -23845,7 +23845,7 @@
         "duration": 40,
         "channel_title": "Telecinco News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "bb089bd74648623ff0e03f93082d5d2bf251966efdbd98ecec68853eeaa029e9"
@@ -25936,7 +25936,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "bb0d113397fc0a5ca5b243002a7b9221408af070c7d4c6de7507bf9a5039af17"
@@ -25953,7 +25953,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "83d87478a8e62a72fb0f3f4b47527a0f5a886936aff609e7696d52163570d38c"
@@ -29370,7 +29370,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "36261400b68c332de50ac399ba7295e738fcfc565f55a9a416c4c568f33d209b"
@@ -29387,7 +29387,7 @@
         "duration": 45,
         "channel_title": "LaSexta News",
         "public": false,
-        "infocontinue": true,
+        "infocontinue": false,
         "radio": false,
         "country": "spain",
         "id": "fc311e65b7d07f0782d3d2c36508dc32a01cafc647eb64ae75cb4b238a1041fc"

@@ -125,7 +125,6 @@ class SegmentCreator:
 
     def extract_features(self, y: np.ndarray) -> dict:
         """Calcule les features frame-par-frame."""
-        print("[2/5] Extraction des features...")
 
         mfcc = librosa.feature.mfcc(
             y=y, sr=self.sr, n_mfcc=self.n_mfcc, hop_length=self.hop_length
@@ -169,13 +168,9 @@ class SegmentCreator:
         Un instant sans silence aura novelty = 0, quelle que soit la dissimilarité
         cosinus (les variations de timbre en cours d'émission sont ignorées).
         """
-        print("[3/5] Calcul de la courbe de nouveauté...")
 
         n_frames = stack.shape[1]
         kernel = max(4, int(self.context_sec * self._fps))
-        print(
-            f"      Fenêtre de contexte : {kernel} frames = {kernel / self._fps:.2f}s de chaque côté"
-        )
 
         # ── 1. Masque silence ────────────────────────────────────────────────
         silence_threshold = np.percentile(energy, self.silence_percentile)
@@ -185,13 +180,6 @@ class SegmentCreator:
         # pour que le pic de nouveauté puisse tomber aux bords du silence.
         dilation_frames = max(1, int(0.1 * self._fps))
         silence_mask = maximum_filter1d(silence_mask, size=dilation_frames * 2 + 1)
-
-        n_silent = int(silence_mask.sum())
-        print(
-            f"      Seuil silence       : énergie < {silence_threshold:.5f} "
-            f"(percentile {self.silence_percentile}) "
-            f"→ {n_silent} frames silencieuses ({100 * n_silent / n_frames:.1f}%)"
-        )
 
         # ── 2. Dissimilarité cosinus ─────────────────────────────────────────
         cosine_dissim = np.zeros(n_frames)
@@ -217,9 +205,6 @@ class SegmentCreator:
         # Lissage léger pour faciliter la détection de pics
         smooth_frames = max(3, int(self.novelty_smooth_sec * self._fps))
         novelty = uniform_filter1d(novelty, size=smooth_frames)
-        print(
-            f"      Lissage             : {smooth_frames} frames = {smooth_frames / self._fps:.2f}s"
-        )
 
         return novelty
 
@@ -232,27 +217,17 @@ class SegmentCreator:
           2. Distance minimale (min_segment_sec) → impose un écart entre pics
           3. Top-N (max_ruptures)            → ne garde que les N plus intenses
         """
-        print("[4/5] Détection des frontières...")
 
         min_dist_frames = int(self.min_segment_sec * self._fps)
 
         # Filtre 1 : seuil adaptatif sur la distribution de la courbe
         # sensitivity=0.25 → seuil au percentile 75 → on garde le quart supérieur
         threshold = np.percentile(novelty, 100 * (1 - self.sensitivity))
-        print(
-            f"      Seuil sensitivity={self.sensitivity:.2f} → "
-            f"hauteur min {threshold:.4f} "
-            f"(percentile {100 * (1 - self.sensitivity):.0f})"
-        )
 
         peaks, props = find_peaks(
             novelty,
             height=threshold,
             distance=min_dist_frames,
-        )
-        print(
-            f"      Après seuil + distance min ({self.min_segment_sec}s) : "
-            f"{len(peaks)} ruptures candidates"
         )
 
         # Filtre 2 : top-N ruptures les plus intenses (optionnel)
@@ -262,17 +237,10 @@ class SegmentCreator:
             heights = props["peak_heights"]
             top_idx = np.argsort(-heights)[: self.max_ruptures]
             peaks = np.sort(peaks[top_idx])
-            print(
-                f"      Filtre top-{self.max_ruptures} appliqué → "
-                f"{len(peaks)} ruptures conservées"
-            )
 
         # Convertir en secondes
         peaks_sec = peaks / self._fps
 
-        print(
-            f"      Résultat final : {len(peaks_sec)} ruptures → {len(peaks_sec) + 1} segments"
-        )
         return peaks_sec
 
     def _extract_peaks(self, y_seg: np.ndarray) -> list:
@@ -348,7 +316,6 @@ class SegmentCreator:
             seg_peaks = self._extract_peaks(y[s_start:s_end])
 
             seg = Segment(
-                index=i,
                 start_sec=start_epoch + float(t_start),
                 end_sec=start_epoch + float(t_end),
                 duration_sec=float(dur),

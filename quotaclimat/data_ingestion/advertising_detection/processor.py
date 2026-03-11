@@ -1,19 +1,18 @@
 import asyncio
 import json
 from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 from typing import Generator
 
-import Path
-
-from analyse.advertising.s01_advertising_detection.e00_download_audio_files.download_partition import (
+from quotaclimat.data_ingestion.advertising_detection.e00_download_audio_files.download_partition import (
     ProcessingTask,
     download_audio,
 )
-from analyse.advertising.s01_advertising_detection.e00_download_audio_files.partition_window import (
+from quotaclimat.data_ingestion.advertising_detection.e00_download_audio_files.partition_window import (
     DownloadTask,
     partition_week,
 )
-from analyse.advertising.s01_advertising_detection.e02_create_segments import (
+from quotaclimat.data_ingestion.advertising_detection.e02_create_segments import (
     SegmentCreator,
 )
 
@@ -25,18 +24,25 @@ from analyse.advertising.s01_advertising_detection.e02_create_segments import (
 
 
 def process_audio(processing_task: ProcessingTask):
-    segments = SegmentCreator().run(
-        processing_task.audio_file_path, processing_task.start_date.timestamp()
-    )
     cache_path = (
         Path("cache")
         / processing_task.channel
         / processing_task.start_date.strftime("%Y-%m-%d _%H-%M-%S")
     )
-    cache_path.mkdir(parents=True, exist_ok=True)
-    with open(cache_path, "w", encoding="utf-8") as f:
-        json.dump([fp.to_dict() for fp in segments], f)
-    return
+    if cache_path.exists():
+        print(f"✓ Cache hit for {processing_task} → skipping processing")
+        return
+    else:
+        print(f"Processing {processing_task.channel}, {processing_task.start_date}...")
+        segments = SegmentCreator().run(
+            processing_task.audio_file_path, processing_task.start_date.timestamp()
+        )
+        print(
+            f"Finished processing {processing_task.channel}, {processing_task.start_date}"
+        )
+        cache_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(cache_path, "w", encoding="utf-8") as f:
+            json.dump([fp.to_dict() for fp in segments], f)
 
 
 ###############################
@@ -87,6 +93,7 @@ class AudioProcessor:
             await self.queue.put(None)
 
     async def _process_worker(self, executor: ProcessPoolExecutor, worker_id: str):
+        print(f"Worker {worker_id} started")
         while True:
             task: ProcessingTask = await self.queue.get()
             if task is None:
@@ -101,7 +108,6 @@ class AudioProcessor:
         async with self.semaphore:
             processing_task = await download_audio(task)
             await self.queue.put(processing_task)
-            print(f"✓ {processing_task.audio_url}")
 
 
 if __name__ == "__main__":

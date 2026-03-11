@@ -1,8 +1,9 @@
 import asyncio
+import json
 from concurrent.futures import ProcessPoolExecutor
 from typing import Generator
 
-import librosa
+import Path
 
 from analyse.advertising.s01_advertising_detection.e00_download_audio_files.download_partition import (
     ProcessingTask,
@@ -27,8 +28,15 @@ def process_audio(processing_task: ProcessingTask):
     segments = SegmentCreator().run(
         processing_task.audio_file_path, processing_task.start_date.timestamp()
     )
-    y, sr = librosa.load(processing_task.audio_url, sr=16000)
-    return librosa.feature.mfcc(y=y, sr=sr)
+    cache_path = (
+        Path("cache")
+        / processing_task.channel
+        / processing_task.start_date.strftime("%Y-%m-%d _%H-%M-%S")
+    )
+    cache_path.mkdir(parents=True, exist_ok=True)
+    with open(cache_path, "w", encoding="utf-8") as f:
+        json.dump([fp.to_dict() for fp in segments], f)
+    return
 
 
 ###############################

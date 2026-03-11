@@ -1,9 +1,15 @@
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from .download_partition import DownloadTask
-
 tz_paris = ZoneInfo("Europe/Paris")
+
+
+@dataclass
+class DownloadTask:
+    start_date: datetime
+    end_date: datetime
+    channel: str
 
 
 def _all_intervals_between(
@@ -23,11 +29,11 @@ def partition_week(
     week_start_date = datetime.fromisoformat(start_date).replace(tzinfo=tz_paris)
     return (
         DownloadTask(
-            start_sec=start_sec.timestamp(),
-            end_sec=end_sec.timestamp(),
+            start_date=task_start_date,
+            end_date=task_end_date,
             channel=channel,
         )
-        for start_sec, end_sec in _all_intervals_between(
+        for task_start_date, task_end_date in _all_intervals_between(
             week_start_date, week_start_date + timedelta(days=7), timedelta(minutes=30)
         )
     )

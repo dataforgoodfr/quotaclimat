@@ -1,23 +1,19 @@
-import os
-import sys
-
-repo_root_path = os.path.abspath(os.path.join("."))
-
-if repo_root_path not in sys.path:
-    sys.path.append(repo_root_path)
-
 import asyncio
 from concurrent.futures import ProcessPoolExecutor
-from dataclasses import dataclass
 from typing import Generator
 
 import librosa
 
 from analyse.advertising.s01_advertising_detection.e00_download_audio_files.download_partition import (
-    DownloadTask,
+    ProcessingTask,
+    download_audio,
 )
 from analyse.advertising.s01_advertising_detection.e00_download_audio_files.partition_window import (
+    DownloadTask,
     partition_week,
+)
+from analyse.advertising.s01_advertising_detection.e02_create_segments import (
+    SegmentCreator,
 )
 
 ###############################
@@ -27,36 +23,12 @@ from analyse.advertising.s01_advertising_detection.e00_download_audio_files.part
 # Process already downloaded files, delete them and the end.
 
 
-@dataclass
-class ProcessingTask:
-    audio_url: str
-    start_sec: float
-    end_sec: float
-    channel: str
-
-
 def process_audio(processing_task: ProcessingTask):
-    print(f"Processing {processing_task}...")
-    return
+    segments = SegmentCreator().run(
+        processing_task.audio_file_path, processing_task.start_date.timestamp()
+    )
     y, sr = librosa.load(processing_task.audio_url, sr=16000)
     return librosa.feature.mfcc(y=y, sr=sr)
-
-
-###############################
-#
-# Download functions:
-#
-# Defines the different steps, download audio file and queue them for processing.
-
-
-async def download_audio(task: DownloadTask) -> ProcessingTask:
-    print(f"Downloading {task}...")
-    return ProcessingTask(
-        audio_url=f"/tmp/{task.channel}_{task.start_sec}_{task.end_sec}.wav",
-        start_sec=task.start_sec,
-        end_sec=task.end_sec,
-        channel=task.channel,
-    )
 
 
 ###############################
@@ -108,7 +80,7 @@ class AudioProcessor:
 
     async def _process_worker(self, executor: ProcessPoolExecutor, worker_id: str):
         while True:
-            task: DownloadTask = await self.queue.get()
+            task: ProcessingTask = await self.queue.get()
             if task is None:
                 break
 
@@ -134,7 +106,7 @@ if __name__ == "__main__":
             num_workers=new_workers,
             task_partition=partition_week(
                 channel="tf1",
-                start_date="2024-01-01",
+                start_date="2025-06-01",
             ),
         ).run()
     )

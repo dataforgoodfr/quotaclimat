@@ -473,6 +473,7 @@ class Keyword_Macro_Category(FactivaBase):
     __tablename__ = "keyword_macro_category"
     
     keyword = Column(String, primary_key=True)  # linked to Dictionary.keyword
+    language = Column(String, nullable=True, default=False)  # linked to Dictionary.keyword
     is_empty = Column(Boolean, nullable=True, default=False)
     general = Column(Boolean, nullable=True, default=False)
     agriculture = Column(Boolean, nullable=True, default=False)

@@ -439,7 +439,7 @@ def update_program_metadata(engine):
         session.close()
 
 
-def update_dictionary(engine, theme_keywords, macro_categories=MACRO_CATEGORIES):
+def update_dictionary(engine, theme_keywords=THEME_KEYWORDS, macro_categories=MACRO_CATEGORIES):
     logging.info("Updating dictionary data")
     Session = sessionmaker(bind=engine)
     session = Session()

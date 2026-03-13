@@ -4,10 +4,9 @@ import logging
 import traceback
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
+from datetime import timedelta
 from pathlib import Path
 from typing import Generator
-
-logger = logging.getLogger(__name__)
 
 from tqdm import tqdm
 
@@ -20,11 +19,18 @@ from quotaclimat.data_ingestion.advertising_detection.e00_download_audio_files.p
     partition_week,
 )
 from quotaclimat.data_ingestion.advertising_detection.e02_create_segments import (
+    Segment,
     SegmentCreator,
 )
 from quotaclimat.data_ingestion.advertising_detection.e03_group_segments import (
     SegmentGroupingPipeline,
 )
+from quotaclimat.data_ingestion.advertising_detection.tools.visualizer.weekly_viewer import (
+    generate_weekly_viewer,
+)
+
+logger = logging.getLogger(__name__)
+
 
 ###############################
 #
@@ -249,7 +255,7 @@ if __name__ == "__main__":
         start_date=start_date,
     )
 
-    if True:
+    if False:
         new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
 
         asyncio.run(
@@ -259,7 +265,7 @@ if __name__ == "__main__":
             ).run()
         )
 
-    else:
+    elif False:
         segments_list = []
         for dl_task in partition:
             cache_path = (
@@ -276,7 +282,7 @@ if __name__ == "__main__":
             else:
                 with open(cache_path, "r", encoding="utf-8") as f:
                     segments = json.load(f)
-                segments_list.push(segments)
+                segments_list.append([Segment.from_dict(d) for d in segments])
 
         pipeline = SegmentGroupingPipeline(
             similarity_threshold=0.05,
@@ -288,14 +294,53 @@ if __name__ == "__main__":
         )
 
         groups = pipeline.run(segments_list)
-        groups_cache_path = (
-            Path(".cache")
-            / "grouping"
-            / "abc"
-            / channel
-            / start_date.strftime("%Y-%m-%d_%H-%M-%S")
-        )
+        groups_cache_path = Path(".cache") / "grouping" / "abc" / channel / start_date
 
         # Export JSON
+        groups_cache_path.parent.mkdir(parents=True, exist_ok=True)
         with open(groups_cache_path, "w", encoding="utf-8") as f:
             json.dump(groups, f, indent=2, ensure_ascii=False)
+
+    else:
+        groups_cache_path = Path(".cache") / "grouping" / "abc" / channel / start_date
+        with open(groups_cache_path, "r", encoding="utf-8") as f:
+            groups = json.load(f)
+
+        parts = []
+        for dl_task in partition:
+            cache_path = (
+                Path(".cache")
+                / "segments"
+                / "abc"
+                / dl_task.channel
+                / dl_task.start_date.strftime("%Y-%m-%d_%H-%M-%S")
+            )
+            if not cache_path.exists():
+                raise RuntimeError(
+                    f"Cache file not found for {dl_task}. Please run the full pipeline first."
+                )
+            else:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    segments = json.load(f)
+                parts.append(
+                    {
+                        "start_date": dl_task.start_date.timestamp(),
+                        "end_date": (
+                            dl_task.end_date + timedelta(minutes=1)
+                        ).timestamp(),
+                        "segments": [d for d in segments],
+                        "media_url": "https://vod.mediatree.fr/assets/tf1_2025-03-17T11-00-00Z_2025-03-17T11-30-00Z.mp4",
+                    }
+                )
+
+        generate_weekly_viewer(
+            output_path="week_report.html",
+            grouping=groups,
+            parts=parts,
+            annotations=[],
+            # annotations=[  # testimony_table
+            #     {"type": "PUBLICITE", "start": 1709561000, "end": 1709561300},
+            #     ...,
+            # ],
+            params_summary={"channel": channel, "start_date": start_date},
+        )

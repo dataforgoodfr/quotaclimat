@@ -37,6 +37,10 @@ class Segment:
     def to_dict(self):
         return asdict(self)
 
+    @classmethod
+    def from_dict(cls, d):
+        return cls(**d)
+
 
 # ─────────────────────────────────────────────
 #  Création de segments

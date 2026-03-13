@@ -170,7 +170,6 @@ class Fingerprint:
     end_sec: float
     duration_sec: float
     label: str
-    audio_source: str = ""
     hashes: List[Tuple[str, int]] = field(default_factory=list)  # [(hash, t_ancrage)]
     hash_set: Set[str] = field(default_factory=set)  # Pour lookup rapide
     # Features acoustiques pour pré-filtrage
@@ -188,7 +187,6 @@ class Fingerprint:
             "end_sec": self.end_sec,
             "duration_sec": self.duration_sec,
             "label": self.label,
-            "audio_source": self.audio_source,
             "hashes": self.hashes,  # List[Tuple[str, int]] → JSON array of [str, int]
             "rms": self.rms,
             "spectral_centroid": self.spectral_centroid,
@@ -203,7 +201,6 @@ class Fingerprint:
             end_sec=d["end_sec"],
             duration_sec=d["duration_sec"],
             label=d["label"],
-            audio_source=d["audio_source"],
             hashes=[(h, t) for h, t in d["hashes"]],
             rms=d.get("rms", 0.0),
             spectral_centroid=d.get("spectral_centroid", 0.0),
@@ -447,9 +444,7 @@ class SegmentGroupingPipeline:
         )
         return hashlib.md5(params.encode()).hexdigest()[:8]
 
-    def fingerprint_source(
-        self, audio_path: str, segments: List[Segment], start_time: float
-    ) -> List[Fingerprint]:
+    def fingerprint_source(self, segments: List[Segment]) -> List[Fingerprint]:
         fingerprints = []
         for i, seg in enumerate(segments):
             duration_seg = seg.end_sec - seg.start_sec
@@ -466,7 +461,7 @@ class SegmentGroupingPipeline:
 
             rms = seg.energy_mean
             centroid = seg.spectral_centroid
-            zcr = seg.zcr
+            zcr = seg.zcr_mean
 
             fp = Fingerprint(
                 segment_index=i,
@@ -474,7 +469,6 @@ class SegmentGroupingPipeline:
                 end_sec=seg.end_sec,
                 duration_sec=seg.end_sec - seg.start_sec,
                 label="",
-                audio_source=audio_path,
                 hashes=hashes,
                 rms=rms,
                 spectral_centroid=centroid,
@@ -525,7 +519,6 @@ class SegmentGroupingPipeline:
                     "occurrences": [
                         {
                             "segment_index": m.segment_index,
-                            "audio_source": m.audio_source,
                             "start_sec": round(m.start_sec, 2),
                             "end_sec": round(m.end_sec, 2),
                             "duration_sec": round(m.duration_sec, 2),

@@ -1,10 +1,13 @@
 import asyncio
 import json
+import logging
 import traceback
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Generator
+
+logger = logging.getLogger(__name__)
 
 from tqdm import tqdm
 
@@ -193,21 +196,41 @@ class AudioProcessor:
             self.proc_bar.update(1)
             self._update_postfix()
 
-    async def _download_and_queue(self, task: DownloadTask):
-        """All-in-one: download AND queue"""
+    async def _download_and_queue(
+        self, task: DownloadTask, max_retries: int = 3, base_delay: float = 2.0
+    ):
+        """All-in-one: download with retry AND queue"""
         async with self.semaphore:
-            try:
-                processing_task = await download_audio(task)
-                if processing_task.download_was_cached:
-                    self.stats.dl_cached += 1
-                else:
-                    self.stats.dl_downloaded += 1
-                await self.queue.put(processing_task)
-            except Exception:
+            last_exception = None
+            for attempt in range(1, max_retries + 1):
+                try:
+                    processing_task = await download_audio(task)
+                    if processing_task.download_was_cached:
+                        self.stats.dl_cached += 1
+                    else:
+                        self.stats.dl_downloaded += 1
+                    await self.queue.put(processing_task)
+                    last_exception = None
+                    break
+                except Exception:
+                    last_exception = traceback.format_exc()
+                    if attempt < max_retries:
+                        delay = base_delay * (2 ** (attempt - 1))
+                        logger.warning(
+                            "Download attempt %d/%d failed for %s, retrying in %.1fs",
+                            attempt,
+                            max_retries,
+                            task,
+                            delay,
+                        )
+                        await asyncio.sleep(delay)
+
+            if last_exception is not None:
                 self.stats.dl_errors += 1
-                tb = traceback.format_exc()
-                self.stats.errors.append(("download", str(task), tb))
-                tqdm.write(f"\n[ERROR] Download failed for {task}:\n{tb}")
+                self.stats.errors.append(("download", str(task), last_exception))
+                tqdm.write(
+                    f"\n[ERROR] Download failed for {task} after {max_retries} attempts:\n{last_exception}"
+                )
 
             self.dl_bar.update(1)
             self._update_postfix()

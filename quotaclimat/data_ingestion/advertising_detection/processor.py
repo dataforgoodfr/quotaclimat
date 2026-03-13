@@ -30,9 +30,11 @@ from quotaclimat.data_ingestion.advertising_detection.e02_create_segments import
 def process_audio(processing_task: ProcessingTask) -> bool:
     """Returns True if processing was cached (skipped), False if actually processed."""
     cache_path = (
-        Path("cache")
+        Path(".cache")
+        / "segments"
+        / "abc"
         / processing_task.channel
-        / processing_task.start_date.strftime("%Y-%m-%d _%H-%M-%S")
+        / processing_task.start_date.strftime("%Y-%m-%d_%H-%M-%S")
     )
     if cache_path.exists():
         return True
@@ -159,8 +161,7 @@ class AudioProcessor:
     async def _download_worker(self):
         """Launch downloads and queue them as they complete"""
         tasks = [
-            self._download_and_queue(download_task)
-            for download_task in self.tasks
+            self._download_and_queue(download_task) for download_task in self.tasks
         ]
 
         # Wait for all to finish
@@ -215,14 +216,14 @@ class AudioProcessor:
 if __name__ == "__main__":
     import os
 
-    new_workers = max(1, os.cpu_count() - 2)  # Laisser 1-2 CPUs libres pour l'OS
+    new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
 
     asyncio.run(
         AudioProcessor(
             num_workers=new_workers,
             task_partition=partition_week(
                 channel="tf1",
-                start_date="2025-06-01",
+                start_date="2025-05-05",
             ),
         ).run()
     )

@@ -9,7 +9,7 @@ Extrait les descripteurs de chaque segment (énergie, centroïde spectral, ZCR) 
 
 import argparse
 import json
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import List
 
 import librosa
@@ -33,6 +33,9 @@ class Segment:
     spectral_centroid: float  # "Brillance" moyenne — grave vs aigu
     zcr_mean: float  # Zero-crossing rate — parole vs musique
     peaks: list = None  # Constellation map : liste de [time_frame, freq_bin] relatifs au début du segment
+
+    def to_dict(self):
+        return asdict(self)
 
 
 # ─────────────────────────────────────────────

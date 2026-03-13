@@ -55,15 +55,24 @@ class MediatreeAPI:
             },
         )
         if response.status_code != 200:
-            raise Exception(f"Unexpected response status code: {response.status_code}")
-        return response.json()["src"]
+            raise Exception(
+                f"Unexpected response status code: {response.status_code} ({response.url})\nResponse text: {response.text}"
+            )
+
+        json_response = response.json()
+        if "src" not in json_response:
+            raise Exception(
+                f"Unexpected response format ({response.url}): {json_response}",
+            )
+
+        return json_response["src"]
 
     async def download_export(
         self, file_name, channel: str, from_date: datetime, to_date: datetime
     ):
         # Opening a new client for each download. It would be better to open and close a single client for whole execution.
         async with httpx.AsyncClient(
-            timeout=httpx.Timeout(60.0, connect=60.0)
+            timeout=httpx.Timeout(120.0, connect=120.0)
         ) as client:
             single_export_url = await self.get_single_export_url(
                 client, channel, from_date, to_date, "mp3"
@@ -77,7 +86,7 @@ class MediatreeAPI:
 
 
 class CachedMediatreeAPI:
-    def __init__(self, export_folder="../exports", prefix=""):
+    def __init__(self, export_folder="./.cache/mediatree", prefix=""):
         self.api = MediatreeAPI()
         self.export_folder = export_folder
         self.prefix = prefix
@@ -100,7 +109,7 @@ class CachedMediatreeAPI:
         file_path = os.path.join(self.export_folder, file_name)
 
         if not os.path.isfile(file_path):
-            print(f"Downloading export for {channel} from {from_date} to {to_date}...")
+            # print(f"Downloading export for {channel} from {from_date} to {to_date}...")
             await self.api.download_export(file_path, channel, from_date, to_date)
 
         return file_path

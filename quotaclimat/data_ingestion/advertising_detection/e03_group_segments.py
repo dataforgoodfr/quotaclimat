@@ -22,7 +22,7 @@ import numpy as np
 from scipy.ndimage import maximum_filter
 from tqdm import tqdm
 
-from .e02_create_segments import Segments
+from .e02_create_segments import Segment
 
 # ─────────────────────────────────────────────────────────────
 #  Constellation Map : extraction des pics dans le spectrogramme
@@ -448,7 +448,7 @@ class SegmentGroupingPipeline:
         return hashlib.md5(params.encode()).hexdigest()[:8]
 
     def fingerprint_source(
-        self, audio_path: str, segments: List[Segments], start_time: float
+        self, audio_path: str, segments: List[Segment], start_time: float
     ) -> List[Fingerprint]:
         fingerprints = []
         for i, seg in enumerate(segments):
@@ -493,7 +493,7 @@ class SegmentGroupingPipeline:
 
     def run(
         self,
-        sources: List[List[Segments]],
+        sources: List[List[Segment]],
     ) -> dict:
         t0 = time.time()
 

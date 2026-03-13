@@ -22,6 +22,9 @@ from quotaclimat.data_ingestion.advertising_detection.e00_download_audio_files.p
 from quotaclimat.data_ingestion.advertising_detection.e02_create_segments import (
     SegmentCreator,
 )
+from quotaclimat.data_ingestion.advertising_detection.e03_group_segments import (
+    SegmentGroupingPipeline,
+)
 
 ###############################
 #
@@ -239,14 +242,60 @@ class AudioProcessor:
 if __name__ == "__main__":
     import os
 
-    new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
-
-    asyncio.run(
-        AudioProcessor(
-            num_workers=new_workers,
-            task_partition=partition_week(
-                channel="tf1",
-                start_date="2025-05-05",
-            ),
-        ).run()
+    channel = "tf1"
+    start_date = "2025-05-05"
+    partition = partition_week(
+        channel=channel,
+        start_date=start_date,
     )
+
+    if True:
+        new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
+
+        asyncio.run(
+            AudioProcessor(
+                num_workers=new_workers,
+                task_partition=partition,
+            ).run()
+        )
+
+    else:
+        segments_list = []
+        for dl_task in partition:
+            cache_path = (
+                Path(".cache")
+                / "segments"
+                / "abc"
+                / dl_task.channel
+                / dl_task.start_date.strftime("%Y-%m-%d_%H-%M-%S")
+            )
+            if not cache_path.exists():
+                raise RuntimeError(
+                    f"Cache file not found for {dl_task}. Please run the full pipeline first."
+                )
+            else:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    segments = json.load(f)
+                segments_list.push(segments)
+
+        pipeline = SegmentGroupingPipeline(
+            similarity_threshold=0.05,
+            sr=22050,
+            min_matching_hashes=1,
+            n_peaks_by_segment=5,
+            neighborhood_peaks_filter=15,
+            min_peak_amplitude=0.01,
+        )
+
+        groups = pipeline.run(segments_list)
+        groups_cache_path = (
+            Path(".cache")
+            / "grouping"
+            / "abc"
+            / channel
+            / start_date.strftime("%Y-%m-%d_%H-%M-%S")
+        )
+
+        # Export JSON
+        with open(groups_cache_path, "w", encoding="utf-8") as f:
+            json.dump(groups, f, indent=2, ensure_ascii=False)

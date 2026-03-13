@@ -56,6 +56,7 @@ nbformat = "^5.10.4"
 kaleido = "^1.2.0"
 duckdb = "^1.4.4"
 scikit-learn = "^1.8.0"
+stanza = "^1.11.1"
 [build-system]
 requires = ["poetry-core>=1.1"]
 build-backend = "poetry.core.masonry.api"

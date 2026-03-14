@@ -265,6 +265,9 @@ class AudioProcessor:
 
 
 if __name__ == "__main__":
+    from quotaclimat.data_ingestion.advertising_detection.offline_pipeline import (
+        group_segments,
+    )
     import os
 
     channel = "tf1"
@@ -306,16 +309,7 @@ if __name__ == "__main__":
                     segments = json.load(f)
                 segments_list.append([Segment.from_dict(d) for d in segments])
 
-        pipeline = SegmentGroupingPipeline(
-            similarity_threshold=0.05,
-            sr=22050,
-            min_matching_hashes=1,
-            n_peaks_by_segment=5,
-            neighborhood_peaks_filter=15,
-            min_peak_amplitude=0.01,
-        )
-
-        groups = pipeline.run(segments_list)
+        groups = group_segments(segments_list)
         groups_cache_path = Path(".cache") / "grouping" / "abc" / channel / start_date
 
         # Export JSON

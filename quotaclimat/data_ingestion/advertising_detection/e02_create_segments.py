@@ -8,14 +8,81 @@ Extrait les descripteurs de chaque segment (énergie, centroïde spectral, ZCR) 
 """
 
 import argparse
+import hashlib
 import json
 from dataclasses import asdict, dataclass
-from typing import List
+from typing import List, Tuple
 
 import librosa
 import numpy as np
 from scipy.ndimage import maximum_filter, maximum_filter1d, uniform_filter1d
 from scipy.signal import find_peaks
+
+
+# ─────────────────────────────────────────────────────────────
+#  Génération des hashes par paires de pics (fan-out)
+# ─────────────────────────────────────────────────────────────
+
+
+class HashGenerator:
+    """
+    À partir de la constellation, génère des hashes robustes
+    en combinant des PAIRES de pics proches.
+
+    Pourquoi des paires ?
+      → Un hash = (freq1, freq2, delta_temps)
+      → Invariant au décalage temporel absolu
+      → Résistant au bruit (un pic isolé peut disparaître,
+        une paire cohérente est beaucoup plus stable)
+    """
+
+    def __init__(
+        self,
+        fan_out: int = 15,  # Nombre de voisins à combiner avec chaque pic
+        time_delta_max: int = 100,  # Fenêtre temporelle max entre deux pics (frames)
+        time_delta_min: int = 1,  # Fenêtre minimale (évite les auto-paires)
+    ):
+        self.fan_out = fan_out
+        self.time_delta_max = time_delta_max
+        self.time_delta_min = time_delta_min
+
+    def generate(self, peaks: np.ndarray) -> List[Tuple[str, int]]:
+        """
+        Retourne une liste de (hash_str, temps_ancrage).
+
+        hash_str   = empreinte d'une paire de pics
+        temps_ancrage = position temporelle du pic de référence (en frames)
+        """
+        if len(peaks) < 2:
+            return []
+
+        # Trier par temps croissant
+        peaks = peaks[peaks[:, 0].argsort()]
+
+        hashes = []
+        for i, (t1, f1) in enumerate(peaks):
+            # Chercher les pics suivants dans la fenêtre temporelle
+            j = i + 1
+            count = 0
+            while j < len(peaks) and count < self.fan_out:
+                t2, f2 = peaks[j]
+                delta_t = t2 - t1
+
+                if delta_t > self.time_delta_max:
+                    break
+                if delta_t >= self.time_delta_min:
+                    # Hash = combinaison des deux fréquences + écart temporel
+                    # → identique quelle que soit la position dans le flux
+                    h = self._make_hash(f1, f2, delta_t)
+                    hashes.append((h, int(t1)))
+                    count += 1
+                j += 1
+
+        return hashes
+
+    def _make_hash(self, f1: int, f2: int, dt: int) -> str:
+        raw = f"{f1}|{f2}|{dt}"
+        return hashlib.md5(raw.encode()).hexdigest()[:12]
 
 # ─────────────────────────────────────────────
 #  Structure de données pour un segment détecté
@@ -33,6 +100,7 @@ class Segment:
     spectral_centroid: float  # "Brillance" moyenne — grave vs aigu
     zcr_mean: float  # Zero-crossing rate — parole vs musique
     peaks: list = None  # Constellation map : liste de [time_frame, freq_bin] relatifs au début du segment
+    hashes: list = None  # Liste de [hash_str, anchor_time] pré-calculés à partir des peaks
 
     def to_dict(self):
         return asdict(self)
@@ -125,6 +193,7 @@ class SegmentCreator:
         self.neighborhood = neighborhood
         self.min_amplitude = min_amplitude
         self._fps = sr / hop_length  # frames/sec ≈ 43 à sr=22050, hop=512
+        self._hasher = HashGenerator()
 
     def load(self, path: str) -> np.ndarray:
         y, sr = librosa.load(path, sr=self.sr, mono=True)
@@ -322,6 +391,14 @@ class SegmentCreator:
             s_end = int(t_end * self.sr)
             seg_peaks = self._extract_peaks(y[s_start:s_end])
 
+            # Pré-calcul des hashes à partir des pics (constellation fingerprinting)
+            peaks_array = (
+                np.array(seg_peaks, dtype=np.int32)
+                if seg_peaks
+                else np.empty((0, 2), dtype=np.int32)
+            )
+            seg_hashes = self._hasher.generate(peaks_array)
+
             seg = Segment(
                 start_sec=start_epoch + float(t_start),
                 end_sec=start_epoch + float(t_end),
@@ -330,6 +407,7 @@ class SegmentCreator:
                 spectral_centroid=c,
                 zcr_mean=z,
                 peaks=seg_peaks,
+                hashes=seg_hashes,
             )
             segments.append(seg)
 

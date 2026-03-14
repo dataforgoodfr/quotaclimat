@@ -36,7 +36,7 @@ class MediatreeAPI:
         token = output["data"]["access_token"]
         return token
 
-    async def get_single_export_url(
+    async def _get_single_export_url(
         self,
         client: httpx.AsyncClient,
         channel: str,
@@ -68,14 +68,19 @@ class MediatreeAPI:
         return json_response["src"]
 
     async def download_export(
-        self, file_name, channel: str, from_date: datetime, to_date: datetime
+        self,
+        file_name,
+        channel: str,
+        from_date: datetime,
+        to_date: datetime,
+        media_format: str,
     ):
         # Opening a new client for each download. It would be better to open and close a single client for whole execution.
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(120.0, connect=120.0)
         ) as client:
-            single_export_url = await self.get_single_export_url(
-                client, channel, from_date, to_date, "mp3"
+            single_export_url = await self._get_single_export_url(
+                client, channel, from_date, to_date, media_format
             )
 
             response = await client.get(single_export_url)
@@ -84,6 +89,23 @@ class MediatreeAPI:
             with open(file_name, "wb") as f:
                 f.write(response.content)
 
+    async def get_src_url(
+        self,
+        channel: str,
+        from_date: datetime,
+        to_date: datetime,
+        media_format: str,
+    ):
+        # Opening a new client for each call. It would be better to open and close a single client for whole execution.
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(120.0, connect=120.0)
+        ) as client:
+            url = await self._get_single_export_url(
+                client, channel, from_date, to_date, media_format
+            )
+
+            return url
+
 
 class CachedMediatreeAPI:
     def __init__(self, export_folder="./.cache/mediatree", prefix=""):
@@ -91,34 +113,53 @@ class CachedMediatreeAPI:
         self.export_folder = export_folder
         self.prefix = prefix
 
-    def _file_name(self, channel: str, from_date: datetime, to_date: datetime):
+    def _file_name(
+        self, channel: str, from_date: datetime, to_date: datetime, media_format: str
+    ):
         from_date_utc = from_date.astimezone(tz=ZoneInfo("UTC"))
         to_date_utc = to_date.astimezone(tz=ZoneInfo("UTC"))
-        return f"{self.prefix}{channel}_{from_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}Z_{to_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}Z.mp3"
+        return f"{self.prefix}{channel}_{from_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}Z_{to_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}Z.{media_format}"
 
     async def download_export(
         self,
         channel: str,
         from_date: datetime,
         to_date: datetime,
+        media_format: str,
         file_name: str | None = None,
     ):
         if file_name is None:
-            file_name = self._file_name(channel, from_date, to_date)
+            file_name = self._file_name(channel, from_date, to_date, media_format)
 
         file_path = os.path.join(self.export_folder, file_name)
 
         if not os.path.isfile(file_path):
             # print(f"Downloading export for {channel} from {from_date} to {to_date}...")
-            await self.api.download_export(file_path, channel, from_date, to_date)
+            await self.api.download_export(
+                file_path, channel, from_date, to_date, media_format
+            )
 
         return file_path
 
-    async def export_channel_whole_week(self, channel: str, week_start_date: datetime):
-        for start_date, end_date in all_intervals_between(
-            week_start_date, week_start_date + timedelta(days=7), timedelta(hours=1)
-        ):
-            await self.download_export(channel, start_date, end_date)
+    async def generate_src_url(
+        self, channel: str, from_date: datetime, to_date: datetime, media_format: str
+    ):
+        file_name = self._file_name(
+            channel, from_date, to_date, media_format + "-source"
+        )
+        file_path = os.path.join(self.export_folder, file_name)
+
+        if os.path.isfile(file_path):
+            with open(file_path, "r") as f:
+                return f.read().strip()
+
+        url = await self.api.get_src_url(channel, from_date, to_date, media_format)
+
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, "w") as f:
+            f.write(url)
+
+        return url
 
 
 def all_intervals_between(

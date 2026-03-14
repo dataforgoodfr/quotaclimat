@@ -25,11 +25,41 @@ from quotaclimat.data_ingestion.advertising_detection.e02_create_segments import
 from quotaclimat.data_ingestion.advertising_detection.e03_group_segments import (
     SegmentGroupingPipeline,
 )
+from quotaclimat.data_ingestion.advertising_detection.tools.mediatree import (
+    CachedMediatreeAPI,
+)
+from quotaclimat.data_ingestion.advertising_detection.tools.testimony_data.extract import (
+    get_testimony_data,
+)
 from quotaclimat.data_ingestion.advertising_detection.tools.visualizer.weekly_viewer import (
     generate_weekly_viewer,
 )
 
 logger = logging.getLogger(__name__)
+
+api = CachedMediatreeAPI()
+
+
+async def with_exponential_backoff(
+    coro_fn, max_retries: int = 3, base_delay: float = 2.0, label: str = ""
+):
+    """Retry an async callable with exponential backoff. Raises on final failure."""
+    for attempt in range(1, max_retries + 1):
+        try:
+            return await coro_fn()
+        except Exception as exc:
+            if attempt == max_retries:
+                raise
+            delay = base_delay * (2 ** (attempt - 1))
+            logger.warning(
+                "Attempt %d/%d failed%s, retrying in %.1fs: %s",
+                attempt,
+                max_retries,
+                f" for {label}" if label else "",
+                delay,
+                exc,
+            )
+            await asyncio.sleep(delay)
 
 
 ###############################
@@ -210,35 +240,24 @@ class AudioProcessor:
     ):
         """All-in-one: download with retry AND queue"""
         async with self.semaphore:
-            last_exception = None
-            for attempt in range(1, max_retries + 1):
-                try:
-                    processing_task = await download_audio(task)
-                    if processing_task.download_was_cached:
-                        self.stats.dl_cached += 1
-                    else:
-                        self.stats.dl_downloaded += 1
-                    await self.queue.put(processing_task)
-                    last_exception = None
-                    break
-                except Exception:
-                    last_exception = traceback.format_exc()
-                    if attempt < max_retries:
-                        delay = base_delay * (2 ** (attempt - 1))
-                        logger.warning(
-                            "Download attempt %d/%d failed for %s, retrying in %.1fs",
-                            attempt,
-                            max_retries,
-                            task,
-                            delay,
-                        )
-                        await asyncio.sleep(delay)
-
-            if last_exception is not None:
+            try:
+                processing_task = await with_exponential_backoff(
+                    lambda: download_audio(task),
+                    max_retries=max_retries,
+                    base_delay=base_delay,
+                    label=str(task),
+                )
+                if processing_task.download_was_cached:
+                    self.stats.dl_cached += 1
+                else:
+                    self.stats.dl_downloaded += 1
+                await self.queue.put(processing_task)
+            except Exception:
+                tb = traceback.format_exc()
                 self.stats.dl_errors += 1
-                self.stats.errors.append(("download", str(task), last_exception))
+                self.stats.errors.append(("download", str(task), tb))
                 tqdm.write(
-                    f"\n[ERROR] Download failed for {task} after {max_retries} attempts:\n{last_exception}"
+                    f"\n[ERROR] Download failed for {task} after {max_retries} attempts:\n{tb}"
                 )
 
             self.dl_bar.update(1)
@@ -249,10 +268,13 @@ if __name__ == "__main__":
     import os
 
     channel = "tf1"
+    TESTIMONY_CHANNEL = "TF1"
     start_date = "2025-05-05"
-    partition = partition_week(
-        channel=channel,
-        start_date=start_date,
+    partition = list(
+        partition_week(
+            channel=channel,
+            start_date=start_date,
+        )
     )
 
     if False:
@@ -307,7 +329,7 @@ if __name__ == "__main__":
             groups = json.load(f)
 
         parts = []
-        for dl_task in partition:
+        for dl_task in tqdm(partition, desc="Processing partition"):
             cache_path = (
                 Path(".cache")
                 / "segments"
@@ -322,6 +344,21 @@ if __name__ == "__main__":
             else:
                 with open(cache_path, "r", encoding="utf-8") as f:
                     segments = json.load(f)
+
+                media_url = asyncio.run(
+                    with_exponential_backoff(
+                        lambda: api.generate_src_url(
+                            channel=dl_task.channel,
+                            from_date=dl_task.start_date,
+                            to_date=dl_task.end_date + timedelta(minutes=1),
+                            media_format="mp4",
+                        ),
+                        label=str(dl_task),
+                        base_delay=10.0,
+                        max_retries=10,
+                    )
+                )
+
                 parts.append(
                     {
                         "start_date": dl_task.start_date.timestamp(),
@@ -329,7 +366,7 @@ if __name__ == "__main__":
                             dl_task.end_date + timedelta(minutes=1)
                         ).timestamp(),
                         "segments": [d for d in segments],
-                        "media_url": "https://vod.mediatree.fr/assets/tf1_2025-03-17T11-00-00Z_2025-03-17T11-30-00Z.mp4",
+                        "media_url": media_url,
                     }
                 )
 
@@ -337,10 +374,11 @@ if __name__ == "__main__":
             output_path="week_report.html",
             grouping=groups,
             parts=parts,
-            annotations=[],
-            # annotations=[  # testimony_table
-            #     {"type": "PUBLICITE", "start": 1709561000, "end": 1709561300},
-            #     ...,
-            # ],
+            annotations=get_testimony_data(
+                channel=TESTIMONY_CHANNEL,
+                from_date=partition[0].start_date,
+                to_date=partition[-1].end_date,
+                source_file="export.csv",
+            ),
             params_summary={"channel": channel, "start_date": start_date},
         )

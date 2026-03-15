@@ -265,7 +265,34 @@ class AudioProcessor:
             self._update_postfix()
 
 
+async def semaphore_wrap(semaphore: asyncio.Semaphore, coro):
+    async with semaphore:
+        return await coro
+
+
+async def download_and_write_subtitle(occurences: list[dict], file_path: Path):
+    if file_path.exists():
+        return True
+
+    for occ in occurences:
+        subtitle = await api.get_subtitle(
+            occ["channel"],
+            occ["start_date"],
+            occ["end_date"],
+        )
+        if subtitle:
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(subtitle)
+                # We try all the occurences until we get one, because we don't target the good ones for now
+            return True
+    return False
+
+
 async def export_advertisings(advertisings: list[dict], path: Path):
+    # This semaphore should be handled somewhere else
+    semaphore = asyncio.Semaphore(5)
+    tasks = []
+
     for i, ad in enumerate(advertisings):
         ad_path = path / str(i)
         ad_path.mkdir(parents=True, exist_ok=True)
@@ -297,28 +324,38 @@ async def export_advertisings(advertisings: list[dict], path: Path):
             )
 
         occ = ad["occurences"][0]
-        await api.download_export(
-            occ["channel"],
-            occ["start_date"],
-            occ["end_date"],
-            "mp3",
-            ad_path / "version.mp3",
-        )
-        await api.download_export(
-            occ["channel"],
-            occ["start_date"],
-            occ["end_date"],
-            "mp4",
-            ad_path / "version.mp4",
-        )
-        with open(ad_path / "subtitle.txt", "w", encoding="utf-8") as f:
-            f.write(
-                await api.get_subtitle(
+        tasks.append(
+            semaphore_wrap(
+                semaphore,
+                api.download_export(
                     occ["channel"],
                     occ["start_date"],
                     occ["end_date"],
-                )
+                    "mp3",
+                    ad_path / "version.mp3",
+                ),
             )
+        )
+        tasks.append(
+            semaphore_wrap(
+                semaphore,
+                api.download_export(
+                    occ["channel"],
+                    occ["start_date"],
+                    occ["end_date"],
+                    "mp4",
+                    ad_path / "version.mp4",
+                ),
+            )
+        )
+        tasks.append(
+            semaphore_wrap(
+                semaphore,
+                download_and_write_subtitle(ad["occurences"], ad_path / "subtitle.txt"),
+            )
+        )
+
+    await asyncio.gather(*tasks)
 
 
 if __name__ == "__main__":
@@ -467,7 +504,7 @@ if __name__ == "__main__":
         advertising_export_folder = (
             Path(".cache") / "advertisings" / "abc-c5" / channel / start_date
         )
-        asyncio.run(export_advertisings(advertisings[:5], advertising_export_folder))
+        asyncio.run(export_advertisings(advertisings, advertising_export_folder))
 
         print(f"{len(advertisings)} potential advertising blocks detected:")
         print(advertising_export_folder.absolute())

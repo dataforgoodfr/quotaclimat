@@ -1,12 +1,15 @@
 """
-Fingerprinting audio par constellation maps (style Shazam)
-===========================================================
-Génère une empreinte robuste pour chaque segment fourni,
-compare toutes les empreintes entre elles,
-et regroupe les segments identiques.
+Regroupement de segments audio par fingerprints pré-calculés
+=============================================================
+Utilise les hashes pré-calculés par e02 (constellation maps style Shazam)
+pour comparer et regrouper les segments identiques.
+
+Le calcul lourd (extraction de pics spectraux + génération de hashes)
+est fait en amont dans e02_create_segments. Ici on ne fait que
+la comparaison, le clustering et le rapport.
 
 Dépendances :
-    pip install librosa numpy scipy matplotlib tqdm
+    pip install numpy tqdm
 """
 
 import hashlib
@@ -17,145 +20,10 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Set, Tuple
 
-import librosa
 import numpy as np
-from scipy.ndimage import maximum_filter
 from tqdm import tqdm
 
-from .e02_create_segments import Segment
-
-# ─────────────────────────────────────────────────────────────
-#  Constellation Map : extraction des pics dans le spectrogramme
-# ─────────────────────────────────────────────────────────────
-
-
-class ConstellationMap:
-    """
-    Transforme un segment audio en un nuage de points saillants
-    dans le plan (temps × fréquence).
-
-    Principe :
-      1. Calcul du spectrogramme (magnitude)
-      2. Détection des maxima locaux (pics d'énergie)
-      3. Chaque pic = un point dans la constellation
-    """
-
-    def __init__(
-        self,
-        sr: int = 22050,
-        n_fft: int = 2048,  # Taille FFT → résolution fréquence
-        hop_length: int = 512,  # Pas → résolution temporelle (~23ms)
-        n_peaks: int = 30,  # Nombre ABSOLU de pics à garder (indépendant de la durée)
-        neighborhood: int = 15,  # Taille du filtre de maximum local (frames × bins)
-        min_amplitude: float = 0.01,  # Seuil minimal d'amplitude
-    ):
-        self.sr = sr
-        self.n_fft = n_fft
-        self.hop_length = hop_length
-        self.n_peaks = n_peaks
-        self.neighborhood = neighborhood
-        self.min_amplitude = min_amplitude
-
-    def extract(self, y: np.ndarray) -> np.ndarray:
-        """
-        Retourne un tableau (N_pics × 2) avec colonnes [temps_frame, bin_freq].
-        """
-        # Spectrogramme en magnitude
-        D = np.abs(librosa.stft(y, n_fft=self.n_fft, hop_length=self.hop_length))
-
-        # Log-compression pour équilibrer grave et aigu
-        D_log = librosa.amplitude_to_db(D, ref=np.max)
-        D_norm = (D_log - D_log.min()) / (D_log.max() - D_log.min() + 1e-8)
-
-        # Maxima locaux : un pic est retenu seulement s'il est
-        # le plus fort dans son voisinage (neighborhood × neighborhood)
-        local_max = maximum_filter(D_norm, size=self.neighborhood)
-        is_peak = (D_norm == local_max) & (D_norm > self.min_amplitude)
-
-        # Coordonnées des pics : (bin_freq, temps_frame)
-        freq_idxs, time_idxs = np.where(is_peak)
-
-        if len(freq_idxs) == 0:
-            return np.empty((0, 2), dtype=np.int32)
-
-        # Trier par amplitude décroissante et garder les N meilleurs (cap absolu)
-        amplitudes = D_norm[freq_idxs, time_idxs]
-        order = np.argsort(-amplitudes)[: self.n_peaks]
-
-        peaks = np.column_stack(
-            [
-                time_idxs[order].astype(np.int32),
-                freq_idxs[order].astype(np.int32),
-            ]
-        )
-
-        return peaks  # shape : (N, 2)  — N peut varier selon le contenu
-
-
-# ─────────────────────────────────────────────────────────────
-#  Génération des hashes par paires de pics (fan-out)
-# ─────────────────────────────────────────────────────────────
-
-
-class HashGenerator:
-    """
-    À partir de la constellation, génère des hashes robustes
-    en combinant des PAIRES de pics proches.
-
-    Pourquoi des paires ?
-      → Un hash = (freq1, freq2, delta_temps)
-      → Invariant au décalage temporel absolu
-      → Résistant au bruit (un pic isolé peut disparaître,
-        une paire cohérente est beaucoup plus stable)
-    """
-
-    def __init__(
-        self,
-        fan_out: int = 15,  # Nombre de voisins à combiner avec chaque pic
-        time_delta_max: int = 100,  # Fenêtre temporelle max entre deux pics (frames)
-        time_delta_min: int = 1,  # Fenêtre minimale (évite les auto-paires)
-    ):
-        self.fan_out = fan_out
-        self.time_delta_max = time_delta_max
-        self.time_delta_min = time_delta_min
-
-    def generate(self, peaks: np.ndarray) -> List[Tuple[str, int]]:
-        """
-        Retourne une liste de (hash_str, temps_ancrage).
-
-        hash_str   = empreinte d'une paire de pics
-        temps_ancrage = position temporelle du pic de référence (en frames)
-        """
-        if len(peaks) < 2:
-            return []
-
-        # Trier par temps croissant
-        peaks = peaks[peaks[:, 0].argsort()]
-
-        hashes = []
-        for i, (t1, f1) in enumerate(peaks):
-            # Chercher les pics suivants dans la fenêtre temporelle
-            j = i + 1
-            count = 0
-            while j < len(peaks) and count < self.fan_out:
-                t2, f2 = peaks[j]
-                delta_t = t2 - t1
-
-                if delta_t > self.time_delta_max:
-                    break
-                if delta_t >= self.time_delta_min:
-                    # Hash = combinaison des deux fréquences + écart temporel
-                    # → identique quelle que soit la position dans le flux
-                    h = self._make_hash(f1, f2, delta_t)
-                    hashes.append((h, int(t1)))
-                    count += 1
-                j += 1
-
-        return hashes
-
-    def _make_hash(self, f1: int, f2: int, dt: int) -> str:
-        raw = f"{f1}|{f2}|{dt}"
-        return hashlib.md5(raw.encode()).hexdigest()[:12]
+from .e02_create_segments import HashGenerator, Segment
 
 
 # ─────────────────────────────────────────────────────────────
@@ -415,53 +283,41 @@ class SegmentGroupingPipeline:
     def __init__(
         self,
         similarity_threshold: float = 0.08,
-        sr: int = 22050,
         min_matching_hashes: int = 2,
+        # Legacy params kept for _params_hash cache invalidation
+        sr: int = 22050,
         n_peaks_by_segment: int = 5,
         neighborhood_peaks_filter: int = 15,
         min_peak_amplitude: float = 0.01,
     ):
         self.sr = sr
-        self.constellation = ConstellationMap(
-            sr=sr,
-            n_peaks=n_peaks_by_segment,
-            neighborhood=neighborhood_peaks_filter,
-            min_amplitude=min_peak_amplitude,
-        )
-        self.hasher = HashGenerator()
+        self.n_peaks_by_segment = n_peaks_by_segment
+        self.neighborhood_peaks_filter = neighborhood_peaks_filter
+        self.min_peak_amplitude = min_peak_amplitude
         self.matcher = FingerprintMatcher(min_matching_hashes=min_matching_hashes)
         self.clusterer = RepetitionClusterer(similarity_threshold)
 
     def _params_hash(self) -> str:
         """Hash des paramètres qui influent sur le calcul des fingerprints."""
-        c = self.constellation
-        h = self.hasher
+        h = HashGenerator()
         params = (
-            f"sr={c.sr}|n_fft={c.n_fft}|hop={c.hop_length}|n_peaks={c.n_peaks}"
-            f"|neighborhood={c.neighborhood}|min_amp={c.min_amplitude}"
+            f"sr={self.sr}|n_fft=2048|hop=512|n_peaks={self.n_peaks_by_segment}"
+            f"|neighborhood={self.neighborhood_peaks_filter}|min_amp={self.min_peak_amplitude}"
             f"|fan_out={h.fan_out}|dt_max={h.time_delta_max}|dt_min={h.time_delta_min}"
-            f"|features=v1"  # Invalide les caches sans rms/centroid/zcr
+            f"|features=v1"
         )
         return hashlib.md5(params.encode()).hexdigest()[:8]
 
     def fingerprint_source(self, segments: List[Segment]) -> List[Fingerprint]:
+        """Converts segments (with pre-computed hashes from e02) into Fingerprints."""
         fingerprints = []
         for i, seg in enumerate(segments):
             duration_seg = seg.end_sec - seg.start_sec
             if duration_seg < 0.5:  # Ignorer < 0.5s
                 continue
 
-            peaks = (
-                np.array(seg.peaks, dtype=np.int32)
-                if seg.peaks
-                else np.empty((0, 2), dtype=np.int32)
-            )
-
-            hashes = self.hasher.generate(peaks)
-
-            rms = seg.energy_mean
-            centroid = seg.spectral_centroid
-            zcr = seg.zcr_mean
+            # Hashes are pre-computed in e02 (SegmentCreator.build_segments)
+            hashes = seg.hashes if seg.hashes else []
 
             fp = Fingerprint(
                 segment_index=i,
@@ -470,9 +326,9 @@ class SegmentGroupingPipeline:
                 duration_sec=seg.end_sec - seg.start_sec,
                 label="",
                 hashes=hashes,
-                rms=rms,
-                spectral_centroid=centroid,
-                zcr=zcr,
+                rms=seg.energy_mean,
+                spectral_centroid=seg.spectral_centroid,
+                zcr=seg.zcr_mean,
             )
             fp.build_hash_set()
             fingerprints.append(fp)

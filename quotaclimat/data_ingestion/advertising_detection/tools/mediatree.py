@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, timedelta
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -126,12 +127,12 @@ class CachedMediatreeAPI:
         from_date: datetime,
         to_date: datetime,
         media_format: str,
-        file_name: str | None = None,
+        file_path: str | Path | None = None,
     ):
-        if file_name is None:
+        if file_path is None:
             file_name = self._file_name(channel, from_date, to_date, media_format)
 
-        file_path = os.path.join(self.export_folder, file_name)
+            file_path = os.path.join(self.export_folder, file_name)
 
         if not os.path.isfile(file_path):
             # print(f"Downloading export for {channel} from {from_date} to {to_date}...")
@@ -172,3 +173,38 @@ def all_intervals_between(
         intervals.append((current_start, current_end))
         current_start = current_end
     return intervals
+
+
+if __name__ == "__main__":
+    import asyncio
+
+    # Example usage
+    api = CachedMediatreeAPI()
+
+    # These are the assets used by the tests
+    segment1 = (
+        "tf1_1",
+        "tf1",
+        datetime(2025, 5, 5, 9, 19, tzinfo=ZoneInfo("Europe/Paris")),
+        datetime(2025, 5, 5, 9, 21, tzinfo=ZoneInfo("Europe/Paris")),
+    )
+    segment2 = (
+        "tf1_2",
+        "tf1",
+        datetime(2025, 5, 5, 13, 47, tzinfo=ZoneInfo("Europe/Paris")),
+        datetime(2025, 5, 5, 13, 49, tzinfo=ZoneInfo("Europe/Paris")),
+    )
+
+    path = Path(__file__).parent / ".." / "tests" / "assets"
+
+    for name, channel, from_date, to_date in [segment1, segment2]:
+        file_url = asyncio.run(
+            api.download_export(
+                channel, from_date, to_date, "mp3", path / f"{name}.mp3"
+            )
+        )
+        file_url = asyncio.run(
+            api.download_export(
+                channel, from_date, to_date, "mp4", path / f"{name}.mp4"
+            )
+        )

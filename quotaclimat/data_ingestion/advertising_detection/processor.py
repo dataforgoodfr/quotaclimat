@@ -311,6 +311,14 @@ async def export_advertisings(advertisings: list[dict], path: Path):
             "mp4",
             ad_path / "version.mp4",
         )
+        with open(ad_path / "subtitle.txt", "w", encoding="utf-8") as f:
+            f.write(
+                await api.get_subtitle(
+                    occ["channel"],
+                    occ["start_date"],
+                    occ["end_date"],
+                )
+            )
 
 
 if __name__ == "__main__":
@@ -462,3 +470,4 @@ if __name__ == "__main__":
         asyncio.run(export_advertisings(advertisings[:5], advertising_export_folder))
 
         print(f"{len(advertisings)} potential advertising blocks detected:")
+        print(advertising_export_folder.absolute())

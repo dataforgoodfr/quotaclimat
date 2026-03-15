@@ -107,6 +107,32 @@ class MediatreeAPI:
 
             return url
 
+    async def get_api_subtitle(
+        self,
+        channel,
+        start_gte,
+        start_lte,
+    ):
+        # Opening a new client for each call. It would be better to open and close a single client for whole execution.
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(120.0, connect=120.0)
+        ) as client:
+            response = await client.get(
+                f"{MEDIATREE_API_URL}/v2/subtitle/",
+                params={
+                    "token": self.token,
+                    "channel": channel,
+                    "start_gte": int(start_gte.timestamp()),
+                    "start_lte": int(start_lte.timestamp()),
+                },
+            )
+            if response.status_code != 200:
+                raise Exception(
+                    f"Unexpected response status code: {response.status_code} ({response.url})\nResponse text: {response.text}"
+                )
+
+            return response.json()
+
 
 class CachedMediatreeAPI:
     def __init__(self, export_folder="./.cache/mediatree", prefix=""):
@@ -161,6 +187,30 @@ class CachedMediatreeAPI:
             f.write(url)
 
         return url
+
+    async def get_subtitle(
+        self,
+        channel: str,
+        from_date: datetime,
+        to_date: datetime,
+    ):
+        raw_subtitle = await self.api.get_api_subtitle(
+            channel,
+            from_date
+            - timedelta(
+                minutes=2
+            ),  # subtitle are computed every 2 minutes, we need the batch the starts in the last 2 minutes before start
+            to_date + timedelta(minutes=2),  # same after end date
+        )
+
+        output = []
+        for parts in raw_subtitle["data"]:
+            for srt in parts["srt"]:
+                timestamp = srt["cts_in_ms"] / 1000
+                if from_date.timestamp() <= timestamp <= to_date.timestamp():
+                    output.append(srt["text"])
+
+        return " ".join(output)
 
 
 def all_intervals_between(

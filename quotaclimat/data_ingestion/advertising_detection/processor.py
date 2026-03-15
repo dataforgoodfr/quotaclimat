@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
 from typing import Generator
+from zoneinfo import ZoneInfo
 
 from tqdm import tqdm
 
@@ -264,12 +265,62 @@ class AudioProcessor:
             self._update_postfix()
 
 
+async def export_advertisings(advertisings: list[dict], path: Path):
+    for i, ad in enumerate(advertisings):
+        ad_path = path / str(i)
+        ad_path.mkdir(parents=True, exist_ok=True)
+
+        with open(ad_path / "description.json", "w", encoding="utf-8") as f:
+            json.dump(
+                {
+                    "count": ad["count"],
+                    "occurences": [
+                        {
+                            "start_date": (
+                                occ["start_date"]
+                                .astimezone(ZoneInfo("Europe/Paris"))
+                                .isoformat()
+                            ),
+                            "end_date": (
+                                occ["end_date"]
+                                .astimezone(ZoneInfo("Europe/Paris"))
+                                .isoformat()
+                            ),
+                            "channel": occ["channel"],
+                        }
+                        for occ in ad["occurences"]
+                    ],
+                },
+                f,
+                indent=2,
+                ensure_ascii=False,
+            )
+
+        occ = ad["occurences"][0]
+        await api.download_export(
+            occ["channel"],
+            occ["start_date"],
+            occ["end_date"],
+            "mp3",
+            ad_path / "version.mp3",
+        )
+        await api.download_export(
+            occ["channel"],
+            occ["start_date"],
+            occ["end_date"],
+            "mp4",
+            ad_path / "version.mp4",
+        )
+
+
 if __name__ == "__main__":
     import os
+    from datetime import datetime
 
     channel = "tf1"
     TESTIMONY_CHANNEL = "TF1"
     start_date = "2025-05-05"
+
     partition = list(
         partition_week(
             channel=channel,
@@ -323,7 +374,7 @@ if __name__ == "__main__":
         with open(groups_cache_path, "w", encoding="utf-8") as f:
             json.dump(groups, f, indent=2, ensure_ascii=False)
 
-    else:
+    elif False:
         groups_cache_path = Path(".cache") / "grouping" / "abc" / channel / start_date
         with open(groups_cache_path, "r", encoding="utf-8") as f:
             groups = json.load(f)
@@ -382,3 +433,32 @@ if __name__ == "__main__":
             ),
             params_summary={"channel": channel, "start_date": start_date},
         )
+
+    else:
+        groups_cache_path = Path(".cache") / "grouping" / "abc" / channel / start_date
+        with open(groups_cache_path, "r", encoding="utf-8") as f:
+            groups = json.load(f)
+
+        advertisings = []
+        for group in groups:
+            if group["count"] > 5:
+                advertisings.append(
+                    {
+                        "count": group["count"],
+                        "occurences": [
+                            {
+                                "start_date": datetime.fromtimestamp(occ["start_sec"]),
+                                "end_date": datetime.fromtimestamp(occ["end_sec"]),
+                                "channel": channel,
+                            }
+                            for occ in group["occurrences"]
+                        ],
+                    }
+                )
+
+        advertising_export_folder = (
+            Path(".cache") / "advertisings" / "abc-c5" / channel / start_date
+        )
+        asyncio.run(export_advertisings(advertisings[:5], advertising_export_folder))
+
+        print(f"{len(advertisings)} potential advertising blocks detected:")

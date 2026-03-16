@@ -77,6 +77,7 @@ services:
       - ./alembic.ini:/app/alembic.ini
       - ./my_dbt_project:/app/my_dbt_project
       - ./transform_program.py:/app/transform_program.py
+      - ./parse_dictionary.py:/app/parse_dictionary.py
       - ./i8n:/app/i8n
     depends_on:
       nginxtest:
@@ -437,10 +438,10 @@ services:
       HEALTHCHECK_SERVER: "0.0.0.0"
       # PostgreSQL configuration
       POSTGRES_USER: user
-      POSTGRES_DB: barometre
+      POSTGRES_DB: print_media_db
       POSTGRES_PASSWORD: password
-      POSTGRES_HOST: postgres_db
-      POSTGRES_PORT: 5432
+      POSTGRES_HOST: print_media_db
+      POSTGRES_PORT: 5433
       # S3 configuration (Scaleway, from secrets)
       S3_BUCKET_NAME: "factiva"
       S3_REGION: "fr-par"
@@ -501,8 +502,30 @@ services:
       - bucket
       - bucket_secret
     depends_on:
-      postgres_db:
+      print_media_db:
         condition: service_healthy
+
+  print_media_db:
+    image: postgres:15
+    ports:
+      - 5433:5433
+    volumes:
+      - './pgdata-factiva:/var/lib/postgresql/data' # persist data https://stackoverflow.com/a/41650891/3535853
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d print_media_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    environment:
+      TZ: Europe/Paris # to match prod settings
+      POSTGRES_USER: user
+      POSTGRES_DB: print_media_db
+      POSTGRES_PASSWORD: password
+      PGPORT: 5433
+    # logging: # no logs for postgres container
+    #   driver: none
+
 
   analyse_instagram_data:
     entrypoint: ["poetry", "run", "python", "analyse/instagram/analyse.py"]

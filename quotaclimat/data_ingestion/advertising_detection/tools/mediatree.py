@@ -245,7 +245,16 @@ if __name__ == "__main__":
         datetime(2025, 5, 5, 13, 49, tzinfo=ZoneInfo("Europe/Paris")),
     )
 
-    path = Path(__file__).parent / ".." / "tests" / "assets"
+    path = (
+        Path(__file__).parent
+        / ".."
+        / ".."
+        / ".."
+        / ".."
+        / "test"
+        / "advertising_detection"
+        / "assets"
+    )
 
     for name, channel, from_date, to_date in [segment1, segment2]:
         file_url = asyncio.run(

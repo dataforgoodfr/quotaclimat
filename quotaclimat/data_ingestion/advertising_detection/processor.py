@@ -376,6 +376,7 @@ async def processor(
     await AudioProcessor(
         num_workers=new_workers,
         task_partition=partition,
+        cache_key=cache_key,
     ).run()
 
     segments_list = []

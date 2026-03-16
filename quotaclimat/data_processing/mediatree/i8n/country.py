@@ -26,12 +26,17 @@ from quotaclimat.data_processing.mediatree.i8n.belgium import (
     channel_titles_belgium,
     channels_programs_belgium
 )
+from quotaclimat.data_processing.mediatree.i8n.belgium_flanders import (
+    channels_programs_belgium_flanders,
+    channel_titles_belgium_flanders,
+)
 # Define country codes as Literal types
 # from https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
 FranceCode = Literal["fra"]
 GermanyCode = Literal["deu"]
 BrazilCode = Literal["bra"]
 BelgiumCode = Literal["bel"]
+BelgiumFlandersCode = Literal["bel-fla"]
 SpainCode = Literal["esp"]
 PolandCode = Literal["pol"]
 AllCode = Literal["all"]
@@ -39,6 +44,7 @@ CountryCode = Union[
     FranceCode,
     GermanyCode,
     BelgiumCode,
+    BelgiumFlandersCode,
     BrazilCode,
     SpainCode,
     PolandCode,
@@ -54,6 +60,8 @@ def get_country_name_from_code(code: CountryCode) -> str:
         case "bra":
             return 'brazil'
         case "bel":
+            return 'belgium'
+        case "bel-fla":
             return 'belgium'
         case "esp":
             return 'spain'
@@ -142,6 +150,17 @@ BELGIUM_TZ = "Europe/Brussels"
 BELGIUM_LANGUAGE = "french"
 BELGIUM = CountryMediaTree(code=BELGIUM_CODE,channels=BELGIUM_CHANNELS, timezone=BELGIUM_TZ, language=BELGIUM_LANGUAGE, programs=channels_programs_belgium, titles=channel_titles_belgium)
 
+BELGIUM_FLANDERS_CODE : BelgiumCode = "bel-fla"
+BELGIUM_FLANDERS_CHANNELS= [
+
+]
+BELGIUM_FLANDERS_CHANNELS_MEDIATREE = [
+
+]
+BELGIUM_FLANDERS_TZ = "Europe/Brussels"
+BELGIUM_FLANDERS_LANGUAGE = "dutch"
+BELGIUM_FLANDERS = CountryMediaTree(code=BELGIUM_FLANDERS_CODE,channels=BELGIUM_FLANDERS_CHANNELS, timezone=BELGIUM_FLANDERS_TZ, language=BELGIUM_FLANDERS_LANGUAGE, programs=channels_programs_belgium_flanders, titles=channel_titles_belgium_flanders)
+
 GERMANY_CODE: GermanyCode ="deu"
 GERMANY_CHANNELS= ["daserste" # from srt import
     ,"zdf-neo"
@@ -225,6 +244,7 @@ ALL_COUNTRIES = [
     FRANCE,
     BRAZIL,
     BELGIUM,
+    BELGIUM_FLANDERS,
     SPAIN,
     POLAND,
 ]

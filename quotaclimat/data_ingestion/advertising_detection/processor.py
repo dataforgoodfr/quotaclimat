@@ -358,21 +358,12 @@ async def export_advertisings(advertisings: list[dict], path: Path):
     await asyncio.gather(*tasks)
 
 
-if __name__ == "__main__":
-    import os
-    from datetime import datetime
-
-    channel = "tf1"
-    TESTIMONY_CHANNEL = "TF1"
-    start_date = "2025-05-05"
-
-    partition = list(
-        partition_week(
-            channel=channel,
-            start_date=start_date,
-        )
-    )
-
+async def processor(
+    channel: str,
+    start_date: str,
+    partition: Generator[DownloadTask, None, None],
+    TESTIMONY_CHANNEL: str = False,
+):
     if False:
         new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
 
@@ -508,3 +499,28 @@ if __name__ == "__main__":
 
         print(f"{len(advertisings)} potential advertising blocks detected:")
         print(advertising_export_folder.absolute())
+
+
+if __name__ == "__main__":
+    import os
+    from datetime import datetime
+
+    channel = "tf1"
+    TESTIMONY_CHANNEL = "TF1"
+    start_date = "2025-05-05"
+
+    partition = list(
+        partition_week(
+            channel=channel,
+            start_date=start_date,
+        )
+    )
+
+    asyncio.run(
+        processor(
+            channel=channel,
+            start_date=start_date,
+            partition=partition,
+            TESTIMONY_CHANNEL=TESTIMONY_CHANNEL,
+        )
+    )

@@ -46,8 +46,23 @@ async def test_extract_segments_run_successfully():
         ),
     ]
 
-    await processor(
+    groups = await processor(
         channel=channel,
         start_date=start_date,
         partition=list(partition),
     )
+
+    ads = [group for group in groups if group["count"] >= 2]
+    assert len(ads) == 1
+
+    assert ads[0]["occurrences"][0]["duration_sec"] >= 20
+    assert ads[0]["occurrences"][0]["duration_sec"] <= 21
+    assert ads[0]["occurrences"][1]["duration_sec"] >= 20
+    assert ads[0]["occurrences"][1]["duration_sec"] <= 21
+
+    start_date_1 = datetime.fromtimestamp(ads[0]["occurrences"][0]["start_sec"])
+    start_date_2 = datetime.fromtimestamp(ads[0]["occurrences"][1]["start_sec"])
+    assert start_date_1.astimezone(ZoneInfo("Europe/Paris")) >= partition[0].start_date
+    assert start_date_1.astimezone(ZoneInfo("Europe/Paris")) <= partition[0].end_date
+    assert start_date_2.astimezone(ZoneInfo("Europe/Paris")) >= partition[1].start_date
+    assert start_date_2.astimezone(ZoneInfo("Europe/Paris")) <= partition[1].end_date

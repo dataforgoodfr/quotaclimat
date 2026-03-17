@@ -493,6 +493,8 @@ async def processor(
     print(f"{len(advertisings)} potential advertising blocks detected:")
     print(advertising_export_folder.absolute())
 
+    return groups
+
 
 if __name__ == "__main__":
     channel = "tf1"

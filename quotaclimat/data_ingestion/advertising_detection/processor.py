@@ -437,17 +437,18 @@ async def processor(
             with open(cache_path, "r", encoding="utf-8") as f:
                 segments = json.load(f)
 
-            media_url = await with_exponential_backoff(
-                lambda: api.generate_src_url(
-                    channel=dl_task.channel,
-                    from_date=dl_task.start_date,
-                    to_date=dl_task.end_date + timedelta(minutes=1),
-                    media_format="mp4",
-                ),
-                label=str(dl_task),
-                base_delay=10.0,
-                max_retries=10,
-            )
+            media_url = "https://example.org"
+            # media_url = await with_exponential_backoff(
+            #     lambda: api.generate_src_url(
+            #         channel=dl_task.channel,
+            #         from_date=dl_task.start_date,
+            #         to_date=dl_task.end_date + timedelta(minutes=1),
+            #         media_format="mp4",
+            #     ),
+            #     label=str(dl_task),
+            #     base_delay=10.0,
+            #     max_retries=10,
+            # )
 
             parts.append(
                 {

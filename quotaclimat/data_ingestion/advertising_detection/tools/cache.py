@@ -14,6 +14,8 @@
 #         cache.set(file_name, [fp.to_dict() for fp in segments])
 #         return False
 
+import os
+import shutil
 from pathlib import Path
 
 GLOBAL_CACHE_FOLDER = ".cache"
@@ -22,12 +24,16 @@ GLOBAL_CACHE_FOLDER = ".cache"
 class LocalCache:
     def __init__(self, name: str, version: str):
         self.cache_folder = Path(GLOBAL_CACHE_FOLDER) / name / version
+        self.clean_on_exit = (
+            os.environ.get("CLEAN_CACHE_ON_EXIT") or True
+        )  # This is activated by default for testing purpose, should be corrected
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        if self.clean_on_exit:
+            shutil.rmtree(self.cache_folder)
 
     def exists(self, file_name: str) -> bool:
         return (self.cache_folder / file_name).is_file()

@@ -27,6 +27,9 @@ from quotaclimat.data_ingestion.advertising_detection.e02_create_segments import
 from quotaclimat.data_ingestion.advertising_detection.e03_group_segments import (
     SegmentGroupingPipeline,
 )
+from quotaclimat.data_ingestion.advertising_detection.tools.cache import (
+    LocalCache,
+)
 from quotaclimat.data_ingestion.advertising_detection.tools.mediatree import (
     CachedMediatreeAPI,
 )
@@ -73,23 +76,21 @@ async def with_exponential_backoff(
 
 def process_audio(processing_task: ProcessingTask, cache_key: str) -> bool:
     """Returns True if processing was cached (skipped), False if actually processed."""
-    cache_path = (
-        Path(".cache")
-        / "segments"
-        / cache_key
-        / processing_task.channel
-        / processing_task.start_date.strftime("%Y-%m-%d_%H-%M-%S")
-    )
-    if cache_path.exists():
-        return True
-    else:
-        segments = SegmentCreator().run(
-            processing_task.audio_file_path, processing_task.start_date.timestamp()
+    with LocalCache(name="segments", version=cache_key) as cache:
+        file_name = (
+            processing_task.channel
+            + "/"
+            + processing_task.start_date.strftime("%Y-%m-%d_%H-%M-%S")
+            + ".json"
         )
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(cache_path, "w", encoding="utf-8") as f:
-            json.dump([fp.to_dict() for fp in segments], f)
-        return False
+        if cache.exists(file_name):
+            return True
+        else:
+            segments = SegmentCreator().run(
+                processing_task.audio_file_path, processing_task.start_date.timestamp()
+            )
+            cache.set(file_name, json.dumps([fp.to_dict() for fp in segments]))
+            return False
 
 
 ###############################
@@ -371,7 +372,7 @@ async def processor(
     annotations: list[dict] = [],
 ):
     new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
-    cache_key = "tests"
+    cache_key = "tests2"
 
     await AudioProcessor(
         num_workers=new_workers,
@@ -386,8 +387,9 @@ async def processor(
             / "segments"
             / cache_key
             / dl_task.channel
-            / dl_task.start_date.strftime("%Y-%m-%d_%H-%M-%S")
+            / (dl_task.start_date.strftime("%Y-%m-%d_%H-%M-%S") + ".json")
         )
+        print(cache_path)
         if not cache_path.exists():
             raise RuntimeError(
                 f"Cache file not found for {dl_task}. Please run the full pipeline first."
@@ -425,7 +427,7 @@ async def processor(
             / "segments"
             / cache_key
             / dl_task.channel
-            / dl_task.start_date.strftime("%Y-%m-%d_%H-%M-%S")
+            / (dl_task.start_date.strftime("%Y-%m-%d_%H-%M-%S") + ".json")
         )
         if not cache_path.exists():
             raise RuntimeError(

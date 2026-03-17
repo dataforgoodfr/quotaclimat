@@ -374,7 +374,10 @@ async def processor(
     new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
     cache_key = "tests2"
 
-    with LocalCache(name="segments", version=cache_key) as segment_cache:
+    with (
+        LocalCache(name="segments", version=cache_key) as segment_cache,
+        LocalCache(name="grouping", version=cache_key) as group_cache,
+    ):
         process_media = partial(process_audio, cache=segment_cache)
 
         await AudioProcessor(
@@ -385,22 +388,15 @@ async def processor(
 
         segments_list = []
         for dl_task in partition:
-            cache_path = (
-                Path(".cache")
-                / "segments"
-                / cache_key
-                / dl_task.channel
-                / (dl_task.start_date.strftime("%Y-%m-%d_%H-%M-%S") + ".json")
-            )
-            print(cache_path)
-            if not cache_path.exists():
-                raise RuntimeError(
-                    f"Cache file not found for {dl_task}. Please run the full pipeline first."
+            segments = json.loads(
+                segment_cache.get(
+                    dl_task.channel
+                    + "/"
+                    + dl_task.start_date.strftime("%Y-%m-%d_%H-%M-%S")
+                    + ".json"
                 )
-            else:
-                with open(cache_path, "r", encoding="utf-8") as f:
-                    segments = json.load(f)
-                segments_list.append([Segment.from_dict(d) for d in segments])
+            )
+            segments_list.append([Segment.from_dict(d) for d in segments])
 
         pipeline = SegmentGroupingPipeline(
             similarity_threshold=0.05,
@@ -410,63 +406,42 @@ async def processor(
             neighborhood_peaks_filter=15,
             min_peak_amplitude=0.01,
         )
-
         groups = pipeline.run(segments_list)
-        groups_cache_path = (
-            Path(".cache") / "grouping" / cache_key / channel / start_date
-        )
 
-        # Export JSON
-        groups_cache_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(groups_cache_path, "w", encoding="utf-8") as f:
-            json.dump(groups, f, indent=2, ensure_ascii=False)
-
-        groups_cache_path = (
-            Path(".cache") / "grouping" / cache_key / channel / start_date
-        )
-        with open(groups_cache_path, "r", encoding="utf-8") as f:
-            groups = json.load(f)
+        group_cache.set(channel + start_date + ".json", json.dumps(groups))
 
         parts = []
-        for dl_task in tqdm(partition, desc="Processing partition"):
-            cache_path = (
-                Path(".cache")
-                / "segments"
-                / cache_key
-                / dl_task.channel
-                / (dl_task.start_date.strftime("%Y-%m-%d_%H-%M-%S") + ".json")
+        for dl_task in partition:
+            segments = json.loads(
+                segment_cache.get(
+                    dl_task.channel
+                    + "/"
+                    + dl_task.start_date.strftime("%Y-%m-%d_%H-%M-%S")
+                    + ".json"
+                )
             )
-            if not cache_path.exists():
-                raise RuntimeError(
-                    f"Cache file not found for {dl_task}. Please run the full pipeline first."
-                )
-            else:
-                with open(cache_path, "r", encoding="utf-8") as f:
-                    segments = json.load(f)
 
-                media_url = "https://example.org"
-                # media_url = await with_exponential_backoff(
-                #     lambda: api.generate_src_url(
-                #         channel=dl_task.channel,
-                #         from_date=dl_task.start_date,
-                #         to_date=dl_task.end_date + timedelta(minutes=1),
-                #         media_format="mp4",
-                #     ),
-                #     label=str(dl_task),
-                #     base_delay=10.0,
-                #     max_retries=10,
-                # )
+            media_url = "https://example.org"
+            # media_url = await with_exponential_backoff(
+            #     lambda: api.generate_src_url(
+            #         channel=dl_task.channel,
+            #         from_date=dl_task.start_date,
+            #         to_date=dl_task.end_date + timedelta(minutes=1),
+            #         media_format="mp4",
+            #     ),
+            #     label=str(dl_task),
+            #     base_delay=10.0,
+            #     max_retries=10,
+            # )
 
-                parts.append(
-                    {
-                        "start_date": dl_task.start_date.timestamp(),
-                        "end_date": (
-                            dl_task.end_date + timedelta(minutes=1)
-                        ).timestamp(),
-                        "segments": [d for d in segments],
-                        "media_url": media_url,
-                    }
-                )
+            parts.append(
+                {
+                    "start_date": dl_task.start_date.timestamp(),
+                    "end_date": (dl_task.end_date + timedelta(minutes=1)).timestamp(),
+                    "segments": [d for d in segments],
+                    "media_url": media_url,
+                }
+            )
 
         generate_weekly_viewer(
             output_path="week_report.html",
@@ -475,12 +450,6 @@ async def processor(
             annotations=annotations,
             params_summary={"channel": channel, "start_date": start_date},
         )
-
-        groups_cache_path = (
-            Path(".cache") / "grouping" / cache_key / channel / start_date
-        )
-        with open(groups_cache_path, "r", encoding="utf-8") as f:
-            groups = json.load(f)
 
         advertisings = []
         for group in groups:
@@ -499,13 +468,14 @@ async def processor(
                     }
                 )
 
-        advertising_export_folder = (
-            Path(".cache") / "advertisings" / (cache_key + "-c5") / channel / start_date
-        )
-        await export_advertisings(advertisings, advertising_export_folder)
+        with LocalCache(name="advertising", version=cache_key + "-c5") as ads_cache:
+            advertising_export_folder = (
+                Path(".cache") / "advertisings" / () / channel / start_date
+            )
+            await export_advertisings(advertisings, advertising_export_folder)
 
-        print(f"{len(advertisings)} potential advertising blocks detected:")
-        print(advertising_export_folder.absolute())
+            print(f"{len(advertisings)} potential advertising blocks detected:")
+            print(advertising_export_folder.absolute())
 
     return groups
 
@@ -522,16 +492,18 @@ if __name__ == "__main__":
         )
     )
 
+    annotations = get_testimony_data(
+        channel=TESTIMONY_CHANNEL,
+        from_date=partition[0].start_date,
+        to_date=partition[-1].end_date,
+        source_file="export.csv",
+    )
+
     asyncio.run(
         processor(
             channel=channel,
             start_date=start_date,
             partition=partition,
-            annotations=get_testimony_data(
-                channel=TESTIMONY_CHANNEL,
-                from_date=partition[0].start_date,
-                to_date=partition[-1].end_date,
-                source_file="export.csv",
-            ),
+            annotations=annotations,
         )
     )

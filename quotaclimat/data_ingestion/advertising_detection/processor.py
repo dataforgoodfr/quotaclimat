@@ -70,31 +70,6 @@ async def with_exponential_backoff(
 
 ###############################
 #
-# Processing functions:
-#
-# Process already downloaded files, delete them and the end.
-
-
-def process_audio(processing_task: ProcessingTask, cache: LocalCache) -> bool:
-    """Returns True if processing was cached (skipped), False if actually processed."""
-    file_name = (
-        processing_task.channel
-        + "/"
-        + processing_task.start_date.strftime("%Y-%m-%d_%H-%M-%S")
-        + ".json"
-    )
-    if cache.exists(file_name):
-        return True
-    else:
-        segments = SegmentCreator().run(
-            processing_task.audio_file_path, processing_task.start_date.timestamp()
-        )
-        cache.set(file_name, json.dumps([fp.to_dict() for fp in segments]))
-        return False
-
-
-###############################
-#
 # Stats tracking
 #
 
@@ -365,6 +340,21 @@ async def export_advertisings(advertisings: list[dict], path: Path):
     await asyncio.gather(*tasks)
 
 
+def process_audio(
+    processing_task: ProcessingTask, cache: LocalCache, segment_creator: SegmentCreator
+) -> bool:
+    """Returns True if processing was cached (skipped), False if actually processed."""
+
+    file_name = processing_task.identifier + ".json"
+
+    if cache.exists(file_name):
+        return True
+    else:
+        segments = segment_creator.run(processing_task)
+        cache.set(file_name, json.dumps([fp.to_dict() for fp in segments]))
+        return False
+
+
 async def processor(
     channel: str,
     start_date: str,
@@ -378,7 +368,9 @@ async def processor(
         LocalCache(name="segments", version=cache_key) as segment_cache,
         LocalCache(name="grouping", version=cache_key) as group_cache,
     ):
-        process_media = partial(process_audio, cache=segment_cache)
+        process_media = partial(
+            process_audio, segment_creator=SegmentCreator(), cache=segment_cache
+        )
 
         await AudioProcessor(
             num_workers=new_workers,
@@ -388,14 +380,7 @@ async def processor(
 
         segments_list = []
         for dl_task in partition:
-            segments = json.loads(
-                segment_cache.get(
-                    dl_task.channel
-                    + "/"
-                    + dl_task.start_date.strftime("%Y-%m-%d_%H-%M-%S")
-                    + ".json"
-                )
-            )
+            segments = json.loads(segment_cache.get(dl_task.identifier + ".json"))
             segments_list.append([Segment.from_dict(d) for d in segments])
 
         pipeline = SegmentGroupingPipeline(
@@ -410,16 +395,39 @@ async def processor(
 
         group_cache.set(channel + start_date + ".json", json.dumps(groups))
 
+        advertisings = []
+        for group in groups:
+            if group["count"] > 5:
+                advertisings.append(
+                    {
+                        "count": group["count"],
+                        "occurences": [
+                            {
+                                "start_date": datetime.fromtimestamp(occ["start_sec"]),
+                                "end_date": datetime.fromtimestamp(occ["end_sec"]),
+                                "channel": channel,
+                            }
+                            for occ in group["occurrences"]
+                        ],
+                    }
+                )
+
+        with LocalCache(name="advertising", version=cache_key + "-c5") as ads_cache:
+            advertising_export_folder = (
+                Path(".cache")
+                / "advertisings"
+                / (cache_key + "-c5")
+                / channel
+                / start_date
+            )
+            await export_advertisings(advertisings, advertising_export_folder)
+
+            print(f"{len(advertisings)} potential advertising blocks detected:")
+            print(advertising_export_folder.absolute())
+
         parts = []
         for dl_task in partition:
-            segments = json.loads(
-                segment_cache.get(
-                    dl_task.channel
-                    + "/"
-                    + dl_task.start_date.strftime("%Y-%m-%d_%H-%M-%S")
-                    + ".json"
-                )
-            )
+            segments = json.loads(segment_cache.get(dl_task.identifier + ".json"))
 
             media_url = "https://example.org"
             # media_url = await with_exponential_backoff(
@@ -450,32 +458,6 @@ async def processor(
             annotations=annotations,
             params_summary={"channel": channel, "start_date": start_date},
         )
-
-        advertisings = []
-        for group in groups:
-            if group["count"] > 5:
-                advertisings.append(
-                    {
-                        "count": group["count"],
-                        "occurences": [
-                            {
-                                "start_date": datetime.fromtimestamp(occ["start_sec"]),
-                                "end_date": datetime.fromtimestamp(occ["end_sec"]),
-                                "channel": channel,
-                            }
-                            for occ in group["occurrences"]
-                        ],
-                    }
-                )
-
-        with LocalCache(name="advertising", version=cache_key + "-c5") as ads_cache:
-            advertising_export_folder = (
-                Path(".cache") / "advertisings" / () / channel / start_date
-            )
-            await export_advertisings(advertisings, advertising_export_folder)
-
-            print(f"{len(advertisings)} potential advertising blocks detected:")
-            print(advertising_export_folder.absolute())
 
     return groups
 

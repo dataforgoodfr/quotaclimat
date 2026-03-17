@@ -18,6 +18,7 @@ import numpy as np
 from scipy.ndimage import maximum_filter, maximum_filter1d, uniform_filter1d
 from scipy.signal import find_peaks
 
+from .e00_download_audio_files.download_partition import ProcessingTask
 
 # ─────────────────────────────────────────────────────────────
 #  Génération des hashes par paires de pics (fan-out)
@@ -84,6 +85,7 @@ class HashGenerator:
         raw = f"{f1}|{f2}|{dt}"
         return hashlib.md5(raw.encode()).hexdigest()[:12]
 
+
 # ─────────────────────────────────────────────
 #  Structure de données pour un segment détecté
 # ─────────────────────────────────────────────
@@ -100,7 +102,9 @@ class Segment:
     spectral_centroid: float  # "Brillance" moyenne — grave vs aigu
     zcr_mean: float  # Zero-crossing rate — parole vs musique
     peaks: list = None  # Constellation map : liste de [time_frame, freq_bin] relatifs au début du segment
-    hashes: list = None  # Liste de [hash_str, anchor_time] pré-calculés à partir des peaks
+    hashes: list = (
+        None  # Liste de [hash_str, anchor_time] pré-calculés à partir des peaks
+    )
 
     def to_dict(self):
         return asdict(self)
@@ -413,13 +417,15 @@ class SegmentCreator:
 
         return segments
 
-    def run(self, path: str, start_epoch: float) -> List[Segment]:
-        y = self.load(path)
+    def run(self, task: ProcessingTask) -> List[Segment]:
+        y = self.load(task.audio_file_path)
         features = self.extract_features(y)
         novelty = self.compute_novelty(features["stack"], features["energy"])
         duration = len(y) / self.sr
         peaks = self.detect_peaks(novelty)
-        segments = self.build_segments(peaks, features, duration, y, start_epoch)
+        segments = self.build_segments(
+            peaks, features, duration, y, task.download_task.start_date.timestamp()
+        )
 
         return segments
 

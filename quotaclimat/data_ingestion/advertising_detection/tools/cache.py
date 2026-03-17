@@ -33,7 +33,7 @@ class LocalCache:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.clean_on_exit:
-            shutil.rmtree(self.cache_folder)
+            shutil.rmtree(self.cache_folder, ignore_errors=True)
 
     def exists(self, file_name: str) -> bool:
         return (self.cache_folder / file_name).is_file()

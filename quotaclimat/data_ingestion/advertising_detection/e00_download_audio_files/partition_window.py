@@ -11,6 +11,10 @@ class DownloadTask:
     end_date: datetime
     channel: str
 
+    @property
+    def identifier(self) -> str:
+        return f"{self.channel}_{self.start_date.strftime('%Y-%m-%d_%H-%M-%S')}"
+
 
 def _all_intervals_between(
     start_date: datetime, end_date: datetime, interval: timedelta

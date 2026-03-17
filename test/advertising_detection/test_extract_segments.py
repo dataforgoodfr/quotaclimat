@@ -17,9 +17,7 @@ async def mock_download_audio(task: DownloadTask) -> ProcessingTask:
     item = 1 if task.start_date.minute == 0 else 2
     return ProcessingTask(
         audio_file_path=f"test/advertising_detection/assets/tf1_{item}.mp3",
-        start_date=task.start_date,
-        end_date=task.end_date,
-        channel=task.channel,
+        download_task=task,
         download_was_cached=True,
     )
 

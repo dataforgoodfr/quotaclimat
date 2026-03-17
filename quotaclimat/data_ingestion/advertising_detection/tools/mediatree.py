@@ -23,7 +23,13 @@ MEDIATREE_API_URL = os.environ.get("MEDIATREE_API_URL")
 
 class MediatreeAPI:
     def __init__(self):
-        self.token = self._get_auth_token()
+        self._token = None
+
+    @property
+    def token(self):
+        if self._token is None:
+            self._token = self._get_auth_token()
+        return self._token
 
     def _get_auth_token(self):
         post_arguments = {

@@ -379,16 +379,18 @@ async def processor(
             num_workers=new_workers,
             task_partition=partition,
             process_media=process_media,
+            max_concurrent_downloads=5,
+            max_queue_size=10,
         ).run()
 
-        segments_list = []
+        segments: list[Segment] = []
         for dl_task in partition:
-            segments = json.loads(segment_cache.get(dl_task.identifier + ".json"))
-            segments_list.append([Segment.from_dict(d) for d in segments])
+            segment_batch = json.loads(segment_cache.get(dl_task.identifier + ".json"))
+            segments.extend([Segment.from_dict(d) for d in segment_batch])
 
     cache_key += "-" + segment_grouping.params_hash()
     with LocalCache(name="grouping", version=cache_key) as group_cache:
-        groups = segment_grouping.run(segments_list)
+        groups = segment_grouping.run(segments)
 
         group_cache.set(
             operation_name + ".json", json.dumps([group.to_dict() for group in groups])

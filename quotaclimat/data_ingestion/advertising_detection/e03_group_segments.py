@@ -15,6 +15,7 @@ Dépendances :
 import hashlib
 import itertools
 import json
+import logging
 import time
 from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass, field
@@ -24,6 +25,8 @@ import numpy as np
 from tqdm import tqdm
 
 from .e02_create_segments import Segment
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -360,15 +363,17 @@ class SegmentGrouping:
 
     def run(
         self,
-        sources: List[List[Segment]],
+        source: List[Segment],
     ) -> list[SegmentGroup]:
         t0 = time.time()
 
-        fingerprints = self._fingerprints(sources)
+        logger.debug(f"{len(source)} segments à regrouper")
+
+        fingerprints = self._fingerprints([source])
 
         groups = self.clusterer.cluster(fingerprints, self.matcher)
 
-        results = self.build_report(fingerprints, groups, channel=sources[0][0].channel)
+        results = self.build_report(fingerprints, groups, channel=source[0].channel)
         results["processing_time_sec"] = round(time.time() - t0, 2)
 
         return results["groups"]

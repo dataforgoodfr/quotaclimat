@@ -3,6 +3,7 @@ import json
 import logging
 import os
 from functools import partial
+from pathlib import Path
 
 from .e00_partition_window import Segment, partition_week
 from .e01_download_audio import AudioProcessor
@@ -36,8 +37,6 @@ def process_audio(
 
 async def processor(
     operation_name: str,
-    channel: str,
-    start_date: str,
     segments: list[Segment],
     annotations: list[dict] = [],
 ):
@@ -107,16 +106,20 @@ async def processor(
             json.dumps([fragment.to_dict() for fragment in fragments], default=str),
         )
 
-        generate_weekly_viewer(
-            output_path=f"{operation_name}_report.html",
-            fragments=fragments,
-            annotations=annotations,
-            params_summary={
-                "operation_name": operation_name,
-                "channel": channel,
-                "start_date": start_date,
-            },
-        )
+    html = generate_weekly_viewer(
+        fragments=fragments,
+        annotations=annotations,
+        params_summary={
+            "operation_name": operation_name,
+            "chunk_creator": chunk_creator.params(),
+            "chunk_grouping": chunk_grouping.params(),
+            "fragment_classifier": fragment_classifier.params(),
+        },
+    )
+    output_path = Path(".cache") / "reports" / f"{params_hash_key}.html"
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html)
 
     return groups
 
@@ -143,8 +146,6 @@ if __name__ == "__main__":
     asyncio.run(
         processor(
             operation_name=f"{channel}-full_week-{start_date}",
-            channel=channel,
-            start_date=start_date,
             segments=partition,
             annotations=annotations,
         )

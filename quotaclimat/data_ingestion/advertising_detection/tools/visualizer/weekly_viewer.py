@@ -41,7 +41,6 @@ def _build_player_url(channel: str, start_epoch: float, end_epoch: float) -> str
 
 
 def generate_weekly_viewer(
-    output_path: str | Path,
     fragments: list[Fragment],
     annotations: list[dict] | None = None,
     params_summary: Optional[dict] = None,
@@ -56,7 +55,6 @@ def generate_weekly_viewer(
                           Chaque annotation : {type: str, start: float (epoch), end: float (epoch)}
         params_summary  : dictionnaire de paramètres à afficher dans le rapport
     """
-    output_path = Path(output_path)
     params_summary = params_summary or {}
     annotations = annotations or []
 
@@ -205,16 +203,18 @@ def generate_weekly_viewer(
         f'<script id="embedded-data" type="application/json">{payload_str}</script>',
     )
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(html)
+    # output_path.parent.mkdir(parents=True, exist_ok=True)
+    # with open(output_path, "w", encoding="utf-8") as f:
+    #     f.write(html)
 
-    size_mb = output_path.stat().st_size / (1024 * 1024)
-    print(f"\n[WeeklyViewer] Rapport généré : {output_path.absolute()}")
-    print(f"  Taille         : {size_mb:.1f} Mo")
-    print(f"  Fragments      : {len(processed_fragments)}")
-    for cls, count in sorted(classification_counts.items()):
-        print(f"    {cls:<20} : {count}")
-    print(f"  Groupes        : {len(unique_groups)}")
-    print(f"  Annotations    : {len(processed_annotations)}")
-    print("\n  → Ouvrez dans Firefox ou Chrome.\n")
+    # size_mb = output_path.stat().st_size / (1024 * 1024)
+    # print(f"\n[WeeklyViewer] Rapport généré : {output_path.absolute()}")
+    # print(f"  Taille         : {size_mb:.1f} Mo")
+    # print(f"  Fragments      : {len(processed_fragments)}")
+    # for cls, count in sorted(classification_counts.items()):
+    #     print(f"    {cls:<20} : {count}")
+    # print(f"  Groupes        : {len(unique_groups)}")
+    # print(f"  Annotations    : {len(processed_annotations)}")
+    # print("\n  → Ouvrez dans Firefox ou Chrome.\n")
+
+    return html

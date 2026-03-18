@@ -27,7 +27,6 @@ async def mock_download_audio(task: Segment) -> tuple[str, bool]:
 )
 async def test_extract_chunks_run_successfully():
     channel = "tf1"
-    start_date = "2025-05-05"
 
     segments = [
         Segment(
@@ -44,8 +43,6 @@ async def test_extract_chunks_run_successfully():
 
     groups = await processor(
         operation_name="test",
-        channel=channel,
-        start_date=start_date,
         segments=segments,
     )
 

@@ -1,11 +1,11 @@
 """
-Regroupement de segments audio par fingerprints pré-calculés
+Regroupement de chunks audio par fingerprints pré-calculés
 =============================================================
 Utilise les hashes pré-calculés par e02 (constellation maps style Shazam)
-pour comparer et regrouper les segments identiques.
+pour comparer et regrouper les chunks identiques.
 
 Le calcul lourd (extraction de pics spectraux + génération de hashes)
-est fait en amont dans e02_create_segments. Ici on ne fait que
+est fait en amont dans e02_create_chunks. Ici on ne fait que
 la comparaison, le clustering et le rapport.
 
 Dépendances :
@@ -24,30 +24,30 @@ from typing import Dict, List, Set, Tuple
 import numpy as np
 from tqdm import tqdm
 
-from .e02_create_segments import Segment
+from .e02_create_chunks import Chunk
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
-class SegmentGroup:
+class ChunkGroup:
     count: int
     duration_mean: float
     duration_std: float
-    occurrences: list[Segment]
+    occurrences: list[Chunk]
 
     def to_dict(self):
         return asdict(self)
 
 
 # ─────────────────────────────────────────────────────────────
-#  Fingerprint d'un segment
+#  Fingerprint d'un chunk
 # ─────────────────────────────────────────────────────────────
 
 
 @dataclass
 class Fingerprint:
-    segment_index: int
+    chunk_index: int
     start_sec: float
     end_sec: float
     duration_sec: float
@@ -64,7 +64,7 @@ class Fingerprint:
 
     def to_dict(self) -> dict:
         return {
-            "segment_index": self.segment_index,
+            "chunk_index": self.chunk_index,
             "start_sec": self.start_sec,
             "end_sec": self.end_sec,
             "duration_sec": self.duration_sec,
@@ -78,7 +78,7 @@ class Fingerprint:
     @staticmethod
     def from_dict(d: dict) -> "Fingerprint":
         fp = Fingerprint(
-            segment_index=d["segment_index"],
+            chunk_index=d["chunk_index"],
             start_sec=d["start_sec"],
             end_sec=d["end_sec"],
             duration_sec=d["duration_sec"],
@@ -102,7 +102,7 @@ class FingerprintMatcher:
     Compare deux fingerprints et retourne un score de similarité.
 
     La vraie robustesse vient de la cohérence temporelle :
-    si deux segments se ressemblent, non seulement leurs hashes
+    si deux chunks se ressemblent, non seulement leurs hashes
     doivent matcher, mais les offsets temporels correspondants
     doivent être cohérents (alignés sur la même droite t1 - t2 = constante).
     """
@@ -148,15 +148,15 @@ class FingerprintMatcher:
 
 
 # ─────────────────────────────────────────────────────────────
-#  Clustering des segments similaires
+#  Clustering des chunks similaires
 # ─────────────────────────────────────────────────────────────
 
 
 class RepetitionClusterer:
     """
-    Groupe les segments ayant des fingerprints similaires.
+    Groupe les chunks ayant des fingerprints similaires.
 
-    Utilise un index inversé (hash → segments) pour éviter la comparaison
+    Utilise un index inversé (hash → chunks) pour éviter la comparaison
     exhaustive O(n²) : seules les paires partageant au moins
     `min_shared_hashes` hashes sont évaluées (comme Shazam côté indexation).
 
@@ -211,7 +211,7 @@ class RepetitionClusterer:
         matcher: FingerprintMatcher,
     ) -> Dict[int, List[int]]:
         """
-        Retourne un dict {groupe_id: [indices de segments]}.
+        Retourne un dict {groupe_id: [indices de chunks]}.
         """
         n = len(fingerprints)
         parent = list(range(n))
@@ -225,15 +225,15 @@ class RepetitionClusterer:
         def union(x, y):
             parent[find(x)] = find(y)
 
-        # ── Index inversé : hash → liste d'indices de segments ──
-        print(f"\n[Clustering] {n} segments — construction de l'index inversé...")
+        # ── Index inversé : hash → liste d'indices de chunks ──
+        print(f"\n[Clustering] {n} chunks — construction de l'index inversé...")
         hash_index: Dict[str, List[int]] = defaultdict(list)
         for i, fp in enumerate(fingerprints):
             for h in fp.hash_set:
                 hash_index[h].append(i)
 
         # ── Compter les hashes partagés par paire (sans énumérer toutes les paires) ──
-        # Seuil max : on ignore les hashes présents dans plus de la moitié des segments
+        # Seuil max : on ignore les hashes présents dans plus de la moitié des chunks
         # (silence, fond musical constant…) mais on garde les hashes de pubs répétées
         # popular_threshold = max(50, n // 2)
         shared_counts: Dict[Tuple[int, int], int] = defaultdict(int)
@@ -293,19 +293,19 @@ class RepetitionClusterer:
 # ─────────────────────────────────────────────────────────────
 
 
-class SegmentGrouping:
+class ChunkGrouping:
     def __init__(
         self,
         similarity_threshold: float = 0.08,
         min_matching_hashes: int = 2,
         # Legacy params kept for _params_hash cache invalidation
         sr: int = 22050,
-        n_peaks_by_segment: int = 5,
+        n_peaks_by_chunk: int = 5,
         neighborhood_peaks_filter: int = 15,
         min_peak_amplitude: float = 0.01,
     ):
         self.sr = sr
-        self.n_peaks_by_segment = n_peaks_by_segment
+        self.n_peaks_by_chunk = n_peaks_by_chunk
         self.neighborhood_peaks_filter = neighborhood_peaks_filter
         self.min_peak_amplitude = min_peak_amplitude
         self.matcher = FingerprintMatcher(min_matching_hashes=min_matching_hashes)
@@ -317,7 +317,7 @@ class SegmentGrouping:
             "similarity_threshold": self.clusterer.threshold,
             "min_matching_hashes": self.matcher.min_matching_hashes,
             "sr": self.sr,
-            "n_peaks_by_segment": self.n_peaks_by_segment,
+            "n_peaks_by_chunk": self.n_peaks_by_chunk,
             "neighborhood_peaks_filter": self.neighborhood_peaks_filter,
             "min_peak_amplitude": self.min_peak_amplitude,
         }
@@ -328,19 +328,19 @@ class SegmentGrouping:
         serialized = json.dumps(self.params(), sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(serialized.encode()).hexdigest()[:16]
 
-    def fingerprint_source(self, segments: List[Segment]) -> List[Fingerprint]:
-        """Converts segments (with pre-computed hashes from e02) into Fingerprints."""
+    def fingerprint_source(self, chunks: List[Chunk]) -> List[Fingerprint]:
+        """Converts chunks (with pre-computed hashes from e02) into Fingerprints."""
         fingerprints = []
-        for i, seg in enumerate(segments):
+        for i, seg in enumerate(chunks):
             duration_seg = seg.end_sec - seg.start_sec
             if duration_seg < 0.5:  # Ignorer < 0.5s
                 continue
 
-            # Hashes are pre-computed in e02 (SegmentCreator.build_segments)
+            # Hashes are pre-computed in e02 (ChunkCreator.build_chunks)
             hashes = seg.hashes if seg.hashes else []
 
             fp = Fingerprint(
-                segment_index=i,
+                chunk_index=i,
                 start_sec=seg.start_sec,
                 end_sec=seg.end_sec,
                 duration_sec=seg.end_sec - seg.start_sec,
@@ -357,17 +357,17 @@ class SegmentGrouping:
 
     def _fingerprints(self, sources) -> List[Fingerprint]:
         fingerprints = []
-        for segments in sources:
-            fingerprints.extend(self.fingerprint_source(segments))
+        for chunks in sources:
+            fingerprints.extend(self.fingerprint_source(chunks))
         return fingerprints
 
     def run(
         self,
-        source: List[Segment],
-    ) -> list[SegmentGroup]:
+        source: List[Chunk],
+    ) -> list[ChunkGroup]:
         t0 = time.time()
 
-        logger.debug(f"{len(source)} segments à regrouper")
+        logger.debug(f"{len(source)} chunks à regrouper")
 
         fingerprints = self._fingerprints([source])
 
@@ -383,7 +383,7 @@ class SegmentGrouping:
     ) -> dict:
         """Construit le rapport de répétitions."""
 
-        report_groups: list[SegmentGroup] = []
+        report_groups: list[ChunkGroup] = []
         for group_id, member_idxs in groups.items():
             members = [fingerprints[i] for i in member_idxs]
             members.sort(key=lambda x: x.start_sec)
@@ -391,12 +391,12 @@ class SegmentGrouping:
             durations = [m.duration_sec for m in members]
 
             report_groups.append(
-                SegmentGroup(
+                ChunkGroup(
                     count=len(members),
                     duration_mean=round(float(np.mean(durations)), 2),
                     duration_std=round(float(np.std(durations)), 2),
                     occurrences=[
-                        Segment(
+                        Chunk(
                             start_sec=round(m.start_sec, 2),
                             end_sec=round(m.end_sec, 2),
                             channel=channel,
@@ -414,7 +414,7 @@ class SegmentGrouping:
         report_groups.sort(key=lambda x: -x.count)
 
         return {
-            "total_segments": len(fingerprints),
+            "total_chunks": len(fingerprints),
             "total_groups": len(groups),
             "groups": report_groups,
         }
@@ -430,7 +430,7 @@ def print_report(report: dict):
     print("\n" + "═" * 70)
     print("  RAPPORT DE RÉPÉTITIONS")
     print("═" * 70)
-    print(f"  Segments analysés : {report['total_segments']}")
+    print(f"  Chunks analysés : {report['total_chunks']}")
     print(f"  Groupes détectés  : {report['total_groups']}")
 
     # Stats par classification
@@ -475,10 +475,10 @@ def main():
         epilog="""
 Exemples :
   # Source unique
-  finger_printer.py audio.mp3 --segments segments.json
+  finger_printer.py audio.mp3 --chunks chunks.json
 
-  # Sources multiples (audio et segments appariés par ordre)
-  finger_printer.py a1.mp3 a2.mp3 --segments s1.json s2.json
+  # Sources multiples (audio et chunks appariés par ordre)
+  finger_printer.py a1.mp3 a2.mp3 --chunks s1.json s2.json
 """,
     )
     parser.add_argument(
@@ -487,10 +487,10 @@ Exemples :
         help="Fichier(s) audio source",
     )
     parser.add_argument(
-        "--segments",
+        "--chunks",
         nargs="+",
-        default=["segments.json"],
-        help="JSON(s) produit(s) par rupture_detector.py, dans le même ordre que les audios [défaut: segments.json]",
+        default=["chunks.json"],
+        help="JSON(s) produit(s) par rupture_detector.py, dans le même ordre que les audios [défaut: chunks.json]",
     )
     parser.add_argument(
         "--threshold",
@@ -511,15 +511,15 @@ Exemples :
     parser.add_argument("--no-plot", action="store_true")
     args = parser.parse_args()
 
-    if len(args.audio) != len(args.segments):
+    if len(args.audio) != len(args.chunks):
         parser.error(
             f"Le nombre de fichiers audio ({len(args.audio)}) "
-            f"doit correspondre au nombre de fichiers segments ({len(args.segments)})"
+            f"doit correspondre au nombre de fichiers chunks ({len(args.chunks)})"
         )
 
-    sources = list(zip(args.audio, args.segments))
+    sources = list(zip(args.audio, args.chunks))
 
-    pipeline = SegmentGrouping(
+    pipeline = ChunkGrouping(
         sources=sources,
         similarity_threshold=args.threshold,
     )

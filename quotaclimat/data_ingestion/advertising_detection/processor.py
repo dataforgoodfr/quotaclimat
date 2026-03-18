@@ -13,10 +13,10 @@ from zoneinfo import ZoneInfo
 
 from tqdm import tqdm
 
-from .e00_partition_window import DownloadTask, partition_week
-from .e01_download_audio import ProcessingTask, download_audio
-from .e02_create_segments import Segment, SegmentCreator
-from .e03_group_segments import SegmentGrouping
+from .e00_partition_window import Partition, partition_week
+from .e01_download_audio import download_audio
+from .e02_create_chunks import Chunk, ChunkCreator
+from .e03_group_chunks import ChunkGrouping
 from .tools.cache import LocalCache
 from .tools.mediatree import CachedMediatreeAPI
 from .tools.testimony_data.extract import get_testimony_data
@@ -88,13 +88,19 @@ class PipelineStats:
 # Launch download workers in async and processing workers in parallel
 
 
+@dataclass
+class ProcessingTask:
+    audio_file_path: str
+    download_task: Partition
+
+
 class AudioProcessor:
     def __init__(
         self,
         task_partition: Generator[
-            DownloadTask, None, None
+            Partition, None, None
         ],  # Function to generate download tasks based on input parameters
-        process_media: Callable[[ProcessingTask], bool],
+        process_media: Callable[[Partition, str], bool],
         num_workers: int = 4,  # Number of processor for audio work (CPU intensive)
         max_concurrent_downloads: int = 5,  # Limit of simultaneous downloads (I/O intensive, API limits)
         max_queue_size: int = 10,  # Maximum queue size between download and processing (Memory intensive: all pending files are saved locally)
@@ -176,14 +182,17 @@ class AudioProcessor:
 
     async def _process_worker(self, executor: ProcessPoolExecutor, worker_id: int):
         while True:
-            task: ProcessingTask = await self.queue.get()
-            if task is None:
+            next_item = await self.queue.get()
+            if next_item is None:
                 break
+
+            task: Partition = next_item[0]
+            audio_file_path: str = next_item[1]
 
             try:
                 loop = asyncio.get_event_loop()
                 was_cached = await loop.run_in_executor(
-                    executor, self.process_media, task
+                    executor, self.process_media, task, audio_file_path
                 )
                 if was_cached:
                     self.stats.proc_cached += 1
@@ -199,22 +208,24 @@ class AudioProcessor:
             self._update_postfix()
 
     async def _download_and_queue(
-        self, task: DownloadTask, max_retries: int = 3, base_delay: float = 2.0
+        self, task: Partition, max_retries: int = 3, base_delay: float = 2.0
     ):
         """All-in-one: download with retry AND queue"""
         async with self.semaphore:
             try:
-                processing_task = await with_exponential_backoff(
+                audio_file_path, download_was_cached = await with_exponential_backoff(
                     lambda: download_audio(task),
                     max_retries=max_retries,
                     base_delay=base_delay,
                     label=str(task),
                 )
-                if processing_task.download_was_cached:
+
+                if download_was_cached:
                     self.stats.dl_cached += 1
                 else:
                     self.stats.dl_downloaded += 1
-                await self.queue.put(processing_task)
+
+                await self.queue.put((task, audio_file_path))
             except Exception:
                 tb = traceback.format_exc()
                 self.stats.dl_errors += 1
@@ -321,17 +332,20 @@ async def export_advertisings(advertisings: list[dict], path: Path):
 
 
 def process_audio(
-    processing_task: ProcessingTask, cache: LocalCache, segment_creator: SegmentCreator
+    task: Partition,
+    audio_file_path: str,
+    cache: LocalCache,
+    chunk_creator: ChunkCreator,
 ) -> bool:
     """Returns True if processing was cached (skipped), False if actually processed."""
 
-    file_name = processing_task.identifier + ".json"
+    file_name = task.identifier + ".json"
 
     if cache.exists(file_name):
         return True
     else:
-        segments = segment_creator.run(processing_task)
-        cache.set(file_name, json.dumps([fp.to_dict() for fp in segments]))
+        chunks = chunk_creator.run(task, audio_file_path)
+        cache.set(file_name, json.dumps([fp.to_dict() for fp in chunks]))
         return False
 
 
@@ -339,18 +353,18 @@ async def processor(
     operation_name: str,
     channel: str,
     start_date: str,
-    partition: list[DownloadTask],
+    partition: list[Partition],
     annotations: list[dict] = [],
 ):
     new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
 
-    segment_creator = SegmentCreator(
+    chunk_creator = ChunkCreator(
         sr=22050,
         hop_length=512,
         n_mfcc=20,
         context_sec=1.0,
         novelty_smooth_sec=0.5,
-        min_segment_sec=5.0,
+        min_chunk_sec=5.0,
         sensitivity=0.25,
         max_ruptures=0,
         silence_percentile=5.0,
@@ -360,19 +374,19 @@ async def processor(
         neighborhood=15,
         min_amplitude=0.01,
     )
-    segment_grouping = SegmentGrouping(
+    chunk_grouping = ChunkGrouping(
         similarity_threshold=0.05,
         sr=22050,
         min_matching_hashes=1,
-        n_peaks_by_segment=5,
+        n_peaks_by_chunk=5,
         neighborhood_peaks_filter=15,
         min_peak_amplitude=0.01,
     )
 
-    cache_key = segment_creator.params_hash()
-    with LocalCache(name="segments", version=cache_key) as segment_cache:
+    params_hash_key = chunk_creator.params_hash()
+    with LocalCache(name="chunks", version=params_hash_key) as chunk_cache:
         process_media = partial(
-            process_audio, segment_creator=segment_creator, cache=segment_cache
+            process_audio, chunk_creator=chunk_creator, cache=chunk_cache
         )
 
         await AudioProcessor(
@@ -383,14 +397,14 @@ async def processor(
             max_queue_size=10,
         ).run()
 
-        segments: list[Segment] = []
+        chunks: list[Chunk] = []
         for dl_task in partition:
-            segment_batch = json.loads(segment_cache.get(dl_task.identifier + ".json"))
-            segments.extend([Segment.from_dict(d) for d in segment_batch])
+            chunk_batch = json.loads(chunk_cache.get(dl_task.identifier + ".json"))
+            chunks.extend([Chunk.from_dict(d) for d in chunk_batch])
 
-    cache_key += "-" + segment_grouping.params_hash()
-    with LocalCache(name="grouping", version=cache_key) as group_cache:
-        groups = segment_grouping.run(segments)
+    params_hash_key += "-" + chunk_grouping.params_hash()
+    with LocalCache(name="grouping", version=params_hash_key) as group_cache:
+        groups = chunk_grouping.run(chunks)
 
         group_cache.set(
             operation_name + ".json", json.dumps([group.to_dict() for group in groups])
@@ -413,11 +427,13 @@ async def processor(
                     }
                 )
 
-        with LocalCache(name="advertising", version=cache_key + "-c5") as ads_cache:
+        with LocalCache(
+            name="advertising", version=params_hash_key + "-c5"
+        ) as ads_cache:
             advertising_export_folder = (
                 Path(".cache")
                 / "advertisings"
-                / (cache_key + "-c5")
+                / (params_hash_key + "-c5")
                 / (operation_name + ".json")
             )
             await export_advertisings(advertisings, advertising_export_folder)
@@ -427,7 +443,7 @@ async def processor(
 
         # parts = []
         # for dl_task in partition:
-        #     segments = json.loads(segment_cache.get(dl_task.identifier + ".json"))
+        #     chunks = json.loads(chunk_cache.get(dl_task.identifier + ".json"))
 
         #     media_url = "https://example.org"
         #     # media_url = await with_exponential_backoff(
@@ -446,7 +462,7 @@ async def processor(
         #         {
         #             "start_date": dl_task.start_date.timestamp(),
         #             "end_date": (dl_task.end_date + timedelta(minutes=1)).timestamp(),
-        #             "segments": [d for d in segments],
+        #             "chunks": [d for d in chunks],
         #             "media_url": media_url,
         #         }
         #     )

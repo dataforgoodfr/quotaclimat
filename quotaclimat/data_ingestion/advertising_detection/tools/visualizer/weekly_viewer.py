@@ -2,7 +2,7 @@
 weekly_viewer.py
 ================
 Génère un fichier HTML autonome de visualisation hebdomadaire
-des segments audio/vidéo détectés, avec grouping et annotations.
+des chunks audio/vidéo détectés, avec grouping et annotations.
 
 Usage programmatique :
     from analyse.advertising.tools.visualizer.weekly_viewer import generate_weekly_viewer
@@ -14,7 +14,7 @@ Usage programmatique :
             {
                 "start_date": 1709560800,   # epoch début
                 "end_date":   1709604400,   # epoch fin
-                "segments": [...],          # liste de Segment.to_dict() ou to_alternary_dict()
+                "chunks": [...],          # liste de Chunk.to_dict() ou to_alternary_dict()
                 "media_url": "https://..."  # URL mp4 / mp3
             },
             ...
@@ -37,7 +37,7 @@ from typing import Optional
 TEMPLATE_PATH = Path(__file__).parent / "weekly_viewer.html"
 
 
-def _normalize_segment(seg: dict) -> dict:
+def _normalize_chunk(seg: dict) -> dict:
     """Normalise les clés courtes {s, e, rms, sc, zcr} vers les clés longues."""
     return {
         "start_sec": seg.get("start_sec", seg.get("s", 0.0)),
@@ -52,7 +52,7 @@ def _build_group_lookup(grouping: list) -> dict:
     """
     Construit un dictionnaire start_sec -> {group_id, group_size, classification}.
     À partir du rapport de grouping issu de MetaMatcherPipeline.build_report().
-    La clé est start_sec (epoch float), identifiant stable et unique d'un segment.
+    La clé est start_sec (epoch float), identifiant stable et unique d'un chunk.
     """
     lookup = {}
     if not grouping:
@@ -94,7 +94,7 @@ def generate_weekly_viewer(
                           Chaque partie : {
                               start_date: float (epoch),
                               end_date: float (epoch),
-                              segments: list[dict],  # Segment.to_dict() ou to_alternary_dict()
+                              chunks: list[dict],  # Chunk.to_dict() ou to_alternary_dict()
                               media_url: str          # URL mp4 ou mp3
                           }
         annotations     : liste d'annotations (testimony_table)
@@ -110,8 +110,8 @@ def generate_weekly_viewer(
     # ── Lookup grouping ────────────────────────────────────────
     group_lookup = _build_group_lookup(grouping)
 
-    # ── Prétraitement des segments ─────────────────────────────
-    all_segments = []
+    # ── Prétraitement des chunks ─────────────────────────────
+    all_chunks = []
     processed_parts = []
     global_idx = 0
     time_min = float("inf")
@@ -125,17 +125,17 @@ def generate_weekly_viewer(
         time_min = min(time_min, part_start)
         time_max = max(time_max, part_end)
 
-        raw_segments = part.get("segments", [])
+        raw_chunks = part.get("chunks", [])
         part_seg_ids = []
 
-        for seg_raw in raw_segments:
-            seg = _normalize_segment(seg_raw)
+        for seg_raw in raw_chunks:
+            seg = _normalize_chunk(seg_raw)
             abs_start = seg["start_sec"]
             abs_end = seg["end_sec"]
 
             if abs_start < part_start or abs_end > part_end:
                 warnings.warn(
-                    f"[WeeklyViewer] Partie {part_idx}: segment [{abs_start}, {abs_end}] "
+                    f"[WeeklyViewer] Partie {part_idx}: chunk [{abs_start}, {abs_end}] "
                     f"dépasse la plage de la partie [{part_start}, {part_end}].",
                     stacklevel=2,
                 )
@@ -145,7 +145,7 @@ def generate_weekly_viewer(
 
             grp = group_lookup.get(round(abs_start, 2), {})
 
-            all_segments.append(
+            all_chunks.append(
                 {
                     "id": global_idx,
                     "absStart": round(abs_start, 2),
@@ -173,8 +173,8 @@ def generate_weekly_viewer(
                 "startDate": part_start,
                 "endDate": part_end,
                 "mediaUrl": media_url,
-                "segmentCount": len(raw_segments),
-                "segmentIds": part_seg_ids,
+                "chunkCount": len(raw_chunks),
+                "chunkIds": part_seg_ids,
             }
         )
 
@@ -189,9 +189,7 @@ def generate_weekly_viewer(
                     "durationMean": g.get("duration_mean", 0),
                     "durationStd": g.get("duration_std", 0),
                     "classification": g.get("classification", ""),
-                    "memberIds": [
-                        occ["start_sec"] for occ in g.get("occurrences", [])
-                    ],
+                    "memberIds": [occ["start_sec"] for occ in g.get("occurrences", [])],
                 }
             )
 
@@ -215,12 +213,12 @@ def generate_weekly_viewer(
 
     # ── Densité par heure ──────────────────────────────────────
     # Pré-calculée en Python pour alléger le JS
-    if all_segments and time_min < time_max:
+    if all_chunks and time_min < time_max:
         bin_size = 900  # 15 minutes
         n_bins = int((time_max - time_min) / bin_size) + 1
         density_total = [0] * n_bins
         density_grouped = [0] * n_bins
-        for seg in all_segments:
+        for seg in all_chunks:
             b = int((seg["absStart"] - time_min) / bin_size)
             if 0 <= b < n_bins:
                 density_total[b] += 1
@@ -236,7 +234,7 @@ def generate_weekly_viewer(
 
     # ── Payload ────────────────────────────────────────────────
     payload = {
-        "segments": all_segments,
+        "chunks": all_chunks,
         "parts": processed_parts,
         "groups": processed_groups,
         "annotations": processed_annotations,
@@ -247,11 +245,11 @@ def generate_weekly_viewer(
             "max": time_max if time_max != float("-inf") else 0,
         },
         "stats": {
-            "totalSegments": len(all_segments),
+            "totalChunks": len(all_chunks),
             "totalGroups": len(processed_groups),
             "totalParts": len(processed_parts),
             "totalAnnotations": len(processed_annotations),
-            "groupedSegments": sum(1 for s in all_segments if s["groupSize"] > 1),
+            "groupedChunks": sum(1 for s in all_chunks if s["groupSize"] > 1),
         },
     }
 
@@ -279,8 +277,8 @@ def generate_weekly_viewer(
     size_mb = output_path.stat().st_size / (1024 * 1024)
     print(f"\n[WeeklyViewer] Rapport généré : {output_path.absolute()}")
     print(f"  Taille         : {size_mb:.1f} Mo")
-    print(f"  Segments       : {len(all_segments)}")
-    print(f"  Groupés        : {sum(1 for s in all_segments if s['groupSize'] > 1)}")
+    print(f"  Chunks       : {len(all_chunks)}")
+    print(f"  Groupés        : {sum(1 for s in all_chunks if s['groupSize'] > 1)}")
     print(f"  Groupes        : {len(processed_groups)}")
     print(f"  Parties        : {len(processed_parts)}")
     print(f"  Annotations    : {len(processed_annotations)}")

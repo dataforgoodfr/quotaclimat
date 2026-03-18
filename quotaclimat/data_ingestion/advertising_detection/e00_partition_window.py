@@ -6,7 +6,7 @@ tz_paris = ZoneInfo("Europe/Paris")
 
 
 @dataclass
-class DownloadTask:
+class Partition:
     start_date: datetime
     end_date: datetime
     channel: str
@@ -29,10 +29,10 @@ def _all_intervals_between(
 def partition_week(
     start_date: str,  # Start of the analyzed week, format iso 2026-12-31
     channel: str,
-) -> list[DownloadTask]:
+) -> list[Partition]:
     week_start_date = datetime.fromisoformat(start_date).replace(tzinfo=tz_paris)
     return (
-        DownloadTask(
+        Partition(
             start_date=task_start_date,
             end_date=task_end_date,
             channel=channel,

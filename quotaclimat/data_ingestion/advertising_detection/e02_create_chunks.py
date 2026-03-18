@@ -1,13 +1,12 @@
 """
 Détection de ruptures dans un flux audio (TV/Radio)
 =====================================================
-Segmente automatiquement un fichier audio en unités naturelles,
+Chunke automatiquement un fichier audio en unités naturelles,
 en coupant dans les micro silences.
-Extrait les descripteurs de chaque segment (énergie, centroïde spectral, ZCR) et une constellation map de pics spectraux (MFCC + delta).
+Extrait les descripteurs de chaque chunk (énergie, centroïde spectral, ZCR) et une constellation map de pics spectraux (MFCC + delta).
 
 """
 
-import argparse
 import hashlib
 import json
 from dataclasses import asdict, dataclass
@@ -18,7 +17,7 @@ import numpy as np
 from scipy.ndimage import maximum_filter, maximum_filter1d, uniform_filter1d
 from scipy.signal import find_peaks
 
-from .e01_download_audio import ProcessingTask
+from .e00_partition_window import Partition
 
 # ─────────────────────────────────────────────────────────────
 #  Génération des hashes par paires de pics (fan-out)
@@ -87,12 +86,12 @@ class HashGenerator:
 
 
 # ─────────────────────────────────────────────
-#  Structure de données pour un segment détecté
+#  Structure de données pour un chunk détecté
 # ─────────────────────────────────────────────
 
 
 @dataclass
-class Segment:
+class Chunk:
     start_sec: float
     end_sec: float
     channel: str
@@ -102,7 +101,7 @@ class Segment:
     )
     spectral_centroid: float  # "Brillance" moyenne — grave vs aigu
     zcr_mean: float  # Zero-crossing rate — parole vs musique
-    peaks: list = None  # Constellation map : liste de [time_frame, freq_bin] relatifs au début du segment
+    peaks: list = None  # Constellation map : liste de [time_frame, freq_bin] relatifs au début du chunk
     hashes: list = (
         None  # Liste de [hash_str, anchor_time] pré-calculés à partir des peaks
     )
@@ -116,18 +115,18 @@ class Segment:
 
 
 # ─────────────────────────────────────────────
-#  Création de segments
+#  Création de chunks
 # ─────────────────────────────────────────────
 
 
-class SegmentCreator:
+class ChunkCreator:
     """
     Stratégie :
       1. Calcul de features frame-par-frame (MFCC + énergie + centroïde spectral)
       2. Calcul d'une courbe de "nouveauté" : à quel point chaque instant
          diffère-t-il de son voisinage ?
-      3. Lissage + détection de pics → frontières de segments
-      4. Extraction de descripteurs par segment
+      3. Lissage + détection de pics → frontières de chunks
+      4. Extraction de descripteurs par chunk
       5. Classification heuristique simple
     """
 
@@ -146,19 +145,19 @@ class SegmentCreator:
         # ↑ Lissage temporel de la courbe de nouveauté.
         # Avant : 10 frames = 230ms. 0.5s filtre mieux les fluctuations courtes.
         # Augmenter (1–2s) si la courbe est encore trop bruitée.
-        min_segment_sec: float = 5.0,
+        min_chunk_sec: float = 5.0,
         # ↑ Durée minimale imposée entre deux ruptures.
-        # Relevé de 2s → 5s : les segments < 5s sont presque toujours du bruit.
+        # Relevé de 2s → 5s : les chunks < 5s sont presque toujours du bruit.
         # Mettre à 10–15s pour des émissions longues.
         sensitivity: float = 0.25,
         # ↑ Fraction des pics de nouveauté retenus comme ruptures.
-        # 0.1 = 10% des pics les plus intenses seulement (peu de segments).
-        # 0.5 = la moitié des pics (beaucoup de segments).
+        # 0.1 = 10% des pics les plus intenses seulement (peu de chunks).
+        # 0.5 = la moitié des pics (beaucoup de chunks).
         # Baissé de 0.3 → 0.25 par défaut.
         max_ruptures: int = 0,
         # ↑ Si > 0 : ne garder que les N ruptures les plus intenses, quelle que
-        # soit la sensitivity. Utile pour forcer un nombre max de segments.
-        # Ex : max_ruptures=50 garantit au plus 51 segments sur toute la durée.
+        # soit la sensitivity. Utile pour forcer un nombre max de chunks.
+        # Ex : max_ruptures=50 garantit au plus 51 chunks sur toute la durée.
         silence_percentile: float = 5.0,
         # ↑ Percentile d'énergie RMS en dessous duquel une frame est considérée
         # comme silencieuse. 5 = 5% des frames les plus silencieuses du fichier.
@@ -176,7 +175,7 @@ class SegmentCreator:
         n_fft: int = 2048,
         # ↑ Taille FFT pour le spectrogramme de la constellation. 2048 ≈ 93ms @ 22050Hz.
         n_peaks: int = 30,
-        # ↑ Nombre maximum de pics spectraux retenus par segment (indépendant de la durée).
+        # ↑ Nombre maximum de pics spectraux retenus par chunk (indépendant de la durée).
         neighborhood: int = 15,
         # ↑ Taille du filtre de maximum local dans le plan temps×fréquence.
         #   Un pic est retenu uniquement s'il est le plus fort dans son voisinage.
@@ -188,7 +187,7 @@ class SegmentCreator:
         self.n_mfcc = n_mfcc
         self.context_sec = context_sec
         self.novelty_smooth_sec = novelty_smooth_sec
-        self.min_segment_sec = min_segment_sec
+        self.min_chunk_sec = min_chunk_sec
         self.sensitivity = sensitivity
         self.max_ruptures = max_ruptures
         self.silence_percentile = silence_percentile
@@ -295,11 +294,11 @@ class SegmentCreator:
 
         Trois filtres successifs :
           1. Seuil de hauteur (sensitivity)  → élimine les pics faibles
-          2. Distance minimale (min_segment_sec) → impose un écart entre pics
+          2. Distance minimale (min_chunk_sec) → impose un écart entre pics
           3. Top-N (max_ruptures)            → ne garde que les N plus intenses
         """
 
-        min_dist_frames = int(self.min_segment_sec * self._fps)
+        min_dist_frames = int(self.min_chunk_sec * self._fps)
 
         # Filtre 1 : seuil adaptatif sur la distribution de la courbe
         # sensitivity=0.25 → seuil au percentile 75 → on garde le quart supérieur
@@ -326,8 +325,8 @@ class SegmentCreator:
 
     def _extract_peaks(self, y_seg: np.ndarray) -> list:
         """
-        Extrait la constellation map d'un segment audio.
-        Retourne une liste de [time_frame, freq_bin] relatifs au début du segment.
+        Extrait la constellation map d'un chunk audio.
+        Retourne une liste de [time_frame, freq_bin] relatifs au début du chunk.
         """
         if len(y_seg) < self.sr * 0.5:
             return []
@@ -349,7 +348,7 @@ class SegmentCreator:
             [time_idxs[order].astype(np.int32), freq_idxs[order].astype(np.int32)]
         ).tolist()
 
-    def build_segments(
+    def build_chunks(
         self,
         peaks: np.ndarray,
         features: dict,
@@ -357,10 +356,10 @@ class SegmentCreator:
         y: np.ndarray,
         start_epoch: float,
         channel: str,
-    ) -> List[Segment]:
-        """Construit les segments avec leurs descripteurs et leur constellation map."""
+    ) -> List[Chunk]:
+        """Construit les chunks avec leurs descripteurs et leur constellation map."""
         frames_per_sec = self.sr / self.hop_length
-        segments = []
+        chunks = []
 
         # Ajoute début et fin
         boundaries = np.concatenate([[0.0], peaks, [duration_sec]])
@@ -373,7 +372,7 @@ class SegmentCreator:
             f_start = int(t_start * frames_per_sec)
             f_end = int(t_end * frames_per_sec)
 
-            # Éviter les segments vides
+            # Éviter les chunks vides
             if f_end <= f_start:
                 continue
 
@@ -405,7 +404,7 @@ class SegmentCreator:
             )
             seg_hashes = self._hasher.generate(peaks_array)
 
-            seg = Segment(
+            seg = Chunk(
                 start_sec=start_epoch + float(t_start),
                 end_sec=start_epoch + float(t_end),
                 duration_sec=float(dur),
@@ -416,26 +415,26 @@ class SegmentCreator:
                 hashes=seg_hashes,
                 channel=channel,
             )
-            segments.append(seg)
+            chunks.append(seg)
 
-        return segments
+        return chunks
 
-    def run(self, task: ProcessingTask) -> List[Segment]:
-        y = self.load(task.audio_file_path)
+    def run(self, task: Partition, audio_file_path: str) -> List[Chunk]:
+        y = self.load(audio_file_path)
         features = self.extract_features(y)
         novelty = self.compute_novelty(features["stack"], features["energy"])
         duration = len(y) / self.sr
         peaks = self.detect_peaks(novelty)
-        segments = self.build_segments(
+        chunks = self.build_chunks(
             peaks,
             features,
             duration,
             y,
-            task.download_task.start_date.timestamp(),
-            channel=task.download_task.channel,
+            task.start_date.timestamp(),
+            channel=task.channel,
         )
 
-        return segments
+        return chunks
 
     # ─────────────────────────────────────────────
     #  Visualisation
@@ -444,11 +443,11 @@ class SegmentCreator:
     def get_novelty_peaks(self, novelty: np.ndarray) -> list:
         """
         Retourne tous les pics locaux de la courbe de nouveauté,
-        avec uniquement le filtre distance (min_segment_sec) —
+        avec uniquement le filtre distance (min_chunk_sec) —
         avant le seuil sensitivity et le filtre max_ruptures.
         Utile pour la visualisation interactive du choix des paramètres.
         """
-        min_dist_frames = int(self.min_segment_sec * self._fps)
+        min_dist_frames = int(self.min_chunk_sec * self._fps)
         peaks, _ = find_peaks(novelty, distance=min_dist_frames)
         return [
             {
@@ -466,7 +465,7 @@ class SegmentCreator:
             "n_mfcc": self.n_mfcc,
             "context_sec": self.context_sec,
             "novelty_smooth_sec": self.novelty_smooth_sec,
-            "min_segment_sec": self.min_segment_sec,
+            "min_chunk_sec": self.min_chunk_sec,
             "sensitivity": self.sensitivity,
             "max_ruptures": self.max_ruptures,
             "silence_percentile": self.silence_percentile,
@@ -492,7 +491,7 @@ class SegmentCreator:
             "n_mfcc": self.n_mfcc,
             "context_sec": self.context_sec,
             "novelty_smooth_sec": self.novelty_smooth_sec,
-            "min_segment_sec": self.min_segment_sec,
+            "min_chunk_sec": self.min_chunk_sec,
             "sensitivity": self.sensitivity,
             "max_ruptures": self.max_ruptures,
             "silence_percentile": self.silence_percentile,
@@ -500,127 +499,31 @@ class SegmentCreator:
         }
 
 
-def print_summary(segments: List[Segment]):
+def print_summary(chunks: List[Chunk]):
     from collections import Counter
 
-    counts = Counter(s.label for s in segments)
-    total = len(segments)
+    counts = Counter(s.label for s in chunks)
+    total = len(chunks)
 
     print("\n" + "═" * 55)
     print("  RÉSUMÉ DE SEGMENTATION")
     print("═" * 55)
-    print(f"  Total segments : {total}")
+    print(f"  Total chunks : {total}")
     print(f"  {'Label':<22} {'Nb':>5}  {'%':>6}  {'Durée moy':>10}")
     print("  " + "─" * 50)
 
     for label, count in sorted(counts.items(), key=lambda x: -x[1]):
-        segs_l = [s for s in segments if s.label == label]
+        segs_l = [s for s in chunks if s.label == label]
         mean_d = np.mean([s.duration_sec for s in segs_l])
         pct = count / total * 100
         print(f"  {label:<22} {count:>5}  {pct:>5.1f}%  {mean_d:>8.1f}s")
 
     print("═" * 55)
 
-    print("\n  10 segments les plus courts :")
-    for s in sorted(segments, key=lambda x: x.duration_sec)[:10]:
+    print("\n  10 chunks les plus courts :")
+    for s in sorted(chunks, key=lambda x: x.duration_sec)[:10]:
         print(f"    [{s.start_tc}]  {s.duration_sec:6.2f}s  {s.label}")
 
-    print("\n  10 segments les plus longs :")
-    for s in sorted(segments, key=lambda x: -x.duration_sec)[:10]:
+    print("\n  10 chunks les plus longs :")
+    for s in sorted(chunks, key=lambda x: -x.duration_sec)[:10]:
         print(f"    [{s.start_tc}]  {s.duration_sec:7.1f}s  {s.label}")
-
-
-# ─────────────────────────────────────────────
-#  Point d'entrée
-# ─────────────────────────────────────────────
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Détection de ruptures dans un flux audio TV/Radio"
-    )
-    parser.add_argument("input", help="Fichier audio d'entrée (wav, mp3, flac, ogg...)")
-    parser.add_argument(
-        "--sensitivity",
-        type=float,
-        default=0.25,
-        help="Fraction des pics retenus, 0.1 (peu) à 0.5 (beaucoup) [défaut: 0.25]",
-    )
-    parser.add_argument(
-        "--min-seg",
-        type=float,
-        default=5.0,
-        help="Durée minimale d'un segment en secondes [défaut: 5.0]",
-    )
-    parser.add_argument(
-        "--context",
-        type=float,
-        default=1.0,
-        help="Secondes de contexte analysées de chaque côté d'un point [défaut: 1.0]",
-    )
-    parser.add_argument(
-        "--smooth",
-        type=float,
-        default=0.5,
-        help="Lissage de la courbe de nouveauté en secondes [défaut: 0.5]",
-    )
-    parser.add_argument(
-        "--max-ruptures",
-        type=int,
-        default=0,
-        dest="max_ruptures",
-        help="Garder seulement les N ruptures les plus intenses (0 = pas de limite) [défaut: 0]",
-    )
-    parser.add_argument(
-        "--cosine-weight",
-        type=float,
-        default=1.0,
-        dest="cosine_weight",
-        help="Poids du cosinus (0=silence pur, 1=cosinus plein) [défaut: 1.0]",
-    )
-    parser.add_argument(
-        "--out-json",
-        default="segments.json",
-        help="Fichier JSON de sortie [défaut: segments.json]",
-    )
-    parser.add_argument(
-        "--out-plot",
-        default="rupture_analyse.png",
-        help="Image de visualisation [défaut: rupture_analyse.png]",
-    )
-    parser.add_argument(
-        "--out-novelty",
-        default="novelty_peaks.json",
-        help="Fichier JSON des pics de nouveauté (pour le player) [défaut: novelty_peaks.json]",
-    )
-    parser.add_argument(
-        "--no-plot", action="store_true", help="Désactiver la visualisation"
-    )
-    args = parser.parse_args()
-
-    detector = SegmentCreator(
-        sensitivity=args.sensitivity,
-        min_segment_sec=args.min_seg,
-        context_sec=args.context,
-        novelty_smooth_sec=args.smooth,
-        max_ruptures=args.max_ruptures,
-        cosine_weight=args.cosine_weight,
-    )
-
-    segments, peaks, novelty, features, y = detector.run(args.input)
-
-    novelty_peaks = detector.get_novelty_peaks(novelty)
-
-    print_summary(segments)
-
-    with open(args.out_novelty, "w", encoding="utf-8") as f:
-        json.dump(novelty_peaks, f, separators=(",", ":"))
-    print(f"    Export novelty peaks : {args.out_novelty} ({len(novelty_peaks)} pics)")
-
-    print(
-        "\nFait. Prochaine étape : fingerprinting des segments pour détecter les répétitions.\n"
-    )
-
-
-if __name__ == "__main__":
-    main()

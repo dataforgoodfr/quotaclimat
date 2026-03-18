@@ -238,13 +238,13 @@ if __name__ == "__main__":
     api = CachedMediatreeAPI()
 
     # These are the assets used by the tests
-    segment1 = (
+    chunk1 = (
         "tf1_1",
         "tf1",
         datetime(2025, 5, 5, 9, 19, tzinfo=ZoneInfo("Europe/Paris")),
         datetime(2025, 5, 5, 9, 21, tzinfo=ZoneInfo("Europe/Paris")),
     )
-    segment2 = (
+    chunk2 = (
         "tf1_2",
         "tf1",
         datetime(2025, 5, 5, 13, 47, tzinfo=ZoneInfo("Europe/Paris")),
@@ -262,7 +262,7 @@ if __name__ == "__main__":
         / "assets"
     )
 
-    for name, channel, from_date, to_date in [segment1, segment2]:
+    for name, channel, from_date, to_date in [chunk1, chunk2]:
         file_url = asyncio.run(
             api.download_export(
                 channel, from_date, to_date, "mp3", path / f"{name}.mp3"

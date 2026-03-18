@@ -1,4 +1,4 @@
-# with LocalCache(name="segments", version=cache_key) as cache:
+# with LocalCache(name="chunks", version=cache_key) as cache:
 #     file_name = (
 #         processing_task.channel
 #         + "/"
@@ -8,10 +8,10 @@
 #     if cache.exists(file_name):
 #         return True
 #     else:
-#         segments = SegmentCreator().run(
+#         chunks = ChunkCreator().run(
 #             processing_task.audio_file_path, processing_task.start_date.timestamp()
 #         )
-#         cache.set(file_name, [fp.to_dict() for fp in segments])
+#         cache.set(file_name, [fp.to_dict() for fp in chunks])
 #         return False
 
 import os

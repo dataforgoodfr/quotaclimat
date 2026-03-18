@@ -4,7 +4,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from quotaclimat.data_ingestion.advertising_detection.e00_download_audio_files.partition_window import (
+from quotaclimat.data_ingestion.advertising_detection.e00_partition_window import (
     DownloadTask,
 )
 from quotaclimat.data_ingestion.advertising_detection.processor import (

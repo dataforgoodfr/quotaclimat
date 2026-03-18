@@ -13,30 +13,13 @@ from zoneinfo import ZoneInfo
 
 from tqdm import tqdm
 
-from quotaclimat.data_ingestion.advertising_detection.e00_download_audio_files.download_partition import (
-    ProcessingTask,
-    download_audio,
-)
-from quotaclimat.data_ingestion.advertising_detection.e00_download_audio_files.partition_window import (
-    DownloadTask,
-    partition_week,
-)
-from quotaclimat.data_ingestion.advertising_detection.e02_create_segments import (
-    Segment,
-    SegmentCreator,
-)
-from quotaclimat.data_ingestion.advertising_detection.e03_group_segments import (
-    SegmentGroupingPipeline,
-)
-from quotaclimat.data_ingestion.advertising_detection.tools.cache import (
-    LocalCache,
-)
-from quotaclimat.data_ingestion.advertising_detection.tools.mediatree import (
-    CachedMediatreeAPI,
-)
-from quotaclimat.data_ingestion.advertising_detection.tools.testimony_data.extract import (
-    get_testimony_data,
-)
+from .e00_partition_window import DownloadTask, partition_week
+from .e01_download_audio import ProcessingTask, download_audio
+from .e02_create_segments import Segment, SegmentCreator
+from .e03_group_segments import SegmentGroupingPipeline
+from .tools.cache import LocalCache
+from .tools.mediatree import CachedMediatreeAPI
+from .tools.testimony_data.extract import get_testimony_data
 
 logger = logging.getLogger(__name__)
 

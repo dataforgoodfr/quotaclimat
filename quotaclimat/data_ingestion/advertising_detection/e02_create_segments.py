@@ -18,7 +18,7 @@ import numpy as np
 from scipy.ndimage import maximum_filter, maximum_filter1d, uniform_filter1d
 from scipy.signal import find_peaks
 
-from .e00_download_audio_files.download_partition import ProcessingTask
+from .e01_download_audio import ProcessingTask
 
 # ─────────────────────────────────────────────────────────────
 #  Génération des hashes par paires de pics (fan-out)

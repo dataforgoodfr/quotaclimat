@@ -2,8 +2,8 @@ import os
 from dataclasses import dataclass
 from datetime import timedelta
 
-from ..tools.mediatree import CachedMediatreeAPI
-from .partition_window import DownloadTask
+from .e00_partition_window import DownloadTask
+from .tools.mediatree import CachedMediatreeAPI
 
 api = CachedMediatreeAPI()
 

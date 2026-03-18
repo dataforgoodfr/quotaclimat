@@ -22,7 +22,7 @@ async def mock_download_audio(task: Segment) -> tuple[str, bool]:
 
 @pytest.mark.asyncio
 @patch(
-    "quotaclimat.data_ingestion.advertising_detection.processor.download_audio",
+    "quotaclimat.data_ingestion.advertising_detection.e01_download_audio.download_audio",
     new=mock_download_audio,
 )
 async def test_extract_chunks_run_successfully():

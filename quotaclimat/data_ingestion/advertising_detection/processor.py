@@ -2,115 +2,17 @@ import asyncio
 import json
 import logging
 import os
-from datetime import datetime
 from functools import partial
-from pathlib import Path
-from zoneinfo import ZoneInfo
 
 from .e00_partition_window import Segment, partition_week
 from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import Chunk, ChunkCreator
 from .e04_group_chunks import ChunkGrouping
+from .e05_classify_fragments import FragmentsClassifier
 from .tools.cache import LocalCache
-from .tools.mediatree import CachedMediatreeAPI
 from .tools.testimony_data.extract import get_testimony_data
 
 logger = logging.getLogger(__name__)
-
-api = CachedMediatreeAPI()
-
-
-async def semaphore_wrap(semaphore: asyncio.Semaphore, coro):
-    async with semaphore:
-        return await coro
-
-
-async def download_and_write_subtitle(occurences: list[dict], file_path: Path):
-    if file_path.exists():
-        return True
-
-    for occ in occurences:
-        subtitle = await api.get_subtitle(
-            occ["channel"],
-            occ["start_date"],
-            occ["end_date"],
-        )
-        if subtitle:
-            with open(file_path, "w", encoding="utf-8") as f:
-                f.write(subtitle)
-                # We try all the occurences until we get one, because we don't target the good ones for now
-            return True
-    return False
-
-
-async def export_advertisings(advertisings: list[dict], path: Path):
-    # This semaphore should be handled somewhere else
-    semaphore = asyncio.Semaphore(5)
-    tasks = []
-
-    for i, ad in enumerate(advertisings):
-        ad_path = path / str(i)
-        ad_path.mkdir(parents=True, exist_ok=True)
-
-        with open(ad_path / "description.json", "w", encoding="utf-8") as f:
-            json.dump(
-                {
-                    "count": ad["count"],
-                    "occurences": [
-                        {
-                            "start_date": (
-                                occ["start_date"]
-                                .astimezone(ZoneInfo("Europe/Paris"))
-                                .isoformat()
-                            ),
-                            "end_date": (
-                                occ["end_date"]
-                                .astimezone(ZoneInfo("Europe/Paris"))
-                                .isoformat()
-                            ),
-                            "channel": occ["channel"],
-                        }
-                        for occ in ad["occurences"]
-                    ],
-                },
-                f,
-                indent=2,
-                ensure_ascii=False,
-            )
-
-        occ = ad["occurences"][0]
-        tasks.append(
-            semaphore_wrap(
-                semaphore,
-                api.download_export(
-                    occ["channel"],
-                    occ["start_date"],
-                    occ["end_date"],
-                    "mp3",
-                    ad_path / "version.mp3",
-                ),
-            )
-        )
-        tasks.append(
-            semaphore_wrap(
-                semaphore,
-                api.download_export(
-                    occ["channel"],
-                    occ["start_date"],
-                    occ["end_date"],
-                    "mp4",
-                    ad_path / "version.mp4",
-                ),
-            )
-        )
-        tasks.append(
-            semaphore_wrap(
-                semaphore,
-                download_and_write_subtitle(ad["occurences"], ad_path / "subtitle.txt"),
-            )
-        )
-
-    await asyncio.gather(*tasks)
 
 
 def process_audio(
@@ -164,6 +66,9 @@ async def processor(
         neighborhood_peaks_filter=15,
         min_peak_amplitude=0.01,
     )
+    fragment_classifier = FragmentsClassifier(
+        repetition_threshold=5,
+    )
 
     params_hash_key = chunk_creator.params_hash()
     with LocalCache(name="chunks", version=params_hash_key) as chunk_cache:
@@ -192,36 +97,14 @@ async def processor(
             operation_name + ".json", json.dumps([group.to_dict() for group in groups])
         )
 
-        advertisings = []
-        for group in groups:
-            if group.count > 5:
-                advertisings.append(
-                    {
-                        "count": group.count,
-                        "occurences": [
-                            {
-                                "start_date": datetime.fromtimestamp(occ.start_sec),
-                                "end_date": datetime.fromtimestamp(occ.end_sec),
-                                "channel": channel,
-                            }
-                            for occ in group.occurrences
-                        ],
-                    }
-                )
+    params_hash_key += "-" + fragment_classifier.params_hash()
+    with LocalCache(name="fragments", version=params_hash_key) as fragments_cache:
+        fragments = fragment_classifier.run(groups)
 
-        with LocalCache(
-            name="advertising", version=params_hash_key + "-c5"
-        ) as ads_cache:
-            advertising_export_folder = (
-                Path(".cache")
-                / "advertisings"
-                / (params_hash_key + "-c5")
-                / (operation_name + ".json")
-            )
-            await export_advertisings(advertisings, advertising_export_folder)
-
-            print(f"{len(advertisings)} potential advertising blocks detected:")
-            print(advertising_export_folder.absolute())
+        fragments_cache.set(
+            operation_name + ".json",
+            json.dumps([fragment.to_dict() for fragment in fragments], default=str),
+        )
 
         # parts = []
         # for segment in segments:

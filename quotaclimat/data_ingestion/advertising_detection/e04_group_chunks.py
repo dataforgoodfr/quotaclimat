@@ -425,116 +425,37 @@ class ChunkGrouping:
 # ─────────────────────────────────────────────────────────────
 
 
-def print_report(report: dict):
-    groups = report["groups"]
-    print("\n" + "═" * 70)
-    print("  RAPPORT DE RÉPÉTITIONS")
-    print("═" * 70)
-    print(f"  Chunks analysés : {report['total_chunks']}")
-    print(f"  Groupes détectés  : {report['total_groups']}")
+# def print_report(report: dict):
+#     groups = report["groups"]
+#     print("\n" + "═" * 70)
+#     print("  RAPPORT DE RÉPÉTITIONS")
+#     print("═" * 70)
+#     print(f"  Chunks analysés : {report['total_chunks']}")
+#     print(f"  Groupes détectés  : {report['total_groups']}")
 
-    # Stats par classification
-    class_counts = Counter(g["classification"] for g in groups)
-    seg_counts = Counter()
-    for g in groups:
-        seg_counts[g["classification"]] += g["count"]
+#     # Stats par classification
+#     class_counts = Counter(g["classification"] for g in groups)
+#     seg_counts = Counter()
+#     for g in groups:
+#         seg_counts[g["classification"]] += g["count"]
 
-    print(f"\n  {'Classification':<25} {'Groupes':>8}  {'Occurrences tot':>16}")
-    print("  " + "─" * 52)
-    for cls, gc in sorted(class_counts.items(), key=lambda x: -seg_counts[x[0]]):
-        print(f"  {cls:<25} {gc:>8}  {seg_counts[cls]:>16}")
+#     print(f"\n  {'Classification':<25} {'Groupes':>8}  {'Occurrences tot':>16}")
+#     print("  " + "─" * 52)
+#     for cls, gc in sorted(class_counts.items(), key=lambda x: -seg_counts[x[0]]):
+#         print(f"  {cls:<25} {gc:>8}  {seg_counts[cls]:>16}")
 
-    print("\n  TOP 15 GROUPES LES PLUS FRÉQUENTS :")
-    print(f"  {'Groupe':<8} {'Occurrences':>12}  {'Durée moy':>10}  {'Classification'}")
-    print("  " + "─" * 60)
-    for g in groups[:15]:
-        print(
-            f"  G{g['group_id']:<7} {g['count']:>12}  {g['duration_mean']:>8.1f}s  {g['classification']}"
-        )
-        # Afficher les 3 premières occurrences
-        for occ in g["occurrences"][:3]:
-            print(f"    ↳ [{occ['start_tc']}]  {occ['duration_sec']:.1f}s")
-        if g["count"] > 3:
-            print(f"    ↳ ... +{g['count'] - 3} autres occurrences")
+#     print("\n  TOP 15 GROUPES LES PLUS FRÉQUENTS :")
+#     print(f"  {'Groupe':<8} {'Occurrences':>12}  {'Durée moy':>10}  {'Classification'}")
+#     print("  " + "─" * 60)
+#     for g in groups[:15]:
+#         print(
+#             f"  G{g['group_id']:<7} {g['count']:>12}  {g['duration_mean']:>8.1f}s  {g['classification']}"
+#         )
+#         # Afficher les 3 premières occurrences
+#         for occ in g["occurrences"][:3]:
+#             print(f"    ↳ [{occ['start_tc']}]  {occ['duration_sec']:.1f}s")
+#         if g["count"] > 3:
+#             print(f"    ↳ ... +{g['count'] - 3} autres occurrences")
 
-    print("═" * 70)
-    print(f"\n  Temps de traitement : {report.get('processing_time_sec', '?')}s\n")
-
-
-# ─────────────────────────────────────────────────────────────
-#  Point d'entrée
-# ─────────────────────────────────────────────────────────────
-
-
-def main():
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Fingerprinting et détection de répétitions dans un ou plusieurs flux audio",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Exemples :
-  # Source unique
-  finger_printer.py audio.mp3 --chunks chunks.json
-
-  # Sources multiples (audio et chunks appariés par ordre)
-  finger_printer.py a1.mp3 a2.mp3 --chunks s1.json s2.json
-""",
-    )
-    parser.add_argument(
-        "audio",
-        nargs="+",
-        help="Fichier(s) audio source",
-    )
-    parser.add_argument(
-        "--chunks",
-        nargs="+",
-        default=["chunks.json"],
-        help="JSON(s) produit(s) par rupture_detector.py, dans le même ordre que les audios [défaut: chunks.json]",
-    )
-    parser.add_argument(
-        "--threshold",
-        type=float,
-        default=0.08,
-        help="Seuil de similarité 0.0–1.0 [défaut: 0.08]",
-    )
-    parser.add_argument(
-        "--out-json",
-        default="repetitions.json",
-        help="Rapport JSON de sortie [défaut: repetitions.json]",
-    )
-    parser.add_argument(
-        "--out-plot",
-        default="fingerprint_groupes.png",
-        help="Image de visualisation [défaut: fingerprint_groupes.png]",
-    )
-    parser.add_argument("--no-plot", action="store_true")
-    args = parser.parse_args()
-
-    if len(args.audio) != len(args.chunks):
-        parser.error(
-            f"Le nombre de fichiers audio ({len(args.audio)}) "
-            f"doit correspondre au nombre de fichiers chunks ({len(args.chunks)})"
-        )
-
-    sources = list(zip(args.audio, args.chunks))
-
-    pipeline = ChunkGrouping(
-        sources=sources,
-        similarity_threshold=args.threshold,
-    )
-
-    report, fingerprints, groups = pipeline.run()
-
-    print_report(report)
-
-    # Export JSON
-    with open(args.out_json, "w", encoding="utf-8") as f:
-        json.dump(report, f, indent=2, ensure_ascii=False)
-    print(f"  Rapport JSON : {args.out_json}")
-
-    print("\nFait. Prochaine étape : analyse de fréquence et rapport final.\n")
-
-
-if __name__ == "__main__":
-    main()
+#     print("═" * 70)
+#     print(f"\n  Temps de traitement : {report.get('processing_time_sec', '?')}s\n")

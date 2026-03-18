@@ -6,7 +6,7 @@ tz_paris = ZoneInfo("Europe/Paris")
 
 
 @dataclass
-class Partition:
+class Segment:
     start_date: datetime
     end_date: datetime
     channel: str
@@ -29,15 +29,15 @@ def _all_intervals_between(
 def partition_week(
     start_date: str,  # Start of the analyzed week, format iso 2026-12-31
     channel: str,
-) -> list[Partition]:
+) -> list[Segment]:
     week_start_date = datetime.fromisoformat(start_date).replace(tzinfo=tz_paris)
     return (
-        Partition(
-            start_date=task_start_date,
-            end_date=task_end_date,
+        Segment(
+            start_date=segment_start_date,
+            end_date=segment_end_date,
             channel=channel,
         )
-        for task_start_date, task_end_date in _all_intervals_between(
+        for segment_start_date, segment_end_date in _all_intervals_between(
             week_start_date, week_start_date + timedelta(days=7), timedelta(minutes=30)
         )
     )

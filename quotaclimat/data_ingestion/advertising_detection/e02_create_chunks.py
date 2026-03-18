@@ -17,7 +17,7 @@ import numpy as np
 from scipy.ndimage import maximum_filter, maximum_filter1d, uniform_filter1d
 from scipy.signal import find_peaks
 
-from .e00_partition_window import Partition
+from .e00_partition_window import Segment
 
 # ─────────────────────────────────────────────────────────────
 #  Génération des hashes par paires de pics (fan-out)
@@ -419,7 +419,7 @@ class ChunkCreator:
 
         return chunks
 
-    def run(self, task: Partition, audio_file_path: str) -> List[Chunk]:
+    def run(self, segment: Segment, audio_file_path: str) -> List[Chunk]:
         y = self.load(audio_file_path)
         features = self.extract_features(y)
         novelty = self.compute_novelty(features["stack"], features["energy"])
@@ -430,8 +430,8 @@ class ChunkCreator:
             features,
             duration,
             y,
-            task.start_date.timestamp(),
-            channel=task.channel,
+            segment.start_date.timestamp(),
+            channel=segment.channel,
         )
 
         return chunks

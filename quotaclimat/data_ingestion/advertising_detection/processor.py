@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 
 from tqdm import tqdm
 
-from .e00_partition_window import Partition, partition_week
+from .e00_partition_window import Segment, partition_week
 from .e01_download_audio import download_audio
 from .e02_create_chunks import Chunk, ChunkCreator
 from .e03_group_chunks import ChunkGrouping
@@ -75,8 +75,8 @@ class PipelineStats:
         ]
         if self.errors:
             lines.append(f"\n  {len(self.errors)} error(s):")
-            for i, (stage, task, err) in enumerate(self.errors, 1):
-                lines.append(f"    [{i}] {stage} | {task} | {err}")
+            for i, (stage, segment, err) in enumerate(self.errors, 1):
+                lines.append(f"    [{i}] {stage} | {segment} | {err}")
         lines.append("=" * 60)
         return "\n".join(lines)
 
@@ -91,16 +91,16 @@ class PipelineStats:
 @dataclass
 class ProcessingTask:
     audio_file_path: str
-    download_task: Partition
+    download_segment: Segment
 
 
 class AudioProcessor:
     def __init__(
         self,
-        task_partition: Generator[
-            Partition, None, None
-        ],  # Function to generate download tasks based on input parameters
-        process_media: Callable[[Partition, str], bool],
+        segment_segment: Generator[
+            Segment, None, None
+        ],  # Function to generate download segments based on input parameters
+        process_media: Callable[[Segment, str], bool],
         num_workers: int = 4,  # Number of processor for audio work (CPU intensive)
         max_concurrent_downloads: int = 5,  # Limit of simultaneous downloads (I/O intensive, API limits)
         max_queue_size: int = 10,  # Maximum queue size between download and processing (Memory intensive: all pending files are saved locally)
@@ -110,8 +110,8 @@ class AudioProcessor:
         self.queue = asyncio.Queue(maxsize=max_queue_size)
 
         # Materialize the generator to know the total count for progress bars
-        self.tasks = list(task_partition)
-        self.total = len(self.tasks)
+        self.segments = list(segment_segment)
+        self.total = len(self.segments)
 
         self.stats = PipelineStats()
 
@@ -169,12 +169,13 @@ class AudioProcessor:
 
     async def _download_worker(self):
         """Launch downloads and queue them as they complete"""
-        tasks = [
-            self._download_and_queue(download_task) for download_task in self.tasks
+        segments = [
+            self._download_and_queue(download_segment)
+            for download_segment in self.segments
         ]
 
         # Wait for all to finish
-        await asyncio.gather(*tasks)
+        await asyncio.gather(*segments)
 
         # End signals
         for _ in range(self.num_workers):
@@ -186,13 +187,13 @@ class AudioProcessor:
             if next_item is None:
                 break
 
-            task: Partition = next_item[0]
+            segment: Segment = next_item[0]
             audio_file_path: str = next_item[1]
 
             try:
                 loop = asyncio.get_event_loop()
                 was_cached = await loop.run_in_executor(
-                    executor, self.process_media, task, audio_file_path
+                    executor, self.process_media, segment, audio_file_path
                 )
                 if was_cached:
                     self.stats.proc_cached += 1
@@ -201,23 +202,23 @@ class AudioProcessor:
             except Exception:
                 self.stats.proc_errors += 1
                 tb = traceback.format_exc()
-                self.stats.errors.append(("process", str(task), tb))
-                tqdm.write(f"\n[ERROR] Worker {worker_id} failed on {task}:\n{tb}")
+                self.stats.errors.append(("process", str(segment), tb))
+                tqdm.write(f"\n[ERROR] Worker {worker_id} failed on {segment}:\n{tb}")
 
             self.proc_bar.update(1)
             self._update_postfix()
 
     async def _download_and_queue(
-        self, task: Partition, max_retries: int = 3, base_delay: float = 2.0
+        self, segment: Segment, max_retries: int = 3, base_delay: float = 2.0
     ):
         """All-in-one: download with retry AND queue"""
         async with self.semaphore:
             try:
                 audio_file_path, download_was_cached = await with_exponential_backoff(
-                    lambda: download_audio(task),
+                    lambda: download_audio(segment),
                     max_retries=max_retries,
                     base_delay=base_delay,
-                    label=str(task),
+                    label=str(segment),
                 )
 
                 if download_was_cached:
@@ -225,13 +226,13 @@ class AudioProcessor:
                 else:
                     self.stats.dl_downloaded += 1
 
-                await self.queue.put((task, audio_file_path))
+                await self.queue.put((segment, audio_file_path))
             except Exception:
                 tb = traceback.format_exc()
                 self.stats.dl_errors += 1
-                self.stats.errors.append(("download", str(task), tb))
+                self.stats.errors.append(("download", str(segment), tb))
                 tqdm.write(
-                    f"\n[ERROR] Download failed for {task} after {max_retries} attempts:\n{tb}"
+                    f"\n[ERROR] Download failed for {segment} after {max_retries} attempts:\n{tb}"
                 )
 
             self.dl_bar.update(1)
@@ -332,19 +333,19 @@ async def export_advertisings(advertisings: list[dict], path: Path):
 
 
 def process_audio(
-    task: Partition,
+    segment: Segment,
     audio_file_path: str,
     cache: LocalCache,
     chunk_creator: ChunkCreator,
 ) -> bool:
     """Returns True if processing was cached (skipped), False if actually processed."""
 
-    file_name = task.identifier + ".json"
+    file_name = segment.identifier + ".json"
 
     if cache.exists(file_name):
         return True
     else:
-        chunks = chunk_creator.run(task, audio_file_path)
+        chunks = chunk_creator.run(segment, audio_file_path)
         cache.set(file_name, json.dumps([fp.to_dict() for fp in chunks]))
         return False
 
@@ -353,7 +354,7 @@ async def processor(
     operation_name: str,
     channel: str,
     start_date: str,
-    partition: list[Partition],
+    segments: list[Segment],
     annotations: list[dict] = [],
 ):
     new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
@@ -391,15 +392,15 @@ async def processor(
 
         await AudioProcessor(
             num_workers=new_workers,
-            task_partition=partition,
+            segment_segment=segments,
             process_media=process_media,
             max_concurrent_downloads=5,
             max_queue_size=10,
         ).run()
 
         chunks: list[Chunk] = []
-        for dl_task in partition:
-            chunk_batch = json.loads(chunk_cache.get(dl_task.identifier + ".json"))
+        for segment in segments:
+            chunk_batch = json.loads(chunk_cache.get(segment.identifier + ".json"))
             chunks.extend([Chunk.from_dict(d) for d in chunk_batch])
 
     params_hash_key += "-" + chunk_grouping.params_hash()
@@ -442,26 +443,26 @@ async def processor(
             print(advertising_export_folder.absolute())
 
         # parts = []
-        # for dl_task in partition:
-        #     chunks = json.loads(chunk_cache.get(dl_task.identifier + ".json"))
+        # for segment in segments:
+        #     chunks = json.loads(chunk_cache.get(segment.identifier + ".json"))
 
         #     media_url = "https://example.org"
         #     # media_url = await with_exponential_backoff(
         #     #     lambda: api.generate_src_url(
-        #     #         channel=dl_task.channel,
-        #     #         from_date=dl_task.start_date,
-        #     #         to_date=dl_task.end_date + timedelta(minutes=1),
+        #     #         channel=dl_segment.channel,
+        #     #         from_date=dl_segment.start_date,
+        #     #         to_date=dl_segment.end_date + timedelta(minutes=1),
         #     #         media_format="mp4",
         #     #     ),
-        #     #     label=str(dl_task),
+        #     #     label=str(dl_segment),
         #     #     base_delay=10.0,
         #     #     max_retries=10,
         #     # )
 
         #     parts.append(
         #         {
-        #             "start_date": dl_task.start_date.timestamp(),
-        #             "end_date": (dl_task.end_date + timedelta(minutes=1)).timestamp(),
+        #             "start_date": dl_segment.start_date.timestamp(),
+        #             "end_date": (dl_segment.end_date + timedelta(minutes=1)).timestamp(),
         #             "chunks": [d for d in chunks],
         #             "media_url": media_url,
         #         }
@@ -502,7 +503,7 @@ if __name__ == "__main__":
             operation_name=f"{channel}-full_week-{start_date}",
             channel=channel,
             start_date=start_date,
-            partition=partition,
+            segments=partition,
             annotations=annotations,
         )
     )

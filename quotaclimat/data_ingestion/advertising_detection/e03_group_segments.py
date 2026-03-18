@@ -23,7 +23,7 @@ from typing import Dict, List, Set, Tuple
 import numpy as np
 from tqdm import tqdm
 
-from .e02_create_segments import HashGenerator, Segment
+from .e02_create_segments import Segment
 
 
 @dataclass
@@ -290,7 +290,7 @@ class RepetitionClusterer:
 # ─────────────────────────────────────────────────────────────
 
 
-class SegmentGroupingPipeline:
+class SegmentGrouping:
     def __init__(
         self,
         similarity_threshold: float = 0.08,
@@ -308,16 +308,22 @@ class SegmentGroupingPipeline:
         self.matcher = FingerprintMatcher(min_matching_hashes=min_matching_hashes)
         self.clusterer = RepetitionClusterer(similarity_threshold)
 
-    def _params_hash(self) -> str:
-        """Hash des paramètres qui influent sur le calcul des fingerprints."""
-        h = HashGenerator()
-        params = (
-            f"sr={self.sr}|n_fft=2048|hop=512|n_peaks={self.n_peaks_by_segment}"
-            f"|neighborhood={self.neighborhood_peaks_filter}|min_amp={self.min_peak_amplitude}"
-            f"|fan_out={h.fan_out}|dt_max={h.time_delta_max}|dt_min={h.time_delta_min}"
-            f"|features=v1"
-        )
-        return hashlib.md5(params.encode()).hexdigest()[:8]
+    def params(self) -> dict:
+        """Returns all constructor parameters as a dict."""
+        return {
+            "similarity_threshold": self.clusterer.threshold,
+            "min_matching_hashes": self.matcher.min_matching_hashes,
+            "sr": self.sr,
+            "n_peaks_by_segment": self.n_peaks_by_segment,
+            "neighborhood_peaks_filter": self.neighborhood_peaks_filter,
+            "min_peak_amplitude": self.min_peak_amplitude,
+        }
+
+    def params_hash(self) -> str:
+        """Returns a stable SHA256 hash of all constructor parameters.
+        Changes when any parameter value changes, identical otherwise."""
+        serialized = json.dumps(self.params(), sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(serialized.encode()).hexdigest()[:16]
 
     def fingerprint_source(self, segments: List[Segment]) -> List[Fingerprint]:
         """Converts segments (with pre-computed hashes from e02) into Fingerprints."""
@@ -508,7 +514,7 @@ Exemples :
 
     sources = list(zip(args.audio, args.segments))
 
-    pipeline = SegmentGroupingPipeline(
+    pipeline = SegmentGrouping(
         sources=sources,
         similarity_threshold=args.threshold,
     )

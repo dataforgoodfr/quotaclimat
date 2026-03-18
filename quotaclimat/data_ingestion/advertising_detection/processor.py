@@ -5,7 +5,7 @@ import os
 import traceback
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import partial
 from pathlib import Path
 from typing import Callable, Generator
@@ -16,7 +16,7 @@ from tqdm import tqdm
 from .e00_partition_window import DownloadTask, partition_week
 from .e01_download_audio import ProcessingTask, download_audio
 from .e02_create_segments import Segment, SegmentCreator
-from .e03_group_segments import SegmentGroupingPipeline
+from .e03_group_segments import SegmentGrouping
 from .tools.cache import LocalCache
 from .tools.mediatree import CachedMediatreeAPI
 from .tools.testimony_data.extract import get_testimony_data
@@ -343,14 +343,36 @@ async def processor(
     annotations: list[dict] = [],
 ):
     new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
-    cache_key = "tests2"
 
-    with (
-        LocalCache(name="segments", version=cache_key) as segment_cache,
-        LocalCache(name="grouping", version=cache_key) as group_cache,
-    ):
+    segment_creator = SegmentCreator(
+        sr=22050,
+        hop_length=512,
+        n_mfcc=20,
+        context_sec=1.0,
+        novelty_smooth_sec=0.5,
+        min_segment_sec=5.0,
+        sensitivity=0.25,
+        max_ruptures=0,
+        silence_percentile=5.0,
+        cosine_weight=1.0,
+        n_fft=2048,
+        n_peaks=30,
+        neighborhood=15,
+        min_amplitude=0.01,
+    )
+    segment_grouping = SegmentGrouping(
+        similarity_threshold=0.05,
+        sr=22050,
+        min_matching_hashes=1,
+        n_peaks_by_segment=5,
+        neighborhood_peaks_filter=15,
+        min_peak_amplitude=0.01,
+    )
+
+    cache_key = segment_creator.params_hash()
+    with LocalCache(name="segments", version=cache_key) as segment_cache:
         process_media = partial(
-            process_audio, segment_creator=SegmentCreator(), cache=segment_cache
+            process_audio, segment_creator=segment_creator, cache=segment_cache
         )
 
         await AudioProcessor(
@@ -364,15 +386,9 @@ async def processor(
             segments = json.loads(segment_cache.get(dl_task.identifier + ".json"))
             segments_list.append([Segment.from_dict(d) for d in segments])
 
-        pipeline = SegmentGroupingPipeline(
-            similarity_threshold=0.05,
-            sr=22050,
-            min_matching_hashes=1,
-            n_peaks_by_segment=5,
-            neighborhood_peaks_filter=15,
-            min_peak_amplitude=0.01,
-        )
-        groups = pipeline.run(segments_list)
+    cache_key += "-" + segment_grouping.params_hash()
+    with LocalCache(name="grouping", version=cache_key) as group_cache:
+        groups = segment_grouping.run(segments_list)
 
         group_cache.set(
             operation_name + ".json", json.dumps([group.to_dict() for group in groups])
@@ -407,31 +423,31 @@ async def processor(
             print(f"{len(advertisings)} potential advertising blocks detected:")
             print(advertising_export_folder.absolute())
 
-        parts = []
-        for dl_task in partition:
-            segments = json.loads(segment_cache.get(dl_task.identifier + ".json"))
+        # parts = []
+        # for dl_task in partition:
+        #     segments = json.loads(segment_cache.get(dl_task.identifier + ".json"))
 
-            media_url = "https://example.org"
-            # media_url = await with_exponential_backoff(
-            #     lambda: api.generate_src_url(
-            #         channel=dl_task.channel,
-            #         from_date=dl_task.start_date,
-            #         to_date=dl_task.end_date + timedelta(minutes=1),
-            #         media_format="mp4",
-            #     ),
-            #     label=str(dl_task),
-            #     base_delay=10.0,
-            #     max_retries=10,
-            # )
+        #     media_url = "https://example.org"
+        #     # media_url = await with_exponential_backoff(
+        #     #     lambda: api.generate_src_url(
+        #     #         channel=dl_task.channel,
+        #     #         from_date=dl_task.start_date,
+        #     #         to_date=dl_task.end_date + timedelta(minutes=1),
+        #     #         media_format="mp4",
+        #     #     ),
+        #     #     label=str(dl_task),
+        #     #     base_delay=10.0,
+        #     #     max_retries=10,
+        #     # )
 
-            parts.append(
-                {
-                    "start_date": dl_task.start_date.timestamp(),
-                    "end_date": (dl_task.end_date + timedelta(minutes=1)).timestamp(),
-                    "segments": [d for d in segments],
-                    "media_url": media_url,
-                }
-            )
+        #     parts.append(
+        #         {
+        #             "start_date": dl_task.start_date.timestamp(),
+        #             "end_date": (dl_task.end_date + timedelta(minutes=1)).timestamp(),
+        #             "segments": [d for d in segments],
+        #             "media_url": media_url,
+        #         }
+        #     )
 
         # generate_weekly_viewer(
         #     output_path="week_report.html",

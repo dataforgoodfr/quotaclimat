@@ -458,6 +458,31 @@ class SegmentCreator:
             for p in peaks
         ]
 
+    def params(self) -> dict:
+        """Returns all constructor parameters as a dict."""
+        return {
+            "sr": self.sr,
+            "hop_length": self.hop_length,
+            "n_mfcc": self.n_mfcc,
+            "context_sec": self.context_sec,
+            "novelty_smooth_sec": self.novelty_smooth_sec,
+            "min_segment_sec": self.min_segment_sec,
+            "sensitivity": self.sensitivity,
+            "max_ruptures": self.max_ruptures,
+            "silence_percentile": self.silence_percentile,
+            "cosine_weight": self.cosine_weight,
+            "n_fft": self.n_fft,
+            "n_peaks": self.n_peaks,
+            "neighborhood": self.neighborhood,
+            "min_amplitude": self.min_amplitude,
+        }
+
+    def params_hash(self) -> str:
+        """Returns a stable SHA256 hash of all constructor parameters.
+        Changes when any parameter value changes, identical otherwise."""
+        serialized = json.dumps(self.params(), sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(serialized.encode()).hexdigest()[:16]
+
     def get_params(self) -> dict:
         """Retourne les paramètres du détecteur sous forme de dict (pour l'embarquer dans le player)."""
         return {

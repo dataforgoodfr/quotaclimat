@@ -17,13 +17,24 @@ import itertools
 import json
 import time
 from collections import Counter, defaultdict
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from typing import Dict, List, Set, Tuple
 
 import numpy as np
 from tqdm import tqdm
 
 from .e02_create_segments import HashGenerator, Segment
+
+
+@dataclass
+class SegmentGroup:
+    count: int
+    duration_mean: float
+    duration_std: float
+    occurrences: list[Segment]
+
+    def to_dict(self):
+        return asdict(self)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -344,22 +355,24 @@ class SegmentGroupingPipeline:
     def run(
         self,
         sources: List[List[Segment]],
-    ) -> dict:
+    ) -> list[SegmentGroup]:
         t0 = time.time()
 
         fingerprints = self._fingerprints(sources)
 
         groups = self.clusterer.cluster(fingerprints, self.matcher)
 
-        results = self.build_report(fingerprints, groups)
+        results = self.build_report(fingerprints, groups, channel=sources[0][0].channel)
         results["processing_time_sec"] = round(time.time() - t0, 2)
 
         return results["groups"]
 
-    def build_report(self, fingerprints: List[Fingerprint], groups: Dict) -> dict:
+    def build_report(
+        self, fingerprints: List[Fingerprint], groups: Dict, channel: str
+    ) -> dict:
         """Construit le rapport de répétitions."""
 
-        report_groups = []
+        report_groups: list[SegmentGroup] = []
         for group_id, member_idxs in groups.items():
             members = [fingerprints[i] for i in member_idxs]
             members.sort(key=lambda x: x.start_sec)
@@ -367,26 +380,27 @@ class SegmentGroupingPipeline:
             durations = [m.duration_sec for m in members]
 
             report_groups.append(
-                {
-                    "group_id": group_id,
-                    "count": len(members),
-                    "duration_mean": round(float(np.mean(durations)), 2),
-                    "duration_std": round(float(np.std(durations)), 2),
-                    "occurrences": [
-                        {
-                            "segment_index": m.segment_index,
-                            "start_sec": round(m.start_sec, 2),
-                            "end_sec": round(m.end_sec, 2),
-                            "duration_sec": round(m.duration_sec, 2),
-                            "label": m.label,
-                        }
+                SegmentGroup(
+                    count=len(members),
+                    duration_mean=round(float(np.mean(durations)), 2),
+                    duration_std=round(float(np.std(durations)), 2),
+                    occurrences=[
+                        Segment(
+                            start_sec=round(m.start_sec, 2),
+                            end_sec=round(m.end_sec, 2),
+                            channel=channel,
+                            duration_sec=round(m.duration_sec, 2),
+                            energy_mean=round(m.rms, 2),
+                            spectral_centroid=round(m.spectral_centroid, 2),
+                            zcr_mean=round(m.zcr, 2),
+                        )
                         for m in members
                     ],
-                }
+                )
             )
 
         # Trier par nombre d'occurrences décroissant
-        report_groups.sort(key=lambda x: -x["count"])
+        report_groups.sort(key=lambda x: -x.count)
 
         return {
             "total_segments": len(fingerprints),

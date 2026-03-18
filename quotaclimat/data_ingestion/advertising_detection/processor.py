@@ -37,9 +37,6 @@ from quotaclimat.data_ingestion.advertising_detection.tools.mediatree import (
 from quotaclimat.data_ingestion.advertising_detection.tools.testimony_data.extract import (
     get_testimony_data,
 )
-from quotaclimat.data_ingestion.advertising_detection.tools.visualizer.weekly_viewer import (
-    generate_weekly_viewer,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -356,6 +353,7 @@ def process_audio(
 
 
 async def processor(
+    operation_name: str,
     channel: str,
     start_date: str,
     partition: list[DownloadTask],
@@ -393,21 +391,23 @@ async def processor(
         )
         groups = pipeline.run(segments_list)
 
-        group_cache.set(channel + start_date + ".json", json.dumps(groups))
+        group_cache.set(
+            operation_name + ".json", json.dumps([group.to_dict() for group in groups])
+        )
 
         advertisings = []
         for group in groups:
-            if group["count"] > 5:
+            if group.count > 5:
                 advertisings.append(
                     {
-                        "count": group["count"],
+                        "count": group.count,
                         "occurences": [
                             {
-                                "start_date": datetime.fromtimestamp(occ["start_sec"]),
-                                "end_date": datetime.fromtimestamp(occ["end_sec"]),
+                                "start_date": datetime.fromtimestamp(occ.start_sec),
+                                "end_date": datetime.fromtimestamp(occ.end_sec),
                                 "channel": channel,
                             }
-                            for occ in group["occurrences"]
+                            for occ in group.occurrences
                         ],
                     }
                 )
@@ -417,8 +417,7 @@ async def processor(
                 Path(".cache")
                 / "advertisings"
                 / (cache_key + "-c5")
-                / channel
-                / start_date
+                / (operation_name + ".json")
             )
             await export_advertisings(advertisings, advertising_export_folder)
 
@@ -451,13 +450,13 @@ async def processor(
                 }
             )
 
-        generate_weekly_viewer(
-            output_path="week_report.html",
-            grouping=groups,
-            parts=parts,
-            annotations=annotations,
-            params_summary={"channel": channel, "start_date": start_date},
-        )
+        # generate_weekly_viewer(
+        #     output_path="week_report.html",
+        #     grouping=groups,
+        #     parts=parts,
+        #     annotations=annotations,
+        #     params_summary={"operation_name": operation_name},
+        # )
 
     return groups
 
@@ -483,6 +482,7 @@ if __name__ == "__main__":
 
     asyncio.run(
         processor(
+            operation_name=f"{channel}-full_week-{start_date}",
             channel=channel,
             start_date=start_date,
             partition=partition,

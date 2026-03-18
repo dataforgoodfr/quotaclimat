@@ -95,6 +95,7 @@ class HashGenerator:
 class Segment:
     start_sec: float
     end_sec: float
+    channel: str
     duration_sec: float
     energy_mean: (
         float  # Énergie RMS moyenne (utile pour discriminer silence/parole/musique)
@@ -355,6 +356,7 @@ class SegmentCreator:
         duration_sec: float,
         y: np.ndarray,
         start_epoch: float,
+        channel: str,
     ) -> List[Segment]:
         """Construit les segments avec leurs descripteurs et leur constellation map."""
         frames_per_sec = self.sr / self.hop_length
@@ -412,6 +414,7 @@ class SegmentCreator:
                 zcr_mean=z,
                 peaks=seg_peaks,
                 hashes=seg_hashes,
+                channel=channel,
             )
             segments.append(seg)
 
@@ -424,7 +427,12 @@ class SegmentCreator:
         duration = len(y) / self.sr
         peaks = self.detect_peaks(novelty)
         segments = self.build_segments(
-            peaks, features, duration, y, task.download_task.start_date.timestamp()
+            peaks,
+            features,
+            duration,
+            y,
+            task.download_task.start_date.timestamp(),
+            channel=task.download_task.channel,
         )
 
         return segments

@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuotaClimat — Weekly Chunk Viewer</title>
+  <title>QuotaClimat — Fragment Viewer</title>
   <style>
     :root {
       --bg: #0c0c18;
@@ -130,6 +130,50 @@
     #params-panel td:first-child {
       color: var(--text3);
       font-family: var(--mono);
+    }
+
+    /* ─── Legend ──────────────────────────────────────── */
+    #legend-bar {
+      display: flex;
+      gap: 16px;
+      padding: 6px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text2);
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 3px;
+      transition: background 0.1s;
+    }
+
+    .legend-item:hover {
+      background: var(--surface3);
+    }
+
+    .legend-item.dimmed {
+      opacity: 0.3;
+    }
+
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .legend-count {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
     }
 
     /* ─── Day Navigation ─────────────────────────────── */
@@ -269,7 +313,6 @@
     }
 
     #tooltip .tt-label {
-      color: var(--primary);
       font-weight: 700;
       margin-bottom: 2px;
     }
@@ -327,17 +370,27 @@
       color: var(--danger);
     }
 
-    #media-container {
+    #player-link-container {
       flex-shrink: 0;
-      background: #000;
-      position: relative;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
     }
 
-    #media-container video,
-    #media-container audio {
-      width: 100%;
-      display: block;
-      max-height: 260px;
+    .player-link {
+      display: inline-block;
+      background: var(--primary-dim);
+      color: #fff;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    .player-link:hover {
+      background: var(--primary);
+      color: #000;
     }
 
     #detail-content {
@@ -377,12 +430,38 @@
       font-size: 11px;
     }
 
+    .classification-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #000;
+    }
+
     .group-badge {
       display: inline-block;
       padding: 2px 8px;
       border-radius: 10px;
       font-size: 11px;
       font-weight: 700;
+    }
+
+    .chunk-list {
+      list-style: none;
+    }
+
+    .chunk-item {
+      padding: 6px 8px;
+      margin: 2px 0;
+      border-radius: var(--radius);
+      font-size: 12px;
+      background: var(--surface2);
+      border-left: 3px solid var(--primary-dim);
+    }
+
+    .chunk-item .info-grid {
+      font-size: 11px;
     }
 
     .member-list {
@@ -421,6 +500,16 @@
     .member-item .m-dur {
       color: var(--text3);
       font-size: 10px;
+    }
+
+    .member-item .m-link {
+      color: var(--text3);
+      font-size: 10px;
+      text-decoration: none;
+    }
+
+    .member-item .m-link:hover {
+      color: var(--primary);
     }
 
     /* ─── Keyboard Help ──────────────────────────────── */
@@ -471,16 +560,16 @@
   <div id="header">
     <div id="logo"><span class="q">Quota</span><span class="c">Climat</span></div>
     <div id="header-stats">
-      <div><span class="stat-val" id="stat-chunks">0</span> chunks</div>
-      <div><span class="stat-val" id="stat-grouped">0</span> groupés</div>
+      <div><span class="stat-val" id="stat-fragments">0</span> fragments</div>
       <div><span class="stat-val" id="stat-groups">0</span> groupes</div>
-      <div><span class="stat-val" id="stat-parts">0</span> parties</div>
       <div><span class="stat-val" id="stat-annotations">0</span> annotations</div>
     </div>
     <button id="params-toggle">Paramètres</button>
   </div>
 
   <div id="params-panel"></div>
+
+  <div id="legend-bar"></div>
 
   <nav id="day-nav">
     <div id="day-buttons"></div>
@@ -500,7 +589,7 @@
       <canvas id="overview-canvas"></canvas>
     </div>
     <div class="canvas-row" id="density-row">
-      <span class="canvas-label">Densité (chunks / 15 min)</span>
+      <span class="canvas-label">Densité (fragments / 15 min)</span>
       <canvas id="density-canvas"></canvas>
     </div>
     <div class="canvas-row" id="timeline-row">
@@ -512,10 +601,10 @@
 
   <div id="detail-panel">
     <div id="detail-header">
-      <h3 id="detail-title">Chunk</h3>
+      <h3 id="detail-title">Fragment</h3>
       <button id="close-detail">&times;</button>
     </div>
-    <div id="media-container"></div>
+    <div id="player-link-container"></div>
     <div id="detail-content"></div>
   </div>
 
@@ -536,9 +625,7 @@
       //  Data loading
       // ───────────────────────────────────────────────────────────
       const DATA = JSON.parse(document.getElementById("embedded-data").textContent);
-      const SEGMENTS = DATA.chunks;
-      const PARTS = DATA.parts;
-      const GROUPS = DATA.groups;
+      const FRAGMENTS = DATA.fragments;
       const ANNOTATIONS = DATA.annotations;
       const DENSITY = DATA.density;
       const PARAMS = DATA.params;
@@ -546,26 +633,29 @@
       const T_MAX = DATA.timeRange.max;
       const STATS = DATA.stats;
 
-      // Chunk lookup by id
-      const segById = {};
-      SEGMENTS.forEach(s => segById[s.id] = s);
-
-      // Chunk lookup by absStart (epoch) — identifiant stable utilisé dans memberIds
-      const segByAbsStart = {};
-      SEGMENTS.forEach(s => segByAbsStart[s.absStart] = s);
+      // Fragment lookup by absStart
+      const fragByAbsStart = {};
+      FRAGMENTS.forEach(f => fragByAbsStart[f.absStart] = f);
 
       // ───────────────────────────────────────────────────────────
-      //  Color palette for groups
+      //  Classification colors
       // ───────────────────────────────────────────────────────────
-      const PALETTE = [
-        "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
-        "#DDA0DD", "#98D8C8", "#F7DC6F", "#BB8FCE", "#85C1E9",
-        "#F8C471", "#82E0AA", "#F1948A", "#AED6F1", "#D7BDE2",
-        "#A3E4D7", "#FAD7A0", "#A9CCE3", "#D5F5E3", "#FADBD8",
-        "#FF9F43", "#EE5A24", "#0ABDE3", "#10AC84", "#FDA7DF",
-        "#C8D6E5", "#576574", "#F368E0", "#48DBFB", "#FF6348"
-      ];
-      const UNGROUPED_COLOR = "#444455";
+      const CLASSIFICATION_COLORS = {
+        "already_known_ad": "#e05050",
+        "new_ad": "#FF9F43",
+        "content": "#4ECDC4",
+        "jingle": "#f0c040",
+        "unknown": "#808090",
+      };
+
+      const CLASSIFICATION_LABELS = {
+        "already_known_ad": "Pub connue",
+        "new_ad": "Nouvelle pub",
+        "content": "Contenu",
+        "jingle": "Jingle",
+        "unknown": "Inconnu",
+      };
+
       const ANNOTATION_COLORS = {
         "PUBLICITE": "#e05050",
         "JINGLE": "#f0c040",
@@ -575,9 +665,11 @@
       };
       const DEFAULT_ANNOTATION_COLOR = "#808090";
 
-      function groupColor(gid, size) {
-        if (gid < 0 || size <= 1) return UNGROUPED_COLOR;
-        return PALETTE[gid % PALETTE.length];
+      // Filter state: which classifications are visible
+      const visibleClassifications = new Set(Object.keys(CLASSIFICATION_COLORS));
+
+      function classColor(classification) {
+        return CLASSIFICATION_COLORS[classification] || "#808090";
       }
       function annotationColor(type) {
         return ANNOTATION_COLORS[type] || DEFAULT_ANNOTATION_COLOR;
@@ -609,19 +701,9 @@
         const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
         return m + "m" + (s ? s + "s" : "");
       }
-      function formatDurationLong(sec) {
-        const h = Math.floor(sec / 3600);
-        const m = Math.floor((sec % 3600) / 60);
-        const s = Math.floor(sec % 60);
-        if (h) return `${h}h ${m}m ${s}s`;
-        if (m) return `${m}m ${s}s`;
-        return `${s}s`;
-      }
       function dayOfEpoch(epoch) {
         const d = epochToDate(epoch);
-        // Day start in Paris TZ (approximate via offset)
-        const str = d.toLocaleDateString("fr-CA", { timeZone: PARIS_TZ });
-        return str;
+        return d.toLocaleDateString("fr-CA", { timeZone: PARIS_TZ });
       }
 
       // ───────────────────────────────────────────────────────────
@@ -629,26 +711,27 @@
       // ───────────────────────────────────────────────────────────
       let viewStart = T_MIN;
       let viewEnd = T_MAX;
-      let selectedChunk = null;
-      let highlightedGroup = -1;
-      const MIN_VIEW_SPAN = 30;       // 30 seconds minimum
+      let selectedFragment = null;
+      let highlightedGroup = null;
+      const MIN_VIEW_SPAN = 30;
       const MAX_VIEW_SPAN = T_MAX - T_MIN || 86400 * 7;
 
-      // Sorted chunks for binary search
-      const sortedChunks = [...SEGMENTS].sort((a, b) => a.absStart - b.absStart);
+      // Sorted fragments for binary search
+      const sortedFragments = [...FRAGMENTS].sort((a, b) => a.absStart - b.absStart);
 
-      function visibleChunks() {
-        // Binary search for first visible chunk
-        let lo = 0, hi = sortedChunks.length;
+      function visibleFragments() {
+        let lo = 0, hi = sortedFragments.length;
         while (lo < hi) {
           const mid = (lo + hi) >> 1;
-          if (sortedChunks[mid].absEnd < viewStart) lo = mid + 1;
+          if (sortedFragments[mid].absEnd < viewStart) lo = mid + 1;
           else hi = mid;
         }
         const result = [];
-        for (let i = lo; i < sortedChunks.length; i++) {
-          if (sortedChunks[i].absStart > viewEnd) break;
-          result.push(sortedChunks[i]);
+        for (let i = lo; i < sortedFragments.length; i++) {
+          if (sortedFragments[i].absStart > viewEnd) break;
+          if (visibleClassifications.has(sortedFragments[i].classification)) {
+            result.push(sortedFragments[i]);
+          }
         }
         return result;
       }
@@ -703,20 +786,13 @@
 
         if (T_MAX <= T_MIN) return;
 
-        // Parts as blocks
-        PARTS.forEach(p => {
-          const x1 = epochToX(p.startDate, 0, W, T_MIN, T_MAX);
-          const x2 = epochToX(p.endDate, 0, W, T_MIN, T_MAX);
-          ctx.fillStyle = "rgba(30, 30, 54, 0.8)";
-          ctx.fillRect(x1, 0, Math.max(x2 - x1, 1), H);
-        });
-
-        // Chunks as lines
-        SEGMENTS.forEach(s => {
-          const x = epochToX(s.absStart, 0, W, T_MIN, T_MAX);
-          const xw = Math.max(epochToX(s.absEnd, 0, W, T_MIN, T_MAX) - x, 0.5);
-          ctx.fillStyle = groupColor(s.groupId, s.groupSize);
-          ctx.globalAlpha = s.groupSize > 1 ? 0.8 : 0.3;
+        // Fragments as colored bars
+        FRAGMENTS.forEach(f => {
+          if (!visibleClassifications.has(f.classification)) return;
+          const x = epochToX(f.absStart, 0, W, T_MIN, T_MAX);
+          const xw = Math.max(epochToX(f.absEnd, 0, W, T_MIN, T_MAX) - x, 0.5);
+          ctx.fillStyle = classColor(f.classification);
+          ctx.globalAlpha = f.groupSize > 1 ? 0.8 : 0.4;
           ctx.fillRect(x, 2, xw, H - 4);
         });
         ctx.globalAlpha = 1.0;
@@ -724,7 +800,6 @@
         // Viewport rectangle
         const vx1 = epochToX(viewStart, 0, W, T_MIN, T_MAX);
         const vx2 = epochToX(viewEnd, 0, W, T_MIN, T_MAX);
-        ctx.strokeStyle = "var(--primary)";
         ctx.strokeStyle = "#00d2a0";
         ctx.lineWidth = 1.5;
         ctx.strokeRect(vx1, 0.5, vx2 - vx1, H - 1);
@@ -742,7 +817,7 @@
         ctx.clearRect(0, 0, W, H);
 
         const bins = DENSITY.total;
-        const binsGrouped = DENSITY.grouped;
+        const binsAd = DENSITY.ad;
         const binSize = DENSITY.binSize;
         if (!bins.length) return;
 
@@ -750,37 +825,35 @@
         const pad = 20;
         const plotH = H - pad;
 
-        // Find visible bin range
         const binStart = Math.max(0, Math.floor((viewStart - T_MIN) / binSize) - 1);
         const binEnd = Math.min(bins.length - 1, Math.ceil((viewEnd - T_MIN) / binSize) + 1);
 
-        // Total chunks area
+        // Total fragments area
         ctx.beginPath();
         ctx.moveTo(epochToX(T_MIN + binStart * binSize, 0, W, viewStart, viewEnd), H);
         for (let i = binStart; i <= binEnd; i++) {
           const t = T_MIN + (i + 0.5) * binSize;
           const x = epochToX(t, 0, W, viewStart, viewEnd);
           const y = H - (bins[i] / maxVal) * plotH;
-          if (i === binStart) ctx.lineTo(x, y);
-          else ctx.lineTo(x, y);
+          ctx.lineTo(x, y);
         }
         ctx.lineTo(epochToX(T_MIN + (binEnd + 0.5) * binSize, 0, W, viewStart, viewEnd), H);
         ctx.closePath();
         ctx.fillStyle = "rgba(100, 110, 130, 0.2)";
         ctx.fill();
 
-        // Grouped chunks area
+        // Ad fragments area
         ctx.beginPath();
         ctx.moveTo(epochToX(T_MIN + binStart * binSize, 0, W, viewStart, viewEnd), H);
         for (let i = binStart; i <= binEnd; i++) {
           const t = T_MIN + (i + 0.5) * binSize;
           const x = epochToX(t, 0, W, viewStart, viewEnd);
-          const y = H - (binsGrouped[i] / maxVal) * plotH;
+          const y = H - (binsAd[i] / maxVal) * plotH;
           ctx.lineTo(x, y);
         }
         ctx.lineTo(epochToX(T_MIN + (binEnd + 0.5) * binSize, 0, W, viewStart, viewEnd), H);
         ctx.closePath();
-        ctx.fillStyle = "rgba(0, 210, 160, 0.25)";
+        ctx.fillStyle = "rgba(224, 80, 80, 0.25)";
         ctx.fill();
 
         // Lines
@@ -800,11 +873,11 @@
         for (let i = binStart; i <= binEnd; i++) {
           const t = T_MIN + (i + 0.5) * binSize;
           const x = epochToX(t, 0, W, viewStart, viewEnd);
-          const y = H - (binsGrouped[i] / maxVal) * plotH;
+          const y = H - (binsAd[i] / maxVal) * plotH;
           if (i === binStart) ctx.moveTo(x, y);
           else ctx.lineTo(x, y);
         }
-        ctx.strokeStyle = "#00d2a0";
+        ctx.strokeStyle = "#e05050";
         ctx.lineWidth = 1.5;
         ctx.stroke();
 
@@ -820,18 +893,16 @@
         ctx.fillRect(80, 4, 10, 10);
         ctx.fillStyle = "#606878";
         ctx.fillText("Total", 94, 13);
-        ctx.fillStyle = "rgba(0, 210, 160, 0.6)";
-        ctx.fillRect(140, 4, 10, 10);
+        ctx.fillStyle = "rgba(224, 80, 80, 0.6)";
+        ctx.fillRect(130, 4, 10, 10);
         ctx.fillStyle = "#606878";
-        ctx.fillText("Groupés", 154, 13);
+        ctx.fillText("Pubs", 144, 13);
       }
 
       // ───────────────────────────────────────────────────────────
       //  Render: Timeline
       // ───────────────────────────────────────────────────────────
-      const TRACK_PARTS_Y = 0;
-      const TRACK_PARTS_H = 18;
-      const TRACK_SEG_Y = 22;
+      const TRACK_FRAG_Y = 22;
       const TRACK_ANNOT_H = 16;
       const TRACK_GAP = 4;
 
@@ -846,26 +917,20 @@
         const span = viewEnd - viewStart;
 
         // ── Time grid ──────────────────────────────────
-        const gridIntervals = [
-          60, 300, 900, 1800, 3600, 7200, 14400, 21600, 43200, 86400
-        ];
+        const gridIntervals = [60, 300, 900, 1800, 3600, 7200, 14400, 21600, 43200, 86400];
         let gridStep = gridIntervals[0];
         for (const gi of gridIntervals) {
           if (W / (span / gi) > 50) { gridStep = gi; break; }
         }
 
         const gridStart = Math.floor(viewStart / gridStep) * gridStep;
-        ctx.strokeStyle = "rgba(50, 50, 80, 0.5)";
-        ctx.lineWidth = 0.5;
         ctx.font = "10px " + getComputedStyle(document.body).fontFamily;
-        ctx.fillStyle = "#505068";
         ctx.textAlign = "center";
 
         for (let t = gridStart; t <= viewEnd; t += gridStep) {
           const x = epochToX(t, 0, W, viewStart, viewEnd);
           if (x < 0 || x > W) continue;
 
-          // Day boundaries are thicker
           const d = epochToDate(t);
           const hours = parseInt(d.toLocaleString("fr-FR", { timeZone: PARIS_TZ, hour: "2-digit", hour12: false }));
           const minutes = d.getMinutes();
@@ -878,86 +943,86 @@
           ctx.lineWidth = isDayBoundary ? 1.5 : 0.5;
           ctx.stroke();
 
-          // Label
           let label;
           if (gridStep >= 86400) label = formatDate(t);
           else if (gridStep >= 3600) label = formatTime(t).slice(0, 5);
           else label = formatTime(t);
+          ctx.fillStyle = "#505068";
           ctx.fillText(label, x, H - 4);
         }
 
-        // ── Parts track ────────────────────────────────
-        PARTS.forEach(p => {
-          const x1 = Math.max(epochToX(p.startDate, 0, W, viewStart, viewEnd), 0);
-          const x2 = Math.min(epochToX(p.endDate, 0, W, viewStart, viewEnd), W);
-          if (x2 < 0 || x1 > W) return;
-          ctx.fillStyle = "rgba(30, 30, 60, 0.5)";
-          ctx.fillRect(x1, TRACK_PARTS_Y, x2 - x1, TRACK_PARTS_H);
-          ctx.strokeStyle = "rgba(80, 80, 120, 0.4)";
-          ctx.lineWidth = 0.5;
-          ctx.strokeRect(x1, TRACK_PARTS_Y, x2 - x1, TRACK_PARTS_H);
+        // ── Fragments track ─────────────────────────────
+        const TRACK_FRAG_H = Math.max(30, H - TRACK_FRAG_Y - TRACK_ANNOT_H - TRACK_GAP - 20);
+        const visFrag = visibleFragments();
 
-          // Part label if wide enough
-          if (x2 - x1 > 60) {
-            ctx.fillStyle = "#707088";
-            ctx.font = "9px " + getComputedStyle(document.body).fontFamily;
-            ctx.textAlign = "left";
-            ctx.fillText(formatTime(p.startDate).slice(0, 5) + " - " + formatTime(p.endDate).slice(0, 5), x1 + 4, TRACK_PARTS_Y + 12);
-          }
-        });
-
-        // ── Chunks track ─────────────────────────────
-        const TRACK_SEG_H = Math.max(30, H - TRACK_SEG_Y - TRACK_ANNOT_H - TRACK_GAP - 20);
-        const visSeg = visibleChunks();
-
-        // If group is highlighted, draw highlight backgrounds first
-        if (highlightedGroup >= 0) {
-          visSeg.forEach(s => {
-            if (s.groupId !== highlightedGroup) return;
-            const x1 = epochToX(s.absStart, 0, W, viewStart, viewEnd);
-            const x2 = epochToX(s.absEnd, 0, W, viewStart, viewEnd);
+        // Highlight group background
+        if (highlightedGroup !== null) {
+          visFrag.forEach(f => {
+            if (f.groupId !== highlightedGroup) return;
+            const x1 = epochToX(f.absStart, 0, W, viewStart, viewEnd);
+            const x2 = epochToX(f.absEnd, 0, W, viewStart, viewEnd);
             ctx.fillStyle = "rgba(0, 210, 160, 0.15)";
-            ctx.fillRect(x1 - 2, TRACK_SEG_Y - 2, Math.max(x2 - x1 + 4, 6), TRACK_SEG_H + 4);
+            ctx.fillRect(x1 - 2, TRACK_FRAG_Y - 2, Math.max(x2 - x1 + 4, 6), TRACK_FRAG_H + 4);
           });
         }
 
-        visSeg.forEach(s => {
-          const x1 = epochToX(s.absStart, 0, W, viewStart, viewEnd);
-          const x2 = epochToX(s.absEnd, 0, W, viewStart, viewEnd);
-          const sw = Math.max(x2 - x1, 1.5);
-          const color = groupColor(s.groupId, s.groupSize);
+        visFrag.forEach(f => {
+          const x1 = epochToX(f.absStart, 0, W, viewStart, viewEnd);
+          const x2 = epochToX(f.absEnd, 0, W, viewStart, viewEnd);
+          const fw = Math.max(x2 - x1, 2);
+          const color = classColor(f.classification);
 
-          // Height proportional to group size (min 8px, max full track)
+          // Height based on group size for repeated fragments
           const maxGroupSize = 20;
-          const hRatio = s.groupSize > 1 ? Math.min(s.groupSize / maxGroupSize, 1) : 0.25;
-          const sh = Math.max(8, hRatio * TRACK_SEG_H);
-          const sy = TRACK_SEG_Y + (TRACK_SEG_H - sh);
+          const hRatio = f.groupSize > 1 ? Math.min(f.groupSize / maxGroupSize, 1) : 0.3;
+          const fh = Math.max(10, hRatio * TRACK_FRAG_H);
+          const fy = TRACK_FRAG_Y + (TRACK_FRAG_H - fh);
 
+          // Draw fragment background
           ctx.fillStyle = color;
-          ctx.globalAlpha = s.groupSize > 1 ? 0.8 : 0.35;
-          ctx.fillRect(x1, sy, sw, sh);
+          ctx.globalAlpha = 0.7;
+          ctx.fillRect(x1, fy, fw, fh);
+
+          // Draw internal chunks if zoomed in enough
+          if (f.chunks && f.chunks.length > 1 && fw > 20) {
+            ctx.globalAlpha = 1;
+            f.chunks.forEach((chunk, ci) => {
+              const cx1 = epochToX(chunk.absStart, 0, W, viewStart, viewEnd);
+              const cx2 = epochToX(chunk.absEnd, 0, W, viewStart, viewEnd);
+              // Draw chunk separator
+              if (ci > 0) {
+                ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(cx1, fy);
+                ctx.lineTo(cx1, fy + fh);
+                ctx.stroke();
+              }
+            });
+          }
 
           // Border for selected
-          if (selectedChunk && s.id === selectedChunk.id) {
+          if (selectedFragment && f.id === selectedFragment.id) {
             ctx.globalAlpha = 1;
             ctx.strokeStyle = "#ffffff";
             ctx.lineWidth = 2;
-            ctx.strokeRect(x1 - 1, sy - 1, sw + 2, sh + 2);
+            ctx.strokeRect(x1 - 1, fy - 1, fw + 2, fh + 2);
           }
           ctx.globalAlpha = 1;
 
           // Label if wide enough
-          if (sw > 40) {
+          if (fw > 50) {
             ctx.fillStyle = "#fff";
             ctx.font = "bold 9px " + getComputedStyle(document.body).fontFamily;
             ctx.textAlign = "center";
-            const label = s.groupSize > 1 ? `G${s.groupId}(${s.groupSize}x)` : `#${s.id}`;
-            ctx.fillText(label, x1 + sw / 2, sy + sh / 2 + 3);
+            const label = CLASSIFICATION_LABELS[f.classification] || f.classification;
+            const groupLabel = f.groupSize > 1 ? ` (${f.groupSize}x)` : "";
+            ctx.fillText(label + groupLabel, x1 + fw / 2, fy + fh / 2 + 3);
           }
         });
 
         // ── Annotations track ──────────────────────────
-        const TRACK_ANNOT_Y = TRACK_SEG_Y + TRACK_SEG_H + TRACK_GAP;
+        const TRACK_ANNOT_Y = TRACK_FRAG_Y + TRACK_FRAG_H + TRACK_GAP;
         ANNOTATIONS.forEach(a => {
           const x1 = Math.max(epochToX(a.start, 0, W, viewStart, viewEnd), 0);
           const x2 = Math.min(epochToX(a.end, 0, W, viewStart, viewEnd), W);
@@ -981,8 +1046,7 @@
         ctx.fillStyle = "#505068";
         ctx.font = "9px " + getComputedStyle(document.body).fontFamily;
         ctx.textAlign = "left";
-        ctx.fillText("Parties", 4, TRACK_PARTS_Y + 12);
-        ctx.fillText("Chunks", 4, TRACK_SEG_Y + 10);
+        ctx.fillText("Fragments", 4, TRACK_FRAG_Y + 10);
         if (ANNOTATIONS.length) ctx.fillText("Annotations", 4, TRACK_ANNOT_Y + 11);
       }
 
@@ -1047,26 +1111,14 @@
       }
 
       function zoomToDay(dayStr) {
-        // Find parts that belong to this day
         let dayMin = Infinity, dayMax = -Infinity;
-        PARTS.forEach(p => {
-          if (dayOfEpoch(p.startDate) === dayStr) {
-            dayMin = Math.min(dayMin, p.startDate);
-            dayMax = Math.max(dayMax, p.endDate);
+        FRAGMENTS.forEach(f => {
+          if (dayOfEpoch(f.absStart) === dayStr) {
+            dayMin = Math.min(dayMin, f.absStart);
+            dayMax = Math.max(dayMax, f.absEnd);
           }
         });
-        if (dayMin === Infinity) {
-          // No parts for this day, calculate from epoch
-          // Find the day boundaries
-          const allDays = [...new Set(PARTS.map(p => dayOfEpoch(p.startDate)))];
-          const idx = allDays.indexOf(dayStr);
-          if (idx >= 0) {
-            const p = PARTS.find(p => dayOfEpoch(p.startDate) === dayStr);
-            if (p) { dayMin = p.startDate; dayMax = p.endDate; }
-          }
-          if (dayMin === Infinity) return;
-        }
-        // Add 5% padding
+        if (dayMin === Infinity) return;
         const pad = (dayMax - dayMin) * 0.05;
         viewStart = dayMin - pad;
         viewEnd = dayMax + pad;
@@ -1078,26 +1130,25 @@
       // ───────────────────────────────────────────────────────────
       //  Hit testing
       // ───────────────────────────────────────────────────────────
-      function chunkAtPosition(canvasX, canvasY) {
+      function fragmentAtPosition(canvasX, canvasY) {
         const rect = timelineCanvas.getBoundingClientRect();
         const W = rect.width, H = rect.height;
-        const TRACK_SEG_H = Math.max(30, H - TRACK_SEG_Y - TRACK_ANNOT_H - TRACK_GAP - 20);
+        const TRACK_FRAG_H = Math.max(30, H - TRACK_FRAG_Y - TRACK_ANNOT_H - TRACK_GAP - 20);
 
-        const visSeg = visibleChunks();
-        // Reverse order so topmost (last drawn) is checked first
-        for (let i = visSeg.length - 1; i >= 0; i--) {
-          const s = visSeg[i];
-          const x1 = epochToX(s.absStart, 0, W, viewStart, viewEnd);
-          const x2 = epochToX(s.absEnd, 0, W, viewStart, viewEnd);
-          const sw = Math.max(x2 - x1, 4);
+        const visFrag = visibleFragments();
+        for (let i = visFrag.length - 1; i >= 0; i--) {
+          const f = visFrag[i];
+          const x1 = epochToX(f.absStart, 0, W, viewStart, viewEnd);
+          const x2 = epochToX(f.absEnd, 0, W, viewStart, viewEnd);
+          const fw = Math.max(x2 - x1, 4);
 
           const maxGroupSize = 20;
-          const hRatio = s.groupSize > 1 ? Math.min(s.groupSize / maxGroupSize, 1) : 0.25;
-          const sh = Math.max(8, hRatio * TRACK_SEG_H);
-          const sy = TRACK_SEG_Y + (TRACK_SEG_H - sh);
+          const hRatio = f.groupSize > 1 ? Math.min(f.groupSize / maxGroupSize, 1) : 0.3;
+          const fh = Math.max(10, hRatio * TRACK_FRAG_H);
+          const fy = TRACK_FRAG_Y + (TRACK_FRAG_H - fh);
 
-          if (canvasX >= x1 - 2 && canvasX <= x1 + sw + 2 && canvasY >= sy && canvasY <= sy + sh) {
-            return s;
+          if (canvasX >= x1 - 2 && canvasX <= x1 + fw + 2 && canvasY >= fy && canvasY <= fy + fh) {
+            return f;
           }
         }
         return null;
@@ -1106,99 +1157,74 @@
       // ───────────────────────────────────────────────────────────
       //  Detail Panel
       // ───────────────────────────────────────────────────────────
-      function showDetail(seg) {
-        selectedChunk = seg;
-        highlightedGroup = seg.groupSize > 1 ? seg.groupId : -1;
+      function showDetail(frag) {
+        selectedFragment = frag;
+        highlightedGroup = frag.groupSize > 1 ? frag.groupId : null;
 
         const panel = document.getElementById("detail-panel");
         panel.classList.add("open");
 
+        const classLabel = CLASSIFICATION_LABELS[frag.classification] || frag.classification;
         document.getElementById("detail-title").textContent =
-          seg.groupSize > 1 ? `Groupe ${seg.groupId}` : "Chunk (sans groupe)";
+          frag.groupSize > 1 ? `${classLabel} — Groupe ${frag.groupId}` : classLabel;
 
-        // Media
-        const part = PARTS[seg.partIdx];
-        const mediaContainer = document.getElementById("media-container");
-        const isVideo = part.mediaUrl && (part.mediaUrl.includes(".mp4") || part.mediaUrl.includes(".webm") || part.mediaUrl.includes(".mov"));
+        // Player link
+        const linkContainer = document.getElementById("player-link-container");
+        linkContainer.innerHTML =
+          `<a class="player-link" href="${frag.playerUrl}" target="_blank" rel="noopener">` +
+          `Voir sur Mediatree</a>` +
+          `<span style="color:var(--text3);font-size:11px;margin-left:8px;">${frag.channel}</span>`;
 
-        if (part.mediaUrl) {
-          if (isVideo) {
-            mediaContainer.innerHTML = `<video id="player" controls preload="metadata"></video>`;
-          } else {
-            mediaContainer.innerHTML = `<audio id="player" controls preload="metadata" style="width:100%;padding:8px 0;"></audio>`;
-          }
-          const player = document.getElementById("player");
-          // Only reload if different source
-          if (player.getAttribute("data-src") !== part.mediaUrl) {
-            player.src = part.mediaUrl;
-            player.setAttribute("data-src", part.mediaUrl);
-          }
-          // Seek to chunk position and stop at chunk end
-          player.currentTime = seg.localStart;
-          player.addEventListener("loadedmetadata", function onMeta() {
-            player.currentTime = seg.localStart;
-            player.removeEventListener("loadedmetadata", onMeta);
-          });
-          // Remove any previous stop listener
-          if (player._segStopHandler) {
-            player.removeEventListener("timeupdate", player._segStopHandler);
-          }
-          player._segStopHandler = function () {
-            if (player.currentTime >= seg.localEnd) {
-              player.pause();
-            }
-          };
-          player.addEventListener("timeupdate", player._segStopHandler);
-        } else {
-          mediaContainer.innerHTML = '<div style="padding:20px;color:var(--text3);text-align:center;">Aucun média disponible</div>';
-        }
-
-        // Chunk info
-        let html = '<div class="detail-section"><h4>Informations du chunk</h4><div class="info-grid">';
-        html += `<span class="label">Durée</span><span class="value">${formatDuration(seg.duration)}</span>`;
-        html += `<span class="label">Début</span><span class="value">${formatDateTime(seg.absStart)}</span>`;
-        html += `<span class="label">Epoch début</span><span class="value" style="font-family:var(--mono);font-size:11px;">${seg.absStart}</span>`;
-        html += `<span class="label">Fin</span><span class="value">${formatDateTime(seg.absEnd)}</span>`;
-        html += `<span class="label">Epoch fin</span><span class="value" style="font-family:var(--mono);font-size:11px;">${seg.absEnd}</span>`;
-        html += `<span class="label">Début (local)</span><span class="value">${formatDuration(seg.localStart)}</span>`;
-        html += `<span class="label">Énergie RMS</span><span class="value">${seg.rms.toFixed(4)}</span>`;
-        html += `<span class="label">Centroïde spectral</span><span class="value">${seg.sc.toFixed(1)} Hz</span>`;
-        html += `<span class="label">ZCR</span><span class="value">${seg.zcr.toFixed(4)}</span>`;
-        html += `<span class="label">Partie</span><span class="value">#${seg.partIdx}</span>`;
+        // Fragment info
+        let html = '<div class="detail-section"><h4>Informations du fragment</h4><div class="info-grid">';
+        html += `<span class="label">Classification</span><span class="value"><span class="classification-badge" style="background:${classColor(frag.classification)};">${classLabel}</span></span>`;
+        html += `<span class="label">Durée</span><span class="value">${formatDuration(frag.duration)}</span>`;
+        html += `<span class="label">Début</span><span class="value">${formatDateTime(frag.absStart)}</span>`;
+        html += `<span class="label">Fin</span><span class="value">${formatDateTime(frag.absEnd)}</span>`;
+        html += `<span class="label">Chaîne</span><span class="value">${frag.channel}</span>`;
         html += '</div></div>';
 
+        // Chunks detail
+        if (frag.chunks && frag.chunks.length > 0) {
+          html += `<div class="detail-section"><h4>Chunks (${frag.chunks.length})</h4>`;
+          html += '<ul class="chunk-list">';
+          frag.chunks.forEach((chunk, i) => {
+            html += `<li class="chunk-item">`;
+            html += `<div style="margin-bottom:4px;font-weight:600;font-size:11px;">Chunk ${i + 1}</div>`;
+            html += '<div class="info-grid">';
+            html += `<span class="label">Durée</span><span class="value">${formatDuration(chunk.duration)}</span>`;
+            html += `<span class="label">Début</span><span class="value">${formatTime(chunk.absStart)}</span>`;
+            html += `<span class="label">Fin</span><span class="value">${formatTime(chunk.absEnd)}</span>`;
+            html += `<span class="label">Énergie RMS</span><span class="value">${chunk.rms.toFixed(4)}</span>`;
+            html += `<span class="label">Centroïde</span><span class="value">${chunk.sc.toFixed(1)} Hz</span>`;
+            html += `<span class="label">ZCR</span><span class="value">${chunk.zcr.toFixed(4)}</span>`;
+            html += '</div></li>';
+          });
+          html += '</ul></div>';
+        }
+
         // Group info
-        if (seg.groupSize > 1) {
-          const color = groupColor(seg.groupId, seg.groupSize);
+        if (frag.groupSize > 1) {
+          const color = classColor(frag.classification);
           html += '<div class="detail-section"><h4>Groupe</h4>';
           html += `<div style="margin-bottom:8px;">`;
-          html += `<span class="group-badge" style="background:${color};color:#000;">ID ${seg.groupId}</span> `;
-          html += `<span class="group-badge" style="background:${color};color:#000;">${seg.groupSize} occurrences</span> `;
-          if (seg.classification) {
-            html += `<span style="color:var(--text2);font-size:12px;">${seg.classification}</span>`;
-          }
-          html += `</div>`;
-          html += `<div class="info-grid" style="margin-bottom:8px;">`;
-          html += `<span class="label">Durée moyenne</span><span class="value">${seg.durationMean.toFixed(2)}s</span>`;
-          html += `<span class="label">Écart-type</span><span class="value">${seg.durationStd.toFixed(2)}s</span>`;
+          html += `<span class="group-badge" style="background:${color};color:#000;">${frag.groupId}</span> `;
+          html += `<span class="group-badge" style="background:${color};color:#000;">${frag.groupSize} occurrences</span>`;
           html += `</div>`;
 
           html += '<h4>Membres du groupe</h4>';
           html += '<ul class="member-list">';
-          seg.memberIds.forEach(mid => {
-            const m = segByAbsStart[mid];
+          frag.memberStarts.forEach(absStart => {
+            const m = fragByAbsStart[absStart];
             if (!m) return;
-            const isCurrent = m.absStart === seg.absStart;
-            html += `<li class="member-item${isCurrent ? ' current' : ''}" data-seg-abs-start="${m.absStart}">`;
+            const isCurrent = m.absStart === frag.absStart;
+            html += `<li class="member-item${isCurrent ? ' current' : ''}" data-frag-abs-start="${m.absStart}">`;
             html += `<span class="m-time">${formatDateTime(m.absStart)}</span>`;
-            html += `<span style="font-family:var(--mono);font-size:10px;color:var(--text3);">${m.absStart}</span>`;
             html += `<span class="m-dur">${formatDuration(m.duration)}</span>`;
+            html += `<a class="m-link" href="${m.playerUrl}" target="_blank" rel="noopener" title="Voir sur Mediatree">&#9654;</a>`;
             html += `</li>`;
           });
           html += '</ul>';
-        } else {
-          html += '<div class="detail-section"><h4>Groupe</h4>';
-          html += '<div style="color:var(--text3);font-size:12px;">Ce chunk n\'appartient à aucun groupe (occurrence unique).</div>';
           html += '</div>';
         }
 
@@ -1206,10 +1232,11 @@
 
         // Click handlers for group members
         document.querySelectorAll(".member-item").forEach(el => {
-          el.addEventListener("click", () => {
-            const absStart = parseFloat(el.getAttribute("data-seg-abs-start"));
-            const s = segByAbsStart[absStart];
-            if (s) navigateToChunk(s);
+          el.addEventListener("click", (e) => {
+            if (e.target.closest('.m-link')) return; // Don't navigate when clicking the play link
+            const absStart = parseFloat(el.getAttribute("data-frag-abs-start"));
+            const f = fragByAbsStart[absStart];
+            if (f) navigateToFragment(f);
           });
         });
 
@@ -1218,43 +1245,44 @@
 
       function closeDetail() {
         document.getElementById("detail-panel").classList.remove("open");
-        selectedChunk = null;
-        highlightedGroup = -1;
+        selectedFragment = null;
+        highlightedGroup = null;
         render();
       }
 
-      function navigateToChunk(seg) {
-        // Center the view on this chunk
-        const segCenter = (seg.absStart + seg.absEnd) / 2;
+      function navigateToFragment(frag) {
+        const fragCenter = (frag.absStart + frag.absEnd) / 2;
         const currentSpan = viewEnd - viewStart;
-        const segDuration = seg.absEnd - seg.absStart;
-        // Ensure chunk is visible: zoom to at least 10x chunk duration
-        const minSpan = Math.max(segDuration * 10, 60);
+        const fragDuration = frag.absEnd - frag.absStart;
+        const minSpan = Math.max(fragDuration * 10, 60);
         const newSpan = Math.min(currentSpan, Math.max(minSpan, currentSpan));
 
-        viewStart = segCenter - newSpan / 2;
-        viewEnd = segCenter + newSpan / 2;
+        viewStart = fragCenter - newSpan / 2;
+        viewEnd = fragCenter + newSpan / 2;
         clampView();
 
-        showDetail(seg);
+        showDetail(frag);
       }
 
       // ───────────────────────────────────────────────────────────
       //  Tooltip
       // ───────────────────────────────────────────────────────────
       const tooltip = document.getElementById("tooltip");
-      function showTooltip(seg, x, y) {
-        let html = `<div class="tt-label">Chunk #${seg.id}</div>`;
-        html += `${formatDateTime(seg.absStart)}<br>`;
-        html += `Durée : ${formatDuration(seg.duration)}`;
-        if (seg.groupSize > 1) {
-          html += `<br><span class="tt-group">Groupe ${seg.groupId} — ${seg.groupSize} occurrences</span>`;
-          if (seg.classification) html += `<br>${seg.classification}`;
+      function showTooltip(frag, x, y) {
+        const color = classColor(frag.classification);
+        const label = CLASSIFICATION_LABELS[frag.classification] || frag.classification;
+        let html = `<div class="tt-label" style="color:${color};">${label}</div>`;
+        html += `${formatDateTime(frag.absStart)}<br>`;
+        html += `Durée : ${formatDuration(frag.duration)}`;
+        if (frag.chunks && frag.chunks.length > 1) {
+          html += `<br>${frag.chunks.length} chunks`;
+        }
+        if (frag.groupSize > 1) {
+          html += `<br><span class="tt-group">${frag.groupId} — ${frag.groupSize} occurrences</span>`;
         }
         tooltip.innerHTML = html;
         tooltip.style.display = "block";
 
-        // Position
         const tw = tooltip.offsetWidth;
         const th = tooltip.offsetHeight;
         let tx = x + 12, ty = y - th - 8;
@@ -1305,14 +1333,13 @@
           render();
           hideTooltip();
         } else {
-          // Tooltip
           const rect = timelineCanvas.getBoundingClientRect();
           const mx = e.clientX - rect.left;
           const my = e.clientY - rect.top;
           if (mx >= 0 && mx <= rect.width && my >= 0 && my <= rect.height) {
-            const seg = chunkAtPosition(mx, my);
-            if (seg) {
-              showTooltip(seg, e.clientX, e.clientY);
+            const frag = fragmentAtPosition(mx, my);
+            if (frag) {
+              showTooltip(frag, e.clientX, e.clientY);
               timelineCanvas.style.cursor = "pointer";
             } else {
               hideTooltip();
@@ -1330,12 +1357,12 @@
       });
 
       timelineCanvas.addEventListener("click", (e) => {
-        if (Math.abs(e.clientX - dragStartX) > 5) return; // was a drag
+        if (Math.abs(e.clientX - dragStartX) > 5) return;
         const rect = timelineCanvas.getBoundingClientRect();
         const mx = e.clientX - rect.left;
         const my = e.clientY - rect.top;
-        const seg = chunkAtPosition(mx, my);
-        if (seg) showDetail(seg);
+        const frag = fragmentAtPosition(mx, my);
+        if (frag) showDetail(frag);
       });
 
       // ───────────────────────────────────────────────────────────
@@ -1353,7 +1380,6 @@
       });
       overviewCanvas.style.cursor = "crosshair";
 
-      // Density zoom
       densityCanvas.addEventListener("wheel", (e) => {
         e.preventDefault();
         const rect = densityCanvas.getBoundingClientRect();
@@ -1403,10 +1429,8 @@
       // ───────────────────────────────────────────────────────────
       function init() {
         // Stats
-        document.getElementById("stat-chunks").textContent = STATS.totalChunks;
-        document.getElementById("stat-grouped").textContent = STATS.groupedChunks;
+        document.getElementById("stat-fragments").textContent = STATS.totalFragments;
         document.getElementById("stat-groups").textContent = STATS.totalGroups;
-        document.getElementById("stat-parts").textContent = STATS.totalParts;
         document.getElementById("stat-annotations").textContent = STATS.totalAnnotations;
 
         // Params
@@ -1422,20 +1446,46 @@
           document.getElementById("params-toggle").style.display = "none";
         }
 
+        // Legend bar (classification filter)
+        const legendBar = document.getElementById("legend-bar");
+        const counts = STATS.classificationCounts || {};
+        for (const [cls, color] of Object.entries(CLASSIFICATION_COLORS)) {
+          const count = counts[cls] || 0;
+          const label = CLASSIFICATION_LABELS[cls] || cls;
+          const item = document.createElement("div");
+          item.className = "legend-item";
+          item.setAttribute("data-cls", cls);
+          item.innerHTML =
+            `<div class="legend-swatch" style="background:${color};"></div>` +
+            `<span>${label}</span>` +
+            `<span class="legend-count">(${count})</span>`;
+          item.addEventListener("click", () => {
+            if (visibleClassifications.has(cls)) {
+              visibleClassifications.delete(cls);
+              item.classList.add("dimmed");
+            } else {
+              visibleClassifications.add(cls);
+              item.classList.remove("dimmed");
+            }
+            render();
+          });
+          legendBar.appendChild(item);
+        }
+
         // Day buttons
         const days = [];
         const daySet = new Set();
-        PARTS.forEach(p => {
-          const d = dayOfEpoch(p.startDate);
+        FRAGMENTS.forEach(f => {
+          const d = dayOfEpoch(f.absStart);
           if (!daySet.has(d)) {
             daySet.add(d);
-            days.push({ key: d, label: formatDate(p.startDate), epoch: p.startDate });
+            days.push({ key: d, label: formatDate(f.absStart), epoch: f.absStart });
           }
         });
         days.sort((a, b) => a.epoch - b.epoch);
 
         const container = document.getElementById("day-buttons");
-        days.forEach((d, i) => {
+        days.forEach((d) => {
           const btn = document.createElement("button");
           btn.className = "day-btn";
           btn.textContent = d.label;

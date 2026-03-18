@@ -436,27 +436,6 @@ class ChunkCreator:
 
         return chunks
 
-    # ─────────────────────────────────────────────
-    #  Visualisation
-    # ─────────────────────────────────────────────
-
-    def get_novelty_peaks(self, novelty: np.ndarray) -> list:
-        """
-        Retourne tous les pics locaux de la courbe de nouveauté,
-        avec uniquement le filtre distance (min_chunk_sec) —
-        avant le seuil sensitivity et le filtre max_ruptures.
-        Utile pour la visualisation interactive du choix des paramètres.
-        """
-        min_dist_frames = int(self.min_chunk_sec * self._fps)
-        peaks, _ = find_peaks(novelty, distance=min_dist_frames)
-        return [
-            {
-                "time_sec": round(float(p / self._fps), 4),
-                "novelty": round(float(novelty[p]), 6),
-            }
-            for p in peaks
-        ]
-
     def params(self) -> dict:
         """Returns all constructor parameters as a dict."""
         return {
@@ -481,49 +460,3 @@ class ChunkCreator:
         Changes when any parameter value changes, identical otherwise."""
         serialized = json.dumps(self.params(), sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(serialized.encode()).hexdigest()[:16]
-
-    def get_params(self) -> dict:
-        """Retourne les paramètres du détecteur sous forme de dict (pour l'embarquer dans le player)."""
-        return {
-            "sr": self.sr,
-            "hop_length": self.hop_length,
-            "fps": round(self._fps, 2),
-            "n_mfcc": self.n_mfcc,
-            "context_sec": self.context_sec,
-            "novelty_smooth_sec": self.novelty_smooth_sec,
-            "min_chunk_sec": self.min_chunk_sec,
-            "sensitivity": self.sensitivity,
-            "max_ruptures": self.max_ruptures,
-            "silence_percentile": self.silence_percentile,
-            "cosine_weight": self.cosine_weight,
-        }
-
-
-def print_summary(chunks: List[Chunk]):
-    from collections import Counter
-
-    counts = Counter(s.label for s in chunks)
-    total = len(chunks)
-
-    print("\n" + "═" * 55)
-    print("  RÉSUMÉ DE SEGMENTATION")
-    print("═" * 55)
-    print(f"  Total chunks : {total}")
-    print(f"  {'Label':<22} {'Nb':>5}  {'%':>6}  {'Durée moy':>10}")
-    print("  " + "─" * 50)
-
-    for label, count in sorted(counts.items(), key=lambda x: -x[1]):
-        segs_l = [s for s in chunks if s.label == label]
-        mean_d = np.mean([s.duration_sec for s in segs_l])
-        pct = count / total * 100
-        print(f"  {label:<22} {count:>5}  {pct:>5.1f}%  {mean_d:>8.1f}s")
-
-    print("═" * 55)
-
-    print("\n  10 chunks les plus courts :")
-    for s in sorted(chunks, key=lambda x: x.duration_sec)[:10]:
-        print(f"    [{s.start_tc}]  {s.duration_sec:6.2f}s  {s.label}")
-
-    print("\n  10 chunks les plus longs :")
-    for s in sorted(chunks, key=lambda x: -x.duration_sec)[:10]:
-        print(f"    [{s.start_tc}]  {s.duration_sec:7.1f}s  {s.label}")

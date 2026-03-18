@@ -22,7 +22,9 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Optional
 
-from ...advertising_detection.e05_classify_fragments import Fragment
+from quotaclimat.data_ingestion.advertising_detection.e05_classify_fragments import (
+    Fragment,
+)
 
 TEMPLATE_PATH = Path(__file__).parent / "weekly_viewer.html"
 
@@ -95,30 +97,34 @@ def generate_weekly_viewer(
         processed_chunks = []
         if frag.chunks:
             for chunk in frag.chunks:
-                processed_chunks.append({
-                    "absStart": round(chunk.start_sec, 2),
-                    "absEnd": round(chunk.end_sec, 2),
-                    "duration": round(chunk.end_sec - chunk.start_sec, 3),
-                    "rms": round(chunk.energy_mean, 4),
-                    "sc": round(chunk.spectral_centroid, 1),
-                    "zcr": round(chunk.zcr_mean, 4),
-                })
+                processed_chunks.append(
+                    {
+                        "absStart": round(chunk.start_sec, 2),
+                        "absEnd": round(chunk.end_sec, 2),
+                        "duration": round(chunk.end_sec - chunk.start_sec, 3),
+                        "rms": round(chunk.energy_mean, 4),
+                        "sc": round(chunk.spectral_centroid, 1),
+                        "zcr": round(chunk.zcr_mean, 4),
+                    }
+                )
 
         player_url = _build_player_url(frag.channel, abs_start, abs_end)
 
-        processed_fragments.append({
-            "id": idx,
-            "absStart": round(abs_start, 2),
-            "absEnd": round(abs_end, 2),
-            "duration": round(duration, 3),
-            "channel": frag.channel,
-            "classification": frag.classification,
-            "groupId": frag.group_id,
-            "groupSize": group_size,
-            "chunks": processed_chunks,
-            "playerUrl": player_url,
-            "memberStarts": [round(s, 2) for s in member_starts],
-        })
+        processed_fragments.append(
+            {
+                "id": idx,
+                "absStart": round(abs_start, 2),
+                "absEnd": round(abs_end, 2),
+                "duration": round(duration, 3),
+                "channel": frag.channel,
+                "classification": frag.classification,
+                "groupId": frag.group_id,
+                "groupSize": group_size,
+                "chunks": processed_chunks,
+                "playerUrl": player_url,
+                "memberStarts": [round(s, 2) for s in member_starts],
+            }
+        )
 
     # ── Annotations ────────────────────────────────────────────
     processed_annotations = []
@@ -129,11 +135,13 @@ def generate_weekly_viewer(
             start = start.timestamp()
         if hasattr(end, "timestamp"):
             end = end.timestamp()
-        processed_annotations.append({
-            "type": ann.get("type", "INCONNU"),
-            "start": start,
-            "end": end,
-        })
+        processed_annotations.append(
+            {
+                "type": ann.get("type", "INCONNU"),
+                "start": start,
+                "end": end,
+            }
+        )
 
     # ── Densité par 15 min ─────────────────────────────────────
     if processed_fragments and time_min < time_max:
@@ -160,9 +168,7 @@ def generate_weekly_viewer(
     for frag in processed_fragments:
         classification_counts[frag["classification"]] += 1
 
-    unique_groups = set(
-        f["groupId"] for f in processed_fragments if f["groupId"]
-    )
+    unique_groups = set(f["groupId"] for f in processed_fragments if f["groupId"])
 
     # ── Payload ────────────────────────────────────────────────
     payload = {

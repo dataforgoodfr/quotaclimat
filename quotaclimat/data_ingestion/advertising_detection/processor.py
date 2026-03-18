@@ -11,6 +11,7 @@ from .e04_group_chunks import ChunkGrouping
 from .e05_classify_fragments import FragmentsClassifier
 from .tools.cache import LocalCache
 from .tools.testimony_data.extract import get_testimony_data
+from .tools.visualizer.weekly_viewer import generate_weekly_viewer
 
 logger = logging.getLogger(__name__)
 
@@ -106,39 +107,16 @@ async def processor(
             json.dumps([fragment.to_dict() for fragment in fragments], default=str),
         )
 
-        # parts = []
-        # for segment in segments:
-        #     chunks = json.loads(chunk_cache.get(segment.identifier + ".json"))
-
-        #     media_url = "https://example.org"
-        #     # media_url = await with_exponential_backoff(
-        #     #     lambda: api.generate_src_url(
-        #     #         channel=dl_segment.channel,
-        #     #         from_date=dl_segment.start_date,
-        #     #         to_date=dl_segment.end_date + timedelta(minutes=1),
-        #     #         media_format="mp4",
-        #     #     ),
-        #     #     label=str(dl_segment),
-        #     #     base_delay=10.0,
-        #     #     max_retries=10,
-        #     # )
-
-        #     parts.append(
-        #         {
-        #             "start_date": dl_segment.start_date.timestamp(),
-        #             "end_date": (dl_segment.end_date + timedelta(minutes=1)).timestamp(),
-        #             "chunks": [d for d in chunks],
-        #             "media_url": media_url,
-        #         }
-        #     )
-
-        # generate_weekly_viewer(
-        #     output_path="week_report.html",
-        #     grouping=groups,
-        #     parts=parts,
-        #     annotations=annotations,
-        #     params_summary={"operation_name": operation_name},
-        # )
+        generate_weekly_viewer(
+            output_path=f"{operation_name}_report.html",
+            fragments=fragments,
+            annotations=annotations,
+            params_summary={
+                "operation_name": operation_name,
+                "channel": channel,
+                "start_date": start_date,
+            },
+        )
 
     return groups
 

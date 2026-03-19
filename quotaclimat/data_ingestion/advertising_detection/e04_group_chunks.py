@@ -10,8 +10,8 @@ import itertools
 import json
 import logging
 from collections import Counter, defaultdict
-from dataclasses import asdict, dataclass, field
-from typing import Dict, List, Set, Tuple
+from dataclasses import asdict, dataclass
+from typing import Dict, List, Tuple
 
 import numpy as np
 from tqdm import tqdm
@@ -32,147 +32,130 @@ class ChunkGroup:
         return asdict(self)
 
 
-@dataclass
-class Fingerprint:
-    chunk_index: int
-    start_sec: float
-    end_sec: float
-    duration_sec: float
-    hashes: List[Tuple[str, int]] = field(default_factory=list)
-    hash_set: Set[str] = field(default_factory=set)
-    rms: float = 0.0
-    spectral_centroid: float = 0.0
-    zcr: float = 0.0
-
-    def build_hash_set(self):
-        self.hash_set = {h for h, _ in self.hashes}
+def _build_hash_sets(chunks: list[Chunk]) -> list[set[str]]:
+    """Precompute the set of hash keys for each chunk (for O(1) lookup)."""
+    return [
+        {h for h, _ in (c.hashes or [])}
+        for c in chunks
+    ]
 
 
-class FingerprintMatcher:
+def _score(chunk_a: Chunk, chunk_b: Chunk, set_a: set, set_b: set, min_matching: int) -> float:
     """
-    Compare deux fingerprints via cohérence temporelle des hashes :
-    les offsets temporels des hashes communs doivent être alignés.
+    Similarity score based on temporal coherence of shared hashes.
+    Common hashes must align on a consistent time offset.
     """
+    common = set_a & set_b
+    if len(common) < min_matching:
+        return 0.0
 
-    def __init__(self, min_matching_hashes: int = 2):
-        self.min_matching_hashes = min_matching_hashes
+    hashes_a = chunk_a.hashes or []
+    hashes_b = chunk_b.hashes or []
 
-    def score(self, fp_a: Fingerprint, fp_b: Fingerprint) -> float:
-        common_hashes = fp_a.hash_set & fp_b.hash_set
-        if len(common_hashes) < self.min_matching_hashes:
-            return 0.0
+    index_a = {h: t for h, t in hashes_a if h in common}
+    index_b = {h: t for h, t in hashes_b if h in common}
 
-        index_a = {h: t for h, t in fp_a.hashes if h in common_hashes}
-        index_b = {h: t for h, t in fp_b.hashes if h in common_hashes}
+    offsets = [
+        index_a[h] - index_b[h]
+        for h in common
+        if h in index_a and h in index_b
+    ]
+    if not offsets:
+        return 0.0
 
-        offsets = [
-            index_a[h] - index_b[h]
-            for h in common_hashes
-            if h in index_a and h in index_b
-        ]
-        if not offsets:
-            return 0.0
-
-        coherent_count = Counter(offsets).most_common(1)[0][1]
-        min_hashes = min(len(fp_a.hashes), len(fp_b.hashes)) + 1
-        return coherent_count / min_hashes
+    coherent_count = Counter(offsets).most_common(1)[0][1]
+    min_hashes = min(len(hashes_a), len(hashes_b)) + 1
+    return coherent_count / min_hashes
 
 
-class RepetitionClusterer:
-    """
-    Groupe les chunks similaires via un index inversé (hash → chunks)
-    et un Union-Find. Pré-filtre acoustique sur durée/RMS/centroid/ZCR.
-    """
+def _features_compatible(
+    a: Chunk,
+    b: Chunk,
+    duration_tol: float = 0.3,
+    rms_tol: float = 0.05,
+    centroid_tol: float = 0.05,
+    zcr_tol: float = 0.1,
+) -> bool:
+    """Acoustic pre-filter: reject pairs that differ too much in basic features."""
+    if abs(a.duration_sec - b.duration_sec) > duration_tol:
+        return False
 
-    def __init__(
-        self,
-        similarity_threshold: float = 0.08,
-        duration_tolerance_sec: float = 0.3,
-        rms_tolerance: float = 0.05,
-        centroid_tolerance: float = 0.05,
-        zcr_tolerance: float = 0.1,
-    ):
-        self.threshold = similarity_threshold
-        self.duration_tolerance_sec = duration_tolerance_sec
-        self.rms_tolerance = rms_tolerance
-        self.centroid_tolerance = centroid_tolerance
-        self.zcr_tolerance = zcr_tolerance
+    def rel_diff(x: float, y: float) -> float:
+        return abs(x - y) / max(abs(x), abs(y), 1e-8)
 
-    def _features_compatible(self, fp_a: Fingerprint, fp_b: Fingerprint) -> bool:
-        if abs(fp_a.duration_sec - fp_b.duration_sec) > self.duration_tolerance_sec:
+    if a.energy_mean > 0 and b.energy_mean > 0:
+        if rel_diff(a.energy_mean, b.energy_mean) > rms_tol:
+            return False
+    if a.spectral_centroid > 0 and b.spectral_centroid > 0:
+        if rel_diff(a.spectral_centroid, b.spectral_centroid) > centroid_tol:
+            return False
+    if a.zcr_mean > 0 and b.zcr_mean > 0:
+        if rel_diff(a.zcr_mean, b.zcr_mean) > zcr_tol:
             return False
 
-        def rel_diff(a: float, b: float) -> float:
-            return abs(a - b) / max(abs(a), abs(b), 1e-8)
+    return True
 
-        if fp_a.rms > 0 and fp_b.rms > 0:
-            if rel_diff(fp_a.rms, fp_b.rms) > self.rms_tolerance:
-                return False
-        if fp_a.spectral_centroid > 0 and fp_b.spectral_centroid > 0:
-            if rel_diff(fp_a.spectral_centroid, fp_b.spectral_centroid) > self.centroid_tolerance:
-                return False
-        if fp_a.zcr > 0 and fp_b.zcr > 0:
-            if rel_diff(fp_a.zcr, fp_b.zcr) > self.zcr_tolerance:
-                return False
 
-        return True
+def _cluster(
+    chunks: list[Chunk],
+    hash_sets: list[set[str]],
+    min_matching_hashes: int,
+    similarity_threshold: float,
+) -> Dict[int, List[int]]:
+    """
+    Group similar chunks via inverted index + Union-Find.
+    Returns {group_id: [chunk indices]}.
+    """
+    n = len(chunks)
+    parent = list(range(n))
 
-    def cluster(
-        self,
-        fingerprints: List[Fingerprint],
-        matcher: FingerprintMatcher,
-    ) -> Dict[int, List[int]]:
-        """Retourne {groupe_id: [indices de fingerprints]}."""
-        n = len(fingerprints)
-        parent = list(range(n))
+    def find(x):
+        while parent[x] != x:
+            parent[x] = parent[parent[x]]
+            x = parent[x]
+        return x
 
-        def find(x):
-            while parent[x] != x:
-                parent[x] = parent[parent[x]]
-                x = parent[x]
-            return x
+    def union(x, y):
+        parent[find(x)] = find(y)
 
-        def union(x, y):
-            parent[find(x)] = find(y)
+    # Inverted index: hash → chunk indices
+    logger.debug(f"Clustering {n} chunks — building inverted index...")
+    hash_index: Dict[str, List[int]] = defaultdict(list)
+    for i, hs in enumerate(hash_sets):
+        for h in hs:
+            hash_index[h].append(i)
 
-        # Index inversé : hash → indices de chunks
-        logger.debug(f"Clustering {n} chunks — building inverted index...")
-        hash_index: Dict[str, List[int]] = defaultdict(list)
-        for i, fp in enumerate(fingerprints):
-            for h in fp.hash_set:
-                hash_index[h].append(i)
+    # Count shared hashes per pair
+    shared_counts: Dict[Tuple[int, int], int] = defaultdict(int)
+    for bucket in hash_index.values():
+        if len(bucket) < 2:
+            continue
+        for a, b in itertools.combinations(bucket, 2):
+            key = (a, b) if a < b else (b, a)
+            shared_counts[key] += 1
 
-        # Compter les hashes partagés par paire
-        shared_counts: Dict[Tuple[int, int], int] = defaultdict(int)
-        for bucket in hash_index.values():
-            if len(bucket) < 2:
-                continue
-            for a, b in itertools.combinations(bucket, 2):
-                key = (a, b) if a < b else (b, a)
-                shared_counts[key] += 1
+    # Filter: enough shared hashes + acoustic compatibility
+    candidates = [
+        (i, j)
+        for (i, j), count in shared_counts.items()
+        if count >= min_matching_hashes
+        and _features_compatible(chunks[i], chunks[j])
+    ]
+    logger.debug(f"  {len(candidates)} candidate pairs to score")
 
-        # Ne scorer que les paires au-dessus du seuil + pré-filtre acoustique
-        candidates = [
-            (i, j)
-            for (i, j), count in shared_counts.items()
-            if count >= matcher.min_matching_hashes
-            and self._features_compatible(fingerprints[i], fingerprints[j])
-        ]
-        logger.debug(f"  {len(candidates)} candidate pairs to score")
+    matches = 0
+    for i, j in tqdm(candidates, desc="Comparaison fingerprints"):
+        if _score(chunks[i], chunks[j], hash_sets[i], hash_sets[j], min_matching_hashes) >= similarity_threshold:
+            union(i, j)
+            matches += 1
 
-        matches = 0
-        for i, j in tqdm(candidates, desc="Comparaison fingerprints"):
-            if matcher.score(fingerprints[i], fingerprints[j]) >= self.threshold:
-                union(i, j)
-                matches += 1
+    logger.debug(f"  {matches} similar pairs found")
 
-        logger.debug(f"  {matches} similar pairs found")
+    groups = defaultdict(list)
+    for i in range(n):
+        groups[find(i)].append(i)
 
-        groups = defaultdict(list)
-        for i in range(n):
-            groups[find(i)].append(i)
-
-        return dict(groups)
+    return dict(groups)
 
 
 class ChunkGrouping:
@@ -186,17 +169,17 @@ class ChunkGrouping:
         neighborhood_peaks_filter: int = 15,
         min_peak_amplitude: float = 0.01,
     ):
+        self.similarity_threshold = similarity_threshold
+        self.min_matching_hashes = min_matching_hashes
         self.sr = sr
         self.n_peaks_by_chunk = n_peaks_by_chunk
         self.neighborhood_peaks_filter = neighborhood_peaks_filter
         self.min_peak_amplitude = min_peak_amplitude
-        self.matcher = FingerprintMatcher(min_matching_hashes=min_matching_hashes)
-        self.clusterer = RepetitionClusterer(similarity_threshold)
 
     def params(self) -> dict:
         return {
-            "similarity_threshold": self.clusterer.threshold,
-            "min_matching_hashes": self.matcher.min_matching_hashes,
+            "similarity_threshold": self.similarity_threshold,
+            "min_matching_hashes": self.min_matching_hashes,
             "sr": self.sr,
             "n_peaks_by_chunk": self.n_peaks_by_chunk,
             "neighborhood_peaks_filter": self.neighborhood_peaks_filter,
@@ -207,40 +190,21 @@ class ChunkGrouping:
         serialized = json.dumps(self.params(), sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(serialized.encode()).hexdigest()[:16]
 
-    def _build_fingerprints(self, chunks: List[Chunk]) -> List[Fingerprint]:
-        fingerprints = []
-        for i, chunk in enumerate(chunks):
-            if chunk.duration_sec < 0.5:
-                continue
-
-            fp = Fingerprint(
-                chunk_index=i,
-                start_sec=chunk.start_sec,
-                end_sec=chunk.end_sec,
-                duration_sec=chunk.duration_sec,
-                hashes=chunk.hashes or [],
-                rms=chunk.energy_mean,
-                spectral_centroid=chunk.spectral_centroid,
-                zcr=chunk.zcr_mean,
-            )
-            fp.build_hash_set()
-            fingerprints.append(fp)
-
-        return fingerprints
-
     def run(self, source: List[Chunk]) -> list[ChunkGroup]:
-        logger.debug(f"{len(source)} chunks to group")
+        # Filter out very short chunks
+        chunks = [c for c in source if c.duration_sec >= 0.5]
+        logger.debug(f"{len(chunks)} chunks to group")
 
-        fingerprints = self._build_fingerprints(source)
-        groups = self.clusterer.cluster(fingerprints, self.matcher)
+        hash_sets = _build_hash_sets(chunks)
+        groups = _cluster(chunks, hash_sets, self.min_matching_hashes, self.similarity_threshold)
         channel = source[0].channel
 
         report_groups: list[ChunkGroup] = []
         for member_idxs in groups.values():
             members = sorted(
-                [fingerprints[i] for i in member_idxs], key=lambda x: x.start_sec
+                [chunks[i] for i in member_idxs], key=lambda c: c.start_sec
             )
-            durations = [m.duration_sec for m in members]
+            durations = [c.duration_sec for c in members]
 
             report_groups.append(
                 ChunkGroup(
@@ -249,18 +213,18 @@ class ChunkGrouping:
                     duration_std=round(float(np.std(durations)), 2),
                     occurrences=[
                         Chunk(
-                            start_sec=round(m.start_sec, 2),
-                            end_sec=round(m.end_sec, 2),
+                            start_sec=round(c.start_sec, 2),
+                            end_sec=round(c.end_sec, 2),
                             channel=channel,
-                            duration_sec=round(m.duration_sec, 2),
-                            energy_mean=round(m.rms, 2),
-                            spectral_centroid=round(m.spectral_centroid, 2),
-                            zcr_mean=round(m.zcr, 2),
+                            duration_sec=round(c.duration_sec, 2),
+                            energy_mean=round(c.energy_mean, 2),
+                            spectral_centroid=round(c.spectral_centroid, 2),
+                            zcr_mean=round(c.zcr_mean, 2),
                         )
-                        for m in members
+                        for c in members
                     ],
                 )
             )
 
-        report_groups.sort(key=lambda x: -x.count)
+        report_groups.sort(key=lambda g: -g.count)
         return report_groups

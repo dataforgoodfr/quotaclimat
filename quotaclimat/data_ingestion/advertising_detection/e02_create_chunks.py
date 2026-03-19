@@ -101,18 +101,23 @@ class ChunkCreator:
 
     def __init__(
         self,
-        sr: int = 22050,
-        hop_length: int = 512,
-        n_mfcc: int = 20,
-        context_sec: float = 1.0,
-        novelty_smooth_sec: float = 0.5,
-        min_chunk_sec: float = 5.0,
-        sensitivity: float = 0.25,
-        silence_percentile: float = 5.0,
-        n_fft: int = 2048,
-        n_peaks: int = 30,
-        neighborhood: int = 15,
-        min_amplitude: float = 0.01,
+        sr: int = 22050,  # Sample rate (Hz). Standard for audio analysis.
+        hop_length: int = 512,  # STFT hop size (samples). Controls frame rate: fps = sr/hop_length ≈ 43.
+        n_mfcc: int = 20,  # Number of MFCC coefficients for feature extraction.
+        context_sec: float = 1.0,  # Context window (seconds) on each side for cosine dissimilarity.
+        #   1.0s = good general balance. Increase (1.5-3s) if too many false positives.
+        novelty_smooth_sec: float = 0.5,  # Smoothing window (seconds) applied to the novelty curve.
+        #   Filters out short fluctuations before peak detection.
+        min_chunk_sec: float = 5.0,  # Minimum duration (seconds) between two boundaries.
+        #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
+        sensitivity: float = 0.25,  # Fraction of novelty peaks retained as boundaries.
+        #   0.1 = only top 10% (few chunks). 0.5 = top 50% (many chunks).
+        silence_percentile: float = 5.0,  # Energy percentile below which a frame is silent.
+        #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
+        n_fft: int = 2048,  # FFT size for constellation map. 2048 ≈ 93ms @ 22050Hz.
+        n_peaks: int = 30,  # Max spectral peaks retained per chunk (constellation map).
+        neighborhood: int = 15,  # Local max filter size for peak detection in time×frequency plane.
+        min_amplitude: float = 0.01,  # Min normalized amplitude (0-1) for a spectral peak to be retained.
     ):
         self.sr = sr
         self.hop_length = hop_length
@@ -339,3 +344,47 @@ class ChunkCreator:
     def params_hash(self) -> str:
         serialized = json.dumps(self.params(), sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(serialized.encode()).hexdigest()[:16]
+
+    def generate_report(self, chunks: List[Chunk]) -> str:
+        """Generate a multiline text report summarizing a list of chunks."""
+        if not chunks:
+            return "No chunks to report."
+
+        durations = [c.duration_sec for c in chunks]
+        energies = [c.energy_mean for c in chunks]
+        centroids = [c.spectral_centroid for c in chunks]
+        total_duration = sum(durations)
+        hashes_counts = [len(c.hashes or []) for c in chunks]
+
+        lines = [
+            "=" * 60,
+            "  CHUNK CREATION REPORT",
+            "=" * 60,
+            f"  Total chunks     : {len(chunks)}",
+            f"  Total duration   : {total_duration:.1f}s",
+            f"  Duration range   : {min(durations):.1f}s — {max(durations):.1f}s (mean {np.mean(durations):.1f}s)",
+            f"  Energy range     : {min(energies):.4f} — {max(energies):.4f} (mean {np.mean(energies):.4f})",
+            f"  Centroid range   : {min(centroids):.0f} — {max(centroids):.0f} Hz",
+            f"  Hashes per chunk : {min(hashes_counts)} — {max(hashes_counts)} (mean {np.mean(hashes_counts):.0f})",
+            "",
+            "  Parameters:",
+        ]
+        for key, value in self.params().items():
+            lines.append(f"    {key:<22} = {value}")
+
+        lines += [
+            "",
+            "  10 shortest chunks:",
+        ]
+        for c in sorted(chunks, key=lambda x: x.duration_sec)[:10]:
+            lines.append(f"    {c.duration_sec:6.2f}s  energy={c.energy_mean:.4f}  centroid={c.spectral_centroid:.0f}Hz")
+
+        lines += [
+            "",
+            "  10 longest chunks:",
+        ]
+        for c in sorted(chunks, key=lambda x: -x.duration_sec)[:10]:
+            lines.append(f"    {c.duration_sec:7.1f}s  energy={c.energy_mean:.4f}  centroid={c.spectral_centroid:.0f}Hz")
+
+        lines.append("=" * 60)
+        return "\n".join(lines)

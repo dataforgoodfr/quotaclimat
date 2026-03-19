@@ -161,8 +161,12 @@ def _cluster(
 class ChunkGrouping:
     def __init__(
         self,
-        similarity_threshold: float = 0.08,
-        min_matching_hashes: int = 2,
+        similarity_threshold: float = 0.08,  # Min fingerprint score to consider two chunks identical.
+        #   Score = temporally coherent hashes / min(hashes_a, hashes_b).
+        #   Lower = more matches (more false positives). Higher = stricter.
+        min_matching_hashes: int = 2,  # Min shared hashes before scoring a pair.
+        #   Acts as a fast pre-filter via the inverted index.
+        #   1 = very permissive (more candidates to score). 3+ = stricter.
         # Legacy params kept for params_hash cache invalidation
         sr: int = 22050,
         n_peaks_by_chunk: int = 5,
@@ -228,3 +232,48 @@ class ChunkGrouping:
 
         report_groups.sort(key=lambda g: -g.count)
         return report_groups
+
+    def generate_report(self, groups: list[ChunkGroup]) -> str:
+        """Generate a multiline text report summarizing grouped chunks."""
+        if not groups:
+            return "No groups to report."
+
+        total_chunks = sum(g.count for g in groups)
+        singletons = sum(1 for g in groups if g.count == 1)
+        repeated = [g for g in groups if g.count > 1]
+        repeated_chunks = sum(g.count for g in repeated)
+
+        lines = [
+            "=" * 60,
+            "  CHUNK GROUPING REPORT",
+            "=" * 60,
+            f"  Total chunks     : {total_chunks}",
+            f"  Total groups     : {len(groups)}",
+            f"  Singletons       : {singletons} (unique chunks)",
+            f"  Repeated groups  : {len(repeated)} ({repeated_chunks} chunks total)",
+            "",
+            "  Parameters:",
+        ]
+        for key, value in self.params().items():
+            lines.append(f"    {key:<28} = {value}")
+
+        if repeated:
+            lines += [
+                "",
+                "  TOP 15 MOST REPEATED GROUPS:",
+                f"  {'Group':<8} {'Count':>6}  {'Duration':>10}  {'Std':>6}",
+                "  " + "-" * 40,
+            ]
+            for i, g in enumerate(repeated[:15]):
+                lines.append(
+                    f"  G{i:<7} {g.count:>6}  {g.duration_mean:>8.1f}s  {g.duration_std:>5.2f}s"
+                )
+                for occ in g.occurrences[:3]:
+                    lines.append(
+                        f"    -> {occ.start_sec:.1f}s — {occ.end_sec:.1f}s  ({occ.duration_sec:.1f}s)"
+                    )
+                if g.count > 3:
+                    lines.append(f"    -> ... +{g.count - 3} more occurrences")
+
+        lines.append("=" * 60)
+        return "\n".join(lines)

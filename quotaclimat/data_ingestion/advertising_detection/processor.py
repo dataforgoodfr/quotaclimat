@@ -47,6 +47,7 @@ async def processor(
         hop_length=512,
         n_mfcc=20,
         context_sec=1.0,
+        novelty_smooth_sec=0.5,
         min_chunk_sec=5.0,
         sensitivity=0.25,
         silence_percentile=5.0,

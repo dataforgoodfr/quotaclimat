@@ -17,7 +17,7 @@ from typing import List, Tuple
 
 import librosa
 import numpy as np
-from scipy.ndimage import maximum_filter, maximum_filter1d
+from scipy.ndimage import maximum_filter, maximum_filter1d, uniform_filter1d
 from scipy.signal import find_peaks
 
 from .e00_partition_window import Segment
@@ -105,6 +105,7 @@ class ChunkCreator:
         hop_length: int = 512,
         n_mfcc: int = 20,
         context_sec: float = 1.0,
+        novelty_smooth_sec: float = 0.5,
         min_chunk_sec: float = 5.0,
         sensitivity: float = 0.25,
         silence_percentile: float = 5.0,
@@ -117,6 +118,7 @@ class ChunkCreator:
         self.hop_length = hop_length
         self.n_mfcc = n_mfcc
         self.context_sec = context_sec
+        self.novelty_smooth_sec = novelty_smooth_sec
         self.min_chunk_sec = min_chunk_sec
         self.sensitivity = sensitivity
         self.silence_percentile = silence_percentile
@@ -151,13 +153,13 @@ class ChunkCreator:
             "zcr": zcr,
         }
 
-    def _find_silence_peaks(self, energy: np.ndarray) -> np.ndarray:
+    def _compute_silence_mask(self, energy: np.ndarray) -> np.ndarray:
         """
-        Step 1: detect candidate boundaries at silence locations.
+        Step 1: build a binary mask of silent frames.
 
-        Builds a binary silence mask from the energy curve, dilates it
-        slightly (~100ms) to cover silence edges, then finds peaks
-        with minimum spacing of min_chunk_sec.
+        A frame is silent if its energy is below the `silence_percentile`
+        of the full signal. The mask is dilated by ~100ms to cover
+        silence edges.
         """
         silence_threshold = np.percentile(energy, self.silence_percentile)
         silence_mask = (energy < silence_threshold).astype(float)
@@ -165,43 +167,51 @@ class ChunkCreator:
         dilation_frames = max(1, int(0.1 * self._fps))
         silence_mask = maximum_filter1d(silence_mask, size=dilation_frames * 2 + 1)
 
-        min_dist_frames = int(self.min_chunk_sec * self._fps)
-        peaks, _ = find_peaks(silence_mask, height=0.5, distance=min_dist_frames)
+        return silence_mask
 
-        return peaks
-
-    def _filter_by_cosine(self, peaks: np.ndarray, stack: np.ndarray) -> np.ndarray:
+    def _compute_cosine_dissimilarity(self, stack: np.ndarray) -> np.ndarray:
         """
-        Step 2: keep only silence peaks where the audio content actually changes.
+        Step 2: for each frame, measure how much the audio content
+        changes between the past and future context windows.
 
-        For each candidate peak, compare the mean feature vector before and after
-        using cosine dissimilarity. Then keep the top `sensitivity` fraction
-        (e.g. sensitivity=0.25 → keep the 25% most dissimilar).
+        Returns a curve where high values indicate a content change.
         """
-        if len(peaks) == 0:
-            return peaks
-
-        kernel = max(4, int(self.context_sec * self._fps))
         n_frames = stack.shape[1]
+        kernel = max(4, int(self.context_sec * self._fps))
 
+        cosine_dissim = np.zeros(n_frames)
         norms = np.linalg.norm(stack, axis=0, keepdims=True) + 1e-8
         X = stack / norms
 
-        dissimilarities = np.zeros(len(peaks))
-        for idx, p in enumerate(peaks):
-            if p < kernel or p >= n_frames - kernel:
-                continue
-            past = X[:, p - kernel : p].mean(axis=1)
-            future = X[:, p : p + kernel].mean(axis=1)
+        for i in range(kernel, n_frames - kernel):
+            past = X[:, i - kernel : i].mean(axis=1)
+            future = X[:, i : i + kernel].mean(axis=1)
             cos_sim = np.dot(past, future) / (
                 np.linalg.norm(past) * np.linalg.norm(future) + 1e-8
             )
-            dissimilarities[idx] = 1.0 - cos_sim
+            cosine_dissim[i] = 1.0 - cos_sim
 
-        # Keep the top `sensitivity` fraction of peaks by dissimilarity
-        threshold = np.percentile(dissimilarities, 100 * (1 - self.sensitivity))
-        mask = dissimilarities >= threshold
-        return peaks[mask]
+        return cosine_dissim
+
+    def _detect_peaks(self, silence_mask: np.ndarray, cosine_dissim: np.ndarray) -> np.ndarray:
+        """
+        Combine both signals and find peaks.
+
+        novelty = silence_mask × cosine_dissim
+        → Only silent frames can produce peaks, and their height
+          reflects how much the content changes at that point.
+        """
+        novelty = silence_mask * cosine_dissim
+
+        smooth_frames = max(3, int(self.novelty_smooth_sec * self._fps))
+        novelty = uniform_filter1d(novelty, size=smooth_frames)
+
+        min_dist_frames = int(self.min_chunk_sec * self._fps)
+        threshold = np.percentile(novelty, 100 * (1 - self.sensitivity))
+
+        peaks, _ = find_peaks(novelty, height=threshold, distance=min_dist_frames)
+
+        return peaks / self._fps
 
     def _extract_peaks(self, y_seg: np.ndarray) -> list:
         """Extract constellation map peaks from a chunk's audio."""
@@ -297,12 +307,12 @@ class ChunkCreator:
         features = self.extract_features(y)
         duration = len(y) / self.sr
 
-        # Step 1: find candidate boundaries at silence locations
-        silence_peaks = self._find_silence_peaks(features["energy"])
-        # Step 2: keep only those where content actually changes
-        peaks = self._filter_by_cosine(silence_peaks, features["stack"])
-        # Convert frames to seconds
-        peaks_sec = peaks / self._fps
+        # Step 1: identify silent frames
+        silence_mask = self._compute_silence_mask(features["energy"])
+        # Step 2: measure content change at each frame
+        cosine_dissim = self._compute_cosine_dissimilarity(features["stack"])
+        # Combine and find peaks
+        peaks_sec = self._detect_peaks(silence_mask, cosine_dissim)
 
         return self.build_chunks(
             peaks_sec, features, duration, y,
@@ -316,6 +326,7 @@ class ChunkCreator:
             "hop_length": self.hop_length,
             "n_mfcc": self.n_mfcc,
             "context_sec": self.context_sec,
+            "novelty_smooth_sec": self.novelty_smooth_sec,
             "min_chunk_sec": self.min_chunk_sec,
             "sensitivity": self.sensitivity,
             "silence_percentile": self.silence_percentile,

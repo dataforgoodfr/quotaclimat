@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+from datetime import datetime
 from functools import partial
 from pathlib import Path
 
@@ -124,6 +125,7 @@ async def processor(
         annotations=annotations,
         params_summary={
             "operation_name": operation_name,
+            "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
             "chunk_creator": chunk_creator.params(),
             "chunk_grouping": chunk_grouping.params(),
             "fragment_classifier": fragment_classifier.params(),

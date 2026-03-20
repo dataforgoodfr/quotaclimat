@@ -116,7 +116,10 @@ async def processor(
                 json.dumps([fragment.to_dict() for fragment in fragments], default=str),
             )
 
-    html = generate_weekly_viewer(
+    reports_path = Path(".cache") / "reports"
+    reports_path.mkdir(parents=True, exist_ok=True)
+
+    html_report = generate_weekly_viewer(
         fragments=fragments,
         annotations=annotations,
         params_summary={
@@ -126,9 +129,13 @@ async def processor(
             "fragment_classifier": fragment_classifier.params(),
         },
     )
-    output_path = Path(".cache") / "reports" / f"{params_hash_key}.html"
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(html)
+
+    html_report_path = reports_path / f"{params_hash_key}.html"
+    with open(html_report_path, "w", encoding="utf-8") as f:
+        f.write(html_report)
+
+    print(f"""Reports generated:
+        HTML: {html_report_path.absolute()}
+    """)
 
     return groups

@@ -198,7 +198,9 @@ class ChunkCreator:
 
         return cosine_dissim
 
-    def _detect_peaks(self, silence_mask: np.ndarray, cosine_dissim: np.ndarray) -> np.ndarray:
+    def _detect_peaks(
+        self, silence_mask: np.ndarray, cosine_dissim: np.ndarray
+    ) -> np.ndarray:
         """
         Combine both signals and find peaks.
 
@@ -247,18 +249,21 @@ class ChunkCreator:
         duration_sec: float,
         y: np.ndarray,
         start_epoch: float,
+        end_epoch: float,
         channel: str,
     ) -> List[Chunk]:
         """Build chunks with descriptors and constellation maps."""
         frames_per_sec = self._fps
         chunks = []
 
-        boundaries = np.concatenate([[0.0], peaks_sec, [duration_sec]])
-
-        for i in range(len(boundaries) - 1):
-            t_start = boundaries[i]
-            t_end = boundaries[i + 1]
+        for i in range(len(peaks_sec) - 1):
+            t_start = peaks_sec[i]
+            t_end = peaks_sec[i + 1]
             dur = t_end - t_start
+
+            # Skip chunks that would end after the segment's end time (can happen if the last peak is close to the end)
+            if float(t_start) + start_epoch > end_epoch:
+                continue
 
             f_start = int(t_start * frames_per_sec)
             f_end = int(t_end * frames_per_sec)
@@ -320,8 +325,12 @@ class ChunkCreator:
         peaks_sec = self._detect_peaks(silence_mask, cosine_dissim)
 
         return self.build_chunks(
-            peaks_sec, features, duration, y,
+            peaks_sec,
+            features,
+            duration,
+            y,
             segment.start_date.timestamp(),
+            segment.end_date.timestamp(),
             channel=segment.channel,
         )
 
@@ -377,14 +386,18 @@ class ChunkCreator:
             "  10 shortest chunks:",
         ]
         for c in sorted(chunks, key=lambda x: x.duration_sec)[:10]:
-            lines.append(f"    {c.duration_sec:6.2f}s  energy={c.energy_mean:.4f}  centroid={c.spectral_centroid:.0f}Hz")
+            lines.append(
+                f"    {c.duration_sec:6.2f}s  energy={c.energy_mean:.4f}  centroid={c.spectral_centroid:.0f}Hz"
+            )
 
         lines += [
             "",
             "  10 longest chunks:",
         ]
         for c in sorted(chunks, key=lambda x: -x.duration_sec)[:10]:
-            lines.append(f"    {c.duration_sec:7.1f}s  energy={c.energy_mean:.4f}  centroid={c.spectral_centroid:.0f}Hz")
+            lines.append(
+                f"    {c.duration_sec:7.1f}s  energy={c.energy_mean:.4f}  centroid={c.spectral_centroid:.0f}Hz"
+            )
 
         lines.append("=" * 60)
         return "\n".join(lines)

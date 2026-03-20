@@ -35,7 +35,7 @@ async def download_audio(segment: Segment) -> (str, bool):
         segment.start_date,
         segment.end_date + timedelta(minutes=1),
         "mp3",
-    )  # on ajoute une minute pour être sûr de couvrir toute la période
+    )  # on ajoute une minute pour être sûr d'avoir le dernier chunk en entier
 
     return audio_file_path, was_cached
 

@@ -2,9 +2,12 @@
 Détection de ruptures dans un flux audio (TV/Radio)
 =====================================================
 Chunke automatiquement un fichier audio en unités naturelles,
-en coupant dans les micro silences.
-Extrait les descripteurs de chaque chunk (énergie, centroïde spectral, ZCR) et une constellation map de pics spectraux (MFCC + delta).
+en coupant dans les micro silences où le contenu change.
 
+Deux étapes explicites :
+  1. Détection de pics dans les zones de silence (critère primaire)
+  2. Filtrage par dissimilarité cosinus : ne garder que les silences
+     où le contenu audio change réellement (critère secondaire)
 """
 
 import hashlib
@@ -19,49 +22,34 @@ from scipy.signal import find_peaks
 
 from .e00_partition_window import Segment
 
-# ─────────────────────────────────────────────────────────────
-#  Génération des hashes par paires de pics (fan-out)
-# ─────────────────────────────────────────────────────────────
-
 
 class HashGenerator:
     """
-    À partir de la constellation, génère des hashes robustes
-    en combinant des PAIRES de pics proches.
+    Génère des hashes robustes en combinant des PAIRES de pics proches
+    de la constellation map.
 
-    Pourquoi des paires ?
-      → Un hash = (freq1, freq2, delta_temps)
-      → Invariant au décalage temporel absolu
-      → Résistant au bruit (un pic isolé peut disparaître,
-        une paire cohérente est beaucoup plus stable)
+    Un hash = (freq1, freq2, delta_temps) → invariant au décalage temporel,
+    résistant au bruit.
     """
 
     def __init__(
         self,
-        fan_out: int = 15,  # Nombre de voisins à combiner avec chaque pic
-        time_delta_max: int = 100,  # Fenêtre temporelle max entre deux pics (frames)
-        time_delta_min: int = 1,  # Fenêtre minimale (évite les auto-paires)
+        fan_out: int = 15,
+        time_delta_max: int = 100,
+        time_delta_min: int = 1,
     ):
         self.fan_out = fan_out
         self.time_delta_max = time_delta_max
         self.time_delta_min = time_delta_min
 
     def generate(self, peaks: np.ndarray) -> List[Tuple[str, int]]:
-        """
-        Retourne une liste de (hash_str, temps_ancrage).
-
-        hash_str   = empreinte d'une paire de pics
-        temps_ancrage = position temporelle du pic de référence (en frames)
-        """
         if len(peaks) < 2:
             return []
 
-        # Trier par temps croissant
         peaks = peaks[peaks[:, 0].argsort()]
 
         hashes = []
         for i, (t1, f1) in enumerate(peaks):
-            # Chercher les pics suivants dans la fenêtre temporelle
             j = i + 1
             count = 0
             while j < len(peaks) and count < self.fan_out:
@@ -71,8 +59,6 @@ class HashGenerator:
                 if delta_t > self.time_delta_max:
                     break
                 if delta_t >= self.time_delta_min:
-                    # Hash = combinaison des deux fréquences + écart temporel
-                    # → identique quelle que soit la position dans le flux
                     h = self._make_hash(f1, f2, delta_t)
                     hashes.append((h, int(t1)))
                     count += 1
@@ -85,26 +71,17 @@ class HashGenerator:
         return hashlib.md5(raw.encode()).hexdigest()[:12]
 
 
-# ─────────────────────────────────────────────
-#  Structure de données pour un chunk détecté
-# ─────────────────────────────────────────────
-
-
 @dataclass
 class Chunk:
     start_sec: float
     end_sec: float
     channel: str
     duration_sec: float
-    energy_mean: (
-        float  # Énergie RMS moyenne (utile pour discriminer silence/parole/musique)
-    )
-    spectral_centroid: float  # "Brillance" moyenne — grave vs aigu
-    zcr_mean: float  # Zero-crossing rate — parole vs musique
-    peaks: list = None  # Constellation map : liste de [time_frame, freq_bin] relatifs au début du chunk
-    hashes: list = (
-        None  # Liste de [hash_str, anchor_time] pré-calculés à partir des peaks
-    )
+    energy_mean: float
+    spectral_centroid: float
+    zcr_mean: float
+    peaks: list = None
+    hashes: list = None
 
     def to_dict(self):
         return asdict(self)
@@ -114,73 +91,33 @@ class Chunk:
         return cls(**d)
 
 
-# ─────────────────────────────────────────────
-#  Création de chunks
-# ─────────────────────────────────────────────
-
-
 class ChunkCreator:
     """
-    Stratégie :
-      1. Calcul de features frame-par-frame (MFCC + énergie + centroïde spectral)
-      2. Calcul d'une courbe de "nouveauté" : à quel point chaque instant
-         diffère-t-il de son voisinage ?
-      3. Lissage + détection de pics → frontières de chunks
-      4. Extraction de descripteurs par chunk
-      5. Classification heuristique simple
+    Stratégie en deux passes :
+      1. Trouver les pics de silence (transitions naturelles)
+      2. Ne garder que ceux où le contenu audio change (dissimilarité cosinus)
+      3. Extraire les descripteurs et la constellation map par chunk
     """
 
     def __init__(
         self,
-        sr: int = 22050,
-        hop_length: int = 512,
-        n_mfcc: int = 20,
-        context_sec: float = 1.0,
-        # ↑ CLEF : durée analysée de chaque côté d'un point pour évaluer la rupture.
-        # Avant : hardcodé à 8 frames = 184ms → beaucoup trop court, capturait le bruit.
-        # 1.0s = bon équilibre général (radio/TV).
-        # Augmenter (1.5–3s) si trop de faux positifs.
-        # Diminuer (0.3–0.5s) seulement si tu cherches des micro-transitions.
-        novelty_smooth_sec: float = 0.5,
-        # ↑ Lissage temporel de la courbe de nouveauté.
-        # Avant : 10 frames = 230ms. 0.5s filtre mieux les fluctuations courtes.
-        # Augmenter (1–2s) si la courbe est encore trop bruitée.
-        min_chunk_sec: float = 5.0,
-        # ↑ Durée minimale imposée entre deux ruptures.
-        # Relevé de 2s → 5s : les chunks < 5s sont presque toujours du bruit.
-        # Mettre à 10–15s pour des émissions longues.
-        sensitivity: float = 0.25,
-        # ↑ Fraction des pics de nouveauté retenus comme ruptures.
-        # 0.1 = 10% des pics les plus intenses seulement (peu de chunks).
-        # 0.5 = la moitié des pics (beaucoup de chunks).
-        # Baissé de 0.3 → 0.25 par défaut.
-        max_ruptures: int = 0,
-        # ↑ Si > 0 : ne garder que les N ruptures les plus intenses, quelle que
-        # soit la sensitivity. Utile pour forcer un nombre max de chunks.
-        # Ex : max_ruptures=50 garantit au plus 51 chunks sur toute la durée.
-        silence_percentile: float = 5.0,
-        # ↑ Percentile d'énergie RMS en dessous duquel une frame est considérée
-        # comme silencieuse. 5 = 5% des frames les plus silencieuses du fichier.
-        # Augmenter (8–15) si les silences sont moins nets (parole continue).
-        # Baisser (1–3) si seuls les vrais blancs doivent compter.
-        cosine_weight: float = 1.0,
-        # ↑ Poids de la dissimilarité cosinus dans le calcul de nouveauté.
-        # novelty = silence_mask × (cosine_weight × cosine_dissim + (1 − cosine_weight))
-        # 0.0 = silence pur : tout silence déclenche une rupture, indépendamment
-        #       du contenu sonore avant/après. À utiliser pour diagnostiquer les
-        #       silences manqués ou si le contenu se ressemble beaucoup (pub→pub).
-        # 1.0 = comportement par défaut : le cosinus module l'intensité du pic.
-        # 0.3 = bon compromis si certaines vraies ruptures sont manquées.
-        # ── Paramètres de la constellation map (pics spectraux) ──────────────
-        n_fft: int = 2048,
-        # ↑ Taille FFT pour le spectrogramme de la constellation. 2048 ≈ 93ms @ 22050Hz.
-        n_peaks: int = 30,
-        # ↑ Nombre maximum de pics spectraux retenus par chunk (indépendant de la durée).
-        neighborhood: int = 15,
-        # ↑ Taille du filtre de maximum local dans le plan temps×fréquence.
-        #   Un pic est retenu uniquement s'il est le plus fort dans son voisinage.
-        min_amplitude: float = 0.01,
-        # ↑ Seuil minimal d'amplitude normalisée (0–1) pour qu'un point soit retenu.
+        sr: int = 22050,  # Sample rate (Hz). Standard for audio analysis.
+        hop_length: int = 512,  # STFT hop size (samples). Controls frame rate: fps = sr/hop_length ≈ 43.
+        n_mfcc: int = 20,  # Number of MFCC coefficients for feature extraction.
+        context_sec: float = 1.0,  # Context window (seconds) on each side for cosine dissimilarity.
+        #   1.0s = good general balance. Increase (1.5-3s) if too many false positives.
+        novelty_smooth_sec: float = 0.5,  # Smoothing window (seconds) applied to the novelty curve.
+        #   Filters out short fluctuations before peak detection.
+        min_chunk_sec: float = 5.0,  # Minimum duration (seconds) between two boundaries.
+        #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
+        sensitivity: float = 0.25,  # Fraction of novelty peaks retained as boundaries.
+        #   0.1 = only top 10% (few chunks). 0.5 = top 50% (many chunks).
+        silence_percentile: float = 5.0,  # Energy percentile below which a frame is silent.
+        #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
+        n_fft: int = 2048,  # FFT size for constellation map. 2048 ≈ 93ms @ 22050Hz.
+        n_peaks: int = 30,  # Max spectral peaks retained per chunk (constellation map).
+        neighborhood: int = 15,  # Local max filter size for peak detection in time×frequency plane.
+        min_amplitude: float = 0.01,  # Min normalized amplitude (0-1) for a spectral peak to be retained.
     ):
         self.sr = sr
         self.hop_length = hop_length
@@ -189,79 +126,64 @@ class ChunkCreator:
         self.novelty_smooth_sec = novelty_smooth_sec
         self.min_chunk_sec = min_chunk_sec
         self.sensitivity = sensitivity
-        self.max_ruptures = max_ruptures
         self.silence_percentile = silence_percentile
-        self.cosine_weight = cosine_weight
         self.n_fft = n_fft
         self.n_peaks = n_peaks
         self.neighborhood = neighborhood
         self.min_amplitude = min_amplitude
-        self._fps = sr / hop_length  # frames/sec ≈ 43 à sr=22050, hop=512
+        self._fps = sr / hop_length
         self._hasher = HashGenerator()
 
     def load(self, path: str) -> np.ndarray:
-        y, sr = librosa.load(path, sr=self.sr, mono=True)
+        y, _ = librosa.load(path, sr=self.sr, mono=True)
         return y
 
     def extract_features(self, y: np.ndarray) -> dict:
-        """Calcule les features frame-par-frame."""
-
         mfcc = librosa.feature.mfcc(
             y=y, sr=self.sr, n_mfcc=self.n_mfcc, hop_length=self.hop_length
         )
-        delta = librosa.feature.delta(mfcc)  # Dérivée temporelle des MFCC
+        delta = librosa.feature.delta(mfcc)
         energy = librosa.feature.rms(y=y, hop_length=self.hop_length)[0]
         centroid = librosa.feature.spectral_centroid(
             y=y, sr=self.sr, hop_length=self.hop_length
         )[0]
         zcr = librosa.feature.zero_crossing_rate(y, hop_length=self.hop_length)[0]
 
-        # Stack en une seule matrice (features × frames)
         stack = np.vstack([mfcc, delta, energy, centroid / centroid.max(), zcr])
 
         return {
             "stack": stack,
-            "mfcc": mfcc,
             "energy": energy,
             "centroid": centroid,
             "zcr": zcr,
         }
 
-    def compute_novelty(self, stack: np.ndarray, energy: np.ndarray) -> np.ndarray:
+    def _compute_silence_mask(self, energy: np.ndarray) -> np.ndarray:
         """
-        Courbe de nouveauté en deux étapes complémentaires :
+        Step 1: build a binary mask of silent frames.
 
-        1. SILENCE (critère primaire)
-           Les transitions pub/jingle/émission passent systématiquement par un
-           silence visible sur la forme d'onde. Seuls les instants silencieux
-           peuvent produire une forte nouveauté.
-           → silence_mask[i] = 1 si energy[i] < percentile(silence_percentile), 0 sinon.
-           → Dilaté légèrement pour couvrir les bords du silence.
-
-        2. DISSIMILARITÉ COSINUS (critère secondaire)
-           Parmi les instants silencieux, mesure à quel point le contenu sonore
-           avant et après diffère. Permet de distinguer une vraie rupture
-           (pub→pub, jingle→émission) d'une simple pause au sein d'un même contenu.
-
-        novelty[i] = silence_mask[i] × cosine_dissimilarity[i]
-
-        Un instant sans silence aura novelty = 0, quelle que soit la dissimilarité
-        cosinus (les variations de timbre en cours d'émission sont ignorées).
+        A frame is silent if its energy is below the `silence_percentile`
+        of the full signal. The mask is dilated by ~100ms to cover
+        silence edges.
         """
-
-        n_frames = stack.shape[1]
-        kernel = max(4, int(self.context_sec * self._fps))
-
-        # ── 1. Masque silence ────────────────────────────────────────────────
         silence_threshold = np.percentile(energy, self.silence_percentile)
         silence_mask = (energy < silence_threshold).astype(float)
 
-        # Dilatation : élargit le masque autour de chaque silence (~100 ms)
-        # pour que le pic de nouveauté puisse tomber aux bords du silence.
         dilation_frames = max(1, int(0.1 * self._fps))
         silence_mask = maximum_filter1d(silence_mask, size=dilation_frames * 2 + 1)
 
-        # ── 2. Dissimilarité cosinus ─────────────────────────────────────────
+        return silence_mask
+
+    def _compute_cosine_dissimilarity(self, stack: np.ndarray) -> np.ndarray:
+        """
+        Step 2: for each frame, measure how much the audio content
+        changes between the past and future context windows.
+
+        Returns a curve where high values indicate a content change.
+        """
+        n_frames = stack.shape[1]
+        kernel = max(4, int(self.context_sec * self._fps))
+
         cosine_dissim = np.zeros(n_frames)
         norms = np.linalg.norm(stack, axis=0, keepdims=True) + 1e-8
         X = stack / norms
@@ -274,60 +196,30 @@ class ChunkCreator:
             )
             cosine_dissim[i] = 1.0 - cos_sim
 
-        # ── 3. Combinaison : silence × (cosinus pondéré) ────────────────────
-        # cosine_weight=0 → novelty = silence_mask  (tout silence = rupture)
-        # cosine_weight=1 → novelty = silence_mask × cosine_dissim (défaut)
-        # Valeurs intermédiaires → le cosinus module sans bloquer.
-        novelty = silence_mask * (
-            self.cosine_weight * cosine_dissim + (1.0 - self.cosine_weight)
-        )
+        return cosine_dissim
 
-        # Lissage léger pour faciliter la détection de pics
+    def _detect_peaks(self, silence_mask: np.ndarray, cosine_dissim: np.ndarray) -> np.ndarray:
+        """
+        Combine both signals and find peaks.
+
+        novelty = silence_mask × cosine_dissim
+        → Only silent frames can produce peaks, and their height
+          reflects how much the content changes at that point.
+        """
+        novelty = silence_mask * cosine_dissim
+
         smooth_frames = max(3, int(self.novelty_smooth_sec * self._fps))
         novelty = uniform_filter1d(novelty, size=smooth_frames)
 
-        return novelty
-
-    def detect_peaks(self, novelty: np.ndarray) -> np.ndarray:
-        """
-        Trouve les pics de nouveauté = frontières naturelles.
-
-        Trois filtres successifs :
-          1. Seuil de hauteur (sensitivity)  → élimine les pics faibles
-          2. Distance minimale (min_chunk_sec) → impose un écart entre pics
-          3. Top-N (max_ruptures)            → ne garde que les N plus intenses
-        """
-
         min_dist_frames = int(self.min_chunk_sec * self._fps)
-
-        # Filtre 1 : seuil adaptatif sur la distribution de la courbe
-        # sensitivity=0.25 → seuil au percentile 75 → on garde le quart supérieur
         threshold = np.percentile(novelty, 100 * (1 - self.sensitivity))
 
-        peaks, props = find_peaks(
-            novelty,
-            height=threshold,
-            distance=min_dist_frames,
-        )
+        peaks, _ = find_peaks(novelty, height=threshold, distance=min_dist_frames)
 
-        # Filtre 2 : top-N ruptures les plus intenses (optionnel)
-        if self.max_ruptures > 0 and len(peaks) > self.max_ruptures:
-            # Trier par hauteur décroissante, garder les N meilleurs,
-            # puis re-trier par position temporelle pour reconstruire l'ordre
-            heights = props["peak_heights"]
-            top_idx = np.argsort(-heights)[: self.max_ruptures]
-            peaks = np.sort(peaks[top_idx])
-
-        # Convertir en secondes
-        peaks_sec = peaks / self._fps
-
-        return peaks_sec
+        return peaks / self._fps
 
     def _extract_peaks(self, y_seg: np.ndarray) -> list:
-        """
-        Extrait la constellation map d'un chunk audio.
-        Retourne une liste de [time_frame, freq_bin] relatifs au début du chunk.
-        """
+        """Extract constellation map peaks from a chunk's audio."""
         if len(y_seg) < self.sr * 0.5:
             return []
 
@@ -350,19 +242,18 @@ class ChunkCreator:
 
     def build_chunks(
         self,
-        peaks: np.ndarray,
+        peaks_sec: np.ndarray,
         features: dict,
         duration_sec: float,
         y: np.ndarray,
         start_epoch: float,
         channel: str,
     ) -> List[Chunk]:
-        """Construit les chunks avec leurs descripteurs et leur constellation map."""
-        frames_per_sec = self.sr / self.hop_length
+        """Build chunks with descriptors and constellation maps."""
+        frames_per_sec = self._fps
         chunks = []
 
-        # Ajoute début et fin
-        boundaries = np.concatenate([[0.0], peaks, [duration_sec]])
+        boundaries = np.concatenate([[0.0], peaks_sec, [duration_sec]])
 
         for i in range(len(boundaries) - 1):
             t_start = boundaries[i]
@@ -371,16 +262,13 @@ class ChunkCreator:
 
             f_start = int(t_start * frames_per_sec)
             f_end = int(t_end * frames_per_sec)
-
-            # Éviter les chunks vides
             if f_end <= f_start:
                 continue
 
             energy_seg = features["energy"][f_start:f_end]
             e = float(np.mean(energy_seg))
 
-            # Pour centroïde et ZCR : ignorer les frames silencieuses en début/fin
-            # (un blanc de quelques ms sinon tire le centroïde vers 0 et fausse le ZCR)
+            # For centroid and ZCR: ignore silent frames at edges
             silence_thr = np.percentile(features["energy"], self.silence_percentile)
             non_silent = np.where(energy_seg > silence_thr)[0]
             if len(non_silent) >= 2:
@@ -396,7 +284,6 @@ class ChunkCreator:
             s_end = int(t_end * self.sr)
             seg_peaks = self._extract_peaks(y[s_start:s_end])
 
-            # Pré-calcul des hashes à partir des pics (constellation fingerprinting)
             peaks_array = (
                 np.array(seg_peaks, dtype=np.int32)
                 if seg_peaks
@@ -404,61 +291,41 @@ class ChunkCreator:
             )
             seg_hashes = self._hasher.generate(peaks_array)
 
-            seg = Chunk(
-                start_sec=start_epoch + float(t_start),
-                end_sec=start_epoch + float(t_end),
-                duration_sec=float(dur),
-                energy_mean=e,
-                spectral_centroid=c,
-                zcr_mean=z,
-                peaks=seg_peaks,
-                hashes=seg_hashes,
-                channel=channel,
+            chunks.append(
+                Chunk(
+                    start_sec=start_epoch + float(t_start),
+                    end_sec=start_epoch + float(t_end),
+                    duration_sec=float(dur),
+                    energy_mean=e,
+                    spectral_centroid=c,
+                    zcr_mean=z,
+                    peaks=seg_peaks,
+                    hashes=seg_hashes,
+                    channel=channel,
+                )
             )
-            chunks.append(seg)
 
         return chunks
 
     def run(self, segment: Segment, audio_file_path: str) -> List[Chunk]:
         y = self.load(audio_file_path)
         features = self.extract_features(y)
-        novelty = self.compute_novelty(features["stack"], features["energy"])
         duration = len(y) / self.sr
-        peaks = self.detect_peaks(novelty)
-        chunks = self.build_chunks(
-            peaks,
-            features,
-            duration,
-            y,
+
+        # Step 1: identify silent frames
+        silence_mask = self._compute_silence_mask(features["energy"])
+        # Step 2: measure content change at each frame
+        cosine_dissim = self._compute_cosine_dissimilarity(features["stack"])
+        # Combine and find peaks
+        peaks_sec = self._detect_peaks(silence_mask, cosine_dissim)
+
+        return self.build_chunks(
+            peaks_sec, features, duration, y,
             segment.start_date.timestamp(),
             channel=segment.channel,
         )
 
-        return chunks
-
-    # ─────────────────────────────────────────────
-    #  Visualisation
-    # ─────────────────────────────────────────────
-
-    def get_novelty_peaks(self, novelty: np.ndarray) -> list:
-        """
-        Retourne tous les pics locaux de la courbe de nouveauté,
-        avec uniquement le filtre distance (min_chunk_sec) —
-        avant le seuil sensitivity et le filtre max_ruptures.
-        Utile pour la visualisation interactive du choix des paramètres.
-        """
-        min_dist_frames = int(self.min_chunk_sec * self._fps)
-        peaks, _ = find_peaks(novelty, distance=min_dist_frames)
-        return [
-            {
-                "time_sec": round(float(p / self._fps), 4),
-                "novelty": round(float(novelty[p]), 6),
-            }
-            for p in peaks
-        ]
-
     def params(self) -> dict:
-        """Returns all constructor parameters as a dict."""
         return {
             "sr": self.sr,
             "hop_length": self.hop_length,
@@ -467,9 +334,7 @@ class ChunkCreator:
             "novelty_smooth_sec": self.novelty_smooth_sec,
             "min_chunk_sec": self.min_chunk_sec,
             "sensitivity": self.sensitivity,
-            "max_ruptures": self.max_ruptures,
             "silence_percentile": self.silence_percentile,
-            "cosine_weight": self.cosine_weight,
             "n_fft": self.n_fft,
             "n_peaks": self.n_peaks,
             "neighborhood": self.neighborhood,
@@ -477,53 +342,49 @@ class ChunkCreator:
         }
 
     def params_hash(self) -> str:
-        """Returns a stable SHA256 hash of all constructor parameters.
-        Changes when any parameter value changes, identical otherwise."""
         serialized = json.dumps(self.params(), sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(serialized.encode()).hexdigest()[:16]
 
-    def get_params(self) -> dict:
-        """Retourne les paramètres du détecteur sous forme de dict (pour l'embarquer dans le player)."""
-        return {
-            "sr": self.sr,
-            "hop_length": self.hop_length,
-            "fps": round(self._fps, 2),
-            "n_mfcc": self.n_mfcc,
-            "context_sec": self.context_sec,
-            "novelty_smooth_sec": self.novelty_smooth_sec,
-            "min_chunk_sec": self.min_chunk_sec,
-            "sensitivity": self.sensitivity,
-            "max_ruptures": self.max_ruptures,
-            "silence_percentile": self.silence_percentile,
-            "cosine_weight": self.cosine_weight,
-        }
+    def generate_report(self, chunks: List[Chunk]) -> str:
+        """Generate a multiline text report summarizing a list of chunks."""
+        if not chunks:
+            return "No chunks to report."
 
+        durations = [c.duration_sec for c in chunks]
+        energies = [c.energy_mean for c in chunks]
+        centroids = [c.spectral_centroid for c in chunks]
+        total_duration = sum(durations)
+        hashes_counts = [len(c.hashes or []) for c in chunks]
 
-def print_summary(chunks: List[Chunk]):
-    from collections import Counter
+        lines = [
+            "=" * 60,
+            "  CHUNK CREATION REPORT",
+            "=" * 60,
+            f"  Total chunks     : {len(chunks)}",
+            f"  Total duration   : {total_duration:.1f}s",
+            f"  Duration range   : {min(durations):.1f}s — {max(durations):.1f}s (mean {np.mean(durations):.1f}s)",
+            f"  Energy range     : {min(energies):.4f} — {max(energies):.4f} (mean {np.mean(energies):.4f})",
+            f"  Centroid range   : {min(centroids):.0f} — {max(centroids):.0f} Hz",
+            f"  Hashes per chunk : {min(hashes_counts)} — {max(hashes_counts)} (mean {np.mean(hashes_counts):.0f})",
+            "",
+            "  Parameters:",
+        ]
+        for key, value in self.params().items():
+            lines.append(f"    {key:<22} = {value}")
 
-    counts = Counter(s.label for s in chunks)
-    total = len(chunks)
+        lines += [
+            "",
+            "  10 shortest chunks:",
+        ]
+        for c in sorted(chunks, key=lambda x: x.duration_sec)[:10]:
+            lines.append(f"    {c.duration_sec:6.2f}s  energy={c.energy_mean:.4f}  centroid={c.spectral_centroid:.0f}Hz")
 
-    print("\n" + "═" * 55)
-    print("  RÉSUMÉ DE SEGMENTATION")
-    print("═" * 55)
-    print(f"  Total chunks : {total}")
-    print(f"  {'Label':<22} {'Nb':>5}  {'%':>6}  {'Durée moy':>10}")
-    print("  " + "─" * 50)
+        lines += [
+            "",
+            "  10 longest chunks:",
+        ]
+        for c in sorted(chunks, key=lambda x: -x.duration_sec)[:10]:
+            lines.append(f"    {c.duration_sec:7.1f}s  energy={c.energy_mean:.4f}  centroid={c.spectral_centroid:.0f}Hz")
 
-    for label, count in sorted(counts.items(), key=lambda x: -x[1]):
-        segs_l = [s for s in chunks if s.label == label]
-        mean_d = np.mean([s.duration_sec for s in segs_l])
-        pct = count / total * 100
-        print(f"  {label:<22} {count:>5}  {pct:>5.1f}%  {mean_d:>8.1f}s")
-
-    print("═" * 55)
-
-    print("\n  10 chunks les plus courts :")
-    for s in sorted(chunks, key=lambda x: x.duration_sec)[:10]:
-        print(f"    [{s.start_tc}]  {s.duration_sec:6.2f}s  {s.label}")
-
-    print("\n  10 chunks les plus longs :")
-    for s in sorted(chunks, key=lambda x: -x.duration_sec)[:10]:
-        print(f"    [{s.start_tc}]  {s.duration_sec:7.1f}s  {s.label}")
+        lines.append("=" * 60)
+        return "\n".join(lines)

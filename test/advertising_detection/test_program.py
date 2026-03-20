@@ -8,10 +8,6 @@ from quotaclimat.data_ingestion.advertising_detection.tools.program import (
     merge_shows_in_program,
 )
 
-# Helpers
-SORW = Show.start_of_reference_week()  # datetime(1900, 1, 1, 0, 0)
-EORW = Show.end_of_reference_week()  # SORW + 7 days
-
 
 def make_show(channel, day, start_hm, end_hm):
     """Create a Show with weekday `day` (1-based, like program JSON) and HH:MM times."""
@@ -155,21 +151,21 @@ class TestExtendProgramBy:
         # Show starts at the very beginning of the week; extending backward wraps to end-of-week
         show = make_show("tf1", 1, "00:10", "01:00")
         result = extend_program_by([show], timedelta(minutes=30))
-        # One piece truncated to SORW, plus a wrap-around piece near EORW
-        starts = [s.start for s in result]
-        assert SORW in starts  # truncated piece starts at week boundary
+        # One piece truncated to start of the week, plus a wrap-around piece near end of week
+        starts = [show.for_week(datetime(2024, 1, 1))[0] for show in result]
+        assert datetime(2024, 1, 1) in starts  # truncated piece starts at week boundary
         assert any(
-            s.start > EORW - timedelta(hours=1) for s in result
+            start > datetime(2024, 1, 8) - timedelta(hours=1) for start in starts
         )  # wrap-around piece
 
     def test_extension_clamps_at_end_of_reference_week(self):
         # Show ends near the end of the week; extending forward wraps to start-of-week
         show = make_show("tf1", 7, "23:00", "23:50")
         result = extend_program_by([show], timedelta(minutes=30))
-        ends = [s.end for s in result]
-        assert EORW in ends  # truncated piece ends at week boundary
+        ends = [show.for_week(datetime(2024, 1, 1))[1] for show in result]
+        assert datetime(2024, 1, 8) in ends  # truncated piece ends at week boundary
         assert any(
-            s.end < timedelta(hours=1) + SORW for s in result
+            end < datetime(2024, 1, 1) + timedelta(hours=1) for end in ends
         )  # wrap-around piece
 
     def test_zero_delta_unchanged(self):
@@ -198,8 +194,9 @@ class TestExtendProgramBy:
         ]
         result = extend_program_by(shows, timedelta(hours=12))
         assert len(result) == 1
-        assert result[0].start == SORW
-        assert result[0].end == EORW
+        (start, end) = result[0].for_week(datetime(2024, 1, 1))
+        assert start == datetime(2024, 1, 1)
+        assert end == datetime(2024, 1, 8)
 
 
 # ---------------------------------------------------------------------------

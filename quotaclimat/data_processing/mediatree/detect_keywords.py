@@ -6,7 +6,7 @@ from quotaclimat.data_processing.mediatree.utils import *
 from quotaclimat.data_processing.mediatree.config import *
 from postgres.schemas.models import keywords_table
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
-from typing import List, Optional
+from typing import List, Optional, Set
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 from quotaclimat.data_processing.mediatree.i8n.country import *
 import re
@@ -32,12 +32,12 @@ LANGUAGE_CODES = {
     "dutch": "nl",
     "spanish": "es",
     "german": "de",
-    "english": "en",
+    "english": "en", # TODO: DOWNLOAD DICTIONARY IN DOCKERFILE
     "portuguese": "pt",
     "polish": "pl",
-    "italian": "it",
-    "danish": "da",
-    "greek": "el",
+    "italian": "it", # TODO: DOWNLOAD DICTIONARY IN DOCKERFILE
+    "danish": "da", # TODO: DOWNLOAD DICTIONARY IN DOCKERFILE
+    "greek": "el", # TODO: DOWNLOAD DICTIONARY IN DOCKERFILE
     # "latvian": "lv", # need to use stanza as it is not supported in spacy (stanza is slower)
 }
 
@@ -65,13 +65,13 @@ def find_matching_subtitle(subtitles, keyword, country: CountryMediaTree=FRANCE)
     if isinstance(subtitles, str):
         subtitles = json.loads(subtitles)
     lang = LANGUAGE_CODES[country.language]
-    keyword_lemma = get_lemmas(keyword, lang)
+    keyword_lemma = set(get_lemmas(keyword, lang))
     for item in subtitles:
         logging.debug(f"Testing {item} with {keyword} full subtitle is {subtitles}")
         try:
-            item_lemma = get_lemmas(keyword, lang)
+            item_lemma = set(get_lemmas(item["text"], lang))
             if bool(keyword_lemma & item_lemma):
-                logging.debug(f"match found {item} with {keyword}")
+                logging.info(f"match found {item} with {keyword}")
                 return item
         except Exception as e: 
             logging.error(f"Error in find_matching_subtitle for keyword {keyword} - item {item} - subtitles {subtitles} - {e}")
@@ -117,34 +117,37 @@ def format_word_regex(word: str) -> str:
 
 
 def is_word_in_sentence_fr(words: str, sentence: str) -> bool :
-    logging.info("Running french regex for plurals")
+    logging.debug("Running french regex for plurals")
     # words can contain plurals and several words
     words = ' '.join(list(map(( lambda x: format_word_regex(x)), words.split(" "))))
 
     #  test https://regex101.com/r/ilvs9G/1/
-    if re.search(rf"\b{words}(?![\w-])", sentence, re.IGNORECASE):
+    res = re.search(rf"\b{words}(?![\w-])", sentence, re.IGNORECASE)
+    if res:
         logging.debug(f"words {words} found in {sentence}")
         return True
     else:
-        return False
+        return ""
 
 
 def get_lemmas(text, lang):
     nlp = get_pipeline(lang)
     doc = nlp(text)
-    return {
+    return [
         token.lemma_.lower()
         for token in doc
         if not token.is_punct
-    }
+    ]
 
 def build_keyword_automaton(keywords, country: CountryMediaTree=FRANCE):
     lang = LANGUAGE_CODES[country.language]
     automaton = ahocorasick.Automaton()
+    kw_lemmas = set()
     for idx, kw in enumerate(keywords):
-        lemmas = tuple(get_lemmas(kw, lang))
+        lemmas = get_lemmas(kw, lang)
         key = " " + " ".join(lemmas) + " "
         automaton.add_word(key, (idx, key))
+        kw_lemmas.add(key)
 
     automaton.make_automaton()
     return automaton
@@ -152,8 +155,8 @@ def build_keyword_automaton(keywords, country: CountryMediaTree=FRANCE):
 def is_word_in_sentence_i18n(words: str, sentence: str, country: CountryMediaTree=FRANCE) -> bool:
     logging.info("Running lemmatization matching for i18n languages")
     lang = LANGUAGE_CODES[country.language]
-    sentence_lemmas = get_lemmas(sentence, lang)
-    query_lemmas = get_lemmas(words, lang)
+    sentence_lemmas = set(get_lemmas(sentence, lang))
+    query_lemmas = set(get_lemmas(words, lang))
     return bool(sentence_lemmas & query_lemmas)
 
 
@@ -164,16 +167,18 @@ def is_word_in_sentence(words: str, sentence: str, country: CountryMediaTree=FRA
     #     return is_word_in_sentence_i18n(words, sentence, country=country)
     return is_word_in_sentence_i18n(words, sentence, country=country)
 
-def get_words_in_sentence(automaton: ahocorasick.Automaton, text: str, country: CountryMediaTree=FRANCE) -> bool:
-    logging.info("Running lemmatization matching for i18n languages")
+def get_words_in_sentence_i18n(automaton: ahocorasick.Automaton, text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
+    logging.info("Running lemmatization matching with ahocorasick.Automaton for i18n languages")
     lang = LANGUAGE_CODES[country.language]
     text_lemmas = get_lemmas(text, lang)
     lemmatised_text = " " + " ".join(text_lemmas).lower() + " "
 
     found = set()
+    keywords = set()
 
     for _, (idx, kw) in automaton.iter(lemmatised_text):
         found.add(idx)
+        keywords.add(kw)
 
     return found
 
@@ -257,20 +262,27 @@ def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
             "category": keyword_dict["category"]
     }
 
+def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
+    if country==FRANCE:
+        return set([idx for idx, kw in enumerate(keywords_dict) if is_word_in_sentence_fr(kw["keyword"], text)])
+    else:
+        keywords = [keyword_dict["keyword"].lower() for keyword_dict in keywords_dict]
+        automaton = build_keyword_automaton(keywords)
+        return get_words_in_sentence_i18n(automaton, text, country)
+
+
 def get_detected_keywords(plaintext_without_stopwords: str, keywords_dict, country=FRANCE):
 
     matching_words = []
     logging.info(f"Keeping only {country.language} keywords...")
     logging.info(f"Got {len(keywords_dict)} keywords")
     keywords_dict = list(filter(lambda x: x["language"] == country.language, keywords_dict))
-    keywords = [keyword_dict["keyword"].lower() for keyword_dict in keywords_dict]
-    automaton = build_keyword_automaton(keywords)
-    found_idx = get_words_in_sentence(automaton, plaintext_without_stopwords, country)
+    found_idx = get_words_in_sentence(keywords_dict, plaintext_without_stopwords, country)
     matching_words = [get_keyword_matching_json(keywords_dict[idx], country=country) for idx in found_idx]
-    logging.info(f"found following keywords: {matching_words}")
-    # for keyword_dict in keywords_dict:
-    #     if is_word_in_sentence(keyword_dict["keyword"], plaintext_without_stopwords, country):
-    #         matching_words.append(get_keyword_matching_json(keyword_dict, country=country))
+    if matching_words:
+        logging.info(f"found following matching words: {matching_words}")
+    else:
+        logging.info(f"Found no matching keywords")
     return matching_words
 
 @sentry_sdk.trace
@@ -300,12 +312,11 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
                 except Exception as e: 
                     logging.error(f"Error in get_cts_in_ms_for_keywords for theme {theme} - matching_words {matching_words} - subtitle_duration {subtitle_duration} - {e}")
                     raise e
-        
         if len(keywords_with_timestamp) > 0:
             # count false positive near of default_window_in_seconds of positive keywords
             keywords_with_timestamp_default = get_keywords_with_timestamp_with_false_positive(keywords_with_timestamp, start, duration_seconds=default_window_in_seconds)
             filtered_keywords_with_timestamp = filter_indirect_words(keywords_with_timestamp_default)
-
+            logging.info(f"Found the following keywords w/ timestamps: {filtered_keywords_with_timestamp}")
             theme= get_themes(keywords_with_timestamp_default)
             keywords_with_timestamp= clean_metadata(keywords_with_timestamp_default)
             number_of_keywords= count_keywords_duration_overlap(filtered_keywords_with_timestamp, start)
@@ -487,48 +498,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], countr
                 )
             logging.info(("="*20))
             logging.info(f"Analysed keywords in {time()-t} seconds!")
-            # results = []
-            # columns = ['theme',
-            #     u'keywords_with_timestamp',
-            #     'number_of_keywords',
-            #     'number_of_changement_climatique_constat',
-            #     'number_of_changement_climatique_causes_directes',
-            #     'number_of_changement_climatique_consequences',
-            #     'number_of_attenuation_climatique_solutions_directes',
-            #     'number_of_adaptation_climatique_solutions_directes',
-            #     'number_of_ressources',
-            #     'number_of_ressources_solutions',
-            #     'number_of_biodiversite_concepts_generaux',
-            #     'number_of_biodiversite_causes_directes',
-            #     'number_of_biodiversite_consequences',
-            #     'number_of_biodiversite_solutions_directes',
-            #     "number_of_keywords_climat",
-            #     "number_of_keywords_biodiversite",
-            #     "number_of_keywords_ressources",
-            #     "number_of_changement_climatique_constat_no_hrfp",
-            #     "number_of_changement_climatique_causes_no_hrfp",
-            #     "number_of_changement_climatique_consequences_no_hrfp",
-            #     "number_of_attenuation_climatique_solutions_no_hrfp",
-            #     "number_of_adaptation_climatique_solutions_no_hrfp",
-            #     "number_of_ressources_no_hrfp",
-            #     "number_of_ressources_solutions_no_hrfp",
-            #     "number_of_biodiversite_concepts_generaux_no_hrfp",
-            #     "number_of_biodiversite_causes_no_hrfp",
-            #     "number_of_biodiversite_consequences_no_hrfp",
-            #     "number_of_biodiversite_solutions_no_hrfp",
-            #     'country',
-            # ]
-            # for idx, row in df[['plaintext','srt', 'start']].iterrows():
-            #     logging.info(f"RUNNING TEXT NUMBER {idx}/{len(df)}")
-            #     result = get_themes_keywords_duration(*row, stop_words=stop_words, country=country)
-            #     result_dict = {}
-            #     for col, res in zip(columns, result):
-            #         result_dict[col] = res
-            #     results.append(result_dict)
-            
-            # df = pd.concat([df, pd.DataFrame.from_records(results)], axis=1)
 
- 
             # remove all rows that does not have themes
             df = df.dropna(subset=['theme'], how='any') # any is for None values
             logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")
@@ -606,7 +576,7 @@ def transform_false_positive_keywords_to_positive(keywords_with_timestamp: List[
             filter(
                 lambda kw:
                             1 == abs(keyword_info['window_number'] - kw['window_number']) or
-                            0 == abs(keyword_info['window_number'] - kw['window_number'])
+                            0 == abs(keyword_info['window_number'] - kw['window_number']) and kw != keyword_info
             , keywords_with_timestamp)
         )
 

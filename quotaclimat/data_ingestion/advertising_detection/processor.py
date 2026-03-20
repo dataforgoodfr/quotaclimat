@@ -89,20 +89,36 @@ async def processor(
 
     params_hash_key += "-" + chunk_grouping.params_hash()
     with LocalCache(name="grouping", version=params_hash_key) as group_cache:
-        groups = chunk_grouping.run(chunks)
+        group_cache_file = operation_name + ".json"
+        if group_cache.exists(group_cache_file):
+            groups_data = json.loads(group_cache.get(group_cache_file))
 
-        group_cache.set(
-            operation_name + ".json", json.dumps([group.to_dict() for group in groups])
-        )
+            groups = [ChunkGrouping.ChunkGroup.from_dict(d) for d in groups_data]
+
+        else:
+            groups = chunk_grouping.run(chunks)
+
+            group_cache.set(
+                operation_name + ".json",
+                json.dumps([group.to_dict() for group in groups]),
+            )
 
     params_hash_key += "-" + fragment_classifier.params_hash()
     with LocalCache(name="fragments", version=params_hash_key) as fragments_cache:
-        fragments = fragment_classifier.run(groups)
+        fragments_cache_file = operation_name + ".json"
+        if fragments_cache.exists(fragments_cache_file):
+            fragments_data = json.loads(fragments_cache.get(fragments_cache_file))
 
-        fragments_cache.set(
-            operation_name + ".json",
-            json.dumps([fragment.to_dict() for fragment in fragments], default=str),
-        )
+            fragments = [
+                FragmentsClassifier.Fragment.from_dict(d) for d in fragments_data
+            ]
+        else:
+            fragments = fragment_classifier.run(groups)
+
+            fragments_cache.set(
+                operation_name + ".json",
+                json.dumps([fragment.to_dict() for fragment in fragments], default=str),
+            )
 
     html = generate_weekly_viewer(
         fragments=fragments,

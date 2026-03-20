@@ -89,7 +89,7 @@ CATEGORY_MAP = {
     "Resource overexploitation": "Surexploitation des ressources",
     "Pollution": "Pollution",
     "General concepts": "Concepts généraux",
-    "General": "General"
+    "General": "General",
 }
 
 
@@ -141,7 +141,7 @@ class DictionaryProcessor:
             if self.file_language == "english":
                 theme_name = THEME_MAP.get(theme_name, theme_name)
                 category = CATEGORY_MAP.get(category, category)
-            
+
             if high_risk_of_false_positive and not theme_name.endswith("_indirectes"):
                 theme_name = theme_name + "_indirectes"
 
@@ -226,8 +226,8 @@ class i18nDictionaryProcessor:
     def __init__(self, source: str, sheet_name: Union[str, int]):
         self.french = "French"
         self.english = "English"
-        self.german = "German"
-        self.spanish = "Spanish"
+        # self.german = "German"
+        # self.spanish = "Spanish"
         self.portuguese = "Portuguese"
         self.polish = "Polish"
         self.danish = "Danish"
@@ -277,16 +277,16 @@ class i18nDictionaryProcessor:
                 if pd.isna(row.get(self.english))
                 else TranslatedKeyword(self.english.lower(), row.get(self.english))
             )
-            keyword_german = (
-                None
-                if pd.isna(row.get(self.german))
-                else TranslatedKeyword(self.german.lower(), row.get(self.german))
-            )
-            keyword_spanish = (
-                None
-                if pd.isna(row.get(self.spanish))
-                else TranslatedKeyword(self.spanish.lower(), row.get(self.spanish))
-            )
+            # keyword_german = (
+            #     None
+            #     if pd.isna(row.get(self.german))
+            #     else TranslatedKeyword(self.german.lower(), row.get(self.german))
+            # )
+            # keyword_spanish = (
+            #     None
+            #     if pd.isna(row.get(self.spanish))
+            #     else TranslatedKeyword(self.spanish.lower(), row.get(self.spanish))
+            # )
             keyword_portuguese = (
                 None
                 if pd.isna(row.get(self.portuguese))
@@ -330,8 +330,8 @@ class i18nDictionaryProcessor:
                 THEME_KEYWORDS[theme_name] = []
             keywords_list = [
                 keyword_english,
-                keyword_german,
-                keyword_spanish,
+                # keyword_german,
+                # keyword_spanish,
                 keyword_portuguese,
                 keyword_polish,
                 keyword_danish,
@@ -399,6 +399,18 @@ dutch_processor = DictionaryProcessor(
     file_language="english",
     dictionary_language="dutch",
 )
+spanish_processor = DictionaryProcessor(
+    source="document-experts/Dictionary_OME_Spanish.xlsx",
+    sheet_name="Final Categorization",
+    file_language="english",
+    dictionary_language="spanish",
+)
+german_processor = DictionaryProcessor(
+    source="document-experts/Dictionary_OME_German.xlsx",
+    sheet_name="Final Categorization",
+    file_language="english",
+    dictionary_language="german",
+)
 i18n_processor = i18nDictionaryProcessor(
     source="document-experts/Dictionnaire_Multilingue.xlsx",
     sheet_name=0,  # "Multilingual_dictionnary_without_HRFP"
@@ -406,10 +418,14 @@ i18n_processor = i18nDictionaryProcessor(
 
 french_keywords = french_processor.process()
 dutch_keywords = dutch_processor.process()
+spanish_keywords = spanish_processor.process()
+german_keywords = german_processor.process()
 i18n_keywords = i18n_processor.process()
 themes = set(
     list(french_keywords.keys())
     + list(dutch_keywords.keys())
+    + list(spanish_keywords.keys())
+    + list(german_keywords.keys())
     + list(i18n_keywords.keys())
 )
 theme_keywords = {}
@@ -417,6 +433,8 @@ for theme in themes:
     theme_keywords[theme] = sorted(
         french_keywords.get(theme, [])
         + dutch_keywords.get(theme, [])
+        + spanish_keywords.get(theme, [])
+        + german_keywords.get(theme, [])
         + i18n_keywords.get(theme, []),
         key=lambda x: x["keyword"],
     )
@@ -446,11 +464,30 @@ dutch_macro_categories_processor = MacroCategoryProcessor(
     file_language="english",
     dictionary_language="dutch",
 )
+spanish_macro_categories_processor = MacroCategoryProcessor(
+    source="document-experts/Dictionary_OME_Spanish.xlsx",
+    sheet_name="Cross-cutting Categories",
+    file_language="english",
+    dictionary_language="spanish",
+)
+german_macro_categories_processor = MacroCategoryProcessor(
+    source="document-experts/Dictionary_OME_German.xlsx",
+    sheet_name="Cross-cutting Categories",
+    file_language="english",
+    dictionary_language="german",
+)
 
 french_macro_categories = french_macro_categories_processor.process()
 dutch_macro_categories = dutch_macro_categories_processor.process()
+spanish_macro_categories = spanish_macro_categories_processor.process()
+german_macro_categories = german_macro_categories_processor.process()
 
-macro_categories = french_macro_categories + dutch_macro_categories
+macro_categories = (
+    french_macro_categories
+    + dutch_macro_categories
+    + spanish_macro_categories
+    + german_macro_categories
+)
 with open(output_file_macro_category, "w", encoding="utf-8") as f:
     logging.info(
         f"Json written  - {len(macro_categories)} keywords inside {output_file_macro_category}"

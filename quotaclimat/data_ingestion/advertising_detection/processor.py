@@ -1,17 +1,15 @@
-import asyncio
 import json
 import logging
 import os
 from functools import partial
 from pathlib import Path
 
-from .e00_partition_window import Segment, partition_week
+from .e00_partition_window import Segment
 from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import Chunk, ChunkCreator
 from .e04_group_chunks import ChunkGrouping
 from .e05_classify_fragments import FragmentsClassifier
 from .tools.cache import LocalCache
-from .tools.testimony_data.extract import get_testimony_data
 from .tools.visualizer.weekly_viewer import generate_weekly_viewer
 
 logger = logging.getLogger(__name__)
@@ -136,31 +134,3 @@ async def processor(
         f.write(html)
 
     return groups
-
-
-if __name__ == "__main__":
-    channel = "tf1"
-    TESTIMONY_CHANNEL = "TF1"
-    start_date = "2025-05-05"
-
-    partition = list(
-        partition_week(
-            channel=channel,
-            start_date=start_date,
-        )
-    )
-
-    annotations = get_testimony_data(
-        channel=TESTIMONY_CHANNEL,
-        from_date=partition[0].start_date,
-        to_date=partition[-1].end_date,
-        source_file="export.csv",
-    )
-
-    asyncio.run(
-        processor(
-            operation_name=f"{channel}-full_week-{start_date}",
-            segments=partition,
-            annotations=annotations,
-        )
-    )

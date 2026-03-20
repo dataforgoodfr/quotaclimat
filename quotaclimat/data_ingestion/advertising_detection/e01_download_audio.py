@@ -22,7 +22,10 @@ async def download_audio(segment: Segment) -> (str, bool):
     expected_path = os.path.join(
         api.export_folder,
         api._file_name(
-            segment.channel, segment.start_date, segment.end_date + timedelta(minutes=1)
+            segment.channel,
+            segment.start_date,
+            segment.end_date + timedelta(minutes=1),
+            "mp3",
         ),
     )
     was_cached = os.path.isfile(expected_path)

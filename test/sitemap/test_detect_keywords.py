@@ -888,22 +888,38 @@ def test_complexe_filter_and_tag_by_theme():
     assert df["number_of_biodiversite_solutions_directes"].head(1)[0] == expected_result["number_of_biodiversite_solutions_directes"].head(1)[0]
 
 
-def test_is_word_in_sentence():
-    assert is_word_in_sentence("bus", "abusive") == False
-    assert is_word_in_sentence("bus", "le bus est à l'heure") == True
-    assert is_word_in_sentence("bus électrique", "le bus est à l'heure") == False
-    assert is_word_in_sentence("bus électrique", "le bus électrique est à l'heure") == True
-    assert is_word_in_sentence("bus électrique", "bus électrique est à l'heure") == True
-    assert is_word_in_sentence("bus électrique", "le village se déplace en bus électrique") == True
+def test_is_word_in_sentence_fr():
+    assert is_word_in_sentence_fr("bus", "abusive") == False
+    assert is_word_in_sentence_fr("bus", "le bus est à l'heure") == True
+    assert is_word_in_sentence_fr("bus électrique", "le bus est à l'heure") == False
+    assert is_word_in_sentence_fr("bus électrique", "le bus électrique est à l'heure") == True
+    assert is_word_in_sentence_fr("bus électrique", "bus électrique est à l'heure") == True
+    assert is_word_in_sentence_fr("bus électrique", "le village se déplace en bus électrique") == True
 
-    assert is_word_in_sentence("bus électriques", "les bus électriques sont à l'heure") == True
+    assert is_word_in_sentence_fr("bus électriques", "les bus électriques sont à l'heure") == True
     
-    assert is_word_in_sentence("Voitures électriques", "le village se déplace en voitures électriques") == True
-    assert is_word_in_sentence("Voitures électriques", "le village se déplace en voiture électrique") == True
-    assert is_word_in_sentence("$-BreakingReg!-\\fezz$'", "le bus électrique est à l'heure") == False
+    assert is_word_in_sentence_fr("Voitures électriques", "le village se déplace en voitures électriques") == True
+    assert is_word_in_sentence_fr("Voitures électriques", "le village se déplace en voiture électrique") == True
+    assert is_word_in_sentence_fr("$-BreakingReg!-\\fezz$'", "le bus électrique est à l'heure") == False
 
-    assert is_word_in_sentence("terre", "la région de terre-neuve se déplace") == False
-    assert is_word_in_sentence("submersion", 'vagues-submersion') == True
+    assert is_word_in_sentence_fr("terre", "la région de terre-neuve se déplace") == False
+    assert is_word_in_sentence_fr("submersion", 'vagues-submersion') == True
+
+
+def test_get_words_in_sentence_i18n():
+    keywords_dict = [
+        {"keyword": "bus électrique"},
+        {"keyword": "Voitures électriques"},
+        {"keyword": "terre"}
+    ]
+    keywords = [keyword_dict["keyword"].lower() for keyword_dict in keywords_dict]
+    automaton = build_keyword_automaton(keywords)
+    assert not get_words_in_sentence_i18n(automaton, "le bus est à l'heure", FRANCE)
+    assert get_words_in_sentence_i18n(automaton, "le bus électrique est à l'heure", FRANCE)
+    
+    assert not get_words_in_sentence_i18n(automaton, "le village se déplace en voiture", FRANCE)
+    assert get_words_in_sentence_i18n(automaton, "le village se déplace en voiture électrique", FRANCE)
+
 
 def test_format_word_regex():
     assert format_word_regex("voitures") == "voitures?"

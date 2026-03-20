@@ -276,7 +276,7 @@ def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
     }
 
 def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
-    if country==FRANCE:
+    if country.code=='fra':
         return set([idx for idx, kw in enumerate(keywords_dict) if is_word_in_sentence_fr(kw["keyword"], text)])
     else:
         keywords = [keyword_dict["keyword"].lower() for keyword_dict in keywords_dict]

@@ -22,6 +22,17 @@ class Fragment:
     def to_dict(self) -> dict:
         return asdict(self)
 
+    @classmethod
+    def from_dict(cls, data: dict) -> "Fragment":
+        return cls(
+            start_date=datetime.fromisoformat(data["start_date"]),
+            end_date=datetime.fromisoformat(data["end_date"]),
+            channel=data["channel"],
+            classification=data["classification"],
+            group_id=data.get("group_id"),
+            chunks=[Chunk(**c) for c in data.get("chunks", [])],
+        )
+
 
 class FragmentsClassifier:
     def __init__(self, repetition_threshold: int = 5):

@@ -7,8 +7,8 @@ from pathlib import Path
 from .e00_partition_window import Segment
 from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import Chunk, ChunkCreator
-from .e04_group_chunks import ChunkGrouping
-from .e05_classify_fragments import FragmentsClassifier
+from .e04_group_chunks import ChunkGroup, ChunkGrouping
+from .e05_classify_fragments import Fragment, FragmentsClassifier
 from .tools.cache import LocalCache
 from .tools.visualizer.weekly_viewer import generate_weekly_viewer
 
@@ -91,7 +91,7 @@ async def processor(
         if group_cache.exists(group_cache_file):
             groups_data = json.loads(group_cache.get(group_cache_file))
 
-            groups = [ChunkGrouping.ChunkGroup.from_dict(d) for d in groups_data]
+            groups = [ChunkGroup.from_dict(d) for d in groups_data]
 
         else:
             groups = chunk_grouping.run(chunks)
@@ -107,9 +107,7 @@ async def processor(
         if fragments_cache.exists(fragments_cache_file):
             fragments_data = json.loads(fragments_cache.get(fragments_cache_file))
 
-            fragments = [
-                FragmentsClassifier.Fragment.from_dict(d) for d in fragments_data
-            ]
+            fragments = [Fragment.from_dict(d) for d in fragments_data]
         else:
             fragments = fragment_classifier.run(groups)
 

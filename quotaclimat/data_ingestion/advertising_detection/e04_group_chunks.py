@@ -31,16 +31,24 @@ class ChunkGroup:
     def to_dict(self):
         return asdict(self)
 
+    @classmethod
+    def from_dict(cls, data: dict):
+        return cls(
+            count=data["count"],
+            duration_mean=data["duration_mean"],
+            duration_std=data["duration_std"],
+            occurrences=[Chunk(**occ) for occ in data["occurrences"]],
+        )
+
 
 def _build_hash_sets(chunks: list[Chunk]) -> list[set[str]]:
     """Precompute the set of hash keys for each chunk (for O(1) lookup)."""
-    return [
-        {h for h, _ in (c.hashes or [])}
-        for c in chunks
-    ]
+    return [{h for h, _ in (c.hashes or [])} for c in chunks]
 
 
-def _score(chunk_a: Chunk, chunk_b: Chunk, set_a: set, set_b: set, min_matching: int) -> float:
+def _score(
+    chunk_a: Chunk, chunk_b: Chunk, set_a: set, set_b: set, min_matching: int
+) -> float:
     """
     Similarity score based on temporal coherence of shared hashes.
     Common hashes must align on a consistent time offset.
@@ -55,11 +63,7 @@ def _score(chunk_a: Chunk, chunk_b: Chunk, set_a: set, set_b: set, min_matching:
     index_a = {h: t for h, t in hashes_a if h in common}
     index_b = {h: t for h, t in hashes_b if h in common}
 
-    offsets = [
-        index_a[h] - index_b[h]
-        for h in common
-        if h in index_a and h in index_b
-    ]
+    offsets = [index_a[h] - index_b[h] for h in common if h in index_a and h in index_b]
     if not offsets:
         return 0.0
 
@@ -138,14 +142,18 @@ def _cluster(
     candidates = [
         (i, j)
         for (i, j), count in shared_counts.items()
-        if count >= min_matching_hashes
-        and _features_compatible(chunks[i], chunks[j])
+        if count >= min_matching_hashes and _features_compatible(chunks[i], chunks[j])
     ]
     logger.debug(f"  {len(candidates)} candidate pairs to score")
 
     matches = 0
     for i, j in tqdm(candidates, desc="Comparaison fingerprints"):
-        if _score(chunks[i], chunks[j], hash_sets[i], hash_sets[j], min_matching_hashes) >= similarity_threshold:
+        if (
+            _score(
+                chunks[i], chunks[j], hash_sets[i], hash_sets[j], min_matching_hashes
+            )
+            >= similarity_threshold
+        ):
             union(i, j)
             matches += 1
 
@@ -200,7 +208,9 @@ class ChunkGrouping:
         logger.debug(f"{len(chunks)} chunks to group")
 
         hash_sets = _build_hash_sets(chunks)
-        groups = _cluster(chunks, hash_sets, self.min_matching_hashes, self.similarity_threshold)
+        groups = _cluster(
+            chunks, hash_sets, self.min_matching_hashes, self.similarity_threshold
+        )
         channel = source[0].channel
 
         report_groups: list[ChunkGroup] = []

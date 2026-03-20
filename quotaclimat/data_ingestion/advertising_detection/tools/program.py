@@ -6,25 +6,25 @@ from datetime import datetime, timedelta
 @dataclass
 class Show:
     channel_name: str
-    # These start and end are relative to the 0 of strptime: Show.start_of_week()
+    # These start and end are relative to the 0 of strptime: Show.start_of_reference_week()
     start: datetime
     end: datetime
 
     # Return exact start and end datetime of the show for a given week, by adding the relative start and end to the start of the week.
     def for_week(self, week_start_date: datetime) -> tuple[datetime, datetime]:
-        absolute_start = Show.start_of_week()
+        absolute_start = Show.start_of_reference_week()
         return (
             week_start_date + (self.start - absolute_start),
             week_start_date + (self.end - absolute_start),
         )
 
     @classmethod
-    def start_of_week(cls):
+    def start_of_reference_week(cls):
         return datetime.strptime("", "")
 
     @classmethod
-    def end_of_week(cls):
-        return cls.start_of_week() + timedelta(days=7)
+    def end_of_reference_week(cls):
+        return cls.start_of_reference_week() + timedelta(days=7)
 
 
 def get_program() -> list[Show]:
@@ -63,7 +63,7 @@ def merge_shows_in_program(program: list[Show]) -> list[Show]:
             merged_program[-1] = Show(
                 channel_name=last_show.channel_name,
                 start=last_show.start,
-                end=show.end,
+                end=max(last_show.end, show.end),
             )
         else:
             merged_program.append(show)
@@ -74,8 +74,8 @@ def merge_shows_in_program(program: list[Show]) -> list[Show]:
 def extend_program_by(program: list[Show], delta: timedelta) -> list[Show]:
     # This function extends the start and end time of each show by a given timedelta.
 
-    start_of_week = Show.start_of_week()
-    end_of_week = Show.end_of_week()
+    start_of_reference_week = Show.start_of_reference_week()
+    end_of_reference_week = Show.end_of_reference_week()
 
     extended_program = []
     for show in program:
@@ -86,26 +86,26 @@ def extend_program_by(program: list[Show], delta: timedelta) -> list[Show]:
         )
 
         # If the period now start before the week, we add this part at the end of the week, and we truncate the start to the start of the week
-        if extended_show.start < start_of_week:
+        if extended_show.start < start_of_reference_week:
             extended_program.append(
                 Show(
                     channel_name=show.channel_name,
                     start=extended_show.start + timedelta(days=7),
-                    end=end_of_week,
+                    end=end_of_reference_week,
                 )
             )
-            extended_show.start = start_of_week
+            extended_show.start = start_of_reference_week
 
         # Same for the end of the week
-        if extended_show.end > end_of_week:
+        if extended_show.end > end_of_reference_week:
             extended_program.append(
                 Show(
                     channel_name=show.channel_name,
-                    start=start_of_week,
+                    start=start_of_reference_week,
                     end=extended_show.end - timedelta(days=7),
                 )
             )
-            extended_show.end = end_of_week
+            extended_show.end = end_of_reference_week
 
         extended_program.append(extended_show)
 

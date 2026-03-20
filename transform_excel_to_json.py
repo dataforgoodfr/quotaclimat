@@ -141,7 +141,10 @@ class DictionaryProcessor:
             if self.file_language == "english":
                 theme_name = THEME_MAP.get(theme_name, theme_name)
                 category = CATEGORY_MAP.get(category, category)
-                
+            
+            if high_risk_of_false_positive and not theme_name.endswith("_indirectes"):
+                theme_name = theme_name + "_indirectes"
+
             if theme_name not in THEME_KEYWORDS:
                 print(f"Found new theme {theme_name}")
                 THEME_KEYWORDS[theme_name] = []

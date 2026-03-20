@@ -1,5 +1,6 @@
 import json
 import logging
+import subprocess
 
 import ahocorasick
 from quotaclimat.data_processing.mediatree.utils import *
@@ -46,6 +47,18 @@ PIPELINES = {}
 
 def get_pipeline(lang):
     if lang not in PIPELINES:
+        subprocess.run(
+            [
+                "poetry",
+                "run",
+                "python",
+                "-m",
+                "spacy",
+                "download",
+                f"{lang}_core_news_sm", 
+            ],
+            check=True,
+        )
         PIPELINES[lang] = spacy.load(
             f"{lang}_core_news_sm", 
             disable=["parser", "ner", "tagger"]

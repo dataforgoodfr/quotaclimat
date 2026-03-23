@@ -1196,6 +1196,8 @@
         html += `<span class="label">Durée</span><span class="value">${formatDuration(frag.duration)}</span>`;
         html += `<span class="label">Début</span><span class="value">${formatDateTime(frag.absStart)}</span>`;
         html += `<span class="label">Fin</span><span class="value">${formatDateTime(frag.absEnd)}</span>`;
+        html += `<span class="label">Epoch début</span><span class="value" style="font-family:monospace;user-select:all;">${frag.absStart}</span>`;
+        html += `<span class="label">Epoch fin</span><span class="value" style="font-family:monospace;user-select:all;">${frag.absEnd}</span>`;
         html += `<span class="label">Chaîne</span><span class="value">${frag.channel}</span>`;
         html += '</div></div>';
 

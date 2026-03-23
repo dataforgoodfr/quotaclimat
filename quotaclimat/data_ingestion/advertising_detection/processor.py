@@ -47,7 +47,7 @@ async def processor(
         n_mfcc=20,
         context_sec=1.0,
         novelty_smooth_sec=0.5,
-        min_chunk_sec=5.0,
+        min_chunk_sec=1.5,
         sensitivity=0.25,
         silence_percentile=5.0,
         n_fft=2048,
@@ -56,12 +56,12 @@ async def processor(
         min_amplitude=0.01,
     )
     chunk_grouping = ChunkGrouping(
-        similarity_threshold=0.05,
-        sr=22050,
+        duration_tol=1.5,  # C'est relativement haut, mais les autres filtres affinent bien. 1.5 = durée minimum d'un segment, pour que l'absorption ou non d'un micro segment ne soit pas discriminant
+        rms_tol=0.1,
+        centroid_tol=0.05,
+        zcr_tol=0.1,
+        similarity_threshold=0.05,  # C'est bas, mais les tol ci-dessus font un pré filtre très éfficace déjà
         min_matching_hashes=1,
-        n_peaks_by_chunk=5,
-        neighborhood_peaks_filter=15,
-        min_peak_amplitude=0.01,
     )
     fragment_classifier = FragmentsClassifier(
         repetition_threshold=5,
@@ -117,7 +117,7 @@ async def processor(
                 json.dumps([fragment.to_dict() for fragment in fragments], default=str),
             )
 
-    reports_path = Path(".cache") / "reports"
+    reports_path = Path(".cache") / "reports" / operation_name
     reports_path.mkdir(parents=True, exist_ok=True)
 
     html_report = generate_weekly_viewer(

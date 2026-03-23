@@ -51,7 +51,7 @@ async def with_exponential_backoff(
             if attempt == max_retries:
                 raise
             delay = base_delay * (2 ** (attempt - 1))
-            logger.warning(
+            logger.debug(
                 "Attempt %d/%d failed%s, retrying in %.1fs: %s",
                 attempt,
                 max_retries,

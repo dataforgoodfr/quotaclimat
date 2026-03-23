@@ -989,7 +989,7 @@
 
           // Height based on group size for repeated fragments
           const maxGroupSize = 20;
-          const hRatio = f.groupSize > 1 ? Math.min(f.groupSize / maxGroupSize, 1) : 0.3;
+          const hRatio = Math.min(f.groupSize / maxGroupSize, 1);
           const fh = Math.max(10, hRatio * TRACK_FRAG_H);
           const fy = TRACK_FRAG_Y + (TRACK_FRAG_H - fh);
 
@@ -1158,7 +1158,7 @@
           const fw = Math.max(x2 - x1, 4);
 
           const maxGroupSize = 20;
-          const hRatio = f.groupSize > 1 ? Math.min(f.groupSize / maxGroupSize, 1) : 0.3;
+          const hRatio = Math.min(f.groupSize / maxGroupSize, 1);
           const fh = Math.max(10, hRatio * TRACK_FRAG_H);
           const fy = TRACK_FRAG_Y + (TRACK_FRAG_H - fh);
 

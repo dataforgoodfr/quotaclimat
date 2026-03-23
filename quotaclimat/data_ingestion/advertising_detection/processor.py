@@ -47,7 +47,7 @@ async def processor(
         n_mfcc=20,
         context_sec=1.0,
         novelty_smooth_sec=0.5,
-        min_chunk_sec=1.5,
+        min_chunk_sec=1.0,
         sensitivity=0.25,
         silence_percentile=5.0,
         n_fft=2048,
@@ -56,7 +56,7 @@ async def processor(
         min_amplitude=0.01,
     )
     chunk_grouping = ChunkGrouping(
-        duration_tol=1.5,  # C'est relativement haut, mais les autres filtres affinent bien. 1.5 = durée minimum d'un segment, pour que l'absorption ou non d'un micro segment ne soit pas discriminant
+        duration_tol=1.0,  # C'est relativement haut, mais les autres filtres affinent bien. 1 = durée minimum d'un segment, pour que l'absorption ou non d'un micro segment ne soit pas discriminant
         rms_tol=0.1,
         centroid_tol=0.05,
         zcr_tol=0.1,
@@ -64,7 +64,7 @@ async def processor(
         min_matching_hashes=1,
     )
     fragment_classifier = FragmentsClassifier(
-        repetition_threshold=5,
+        repetition_threshold=3,
     )
 
     params_hash_key = chunk_creator.params_hash()
@@ -75,7 +75,7 @@ async def processor(
 
         await AudioProcessor(
             num_workers=new_workers,
-            segment_segment=segments,
+            segments=segments,
             process_media=process_media,
             max_concurrent_downloads=5,
             max_queue_size=10,

@@ -111,7 +111,7 @@ class ProcessingTask:
 class AudioProcessor:
     def __init__(
         self,
-        segment_segment: Generator[
+        segments: Generator[
             Segment, None, None
         ],  # Function to generate download segments based on input parameters
         process_media: Callable[[Segment, str], bool],
@@ -124,7 +124,7 @@ class AudioProcessor:
         self.queue = asyncio.Queue(maxsize=max_queue_size)
 
         # Materialize the generator to know the total count for progress bars
-        self.segments = list(segment_segment)
+        self.segments = list(segments)
         self.total = len(self.segments)
 
         self.stats = PipelineStats()

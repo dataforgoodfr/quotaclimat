@@ -143,6 +143,58 @@
       border: 1px dashed var(--chunk-border);
       background: var(--chunk-zone);
     }
+
+    /* ─── Audio Player ────────────────────────────────── */
+    .audio-section {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px; padding: 4px 20px 8px;
+    }
+    .audio-player {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .audio-player.side-a { border-color: var(--primary-dim); }
+    .audio-player.side-b { border-color: var(--accent-dim); }
+    .audio-player-row {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .play-btn {
+      background: var(--surface3); border: 1px solid var(--border);
+      border-radius: 4px; color: var(--text); cursor: pointer;
+      font-size: 16px; line-height: 1; padding: 4px 10px;
+      flex-shrink: 0;
+    }
+    .play-btn:hover { background: var(--surface2); }
+    .audio-player.side-a .play-btn { color: var(--primary); }
+    .audio-player.side-b .play-btn { color: var(--accent); }
+    .time-display {
+      font-family: var(--mono); font-size: 11px; color: var(--text3);
+      flex-shrink: 0; min-width: 100px;
+    }
+    .seek-bar {
+      flex: 1; cursor: pointer; height: 4px;
+      accent-color: var(--primary);
+    }
+    .audio-player.side-b .seek-bar { accent-color: var(--accent); }
+    .audio-label {
+      font-size: 12px; font-weight: 600; margin-bottom: 2px;
+    }
+    .audio-player.side-a .audio-label { color: var(--primary); }
+    .audio-player.side-b .audio-label { color: var(--accent); }
+
+    /* ─── Playhead overlay ────────────────────────────── */
+    .canvas-wrapper { position: relative; }
+    .playhead {
+      position: absolute; top: 0; bottom: 0;
+      width: 2px; background: rgba(255,255,255,0.85);
+      pointer-events: none; display: none;
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+    .canvas-wrapper { cursor: crosshair; }
   </style>
 </head>
 
@@ -160,6 +212,7 @@
 
   <div class="meta-section" id="meta-section"></div>
   <div class="diff-section" id="diff-section"></div>
+  <div class="audio-section" id="audio-section"></div>
   <div class="charts-section" id="charts-section"></div>
   <div class="params-section" id="params-section"></div>
 
@@ -419,10 +472,97 @@
       }
     }
 
+    // ── Audio players ──────────────────────────────────
+    const audioA = new Audio(`data:audio/wav;base64,${A.audioBase64}`);
+    const audioB = new Audio(`data:audio/wav;base64,${B.audioBase64}`);
+
+    const playheadsA = [];
+    const playheadsB = [];
+
+    function buildAudioPlayer(chunk, side) {
+      const audio = side === "a" ? audioA : audioB;
+      const color = side === "a" ? "side-a" : "side-b";
+      const label = side === "a" ? "Chunk A" : "Chunk B";
+
+      const player = document.createElement("div");
+      player.className = `audio-player ${color}`;
+
+      const labelEl = document.createElement("div");
+      labelEl.className = "audio-label";
+      labelEl.textContent = `${label} — ${chunk.channel} — ${chunk.window.windowDuration.toFixed(2)}s (±${PADDING}s padding)`;
+      player.appendChild(labelEl);
+
+      const row = document.createElement("div");
+      row.className = "audio-player-row";
+
+      const btn = document.createElement("button");
+      btn.className = "play-btn";
+      btn.textContent = "▶";
+
+      const seekBar = document.createElement("input");
+      seekBar.type = "range";
+      seekBar.className = "seek-bar";
+      seekBar.min = 0;
+      seekBar.max = 1000;
+      seekBar.value = 0;
+      seekBar.step = 1;
+
+      const timeDisplay = document.createElement("div");
+      timeDisplay.className = "time-display";
+      timeDisplay.textContent = "0.00s / —";
+
+      row.appendChild(btn);
+      row.appendChild(seekBar);
+      row.appendChild(timeDisplay);
+      player.appendChild(row);
+
+      // Update playheads and time display
+      function syncUI() {
+        const ratio = audio.duration ? audio.currentTime / audio.duration : 0;
+        const playheads = side === "a" ? playheadsA : playheadsB;
+        for (const ph of playheads) {
+          ph.style.left = (ratio * 100) + "%";
+          ph.style.display = "block";
+        }
+        seekBar.value = Math.round(ratio * 1000);
+        timeDisplay.textContent =
+          `${audio.currentTime.toFixed(2)}s / ${(audio.duration || 0).toFixed(2)}s`;
+      }
+
+      audio.addEventListener("timeupdate", syncUI);
+      audio.addEventListener("loadedmetadata", () => {
+        timeDisplay.textContent = `0.00s / ${audio.duration.toFixed(2)}s`;
+      });
+      audio.addEventListener("ended", () => { btn.textContent = "▶"; });
+
+      btn.addEventListener("click", () => {
+        if (audio.paused) {
+          audio.play();
+          btn.textContent = "⏸";
+        } else {
+          audio.pause();
+          btn.textContent = "▶";
+        }
+      });
+
+      seekBar.addEventListener("input", () => {
+        if (audio.duration) {
+          audio.currentTime = (seekBar.value / 1000) * audio.duration;
+          syncUI();
+        }
+      });
+
+      return player;
+    }
+
+    const audioSection = document.getElementById("audio-section");
+    audioSection.appendChild(buildAudioPlayer(A, "a"));
+    audioSection.appendChild(buildAudioPlayer(B, "b"));
+
     // ── Build all chart rows ───────────────────────────
     const chartsEl = document.getElementById("charts-section");
 
-    function addChartRow(title, drawFn) {
+    function addChartRow(title, drawFn, clickToSeek = false) {
       const row = document.createElement("div");
       row.className = "chart-row";
 
@@ -435,17 +575,45 @@
         const ch = title.includes("Spectrogramme") ? SPEC_H : CHART_H;
         const { canvas, ctx, w, h } = createCanvas(cw, ch);
         drawFn(ctx, chunk, w, h, color);
-        container.appendChild(canvas);
+
+        // Wrapper for playhead overlay
+        const wrapper = document.createElement("div");
+        wrapper.className = "canvas-wrapper";
+        wrapper.appendChild(canvas);
+
+        const playhead = document.createElement("div");
+        playhead.className = "playhead";
+        wrapper.appendChild(playhead);
+
+        if (side === "a") playheadsA.push(playhead);
+        else playheadsB.push(playhead);
+
+        // Click/drag to seek
+        if (clickToSeek) {
+          const audio = side === "a" ? audioA : audioB;
+          function seek(e) {
+            if (!audio.duration) return;
+            const rect = wrapper.getBoundingClientRect();
+            const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            audio.currentTime = ratio * audio.duration;
+          }
+          let dragging = false;
+          wrapper.addEventListener("mousedown", (e) => { dragging = true; seek(e); });
+          window.addEventListener("mousemove", (e) => { if (dragging) seek(e); });
+          window.addEventListener("mouseup", () => { dragging = false; });
+        }
+
+        container.appendChild(wrapper);
         row.appendChild(container);
       }
 
       chartsEl.appendChild(row);
     }
 
-    // 1. Waveform
+    // 1. Waveform (click-to-seek enabled)
     addChartRow("Forme d'onde", (ctx, chunk, w, h, color) => {
       drawWaveform(ctx, chunk.waveform, w, h, color, chunk);
-    });
+    }, true);
 
     // 2. Spectrogram + constellation
     addChartRow("Spectrogramme + Constellation", (ctx, chunk, w, h, color) => {

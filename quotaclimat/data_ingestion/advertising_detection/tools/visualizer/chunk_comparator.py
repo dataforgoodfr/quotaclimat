@@ -28,11 +28,14 @@ Usage programmatique :
 Dépendances : librosa, numpy, scipy (déjà présentes dans le projet)
 """
 
+import base64
+import io
 import json
 from pathlib import Path
 
 import librosa
 import numpy as np
+import scipy.io.wavfile
 from scipy.ndimage import maximum_filter, maximum_filter1d, uniform_filter1d
 
 from quotaclimat.data_ingestion.advertising_detection.e02_create_chunks import (
@@ -44,6 +47,14 @@ TEMPLATE_PATH = Path(__file__).parent / "chunk_comparator.html"
 
 # Nombre max de points pour la forme d'onde (downsampling pour le HTML)
 _MAX_WAVEFORM_POINTS = 2000
+
+
+def _audio_to_base64(y: np.ndarray, sr: int) -> str:
+    """Encode a float32 mono audio array as a base64-encoded WAV (int16)."""
+    buf = io.BytesIO()
+    y_int16 = np.clip(y * 32767.0, -32768, 32767).astype(np.int16)
+    scipy.io.wavfile.write(buf, sr, y_int16)
+    return base64.b64encode(buf.getvalue()).decode("ascii")
 # Nombre max de bins fréquentiels pour le spectrogramme
 _MAX_FREQ_BINS = 128
 
@@ -212,6 +223,8 @@ def _extract_chunk_data(
             "nTime": D_norm.shape[1],
         },
         "constellationPeaks": constellation_peaks,
+        # Audio embarqué (fenêtre paddée, WAV mono int16 en base64)
+        "audioBase64": _audio_to_base64(y, cc.sr),
     }
 
 

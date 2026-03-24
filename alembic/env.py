@@ -70,11 +70,11 @@ def run_migrations_online() -> None:
 
     """
     url_tokens = {
-      "POSTGRES_USER": os.getenv("POSTGRES_USER",""),
-      "POSTGRES_DB": os.getenv("POSTGRES_DB",""),
-      "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD",""),
-      "POSTGRES_HOST": os.getenv("POSTGRES_HOST",""),
-      "POSTGRES_PORT": os.getenv("POSTGRES_PORT","")
+        "POSTGRES_USER": os.getenv("POSTGRES_USER", "user"),
+        "POSTGRES_DB": os.getenv("POSTGRES_DB", "barometre"),
+        "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD", "password"),
+        "POSTGRES_HOST": os.getenv("POSTGRES_HOST", "localhost"),
+        "POSTGRES_PORT": os.getenv("POSTGRES_PORT", "5432"),
     }
 
     url = config.get_main_option("sqlalchemy.url")

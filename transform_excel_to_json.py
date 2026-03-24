@@ -455,7 +455,7 @@ with open(output_file, "w", encoding="utf-8") as f:
         + json.dumps(theme_keywords, ensure_ascii=False, indent=4)
         .replace("null", "None")
         .replace("true", "True")
-        .replace("false", "False")
+        .replace(" false,", "False,")
     )
 
 

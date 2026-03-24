@@ -99,9 +99,7 @@ def _extract_chunk_data(
     silence_threshold = np.percentile(energy, cc.silence_percentile)
     silence_mask = (energy < silence_threshold).astype(float)
     dilation_frames = max(1, int(0.1 * fps))
-    silence_mask_dilated = maximum_filter1d(
-        silence_mask, size=dilation_frames * 2 + 1
-    )
+    silence_mask_dilated = maximum_filter1d(silence_mask, size=dilation_frames * 2 + 1)
 
     # ── Cosine dissimilarity ────────────────────────────
     centroid_max = centroid.max() if centroid.max() > 0 else 1.0
@@ -243,7 +241,7 @@ def generate_chunk_comparator(
     cc = chunk_creator or ChunkCreator()
 
     if not TEMPLATE_PATH.exists():
-        raise FileNotFoundError(f"Template HTML introuvable : {TEMPLATE_PATH}")
+        raise FileNotFoundError(f"Template HTML introuvable : {str(TEMPLATE_PATH)}")
 
     data_a = _extract_chunk_data(
         chunk_a, audio_a_path, segment_a_start_epoch, cc, padding_sec

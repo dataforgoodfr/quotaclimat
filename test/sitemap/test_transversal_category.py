@@ -10,8 +10,6 @@ from quotaclimat.data_processing.mediatree.keyword.macro_category import (
 
 def test_macro_category():
     """ Check that there is no duplicate keyword in the macro category """
-    keywords = [category["keyword"] for category in MACRO_CATEGORIES]
-    print(len(keywords))
-    print(len(set(keywords)))
+    keywords = pd.DataFrame.from_records(MACRO_CATEGORIES)
 
-    assert len(keywords) == len(set(keywords)), "There is a duplicate keyword in the macro category"
+    assert len(keywords) == len(keywords.drop_duplicates()), "There is a duplicate keyword in the macro category"

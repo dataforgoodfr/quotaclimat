@@ -106,12 +106,14 @@ class DictionaryProcessor:
         sheet_name: str,
         file_language: str,
         dictionary_language: str,
+        use_hrfp: bool = False
     ):
         df = pd.read_excel(source, sheet_name=sheet_name, engine="openpyxl")
         self.df = df[DICTIONARY_COLUMNS[file_language]]
         self.file_language = file_language
         self.theme_column = DICTIONARY_COLUMNS[file_language][1]
         self.dictionary_language = dictionary_language
+        self.use_hrfp = use_hrfp
 
     def process(self):
         THEME_KEYWORDS = {}
@@ -130,7 +132,7 @@ class DictionaryProcessor:
                 row[DICTIONARY_COLUMNS[self.file_language][3]]
                 == DICTIONARY_CATEGORIES[self.file_language][2]
             )
-            high_risk_of_false_positive = row["HRFP"] == 1.0
+            high_risk_of_false_positive = row["HRFP"] == 1.0 if self.use_hrfp else False
             solution = "solution" in row[self.theme_column]
             consequence = "consequence" in row[self.theme_column]
             cause = "cause" in row[self.theme_column]
@@ -144,6 +146,9 @@ class DictionaryProcessor:
 
             if high_risk_of_false_positive and not theme_name.endswith("_indirectes"):
                 theme_name = theme_name + "_indirectes"
+
+            if not self.use_hrfp and theme_name.endswith("_indirectes"):
+                theme_name = theme_name.replace("_indirectes", "")
 
             if theme_name not in THEME_KEYWORDS:
                 print(f"Found new theme {theme_name}")
@@ -226,8 +231,8 @@ class i18nDictionaryProcessor:
     def __init__(self, source: str, sheet_name: Union[str, int]):
         self.french = "French"
         self.english = "English"
-        # self.german = "German"
-        # self.spanish = "Spanish"
+        self.german = "German"
+        self.spanish = "Spanish"
         self.portuguese = "Portuguese"
         self.polish = "Polish"
         self.danish = "Danish"
@@ -277,16 +282,16 @@ class i18nDictionaryProcessor:
                 if pd.isna(row.get(self.english))
                 else TranslatedKeyword(self.english.lower(), row.get(self.english))
             )
-            # keyword_german = (
-            #     None
-            #     if pd.isna(row.get(self.german))
-            #     else TranslatedKeyword(self.german.lower(), row.get(self.german))
-            # )
-            # keyword_spanish = (
-            #     None
-            #     if pd.isna(row.get(self.spanish))
-            #     else TranslatedKeyword(self.spanish.lower(), row.get(self.spanish))
-            # )
+            keyword_german = (
+                None
+                if pd.isna(row.get(self.german))
+                else TranslatedKeyword(self.german.lower(), row.get(self.german))
+            )
+            keyword_spanish = (
+                None
+                if pd.isna(row.get(self.spanish))
+                else TranslatedKeyword(self.spanish.lower(), row.get(self.spanish))
+            )
             keyword_portuguese = (
                 None
                 if pd.isna(row.get(self.portuguese))
@@ -330,8 +335,8 @@ class i18nDictionaryProcessor:
                 THEME_KEYWORDS[theme_name] = []
             keywords_list = [
                 keyword_english,
-                # keyword_german,
-                # keyword_spanish,
+                keyword_german,
+                keyword_spanish,
                 keyword_portuguese,
                 keyword_polish,
                 keyword_danish,
@@ -392,25 +397,27 @@ french_processor = DictionaryProcessor(
     sheet_name="Catégorisation Finale",
     file_language="french",
     dictionary_language="french",
+    use_hrfp=True,
 )
 dutch_processor = DictionaryProcessor(
     source="document-experts/Dictionary_OME_Dutch.xlsx",
     sheet_name="Final Categorization",
     file_language="english",
     dictionary_language="dutch",
+    use_hrfp=True,
 )
-spanish_processor = DictionaryProcessor(
-    source="document-experts/Dictionary_OME_Spanish.xlsx",
-    sheet_name="Final Categorization",
-    file_language="english",
-    dictionary_language="spanish",
-)
-german_processor = DictionaryProcessor(
-    source="document-experts/Dictionary_OME_German.xlsx",
-    sheet_name="Final Categorization",
-    file_language="english",
-    dictionary_language="german",
-)
+# spanish_processor = DictionaryProcessor(
+#     source="document-experts/Dictionary_OME_Spanish.xlsx",
+#     sheet_name="Final Categorization",
+#     file_language="english",
+#     dictionary_language="spanish",
+# )
+# german_processor = DictionaryProcessor(
+#     source="document-experts/Dictionary_OME_German_HRFP.xlsx",
+#     sheet_name="Final Categorization",
+#     file_language="english",
+#     dictionary_language="german",
+# )
 i18n_processor = i18nDictionaryProcessor(
     source="document-experts/Dictionnaire_Multilingue.xlsx",
     sheet_name=0,  # "Multilingual_dictionnary_without_HRFP"
@@ -418,14 +425,14 @@ i18n_processor = i18nDictionaryProcessor(
 
 french_keywords = french_processor.process()
 dutch_keywords = dutch_processor.process()
-spanish_keywords = spanish_processor.process()
-german_keywords = german_processor.process()
+# spanish_keywords = spanish_processor.process()
+# german_keywords = german_processor.process()
 i18n_keywords = i18n_processor.process()
 themes = set(
     list(french_keywords.keys())
     + list(dutch_keywords.keys())
-    + list(spanish_keywords.keys())
-    + list(german_keywords.keys())
+    # + list(spanish_keywords.keys())
+    # + list(german_keywords.keys())
     + list(i18n_keywords.keys())
 )
 theme_keywords = {}
@@ -433,8 +440,8 @@ for theme in themes:
     theme_keywords[theme] = sorted(
         french_keywords.get(theme, [])
         + dutch_keywords.get(theme, [])
-        + spanish_keywords.get(theme, [])
-        + german_keywords.get(theme, [])
+        # + spanish_keywords.get(theme, [])
+        # + german_keywords.get(theme, [])
         + i18n_keywords.get(theme, []),
         key=lambda x: x["keyword"],
     )
@@ -464,29 +471,29 @@ dutch_macro_categories_processor = MacroCategoryProcessor(
     file_language="english",
     dictionary_language="dutch",
 )
-spanish_macro_categories_processor = MacroCategoryProcessor(
-    source="document-experts/Dictionary_OME_Spanish.xlsx",
-    sheet_name="Cross-cutting Categories",
-    file_language="english",
-    dictionary_language="spanish",
-)
-german_macro_categories_processor = MacroCategoryProcessor(
-    source="document-experts/Dictionary_OME_German.xlsx",
-    sheet_name="Cross-cutting Categories",
-    file_language="english",
-    dictionary_language="german",
-)
+# spanish_macro_categories_processor = MacroCategoryProcessor(
+#     source="document-experts/Dictionary_OME_Spanish.xlsx",
+#     sheet_name="Cross-cutting Categories",
+#     file_language="english",
+#     dictionary_language="spanish",
+# )
+# german_macro_categories_processor = MacroCategoryProcessor(
+#     source="document-experts/Dictionary_OME_German_HRFP.xlsx",
+#     sheet_name="Cross-cutting Categories",
+#     file_language="english",
+#     dictionary_language="german",
+# )
 
 french_macro_categories = french_macro_categories_processor.process()
 dutch_macro_categories = dutch_macro_categories_processor.process()
-spanish_macro_categories = spanish_macro_categories_processor.process()
-german_macro_categories = german_macro_categories_processor.process()
+# spanish_macro_categories = spanish_macro_categories_processor.process()
+# german_macro_categories = german_macro_categories_processor.process()
 
 macro_categories = (
     french_macro_categories
     + dutch_macro_categories
-    + spanish_macro_categories
-    + german_macro_categories
+    # + spanish_macro_categories
+    # + german_macro_categories
 )
 with open(output_file_macro_category, "w", encoding="utf-8") as f:
     logging.info(

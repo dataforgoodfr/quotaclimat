@@ -61,7 +61,7 @@ class _InternalFragment:
     start_sec: float
     end_sec: float
     classification: FragmentClassification
-    group_index: int | None
+    group_id: str | None
     chunks: list[Chunk]
 
 
@@ -93,7 +93,7 @@ class FragmentsClassifier:
                         start_sec=occ.start_sec,
                         end_sec=occ.end_sec,
                         classification="content",
-                        group_index=None,
+                        group_id=None,
                         chunks=[occ],
                     )
                 )
@@ -107,7 +107,7 @@ class FragmentsClassifier:
                             start_sec=occ.start_sec,
                             end_sec=occ.end_sec,
                             classification=classification,
-                            group_index=index,
+                            group_id=f"group_{index}",
                             chunks=[occ],
                         )
                     )
@@ -123,7 +123,7 @@ class FragmentsClassifier:
         for i, fragment in enumerate(fragments):
             if (
                 fragment.classification in ("already_known_ad", "new_ad")
-                or fragment.group_index is not None
+                or fragment.group_id is not None
             ):
                 ad_in_the_block = fragment.classification in (
                     "already_known_ad",
@@ -134,7 +134,7 @@ class FragmentsClassifier:
                     next_fragment = fragments[j]
                     if (
                         next_fragment.classification in ("already_known_ad", "new_ad")
-                        or next_fragment.group_index is not None
+                        or next_fragment.group_id is not None
                     ):
                         ad_in_the_block = (
                             ad_in_the_block
@@ -225,11 +225,7 @@ class FragmentsClassifier:
                     channel=fragment.chunks[0].channel,
                     classification=fragment.classification,
                     chunks=fragment.chunks,
-                    group_id=(
-                        f"g-{fragment.group_index}"
-                        if fragment.group_index is not None
-                        else None
-                    ),
+                    group_id=fragment.group_id,
                 )
             )
         return output_fragments
@@ -240,90 +236,92 @@ class FragmentsClassifier:
         """This function will merge groups, of which fragments are almost always continous.
         For each group, we will look at all the groups that are following the segments of the group.
         Depending on the repartition of those groups, we will merge the most represented group with the current one."""
-        groups_to_merge: list[tuple[int, int]] = []
+        groups_to_merge: list[tuple[str, str]] = []
 
-        groups_fragment_index: dict[int, list[int]] = {}
+        groups_fragment_index: dict[str, list[int]] = {}
         for index, fragment in enumerate(fragments):
-            if fragment.group_index is not None:
-                if fragment.group_index not in groups_fragment_index:
-                    groups_fragment_index[fragment.group_index] = []
-                groups_fragment_index[fragment.group_index].append(index)
+            if fragment.group_id is not None:
+                if fragment.group_id not in groups_fragment_index:
+                    groups_fragment_index[fragment.group_id] = []
+                groups_fragment_index[fragment.group_id].append(index)
 
-        for group_index, fragment_indexes in groups_fragment_index.items():
+        for group_id, fragment_indexes in groups_fragment_index.items():
             following_groups_count = self._get_group_repartition_following(
                 fragments, fragment_indexes
             )
 
-            if len(following_groups_count) == 1 and (-1 not in following_groups_count):
-                most_followed_group_index = list(following_groups_count.keys())[0]
-                preceeding_most_followed_group_index = (
+            if len(following_groups_count) == 1 and (
+                "none" not in following_groups_count
+            ):
+                most_followed_group_id = list(following_groups_count.keys())[0]
+                preceeding_most_followed_group_id = (
                     self._get_group_repartition_preceeding(
-                        fragments, groups_fragment_index[most_followed_group_index]
+                        fragments, groups_fragment_index[most_followed_group_id]
                     )
                 )
-                if len(preceeding_most_followed_group_index) == 1 and (
-                    -1 not in preceeding_most_followed_group_index
+                if len(preceeding_most_followed_group_id) == 1 and (
+                    "none" not in preceeding_most_followed_group_id
                 ):
-                    most_preceeding_followed_group_index = list(
-                        preceeding_most_followed_group_index.keys()
+                    most_preceeding_followed_group_id = list(
+                        preceeding_most_followed_group_id.keys()
                     )[0]
-                    if most_preceeding_followed_group_index != group_index:
+                    if most_preceeding_followed_group_id != group_id:
                         logger.error(
-                            f"Preceeding group index repartition for group {most_followed_group_index} is {preceeding_most_followed_group_index}, while following group index repartition for group {group_index} is {following_groups_count}. Not merging those groups because of this incoherence."
+                            f"Preceeding group index repartition for group {most_followed_group_id} is {preceeding_most_followed_group_id}, while following group index repartition for group {group_id} is {following_groups_count}. Not merging those groups because of this incoherence."
                         )
                     else:
                         logger.debug(
-                            f"Merging group {group_index} with group {most_followed_group_index}"
+                            f"Merging group {group_id} with group {most_followed_group_id} because all the following fragments of group {group_id} are in group {most_followed_group_id}, and all the preceeding fragments of group {most_followed_group_id} are in group {group_id}."
                         )
-                        groups_to_merge.append((group_index, most_followed_group_index))
-                elif len(preceeding_most_followed_group_index) == 2:
-                    most_preceeding_followed_group_index = max(
-                        preceeding_most_followed_group_index,
-                        key=preceeding_most_followed_group_index.get,
+                        groups_to_merge.append((group_id, most_followed_group_id))
+                elif len(preceeding_most_followed_group_id) == 2:
+                    most_preceeding_followed_group_id = max(
+                        preceeding_most_followed_group_id,
+                        key=preceeding_most_followed_group_id.get,
                     )
-                    less_preceeding_followed_group_index = min(
-                        preceeding_most_followed_group_index,
-                        key=preceeding_most_followed_group_index.get,
+                    less_preceeding_followed_group_id = min(
+                        preceeding_most_followed_group_id,
+                        key=preceeding_most_followed_group_id.get,
                     )
                     if (
-                        preceeding_most_followed_group_index[
-                            most_preceeding_followed_group_index
+                        preceeding_most_followed_group_id[
+                            most_preceeding_followed_group_id
                         ]
                         / (
-                            preceeding_most_followed_group_index[
-                                less_preceeding_followed_group_index
+                            preceeding_most_followed_group_id[
+                                less_preceeding_followed_group_id
                             ]
-                            + preceeding_most_followed_group_index[
-                                most_preceeding_followed_group_index
+                            + preceeding_most_followed_group_id[
+                                most_preceeding_followed_group_id
                             ]
                         )
                         >= 0.8
                     ):
                         logger.warning(
-                            f"Preceeding group index repartition for group {most_followed_group_index} is {preceeding_most_followed_group_index}, while following group index repartition for group {group_index} is {following_groups_count}. Not merging those groups because of this incoherence, even if there is a majority in the following repartition, because of the significant presence of the other group in the preceeding repartition."
+                            f"Preceeding group index repartition for group {most_followed_group_id} is {preceeding_most_followed_group_id}, while following group index repartition for group {group_id} is {following_groups_count}. Not merging those groups because of this incoherence, even if there is a majority in the following repartition, because of the significant presence of the other group in the preceeding repartition."
                         )
             elif len(following_groups_count) == 2:
-                most_followed_group_index = max(
+                most_followed_group_id = max(
                     following_groups_count, key=following_groups_count.get
                 )
-                less_followed_group_index = min(
+                less_followed_group_id = min(
                     following_groups_count, key=following_groups_count.get
                 )
                 if (
-                    following_groups_count[most_followed_group_index]
+                    following_groups_count[most_followed_group_id]
                     / (
-                        following_groups_count[less_followed_group_index]
-                        + following_groups_count[most_followed_group_index]
+                        following_groups_count[less_followed_group_id]
+                        + following_groups_count[most_followed_group_id]
                     )
                     >= 0.8
                 ):
                     logger.warning(
-                        f"Not merging group {group_index} with group {most_followed_group_index} because it is followed in {following_groups_count[most_followed_group_index]} cases out of {following_groups_count[less_followed_group_index] + following_groups_count[most_followed_group_index]}"
+                        f"Not merging group {group_id} with group {most_followed_group_id} because it is followed in {following_groups_count[most_followed_group_id]} cases out of {following_groups_count[less_followed_group_id] + following_groups_count[most_followed_group_id]}"
                     )
 
-        for group_index_to_merge, group_index_to_merge_with in groups_to_merge:
+        for group_id_to_merge, group_id_to_merge_with in groups_to_merge:
             fragments = self._merge_groups(
-                fragments, group_index_to_merge, group_index_to_merge_with
+                fragments, group_id_to_merge, group_id_to_merge_with
             )
         return fragments
 
@@ -339,14 +337,14 @@ class FragmentsClassifier:
                 if (
                     next_fragment.start_sec - fragment.end_sec <= 1.0
                 ):  # If the next fragment is within 1 second after the current one
-                    next_group_index = next_fragment.group_index
-                    if next_group_index is None:
-                        next_group_index = (
-                            -1
-                        )  # We use -1 to represent fragments without group
-                    if next_group_index not in following_groups_count:
-                        following_groups_count[next_group_index] = 0
-                    following_groups_count[next_group_index] += 1
+                    next_group_id = next_fragment.group_id
+                    if next_group_id is None:
+                        next_group_id = (
+                            "none"  # We use "none" to represent fragments without group
+                        )
+                    if next_group_id not in following_groups_count:
+                        following_groups_count[next_group_id] = 0
+                    following_groups_count[next_group_id] += 1
         return following_groups_count
 
     def _get_group_repartition_preceeding(
@@ -361,31 +359,31 @@ class FragmentsClassifier:
                 if (
                     fragment.start_sec - previous_fragment.end_sec <= 1.0
                 ):  # If the previous fragment is within 1 second before the current one
-                    previous_group_index = previous_fragment.group_index
-                    if previous_group_index is None:
-                        previous_group_index = (
-                            -1
-                        )  # We use -1 to represent fragments without group
-                    if previous_group_index not in preceding_groups_count:
-                        preceding_groups_count[previous_group_index] = 0
-                    preceding_groups_count[previous_group_index] += 1
+                    previous_group_id = previous_fragment.group_id
+                    if previous_group_id is None:
+                        previous_group_id = (
+                            "none"  # We use "none" to represent fragments without group
+                        )
+                    if previous_group_id not in preceding_groups_count:
+                        preceding_groups_count[previous_group_id] = 0
+                    preceding_groups_count[previous_group_id] += 1
         return preceding_groups_count
 
     def _merge_groups(
         self,
         fragments: list[_InternalFragment],
-        group_index_to_merge: int,
-        group_index_to_merge_with: int,
+        group_id_to_merge: int,
+        group_id_to_merge_with: int,
     ) -> None:
         """Here we keep the second index to be sure it can later be merged with another group"""
         new_fragments = []
         i = 0
         while i < len(fragments):
             fragment = fragments[i]
-            if fragment.group_index == group_index_to_merge:
+            if fragment.group_id == group_id_to_merge:
                 if i < len(fragments) - 1:
                     next_fragment = fragments[i + 1]
-                    if next_fragment.group_index == group_index_to_merge_with:
+                    if next_fragment.group_id == group_id_to_merge_with:
                         new_fragments.append(
                             _InternalFragment(
                                 start_sec=fragment.start_sec,
@@ -394,21 +392,21 @@ class FragmentsClassifier:
                                     fragment.classification,
                                     next_fragment.classification,
                                 ),
-                                group_index=group_index_to_merge_with,
+                                group_id=group_id_to_merge_with,
                                 chunks=fragment.chunks + next_fragment.chunks,
                             )
                         )
                         i += 2
                         continue
                 new_fragments.append(fragment)  # we keep the original group id
-            elif fragment.group_index == group_index_to_merge_with:
+            elif fragment.group_id == group_id_to_merge_with:
                 # It has not been merged with the previous one, we remove the group id to avoid future incoherence
                 new_fragments.append(
                     _InternalFragment(
                         start_sec=fragment.start_sec,
                         end_sec=fragment.end_sec,
                         classification=fragment.classification,
-                        group_index=None,
+                        group_id=None,
                         chunks=fragment.chunks,
                     )
                 )

@@ -259,6 +259,36 @@
       text-align: center;
     }
 
+    /* ─── Focus bar ──────────────────────────────────────── */
+    #focus-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0 8px;
+      height: 28px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-family: var(--mono);
+      width: 170px;
+      transition: border-color 0.15s;
+    }
+
+    #focus-input:focus {
+      outline: none;
+      border-color: var(--primary-dim);
+    }
+
+    #focus-input.error {
+      border-color: var(--danger);
+    }
+
+    #focus-separator {
+      color: var(--border);
+      font-size: 18px;
+      line-height: 1;
+      margin: 0 2px;
+    }
+
     /* ─── Canvas Area ────────────────────────────────── */
     #canvas-area {
       flex: 1;
@@ -595,6 +625,9 @@
       <button class="nav-btn" id="pan-left" title="Gauche (←)">◀</button>
       <button class="nav-btn" id="pan-right" title="Droite (→)">▶</button>
       <button class="nav-btn" id="fit-all" title="Vue complète (F)">⊞</button>
+      <span id="focus-separator">│</span>
+      <input id="focus-input" type="text" placeholder="Epoch ou groupe ID…" title="Focus sur un fragment par epoch (ex: 1700000000) ou groupe ID" />
+      <button class="nav-btn" id="focus-btn" title="Focus (Entrée)">⌖</button>
     </div>
   </nav>
 
@@ -1441,6 +1474,11 @@
         document.getElementById("params-panel").classList.toggle("open");
       });
 
+      document.getElementById("focus-btn").addEventListener("click", handleFocusInput);
+      document.getElementById("focus-input").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); handleFocusInput(); }
+      });
+
       // ───────────────────────────────────────────────────────────
       //  Initialize
       // ───────────────────────────────────────────────────────────
@@ -1529,6 +1567,61 @@
         // Resize
         window.addEventListener("resize", resizeAll);
         resizeAll();
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Focus / Jump
+      // ───────────────────────────────────────────────────────────
+
+      // Index: first fragment per group (by earliest absStart)
+      const fragByGroupId = {};
+      FRAGMENTS.forEach(f => {
+        if (f.groupId !== null && f.groupId !== undefined) {
+          if (!fragByGroupId[f.groupId] || f.absStart < fragByGroupId[f.groupId].absStart) {
+            fragByGroupId[f.groupId] = f;
+          }
+        }
+      });
+
+      function focusFragment(frag) {
+        const dur = frag.absEnd - frag.absStart;
+        const center = (frag.absStart + frag.absEnd) / 2;
+        // Show ~10x the fragment duration, minimum 2 minutes
+        const span = Math.max(dur * 10, 120);
+        viewStart = center - span / 2;
+        viewEnd = center + span / 2;
+        clampView();
+        render();
+        updateDayButtons();
+        showDetail(frag);
+      }
+
+      function handleFocusInput() {
+        const raw = document.getElementById("focus-input").value.trim();
+        const inputEl = document.getElementById("focus-input");
+        inputEl.classList.remove("error");
+        if (!raw) return;
+
+        const asNum = parseFloat(raw);
+
+        // Heuristic: epoch timestamps in seconds are > 1e9 (post-2001)
+        if (!isNaN(asNum) && asNum > 1e9) {
+          // Find fragment whose absStart is closest to the given epoch
+          let best = null, bestDist = Infinity;
+          FRAGMENTS.forEach(f => {
+            const dist = Math.abs(f.absStart - asNum);
+            if (dist < bestDist) { bestDist = dist; best = f; }
+          });
+          if (best) { focusFragment(best); return; }
+        }
+
+        // Try as group ID (string key first, then numeric)
+        if (fragByGroupId[raw]) { focusFragment(fragByGroupId[raw]); return; }
+        if (!isNaN(asNum) && fragByGroupId[asNum]) { focusFragment(fragByGroupId[asNum]); return; }
+
+        // Not found
+        inputEl.classList.add("error");
+        setTimeout(() => inputEl.classList.remove("error"), 1500);
       }
 
       function updateDayButtons() {

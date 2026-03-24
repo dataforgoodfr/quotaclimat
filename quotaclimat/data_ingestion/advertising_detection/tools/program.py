@@ -1,4 +1,5 @@
 import json
+import os
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -28,7 +29,16 @@ class Show:
 
 
 def get_program() -> list[Show]:
-    with open("postgres/program_metadata.json", "r", encoding="utf-8") as f:
+    program_metadata_path = os.path.join(
+        os.path.dirname(__file__),
+        "..",
+        "..",
+        "..",
+        "..",
+        "postgres",
+        "program_metadata.json",
+    )
+    with open(program_metadata_path, "r", encoding="utf-8") as f:
         for program in json.load(f):
             yield Show(
                 channel_name=program["channel_name"],

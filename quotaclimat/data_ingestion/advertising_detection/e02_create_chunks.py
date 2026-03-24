@@ -199,14 +199,23 @@ class ChunkCreator:
         return cosine_dissim
 
     def _detect_peaks(
-        self, silence_mask: np.ndarray, cosine_dissim: np.ndarray
+        self,
+        silence_mask: np.ndarray,
+        cosine_dissim: np.ndarray,
+        energy: np.ndarray,
     ) -> np.ndarray:
         """
-        Combine both signals and find peaks.
+        Find cut points at the deepest silence in each boundary region.
 
-        novelty = silence_mask × cosine_dissim
-        → Only silent frames can produce peaks, and their height
-          reflects how much the content changes at that point.
+        1. Compute novelty = silence × cosine_dissim to locate candidate
+           boundary regions.
+        2. Find all local maxima above threshold, then enforce the minimum
+           distance constraint **deterministically**: candidates are selected
+           in decreasing novelty order (ties broken by earlier index), so the
+           result depends only on the signal values, not on processing order.
+        3. Snap each selected candidate to the frame of minimum energy
+           (deepest silence) within a ±0.5 s window.  np.argmin returns the
+           first occurrence for ties, guaranteeing reproducibility.
         """
         novelty = silence_mask * cosine_dissim
 
@@ -216,9 +225,42 @@ class ChunkCreator:
         min_dist_frames = int(self.min_chunk_sec * self._fps)
         threshold = np.percentile(novelty, 100 * (1 - self.sensitivity))
 
-        peaks, _ = find_peaks(novelty, height=threshold, distance=min_dist_frames)
+        # Collect all candidate peaks above threshold (no distance filter yet).
+        all_peaks, _ = find_peaks(novelty, height=threshold)
 
-        return peaks / self._fps
+        if len(all_peaks) == 0:
+            return np.array([], dtype=float)
+
+        # Enforce minimum distance deterministically:
+        # process candidates in order of decreasing novelty height;
+        # for equal heights the earlier (smaller index) candidate wins.
+        peak_heights = novelty[all_peaks]
+        # lexsort: primary key = -height (descending), secondary = index (ascending)
+        sort_order = np.lexsort((all_peaks, -peak_heights))
+        sorted_peaks = all_peaks[sort_order]
+
+        selected: list[int] = []
+        for p in sorted_peaks:
+            if all(abs(p - s) >= min_dist_frames for s in selected):
+                selected.append(int(p))
+
+        selected_arr = np.array(sorted(selected), dtype=int)
+
+        # Snap each selected peak to the minimum-energy frame in a local window
+        # so that cuts land on the deepest silence, not the novelty maximum.
+        snap_frames = max(1, int(0.5 * self._fps))
+        snapped: list[int] = []
+        for p in selected_arr:
+            lo = max(0, p - snap_frames)
+            hi = min(len(energy), p + snap_frames + 1)
+            # argmin is deterministic: returns the first occurrence of the minimum
+            min_offset = int(np.argmin(energy[lo:hi]))
+            snapped.append(lo + min_offset)
+
+        # Remove duplicates that can arise after snapping, keep sorted order
+        snapped_unique = sorted(set(snapped))
+
+        return np.array(snapped_unique, dtype=float) / self._fps
 
     def _extract_peaks(self, y_seg: np.ndarray) -> list:
         """Extract constellation map peaks from a chunk's audio."""
@@ -322,7 +364,7 @@ class ChunkCreator:
         # Step 2: measure content change at each frame
         cosine_dissim = self._compute_cosine_dissimilarity(features["stack"])
         # Combine and find peaks
-        peaks_sec = self._detect_peaks(silence_mask, cosine_dissim)
+        peaks_sec = self._detect_peaks(silence_mask, cosine_dissim, features["energy"])
 
         return self.build_chunks(
             peaks_sec,

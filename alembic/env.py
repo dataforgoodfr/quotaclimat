@@ -1,12 +1,13 @@
+import os
+import re
 from logging.config import fileConfig
 
 from sqlalchemy import create_engine
+
+from alembic import context
+from postgres.schemas.advertising.models import AdvertisingBase
 from postgres.schemas.base import Base
 from quotaclimat.data_ingestion.labelstudio.models import TargetBase
-from alembic import context
-
-import re
-import os
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -21,7 +22,8 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = [Base.metadata, TargetBase.metadata]
+target_metadata = [Base.metadata, TargetBase.metadata, AdvertisingBase.metadata]
+
 
 # from https://stackoverflow.com/a/63672522/3535853
 # https://alembic.sqlalchemy.org/en/latest/cookbook.html#don-t-generate-any-drop-table-directives-with-autogenerate
@@ -30,7 +32,8 @@ def include_object(object, name, type_, reflected, compare_to):
         return False
     else:
         return True
-    
+
+
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
@@ -55,7 +58,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        include_object=include_object
+        include_object=include_object,
     )
 
     with context.begin_transaction():
@@ -89,11 +92,12 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             compare_type=True,
             compare_server_default=True,
-            include_object=include_object
+            include_object=include_object,
         )
 
         with context.begin_transaction():
             context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()

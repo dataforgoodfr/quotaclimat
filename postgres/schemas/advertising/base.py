@@ -1,4 +1,5 @@
-from sqlalchemy.orm import MetaData, declarative_base
+from sqlalchemy import MetaData
+from sqlalchemy.orm import declarative_base
 
 metadata = MetaData(schema="advertising")
 

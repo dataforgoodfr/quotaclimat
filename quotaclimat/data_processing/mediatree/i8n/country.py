@@ -152,11 +152,16 @@ BELGIUM = CountryMediaTree(code=BELGIUM_CODE,channels=BELGIUM_CHANNELS, timezone
 
 BELGIUM_FLANDERS_CODE : BelgiumCode = "bel-fla"
 BELGIUM_FLANDERS_CHANNELS= [
-
+    "canvas",
+    "radio-2",
+    "vtm",
+    "radio-1",
+    "stu-bru",
+    "qmusic",
+    "play",
+    "vrt1",
 ]
-BELGIUM_FLANDERS_CHANNELS_MEDIATREE = [
 
-]
 BELGIUM_FLANDERS_TZ = "Europe/Brussels"
 BELGIUM_FLANDERS_LANGUAGE = "dutch"
 BELGIUM_FLANDERS = CountryMediaTree(code=BELGIUM_FLANDERS_CODE,channels=BELGIUM_FLANDERS_CHANNELS, timezone=BELGIUM_FLANDERS_TZ, language=BELGIUM_FLANDERS_LANGUAGE, programs=channels_programs_belgium_flanders, titles=channel_titles_belgium_flanders)
@@ -233,6 +238,7 @@ COUNTRIES = {
     GERMANY.code: GERMANY,
     BRAZIL.code: BRAZIL,
     BELGIUM.code: BELGIUM,
+    BELGIUM_FLANDERS.code: BELGIUM_FLANDERS,
     SPAIN.code: SPAIN,
     POLAND.code: POLAND,
 }
@@ -259,7 +265,7 @@ def get_all_countries(no_belgium = False):
 
 def validate_country_code(code: str) -> CountryCode:
     """Validate that a string is a valid country code."""
-    if code in (FRANCE_CODE, GERMANY_CODE, BRAZIL_CODE, BELGIUM_CODE, POLAND_CODE, SPAIN_CODE, ALL_COUNTRIES_CODE):
+    if code in (FRANCE_CODE, GERMANY_CODE, BRAZIL_CODE, BELGIUM_CODE, BELGIUM_FLANDERS_CODE, POLAND_CODE, SPAIN_CODE, ALL_COUNTRIES_CODE):
         return code
     raise ValueError(f"Invalid country code: {code}")
 

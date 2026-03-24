@@ -140,7 +140,7 @@ def is_word_in_sentence_fr(words: str, sentence: str) -> bool :
         logging.debug(f"words {words} found in {sentence}")
         return True
     else:
-        return ""
+        return False
 
 
 def get_lemmas(text, lang):

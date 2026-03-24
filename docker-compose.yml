@@ -1,5 +1,6 @@
 services:
   test:
+    shm_size: 6gb
     build:
       context: ./
       dockerfile: Dockerfile

@@ -17,8 +17,7 @@ from typing import List, Tuple
 
 import librosa
 import numpy as np
-from scipy.ndimage import maximum_filter, maximum_filter1d, uniform_filter1d
-from scipy.signal import find_peaks
+from scipy.ndimage import maximum_filter, maximum_filter1d
 
 from .e00_partition_window import Segment
 
@@ -199,26 +198,69 @@ class ChunkCreator:
         return cosine_dissim
 
     def _detect_peaks(
-        self, silence_mask: np.ndarray, cosine_dissim: np.ndarray
+        self, silence_mask: np.ndarray, cosine_dissim: np.ndarray,
+        energy: np.ndarray,
     ) -> np.ndarray:
         """
-        Combine both signals and find peaks.
+        Deterministic boundary detection anchored on deepest silences.
 
-        novelty = silence_mask × cosine_dissim
-        → Only silent frames can produce peaks, and their height
-          reflects how much the content changes at that point.
+        1. Find contiguous silence regions from the binary silence mask.
+        2. In each region, pick the frame with the lowest energy (deepest
+           silence point) — this is purely local and deterministic.
+        3. Score each candidate by the cosine dissimilarity at that frame
+           (secondary criterion: does the content actually change here?).
+        4. Keep only the top candidates (controlled by ``sensitivity``)
+           and enforce ``min_chunk_sec`` spacing by always preferring the
+           candidate with the higher dissimilarity score.
         """
-        novelty = silence_mask * cosine_dissim
+        n_frames = len(silence_mask)
 
-        smooth_frames = max(3, int(self.novelty_smooth_sec * self._fps))
-        novelty = uniform_filter1d(novelty, size=smooth_frames)
+        # --- 1. Find contiguous silence regions ---
+        # Detect rising/falling edges of the binary mask
+        diff = np.diff(np.concatenate([[0], silence_mask, [0]]))
+        starts = np.where(diff > 0.5)[0]
+        ends = np.where(diff < -0.5)[0]
 
+        if len(starts) == 0:
+            return np.array([])
+
+        # --- 2. Anchor each region at its energy minimum ---
+        candidates = []  # (frame_index, dissimilarity_score)
+        for s, e in zip(starts, ends):
+            e = min(e, n_frames)
+            region_energy = energy[s:e]
+            if len(region_energy) == 0:
+                continue
+            # Deepest silence = frame with lowest energy in the region
+            min_idx = s + int(np.argmin(region_energy))
+            dissim = float(cosine_dissim[min_idx]) if min_idx < len(cosine_dissim) else 0.0
+            candidates.append((min_idx, dissim))
+
+        if not candidates:
+            return np.array([])
+
+        # --- 3. Filter by dissimilarity threshold ---
+        dissim_values = np.array([d for _, d in candidates])
+        threshold = np.percentile(dissim_values, 100 * (1 - self.sensitivity))
+        candidates = [(f, d) for f, d in candidates if d >= threshold]
+
+        if not candidates:
+            return np.array([])
+
+        # Sort by dissimilarity descending so the greedy spacing filter
+        # keeps the most important boundaries first.
+        candidates.sort(key=lambda x: -x[1])
+
+        # --- 4. Enforce minimum spacing (greedy, deterministic) ---
         min_dist_frames = int(self.min_chunk_sec * self._fps)
-        threshold = np.percentile(novelty, 100 * (1 - self.sensitivity))
+        selected_frames: list[int] = []
+        for frame, _ in candidates:
+            if all(abs(frame - s) >= min_dist_frames for s in selected_frames):
+                selected_frames.append(frame)
 
-        peaks, _ = find_peaks(novelty, height=threshold, distance=min_dist_frames)
+        selected_frames.sort()
 
-        return peaks / self._fps
+        return np.array(selected_frames) / self._fps
 
     def _extract_peaks(self, y_seg: np.ndarray) -> list:
         """Extract constellation map peaks from a chunk's audio."""
@@ -321,8 +363,8 @@ class ChunkCreator:
         silence_mask = self._compute_silence_mask(features["energy"])
         # Step 2: measure content change at each frame
         cosine_dissim = self._compute_cosine_dissimilarity(features["stack"])
-        # Combine and find peaks
-        peaks_sec = self._detect_peaks(silence_mask, cosine_dissim)
+        # Combine and find peaks — anchored on energy minima for determinism
+        peaks_sec = self._detect_peaks(silence_mask, cosine_dissim, features["energy"])
 
         return self.build_chunks(
             peaks_sec,

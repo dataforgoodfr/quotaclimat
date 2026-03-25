@@ -10,6 +10,7 @@ from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import Chunk, ChunkCreator
 from .e04_group_chunks import ChunkGroup, ChunkGrouping
 from .e05_classify_fragments import Fragment, FragmentsClassifier
+from .e06_export_classification import database_storage_save
 from .tools.cache import LocalCache
 from .tools.visualizer.weekly_viewer import generate_weekly_viewer
 
@@ -68,7 +69,8 @@ async def processor(
 
     new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
 
-    params_hash_key = chunk_creator.params_hash()
+    chunk_hash = chunk_creator.params_hash()
+    params_hash_key = chunk_hash
     with LocalCache(name="chunks", version=params_hash_key) as chunk_cache:
         process_media = partial(
             process_audio, chunk_creator=chunk_creator, cache=chunk_cache
@@ -124,7 +126,7 @@ async def processor(
 
     #### Database storage
 
-    # await database_storage_save(fragments)
+    database_storage_save(fragments, chunk_hash="")
 
     #### Results exportation
 

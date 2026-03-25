@@ -225,7 +225,6 @@ class ChunkGrouping:
             self.centroid_tol,
             self.zcr_tol,
         )
-        channel = source[0].channel
 
         report_groups: list[ChunkGroup] = []
         for member_idxs in groups.values():
@@ -239,23 +238,89 @@ class ChunkGrouping:
                     count=len(members),
                     duration_mean=round(float(np.mean(durations)), 2),
                     duration_std=round(float(np.std(durations)), 2),
-                    occurrences=[
-                        Chunk(
-                            start_sec=round(c.start_sec, 2),
-                            end_sec=round(c.end_sec, 2),
-                            channel=channel,
-                            duration_sec=round(c.duration_sec, 2),
-                            energy_mean=round(c.energy_mean, 2),
-                            spectral_centroid=round(c.spectral_centroid, 2),
-                            zcr_mean=round(c.zcr_mean, 2),
-                        )
-                        for c in members
-                    ],
+                    occurrences=members,
                 )
             )
 
         report_groups.sort(key=lambda g: -g.count)
         return report_groups
+
+
+def canonical(chunks: list[Chunk]) -> Chunk:
+    """
+    Build a canonical Chunk from multiple occurrences of the same audio segment.
+
+    Designed to maximise future matching probability against the grouping logic:
+
+    - Hashes: only hashes present in at least half the occurrences are kept.
+      Hashes that appear in most occurrences are stable fingerprints of the ad;
+      hashes that appear in only one are likely noise artefacts.
+      The time offset kept for each hash is the median across occurrences,
+      which is robust to minor chunk-boundary shifts between recordings.
+      If the frequency filter yields fewer than MIN_CANONICAL_HASHES results,
+      the top hashes ranked by occurrence frequency are used as a fallback
+      so the canonical always carries enough fingerprint material to be matchable.
+
+    - Acoustic features (duration, energy_mean, spectral_centroid, zcr_mean):
+      median across all occurrences.  The median sits at the group centroid and
+      therefore minimises the distance to any real future occurrence, maximising
+      the chance of passing the _features_compatible pre-filter.
+
+    - peaks: taken from the occurrence with the most hashes (richest fingerprint)
+      so that re-hashing from the canonical peaks yields a dense set.
+    """
+    if len(chunks) == 1:
+        return chunks[0]
+
+    # Count how many distinct chunks each hash appears in,
+    # and collect all its time offsets across occurrences.
+    hash_occurrence_count: Counter = Counter()
+    hash_to_times: dict[str, list[int]] = defaultdict(list)
+
+    for chunk in chunks:
+        seen_in_chunk: set[str] = set()
+        for h, t in chunk.hashes or []:
+            hash_to_times[h].append(t)
+            seen_in_chunk.add(h)
+        hash_occurrence_count.update(seen_in_chunk)
+
+    # Keep only hashes present in at least half the occurrences.
+    # If that yields fewer than MIN_CANONICAL_HASHES, fall back to the
+    # top-MIN_CANONICAL_HASHES hashes ranked by occurrence frequency so
+    # the canonical always has enough fingerprint material to be matchable.
+    MIN_CANONICAL_HASHES = 10
+    min_freq = max(1, len(chunks) // 2)
+    stable_hashes = [
+        (h, int(np.median(times)))
+        for h, times in hash_to_times.items()
+        if hash_occurrence_count[h] >= min_freq
+    ]
+    if len(stable_hashes) < MIN_CANONICAL_HASHES:
+        stable_hashes = [
+            (h, int(np.median(hash_to_times[h])))
+            for h, _ in hash_occurrence_count.most_common(MIN_CANONICAL_HASHES)
+        ]
+
+    # Median acoustic features.
+    durations = [c.duration_sec for c in chunks]
+    energies = [c.energy_mean for c in chunks]
+    centroids = [c.spectral_centroid for c in chunks]
+    zcrs = [c.zcr_mean for c in chunks]
+
+    # Richest occurrence as source for peaks.
+    richest = max(chunks, key=lambda c: len(c.hashes or []))
+
+    return Chunk(
+        start_sec=richest.start_sec,
+        end_sec=richest.end_sec,
+        channel=richest.channel,
+        duration_sec=float(np.median(durations)),
+        energy_mean=float(np.median(energies)),
+        spectral_centroid=float(np.median(centroids)),
+        zcr_mean=float(np.median(zcrs)),
+        peaks=richest.peaks,
+        hashes=stable_hashes,
+    )
 
 
 def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:

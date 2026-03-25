@@ -35,6 +35,7 @@ def get_program() -> list[Show]:
         "..",
         "..",
         "..",
+        "..",
         "postgres",
         "program_metadata.json",
     )

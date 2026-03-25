@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from quotaclimat.data_ingestion.advertising_detection.tools.program import (
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.program import (
     Show,
     extend_program_by,
     get_channel_program,

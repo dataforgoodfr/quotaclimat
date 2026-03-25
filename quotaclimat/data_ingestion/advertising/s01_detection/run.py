@@ -2,11 +2,11 @@ import asyncio
 import logging
 from datetime import timedelta
 
-from quotaclimat.data_ingestion.advertising_detection.e00_partition_window import (
+from quotaclimat.data_ingestion.advertising.s01_detection.e00_partition_window import (
     partition_week_program,
 )
-from quotaclimat.data_ingestion.advertising_detection.processor import processor
-from quotaclimat.data_ingestion.advertising_detection.tools.testimony_data.extract import (
+from quotaclimat.data_ingestion.advertising.s01_detection.processor import processor
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.testimony_data.extract import (
     get_testimony_data,
 )
 

@@ -5,8 +5,8 @@ Génère un fichier HTML autonome de visualisation des fragments
 classifiés (pub, contenu, jingle…).
 
 Usage programmatique :
-    from quotaclimat.data_ingestion.advertising_detection.tools.visualizer.weekly_viewer import generate_weekly_viewer
-    from quotaclimat.data_ingestion.advertising_detection.e05_classify_fragments import Fragment
+    from quotaclimat.data_ingestion.advertising.s01_detection.tools.visualizer.weekly_viewer import generate_weekly_viewer
+    from quotaclimat.data_ingestion.advertising.s01_detection.e05_classify_fragments import Fragment
 
     generate_weekly_viewer(
         output_path="report.html",
@@ -22,7 +22,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Optional
 
-from quotaclimat.data_ingestion.advertising_detection.e05_classify_fragments import (
+from quotaclimat.data_ingestion.advertising.s01_detection.e05_classify_fragments import (
     Fragment,
 )
 

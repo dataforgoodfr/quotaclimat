@@ -4,10 +4,10 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from quotaclimat.data_ingestion.advertising_detection.e00_partition_window import (
+from quotaclimat.data_ingestion.advertising.s01_detection.e00_partition_window import (
     Segment,
 )
-from quotaclimat.data_ingestion.advertising_detection.processor import (
+from quotaclimat.data_ingestion.advertising.s01_detection.processor import (
     processor,
 )
 
@@ -22,7 +22,7 @@ async def mock_download_audio(task: Segment) -> tuple[str, bool]:
 
 @pytest.mark.asyncio
 @patch(
-    "quotaclimat.data_ingestion.advertising_detection.e01_download_audio.download_audio",
+    "quotaclimat.data_ingestion.advertising.s01_detection.e01_download_audio.download_audio",
     new=mock_download_audio,
 )
 async def test_extract_chunks_run_successfully():

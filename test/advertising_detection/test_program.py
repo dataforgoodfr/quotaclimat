@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from unittest.mock import patch
 
-from quotaclimat.data_ingestion.advertising_detection.tools.program import (
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.program import (
     Show,
     extend_program_by,
     get_channel_program,
@@ -216,7 +216,7 @@ class TestGetChannelProgram:
 
     def test_filters_by_channel(self):
         with patch(
-            "quotaclimat.data_ingestion.advertising_detection.tools.program.get_program",
+            "quotaclimat.data_ingestion.advertising.s01_detection.tools.program.get_program",
             return_value=self._make_shows(),
         ):
             result = get_channel_program("tf1")
@@ -225,7 +225,7 @@ class TestGetChannelProgram:
 
     def test_unknown_channel_returns_empty(self):
         with patch(
-            "quotaclimat.data_ingestion.advertising_detection.tools.program.get_program",
+            "quotaclimat.data_ingestion.advertising.s01_detection.tools.program.get_program",
             return_value=self._make_shows(),
         ):
             result = get_channel_program("bfmtv")

@@ -10,10 +10,10 @@ Ajoute ±1 seconde de contexte autour de chaque chunk pour voir les
 frontières de découpage.
 
 Usage programmatique :
-    from quotaclimat.data_ingestion.advertising_detection.tools.visualizer.chunk_comparator import (
+    from quotaclimat.data_ingestion.advertising.s01_detection.tools.visualizer.chunk_comparator import (
         generate_chunk_comparator,
     )
-    from quotaclimat.data_ingestion.advertising_detection.e02_create_chunks import Chunk, ChunkCreator
+    from quotaclimat.data_ingestion.advertising.s01_detection.e02_create_chunks import Chunk, ChunkCreator
 
     html = generate_chunk_comparator(
         chunk_a=chunk_a,           # Chunk
@@ -38,7 +38,7 @@ import numpy as np
 import scipy.io.wavfile
 from scipy.ndimage import maximum_filter, maximum_filter1d, uniform_filter1d
 
-from quotaclimat.data_ingestion.advertising_detection.e02_create_chunks import (
+from quotaclimat.data_ingestion.advertising.s01_detection.e02_create_chunks import (
     Chunk,
     ChunkCreator,
 )
@@ -55,6 +55,8 @@ def _audio_to_base64(y: np.ndarray, sr: int) -> str:
     y_int16 = np.clip(y * 32767.0, -32768, 32767).astype(np.int16)
     scipy.io.wavfile.write(buf, sr, y_int16)
     return base64.b64encode(buf.getvalue()).decode("ascii")
+
+
 # Nombre max de bins fréquentiels pour le spectrogramme
 _MAX_FREQ_BINS = 128
 

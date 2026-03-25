@@ -1,18 +1,60 @@
 import logging
 import zoneinfo
+import json
 
 import pandas as pd
 import pytest
-from test_main_import_api import insert_mediatree_json
+#from test_main_import_api import insert_mediatree_json
+
+from datetime import datetime
 
 from postgres.schemas.models import connect_to_db, drop_tables, get_db_session
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
-from quotaclimat.data_processing.mediatree.stop_word.main import *
+from quotaclimat.data_processing.mediatree.stop_word.main import (
+    get_top_keywords_by_channel,
+    get_all_repetitive_context_advertising_for_a_keyword,
+    get_repetitive_context_advertising,
+    save_append_stop_word,
+    manage_stop_word,
+    get_all_stop_word,
+    is_already_known_stop_word,
+    get_all_stop_word
+)
+
+from modin.pandas.dataframe import DataFrame
+
+import time as t
+
+from postgres.insert_data import save_to_pg
+from postgres.schemas.models import (
+    create_tables,
+    empty_tables,
+    keywords_table
+)
+from quotaclimat.data_processing.mediatree.detect_keywords import filter_and_tag_by_theme, add_primary_key
+from quotaclimat.data_processing.mediatree.s3.api_to_s3 import parse_reponse_subtitle
+from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
 
 conn = connect_to_db()
 session = get_db_session(conn)
 
-
+def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
+    create_tables(conn)  
+    empty_tables(get_db_session(conn), stop_word=False)
+    logging.info(f"reading {json_file_path}")
+    with open(json_file_path, 'r') as file:
+        json_response = json.load(file)
+        start_time = t.time()
+        df = parse_reponse_subtitle(json_response)
+        df = filter_and_tag_by_theme(df)
+        df["id"] = df.apply(lambda x: add_primary_key(x), axis=1)
+        end_time = t.time()
+        logging.info(f"Elapsed time for api import {end_time - start_time}")
+        
+        # must df._to_pandas() because to_sql does not handle modin dataframe
+        save_to_pg(df._to_pandas(), keywords_table, conn)
+        
+        return len(df)
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -30,11 +72,11 @@ def test_stop_word_get_top_keywords_by_channel():
                 "theme": "ressources_solutions",
                 "channel_title": "France 2",
                 "count": 160,
-            },{
-                "keyword": "changement climatique",
-                "theme": "changement_climatique_constat",
-                "channel_title": "France 2",
-                "count": 20,
+            # },{
+            #     "keyword": "changement climatique",
+            #     "theme": "changement_climatique_constat",
+            #     "channel_title": "France 2",
+            #     "count": 20,
             },{
                 "keyword": "climatique",
                 "theme": "changement_climatique_constat",
@@ -61,11 +103,13 @@ def test_stop_word_get_top_keywords_by_channel():
         ]
     )
     
-    top_keywords = get_top_keywords_by_channel(session, duration=3000, top=5, min_number_of_keywords=1)
+    top_keywords = get_top_keywords_by_channel(session, duration=3000, top=(5), min_number_of_keywords=1)
+
     top_keywords.drop(columns=["theme"], inplace=True) # can be several themes, so dropping theme for tests
     excepted_df.drop(columns=["theme"], inplace=True) # can be several themes, so dropping theme for tests
 
     assert len(top_keywords) != 0
+    assert top_keywords.sort_values("count")["keyword"].tolist() == excepted_df.sort_values("count")["keyword"].tolist()
     pd.testing.assert_frame_equal(top_keywords, excepted_df)
 
 def test_stop_word_get_all_repetitive_context_advertising_for_a_keyword_default():

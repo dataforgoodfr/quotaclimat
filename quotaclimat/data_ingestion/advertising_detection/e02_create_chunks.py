@@ -109,8 +109,6 @@ class ChunkCreator:
         #   Filters out short fluctuations before peak detection.
         min_chunk_sec: float = 5.0,  # Minimum duration (seconds) between two boundaries.
         #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
-        sensitivity: float = 0.25,  # Fraction of novelty peaks retained as boundaries.
-        #   0.1 = only top 10% (few chunks). 0.5 = top 50% (many chunks).
         silence_percentile: float = 5.0,  # Energy percentile below which a frame is silent.
         #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
         n_fft: int = 2048,  # FFT size for constellation map. 2048 ≈ 93ms @ 22050Hz.
@@ -124,7 +122,6 @@ class ChunkCreator:
         self.context_sec = context_sec
         self.novelty_smooth_sec = novelty_smooth_sec
         self.min_chunk_sec = min_chunk_sec
-        self.sensitivity = sensitivity
         self.silence_percentile = silence_percentile
         self.n_fft = n_fft
         self.n_peaks = n_peaks
@@ -198,7 +195,8 @@ class ChunkCreator:
         return cosine_dissim
 
     def _detect_peaks(
-        self, silence_mask: np.ndarray,
+        self,
+        silence_mask: np.ndarray,
         energy: np.ndarray,
     ) -> np.ndarray:
         """
@@ -371,7 +369,6 @@ class ChunkCreator:
             "context_sec": self.context_sec,
             "novelty_smooth_sec": self.novelty_smooth_sec,
             "min_chunk_sec": self.min_chunk_sec,
-            "sensitivity": self.sensitivity,
             "silence_percentile": self.silence_percentile,
             "n_fft": self.n_fft,
             "n_peaks": self.n_peaks,

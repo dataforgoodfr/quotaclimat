@@ -15,6 +15,31 @@ from .tools.visualizer.weekly_viewer import generate_weekly_viewer
 
 logger = logging.getLogger(__name__)
 
+chunk_creator = ChunkCreator(
+    sr=22050,
+    hop_length=512,
+    n_mfcc=20,
+    context_sec=1.0,
+    novelty_smooth_sec=0.5,
+    min_chunk_sec=1.0,
+    silence_percentile=5.0,
+    n_fft=2048,
+    n_peaks=30,
+    neighborhood=15,
+    min_amplitude=0.01,
+)
+chunk_grouping = ChunkGrouping(
+    duration_tol=1.0,  # C'est relativement haut, mais les autres filtres affinent bien. 1 = durée minimum d'un segment, pour que l'absorption ou non d'un micro segment ne soit pas discriminant
+    rms_tol=0.1,
+    centroid_tol=0.05,
+    zcr_tol=0.1,
+    similarity_threshold=0.05,  # C'est bas, mais les tol ci-dessus font un pré filtre très éfficace déjà
+    min_matching_hashes=1,
+)
+fragment_classifier = FragmentsClassifier(
+    repetition_threshold=3,
+)
+
 
 def process_audio(
     segment: Segment,
@@ -40,32 +65,6 @@ async def processor(
     annotations: list[dict] = [],
 ):
     new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
-
-    chunk_creator = ChunkCreator(
-        sr=22050,
-        hop_length=512,
-        n_mfcc=20,
-        context_sec=1.0,
-        novelty_smooth_sec=0.5,
-        min_chunk_sec=1.0,
-        sensitivity=0.25,
-        silence_percentile=5.0,
-        n_fft=2048,
-        n_peaks=30,
-        neighborhood=15,
-        min_amplitude=0.01,
-    )
-    chunk_grouping = ChunkGrouping(
-        duration_tol=1.0,  # C'est relativement haut, mais les autres filtres affinent bien. 1 = durée minimum d'un segment, pour que l'absorption ou non d'un micro segment ne soit pas discriminant
-        rms_tol=0.1,
-        centroid_tol=0.05,
-        zcr_tol=0.1,
-        similarity_threshold=0.05,  # C'est bas, mais les tol ci-dessus font un pré filtre très éfficace déjà
-        min_matching_hashes=1,
-    )
-    fragment_classifier = FragmentsClassifier(
-        repetition_threshold=3,
-    )
 
     params_hash_key = chunk_creator.params_hash()
     with LocalCache(name="chunks", version=params_hash_key) as chunk_cache:

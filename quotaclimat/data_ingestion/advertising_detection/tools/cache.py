@@ -2,6 +2,11 @@ import os
 import shutil
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
+
 GLOBAL_CACHE_FOLDER = ".cache"
 
 
@@ -9,7 +14,7 @@ class LocalCache:
     def __init__(self, name: str, version: str):
         self.cache_folder = Path(GLOBAL_CACHE_FOLDER) / name / version
         self.clean_on_exit = (
-            os.environ.get("CLEAN_CACHE_ON_EXIT") or True
+            os.environ.get("CLEAN_CACHE_ON_EXIT", "true").lower() == "true"
         )  # This is activated by default for testing purpose, should be corrected
 
     def __enter__(self):

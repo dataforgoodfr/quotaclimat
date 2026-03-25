@@ -74,9 +74,33 @@ def get_keyword_with_timestamp(theme: str, category: str, keyword : str, cts_in_
             "category": category
     }
 
+
 def find_matching_subtitle(subtitles, keyword, country: CountryMediaTree=FRANCE):
     if isinstance(subtitles, str):
         subtitles = json.loads(subtitles)
+    if country.code=='fra':
+        logging.info(f"Matching subtitles using the old way")
+        return find_matching_subtitle_fr(subtitles, keyword)
+    else:
+        find_matching_subtitle_i18n(subtitles, keyword, country)
+    
+
+def find_matching_subtitle_fr(subtitles, keyword):
+    for item in subtitles:
+        logging.debug(f"Testing {item} with {keyword} full subtitle is {subtitles}")
+        try:
+            if is_word_in_sentence(keyword, item.get("text", "")):
+                logging.debug(f"match found {item} with {keyword}")
+                return item
+        except Exception as e: 
+            logging.error(f"Error in find_matching_subtitle for keyword {keyword} - item {item} - subtitles {subtitles} - {e}")
+            raise e
+
+    logging.warning(f"SRT match not found - default timestamp is now 0, possible error inside srt which is acceptable - {keyword} - {subtitles}")
+    return None
+
+
+def find_matching_subtitle_i18n(subtitles, keyword, country: CountryMediaTree=FRANCE):
     lang = LANGUAGE_CODES[country.language]
     keyword_lemma = set(get_lemmas(keyword.lower(), lang))
     for item in subtitles:
@@ -275,6 +299,7 @@ def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
 
 def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
     if country.code=='fra':
+        logging.info("Using regex for france")
         return set([idx for idx, kw in enumerate(keywords_dict) if is_word_in_sentence_fr(kw["keyword"], text)])
     else:
         keywords = [keyword_dict["keyword"].lower() for keyword_dict in keywords_dict]
@@ -468,7 +493,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], countr
             count_before_filtering = len(df)
             logging.info(f"{count_before_filtering} subtitles to filter by keywords and tag with themes")
             log_min_max_date(df)
-            from time import time; t = time()
+            logging.info(f"Running fo country = {country.code}")
             logging.info(f'tagging plaintext subtitle with keywords and theme : regexp - search taking time...')
             # using swifter to speed up apply https://github.com/jmcarpenter2/swifter
             df[
@@ -508,8 +533,6 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], countr
                         axis=1,
                         result_type='expand'
                 )
-            logging.info(("="*20))
-            logging.info(f"Analysed keywords in {time()-t} seconds!")
 
             # remove all rows that does not have themes
             df = df.dropna(subset=['theme'], how='any') # any is for None values

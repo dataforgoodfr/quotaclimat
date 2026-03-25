@@ -72,11 +72,11 @@ def test_stop_word_get_top_keywords_by_channel():
                 "theme": "ressources_solutions",
                 "channel_title": "France 2",
                 "count": 160,
-            # },{
-            #     "keyword": "changement climatique",
-            #     "theme": "changement_climatique_constat",
-            #     "channel_title": "France 2",
-            #     "count": 20,
+            },{
+                "keyword": "changement climatique",
+                "theme": "changement_climatique_constat",
+                "channel_title": "France 2",
+                "count": 20,
             },{
                 "keyword": "climatique",
                 "theme": "changement_climatique_constat",

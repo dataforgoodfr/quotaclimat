@@ -1037,14 +1037,17 @@
             f.chunks.forEach((chunk, ci) => {
               const cx1 = epochToX(chunk.absStart, 0, W, viewStart, viewEnd);
               const cx2 = epochToX(chunk.absEnd, 0, W, viewStart, viewEnd);
-              // Draw chunk separator
+              // Draw chunk separator (subtle dashed line — less important than segment boundary)
               if (ci > 0) {
-                ctx.strokeStyle = "rgba(0, 0, 0, 0.5)";
+                ctx.save();
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
                 ctx.lineWidth = 1;
+                ctx.setLineDash([2, 3]);
                 ctx.beginPath();
                 ctx.moveTo(cx1, fy);
                 ctx.lineTo(cx1, fy + fh);
                 ctx.stroke();
+                ctx.restore();
               }
             });
           }
@@ -1209,6 +1212,11 @@
         selectedFragment = frag;
         highlightedGroup = frag.groupSize > 1 ? frag.groupId : null;
 
+        // Sync focused segment to URL so it survives reload / sharing
+        const url = new URL(location.href);
+        url.searchParams.set("focus", frag.absStart);
+        history.replaceState(null, "", url.toString());
+
         const panel = document.getElementById("detail-panel");
         panel.classList.add("open");
 
@@ -1297,6 +1305,12 @@
         document.getElementById("detail-panel").classList.remove("open");
         selectedFragment = null;
         highlightedGroup = null;
+
+        // Remove focus param from URL
+        const url = new URL(location.href);
+        url.searchParams.delete("focus");
+        history.replaceState(null, "", url.toString());
+
         render();
       }
 
@@ -1567,6 +1581,20 @@
         // Resize
         window.addEventListener("resize", resizeAll);
         resizeAll();
+
+        // Restore focused segment from URL query param (?focus=<absStart>)
+        const focusParam = new URLSearchParams(location.search).get("focus");
+        if (focusParam) {
+          const targetEpoch = parseFloat(focusParam);
+          if (!isNaN(targetEpoch)) {
+            let best = null, bestDist = Infinity;
+            FRAGMENTS.forEach(f => {
+              const dist = Math.abs(f.absStart - targetEpoch);
+              if (dist < bestDist) { bestDist = dist; best = f; }
+            });
+            if (best) focusFragment(best);
+          }
+        }
       }
 
       // ───────────────────────────────────────────────────────────

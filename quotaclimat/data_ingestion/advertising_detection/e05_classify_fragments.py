@@ -266,7 +266,7 @@ class FragmentsClassifier:
                         preceeding_most_followed_group_id.keys()
                     )[0]
                     if most_preceeding_followed_group_id != group_id:
-                        logger.error(
+                        logger.debug(
                             f"Preceeding group index repartition for group {most_followed_group_id} is {preceeding_most_followed_group_id}, while following group index repartition for group {group_id} is {following_groups_count}. Not merging those groups because of this incoherence."
                         )
                     else:
@@ -297,7 +297,7 @@ class FragmentsClassifier:
                         )
                         >= 0.8
                     ):
-                        logger.warning(
+                        logger.debug(
                             f"Preceeding group index repartition for group {most_followed_group_id} is {preceeding_most_followed_group_id}, while following group index repartition for group {group_id} is {following_groups_count}. Not merging those groups because of this incoherence, even if there is a majority in the following repartition, because of the significant presence of the other group in the preceeding repartition."
                         )
             elif len(following_groups_count) == 2:
@@ -315,7 +315,7 @@ class FragmentsClassifier:
                     )
                     >= 0.8
                 ):
-                    logger.warning(
+                    logger.debug(
                         f"Not merging group {group_id} with group {most_followed_group_id} because it is followed in {following_groups_count[most_followed_group_id]} cases out of {following_groups_count[less_followed_group_id] + following_groups_count[most_followed_group_id]}"
                     )
 

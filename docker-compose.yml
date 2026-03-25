@@ -168,10 +168,11 @@ services:
     volumes:
       - './pgdata:/var/lib/postgresql/data' # persist data https://stackoverflow.com/a/41650891/3535853
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U user -d barometre"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
     environment:
       TZ: Europe/Paris # to match prod settings
       POSTGRES_USER: user
@@ -192,7 +193,7 @@ services:
     environment:
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project
-      ENV: docker # change me to prod for real cases
+      ENV: prod # change me to prod for real cases
       LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log
       PYTHONPATH: /app
       LABELSTUDIO_INGESTION_POSTGRES_USER: user
@@ -204,7 +205,7 @@ services:
       POSTGRES_PORT: 5432
       PORT_HS: 5050 # healthcheck
       HEALTHCHECK_SERVER: "0.0.0.0"
-      COUNTRY: "bel"
+      COUNTRY: bel
       # SENTRY_DSN: prod_only
       # UPDATE: "true" # to batch update PG 
       # BIODIVERSITY_ONLY: "true"
@@ -214,17 +215,17 @@ services:
       STOP_WORD_KEYWORD_ONLY: "true"  # speed up execution when we only want to update stop words
       #END_DATE: "2024-02-29" # optional - otherwise end of the month
       BATCH_SIZE: 100 # number of records to update in one batch
-      START_DATE: 1743515231 # to test batch import 
-      #NUMBER_OF_PREVIOUS_DAYS: 0 # to query mediatree api only - not used for update
+      START_DATE: 1772543952 # to test batch import 
+      NUMBER_OF_PREVIOUS_DAYS: 1 # to query mediatree api only - not used for update
       # CHANNEL : fr3-idf # to reimport only one channel
       MODIN_ENGINE: ray
       MODIN_CPUS: 4 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
       MODIN_MEMORY: 1000000000 # 1Gb
       RAY_memory_usage_threshold: 1
       BUCKET: /run/secrets/bucket
-      BUCKET_NAME: mediatree
+      BUCKET_NAME: test-bucket-mediatree
       BUCKET_SECRET: /run/secrets/bucket_secret
-    mem_limit: "1G"
+    mem_limit: "4G"
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/
@@ -252,12 +253,12 @@ services:
       PYTHONPATH: /app
       PORT_HS: 5666 # healthcheck
       HEALTHCHECK_SERVER: "0.0.0.0"
-      COUNTRY: deu   # see country.py to get all country 3-letter codes
+      COUNTRY: bel   # see country.py to get all country 3-letter codes
       # SENTRY_DSN: prod_only
       #END_DATE: "2024-02-29" # optional - otherwise end of the month
-      START_DATE: 1743515231 # to test batch import 
-      CHANNEL : daserste # to reimport only one channel
-      NUMBER_OF_PREVIOUS_DAYS : 1
+      START_DATE: 1772543952 # to test batch import 
+      # CHANNEL : daserste # to reimport only one channel
+      NUMBER_OF_PREVIOUS_DAYS : 7
       MEDIATREE_USER : /run/secrets/username_api
       MEDIATREE_PASSWORD: /run/secrets/pwd_api
       BUCKET: /run/secrets/bucket
@@ -339,6 +340,228 @@ services:
        - bucket
        - bucket_secret
 
+  factiva_to_s3:
+    container_name: factiva_to_s3
+    build:
+      context: ./
+      dockerfile: Dockerfile_factiva_to_s3
+    environment:
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      PORT_HS: 5050
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      FACTIVA_S3_BUCKET: "factiva"
+      FACTIVA_S3_PREFIX: "country_france"
+      FACTIVA_BATCH_SIZE: "100"
+      FACTIVA_MAX_EMPTY_PULLS: "3"
+      FACTIVA_EMPTY_PULL_WAIT: "5"
+      FACTIVA_PULL_TIMEOUT: "30"
+      FACTIVA_LOCAL_TMP: "/tmp/factiva"
+      FACTIVA_MOCK_MODE: "false"
+      FACTIVA_MOCK_SOURCE_DIR: "/app/test/factiva_mock"
+      FACTIVA_MOCK_FILE_PATTERN: "*.json"
+      FACTIVA_USERKEY_FILE: /run/secrets/factiva_userkey
+      FACTIVA_SUBSCRIPTION_ID_FILE: /run/secrets/stream_subscription_main
+      BUCKET: /run/secrets/bucket
+      BUCKET_SECRET: /run/secrets/bucket_secret
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./test/:/app/test/
+    secrets:
+      - bucket
+      - bucket_secret
+      - factiva_userkey
+      - stream_subscription_main
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
+  factiva_stats_to_s3:
+    container_name: factiva_stats_to_s3
+    ports:
+      - 5003:5000
+    build:
+      context: ./
+      dockerfile: Dockerfile_factiva_stats_to_s3
+    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
+    environment:
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      PORT: 5000
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      # Factiva API credentials (from secrets)
+      FACTIVA_USERKEY: /run/secrets/factiva_userkey
+      # Factiva stats configuration
+      FACTIVA_MINIMAL_WORD_COUNT: "0"
+      FACTIVA_LANGUAGE_CODE: "fr"
+      FACTIVA_LOCAL_TMP: "/tmp/factiva_stats"
+      FACTIVA_DAYS_BEFORE_TODAY: "7"
+      FACTIVA_STATS_ANALYSIS_DURATION: "7"
+      # New configuration variables
+      EXTRACT_STATS: "true"
+      SELECT_DATE: "false"
+      # START_DATE: "2025-11-16"  # Only used when SELECT_DATE=true
+      # END_DATE: "2025-11-16"    # Only used when SELECT_DATE=true
+      # S3 configuration (Scaleway, from secrets)
+      FACTIVA_S3_BUCKET: "factiva"
+      FACTIVA_S3_PREFIX: "country_france"
+      BUCKET: /run/secrets/bucket
+      BUCKET_SECRET: /run/secrets/bucket_secret
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./test/:/app/test/
+      - ./tmp/factiva_stats:/tmp/factiva_stats
+    secrets:
+      - bucket
+      - bucket_secret
+      - factiva_userkey
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
+  s3_factiva_to_postgre:
+    container_name: s3_factiva_to_postgre
+    ports:
+      - 5004:5000
+    build:
+      context: ./
+      dockerfile: Dockerfile_s3_factiva_to_postgre
+    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
+    environment:
+      ENV: docker
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      PORT: 5000
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      # PostgreSQL configuration
+      POSTGRES_USER: user
+      POSTGRES_DB: barometre
+      POSTGRES_PASSWORD: password
+      POSTGRES_HOST: postgres_db
+      POSTGRES_PORT: 5432
+      # S3 configuration (Scaleway, from secrets)
+      S3_BUCKET_NAME: "factiva"
+      S3_REGION: "fr-par"
+      S3_ACCESS_KEY: /run/secrets/bucket
+      S3_SECRET_KEY: /run/secrets/bucket_secret
+      S3_ENDPOINT_URL: "https://s3.fr-par.scw.cloud"
+      S3_BASE_PREFIX: "country_france"
+      # Processing configuration (normal import mode)
+      PROCESS_ARTICLES: "true"
+      PROCESS_STATS: "true"
+      LOOKBACK_DAYS: "30"
+      LOCAL_TMP_DIR: "/tmp/s3_factiva_to_postgre"
+      # Dictionary update configuration
+      UPDATE_DICTIONARY: "false"         # Update Dictionary, Keyword_Macro_Category, and Source_Classification tables (default: true)
+      # Duplicate detection configuration
+      DETECT_DUPLICATES: "true"          # Detect and mark duplicate articles before DBT processing (default: true)
+      # Article filtering configuration
+      MINIMAL_WORD_COUNT: "200"            # Minimum word count for articles to be included in crisis counts (default: 0)
+      # DBT configuration
+      RUN_DBT: "true"                    # Run DBT models after processing (default: true)
+      DBT_PROFILES_DIR: /app/my_dbt_project_print_media/dbt
+      DBT_PROJECT_DIR: /app/my_dbt_project_print_media
+      # HRFP multipliers for crisis scoring (default: 0 = no HRFP consideration)
+      MULTIPLIER_HRFP_CLIMAT: "0"        # Multiplier for climate HRFP keywords
+      MULTIPLIER_HRFP_BIODIV: "0"        # Multiplier for biodiversity HRFP keywords
+      MULTIPLIER_HRFP_RESSOURCE: "0"     # Multiplier for resource HRFP keywords
+      # Article length-based thresholds configuration
+      CONSIDER_ARTICLE_LENGTH: "true"   # Enable article length-based thresholds (default: false)
+      WORD_COUNT_THRESHOLD: "600"            # Article length segments (e.g., "350-600" or "350-600-900")
+      # Thresholds for crisis labeling
+      # If CONSIDER_ARTICLE_LENGTH=false: single threshold (format: "biodiv,climat,ressource")
+      # If CONSIDER_ARTICLE_LENGTH=true: multiple thresholds per length segment (format: "b1,c1,r1 - b2,c2,r2 - b3,c3,r3")
+      THRESHOLD_BIOD_CLIM_RESS: "2,2,2 - 3,2,2"  # Thresholds for biodiversity, climate, resource
+      # Thresholds for causal links labeling
+      # If CONSIDER_ARTICLE_LENGTH=false: single threshold per causal link
+      # If CONSIDER_ARTICLE_LENGTH=true: multiple thresholds separated by " - "
+      THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT: "2,1,1,1 - 2,1,1,1"  # Biodiversity causal links: constat, cause, consequence, solution
+      THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT: "2,1,1,1 - 2,1,1,1"  # Climate causal links: constat, cause, consequence, solution
+      THRESHOLD_RESS_CONST_SOLUT: "1,1 - 1,1"                  # Resource causal links: constat, solution
+      # UPDATE mode configuration (keyword re-detection)
+      UPDATE: "true"                    # Enable UPDATE mode (re-detect keywords on existing data)
+      START_DATE_UPDATE: "2025-11-25"   # Filter on publication_datetime >= this date
+      END_DATE: "2025-11-29"            # Filter on publication_datetime <= this date
+      # BATCH_SIZE: "1000"                # Number of articles per batch
+      # # SOURCE_CODE_UPDATE: "LEMOND, FIGARO"  # Comma-separated list of source_code to filter
+      # # BIODIVERSITY_ONLY: "true"         # Only update articles with number_of_biodiversite_no_hrfp >= 1
+      # # RESSOURCE_ONLY: "true"            # Only update articles with number_of_ressources_no_hrfp >= 1
+      # # CLIMATE_ONLY: "true"              # Only update articles with number_of_climat_no_hrfp >= 1
+      THRESHOLD_AGRI_MOBI_BATI_ECON_ENERG_INDU_EAU_ECOS: "2,2,2,1,1,2,1,2"  # Thresholds for each sector (agriculture_alimentation,mobilite,batiments_amenagement,economie_circulaire,energie,industrie,eau,ecosysteme)
+    volumes:
+      - ./quotaclimat/:/app/quotaclimat/
+      - ./postgres/:/app/postgres/
+      - ./alembic_factiva:/app/alembic_factiva
+      - ./alembic_factiva.ini:/app/alembic_factiva.ini
+      - ./my_dbt_project_print_media:/app/my_dbt_project_print_media
+      - ./tmp/s3_factiva_to_postgre:/tmp/s3_factiva_to_postgre
+    secrets:
+      - bucket
+      - bucket_secret
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
+  analyse_instagram_data:
+    entrypoint: ["poetry", "run", "python", "analyse/instagram/analyse.py"]
+    build:
+      context: ./
+      dockerfile: duckdb.Dockerfile
+    volumes:
+      - "./:/workspace"
+    working_dir: "/workspace"
+    depends_on:
+      - postgres_db
+  ftp_server:
+      container_name: my-ftp-server
+      environment:
+          - PUBLIC_IP=192.168.0.1
+          - FTP_PASS=password123
+          - FTP_USER=quotaclimat
+      image: garethflowers/ftp-server
+      ports:
+          - "20-21:20-21/tcp"
+          - "40000-40009:40000-40009/tcp" # For passive mode
+      volumes:
+        - ./quotaclimat/data_ingestion/lemonde_ftp/ftp_data:/home/quotaclimat
+
+  lemonde_ftp_to_s3:
+    container_name: lemonde_ftp_to_s3
+    ports:
+      - 5003:5000
+    build:
+      context: ./
+      dockerfile: Dockerfile_factiva_to_s3
+    entrypoint: ["python", "quotaclimat/data_ingestion/lemonde_ftp/ftp_to_s3.py"]
+    environment:
+      FTP_HOST: ftp_server 
+      # Change to secret to use in prod
+      # FTP_HOST: /run/secrets/lemonde_ftp_host
+      FTP_USER: quotaclimat
+      FTP_PASS: password123
+      # Change to secret to use in prod
+      # FTP_PASS: /run/secrets/lemonde_ftp_pass
+      FTP_PORT: 21
+      S3_BUCKET_NAME: "test-bucket-mediatree"
+      S3_REGION: "fr-par"
+      S3_ACCESS_KEY: /run/secrets/bucket
+      S3_SECRET_KEY: /run/secrets/bucket_secret
+      START_DATE: "20260221"
+      NUMBER_DAYS_PRIOR: 7
+      OVERRIDE: "false"
+    # volumes:
+    #   - ./quotaclimat/data_ingestion/lemonde_ftp/data:/outputs
+    secrets:
+      - lemonde_ftp_host
+      - lemonde_ftp_pass
+      - bucket
+      - bucket_secret
+    depends_on:
+      ftp_server:
+        condition: service_healthy
+
 secrets: # https://docs.docker.com/compose/use-secrets/
   pwd_api:
     file: secrets/pwd_api.txt
@@ -348,3 +571,13 @@ secrets: # https://docs.docker.com/compose/use-secrets/
     file: secrets/scw_bucket.txt
   bucket_secret:
     file: secrets/scw_bucket_secret.txt
+  stream_factiva:
+    file: secrets/stream_factiva.txt
+  stream_subscription_main:
+    file: secrets/stream_subscription_main.txt
+  factiva_userkey:
+    file: secrets/factiva_userkey.txt
+  lemonde_ftp_host:
+    file: secrets/lemonde_ftp_host.txt
+  lemonde_ftp_pass:
+    file: secrets/lemonde_ftp_pass.txt

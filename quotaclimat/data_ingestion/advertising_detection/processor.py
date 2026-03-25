@@ -64,6 +64,8 @@ async def processor(
     segments: list[Segment],
     annotations: list[dict] = [],
 ):
+    #### Audio processing
+
     new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
 
     params_hash_key = chunk_creator.params_hash()
@@ -85,6 +87,8 @@ async def processor(
             chunk_batch = json.loads(chunk_cache.get(segment.identifier + ".json"))
             chunks.extend([Chunk.from_dict(d) for d in chunk_batch])
 
+    #### Chunk grouping
+
     params_hash_key += "-" + chunk_grouping.params_hash()
     with LocalCache(name="grouping", version=params_hash_key) as group_cache:
         group_cache_file = operation_name + ".json"
@@ -101,6 +105,8 @@ async def processor(
                 json.dumps([group.to_dict() for group in groups]),
             )
 
+    #### Fragment classification
+
     params_hash_key += "-" + fragment_classifier.params_hash()
     with LocalCache(name="fragments", version=params_hash_key) as fragments_cache:
         fragments_cache_file = operation_name + ".json"
@@ -115,6 +121,12 @@ async def processor(
                 operation_name + ".json",
                 json.dumps([fragment.to_dict() for fragment in fragments], default=str),
             )
+
+    #### Database storage
+
+    # await database_storage_save(fragments)
+
+    #### Results exportation
 
     reports_path = Path(".cache") / "reports" / operation_name
     reports_path.mkdir(parents=True, exist_ok=True)

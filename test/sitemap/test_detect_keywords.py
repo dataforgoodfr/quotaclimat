@@ -2,8 +2,7 @@ from datetime import datetime, timezone
 
 import pandas as pd
 import pytest
-from test_utils import (compare_unordered_lists_of_dicts, debug_df,
-                        get_localhost)
+from test_utils import compare_unordered_lists_of_dicts, debug_df, get_localhost
 
 from quotaclimat.data_processing.mediatree.detect_keywords import *
 from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS

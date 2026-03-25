@@ -296,15 +296,14 @@ async def get_and_save_api_data(exit_event):
             number_of_previous_days = int(os.environ.get("NUMBER_OF_PREVIOUS_DAYS", 7))
             country_code: str = os.environ.get("COUNTRY", FRANCE_CODE)
             logging.info(f"Country used is (default {FRANCE_CODE}) : {country_code}")
-            countries = get_countries_array(country_code=country_code, no_belgium=True)
+            # We are ingesting belgium as well partially via api
+            countries = get_countries_array(country_code=country_code, no_belgium=False) 
 
             for country in countries:
                 logging.info(f"Country : {country}")
                 df_programs = get_programs(country)
                 channels = country.channels
-                if country == GERMANY:
-                    logging.warning(f"Removing channels daserste and zdf-neo and using GERMANY_CHANNELS_MEDIATREE as import via SRT")
-                    channels = GERMANY_CHANNELS_MEDIATREE
+                channels = get_mediatree_channels(channels, country)
                 timezone = country.timezone
                 (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, \
                                                                                             minus_days=number_of_previous_days,\

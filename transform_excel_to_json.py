@@ -1,11 +1,11 @@
 # to generate keywords.py file
 import json
 import logging
+from typing import Union
 
 import pandas as pd
 
-from postgres.schemas.models import Keyword_Macro_Category
-from typing import Union
+from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 
 
 output_file = "quotaclimat/data_processing/mediatree/keyword/keyword.py"
@@ -223,6 +223,7 @@ class MacroCategoryProcessor:
                 ),  # economie_ressources
                 language=self.dictionary_language,
             )
+            record["keyword_id"]=get_consistent_hash(json.dumps(record))
             records.append(record)
         return records
 

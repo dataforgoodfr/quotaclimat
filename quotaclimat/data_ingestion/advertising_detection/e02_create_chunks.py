@@ -198,25 +198,24 @@ class ChunkCreator:
         return cosine_dissim
 
     def _detect_peaks(
-        self, silence_mask: np.ndarray, cosine_dissim: np.ndarray,
+        self, silence_mask: np.ndarray,
         energy: np.ndarray,
     ) -> np.ndarray:
         """
-        Deterministic boundary detection anchored on deepest silences.
+        Fully deterministic boundary detection using only local properties.
 
         1. Find contiguous silence regions from the binary silence mask.
         2. In each region, pick the frame with the lowest energy (deepest
-           silence point) — this is purely local and deterministic.
-        3. Score each candidate by the cosine dissimilarity at that frame
-           (secondary criterion: does the content actually change here?).
-        4. Keep only the top candidates (controlled by ``sensitivity``)
-           and enforce ``min_chunk_sec`` spacing by always preferring the
-           candidate with the higher dissimilarity score.
+           silence point) — purely local and deterministic.
+        3. Enforce ``min_chunk_sec`` spacing: when two candidates are too
+           close, keep the one with the deeper silence (lower energy).
+
+        No global threshold or percentile is used, so adding/removing
+        content elsewhere in the audio cannot affect boundary placement.
         """
         n_frames = len(silence_mask)
 
         # --- 1. Find contiguous silence regions ---
-        # Detect rising/falling edges of the binary mask
         diff = np.diff(np.concatenate([[0], silence_mask, [0]]))
         starts = np.where(diff > 0.5)[0]
         ends = np.where(diff < -0.5)[0]
@@ -225,33 +224,23 @@ class ChunkCreator:
             return np.array([])
 
         # --- 2. Anchor each region at its energy minimum ---
-        candidates = []  # (frame_index, dissimilarity_score)
+        candidates = []  # (frame_index, energy_at_min)
         for s, e in zip(starts, ends):
             e = min(e, n_frames)
             region_energy = energy[s:e]
             if len(region_energy) == 0:
                 continue
-            # Deepest silence = frame with lowest energy in the region
             min_idx = s + int(np.argmin(region_energy))
-            dissim = float(cosine_dissim[min_idx]) if min_idx < len(cosine_dissim) else 0.0
-            candidates.append((min_idx, dissim))
+            candidates.append((min_idx, float(energy[min_idx])))
 
         if not candidates:
             return np.array([])
 
-        # --- 3. Filter by dissimilarity threshold ---
-        dissim_values = np.array([d for _, d in candidates])
-        threshold = np.percentile(dissim_values, 100 * (1 - self.sensitivity))
-        candidates = [(f, d) for f, d in candidates if d >= threshold]
+        # Sort by energy ascending (deepest silences first) so the greedy
+        # spacing filter keeps the best candidates.
+        candidates.sort(key=lambda x: x[1])
 
-        if not candidates:
-            return np.array([])
-
-        # Sort by dissimilarity descending so the greedy spacing filter
-        # keeps the most important boundaries first.
-        candidates.sort(key=lambda x: -x[1])
-
-        # --- 4. Enforce minimum spacing (greedy, deterministic) ---
+        # --- 3. Enforce minimum spacing (greedy, deterministic) ---
         min_dist_frames = int(self.min_chunk_sec * self._fps)
         selected_frames: list[int] = []
         for frame, _ in candidates:
@@ -361,10 +350,8 @@ class ChunkCreator:
 
         # Step 1: identify silent frames
         silence_mask = self._compute_silence_mask(features["energy"])
-        # Step 2: measure content change at each frame
-        cosine_dissim = self._compute_cosine_dissimilarity(features["stack"])
-        # Combine and find peaks — anchored on energy minima for determinism
-        peaks_sec = self._detect_peaks(silence_mask, cosine_dissim, features["energy"])
+        # Step 2: find boundaries at deepest silences
+        peaks_sec = self._detect_peaks(silence_mask, features["energy"])
 
         return self.build_chunks(
             peaks_sec,

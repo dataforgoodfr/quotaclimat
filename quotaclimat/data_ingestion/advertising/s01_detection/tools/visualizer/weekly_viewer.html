@@ -1226,10 +1226,16 @@
 
         // Player link
         const linkContainer = document.getElementById("player-link-container");
-        linkContainer.innerHTML =
+        let linkHtml =
           `<a class="player-link" href="${frag.playerUrl}" target="_blank" rel="noopener">` +
-          `Voir sur Mediatree</a>` +
-          `<span style="color:var(--text3);font-size:11px;margin-left:8px;">${frag.channel}</span>`;
+          `Voir sur Mediatree</a>`;
+        if (frag.s3Url) {
+          linkHtml +=
+            ` <a class="player-link" href="${frag.s3Url}" target="_blank" rel="noopener" style="margin-left:6px;">` +
+            `Voir sur le S3</a>`;
+        }
+        linkHtml += `<span style="color:var(--text3);font-size:11px;margin-left:8px;">${frag.channel}</span>`;
+        linkContainer.innerHTML = linkHtml;
 
         // Fragment info
         let html = '<div class="detail-section"><h4>Informations du fragment</h4><div class="info-grid">';
@@ -1280,6 +1286,9 @@
             html += `<span class="m-time">${formatDateTime(m.absStart)}</span>`;
             html += `<span class="m-dur">${formatDuration(m.duration)}</span>`;
             html += `<a class="m-link" href="${m.playerUrl}" target="_blank" rel="noopener" title="Voir sur Mediatree">&#9654;</a>`;
+            if (m.s3Url) {
+              html += `<a class="m-link" href="${m.s3Url}" target="_blank" rel="noopener" title="Voir sur le S3" style="margin-left:4px;font-size:10px;">S3</a>`;
+            }
             html += `</li>`;
           });
           html += '</ul>';

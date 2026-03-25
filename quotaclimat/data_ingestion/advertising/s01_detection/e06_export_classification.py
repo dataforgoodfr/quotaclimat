@@ -92,6 +92,7 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
             )
 
             for fragment in group_fragments:
+                fragment.group_id = ad_id
                 occ_id = _occurrence_id(ad_id, fragment.start_date, fragment.channel)
                 occurrences.append(
                     Ad_Occurrence(
@@ -105,6 +106,7 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
         for fragment in ungrouped:
             chunks = fragment.chunks or []
             ad_id = _ad_id_from_chunks(chunks)
+            fragment.group_id = ad_id
             fragment_type = (
                 "jingle" if fragment.classification == "jingle" else "advertising"
             )

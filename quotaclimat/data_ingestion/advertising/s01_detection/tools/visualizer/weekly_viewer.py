@@ -27,6 +27,13 @@ from quotaclimat.data_ingestion.advertising.s01_detection.e05_classify_fragments
 )
 
 TEMPLATE_PATH = Path(__file__).parent / "weekly_viewer.html"
+S3_BASE_URL = "https://console.scaleway.com/object-storage/buckets/fr-par/test-advertising-detection/files/ads/"
+
+AD_CLASSIFICATIONS = {"already_known_ad", "new_ad", "jingle"}
+
+
+def _build_s3_url(ad_id: str) -> str:
+    return f"{S3_BASE_URL}{ad_id}/"
 
 
 def _build_player_url(channel: str, start_epoch: float, end_epoch: float) -> str:
@@ -107,6 +114,11 @@ def generate_weekly_viewer(
                 )
 
         player_url = _build_player_url(frag.channel, abs_start, abs_end)
+        s3_url = (
+            _build_s3_url(frag.group_id)
+            if frag.group_id and frag.classification in AD_CLASSIFICATIONS
+            else None
+        )
 
         processed_fragments.append(
             {
@@ -120,6 +132,7 @@ def generate_weekly_viewer(
                 "groupSize": group_size,
                 "chunks": processed_chunks,
                 "playerUrl": player_url,
+                "s3Url": s3_url,
                 "memberStarts": [round(s, 2) for s in member_starts],
             }
         )

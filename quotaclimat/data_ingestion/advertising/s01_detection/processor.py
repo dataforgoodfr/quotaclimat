@@ -126,8 +126,7 @@ async def processor(
 
     #### Database storage
 
-    if False:
-        database_storage_save(fragments, chunk_hash="")
+    database_storage_save(fragments, chunk_hash=chunk_hash)
 
     #### Results exportation
 

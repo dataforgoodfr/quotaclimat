@@ -208,7 +208,6 @@ def update_programs_and_filter_out_of_scope_programs_from_df(df: pd.DataFrame, d
                 axis=1,
                 result_type='expand'
             )
-            
             logging.debug("drop out of perimeters rows")
             df = df.dropna(subset=['channel_program'], how='any') # any is for None values
             df.drop(columns=['id'], inplace=True, errors='ignore') # as replaced by program_metadata_id
@@ -217,4 +216,4 @@ def update_programs_and_filter_out_of_scope_programs_from_df(df: pd.DataFrame, d
         return df
     except Exception as err:
         logging.error(f"Could not update_programs_and_filter_out_of_scope_programs_from_df {err}")
-        raise Exception
+        raise err

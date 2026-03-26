@@ -276,7 +276,9 @@ class Dictionary(Base):
 
 class Keyword_Macro_Category(Base):
     __tablename__ = "keyword_macro_category"
-    keyword = Column(String, primary_key=True)  # linked to Dictionary.keyword
+    keyword_id = Column(String, nullable=False, primary_key=True)  # linked to Dictionary.keyword
+    keyword = Column(String, nullable=False)  # linked to Dictionary.keyword
+    language = Column(String, nullable=True, default=False)  # linked to Dictionary.keyword
     is_empty = Column(Boolean, nullable=True, default=False)
     general = Column(Boolean, nullable=True, default=False)
     agriculture = Column(Boolean, nullable=True, default=False)
@@ -287,7 +289,6 @@ class Keyword_Macro_Category(Base):
     eau = Column(Boolean, nullable=True, default=False)
     ecosysteme = Column(Boolean, nullable=True, default=False)
     economie_ressources = Column(Boolean, nullable=True, default=False)
-
 
 
 
@@ -438,7 +439,7 @@ def update_program_metadata(engine):
         session.close()
 
 
-def update_dictionary(engine, theme_keywords, macro_categories=MACRO_CATEGORIES):
+def update_dictionary(engine, theme_keywords=THEME_KEYWORDS, macro_categories=MACRO_CATEGORIES):
     logging.info("Updating dictionary data")
     Session = sessionmaker(bind=engine)
     session = Session()

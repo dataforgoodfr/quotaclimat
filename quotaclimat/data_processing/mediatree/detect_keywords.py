@@ -1,7 +1,8 @@
 import json
 import logging
 import subprocess
-from time import time
+from time import time as get_time
+
 
 import ahocorasick
 from quotaclimat.data_processing.mediatree.utils import *
@@ -34,12 +35,12 @@ LANGUAGE_CODES = {
     "dutch": "nl",
     "spanish": "es",
     "german": "de",
-    "english": "en", # TODO: DOWNLOAD DICTIONARY IN DOCKERFILE
+    "english": "en",
     "portuguese": "pt",
     "polish": "pl",
-    "italian": "it", # TODO: DOWNLOAD DICTIONARY IN DOCKERFILE
-    "danish": "da", # TODO: DOWNLOAD DICTIONARY IN DOCKERFILE
-    "greek": "el", # TODO: DOWNLOAD DICTIONARY IN DOCKERFILE
+    "italian": "it",
+    "danish": "da",
+    "greek": "el",
     # "latvian": "lv", # need to use stanza as it is not supported in spacy (stanza is slower)
 }
 
@@ -482,7 +483,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], countr
             log_min_max_date(df)
             logging.info(f"Running fo country = {country.code}")
             logging.info(f'tagging plaintext subtitle with keywords and theme : regexp - search taking time...')
-            t = time()
+            t = get_time()
             # using swifter to speed up apply https://github.com/jmcarpenter2/swifter
             df[
                 ['theme',
@@ -521,7 +522,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], countr
                         axis=1,
                         result_type='expand'
                 )
-            t_end = time()
+            t_end = get_time()
             logging.info(f"Search took: {t - t_end}s, {(t - t_end) / len(df)}")
             # remove all rows that does not have themes
             df = df.dropna(subset=['theme'], how='any') # any is for None values

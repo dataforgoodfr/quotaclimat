@@ -89,7 +89,7 @@ def find_matching_subtitle_fr(subtitles, keyword):
     for item in subtitles:
         logging.debug(f"Testing {item} with {keyword} full subtitle is {subtitles}")
         try:
-            if is_word_in_sentence(keyword, item.get("text", "")):
+            if is_word_in_sentence_fr(keyword, item.get("text", "")):
                 logging.debug(f"match found {item} with {keyword}")
                 return item
         except Exception as e: 
@@ -187,20 +187,6 @@ def build_keyword_automaton(keywords, country: CountryMediaTree=FRANCE):
     automaton.make_automaton()
     return automaton
 
-def is_word_in_sentence_i18n(words: str, sentence: str, country: CountryMediaTree=FRANCE) -> bool:
-    logging.info("Running lemmatization matching for i18n languages")
-    lang = LANGUAGE_CODES[country.language]
-    sentence_lemmas = set(get_lemmas(sentence, lang))
-    query_lemmas = set(get_lemmas(words, lang))
-    return bool(sentence_lemmas & query_lemmas)
-
-
-def is_word_in_sentence(words: str, sentence: str, country: CountryMediaTree=FRANCE) -> bool:
-    # if country == FRANCE:
-    #     return is_word_in_sentence_fr(words, sentence)
-    # else:
-    #     return is_word_in_sentence_i18n(words, sentence, country=country)
-    return is_word_in_sentence_i18n(words, sentence, country=country)
 
 def get_words_in_sentence_i18n(automaton: ahocorasick.Automaton, text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
     logging.info("Running lemmatization matching with ahocorasick.Automaton for i18n languages")

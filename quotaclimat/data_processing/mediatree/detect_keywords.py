@@ -1,6 +1,7 @@
 import json
 import logging
 import subprocess
+from time import time
 
 import ahocorasick
 from quotaclimat.data_processing.mediatree.utils import *
@@ -481,6 +482,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], countr
             log_min_max_date(df)
             logging.info(f"Running fo country = {country.code}")
             logging.info(f'tagging plaintext subtitle with keywords and theme : regexp - search taking time...')
+            t = time()
             # using swifter to speed up apply https://github.com/jmcarpenter2/swifter
             df[
                 ['theme',
@@ -519,7 +521,8 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], countr
                         axis=1,
                         result_type='expand'
                 )
-
+            t_end = time()
+            logging.info(f"Search took: {t - t_end}s, {(t - t_end) / len(df)}")
             # remove all rows that does not have themes
             df = df.dropna(subset=['theme'], how='any') # any is for None values
             logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")

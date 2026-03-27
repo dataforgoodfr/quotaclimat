@@ -205,6 +205,36 @@ def get_words_in_sentence_i18n(automaton: ahocorasick.Automaton, text: str, coun
 
     return found
 
+def is_keyword_in_text(keyword: str, text: str) -> bool:
+    """
+    Checks if a specific keyword is present in a text.
+    Replicates the logic of is_word_in_sentence from the original file.
+
+    Args:
+        keyword: The keyword to search for
+        text: The text to search in
+
+    Returns:
+        True if the keyword is found, False otherwise
+    """
+    if not keyword or not text:
+        return False
+
+    # Create the regex pattern with case-insensitivity and line start
+    pattern = f"(?i)(?:^|\\b){keyword}(?![\\w-])"
+
+    # Search (case-insensitivity already in the pattern)
+    return bool(re.search(pattern, text))
+
+def get_words_in_sentence_regex_i18n(keywords_lemmas, text: str) -> Set[str]:
+    logging.info("Running regex matching with lemmas for i18n languages")
+  
+    found = set()
+    for idx in keywords_lemmas:
+        if is_keyword_in_text(keywords_lemmas[idx], text):
+            found.add(idx)
+    return found
+
 def filter_already_contained_keyword(keywords_with_timestamp: List[dict]) -> List[dict]:
     number_of_keywords = len(keywords_with_timestamp)
 
@@ -285,24 +315,28 @@ def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
             "category": keyword_dict["category"]
     }
 
+# def get_words_in_sentence(automaton: ahocorasick.Automaton, keywords_dict: Dict[str, str], text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
 def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
     if country.code=='fra':
         logging.info("Using regex for france")
         return set([idx for idx, kw in enumerate(keywords_dict) if is_word_in_sentence_fr(kw["keyword"], text)])
     else:
+        lang = LANGUAGE_CODES[country.language]
+        kw_lemmas = dict()
         keywords = [keyword_dict["keyword"].lower() for keyword_dict in keywords_dict]
-        automaton = build_keyword_automaton(keywords, country)
-        return get_words_in_sentence_i18n(automaton, text, country)
+        for idx, kw in enumerate(keywords):
+            lemmas = get_lemmas(kw, lang)
+            key = " ".join(lemmas)
+            kw_lemmas[idx] = key
+        text_lemmas = get_lemmas(text, lang)
+        lemmatised_text = " " + " ".join(text_lemmas) + " "
+        return get_words_in_sentence_regex_i18n(kw_lemmas, lemmatised_text)
 
 
+# def get_detected_keywords(automaton: ahocorasick.Automaton, plaintext_without_stopwords: str, keywords_dict, country=FRANCE):
 def get_detected_keywords(plaintext_without_stopwords: str, keywords_dict, country=FRANCE):
-
-    matching_words = []
-    logging.info(f"Keeping only {country.language} keywords... ")
-    keywords_dict = list(filter(lambda x: x["language"] == country.language, keywords_dict))
-    if len(keywords_dict) == 0:
-        return matching_words
     found_idx = get_words_in_sentence(keywords_dict, plaintext_without_stopwords, country)
+    # found_idx = get_words_in_sentence(automaton, keywords_dict, plaintext_without_stopwords, country)
     matching_words = [get_keyword_matching_json(keywords_dict[idx], country=country) for idx in found_idx]
     if matching_words:
         logging.info(f"found following matching words: {matching_words}")
@@ -323,8 +357,16 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
     logging.info(f"Keeping only {country.language} keywords...")
     try:
         for theme, keywords_dict in THEME_KEYWORDS.items():
-            logging.debug(f"searching {theme} for {keywords_dict}")
-            matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict, country=country)
+            logging.debug(f"searching theme: {theme}")
+            logging.info(f"Keeping only {country.language} keywords... ")
+            keywords_dict = list(filter(lambda x: x["language"] == country.language, keywords_dict))
+            if len(keywords_dict) == 0:
+                matching_words = []
+            else:
+                # keywords = [keyword_dict["keyword"].lower() for keyword_dict in keywords_dict]
+                # automaton = build_keyword_automaton(keywords, country)
+                matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict, country=country)
+                # matching_words = get_detected_keywords(automaton, plaitext_without_stopwords, keywords_dict, country=country)
         
             if matching_words:
                 logging.info(f"theme found : {theme} with word {matching_words}")
@@ -523,7 +565,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], countr
                         result_type='expand'
                 )
             t_end = get_time()
-            logging.info(f"Search took: {t - t_end}s, {(t - t_end) / len(df)}")
+            logging.info(f"Search took: {t_end - t}s, {(t_end - t) / len(df)}")
             # remove all rows that does not have themes
             df = df.dropna(subset=['theme'], how='any') # any is for None values
             logging.info(f"After filtering with out keywords, we have {len(df)} out of {count_before_filtering} subtitles left that are insteresting for us")

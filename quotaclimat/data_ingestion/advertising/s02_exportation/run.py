@@ -11,7 +11,7 @@ from tqdm import tqdm
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad, Ad_Occurrence
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.mediatree import (
-    CachedMediatreeAPI,
+    MediatreeAPI,
 )
 
 logger = logging.getLogger(__name__)
@@ -58,7 +58,7 @@ def query_ads_since(session, since_date: datetime) -> list[tuple[Ad, Ad_Occurren
 
 
 async def _export_ad(
-    ad: Ad, occurrence: Ad_Occurrence, api: CachedMediatreeAPI, s3_client, tmp_dir: str
+    ad: Ad, occurrence: Ad_Occurrence, api: MediatreeAPI, s3_client, tmp_dir: str
 ):
     from_date = occurrence.occurrence_date
     to_date = from_date + timedelta(seconds=ad.duration_sec)
@@ -80,26 +80,26 @@ async def _export_ad(
 async def run(since_date: datetime):
     session = get_db_session()
     s3_client = get_s3_client()
-    api = CachedMediatreeAPI()
 
     try:
         ads = query_ads_since(session, since_date)
         logger.info(f"Found {len(ads)} ads since {since_date}")
 
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            for ad, occurrence in tqdm(ads, desc="Exporting ads"):
-                if ad_folder_exists_in_s3(ad.id, s3_client):
-                    logger.info(f"Ad {ad.id} already in S3, skipping")
-                    continue
+        async with MediatreeAPI() as api:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                for ad, occurrence in tqdm(ads, desc="Exporting ads"):
+                    if ad_folder_exists_in_s3(ad.id, s3_client):
+                        logger.info(f"Ad {ad.id} already in S3, skipping")
+                        continue
 
-                logger.info(
-                    f"Processing ad {ad.id} (channel={occurrence.channel_name})"
-                )
-                try:
-                    await _export_ad(ad, occurrence, api, s3_client, tmp_dir)
-                except Exception as e:
-                    logger.error(f"Failed to export ad {ad.id}: {e}")
-                    raise e
+                    logger.info(
+                        f"Processing ad {ad.id} (channel={occurrence.channel_name})"
+                    )
+                    try:
+                        await _export_ad(ad, occurrence, api, s3_client, tmp_dir)
+                    except Exception as e:
+                        logger.error(f"Failed to export ad {ad.id}: {e}")
+                        raise e
     finally:
         session.close()
 

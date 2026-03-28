@@ -153,6 +153,25 @@ class MediatreeAPI:
 
     # ---- Public API ----
 
+    def export_path(
+        self,
+        channel: str,
+        from_date: datetime,
+        to_date: datetime,
+        media_format: str,
+    ) -> str:
+        file_name = self._file_name(channel, from_date, to_date, media_format)
+        return os.path.join(self.export_folder, file_name)
+
+    def export_exists(
+        self,
+        channel: str,
+        from_date: datetime,
+        to_date: datetime,
+        media_format: str,
+    ) -> bool:
+        return os.path.isfile(self.export_path(channel, from_date, to_date, media_format))
+
     async def get_single_export_url(
         self,
         channel: str,
@@ -185,14 +204,13 @@ class MediatreeAPI:
         file_path: str | Path | None = None,
     ) -> str:
         if file_path is None:
-            file_name = self._file_name(channel, from_date, to_date, media_format)
-            file_path = os.path.join(self.export_folder, file_name)
+            file_path = self.export_path(channel, from_date, to_date, media_format)
 
         file_path = str(file_path)
         if os.path.isfile(file_path):
             return file_path
 
-        src_url = await self.get_single_export_url(channel, from_date, to_date, media_format)
+        src_url = await self.generate_src_url(channel, from_date, to_date, media_format)
 
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         await self._stream_to_file_with_retry(src_url, file_path)

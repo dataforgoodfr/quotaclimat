@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 import traceback
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
@@ -16,21 +15,13 @@ logger = logging.getLogger(__name__)
 
 
 async def download_audio(api: MediatreeAPI, segment: Segment) -> tuple[str, bool]:
-    expected_path = os.path.join(
-        api.export_folder,
-        api._file_name(
-            segment.channel,
-            segment.start_date,
-            segment.end_date + timedelta(minutes=1),
-            "mp3",
-        ),
-    )
-    was_cached = os.path.isfile(expected_path)
+    end_date = segment.end_date + timedelta(minutes=1)
+    was_cached = api.export_exists(segment.channel, segment.start_date, end_date, "mp3")
 
     audio_file_path = await api.download_export(
         segment.channel,
         segment.start_date,
-        segment.end_date + timedelta(minutes=1),
+        end_date,
         "mp3",
     )
 

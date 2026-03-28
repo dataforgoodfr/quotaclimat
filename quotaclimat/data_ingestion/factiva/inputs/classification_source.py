@@ -513,6 +513,13 @@ SOURCE_CLASSIFICATION = {
             "source_owner": "Groupe Sud Ouest",
             "media_all": "Sud Ouest",
             "source_region": "Nouvelle-Aquitaine"
+        },
+        {
+            "source_name": "Ouest-France",
+            "source_code": "OUESTFR",
+            "source_owner": "SIPA Ouest-France",
+            "media_all": "Ouest-France",
+            "source_region": "Bretagne"
         }
     ],
     "Agence Presse": [

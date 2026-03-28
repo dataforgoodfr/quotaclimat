@@ -10,12 +10,12 @@ from typing import Callable, Generator
 from tqdm import tqdm
 
 from .e00_partition_window import Segment
-from .tools.mediatree import CachedMediatreeAPI
+from .tools.mediatree import MediatreeAPI
 
 logger = logging.getLogger(__name__)
 
 
-async def download_audio(api: CachedMediatreeAPI, segment: Segment) -> tuple[str, bool]:
+async def download_audio(api: MediatreeAPI, segment: Segment) -> tuple[str, bool]:
     expected_path = os.path.join(
         api.export_folder,
         api._file_name(
@@ -101,8 +101,8 @@ class AudioProcessor:
         self.stats = PipelineStats()
         self.process_media = process_media
 
-        # Semaphore and retry are now handled inside CachedMediatreeAPI
-        self.api = CachedMediatreeAPI(max_concurrent_requests=max_concurrent_downloads)
+        # Semaphore and retry are now handled inside MediatreeAPI
+        self.api = MediatreeAPI(max_concurrent_requests=max_concurrent_downloads)
 
     async def run(self):
         self.dl_bar = tqdm(

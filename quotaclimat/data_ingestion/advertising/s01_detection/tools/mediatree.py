@@ -27,26 +27,33 @@ DEFAULT_TIMEOUT = httpx.Timeout(120.0, connect=120.0)
 
 
 class MediatreeAPI:
-    """Async Mediatree API client.
+    """Async Mediatree API client with local file caching.
 
     Usage::
 
         async with MediatreeAPI() as api:
-            await api.download_export(...)
+            path = await api.download_export("tf1", from_date, to_date, "mp3")
+            subtitle = await api.get_subtitle("tf1", from_date, to_date)
 
     Features:
     - Lazy authentication (token fetched on first request)
     - Shared httpx.AsyncClient for connection pooling
     - Semaphore to limit concurrent requests to the API
     - Automatic retry with exponential backoff
+    - Local file caching (skips download if file already exists)
+    - Streaming downloads (constant memory usage for large files)
     """
 
     def __init__(
         self,
+        export_folder: str = "./.cache/mediatree",
+        prefix: str = "",
         max_concurrent_requests: int = 5,
         max_retries: int = 3,
         retry_base_delay: float = 2.0,
     ):
+        self.export_folder = export_folder
+        self.prefix = prefix
         self._token: str | None = None
         self._client: httpx.AsyncClient | None = None
         self._semaphore = asyncio.Semaphore(max_concurrent_requests)
@@ -61,6 +68,8 @@ class MediatreeAPI:
         if self._client:
             await self._client.aclose()
             self._client = None
+
+    # ---- Auth ----
 
     @property
     def token(self) -> str:
@@ -81,6 +90,8 @@ class MediatreeAPI:
         response.raise_for_status()
         return response.json()["data"]["access_token"]
 
+    # ---- HTTP helpers ----
+
     @property
     def _http(self) -> httpx.AsyncClient:
         if self._client is None:
@@ -92,28 +103,55 @@ class MediatreeAPI:
 
     async def _request_with_retry(self, method: str, url: str, **kwargs) -> httpx.Response:
         async with self._semaphore:
-            last_exc: Exception | None = None
-            for attempt in range(1, self._max_retries + 1):
-                try:
-                    response = await self._http.request(method, url, **kwargs)
-                    response.raise_for_status()
-                    return response
-                except Exception as exc:
-                    last_exc = exc
-                    if attempt == self._max_retries:
-                        raise
-                    delay = self._retry_base_delay * (2 ** (attempt - 1))
-                    logger.warning(
-                        "Request %s %s attempt %d/%d failed, retrying in %.1fs: %s",
-                        method,
-                        url,
-                        attempt,
-                        self._max_retries,
-                        delay,
-                        exc,
-                    )
-                    await asyncio.sleep(delay)
-            raise last_exc  # unreachable, but satisfies type checkers
+            return await self._do_with_retry(
+                lambda: self._http.request(method, url, **kwargs)
+            )
+
+    async def _stream_to_file_with_retry(self, url: str, file_path: str) -> None:
+        async with self._semaphore:
+            await self._do_with_retry(
+                lambda: self._stream_to_file(url, file_path)
+            )
+
+    async def _do_with_retry(self, fn):
+        for attempt in range(1, self._max_retries + 1):
+            try:
+                return await fn()
+            except Exception as exc:
+                if attempt == self._max_retries:
+                    raise
+                delay = self._retry_base_delay * (2 ** (attempt - 1))
+                logger.warning(
+                    "Attempt %d/%d failed, retrying in %.1fs: %s",
+                    attempt,
+                    self._max_retries,
+                    delay,
+                    exc,
+                )
+                await asyncio.sleep(delay)
+
+    async def _stream_to_file(self, url: str, file_path: str) -> None:
+        async with self._http.stream("GET", url) as response:
+            response.raise_for_status()
+            with open(file_path, "wb") as f:
+                async for chunk in response.aiter_bytes(chunk_size=64 * 1024):
+                    f.write(chunk)
+
+    # ---- Cache helpers ----
+
+    def _file_name(
+        self, channel: str, from_date: datetime, to_date: datetime, media_format: str
+    ) -> str:
+        from_date_utc = from_date.astimezone(tz=ZoneInfo("UTC"))
+        to_date_utc = to_date.astimezone(tz=ZoneInfo("UTC"))
+        return (
+            f"{self.prefix}{channel}"
+            f"_{from_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}Z"
+            f"_{to_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}Z"
+            f".{media_format}"
+        )
+
+    # ---- Public API ----
 
     async def get_single_export_url(
         self,
@@ -140,73 +178,6 @@ class MediatreeAPI:
 
     async def download_export(
         self,
-        file_path: str | Path,
-        channel: str,
-        from_date: datetime,
-        to_date: datetime,
-        media_format: str,
-    ) -> None:
-        src_url = await self.get_single_export_url(channel, from_date, to_date, media_format)
-        response = await self._request_with_retry("GET", src_url)
-
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, "wb") as f:
-            f.write(response.content)
-
-    async def get_subtitle(
-        self,
-        channel: str,
-        start_gte: datetime,
-        start_lte: datetime,
-    ) -> dict:
-        response = await self._request_with_retry(
-            "GET",
-            f"{MEDIATREE_API_URL}/v2/subtitle/",
-            params={
-                "token": self.token,
-                "channel": channel,
-                "start_gte": int(start_gte.timestamp()),
-                "start_lte": int(start_lte.timestamp()),
-            },
-        )
-        return response.json()
-
-
-class CachedMediatreeAPI:
-    """Mediatree API with local file caching.
-
-    Usage::
-
-        async with CachedMediatreeAPI() as api:
-            path = await api.download_export("tf1", from_date, to_date, "mp3")
-    """
-
-    def __init__(self, export_folder: str = "./.cache/mediatree", prefix: str = "", **api_kwargs):
-        self.api = MediatreeAPI(**api_kwargs)
-        self.export_folder = export_folder
-        self.prefix = prefix
-
-    async def __aenter__(self):
-        await self.api.__aenter__()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self.api.__aexit__(exc_type, exc_val, exc_tb)
-
-    def _file_name(
-        self, channel: str, from_date: datetime, to_date: datetime, media_format: str
-    ) -> str:
-        from_date_utc = from_date.astimezone(tz=ZoneInfo("UTC"))
-        to_date_utc = to_date.astimezone(tz=ZoneInfo("UTC"))
-        return (
-            f"{self.prefix}{channel}"
-            f"_{from_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}Z"
-            f"_{to_date_utc.strftime('%Y-%m-%d_%H-%M-%S')}Z"
-            f".{media_format}"
-        )
-
-    async def download_export(
-        self,
         channel: str,
         from_date: datetime,
         to_date: datetime,
@@ -218,8 +189,13 @@ class CachedMediatreeAPI:
             file_path = os.path.join(self.export_folder, file_name)
 
         file_path = str(file_path)
-        if not os.path.isfile(file_path):
-            await self.api.download_export(file_path, channel, from_date, to_date, media_format)
+        if os.path.isfile(file_path):
+            return file_path
+
+        src_url = await self.get_single_export_url(channel, from_date, to_date, media_format)
+
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        await self._stream_to_file_with_retry(src_url, file_path)
 
         return file_path
 
@@ -233,7 +209,7 @@ class CachedMediatreeAPI:
             with open(file_path, "r") as f:
                 return f.read().strip()
 
-        url = await self.api.get_single_export_url(channel, from_date, to_date, media_format)
+        url = await self.get_single_export_url(channel, from_date, to_date, media_format)
 
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "w") as f:
@@ -247,11 +223,17 @@ class CachedMediatreeAPI:
         from_date: datetime,
         to_date: datetime,
     ) -> str:
-        raw_subtitle = await self.api.get_subtitle(
-            channel,
-            from_date - timedelta(minutes=2),
-            to_date + timedelta(minutes=2),
+        response = await self._request_with_retry(
+            "GET",
+            f"{MEDIATREE_API_URL}/v2/subtitle/",
+            params={
+                "token": self.token,
+                "channel": channel,
+                "start_gte": int((from_date - timedelta(minutes=2)).timestamp()),
+                "start_lte": int((to_date + timedelta(minutes=2)).timestamp()),
+            },
         )
+        raw_subtitle = response.json()
 
         output = []
         for parts in raw_subtitle["data"]:
@@ -279,7 +261,7 @@ if __name__ == "__main__":
     import asyncio
 
     async def main():
-        async with CachedMediatreeAPI() as api:
+        async with MediatreeAPI() as api:
             chunk1 = (
                 "tf1_1",
                 "tf1",

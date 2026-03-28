@@ -216,3 +216,22 @@ jobs:
           SCW_ZONE: ${{ secrets.SCW_ZONE }}
         with:
           args: jobs definition update ${{ secrets.SCALEWAY_JOB_LEMONDE_WEB_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }}
+
+      - name: Build ouest_france image (same Dockerfile, different default pipeline)
+        run: docker build -f Dockerfile_lemonde_web --build-arg DEFAULT_PIPELINE=ouest_france . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:${{ env.PROJECT_VERSION }}
+
+      - name: Tag ouest_france latest image
+        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:latest
+
+      - name: Push ouest_france Image
+        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france
+
+      - name: Update Scaleway job definition with OuestFrance image
+        uses: jawher/action-scw@v2.34.0
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          SCW_ZONE: ${{ secrets.SCW_ZONE }}
+        with:
+          args: jobs definition update ${{ secrets.SCALEWAY_JOB_OUEST_FRANCE_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:${{ env.PROJECT_VERSION }}

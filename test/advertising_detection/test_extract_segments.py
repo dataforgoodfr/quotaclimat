@@ -12,7 +12,7 @@ from quotaclimat.data_ingestion.advertising.s01_detection.processor import (
 )
 
 
-async def mock_download_audio(task: Segment) -> tuple[str, bool]:
+async def mock_download_audio(api, task: Segment) -> tuple[str, bool]:
     item = 1 if task.start_date.minute == 0 else 2
     return (
         f"test/advertising_detection/assets/tf1_{item}.mp3",

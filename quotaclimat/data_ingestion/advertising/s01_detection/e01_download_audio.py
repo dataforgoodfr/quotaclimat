@@ -14,11 +14,8 @@ from .tools.mediatree import CachedMediatreeAPI
 
 logger = logging.getLogger(__name__)
 
-api = CachedMediatreeAPI()
 
-
-async def download_audio(segment: Segment) -> (str, bool):
-    # Check if file already exists before download to detect cache hits
+async def download_audio(api: CachedMediatreeAPI, segment: Segment) -> tuple[str, bool]:
     expected_path = os.path.join(
         api.export_folder,
         api._file_name(
@@ -35,31 +32,9 @@ async def download_audio(segment: Segment) -> (str, bool):
         segment.start_date,
         segment.end_date + timedelta(minutes=1),
         "mp3",
-    )  # on ajoute une minute pour être sûr d'avoir le dernier chunk en entier
+    )
 
     return audio_file_path, was_cached
-
-
-async def with_exponential_backoff(
-    coro_fn, max_retries: int = 3, base_delay: float = 2.0, label: str = ""
-):
-    """Retry an async callable with exponential backoff. Raises on final failure."""
-    for attempt in range(1, max_retries + 1):
-        try:
-            return await coro_fn()
-        except Exception as exc:
-            if attempt == max_retries:
-                raise
-            delay = base_delay * (2 ** (attempt - 1))
-            logger.debug(
-                "Attempt %d/%d failed%s, retrying in %.1fs: %s",
-                attempt,
-                max_retries,
-                f" for {label}" if label else "",
-                delay,
-                exc,
-            )
-            await asyncio.sleep(delay)
 
 
 ###############################
@@ -111,28 +86,25 @@ class ProcessingTask:
 class AudioProcessor:
     def __init__(
         self,
-        segments: Generator[
-            Segment, None, None
-        ],  # Function to generate download segments based on input parameters
+        segments: Generator[Segment, None, None],
         process_media: Callable[[Segment, str], bool],
-        num_workers: int = 4,  # Number of processor for audio work (CPU intensive)
-        max_concurrent_downloads: int = 5,  # Limit of simultaneous downloads (I/O intensive, API limits)
-        max_queue_size: int = 10,  # Maximum queue size between download and processing (Memory intensive: all pending files are saved locally)
+        num_workers: int = 4,
+        max_concurrent_downloads: int = 5,
+        max_queue_size: int = 10,
     ):
         self.num_workers = num_workers
-        self.semaphore = asyncio.Semaphore(max_concurrent_downloads)
         self.queue = asyncio.Queue(maxsize=max_queue_size)
 
-        # Materialize the generator to know the total count for progress bars
         self.segments = list(segments)
         self.total = len(self.segments)
 
         self.stats = PipelineStats()
-
         self.process_media = process_media
 
+        # Semaphore and retry are now handled inside CachedMediatreeAPI
+        self.api = CachedMediatreeAPI(max_concurrent_requests=max_concurrent_downloads)
+
     async def run(self):
-        # Progress bars: download on top, processing below
         self.dl_bar = tqdm(
             total=self.total,
             desc="Download",
@@ -150,15 +122,16 @@ class AudioProcessor:
         self._update_postfix()
 
         try:
-            with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
-                download = asyncio.create_task(self._download_worker())
-                workers = [
-                    asyncio.create_task(self._process_worker(executor, i))
-                    for i in range(self.num_workers)
-                ]
+            async with self.api:
+                with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
+                    download = asyncio.create_task(self._download_worker())
+                    workers = [
+                        asyncio.create_task(self._process_worker(executor, i))
+                        for i in range(self.num_workers)
+                    ]
 
-                await download
-                await asyncio.gather(*workers)
+                    await download
+                    await asyncio.gather(*workers)
         finally:
             self.dl_bar.close()
             self.proc_bar.close()
@@ -184,14 +157,12 @@ class AudioProcessor:
     async def _download_worker(self):
         """Launch downloads and queue them as they complete"""
         segments = [
-            self._download_and_queue(download_segment)
-            for download_segment in self.segments
+            self._download_and_queue(segment)
+            for segment in self.segments
         ]
 
-        # Wait for all to finish
         await asyncio.gather(*segments)
 
-        # End signals
         for _ in range(self.num_workers):
             await self.queue.put(None)
 
@@ -222,32 +193,23 @@ class AudioProcessor:
             self.proc_bar.update(1)
             self._update_postfix()
 
-    async def _download_and_queue(
-        self, segment: Segment, max_retries: int = 3, base_delay: float = 2.0
-    ):
-        """All-in-one: download with retry AND queue"""
-        async with self.semaphore:
-            try:
-                audio_file_path, download_was_cached = await with_exponential_backoff(
-                    lambda: download_audio(segment),
-                    max_retries=max_retries,
-                    base_delay=base_delay,
-                    label=str(segment),
-                )
+    async def _download_and_queue(self, segment: Segment):
+        try:
+            audio_file_path, was_cached = await download_audio(self.api, segment)
 
-                if download_was_cached:
-                    self.stats.dl_cached += 1
-                else:
-                    self.stats.dl_downloaded += 1
+            if was_cached:
+                self.stats.dl_cached += 1
+            else:
+                self.stats.dl_downloaded += 1
 
-                await self.queue.put((segment, audio_file_path))
-            except Exception:
-                tb = traceback.format_exc()
-                self.stats.dl_errors += 1
-                self.stats.errors.append(("download", str(segment), tb))
-                tqdm.write(
-                    f"\n[ERROR] Download failed for {segment} after {max_retries} attempts:\n{tb}"
-                )
+            await self.queue.put((segment, audio_file_path))
+        except Exception:
+            tb = traceback.format_exc()
+            self.stats.dl_errors += 1
+            self.stats.errors.append(("download", str(segment), tb))
+            tqdm.write(
+                f"\n[ERROR] Download failed for {segment}:\n{tb}"
+            )
 
-            self.dl_bar.update(1)
-            self._update_postfix()
+        self.dl_bar.update(1)
+        self._update_postfix()

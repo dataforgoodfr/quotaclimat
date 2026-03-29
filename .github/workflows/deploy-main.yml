@@ -217,8 +217,8 @@ jobs:
         with:
           args: jobs definition update ${{ secrets.SCALEWAY_JOB_LEMONDE_WEB_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }}
 
-      - name: Build ouest_france image (same Dockerfile, different entrypoint)
-        run: docker build -f Dockerfile_press_ingestion --build-arg ENTRYPOINT_SCRIPT=docker-entrypoint-ouest-france.sh . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:${{ env.PROJECT_VERSION }}
+      - name: Tag press_ingestion image as ouest_france (same image, command overridden at runtime)
+        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:${{ env.PROJECT_VERSION }}
 
       - name: Tag ouest_france latest image
         run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:latest

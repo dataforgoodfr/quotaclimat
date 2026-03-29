@@ -1,9 +1,7 @@
 # Dockerfile for press ingestion pipelines (Le Monde FTP, OuestFrance API)
-# Uses a build arg to select which entrypoint script to bake in.
 #
-# Usage:
-#   docker build -f Dockerfile_press_ingestion . -t lemonde_web
-#   docker build -f Dockerfile_press_ingestion --build-arg ENTRYPOINT_SCRIPT=docker-entrypoint-ouest-france.sh . -t ouest_france
+# Default CMD runs the Le Monde pipeline. Override at runtime for others:
+#   docker run <image> ./docker-entrypoint-ouest-france.sh
 
 FROM python:3.12.10 AS builder
 
@@ -44,9 +42,10 @@ RUN mkdir -p /tmp/s3_factiva_to_postgre \
 # Healthcheck port
 EXPOSE 5000
 
-# Select entrypoint script via build arg (default: lemonde)
-ARG ENTRYPOINT_SCRIPT=docker-entrypoint-lemonde-web.sh
-COPY ${ENTRYPOINT_SCRIPT} ./entrypoint.sh
-RUN chmod +x ./entrypoint.sh
+# Copy entrypoint scripts
+COPY docker-entrypoint-lemonde-web.sh ./docker-entrypoint-lemonde-web.sh
+COPY docker-entrypoint-ouest-france.sh ./docker-entrypoint-ouest-france.sh
+RUN chmod +x ./docker-entrypoint-lemonde-web.sh ./docker-entrypoint-ouest-france.sh
 
-ENTRYPOINT ["./entrypoint.sh"]
+# Default: Le Monde pipeline. Override at runtime for other pipelines.
+CMD ["./docker-entrypoint-lemonde-web.sh"]

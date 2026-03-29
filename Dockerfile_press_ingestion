@@ -42,10 +42,9 @@ RUN mkdir -p /tmp/s3_factiva_to_postgre \
 # Healthcheck port
 EXPOSE 5000
 
-# Copy entrypoint scripts
+# Copy entrypoint scripts (executable bit set in repo)
 COPY docker-entrypoint-lemonde-web.sh ./docker-entrypoint-lemonde-web.sh
 COPY docker-entrypoint-ouest-france.sh ./docker-entrypoint-ouest-france.sh
-RUN chmod +x ./docker-entrypoint-lemonde-web.sh ./docker-entrypoint-ouest-france.sh
 
 # Default: Le Monde pipeline. Override at runtime for other pipelines.
 CMD ["./docker-entrypoint-lemonde-web.sh"]

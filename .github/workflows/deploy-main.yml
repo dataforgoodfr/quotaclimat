@@ -168,13 +168,22 @@ jobs:
       - name: Push s3_factiva_to_postgre Image
         run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre
 
-      - name: Build lemonde_web image
-        run: docker build -f Dockerfile_press_ingestion . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }}
+      - name: Build press_ingestion image
+        run: docker build -f Dockerfile_press_ingestion . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/press_ingestion:${{ env.PROJECT_VERSION }}
+
+      - name: Tag press_ingestion latest image
+        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/press_ingestion:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/press_ingestion:latest
+
+      - name: Push press_ingestion image
+        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/press_ingestion
+
+      - name: Tag press_ingestion as lemonde_web (backward compatibility)
+        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/press_ingestion:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }}
 
       - name: Tag lemonde_web latest image
         run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:latest
 
-      - name: Push lemonde_web Image
+      - name: Push lemonde_web image
         run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web
 
       - name: Update Scaleway job definition with Factiva Stats image
@@ -217,15 +226,6 @@ jobs:
         with:
           args: jobs definition update ${{ secrets.SCALEWAY_JOB_LEMONDE_WEB_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }}
 
-      - name: Tag press_ingestion image as ouest_france (same image, command overridden at runtime)
-        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:${{ env.PROJECT_VERSION }}
-
-      - name: Tag ouest_france latest image
-        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:latest
-
-      - name: Push ouest_france Image
-        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france
-
       - name: Update Scaleway job definition with OuestFrance image
         uses: jawher/action-scw@v2.34.0
         env:
@@ -234,4 +234,4 @@ jobs:
           SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
           SCW_ZONE: ${{ secrets.SCW_ZONE }}
         with:
-          args: jobs definition update ${{ secrets.SCALEWAY_JOB_OUEST_FRANCE_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:${{ env.PROJECT_VERSION }}
+          args: jobs definition update ${{ secrets.SCALEWAY_JOB_OUEST_FRANCE_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/press_ingestion:${{ env.PROJECT_VERSION }}

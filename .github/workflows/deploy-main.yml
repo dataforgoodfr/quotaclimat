@@ -169,7 +169,7 @@ jobs:
         run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre
 
       - name: Build lemonde_web image
-        run: docker build -f Dockerfile_lemonde_web . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }}
+        run: docker build -f Dockerfile_press_ingestion . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }}
 
       - name: Tag lemonde_web latest image
         run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:latest
@@ -217,8 +217,8 @@ jobs:
         with:
           args: jobs definition update ${{ secrets.SCALEWAY_JOB_LEMONDE_WEB_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }}
 
-      - name: Build ouest_france image (same Dockerfile, different default pipeline)
-        run: docker build -f Dockerfile_lemonde_web --build-arg DEFAULT_PIPELINE=ouest_france . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:${{ env.PROJECT_VERSION }}
+      - name: Build ouest_france image (same Dockerfile, different entrypoint)
+        run: docker build -f Dockerfile_press_ingestion --build-arg ENTRYPOINT_SCRIPT=docker-entrypoint-ouest-france.sh . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:${{ env.PROJECT_VERSION }}
 
       - name: Tag ouest_france latest image
         run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/ouest_france:latest

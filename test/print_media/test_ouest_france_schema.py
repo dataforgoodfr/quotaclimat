@@ -1,7 +1,7 @@
-"""Tests for the Factiva article Pydantic schema and OuestFrance XML parsing.
+"""Tests for the Factiva article dataclass schema and OuestFrance XML parsing.
 
 These tests validate:
-1. The Pydantic schema catches format errors at write time
+1. The dataclass schema catches format errors at construction time
 2. OuestFrance XML is correctly parsed into Factiva-format articles
 """
 
@@ -174,7 +174,7 @@ SAMPLE_OUEST_FRANCE_XML = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 
-# --- Pydantic schema tests ---
+# --- Dataclass schema tests ---
 
 
 class TestFactivaArticleAttributes:
@@ -241,15 +241,6 @@ class TestFactivaArticleAttributes:
         )
         assert attrs.word_count == 827
 
-    def test_extra_fields_allowed(self):
-        attrs = FactivaArticleAttributes(
-            an="TEST:123",
-            source_code="OUESTFR",
-            source_name="Ouest-France",
-            usage_rights_permitted="analytics",
-        )
-        assert attrs.usage_rights_permitted == "analytics"
-
 
 class TestFactivaArticleEnvelope:
     def test_valid_envelope(self):
@@ -266,8 +257,8 @@ class TestFactivaArticleEnvelope:
         assert envelope.type == "article"
         assert envelope.attributes.source_code == "OUESTFR"
 
-    def test_model_dump_structure(self):
-        """Verify model_dump output matches the format expected by s3_factiva_to_postgre."""
+    def test_to_dict_structure(self):
+        """Verify to_dict output matches the format expected by s3_factiva_to_postgre."""
         envelope = FactivaArticleEnvelope(
             id="TEST:123",
             attributes=FactivaArticleAttributes(
@@ -277,7 +268,7 @@ class TestFactivaArticleEnvelope:
                 title="My Title",
             ),
         )
-        d = envelope.model_dump()
+        d = envelope.to_dict()
         assert d["id"] == "TEST:123"
         assert d["type"] == "article"
         assert d["attributes"]["an"] == "TEST:123"
@@ -305,7 +296,7 @@ class TestFactivaS3Document:
         )
         assert len(doc.data) == 2
 
-    def test_model_dump_produces_valid_json(self):
+    def test_to_dict_produces_valid_json(self):
         doc = FactivaS3Document(
             data=[
                 FactivaArticleEnvelope(
@@ -319,7 +310,7 @@ class TestFactivaS3Document:
                 )
             ]
         )
-        d = doc.model_dump()
+        d = doc.to_dict()
         json_str = json.dumps(d, ensure_ascii=False)
         parsed = json.loads(json_str)
         assert len(parsed["data"]) == 1
@@ -453,8 +444,8 @@ class TestFactivaS3DocumentFromOuestFrance:
         ]
         articles = [a for a in articles if a is not None]
 
-        doc = FactivaS3Document(data=[a.model_dump() for a in articles])
-        json_str = json.dumps(doc.model_dump(), ensure_ascii=False)
+        doc = FactivaS3Document(data=articles)
+        json_str = json.dumps(doc.to_dict(), ensure_ascii=False)
         parsed = json.loads(json_str)
 
         assert len(parsed["data"]) == 2
@@ -468,13 +459,13 @@ class TestFactivaS3DocumentFromOuestFrance:
         """The top-level JSON must have a 'data' key (required by s3_factiva_to_postgre)."""
         root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
         articles = [
-            _parse_article_xml(elem).model_dump()
+            _parse_article_xml(elem)
             for elem in root.findall(".//article")
             if _parse_article_xml(elem) is not None
         ]
 
         doc = FactivaS3Document(data=articles)
-        d = doc.model_dump()
+        d = doc.to_dict()
 
         assert "data" in d
         assert isinstance(d["data"], list)

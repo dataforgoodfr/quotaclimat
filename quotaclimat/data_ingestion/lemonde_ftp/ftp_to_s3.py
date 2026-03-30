@@ -348,7 +348,7 @@ def parse_article_xml(article_path):
         )
 
         envelope = FactivaArticleEnvelope(id=an, type="article", attributes=attributes)
-        return envelope.model_dump()
+        return envelope.to_dict()
     except Exception as e:
         print(f"Error parsing article XML {article_path}: {e}")
         return None

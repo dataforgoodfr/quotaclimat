@@ -284,7 +284,7 @@ def partition_articles_by_date(
         year, month, day = parts[0], parts[1], parts[2].split("T")[0]
 
         partitioned.setdefault(year, {}).setdefault(month, {}).setdefault(day, [])
-        partitioned[year][month][day].append(envelope.model_dump())
+        partitioned[year][month][day].append(envelope.to_dict())
 
     return partitioned
 
@@ -316,7 +316,7 @@ def save_articles_to_local(
                     filepath = os.path.join(dir_path, filename)
 
                     with open(filepath, "w", encoding="utf-8") as f:
-                        json.dump(doc.model_dump(), f, ensure_ascii=False, indent=2)
+                        json.dump(doc.to_dict(), f, ensure_ascii=False, indent=2)
 
                     logging.info(f"Saved {len(batch)} articles to {filepath}")
 

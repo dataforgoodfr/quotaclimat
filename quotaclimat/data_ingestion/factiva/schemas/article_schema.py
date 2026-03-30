@@ -1,4 +1,4 @@
-"""Pydantic schema for Factiva-format articles written to S3.
+"""Dataclass schema for Factiva-format articles written to S3.
 
 Used by all converters (Factiva stream, LeMonde FTP, OuestFrance API)
 to validate the JSON structure before uploading to S3. This ensures
@@ -11,19 +11,17 @@ The S3 JSON format is:
 
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from dataclasses import asdict, dataclass, field
+from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, ConfigDict, field_validator
 
-
-class FactivaArticleAttributes(BaseModel):
+@dataclass
+class FactivaArticleAttributes:
     """Validated schema for article attributes in the Factiva S3 JSON format.
 
     Required fields: an, source_code, source_name.
     All other fields are optional with sensible defaults for non-Factiva sources.
     """
-
-    model_config = ConfigDict(extra="allow")
 
     # --- Required fields ---
     an: str  # Unique article ID (primary key in factiva_articles)
@@ -98,43 +96,40 @@ class FactivaArticleAttributes(BaseModel):
     article_url: Optional[str] = None  # Article URL (OuestFrance, LeMonde, etc.)
     tags: Optional[List[str]] = None  # Category tags
 
-    @field_validator("an")
-    @classmethod
-    def an_not_empty(cls, v: str) -> str:
-        if not v.strip():
+    def __post_init__(self) -> None:
+        if not self.an or not self.an.strip():
             raise ValueError("Article ID (an) must not be empty")
-        return v
-
-    @field_validator("source_code")
-    @classmethod
-    def source_code_not_empty(cls, v: str) -> str:
-        if not v.strip():
+        if not self.source_code or not self.source_code.strip():
             raise ValueError("source_code must not be empty")
-        return v
+        if self.word_count is not None:
+            self.word_count = int(self.word_count)
 
-    @field_validator("word_count", mode="before")
-    @classmethod
-    def coerce_word_count(cls, v: Any) -> Optional[int]:
-        if v is None:
-            return None
-        return int(v)
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
 
 
-class FactivaArticleEnvelope(BaseModel):
+@dataclass
+class FactivaArticleEnvelope:
     """Single article in the Factiva S3 JSON format."""
 
     id: str
     type: str = "article"
-    attributes: FactivaArticleAttributes
+    attributes: FactivaArticleAttributes = field(default_factory=FactivaArticleAttributes)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
 
 
-class FactivaS3Document(BaseModel):
+@dataclass
+class FactivaS3Document:
     """Top-level S3 JSON document containing multiple articles.
 
     Usage:
         doc = FactivaS3Document(data=[envelope1, envelope2, ...])
-        json_str = doc.model_dump_json()  # Validated JSON string
-        json_dict = doc.model_dump()      # Validated dict for json.dump()
+        json_dict = doc.to_dict()  # Validated dict for json.dump()
     """
 
-    data: List[FactivaArticleEnvelope]
+    data: List[FactivaArticleEnvelope] = field(default_factory=list)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)

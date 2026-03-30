@@ -84,7 +84,7 @@ def _parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvel
         source_code=SOURCE_CODE,
         source_name=SOURCE_NAME,
         action="add",
-        document_type="article",
+        document_type="paper",
         title=title,
         body=body,
         snippet=snippet,
@@ -105,7 +105,7 @@ def _parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvel
     return FactivaArticleEnvelope(id=an, type="article", attributes=attributes)
 
 
-# --- Sample XML ---
+# --- Sample XML (contenus / paper format) ---
 
 SAMPLE_OUEST_FRANCE_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <contenus version="2.0">
@@ -433,6 +433,13 @@ class TestParseArticleXml:
                 assert envelope.attributes.source_code == "OUESTFR"
                 assert envelope.attributes.action == "add"
 
+    def test_document_type_is_paper(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[0]
+        envelope = _parse_article_xml(article_elem)
+
+        assert envelope.attributes.document_type == "paper"
+
 
 class TestFactivaS3DocumentFromOuestFrance:
     """Integration: OuestFrance articles produce a valid FactivaS3Document for S3."""
@@ -522,7 +529,7 @@ def _parse_rss_item(item_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
         source_code=SOURCE_CODE,
         source_name=SOURCE_NAME,
         action="add",
-        document_type="article",
+        document_type="web",
         title=title,
         body=body,
         snippet="",
@@ -652,6 +659,13 @@ class TestParseRssItem:
         envelope = _parse_rss_item(item_elem)
 
         assert envelope.attributes.tags is None
+
+    def test_rss_document_type_is_web(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope.attributes.document_type == "web"
 
     def test_rss_missing_guid_returns_none(self):
         xml = '<item xmlns:dc="http://purl.org/dc/elements/1.1/"><title>No GUID</title></item>'

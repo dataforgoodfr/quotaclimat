@@ -483,9 +483,6 @@ class LemondeArticleProcessor:
                 "restrictor_codes": self._join_codes(
                     attributes.get("restrictor_codes")
                 ),
-                # Optional extensions for non-Factiva sources
-                "article_url": attributes.get("article_url"),
-                "tags": attributes.get("tags"),
                 "is_deleted": False,
                 **keyword_data,  # Add all keyword counts, lists, and aggregated counts
             }

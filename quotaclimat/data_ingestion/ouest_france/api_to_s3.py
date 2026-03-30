@@ -19,6 +19,7 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
+from email.utils import parsedate_to_datetime
 from typing import Any, Dict, List, Optional
 
 import boto3
@@ -244,13 +245,116 @@ def parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvelo
         return None
 
 
+DC_NAMESPACE = "http://purl.org/dc/elements/1.1/"
+
+
+def parse_rss_item(item_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
+    """Parse a single RSS <item> element into a Factiva-format article.
+
+    Returns:
+        FactivaArticleEnvelope, or None if parsing fails.
+    """
+    try:
+        # Article ID from <guid>
+        article_id = get_text(item_elem.find("guid"))
+        if not article_id:
+            logging.warning("RSS item missing <guid>, skipping")
+            return None
+
+        an = f"{SOURCE_CODE}:{article_id}"
+
+        # Publication date from <pubDate> (RFC 2822 format)
+        pub_date_raw = get_text(item_elem.find("pubDate"))
+        publication_datetime = None
+        publication_date = None
+        if pub_date_raw:
+            try:
+                dt = parsedate_to_datetime(pub_date_raw)
+                publication_datetime = dt.strftime("%Y-%m-%dT%H:%M:%S")
+                publication_date = dt.strftime("%Y-%m-%d")
+            except (ValueError, TypeError):
+                logging.warning(f"Could not parse pubDate: {pub_date_raw}")
+
+        # Content fields
+        title = get_text(item_elem.find("title"))
+        body = strip_html(get_text(item_elem.find("description")))
+
+        # Word count (computed from body since RSS has no <nombreMots>)
+        word_count = len(body.split()) if body else None
+
+        # Author from <dc:creator>
+        byline = get_text(item_elem.find(f"{{{DC_NAMESPACE}}}creator"))
+
+        # Photo from <enclosure>
+        enclosure = item_elem.find("enclosure")
+        art = ""
+        if enclosure is not None:
+            enclosure_url = enclosure.get("url", "")
+            art = enclosure_url if enclosure_url else ""
+
+        # Article URL from <link>
+        article_url = get_text(item_elem.find("link")) or None
+
+        copyright_text = f"Copyright {SOURCE_NAME}"
+
+        attributes = FactivaArticleAttributes(
+            an=an,
+            source_code=SOURCE_CODE,
+            source_name=SOURCE_NAME,
+            action="add",
+            document_type="article",
+            title=title,
+            body=body,
+            snippet="",
+            art=art,
+            byline=byline,
+            credit="",
+            dateline=None,
+            publisher_name=SOURCE_NAME,
+            section="",
+            copyright=copyright_text,
+            publication_datetime=publication_datetime,
+            publication_date=publication_date,
+            modification_datetime=datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+            modification_date=datetime.now().strftime("%Y-%m-%d"),
+            ingestion_datetime=datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+            availability_datetime=publication_datetime,
+            language_code="fr",
+            region_of_origin="France",
+            word_count=word_count,
+            article_url=article_url,
+            tags=None,
+        )
+
+        return FactivaArticleEnvelope(
+            id=an,
+            type="article",
+            attributes=attributes,
+        )
+
+    except Exception as e:
+        logging.error(f"Error parsing RSS item: {e}")
+        return None
+
+
 def parse_all_articles(xml_content: str) -> List[FactivaArticleEnvelope]:
-    """Parse the full OuestFrance XML and return all articles as Factiva envelopes."""
+    """Parse OuestFrance XML (auto-detects <contenus> or RSS format)."""
     root = ET.fromstring(xml_content)
 
+    # Detect format: RSS has <rss> or <channel> root, contenus has <contenus>
+    if root.tag == "rss" or root.find("channel") is not None:
+        items = root.findall(".//item")
+        logging.info(f"Detected RSS format with {len(items)} items")
+        parser = parse_rss_item
+        elements = items
+    else:
+        elements = root.findall(".//article")
+        logging.info(f"Detected contenus format with {len(elements)} articles")
+        parser = parse_article_xml
+
     articles = []
-    for article_elem in root.findall(".//article"):
-        envelope = parse_article_xml(article_elem)
+    for elem in elements:
+        envelope = parser(elem)
         if envelope is not None:
             articles.append(envelope)
 

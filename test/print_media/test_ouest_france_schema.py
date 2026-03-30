@@ -8,6 +8,7 @@ These tests validate:
 import json
 import re
 import xml.etree.ElementTree as ET
+from email.utils import parsedate_to_datetime
 from typing import List, Optional
 
 import pytest
@@ -473,3 +474,229 @@ class TestFactivaS3DocumentFromOuestFrance:
             assert "id" in item
             assert "type" in item
             assert "attributes" in item
+
+
+# --- RSS format helpers and tests ---
+
+DC_NAMESPACE = "http://purl.org/dc/elements/1.1/"
+
+
+def _parse_rss_item(item_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
+    """Minimal RSS parser matching api_to_s3.parse_rss_item logic."""
+    SOURCE_CODE = "OUESTFR"
+    SOURCE_NAME = "Ouest-France"
+
+    article_id = _get_text(item_elem.find("guid"))
+    if not article_id:
+        return None
+
+    an = f"{SOURCE_CODE}:{article_id}"
+
+    pub_date_raw = _get_text(item_elem.find("pubDate"))
+    publication_datetime = None
+    publication_date = None
+    if pub_date_raw:
+        try:
+            dt = parsedate_to_datetime(pub_date_raw)
+            publication_datetime = dt.strftime("%Y-%m-%dT%H:%M:%S")
+            publication_date = dt.strftime("%Y-%m-%d")
+        except (ValueError, TypeError):
+            pass
+
+    title = _get_text(item_elem.find("title"))
+    body = _strip_html(_get_text(item_elem.find("description")))
+    word_count = len(body.split()) if body else None
+
+    byline = _get_text(item_elem.find(f"{{{DC_NAMESPACE}}}creator"))
+
+    enclosure = item_elem.find("enclosure")
+    art = ""
+    if enclosure is not None:
+        enclosure_url = enclosure.get("url", "")
+        art = enclosure_url if enclosure_url else ""
+
+    article_url = _get_text(item_elem.find("link")) or None
+
+    attributes = FactivaArticleAttributes(
+        an=an,
+        source_code=SOURCE_CODE,
+        source_name=SOURCE_NAME,
+        action="add",
+        document_type="article",
+        title=title,
+        body=body,
+        snippet="",
+        art=art,
+        byline=byline,
+        credit="",
+        publisher_name=SOURCE_NAME,
+        section="",
+        publication_datetime=publication_datetime,
+        publication_date=publication_date,
+        language_code="fr",
+        region_of_origin="France",
+        word_count=word_count,
+        article_url=article_url,
+        tags=None,
+    )
+
+    return FactivaArticleEnvelope(id=an, type="article", attributes=attributes)
+
+
+SAMPLE_RSS_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
+   <channel>
+      <title>Flux d'actualités Ouest-France</title>
+      <ttl>3600</ttl>
+      <description>Flux d'actualités Ouest-France</description>
+      <pubDate>Thu, 19 Mar 2026 14:38:43 +0100</pubDate>
+      <link>http://www.ouest-france.fr</link>
+      <language>fr</language>
+      <copyright>Ouest-France</copyright>
+      <item>
+         <title><![CDATA[Assaut du Capitole : un fugitif demande l'asile au Canada]]></title>
+         <guid isPermaLink="false">1b641bd6-c7d0-11ef-892d-e6c5d734e1e4</guid>
+         <description><![CDATA[<p>L'un des assaillants du Capitole en janvier 2021 a fui au Canada.</p><p>Un Américain condamné pour l'assaut du Capitole a demandé l'asile au Canada.</p>]]></description>
+         <dc:creator><![CDATA[avec AFP.]]></dc:creator>
+         <pubDate>Wed, 01 Jan 2025 01:01:44 +0100</pubDate>
+         <enclosure length="0"
+            url="https://guichet.ouest-france.fr/ws/medias/image/test-image-1"
+            type="image/jpeg" />
+         <link>https://www.ouest-france.fr/monde/etats-unis/assaut-du-capitole-1b641bd6</link>
+      </item>
+      <item>
+         <title><![CDATA[Deux projectiles tirés vers Israël depuis Gaza]]></title>
+         <guid isPermaLink="false">e37b2fa0-c7ef-11ef-aeb4-ddc1bf4e1b1d</guid>
+         <description><![CDATA[<p>Israël a indiqué avoir été visé à deux reprises.</p>]]></description>
+         <dc:creator><![CDATA[avec AFP.]]></dc:creator>
+         <pubDate>Wed, 01 Jan 2025 04:36:58 +0100</pubDate>
+         <enclosure length="0"
+            url="https://guichet.ouest-france.fr/ws/medias/image/test-image-2"
+            type="image/jpeg" />
+         <link>https://www.ouest-france.fr/monde/israel/deux-projectiles-e37b2fa0</link>
+      </item>
+   </channel>
+</rss>
+"""
+
+
+class TestParseRssItem:
+    def test_parse_first_item(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope is not None
+        attrs = envelope.attributes
+        assert attrs.an == "OUESTFR:1b641bd6-c7d0-11ef-892d-e6c5d734e1e4"
+        assert attrs.source_code == "OUESTFR"
+        assert "Capitole" in attrs.title
+        assert attrs.language_code == "fr"
+
+    def test_rss_date_parsed(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope.attributes.publication_date == "2025-01-01"
+        assert envelope.attributes.publication_datetime == "2025-01-01T01:01:44"
+
+    def test_rss_body_html_stripped(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert "<p>" not in envelope.attributes.body
+        assert "<a " not in envelope.attributes.body
+        assert "Capitole" in envelope.attributes.body
+
+    def test_rss_byline_from_dc_creator(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert "avec AFP" in envelope.attributes.byline
+
+    def test_rss_enclosure_in_art(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert "test-image-1" in envelope.attributes.art
+
+    def test_rss_article_url(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope.attributes.article_url == "https://www.ouest-france.fr/monde/etats-unis/assaut-du-capitole-1b641bd6"
+
+    def test_rss_word_count_computed(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope.attributes.word_count is not None
+        assert envelope.attributes.word_count > 0
+
+    def test_rss_no_snippet(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope.attributes.snippet == ""
+
+    def test_rss_no_tags(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope.attributes.tags is None
+
+    def test_rss_missing_guid_returns_none(self):
+        xml = '<item xmlns:dc="http://purl.org/dc/elements/1.1/"><title>No GUID</title></item>'
+        item_elem = ET.fromstring(xml)
+        result = _parse_rss_item(item_elem)
+        assert result is None
+
+    def test_rss_multiple_items_parsed(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        articles = []
+        for item_elem in root.findall(".//item"):
+            envelope = _parse_rss_item(item_elem)
+            if envelope is not None:
+                articles.append(envelope)
+
+        assert len(articles) == 2
+        assert articles[0].attributes.an == "OUESTFR:1b641bd6-c7d0-11ef-892d-e6c5d734e1e4"
+        assert articles[1].attributes.an == "OUESTFR:e37b2fa0-c7ef-11ef-aeb4-ddc1bf4e1b1d"
+
+    def test_rss_all_items_have_correct_source(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        for item_elem in root.findall(".//item"):
+            envelope = _parse_rss_item(item_elem)
+            if envelope is not None:
+                assert envelope.attributes.source_code == "OUESTFR"
+                assert envelope.attributes.action == "add"
+
+
+class TestRssS3DocumentRoundTrip:
+    """Integration: RSS articles produce a valid FactivaS3Document for S3."""
+
+    def test_round_trip_json(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        articles = [
+            _parse_rss_item(elem)
+            for elem in root.findall(".//item")
+        ]
+        articles = [a for a in articles if a is not None]
+
+        doc = FactivaS3Document(data=articles)
+        json_str = json.dumps(doc.to_dict(), ensure_ascii=False)
+        parsed = json.loads(json_str)
+
+        assert len(parsed["data"]) == 2
+        first = parsed["data"][0]["attributes"]
+        assert first["source_code"] == "OUESTFR"
+        assert first["an"].startswith("OUESTFR:")
+        assert first["article_url"].startswith("https://")

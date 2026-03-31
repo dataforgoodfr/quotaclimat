@@ -7,11 +7,13 @@ from pathlib import Path
 
 from .e00_partition_window import Segment
 from .e01_download_audio import AudioProcessor
-from .e02_create_chunks import Chunk, ChunkCreator
+from .e02_create_chunks import ChunkCreator
+from .e03_already_identified_advertising import run_chunk_identification
 from .e04_group_chunks import ChunkGroup, ChunkGrouping
-from .e05_classify_fragments import Fragment, FragmentsClassifier
+from .e05_classify_fragments import FragmentsClassifier
 from .e06_export_classification import database_storage_save
 from .tools.cache import LocalCache
+from .tools.common_objects import Chunk, Fragment
 from .tools.visualizer.weekly_viewer import generate_weekly_viewer
 
 logger = logging.getLogger(__name__)
@@ -89,6 +91,18 @@ async def processor(
             chunk_batch = json.loads(chunk_cache.get(segment.identifier + ".json"))
             chunks.extend([Chunk.from_dict(d) for d in chunk_batch])
 
+        # Sort by start time. Should already be the case, but ensure it.
+        chunks.sort(key=lambda c: c.start_sec)
+
+    #### Identification of known chunks
+
+    previously_known_chunks, unkown_chunks = await run_chunk_identification(
+        chunks,
+        params_hash=chunk_hash,
+        min_matching_hashes=chunk_grouping.min_matching_hashes,
+        similarity_threshold=chunk_grouping.similarity_threshold,
+    )
+
     #### Chunk grouping
 
     params_hash_key += "-" + chunk_grouping.params_hash()
@@ -100,7 +114,7 @@ async def processor(
             groups = [ChunkGroup.from_dict(d) for d in groups_data]
 
         else:
-            groups = chunk_grouping.run(chunks)
+            groups = chunk_grouping.run(unkown_chunks)
 
             group_cache.set(
                 operation_name + ".json",
@@ -117,7 +131,9 @@ async def processor(
 
             fragments = [Fragment.from_dict(d) for d in fragments_data]
         else:
-            fragments = fragment_classifier.run(groups)
+            fragments = fragment_classifier.run(
+                groups, already_known_chunks=previously_known_chunks
+            )
 
             fragments_cache.set(
                 operation_name + ".json",
@@ -126,7 +142,9 @@ async def processor(
 
     #### Database storage
 
-    database_storage_save(fragments, chunk_hash=chunk_hash)
+    database_storage_save(
+        fragments, chunk_hash=chunk_hash, already_known_chunks=previously_known_chunks
+    )
 
     #### Results exportation
 

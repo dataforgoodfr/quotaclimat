@@ -5,8 +5,8 @@ from dataclasses import dataclass, field
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
 
-from .e02_create_chunks import Chunk
-from .e04_group_chunks import _features_compatible, _score
+from .tools.common_objects import Chunk
+from .tools.fingerprint.hash import are_chunks_similar
 
 logger = logging.getLogger(__name__)
 
@@ -99,16 +99,14 @@ async def run_chunk_identification(
                     db_chunk,
                     db_hash_set,
                 ) in candidates.values():
-                    if not _features_compatible(chunk, db_chunk):
-                        continue
-                    score = _score(
+                    if are_chunks_similar(
                         chunk,
                         db_chunk,
                         local_hash_set,
                         db_hash_set,
                         min_matching_hashes,
-                    )
-                    if score >= similarity_threshold:
+                        similarity_threshold,
+                    ):
                         matches[local_idx].append(
                             AdChunkMatch(
                                 ad=ad,
@@ -120,19 +118,20 @@ async def run_chunk_identification(
     logger.info(f"Loaded {total_db_chunks} DB chunks (params_hash={params_hash})")
 
     # --- Build final lists ---
-    known_chunks: list[KnownChunk] = []
+    known_fragments: list[KnownChunk] = []
     unknown_chunks: list[Chunk] = []
 
+    # Chunks should be sorted by start_time
     for local_idx, chunk in enumerate(chunks):
         chunk_matches = matches.get(local_idx, [])
         if chunk_matches:
-            known_chunks.append(KnownChunk(chunk=chunk, matching_ads=chunk_matches))
+            known_fragments.append(KnownChunk(chunk=chunk, matching_ads=chunk_matches))
         else:
             unknown_chunks.append(chunk)
 
     logger.info(
-        f"Chunk identification: {len(known_chunks)} known, {len(unknown_chunks)} unknown "
+        f"Chunks identification: {len(known_fragments)} fragments known, {len(unknown_chunks)} chunks unknown "
         f"(out of {len(chunks)} total)"
     )
 
-    return known_chunks, unknown_chunks
+    return known_fragments, unknown_chunks

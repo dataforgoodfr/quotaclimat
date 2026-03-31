@@ -10,84 +10,15 @@ Deux étapes explicites :
      où le contenu audio change réellement (critère secondaire)
 """
 
-import hashlib
-import json
-from dataclasses import asdict, dataclass
-from typing import List, Tuple
+from typing import List
 
 import librosa
 import numpy as np
 from scipy.ndimage import maximum_filter, maximum_filter1d
 
 from .e00_partition_window import Segment
-
-
-class HashGenerator:
-    """
-    Génère des hashes robustes en combinant des PAIRES de pics proches
-    de la constellation map.
-
-    Un hash = (freq1, freq2, delta_temps) → invariant au décalage temporel,
-    résistant au bruit.
-    """
-
-    def __init__(
-        self,
-        fan_out: int = 15,
-        time_delta_max: int = 100,
-        time_delta_min: int = 1,
-    ):
-        self.fan_out = fan_out
-        self.time_delta_max = time_delta_max
-        self.time_delta_min = time_delta_min
-
-    def generate(self, peaks: np.ndarray) -> List[Tuple[str, int]]:
-        if len(peaks) < 2:
-            return []
-
-        peaks = peaks[peaks[:, 0].argsort()]
-
-        hashes = []
-        for i, (t1, f1) in enumerate(peaks):
-            j = i + 1
-            count = 0
-            while j < len(peaks) and count < self.fan_out:
-                t2, f2 = peaks[j]
-                delta_t = t2 - t1
-
-                if delta_t > self.time_delta_max:
-                    break
-                if delta_t >= self.time_delta_min:
-                    h = self._make_hash(f1, f2, delta_t)
-                    hashes.append((h, int(t1)))
-                    count += 1
-                j += 1
-
-        return hashes
-
-    def _make_hash(self, f1: int, f2: int, dt: int) -> str:
-        raw = f"{f1}|{f2}|{dt}"
-        return hashlib.md5(raw.encode()).hexdigest()[:12]
-
-
-@dataclass
-class Chunk:
-    start_sec: float
-    end_sec: float
-    channel: str
-    duration_sec: float
-    energy_mean: float
-    spectral_centroid: float
-    zcr_mean: float
-    peaks: list = None
-    hashes: list = None
-
-    def to_dict(self):
-        return asdict(self)
-
-    @classmethod
-    def from_dict(cls, d):
-        return cls(**d)
+from .tools.common_objects import Chunk
+from .tools.fingerprint.hash import HashGenerator, make_params_hash
 
 
 class ChunkCreator:
@@ -377,5 +308,4 @@ class ChunkCreator:
         }
 
     def params_hash(self) -> str:
-        serialized = json.dumps(self.params(), sort_keys=True, separators=(",", ":"))
-        return hashlib.sha256(serialized.encode()).hexdigest()[:16]
+        return make_params_hash(self.params())

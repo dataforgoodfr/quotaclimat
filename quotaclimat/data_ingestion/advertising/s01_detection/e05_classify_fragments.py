@@ -1,18 +1,13 @@
 import hashlib
 import json
 import logging
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal
 
-from .e02_create_chunks import Chunk
 from .e04_group_chunks import ChunkGroup
+from .tools.common_objects import Chunk, Fragment, FragmentClassification
 
 logger = logging.getLogger(__name__)
-
-FragmentClassification = Literal[
-    "already_known_ad", "new_ad", "content", "jingle", "unknown"
-]
 
 
 def higher_classification(
@@ -30,30 +25,6 @@ def higher_classification(
         return class1
     else:
         return class2
-
-
-@dataclass
-class Fragment:
-    start_date: datetime
-    end_date: datetime
-    channel: str
-    classification: FragmentClassification
-    group_id: str | None = None
-    chunks: list[Chunk] = None
-
-    def to_dict(self) -> dict:
-        return asdict(self)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> "Fragment":
-        return cls(
-            start_date=datetime.fromisoformat(data["start_date"]),
-            end_date=datetime.fromisoformat(data["end_date"]),
-            channel=data["channel"],
-            classification=data["classification"],
-            group_id=data.get("group_id"),
-            chunks=[Chunk(**c) for c in data.get("chunks", [])],
-        )
 
 
 @dataclass

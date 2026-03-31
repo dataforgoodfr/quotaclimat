@@ -96,7 +96,7 @@ async def processor(
 
     #### Identification of known chunks
 
-    previously_known_chunks, unkown_chunks = await run_chunk_identification(
+    previously_known_fragments, unknown_chunks = await run_chunk_identification(
         chunks,
         params_hash=chunk_hash,
         min_matching_hashes=chunk_grouping.min_matching_hashes,
@@ -114,7 +114,7 @@ async def processor(
             groups = [ChunkGroup.from_dict(d) for d in groups_data]
 
         else:
-            groups = chunk_grouping.run(unkown_chunks)
+            groups = chunk_grouping.run(unknown_chunks)
 
             group_cache.set(
                 operation_name + ".json",
@@ -132,7 +132,7 @@ async def processor(
             fragments = [Fragment.from_dict(d) for d in fragments_data]
         else:
             fragments = fragment_classifier.run(
-                groups, already_known_chunks=previously_known_chunks
+                groups, already_known_fragments=previously_known_fragments
             )
 
             fragments_cache.set(
@@ -142,9 +142,7 @@ async def processor(
 
     #### Database storage
 
-    database_storage_save(
-        fragments, chunk_hash=chunk_hash, already_known_chunks=previously_known_chunks
-    )
+    database_storage_save(fragments, chunk_hash=chunk_hash)
 
     #### Results exportation
 

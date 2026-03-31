@@ -1,7 +1,8 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime
+
+from sqlalchemy import select
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
@@ -55,7 +56,9 @@ async def run_chunk_identification(
     total_db_chunks = 0
 
     with get_db_session() as session:
-        for ads in session.query(Ad).yield_per(CURSOR_BATCH_SIZE):
+        for ads in session.scalars(
+            select(Ad).execution_options(yield_per=CURSOR_BATCH_SIZE)
+        ).partitions():
             # --- Build hash index for this batch only ---
             # hash_str → list of (ad, entry_idx, chunk_idx, db_chunk, db_hash_set)
             hash_index: dict[str, list[tuple[Ad, int, int, Chunk, set]]] = defaultdict(
@@ -158,8 +161,8 @@ async def run_chunk_identification(
                     start_sec = end_sec - db_ad.duration_sec
                 known_fragments.append(
                     Fragment(
-                        start_date=datetime.fromtimestamp(start_sec),
-                        end_date=datetime.fromtimestamp(end_sec),
+                        start_sec=start_sec,
+                        end_sec=end_sec,
                         channel=chunk.channel,
                         classification="already_known_ad",
                         group_id=db_ad.id,

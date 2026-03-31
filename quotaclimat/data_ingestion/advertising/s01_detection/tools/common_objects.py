@@ -1,5 +1,4 @@
 from dataclasses import asdict, dataclass
-from datetime import datetime
 from typing import Literal
 
 
@@ -30,8 +29,8 @@ FragmentClassification = Literal[
 
 @dataclass
 class Fragment:
-    start_date: datetime
-    end_date: datetime
+    start_sec: float
+    end_sec: float
     channel: str
     classification: FragmentClassification
     group_id: str | None = None
@@ -43,8 +42,8 @@ class Fragment:
     @classmethod
     def from_dict(cls, data: dict) -> "Fragment":
         return cls(
-            start_date=datetime.fromisoformat(data["start_date"]),
-            end_date=datetime.fromisoformat(data["end_date"]),
+            start_sec=data["start_sec"],
+            end_sec=data["end_sec"],
             channel=data["channel"],
             classification=data["classification"],
             group_id=data.get("group_id"),

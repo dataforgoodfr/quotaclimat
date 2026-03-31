@@ -48,7 +48,7 @@ class PipelineStats:
         lines = [
             "",
             "=" * 60,
-            "Pipeline finished",
+            "Audio pipeline finished",
             "=" * 60,
             f"  Downloads:  {self.dl_downloaded} downloaded, {self.dl_cached} cached, {self.dl_errors} errors",
             f"  Processing: {self.proc_processed} processed, {self.proc_cached} cached, {self.proc_errors} errors",
@@ -147,10 +147,7 @@ class AudioProcessor:
 
     async def _download_worker(self):
         """Launch downloads and queue them as they complete"""
-        segments = [
-            self._download_and_queue(segment)
-            for segment in self.segments
-        ]
+        segments = [self._download_and_queue(segment) for segment in self.segments]
 
         await asyncio.gather(*segments)
 
@@ -198,9 +195,7 @@ class AudioProcessor:
             tb = traceback.format_exc()
             self.stats.dl_errors += 1
             self.stats.errors.append(("download", str(segment), tb))
-            tqdm.write(
-                f"\n[ERROR] Download failed for {segment}:\n{tb}"
-            )
+            tqdm.write(f"\n[ERROR] Download failed for {segment}:\n{tb}")
 
         self.dl_bar.update(1)
         self._update_postfix()

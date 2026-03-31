@@ -5,6 +5,8 @@ from typing import List, Tuple
 
 import numpy as np
 
+from ..common_objects import Chunk
+
 
 class HashGenerator:
     """
@@ -60,13 +62,13 @@ def make_params_hash(params: dict) -> str:
     return hashlib.sha256(serialized.encode()).hexdigest()[:16]
 
 
-def _build_hash_sets(chunks: list) -> list[set[str]]:
+def _build_hash_sets(chunks: list[Chunk]) -> list[set[str]]:
     """Precompute the set of hash keys for each chunk (for O(1) lookup)."""
     return [{h for h, _ in (c.hashes or [])} for c in chunks]
 
 
 def _score(
-    chunk_a: "Chunk", chunk_b: "Chunk", set_a: set, set_b: set, min_matching: int
+    chunk_a: Chunk, chunk_b: "Chunk", set_a: set, set_b: set, min_matching: int
 ) -> float:
     """
     Similarity score based on temporal coherence of shared hashes.

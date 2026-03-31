@@ -1,11 +1,9 @@
 import hashlib
 import json
 import logging
-from dataclasses import dataclass
-from datetime import datetime
 
 from .e04_group_chunks import ChunkGroup
-from .tools.common_objects import Chunk, Fragment, FragmentClassification
+from .tools.common_objects import Fragment, FragmentClassification
 
 logger = logging.getLogger(__name__)
 
@@ -27,21 +25,14 @@ def higher_classification(
         return class2
 
 
-@dataclass
-class _InternalFragment:
-    start_sec: float
-    end_sec: float
-    classification: FragmentClassification
-    group_id: str | None
-    chunks: list[Chunk]
-
-
 class FragmentsClassifier:
     def __init__(self, repetition_threshold: int = 3):
         self.repetition_threshold = repetition_threshold
 
-    def run(self, groups: list[ChunkGroup]) -> list[Fragment]:
-        fragments = self._get_internal_fragments(groups)
+    def run(
+        self, groups: list[ChunkGroup], already_known_fragments: list[Fragment] = []
+    ) -> list[Fragment]:
+        fragments = self._get_internal_fragments(groups) + already_known_fragments
         fragments.sort(key=lambda f: f.start_sec)
         self._detect_tunnels(fragments)
         self._detect_long_tunnels(fragments)  # 10 d'un côté et 5 de l'autre
@@ -49,20 +40,19 @@ class FragmentsClassifier:
 
         return self._convert_to_output_fragments(fragments)
 
-    def _get_internal_fragments(
-        self, groups: list[ChunkGroup]
-    ) -> list[_InternalFragment]:
+    def _get_internal_fragments(self, groups: list[ChunkGroup]) -> list[Fragment]:
         """
         Classify the chunks of audio files into fragments.
         """
-        fragments: list[_InternalFragment] = []
+        fragments: list[Fragment] = []
         for index, group in enumerate(groups):
             if group.count == 1:
                 occ = group.occurrences[0]
                 fragments.append(
-                    _InternalFragment(
+                    Fragment(
                         start_sec=occ.start_sec,
                         end_sec=occ.end_sec,
+                        channel=occ.channel,
                         classification="content",
                         group_id=None,
                         chunks=[occ],
@@ -74,9 +64,10 @@ class FragmentsClassifier:
                 )
                 for occ in group.occurrences:
                     fragments.append(
-                        _InternalFragment(
+                        Fragment(
                             start_sec=occ.start_sec,
                             end_sec=occ.end_sec,
+                            channel=occ.channel,
                             classification=classification,
                             group_id=f"group_{index}",
                             chunks=[occ],
@@ -85,7 +76,7 @@ class FragmentsClassifier:
 
         return fragments
 
-    def _detect_tunnels(self, fragments: list[_InternalFragment]) -> None:
+    def _detect_tunnels(self, fragments: list[Fragment]) -> None:
         """
         Detect ad tunnels in the fragments, which are sequences of continous ads.
         The rule is that if we have a segment tagged as already_known_ad or who is repeated (has a group index) and another segment is an already_known_ad or a new_ad in the next 4 segments in the order,
@@ -123,7 +114,7 @@ class FragmentsClassifier:
                                 ):
                                     fragments[k].classification = "new_ad"
 
-    def _detect_long_tunnels(self, fragments: list[_InternalFragment]) -> None:
+    def _detect_long_tunnels(self, fragments: list[Fragment]) -> None:
         """
         Detect long ad tunnels in the fragments, which are sequences of continous ads.
         The rule is that if we have a sequence of fragments between two sequences of already_known_ad or new_ad, then this unkown sequence of fragment is tagged as new_ad (if not already tagged).
@@ -184,15 +175,13 @@ class FragmentsClassifier:
             else:
                 start_of_first_block += 1
 
-    def _convert_to_output_fragments(
-        self, fragments: list[_InternalFragment]
-    ) -> list[Fragment]:
+    def _convert_to_output_fragments(self, fragments: list[Fragment]) -> list[Fragment]:
         output_fragments: list[Fragment] = []
         for fragment in fragments:
             output_fragments.append(
                 Fragment(
-                    start_date=datetime.fromtimestamp(fragment.start_sec),
-                    end_date=datetime.fromtimestamp(fragment.end_sec),
+                    start_sec=fragment.start_sec,
+                    end_sec=fragment.end_sec,
                     channel=fragment.chunks[0].channel,
                     classification=fragment.classification,
                     chunks=fragment.chunks,
@@ -201,9 +190,7 @@ class FragmentsClassifier:
             )
         return output_fragments
 
-    def _merge_continous_fragments(
-        self, fragments: list[_InternalFragment]
-    ) -> list[_InternalFragment]:
+    def _merge_continous_fragments(self, fragments: list[Fragment]) -> list[Fragment]:
         """This function will merge groups, of which fragments are almost always continous.
         For each group, we will look at all the groups that are following the segments of the group.
         Depending on the repartition of those groups, we will merge the most represented group with the current one."""
@@ -211,7 +198,10 @@ class FragmentsClassifier:
 
         groups_fragment_index: dict[str, list[int]] = {}
         for index, fragment in enumerate(fragments):
-            if fragment.group_id is not None:
+            if (
+                fragment.group_id is not None
+                and fragment.classification != "already_known_ad"
+            ):
                 if fragment.group_id not in groups_fragment_index:
                     groups_fragment_index[fragment.group_id] = []
                 groups_fragment_index[fragment.group_id].append(index)
@@ -297,7 +287,7 @@ class FragmentsClassifier:
         return fragments
 
     def _get_group_repartition_following(
-        self, fragments: list[_InternalFragment], fragment_indexes: list[int]
+        self, fragments: list[Fragment], fragment_indexes: list[int]
     ) -> dict[int, int]:
         following_groups_count: dict[int, int] = {}
         for fragment_index in fragment_indexes:
@@ -319,7 +309,7 @@ class FragmentsClassifier:
         return following_groups_count
 
     def _get_group_repartition_preceeding(
-        self, fragments: list[_InternalFragment], fragment_indexes: list[int]
+        self, fragments: list[Fragment], fragment_indexes: list[int]
     ) -> dict[int, int]:
         preceding_groups_count: dict[int, int] = {}
         for fragment_index in fragment_indexes:
@@ -342,7 +332,7 @@ class FragmentsClassifier:
 
     def _merge_groups(
         self,
-        fragments: list[_InternalFragment],
+        fragments: list[Fragment],
         group_id_to_merge: int,
         group_id_to_merge_with: int,
     ) -> None:
@@ -356,9 +346,10 @@ class FragmentsClassifier:
                     next_fragment = fragments[i + 1]
                     if next_fragment.group_id == group_id_to_merge_with:
                         new_fragments.append(
-                            _InternalFragment(
+                            Fragment(
                                 start_sec=fragment.start_sec,
                                 end_sec=next_fragment.end_sec,
+                                channel=fragment.channel,
                                 classification=higher_classification(
                                     fragment.classification,
                                     next_fragment.classification,
@@ -373,9 +364,10 @@ class FragmentsClassifier:
             elif fragment.group_id == group_id_to_merge_with:
                 # It has not been merged with the previous one, we remove the group id to avoid future incoherence
                 new_fragments.append(
-                    _InternalFragment(
+                    Fragment(
                         start_sec=fragment.start_sec,
                         end_sec=fragment.end_sec,
+                        channel=fragment.channel,
                         classification=fragment.classification,
                         group_id=None,
                         chunks=fragment.chunks,

@@ -72,7 +72,7 @@ def generate_weekly_viewer(
         raise ValueError("Aucun fragment à visualiser.")
 
     # ── Tri des fragments par date ────────────────────────────
-    fragments = sorted(fragments, key=lambda f: f.start_date)
+    fragments = sorted(fragments, key=lambda f: f.start_sec)
 
     # ── Calcul des tailles de groupes ─────────────────────────
     group_counts: dict[str, int] = defaultdict(int)
@@ -80,7 +80,7 @@ def generate_weekly_viewer(
     for frag in fragments:
         if frag.group_id:
             group_counts[frag.group_id] += 1
-            group_members[frag.group_id].append(frag.start_date.timestamp())
+            group_members[frag.group_id].append(frag.start_sec)
 
     # ── Traitement des fragments ──────────────────────────────
     processed_fragments = []
@@ -88,8 +88,8 @@ def generate_weekly_viewer(
     time_max = float("-inf")
 
     for idx, frag in enumerate(fragments):
-        abs_start = frag.start_date.timestamp()
-        abs_end = frag.end_date.timestamp()
+        abs_start = frag.start_sec
+        abs_end = frag.end_sec
         duration = abs_end - abs_start
 
         time_min = min(time_min, abs_start)

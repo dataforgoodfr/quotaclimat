@@ -1,6 +1,7 @@
 import hashlib
 import json
 import logging
+from datetime import datetime
 
 from sqlalchemy.dialects.postgresql import insert
 
@@ -58,38 +59,44 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
         occurrences: list[Ad_Occurrence] = []
 
         for group_id, group_fragments in groups.items():
-            # Each fragment has the same number of chunks; build one canonical
-            # chunk per position by comparing the nth chunk across all fragments.
-            chunks_by_position = zip(*(f.chunks or [] for f in group_fragments))
-            canonical_chunks = [
-                canonical(list(position)) for position in chunks_by_position
-            ]
+            if any(f.classification == "already_known_ad" for f in group_fragments):
+                # We reuse the group_id because it should be the ad id. We jump to the occurence creation.
+                ad_id = group_id
+            else:
+                # Each fragment has the same number of chunks; build one canonical
+                # chunk per position by comparing the nth chunk across all fragments.
+                chunks_by_position = zip(*(f.chunks or [] for f in group_fragments))
+                canonical_chunks = [
+                    canonical(list(position)) for position in chunks_by_position
+                ]
 
-            ad_id = _ad_id_from_chunks(canonical_chunks)
-            first_fragment = min(group_fragments, key=lambda f: f.start_date)
+                ad_id = _ad_id_from_chunks(canonical_chunks)
+                first_fragment = min(group_fragments, key=lambda f: f.start_sec)
 
-            fragment_type = (
-                "jingle"
-                if all(f.classification == "jingle" for f in group_fragments)
-                else "advertising"
-            )
-
-            ads.append(
-                Ad(
-                    id=ad_id,
-                    first_detection_date=first_fragment.start_date,
-                    duration_sec=(
-                        first_fragment.end_date - first_fragment.start_date
-                    ).total_seconds(),
-                    chunks=[
-                        {
-                            "hash": chunk_hash,
-                            "chunks": [c.to_dict() for c in canonical_chunks],
-                        }
-                    ],
-                    fragment_type=fragment_type,
+                fragment_type = (
+                    "jingle"
+                    if all(f.classification == "jingle" for f in group_fragments)
+                    else "advertising"
                 )
-            )
+
+                ads.append(
+                    Ad(
+                        id=ad_id,
+                        first_detection_date=datetime.fromtimestamp(
+                            first_fragment.start_sec
+                        ),
+                        duration_sec=(
+                            first_fragment.end_sec - first_fragment.start_sec
+                        ),
+                        chunks=[
+                            {
+                                "hash": chunk_hash,
+                                "chunks": [c.to_dict() for c in canonical_chunks],
+                            }
+                        ],
+                        fragment_type=fragment_type,
+                    )
+                )
 
             for fragment in group_fragments:
                 fragment.group_id = ad_id
@@ -97,7 +104,7 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
                 occurrences.append(
                     Ad_Occurrence(
                         id=occ_id,
-                        occurrence_date=fragment.start_date,
+                        occurrence_date=datetime.fromtimestamp(fragment.start_sec),
                         channel_name=fragment.channel,
                         ad_id=ad_id,
                     )
@@ -114,10 +121,8 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
             ads.append(
                 Ad(
                     id=ad_id,
-                    first_detection_date=fragment.start_date,
-                    duration_sec=(
-                        fragment.end_date - fragment.start_date
-                    ).total_seconds(),
+                    first_detection_date=datetime.fromtimestamp(fragment.start_sec),
+                    duration_sec=(fragment.end_sec - fragment.start_sec),
                     chunks=[
                         {
                             "hash": chunk_hash,
@@ -128,11 +133,11 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
                 )
             )
 
-            occ_id = _occurrence_id(ad_id, fragment.start_date, fragment.channel)
+            occ_id = _occurrence_id(ad_id, fragment.start_sec, fragment.channel)
             occurrences.append(
                 Ad_Occurrence(
                     id=occ_id,
-                    occurrence_date=fragment.start_date,
+                    occurrence_date=datetime.fromtimestamp(fragment.start_sec),
                     channel_name=fragment.channel,
                     ad_id=ad_id,
                 )

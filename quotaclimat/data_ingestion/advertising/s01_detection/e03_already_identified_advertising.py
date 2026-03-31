@@ -1,11 +1,12 @@
 import logging
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from datetime import datetime
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
 
-from .tools.common_objects import Chunk
+from .tools.common_objects import Chunk, Fragment
 from .tools.fingerprint.hash import are_chunks_similar
 
 logger = logging.getLogger(__name__)
@@ -20,18 +21,12 @@ class AdChunkMatch:
     chunk_index: int  # index within that entry's "chunks" list
 
 
-@dataclass
-class KnownChunk:
-    chunk: Chunk
-    matching_ads: list[AdChunkMatch] = field(default_factory=list)
-
-
 async def run_chunk_identification(
     chunks: list[Chunk],
     params_hash: str,
     min_matching_hashes: int = 1,
     similarity_threshold: float = 0.05,
-) -> tuple[list[KnownChunk], list[Chunk]]:
+) -> tuple[list[Fragment], list[Chunk]]:
     """
     Identifie les chunks déjà connus (présents dans la DB) et les chunks inconnus.
 
@@ -118,16 +113,67 @@ async def run_chunk_identification(
     logger.info(f"Loaded {total_db_chunks} DB chunks (params_hash={params_hash})")
 
     # --- Build final lists ---
-    known_fragments: list[KnownChunk] = []
+    known_fragments: list[Fragment] = []
     unknown_chunks: list[Chunk] = []
 
     # Chunks should be sorted by start_time
-    for local_idx, chunk in enumerate(chunks):
+    local_idx = 0
+    while local_idx < len(chunks):
+        chunk = chunks[local_idx]
         chunk_matches = matches.get(local_idx, [])
-        if chunk_matches:
-            known_fragments.append(KnownChunk(chunk=chunk, matching_ads=chunk_matches))
-        else:
+
+        if not chunk_matches:
             unknown_chunks.append(chunk)
+            local_idx += 1
+            continue
+
+        chunk_is_start_of_segment = local_idx == 0 or (
+            (chunk.start_sec - chunks[local_idx - 1].end_sec) > 1.0
+        )
+
+        for chunk_match in chunk_matches:
+            if chunk_match.chunk_index > 0 and not chunk_is_start_of_segment:
+                # we matched a chunk that is in the middle of a fragment, we cannot use it
+                continue
+
+            # Now we check if all following chunks in the same db fragment also match the next chunks in the local list
+            db_ad = chunk_match.ad
+            db_entry = db_ad.chunks[chunk_match.chunk_entry_index]
+            db_chunks = [Chunk.from_dict(c) for c in db_entry.get("chunks", [])]
+
+            match, next_index = _current_fragment_is_a_match(
+                chunk_match, db_chunks, chunks, local_idx, matches
+            )
+
+            if match:
+                # We consider this fragment as already known, we add it to the known fragments list and skip all its chunks in the local list
+                if chunk_match.chunk_index == 0:
+                    start_sec = chunk.start_sec
+                    end_sec = chunk.start_sec + db_ad.duration_sec
+                else:
+                    # We compute end_sec from the last chunk that match
+                    end_sec = chunks[
+                        local_idx + len(db_chunks) - chunk_match.chunk_index - 1
+                    ].end_sec
+                    start_sec = end_sec - db_ad.duration_sec
+                known_fragments.append(
+                    Fragment(
+                        start_date=datetime.fromtimestamp(start_sec),
+                        end_date=datetime.fromtimestamp(end_sec),
+                        channel=chunk.channel,
+                        classification="already_known_ad",
+                        group_id=db_ad.id,
+                        chunks=db_chunks,
+                    )
+                )
+                local_idx = (
+                    next_index  # skip all chunks of this fragment in the local list
+                )
+                break  # stop checking other matches for this chunk, we already found a matching fragment
+        else:
+            # No match was good enough to consider the fragment as already known, we consider this chunk as unknown
+            unknown_chunks.append(chunk)
+            local_idx += 1
 
     logger.info(
         f"Chunks identification: {len(known_fragments)} fragments known, {len(unknown_chunks)} chunks unknown "
@@ -135,3 +181,36 @@ async def run_chunk_identification(
     )
 
     return known_fragments, unknown_chunks
+
+
+def _current_fragment_is_a_match(
+    chunk_match: AdChunkMatch,
+    db_ad_chunks: list[Chunk],
+    local_chunks: list[Chunk],
+    current_local_idx: int,
+    all_chunk_matches: dict[int, list[AdChunkMatch]],
+) -> tuple[bool, int | None]:
+    current_chunk = local_chunks[current_local_idx]
+    number_of_chunks_to_match = len(db_ad_chunks) - chunk_match.chunk_index
+    for offset in range(1, number_of_chunks_to_match):
+        next_local_idx = current_local_idx + offset
+        if next_local_idx >= len(local_chunks):
+            # We reached the end of the local chunks, we consider it a match (the local fragment is shorter than the DB one)
+            return True, next_local_idx
+        next_chunk = local_chunks[next_local_idx]
+
+        if next_chunk.start_sec - current_chunk.start_sec > 1.0:
+            # Too much time between the chunks, we consider it a match (the local fragment has a gap, but is still similar to the DB one)
+            return True, next_local_idx
+
+        next_chunk_matches = all_chunk_matches.get(next_local_idx, [])
+        if not any(
+            m.ad.id == chunk_match.ad.id
+            and m.chunk_entry_index == chunk_match.chunk_entry_index
+            and m.chunk_index == chunk_match.chunk_index + offset
+            for m in next_chunk_matches
+        ):
+            # We did not find a match for the next chunk in the DB fragment, we consider the whole fragment as not matching (to avoid partial matches)
+            return False, None
+    # All following chunks in the DB fragment also match the next local chunks, we consider it a match
+    return True, current_local_idx + number_of_chunks_to_match

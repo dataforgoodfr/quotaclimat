@@ -1,7 +1,6 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta
 
 from sqlalchemy import select
 
@@ -58,9 +57,7 @@ async def run_chunk_identification(
 
     with get_db_session() as session:
         for ads in session.scalars(
-            select(Ad)
-            .filter(Ad.first_detection_date < datetime.now() - timedelta(days=1))
-            .execution_options(yield_per=CURSOR_BATCH_SIZE)
+            select(Ad).execution_options(yield_per=CURSOR_BATCH_SIZE)
         ).partitions():
             # --- Build hash index for this batch only ---
             # hash_str → list of (ad, entry_idx, chunk_idx, db_chunk, db_hash_set)

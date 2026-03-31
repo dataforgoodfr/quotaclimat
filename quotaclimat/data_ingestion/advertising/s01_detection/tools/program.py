@@ -126,5 +126,5 @@ def extend_program_by(program: list[Show], delta: timedelta) -> list[Show]:
 
 if __name__ == "__main__":
     program = get_channel_program("tf1")
-    new_program = extend_program_by(program, timedelta(minutes=30))
+    new_program = extend_program_by(program, timedelta(minutes=15))
     print(new_program)

@@ -1,9 +1,12 @@
 import json
 import logging
 import os
+import time
 from datetime import datetime
 from functools import partial
 from pathlib import Path
+
+import boto3
 
 from .e00_partition_window import Segment
 from .e01_download_audio import AudioProcessor
@@ -17,6 +20,32 @@ from .tools.common_objects import Chunk, Fragment
 from .tools.visualizer.weekly_viewer import generate_weekly_viewer
 
 logger = logging.getLogger(__name__)
+
+ACCESS_KEY = os.environ.get("BUCKET")
+SECRET_KEY = os.environ.get("BUCKET_SECRET")
+BUCKET_NAME = os.environ.get("ADVERTISING_BUCKET_NAME")
+REGION = "fr-par"
+ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
+REPORTS_S3_PREFIX = "reports"
+
+
+def get_s3_client():
+    return boto3.client(
+        service_name="s3",
+        region_name=REGION,
+        aws_access_key_id=ACCESS_KEY,
+        aws_secret_access_key=SECRET_KEY,
+        endpoint_url=ENDPOINT_URL,
+    )
+
+
+def upload_to_s3(local_path: Path, s3_key: str, s3_client):
+    try:
+        s3_client.upload_file(str(local_path), BUCKET_NAME, s3_key)
+        logger.info(f"Uploaded s3://{BUCKET_NAME}/{s3_key}")
+    except Exception as e:
+        logger.error(f"Failed to upload {local_path} to S3: {e}")
+
 
 chunk_creator = ChunkCreator(
     sr=22050,
@@ -64,13 +93,18 @@ def process_audio(
 
 async def processor(
     operation_name: str,
+    report_folder: str | None,
     segments: list[Segment],
     annotations: list[dict] = [],
 ):
+    timings: dict[str, float] = {}
+    t_start = time.monotonic()
+
     #### Audio processing
 
     new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
 
+    t0 = time.monotonic()
     chunk_hash = chunk_creator.params_hash()
     params_hash_key = chunk_hash
     with LocalCache(name="chunks", version=params_hash_key) as chunk_cache:
@@ -93,18 +127,22 @@ async def processor(
 
         # Sort by start time. Should already be the case, but ensure it.
         chunks.sort(key=lambda c: c.start_sec)
+    timings["audio_processing"] = time.monotonic() - t0
 
     #### Identification of known chunks
 
+    t0 = time.monotonic()
     previously_known_fragments, unknown_chunks = await run_chunk_identification(
         chunks,
         params_hash=chunk_hash,
         min_matching_hashes=chunk_grouping.min_matching_hashes,
         similarity_threshold=chunk_grouping.similarity_threshold,
     )
+    timings["chunk_identification"] = time.monotonic() - t0
 
     #### Chunk grouping
 
+    t0 = time.monotonic()
     params_hash_key += "-" + chunk_grouping.params_hash()
     with LocalCache(name="grouping", version=params_hash_key) as group_cache:
         group_cache_file = operation_name + ".json"
@@ -120,9 +158,11 @@ async def processor(
                 operation_name + ".json",
                 json.dumps([group.to_dict() for group in groups]),
             )
+    timings["chunk_grouping"] = time.monotonic() - t0
 
     #### Fragment classification
 
+    t0 = time.monotonic()
     params_hash_key += "-" + fragment_classifier.params_hash()
     with LocalCache(name="fragments", version=params_hash_key) as fragments_cache:
         fragments_cache_file = operation_name + ".json"
@@ -139,10 +179,15 @@ async def processor(
                 operation_name + ".json",
                 json.dumps([fragment.to_dict() for fragment in fragments], default=str),
             )
+    timings["fragment_classification"] = time.monotonic() - t0
 
     #### Database storage
 
+    t0 = time.monotonic()
     database_storage_save(fragments, chunk_hash=chunk_hash)
+    timings["database_storage"] = time.monotonic() - t0
+
+    timings["total"] = time.monotonic() - t_start
 
     #### Results exportation
 
@@ -165,8 +210,29 @@ async def processor(
     with open(html_report_path, "w", encoding="utf-8") as f:
         f.write(html_report)
 
+    timing_lines = [
+        f"Timing report for: {operation_name}",
+        f"Generated: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+        "",
+    ]
+    for step, duration in timings.items():
+        timing_lines.append(f"  {step:<30} {duration:>8.2f}s")
+
+    timing_report = "\n".join(timing_lines)
+
+    text_report_path = reports_path / f"{params_hash_key}.txt"
+    with open(text_report_path, "w", encoding="utf-8") as f:
+        f.write(timing_report)
+
     print(f"""Reports generated:
         HTML: {html_report_path.absolute()}
+        Text: {text_report_path.absolute()}
     """)
+
+    if report_folder is not None:
+        s3_client = get_s3_client()
+        s3_folder = f"{REPORTS_S3_PREFIX}/{report_folder}/{params_hash_key}"
+        upload_to_s3(html_report_path, f"{s3_folder}.html", s3_client)
+        upload_to_s3(text_report_path, f"{s3_folder}.txt", s3_client)
 
     return groups

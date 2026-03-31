@@ -137,6 +137,25 @@ class MediatreeAPI:
                 async for chunk in response.aiter_bytes(chunk_size=64 * 1024):
                     f.write(chunk)
 
+    async def _stream_to_fileobj(self, url: str, fileobj) -> None:
+        async with self._http.stream("GET", url) as response:
+            response.raise_for_status()
+            async for chunk in response.aiter_bytes(chunk_size=64 * 1024):
+                fileobj.write(chunk)
+
+    async def stream_export(
+        self,
+        channel: str,
+        from_date: datetime,
+        to_date: datetime,
+        media_format: str,
+        fileobj,
+    ) -> None:
+        """Stream the export directly into a writable file-like object (e.g. io.BytesIO)."""
+        src_url = await self.generate_src_url(channel, from_date, to_date, media_format)
+        async with self._semaphore:
+            await self._do_with_retry(lambda: self._stream_to_fileobj(src_url, fileobj))
+
     # ---- Cache helpers ----
 
     def _file_name(

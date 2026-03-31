@@ -299,10 +299,11 @@ class FragmentsClassifier:
                     next_fragment.start_sec - fragment.end_sec <= 1.0
                 ):  # If the next fragment is within 1 second after the current one
                     next_group_id = next_fragment.group_id
-                    if next_group_id is None:
-                        next_group_id = (
-                            "none"  # We use "none" to represent fragments without group
-                        )
+                    if (
+                        next_group_id is None
+                        or next_fragment.classification == "already_known_ad"
+                    ):
+                        next_group_id = "none"  # We use "none" to represent fragments without group or that cannot be matched
                     if next_group_id not in following_groups_count:
                         following_groups_count[next_group_id] = 0
                     following_groups_count[next_group_id] += 1

@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 
@@ -57,7 +58,9 @@ async def run_chunk_identification(
 
     with get_db_session() as session:
         for ads in session.scalars(
-            select(Ad).execution_options(yield_per=CURSOR_BATCH_SIZE)
+            select(Ad)
+            .filter(Ad.first_detection_date < datetime.now() - timedelta(days=1))
+            .execution_options(yield_per=CURSOR_BATCH_SIZE)
         ).partitions():
             # --- Build hash index for this batch only ---
             # hash_str → list of (ad, entry_idx, chunk_idx, db_chunk, db_hash_set)
@@ -134,7 +137,7 @@ async def run_chunk_identification(
             (chunk.start_sec - chunks[local_idx - 1].end_sec) > 1.0
         )
 
-        for chunk_match in chunk_matches:
+        for chunk_match in _sort_chunk_matches_by_importance(chunk_matches):
             if chunk_match.chunk_index > 0 and not chunk_is_start_of_segment:
                 # we matched a chunk that is in the middle of a fragment, we cannot use it
                 continue
@@ -193,16 +196,16 @@ def _current_fragment_is_a_match(
     current_local_idx: int,
     all_chunk_matches: dict[int, list[AdChunkMatch]],
 ) -> tuple[bool, int | None]:
-    current_chunk = local_chunks[current_local_idx]
     number_of_chunks_to_match = len(db_ad_chunks) - chunk_match.chunk_index
     for offset in range(1, number_of_chunks_to_match):
         next_local_idx = current_local_idx + offset
         if next_local_idx >= len(local_chunks):
             # We reached the end of the local chunks, we consider it a match (the local fragment is shorter than the DB one)
             return True, next_local_idx
+        prev_chunk = local_chunks[next_local_idx - 1]
         next_chunk = local_chunks[next_local_idx]
 
-        if next_chunk.start_sec - current_chunk.start_sec > 1.0:
+        if next_chunk.start_sec - prev_chunk.end_sec > 1.0:
             # Too much time between the chunks, we consider it a match (the local fragment has a gap, but is still similar to the DB one)
             return True, next_local_idx
 
@@ -217,3 +220,18 @@ def _current_fragment_is_a_match(
             return False, None
     # All following chunks in the DB fragment also match the next local chunks, we consider it a match
     return True, current_local_idx + number_of_chunks_to_match
+
+
+def _sort_chunk_matches_by_importance(
+    matches: list[AdChunkMatch],
+) -> list[AdChunkMatch]:
+    # We sort the matches to try the most important ones first (to maximize the chances to match a whole fragment and not a part of it)
+    # The importance is first given from the type, then to the duration of the ad (longer is more interesting than shorter),
+    # then by chunk_index ascending so chunk_index=0 is tried first (ensures full fragment match before partial)
+    return sorted(
+        (m for m in matches if m.ad.fragment_type == "advertising"),
+        key=lambda m: (m.chunk_index, -m.ad.duration_sec),
+    ) + sorted(
+        (m for m in matches if m.ad.fragment_type != "advertising"),
+        key=lambda m: (m.chunk_index, -m.ad.duration_sec),
+    )

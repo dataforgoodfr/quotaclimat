@@ -32,8 +32,8 @@ def _ad_id_from_chunks(chunks) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
 
 
-def _occurrence_id(ad_id: str, occurrence_date, channel: str) -> str:
-    raw = f"{ad_id}|{occurrence_date.isoformat()}|{channel}"
+def _occurrence_id(ad_id: str, occurrence_sec: float, channel: str) -> str:
+    raw = f"{ad_id}|{occurrence_sec}|{channel}"
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
 
 
@@ -100,7 +100,7 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
 
             for fragment in group_fragments:
                 fragment.group_id = ad_id
-                occ_id = _occurrence_id(ad_id, fragment.start_date, fragment.channel)
+                occ_id = _occurrence_id(ad_id, fragment.start_sec, fragment.channel)
                 occurrences.append(
                     Ad_Occurrence(
                         id=occ_id,

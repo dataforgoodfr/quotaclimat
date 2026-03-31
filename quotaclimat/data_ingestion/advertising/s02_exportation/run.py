@@ -1,7 +1,7 @@
 import asyncio
+import io
 import logging
 import os
-import tempfile
 from datetime import datetime, timedelta, timezone
 
 import boto3
@@ -58,23 +58,20 @@ def query_ads_since(session, since_date: datetime) -> list[tuple[Ad, Ad_Occurren
 
 
 async def _export_ad(
-    ad: Ad, occurrence: Ad_Occurrence, api: MediatreeAPI, s3_client, tmp_dir: str
+    ad: Ad, occurrence: Ad_Occurrence, api: MediatreeAPI, s3_client
 ):
     from_date = occurrence.occurrence_date
     to_date = from_date + timedelta(seconds=ad.duration_sec)
     channel = occurrence.channel_name
 
     for media_format in ("mp3", "mp4"):
-        local_path = os.path.join(tmp_dir, f"{ad.id}.{media_format}")
-        await api.download_export(
-            channel, from_date, to_date, media_format, file_path=local_path
-        )
+        buf = io.BytesIO()
+        await api.stream_export(channel, from_date, to_date, media_format, buf)
+        buf.seek(0)
 
         s3_key = f"{AD_S3_PREFIX}/{ad.id}/raw.{media_format}"
-        s3_client.upload_file(local_path, BUCKET_NAME, s3_key)
+        s3_client.upload_fileobj(buf, BUCKET_NAME, s3_key)
         logger.info(f"Uploaded s3://{BUCKET_NAME}/{s3_key}")
-
-        os.remove(local_path)
 
 
 async def run(since_date: datetime):
@@ -86,20 +83,19 @@ async def run(since_date: datetime):
         logger.info(f"Found {len(ads)} ads since {since_date}")
 
         async with MediatreeAPI() as api:
-            with tempfile.TemporaryDirectory() as tmp_dir:
-                for ad, occurrence in tqdm(ads, desc="Exporting ads"):
-                    if ad_folder_exists_in_s3(ad.id, s3_client):
-                        logger.info(f"Ad {ad.id} already in S3, skipping")
-                        continue
+            for ad, occurrence in tqdm(ads, desc="Exporting ads"):
+                if ad_folder_exists_in_s3(ad.id, s3_client):
+                    logger.info(f"Ad {ad.id} already in S3, skipping")
+                    continue
 
-                    logger.info(
-                        f"Processing ad {ad.id} (channel={occurrence.channel_name})"
-                    )
-                    try:
-                        await _export_ad(ad, occurrence, api, s3_client, tmp_dir)
-                    except Exception as e:
-                        logger.error(f"Failed to export ad {ad.id}: {e}")
-                        raise e
+                logger.info(
+                    f"Processing ad {ad.id} (channel={occurrence.channel_name})"
+                )
+                try:
+                    await _export_ad(ad, occurrence, api, s3_client)
+                except Exception as e:
+                    logger.error(f"Failed to export ad {ad.id}: {e}")
+                    raise e
     finally:
         session.close()
 

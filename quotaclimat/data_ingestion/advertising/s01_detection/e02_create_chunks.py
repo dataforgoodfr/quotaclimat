@@ -17,7 +17,7 @@ import numpy as np
 from scipy.ndimage import maximum_filter, maximum_filter1d
 
 from .e00_partition_window import Segment
-from .tools.common_objects import Chunk
+from .tools.common_objects import Chunk, Fingerprint
 from .tools.fingerprint.hash import HashGenerator, make_params_hash
 
 
@@ -260,13 +260,15 @@ class ChunkCreator:
                 Chunk(
                     start_sec=round(start_epoch + float(t_start), 2),
                     end_sec=round(start_epoch + float(t_end), 2),
-                    duration_sec=round(float(dur), 2),
-                    energy_mean=round(e, 2),
-                    spectral_centroid=round(c, 2),
-                    zcr_mean=round(z, 2),
-                    peaks=seg_peaks,
-                    hashes=seg_hashes,
                     channel=channel,
+                    fingerprint=Fingerprint(
+                        duration_sec=round(float(dur), 2),
+                        energy_mean=round(e, 2),
+                        spectral_centroid=round(c, 2),
+                        zcr_mean=round(z, 2),
+                        peaks=seg_peaks,
+                        hashes=seg_hashes,
+                    ),
                 )
             )
 

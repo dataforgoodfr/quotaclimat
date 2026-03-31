@@ -64,7 +64,7 @@ def make_params_hash(params: dict) -> str:
 
 def _build_hash_sets(chunks: list[Chunk]) -> list[set[str]]:
     """Precompute the set of hash keys for each chunk (for O(1) lookup)."""
-    return [{h for h, _ in (c.hashes or [])} for c in chunks]
+    return [{h for h, _ in (c.fingerprint.hashes or [])} for c in chunks]
 
 
 def _score(
@@ -78,8 +78,8 @@ def _score(
     if len(common) < min_matching:
         return 0.0
 
-    hashes_a = chunk_a.hashes or []
-    hashes_b = chunk_b.hashes or []
+    hashes_a = chunk_a.fingerprint.hashes or []
+    hashes_b = chunk_b.fingerprint.hashes or []
 
     index_a = {h: t for h, t in hashes_a if h in common}
     index_b = {h: t for h, t in hashes_b if h in common}
@@ -102,20 +102,21 @@ def _features_compatible(
     zcr_tol: float = 0.1,
 ) -> bool:
     """Acoustic pre-filter: reject pairs that differ too much in basic features."""
-    if abs(a.duration_sec - b.duration_sec) > duration_tol:
+    fp_a, fp_b = a.fingerprint, b.fingerprint
+    if abs(fp_a.duration_sec - fp_b.duration_sec) > duration_tol:
         return False
 
     def rel_diff(x: float, y: float) -> float:
         return abs(x - y) / max(abs(x), abs(y), 1e-8)
 
-    if a.energy_mean > 0 and b.energy_mean > 0:
-        if rel_diff(a.energy_mean, b.energy_mean) > rms_tol:
+    if fp_a.energy_mean > 0 and fp_b.energy_mean > 0:
+        if rel_diff(fp_a.energy_mean, fp_b.energy_mean) > rms_tol:
             return False
-    if a.spectral_centroid > 0 and b.spectral_centroid > 0:
-        if rel_diff(a.spectral_centroid, b.spectral_centroid) > centroid_tol:
+    if fp_a.spectral_centroid > 0 and fp_b.spectral_centroid > 0:
+        if rel_diff(fp_a.spectral_centroid, fp_b.spectral_centroid) > centroid_tol:
             return False
-    if a.zcr_mean > 0 and b.zcr_mean > 0:
-        if rel_diff(a.zcr_mean, b.zcr_mean) > zcr_tol:
+    if fp_a.zcr_mean > 0 and fp_b.zcr_mean > 0:
+        if rel_diff(fp_a.zcr_mean, fp_b.zcr_mean) > zcr_tol:
             return False
 
     return True

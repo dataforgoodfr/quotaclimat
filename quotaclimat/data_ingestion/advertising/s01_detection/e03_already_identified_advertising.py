@@ -51,7 +51,7 @@ async def run_chunk_identification(
     matches: dict[int, list[AdChunkMatch]] = defaultdict(list)
 
     # Precompute local hash sets once (reused for every page)
-    local_hash_sets: list[set[str]] = [{h for h, _ in (c.hashes or [])} for c in chunks]
+    local_hash_sets: list[set[str]] = [{h for h, _ in (c.fingerprint.hashes or [])} for c in chunks]
 
     total_db_chunks = 0
 
@@ -73,7 +73,7 @@ async def run_chunk_identification(
                         chunk_entry.get("chunks", [])
                     ):
                         db_chunk = Chunk.from_dict(chunk_dict)
-                        db_hash_set = {h for h, _ in (db_chunk.hashes or [])}
+                        db_hash_set = {h for h, _ in (db_chunk.fingerprint.hashes or [])}
                         for h in db_hash_set:
                             hash_index[h].append(
                                 (ad, entry_idx, chunk_idx, db_chunk, db_hash_set)

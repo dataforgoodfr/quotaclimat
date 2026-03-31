@@ -14,7 +14,7 @@ from typing import Dict, List, Tuple
 import numpy as np
 from tqdm import tqdm
 
-from .tools.common_objects import Chunk
+from .tools.common_objects import Chunk, Fingerprint
 from .tools.fingerprint.hash import (
     _build_hash_sets,
     are_chunks_similar,
@@ -40,7 +40,7 @@ class ChunkGroup:
             count=data["count"],
             duration_mean=data["duration_mean"],
             duration_std=data["duration_std"],
-            occurrences=[Chunk(**occ) for occ in data["occurrences"]],
+            occurrences=[Chunk.from_dict(occ) for occ in data["occurrences"]],
         )
 
 
@@ -157,7 +157,7 @@ class ChunkGrouping:
 
     def run(self, source: List[Chunk]) -> list[ChunkGroup]:
         # Filter out very short chunks
-        chunks = [c for c in source if c.duration_sec >= 0.5]
+        chunks = [c for c in source if c.fingerprint.duration_sec >= 0.5]
         logger.debug(f"{len(chunks)} chunks to group")
 
         hash_sets = _build_hash_sets(chunks)
@@ -177,7 +177,7 @@ class ChunkGrouping:
             members = sorted(
                 [chunks[i] for i in member_idxs], key=lambda c: c.start_sec
             )
-            durations = [c.duration_sec for c in members]
+            durations = [c.fingerprint.duration_sec for c in members]
 
             report_groups.append(
                 ChunkGroup(
@@ -225,7 +225,7 @@ def canonical(chunks: list[Chunk]) -> Chunk:
 
     for chunk in chunks:
         seen_in_chunk: set[str] = set()
-        for h, t in chunk.hashes or []:
+        for h, t in chunk.fingerprint.hashes or []:
             hash_to_times[h].append(t)
             seen_in_chunk.add(h)
         hash_occurrence_count.update(seen_in_chunk)
@@ -248,24 +248,26 @@ def canonical(chunks: list[Chunk]) -> Chunk:
         ]
 
     # Median acoustic features.
-    durations = [c.duration_sec for c in chunks]
-    energies = [c.energy_mean for c in chunks]
-    centroids = [c.spectral_centroid for c in chunks]
-    zcrs = [c.zcr_mean for c in chunks]
+    durations = [c.fingerprint.duration_sec for c in chunks]
+    energies = [c.fingerprint.energy_mean for c in chunks]
+    centroids = [c.fingerprint.spectral_centroid for c in chunks]
+    zcrs = [c.fingerprint.zcr_mean for c in chunks]
 
     # Richest occurrence as source for peaks.
-    richest = max(chunks, key=lambda c: len(c.hashes or []))
+    richest = max(chunks, key=lambda c: len(c.fingerprint.hashes or []))
 
     return Chunk(
         start_sec=richest.start_sec,
         end_sec=richest.end_sec,
         channel=richest.channel,
-        duration_sec=float(np.median(durations)),
-        energy_mean=float(np.median(energies)),
-        spectral_centroid=float(np.median(centroids)),
-        zcr_mean=float(np.median(zcrs)),
-        peaks=richest.peaks,
-        hashes=stable_hashes,
+        fingerprint=Fingerprint(
+            duration_sec=float(np.median(durations)),
+            energy_mean=float(np.median(energies)),
+            spectral_centroid=float(np.median(centroids)),
+            zcr_mean=float(np.median(zcrs)),
+            peaks=richest.fingerprint.peaks,
+            hashes=stable_hashes,
+        ),
     )
 
 
@@ -290,10 +292,10 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
 
     # ── Step 1: minimum duration filter (applied in run()) ──────────────
     print("\n[1] Minimum duration filter (>= 0.5 s)")
-    a_ok = a.duration_sec >= 0.5
-    b_ok = b.duration_sec >= 0.5
-    print(f"    A duration: {a.duration_sec:.3f}s  {PASS if a_ok else FAIL}")
-    print(f"    B duration: {b.duration_sec:.3f}s  {PASS if b_ok else FAIL}")
+    a_ok = a.fingerprint.duration_sec >= 0.5
+    b_ok = b.fingerprint.duration_sec >= 0.5
+    print(f"    A duration: {a.fingerprint.duration_sec:.3f}s  {PASS if a_ok else FAIL}")
+    print(f"    B duration: {b.fingerprint.duration_sec:.3f}s  {PASS if b_ok else FAIL}")
     if not (a_ok and b_ok):
         print(
             "  → BLOCKED: one or both chunks are too short and would be filtered out."
@@ -303,41 +305,43 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
     # ── Step 2: acoustic pre-filter (_features_compatible) ──────────────
     print("\n[2] Acoustic pre-filter (_features_compatible)")
 
-    dur_diff = abs(a.duration_sec - b.duration_sec)
+    fp_a, fp_b = a.fingerprint, b.fingerprint
+
+    dur_diff = abs(fp_a.duration_sec - fp_b.duration_sec)
     dur_ok = dur_diff <= grouping.duration_tol
     print(
         f"    duration |A-B| = {dur_diff:.3f}s  (tol={grouping.duration_tol})  {PASS if dur_ok else FAIL}"
     )
 
     rms_ok = True
-    if a.energy_mean > 0 and b.energy_mean > 0:
-        rms_diff = rel_diff(a.energy_mean, b.energy_mean)
+    if fp_a.energy_mean > 0 and fp_b.energy_mean > 0:
+        rms_diff = rel_diff(fp_a.energy_mean, fp_b.energy_mean)
         rms_ok = rms_diff <= grouping.rms_tol
         print(
             f"    energy_mean rel_diff = {rms_diff:.4f}  (tol={grouping.rms_tol})  {PASS if rms_ok else FAIL}"
-            f"  (A={a.energy_mean:.4f}, B={b.energy_mean:.4f})"
+            f"  (A={fp_a.energy_mean:.4f}, B={fp_b.energy_mean:.4f})"
         )
     else:
         print("    energy_mean: skipped (one value is 0)")
 
     centroid_ok = True
-    if a.spectral_centroid > 0 and b.spectral_centroid > 0:
-        centroid_diff = rel_diff(a.spectral_centroid, b.spectral_centroid)
+    if fp_a.spectral_centroid > 0 and fp_b.spectral_centroid > 0:
+        centroid_diff = rel_diff(fp_a.spectral_centroid, fp_b.spectral_centroid)
         centroid_ok = centroid_diff <= grouping.centroid_tol
         print(
             f"    spectral_centroid rel_diff = {centroid_diff:.4f}  (tol={grouping.centroid_tol})  {PASS if centroid_ok else FAIL}"
-            f"  (A={a.spectral_centroid:.1f}, B={b.spectral_centroid:.1f})"
+            f"  (A={fp_a.spectral_centroid:.1f}, B={fp_b.spectral_centroid:.1f})"
         )
     else:
         print("    spectral_centroid: skipped (one value is 0)")
 
     zcr_ok = True
-    if a.zcr_mean > 0 and b.zcr_mean > 0:
-        zcr_diff = rel_diff(a.zcr_mean, b.zcr_mean)
+    if fp_a.zcr_mean > 0 and fp_b.zcr_mean > 0:
+        zcr_diff = rel_diff(fp_a.zcr_mean, fp_b.zcr_mean)
         zcr_ok = zcr_diff <= grouping.zcr_tol
         print(
             f"    zcr_mean rel_diff = {zcr_diff:.4f}  (tol={grouping.zcr_tol})  {PASS if zcr_ok else FAIL}"
-            f"  (A={a.zcr_mean:.4f}, B={b.zcr_mean:.4f})"
+            f"  (A={fp_a.zcr_mean:.4f}, B={fp_b.zcr_mean:.4f})"
         )
     else:
         print("    zcr_mean: skipped (one value is 0)")
@@ -349,8 +353,8 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
 
     # ── Step 3: shared hash count (min_matching_hashes) ─────────────────
     print("\n[3] Shared hash count (min_matching_hashes)")
-    set_a = {h for h, _ in (a.hashes or [])}
-    set_b = {h for h, _ in (b.hashes or [])}
+    set_a = {h for h, _ in (fp_a.hashes or [])}
+    set_b = {h for h, _ in (fp_b.hashes or [])}
     common = set_a & set_b
     hashes_ok = len(common) >= grouping.min_matching_hashes
     print(
@@ -365,8 +369,8 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
 
     # ── Step 4: temporal coherence score (_score) ────────────────────────
     print("\n[4] Fingerprint similarity score (_score)")
-    hashes_a = a.hashes or []
-    hashes_b = b.hashes or []
+    hashes_a = fp_a.hashes or []
+    hashes_b = fp_b.hashes or []
     index_a = {h: t for h, t in hashes_a if h in common}
     index_b = {h: t for h, t in hashes_b if h in common}
     offsets = [index_a[h] - index_b[h] for h in common if h in index_a and h in index_b]

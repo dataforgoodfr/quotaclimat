@@ -153,7 +153,10 @@ def parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvelo
         publication_date = pub_date_str.split("T")[0] if pub_date_str else None
 
         # Content fields (strip HTML from body and snippet)
+        surtitre = get_text(article_elem.find("surtitre"))
         title = get_text(article_elem.find("titre"))
+        if surtitre:
+            title = f"{surtitre} - {title}" if title else surtitre
         body = strip_html(get_text(article_elem.find("texte")))
         snippet = strip_html(get_text(article_elem.find("chapeau")))
 
@@ -189,6 +192,14 @@ def parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvelo
                 tag_text = tag_elem.text.strip()
             if tag_text:
                 tags.append(tag_text)
+
+        # Localisations → region_of_origin
+        localisations = []
+        for loc_elem in article_elem.findall("localisations/localisation"):
+            loc_name = get_text(loc_elem.find("nom"))
+            if loc_name:
+                localisations.append(loc_name)
+        region_of_origin = ", ".join(localisations) if localisations else "France"
 
         # Section from first tag if available
         section = tags[0] if tags else ""
@@ -228,7 +239,7 @@ def parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvelo
             ingestion_datetime=datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
             availability_datetime=publication_datetime,
             language_code="fr",
-            region_of_origin="France",
+            region_of_origin=region_of_origin,
             word_count=word_count,
             article_url=article_url,
             tags=tags if tags else None,

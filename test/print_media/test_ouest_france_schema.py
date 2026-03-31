@@ -49,7 +49,10 @@ def _parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvel
     publication_datetime = pub_date_str if pub_date_str else None
     publication_date = pub_date_str.split("T")[0] if pub_date_str else None
 
+    surtitre = _get_text(article_elem.find("surtitre"))
     title = _get_text(article_elem.find("titre"))
+    if surtitre:
+        title = f"{surtitre} - {title}" if title else surtitre
     body = _strip_html(_get_text(article_elem.find("texte")))
     snippet = _strip_html(_get_text(article_elem.find("chapeau")))
     byline = _get_text(article_elem.find("signature"))
@@ -79,6 +82,13 @@ def _parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvel
         if tag_text:
             tags.append(tag_text)
 
+    localisations = []
+    for loc_elem in article_elem.findall("localisations/localisation"):
+        loc_name = _get_text(loc_elem.find("nom"))
+        if loc_name:
+            localisations.append(loc_name)
+    region_of_origin = ", ".join(localisations) if localisations else "France"
+
     attributes = FactivaArticleAttributes(
         an=an,
         source_code=SOURCE_CODE,
@@ -96,7 +106,7 @@ def _parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvel
         publication_datetime=publication_datetime,
         publication_date=publication_date,
         language_code="fr",
-        region_of_origin="France",
+        region_of_origin=region_of_origin,
         word_count=word_count,
         article_url=article_url,
         tags=tags if tags else None,
@@ -169,6 +179,45 @@ SAMPLE_OUEST_FRANCE_XML = """<?xml version="1.0" encoding="UTF-8"?>
             <categorisations/>
             <url>https://www.ouest-france.fr/test/second-article</url>
             <tags/>
+        </article>
+        <article>
+            <id>third-article-with-surtitre</id>
+            <parutions>
+                <parution>
+                    <dateParution>2025-01-03T00:00:00</dateParution>
+                    <publications>
+                        <publication>Quotidien Ouest-France</publication>
+                    </publications>
+                </parution>
+            </parutions>
+            <surtitre><![CDATA[Environnement]]></surtitre>
+            <titre><![CDATA[ La biodiversité marine en danger ]]></titre>
+            <chapeau><![CDATA[<p>Un rapport alarmant.</p>]]></chapeau>
+            <texte><![CDATA[<p>Les océans se réchauffent.</p>]]></texte>
+            <signature><![CDATA[Marie DUPONT.]]></signature>
+            <nombreMots>200</nombreMots>
+            <photos/>
+            <localisations>
+                <localisation>
+                    <nom>Saint-Laurent</nom>
+                    <CodeINSEE/>
+                    <Longitude>0.8003397</Longitude>
+                    <Latitude>43.32542</Latitude>
+                    <type>Commune</type>
+                </localisation>
+                <localisation>
+                    <nom>Bretagne</nom>
+                    <CodeINSEE/>
+                    <Longitude/>
+                    <Latitude/>
+                    <type>Région</type>
+                </localisation>
+            </localisations>
+            <categorisations/>
+            <url>https://www.ouest-france.fr/environnement/biodiversite-marine</url>
+            <tags>
+                <tag>Environnement</tag>
+            </tags>
         </article>
     </articles>
 </contenus>
@@ -421,7 +470,7 @@ class TestParseArticleXml:
             if envelope is not None:
                 articles.append(envelope)
 
-        assert len(articles) == 2
+        assert len(articles) == 3
         assert articles[0].attributes.an == "OUESTFR:42ef78db-2551-4ccb-914d-b8d75de2dc0e"
         assert articles[1].attributes.an == "OUESTFR:second-article-id"
 
@@ -440,6 +489,36 @@ class TestParseArticleXml:
 
         assert envelope.attributes.document_type == "paper"
 
+    def test_surtitre_prepended_to_title(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[2]
+        envelope = _parse_article_xml(article_elem)
+
+        assert envelope.attributes.title == "Environnement - La biodiversité marine en danger"
+
+    def test_empty_surtitre_ignored(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[0]
+        envelope = _parse_article_xml(article_elem)
+
+        assert "choristes" in envelope.attributes.title
+        assert " - " not in envelope.attributes.title
+
+    def test_localisations_in_region_of_origin(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[2]
+        envelope = _parse_article_xml(article_elem)
+
+        assert "Saint-Laurent" in envelope.attributes.region_of_origin
+        assert "Bretagne" in envelope.attributes.region_of_origin
+
+    def test_empty_localisations_defaults_to_france(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[0]
+        envelope = _parse_article_xml(article_elem)
+
+        assert envelope.attributes.region_of_origin == "France"
+
 
 class TestFactivaS3DocumentFromOuestFrance:
     """Integration: OuestFrance articles produce a valid FactivaS3Document for S3."""
@@ -456,7 +535,7 @@ class TestFactivaS3DocumentFromOuestFrance:
         json_str = json.dumps(doc.to_dict(), ensure_ascii=False)
         parsed = json.loads(json_str)
 
-        assert len(parsed["data"]) == 2
+        assert len(parsed["data"]) == 3
         first = parsed["data"][0]["attributes"]
         assert first["source_code"] == "OUESTFR"
         assert first["an"].startswith("OUESTFR:")

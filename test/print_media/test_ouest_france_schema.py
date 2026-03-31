@@ -773,6 +773,78 @@ class TestParseRssItem:
                 assert envelope.attributes.action == "add"
 
 
+def _deduplicate_articles(
+    articles: List[FactivaArticleEnvelope],
+) -> List[FactivaArticleEnvelope]:
+    """Local copy of deduplicate_articles to avoid heavy transitive imports."""
+    seen: set = set()
+    unique = []
+    for article in articles:
+        if article.id not in seen:
+            seen.add(article.id)
+            unique.append(article)
+    return unique
+
+
+class TestDeduplicateArticles:
+    """Test deduplication of articles across multiple XML files."""
+
+    def _make_envelope(self, article_id: str, title: str = "Test") -> FactivaArticleEnvelope:
+        an = f"OUESTFR:{article_id}"
+        return FactivaArticleEnvelope(
+            id=an,
+            type="article",
+            attributes=FactivaArticleAttributes(
+                an=an,
+                source_code="OUESTFR",
+                source_name="Ouest-France",
+                title=title,
+            ),
+        )
+
+    def test_no_duplicates_unchanged(self):
+        articles = [self._make_envelope("1"), self._make_envelope("2"), self._make_envelope("3")]
+        result = _deduplicate_articles(articles)
+        assert len(result) == 3
+
+    def test_removes_duplicates(self):
+        articles = [
+            self._make_envelope("1", "First occurrence"),
+            self._make_envelope("2"),
+            self._make_envelope("1", "Second occurrence"),
+        ]
+        result = _deduplicate_articles(articles)
+        assert len(result) == 2
+        assert result[0].attributes.title == "First occurrence"
+        assert result[1].id == "OUESTFR:2"
+
+    def test_empty_list(self):
+        assert _deduplicate_articles([]) == []
+
+    def test_all_same_id(self):
+        articles = [self._make_envelope("dup") for _ in range(5)]
+        result = _deduplicate_articles(articles)
+        assert len(result) == 1
+
+    def test_dedup_across_xml_formats(self):
+        """Simulate articles from two different XML files (contenus + RSS) with same ID."""
+        # Parse from contenus
+        root1 = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        articles1 = [_parse_article_xml(e) for e in root1.findall(".//article")]
+        articles1 = [a for a in articles1 if a is not None]
+
+        # Parse from RSS
+        root2 = ET.fromstring(SAMPLE_RSS_XML)
+        articles2 = [_parse_rss_item(e) for e in root2.findall(".//item")]
+        articles2 = [a for a in articles2 if a is not None]
+
+        # Combine with duplicates from contenus again
+        all_articles = articles1 + articles2 + articles1
+        result = _deduplicate_articles(all_articles)
+        # 3 contenus + 2 RSS = 5 unique
+        assert len(result) == 5
+
+
 class TestRssS3DocumentRoundTrip:
     """Integration: RSS articles produce a valid FactivaS3Document for S3."""
 

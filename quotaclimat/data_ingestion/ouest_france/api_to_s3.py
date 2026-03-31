@@ -11,6 +11,7 @@ This script:
 The existing Factiva S3→PostgreSQL pipeline then picks them up automatically.
 """
 
+import glob
 import json
 import logging
 import math
@@ -377,6 +378,22 @@ def parse_all_articles(xml_content: str) -> List[FactivaArticleEnvelope]:
     return articles
 
 
+def deduplicate_articles(
+    articles: List[FactivaArticleEnvelope],
+) -> List[FactivaArticleEnvelope]:
+    """Remove duplicate articles by ID, keeping the first occurrence."""
+    seen: set = set()
+    unique = []
+    for article in articles:
+        if article.id not in seen:
+            seen.add(article.id)
+            unique.append(article)
+    n_duplicates = len(articles) - len(unique)
+    if n_duplicates > 0:
+        logging.info(f"Removed {n_duplicates} duplicate articles, {len(unique)} unique remaining")
+    return unique
+
+
 # --- Partitioning and saving ---
 
 
@@ -445,6 +462,34 @@ def save_articles_to_local(
                     logging.info(f"Saved {len(batch)} articles to {filepath}")
 
 
+def _resolve_xml_files(path: str) -> List[str]:
+    """Resolve a path to a list of XML files.
+
+    Supports: single file, directory (all *.xml files), glob pattern,
+    or comma-separated list of paths.
+    """
+    # Comma-separated list
+    if "," in path:
+        files = []
+        for p in path.split(","):
+            p = p.strip()
+            if p and os.path.isfile(p):
+                files.append(p)
+        return sorted(files)
+
+    # Single file
+    if os.path.isfile(path):
+        return [path]
+
+    # Directory — find all .xml files
+    if os.path.isdir(path):
+        return sorted(glob.glob(os.path.join(path, "*.xml")))
+
+    # Glob pattern
+    matches = sorted(glob.glob(path))
+    return [m for m in matches if os.path.isfile(m)]
+
+
 # --- Main ---
 
 
@@ -463,15 +508,19 @@ def main():
     start_date_str = start_date.strftime("%Y-%m-%d")
     end_date_str = end_date.strftime("%Y-%m-%d")
 
-    # Fetch XML from API or local file
+    # Fetch XML from API or local file(s)
     local_xml_path = os.getenv("OUESTFRANCE_LOCAL_XML")
     if local_xml_path:
-        local_xml_paths = [p.strip() for p in local_xml_path.split(",") if p.strip()]
+        # Support multiple files: directory, glob pattern, or comma-separated paths
+        xml_files = _resolve_xml_files(local_xml_path)
+        if not xml_files:
+            logging.error(f"No XML files found for: {local_xml_path}")
+            sys.exit(1)
         all_articles: List[FactivaArticleEnvelope] = []
-        for path in local_xml_paths:
-            xml_content = fetch_xml_from_file(path)
+        for xml_file in xml_files:
+            xml_content = fetch_xml_from_file(xml_file)
             all_articles.extend(parse_all_articles(xml_content))
-        articles = all_articles
+        articles = deduplicate_articles(all_articles)
     else:
         if not OUESTFRANCE_API_URL:
             logging.error(

@@ -32,8 +32,8 @@ from quotaclimat.data_ingestion.factiva.schemas.article_schema import (
 )
 from quotaclimat.data_processing.mediatree.s3.s3_utils import upload_folder_to_s3
 
-
 # --- Configuration from environment variables ---
+
 
 def _get_secret(env_var: str) -> str:
     """Read env var value, or if it's a file path, read the file content."""
@@ -88,6 +88,7 @@ def get_text(element: Optional[ET.Element]) -> str:
 
 # --- API fetching ---
 
+
 def fetch_xml_from_api(api_url: str, token: str, start_date: str, end_date: str) -> str:
     """Fetch XML content from the OuestFrance API.
 
@@ -109,7 +110,9 @@ def fetch_xml_from_api(api_url: str, token: str, start_date: str, end_date: str)
         "end_date": end_date,
     }
 
-    logging.info(f"Fetching OuestFrance articles from {api_url} ({start_date} to {end_date})")
+    logging.info(
+        f"Fetching OuestFrance articles from {api_url} ({start_date} to {end_date})"
+    )
     response = requests.get(api_url, headers=headers, params=params, timeout=300)
     response.raise_for_status()
 
@@ -125,6 +128,7 @@ def fetch_xml_from_file(file_path: str) -> str:
 
 
 # --- XML parsing ---
+
 
 def parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
     """Parse a single <article> XML element into a Factiva-format article.
@@ -375,6 +379,7 @@ def parse_all_articles(xml_content: str) -> List[FactivaArticleEnvelope]:
 
 # --- Partitioning and saving ---
 
+
 def partition_articles_by_date(
     articles: List[FactivaArticleEnvelope],
 ) -> Dict[str, Dict[str, Dict[str, List[Dict[str, Any]]]]]:
@@ -393,7 +398,9 @@ def partition_articles_by_date(
 
         parts = pub_date.split("-")
         if len(parts) < 3:
-            logging.warning(f"Article {envelope.id} has invalid publication_date: {pub_date}")
+            logging.warning(
+                f"Article {envelope.id} has invalid publication_date: {pub_date}"
+            )
             continue
 
         year, month, day = parts[0], parts[1], parts[2].split("T")[0]
@@ -427,7 +434,9 @@ def save_articles_to_local(
                     # Validate the batch via Pydantic before writing
                     doc = FactivaS3Document(data=batch)
 
-                    filename = f"{year}_{month}_{day}_00_00_00_{batch_idx + 1}_stream.json"
+                    filename = (
+                        f"{year}_{month}_{day}_00_00_00_{batch_idx + 1}_stream.json"
+                    )
                     filepath = os.path.join(dir_path, filename)
 
                     with open(filepath, "w", encoding="utf-8") as f:
@@ -437,6 +446,7 @@ def save_articles_to_local(
 
 
 # --- Main ---
+
 
 def main():
     logging.basicConfig(
@@ -456,17 +466,23 @@ def main():
     # Fetch XML from API or local file
     local_xml_path = os.getenv("OUESTFRANCE_LOCAL_XML")
     if local_xml_path:
-        xml_content = fetch_xml_from_file(local_xml_path)
+        local_xml_paths = [p.strip() for p in local_xml_path.split(",") if p.strip()]
+        all_articles: List[FactivaArticleEnvelope] = []
+        for path in local_xml_paths:
+            xml_content = fetch_xml_from_file(path)
+            all_articles.extend(parse_all_articles(xml_content))
+        articles = all_articles
     else:
         if not OUESTFRANCE_API_URL:
-            logging.error("OUESTFRANCE_API_URL is required (or set OUESTFRANCE_LOCAL_XML for local file)")
+            logging.error(
+                "OUESTFRANCE_API_URL is required (or set OUESTFRANCE_LOCAL_XML for local file)"
+            )
             sys.exit(1)
         xml_content = fetch_xml_from_api(
             OUESTFRANCE_API_URL, OUESTFRANCE_API_TOKEN, start_date_str, end_date_str
         )
+        articles = parse_all_articles(xml_content)
 
-    # Parse articles
-    articles = parse_all_articles(xml_content)
     if not articles:
         logging.info("No articles found, exiting")
         return
@@ -475,21 +491,22 @@ def main():
     partitioned = partition_articles_by_date(articles)
     save_articles_to_local(partitioned, output_dir)
 
-    # Upload to S3
-    s3_client = boto3.client(
-        service_name="s3",
-        region_name=S3_REGION,
-        aws_access_key_id=S3_ACCESS_KEY,
-        aws_secret_access_key=S3_SECRET_KEY,
-        endpoint_url=f"https://s3.{S3_REGION}.scw.cloud",
-    )
+    if False:
+        # Upload to S3
+        s3_client = boto3.client(
+            service_name="s3",
+            region_name=S3_REGION,
+            aws_access_key_id=S3_ACCESS_KEY,
+            aws_secret_access_key=S3_SECRET_KEY,
+            endpoint_url=f"https://s3.{S3_REGION}.scw.cloud",
+        )
 
-    upload_folder_to_s3(
-        output_dir,
-        bucket_name=S3_BUCKET,
-        base_s3_path=f"{S3_BASE_PREFIX}/articles",
-        s3_client=s3_client,
-    )
+        upload_folder_to_s3(
+            output_dir,
+            bucket_name=S3_BUCKET,
+            base_s3_path=f"{S3_BASE_PREFIX}/articles",
+            s3_client=s3_client,
+        )
 
     logging.info("OuestFrance API to S3 upload complete")
 

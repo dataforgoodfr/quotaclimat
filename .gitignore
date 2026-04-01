@@ -164,8 +164,3 @@ analyse/mediatree/images
 analyse/instagram/data
 quotaclimat/data_ingestion/lemonde_ftp/ftp_data
 quotaclimat/data_ingestion/lemonde_ftp/examples
-
-exports/
-output.html
-.fingerprint_cache
-working_data

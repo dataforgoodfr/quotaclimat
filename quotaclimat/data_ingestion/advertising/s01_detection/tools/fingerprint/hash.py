@@ -5,7 +5,7 @@ from typing import List, Tuple
 
 import numpy as np
 
-from ..common_objects import Chunk
+from ..common_objects import Fingerprint
 
 
 class HashGenerator:
@@ -62,13 +62,13 @@ def make_params_hash(params: dict) -> str:
     return hashlib.sha256(serialized.encode()).hexdigest()[:16]
 
 
-def _build_hash_sets(chunks: list[Chunk]) -> list[set[str]]:
-    """Precompute the set of hash keys for each chunk (for O(1) lookup)."""
-    return [{h for h, _ in (c.hashes or [])} for c in chunks]
+def _build_hash_sets(fingerprints: list[Fingerprint]) -> list[set[str]]:
+    """Precompute the set of hash keys for each fingerprint (for O(1) lookup)."""
+    return [{h for h, _ in (fp.hashes or [])} for fp in fingerprints]
 
 
 def _score(
-    chunk_a: Chunk, chunk_b: "Chunk", set_a: set, set_b: set, min_matching: int
+    fp_a: Fingerprint, fp_b: Fingerprint, set_a: set, set_b: set, min_matching: int
 ) -> float:
     """
     Similarity score based on temporal coherence of shared hashes.
@@ -78,8 +78,8 @@ def _score(
     if len(common) < min_matching:
         return 0.0
 
-    hashes_a = chunk_a.hashes or []
-    hashes_b = chunk_b.hashes or []
+    hashes_a = fp_a.hashes or []
+    hashes_b = fp_b.hashes or []
 
     index_a = {h: t for h, t in hashes_a if h in common}
     index_b = {h: t for h, t in hashes_b if h in common}
@@ -94,8 +94,8 @@ def _score(
 
 
 def _features_compatible(
-    a: "Chunk",
-    b: "Chunk",
+    a: Fingerprint,
+    b: Fingerprint,
     duration_tol: float = 0.3,
     rms_tol: float = 0.05,
     centroid_tol: float = 0.05,
@@ -121,9 +121,9 @@ def _features_compatible(
     return True
 
 
-def are_chunks_similar(
-    chunk_a: "Chunk",
-    chunk_b: "Chunk",
+def are_fingerprints_similar(
+    fp_a: Fingerprint,
+    fp_b: Fingerprint,
     set_a: set,
     set_b: set,
     min_matching_hashes: int,
@@ -133,12 +133,12 @@ def are_chunks_similar(
     centroid_tol: float = 0.05,
     zcr_tol: float = 0.1,
 ) -> bool:
-    """Return True if two chunks pass the acoustic pre-filter and the fingerprint similarity threshold."""
+    """Return True if two fingerprints pass the acoustic pre-filter and the similarity threshold."""
     if not _features_compatible(
-        chunk_a, chunk_b, duration_tol, rms_tol, centroid_tol, zcr_tol
+        fp_a, fp_b, duration_tol, rms_tol, centroid_tol, zcr_tol
     ):
         return False
     return (
-        _score(chunk_a, chunk_b, set_a, set_b, min_matching_hashes)
+        _score(fp_a, fp_b, set_a, set_b, min_matching_hashes)
         >= similarity_threshold
     )

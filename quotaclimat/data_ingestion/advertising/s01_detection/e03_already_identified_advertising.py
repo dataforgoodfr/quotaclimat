@@ -7,8 +7,8 @@ from sqlalchemy import select
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
 
-from .tools.common_objects import Chunk, Fragment
-from .tools.fingerprint.hash import are_chunks_similar
+from .tools.common_objects import Chunk, Fingerprint, Fragment
+from .tools.fingerprint.hash import are_fingerprints_similar
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ CURSOR_BATCH_SIZE = 1000
 class AdChunkMatch:
     ad: Ad
     chunk_entry_index: int  # index in ad.chunks list (the entry matching params_hash)
-    chunk_index: int  # index within that entry's "chunks" list
+    chunk_index: int  # index within that entry's "fingerprints" list
 
 
 async def run_chunk_identification(
@@ -51,17 +51,17 @@ async def run_chunk_identification(
     matches: dict[int, list[AdChunkMatch]] = defaultdict(list)
 
     # Precompute local hash sets once (reused for every page)
-    local_hash_sets: list[set[str]] = [{h for h, _ in (c.hashes or [])} for c in chunks]
+    local_hash_sets: list[set[str]] = [{h for h, _ in (c.fingerprint.hashes or [])} for c in chunks]
 
-    total_db_chunks = 0
+    total_db_fingerprints = 0
 
     with get_db_session() as session:
         for ads in session.scalars(
             select(Ad).execution_options(yield_per=CURSOR_BATCH_SIZE)
         ).partitions():
             # --- Build hash index for this batch only ---
-            # hash_str → list of (ad, entry_idx, chunk_idx, db_chunk, db_hash_set)
-            hash_index: dict[str, list[tuple[Ad, int, int, Chunk, set]]] = defaultdict(
+            # hash_str → list of (ad, entry_idx, fp_idx, db_fingerprint, db_hash_set)
+            hash_index: dict[str, list[tuple[Ad, int, int, Fingerprint, set]]] = defaultdict(
                 list
             )
 
@@ -69,37 +69,37 @@ async def run_chunk_identification(
                 for entry_idx, chunk_entry in enumerate(ad.chunks or []):
                     if chunk_entry.get("hash") != params_hash:
                         continue
-                    for chunk_idx, chunk_dict in enumerate(
-                        chunk_entry.get("chunks", [])
+                    for fp_idx, fp_dict in enumerate(
+                        chunk_entry.get("fingerprints", [])
                     ):
-                        db_chunk = Chunk.from_dict(chunk_dict)
-                        db_hash_set = {h for h, _ in (db_chunk.hashes or [])}
+                        db_fp = Fingerprint.from_dict(fp_dict)
+                        db_hash_set = {h for h, _ in (db_fp.hashes or [])}
                         for h in db_hash_set:
                             hash_index[h].append(
-                                (ad, entry_idx, chunk_idx, db_chunk, db_hash_set)
+                                (ad, entry_idx, fp_idx, db_fp, db_hash_set)
                             )
-                        total_db_chunks += 1
+                        total_db_fingerprints += 1
 
             # --- Match every local chunk against this page ---
             for local_idx, (chunk, local_hash_set) in enumerate(
                 zip(chunks, local_hash_sets)
             ):
-                # Candidate DB chunks sharing at least one hash
-                candidates: dict[int, tuple[Ad, int, int, Chunk, set]] = {}
+                # Candidate DB fingerprints sharing at least one hash
+                candidates: dict[int, tuple[Ad, int, int, Fingerprint, set]] = {}
                 for h in local_hash_set:
                     for item in hash_index.get(h, []):
-                        candidates[id(item[3])] = item  # key = identity of db_chunk
+                        candidates[id(item[3])] = item  # key = identity of db_fp
 
                 for (
                     ad,
                     entry_idx,
-                    chunk_idx,
-                    db_chunk,
+                    fp_idx,
+                    db_fp,
                     db_hash_set,
                 ) in candidates.values():
-                    if are_chunks_similar(
-                        chunk,
-                        db_chunk,
+                    if are_fingerprints_similar(
+                        chunk.fingerprint,
+                        db_fp,
                         local_hash_set,
                         db_hash_set,
                         min_matching_hashes,
@@ -109,11 +109,11 @@ async def run_chunk_identification(
                             AdChunkMatch(
                                 ad=ad,
                                 chunk_entry_index=entry_idx,
-                                chunk_index=chunk_idx,
+                                chunk_index=fp_idx,
                             )
                         )
 
-    logger.info(f"Loaded {total_db_chunks} DB chunks (params_hash={params_hash})")
+    logger.info(f"Loaded {total_db_fingerprints} DB fingerprints (params_hash={params_hash})")
 
     # --- Build final lists ---
     known_fragments: list[Fragment] = []
@@ -142,10 +142,10 @@ async def run_chunk_identification(
             # Now we check if all following chunks in the same db fragment also match the next chunks in the local list
             db_ad = chunk_match.ad
             db_entry = db_ad.chunks[chunk_match.chunk_entry_index]
-            db_chunks = [Chunk.from_dict(c) for c in db_entry.get("chunks", [])]
+            db_fingerprint_count = len(db_entry.get("fingerprints", []))
 
             match, next_index = _current_fragment_is_a_match(
-                chunk_match, db_chunks, chunks, local_idx, matches
+                chunk_match, db_fingerprint_count, chunks, local_idx, matches
             )
 
             if match:
@@ -156,9 +156,10 @@ async def run_chunk_identification(
                 else:
                     # We compute end_sec from the last chunk that match
                     end_sec = chunks[
-                        local_idx + len(db_chunks) - chunk_match.chunk_index - 1
+                        local_idx + db_fingerprint_count - chunk_match.chunk_index - 1
                     ].end_sec
                     start_sec = end_sec - db_ad.duration_sec
+                matched_local_chunks = chunks[local_idx:next_index]
                 known_fragments.append(
                     Fragment(
                         start_sec=start_sec,
@@ -166,7 +167,7 @@ async def run_chunk_identification(
                         channel=chunk.channel,
                         classification="already_known_ad",
                         group_id=db_ad.id,
-                        chunks=db_chunks,
+                        chunks=matched_local_chunks,
                     )
                 )
                 local_idx = (
@@ -188,12 +189,12 @@ async def run_chunk_identification(
 
 def _current_fragment_is_a_match(
     chunk_match: AdChunkMatch,
-    db_ad_chunks: list[Chunk],
+    db_fingerprint_count: int,
     local_chunks: list[Chunk],
     current_local_idx: int,
     all_chunk_matches: dict[int, list[AdChunkMatch]],
 ) -> tuple[bool, int | None]:
-    number_of_chunks_to_match = len(db_ad_chunks) - chunk_match.chunk_index
+    number_of_chunks_to_match = db_fingerprint_count - chunk_match.chunk_index
     for offset in range(1, number_of_chunks_to_match):
         next_local_idx = current_local_idx + offset
         if next_local_idx >= len(local_chunks):

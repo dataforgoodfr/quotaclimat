@@ -191,15 +191,15 @@ def _extract_chunk_data(
         "label": f"Chunk @ {chunk.start_sec:.2f}",
         "absStart": round(chunk.start_sec, 3),
         "absEnd": round(chunk.end_sec, 3),
-        "duration": round(chunk.duration_sec, 3),
+        "duration": round(chunk.fingerprint.duration_sec, 3),
         "channel": chunk.channel,
         # Métadonnées globales du chunk
         "metadata": {
-            "energy_mean": round(chunk.energy_mean, 6),
-            "spectral_centroid": round(chunk.spectral_centroid, 2),
-            "zcr_mean": round(chunk.zcr_mean, 6),
-            "n_peaks": len(chunk.peaks) if chunk.peaks else 0,
-            "n_hashes": len(chunk.hashes) if chunk.hashes else 0,
+            "energy_mean": round(chunk.fingerprint.energy_mean, 6),
+            "spectral_centroid": round(chunk.fingerprint.spectral_centroid, 2),
+            "zcr_mean": round(chunk.fingerprint.zcr_mean, 6),
+            "n_peaks": len(chunk.fingerprint.peaks) if chunk.fingerprint.peaks else 0,
+            "n_hashes": len(chunk.fingerprint.hashes) if chunk.fingerprint.hashes else 0,
         },
         # Fenêtre d'analyse
         "window": {

@@ -107,9 +107,9 @@ def generate_weekly_viewer(
                         "absStart": round(chunk.start_sec, 2),
                         "absEnd": round(chunk.end_sec, 2),
                         "duration": round(chunk.end_sec - chunk.start_sec, 3),
-                        "rms": round(chunk.energy_mean, 4),
-                        "sc": round(chunk.spectral_centroid, 1),
-                        "zcr": round(chunk.zcr_mean, 4),
+                        "rms": round(chunk.fingerprint.energy_mean, 4),
+                        "sc": round(chunk.fingerprint.spectral_centroid, 1),
+                        "zcr": round(chunk.fingerprint.zcr_mean, 4),
                     }
                 )
 

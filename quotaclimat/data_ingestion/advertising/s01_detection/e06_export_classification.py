@@ -27,7 +27,7 @@ def _bulk_insert_pages(session, model, rows: list[dict]) -> None:
 
 def _ad_id_from_chunks(chunks) -> str:
     """Generate a stable Ad ID from the chunk audio hashes."""
-    all_hash_strings = sorted(h for chunk in chunks for h, _ in (chunk.hashes or []))
+    all_hash_strings = sorted(h for chunk in chunks for h, _ in (chunk.fingerprint.hashes or []))
     raw = json.dumps(all_hash_strings, separators=(",", ":"))
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
 
@@ -91,7 +91,7 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
                         chunks=[
                             {
                                 "hash": chunk_hash,
-                                "chunks": [c.to_dict() for c in canonical_chunks],
+                                "fingerprints": [c.fingerprint.to_dict() for c in canonical_chunks],
                             }
                         ],
                         fragment_type=fragment_type,
@@ -126,7 +126,7 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
                     chunks=[
                         {
                             "hash": chunk_hash,
-                            "chunks": [c.to_dict() for c in chunks],
+                            "fingerprints": [c.fingerprint.to_dict() for c in chunks],
                         }
                     ],
                     fragment_type=fragment_type,

@@ -235,4 +235,4 @@ async def processor(
         upload_to_s3(html_report_path, f"{s3_folder}.html", s3_client)
         upload_to_s3(text_report_path, f"{s3_folder}.txt", s3_client)
 
-    return groups
+    return fragments

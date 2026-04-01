@@ -25,7 +25,7 @@ async def mock_download_audio(api, task: Segment) -> tuple[str, bool]:
     "quotaclimat.data_ingestion.advertising.s01_detection.e01_download_audio.download_audio",
     new=mock_download_audio,
 )
-async def test_extract_chunks_run_successfully():
+async def test_extract_fragments_run_successfully():
     channel = "tf1"
 
     segments = [
@@ -41,25 +41,24 @@ async def test_extract_chunks_run_successfully():
         ),
     ]
 
-    groups = await processor(
+    fragments = await processor(
         operation_name="test",
         segments=segments,
+        report_folder=None,
     )
+    maybe_ads = [f for f in fragments if f.classification == "unknown"]
+    assert len(maybe_ads) == 2
+    assert maybe_ads[0].group_id == maybe_ads[1].group_id
 
-    ads = [group for group in groups if group.count >= 2]
-    assert len(ads) == 1
+    assert maybe_ads[0].end_sec - maybe_ads[0].start_sec >= 20
+    assert maybe_ads[0].end_sec - maybe_ads[0].start_sec <= 21
+    assert maybe_ads[1].end_sec - maybe_ads[1].start_sec >= 20
+    assert maybe_ads[1].end_sec - maybe_ads[1].start_sec <= 21
 
-    assert len(ads[0].occurrences) == 2
-
-    assert ads[0].occurrences[0].duration_sec >= 20
-    assert ads[0].occurrences[0].duration_sec <= 21
-    assert ads[0].occurrences[1].duration_sec >= 20
-    assert ads[0].occurrences[1].duration_sec <= 21
-
-    start_date_1 = datetime.fromtimestamp(ads[0].occurrences[0].start_sec).astimezone(
+    start_date_1 = datetime.fromtimestamp(maybe_ads[0].start_sec).astimezone(
         ZoneInfo("Europe/Paris")
     )
-    start_date_2 = datetime.fromtimestamp(ads[0].occurrences[1].start_sec).astimezone(
+    start_date_2 = datetime.fromtimestamp(maybe_ads[1].start_sec).astimezone(
         ZoneInfo("Europe/Paris")
     )
     assert start_date_1 >= segments[0].start_date

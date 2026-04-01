@@ -48,9 +48,9 @@ def upload_to_s3(local_path: Path, s3_key: str, s3_client):
 
 
 chunk_creator = ChunkCreator(
-    sr=22050,
-    hop_length=512,
-    n_mfcc=20,
+    sr=16000,
+    hop_length=1024,
+    n_mfcc=13,
     context_sec=1.0,
     novelty_smooth_sec=0.5,
     min_chunk_sec=1.0,

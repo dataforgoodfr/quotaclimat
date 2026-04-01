@@ -17,7 +17,17 @@ class Ad(AdvertisingBase):
     id = Column(Text, primary_key=True)
     first_detection_date = Column(DateTime(), nullable=False)
     duration_sec = Column(Double, nullable=False)
+
+    # Format: list of audio descriptions of the Ad. Each item of this list describe an audio (list of chunk) of the Ad.
+    # Each description is a dict containing the "hash" describing the extraction of the fingerprints, and a list of audio "fingerprints" (list of dict).
+    # [
+    #     {
+    #         "hash": chunk_hash,
+    #         "fingerprints": [c.fingerprint.to_dict() for c in canonical_chunks],
+    #     }
+    # ]
     chunks = Column(JSON, nullable=False)
+
     fragment_type = Column(String, nullable=False)  # "advertising" or "jingle" ...
 
     def attributes(self):

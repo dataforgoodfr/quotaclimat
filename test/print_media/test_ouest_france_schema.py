@@ -3,8 +3,10 @@
 These tests validate:
 1. The dataclass schema catches format errors at construction time
 2. OuestFrance XML is correctly parsed into Factiva-format articles
+3. Monthly stats distribution logic
 """
 
+import calendar
 import json
 import re
 import xml.etree.ElementTree as ET
@@ -865,3 +867,68 @@ class TestRssS3DocumentRoundTrip:
         assert first["source_code"] == "OUESTFR"
         assert first["an"].startswith("OUESTFR:")
         assert first["article_url"].startswith("https://")
+
+
+# --- Monthly stats distribution tests ---
+
+
+def _distribute_monthly_total(year: int, month: int, total: int) -> List[int]:
+    """Replicate the distribution logic from load_and_insert_monthly_stats."""
+    days_in_month = calendar.monthrange(year, month)[1]
+    daily_count = total // days_in_month
+    remainder = total % days_in_month
+    return [daily_count + (1 if day <= remainder else 0) for day in range(1, days_in_month + 1)]
+
+
+class TestMonthlyStatsDistribution:
+    """Test the daily distribution of monthly article totals."""
+
+    def test_even_distribution(self):
+        """310 articles in January (31 days) = 10 per day."""
+        counts = _distribute_monthly_total(2025, 1, 310)
+        assert len(counts) == 31
+        assert sum(counts) == 310
+        assert all(c == 10 for c in counts)
+
+    def test_remainder_spread(self):
+        counts = _distribute_monthly_total(2025, 1, 100)
+        assert len(counts) == 31
+        assert sum(counts) == 100
+        # 100 / 31 = 3 remainder 7 → first 7 days get 4, rest get 3
+        assert counts[:7] == [4] * 7
+        assert counts[7:] == [3] * 24
+
+    def test_february_leap_year(self):
+        counts = _distribute_monthly_total(2024, 2, 290)
+        assert len(counts) == 29  # 2024 is leap
+        assert sum(counts) == 290
+        assert all(c == 10 for c in counts)
+
+    def test_february_non_leap(self):
+        counts = _distribute_monthly_total(2025, 2, 280)
+        assert len(counts) == 28
+        assert sum(counts) == 280
+
+    def test_zero_total(self):
+        counts = _distribute_monthly_total(2025, 6, 0)
+        assert sum(counts) == 0
+
+    def test_small_total_fewer_than_days(self):
+        """5 articles in January (31 days): first 5 days get 1, rest get 0."""
+        counts = _distribute_monthly_total(2025, 1, 5)
+        assert sum(counts) == 5
+        assert counts[:5] == [1] * 5
+        assert counts[5:] == [0] * 26
+
+    def test_json_format_parsing(self):
+        """Validate the expected JSON input format."""
+        sample = json.dumps([
+            {"year": 2025, "month": 1, "web": 5000, "paper": 3000},
+            {"year": 2025, "month": 2, "web": 4800, "paper": 2900},
+        ])
+        entries = json.loads(sample)
+        assert len(entries) == 2
+        total_jan = int(entries[0]["web"]) + int(entries[0]["paper"])
+        assert total_jan == 8000
+        counts = _distribute_monthly_total(2025, 1, total_jan)
+        assert sum(counts) == 8000

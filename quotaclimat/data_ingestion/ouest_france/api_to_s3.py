@@ -11,6 +11,7 @@ This script:
 The existing Factiva S3→PostgreSQL pipeline then picks them up automatically.
 """
 
+import calendar
 import glob
 import json
 import logging
@@ -19,13 +20,16 @@ import os
 import re
 import sys
 import xml.etree.ElementTree as ET
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from typing import Any, Dict, List, Optional
 
 import boto3
 import requests
+from sqlalchemy.dialects.postgresql import insert
 
+from postgres.database_connection import connect_to_db
+from postgres.schemas.factiva_models import Stats_Factiva_Article
 from quotaclimat.data_ingestion.factiva.schemas.article_schema import (
     FactivaArticleAttributes,
     FactivaArticleEnvelope,
@@ -462,6 +466,70 @@ def save_articles_to_local(
                     logging.info(f"Saved {len(batch)} articles to {filepath}")
 
 
+def load_and_insert_monthly_stats(stats_file_path: str) -> int:
+    """Read monthly article totals from a JSON file and insert into stats_factiva_articles.
+
+    The JSON file format:
+    [
+        {"year": 2025, "month": 1, "web": 5000, "paper": 3000},
+        {"year": 2025, "month": 2, "web": 4800, "paper": 2900},
+        ...
+    ]
+
+    For each month, the total (web + paper) is distributed evenly across
+    the days of the month so that the existing daily DBT model can sum them
+    correctly into monthly totals.
+
+    Returns the number of records upserted.
+    """
+    with open(stats_file_path, "r", encoding="utf-8") as f:
+        monthly_stats = json.load(f)
+
+    engine = connect_to_db(use_custom_json_serializer=True)
+    upserted = 0
+
+    for entry in monthly_stats:
+        year = int(entry["year"])
+        month = int(entry["month"])
+        web_count = int(entry.get("web", 0))
+        paper_count = int(entry.get("paper", 0))
+        total = web_count + paper_count
+
+        if total == 0:
+            continue
+
+        days_in_month = calendar.monthrange(year, month)[1]
+        daily_count = total // days_in_month
+        remainder = total % days_in_month
+
+        for day in range(1, days_in_month + 1):
+            # Spread the remainder across the first N days
+            count = daily_count + (1 if day <= remainder else 0)
+            pub_dt = datetime(year, month, day, tzinfo=timezone.utc)
+
+            stmt = insert(Stats_Factiva_Article).values(
+                source_code=SOURCE_CODE,
+                publication_datetime=pub_dt,
+                count=count,
+            )
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["source_code", "publication_datetime"],
+                set_={
+                    "count": count,
+                    "updated_at": datetime.now(timezone.utc),
+                },
+            )
+            with engine.begin() as conn:
+                conn.execute(stmt)
+            upserted += 1
+
+    logging.info(
+        f"Inserted {upserted} daily stats records for {SOURCE_CODE} "
+        f"from {len(monthly_stats)} monthly entries"
+    )
+    return upserted
+
+
 def _resolve_xml_files(path: str) -> List[str]:
     """Resolve a path to a list of XML files.
 
@@ -556,6 +624,12 @@ def main():
             base_s3_path=f"{S3_BASE_PREFIX}/articles",
             s3_client=s3_client,
         )
+
+    # Insert monthly article totals into stats_factiva_articles (enables ratio calculations)
+    monthly_stats_path = os.getenv("OUESTFRANCE_MONTHLY_STATS")
+    if monthly_stats_path:
+        logging.info(f"Loading monthly stats from {monthly_stats_path}")
+        load_and_insert_monthly_stats(monthly_stats_path)
 
     logging.info("OuestFrance API to S3 upload complete")
 

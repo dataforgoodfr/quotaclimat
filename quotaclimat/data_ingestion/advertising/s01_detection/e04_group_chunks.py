@@ -17,7 +17,7 @@ from tqdm import tqdm
 from .tools.common_objects import Chunk, Fingerprint
 from .tools.fingerprint.hash import (
     _build_hash_sets,
-    are_chunks_similar,
+    are_fingerprints_similar,
     make_params_hash,
 )
 
@@ -96,9 +96,9 @@ def _cluster(
 
     matches = 0
     for i, j in tqdm(candidates, desc="Comparaison fingerprints"):
-        if are_chunks_similar(
-            chunks[i],
-            chunks[j],
+        if are_fingerprints_similar(
+            chunks[i].fingerprint,
+            chunks[j].fingerprint,
             hash_sets[i],
             hash_sets[j],
             min_matching_hashes,
@@ -160,7 +160,7 @@ class ChunkGrouping:
         chunks = [c for c in source if c.fingerprint.duration_sec >= 0.5]
         logger.debug(f"{len(chunks)} chunks to group")
 
-        hash_sets = _build_hash_sets(chunks)
+        hash_sets = _build_hash_sets([c.fingerprint for c in chunks])
         groups = _cluster(
             chunks,
             hash_sets,

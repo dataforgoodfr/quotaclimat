@@ -5,7 +5,7 @@ from typing import List, Tuple
 
 import numpy as np
 
-from ..common_objects import Chunk
+from ..common_objects import Fingerprint
 
 
 class HashGenerator:
@@ -62,13 +62,13 @@ def make_params_hash(params: dict) -> str:
     return hashlib.sha256(serialized.encode()).hexdigest()[:16]
 
 
-def _build_hash_sets(chunks: list[Chunk]) -> list[set[str]]:
-    """Precompute the set of hash keys for each chunk (for O(1) lookup)."""
-    return [{h for h, _ in (c.fingerprint.hashes or [])} for c in chunks]
+def _build_hash_sets(fingerprints: list[Fingerprint]) -> list[set[str]]:
+    """Precompute the set of hash keys for each fingerprint (for O(1) lookup)."""
+    return [{h for h, _ in (fp.hashes or [])} for fp in fingerprints]
 
 
 def _score(
-    chunk_a: Chunk, chunk_b: "Chunk", set_a: set, set_b: set, min_matching: int
+    fp_a: Fingerprint, fp_b: Fingerprint, set_a: set, set_b: set, min_matching: int
 ) -> float:
     """
     Similarity score based on temporal coherence of shared hashes.
@@ -78,8 +78,8 @@ def _score(
     if len(common) < min_matching:
         return 0.0
 
-    hashes_a = chunk_a.fingerprint.hashes or []
-    hashes_b = chunk_b.fingerprint.hashes or []
+    hashes_a = fp_a.hashes or []
+    hashes_b = fp_b.hashes or []
 
     index_a = {h: t for h, t in hashes_a if h in common}
     index_b = {h: t for h, t in hashes_b if h in common}
@@ -94,37 +94,36 @@ def _score(
 
 
 def _features_compatible(
-    a: "Chunk",
-    b: "Chunk",
+    a: Fingerprint,
+    b: Fingerprint,
     duration_tol: float = 0.3,
     rms_tol: float = 0.05,
     centroid_tol: float = 0.05,
     zcr_tol: float = 0.1,
 ) -> bool:
     """Acoustic pre-filter: reject pairs that differ too much in basic features."""
-    fp_a, fp_b = a.fingerprint, b.fingerprint
-    if abs(fp_a.duration_sec - fp_b.duration_sec) > duration_tol:
+    if abs(a.duration_sec - b.duration_sec) > duration_tol:
         return False
 
     def rel_diff(x: float, y: float) -> float:
         return abs(x - y) / max(abs(x), abs(y), 1e-8)
 
-    if fp_a.energy_mean > 0 and fp_b.energy_mean > 0:
-        if rel_diff(fp_a.energy_mean, fp_b.energy_mean) > rms_tol:
+    if a.energy_mean > 0 and b.energy_mean > 0:
+        if rel_diff(a.energy_mean, b.energy_mean) > rms_tol:
             return False
-    if fp_a.spectral_centroid > 0 and fp_b.spectral_centroid > 0:
-        if rel_diff(fp_a.spectral_centroid, fp_b.spectral_centroid) > centroid_tol:
+    if a.spectral_centroid > 0 and b.spectral_centroid > 0:
+        if rel_diff(a.spectral_centroid, b.spectral_centroid) > centroid_tol:
             return False
-    if fp_a.zcr_mean > 0 and fp_b.zcr_mean > 0:
-        if rel_diff(fp_a.zcr_mean, fp_b.zcr_mean) > zcr_tol:
+    if a.zcr_mean > 0 and b.zcr_mean > 0:
+        if rel_diff(a.zcr_mean, b.zcr_mean) > zcr_tol:
             return False
 
     return True
 
 
-def are_chunks_similar(
-    chunk_a: "Chunk",
-    chunk_b: "Chunk",
+def are_fingerprints_similar(
+    fp_a: Fingerprint,
+    fp_b: Fingerprint,
     set_a: set,
     set_b: set,
     min_matching_hashes: int,
@@ -134,12 +133,12 @@ def are_chunks_similar(
     centroid_tol: float = 0.05,
     zcr_tol: float = 0.1,
 ) -> bool:
-    """Return True if two chunks pass the acoustic pre-filter and the fingerprint similarity threshold."""
+    """Return True if two fingerprints pass the acoustic pre-filter and the similarity threshold."""
     if not _features_compatible(
-        chunk_a, chunk_b, duration_tol, rms_tol, centroid_tol, zcr_tol
+        fp_a, fp_b, duration_tol, rms_tol, centroid_tol, zcr_tol
     ):
         return False
     return (
-        _score(chunk_a, chunk_b, set_a, set_b, min_matching_hashes)
+        _score(fp_a, fp_b, set_a, set_b, min_matching_hashes)
         >= similarity_threshold
     )

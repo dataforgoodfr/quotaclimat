@@ -78,6 +78,11 @@ def test_stop_word_get_top_keywords_by_channel():
                 "channel_title": "France 2",
                 "count": 20,
             },{
+                "keyword": "sortie des énergies fossiles",
+                "theme": "attenuation_climatique_solutions",
+                "channel_title": "France 2",
+                "count": 20,
+            },{
                 "keyword": "énergie fossile",
                 "theme": "attenuation_climatique_solutions",
                 "channel_title": "France 2",
@@ -89,12 +94,6 @@ def test_stop_word_get_top_keywords_by_channel():
                 "channel_title": "TF1",
                 "count": 8,
             },
-            {
-                "keyword": "climatique",
-                "theme": "changement_climatique_constat",
-                "channel_title": "TF1",
-                "count": 2,
-            }
         ]
     )
     

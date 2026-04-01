@@ -27,7 +27,9 @@ def _bulk_insert_pages(session, model, rows: list[dict]) -> None:
 
 def _ad_id_from_chunks(chunks) -> str:
     """Generate a stable Ad ID from the chunk audio hashes."""
-    all_hash_strings = sorted(h for chunk in chunks for h, _ in (chunk.fingerprint.hashes or []))
+    all_hash_strings = sorted(
+        h for chunk in chunks for h, _ in (chunk.fingerprint.hashes or [])
+    )
     raw = json.dumps(all_hash_strings, separators=(",", ":"))
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
 
@@ -91,7 +93,9 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
                         chunks=[
                             {
                                 "hash": chunk_hash,
-                                "fingerprints": [c.fingerprint.to_dict() for c in canonical_chunks],
+                                "fingerprints": [
+                                    c.fingerprint.to_dict() for c in canonical_chunks
+                                ],
                             }
                         ],
                         fragment_type=fragment_type,
@@ -146,31 +150,14 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
         _bulk_insert_pages(
             session,
             Ad,
-            [
-                {
-                    "id": ad.id,
-                    "first_detection_date": ad.first_detection_date,
-                    "duration_sec": ad.duration_sec,
-                    "chunks": ad.chunks,
-                    "fragment_type": ad.fragment_type,
-                }
-                for ad in ads
-            ],
+            [ad.attributes() for ad in ads],
         )
         session.flush()
 
         _bulk_insert_pages(
             session,
             Ad_Occurrence,
-            [
-                {
-                    "id": occ.id,
-                    "occurrence_date": occ.occurrence_date,
-                    "channel_name": occ.channel_name,
-                    "ad_id": occ.ad_id,
-                }
-                for occ in occurrences
-            ],
+            [occ.attributes() for occ in occurrences],
         )
         session.commit()
 

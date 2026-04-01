@@ -20,6 +20,15 @@ class Ad(AdvertisingBase):
     chunks = Column(JSON, nullable=False)
     fragment_type = Column(String, nullable=False)  # "advertising" or "jingle" ...
 
+    def attributes(self):
+        return {
+            "id": self.id,
+            "first_detection_date": self.first_detection_date,
+            "duration_sec": self.duration_sec,
+            "chunks": self.chunks,
+            "fragment_type": self.fragment_type,
+        }
+
 
 class Ad_Occurrence(AdvertisingBase):
     __tablename__ = "ad_occurrence"
@@ -31,3 +40,12 @@ class Ad_Occurrence(AdvertisingBase):
 
     ad_id = Column(Text, ForeignKey("ad.id"), nullable=True)
     ad = relationship("Ad", foreign_keys=[ad_id])
+
+    def attributes(self):
+        return {
+            "id": self.id,
+            "occurrence_date": self.occurrence_date,
+            "channel_name": self.channel_name,
+            "ad_id": self.ad_id,
+            "deleted_at": self.deleted_at,
+        }

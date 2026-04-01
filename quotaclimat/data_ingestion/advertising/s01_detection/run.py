@@ -1,21 +1,18 @@
 import asyncio
 import logging
+import os
 from datetime import timedelta
 
 from quotaclimat.data_ingestion.advertising.s01_detection.e00_partition_window import (
     partition_week_program,
 )
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import processor
-from quotaclimat.data_ingestion.advertising.s01_detection.tools.testimony_data.extract import (
-    get_testimony_data,
-)
 
 logger = logging.getLogger(__name__)
 
 if __name__ == "__main__":
-    channel = "tf1"
-    TESTIMONY_CHANNEL = "TF1"
-    start_date = "2025-05-19"
+    channel = os.environ.get("CHANNEL")
+    start_date = os.environ.get("START_DATE")
 
     partition = partition_week_program(
         channel=channel,
@@ -23,17 +20,9 @@ if __name__ == "__main__":
         margin=timedelta(minutes=15),
     )
 
-    annotations = get_testimony_data(
-        channel=TESTIMONY_CHANNEL,
-        from_date=partition[0].start_date,
-        to_date=partition[-1].end_date,
-        source_file="export.csv",
-    )
-
     asyncio.run(
         processor(
             report_folder=f"year={start_date[:4]}/month={start_date[5:7]}/day={start_date[8:10]}/channel={channel}",
             segments=partition,
-            annotations=annotations,
         )
     )

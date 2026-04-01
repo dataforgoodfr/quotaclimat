@@ -14,7 +14,7 @@ COPY pyproject.toml poetry.lock ./
 
 RUN pip install poetry==2.1.3
 
- RUN poetry install --no-root
+RUN poetry install --no-root
 
 # The runtime image, used to just run the code provided its virtual environment
 FROM python:3.12.10-slim as runtime
@@ -37,12 +37,13 @@ COPY pyproject.toml poetry.lock ./
 RUN pip install poetry 
 
 # App code is include with docker-compose as well
- 
+
 COPY quotaclimat ./quotaclimat
 COPY postgres ./postgres
 COPY alembic/ ./alembic
 COPY transform_program.py ./transform_program.py
 COPY my_dbt_project/ ./my_dbt_project
+COPY entrypoints/ ./entrypoints
 
 # Docker compose overwrite this config to have only one Dockerfile
 CMD ["ls"]

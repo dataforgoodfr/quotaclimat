@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import traceback
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, field
@@ -82,6 +83,7 @@ class AudioProcessor:
         num_workers: int = 4,
         max_concurrent_downloads: int = 5,
         max_queue_size: int = 10,
+        delete_files_after_processing: bool = True,
     ):
         self.num_workers = num_workers
         self.queue = asyncio.Queue(maxsize=max_queue_size)
@@ -94,6 +96,7 @@ class AudioProcessor:
 
         # Semaphore and retry are now handled inside MediatreeAPI
         self.api = MediatreeAPI(max_concurrent_requests=max_concurrent_downloads)
+        self.delete_files_after_processing = delete_files_after_processing
 
     async def run(self):
         self.dl_bar = tqdm(
@@ -168,10 +171,18 @@ class AudioProcessor:
                 was_cached = await loop.run_in_executor(
                     executor, self.process_media, segment, audio_file_path
                 )
+
                 if was_cached:
                     self.stats.proc_cached += 1
                 else:
                     self.stats.proc_processed += 1
+
+                if self.delete_files_after_processing:
+                    try:
+                        os.remove(audio_file_path)
+                    except Exception:
+                        tb = traceback.format_exc()
+                        self.stats.errors.append(("delete", str(segment), tb))
             except Exception:
                 self.stats.proc_errors += 1
                 tb = traceback.format_exc()

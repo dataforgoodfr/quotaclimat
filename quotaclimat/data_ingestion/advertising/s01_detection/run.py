@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 if __name__ == "__main__":
     channel = "tf1"
     TESTIMONY_CHANNEL = "TF1"
-    start_date = "2025-05-12"
+    start_date = "2025-05-19"
 
     partition = partition_week_program(
         channel=channel,

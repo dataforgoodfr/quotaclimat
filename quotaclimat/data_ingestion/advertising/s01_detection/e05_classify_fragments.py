@@ -35,7 +35,8 @@ class FragmentsClassifier:
         fragments = self._get_internal_fragments(groups) + already_known_fragments
         fragments.sort(key=lambda f: f.start_sec)
         self._detect_tunnels(fragments)
-        self._detect_long_tunnels(fragments)  # 10 d'un côté et 5 de l'autre
+        self._detect_long_tunnels(fragments, NAD=4, NNAD=3)
+        self._detect_long_tunnels(fragments, NAD=5, NNAD=5)
         fragments = self._merge_continous_fragments(fragments)
 
         return self._convert_to_output_fragments(fragments)
@@ -92,7 +93,9 @@ class FragmentsClassifier:
                     "new_ad",
                 )
 
-                for j in range(i + 1, min(i + 5, len(fragments))):
+                for j in range(
+                    i + 1, min(i + 5, len(fragments))
+                ):  # We accept holes of 3
                     next_fragment = fragments[j]
                     if (
                         next_fragment.classification in ("already_known_ad", "new_ad")
@@ -114,12 +117,14 @@ class FragmentsClassifier:
                                 ):
                                     fragments[k].classification = "new_ad"
 
-    def _detect_long_tunnels(self, fragments: list[Fragment]) -> None:
+    def _detect_long_tunnels(
+        self, fragments: list[Fragment], NAD: int, NNAD: int
+    ) -> None:
         """
         Detect long ad tunnels in the fragments, which are sequences of continous ads.
         The rule is that if we have a sequence of fragments between two sequences of already_known_ad or new_ad, then this unkown sequence of fragment is tagged as new_ad (if not already tagged).
-        We can have up to 5 non-ad segments in the middle, and the two ad blocks on the side must have at least 5 segments.
-        We also accept 10 non-ad segments of one of the two sides is a very long sequence of 10 ads.
+        We can have up to NNAD non-ad segments in the middle, and the two ad blocks on the side must have at least NAD segments.
+        We also accept 2*NNAD non-ad segments if one of the two sides is a very long sequence of 2*NAD ads.
         """
         start_of_first_block = 0
         while start_of_first_block < len(fragments):
@@ -155,14 +160,14 @@ class FragmentsClassifier:
                     end_of_second_block += 1
 
                 if (  # Minimum bot not enough
-                    (end_of_first_block - start_of_first_block >= 5)
-                    and (start_of_second_block - end_of_first_block <= 10)
-                    and (end_of_second_block - start_of_second_block >= 5)
+                    (end_of_first_block - start_of_first_block >= NAD)
+                    and (start_of_second_block - end_of_first_block <= NNAD * 2)
+                    and (end_of_second_block - start_of_second_block >= NAD)
                 ):
                     if (  # More restrictive conditions, we only need one of them
-                        (end_of_first_block - start_of_first_block >= 10)
-                        or (start_of_second_block - end_of_first_block <= 5)
-                        or (end_of_second_block - start_of_second_block >= 10)
+                        (end_of_first_block - start_of_first_block >= NAD * 2)
+                        or (start_of_second_block - end_of_first_block <= NNAD)
+                        or (end_of_second_block - start_of_second_block >= NAD * 2)
                     ):
                         for m in range(end_of_first_block, start_of_second_block):
                             if fragments[m].classification not in (

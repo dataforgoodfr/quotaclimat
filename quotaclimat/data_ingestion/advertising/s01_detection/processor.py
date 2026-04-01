@@ -12,11 +12,11 @@ from .e00_partition_window import Segment
 from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import ChunkCreator
 from .e03_already_identified_advertising import run_chunk_identification
-from .e04_group_chunks import ChunkGroup, ChunkGrouping
+from .e04_group_chunks import ChunkGrouping
 from .e05_classify_fragments import FragmentsClassifier
 from .e06_export_classification import database_storage_save
 from .tools.cache import LocalCache
-from .tools.common_objects import Chunk, Fragment
+from .tools.common_objects import Chunk
 from .tools.visualizer.weekly_viewer import generate_weekly_viewer
 
 logger = logging.getLogger(__name__)
@@ -106,8 +106,7 @@ async def processor(
 
     t0 = time.monotonic()
     chunk_hash = chunk_creator.params_hash()
-    params_hash_key = chunk_hash
-    with LocalCache(name="chunks", version=params_hash_key) as chunk_cache:
+    with LocalCache(name="chunks", version=chunk_hash) as chunk_cache:
         process_media = partial(
             process_audio, chunk_creator=chunk_creator, cache=chunk_cache
         )
@@ -143,42 +142,19 @@ async def processor(
     #### Chunk grouping
 
     t0 = time.monotonic()
-    params_hash_key += "-" + chunk_grouping.params_hash()
-    with LocalCache(name="grouping", version=params_hash_key) as group_cache:
-        group_cache_file = operation_name + ".json"
-        if group_cache.exists(group_cache_file):
-            groups_data = json.loads(group_cache.get(group_cache_file))
 
-            groups = [ChunkGroup.from_dict(d) for d in groups_data]
+    groups = chunk_grouping.run(unknown_chunks)
 
-        else:
-            groups = chunk_grouping.run(unknown_chunks)
-
-            group_cache.set(
-                operation_name + ".json",
-                json.dumps([group.to_dict() for group in groups]),
-            )
     timings["chunk_grouping"] = time.monotonic() - t0
 
     #### Fragment classification
 
     t0 = time.monotonic()
-    params_hash_key += "-" + fragment_classifier.params_hash()
-    with LocalCache(name="fragments", version=params_hash_key) as fragments_cache:
-        fragments_cache_file = operation_name + ".json"
-        if fragments_cache.exists(fragments_cache_file):
-            fragments_data = json.loads(fragments_cache.get(fragments_cache_file))
 
-            fragments = [Fragment.from_dict(d) for d in fragments_data]
-        else:
-            fragments = fragment_classifier.run(
-                groups, already_known_fragments=previously_known_fragments
-            )
+    fragments = fragment_classifier.run(
+        groups, already_known_fragments=previously_known_fragments
+    )
 
-            fragments_cache.set(
-                operation_name + ".json",
-                json.dumps([fragment.to_dict() for fragment in fragments], default=str),
-            )
     timings["fragment_classification"] = time.monotonic() - t0
 
     #### Database storage
@@ -191,14 +167,16 @@ async def processor(
 
     #### Results exportation
 
-    reports_path = Path(".cache") / "reports" / operation_name
-    reports_path.mkdir(parents=True, exist_ok=True)
+    reports_name = f"{chunk_hash}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+    local_reports_path = Path(".cache") / "reports" / report_folder
+    local_reports_path.mkdir(parents=True, exist_ok=True)
 
     html_report = generate_weekly_viewer(
         fragments=fragments,
         annotations=annotations,
         params_summary={
-            "operation_name": operation_name,
+            "operation_name": report_folder,
             "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
             "chunk_creator": chunk_creator.params(),
             "chunk_grouping": chunk_grouping.params(),
@@ -206,12 +184,12 @@ async def processor(
         },
     )
 
-    html_report_path = reports_path / f"{params_hash_key}.html"
+    html_report_path = local_reports_path / f"{reports_name}.html"
     with open(html_report_path, "w", encoding="utf-8") as f:
         f.write(html_report)
 
     timing_lines = [
-        f"Timing report for: {operation_name}",
+        f"Timing report for: {report_folder}",
         f"Generated: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
         "",
     ]
@@ -220,7 +198,7 @@ async def processor(
 
     timing_report = "\n".join(timing_lines)
 
-    text_report_path = reports_path / f"{params_hash_key}.txt"
+    text_report_path = local_reports_path / f"{reports_name}.txt"
     with open(text_report_path, "w", encoding="utf-8") as f:
         f.write(timing_report)
 
@@ -231,8 +209,8 @@ async def processor(
 
     if report_folder is not None:
         s3_client = get_s3_client()
-        s3_folder = f"{REPORTS_S3_PREFIX}/{report_folder}/{params_hash_key}"
-        upload_to_s3(html_report_path, f"{s3_folder}.html", s3_client)
-        upload_to_s3(text_report_path, f"{s3_folder}.txt", s3_client)
+        s3_folder = f"{REPORTS_S3_PREFIX}/{report_folder}"
+        upload_to_s3(html_report_path, f"{s3_folder}/{reports_name}.html", s3_client)
+        upload_to_s3(text_report_path, f"{s3_folder}/{reports_name}.txt", s3_client)
 
     return fragments

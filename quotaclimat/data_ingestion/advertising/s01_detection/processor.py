@@ -92,7 +92,6 @@ def process_audio(
 
 
 async def processor(
-    operation_name: str,
     report_folder: str | None,
     segments: list[Segment],
     annotations: list[dict] = [],
@@ -167,7 +166,7 @@ async def processor(
 
     #### Results exportation
 
-    reports_name = f"{chunk_hash}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    reports_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{chunk_hash}"
 
     local_reports_path = Path(".cache") / "reports" / report_folder
     local_reports_path.mkdir(parents=True, exist_ok=True)

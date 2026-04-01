@@ -18,7 +18,7 @@ CURSOR_BATCH_SIZE = 1000
 @dataclass
 class AdChunkMatch:
     ad: Ad
-    chunk_entry_index: int  # index in ad.chunks_fingerprint list (the entry matching params_hash)
+    chunk_entry_index: int  # index in ad.chunks list (the entry matching params_hash)
     chunk_index: int  # index within that entry's "fingerprints" list
 
 
@@ -66,7 +66,7 @@ async def run_chunk_identification(
             )
 
             for ad in ads:
-                for entry_idx, chunk_entry in enumerate(ad.chunks_fingerprint or []):
+                for entry_idx, chunk_entry in enumerate(ad.chunks or []):
                     if chunk_entry.get("hash") != params_hash:
                         continue
                     for chunk_idx, fp_dict in enumerate(
@@ -144,7 +144,7 @@ async def run_chunk_identification(
 
             # Now we check if all following chunks in the same db fragment also match the next chunks in the local list
             db_ad = chunk_match.ad
-            db_entry = db_ad.chunks_fingerprint[chunk_match.chunk_entry_index]
+            db_entry = db_ad.chunks[chunk_match.chunk_entry_index]
             db_chunks = [
                 Chunk(start_sec=0, end_sec=0, channel="",
                       fingerprint=Fingerprint.from_dict(fp))

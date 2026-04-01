@@ -17,7 +17,7 @@ class Ad(AdvertisingBase):
     id = Column(Text, primary_key=True)
     first_detection_date = Column(DateTime(), nullable=False)
     duration_sec = Column(Double, nullable=False)
-    chunks = Column(JSON, nullable=False)
+    chunks_fingerprint = Column(JSON, nullable=False)
     fragment_type = Column(String, nullable=False)  # "advertising" or "jingle" ...
 
 

@@ -7,7 +7,7 @@ from sqlalchemy import select
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
 
-from .tools.common_objects import Chunk, Fragment
+from .tools.common_objects import Chunk, Fingerprint, Fragment
 from .tools.fingerprint.hash import are_chunks_similar
 
 logger = logging.getLogger(__name__)
@@ -18,8 +18,8 @@ CURSOR_BATCH_SIZE = 1000
 @dataclass
 class AdChunkMatch:
     ad: Ad
-    chunk_entry_index: int  # index in ad.chunks list (the entry matching params_hash)
-    chunk_index: int  # index within that entry's "chunks" list
+    chunk_entry_index: int  # index in ad.chunks_fingerprint list (the entry matching params_hash)
+    chunk_index: int  # index within that entry's "fingerprints" list
 
 
 async def run_chunk_identification(
@@ -66,13 +66,16 @@ async def run_chunk_identification(
             )
 
             for ad in ads:
-                for entry_idx, chunk_entry in enumerate(ad.chunks or []):
+                for entry_idx, chunk_entry in enumerate(ad.chunks_fingerprint or []):
                     if chunk_entry.get("hash") != params_hash:
                         continue
-                    for chunk_idx, chunk_dict in enumerate(
-                        chunk_entry.get("chunks", [])
+                    for chunk_idx, fp_dict in enumerate(
+                        chunk_entry.get("fingerprints", [])
                     ):
-                        db_chunk = Chunk.from_dict(chunk_dict)
+                        db_chunk = Chunk(
+                            start_sec=0, end_sec=0, channel="",
+                            fingerprint=Fingerprint.from_dict(fp_dict),
+                        )
                         db_hash_set = {h for h, _ in (db_chunk.fingerprint.hashes or [])}
                         for h in db_hash_set:
                             hash_index[h].append(
@@ -141,8 +144,12 @@ async def run_chunk_identification(
 
             # Now we check if all following chunks in the same db fragment also match the next chunks in the local list
             db_ad = chunk_match.ad
-            db_entry = db_ad.chunks[chunk_match.chunk_entry_index]
-            db_chunks = [Chunk.from_dict(c) for c in db_entry.get("chunks", [])]
+            db_entry = db_ad.chunks_fingerprint[chunk_match.chunk_entry_index]
+            db_chunks = [
+                Chunk(start_sec=0, end_sec=0, channel="",
+                      fingerprint=Fingerprint.from_dict(fp))
+                for fp in db_entry.get("fingerprints", [])
+            ]
 
             match, next_index = _current_fragment_is_a_match(
                 chunk_match, db_chunks, chunks, local_idx, matches

@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 import os
@@ -164,6 +165,12 @@ async def processor(
 
     t0 = time.monotonic()
     params_hash_key += "-" + fragment_classifier.params_hash()
+    # Include previously_known_fragments in cache key so the cache invalidates
+    # when the set of already-identified ads changes between runs.
+    known_fragments_hash = hashlib.sha256(
+        json.dumps([f.to_dict() for f in previously_known_fragments], sort_keys=True, default=str).encode()
+    ).hexdigest()[:12]
+    params_hash_key += "-" + known_fragments_hash
     with LocalCache(name="fragments", version=params_hash_key) as fragments_cache:
         fragments_cache_file = operation_name + ".json"
         if fragments_cache.exists(fragments_cache_file):

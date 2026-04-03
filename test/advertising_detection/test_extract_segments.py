@@ -42,6 +42,7 @@ async def test_extract_fragments_run_successfully():
     ]
 
     fragments = await processor(
+        operation_name="test_extract_fragments_run_successfully",
         segments=segments,
         report_folder=None,
     )

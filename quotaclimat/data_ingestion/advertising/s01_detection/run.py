@@ -22,6 +22,7 @@ if __name__ == "__main__":
 
     asyncio.run(
         processor(
+            operation_name=f"{channel}-week-{start_date}",
             report_folder=f"year={start_date[:4]}/month={start_date[5:7]}/day={start_date[8:10]}/channel={channel}",
             segments=partition,
         )

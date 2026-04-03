@@ -67,9 +67,9 @@ chunk_grouping = ChunkGrouping(
     zcr_tol=0.1,
     similarity_threshold=0.05,  # C'est bas, mais les tol ci-dessus font un pré filtre très éfficace déjà
     min_matching_hashes=5,
-    freq_tol=2,     # ~15.6 Hz per bin tolerance
-    dt_tol=1,       # ~64 ms per frame tolerance
-    offset_tol=2,   # ~128 ms temporal coherence tolerance
+    freq_tol=2,  # ~15.6 Hz per bin tolerance
+    dt_tol=1,  # ~64 ms per frame tolerance
+    offset_tol=2,  # ~128 ms temporal coherence tolerance
 )
 fragment_classifier = FragmentsClassifier(
     repetition_threshold=3,
@@ -95,6 +95,7 @@ def process_audio(
 
 
 async def processor(
+    operation_name: str,
     report_folder: str | None,
     segments: list[Segment],
     annotations: list[dict] = [],
@@ -119,6 +120,9 @@ async def processor(
             process_media=process_media,
             max_concurrent_downloads=5,
             max_queue_size=10,
+            delete_files_after_processing=(
+                os.environ.get("OPTIMIZE_MEMORY", "true").lower() == "true"
+            ),
         ).run()
 
         chunks: list[Chunk] = []
@@ -174,14 +178,14 @@ async def processor(
 
     reports_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{chunk_hash}"
 
-    local_reports_path = Path(".cache") / "reports" / report_folder
+    local_reports_path = Path(".cache") / "reports" / operation_name
     local_reports_path.mkdir(parents=True, exist_ok=True)
 
     html_report = generate_weekly_viewer(
         fragments=fragments,
         annotations=annotations,
         params_summary={
-            "operation_name": report_folder,
+            "operation_name": operation_name,
             "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
             "chunk_creator": chunk_creator.params(),
             "chunk_grouping": chunk_grouping.params(),
@@ -194,7 +198,7 @@ async def processor(
         f.write(html_report)
 
     timing_lines = [
-        f"Timing report for: {report_folder}",
+        f"Timing report for: {operation_name}",
         f"Generated: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
         "",
     ]

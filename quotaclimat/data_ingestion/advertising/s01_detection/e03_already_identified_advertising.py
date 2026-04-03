@@ -25,14 +25,17 @@ class AdChunkMatch:
 async def run_chunk_identification(
     chunks: list[Chunk],
     params_hash: str,
-    min_matching_hashes: int = 1,
+    min_matching_hashes: int = 5,
     similarity_threshold: float = 0.05,
+    freq_tol: int = 2,
+    dt_tol: int = 1,
+    offset_tol: int = 2,
 ) -> tuple[list[Fragment], list[Chunk]]:
     """
     Identifie les chunks déjà connus (présents dans la DB) et les chunks inconnus.
 
     Pour chaque chunk local, recherche les Ad de la DB dont les chunks correspondent
-    (via inverted index sur les hashes de fingerprint). Plusieurs Ad peuvent correspondre
+    (via acoustic pre-filter + distance-based scoring). Plusieurs Ad peuvent correspondre
     à un même chunk — toutes sont conservées dans KnownChunk.matching_ads, avec les indices
     exacts du chunk dans l'Ad (chunk_entry_index, chunk_index).
 
@@ -41,8 +44,11 @@ async def run_chunk_identification(
     Args:
         chunks: Les chunks locaux à identifier.
         params_hash: Hash des paramètres ChunkCreator, pour filtrer les chunks DB compatibles.
-        min_matching_hashes: Nombre minimum de hashes communs pour considérer deux chunks similaires.
+        min_matching_hashes: Nombre minimum de paires proches pour considérer deux chunks similaires.
         similarity_threshold: Score minimum (cohérence temporelle) pour valider une correspondance.
+        freq_tol: Tolerance on frequency bin indices for pair matching.
+        dt_tol: Tolerance on time delta for pair matching.
+        offset_tol: Tolerance on temporal coherence offset.
 
     Returns:
         (known_chunks, unknown_chunks): chunks reconnus (avec leurs Ad correspondantes) et inconnus.
@@ -50,21 +56,12 @@ async def run_chunk_identification(
     # matches[local_idx] accumulates AdChunkMatch across all pages
     matches: dict[int, list[AdChunkMatch]] = defaultdict(list)
 
-    # Precompute local hash sets once (reused for every page)
-    local_hash_sets: list[set[str]] = [{h for h, _ in (c.fingerprint.hashes or [])} for c in chunks]
-
     total_db_fingerprints = 0
 
     with get_db_session() as session:
         for ads in session.scalars(
             select(Ad).execution_options(yield_per=CURSOR_BATCH_SIZE)
         ).partitions():
-            # --- Build hash index for this batch only ---
-            # hash_str → list of (ad, entry_idx, fp_idx, db_fingerprint, db_hash_set)
-            hash_index: dict[str, list[tuple[Ad, int, int, Fingerprint, set]]] = defaultdict(
-                list
-            )
-
             for ad in ads:
                 for entry_idx, chunk_entry in enumerate(ad.chunks or []):
                     if chunk_entry.get("hash") != params_hash:
@@ -73,45 +70,25 @@ async def run_chunk_identification(
                         chunk_entry.get("fingerprints", [])
                     ):
                         db_fp = Fingerprint.from_dict(fp_dict)
-                        db_hash_set = {h for h, _ in (db_fp.hashes or [])}
-                        for h in db_hash_set:
-                            hash_index[h].append(
-                                (ad, entry_idx, fp_idx, db_fp, db_hash_set)
-                            )
                         total_db_fingerprints += 1
 
-            # --- Match every local chunk against this page ---
-            for local_idx, (chunk, local_hash_set) in enumerate(
-                zip(chunks, local_hash_sets)
-            ):
-                # Candidate DB fingerprints sharing at least one hash
-                candidates: dict[int, tuple[Ad, int, int, Fingerprint, set]] = {}
-                for h in local_hash_set:
-                    for item in hash_index.get(h, []):
-                        candidates[id(item[3])] = item  # key = identity of db_fp
-
-                for (
-                    ad,
-                    entry_idx,
-                    fp_idx,
-                    db_fp,
-                    db_hash_set,
-                ) in candidates.values():
-                    if are_fingerprints_similar(
-                        chunk.fingerprint,
-                        db_fp,
-                        local_hash_set,
-                        db_hash_set,
-                        min_matching_hashes,
-                        similarity_threshold,
-                    ):
-                        matches[local_idx].append(
-                            AdChunkMatch(
-                                ad=ad,
-                                chunk_entry_index=entry_idx,
-                                chunk_index=fp_idx,
-                            )
-                        )
+                        for local_idx, chunk in enumerate(chunks):
+                            if are_fingerprints_similar(
+                                chunk.fingerprint,
+                                db_fp,
+                                min_matching_hashes,
+                                similarity_threshold,
+                                freq_tol,
+                                dt_tol,
+                                offset_tol,
+                            ):
+                                matches[local_idx].append(
+                                    AdChunkMatch(
+                                        ad=ad,
+                                        chunk_entry_index=entry_idx,
+                                        chunk_index=fp_idx,
+                                    )
+                                )
 
     logger.info(f"Loaded {total_db_fingerprints} DB fingerprints (params_hash={params_hash})")
 

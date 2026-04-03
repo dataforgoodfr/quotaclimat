@@ -1,6 +1,5 @@
 import hashlib
 import json
-from collections import Counter
 from typing import List, Tuple
 
 import numpy as np
@@ -8,18 +7,17 @@ import numpy as np
 from ..common_objects import Fingerprint
 
 
-class HashGenerator:
+class PairGenerator:
     """
-    Génère des hashes robustes en combinant des PAIRES de pics proches
-    de la constellation map.
+    Generate peak-pair fingerprint tuples from a constellation map.
 
-    Un hash = (freq1, freq2, delta_temps) → invariant au décalage temporel,
-    résistant au bruit.
+    Each pair = (freq1, freq2, delta_t, time_offset) — shift-invariant,
+    noise-tolerant when matched with distance-based scoring.
     """
 
     def __init__(
         self,
-        fan_out: int = 15,
+        fan_out: int = 4,
         time_delta_max: int = 100,
         time_delta_min: int = 1,
     ):
@@ -27,13 +25,13 @@ class HashGenerator:
         self.time_delta_max = time_delta_max
         self.time_delta_min = time_delta_min
 
-    def generate(self, peaks: np.ndarray) -> List[Tuple[str, int]]:
+    def generate(self, peaks: np.ndarray) -> List[Tuple[int, int, int, int]]:
         if len(peaks) < 2:
             return []
 
         peaks = peaks[peaks[:, 0].argsort()]
 
-        hashes = []
+        pairs = []
         for i, (t1, f1) in enumerate(peaks):
             j = i + 1
             count = 0
@@ -44,16 +42,15 @@ class HashGenerator:
                 if delta_t > self.time_delta_max:
                     break
                 if delta_t >= self.time_delta_min:
-                    h = self._make_hash(f1, f2, delta_t)
-                    hashes.append((h, int(t1)))
+                    pairs.append((int(f1), int(f2), int(delta_t), int(t1)))
                     count += 1
                 j += 1
 
-        return hashes
+        return pairs
 
-    def _make_hash(self, f1: int, f2: int, dt: int) -> str:
-        raw = f"{f1}|{f2}|{dt}"
-        return hashlib.md5(raw.encode()).hexdigest()[:12]
+
+# Keep old name as alias for backward compatibility in imports
+HashGenerator = PairGenerator
 
 
 def make_params_hash(params: dict) -> str:
@@ -62,35 +59,61 @@ def make_params_hash(params: dict) -> str:
     return hashlib.sha256(serialized.encode()).hexdigest()[:16]
 
 
-def _build_hash_sets(fingerprints: list[Fingerprint]) -> list[set[str]]:
-    """Precompute the set of hash keys for each fingerprint (for O(1) lookup)."""
-    return [{h for h, _ in (fp.hashes or [])} for fp in fingerprints]
-
-
 def _score(
-    fp_a: Fingerprint, fp_b: Fingerprint, set_a: set, set_b: set, min_matching: int
+    fp_a: Fingerprint,
+    fp_b: Fingerprint,
+    min_matching: int,
+    freq_tol: int = 2,
+    dt_tol: int = 1,
+    offset_tol: int = 2,
 ) -> float:
     """
-    Similarity score based on temporal coherence of shared hashes.
-    Common hashes must align on a consistent time offset.
-    """
-    common = set_a & set_b
-    if len(common) < min_matching:
-        return 0.0
+    Distance-based similarity score with temporal coherence.
 
+    For each pair in A, find the closest pair in B (within per-dimension
+    tolerance). Then check temporal coherence: matched pairs should share
+    a consistent time offset between the two chunks.
+    """
     hashes_a = fp_a.hashes or []
     hashes_b = fp_b.hashes or []
-
-    index_a = {h: t for h, t in hashes_a if h in common}
-    index_b = {h: t for h, t in hashes_b if h in common}
-
-    offsets = [index_a[h] - index_b[h] for h in common if h in index_a and h in index_b]
-    if not offsets:
+    if len(hashes_a) < min_matching or len(hashes_b) < min_matching:
         return 0.0
 
-    coherent_count = Counter(offsets).most_common(1)[0][1]
-    min_hashes = min(len(hashes_a), len(hashes_b)) + 1
-    return coherent_count / min_hashes
+    pairs_a = np.array(hashes_a, dtype=np.int32)  # (Na, 4): f1, f2, dt, t_offset
+    pairs_b = np.array(hashes_b, dtype=np.int32)  # (Nb, 4)
+
+    # Per-dimension closeness check (Na, Nb) boolean
+    close = (
+        (np.abs(pairs_a[:, None, 0] - pairs_b[None, :, 0]) <= freq_tol)
+        & (np.abs(pairs_a[:, None, 1] - pairs_b[None, :, 1]) <= freq_tol)
+        & (np.abs(pairs_a[:, None, 2] - pairs_b[None, :, 2]) <= dt_tol)
+    )
+
+    # For each pair in A, find closest match in B (L1 on first 3 dims)
+    matched_a = []
+    matched_b = []
+    for i in range(len(pairs_a)):
+        candidates = np.where(close[i])[0]
+        if len(candidates) > 0:
+            dists = np.abs(pairs_a[i, :3] - pairs_b[candidates, :3]).sum(axis=1)
+            best = candidates[dists.argmin()]
+            matched_a.append(i)
+            matched_b.append(best)
+
+    if len(matched_a) < min_matching:
+        return 0.0
+
+    # Temporal coherence with tolerance
+    offsets = pairs_a[matched_a, 3] - pairs_b[matched_b, 3]
+    sorted_offsets = np.sort(offsets)
+
+    best_count = 0
+    for i in range(len(sorted_offsets)):
+        count = int(np.sum(np.abs(sorted_offsets - sorted_offsets[i]) <= offset_tol))
+        if count > best_count:
+            best_count = count
+
+    return best_count / (min(len(pairs_a), len(pairs_b)) + 1)
 
 
 def _features_compatible(
@@ -124,10 +147,11 @@ def _features_compatible(
 def are_fingerprints_similar(
     fp_a: Fingerprint,
     fp_b: Fingerprint,
-    set_a: set,
-    set_b: set,
     min_matching_hashes: int,
     similarity_threshold: float,
+    freq_tol: int = 2,
+    dt_tol: int = 1,
+    offset_tol: int = 2,
     duration_tol: float = 0.3,
     rms_tol: float = 0.05,
     centroid_tol: float = 0.05,
@@ -139,6 +163,6 @@ def are_fingerprints_similar(
     ):
         return False
     return (
-        _score(fp_a, fp_b, set_a, set_b, min_matching_hashes)
+        _score(fp_a, fp_b, min_matching_hashes, freq_tol, dt_tol, offset_tol)
         >= similarity_threshold
     )

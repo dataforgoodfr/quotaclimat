@@ -66,7 +66,10 @@ chunk_grouping = ChunkGrouping(
     centroid_tol=0.05,
     zcr_tol=0.1,
     similarity_threshold=0.05,  # C'est bas, mais les tol ci-dessus font un pré filtre très éfficace déjà
-    min_matching_hashes=1,
+    min_matching_hashes=5,
+    freq_tol=2,     # ~15.6 Hz per bin tolerance
+    dt_tol=1,       # ~64 ms per frame tolerance
+    offset_tol=2,   # ~128 ms temporal coherence tolerance
 )
 fragment_classifier = FragmentsClassifier(
     repetition_threshold=3,
@@ -135,6 +138,9 @@ async def processor(
         params_hash=chunk_hash,
         min_matching_hashes=chunk_grouping.min_matching_hashes,
         similarity_threshold=chunk_grouping.similarity_threshold,
+        freq_tol=chunk_grouping.freq_tol,
+        dt_tol=chunk_grouping.dt_tol,
+        offset_tol=chunk_grouping.offset_tol,
     )
     timings["chunk_identification"] = time.monotonic() - t0
 

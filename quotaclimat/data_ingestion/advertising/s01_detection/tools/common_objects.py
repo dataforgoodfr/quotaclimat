@@ -16,6 +16,12 @@ class Fingerprint:
 
     @classmethod
     def from_dict(cls, d):
+        d = dict(d)  # shallow copy to avoid mutating the caller's dict
+        d.setdefault("peaks", None)
+        d.setdefault("hashes", None)
+        # Convert hashes from JSON lists back to tuples
+        if d["hashes"] is not None:
+            d["hashes"] = [tuple(h) for h in d["hashes"]]
         return cls(**d)
 
 

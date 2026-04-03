@@ -77,15 +77,18 @@ def get_keyword_with_timestamp(theme: str, category: str, keyword : str, cts_in_
     }
 
 
-def find_matching_subtitle(subtitles, keyword, country: CountryMediaTree=FRANCE):
+def find_matching_subtitle(subtitles, pos_in_text, keyword, country: CountryMediaTree=FRANCE):
     if isinstance(subtitles, str):
         subtitles = json.loads(subtitles)
     if country.code=='fra':
         logging.info(f"Matching subtitles using the old way")
         return find_matching_subtitle_fr(subtitles, keyword)
     else:
-        find_matching_subtitle_i18n(subtitles, keyword, country)
-    
+        # find_matching_subtitle_i18n(subtitles, keyword, country)
+        return find_matching_subtitle_from_indices(subtitles, pos_in_text)
+
+def find_matching_subtitle_from_indices(subtitles, pos_in_text):
+     return subtitles[pos_in_text]
 
 def find_matching_subtitle_fr(subtitles, keyword):
     for item in subtitles:
@@ -119,15 +122,15 @@ def find_matching_subtitle_i18n(subtitles, keyword, country: CountryMediaTree=FR
     logging.warning(f"SRT match not found - default timestamp is now 0, possible error inside srt which is acceptable - {keyword} - {subtitles}")
     return None
 
-def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], theme: str, country: CountryMediaTree=FRANCE) -> List[dict]:
+def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], word_positions: List[int], theme: str, country: CountryMediaTree=FRANCE) -> List[dict]:
     result = []
 
     logging.debug(f"Looking for timecode for {keywords} inside subtitle_duration {subtitle_duration}")
-    for multiple_keyword in keywords:
+    for multiple_keyword, pos_in_text in zip(keywords, word_positions):
         category = multiple_keyword["category"]
         all_keywords = multiple_keyword["keyword"].split() # case with multiple words such as 'economie circulaire'
 
-        match = find_matching_subtitle(subtitle_duration, all_keywords[0], country)
+        match = find_matching_subtitle(subtitle_duration, pos_in_text, all_keywords[0], country)
 
         if match is not None:
             cts_in_ms = match['cts_in_ms']
@@ -230,10 +233,16 @@ def get_words_in_sentence_regex_i18n(keywords_lemmas, text: str) -> Set[str]:
     logging.info("Running regex matching with lemmas for i18n languages")
   
     found = set()
+    word_positions = []
     for idx in keywords_lemmas:
-        if is_keyword_in_text(keywords_lemmas[idx], text):
+        pattern = r"(?i)(?:^|\b)" + re.escape(keywords_lemmas[idx]) + r"(?![\w-])"
+        match = re.search(pattern, text)
+        if match:
             found.add(idx)
-    return found
+            word_idx = len(text[:match.start()].split(" ")) - 1
+            word_positions.append(word_idx)
+    logging.info(f"word positions: {word_positions}")
+    return found, word_positions
 
 def filter_already_contained_keyword(keywords_with_timestamp: List[dict]) -> List[dict]:
     number_of_keywords = len(keywords_with_timestamp)
@@ -319,7 +328,8 @@ def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
 def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
     if country.code=='fra':
         logging.info("Using regex for france")
-        return set([idx for idx, kw in enumerate(keywords_dict) if is_word_in_sentence_fr(kw["keyword"], text)])
+        words = set([idx for idx, kw in enumerate(keywords_dict) if is_word_in_sentence_fr(kw["keyword"], text)])
+        return words, [None] * len(words)
     else:
         lang = LANGUAGE_CODES[country.language]
         kw_lemmas = dict()
@@ -335,14 +345,14 @@ def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: Cou
 
 # def get_detected_keywords(automaton: ahocorasick.Automaton, plaintext_without_stopwords: str, keywords_dict, country=FRANCE):
 def get_detected_keywords(plaintext_without_stopwords: str, keywords_dict, country=FRANCE):
-    found_idx = get_words_in_sentence(keywords_dict, plaintext_without_stopwords, country)
+    found_idx, word_positions = get_words_in_sentence(keywords_dict, plaintext_without_stopwords, country)
     # found_idx = get_words_in_sentence(automaton, keywords_dict, plaintext_without_stopwords, country)
     matching_words = [get_keyword_matching_json(keywords_dict[idx], country=country) for idx in found_idx]
     if matching_words:
         logging.info(f"found following matching words: {matching_words}")
     else:
         logging.info(f"Found no matching keywords")
-    return matching_words
+    return matching_words, word_positions
 
 @sentry_sdk.trace
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime,
@@ -365,14 +375,14 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             else:
                 # keywords = [keyword_dict["keyword"].lower() for keyword_dict in keywords_dict]
                 # automaton = build_keyword_automaton(keywords, country)
-                matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict, country=country)
+                matching_words, word_positions = get_detected_keywords(plaitext_without_stopwords, keywords_dict, country=country)
                 # matching_words = get_detected_keywords(automaton, plaitext_without_stopwords, keywords_dict, country=country)
         
             if matching_words:
                 logging.info(f"theme found : {theme} with word {matching_words}")
                 try:
                     # look for cts_in_ms inside matching_words (['keyword':'economie circulaire', 'category':'air'}] from subtitle_duration 
-                    keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme, country)
+                    keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, word_positions, theme, country)
                     if(len(keywords_to_add) == 0):
                         logging.debug(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")
                     keywords_with_timestamp.extend(keywords_to_add)

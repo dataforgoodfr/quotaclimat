@@ -18,7 +18,7 @@ from scipy.ndimage import maximum_filter, maximum_filter1d
 
 from .e00_partition_window import Segment
 from .tools.common_objects import Chunk, Fingerprint
-from .tools.fingerprint.hash import HashGenerator, make_params_hash
+from .tools.fingerprint.hash import PairGenerator, make_params_hash
 
 
 class ChunkCreator:
@@ -46,6 +46,7 @@ class ChunkCreator:
         n_peaks: int = 30,  # Max spectral peaks retained per chunk (constellation map).
         neighborhood: int = 15,  # Local max filter size for peak detection in time×frequency plane.
         min_amplitude: float = 0.01,  # Min normalized amplitude (0-1) for a spectral peak to be retained.
+        fan_out: int = 4,  # Pairs per peak for fingerprinting. 4 is sufficient with distance-based matching.
     ):
         self.sr = sr
         self.hop_length = hop_length
@@ -58,8 +59,9 @@ class ChunkCreator:
         self.n_peaks = n_peaks
         self.neighborhood = neighborhood
         self.min_amplitude = min_amplitude
+        self.fan_out = fan_out
         self._fps = sr / hop_length
-        self._hasher = HashGenerator()
+        self._hasher = PairGenerator(fan_out=fan_out)
 
     def load(self, path: str) -> np.ndarray:
         y, _ = librosa.load(path, sr=self.sr, mono=True)
@@ -307,6 +309,7 @@ class ChunkCreator:
             "n_peaks": self.n_peaks,
             "neighborhood": self.neighborhood,
             "min_amplitude": self.min_amplitude,
+            "fan_out": self.fan_out,
         }
 
     def params_hash(self) -> str:

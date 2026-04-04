@@ -49,9 +49,6 @@ class PairGenerator:
         return pairs
 
 
-# Keep old name as alias for backward compatibility in imports
-HashGenerator = PairGenerator
-
 
 def make_params_hash(params: dict) -> str:
     """Stable 16-char hash of a parameter dict, used as a cache/DB key."""
@@ -74,13 +71,13 @@ def _score(
     tolerance). Then check temporal coherence: matched pairs should share
     a consistent time offset between the two chunks.
     """
-    hashes_a = fp_a.hashes or []
-    hashes_b = fp_b.hashes or []
-    if len(hashes_a) < min_matching or len(hashes_b) < min_matching:
+    pairs_a_raw = fp_a.pairs or []
+    pairs_b_raw = fp_b.pairs or []
+    if len(pairs_a_raw) < min_matching or len(pairs_b_raw) < min_matching:
         return 0.0
 
-    pairs_a = np.array(hashes_a, dtype=np.int32)  # (Na, 4): f1, f2, dt, t_offset
-    pairs_b = np.array(hashes_b, dtype=np.int32)  # (Nb, 4)
+    pairs_a = np.array(pairs_a_raw, dtype=np.int32)  # (Na, 4): f1, f2, dt, t_offset
+    pairs_b = np.array(pairs_b_raw, dtype=np.int32)  # (Nb, 4)
 
     # Per-dimension closeness check (Na, Nb) boolean
     close = (
@@ -147,7 +144,7 @@ def _features_compatible(
 def are_fingerprints_similar(
     fp_a: Fingerprint,
     fp_b: Fingerprint,
-    min_matching_hashes: int,
+    min_matching_pairs: int,
     similarity_threshold: float,
     freq_tol: int = 2,
     dt_tol: int = 1,
@@ -163,6 +160,6 @@ def are_fingerprints_similar(
     ):
         return False
     return (
-        _score(fp_a, fp_b, min_matching_hashes, freq_tol, dt_tol, offset_tol)
+        _score(fp_a, fp_b, min_matching_pairs, freq_tol, dt_tol, offset_tol)
         >= similarity_threshold
     )

@@ -8,7 +8,7 @@ from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
 
 from .tools.common_objects import Chunk, Fingerprint, Fragment
-from .tools.fingerprint.hash import are_fingerprints_similar
+from .tools.fingerprint.pairs import are_fingerprints_similar
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class AdChunkMatch:
 async def run_chunk_identification(
     chunks: list[Chunk],
     params_hash: str,
-    min_matching_hashes: int = 5,
+    min_matching_pairs: int = 5,
     similarity_threshold: float = 0.05,
     freq_tol: int = 2,
     dt_tol: int = 1,
@@ -44,7 +44,7 @@ async def run_chunk_identification(
     Args:
         chunks: Les chunks locaux à identifier.
         params_hash: Hash des paramètres ChunkCreator, pour filtrer les chunks DB compatibles.
-        min_matching_hashes: Nombre minimum de paires proches pour considérer deux chunks similaires.
+        min_matching_pairs: Nombre minimum de paires proches pour considérer deux chunks similaires.
         similarity_threshold: Score minimum (cohérence temporelle) pour valider une correspondance.
         freq_tol: Tolerance on frequency bin indices for pair matching.
         dt_tol: Tolerance on time delta for pair matching.
@@ -76,7 +76,7 @@ async def run_chunk_identification(
                             if are_fingerprints_similar(
                                 chunk.fingerprint,
                                 db_fp,
-                                min_matching_hashes,
+                                min_matching_pairs,
                                 similarity_threshold,
                                 freq_tol,
                                 dt_tol,

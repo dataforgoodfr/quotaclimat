@@ -262,7 +262,7 @@
           <tr><td>Spectral Centroid</td><td>${fmt(m.spectral_centroid, 2)} Hz</td></tr>
           <tr><td>ZCR</td><td>${fmt(m.zcr_mean, 6)}</td></tr>
           <tr><td>Constellation peaks</td><td>${m.n_peaks}</td></tr>
-          <tr><td>Fingerprint hashes</td><td>${m.n_hashes}</td></tr>
+          <tr><td>Fingerprint pairs</td><td>${m.n_pairs}</td></tr>
           <tr><td>Window analysée</td><td>${fmt(w.windowDuration, 2)} s</td></tr>
         </table>
       </div>`;
@@ -288,7 +288,7 @@
         ["Spectral Centroid (Hz)", ma.spectral_centroid, mb.spectral_centroid, 2],
         ["ZCR", ma.zcr_mean, mb.zcr_mean, 6],
         ["Constellation peaks", ma.n_peaks, mb.n_peaks, 0],
-        ["Fingerprint hashes", ma.n_hashes, mb.n_hashes, 0],
+        ["Fingerprint pairs", ma.n_pairs, mb.n_pairs, 0],
       ];
       let html = `<table class="diff-table">
         <tr><th>Métrique</th><th style="text-align:right">Chunk A</th>

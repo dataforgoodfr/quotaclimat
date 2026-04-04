@@ -18,7 +18,7 @@ from scipy.ndimage import maximum_filter, maximum_filter1d
 
 from .e00_partition_window import Segment
 from .tools.common_objects import Chunk, Fingerprint
-from .tools.fingerprint.hash import PairGenerator, make_params_hash
+from .tools.fingerprint.pairs import PairGenerator, make_params_hash
 
 
 class ChunkCreator:
@@ -61,7 +61,7 @@ class ChunkCreator:
         self.min_amplitude = min_amplitude
         self.fan_out = fan_out
         self._fps = sr / hop_length
-        self._hasher = PairGenerator(fan_out=fan_out)
+        self._pair_generator = PairGenerator(fan_out=fan_out)
 
     def load(self, path: str) -> np.ndarray:
         y, _ = librosa.load(path, sr=self.sr, mono=True)
@@ -256,7 +256,7 @@ class ChunkCreator:
                 if seg_peaks
                 else np.empty((0, 2), dtype=np.int32)
             )
-            seg_hashes = self._hasher.generate(peaks_array)
+            seg_pairs = self._pair_generator.generate(peaks_array)
 
             chunks.append(
                 Chunk(
@@ -269,7 +269,7 @@ class ChunkCreator:
                         spectral_centroid=round(c, 2),
                         zcr_mean=round(z, 2),
                         peaks=seg_peaks,
-                        hashes=seg_hashes,
+                        pairs=seg_pairs,
                     ),
                 )
             )

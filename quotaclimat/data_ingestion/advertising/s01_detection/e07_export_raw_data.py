@@ -28,7 +28,7 @@ class Timer:
     def __enter__(self):
         self.t0 = time.monotonic()
 
-    def __exit__(self):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         self.timings[self.key] = time.monotonic() - self.t0
 
 

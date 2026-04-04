@@ -118,19 +118,19 @@ async def processor(
 
     #### Chunk grouping
 
-    with timings.mesure("chunk_grouping"):
+    with timings.measure("chunk_grouping"):
         groups = chunk_grouping.run(unknown_chunks)
 
     #### Fragment classification
 
-    with timings.mesure("fragment_classification"):
+    with timings.measure("fragment_classification"):
         fragments = fragment_classifier.run(
             groups, already_known_fragments=previously_known_fragments
         )
 
     #### Database storage
 
-    with timings.mesure("database_storage"):
+    with timings.measure("database_storage"):
         database_storage_save(fragments, chunk_hash=chunk_hash)
 
     #### Results exportation

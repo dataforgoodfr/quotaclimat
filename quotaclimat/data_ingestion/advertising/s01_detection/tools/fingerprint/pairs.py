@@ -20,10 +20,12 @@ class PairGenerator:
         fan_out: int = 4,
         time_delta_max: int = 100,
         time_delta_min: int = 1,
+        max_pairs: int = 80,
     ):
         self.fan_out = fan_out
         self.time_delta_max = time_delta_max
         self.time_delta_min = time_delta_min
+        self.max_pairs = max_pairs
 
     def generate(self, peaks: np.ndarray) -> List[Tuple[int, int, int, int]]:
         if len(peaks) < 2:
@@ -46,7 +48,7 @@ class PairGenerator:
                     count += 1
                 j += 1
 
-        return pairs
+        return pairs[:self.max_pairs]
 
 
 
@@ -100,15 +102,16 @@ def _score(
     if len(matched_a) < min_matching:
         return 0.0
 
-    # Temporal coherence with tolerance
+    # Temporal coherence with tolerance (sliding window on sorted offsets)
     offsets = pairs_a[matched_a, 3] - pairs_b[matched_b, 3]
     sorted_offsets = np.sort(offsets)
 
     best_count = 0
-    for i in range(len(sorted_offsets)):
-        count = int(np.sum(np.abs(sorted_offsets - sorted_offsets[i]) <= offset_tol))
-        if count > best_count:
-            best_count = count
+    left = 0
+    for right in range(len(sorted_offsets)):
+        while sorted_offsets[right] - sorted_offsets[left] > 2 * offset_tol:
+            left += 1
+        best_count = max(best_count, right - left + 1)
 
     return best_count / (min(len(pairs_a), len(pairs_b)) + 1)
 

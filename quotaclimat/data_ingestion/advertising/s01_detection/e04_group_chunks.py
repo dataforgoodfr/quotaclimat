@@ -418,11 +418,14 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
 
     best_count = 0
     best_offset = 0
-    for i in range(len(sorted_offsets)):
-        count = int(np.sum(np.abs(sorted_offsets - sorted_offsets[i]) <= grouping.offset_tol))
+    left = 0
+    for right in range(len(sorted_offsets)):
+        while sorted_offsets[right] - sorted_offsets[left] > 2 * grouping.offset_tol:
+            left += 1
+        count = right - left + 1
         if count > best_count:
             best_count = count
-            best_offset = int(sorted_offsets[i])
+            best_offset = int(sorted_offsets[(left + right) // 2])
 
     min_pairs = min(len(arr_a), len(arr_b)) + 1
     score = best_count / min_pairs

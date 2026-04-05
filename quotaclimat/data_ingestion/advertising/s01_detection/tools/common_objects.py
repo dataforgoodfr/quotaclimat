@@ -66,6 +66,50 @@ class Chunk:
         )
 
 
+@dataclass
+class EmbeddingFingerprint:
+    duration_sec: float
+    energy_mean: float
+    spectral_centroid: float
+    zcr_mean: float
+    embedding: list  # 2048-dim mean-pooled PANNs vector
+    semantic_labels: list = None  # top AudioSet class names
+
+    def to_dict(self):
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, d):
+        d = dict(d)
+        d.setdefault("semantic_labels", None)
+        return cls(**d)
+
+
+@dataclass
+class EmbeddingChunk:
+    start_sec: float
+    end_sec: float
+    channel: str
+    fingerprint: EmbeddingFingerprint
+
+    def to_dict(self):
+        return {
+            "start_sec": self.start_sec,
+            "end_sec": self.end_sec,
+            "channel": self.channel,
+            "fingerprint": self.fingerprint.to_dict(),
+        }
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            start_sec=d["start_sec"],
+            end_sec=d["end_sec"],
+            channel=d["channel"],
+            fingerprint=EmbeddingFingerprint.from_dict(d["fingerprint"]),
+        )
+
+
 FragmentClassification = Literal[
     "already_known_ad", "new_ad", "content", "jingle", "unknown"
 ]

@@ -47,6 +47,7 @@ class ChunkCreator:
         neighborhood: int = 15,  # Local max filter size for peak detection in time×frequency plane.
         min_amplitude: float = 0.01,  # Min normalized amplitude (0-1) for a spectral peak to be retained.
         fan_out: int = 4,  # Pairs per peak for fingerprinting. 4 is sufficient with distance-based matching.
+        max_pairs: int = 80,
     ):
         self.sr = sr
         self.hop_length = hop_length
@@ -61,7 +62,7 @@ class ChunkCreator:
         self.min_amplitude = min_amplitude
         self.fan_out = fan_out
         self._fps = sr / hop_length
-        self._pair_generator = PairGenerator(fan_out=fan_out)
+        self._pair_generator = PairGenerator(fan_out=fan_out, max_pairs=max_pairs)
 
     def load(self, path: str) -> np.ndarray:
         y, _ = librosa.load(path, sr=self.sr, mono=True)

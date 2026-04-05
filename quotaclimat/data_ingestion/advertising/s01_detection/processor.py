@@ -31,9 +31,10 @@ chunk_creator = ChunkCreator(
     min_chunk_sec=1.0,
     silence_percentile=5.0,
     n_fft=2048,
-    n_peaks=30,
+    n_peaks=20,
     neighborhood=15,
     min_amplitude=0.01,
+    max_pairs=30,
 )
 chunk_grouping = ChunkGrouping(
     duration_tol=1.0,  # C'est relativement haut, mais les autres filtres affinent bien. 1 = durée minimum d'un segment, pour que l'absorption ou non d'un micro segment ne soit pas discriminant
@@ -41,7 +42,7 @@ chunk_grouping = ChunkGrouping(
     centroid_tol=0.05,
     zcr_tol=0.1,
     similarity_threshold=0.05,  # C'est bas, mais les tol ci-dessus font un pré filtre très éfficace déjà
-    min_matching_pairs=5,
+    min_matching_pairs=10,
     freq_tol=2,  # ~15.6 Hz per bin tolerance
     dt_tol=1,  # ~64 ms per frame tolerance
     offset_tol=2,  # ~128 ms temporal coherence tolerance

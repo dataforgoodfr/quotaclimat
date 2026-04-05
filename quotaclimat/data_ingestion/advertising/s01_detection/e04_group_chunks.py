@@ -79,7 +79,7 @@ def _cluster(
 
     # Step 1: compute quantized pair-sum buckets per chunk
     chunk_buckets: list[list[int]] = []
-    for chunk in chunks:
+    for chunk in tqdm(chunks, desc="Indexation fingerprints"):
         pairs = chunk.fingerprint.pairs or []
         if pairs:
             arr = np.array(pairs, dtype=np.int32)
@@ -97,7 +97,7 @@ def _cluster(
     # Step 3: generate candidate pairs via co-occurrence counting
     # Keep duplicates on query side so that k matching pairs yield count >= k
     candidates: set[tuple[int, int]] = set()
-    for i, buckets in enumerate(chunk_buckets):
+    for i, buckets in tqdm(enumerate(chunk_buckets), desc="Recherche candidats", total=n):
         if not buckets:
             continue
         neighbor_counts: Counter[int] = Counter()

@@ -4,6 +4,10 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+from postgres.schemas.advertising.models import AdvertisingBase
+from postgres.schemas.models import (
+    connect_to_db,
+)
 from quotaclimat.data_ingestion.advertising.s01_detection.e00_partition_window import (
     Segment,
 )
@@ -26,6 +30,11 @@ async def mock_download_audio(api, task: Segment) -> tuple[str, bool]:
     new=mock_download_audio,
 )
 async def test_extract_fragments_run_successfully():
+    # This should be put in pytest configuration
+    conn = connect_to_db()
+    AdvertisingBase.metadata.drop_all(conn)
+    AdvertisingBase.metadata.create_all(conn, checkfirst=True)
+
     channel = "tf1"
 
     segments = [
@@ -46,6 +55,7 @@ async def test_extract_fragments_run_successfully():
         segments=segments,
         report_folder=None,
     )
+
     maybe_ads = [f for f in fragments if f.classification == "unknown"]
     assert len(maybe_ads) == 2
     assert maybe_ads[0].group_id == maybe_ads[1].group_id

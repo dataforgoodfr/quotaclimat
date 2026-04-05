@@ -5,9 +5,8 @@ Utilise les paires de pics pré-calculées par e02 (constellation maps)
 pour comparer et regrouper les chunks identiques via distance-based scoring.
 """
 
-import itertools
 import logging
-from collections import defaultdict
+from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass
 from typing import Dict, List
 
@@ -56,7 +55,11 @@ def _cluster(
     zcr_tol: float = 0.1,
 ) -> Dict[int, List[int]]:
     """
-    Group similar chunks via O(n^2) scan with acoustic pre-filter + distance scoring + Union-Find.
+    Group similar chunks using inverted index on pair sums + Union-Find.
+
+    Builds an inverted index of quantized pair sums (f1+f2+dt) to prune
+    candidate pairs before running the full distance-based comparison.
+    Only chunk pairs sharing >= min_matching_pairs bucket overlaps are compared.
     Returns {group_id: [chunk indices]}.
     """
     n = len(chunks)
@@ -71,12 +74,51 @@ def _cluster(
     def union(x, y):
         parent[find(x)] = find(y)
 
-    logger.debug(f"Clustering {n} chunks — checking {n * (n - 1) // 2} pairs...")
+    # --- Inverted index on pair sums to prune candidate pairs ---
+    sum_tol = 2 * freq_tol + dt_tol
 
+    # Step 1: compute quantized pair-sum buckets per chunk
+    chunk_buckets: list[list[int]] = []
+    for chunk in chunks:
+        pairs = chunk.fingerprint.pairs or []
+        if pairs:
+            arr = np.array(pairs, dtype=np.int32)
+            raw_sums = arr[:, 0] + arr[:, 1] + arr[:, 2]
+            chunk_buckets.append((raw_sums // sum_tol).tolist())
+        else:
+            chunk_buckets.append([])
+
+    # Step 2: build inverted index (deduplicated per chunk)
+    bucket_to_chunks: dict[int, set[int]] = defaultdict(set)
+    for i, buckets in enumerate(chunk_buckets):
+        for b in set(buckets):
+            bucket_to_chunks[b].add(i)
+
+    # Step 3: generate candidate pairs via co-occurrence counting
+    # Keep duplicates on query side so that k matching pairs yield count >= k
+    candidates: set[tuple[int, int]] = set()
+    for i, buckets in enumerate(chunk_buckets):
+        if not buckets:
+            continue
+        neighbor_counts: Counter[int] = Counter()
+        for b in buckets:
+            for adj in (b - 1, b, b + 1):
+                for j in bucket_to_chunks.get(adj, ()):
+                    if j > i:
+                        neighbor_counts[j] += 1
+        for j, count in neighbor_counts.items():
+            if count >= min_matching_pairs:
+                candidates.add((i, j))
+
+    logger.debug(
+        f"Clustering {n} chunks — {len(candidates)} candidate pairs "
+        f"(pruned from {n * (n - 1) // 2} exhaustive)"
+    )
+
+    # Step 4: full comparison on candidates only
     matches = 0
     for i, j in tqdm(
-        itertools.combinations(range(n), 2), desc="Comparaison fingerprints",
-        total=n * (n - 1) // 2,
+        candidates, desc="Comparaison fingerprints", total=len(candidates),
     ):
         if are_fingerprints_similar(
             chunks[i].fingerprint,

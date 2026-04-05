@@ -74,36 +74,48 @@ def _cluster(
     def union(x, y):
         parent[find(x)] = find(y)
 
-    # --- Inverted index on pair sums to prune candidate pairs ---
-    sum_tol = 2 * freq_tol + dt_tol
+    # --- Inverted index on 3D pair keys to prune candidate pairs ---
+    # Key = (f1 // freq_tol, f2 // freq_tol, dt // dt_tol) — much more
+    # selective than a 1D sum, spreading pairs across ~250K buckets.
+    _ADJ = [(-1, -1, -1), (-1, -1, 0), (-1, -1, 1),
+            (-1,  0, -1), (-1,  0, 0), (-1,  0, 1),
+            (-1,  1, -1), (-1,  1, 0), (-1,  1, 1),
+            ( 0, -1, -1), ( 0, -1, 0), ( 0, -1, 1),
+            ( 0,  0, -1), ( 0,  0, 0), ( 0,  0, 1),
+            ( 0,  1, -1), ( 0,  1, 0), ( 0,  1, 1),
+            ( 1, -1, -1), ( 1, -1, 0), ( 1, -1, 1),
+            ( 1,  0, -1), ( 1,  0, 0), ( 1,  0, 1),
+            ( 1,  1, -1), ( 1,  1, 0), ( 1,  1, 1)]
 
-    # Step 1: compute quantized pair-sum buckets per chunk
-    chunk_buckets: list[list[int]] = []
-    for chunk in tqdm(chunks, desc="Indexation fingerprints"):
+    # Step 1: compute 3D keys per chunk and build inverted index
+    chunk_keys: list[list[tuple[int, int, int]]] = []
+    index: dict[tuple[int, int, int], set[int]] = defaultdict(set)
+    for i, chunk in enumerate(tqdm(chunks, desc="Indexation fingerprints")):
         pairs = chunk.fingerprint.pairs or []
         if pairs:
             arr = np.array(pairs, dtype=np.int32)
-            raw_sums = arr[:, 0] + arr[:, 1] + arr[:, 2]
-            chunk_buckets.append((raw_sums // sum_tol).tolist())
+            keys = list(zip(
+                (arr[:, 0] // freq_tol).tolist(),
+                (arr[:, 1] // freq_tol).tolist(),
+                (arr[:, 2] // dt_tol).tolist(),
+            ))
+            chunk_keys.append(keys)
+            for k in set(keys):
+                index[k].add(i)
         else:
-            chunk_buckets.append([])
+            chunk_keys.append([])
 
-    # Step 2: build inverted index (deduplicated per chunk)
-    bucket_to_chunks: dict[int, set[int]] = defaultdict(set)
-    for i, buckets in enumerate(chunk_buckets):
-        for b in set(buckets):
-            bucket_to_chunks[b].add(i)
-
-    # Step 3: generate candidate pairs via co-occurrence counting
-    # Keep duplicates on query side so that k matching pairs yield count >= k
+    # Step 2: generate candidate pairs via co-occurrence counting
+    # For each pair in chunk i, look up 27 neighboring 3D cells to find
+    # chunks sharing close pairs. Count >= min_matching_pairs → candidate.
     candidates: set[tuple[int, int]] = set()
-    for i, buckets in tqdm(enumerate(chunk_buckets), desc="Recherche candidats", total=n):
-        if not buckets:
+    for i, keys in tqdm(enumerate(chunk_keys), desc="Recherche candidats", total=n):
+        if not keys:
             continue
         neighbor_counts: Counter[int] = Counter()
-        for b in buckets:
-            for adj in (b - 1, b, b + 1):
-                for j in bucket_to_chunks.get(adj, ()):
+        for kf1, kf2, kdt in keys:
+            for df1, df2, ddt in _ADJ:
+                for j in index.get((kf1 + df1, kf2 + df2, kdt + ddt), ()):
                     if j > i:
                         neighbor_counts[j] += 1
         for j, count in neighbor_counts.items():

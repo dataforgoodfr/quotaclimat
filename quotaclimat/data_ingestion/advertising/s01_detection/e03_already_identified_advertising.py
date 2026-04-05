@@ -8,7 +8,11 @@ from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
 
 from .tools.common_objects import Chunk, Fingerprint, Fragment
-from .tools.fingerprint.pairs import are_fingerprints_similar
+from .tools.fingerprint.pairs import (
+    are_fingerprints_similar,
+    build_pairs_index,
+    query_pairs_index,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +60,11 @@ async def run_chunk_identification(
     # matches[local_idx] accumulates AdChunkMatch across all pages
     matches: dict[int, list[AdChunkMatch]] = defaultdict(list)
 
+    # Build inverted index over local chunks once — queried for each DB fingerprint
+    local_index = build_pairs_index(
+        [c.fingerprint for c in chunks], freq_tol, dt_tol
+    )
+
     total_db_fingerprints = 0
 
     with get_db_session() as session:
@@ -72,9 +81,12 @@ async def run_chunk_identification(
                         db_fp = Fingerprint.from_dict(fp_dict)
                         total_db_fingerprints += 1
 
-                        for local_idx, chunk in enumerate(chunks):
+                        candidates = query_pairs_index(
+                            db_fp, local_index, freq_tol, dt_tol, min_matching_pairs
+                        )
+                        for local_idx in candidates:
                             if are_fingerprints_similar(
-                                chunk.fingerprint,
+                                chunks[local_idx].fingerprint,
                                 db_fp,
                                 min_matching_pairs,
                                 similarity_threshold,

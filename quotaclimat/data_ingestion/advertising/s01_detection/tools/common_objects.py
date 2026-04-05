@@ -9,7 +9,7 @@ class Fingerprint:
     spectral_centroid: float
     zcr_mean: float
     peaks: list = None
-    hashes: list = None
+    pairs: list = None
 
     def to_dict(self):
         return asdict(self)
@@ -18,10 +18,10 @@ class Fingerprint:
     def from_dict(cls, d):
         d = dict(d)  # shallow copy to avoid mutating the caller's dict
         d.setdefault("peaks", None)
-        d.setdefault("hashes", None)
-        # Convert hashes from JSON lists back to tuples
-        if d["hashes"] is not None:
-            d["hashes"] = [tuple(h) for h in d["hashes"]]
+        d.setdefault("pairs", d.pop("hashes", None))
+        # Convert pairs from JSON lists back to tuples
+        if d["pairs"] is not None:
+            d["pairs"] = [tuple(p) for p in d["pairs"]]
         return cls(**d)
 
 
@@ -61,7 +61,7 @@ class Chunk:
                 spectral_centroid=d["spectral_centroid"],
                 zcr_mean=d["zcr_mean"],
                 peaks=d.get("peaks"),
-                hashes=d.get("hashes"),
+                pairs=d.get("pairs", d.get("hashes")),
             ),
         )
 

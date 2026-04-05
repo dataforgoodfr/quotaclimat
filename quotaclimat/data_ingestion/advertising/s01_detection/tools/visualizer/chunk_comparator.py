@@ -199,7 +199,7 @@ def _extract_chunk_data(
             "spectral_centroid": round(chunk.fingerprint.spectral_centroid, 2),
             "zcr_mean": round(chunk.fingerprint.zcr_mean, 6),
             "n_peaks": len(chunk.fingerprint.peaks) if chunk.fingerprint.peaks else 0,
-            "n_hashes": len(chunk.fingerprint.hashes) if chunk.fingerprint.hashes else 0,
+            "n_pairs": len(chunk.fingerprint.pairs) if chunk.fingerprint.pairs else 0,
         },
         # Fenêtre d'analyse
         "window": {

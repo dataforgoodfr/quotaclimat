@@ -15,7 +15,7 @@ import numpy as np
 from tqdm import tqdm
 
 from .tools.common_objects import Chunk, Fingerprint
-from .tools.fingerprint.hash import (
+from .tools.fingerprint.pairs import (
     are_fingerprints_similar,
     make_params_hash,
 )
@@ -45,7 +45,7 @@ class ChunkGroup:
 
 def _cluster(
     chunks: list[Chunk],
-    min_matching_hashes: int,
+    min_matching_pairs: int,
     similarity_threshold: float,
     freq_tol: int = 2,
     dt_tol: int = 1,
@@ -81,7 +81,7 @@ def _cluster(
         if are_fingerprints_similar(
             chunks[i].fingerprint,
             chunks[j].fingerprint,
-            min_matching_hashes,
+            min_matching_pairs,
             similarity_threshold,
             freq_tol,
             dt_tol,
@@ -107,7 +107,7 @@ class ChunkGrouping:
     def __init__(
         self,
         similarity_threshold: float = 0.08,  # Min fingerprint score to consider two chunks identical.
-        min_matching_hashes: int = 5,  # Min close pairs before considering a match.
+        min_matching_pairs: int = 5,  # Min close pairs before considering a match.
         freq_tol: int = 2,  # Frequency bin tolerance for pair matching (~15.6 Hz per bin).
         dt_tol: int = 1,  # Time delta tolerance for pair matching (~64 ms per frame).
         offset_tol: int = 2,  # Temporal coherence tolerance (~128 ms).
@@ -117,7 +117,7 @@ class ChunkGrouping:
         zcr_tol: float = 0.1,
     ):
         self.similarity_threshold = similarity_threshold
-        self.min_matching_hashes = min_matching_hashes
+        self.min_matching_pairs = min_matching_pairs
         self.freq_tol = freq_tol
         self.dt_tol = dt_tol
         self.offset_tol = offset_tol
@@ -129,7 +129,7 @@ class ChunkGrouping:
     def params(self) -> dict:
         return {
             "similarity_threshold": self.similarity_threshold,
-            "min_matching_hashes": self.min_matching_hashes,
+            "min_matching_pairs": self.min_matching_pairs,
             "freq_tol": self.freq_tol,
             "dt_tol": self.dt_tol,
             "offset_tol": self.offset_tol,
@@ -149,7 +149,7 @@ class ChunkGrouping:
 
         groups = _cluster(
             chunks,
-            self.min_matching_hashes,
+            self.min_matching_pairs,
             self.similarity_threshold,
             self.freq_tol,
             self.dt_tol,
@@ -202,12 +202,12 @@ def canonical(chunks: list[Chunk], freq_tol: int = 2, dt_tol: int = 1) -> Chunk:
     # Pool all tuples tagged by occurrence index
     all_tuples = []  # (f1, f2, dt, t_offset, occurrence_idx)
     for occ_idx, chunk in enumerate(chunks):
-        for pair in (chunk.fingerprint.hashes or []):
+        for pair in (chunk.fingerprint.pairs or []):
             all_tuples.append((*pair[:4], occ_idx))
 
     if not all_tuples:
         # No pairs at all, fall back to richest occurrence
-        richest = max(chunks, key=lambda c: len(c.fingerprint.hashes or []))
+        richest = max(chunks, key=lambda c: len(c.fingerprint.pairs or []))
         return _build_canonical_chunk(chunks, richest.fingerprint.peaks, [])
 
     all_tuples_arr = np.array(all_tuples, dtype=np.int32)
@@ -250,12 +250,12 @@ def canonical(chunks: list[Chunk], freq_tol: int = 2, dt_tol: int = 1) -> Chunk:
 
     # Fallback: if too few stable pairs, take pairs from the richest occurrence
     if len(canonical_pairs) < MIN_CANONICAL_PAIRS:
-        richest = max(chunks, key=lambda c: len(c.fingerprint.hashes or []))
-        canonical_pairs = list(richest.fingerprint.hashes or [])
+        richest = max(chunks, key=lambda c: len(c.fingerprint.pairs or []))
+        canonical_pairs = list(richest.fingerprint.pairs or [])
         # Ensure they are 4-tuples
         canonical_pairs = [tuple(p[:4]) for p in canonical_pairs]
 
-    richest = max(chunks, key=lambda c: len(c.fingerprint.hashes or []))
+    richest = max(chunks, key=lambda c: len(c.fingerprint.pairs or []))
     return _build_canonical_chunk(chunks, richest.fingerprint.peaks, canonical_pairs)
 
 
@@ -268,7 +268,7 @@ def _build_canonical_chunk(
     centroids = [c.fingerprint.spectral_centroid for c in chunks]
     zcrs = [c.fingerprint.zcr_mean for c in chunks]
 
-    richest = max(chunks, key=lambda c: len(c.fingerprint.hashes or []))
+    richest = max(chunks, key=lambda c: len(c.fingerprint.pairs or []))
 
     return Chunk(
         start_sec=richest.start_sec,
@@ -280,7 +280,7 @@ def _build_canonical_chunk(
             spectral_centroid=float(np.median(centroids)),
             zcr_mean=float(np.median(zcrs)),
             peaks=peaks,
-            hashes=canonical_pairs,
+            pairs=canonical_pairs,
         ),
     )
 
@@ -367,8 +367,8 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
 
     # ── Step 3: distance-based pair matching ────────────────────────────
     print("\n[3] Distance-based pair matching")
-    pairs_a = fp_a.hashes or []
-    pairs_b = fp_b.hashes or []
+    pairs_a = fp_a.pairs or []
+    pairs_b = fp_b.pairs or []
     print(f"    pairs A: {len(pairs_a)},  pairs B: {len(pairs_b)}")
 
     if not pairs_a or not pairs_b:
@@ -394,9 +394,9 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
             matched_b.append(best)
 
     n_matched = len(matched_a)
-    match_ok = n_matched >= grouping.min_matching_hashes
+    match_ok = n_matched >= grouping.min_matching_pairs
     print(
-        f"    close matches: {n_matched}  (min={grouping.min_matching_hashes})  {PASS if match_ok else FAIL}"
+        f"    close matches: {n_matched}  (min={grouping.min_matching_pairs})  {PASS if match_ok else FAIL}"
     )
 
     if n_matched > 0:
@@ -418,11 +418,14 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
 
     best_count = 0
     best_offset = 0
-    for i in range(len(sorted_offsets)):
-        count = int(np.sum(np.abs(sorted_offsets - sorted_offsets[i]) <= grouping.offset_tol))
+    left = 0
+    for right in range(len(sorted_offsets)):
+        while sorted_offsets[right] - sorted_offsets[left] > 2 * grouping.offset_tol:
+            left += 1
+        count = right - left + 1
         if count > best_count:
             best_count = count
-            best_offset = int(sorted_offsets[i])
+            best_offset = int(sorted_offsets[(left + right) // 2])
 
     min_pairs = min(len(arr_a), len(arr_b)) + 1
     score = best_count / min_pairs
@@ -485,7 +488,7 @@ if __name__ == "__main__":
                     [881, 22],
                     [1197, 6],
                 ],
-                "hashes": [
+                "pairs": [
                     [102, 51, 55, 309],
                     [51, 50, 55, 309],
                     [50, 47, 95, 309],
@@ -560,7 +563,7 @@ if __name__ == "__main__":
                     [303, 15],
                     [279, 36],
                 ],
-                "hashes": [
+                "pairs": [
                     [36, 20, 4, 156],
                     [20, 6, 19, 160],
                     [6, 20, 26, 175],
@@ -596,7 +599,7 @@ if __name__ == "__main__":
         ),
         ChunkGrouping(
             similarity_threshold=0.05,
-            min_matching_hashes=5,
+            min_matching_pairs=5,
             duration_tol=0.4,
             rms_tol=0.05,
             centroid_tol=0.05,

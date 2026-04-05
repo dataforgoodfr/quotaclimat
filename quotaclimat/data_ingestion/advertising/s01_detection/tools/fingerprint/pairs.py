@@ -20,10 +20,12 @@ class PairGenerator:
         fan_out: int = 4,
         time_delta_max: int = 100,
         time_delta_min: int = 1,
+        max_pairs: int = 80,
     ):
         self.fan_out = fan_out
         self.time_delta_max = time_delta_max
         self.time_delta_min = time_delta_min
+        self.max_pairs = max_pairs
 
     def generate(self, peaks: np.ndarray) -> List[Tuple[int, int, int, int]]:
         if len(peaks) < 2:
@@ -46,11 +48,8 @@ class PairGenerator:
                     count += 1
                 j += 1
 
-        return pairs
+        return pairs[:self.max_pairs]
 
-
-# Keep old name as alias for backward compatibility in imports
-HashGenerator = PairGenerator
 
 
 def make_params_hash(params: dict) -> str:
@@ -73,45 +72,63 @@ def _score(
     For each pair in A, find the closest pair in B (within per-dimension
     tolerance). Then check temporal coherence: matched pairs should share
     a consistent time offset between the two chunks.
+
+    Uses a sum-based index (f1+f2+dt) to pre-filter candidates: two pairs
+    can only match if their sums differ by at most 2*freq_tol + dt_tol.
+    This avoids the O(Na*Nb) full cross-product.
     """
-    hashes_a = fp_a.hashes or []
-    hashes_b = fp_b.hashes or []
-    if len(hashes_a) < min_matching or len(hashes_b) < min_matching:
+    pairs_a_raw = fp_a.pairs or []
+    pairs_b_raw = fp_b.pairs or []
+    if len(pairs_a_raw) < min_matching or len(pairs_b_raw) < min_matching:
         return 0.0
 
-    pairs_a = np.array(hashes_a, dtype=np.int32)  # (Na, 4): f1, f2, dt, t_offset
-    pairs_b = np.array(hashes_b, dtype=np.int32)  # (Nb, 4)
+    pairs_a = np.array(pairs_a_raw, dtype=np.int32)  # (Na, 4): f1, f2, dt, t_offset
+    pairs_b = np.array(pairs_b_raw, dtype=np.int32)  # (Nb, 4)
 
-    # Per-dimension closeness check (Na, Nb) boolean
-    close = (
-        (np.abs(pairs_a[:, None, 0] - pairs_b[None, :, 0]) <= freq_tol)
-        & (np.abs(pairs_a[:, None, 1] - pairs_b[None, :, 1]) <= freq_tol)
-        & (np.abs(pairs_a[:, None, 2] - pairs_b[None, :, 2]) <= dt_tol)
-    )
+    # Sort B by sum of first 3 dims for binary-search pre-filtering
+    sums_b = pairs_b[:, 0] + pairs_b[:, 1] + pairs_b[:, 2]
+    order_b = np.argsort(sums_b)
+    pairs_b_sorted = pairs_b[order_b]
+    sums_b_sorted = sums_b[order_b]
 
-    # For each pair in A, find closest match in B (L1 on first 3 dims)
+    sum_tol = 2 * freq_tol + dt_tol
+
     matched_a = []
     matched_b = []
     for i in range(len(pairs_a)):
-        candidates = np.where(close[i])[0]
-        if len(candidates) > 0:
-            dists = np.abs(pairs_a[i, :3] - pairs_b[candidates, :3]).sum(axis=1)
-            best = candidates[dists.argmin()]
+        s_a = int(pairs_a[i, 0]) + int(pairs_a[i, 1]) + int(pairs_a[i, 2])
+        lo = np.searchsorted(sums_b_sorted, s_a - sum_tol, side="left")
+        hi = np.searchsorted(sums_b_sorted, s_a + sum_tol, side="right")
+        if lo >= hi:
+            continue
+
+        candidates_sorted = pairs_b_sorted[lo:hi]
+        # Per-dimension check within the narrow candidate window
+        close_mask = (
+            (np.abs(pairs_a[i, 0] - candidates_sorted[:, 0]) <= freq_tol)
+            & (np.abs(pairs_a[i, 1] - candidates_sorted[:, 1]) <= freq_tol)
+            & (np.abs(pairs_a[i, 2] - candidates_sorted[:, 2]) <= dt_tol)
+        )
+        close_idxs = np.where(close_mask)[0]
+        if len(close_idxs) > 0:
+            dists = np.abs(pairs_a[i, :3] - candidates_sorted[close_idxs, :3]).sum(axis=1)
+            best_local = close_idxs[dists.argmin()]
             matched_a.append(i)
-            matched_b.append(best)
+            matched_b.append(int(order_b[lo + best_local]))
 
     if len(matched_a) < min_matching:
         return 0.0
 
-    # Temporal coherence with tolerance
+    # Temporal coherence with tolerance (sliding window on sorted offsets)
     offsets = pairs_a[matched_a, 3] - pairs_b[matched_b, 3]
     sorted_offsets = np.sort(offsets)
 
     best_count = 0
-    for i in range(len(sorted_offsets)):
-        count = int(np.sum(np.abs(sorted_offsets - sorted_offsets[i]) <= offset_tol))
-        if count > best_count:
-            best_count = count
+    left = 0
+    for right in range(len(sorted_offsets)):
+        while sorted_offsets[right] - sorted_offsets[left] > 2 * offset_tol:
+            left += 1
+        best_count = max(best_count, right - left + 1)
 
     return best_count / (min(len(pairs_a), len(pairs_b)) + 1)
 
@@ -147,7 +164,7 @@ def _features_compatible(
 def are_fingerprints_similar(
     fp_a: Fingerprint,
     fp_b: Fingerprint,
-    min_matching_hashes: int,
+    min_matching_pairs: int,
     similarity_threshold: float,
     freq_tol: int = 2,
     dt_tol: int = 1,
@@ -163,6 +180,6 @@ def are_fingerprints_similar(
     ):
         return False
     return (
-        _score(fp_a, fp_b, min_matching_hashes, freq_tol, dt_tol, offset_tol)
+        _score(fp_a, fp_b, min_matching_pairs, freq_tol, dt_tol, offset_tol)
         >= similarity_threshold
     )

@@ -1,11 +1,79 @@
 import hashlib
 import json
+from collections import Counter, defaultdict
 from typing import List, Tuple
 
 import numpy as np
 
 from ..common_objects import Fingerprint
 
+
+# 27 neighbor offsets for 3D adjacency (±1 in each of f1, f2, dt)
+_ADJ_3D = [
+    (df1, df2, ddt)
+    for df1 in (-1, 0, 1)
+    for df2 in (-1, 0, 1)
+    for ddt in (-1, 0, 1)
+]
+
+
+def build_pairs_index(
+    fingerprints: list[Fingerprint],
+    freq_tol: int = 2,
+    dt_tol: int = 1,
+) -> dict[tuple[int, int, int], set[int]]:
+    """
+    Build an inverted index mapping quantized 3D pair keys to fingerprint indices.
+
+    Key = (f1 // freq_tol, f2 // freq_tol, dt // dt_tol).
+    Spreads pairs across a large key space so each cell stays small,
+    enabling fast candidate lookups in query_pairs_index().
+    """
+    index: dict[tuple[int, int, int], set[int]] = defaultdict(set)
+    for i, fp in enumerate(fingerprints):
+        pairs = fp.pairs or []
+        if not pairs:
+            continue
+        arr = np.array(pairs, dtype=np.int32)
+        for key in set(zip(
+            (arr[:, 0] // freq_tol).tolist(),
+            (arr[:, 1] // freq_tol).tolist(),
+            (arr[:, 2] // dt_tol).tolist(),
+        )):
+            index[key].add(i)
+    return dict(index)
+
+
+def query_pairs_index(
+    query_fp: Fingerprint,
+    index: dict[tuple[int, int, int], set[int]],
+    freq_tol: int = 2,
+    dt_tol: int = 1,
+    min_matching_pairs: int = 5,
+) -> set[int]:
+    """
+    Return indices of fingerprints that are candidate matches for query_fp.
+
+    For each pair in query_fp, looks up 27 neighboring 3D cells and counts
+    co-occurrences. Returns indices with count >= min_matching_pairs.
+    Keeping per-pair duplicates in the query ensures that k matching pairs
+    always yield a count >= k (no false negatives).
+    """
+    pairs = query_fp.pairs or []
+    if not pairs:
+        return set()
+    arr = np.array(pairs, dtype=np.int32)
+    keys = list(zip(
+        (arr[:, 0] // freq_tol).tolist(),
+        (arr[:, 1] // freq_tol).tolist(),
+        (arr[:, 2] // dt_tol).tolist(),
+    ))
+    neighbor_counts: Counter[int] = Counter()
+    for kf1, kf2, kdt in keys:
+        for df1, df2, ddt in _ADJ_3D:
+            for j in index.get((kf1 + df1, kf2 + df2, kdt + ddt), ()):
+                neighbor_counts[j] += 1
+    return {j for j, count in neighbor_counts.items() if count >= min_matching_pairs}
 
 class PairGenerator:
     """

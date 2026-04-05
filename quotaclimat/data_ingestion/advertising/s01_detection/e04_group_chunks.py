@@ -6,7 +6,7 @@ pour comparer et regrouper les chunks identiques via distance-based scoring.
 """
 
 import logging
-from collections import Counter, defaultdict
+from collections import defaultdict
 from dataclasses import asdict, dataclass
 from typing import Dict, List
 
@@ -16,7 +16,9 @@ from tqdm import tqdm
 from .tools.common_objects import Chunk, Fingerprint
 from .tools.fingerprint.pairs import (
     are_fingerprints_similar,
+    build_pairs_index,
     make_params_hash,
+    query_pairs_index,
 )
 
 logger = logging.getLogger(__name__)
@@ -75,51 +77,16 @@ def _cluster(
         parent[find(x)] = find(y)
 
     # --- Inverted index on 3D pair keys to prune candidate pairs ---
-    # Key = (f1 // freq_tol, f2 // freq_tol, dt // dt_tol) — much more
-    # selective than a 1D sum, spreading pairs across ~250K buckets.
-    _ADJ = [(-1, -1, -1), (-1, -1, 0), (-1, -1, 1),
-            (-1,  0, -1), (-1,  0, 0), (-1,  0, 1),
-            (-1,  1, -1), (-1,  1, 0), (-1,  1, 1),
-            ( 0, -1, -1), ( 0, -1, 0), ( 0, -1, 1),
-            ( 0,  0, -1), ( 0,  0, 0), ( 0,  0, 1),
-            ( 0,  1, -1), ( 0,  1, 0), ( 0,  1, 1),
-            ( 1, -1, -1), ( 1, -1, 0), ( 1, -1, 1),
-            ( 1,  0, -1), ( 1,  0, 0), ( 1,  0, 1),
-            ( 1,  1, -1), ( 1,  1, 0), ( 1,  1, 1)]
 
-    # Step 1: compute 3D keys per chunk and build inverted index
-    chunk_keys: list[list[tuple[int, int, int]]] = []
-    index: dict[tuple[int, int, int], set[int]] = defaultdict(set)
-    for i, chunk in enumerate(tqdm(chunks, desc="Indexation fingerprints")):
-        pairs = chunk.fingerprint.pairs or []
-        if pairs:
-            arr = np.array(pairs, dtype=np.int32)
-            keys = list(zip(
-                (arr[:, 0] // freq_tol).tolist(),
-                (arr[:, 1] // freq_tol).tolist(),
-                (arr[:, 2] // dt_tol).tolist(),
-            ))
-            chunk_keys.append(keys)
-            for k in set(keys):
-                index[k].add(i)
-        else:
-            chunk_keys.append([])
+    # Step 1: build index over all chunks
+    fps = [c.fingerprint for c in tqdm(chunks, desc="Indexation fingerprints")]
+    index = build_pairs_index(fps, freq_tol, dt_tol)
 
-    # Step 2: generate candidate pairs via co-occurrence counting
-    # For each pair in chunk i, look up 27 neighboring 3D cells to find
-    # chunks sharing close pairs. Count >= min_matching_pairs → candidate.
+    # Step 2: for each chunk query the index to find candidates with j > i
     candidates: set[tuple[int, int]] = set()
-    for i, keys in tqdm(enumerate(chunk_keys), desc="Recherche candidats", total=n):
-        if not keys:
-            continue
-        neighbor_counts: Counter[int] = Counter()
-        for kf1, kf2, kdt in keys:
-            for df1, df2, ddt in _ADJ:
-                for j in index.get((kf1 + df1, kf2 + df2, kdt + ddt), ()):
-                    if j > i:
-                        neighbor_counts[j] += 1
-        for j, count in neighbor_counts.items():
-            if count >= min_matching_pairs:
+    for i, fp in tqdm(enumerate(fps), desc="Recherche candidats", total=n):
+        for j in query_pairs_index(fp, index, freq_tol, dt_tol, min_matching_pairs):
+            if j > i:
                 candidates.add((i, j))
 
     logger.debug(

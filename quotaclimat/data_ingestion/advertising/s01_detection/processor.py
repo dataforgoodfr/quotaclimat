@@ -244,6 +244,8 @@ async def _processor_embedding(
 
     #### Audio processing with embeddings
 
+    logger.info(f"[embedding] Starting audio processing for {len(segments)} segments")
+
     with timings.measure("audio_processing"):
         new_workers = max(1, os.cpu_count() - 1)
 
@@ -273,7 +275,13 @@ async def _processor_embedding(
 
             chunks.sort(key=lambda c: c.start_sec)
 
+    logger.info(
+        f"[embedding] Audio processing complete: {len(chunks)} chunks"
+    )
+
     #### Identification of known chunks (embedding-based)
+
+    logger.info("[embedding] Starting chunk identification (DB matching)")
 
     with timings.measure("chunk_identification"):
         previously_known_fragments, unknown_chunks = (
@@ -285,19 +293,34 @@ async def _processor_embedding(
             )
         )
 
+    logger.info(
+        f"[embedding] Chunk identification complete: "
+        f"{len(previously_known_fragments)} known, {len(unknown_chunks)} unknown"
+    )
+
     #### Chunk grouping (embedding-based)
+
+    logger.info(f"[embedding] Starting chunk grouping on {len(unknown_chunks)} unknown chunks")
 
     with timings.measure("chunk_grouping"):
         groups = embedding_chunk_grouping.run(unknown_chunks)
 
+    logger.info(f"[embedding] Chunk grouping complete: {len(groups)} groups")
+
     #### Fragment classification (reuses e05 — duck-type compatible)
+
+    logger.info("[embedding] Starting fragment classification")
 
     with timings.measure("fragment_classification"):
         fragments = fragment_classifier.run(
             groups, already_known_fragments=previously_known_fragments
         )
 
+    logger.info(f"[embedding] Fragment classification complete: {len(fragments)} fragments")
+
     #### Database storage (embedding-based)
+
+    logger.info("[embedding] Saving to database")
 
     with timings.measure("database_storage"):
         embedding_database_storage_save(fragments, chunk_hash=chunk_hash)

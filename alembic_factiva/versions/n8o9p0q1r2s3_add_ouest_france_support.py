@@ -45,12 +45,21 @@ def upgrade() -> None:
         sa.Column("tags", postgresql.JSON(astext_type=sa.Text()), nullable=True),
     )
 
-    # Insert OUESTFR into source_classification
+    # Insert OuestFrance sources: paper (OUESTFRANCE) and web (OUESTFRAFR)
     op.execute(
         sa.text(
             """
             INSERT INTO source_classification (source_type, source_name, source_code, source_owner, media_all, source_region)
-            VALUES ('Presse Régionale', 'Ouest-France', 'OUESTFR', 'SIPA Ouest-France', 'Ouest-France', 'Bretagne')
+            VALUES ('Presse Régionale', 'Ouest-France', 'OUESTFRANCE', 'SIPA Ouest-France', 'Ouest-France', 'Bretagne')
+            ON CONFLICT (source_code) DO NOTHING
+            """
+        )
+    )
+    op.execute(
+        sa.text(
+            """
+            INSERT INTO source_classification (source_type, source_name, source_code, source_owner, media_all, source_region)
+            VALUES ('Presse Régionale', 'Ouest-France.fr', 'OUESTFRAFR', 'SIPA Ouest-France', 'Ouest-France', 'Bretagne')
             ON CONFLICT (source_code) DO NOTHING
             """
         )
@@ -58,10 +67,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Remove OUESTFR from source_classification
+    # Remove OuestFrance sources from source_classification
     op.execute(
         sa.text(
-            "DELETE FROM source_classification WHERE source_code = 'OUESTFR'"
+            "DELETE FROM source_classification WHERE source_code IN ('OUESTFRANCE', 'OUESTFRAFR')"
         )
     )
 

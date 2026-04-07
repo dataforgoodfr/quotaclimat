@@ -38,7 +38,7 @@ def _get_text(element: Optional[ET.Element]) -> str:
 
 def _parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
     """Minimal parser matching api_to_s3.parse_article_xml logic."""
-    SOURCE_CODE = "OUESTFR"
+    SOURCE_CODE = "OUESTFRANCE"
     SOURCE_NAME = "Ouest-France"
 
     article_id = _get_text(article_elem.find("id"))
@@ -401,8 +401,8 @@ class TestParseArticleXml:
 
         assert envelope is not None
         attrs = envelope.attributes
-        assert attrs.an == "OUESTFR:42ef78db-2551-4ccb-914d-b8d75de2dc0e"
-        assert attrs.source_code == "OUESTFR"
+        assert attrs.an == "OUESTFRANCE:42ef78db-2551-4ccb-914d-b8d75de2dc0e"
+        assert attrs.source_code == "OUESTFRANCE"
         assert attrs.source_name == "Ouest-France"
         assert "choristes" in attrs.title
         assert attrs.word_count == 827
@@ -473,15 +473,15 @@ class TestParseArticleXml:
                 articles.append(envelope)
 
         assert len(articles) == 3
-        assert articles[0].attributes.an == "OUESTFR:42ef78db-2551-4ccb-914d-b8d75de2dc0e"
-        assert articles[1].attributes.an == "OUESTFR:second-article-id"
+        assert articles[0].attributes.an == "OUESTFRANCE:42ef78db-2551-4ccb-914d-b8d75de2dc0e"
+        assert articles[1].attributes.an == "OUESTFRANCE:second-article-id"
 
     def test_all_articles_have_correct_source(self):
         root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
         for article_elem in root.findall(".//article"):
             envelope = _parse_article_xml(article_elem)
             if envelope is not None:
-                assert envelope.attributes.source_code == "OUESTFR"
+                assert envelope.attributes.source_code == "OUESTFRANCE"
                 assert envelope.attributes.action == "add"
 
     def test_document_type_is_paper(self):
@@ -539,8 +539,8 @@ class TestFactivaS3DocumentFromOuestFrance:
 
         assert len(parsed["data"]) == 3
         first = parsed["data"][0]["attributes"]
-        assert first["source_code"] == "OUESTFR"
-        assert first["an"].startswith("OUESTFR:")
+        assert first["source_code"] == "OUESTFRANCE"
+        assert first["an"].startswith("OUESTFRANCE:")
         assert first["article_url"].startswith("https://")
         assert isinstance(first["tags"], list)
 
@@ -571,7 +571,7 @@ DC_NAMESPACE = "http://purl.org/dc/elements/1.1/"
 
 def _parse_rss_item(item_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
     """Minimal RSS parser matching api_to_s3.parse_rss_item logic."""
-    SOURCE_CODE = "OUESTFR"
+    SOURCE_CODE = "OUESTFRAFR"
     SOURCE_NAME = "Ouest-France"
 
     article_id = _get_text(item_elem.find("guid"))
@@ -676,8 +676,8 @@ class TestParseRssItem:
 
         assert envelope is not None
         attrs = envelope.attributes
-        assert attrs.an == "OUESTFR:1b641bd6-c7d0-11ef-892d-e6c5d734e1e4"
-        assert attrs.source_code == "OUESTFR"
+        assert attrs.an == "OUESTFRAFR:1b641bd6-c7d0-11ef-892d-e6c5d734e1e4"
+        assert attrs.source_code == "OUESTFRAFR"
         assert "Capitole" in attrs.title
         assert attrs.language_code == "fr"
 
@@ -763,15 +763,15 @@ class TestParseRssItem:
                 articles.append(envelope)
 
         assert len(articles) == 2
-        assert articles[0].attributes.an == "OUESTFR:1b641bd6-c7d0-11ef-892d-e6c5d734e1e4"
-        assert articles[1].attributes.an == "OUESTFR:e37b2fa0-c7ef-11ef-aeb4-ddc1bf4e1b1d"
+        assert articles[0].attributes.an == "OUESTFRAFR:1b641bd6-c7d0-11ef-892d-e6c5d734e1e4"
+        assert articles[1].attributes.an == "OUESTFRAFR:e37b2fa0-c7ef-11ef-aeb4-ddc1bf4e1b1d"
 
     def test_rss_all_items_have_correct_source(self):
         root = ET.fromstring(SAMPLE_RSS_XML)
         for item_elem in root.findall(".//item"):
             envelope = _parse_rss_item(item_elem)
             if envelope is not None:
-                assert envelope.attributes.source_code == "OUESTFR"
+                assert envelope.attributes.source_code == "OUESTFRAFR"
                 assert envelope.attributes.action == "add"
 
 
@@ -792,13 +792,13 @@ class TestDeduplicateArticles:
     """Test deduplication of articles across multiple XML files."""
 
     def _make_envelope(self, article_id: str, title: str = "Test") -> FactivaArticleEnvelope:
-        an = f"OUESTFR:{article_id}"
+        an = f"OUESTFRANCE:{article_id}"
         return FactivaArticleEnvelope(
             id=an,
             type="article",
             attributes=FactivaArticleAttributes(
                 an=an,
-                source_code="OUESTFR",
+                source_code="OUESTFRANCE",
                 source_name="Ouest-France",
                 title=title,
             ),
@@ -818,7 +818,7 @@ class TestDeduplicateArticles:
         result = _deduplicate_articles(articles)
         assert len(result) == 2
         assert result[0].attributes.title == "First occurrence"
-        assert result[1].id == "OUESTFR:2"
+        assert result[1].id == "OUESTFRANCE:2"
 
     def test_empty_list(self):
         assert _deduplicate_articles([]) == []
@@ -864,8 +864,8 @@ class TestRssS3DocumentRoundTrip:
 
         assert len(parsed["data"]) == 2
         first = parsed["data"][0]["attributes"]
-        assert first["source_code"] == "OUESTFR"
-        assert first["an"].startswith("OUESTFR:")
+        assert first["source_code"] == "OUESTFRAFR"
+        assert first["an"].startswith("OUESTFRAFR:")
         assert first["article_url"].startswith("https://")
 
 

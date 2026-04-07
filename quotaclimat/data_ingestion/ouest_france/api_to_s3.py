@@ -68,7 +68,8 @@ NUMBER_DAYS_PRIOR = int(os.getenv("OUESTFRANCE_DAYS_PRIOR", "7"))
 ARTICLES_BATCH_SAVE = int(os.getenv("ARTICLES_BATCH_SAVE", "1000"))
 
 # Constants
-SOURCE_CODE = "OUESTFR"
+SOURCE_CODE_PAPER = "OUESTFRANCE"
+SOURCE_CODE_WEB = "OUESTFRAFR"
 SOURCE_NAME = "Ouest-France"
 
 
@@ -148,7 +149,7 @@ def parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvelo
             logging.warning("Article missing <id>, skipping")
             return None
 
-        an = f"{SOURCE_CODE}:{article_id}"
+        an = f"{SOURCE_CODE_PAPER}:{article_id}"
 
         # Publication date from first <parution>
         parution = article_elem.find("parutions/parution")
@@ -227,7 +228,7 @@ def parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvelo
         # Build validated Pydantic model
         attributes = FactivaArticleAttributes(
             an=an,
-            source_code=SOURCE_CODE,
+            source_code=SOURCE_CODE_PAPER,
             source_name=SOURCE_NAME,
             action="add",
             document_type="paper",
@@ -281,7 +282,7 @@ def parse_rss_item(item_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
             logging.warning("RSS item missing <guid>, skipping")
             return None
 
-        an = f"{SOURCE_CODE}:{article_id}"
+        an = f"{SOURCE_CODE_WEB}:{article_id}"
 
         # Publication date from <pubDate> (RFC 2822 format)
         pub_date_raw = get_text(item_elem.find("pubDate"))
@@ -319,7 +320,7 @@ def parse_rss_item(item_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
 
         attributes = FactivaArticleAttributes(
             an=an,
-            source_code=SOURCE_CODE,
+            source_code=SOURCE_CODE_WEB,
             source_name=SOURCE_NAME,
             action="add",
             document_type="web",
@@ -476,9 +477,10 @@ def load_and_insert_monthly_stats(stats_file_path: str) -> int:
         ...
     ]
 
-    For each month, the total (web + paper) is distributed evenly across
-    the days of the month so that the existing daily DBT model can sum them
-    correctly into monthly totals.
+    For each month, web and paper counts are distributed separately across
+    the days of the month under their respective source codes (OUESTFRAFR
+    for web, OUESTFRANCE for paper), so that the existing daily DBT model
+    can sum them correctly into monthly totals.
 
     Returns the number of records upserted.
     """
@@ -491,40 +493,42 @@ def load_and_insert_monthly_stats(stats_file_path: str) -> int:
     for entry in monthly_stats:
         year = int(entry["year"])
         month = int(entry["month"])
-        web_count = int(entry.get("web", 0))
-        paper_count = int(entry.get("paper", 0))
-        total = web_count + paper_count
 
-        if total == 0:
-            continue
+        for source_code, count_key in [
+            (SOURCE_CODE_WEB, "web"),
+            (SOURCE_CODE_PAPER, "paper"),
+        ]:
+            total = int(entry.get(count_key, 0))
+            if total == 0:
+                continue
 
-        days_in_month = calendar.monthrange(year, month)[1]
-        daily_count = total // days_in_month
-        remainder = total % days_in_month
+            days_in_month = calendar.monthrange(year, month)[1]
+            daily_count = total // days_in_month
+            remainder = total % days_in_month
 
-        for day in range(1, days_in_month + 1):
-            # Spread the remainder across the first N days
-            count = daily_count + (1 if day <= remainder else 0)
-            pub_dt = datetime(year, month, day, tzinfo=timezone.utc)
+            for day in range(1, days_in_month + 1):
+                # Spread the remainder across the first N days
+                count = daily_count + (1 if day <= remainder else 0)
+                pub_dt = datetime(year, month, day, tzinfo=timezone.utc)
 
-            stmt = insert(Stats_Factiva_Article).values(
-                source_code=SOURCE_CODE,
-                publication_datetime=pub_dt,
-                count=count,
-            )
-            stmt = stmt.on_conflict_do_update(
-                index_elements=["source_code", "publication_datetime"],
-                set_={
-                    "count": count,
-                    "updated_at": datetime.now(timezone.utc),
-                },
-            )
-            with engine.begin() as conn:
-                conn.execute(stmt)
-            upserted += 1
+                stmt = insert(Stats_Factiva_Article).values(
+                    source_code=source_code,
+                    publication_datetime=pub_dt,
+                    count=count,
+                )
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=["source_code", "publication_datetime"],
+                    set_={
+                        "count": count,
+                        "updated_at": datetime.now(timezone.utc),
+                    },
+                )
+                with engine.begin() as conn:
+                    conn.execute(stmt)
+                upserted += 1
 
     logging.info(
-        f"Inserted {upserted} daily stats records for {SOURCE_CODE} "
+        f"Inserted {upserted} daily stats records "
         f"from {len(monthly_stats)} monthly entries"
     )
     return upserted

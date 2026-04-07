@@ -9,6 +9,7 @@ Produit des EmbeddingChunk avec un vecteur de 2048 dimensions par segment,
 au lieu de constellation maps.
 """
 
+import logging
 from typing import List
 
 import librosa
@@ -19,6 +20,8 @@ from .e00_partition_window import Segment
 from .tools.common_objects import EmbeddingChunk, EmbeddingFingerprint
 from .tools.embedding.model import AudioEmbeddingModel
 from .tools.fingerprint.pairs import make_params_hash
+
+logger = logging.getLogger(__name__)
 
 # AudioSet label index → name mapping from panns_inference
 _LABELS = None
@@ -292,17 +295,23 @@ class EmbeddingChunkCreator:
         return chunks
 
     def run(self, segment: Segment, audio_file_path: str) -> List[EmbeddingChunk]:
+        logger.info(f"[e02b] Processing {segment.channel} {segment.identifier}")
+
         y = self.load(audio_file_path)
         duration = len(y) / self.sr
+        logger.info(f"[e02b] Audio loaded: {duration:.1f}s at {self.sr}Hz")
 
         # Step 1: compute frame-level embeddings
         embeddings, class_probs, frame_times = self._compute_embeddings(y)
+        logger.info(f"[e02b] Embeddings computed: {len(embeddings)} frames")
 
         # Step 2: embedding-based novelty curve
         novelty = self._compute_embedding_novelty(embeddings, frame_times)
+        logger.info("[e02b] Novelty curve computed")
 
         # Step 3: silence score
         silence = self._compute_silence_score(y, duration)
+        logger.info("[e02b] Silence score computed")
 
         # Align lengths (silence may differ by 1 frame due to rounding)
         min_len = min(len(novelty), len(silence))
@@ -317,9 +326,10 @@ class EmbeddingChunkCreator:
 
         # Step 5: detect boundaries
         boundaries_sec = self._detect_boundaries(composite, frame_times_aligned)
+        logger.info(f"[e02b] Boundaries detected: {len(boundaries_sec)} boundaries")
 
         # Step 6: build chunks
-        return self.build_chunks(
+        chunks = self.build_chunks(
             boundaries_sec,
             embeddings,
             class_probs,
@@ -329,6 +339,8 @@ class EmbeddingChunkCreator:
             segment.end_date.timestamp(),
             channel=segment.channel,
         )
+        logger.info(f"[e02b] Built {len(chunks)} chunks from {segment.identifier}")
+        return chunks
 
     def params(self) -> dict:
         return {

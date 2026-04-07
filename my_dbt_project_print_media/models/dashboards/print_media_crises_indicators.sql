@@ -475,8 +475,8 @@ LEFT JOIN daily_stats ds
 LEFT JOIN source_medians sm
     ON asd.source_code = sm.source_code
     
--- Exclude France24.com
-WHERE asd.source_code <> 'HTFRFR'
+-- Exclude France24.com (ecology-only, no total article counts for proportion)
+WHERE asd.source_code NOT IN ('HTFRFR')
 
 ORDER BY
     asd.publication_day DESC,

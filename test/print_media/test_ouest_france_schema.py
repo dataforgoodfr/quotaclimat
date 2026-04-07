@@ -1,0 +1,934 @@
+"""Tests for the Factiva article dataclass schema and OuestFrance XML parsing.
+
+These tests validate:
+1. The dataclass schema catches format errors at construction time
+2. OuestFrance XML is correctly parsed into Factiva-format articles
+3. Monthly stats distribution logic
+"""
+
+import calendar
+import json
+import re
+import xml.etree.ElementTree as ET
+from email.utils import parsedate_to_datetime
+from typing import List, Optional
+
+import pytest
+
+from quotaclimat.data_ingestion.factiva.schemas.article_schema import (
+    FactivaArticleAttributes,
+    FactivaArticleEnvelope,
+    FactivaS3Document,
+)
+
+
+# --- Helpers (copied from api_to_s3 to avoid heavy transitive imports) ---
+
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+
+def _strip_html(text: Optional[str]) -> str:
+    if not text:
+        return ""
+    return _HTML_TAG_RE.sub("", text).strip()
+
+def _get_text(element: Optional[ET.Element]) -> str:
+    if element is None or element.text is None:
+        return ""
+    return element.text.strip()
+
+def _parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
+    """Minimal parser matching api_to_s3.parse_article_xml logic."""
+    SOURCE_CODE = "OUESTFRANCE"
+    SOURCE_NAME = "Ouest-France"
+
+    article_id = _get_text(article_elem.find("id"))
+    if not article_id:
+        return None
+
+    an = f"{SOURCE_CODE}:{article_id}"
+    parution = article_elem.find("parutions/parution")
+    pub_date_str = _get_text(parution.find("dateParution")) if parution is not None else ""
+    publication_datetime = pub_date_str if pub_date_str else None
+    publication_date = pub_date_str.split("T")[0] if pub_date_str else None
+
+    surtitre = _get_text(article_elem.find("surtitre"))
+    title = _get_text(article_elem.find("titre"))
+    if surtitre:
+        title = f"{surtitre} - {title}" if title else surtitre
+    body = _strip_html(_get_text(article_elem.find("texte")))
+    snippet = _strip_html(_get_text(article_elem.find("chapeau")))
+    byline = _get_text(article_elem.find("signature"))
+
+    word_count_str = _get_text(article_elem.find("nombreMots"))
+    word_count = int(word_count_str) if word_count_str else None
+
+    photo_captions = []
+    photo_credits = []
+    for photo in article_elem.findall("photos/photo"):
+        legende = _get_text(photo.find("legende"))
+        if legende:
+            photo_captions.append(_strip_html(legende))
+        credit = _get_text(photo.find("credit"))
+        if credit:
+            photo_credits.append(_strip_html(credit))
+
+    art = " ".join(photo_captions) if photo_captions else ""
+    credit = ", ".join(photo_credits) if photo_credits else ""
+    article_url = _get_text(article_elem.find("url")) or None
+
+    tags = []
+    for tag_elem in article_elem.findall("tags/tag"):
+        tag_text = _get_text(tag_elem) if tag_elem is not None else ""
+        if not tag_text and tag_elem is not None and tag_elem.text:
+            tag_text = tag_elem.text.strip()
+        if tag_text:
+            tags.append(tag_text)
+
+    localisations = []
+    for loc_elem in article_elem.findall("localisations/localisation"):
+        loc_name = _get_text(loc_elem.find("nom"))
+        if loc_name:
+            localisations.append(loc_name)
+    region_of_origin = ", ".join(localisations) if localisations else "France"
+
+    attributes = FactivaArticleAttributes(
+        an=an,
+        source_code=SOURCE_CODE,
+        source_name=SOURCE_NAME,
+        action="add",
+        document_type="paper",
+        title=title,
+        body=body,
+        snippet=snippet,
+        art=art,
+        byline=byline,
+        credit=credit,
+        publisher_name=SOURCE_NAME,
+        section=tags[0] if tags else "",
+        publication_datetime=publication_datetime,
+        publication_date=publication_date,
+        language_code="fr",
+        region_of_origin=region_of_origin,
+        word_count=word_count,
+        article_url=article_url,
+        tags=tags if tags else None,
+    )
+
+    return FactivaArticleEnvelope(id=an, type="article", attributes=attributes)
+
+
+# --- Sample XML (contenus / paper format) ---
+
+SAMPLE_OUEST_FRANCE_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<contenus version="2.0">
+    <descriptif>
+        <dateParution>2025-01-01T00:00:00</dateParution>
+        <publication>Supplément Ouest-France</publication>
+    </descriptif>
+    <articles>
+        <article>
+            <id>42ef78db-2551-4ccb-914d-b8d75de2dc0e</id>
+            <parutions>
+                <parution>
+                    <dateParution>2025-01-01T00:00:00</dateParution>
+                    <publications>
+                        <publication>Quotidien Ouest-France</publication>
+                        <publication>Regards</publication>
+                    </publications>
+                </parution>
+            </parutions>
+            <surtitre/>
+            <titre><![CDATA[ Les choristes réapparaissent dans la soute d'un car ]]></titre>
+            <chapeau><![CDATA[<p>À la Saint-Sylvestre 2009, un petit tableau d'Edgar Degas disparaît.</p>]]></chapeau>
+            <texte><![CDATA[<p>Nous sommes en décembre 2009, à Marseille.</p><p>Parmi tous ces trésors.</p>]]></texte>
+            <signature><![CDATA[Olivier RENAULT.]]></signature>
+            <nombreMots>827</nombreMots>
+            <nombreColonnes/>
+            <photos>
+                <photo>
+                    <legende><![CDATA[Fin 2009, un petit tableau disparaît.]]></legende>
+                    <credit><![CDATA[Xavier Lissilour, Ouest-France]]></credit>
+                    <url>https://guichet.ouest-france.fr/ws/medias/image/test</url>
+                </photo>
+            </photos>
+            <pages><page><id>page1</id></page></pages>
+            <localisations/>
+            <categorisations/>
+            <url>https://www.ouest-france.fr/culture/arts/recit-les-choristes-6922085</url>
+            <tags>
+                <tag>Une_Edition spéciale</tag>
+                <tag>Culture/Arts</tag>
+            </tags>
+        </article>
+        <article>
+            <id>second-article-id</id>
+            <parutions>
+                <parution>
+                    <dateParution>2025-01-02T00:00:00</dateParution>
+                    <publications>
+                        <publication>Quotidien Ouest-France</publication>
+                    </publications>
+                </parution>
+            </parutions>
+            <surtitre/>
+            <titre><![CDATA[ Deuxième article test ]]></titre>
+            <chapeau/>
+            <texte><![CDATA[<p>Corps du deuxième article.</p>]]></texte>
+            <signature><![CDATA[Auteur Test.]]></signature>
+            <nombreMots>50</nombreMots>
+            <photos/>
+            <localisations/>
+            <categorisations/>
+            <url>https://www.ouest-france.fr/test/second-article</url>
+            <tags/>
+        </article>
+        <article>
+            <id>third-article-with-surtitre</id>
+            <parutions>
+                <parution>
+                    <dateParution>2025-01-03T00:00:00</dateParution>
+                    <publications>
+                        <publication>Quotidien Ouest-France</publication>
+                    </publications>
+                </parution>
+            </parutions>
+            <surtitre><![CDATA[Environnement]]></surtitre>
+            <titre><![CDATA[ La biodiversité marine en danger ]]></titre>
+            <chapeau><![CDATA[<p>Un rapport alarmant.</p>]]></chapeau>
+            <texte><![CDATA[<p>Les océans se réchauffent.</p>]]></texte>
+            <signature><![CDATA[Marie DUPONT.]]></signature>
+            <nombreMots>200</nombreMots>
+            <photos/>
+            <localisations>
+                <localisation>
+                    <nom>Saint-Laurent</nom>
+                    <CodeINSEE/>
+                    <Longitude>0.8003397</Longitude>
+                    <Latitude>43.32542</Latitude>
+                    <type>Commune</type>
+                </localisation>
+                <localisation>
+                    <nom>Bretagne</nom>
+                    <CodeINSEE/>
+                    <Longitude/>
+                    <Latitude/>
+                    <type>Région</type>
+                </localisation>
+            </localisations>
+            <categorisations/>
+            <url>https://www.ouest-france.fr/environnement/biodiversite-marine</url>
+            <tags>
+                <tag>Environnement</tag>
+            </tags>
+        </article>
+    </articles>
+</contenus>
+"""
+
+
+# --- Dataclass schema tests ---
+
+
+class TestFactivaArticleAttributes:
+    def test_valid_minimal_article(self):
+        attrs = FactivaArticleAttributes(
+            an="TEST:123",
+            source_code="OUESTFR",
+            source_name="Ouest-France",
+        )
+        assert attrs.an == "TEST:123"
+        assert attrs.source_code == "OUESTFR"
+        assert attrs.action == "add"
+        assert attrs.language_code == "fr"
+        assert attrs.word_count is None
+
+    def test_valid_full_article(self):
+        attrs = FactivaArticleAttributes(
+            an="OUESTFR:abc-123",
+            source_code="OUESTFR",
+            source_name="Ouest-France",
+            title="Test article",
+            body="Article body text",
+            snippet="Lead paragraph",
+            word_count=150,
+            publication_datetime="2025-01-01T00:00:00",
+            article_url="https://www.ouest-france.fr/article/123",
+            tags=["Culture/Arts", "Environnement"],
+        )
+        assert attrs.title == "Test article"
+        assert attrs.word_count == 150
+        assert attrs.article_url == "https://www.ouest-france.fr/article/123"
+        assert attrs.tags == ["Culture/Arts", "Environnement"]
+
+    def test_empty_an_raises(self):
+        with pytest.raises(ValueError, match="Article ID"):
+            FactivaArticleAttributes(
+                an="",
+                source_code="OUESTFR",
+                source_name="Ouest-France",
+            )
+
+    def test_whitespace_an_raises(self):
+        with pytest.raises(ValueError, match="Article ID"):
+            FactivaArticleAttributes(
+                an="   ",
+                source_code="OUESTFR",
+                source_name="Ouest-France",
+            )
+
+    def test_empty_source_code_raises(self):
+        with pytest.raises(ValueError, match="source_code"):
+            FactivaArticleAttributes(
+                an="TEST:123",
+                source_code="",
+                source_name="Ouest-France",
+            )
+
+    def test_word_count_coercion_from_string(self):
+        attrs = FactivaArticleAttributes(
+            an="TEST:123",
+            source_code="OUESTFR",
+            source_name="Ouest-France",
+            word_count="827",
+        )
+        assert attrs.word_count == 827
+
+
+class TestFactivaArticleEnvelope:
+    def test_valid_envelope(self):
+        envelope = FactivaArticleEnvelope(
+            id="TEST:123",
+            type="article",
+            attributes=FactivaArticleAttributes(
+                an="TEST:123",
+                source_code="OUESTFR",
+                source_name="Ouest-France",
+            ),
+        )
+        assert envelope.id == "TEST:123"
+        assert envelope.type == "article"
+        assert envelope.attributes.source_code == "OUESTFR"
+
+    def test_to_dict_structure(self):
+        """Verify to_dict output matches the format expected by s3_factiva_to_postgre."""
+        envelope = FactivaArticleEnvelope(
+            id="TEST:123",
+            attributes=FactivaArticleAttributes(
+                an="TEST:123",
+                source_code="OUESTFR",
+                source_name="Ouest-France",
+                title="My Title",
+            ),
+        )
+        d = envelope.to_dict()
+        assert d["id"] == "TEST:123"
+        assert d["type"] == "article"
+        assert d["attributes"]["an"] == "TEST:123"
+        assert d["attributes"]["title"] == "My Title"
+        assert d["attributes"]["source_code"] == "OUESTFR"
+
+
+class TestFactivaS3Document:
+    def test_valid_document(self):
+        doc = FactivaS3Document(
+            data=[
+                FactivaArticleEnvelope(
+                    id="TEST:1",
+                    attributes=FactivaArticleAttributes(
+                        an="TEST:1", source_code="OUESTFR", source_name="Ouest-France",
+                    ),
+                ),
+                FactivaArticleEnvelope(
+                    id="TEST:2",
+                    attributes=FactivaArticleAttributes(
+                        an="TEST:2", source_code="OUESTFR", source_name="Ouest-France",
+                    ),
+                ),
+            ]
+        )
+        assert len(doc.data) == 2
+
+    def test_to_dict_produces_valid_json(self):
+        doc = FactivaS3Document(
+            data=[
+                FactivaArticleEnvelope(
+                    id="TEST:1",
+                    attributes=FactivaArticleAttributes(
+                        an="TEST:1",
+                        source_code="OUESTFR",
+                        source_name="Ouest-France",
+                        title="Titre test",
+                    ),
+                )
+            ]
+        )
+        d = doc.to_dict()
+        json_str = json.dumps(d, ensure_ascii=False)
+        parsed = json.loads(json_str)
+        assert len(parsed["data"]) == 1
+        assert parsed["data"][0]["attributes"]["title"] == "Titre test"
+
+    def test_empty_data_is_valid(self):
+        doc = FactivaS3Document(data=[])
+        assert len(doc.data) == 0
+
+
+# --- OuestFrance XML parsing tests ---
+
+
+class TestStripHtml:
+    def test_strip_simple_tags(self):
+        assert _strip_html("<p>Hello world</p>") == "Hello world"
+
+    def test_strip_nested_tags(self):
+        assert _strip_html("<p>Hello <em>world</em></p>") == "Hello world"
+
+    def test_strip_none(self):
+        assert _strip_html(None) == ""
+
+    def test_strip_empty(self):
+        assert _strip_html("") == ""
+
+    def test_plain_text_unchanged(self):
+        assert _strip_html("plain text") == "plain text"
+
+
+class TestParseArticleXml:
+    def test_parse_first_article(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[0]
+        envelope = _parse_article_xml(article_elem)
+
+        assert envelope is not None
+        attrs = envelope.attributes
+        assert attrs.an == "OUESTFRANCE:42ef78db-2551-4ccb-914d-b8d75de2dc0e"
+        assert attrs.source_code == "OUESTFRANCE"
+        assert attrs.source_name == "Ouest-France"
+        assert "choristes" in attrs.title
+        assert attrs.word_count == 827
+        assert attrs.publication_datetime == "2025-01-01T00:00:00"
+        assert attrs.publication_date == "2025-01-01"
+        assert attrs.language_code == "fr"
+        assert attrs.article_url == "https://www.ouest-france.fr/culture/arts/recit-les-choristes-6922085"
+        assert attrs.tags == ["Une_Edition spéciale", "Culture/Arts"]
+
+    def test_body_html_stripped(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[0]
+        envelope = _parse_article_xml(article_elem)
+
+        assert "<p>" not in envelope.attributes.body
+        assert "Marseille" in envelope.attributes.body
+
+    def test_snippet_html_stripped(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[0]
+        envelope = _parse_article_xml(article_elem)
+
+        assert "<p>" not in envelope.attributes.snippet
+        assert "Degas" in envelope.attributes.snippet
+
+    def test_photo_caption_in_art(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[0]
+        envelope = _parse_article_xml(article_elem)
+
+        assert "tableau disparaît" in envelope.attributes.art
+
+    def test_photo_credit(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[0]
+        envelope = _parse_article_xml(article_elem)
+
+        assert "Xavier Lissilour" in envelope.attributes.credit
+
+    def test_byline(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[0]
+        envelope = _parse_article_xml(article_elem)
+
+        assert "Olivier RENAULT" in envelope.attributes.byline
+
+    def test_article_without_photos(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[1]
+        envelope = _parse_article_xml(article_elem)
+
+        assert envelope is not None
+        assert envelope.attributes.art == ""
+        assert envelope.attributes.word_count == 50
+
+    def test_article_missing_id_returns_none(self):
+        xml = "<article><titre>No ID</titre></article>"
+        article_elem = ET.fromstring(xml)
+        result = _parse_article_xml(article_elem)
+        assert result is None
+
+    def test_multiple_articles_parsed(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        articles = []
+        for article_elem in root.findall(".//article"):
+            envelope = _parse_article_xml(article_elem)
+            if envelope is not None:
+                articles.append(envelope)
+
+        assert len(articles) == 3
+        assert articles[0].attributes.an == "OUESTFRANCE:42ef78db-2551-4ccb-914d-b8d75de2dc0e"
+        assert articles[1].attributes.an == "OUESTFRANCE:second-article-id"
+
+    def test_all_articles_have_correct_source(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        for article_elem in root.findall(".//article"):
+            envelope = _parse_article_xml(article_elem)
+            if envelope is not None:
+                assert envelope.attributes.source_code == "OUESTFRANCE"
+                assert envelope.attributes.action == "add"
+
+    def test_document_type_is_paper(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[0]
+        envelope = _parse_article_xml(article_elem)
+
+        assert envelope.attributes.document_type == "paper"
+
+    def test_surtitre_prepended_to_title(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[2]
+        envelope = _parse_article_xml(article_elem)
+
+        assert envelope.attributes.title == "Environnement - La biodiversité marine en danger"
+
+    def test_empty_surtitre_ignored(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[0]
+        envelope = _parse_article_xml(article_elem)
+
+        assert "choristes" in envelope.attributes.title
+        assert " - " not in envelope.attributes.title
+
+    def test_localisations_in_region_of_origin(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[2]
+        envelope = _parse_article_xml(article_elem)
+
+        assert "Saint-Laurent" in envelope.attributes.region_of_origin
+        assert "Bretagne" in envelope.attributes.region_of_origin
+
+    def test_empty_localisations_defaults_to_france(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        article_elem = root.findall(".//article")[0]
+        envelope = _parse_article_xml(article_elem)
+
+        assert envelope.attributes.region_of_origin == "France"
+
+
+class TestFactivaS3DocumentFromOuestFrance:
+    """Integration: OuestFrance articles produce a valid FactivaS3Document for S3."""
+
+    def test_round_trip_json(self):
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        articles = [
+            _parse_article_xml(elem)
+            for elem in root.findall(".//article")
+        ]
+        articles = [a for a in articles if a is not None]
+
+        doc = FactivaS3Document(data=articles)
+        json_str = json.dumps(doc.to_dict(), ensure_ascii=False)
+        parsed = json.loads(json_str)
+
+        assert len(parsed["data"]) == 3
+        first = parsed["data"][0]["attributes"]
+        assert first["source_code"] == "OUESTFRANCE"
+        assert first["an"].startswith("OUESTFRANCE:")
+        assert first["article_url"].startswith("https://")
+        assert isinstance(first["tags"], list)
+
+    def test_s3_document_has_data_key(self):
+        """The top-level JSON must have a 'data' key (required by s3_factiva_to_postgre)."""
+        root = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        articles = [
+            _parse_article_xml(elem)
+            for elem in root.findall(".//article")
+            if _parse_article_xml(elem) is not None
+        ]
+
+        doc = FactivaS3Document(data=articles)
+        d = doc.to_dict()
+
+        assert "data" in d
+        assert isinstance(d["data"], list)
+        for item in d["data"]:
+            assert "id" in item
+            assert "type" in item
+            assert "attributes" in item
+
+
+# --- RSS format helpers and tests ---
+
+DC_NAMESPACE = "http://purl.org/dc/elements/1.1/"
+
+
+def _parse_rss_item(item_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
+    """Minimal RSS parser matching api_to_s3.parse_rss_item logic."""
+    SOURCE_CODE = "OUESTFRAFR"
+    SOURCE_NAME = "Ouest-France"
+
+    article_id = _get_text(item_elem.find("guid"))
+    if not article_id:
+        return None
+
+    an = f"{SOURCE_CODE}:{article_id}"
+
+    pub_date_raw = _get_text(item_elem.find("pubDate"))
+    publication_datetime = None
+    publication_date = None
+    if pub_date_raw:
+        try:
+            dt = parsedate_to_datetime(pub_date_raw)
+            publication_datetime = dt.strftime("%Y-%m-%dT%H:%M:%S")
+            publication_date = dt.strftime("%Y-%m-%d")
+        except (ValueError, TypeError):
+            pass
+
+    title = _get_text(item_elem.find("title"))
+    body = _strip_html(_get_text(item_elem.find("description")))
+    word_count = len(body.split()) if body else None
+
+    byline = _get_text(item_elem.find(f"{{{DC_NAMESPACE}}}creator"))
+
+    enclosure = item_elem.find("enclosure")
+    art = ""
+    if enclosure is not None:
+        enclosure_url = enclosure.get("url", "")
+        art = enclosure_url if enclosure_url else ""
+
+    article_url = _get_text(item_elem.find("link")) or None
+
+    attributes = FactivaArticleAttributes(
+        an=an,
+        source_code=SOURCE_CODE,
+        source_name=SOURCE_NAME,
+        action="add",
+        document_type="web",
+        title=title,
+        body=body,
+        snippet="",
+        art=art,
+        byline=byline,
+        credit="",
+        publisher_name=SOURCE_NAME,
+        section="",
+        publication_datetime=publication_datetime,
+        publication_date=publication_date,
+        language_code="fr",
+        region_of_origin="France",
+        word_count=word_count,
+        article_url=article_url,
+        tags=None,
+    )
+
+    return FactivaArticleEnvelope(id=an, type="article", attributes=attributes)
+
+
+SAMPLE_RSS_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
+   <channel>
+      <title>Flux d'actualités Ouest-France</title>
+      <ttl>3600</ttl>
+      <description>Flux d'actualités Ouest-France</description>
+      <pubDate>Thu, 19 Mar 2026 14:38:43 +0100</pubDate>
+      <link>http://www.ouest-france.fr</link>
+      <language>fr</language>
+      <copyright>Ouest-France</copyright>
+      <item>
+         <title><![CDATA[Assaut du Capitole : un fugitif demande l'asile au Canada]]></title>
+         <guid isPermaLink="false">1b641bd6-c7d0-11ef-892d-e6c5d734e1e4</guid>
+         <description><![CDATA[<p>L'un des assaillants du Capitole en janvier 2021 a fui au Canada.</p><p>Un Américain condamné pour l'assaut du Capitole a demandé l'asile au Canada.</p>]]></description>
+         <dc:creator><![CDATA[avec AFP.]]></dc:creator>
+         <pubDate>Wed, 01 Jan 2025 01:01:44 +0100</pubDate>
+         <enclosure length="0"
+            url="https://guichet.ouest-france.fr/ws/medias/image/test-image-1"
+            type="image/jpeg" />
+         <link>https://www.ouest-france.fr/monde/etats-unis/assaut-du-capitole-1b641bd6</link>
+      </item>
+      <item>
+         <title><![CDATA[Deux projectiles tirés vers Israël depuis Gaza]]></title>
+         <guid isPermaLink="false">e37b2fa0-c7ef-11ef-aeb4-ddc1bf4e1b1d</guid>
+         <description><![CDATA[<p>Israël a indiqué avoir été visé à deux reprises.</p>]]></description>
+         <dc:creator><![CDATA[avec AFP.]]></dc:creator>
+         <pubDate>Wed, 01 Jan 2025 04:36:58 +0100</pubDate>
+         <enclosure length="0"
+            url="https://guichet.ouest-france.fr/ws/medias/image/test-image-2"
+            type="image/jpeg" />
+         <link>https://www.ouest-france.fr/monde/israel/deux-projectiles-e37b2fa0</link>
+      </item>
+   </channel>
+</rss>
+"""
+
+
+class TestParseRssItem:
+    def test_parse_first_item(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope is not None
+        attrs = envelope.attributes
+        assert attrs.an == "OUESTFRAFR:1b641bd6-c7d0-11ef-892d-e6c5d734e1e4"
+        assert attrs.source_code == "OUESTFRAFR"
+        assert "Capitole" in attrs.title
+        assert attrs.language_code == "fr"
+
+    def test_rss_date_parsed(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope.attributes.publication_date == "2025-01-01"
+        assert envelope.attributes.publication_datetime == "2025-01-01T01:01:44"
+
+    def test_rss_body_html_stripped(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert "<p>" not in envelope.attributes.body
+        assert "<a " not in envelope.attributes.body
+        assert "Capitole" in envelope.attributes.body
+
+    def test_rss_byline_from_dc_creator(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert "avec AFP" in envelope.attributes.byline
+
+    def test_rss_enclosure_in_art(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert "test-image-1" in envelope.attributes.art
+
+    def test_rss_article_url(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope.attributes.article_url == "https://www.ouest-france.fr/monde/etats-unis/assaut-du-capitole-1b641bd6"
+
+    def test_rss_word_count_computed(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope.attributes.word_count is not None
+        assert envelope.attributes.word_count > 0
+
+    def test_rss_no_snippet(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope.attributes.snippet == ""
+
+    def test_rss_no_tags(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope.attributes.tags is None
+
+    def test_rss_document_type_is_web(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        item_elem = root.findall(".//item")[0]
+        envelope = _parse_rss_item(item_elem)
+
+        assert envelope.attributes.document_type == "web"
+
+    def test_rss_missing_guid_returns_none(self):
+        xml = '<item xmlns:dc="http://purl.org/dc/elements/1.1/"><title>No GUID</title></item>'
+        item_elem = ET.fromstring(xml)
+        result = _parse_rss_item(item_elem)
+        assert result is None
+
+    def test_rss_multiple_items_parsed(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        articles = []
+        for item_elem in root.findall(".//item"):
+            envelope = _parse_rss_item(item_elem)
+            if envelope is not None:
+                articles.append(envelope)
+
+        assert len(articles) == 2
+        assert articles[0].attributes.an == "OUESTFRAFR:1b641bd6-c7d0-11ef-892d-e6c5d734e1e4"
+        assert articles[1].attributes.an == "OUESTFRAFR:e37b2fa0-c7ef-11ef-aeb4-ddc1bf4e1b1d"
+
+    def test_rss_all_items_have_correct_source(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        for item_elem in root.findall(".//item"):
+            envelope = _parse_rss_item(item_elem)
+            if envelope is not None:
+                assert envelope.attributes.source_code == "OUESTFRAFR"
+                assert envelope.attributes.action == "add"
+
+
+def _deduplicate_articles(
+    articles: List[FactivaArticleEnvelope],
+) -> List[FactivaArticleEnvelope]:
+    """Local copy of deduplicate_articles to avoid heavy transitive imports."""
+    seen: set = set()
+    unique = []
+    for article in articles:
+        if article.id not in seen:
+            seen.add(article.id)
+            unique.append(article)
+    return unique
+
+
+class TestDeduplicateArticles:
+    """Test deduplication of articles across multiple XML files."""
+
+    def _make_envelope(self, article_id: str, title: str = "Test") -> FactivaArticleEnvelope:
+        an = f"OUESTFRANCE:{article_id}"
+        return FactivaArticleEnvelope(
+            id=an,
+            type="article",
+            attributes=FactivaArticleAttributes(
+                an=an,
+                source_code="OUESTFRANCE",
+                source_name="Ouest-France",
+                title=title,
+            ),
+        )
+
+    def test_no_duplicates_unchanged(self):
+        articles = [self._make_envelope("1"), self._make_envelope("2"), self._make_envelope("3")]
+        result = _deduplicate_articles(articles)
+        assert len(result) == 3
+
+    def test_removes_duplicates(self):
+        articles = [
+            self._make_envelope("1", "First occurrence"),
+            self._make_envelope("2"),
+            self._make_envelope("1", "Second occurrence"),
+        ]
+        result = _deduplicate_articles(articles)
+        assert len(result) == 2
+        assert result[0].attributes.title == "First occurrence"
+        assert result[1].id == "OUESTFRANCE:2"
+
+    def test_empty_list(self):
+        assert _deduplicate_articles([]) == []
+
+    def test_all_same_id(self):
+        articles = [self._make_envelope("dup") for _ in range(5)]
+        result = _deduplicate_articles(articles)
+        assert len(result) == 1
+
+    def test_dedup_across_xml_formats(self):
+        """Simulate articles from two different XML files (contenus + RSS) with same ID."""
+        # Parse from contenus
+        root1 = ET.fromstring(SAMPLE_OUEST_FRANCE_XML)
+        articles1 = [_parse_article_xml(e) for e in root1.findall(".//article")]
+        articles1 = [a for a in articles1 if a is not None]
+
+        # Parse from RSS
+        root2 = ET.fromstring(SAMPLE_RSS_XML)
+        articles2 = [_parse_rss_item(e) for e in root2.findall(".//item")]
+        articles2 = [a for a in articles2 if a is not None]
+
+        # Combine with duplicates from contenus again
+        all_articles = articles1 + articles2 + articles1
+        result = _deduplicate_articles(all_articles)
+        # 3 contenus + 2 RSS = 5 unique
+        assert len(result) == 5
+
+
+class TestRssS3DocumentRoundTrip:
+    """Integration: RSS articles produce a valid FactivaS3Document for S3."""
+
+    def test_round_trip_json(self):
+        root = ET.fromstring(SAMPLE_RSS_XML)
+        articles = [
+            _parse_rss_item(elem)
+            for elem in root.findall(".//item")
+        ]
+        articles = [a for a in articles if a is not None]
+
+        doc = FactivaS3Document(data=articles)
+        json_str = json.dumps(doc.to_dict(), ensure_ascii=False)
+        parsed = json.loads(json_str)
+
+        assert len(parsed["data"]) == 2
+        first = parsed["data"][0]["attributes"]
+        assert first["source_code"] == "OUESTFRAFR"
+        assert first["an"].startswith("OUESTFRAFR:")
+        assert first["article_url"].startswith("https://")
+
+
+# --- Monthly stats distribution tests ---
+
+
+def _distribute_monthly_total(year: int, month: int, total: int) -> List[int]:
+    """Replicate the distribution logic from load_and_insert_monthly_stats."""
+    days_in_month = calendar.monthrange(year, month)[1]
+    daily_count = total // days_in_month
+    remainder = total % days_in_month
+    return [daily_count + (1 if day <= remainder else 0) for day in range(1, days_in_month + 1)]
+
+
+class TestMonthlyStatsDistribution:
+    """Test the daily distribution of monthly article totals."""
+
+    def test_even_distribution(self):
+        """310 articles in January (31 days) = 10 per day."""
+        counts = _distribute_monthly_total(2025, 1, 310)
+        assert len(counts) == 31
+        assert sum(counts) == 310
+        assert all(c == 10 for c in counts)
+
+    def test_remainder_spread(self):
+        counts = _distribute_monthly_total(2025, 1, 100)
+        assert len(counts) == 31
+        assert sum(counts) == 100
+        # 100 / 31 = 3 remainder 7 → first 7 days get 4, rest get 3
+        assert counts[:7] == [4] * 7
+        assert counts[7:] == [3] * 24
+
+    def test_february_leap_year(self):
+        counts = _distribute_monthly_total(2024, 2, 290)
+        assert len(counts) == 29  # 2024 is leap
+        assert sum(counts) == 290
+        assert all(c == 10 for c in counts)
+
+    def test_february_non_leap(self):
+        counts = _distribute_monthly_total(2025, 2, 280)
+        assert len(counts) == 28
+        assert sum(counts) == 280
+
+    def test_zero_total(self):
+        counts = _distribute_monthly_total(2025, 6, 0)
+        assert sum(counts) == 0
+
+    def test_small_total_fewer_than_days(self):
+        """5 articles in January (31 days): first 5 days get 1, rest get 0."""
+        counts = _distribute_monthly_total(2025, 1, 5)
+        assert sum(counts) == 5
+        assert counts[:5] == [1] * 5
+        assert counts[5:] == [0] * 26
+
+    def test_json_format_parsing(self):
+        """Validate the expected JSON input format."""
+        sample = json.dumps([
+            {"year": 2025, "month": 1, "web": 5000, "paper": 3000},
+            {"year": 2025, "month": 2, "web": 4800, "paper": 2900},
+        ])
+        entries = json.loads(sample)
+        assert len(entries) == 2
+        total_jan = int(entries[0]["web"]) + int(entries[0]["paper"])
+        assert total_jan == 8000
+        counts = _distribute_monthly_total(2025, 1, total_jan)
+        assert sum(counts) == 8000

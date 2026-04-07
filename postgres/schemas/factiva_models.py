@@ -199,6 +199,10 @@ class Factiva_Article(FactivaBase):
     # All keywords with full metadata (keyword, theme, category, count_keyword, is_hrfp)
     all_keywords = Column(JSON, nullable=True)
     
+    # Optional extensions for non-Factiva sources (OuestFrance, LeMonde FTP, etc.)
+    article_url = Column(Text, nullable=True)  # Article URL on the source website
+    tags = Column(JSON, nullable=True)  # Category tags as JSON array of strings
+
     # Duplicate detection status
     # - "NOT_DUP": Article is not a duplicate
     # - "DUP_UNIQUE_VERSION": The unique version to keep among duplicates (most recent modification_datetime)
@@ -419,6 +423,10 @@ class LeMonde_FTP_Article(FactivaBase):
     biodiversite_causes_keywords_hrfp = Column(JSON, nullable=True)
     biodiversite_consequences_keywords_hrfp = Column(JSON, nullable=True)
     biodiversite_solutions_keywords_hrfp = Column(JSON, nullable=True)
+
+    # Optional extensions for non-Factiva sources (OuestFrance, LeMonde FTP, etc.)
+    article_url = Column(Text, nullable=True)  # Article URL on the source website
+    tags = Column(JSON, nullable=True)  # Category tags as JSON array of strings
 
     # All keywords with full metadata (keyword, theme, category, count_keyword, is_hrfp)
     all_keywords = Column(JSON, nullable=True)

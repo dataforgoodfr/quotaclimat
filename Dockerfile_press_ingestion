@@ -1,6 +1,7 @@
-# Dockerfile for Le Monde FTP complete pipeline
-# Step 1: Downloads articles from FTP to S3
-# Step 2: Processes articles from S3 to PostgreSQL (lemonde_ftp_articles + factiva_articles)
+# Dockerfile for press ingestion pipelines (Le Monde FTP, OuestFrance API)
+#
+# Default CMD runs the Le Monde pipeline. Override at runtime for others:
+#   docker run <image> ./docker-entrypoint-ouest-france.sh
 
 FROM python:3.12.10 AS builder
 
@@ -20,7 +21,7 @@ FROM python:3.12.10-slim AS runtime
 
 WORKDIR /app
 
-ENV VIRTUAL_ENV=/app/.venv 
+ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONPATH=/app
 
@@ -33,18 +34,17 @@ COPY pyproject.toml ./pyproject.toml
 COPY alembic_factiva/ ./alembic_factiva
 COPY alembic_factiva.ini ./alembic_factiva.ini
 
-# Create tmp directory for temporary files
-RUN mkdir -p /tmp/s3_factiva_to_postgre
-RUN mkdir -p /tmp/s3_lemonde_to_postgre
-RUN mkdir -p /tmp/lemonde_ftp
+# Create tmp directories needed by lemonde pipeline
+RUN mkdir -p /tmp/s3_factiva_to_postgre \
+    /tmp/s3_lemonde_to_postgre \
+    /tmp/lemonde_ftp
 
 # Healthcheck port
 EXPOSE 5000
 
-# Copy entrypoint script for migrations
+# Copy entrypoint scripts (executable bit set in repo)
 COPY docker-entrypoint-lemonde-web.sh ./docker-entrypoint-lemonde-web.sh
-RUN chmod +x ./docker-entrypoint-lemonde-web.sh
+COPY docker-entrypoint-ouest-france.sh ./docker-entrypoint-ouest-france.sh
 
-# Entrypoint with migrations
-ENTRYPOINT ["./docker-entrypoint-lemonde-web.sh"]
-
+# Default: Le Monde pipeline. Override at runtime for other pipelines.
+CMD ["./docker-entrypoint-lemonde-web.sh"]

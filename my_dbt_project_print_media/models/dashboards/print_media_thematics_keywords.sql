@@ -186,8 +186,8 @@ FROM daily_aggregates da
 LEFT JOIN {{ source('public', 'source_classification') }} sc
     ON da.source_code = sc.source_code
 
--- Exclude France24.com
-WHERE da.source_code <> 'HTFRFR'
+-- Exclude France24.com and OuestFrance (ecology-only, no total article counts for proportion)
+WHERE da.source_code NOT IN ('HTFRFR', 'OUESTFR')
 
 ORDER BY
     da.publication_day DESC,

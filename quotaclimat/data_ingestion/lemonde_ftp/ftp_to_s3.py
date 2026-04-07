@@ -8,6 +8,11 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 import json
 import boto3
+from quotaclimat.data_ingestion.factiva.schemas.article_schema import (
+    FactivaArticleAttributes,
+    FactivaArticleEnvelope,
+    FactivaS3Document,
+)
 from quotaclimat.data_processing.mediatree.s3.s3_utils import upload_folder_to_s3
 
 
@@ -253,126 +258,97 @@ def parse_article_xml(article_path):
         if metadata is None:
             return None
 
-        # Extract required fields
-        article_data = {}
-
         # Identifier
         identifier_elem = metadata.find(".//emd:identifier", namespaces)
-        article_data["an"] = (
-            identifier_elem.text if identifier_elem is not None else None
-        )
-
-        article_data["document_type"] = "article"
-        article_data["action"] = ""
-        article_data["source_code"] = "LEMFR"
-        article_data["source_name"] = "Le Monde.fr"
+        an = identifier_elem.text if identifier_elem is not None else None
+        if not an:
+            return None
 
         # Publication date
         pubdate_elem = metadata.find(".//emd:publicationdate", namespaces)
-        article_data["publication_date"] = (
-            pubdate_elem.text + "T00:00:00.000Z"
-            if "-" in pubdate_elem.text
-            else pubdate_elem.text[:4] +"-"
-            + pubdate_elem.text[4:6] + "-"
-            + pubdate_elem.text[6:8]
-            + "T00:00:00.000Z"
-        )
-        article_data["publication_datetime"] = (
-            pubdate_elem.text + "T02:00:00.000Z"
-            if "-" in pubdate_elem.text
-            else pubdate_elem.text[:4] +"-"
-            + pubdate_elem.text[4:6] + "-"
-            + pubdate_elem.text[6:8]
-            + "T00:00:00.000Z"
-        )
-        article_data["modification_datetime"] = (
-            datetime.now().strftime("%Y-%m-%d") + "T00:00:00.000Z"
-        )
-        article_data["modification_date"] = (
-            datetime.now().strftime("%Y-%m-%d") + "T00:00:00.000Z"
-        )
-        article_data["ingestion_datetime"] = (
-            datetime.strptime(identifier_elem.text.split(":")[2], "%Y%m%d").strftime(
-                "%Y-%m-%d"
+        if "-" in pubdate_elem.text:
+            publication_date = pubdate_elem.text + "T00:00:00.000Z"
+            publication_datetime = pubdate_elem.text + "T02:00:00.000Z"
+        else:
+            formatted = (
+                pubdate_elem.text[:4] + "-"
+                + pubdate_elem.text[4:6] + "-"
+                + pubdate_elem.text[6:8]
             )
+            publication_date = formatted + "T00:00:00.000Z"
+            publication_datetime = formatted + "T00:00:00.000Z"
+
+        ingestion_datetime = (
+            datetime.strptime(identifier_elem.text.split(":")[2], "%Y%m%d").strftime("%Y-%m-%d")
             + "T00:00:00.000Z"
             if identifier_elem is not None
-            else article_data["publication_datetime"]
+            else publication_datetime
         )
+
         # Title
         title_elem = metadata.find(".//emd:title", namespaces)
-        article_data["title"] = title_elem.text if title_elem is not None else None
-        article_data["snippet"] = None
+        title = title_elem.text if title_elem is not None else None
 
         # Content
         content_elem = root.find(".//eddf:content", namespaces)
         if content_elem is not None:
-            # Extract all text content from the content section
             content_text = []
             for elem in content_elem.iter():
                 if elem.text and elem.tag != "{http://www.w3.org/1999/xhtml}div":
                     content_text.append(elem.text.strip())
-            article_data["body"] = " ".join(content_text)
+            body = " ".join(content_text)
         else:
-            article_data["body"] = None
-
-        article_data["art"] = ""
-        article_data["credit"] = ""
+            body = None
 
         author_elem = metadata.find(".//emd:author", namespaces)
-        article_data["byline"] = author_elem.text if author_elem is not None else None
-        # Language
+        byline = author_elem.text if author_elem is not None else None
+
         language_elem = metadata.find(".//emd:language", namespaces)
-        article_data["language"] = (
-            language_elem.text.split("-")[0] if language_elem is not None else None
-        )
-        # Copyright
+        language_code = language_elem.text.split("-")[0] if language_elem is not None else None
+
         copy_elem = metadata.find(".//emd:rights", namespaces)
-        article_data["copyright"] = copy_elem.text if copy_elem is not None else None
-        article_data["region_of_origin"] = " "
-        # Publisher code
+        copyright_text = copy_elem.text if copy_elem is not None else None
+
         publisher_elem = metadata.find(".//emd:publisher", namespaces)
-        # article_data["publisher_code"] = (
-        #     publisher_elem.get("code") if publisher_elem is not None else None
-        # )
-        article_data["publisher_name"] = (
-            publisher_elem.text if publisher_elem is not None else None
-        )
+        publisher_name = publisher_elem.text if publisher_elem is not None else None
 
-        article_data["section"] = ""
-        # Word count
         wordcount_elem = metadata.find(".//emd:wordCount", namespaces)
-        article_data["word_count"] = (
-            int(wordcount_elem.text) if wordcount_elem is not None else None
-        )
-        article_data["company_codes"] = ""
-        article_data["subject_codes"] = ""
-        article_data["region_codes"] = ""
-        article_data["industry_codes"] = ""
-        article_data["person_codes"] = ""
-        article_data["currency_codes"] = ""
-        article_data["market_index_codes"] = ""
-        article_data["company_codes_about"] = ""
-        article_data["company_codes_association"] = ""
-        article_data["company_codes_lineage"] = ""
-        article_data["company_codes_occur"] = ""
-        article_data["company_codes_relevance"] = ""
-        article_data["company_codes_about_ticker_exchange"] = ""
-        article_data["company_codes_association_ticker_exchange"] = ""
-        article_data["company_codes_lineage_ticker_exchange"] = ""
-        article_data["company_codes_occur_ticker_exchange"] = ""
-        article_data["company_codes_relevance_ticker_exchange"] = ""
-        article_data["company_codes_ticker_exchange"] = ""
-        article_data["availability_datetime"] = article_data["publication_datetime"]
-        article_data["attrib_code"] = article_data["source_code"]
-        article_data["authors"] = (
-            [author_elem.text] if author_elem is not None else None
-        )
-        article_data["clusters"] = []
-        article_data["usage_rights_permitted"] = "analytics"
-        article_data["dateline"] = None
+        word_count = int(wordcount_elem.text) if wordcount_elem is not None else None
 
-        return {"id": article_data["an"], "type": "article", "attributes": article_data}
+        # Build validated Pydantic model
+        attributes = FactivaArticleAttributes(
+            an=an,
+            source_code="LEMFR",
+            source_name="Le Monde.fr",
+            action="",
+            document_type="article",
+            title=title,
+            body=body,
+            snippet=None,
+            art="",
+            byline=byline,
+            credit="",
+            dateline=None,
+            publisher_name=publisher_name,
+            section="",
+            copyright=copyright_text,
+            publication_datetime=publication_datetime,
+            publication_date=publication_date,
+            modification_datetime=datetime.now().strftime("%Y-%m-%d") + "T00:00:00.000Z",
+            modification_date=datetime.now().strftime("%Y-%m-%d") + "T00:00:00.000Z",
+            ingestion_datetime=ingestion_datetime,
+            availability_datetime=publication_datetime,
+            language_code=language_code,
+            region_of_origin=" ",
+            word_count=word_count,
+            attrib_code="LEMFR",
+            authors=[author_elem.text] if author_elem is not None else None,
+            clusters=[],
+            usage_rights_permitted="analytics",
+        )
+
+        envelope = FactivaArticleEnvelope(id=an, type="article", attributes=attributes)
+        return envelope.to_dict()
     except Exception as e:
         print(f"Error parsing article XML {article_path}: {e}")
         return None

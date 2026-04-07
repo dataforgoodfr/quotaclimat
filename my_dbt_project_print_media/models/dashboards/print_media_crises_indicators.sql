@@ -48,7 +48,7 @@ all_publication_days AS (
     FROM {{ source('public', 'stats_factiva_articles') }}
     WHERE DATE(publication_datetime) <= CURRENT_DATE - INTERVAL '4 days'
         -- Exclude OuestFrance data because they are not complete for now
-        AND fa.source_code NOT IN ('OUESTFRANCE', 'OUESTFRAFR')
+        AND source_code NOT IN ('OUESTFRANCE', 'OUESTFRAFR')
 ),
 
 -- Create a complete grid of all source-days combinations
@@ -203,7 +203,7 @@ daily_stats AS (
             SELECT publication_day, source_code FROM outlier_source_days
         )
         -- Exclude OuestFrance data because they are not complete for now
-        AND fa.source_code NOT IN ('OUESTFRANCE', 'OUESTFRAFR')
+        AND sfa.source_code NOT IN ('OUESTFRANCE', 'OUESTFRAFR')
     GROUP BY 
         DATE(sfa.publication_datetime),
         sfa.source_code

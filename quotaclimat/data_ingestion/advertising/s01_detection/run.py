@@ -37,6 +37,8 @@ if __name__ == "__main__":
             to_date=partition[-1].end_date,
             source_file=testimony_file,
         )
+    else:
+        annotations = None
 
     clean_pre_existing_detections(partition)
 

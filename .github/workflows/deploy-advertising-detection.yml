@@ -5,7 +5,7 @@ on:
   push:
       # Sequence of patterns matched against refs/heads
     branches:
-      - advertising_detection_WIP
+      - advertising-detection
 
   # to be able to force deploy
   workflow_dispatch:

@@ -572,7 +572,7 @@ DC_NAMESPACE = "http://purl.org/dc/elements/1.1/"
 def _parse_rss_item(item_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
     """Minimal RSS parser matching api_to_s3.parse_rss_item logic."""
     SOURCE_CODE = "OUESTFRAFR"
-    SOURCE_NAME = "Ouest-France"
+    SOURCE_NAME = "Ouest-France.fr"
 
     article_id = _get_text(item_elem.find("guid"))
     if not article_id:

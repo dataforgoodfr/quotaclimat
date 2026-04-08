@@ -70,7 +70,8 @@ ARTICLES_BATCH_SAVE = int(os.getenv("ARTICLES_BATCH_SAVE", "1000"))
 # Constants
 SOURCE_CODE_PAPER = "OUESTFRANCE"
 SOURCE_CODE_WEB = "OUESTFRAFR"
-SOURCE_NAME = "Ouest-France"
+SOURCE_NAME_PAPER = "Ouest-France"
+SOURCE_NAME_WEB = "Ouest-France.fr"
 
 
 # --- HTML stripping ---
@@ -223,13 +224,13 @@ def parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvelo
                     publications.append(pub_text)
 
         # Copyright
-        copyright_text = f"Copyright {SOURCE_NAME}"
+        copyright_text = f"Copyright {SOURCE_NAME_PAPER}"
 
         # Build validated Pydantic model
         attributes = FactivaArticleAttributes(
             an=an,
             source_code=SOURCE_CODE_PAPER,
-            source_name=SOURCE_NAME,
+            source_name=SOURCE_NAME_PAPER,
             action="add",
             document_type="paper",
             title=title,
@@ -239,7 +240,7 @@ def parse_article_xml(article_elem: ET.Element) -> Optional[FactivaArticleEnvelo
             byline=byline,
             credit=credit,
             dateline=None,
-            publisher_name=SOURCE_NAME,
+            publisher_name=SOURCE_NAME_PAPER,
             section=section,
             copyright=copyright_text,
             publication_datetime=publication_datetime,
@@ -316,12 +317,12 @@ def parse_rss_item(item_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
         # Article URL from <link>
         article_url = get_text(item_elem.find("link")) or None
 
-        copyright_text = f"Copyright {SOURCE_NAME}"
+        copyright_text = f"Copyright {SOURCE_NAME_WEB}"
 
         attributes = FactivaArticleAttributes(
             an=an,
             source_code=SOURCE_CODE_WEB,
-            source_name=SOURCE_NAME,
+            source_name=SOURCE_NAME_WEB,
             action="add",
             document_type="web",
             title=title,
@@ -331,7 +332,7 @@ def parse_rss_item(item_elem: ET.Element) -> Optional[FactivaArticleEnvelope]:
             byline=byline,
             credit="",
             dateline=None,
-            publisher_name=SOURCE_NAME,
+            publisher_name=SOURCE_NAME_WEB,
             section="",
             copyright=copyright_text,
             publication_datetime=publication_datetime,

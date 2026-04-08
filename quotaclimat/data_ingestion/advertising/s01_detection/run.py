@@ -6,6 +6,9 @@ from datetime import timedelta
 from quotaclimat.data_ingestion.advertising.s01_detection.e00_partition_window import (
     partition_week_program,
 )
+from quotaclimat.data_ingestion.advertising.s01_detection.e00b_clean_pre_existing_detection import (
+    clean_pre_existing_detections,
+)
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import processor
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.testimony_data.extract import (
     get_testimony_data,
@@ -34,6 +37,8 @@ if __name__ == "__main__":
             to_date=partition[-1].end_date,
             source_file=testimony_file,
         )
+
+    clean_pre_existing_detections(partition)
 
     asyncio.run(
         processor(

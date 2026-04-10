@@ -57,6 +57,7 @@ def process_audio(
     chunk_creator: ChunkCreator,
 ) -> bool:
     """Returns True if processing was cached (skipped), False if actually processed."""
+    logger.info(f"Processing audio {segment.identifier}")
 
     file_name = segment.identifier + ".json"
 

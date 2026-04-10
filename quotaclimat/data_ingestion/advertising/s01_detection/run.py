@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import math
 import os
 from datetime import timedelta
 
@@ -21,7 +22,11 @@ if __name__ == "__main__":
     start_date = os.environ.get("START_DATE")
 
     num_workers = max(
-        1, int(os.environ.get("AUDIO_WORKERS") or os.environ.get("SCW_SLS_CPU") or "0")
+        1,
+        int(os.environ.get("AUDIO_WORKERS") or "0"),
+        math.floor(
+            int(os.environ.get("SCW_SLS_CPU") or "0") / 1000  # Scaleway mVCPU value
+        ),
     )
 
     logger.info(

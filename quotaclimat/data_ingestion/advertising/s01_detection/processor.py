@@ -17,45 +17,6 @@ from .tools.common_objects import Chunk
 
 logger = logging.getLogger(__name__)
 
-MEM_PER_WORKER_MB = 200
-
-
-def _compute_num_workers() -> int:
-    """Compute safe worker count based on CPU and available memory.
-
-    In Docker, os.cpu_count() returns the *host* CPU count, which can lead
-    to spawning far too many workers for the container's memory budget.
-    Each audio-processing worker needs ~100-150 MB peak RAM, so we cap
-    the count based on available memory as well.
-
-    Set the AUDIO_WORKERS env var to override with a fixed value.
-    """
-    env_workers = os.environ.get("AUDIO_WORKERS")
-    if env_workers is not None:
-        n = max(1, int(env_workers))
-        logger.info("Worker count from AUDIO_WORKERS env var: %d", n)
-        return n
-
-    cpu_workers = max(1, os.cpu_count() - 2)
-
-    try:
-        with open("/proc/meminfo") as f:
-            for line in f:
-                if line.startswith("MemAvailable:"):
-                    available_mb = int(line.split()[1]) / 1024  # kB -> MB
-                    mem_workers = max(1, int(available_mb / MEM_PER_WORKER_MB))
-                    n = min(cpu_workers, mem_workers)
-                    logger.info(
-                        "Worker count: %d (cpu_based=%d, mem_based=%d, available=%dMB)",
-                        n, cpu_workers, mem_workers, int(available_mb),
-                    )
-                    return n
-    except OSError:
-        pass
-
-    logger.info("Worker count: %d (cpu-based only, /proc/meminfo unavailable)", cpu_workers)
-    return cpu_workers
-
 
 # --- Signal-based pipeline (default, existing) ---
 
@@ -112,23 +73,24 @@ async def processor(
     report_folder: str | None,
     segments: list[Segment],
     annotations: list[dict] = [],
+    num_workers: int = 1,
 ):
     """Original signal-based pipeline (e02 → e03 → e04 → e05 → e06 → e07)."""
     timings = TimingCollector()
 
+    chunk_hash = chunk_creator.params_hash()
+    logger.info(f"Process is run with chunk_hash={chunk_hash}")
+
     #### Audio processing
 
     with timings.measure("audio_processing"):
-        new_workers = _compute_num_workers()
-
-        chunk_hash = chunk_creator.params_hash()
         with LocalCache(name="chunks", version=chunk_hash) as chunk_cache:
             process_media = partial(
                 process_audio, chunk_creator=chunk_creator, cache=chunk_cache
             )
 
             await AudioProcessor(
-                num_workers=new_workers,
+                num_workers=num_workers,
                 segments=segments,
                 process_media=process_media,
                 max_concurrent_downloads=5,

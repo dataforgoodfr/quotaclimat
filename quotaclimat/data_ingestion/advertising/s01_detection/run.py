@@ -20,6 +20,14 @@ if __name__ == "__main__":
     channel = os.environ.get("CHANNEL")
     start_date = os.environ.get("START_DATE")
 
+    num_workers = max(
+        1, int(os.environ.get("AUDIO_WORKERS") or os.environ.get("SCW_SLS_CPU") or "0")
+    )
+
+    logger.info(
+        f"Start processing of 1 week of {channel} starting from {start_date} on {num_workers} cpu"
+    )
+
     # Annotations, for local run
     testimony_channel = os.environ.get("TESTIMONY_CHANNEL")
     testimony_file = os.environ.get("TESTIMONY_FILE", "export.csv")
@@ -48,5 +56,6 @@ if __name__ == "__main__":
             report_folder=f"year={start_date[:4]}/month={start_date[5:7]}/day={start_date[8:10]}/channel={channel}",
             segments=partition,
             annotations=annotations,
+            num_workers=num_workers,
         )
     )

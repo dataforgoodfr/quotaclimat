@@ -1,9 +1,8 @@
 import asyncio
 import logging
-import multiprocessing
 import os
 import traceback
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Callable, Generator
@@ -118,13 +117,13 @@ class AudioProcessor:
 
         try:
             async with self.api:
-                # Use 'spawn' to avoid deadlocks: the default 'fork' inherits
-                # the parent's asyncio event-loop state into child workers,
-                # which reliably deadlocks inside Docker / Scaleway jobs.
-                mp_ctx = multiprocessing.get_context("spawn")
-                with ProcessPoolExecutor(
-                    max_workers=self.num_workers, mp_context=mp_ctx
-                ) as executor:
+                # Use threads instead of processes: the heavy CPU work
+                # (librosa, numpy, scipy) releases the GIL so threads
+                # give real parallelism. ProcessPoolExecutor fails in
+                # Docker/Scaleway because child processes re-import the
+                # entire module tree (including mediatree secrets, DB
+                # models, etc.) which crashes or deadlocks silently.
+                with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
                     download = asyncio.create_task(self._download_worker())
                     workers = [
                         asyncio.create_task(self._process_worker(executor, i))
@@ -164,7 +163,7 @@ class AudioProcessor:
         for _ in range(self.num_workers):
             await self.queue.put(None)
 
-    async def _process_worker(self, executor: ProcessPoolExecutor, worker_id: int):
+    async def _process_worker(self, executor: ThreadPoolExecutor, worker_id: int):
         logger.info(f"Start processing of worker {worker_id}")
         while True:
             next_item = await self.queue.get()

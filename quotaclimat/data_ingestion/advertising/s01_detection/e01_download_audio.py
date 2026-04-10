@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import multiprocessing
 import os
 import traceback
 from concurrent.futures import ProcessPoolExecutor
@@ -94,7 +95,7 @@ class AudioProcessor:
         self.stats = PipelineStats()
         self.process_media = process_media
 
-        # Semaphore and retry are now handled inside MediatreeAPI
+        # Semaphore and retry are handled inside MediatreeAPI
         self.api = MediatreeAPI(max_concurrent_requests=max_concurrent_downloads)
         self.delete_files_after_processing = delete_files_after_processing
 
@@ -117,7 +118,13 @@ class AudioProcessor:
 
         try:
             async with self.api:
-                with ProcessPoolExecutor(max_workers=self.num_workers) as executor:
+                # Use 'spawn' to avoid deadlocks: the default 'fork' inherits
+                # the parent's asyncio event-loop state into child workers,
+                # which reliably deadlocks inside Docker / Scaleway jobs.
+                mp_ctx = multiprocessing.get_context("spawn")
+                with ProcessPoolExecutor(
+                    max_workers=self.num_workers, mp_context=mp_ctx
+                ) as executor:
                     download = asyncio.create_task(self._download_worker())
                     workers = [
                         asyncio.create_task(self._process_worker(executor, i))
@@ -158,7 +165,7 @@ class AudioProcessor:
             await self.queue.put(None)
 
     async def _process_worker(self, executor: ProcessPoolExecutor, worker_id: int):
-        print(f"Start processing of worked {worker_id}")
+        logger.info(f"Start processing of worker {worker_id}")
         while True:
             next_item = await self.queue.get()
             if next_item is None:

@@ -80,7 +80,7 @@ async def processor(
     #### Audio processing
 
     with timings.measure("audio_processing"):
-        new_workers = max(1, os.cpu_count() - 1)  # Laisser 1-2 CPUs libres pour l'OS
+        new_workers = max(1, os.cpu_count() - 2)  # Laisser 1-2 CPUs libres pour l'OS
 
         chunk_hash = chunk_creator.params_hash()
         with LocalCache(name="chunks", version=chunk_hash) as chunk_cache:

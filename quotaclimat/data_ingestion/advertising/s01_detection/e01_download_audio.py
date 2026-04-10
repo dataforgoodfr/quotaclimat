@@ -174,10 +174,20 @@ class AudioProcessor:
             segment: Segment = next_item[0]
             audio_file_path: str = next_item[1]
 
+            logger.info(
+                f"Start processing audio segment from {segment.start_date} to {segment.end_date}"
+            )
+
             try:
                 loop = asyncio.get_event_loop()
+                logger.info(
+                    f"Got async loop, ready to run for segment from {segment.start_date} to {segment.end_date}"
+                )
                 was_cached = await loop.run_in_executor(
                     executor, self.process_media, segment, audio_file_path
+                )
+                logger.info(
+                    f"Finished running for segment from {segment.start_date} to {segment.end_date}"
                 )
 
                 if was_cached:

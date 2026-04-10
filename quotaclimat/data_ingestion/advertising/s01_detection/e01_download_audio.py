@@ -158,6 +158,7 @@ class AudioProcessor:
             await self.queue.put(None)
 
     async def _process_worker(self, executor: ProcessPoolExecutor, worker_id: int):
+        print(f"Start processing of worked {worker_id}")
         while True:
             next_item = await self.queue.get()
             if next_item is None:

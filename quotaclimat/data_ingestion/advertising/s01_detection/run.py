@@ -41,7 +41,7 @@ if __name__ == "__main__":
         channel=channel,
         start_date=start_date,
         margin=timedelta(minutes=15),
-    )[:5]
+    )
 
     if testimony_channel:
         annotations = get_testimony_data(

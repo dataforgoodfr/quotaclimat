@@ -23,8 +23,8 @@ if __name__ == "__main__":
 
     num_workers = max(
         1,
-        int(os.environ.get("AUDIO_WORKERS") or "0"),
-        math.floor(
+        int(os.environ.get("AUDIO_WORKERS") or "0")
+        or math.floor(
             int(os.environ.get("SCW_SLS_CPU") or "0") / 1000  # Scaleway mVCPU value
         ),
     )

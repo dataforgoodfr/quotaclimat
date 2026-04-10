@@ -86,6 +86,7 @@ class AudioProcessor:
         delete_files_after_processing: bool = True,
     ):
         self.num_workers = num_workers
+        self.max_concurrent_downloads = max_concurrent_downloads
         self.queue = asyncio.Queue(maxsize=max_queue_size)
 
         self.segments = list(segments)
@@ -155,10 +156,22 @@ class AudioProcessor:
         )
 
     async def _download_worker(self):
-        """Launch downloads and queue them as they complete"""
-        segments = [self._download_and_queue(segment) for segment in self.segments]
+        """Download segments with backpressure from the processing queue.
 
-        await asyncio.gather(*segments)
+        The inflight semaphore wraps the entire download+enqueue as one unit.
+        A new download only starts once a previous one has been enqueued,
+        so when the queue is full, downloads pause instead of piling up files on disk.
+        Max files on disk ≈ max_concurrent_downloads + max_queue_size + num_workers.
+        """
+        inflight = asyncio.Semaphore(self.max_concurrent_downloads)
+
+        async def _bounded_download(segment: Segment):
+            async with inflight:
+                await self._download_and_queue(segment)
+
+        async with asyncio.TaskGroup() as tg:
+            for segment in self.segments:
+                tg.create_task(_bounded_download(segment))
 
         for _ in range(self.num_workers):
             await self.queue.put(None)

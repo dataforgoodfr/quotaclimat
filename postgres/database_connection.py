@@ -6,6 +6,9 @@ from sqlalchemy import URL, Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("httpx").setLevel(
+    logging.WARNING
+)  # Avoid having too many logs from httpx
 
 
 def _json_serializer(obj):

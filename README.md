@@ -2,12 +2,14 @@
 
 
 ![](quotaclimat/utils/coverquotaclimat.png)
-The OME is run by a consortium of organisations comprising Data for Good, Eleven Strategy, Expertises Climat, Mediatree, Pour plus de climat dans les médias, QuotaClimat and éclaircies. 
+The OME is run by a consortium of organisations comprising [Data for Good](https://dataforgood.fr/), [Eleven Strategy](https://eleven-strategy.fr/), [Expertises Climat](https://expertisesclimat.fr/), [Mediatree](https://mediatree.fr/), [Pour plus de climat dans les médias](https://climatmedias.org/), [QuotaClimat](https://quotaclimat.org/) and [éclaircies](https://eclaircies.co/). 
 
-It is supported and guided by ADEME as part of a call for proposals on ‘Communs Sobriété et résilience des territoires’ launched in 2022. This call for proposals aims to bring together all willing stakeholders to produce open resources, which make a significant contribution to climate change mitigation and adaptation by creating and sharing these resources.
-The Observatory receives methodological guidance and financial support from the Arcom.
+It is supported and guided by [ADEME](https://www.ademe.fr/) as part of a call for proposals on ‘Communs Sobriété et résilience des territoires’ launched in 2022. This call for proposals aims to bring together all willing stakeholders to produce open resources, which make a significant contribution to climate change mitigation and adaptation by creating and sharing these resources.
+The Observatory receives methodological guidance and financial support from the [Arcom](https://www.arcom.fr/).
 
 The OME aims to measure the proportion of environmental topics in media news content. It provides the general public with objective, reliable and standardised data, enabling them to analyse how the media covers environmental issues.
+
+More at https://observatoiremediaecologie.fr/
 
 
 ### Introduction Videos

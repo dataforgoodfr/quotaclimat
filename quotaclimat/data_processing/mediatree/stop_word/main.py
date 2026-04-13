@@ -260,7 +260,7 @@ def get_top_keywords_by_channel(session, duration: int = 7, top: int = 5, from_d
             count
         FROM ranked_keywords
         WHERE rank <= {top} AND rank_keyword = 1
-        ORDER BY channel_title, "count" DESC, keyword 
+        ORDER BY channel_title, "count" DESC, keyword, theme
         LIMIT 100;
         """
 

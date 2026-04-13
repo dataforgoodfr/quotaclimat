@@ -4,38 +4,63 @@
     )
 }}
 
-WITH choice_annotations AS (
+with unnested AS (
 	SELECT
-		public.labelstudio_task_completion_aggregate.task_completion_aggregate_id as task_completion_aggregate_id,
-		public.labelstudio_task_completion_aggregate.task_aggregate_id as task_aggregate_id,
-		public.labelstudio_task_completion_aggregate.created_at,
-		string_agg(CASE WHEN subquery.choices IN ('Correct', 'Incorrect') THEN subquery.choices END, ',' ORDER BY subquery.choices) AS mesinfo_choice,
+		lta.task_completion_aggregate_id,
+		lta.task_aggregate_id,
+		lta.created_at,
+		elem ->> 'from_name'         AS from_name,
+		elem -> 'value' -> 'choices' AS choices_arr,
+		CASE jsonb_typeof(elem -> 'value' -> 'text')
+			WHEN 'array'  THEN elem -> 'value' -> 'text'
+			WHEN 'string' THEN jsonb_build_array(elem -> 'value' -> 'text')
+		END                          AS text_arr	
+	FROM public.labelstudio_task_completion_aggregate lta
+	CROSS JOIN LATERAL jsonb_array_elements(lta.result::jsonb) AS elem
+),
+-- Expand inner choices/text arrays into scalar rows
+flattened AS (
+	SELECT task_completion_aggregate_id, task_aggregate_id, created_at, from_name, v AS val
+	FROM   unnested, jsonb_array_elements_text(choices_arr::jsonb) v
+	WHERE  choices_arr IS NOT NULL
+	UNION ALL
+	SELECT task_completion_aggregate_id, task_aggregate_id, created_at, from_name, v AS val
+	FROM   unnested, jsonb_array_elements_text(text_arr::jsonb) v
+	WHERE  text_arr IS NOT NULL
+),
+choice_annotations AS (
+	SELECT
+		task_completion_aggregate_id,
+		task_aggregate_id,
+		created_at,
 		string_agg(
-			CASE 
-				WHEN subquery.choices IN ('Journalist', 'Commentator', 'Guest', 'Politician', 'Audience', 'Unknown') 
-				THEN subquery.choices 
-			END,
-			',' ORDER BY subquery.choices
+			CASE WHEN val IN ('Correct', 'Incorrect') THEN val END,
+			',' ORDER BY val
+		) AS mesinfo_choice,
+		string_agg(
+			CASE WHEN val IN ('Journalist', 'Commentator', 'Guest', 'Politician', 'Audience', 'Unknown') THEN val END,
+			',' ORDER BY val
 		) AS locuteur_choice,
-		CASE WHEN SUM(CASE WHEN subquery.choices = 'Correct' THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS mesinfo_correct,
-		CASE WHEN SUM(CASE WHEN subquery.choices = 'Incorrect' THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS mesinfo_incorrect,
-		CASE WHEN SUM(CASE WHEN subquery.choices = 'Journalist' THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS speaker_journalist,
-		CASE WHEN SUM(CASE WHEN subquery.choices = 'Commentator' THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS speaker_commentator,
-		CASE WHEN SUM(CASE WHEN subquery.choices = 'Guest' THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS speaker_guest,
-		CASE WHEN SUM(CASE WHEN subquery.choices = 'Politician' THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS speaker_politician,
-		CASE WHEN SUM(CASE WHEN subquery.choices = 'Audience' THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS speaker_audience,
-		CASE WHEN SUM(CASE WHEN subquery.choices = 'Unknown' THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS speaker_unknown
-	FROM
-		public.labelstudio_task_completion_aggregate
-	LEFT JOIN LATERAL (
-		SELECT
-			jsonb_array_elements_text(elem -> 'value' -> 'choices') AS choices
-		FROM
-			jsonb_array_elements(public.labelstudio_task_completion_aggregate.result::jsonb) AS elem
-		WHERE
-			elem ->> 'type' = 'choices'
-	) 
-	subquery ON true
+		CASE WHEN SUM(CASE WHEN val = 'Correct'     THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS mesinfo_correct,
+		CASE WHEN SUM(CASE WHEN val = 'Incorrect'   THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS mesinfo_incorrect,
+		CASE WHEN SUM(CASE WHEN val = 'Journalist'  THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS speaker_journalist,
+		CASE WHEN SUM(CASE WHEN val = 'Commentator' THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS speaker_commentator,
+		CASE WHEN SUM(CASE WHEN val = 'Guest'       THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS speaker_guest,
+		CASE WHEN SUM(CASE WHEN val = 'Politician'  THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS speaker_politician,
+		CASE WHEN SUM(CASE WHEN val = 'Audience'    THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS speaker_audience,
+		CASE WHEN SUM(CASE WHEN val = 'Unknown'     THEN 1 ELSE 0 END) > 0 THEN 1 ELSE 0 END AS speaker_unknown,
+		CASE WHEN SUM(
+			CASE WHEN from_name = 'Was Misinformation Corrected?' AND val = 'corrected' THEN 1 ELSE 0 END
+		) > 0 THEN 1 ELSE 0 END AS mesinfo_corrected_bool,
+		string_agg(
+			DISTINCT CASE WHEN from_name = 'Was Misinformation Corrected?' THEN val END,
+			',' ORDER BY CASE WHEN from_name = 'Was Misinformation Corrected?' THEN val END
+		) AS mesinfo_corrected,
+		string_agg(DISTINCT CASE WHEN from_name = 'references'  THEN val END, ',') AS debunk_references,
+		string_agg(DISTINCT CASE WHEN from_name = 'claim'       THEN val END, '.') AS claims,
+		string_agg(DISTINCT CASE WHEN from_name = 'explanation' THEN val END, '.') AS explanations,
+		string_agg(DISTINCT CASE WHEN from_name = 'comments'    THEN val END, '.') AS other_comments
+	FROM flattened
 	GROUP BY task_completion_aggregate_id, task_aggregate_id, created_at
 ),
 versioned_choices AS (
@@ -83,6 +108,12 @@ tgc as (
 			versioned_choices.speaker_politician,
 			versioned_choices.speaker_audience,
 			versioned_choices.speaker_unknown,
+			versioned_choices.mesinfo_corrected,
+			versioned_choices.mesinfo_corrected_bool,			
+			versioned_choices.debunk_references,
+			versioned_choices.claims,
+			versioned_choices.explanations,
+			versioned_choices.other_comments,
 			versioned_choices.annotation_version as "Annotation Version"
 		FROM
 			labelstudio_task_aggregate
@@ -126,15 +157,19 @@ env_shares as (
 	from 
 		public.core_query_environmental_shares_i8n cqesin
 	where country!='france'
+),
+tmp as (
+	select 
+		tgc.*,
+		env_shares.sum_duration_minutes,
+		env_shares.weekly_perc_climat
+	from 
+		tgc
+	left join 
+		env_shares
+	on 
+		date_trunc('week', tgc.data_item_start)=env_shares.start
+		and tgc.data_item_channel_name=env_shares.channel_name
 )
-select 
-	tgc.*,
-	env_shares.sum_duration_minutes,
-	env_shares.weekly_perc_climat
-from 
-	tgc
-left join 
-	env_shares
-on 
-	date_trunc('week', tgc.data_item_start)=env_shares.start
-	and tgc.data_item_channel_name=env_shares.channel_name
+select * from tmp 
+

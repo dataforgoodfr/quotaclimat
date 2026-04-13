@@ -27,7 +27,6 @@ ENV VIRTUAL_ENV=/app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PATH="$PYENV_ROOT/bin:$PATH"
 ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
 ENV DBT_PROFILES_DIR=/app/my_dbt_project/dbt
 ENV DBT_PROJECT_DIR=/app/my_dbt_project
 

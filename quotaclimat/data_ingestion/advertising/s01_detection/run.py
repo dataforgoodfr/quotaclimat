@@ -2,8 +2,12 @@ import asyncio
 import logging
 import math
 import os
-from datetime import timedelta
+from datetime import date, timedelta
 
+from sqlalchemy import desc, select
+
+from postgres.database_connection import get_db_session
+from postgres.schemas.advertising.models import Ad_Occurrence
 from quotaclimat.data_ingestion.advertising.s01_detection.e00_partition_window import (
     partition_week_program,
 )
@@ -17,9 +21,30 @@ from quotaclimat.data_ingestion.advertising.s01_detection.tools.testimony_data.e
 
 logger = logging.getLogger(__name__)
 
+
+def get_next_start_date_from_db(channel: str) -> date | None:
+    with get_db_session() as session:
+        last_occurrence = session.scalars(
+            select(Ad_Occurrence)
+            .where(Ad_Occurrence.channel_name == channel)
+            .order_by(desc(Ad_Occurrence.occurrence_date))
+            .limit(1)
+        ).first()
+
+    if last_occurrence is None:
+        return None
+
+    last_occurence_date = last_occurrence.occurrence_date.date()
+
+    next_date = last_occurence_date + timedelta(days=1)
+    return next_date.isoformat()
+
+
 if __name__ == "__main__":
     channel = os.environ.get("CHANNEL")
     start_date = os.environ.get("START_DATE")
+    if not start_date:
+        start_date = get_next_start_date_from_db(channel)
 
     num_workers = max(
         1,

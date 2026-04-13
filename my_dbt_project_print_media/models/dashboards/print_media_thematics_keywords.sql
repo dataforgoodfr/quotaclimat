@@ -57,6 +57,8 @@ article_keywords AS (
         -- Only include articles with all_keywords
         AND fa.all_keywords IS NOT NULL
         AND json_array_length(fa.all_keywords) > 0
+        -- Exclude OuestFrance data because they are not complete for now
+        AND fa.source_code NOT IN ('OUESTFRANCE', 'OUESTFRAFR')
 ),
 
 -- Parse keyword details from JSON

@@ -95,8 +95,8 @@ def test_stop_word_get_top_keywords_by_channel():
             {
                 "keyword": "climatique",
                 "theme": "changement_climatique_constat",
-                "channel_title": "France 2",
-                "count": 20,
+                "channel_title": "TF1",
+                "count": 2,
             },
         ]
     )

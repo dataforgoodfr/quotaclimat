@@ -1,17 +1,21 @@
-# QuotaClimat x Data For Good - ![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/polomarcus/579237daab71afbb359338e2706b7f36/raw/test.json)
+# L’Observatoire des médias sur l’écologie (OME) ![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/polomarcus/579237daab71afbb359338e2706b7f36/raw/test.json)
 
 
 ![](quotaclimat/utils/coverquotaclimat.png)
-The aim of this work is to deliver a tool to a consortium around [QuotaClimat](https://www.quotaclimat.org/ "Quotaclimat website"), [Climat Medias](https://climatmedias.org/) allowing them to quantify the media coverage of the climate crisis. 
+The OME is run by a consortium of organisations comprising Data for Good, Eleven Strategy, Expertises Climat, Mediatree, Pour plus de climat dans les médias, QuotaClimat and éclaircies. 
 
-Radio and TV data are collected thanks to Mediatree API.
+It is supported and guided by ADEME as part of a call for proposals on ‘Communs Sobriété et résilience des territoires’ launched in 2022. This call for proposals aims to bring together all willing stakeholders to produce open resources, which make a significant contribution to climate change mitigation and adaptation by creating and sharing these resources.
+The Observatory receives methodological guidance and financial support from the Arcom.
 
-And webpress is currently at work in progress (as for 04/2024)
+The OME aims to measure the proportion of environmental topics in media news content. It provides the general public with objective, reliable and standardised data, enabling them to analyse how the media covers environmental issues.
 
+
+### Introduction Videos
 - 2022-09-28, Introduction by Eva Morel (Quota Climat): from 14:10 to 32:00 https://www.youtube.com/watch?v=GMrwDjq3rYs
 - 2022-11-29 Project status and prospects by Estelle Rambier (Data): from 09:00 to 25:00 https://www.youtube.com/watch?v=cLGQxHJWwYA
 - 2024-03 Project tech presentation by Paul Leclercq (Data) : https://www.youtube.com/watch?v=zWk4WLVC5Hs
 
+# Development and Contribution
 ## Index
 - [I want to contribute! Where do I start?](#contrib)
 - [Development](#wrench-development)

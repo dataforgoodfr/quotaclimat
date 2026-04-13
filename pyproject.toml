@@ -1,6 +1,6 @@
 [project]
 name = "quotaclimat"
-version = "2.1.9"
+version = "2.1.21"
 description = ""
 authors = [
     {name = "Rambier Estelle", "email"="estelle.rambier@hotmail.fr"},
@@ -60,8 +60,8 @@ scipy = "^1.17.1"
 soundfile = "^0.13.1"
 duckdb = "^1.4.4"
 scikit-learn = "^1.8.0"
-
-
+pyahocorasick = "^2.3.0"
+spacy = "^3.8.11"
 [build-system]
 requires = ["poetry-core>=1.1"]
 build-backend = "poetry.core.masonry.api"

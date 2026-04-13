@@ -47,6 +47,8 @@ all_publication_days AS (
         DATE(publication_datetime) AS publication_day
     FROM {{ source('public', 'stats_factiva_articles') }}
     WHERE DATE(publication_datetime) <= CURRENT_DATE - INTERVAL '4 days'
+        -- Exclude OuestFrance data because they are not complete for now
+        AND source_code NOT IN ('OUESTFRANCE', 'OUESTFRAFR')
 ),
 
 -- Create a complete grid of all source-days combinations
@@ -173,6 +175,8 @@ daily_aggregates AS (
         )
         -- Only include articles with sufficient word count for crisis counts
         AND COALESCE(fa.word_count, 0) >= {{ env_var('MINIMAL_WORD_COUNT', '0') | int }}
+        -- Exclude OuestFrance data because they are not complete for now
+        AND fa.source_code NOT IN ('OUESTFRANCE', 'OUESTFRAFR')
     
     {% if is_incremental() %}
         -- In incremental mode, recalculate ALL articles for days/sources that had updates
@@ -198,6 +202,8 @@ daily_stats AS (
         AND (DATE(sfa.publication_datetime), sfa.source_code) NOT IN (
             SELECT publication_day, source_code FROM outlier_source_days
         )
+        -- Exclude OuestFrance data because they are not complete for now
+        AND sfa.source_code NOT IN ('OUESTFRANCE', 'OUESTFRAFR')
     GROUP BY 
         DATE(sfa.publication_datetime),
         sfa.source_code

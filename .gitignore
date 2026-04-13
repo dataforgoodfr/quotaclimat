@@ -152,6 +152,7 @@ notebooks/nlp/df_X_tfidf.pkl
 
 .DS_Store
 pgdata
+pgdata-factiva
 mb-data
 .idea
 
@@ -164,3 +165,5 @@ analyse/mediatree/images
 analyse/instagram/data
 quotaclimat/data_ingestion/lemonde_ftp/ftp_data
 quotaclimat/data_ingestion/lemonde_ftp/examples
+germany_s3_bucket
+.aws/

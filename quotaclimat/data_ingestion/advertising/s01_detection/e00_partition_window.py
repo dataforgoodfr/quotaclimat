@@ -72,6 +72,9 @@ def partition_week_program(
     if week_start_date.weekday() != 0:
         raise ValueError("start_date must be a Monday")
 
+    if week_start_date > datetime.now(tz=tz_paris) - timedelta(days=7):
+        raise ValueError("start_date must be at least 7 days in the past")
+
     program = extend_program_by(get_channel_program(channel), margin)
 
     return [

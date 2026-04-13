@@ -135,7 +135,7 @@ async def get_and_save_s3_data_to_pg(exit_event):
             
             country_code: str = os.environ.get("COUNTRY", FRANCE_CODE)
             logging.info(f"Country used is (default {FRANCE_CODE}) : {country_code}")
-            countries: List[CountryMediaTree] = get_countries_array(country_code=country_code)
+            countries: List[CountryMediaTree] = get_countries_array(country_code=country_code, no_belgium=False)
 
             for country in countries:
                 logging.info(f"Getting info for country : {country.name}...")

@@ -5448,6 +5448,24 @@ pytest = ">=4.6"
 testing = ["fields", "hunter", "process-tests", "pytest-xdist", "virtualenv"]
 
 [[package]]
+name = "pytest-env"
+version = "1.1.5"
+description = "pytest plugin that allows you to add environment variables."
+optional = false
+python-versions = ">=3.8"
+groups = ["dev"]
+files = [
+    {file = "pytest_env-1.1.5-py3-none-any.whl", hash = "sha256:ce90cf8772878515c24b31cd97c7fa1f4481cd68d588419fd45f10ecaee6bc30"},
+    {file = "pytest_env-1.1.5.tar.gz", hash = "sha256:91209840aa0e43385073ac464a554ad2947cc2fd663a9debf88d03b01e0cc1cf"},
+]
+
+[package.dependencies]
+pytest = ">=8.3.3"
+
+[package.extras]
+testing = ["covdefaults (>=2.3)", "coverage (>=7.6.1)", "pytest-mock (>=3.14)"]
+
+[[package]]
 name = "pytest-timeout"
 version = "2.4.0"
 description = "pytest plugin to abort hanging tests"
@@ -7850,4 +7868,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<=3.13"
-content-hash = "db6f3c8e9bc21c586ca759be794ca1543482f6b62e67e30f31e0b29d398835ab"
+content-hash = "ebb5b1b5ed3f5c5bbc4141d20bc27d447e93d4123133f2894579d6af32441876"

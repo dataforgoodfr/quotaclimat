@@ -68,15 +68,15 @@ class Report:
         operation_name: str,
         chunk_hash: str,
         params: dict,
+        local_path: str,
     ):
         self.params = params
-        self.reports_name = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{chunk_hash}"
+        self.reports_name = (
+            f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{operation_name}"
+        )
 
-        local_reports_path = Path(".cache") / "reports" / operation_name
-        local_reports_path.mkdir(parents=True, exist_ok=True)
-
-        self.html_report_path = local_reports_path / f"{self.reports_name}.html"
-        self.text_report_path = local_reports_path / f"{self.reports_name}.txt"
+        self.html_report_path = local_path / f"{self.reports_name}.html"
+        self.text_report_path = local_path / f"{self.reports_name}.txt"
 
     def generate(
         self,

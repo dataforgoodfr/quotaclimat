@@ -13,9 +13,10 @@ GLOBAL_CACHE_FOLDER = ".cache"
 class LocalCache:
     def __init__(self, name: str, version: str):
         self.cache_folder = Path(GLOBAL_CACHE_FOLDER) / name / version
+        self.cache_folder.mkdir(parents=True, exist_ok=True)
         self.clean_on_exit = (
-            os.environ.get("CLEAN_CACHE_ON_EXIT", "true").lower() == "true"
-        )  # This is activated by default for testing purpose, should be corrected
+            os.environ.get("CLEAN_CACHE_ON_EXIT", "false").lower() == "true"
+        )
 
     def __enter__(self):
         return self

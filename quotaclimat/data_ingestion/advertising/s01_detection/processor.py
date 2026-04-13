@@ -141,29 +141,31 @@ async def processor(
 
     #### Results exportation
 
-    reports = Report(
-        operation_name=operation_name,
-        chunk_hash=chunk_hash,
-        params={
-            "operation_name": operation_name,
-            "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
-            "chunk_creator": chunk_creator.params(),
-            "chunk_grouping": chunk_grouping.params(),
-            "fragment_classifier": fragment_classifier.params(),
-        },
-    )
-    reports.generate(
-        fragments=fragments,
-        annotations=annotations,
-        timings=timings,
-    )
+    with LocalCache(name="reports", version=chunk_hash) as reports_cache:
+        reports = Report(
+            operation_name=operation_name,
+            chunk_hash=chunk_hash,
+            params={
+                "operation_name": operation_name,
+                "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
+                "chunk_creator": chunk_creator.params(),
+                "chunk_grouping": chunk_grouping.params(),
+                "fragment_classifier": fragment_classifier.params(),
+            },
+            local_path=reports_cache.cache_folder
+        )
+        reports.generate(
+            fragments=fragments,
+            annotations=annotations,
+            timings=timings,
+        )
 
-    print(f"""Reports generated:
-        HTML: {reports.html_report_path.absolute()}
-        Text: {reports.text_report_path.absolute()}
-    """)
+        print(f"""Reports generated:
+            HTML: {reports.html_report_path.absolute()}
+            Text: {reports.text_report_path.absolute()}
+        """)
 
-    if report_folder:
-        reports.save_to_s3(report_folder)
+        if report_folder:
+            reports.save_to_s3(report_folder)
 
     return fragments

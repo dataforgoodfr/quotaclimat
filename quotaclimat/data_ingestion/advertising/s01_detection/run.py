@@ -22,7 +22,7 @@ from quotaclimat.data_ingestion.advertising.s01_detection.tools.testimony_data.e
 logger = logging.getLogger(__name__)
 
 
-def get_next_start_date_from_db(channel: str) -> date | None:
+def _get_next_start_date_from_db(channel: str) -> date | None:
     with get_db_session() as session:
         last_occurrence = session.scalars(
             select(Ad_Occurrence)
@@ -40,18 +40,25 @@ def get_next_start_date_from_db(channel: str) -> date | None:
     return next_date.isoformat()
 
 
+def _scaleway_cpu_numbers() -> int:
+    mvcpu = os.environ.get("SCW_SLS_CPU")  # Scaleway mVCPU value
+
+    if not mvcpu:
+        return 0
+
+    cpu = int(mvcpu) / 1000
+    return math.floor(cpu)
+
+
 if __name__ == "__main__":
     channel = os.environ.get("CHANNEL")
     start_date = os.environ.get("START_DATE")
     if not start_date:
-        start_date = get_next_start_date_from_db(channel)
+        start_date = _get_next_start_date_from_db(channel)
 
     num_workers = max(
         1,
-        int(os.environ.get("AUDIO_WORKERS") or "0")
-        or math.floor(
-            int(os.environ.get("SCW_SLS_CPU") or "0") / 1000  # Scaleway mVCPU value
-        ),
+        (int(os.environ.get("AUDIO_WORKERS") or "0") or (_scaleway_cpu_numbers() - 2)),
     )
 
     logger.info(

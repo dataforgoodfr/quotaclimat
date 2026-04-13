@@ -534,7 +534,7 @@ def test_train_stop_word_get_themes_keywords_duration():
    
 
 def test_get_cts_in_ms_for_keywords():
-    str = [{
+    srt = [{
           "duration_ms": 34,
           "cts_in_ms": original_timestamp + 79004,
           "text": "gilets"
@@ -586,10 +586,10 @@ def test_get_cts_in_ms_for_keywords():
             "category":my_category
         },
     ]
-    assert get_cts_in_ms_for_keywords(str, keywords, theme) == expected
+    assert get_cts_in_ms_for_keywords(srt, keywords, [], theme) == expected
 
 def test_complex_hyphen_get_cts_in_ms_for_keywords():
-    str = [
+    srt = [
         {
           "duration_ms": 34,
           "cts_in_ms": original_timestamp + 80006,
@@ -608,7 +608,7 @@ def test_complex_hyphen_get_cts_in_ms_for_keywords():
             "category": my_category
         }
     ]
-    assert get_cts_in_ms_for_keywords(str, keywords, theme) == expected
+    assert get_cts_in_ms_for_keywords(srt, keywords, [], theme) == expected
 
 
 def test_none_theme_filter_and_tag_by_theme():

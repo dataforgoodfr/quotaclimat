@@ -66,7 +66,7 @@ def init_tables():
 
 
 def test_stop_word_get_top_keywords_by_channel():
-    excepted_df = pd.DataFrame(
+    expected_df = pd.DataFrame(
         [
             {
                 "keyword": "replantation",
@@ -95,8 +95,8 @@ def test_stop_word_get_top_keywords_by_channel():
             {
                 "keyword": "climatique",
                 "theme": "changement_climatique_constat",
-                "channel_title": "France 2",
-                "count": 20,
+                "channel_title": "TF1",
+                "count": 2,
             },
         ]
     )
@@ -105,21 +105,21 @@ def test_stop_word_get_top_keywords_by_channel():
         session, duration=3000, top=(5), min_number_of_keywords=1
     )
 
+    assert (
+        top_keywords["keyword"].tolist()
+        == expected_df["keyword"].tolist()
+    )
     top_keywords.drop(
         columns=["theme"], inplace=True
     )  # can be several themes, so dropping theme for tests
-    excepted_df.drop(
+    expected_df.drop(
         columns=["theme"], inplace=True
     )  # can be several themes, so dropping theme for tests
 
     logging.info(top_keywords)  # Debugging because the test is flaky
 
     assert len(top_keywords) != 0
-    assert (
-        top_keywords.sort_values("count")["keyword"].tolist()
-        == excepted_df.sort_values("count")["keyword"].tolist()
-    )
-    pd.testing.assert_frame_equal(top_keywords, excepted_df)
+    pd.testing.assert_frame_equal(top_keywords, expected_df)
 
 
 def test_stop_word_get_all_repetitive_context_advertising_for_a_keyword_default():

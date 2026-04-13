@@ -586,7 +586,8 @@ def test_get_cts_in_ms_for_keywords():
             "category":my_category
         },
     ]
-    assert get_cts_in_ms_for_keywords(srt, keywords, [], theme) == expected
+    # Setting word positions to None as default method for france uses regex reparsing
+    assert get_cts_in_ms_for_keywords(srt, keywords, [None]*len(keywords), theme) == expected
 
 def test_complex_hyphen_get_cts_in_ms_for_keywords():
     srt = [
@@ -608,7 +609,7 @@ def test_complex_hyphen_get_cts_in_ms_for_keywords():
             "category": my_category
         }
     ]
-    assert get_cts_in_ms_for_keywords(srt, keywords, [], theme) == expected
+    assert get_cts_in_ms_for_keywords(srt, keywords, [None]*len(keywords), theme) == expected
 
 
 def test_none_theme_filter_and_tag_by_theme():

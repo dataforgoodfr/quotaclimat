@@ -19,6 +19,12 @@ class Ad(AdvertisingBase):
     duration_sec = Column(Double, nullable=False)
     chunks = Column(JSON, nullable=False)
     fragment_type = Column(String, nullable=False)  # "advertising" or "jingle" ...
+    transcript = Column(Text, nullable=True)
+    prediction = Column(JSON, nullable=True)
+    prediction_status = Column(String, nullable=True)
+    prediction_confidence = Column(Double, nullable=True)
+    predicted_sector = Column(String, nullable=True)
+    predicted_product_category = Column(String, nullable=True)
 
 
 class Ad_Occurrence(AdvertisingBase):

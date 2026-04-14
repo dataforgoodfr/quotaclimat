@@ -88,7 +88,7 @@ def find_matching_subtitle(subtitles, pos_in_text, keyword, country: CountryMedi
         return find_matching_subtitle_from_indices(subtitles, pos_in_text)
 
 def find_matching_subtitle_from_indices(subtitles, pos_in_text):
-     return subtitles[pos_in_text]
+    return subtitles[pos_in_text]
 
 def find_matching_subtitle_fr(subtitles, keyword):
     for item in subtitles:
@@ -239,9 +239,8 @@ def get_words_in_sentence_regex_i18n(keywords_lemmas, text: str) -> Set[str]:
         match = re.search(pattern, text)
         if match:
             found.add(idx)
-            word_idx = max(len(text[:match.start()].split(" ")) - 1, 0)
+            word_idx = len(text[:match.start()].split())
             word_positions.append(word_idx)
-    logging.info(f"word positions: {word_positions}")
     return found, word_positions
 
 def filter_already_contained_keyword(keywords_with_timestamp: List[dict]) -> List[dict]:

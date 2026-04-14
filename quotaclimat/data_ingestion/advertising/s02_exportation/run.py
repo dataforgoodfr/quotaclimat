@@ -101,14 +101,17 @@ async def _process_ad(
     occurrence: Ad_Occurrence,
     api: MediatreeAPI,
     fs: s3fs.S3FileSystem,
-):
-    """Check if an ad already exists in S3, and export it if not."""
+) -> str:
+    """Check if an ad already exists in S3, and export it if not.
+    Returns 'cached' if already in S3, 'uploaded' otherwise.
+    """
     if await ad_folder_exists_in_s3(ad.id, fs):
         logger.debug(f"Ad {ad.id} already in S3, skipping")
-        return
+        return "cached"
 
     logger.debug(f"Processing ad {ad.id} (channel={occurrence.channel_name})")
     await _export_ad(ad, occurrence, api, fs)
+    return "uploaded"
 
 
 async def run(since_date: datetime):
@@ -120,6 +123,7 @@ async def run(since_date: datetime):
         logger.info(f"Found {total} ads since {since_date}")
 
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_EXPORTS)
+        counts = {"cached": 0, "uploaded": 0, "error": 0}
         progress = tqdm(total=total, desc="Exporting ads")
 
         async with MediatreeAPI(max_concurrent_requests=MAX_CONCURRENT_EXPORTS) as api:
@@ -127,16 +131,19 @@ async def run(since_date: datetime):
 
                 async def _limited_process(ad, occurrence):
                     async with semaphore:
-                        await _process_ad(ad, occurrence, api, fs)
-                        progress.update(1)
+                        try:
+                            result = await _process_ad(ad, occurrence, api, fs)
+                            counts[result] += 1
+                        except Exception:
+                            logger.error(f"Failed to export ad {ad.id}: {result}")
+                            counts["error"] += 1
+                        finally:
+                            progress.update(1)
+                            progress.set_postfix(counts)
 
                 tasks = [_limited_process(ad, occurrence) for ad, occurrence in page]
 
-                results = await asyncio.gather(*tasks, return_exceptions=True)
-
-                for (ad, _), result in zip(page, results):
-                    if isinstance(result, Exception):
-                        logger.error(f"Failed to export ad {ad.id}: {result}")
+                await asyncio.gather(*tasks, return_exceptions=True)
 
         progress.close()
     finally:

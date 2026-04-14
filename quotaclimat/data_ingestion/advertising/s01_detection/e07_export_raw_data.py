@@ -7,7 +7,7 @@ from pathlib import Path
 
 import boto3
 
-from .tools.common_objects import Fragment
+from .tools.common_objects import Chunk, Fragment
 from .tools.visualizer.weekly_viewer import generate_weekly_viewer
 
 logger = logging.getLogger(__name__)
@@ -18,6 +18,7 @@ BUCKET_NAME = os.environ.get("ADVERTISING_BUCKET_NAME")
 REGION = "fr-par"
 ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
 REPORTS_S3_PREFIX = "reports"
+RAW_CHUNKS_S3_PREFIX = "raw_chunks"
 
 
 class Timer:
@@ -115,3 +116,11 @@ class Report:
         upload_to_s3(
             self.text_report_path, f"{s3_folder}/{self.reports_name}.txt", s3_client
         )
+
+
+def export_chunks_to_s3(chunks: list[Chunk], report_folder: str):
+    s3_client = get_s3_client()
+    s3_path = f"{RAW_CHUNKS_S3_PREFIX}/{report_folder}/chunks.json"
+    s3_client.put_object(
+        Body=json.dumps([c.to_dict() for c in chunks]), Bucket=BUCKET_NAME, Key=s3_path
+    )

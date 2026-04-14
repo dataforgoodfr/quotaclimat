@@ -99,14 +99,16 @@ async def _process_ad(
     occurrence: Ad_Occurrence,
     api: MediatreeAPI,
     fs: s3fs.S3FileSystem,
+    semaphore: asyncio.Semaphore,
 ):
     """Check if an ad already exists in S3, and export it if not."""
-    if await ad_folder_exists_in_s3(ad.id, fs):
-        logger.info(f"Ad {ad.id} already in S3, skipping")
-        return
+    async with semaphore:
+        if await ad_folder_exists_in_s3(ad.id, fs):
+            logger.info(f"Ad {ad.id} already in S3, skipping")
+            return
 
-    logger.info(f"Processing ad {ad.id} (channel={occurrence.channel_name})")
-    await _export_ad(ad, occurrence, api, fs)
+        logger.info(f"Processing ad {ad.id} (channel={occurrence.channel_name})")
+        await _export_ad(ad, occurrence, api, fs)
 
 
 async def run(since_date: datetime):
@@ -122,14 +124,9 @@ async def run(since_date: datetime):
 
         async with MediatreeAPI() as api:
             for page in iter_ads_pages(session, since_date, PAGE_SIZE):
-                async def _limited_process(ad, occurrence):
-                    async with semaphore:
-                        await _process_ad(ad, occurrence, api, fs)
-
-                tasks = [
-                    _limited_process(ad, occurrence)
-                    for ad, occurrence in page
-                ]
+                tasks = []
+                for ad, occurrence in page:
+                    tasks.append(_process_ad(ad, occurrence, api, fs, semaphore))
 
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 

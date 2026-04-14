@@ -58,4 +58,16 @@ fi
 echo "📦 Installing Tofu version from .opentofu-version..."
 tofuenv install  # Don't fail if version is already installed
 
+# Install tgswitch if not installed
+if ! command -v tgswitch >/dev/null 2>&1; then
+  echo "📦 Installing tgswitch..."
+  brew install warrensbox/tap/tgswitch
+else
+  echo "✅ tgswitch is already installed"
+fi
+
+# Run tgswitch to install the pinned Terragrunt version
+echo "📦 Installing Terragrunt version from .terragrunt-version..."
+tgswitch
+
 echo "✅ Setup complete!"

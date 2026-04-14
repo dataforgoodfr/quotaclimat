@@ -57,7 +57,12 @@ def get_s3_client():
 
 def upload_to_s3(local_path: Path, s3_key: str, s3_client):
     try:
-        s3_client.upload_file(str(local_path), BUCKET_NAME, s3_key)
+        s3_client.upload_file(
+            str(local_path),
+            BUCKET_NAME,
+            s3_key,
+            {"StorageClass": "ONEZONE_IA"},
+        )
         logger.info(f"Uploaded s3://{BUCKET_NAME}/{s3_key}")
     except Exception as e:
         logger.error(f"Failed to upload {local_path} to S3: {e}")
@@ -122,5 +127,8 @@ def export_chunks_to_s3(chunks: list[Chunk], report_folder: str):
     s3_client = get_s3_client()
     s3_path = f"{RAW_CHUNKS_S3_PREFIX}/{report_folder}/chunks.json"
     s3_client.put_object(
-        Body=json.dumps([c.to_dict() for c in chunks]), Bucket=BUCKET_NAME, Key=s3_path
+        Body=json.dumps([c.to_dict() for c in chunks]),
+        Bucket=BUCKET_NAME,
+        Key=s3_path,
+        StorageClass="GLACIER",
     )

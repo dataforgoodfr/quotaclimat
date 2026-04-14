@@ -90,7 +90,7 @@ async def _export_ad(
         await api.stream_export(channel, from_date, to_date, media_format, buf)
 
         s3_key = f"{BUCKET_NAME}/{AD_S3_PREFIX}/{ad.id}/raw.{media_format}"
-        await fs._pipe_file(s3_key, buf.getvalue())
+        await fs._pipe_file(s3_key, buf.getvalue(), StorageClass="ONEZONE_IA")
         logger.debug(
             f"Uploaded s3://{BUCKET_NAME}/{AD_S3_PREFIX}/{ad.id}/raw.{media_format}"
         )

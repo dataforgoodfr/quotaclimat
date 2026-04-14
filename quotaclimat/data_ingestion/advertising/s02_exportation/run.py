@@ -4,8 +4,8 @@ import logging
 import os
 from datetime import datetime, timedelta, timezone
 
-import boto3
-from sqlalchemy import select
+import s3fs
+from sqlalchemy import func, select
 from tqdm import tqdm
 
 from postgres.database_connection import get_db_session
@@ -24,78 +24,128 @@ REGION = "fr-par"
 ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
 AD_S3_PREFIX = "ads"
 
+MARGIN_ON_MEDIA_EXPORT = timedelta(seconds=1)
 
-def get_s3_client():
-    return boto3.client(
-        service_name="s3",
-        region_name=REGION,
-        aws_access_key_id=ACCESS_KEY,
-        aws_secret_access_key=SECRET_KEY,
-        endpoint_url=ENDPOINT_URL,
+PAGE_SIZE = 100
+MAX_CONCURRENT_EXPORTS = 10
+
+
+def get_s3_filesystem() -> s3fs.S3FileSystem:
+    return s3fs.S3FileSystem(
+        key=ACCESS_KEY,
+        secret=SECRET_KEY,
+        client_kwargs={"endpoint_url": ENDPOINT_URL, "region_name": REGION},
     )
 
 
-def ad_folder_exists_in_s3(ad_id: str, s3_client) -> bool:
-    prefix = f"{AD_S3_PREFIX}/{ad_id}/"
+async def ad_folder_exists_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> bool:
+    path = f"{BUCKET_NAME}/{AD_S3_PREFIX}/{ad_id}"
     try:
-        response = s3_client.list_objects_v2(
-            Bucket=BUCKET_NAME, Prefix=prefix, MaxKeys=1
-        )
-        return "Contents" in response
+        return await fs._exists(path)
     except Exception as e:
         logger.error(f"Error checking S3 for ad {ad_id}: {e}")
         return False
 
 
-def query_ads_since(session, since_date: datetime) -> list[tuple[Ad, Ad_Occurrence]]:
-    result = session.execute(
+def _base_ads_query(since_date: datetime):
+    return (
         select(Ad, Ad_Occurrence)
         .join(Ad_Occurrence, Ad_Occurrence.ad_id == Ad.id)
         .where(Ad.first_detection_date >= since_date)
         .distinct(Ad.id)
     )
-    return result.all()
+
+
+def count_ads_since(session, since_date: datetime) -> int:
+    result = session.execute(
+        select(func.count()).select_from(_base_ads_query(since_date).subquery())
+    )
+    return result.scalar()
+
+
+def iter_ads_pages(session, since_date: datetime, page_size: int):
+    """Yield pages of (Ad, Ad_Occurrence) using a server-side cursor."""
+    result = session.execute(
+        _base_ads_query(since_date),
+        execution_options={"stream_results": True},
+    )
+    yield from result.yield_per(page_size).partitions()
 
 
 async def _export_ad(
-    ad: Ad, occurrence: Ad_Occurrence, api: MediatreeAPI, s3_client
+    ad: Ad, occurrence: Ad_Occurrence, api: MediatreeAPI, fs: s3fs.S3FileSystem
 ):
-    from_date = occurrence.occurrence_date
-    to_date = from_date + timedelta(seconds=ad.duration_sec)
+    """Export an ad to S3 based on one of its occurrences.
+    Streams the media file directly to S3 to avoid writing it locally.
+    """
+    occurence_start_date = occurrence.occurrence_date
+    occurence_end_date = occurence_start_date + timedelta(seconds=ad.duration_sec)
     channel = occurrence.channel_name
+
+    from_date = occurence_start_date - MARGIN_ON_MEDIA_EXPORT
+    to_date = occurence_end_date + MARGIN_ON_MEDIA_EXPORT
 
     for media_format in ("mp3", "mp4"):
         buf = io.BytesIO()
         await api.stream_export(channel, from_date, to_date, media_format, buf)
-        buf.seek(0)
 
-        s3_key = f"{AD_S3_PREFIX}/{ad.id}/raw.{media_format}"
-        s3_client.upload_fileobj(buf, BUCKET_NAME, s3_key)
-        logger.info(f"Uploaded s3://{BUCKET_NAME}/{s3_key}")
+        s3_key = f"{BUCKET_NAME}/{AD_S3_PREFIX}/{ad.id}/raw.{media_format}"
+        await fs._pipe_file(s3_key, buf.getvalue(), StorageClass="ONEZONE_IA")
+        logger.debug(
+            f"Uploaded s3://{BUCKET_NAME}/{AD_S3_PREFIX}/{ad.id}/raw.{media_format}"
+        )
+
+
+async def _process_ad(
+    ad: Ad,
+    occurrence: Ad_Occurrence,
+    api: MediatreeAPI,
+    fs: s3fs.S3FileSystem,
+) -> str:
+    """Check if an ad already exists in S3, and export it if not.
+    Returns 'cached' if already in S3, 'uploaded' otherwise.
+    """
+    if await ad_folder_exists_in_s3(ad.id, fs):
+        logger.debug(f"Ad {ad.id} already in S3, skipping")
+        return "cached"
+
+    logger.debug(f"Processing ad {ad.id} (channel={occurrence.channel_name})")
+    await _export_ad(ad, occurrence, api, fs)
+    return "uploaded"
 
 
 async def run(since_date: datetime):
     session = get_db_session()
-    s3_client = get_s3_client()
+    fs = get_s3_filesystem()
 
     try:
-        ads = query_ads_since(session, since_date)
-        logger.info(f"Found {len(ads)} ads since {since_date}")
+        total = count_ads_since(session, since_date)
+        logger.info(f"Found {total} ads since {since_date}")
 
-        async with MediatreeAPI() as api:
-            for ad, occurrence in tqdm(ads, desc="Exporting ads"):
-                if ad_folder_exists_in_s3(ad.id, s3_client):
-                    logger.info(f"Ad {ad.id} already in S3, skipping")
-                    continue
+        semaphore = asyncio.Semaphore(MAX_CONCURRENT_EXPORTS)
+        counts = {"cached": 0, "uploaded": 0, "error": 0}
+        progress = tqdm(total=total, desc="Exporting ads")
 
-                logger.info(
-                    f"Processing ad {ad.id} (channel={occurrence.channel_name})"
-                )
-                try:
-                    await _export_ad(ad, occurrence, api, s3_client)
-                except Exception as e:
-                    logger.error(f"Failed to export ad {ad.id}: {e}")
-                    raise e
+        async with MediatreeAPI(max_concurrent_requests=MAX_CONCURRENT_EXPORTS) as api:
+            for page in iter_ads_pages(session, since_date, PAGE_SIZE):
+
+                async def _limited_process(ad, occurrence):
+                    async with semaphore:
+                        try:
+                            result = await _process_ad(ad, occurrence, api, fs)
+                            counts[result] += 1
+                        except Exception:
+                            logger.error(f"Failed to export ad {ad.id}: {result}")
+                            counts["error"] += 1
+                        finally:
+                            progress.update(1)
+                            progress.set_postfix(counts)
+
+                tasks = [_limited_process(ad, occurrence) for ad, occurrence in page]
+
+                await asyncio.gather(*tasks, return_exceptions=True)
+
+        progress.close()
     finally:
         session.close()
 

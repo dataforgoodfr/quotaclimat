@@ -91,7 +91,9 @@ async def _export_ad(
 
         s3_key = f"{BUCKET_NAME}/{AD_S3_PREFIX}/{ad.id}/raw.{media_format}"
         await fs._pipe_file(s3_key, buf.getvalue())
-        logger.info(f"Uploaded s3://{BUCKET_NAME}/{AD_S3_PREFIX}/{ad.id}/raw.{media_format}")
+        logger.debug(
+            f"Uploaded s3://{BUCKET_NAME}/{AD_S3_PREFIX}/{ad.id}/raw.{media_format}"
+        )
 
 
 async def _process_ad(
@@ -102,10 +104,10 @@ async def _process_ad(
 ):
     """Check if an ad already exists in S3, and export it if not."""
     if await ad_folder_exists_in_s3(ad.id, fs):
-        logger.info(f"Ad {ad.id} already in S3, skipping")
+        logger.debug(f"Ad {ad.id} already in S3, skipping")
         return
 
-    logger.info(f"Processing ad {ad.id} (channel={occurrence.channel_name})")
+    logger.debug(f"Processing ad {ad.id} (channel={occurrence.channel_name})")
     await _export_ad(ad, occurrence, api, fs)
 
 
@@ -120,23 +122,21 @@ async def run(since_date: datetime):
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_EXPORTS)
         progress = tqdm(total=total, desc="Exporting ads")
 
-        async with MediatreeAPI() as api:
+        async with MediatreeAPI(max_concurrent_requests=MAX_CONCURRENT_EXPORTS) as api:
             for page in iter_ads_pages(session, since_date, PAGE_SIZE):
+
                 async def _limited_process(ad, occurrence):
                     async with semaphore:
                         await _process_ad(ad, occurrence, api, fs)
+                        progress.update(1)
 
-                tasks = [
-                    _limited_process(ad, occurrence)
-                    for ad, occurrence in page
-                ]
+                tasks = [_limited_process(ad, occurrence) for ad, occurrence in page]
 
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 
                 for (ad, _), result in zip(page, results):
                     if isinstance(result, Exception):
                         logger.error(f"Failed to export ad {ad.id}: {result}")
-                    progress.update(1)
 
         progress.close()
     finally:

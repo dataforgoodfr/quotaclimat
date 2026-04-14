@@ -109,6 +109,25 @@ jobs:
       with:
         args: jobs definition update ${{ secrets.SCALEWAY_UPDATE_JOB_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }}
 
+    - name: Build quotaclimat_base image
+      run: docker build -f Dockerfile . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+
+    - name: Tag quotaclimat_base latest image
+      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:latest
+
+    - name: Push quotaclimat_base Image
+      run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base
+
+    - name: update advertising_detection scaleway job definition with version quotaclimat_base image
+      uses: jawher/action-scw@v2.54.0
+      env:
+        SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+        SCW_ZONE: ${{ secrets.SCW_ZONE }}
+      with:
+        args: jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_DETECTION_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }} startup-command.0=./entrypoints/advertising_detection.sh
+
   build-factiva:
     needs: build
     runs-on: ubuntu-latest
@@ -140,16 +159,6 @@ jobs:
           username: nologin
           password: ${{ secrets.SCALEWAY_API_KEY }}
           registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
-
-
-      - name: Build quotaclimat_base image
-        run: docker build -f Dockerfile . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
-
-      - name: Tag quotaclimat_base latest image
-        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:latest
-
-      - name: Push quotaclimat_base Image
-        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base
 
       - name: Build factiva_stats_to_s3 image
         run: docker build -f Dockerfile_factiva_stats_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:${{ env.PROJECT_VERSION }}
@@ -226,13 +235,3 @@ jobs:
           SCW_ZONE: ${{ secrets.SCW_ZONE }}
         with:
           args: jobs definition update ${{ secrets.SCALEWAY_JOB_LEMONDE_WEB_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }}
-
-      - name: update advertising_detection scaleway job definition with version quotaclimat_base image
-        uses: jawher/action-scw@v2.54.0
-        env:
-          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
-          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
-          SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
-          SCW_ZONE: ${{ secrets.SCW_ZONE }}
-        with:
-          args: jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_DETECTION_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }} startup-command.0=./entrypoints/advertising_detection.sh

@@ -47,12 +47,18 @@ async def ad_folder_exists_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> bool:
         return False
 
 
-def count_ads_since(session, since_date: datetime) -> int:
-    result = session.execute(
-        select(func.count(func.distinct(Ad.id)))
-        .select_from(Ad)
+def _base_ads_query(since_date: datetime):
+    return (
+        select(Ad, Ad_Occurrence)
         .join(Ad_Occurrence, Ad_Occurrence.ad_id == Ad.id)
         .where(Ad.first_detection_date >= since_date)
+        .distinct(Ad.id)
+    )
+
+
+def count_ads_since(session, since_date: datetime) -> int:
+    result = session.execute(
+        select(func.count()).select_from(_base_ads_query(since_date).subquery())
     )
     return result.scalar()
 
@@ -60,11 +66,7 @@ def count_ads_since(session, since_date: datetime) -> int:
 def iter_ads_pages(session, since_date: datetime, page_size: int):
     """Yield pages of (Ad, Ad_Occurrence) using a server-side cursor."""
     result = session.execute(
-        select(Ad, Ad_Occurrence)
-        .join(Ad_Occurrence, Ad_Occurrence.ad_id == Ad.id)
-        .where(Ad.first_detection_date >= since_date)
-        .distinct(Ad.id)
-        .order_by(Ad.id),
+        _base_ads_query(since_date),
         execution_options={"stream_results": True},
     )
     yield from result.yield_per(page_size).partitions()
@@ -97,16 +99,14 @@ async def _process_ad(
     occurrence: Ad_Occurrence,
     api: MediatreeAPI,
     fs: s3fs.S3FileSystem,
-    semaphore: asyncio.Semaphore,
 ):
-    """Process a single ad with concurrency control."""
-    async with semaphore:
-        if await ad_folder_exists_in_s3(ad.id, fs):
-            logger.info(f"Ad {ad.id} already in S3, skipping")
-            return
+    """Check if an ad already exists in S3, and export it if not."""
+    if await ad_folder_exists_in_s3(ad.id, fs):
+        logger.info(f"Ad {ad.id} already in S3, skipping")
+        return
 
-        logger.info(f"Processing ad {ad.id} (channel={occurrence.channel_name})")
-        await _export_ad(ad, occurrence, api, fs)
+    logger.info(f"Processing ad {ad.id} (channel={occurrence.channel_name})")
+    await _export_ad(ad, occurrence, api, fs)
 
 
 async def run(since_date: datetime):
@@ -122,8 +122,12 @@ async def run(since_date: datetime):
 
         async with MediatreeAPI() as api:
             for page in iter_ads_pages(session, since_date, PAGE_SIZE):
+                async def _limited_process(ad, occurrence):
+                    async with semaphore:
+                        await _process_ad(ad, occurrence, api, fs)
+
                 tasks = [
-                    _process_ad(ad, occurrence, api, fs, semaphore)
+                    _limited_process(ad, occurrence)
                     for ad, occurrence in page
                 ]
 

@@ -57,19 +57,17 @@ def count_ads_since(session, since_date: datetime) -> int:
     return result.scalar()
 
 
-def query_ads_page(
-    session, since_date: datetime, page_size: int, offset: int
-) -> list[tuple[Ad, Ad_Occurrence]]:
+def iter_ads_pages(session, since_date: datetime, page_size: int):
+    """Yield pages of (Ad, Ad_Occurrence) using a server-side cursor."""
     result = session.execute(
         select(Ad, Ad_Occurrence)
         .join(Ad_Occurrence, Ad_Occurrence.ad_id == Ad.id)
         .where(Ad.first_detection_date >= since_date)
         .distinct(Ad.id)
-        .order_by(Ad.id)
-        .limit(page_size)
-        .offset(offset)
+        .order_by(Ad.id),
+        execution_options={"stream_results": True},
     )
-    return result.all()
+    yield from result.yield_per(page_size).partitions()
 
 
 async def _export_ad(
@@ -121,14 +119,9 @@ async def run(since_date: datetime):
 
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_EXPORTS)
         progress = tqdm(total=total, desc="Exporting ads")
-        offset = 0
 
         async with MediatreeAPI() as api:
-            while True:
-                page = query_ads_page(session, since_date, PAGE_SIZE, offset)
-                if not page:
-                    break
-
+            for page in iter_ads_pages(session, since_date, PAGE_SIZE):
                 tasks = [
                     _process_ad(ad, occurrence, api, fs, semaphore)
                     for ad, occurrence in page
@@ -140,8 +133,6 @@ async def run(since_date: datetime):
                     if isinstance(result, Exception):
                         logger.error(f"Failed to export ad {ad.id}: {result}")
                     progress.update(1)
-
-                offset += PAGE_SIZE
 
         progress.close()
     finally:

@@ -239,7 +239,7 @@ def get_words_in_sentence_regex_i18n(keywords_lemmas, text: str) -> Set[str]:
         match = re.search(pattern, text)
         if match:
             found.add(idx)
-            word_idx = min(len(text[:match.start()].split(" ")) - 1, 0)
+            word_idx = max(len(text[:match.start()].split(" ")) - 1, 0)
             word_positions.append(word_idx)
     logging.info(f"word positions: {word_positions}")
     return found, word_positions

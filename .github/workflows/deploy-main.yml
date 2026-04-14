@@ -56,7 +56,7 @@ jobs:
       run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import
 
     - name: update scaleway job definition with version mediatree_import
-      uses: jawher/action-scw@v2.34.0
+      uses: jawher/action-scw@v2.54.0
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
         SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -73,7 +73,7 @@ jobs:
       run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
 
     - name: update scaleway job definition with version s3
-      uses: jawher/action-scw@v2.34.0
+      uses: jawher/action-scw@v2.54.0
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
         SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -90,7 +90,7 @@ jobs:
       run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:${{ env.PROJECT_VERSION }}
 
     - name: update scaleway job definition with version stopwords
-      uses: jawher/action-scw@v2.34.0
+      uses: jawher/action-scw@v2.54.0
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
         SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -100,7 +100,7 @@ jobs:
         args: jobs definition update ${{ secrets.SCALEWAY_STOP_WORDS_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:${{ env.PROJECT_VERSION }}
 
     - name: update scaleway job update job
-      uses: jawher/action-scw@v2.34.0
+      uses: jawher/action-scw@v2.54.0
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
         SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -141,6 +141,16 @@ jobs:
           password: ${{ secrets.SCALEWAY_API_KEY }}
           registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
 
+
+      - name: Build quotaclimat_base image
+        run: docker build -f Dockerfile . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+
+      - name: Tag quotaclimat_base latest image
+        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:latest
+
+      - name: Push quotaclimat_base Image
+        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base
+
       - name: Build factiva_stats_to_s3 image
         run: docker build -f Dockerfile_factiva_stats_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:${{ env.PROJECT_VERSION }}
 
@@ -178,7 +188,7 @@ jobs:
         run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web
 
       - name: Update Scaleway job definition with Factiva Stats image
-        uses: jawher/action-scw@v2.34.0
+        uses: jawher/action-scw@v2.54.0
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -188,7 +198,7 @@ jobs:
           args: jobs definition update ${{ secrets.SCALEWAY_JOB_FACTIVA_STATS_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:${{ env.PROJECT_VERSION }}
 
       - name: Update Scaleway job definition with Factiva to S3 image
-        uses: jawher/action-scw@v2.34.0
+        uses: jawher/action-scw@v2.54.0
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -198,7 +208,7 @@ jobs:
           args: jobs definition update ${{ secrets.SCALEWAY_JOB_FACTIVA_TO_S3_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:${{ env.PROJECT_VERSION }}
 
       - name: Update Scaleway job definition with S3 Factiva to Postgre image
-        uses: jawher/action-scw@v2.34.0
+        uses: jawher/action-scw@v2.54.0
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -208,7 +218,7 @@ jobs:
           args: jobs definition update ${{ secrets.SCALEWAY_JOB_S3_FACTIVA_TO_POSTGRE_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3_factiva_to_postgre:${{ env.PROJECT_VERSION }}
 
       - name: Update Scaleway job definition with Le Monde Web image
-        uses: jawher/action-scw@v2.34.0
+        uses: jawher/action-scw@v2.54.0
         env:
           SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
           SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
@@ -216,3 +226,16 @@ jobs:
           SCW_ZONE: ${{ secrets.SCW_ZONE }}
         with:
           args: jobs definition update ${{ secrets.SCALEWAY_JOB_LEMONDE_WEB_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/lemonde_web:${{ env.PROJECT_VERSION }}
+
+      - name: update advertising_detection scaleway job definition with version quotaclimat_base image
+        uses: jawher/action-scw@v2.54.0
+        env:
+          SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+          SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+          SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+          SCW_ZONE: ${{ secrets.SCW_ZONE }}
+        with:
+          args: jobs definition \
+            update ${{ secrets.SCALEWAY_JOB_ADVERTISING_DETECTION_ID }} \
+            image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }} \
+            startup-command.0=./entrypoints/advertising_detection.sh

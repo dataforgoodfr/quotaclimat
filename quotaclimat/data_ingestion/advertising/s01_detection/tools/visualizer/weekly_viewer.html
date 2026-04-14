@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QuotaClimat — Fragment Viewer</title>
+  <style>
+    :root {
+      --bg: #0c0c18;
+      --surface: #161628;
+      --surface2: #1e1e36;
+      --surface3: #28284a;
+      --border: #2a2a4a;
+      --primary: #00d2a0;
+      --primary-dim: #00805f;
+      --accent: #f0c040;
+      --accent-dim: #a08020;
+      --danger: #e05050;
+      --text: #e8ecf2;
+      --text2: #b8c2d4;
+      --text3: #8890a8;
+      --group-highlight: rgba(0, 210, 160, 0.25);
+      --radius: 6px;
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── Header ─────────────────────────────────────── */
+    #header {
+      background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-shrink: 0;
+    }
+
+    #logo {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    #logo .q {
+      color: var(--primary);
+    }
+
+    #logo .c {
+      color: var(--accent);
+    }
+
+    #header-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    #header-stats .stat-val {
+      color: var(--primary);
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    #params-toggle {
+      margin-left: auto;
+      background: var(--surface3);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 4px 12px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    #params-toggle:hover {
+      color: var(--text);
+      border-color: var(--primary-dim);
+    }
+
+    /* ─── Params Panel ───────────────────────────────── */
+    #params-panel {
+      display: none;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      font-size: 12px;
+      color: var(--text);
+      flex-shrink: 0;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    #params-panel.open {
+      display: block;
+    }
+
+    #params-panel table {
+      border-collapse: collapse;
+    }
+
+    #params-panel td {
+      padding: 2px 12px 2px 0;
+    }
+
+    #params-panel td:first-child {
+      color: var(--text2);
+      font-family: var(--mono);
+      white-space: pre;
+    }
+
+    #params-panel .param-section-key {
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    #params-panel .param-nested-key {
+      color: var(--text);
+    }
+
+    #params-panel td:last-child {
+      font-family: var(--mono);
+      color: var(--accent);
+    }
+
+    /* ─── Legend ──────────────────────────────────────── */
+    #legend-bar {
+      display: flex;
+      gap: 16px;
+      padding: 6px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text2);
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      padding: 2px 6px;
+      border-radius: 3px;
+      transition: background 0.1s;
+    }
+
+    .legend-item:hover {
+      background: var(--surface3);
+    }
+
+    .legend-item.dimmed {
+      opacity: 0.3;
+    }
+
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+    }
+
+    .legend-count {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+    }
+
+    /* ─── Day Navigation ─────────────────────────────── */
+    #day-nav {
+      display: flex;
+      gap: 4px;
+      padding: 8px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .day-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 4px 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+
+    .day-btn:hover {
+      border-color: var(--primary-dim);
+      color: var(--text);
+    }
+
+    .day-btn.active {
+      background: var(--primary-dim);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    #nav-controls {
+      margin-left: auto;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .nav-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-btn:hover {
+      border-color: var(--primary-dim);
+      color: var(--text);
+    }
+
+    #zoom-label {
+      font-size: 11px;
+      color: var(--text3);
+      min-width: 60px;
+      text-align: center;
+    }
+
+    /* ─── Focus bar ──────────────────────────────────────── */
+    #focus-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0 8px;
+      height: 28px;
+      border-radius: var(--radius);
+      font-size: 12px;
+      font-family: var(--mono);
+      width: 170px;
+      transition: border-color 0.15s;
+    }
+
+    #focus-input:focus {
+      outline: none;
+      border-color: var(--primary-dim);
+    }
+
+    #focus-input.error {
+      border-color: var(--danger);
+    }
+
+    #focus-separator {
+      color: var(--border);
+      font-size: 18px;
+      line-height: 1;
+      margin: 0 2px;
+    }
+
+    /* ─── Canvas Area ────────────────────────────────── */
+    #canvas-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      position: relative;
+    }
+
+    .canvas-row {
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .canvas-row canvas {
+      display: block;
+      width: 100%;
+    }
+
+    .canvas-label {
+      position: absolute;
+      left: 8px;
+      top: 4px;
+      font-size: 10px;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #overview-row {
+      height: 40px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #density-row {
+      height: 80px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #timeline-row {
+      flex: 1;
+      min-height: 120px;
+      cursor: grab;
+    }
+
+    #timeline-row.grabbing {
+      cursor: grabbing;
+    }
+
+    /* ─── Tooltip ────────────────────────────────────── */
+    #tooltip {
+      display: none;
+      position: fixed;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 12px;
+      font-size: 11px;
+      color: var(--text);
+      z-index: 100;
+      pointer-events: none;
+      max-width: 320px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      line-height: 1.5;
+    }
+
+    #tooltip .tt-label {
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+
+    #tooltip .tt-group {
+      color: var(--accent);
+    }
+
+    /* ─── Detail Panel ───────────────────────────────── */
+    #detail-panel {
+      position: fixed;
+      right: 0;
+      top: 0;
+      width: 460px;
+      height: 100%;
+      background: var(--surface);
+      border-left: 2px solid var(--primary-dim);
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      box-shadow: -4px 0 30px rgba(0, 0, 0, 0.5);
+    }
+
+    #detail-panel.open {
+      transform: translateX(0);
+    }
+
+    #detail-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    #detail-header h3 {
+      font-size: 14px;
+      color: var(--primary);
+    }
+
+    #close-detail {
+      background: none;
+      border: none;
+      color: var(--text3);
+      font-size: 22px;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+
+    #close-detail:hover {
+      color: var(--danger);
+    }
+
+    #player-link-container {
+      flex-shrink: 0;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .player-link {
+      display: inline-block;
+      background: var(--primary-dim);
+      color: #fff;
+      text-decoration: none;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+
+    .player-link:hover {
+      background: var(--primary);
+      color: #000;
+    }
+
+    #detail-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+    }
+
+    .detail-section {
+      margin-bottom: 16px;
+    }
+
+    .detail-section h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text3);
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 12px;
+      font-size: 12px;
+    }
+
+    .info-grid .label {
+      color: var(--text3);
+    }
+
+    .info-grid .value {
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .classification-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #000;
+    }
+
+    .group-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .chunk-list {
+      list-style: none;
+    }
+
+    .chunk-item {
+      padding: 6px 8px;
+      margin: 2px 0;
+      border-radius: var(--radius);
+      font-size: 12px;
+      background: var(--surface2);
+      border-left: 3px solid var(--primary-dim);
+    }
+
+    .chunk-item .info-grid {
+      font-size: 11px;
+    }
+
+    .member-list {
+      list-style: none;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .member-item {
+      padding: 6px 8px;
+      margin: 2px 0;
+      border-radius: var(--radius);
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.1s;
+    }
+
+    .member-item:hover {
+      background: var(--surface3);
+    }
+
+    .member-item.current {
+      background: var(--group-highlight);
+      border-left: 3px solid var(--primary);
+    }
+
+    .member-item .m-time {
+      color: var(--primary);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .member-item .m-dur {
+      color: var(--text3);
+      font-size: 10px;
+    }
+
+    .member-item .m-link {
+      color: var(--text3);
+      font-size: 10px;
+      text-decoration: none;
+    }
+
+    .member-item .m-link:hover {
+      color: var(--primary);
+    }
+
+    /* ─── Keyboard Help ──────────────────────────────── */
+    #kbd-help {
+      position: fixed;
+      bottom: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: var(--text3);
+      display: flex;
+      gap: 12px;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    kbd {
+      background: var(--surface3);
+      padding: 1px 5px;
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 10px;
+    }
+
+    /* ─── Scrollbar ──────────────────────────────────── */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--surface);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--surface3);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--border);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="header">
+    <div id="logo"><span class="q">Quota</span><span class="c">Climat</span></div>
+    <div id="header-stats">
+      <div><span class="stat-val" id="stat-fragments">0</span> fragments</div>
+      <div><span class="stat-val" id="stat-groups">0</span> groupes</div>
+      <div><span class="stat-val" id="stat-annotations">0</span> annotations</div>
+    </div>
+    <button id="params-toggle">Paramètres</button>
+  </div>
+
+  <div id="params-panel"></div>
+
+  <div id="legend-bar"></div>
+
+  <nav id="day-nav">
+    <div id="day-buttons"></div>
+    <div id="nav-controls">
+      <button class="nav-btn" id="zoom-out" title="Dézoomer (-)">-</button>
+      <span id="zoom-label">1 jour</span>
+      <button class="nav-btn" id="zoom-in" title="Zoomer (+)">+</button>
+      <button class="nav-btn" id="pan-left" title="Gauche (←)">◀</button>
+      <button class="nav-btn" id="pan-right" title="Droite (→)">▶</button>
+      <button class="nav-btn" id="fit-all" title="Vue complète (F)">⊞</button>
+      <span id="focus-separator">│</span>
+      <input id="focus-input" type="text" placeholder="Epoch ou groupe ID…" title="Focus sur un fragment par epoch (ex: 1700000000) ou groupe ID" />
+      <button class="nav-btn" id="focus-btn" title="Focus (Entrée)">⌖</button>
+    </div>
+  </nav>
+
+  <div id="canvas-area">
+    <div class="canvas-row" id="overview-row">
+      <span class="canvas-label">Vue d'ensemble</span>
+      <canvas id="overview-canvas"></canvas>
+    </div>
+    <div class="canvas-row" id="density-row">
+      <span class="canvas-label">Densité (fragments / 15 min)</span>
+      <canvas id="density-canvas"></canvas>
+    </div>
+    <div class="canvas-row" id="timeline-row">
+      <canvas id="timeline-canvas"></canvas>
+    </div>
+  </div>
+
+  <div id="tooltip"></div>
+
+  <div id="detail-panel">
+    <div id="detail-header">
+      <h3 id="detail-title">Fragment</h3>
+      <button id="close-detail">&times;</button>
+    </div>
+    <div id="player-link-container"></div>
+    <div id="detail-content"></div>
+  </div>
+
+  <div id="kbd-help">
+    <span><kbd>Molette</kbd> zoom</span>
+    <span><kbd>←</kbd><kbd>→</kbd> naviguer</span>
+    <span><kbd>1</kbd>-<kbd>7</kbd> jours</span>
+    <span><kbd>F</kbd> vue complète</span>
+    <span><kbd>Échap</kbd> fermer</span>
+  </div>
+
+  <script id="embedded-data" type="application/json">null</script>
+  <script>
+    (function () {
+      "use strict";
+
+      // ───────────────────────────────────────────────────────────
+      //  Data loading
+      // ───────────────────────────────────────────────────────────
+      const DATA = JSON.parse(document.getElementById("embedded-data").textContent);
+      const FRAGMENTS = DATA.fragments;
+      const ANNOTATIONS = DATA.annotations;
+      const DENSITY = DATA.density;
+      const PARAMS = DATA.params;
+      const T_MIN = DATA.timeRange.min;
+      const T_MAX = DATA.timeRange.max;
+      const STATS = DATA.stats;
+
+      // Fragment lookup by absStart
+      const fragByAbsStart = {};
+      FRAGMENTS.forEach(f => fragByAbsStart[f.absStart] = f);
+
+      // ───────────────────────────────────────────────────────────
+      //  Classification colors
+      // ───────────────────────────────────────────────────────────
+      const CLASSIFICATION_COLORS = {
+        "already_known_ad": "#e05050",
+        "new_ad": "#FF9F43",
+        "content": "#4ECDC4",
+        "jingle": "#f0c040",
+        "unknown": "#808090",
+      };
+
+      const CLASSIFICATION_LABELS = {
+        "already_known_ad": "Pub connue",
+        "new_ad": "Nouvelle pub",
+        "content": "Contenu",
+        "jingle": "Jingle",
+        "unknown": "Inconnu",
+      };
+
+      const ANNOTATION_COLORS = {
+        "PUBLICITE": "#e05050",
+        "JINGLE": "#f0c040",
+        "EMISSION": "#4080e0",
+        "AUTOPROMOTION": "#e080e0",
+        "PARRAINAGE": "#40c0c0",
+      };
+      const DEFAULT_ANNOTATION_COLOR = "#808090";
+
+      // Filter state: which classifications are visible
+      const visibleClassifications = new Set(Object.keys(CLASSIFICATION_COLORS));
+
+      function classColor(classification) {
+        return CLASSIFICATION_COLORS[classification] || "#808090";
+      }
+      function annotationColor(type) {
+        return ANNOTATION_COLORS[type] || DEFAULT_ANNOTATION_COLOR;
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Time utilities
+      // ───────────────────────────────────────────────────────────
+      const PARIS_TZ = "Europe/Paris";
+      function epochToDate(epoch) {
+        return new Date(epoch * 1000);
+      }
+      function formatDateTime(epoch) {
+        return epochToDate(epoch).toLocaleString("fr-FR", { timeZone: PARIS_TZ });
+      }
+      function formatTime(epoch) {
+        return epochToDate(epoch).toLocaleString("fr-FR", {
+          timeZone: PARIS_TZ, hour: "2-digit", minute: "2-digit", second: "2-digit"
+        });
+      }
+      function formatDate(epoch) {
+        return epochToDate(epoch).toLocaleString("fr-FR", {
+          timeZone: PARIS_TZ, weekday: "short", day: "numeric", month: "short"
+        });
+      }
+      function formatDuration(sec) {
+        if (sec < 1) return sec.toFixed(2) + "s";
+        if (sec < 60) return sec.toFixed(1) + "s";
+        const m = Math.floor(sec / 60), s = Math.floor(sec % 60);
+        return m + "m" + (s ? s + "s" : "");
+      }
+      function dayOfEpoch(epoch) {
+        const d = epochToDate(epoch);
+        return d.toLocaleDateString("fr-CA", { timeZone: PARIS_TZ });
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  View state
+      // ───────────────────────────────────────────────────────────
+      let viewStart = T_MIN;
+      let viewEnd = T_MAX;
+      let selectedFragment = null;
+      let highlightedGroup = null;
+      const MIN_VIEW_SPAN = 30;
+      const MAX_VIEW_SPAN = T_MAX - T_MIN || 86400 * 7;
+
+      // Sorted fragments for binary search
+      const sortedFragments = [...FRAGMENTS].sort((a, b) => a.absStart - b.absStart);
+
+      function visibleFragments() {
+        let lo = 0, hi = sortedFragments.length;
+        while (lo < hi) {
+          const mid = (lo + hi) >> 1;
+          if (sortedFragments[mid].absEnd < viewStart) lo = mid + 1;
+          else hi = mid;
+        }
+        const result = [];
+        for (let i = lo; i < sortedFragments.length; i++) {
+          if (sortedFragments[i].absStart > viewEnd) break;
+          if (visibleClassifications.has(sortedFragments[i].classification)) {
+            result.push(sortedFragments[i]);
+          }
+        }
+        return result;
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Canvas setup
+      // ───────────────────────────────────────────────────────────
+      const overviewCanvas = document.getElementById("overview-canvas");
+      const densityCanvas = document.getElementById("density-canvas");
+      const timelineCanvas = document.getElementById("timeline-canvas");
+      const overviewCtx = overviewCanvas.getContext("2d");
+      const densityCtx = densityCanvas.getContext("2d");
+      const timelineCtx = timelineCanvas.getContext("2d");
+
+      function resizeCanvas(canvas, container) {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = container.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = rect.height * dpr;
+        canvas.style.width = rect.width + "px";
+        canvas.style.height = rect.height + "px";
+        const ctx = canvas.getContext("2d");
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        return { w: rect.width, h: rect.height };
+      }
+
+      function resizeAll() {
+        resizeCanvas(overviewCanvas, document.getElementById("overview-row"));
+        resizeCanvas(densityCanvas, document.getElementById("density-row"));
+        resizeCanvas(timelineCanvas, document.getElementById("timeline-row"));
+        render();
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Coordinate transforms
+      // ───────────────────────────────────────────────────────────
+      function epochToX(epoch, x0, w, tMin, tMax) {
+        return x0 + (epoch - tMin) / (tMax - tMin) * w;
+      }
+      function xToEpoch(x, x0, w, tMin, tMax) {
+        return tMin + (x - x0) / w * (tMax - tMin);
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Render: Overview
+      // ───────────────────────────────────────────────────────────
+      function renderOverview() {
+        const rect = overviewCanvas.getBoundingClientRect();
+        const W = rect.width, H = rect.height;
+        const ctx = overviewCtx;
+        ctx.clearRect(0, 0, W, H);
+
+        if (T_MAX <= T_MIN) return;
+
+        // Fragments as colored bars
+        FRAGMENTS.forEach(f => {
+          if (!visibleClassifications.has(f.classification)) return;
+          const x = epochToX(f.absStart, 0, W, T_MIN, T_MAX);
+          const xw = Math.max(epochToX(f.absEnd, 0, W, T_MIN, T_MAX) - x, 0.5);
+          ctx.fillStyle = classColor(f.classification);
+          ctx.globalAlpha = f.groupSize > 1 ? 0.8 : 0.4;
+          ctx.fillRect(x, 2, xw, H - 4);
+        });
+        ctx.globalAlpha = 1.0;
+
+        // Viewport rectangle
+        const vx1 = epochToX(viewStart, 0, W, T_MIN, T_MAX);
+        const vx2 = epochToX(viewEnd, 0, W, T_MIN, T_MAX);
+        ctx.strokeStyle = "#00d2a0";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(vx1, 0.5, vx2 - vx1, H - 1);
+        ctx.fillStyle = "rgba(0, 210, 160, 0.08)";
+        ctx.fillRect(vx1, 0, vx2 - vx1, H);
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Render: Density
+      // ───────────────────────────────────────────────────────────
+      function renderDensity() {
+        const rect = densityCanvas.getBoundingClientRect();
+        const W = rect.width, H = rect.height;
+        const ctx = densityCtx;
+        ctx.clearRect(0, 0, W, H);
+
+        const bins = DENSITY.total;
+        const binsAd = DENSITY.ad;
+        const binSize = DENSITY.binSize;
+        if (!bins.length) return;
+
+        const maxVal = Math.max(...bins, 1);
+        const pad = 20;
+        const plotH = H - pad;
+
+        const binStart = Math.max(0, Math.floor((viewStart - T_MIN) / binSize) - 1);
+        const binEnd = Math.min(bins.length - 1, Math.ceil((viewEnd - T_MIN) / binSize) + 1);
+
+        // Total fragments area
+        ctx.beginPath();
+        ctx.moveTo(epochToX(T_MIN + binStart * binSize, 0, W, viewStart, viewEnd), H);
+        for (let i = binStart; i <= binEnd; i++) {
+          const t = T_MIN + (i + 0.5) * binSize;
+          const x = epochToX(t, 0, W, viewStart, viewEnd);
+          const y = H - (bins[i] / maxVal) * plotH;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(epochToX(T_MIN + (binEnd + 0.5) * binSize, 0, W, viewStart, viewEnd), H);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(100, 110, 130, 0.2)";
+        ctx.fill();
+
+        // Ad fragments area
+        ctx.beginPath();
+        ctx.moveTo(epochToX(T_MIN + binStart * binSize, 0, W, viewStart, viewEnd), H);
+        for (let i = binStart; i <= binEnd; i++) {
+          const t = T_MIN + (i + 0.5) * binSize;
+          const x = epochToX(t, 0, W, viewStart, viewEnd);
+          const y = H - (binsAd[i] / maxVal) * plotH;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(epochToX(T_MIN + (binEnd + 0.5) * binSize, 0, W, viewStart, viewEnd), H);
+        ctx.closePath();
+        ctx.fillStyle = "rgba(224, 80, 80, 0.25)";
+        ctx.fill();
+
+        // Lines
+        ctx.beginPath();
+        for (let i = binStart; i <= binEnd; i++) {
+          const t = T_MIN + (i + 0.5) * binSize;
+          const x = epochToX(t, 0, W, viewStart, viewEnd);
+          const y = H - (bins[i] / maxVal) * plotH;
+          if (i === binStart) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = "rgba(150, 160, 180, 0.5)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.beginPath();
+        for (let i = binStart; i <= binEnd; i++) {
+          const t = T_MIN + (i + 0.5) * binSize;
+          const x = epochToX(t, 0, W, viewStart, viewEnd);
+          const y = H - (binsAd[i] / maxVal) * plotH;
+          if (i === binStart) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = "#e05050";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Y-axis label
+        ctx.fillStyle = "#606878";
+        ctx.font = "10px " + getComputedStyle(document.body).fontFamily;
+        ctx.textAlign = "right";
+        ctx.fillText(maxVal.toString(), W - 6, 14);
+
+        // Legend
+        ctx.textAlign = "left";
+        ctx.fillStyle = "rgba(150, 160, 180, 0.5)";
+        ctx.fillRect(80, 4, 10, 10);
+        ctx.fillStyle = "#606878";
+        ctx.fillText("Total", 94, 13);
+        ctx.fillStyle = "rgba(224, 80, 80, 0.6)";
+        ctx.fillRect(130, 4, 10, 10);
+        ctx.fillStyle = "#606878";
+        ctx.fillText("Pubs", 144, 13);
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Render: Timeline
+      // ───────────────────────────────────────────────────────────
+      const TRACK_FRAG_Y = 22;
+      const TRACK_ANNOT_H = 16;
+      const TRACK_GAP = 4;
+
+      function renderTimeline() {
+        const rect = timelineCanvas.getBoundingClientRect();
+        const W = rect.width, H = rect.height;
+        const ctx = timelineCtx;
+        ctx.clearRect(0, 0, W, H);
+
+        if (T_MAX <= T_MIN) return;
+
+        const span = viewEnd - viewStart;
+
+        // ── Time grid ──────────────────────────────────
+        const gridIntervals = [60, 300, 900, 1800, 3600, 7200, 14400, 21600, 43200, 86400];
+        let gridStep = gridIntervals[0];
+        for (const gi of gridIntervals) {
+          if (W / (span / gi) > 50) { gridStep = gi; break; }
+        }
+
+        const gridStart = Math.floor(viewStart / gridStep) * gridStep;
+        ctx.font = "10px " + getComputedStyle(document.body).fontFamily;
+        ctx.textAlign = "center";
+
+        for (let t = gridStart; t <= viewEnd; t += gridStep) {
+          const x = epochToX(t, 0, W, viewStart, viewEnd);
+          if (x < 0 || x > W) continue;
+
+          const d = epochToDate(t);
+          const hours = parseInt(d.toLocaleString("fr-FR", { timeZone: PARIS_TZ, hour: "2-digit", hour12: false }));
+          const minutes = d.getMinutes();
+          const isDayBoundary = hours === 0 && minutes === 0 && gridStep <= 86400;
+
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, H);
+          ctx.strokeStyle = isDayBoundary ? "rgba(100, 100, 150, 0.6)" : "rgba(50, 50, 80, 0.3)";
+          ctx.lineWidth = isDayBoundary ? 1.5 : 0.5;
+          ctx.stroke();
+
+          let label;
+          if (gridStep >= 86400) label = formatDate(t);
+          else if (gridStep >= 3600) label = formatTime(t).slice(0, 5);
+          else label = formatTime(t);
+          ctx.fillStyle = "#505068";
+          ctx.fillText(label, x, H - 4);
+        }
+
+        // ── Fragments track ─────────────────────────────
+        const TRACK_FRAG_H = Math.max(30, H - TRACK_FRAG_Y - TRACK_ANNOT_H - TRACK_GAP - 20);
+        const visFrag = visibleFragments();
+
+        // Highlight group background
+        if (highlightedGroup !== null) {
+          visFrag.forEach(f => {
+            if (f.groupId !== highlightedGroup) return;
+            const x1 = epochToX(f.absStart, 0, W, viewStart, viewEnd);
+            const x2 = epochToX(f.absEnd, 0, W, viewStart, viewEnd);
+            ctx.fillStyle = "rgba(0, 210, 160, 0.15)";
+            ctx.fillRect(x1 - 2, TRACK_FRAG_Y - 2, Math.max(x2 - x1 + 4, 6), TRACK_FRAG_H + 4);
+          });
+        }
+
+        visFrag.forEach(f => {
+          const x1 = epochToX(f.absStart, 0, W, viewStart, viewEnd);
+          const x2 = epochToX(f.absEnd, 0, W, viewStart, viewEnd);
+          const fw = Math.max(x2 - x1, 2);
+          const color = classColor(f.classification);
+
+          // Height based on group size for repeated fragments
+          const maxGroupSize = 20;
+          const hRatio = Math.min(f.groupSize / maxGroupSize, 1);
+          const fh = Math.max(10, hRatio * TRACK_FRAG_H);
+          const fy = TRACK_FRAG_Y + (TRACK_FRAG_H - fh);
+
+          // Draw fragment background
+          ctx.fillStyle = color;
+          ctx.globalAlpha = 0.7;
+          ctx.fillRect(x1, fy, fw, fh);
+
+          // Draw internal chunks if zoomed in enough
+          if (f.chunks && f.chunks.length > 1 && fw > 20) {
+            ctx.globalAlpha = 1;
+            f.chunks.forEach((chunk, ci) => {
+              const cx1 = epochToX(chunk.absStart, 0, W, viewStart, viewEnd);
+              const cx2 = epochToX(chunk.absEnd, 0, W, viewStart, viewEnd);
+              // Draw chunk separator (subtle dashed line — less important than segment boundary)
+              if (ci > 0) {
+                ctx.save();
+                ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 3]);
+                ctx.beginPath();
+                ctx.moveTo(cx1, fy);
+                ctx.lineTo(cx1, fy + fh);
+                ctx.stroke();
+                ctx.restore();
+              }
+            });
+          }
+
+          // Border for selected
+          if (selectedFragment && f.id === selectedFragment.id) {
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x1 - 1, fy - 1, fw + 2, fh + 2);
+          }
+          ctx.globalAlpha = 1;
+
+          // Label if wide enough
+          if (fw > 50) {
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 9px " + getComputedStyle(document.body).fontFamily;
+            ctx.textAlign = "center";
+            const label = CLASSIFICATION_LABELS[f.classification] || f.classification;
+            const groupLabel = f.groupSize > 1 ? ` (${f.groupSize}x)` : "";
+            ctx.fillText(label + groupLabel, x1 + fw / 2, fy + fh / 2 + 3);
+          }
+        });
+
+        // ── Annotations track ──────────────────────────
+        const TRACK_ANNOT_Y = TRACK_FRAG_Y + TRACK_FRAG_H + TRACK_GAP;
+        ANNOTATIONS.forEach(a => {
+          const x1 = Math.max(epochToX(a.start, 0, W, viewStart, viewEnd), 0);
+          const x2 = Math.min(epochToX(a.end, 0, W, viewStart, viewEnd), W);
+          if (x2 < 0 || x1 > W) return;
+          const aw = Math.max(x2 - x1, 2);
+
+          ctx.fillStyle = annotationColor(a.type);
+          ctx.globalAlpha = 0.5;
+          ctx.fillRect(x1, TRACK_ANNOT_Y, aw, TRACK_ANNOT_H);
+          ctx.globalAlpha = 1;
+
+          if (aw > 30) {
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 9px " + getComputedStyle(document.body).fontFamily;
+            ctx.textAlign = "center";
+            ctx.fillText(a.type, x1 + aw / 2, TRACK_ANNOT_Y + TRACK_ANNOT_H - 4);
+          }
+        });
+
+        // Track labels
+        ctx.fillStyle = "#505068";
+        ctx.font = "9px " + getComputedStyle(document.body).fontFamily;
+        ctx.textAlign = "left";
+        ctx.fillText("Fragments", 4, TRACK_FRAG_Y + 10);
+        if (ANNOTATIONS.length) ctx.fillText("Annotations", 4, TRACK_ANNOT_Y + 11);
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Render all
+      // ───────────────────────────────────────────────────────────
+      function render() {
+        renderOverview();
+        renderDensity();
+        renderTimeline();
+        updateZoomLabel();
+      }
+
+      function updateZoomLabel() {
+        const span = viewEnd - viewStart;
+        let label;
+        if (span > 86400 * 2) label = (span / 86400).toFixed(1) + " jours";
+        else if (span > 3600 * 2) label = (span / 3600).toFixed(1) + " heures";
+        else if (span > 60 * 2) label = (span / 60).toFixed(0) + " min";
+        else label = span.toFixed(0) + " sec";
+        document.getElementById("zoom-label").textContent = label;
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Zoom & Pan
+      // ───────────────────────────────────────────────────────────
+      function zoomAt(factor, centerEpoch) {
+        const span = viewEnd - viewStart;
+        const newSpan = Math.max(MIN_VIEW_SPAN, Math.min(MAX_VIEW_SPAN, span * factor));
+        const ratio = (centerEpoch - viewStart) / span;
+        viewStart = centerEpoch - ratio * newSpan;
+        viewEnd = centerEpoch + (1 - ratio) * newSpan;
+        clampView();
+        render();
+      }
+
+      function panBy(fraction) {
+        const span = viewEnd - viewStart;
+        const shift = span * fraction;
+        viewStart += shift;
+        viewEnd += shift;
+        clampView();
+        render();
+      }
+
+      function clampView() {
+        const span = viewEnd - viewStart;
+        if (viewStart < T_MIN - span * 0.1) {
+          viewStart = T_MIN - span * 0.1;
+          viewEnd = viewStart + span;
+        }
+        if (viewEnd > T_MAX + span * 0.1) {
+          viewEnd = T_MAX + span * 0.1;
+          viewStart = viewEnd - span;
+        }
+      }
+
+      function fitAll() {
+        viewStart = T_MIN;
+        viewEnd = T_MAX;
+        render();
+      }
+
+      function zoomToDay(dayStr) {
+        let dayMin = Infinity, dayMax = -Infinity;
+        FRAGMENTS.forEach(f => {
+          if (dayOfEpoch(f.absStart) === dayStr) {
+            dayMin = Math.min(dayMin, f.absStart);
+            dayMax = Math.max(dayMax, f.absEnd);
+          }
+        });
+        if (dayMin === Infinity) return;
+        const pad = (dayMax - dayMin) * 0.05;
+        viewStart = dayMin - pad;
+        viewEnd = dayMax + pad;
+        clampView();
+        render();
+        updateDayButtons();
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Hit testing
+      // ───────────────────────────────────────────────────────────
+      function fragmentAtPosition(canvasX, canvasY) {
+        const rect = timelineCanvas.getBoundingClientRect();
+        const W = rect.width, H = rect.height;
+        const TRACK_FRAG_H = Math.max(30, H - TRACK_FRAG_Y - TRACK_ANNOT_H - TRACK_GAP - 20);
+
+        const visFrag = visibleFragments();
+        for (let i = visFrag.length - 1; i >= 0; i--) {
+          const f = visFrag[i];
+          const x1 = epochToX(f.absStart, 0, W, viewStart, viewEnd);
+          const x2 = epochToX(f.absEnd, 0, W, viewStart, viewEnd);
+          const fw = Math.max(x2 - x1, 4);
+
+          const maxGroupSize = 20;
+          const hRatio = Math.min(f.groupSize / maxGroupSize, 1);
+          const fh = Math.max(10, hRatio * TRACK_FRAG_H);
+          const fy = TRACK_FRAG_Y + (TRACK_FRAG_H - fh);
+
+          if (canvasX >= x1 - 2 && canvasX <= x1 + fw + 2 && canvasY >= fy && canvasY <= fy + fh) {
+            return f;
+          }
+        }
+        return null;
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Detail Panel
+      // ───────────────────────────────────────────────────────────
+      function showDetail(frag) {
+        selectedFragment = frag;
+        highlightedGroup = frag.groupSize > 1 ? frag.groupId : null;
+
+        // Sync focused segment to URL so it survives reload / sharing
+        const url = new URL(location.href);
+        url.searchParams.set("focus", frag.absStart);
+        history.replaceState(null, "", url.toString());
+
+        const panel = document.getElementById("detail-panel");
+        panel.classList.add("open");
+
+        const classLabel = CLASSIFICATION_LABELS[frag.classification] || frag.classification;
+        document.getElementById("detail-title").textContent =
+          frag.groupSize > 1 ? `${classLabel} — Groupe ${frag.groupId}` : classLabel;
+
+        // Player link
+        const linkContainer = document.getElementById("player-link-container");
+        let linkHtml =
+          `<a class="player-link" href="${frag.playerUrl}" target="_blank" rel="noopener">` +
+          `Voir sur Mediatree</a>`;
+        if (frag.s3Url) {
+          linkHtml +=
+            ` <a class="player-link" href="${frag.s3Url}" target="_blank" rel="noopener" style="margin-left:6px;">` +
+            `Voir sur le S3</a>`;
+        }
+        linkHtml += `<span style="color:var(--text3);font-size:11px;margin-left:8px;">${frag.channel}</span>`;
+        linkContainer.innerHTML = linkHtml;
+
+        // Fragment info
+        let html = '<div class="detail-section"><h4>Informations du fragment</h4><div class="info-grid">';
+        html += `<span class="label">Classification</span><span class="value"><span class="classification-badge" style="background:${classColor(frag.classification)};">${classLabel}</span></span>`;
+        html += `<span class="label">Durée</span><span class="value">${formatDuration(frag.duration)}</span>`;
+        html += `<span class="label">Début</span><span class="value">${formatDateTime(frag.absStart)}</span>`;
+        html += `<span class="label">Fin</span><span class="value">${formatDateTime(frag.absEnd)}</span>`;
+        html += `<span class="label">Epoch début</span><span class="value" style="font-family:monospace;user-select:all;">${frag.absStart}</span>`;
+        html += `<span class="label">Epoch fin</span><span class="value" style="font-family:monospace;user-select:all;">${frag.absEnd}</span>`;
+        html += `<span class="label">Chaîne</span><span class="value">${frag.channel}</span>`;
+        html += '</div></div>';
+
+        // Chunks detail
+        if (frag.chunks && frag.chunks.length > 0) {
+          html += `<div class="detail-section"><h4>Chunks (${frag.chunks.length})</h4>`;
+          html += '<ul class="chunk-list">';
+          frag.chunks.forEach((chunk, i) => {
+            html += `<li class="chunk-item">`;
+            html += `<div style="margin-bottom:4px;font-weight:600;font-size:11px;">Chunk ${i + 1}</div>`;
+            html += '<div class="info-grid">';
+            html += `<span class="label">Durée</span><span class="value">${formatDuration(chunk.duration)}</span>`;
+            html += `<span class="label">Début</span><span class="value">${formatTime(chunk.absStart)}</span>`;
+            html += `<span class="label">Fin</span><span class="value">${formatTime(chunk.absEnd)}</span>`;
+            html += `<span class="label">Énergie RMS</span><span class="value">${chunk.rms.toFixed(4)}</span>`;
+            html += `<span class="label">Centroïde</span><span class="value">${chunk.sc.toFixed(1)} Hz</span>`;
+            html += `<span class="label">ZCR</span><span class="value">${chunk.zcr.toFixed(4)}</span>`;
+            html += '</div></li>';
+          });
+          html += '</ul></div>';
+        }
+
+        // Group info
+        if (frag.groupSize > 1) {
+          const color = classColor(frag.classification);
+          html += '<div class="detail-section"><h4>Groupe</h4>';
+          html += `<div style="margin-bottom:8px;">`;
+          html += `<span class="group-badge" style="background:${color};color:#000;">${frag.groupId}</span> `;
+          html += `<span class="group-badge" style="background:${color};color:#000;">${frag.groupSize} occurrences</span>`;
+          html += `</div>`;
+
+          html += '<h4>Membres du groupe</h4>';
+          html += '<ul class="member-list">';
+          frag.memberStarts.forEach(absStart => {
+            const m = fragByAbsStart[absStart];
+            if (!m) return;
+            const isCurrent = m.absStart === frag.absStart;
+            html += `<li class="member-item${isCurrent ? ' current' : ''}" data-frag-abs-start="${m.absStart}">`;
+            html += `<span class="m-time">${formatDateTime(m.absStart)}</span>`;
+            html += `<span class="m-dur">${formatDuration(m.duration)}</span>`;
+            html += `<a class="m-link" href="${m.playerUrl}" target="_blank" rel="noopener" title="Voir sur Mediatree">&#9654;</a>`;
+            if (m.s3Url) {
+              html += `<a class="m-link" href="${m.s3Url}" target="_blank" rel="noopener" title="Voir sur le S3" style="margin-left:4px;font-size:10px;">S3</a>`;
+            }
+            html += `</li>`;
+          });
+          html += '</ul>';
+          html += '</div>';
+        }
+
+        document.getElementById("detail-content").innerHTML = html;
+
+        // Click handlers for group members
+        document.querySelectorAll(".member-item").forEach(el => {
+          el.addEventListener("click", (e) => {
+            if (e.target.closest('.m-link')) return; // Don't navigate when clicking the play link
+            const absStart = parseFloat(el.getAttribute("data-frag-abs-start"));
+            const f = fragByAbsStart[absStart];
+            if (f) navigateToFragment(f);
+          });
+        });
+
+        render();
+      }
+
+      function closeDetail() {
+        document.getElementById("detail-panel").classList.remove("open");
+        selectedFragment = null;
+        highlightedGroup = null;
+
+        // Remove focus param from URL
+        const url = new URL(location.href);
+        url.searchParams.delete("focus");
+        history.replaceState(null, "", url.toString());
+
+        render();
+      }
+
+      function navigateToFragment(frag) {
+        const fragCenter = (frag.absStart + frag.absEnd) / 2;
+        const currentSpan = viewEnd - viewStart;
+        const fragDuration = frag.absEnd - frag.absStart;
+        const minSpan = Math.max(fragDuration * 10, 60);
+        const newSpan = Math.min(currentSpan, Math.max(minSpan, currentSpan));
+
+        viewStart = fragCenter - newSpan / 2;
+        viewEnd = fragCenter + newSpan / 2;
+        clampView();
+
+        showDetail(frag);
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Tooltip
+      // ───────────────────────────────────────────────────────────
+      const tooltip = document.getElementById("tooltip");
+      function showTooltip(frag, x, y) {
+        const color = classColor(frag.classification);
+        const label = CLASSIFICATION_LABELS[frag.classification] || frag.classification;
+        let html = `<div class="tt-label" style="color:${color};">${label}</div>`;
+        html += `${formatDateTime(frag.absStart)}<br>`;
+        html += `Durée : ${formatDuration(frag.duration)}`;
+        if (frag.chunks && frag.chunks.length > 1) {
+          html += `<br>${frag.chunks.length} chunks`;
+        }
+        if (frag.groupSize > 1) {
+          html += `<br><span class="tt-group">${frag.groupId} — ${frag.groupSize} occurrences</span>`;
+        }
+        tooltip.innerHTML = html;
+        tooltip.style.display = "block";
+
+        const tw = tooltip.offsetWidth;
+        const th = tooltip.offsetHeight;
+        let tx = x + 12, ty = y - th - 8;
+        if (tx + tw > window.innerWidth) tx = x - tw - 12;
+        if (ty < 0) ty = y + 16;
+        tooltip.style.left = tx + "px";
+        tooltip.style.top = ty + "px";
+      }
+      function hideTooltip() {
+        tooltip.style.display = "none";
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Event handlers: Timeline
+      // ───────────────────────────────────────────────────────────
+      let isDragging = false;
+      let dragStartX = 0;
+      let dragStartViewStart = 0;
+      let dragStartViewEnd = 0;
+      const timelineRow = document.getElementById("timeline-row");
+
+      timelineCanvas.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const rect = timelineCanvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const center = xToEpoch(mx, 0, rect.width, viewStart, viewEnd);
+        const factor = e.deltaY > 0 ? 1.2 : 1 / 1.2;
+        zoomAt(factor, center);
+      }, { passive: false });
+
+      timelineCanvas.addEventListener("mousedown", (e) => {
+        if (e.button !== 0) return;
+        isDragging = true;
+        dragStartX = e.clientX;
+        dragStartViewStart = viewStart;
+        dragStartViewEnd = viewEnd;
+        timelineRow.classList.add("grabbing");
+      });
+
+      window.addEventListener("mousemove", (e) => {
+        if (isDragging) {
+          const rect = timelineCanvas.getBoundingClientRect();
+          const dx = e.clientX - dragStartX;
+          const epochDx = dx / rect.width * (dragStartViewEnd - dragStartViewStart);
+          viewStart = dragStartViewStart - epochDx;
+          viewEnd = dragStartViewEnd - epochDx;
+          clampView();
+          render();
+          hideTooltip();
+        } else {
+          const rect = timelineCanvas.getBoundingClientRect();
+          const mx = e.clientX - rect.left;
+          const my = e.clientY - rect.top;
+          if (mx >= 0 && mx <= rect.width && my >= 0 && my <= rect.height) {
+            const frag = fragmentAtPosition(mx, my);
+            if (frag) {
+              showTooltip(frag, e.clientX, e.clientY);
+              timelineCanvas.style.cursor = "pointer";
+            } else {
+              hideTooltip();
+              timelineCanvas.style.cursor = isDragging ? "grabbing" : "grab";
+            }
+          } else {
+            hideTooltip();
+          }
+        }
+      });
+
+      window.addEventListener("mouseup", () => {
+        isDragging = false;
+        timelineRow.classList.remove("grabbing");
+      });
+
+      timelineCanvas.addEventListener("click", (e) => {
+        if (Math.abs(e.clientX - dragStartX) > 5) return;
+        const rect = timelineCanvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        const frag = fragmentAtPosition(mx, my);
+        if (frag) showDetail(frag);
+      });
+
+      // ───────────────────────────────────────────────────────────
+      //  Event handlers: Overview (click to jump)
+      // ───────────────────────────────────────────────────────────
+      overviewCanvas.addEventListener("click", (e) => {
+        const rect = overviewCanvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const epoch = xToEpoch(mx, 0, rect.width, T_MIN, T_MAX);
+        const span = viewEnd - viewStart;
+        viewStart = epoch - span / 2;
+        viewEnd = epoch + span / 2;
+        clampView();
+        render();
+      });
+      overviewCanvas.style.cursor = "crosshair";
+
+      densityCanvas.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const rect = densityCanvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const center = xToEpoch(mx, 0, rect.width, viewStart, viewEnd);
+        const factor = e.deltaY > 0 ? 1.2 : 1 / 1.2;
+        zoomAt(factor, center);
+      }, { passive: false });
+
+      // ───────────────────────────────────────────────────────────
+      //  Event handlers: Keyboard
+      // ───────────────────────────────────────────────────────────
+      document.addEventListener("keydown", (e) => {
+        if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+
+        switch (e.key) {
+          case "ArrowLeft": e.preventDefault(); panBy(-0.2); break;
+          case "ArrowRight": e.preventDefault(); panBy(0.2); break;
+          case "+": case "=": e.preventDefault(); zoomAt(0.5, (viewStart + viewEnd) / 2); break;
+          case "-": e.preventDefault(); zoomAt(2, (viewStart + viewEnd) / 2); break;
+          case "f": case "F": fitAll(); break;
+          case "Escape": closeDetail(); break;
+          case "1": case "2": case "3": case "4": case "5": case "6": case "7":
+            const dayIdx = parseInt(e.key) - 1;
+            const dayBtns = document.querySelectorAll(".day-btn");
+            if (dayBtns[dayIdx]) dayBtns[dayIdx].click();
+            break;
+        }
+      });
+
+      // ───────────────────────────────────────────────────────────
+      //  Event handlers: Buttons
+      // ───────────────────────────────────────────────────────────
+      document.getElementById("zoom-in").addEventListener("click", () => zoomAt(0.5, (viewStart + viewEnd) / 2));
+      document.getElementById("zoom-out").addEventListener("click", () => zoomAt(2, (viewStart + viewEnd) / 2));
+      document.getElementById("pan-left").addEventListener("click", () => panBy(-0.3));
+      document.getElementById("pan-right").addEventListener("click", () => panBy(0.3));
+      document.getElementById("fit-all").addEventListener("click", fitAll);
+      document.getElementById("close-detail").addEventListener("click", closeDetail);
+
+      document.getElementById("params-toggle").addEventListener("click", () => {
+        document.getElementById("params-panel").classList.toggle("open");
+      });
+
+      document.getElementById("focus-btn").addEventListener("click", handleFocusInput);
+      document.getElementById("focus-input").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); handleFocusInput(); }
+      });
+
+      // ───────────────────────────────────────────────────────────
+      //  Initialize
+      // ───────────────────────────────────────────────────────────
+      function init() {
+        // Stats
+        document.getElementById("stat-fragments").textContent = STATS.totalFragments;
+        document.getElementById("stat-groups").textContent = STATS.totalGroups;
+        document.getElementById("stat-annotations").textContent = STATS.totalAnnotations;
+
+        // Params
+        if (PARAMS && Object.keys(PARAMS).length) {
+          function renderParamRows(obj, depth) {
+            let rows = "";
+            const indent = "  ".repeat(depth);
+            for (const [k, v] of Object.entries(obj)) {
+              if (v !== null && typeof v === "object" && !Array.isArray(v)) {
+                const keyClass = depth === 0 ? "param-section-key" : "param-nested-key";
+                rows += `<tr><td>${indent}<span class="${keyClass}">${k}:</span></td><td></td></tr>`;
+                rows += renderParamRows(v, depth + 1);
+              } else {
+                const val = Array.isArray(v) ? JSON.stringify(v) : String(v);
+                const keyClass = depth === 0 ? "param-section-key" : "param-nested-key";
+                rows += `<tr><td>${indent}<span class="${keyClass}">${k}:</span></td><td>${val}</td></tr>`;
+              }
+            }
+            return rows;
+          }
+          const html = "<table>" + renderParamRows(PARAMS, 0) + "</table>";
+          document.getElementById("params-panel").innerHTML = html;
+        } else {
+          document.getElementById("params-toggle").style.display = "none";
+        }
+
+        // Legend bar (classification filter)
+        const legendBar = document.getElementById("legend-bar");
+        const counts = STATS.classificationCounts || {};
+        for (const [cls, color] of Object.entries(CLASSIFICATION_COLORS)) {
+          const count = counts[cls] || 0;
+          const label = CLASSIFICATION_LABELS[cls] || cls;
+          const item = document.createElement("div");
+          item.className = "legend-item";
+          item.setAttribute("data-cls", cls);
+          item.innerHTML =
+            `<div class="legend-swatch" style="background:${color};"></div>` +
+            `<span>${label}</span>` +
+            `<span class="legend-count">(${count})</span>`;
+          item.addEventListener("click", () => {
+            if (visibleClassifications.has(cls)) {
+              visibleClassifications.delete(cls);
+              item.classList.add("dimmed");
+            } else {
+              visibleClassifications.add(cls);
+              item.classList.remove("dimmed");
+            }
+            render();
+          });
+          legendBar.appendChild(item);
+        }
+
+        // Day buttons
+        const days = [];
+        const daySet = new Set();
+        FRAGMENTS.forEach(f => {
+          const d = dayOfEpoch(f.absStart);
+          if (!daySet.has(d)) {
+            daySet.add(d);
+            days.push({ key: d, label: formatDate(f.absStart), epoch: f.absStart });
+          }
+        });
+        days.sort((a, b) => a.epoch - b.epoch);
+
+        const container = document.getElementById("day-buttons");
+        days.forEach((d) => {
+          const btn = document.createElement("button");
+          btn.className = "day-btn";
+          btn.textContent = d.label;
+          btn.setAttribute("data-day", d.key);
+          btn.addEventListener("click", () => {
+            zoomToDay(d.key);
+            document.querySelectorAll(".day-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+          });
+          container.appendChild(btn);
+        });
+
+        // Resize
+        window.addEventListener("resize", resizeAll);
+        resizeAll();
+
+        // Restore focused segment from URL query param (?focus=<absStart>)
+        const focusParam = new URLSearchParams(location.search).get("focus");
+        if (focusParam) {
+          const targetEpoch = parseFloat(focusParam);
+          if (!isNaN(targetEpoch)) {
+            let best = null, bestDist = Infinity;
+            FRAGMENTS.forEach(f => {
+              const dist = Math.abs(f.absStart - targetEpoch);
+              if (dist < bestDist) { bestDist = dist; best = f; }
+            });
+            if (best) focusFragment(best);
+          }
+        }
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Focus / Jump
+      // ───────────────────────────────────────────────────────────
+
+      // Index: first fragment per group (by earliest absStart)
+      const fragByGroupId = {};
+      FRAGMENTS.forEach(f => {
+        if (f.groupId !== null && f.groupId !== undefined) {
+          if (!fragByGroupId[f.groupId] || f.absStart < fragByGroupId[f.groupId].absStart) {
+            fragByGroupId[f.groupId] = f;
+          }
+        }
+      });
+
+      function focusFragment(frag) {
+        const dur = frag.absEnd - frag.absStart;
+        const center = (frag.absStart + frag.absEnd) / 2;
+        // Show ~10x the fragment duration, minimum 2 minutes
+        const span = Math.max(dur * 10, 120);
+        viewStart = center - span / 2;
+        viewEnd = center + span / 2;
+        clampView();
+        render();
+        updateDayButtons();
+        showDetail(frag);
+      }
+
+      function handleFocusInput() {
+        const raw = document.getElementById("focus-input").value.trim();
+        const inputEl = document.getElementById("focus-input");
+        inputEl.classList.remove("error");
+        if (!raw) return;
+
+        const asNum = parseFloat(raw);
+
+        // Heuristic: epoch timestamps in seconds are > 1e9 (post-2001)
+        if (!isNaN(asNum) && asNum > 1e9) {
+          // Find fragment whose absStart is closest to the given epoch
+          let best = null, bestDist = Infinity;
+          FRAGMENTS.forEach(f => {
+            const dist = Math.abs(f.absStart - asNum);
+            if (dist < bestDist) { bestDist = dist; best = f; }
+          });
+          if (best) { focusFragment(best); return; }
+        }
+
+        // Try as group ID (string key first, then numeric)
+        if (fragByGroupId[raw]) { focusFragment(fragByGroupId[raw]); return; }
+        if (!isNaN(asNum) && fragByGroupId[asNum]) { focusFragment(fragByGroupId[asNum]); return; }
+
+        // Not found
+        inputEl.classList.add("error");
+        setTimeout(() => inputEl.classList.remove("error"), 1500);
+      }
+
+      function updateDayButtons() {
+        const center = (viewStart + viewEnd) / 2;
+        const centerDay = dayOfEpoch(center);
+        document.querySelectorAll(".day-btn").forEach(btn => {
+          btn.classList.toggle("active", btn.getAttribute("data-day") === centerDay);
+        });
+      }
+
+      init();
+
+    })();
+  </script>
+</body>
+
+</html>

@@ -6,25 +6,19 @@ from json import JSONDecodeError
 
 import pandas as pd
 from sqlalchemy import (
-    ARRAY,
     JSON,
-    BigInteger,
     Boolean,
     Column,
     DateTime,
-    Double,
     ForeignKey,
     Integer,
-    MetaData,
     PrimaryKeyConstraint,
     String,
-    Table,
     Text,
-    Uuid,
     text,
 )
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import declarative_base, relationship, sessionmaker
+from sqlalchemy.orm import relationship, sessionmaker
 
 from postgres.database_connection import connect_to_db, get_db_session
 from postgres.schemas.base import Base
@@ -276,9 +270,13 @@ class Dictionary(Base):
 
 class Keyword_Macro_Category(Base):
     __tablename__ = "keyword_macro_category"
-    keyword_id = Column(String, nullable=False, primary_key=True)  # linked to Dictionary.keyword
+    keyword_id = Column(
+        String, nullable=False, primary_key=True
+    )  # linked to Dictionary.keyword
     keyword = Column(String, nullable=False)  # linked to Dictionary.keyword
-    language = Column(String, nullable=True, default=False)  # linked to Dictionary.keyword
+    language = Column(
+        String, nullable=True, default=False
+    )  # linked to Dictionary.keyword
     is_empty = Column(Boolean, nullable=True, default=False)
     general = Column(Boolean, nullable=True, default=False)
     agriculture = Column(Boolean, nullable=True, default=False)
@@ -289,7 +287,6 @@ class Keyword_Macro_Category(Base):
     eau = Column(Boolean, nullable=True, default=False)
     ecosysteme = Column(Boolean, nullable=True, default=False)
     economie_ressources = Column(Boolean, nullable=True, default=False)
-
 
 
 def get_sitemap(id: str):
@@ -349,9 +346,6 @@ def create_tables(conn=None):
     finally:
         if engine is not None:
             engine.dispose()
-
-
-
 
 
 def update_channel_metadata(engine):
@@ -439,7 +433,9 @@ def update_program_metadata(engine):
         session.close()
 
 
-def update_dictionary(engine, theme_keywords=THEME_KEYWORDS, macro_categories=MACRO_CATEGORIES):
+def update_dictionary(
+    engine, theme_keywords=THEME_KEYWORDS, macro_categories=MACRO_CATEGORIES
+):
     logging.info("Updating dictionary data")
     Session = sessionmaker(bind=engine)
     session = Session()
@@ -539,7 +535,7 @@ def drop_tables(conn=None):
             Base.metadata.drop_all(bind=engine, tables=[Time_Monitored.__table__])
 
             logging.info(
-                f"Table keyword / Program_Metadata / Channel_Metadata deletion done"
+                "Table keyword / Program_Metadata / Channel_Metadata deletion done"
             )
         except Exception as error:
             logging.error(error)

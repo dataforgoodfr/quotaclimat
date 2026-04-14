@@ -24,6 +24,8 @@ REGION = "fr-par"
 ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
 AD_S3_PREFIX = "ads"
 
+MARGIN_ON_MEDIA_EXPORT = timedelta(seconds=1)
+
 
 def get_s3_client():
     return boto3.client(
@@ -57,12 +59,16 @@ def query_ads_since(session, since_date: datetime) -> list[tuple[Ad, Ad_Occurren
     return result.all()
 
 
-async def _export_ad(
-    ad: Ad, occurrence: Ad_Occurrence, api: MediatreeAPI, s3_client
-):
-    from_date = occurrence.occurrence_date
-    to_date = from_date + timedelta(seconds=ad.duration_sec)
+async def _export_ad(ad: Ad, occurrence: Ad_Occurrence, api: MediatreeAPI, s3_client):
+    """This function export an ad to s3, based on one of its occurences.
+    It directly export the media file to s3 as a stream, in order to avoid writing it locally.
+    """
+    occurence_start_date = occurrence.occurrence_date
+    occurence_end_date = occurence_start_date + timedelta(seconds=ad.duration_sec)
     channel = occurrence.channel_name
+
+    from_date = occurence_start_date - MARGIN_ON_MEDIA_EXPORT
+    to_date = occurence_end_date + MARGIN_ON_MEDIA_EXPORT
 
     for media_format in ("mp3", "mp4"):
         buf = io.BytesIO()

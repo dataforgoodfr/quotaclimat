@@ -61,9 +61,13 @@ if __name__ == "__main__":
         sentry_init()
 
         channel = os.environ.get("CHANNEL")
+        assert channel is not None, "Need channel to run the detection process"
+
         start_date = os.environ.get("START_DATE")
         if not start_date:
             start_date = _get_next_start_date_from_db(channel)
+
+        assert start_date is not None, "Need start_date to run the detection process"
 
         num_workers = max(
             1,

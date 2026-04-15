@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set pipefail
+set -e
+
 # Run migrations before starting the application
 echo "Running migrations with alembic if exists"
 poetry run alembic upgrade head

@@ -2,7 +2,6 @@ import datetime
 import logging
 import os
 import subprocess
-from decimal import *
 
 import psycopg2
 import pytest

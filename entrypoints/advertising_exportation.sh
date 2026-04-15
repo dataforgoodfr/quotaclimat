@@ -17,7 +17,7 @@ echo "============================================"
 echo "Starting advertising detection pipeline"
 echo "============================================"
 
-python quotaclimat/data_ingestion/advertising/s01_detection/run.py
+python quotaclimat/data_ingestion/advertising/s02_exportation/run.py
 
 echo "============================================"
 echo "Advertising detection pipeline complete"

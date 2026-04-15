@@ -11,7 +11,7 @@ from .e03_already_identified_advertising import run_chunk_identification
 from .e04_group_chunks import ChunkGrouping
 from .e05_classify_fragments import FragmentsClassifier
 from .e06_export_classification import database_storage_save
-from .e07_export_raw_data import Report, TimingCollector
+from .e07_export_raw_data import Report, TimingCollector, export_chunks_to_s3
 from .tools.cache import LocalCache
 from .tools.common_objects import Chunk
 
@@ -63,7 +63,7 @@ def process_audio(
         return True
     else:
         chunks = chunk_creator.run(segment, audio_file_path)
-        cache.set(file_name, json.dumps([fp.to_dict() for fp in chunks]))
+        cache.set(file_name, json.dumps([c.to_dict() for c in chunks]))
         return False
 
 
@@ -165,5 +165,6 @@ async def processor(
 
         if report_folder:
             reports.save_to_s3(report_folder)
+            export_chunks_to_s3(chunks, report_folder)
 
     return fragments

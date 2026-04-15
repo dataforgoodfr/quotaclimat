@@ -24,7 +24,7 @@ generate "backend" {
         }
       }
       backend "s3" {
-        bucket                      = "terraform-states"
+        bucket                      = "quotaclimat-terraform-states"
         key                         = "${local.project}/${local.environment}/terraform.tfstate"
         endpoint                    = "https://s3.fr-par.scw.cloud"
         region                      = "fr-par"

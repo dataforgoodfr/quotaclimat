@@ -7,7 +7,6 @@ from functools import partial
 from postgres.database_connection import get_db_session
 
 from .e00_partition_window import Segment
-from .e00b_clean_pre_existing_detection import clean_pre_existing_detections
 from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import ChunkCreator
 from .e03_already_identified_advertising import run_chunk_identification
@@ -135,12 +134,11 @@ async def processor(
             groups, already_known_fragments=previously_known_fragments
         )
 
-    #### Database storage (transactional: clean old detections + save new ones)
+    #### Database storage
 
     session = get_db_session()
     try:
         with timings.measure("database_storage"):
-            clean_pre_existing_detections(segments, session=session)
             database_storage_save(fragments, chunk_hash=chunk_hash, session=session)
             session.commit()
     except Exception:

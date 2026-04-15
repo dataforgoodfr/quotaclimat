@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timezone
 
-import pandas as pd
+import modin.pandas as pd
 import pytest
 from test_utils import compare_unordered_lists_of_dicts, debug_df, get_localhost
 

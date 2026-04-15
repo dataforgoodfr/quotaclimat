@@ -1,17 +1,25 @@
 import json
 import logging
+import os
 import subprocess
+from datetime import datetime
 from time import time as get_time
 
 
 import ahocorasick
-from quotaclimat.data_processing.mediatree.utils import *
-from quotaclimat.data_processing.mediatree.config import *
+from quotaclimat.data_processing.mediatree.utils import (
+    get_keyword_time_separation_ms,
+    get_chunk_duration_api,
+)
+
 from postgres.schemas.models import keywords_table
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
-from typing import List, Optional, Set
+from typing import Dict, List, Optional, Set
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
-from quotaclimat.data_processing.mediatree.i8n.country import *
+from quotaclimat.data_processing.mediatree.i8n.country import (
+    CountryMediaTree,
+    FRANCE,
+)
 import re
 import spacy
 import swifter

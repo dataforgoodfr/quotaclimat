@@ -4,16 +4,31 @@ import sys
 import os
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
-from quotaclimat.data_processing.mediatree.utils import *
-from quotaclimat.data_processing.mediatree.config import *
+from quotaclimat.data_processing.mediatree.utils import (
+    get_last_X_days,
+    get_now,
+    get_date_sql_query,
+)
+from quotaclimat.data_processing.mediatree.config import (
+    get_password,
+    get_auth_url,
+    get_user,
+    get_keywords_url,
+)
 from quotaclimat.data_processing.mediatree.detect_keywords import MEDIATREE_TRANSCRIPTION_PROBLEM
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, Stop_Word, get_db_session
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
-from quotaclimat.data_processing.mediatree.i8n.country import *
-from tenacity import *
+from quotaclimat.data_processing.mediatree.i8n.country import (
+    CountryMediaTree,
+    FRANCE,
+    FRANCE_CODE,
+    get_countries_array,
+)
+from datetime import datetime, timedelta
+from typing import List
 from sentry_sdk.crons import monitor
 import modin.pandas as pd
 import pandas as pd

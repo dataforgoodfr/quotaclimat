@@ -1,14 +1,28 @@
 import logging
 import pytest
-from quotaclimat.data_processing.mediatree.update_pg_keywords import *
-
-from quotaclimat.data_ingestion.scrap_sitemap import (get_consistent_hash)
-
-from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db, drop_tables, empty_tables,keywords_table
+from quotaclimat.data_processing.mediatree.update_pg_keywords import (
+    update_keyword_row,
+    update_keywords,
+    get_top_keyword_of_stop_words,
+    get_timestamp_with_tz,
+    update_program_only,
+)
+from quotaclimat.data_processing.mediatree.stop_word.main import save_append_stop_word
+from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
+from postgres.schemas.models import (
+    create_tables,
+    get_db_session,
+    get_keyword,
+    connect_to_db,
+    drop_tables,
+    empty_tables,
+    keywords_table,
+    Stop_Word,
+)
 from postgres.insert_data import save_to_pg
-from quotaclimat.data_processing.mediatree.detect_keywords import *
+from quotaclimat.data_processing.mediatree.detect_keywords import get_themes_keywords_duration
 import pandas as pd
-from quotaclimat.data_processing.mediatree.stop_word.main import *
+from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
 
 logging.getLogger().setLevel(logging.INFO)
 # original_timestamp = 1706271523 * 1000 # Fri Jan 26 2024 12:18:43 GMT+0000

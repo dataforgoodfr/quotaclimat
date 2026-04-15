@@ -1,12 +1,31 @@
+import logging
 from datetime import datetime, timezone
 
 import pandas as pd
 import pytest
 from test_utils import compare_unordered_lists_of_dicts, debug_df, get_localhost
 
-from quotaclimat.data_processing.mediatree.detect_keywords import *
+from quotaclimat.data_processing.mediatree.detect_keywords import (
+    get_themes_keywords_duration,
+    remove_stopwords,
+    filter_and_tag_by_theme,
+    is_word_in_sentence_fr,
+    filter_keyword_with_same_timestamp,
+    get_keywords_with_timestamp_with_false_positive,
+    count_keywords_duration_overlap,
+    tag_wanted_duration_second_window_number,
+    filter_high_risk_false_positive,
+    get_cts_in_ms_for_keywords,
+    build_keyword_automaton,
+    format_word_regex,
+    get_words_in_sentence_i18n,
+    filter_indirect_words,
+    count_different_window_number,
+    transform_false_positive_keywords_to_positive
+)
 from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
-from quotaclimat.data_processing.mediatree.utils import *
+from quotaclimat.data_processing.mediatree.utils import get_keyword_time_separation_ms
+from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
 
 localhost = get_localhost()
 original_timestamp = 1706437079004

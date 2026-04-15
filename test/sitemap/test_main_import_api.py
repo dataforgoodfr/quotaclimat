@@ -1,6 +1,8 @@
+import json
 import logging
 import time as t
 
+import modin.pandas as pd
 from modin.pandas.dataframe import DataFrame
 from test_utils import compare_unordered_lists_of_dicts, debug_df, get_localhost
 
@@ -12,13 +14,19 @@ from postgres.schemas.models import (
     empty_tables,
     get_db_session,
     get_keyword,
+    keywords_table
 )
-from quotaclimat.data_processing.mediatree.api_import import *
-from quotaclimat.data_processing.mediatree.detect_keywords import *
+from quotaclimat.data_processing.mediatree.api_import import transform_raw_keywords, get_stop_words
+from quotaclimat.data_processing.mediatree.channel_program import get_programs
+from quotaclimat.data_processing.mediatree.i8n.country import BELGIUM
 from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
 from quotaclimat.data_processing.mediatree.s3.api_to_s3 import parse_reponse_subtitle
 from quotaclimat.data_processing.mediatree.stop_word.main import save_append_stop_word
-from quotaclimat.data_processing.mediatree.update_pg_keywords import *
+from quotaclimat.data_processing.mediatree.update_pg_keywords import (
+    filter_and_tag_by_theme, 
+    add_primary_key,
+    get_keywords_columns,
+)
 
 
 def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):

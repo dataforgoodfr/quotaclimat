@@ -1,23 +1,50 @@
+import json
 import logging
 import asyncio
+import requests
 from time import sleep
 import sys
 import os
 
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
-from quotaclimat.data_processing.mediatree.utils import *
-from quotaclimat.data_processing.mediatree.config import *
-from quotaclimat.data_processing.mediatree.update_pg_keywords import *
-from quotaclimat.data_processing.mediatree.detect_keywords import *
-from quotaclimat.data_processing.mediatree.channel_program import *
-from quotaclimat.data_processing.mediatree.api_import import *
-from quotaclimat.data_processing.mediatree.s3.s3_utils import *
-from quotaclimat.data_processing.mediatree.i8n.country import *
-
+from quotaclimat.data_processing.mediatree.utils import (
+    EPOCH__5MIN_MARGIN,
+    is_it_tuesday,
+    get_start_end_date_env_variable_with_default,
+    get_date_range,
+)
+from quotaclimat.data_processing.mediatree.config import (
+    get_password,
+    get_auth_url,
+    get_user,
+    get_keywords_url,
+)
+from quotaclimat.data_processing.mediatree.channel_program import (
+    get_programs,
+    get_programs_for_this_day,
+    get_channel_title_for_name,
+)
+from quotaclimat.data_processing.mediatree.s3.s3_utils import (
+    get_s3_client,
+    get_bucket_key,
+    get_bucket_key_folder,
+    upload_folder_to_s3,
+    check_if_object_exists_in_s3,
+    get_object_key_if_exists,
+    BUCKET_NAME,
+)
+from quotaclimat.data_processing.mediatree.i8n.country import (
+    CountryMediaTree,
+    FRANCE,
+    FRANCE_CODE,
+    get_countries_array,
+    get_mediatree_channels,
+)
+from datetime import datetime
 import shutil
 from typing import List, Optional
-from tenacity import *
+from tenacity import retry, wait_random_exponential, stop_after_attempt
 import sentry_sdk
 from sentry_sdk.crons import monitor
 import modin.pandas as pd

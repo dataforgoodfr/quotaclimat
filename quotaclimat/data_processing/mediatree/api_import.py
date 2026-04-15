@@ -6,21 +6,36 @@ import os
 
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
-from quotaclimat.data_processing.mediatree.utils import *
-from quotaclimat.data_processing.mediatree.config import *
-from quotaclimat.data_processing.mediatree.update_pg_keywords import *
-from quotaclimat.data_processing.mediatree.detect_keywords import *
-from quotaclimat.data_processing.mediatree.channel_program import *
+from quotaclimat.data_processing.mediatree.utils import (
+    get_date_now_minus_days,
+    get_now,
+    get_end_of_month,
+    get_start_end_date_env_variable_with_default,
+    get_date_range,
+)
+from quotaclimat.data_processing.mediatree.config import (
+    get_password,
+    get_auth_url,
+    get_user,
+    get_keywords_url,
+)
+from quotaclimat.data_processing.mediatree.update_pg_keywords import update_keywords
+from quotaclimat.data_processing.mediatree.channel_program import get_programs
 from quotaclimat.data_processing.mediatree.stop_word.main import get_all_stop_word
 from quotaclimat.data_processing.mediatree.api_import_utils.db import get_last_date_and_number_of_delay_saved_in_keywords, KeywordLastStats, get_delay_date
 from quotaclimat.data_processing.mediatree.s3.s3_utils import read_folder_from_s3, transform_raw_keywords
-from quotaclimat.data_processing.mediatree.i8n.country import *
+from quotaclimat.data_processing.mediatree.i8n.country import (
+    CountryMediaTree,
+    FRANCE,
+    FRANCE_CODE,
+    get_country_from_code,
+    get_countries_array,
+)
 from postgres.insert_data import save_to_pg
-from postgres.schemas.models import create_tables, connect_to_db, get_db_session
+from postgres.schemas.models import create_tables, connect_to_db, get_db_session, Stop_Word
 from postgres.schemas.models import keywords_table
 from quotaclimat.data_processing.mediatree.time_monitored.models import save_time_monitored
 from typing import List
-from tenacity import *
 import sentry_sdk
 from sentry_sdk.crons import monitor
 import modin.pandas as pd

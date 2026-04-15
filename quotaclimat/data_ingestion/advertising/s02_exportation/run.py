@@ -5,6 +5,7 @@ import os
 from datetime import datetime, timedelta, timezone
 
 import s3fs
+from sentry_sdk.crons import monitor
 from sqlalchemy import func, select
 from tqdm import tqdm
 
@@ -13,6 +14,8 @@ from postgres.schemas.advertising.models import Ad, Ad_Occurrence
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.mediatree import (
     MediatreeAPI,
 )
+from quotaclimat.utils.logger import getLogger
+from quotaclimat.utils.sentry import sentry_init
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +154,11 @@ async def run(since_date: datetime):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    with monitor(
+        monitor_slug="advertising-detection"
+    ):  # https://docs.sentry.io/platforms/python/crons/
+        getLogger()
+        sentry_init()
 
-    since_date = datetime(2025, 1, 1, tzinfo=timezone.utc)
-    asyncio.run(run(since_date))
+        since_date = datetime(2025, 1, 1, tzinfo=timezone.utc)
+        asyncio.run(run(since_date))

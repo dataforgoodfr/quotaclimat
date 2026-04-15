@@ -35,12 +35,3 @@ generate "backend" {
     }
   EOF
 }
-
-# Generate provider.tf in each leaf directory.
-generate "provider" {
-  path      = "provider.tf"
-  if_exists = "overwrite_terragrunt"
-  contents  = <<-EOF
-    provider "scaleway" {}
-  EOF
-}

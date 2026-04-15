@@ -35,7 +35,7 @@ resource "scaleway_container" "labelstudio_container" {
       "",
       [
         "https://",
-        substr(split("/", data.scaleway_container_namespace.container_namespace.registry_endpoint)[1], 7, 50),
+        substr(split("/", scaleway_container_namespace.container_namespace.registry_endpoint)[1], 7, 50),
         "-labelstudio-advertising-${var.environment}.functions.fnc.fr-par.scw.cloud"
       ]
     )
@@ -49,7 +49,7 @@ resource "scaleway_container" "labelstudio_container" {
       "",
       [
         "https://",
-        substr(split("/", data.scaleway_container_namespace.container_namespace.registry_endpoint)[1], 7, 50),
+        substr(split("/", scaleway_container_namespace.container_namespace.registry_endpoint)[1], 7, 50),
         "-labelstudio-advertising-${var.environment}.functions.fnc.fr-par.scw.cloud"
       ]
     )

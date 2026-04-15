@@ -88,7 +88,7 @@ def get_keyword_with_timestamp(theme: str, category: str, keyword : str, cts_in_
 def find_matching_subtitle(subtitles, pos_in_text, keyword, country: CountryMediaTree=FRANCE):
     if isinstance(subtitles, str):
         subtitles = json.loads(subtitles)
-    if country.code=='fra':
+    if country.code=='fra' or country.code=='bel':
         logging.info(f"Matching subtitles using the old way")
         return find_matching_subtitle_fr(subtitles, keyword)
     else:

@@ -41,6 +41,8 @@ RUN pip install poetry
 COPY quotaclimat ./quotaclimat
 COPY postgres ./postgres
 COPY alembic/ ./alembic
+COPY alembic_factiva/ ./alembic_factiva
+COPY alembic_factiva.ini ./alembic_factiva.ini
 COPY transform_program.py ./transform_program.py
 COPY my_dbt_project/ ./my_dbt_project
 COPY entrypoints/ ./entrypoints

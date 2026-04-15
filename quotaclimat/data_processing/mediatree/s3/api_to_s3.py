@@ -23,7 +23,6 @@ from quotaclimat.data_processing.mediatree.config import (
 from quotaclimat.data_processing.mediatree.channel_program import (
     get_programs,
     get_programs_for_this_day,
-    get_channel_title_for_name,
 )
 from quotaclimat.data_processing.mediatree.s3.s3_utils import (
     get_s3_client,
@@ -39,6 +38,7 @@ from quotaclimat.data_processing.mediatree.i8n.country import (
     FRANCE,
     FRANCE_CODE,
     get_countries_array,
+    get_channel_title_for_name,
     get_mediatree_channels,
 )
 from datetime import datetime

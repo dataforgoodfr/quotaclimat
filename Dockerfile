@@ -43,6 +43,7 @@ COPY postgres ./postgres
 COPY alembic/ ./alembic
 COPY transform_program.py ./transform_program.py
 COPY my_dbt_project/ ./my_dbt_project
+COPY entrypoints/ ./entrypoints
 
 # Docker compose overwrite this config to have only one Dockerfile
 CMD ["ls"]

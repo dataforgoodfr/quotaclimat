@@ -1,7 +1,8 @@
 locals {
-  # Path layout relative to this file: <target>/<env>
+  # Path layout relative to this file: <project>/<env>
   # e.g. advertising/dev  →  path_parts[0]="advertising", path_parts[1]="dev"
   path_parts  = split("/", path_relative_to_include())
+  project     = local.path_parts[0]
   environment = local.path_parts[1]
 }
 
@@ -23,8 +24,8 @@ generate "backend" {
         }
       }
       backend "s3" {
-        bucket                      = "advert-detection-terraform"
-        key                         = "${local.environment}/terraform.tfstate"
+        bucket                      = "terraform-states"
+        key                         = "${local.project}/${local.environment}/terraform.tfstate"
         endpoint                    = "https://s3.fr-par.scw.cloud"
         region                      = "fr-par"
         use_lockfile                = true

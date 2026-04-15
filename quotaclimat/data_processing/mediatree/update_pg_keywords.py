@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from postgres.schemas.models import Keywords, Stop_Word
 from quotaclimat.data_processing.mediatree.detect_keywords import get_themes_keywords_duration
 from typing import List
-from quotaclimat.data_processing.mediatree.api_import import get_stop_words
+from quotaclimat.data_processing.mediatree.stop_word.main import get_stop_words
 from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp, get_channel_title_for_name
 from sqlalchemy import func, select, and_, or_
 from quotaclimat.data_processing.mediatree.i8n.country import FRANCE

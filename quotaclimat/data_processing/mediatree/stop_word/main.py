@@ -59,6 +59,26 @@ def is_already_known_stop_word(stop_words: list, context: str) -> bool:
         
     return False
 
+def get_stop_words(session, validated_only=True, context_only=True, filter_days: int = None, country=FRANCE) -> list[Stop_Word]:
+    logging.info(f"Getting Stop words for {country} with days filter of {filter_days} days...")
+    try:
+        stop_words = get_all_stop_word(session, validated_only=validated_only, filter_days=filter_days, country=country)
+        if(context_only):
+            result = list(map(lambda stop: stop.context, stop_words))
+        else:
+            result = stop_words
+
+        result_len = len(result)
+        if result_len > 0:
+            logging.info(f"Got {len(result)} stop words")
+        else:
+            logging.warning("No stop words from sql tables")
+
+        return result
+    except Exception as err:
+        logging.error(f"Stop word error {err}")
+        raise Exception
+
 def get_all_stop_word(session: Session, offset: int = 0, batch_size: int = 50000, validated_only = True\
                       , filter_days: int = None, country=FRANCE) -> list:
     logging.debug(f"Getting {batch_size} elements from offset {offset}")

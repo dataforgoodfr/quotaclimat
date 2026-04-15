@@ -1,23 +1,11 @@
-#  Get VPC
-data "scaleway_vpc" "default_barometre" {
-  name       = "default"
-  project_id = data.scaleway_account_project.barometre.id
-  is_default = true
-}
-
-data "scaleway_vpc_private_network" "pvn_barometre" {
-  name   = "pvn-barometre"
-  vpc_id = data.scaleway_vpc.default_barometre.id
-}
-
 resource "scaleway_container_namespace" "container_namespace" {
-  name       = "labelstudio-advertising-${var.environment}-containers"
-  project_id = data.scaleway_account_project.project.id
+  name       = "advertising-${var.environment}-containers"
+  project_id = scaleway_account_project.project.id
 }
 
 resource "scaleway_container" "labelstudio_container" {
   name           = "labelstudio-advertising-${var.environment}"
-  namespace_id   = data.scaleway_container_namespace.container_namespace.id
+  namespace_id   = scaleway_container_namespace.container_namespace.id
   min_scale      = 0
   max_scale      = 1
   memory_limit   = 2048

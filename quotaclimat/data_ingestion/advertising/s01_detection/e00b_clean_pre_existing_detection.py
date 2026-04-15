@@ -11,7 +11,7 @@ from .e00_partition_window import Segment
 logger = logging.getLogger(__name__)
 
 
-def clean_pre_existing_detections(segments: list[Segment]) -> int:
+def clean_pre_existing_detections(segments: list[Segment], session=None) -> int:
     """Soft-delete all Ad_Occurrence rows whose occurrence_date falls within
     any of the given segments (matched by channel and time window).
 
@@ -31,7 +31,9 @@ def clean_pre_existing_detections(segments: list[Segment]) -> int:
 
     now = datetime.now(tz=timezone.utc)
 
-    session = get_db_session()
+    owns_session = session is None
+    if owns_session:
+        session = get_db_session()
     try:
         result = session.execute(
             update(Ad_Occurrence)
@@ -43,14 +45,17 @@ def clean_pre_existing_detections(segments: list[Segment]) -> int:
             )
             .values(deleted_at=now)
         )
-        session.commit()
+        if owns_session:
+            session.commit()
         count = result.rowcount
         logger.info(
             f"Soft-deleted {count} Ad_Occurrence rows across {len(segments)} segments."
         )
         return count
     except Exception:
-        session.rollback()
+        if owns_session:
+            session.rollback()
         raise
     finally:
-        session.close()
+        if owns_session:
+            session.close()

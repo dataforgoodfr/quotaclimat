@@ -39,7 +39,7 @@ def _occurrence_id(ad_id: str, occurrence_sec: float, channel: str) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
 
 
-def database_storage_save(fragments: list[Fragment], chunk_hash: str):
+def database_storage_save(fragments: list[Fragment], chunk_hash: str, session=None):
     ad_fragments = [f for f in fragments if f.classification in AD_CLASSIFICATIONS]
 
     if not ad_fragments:
@@ -55,7 +55,9 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
         else:
             ungrouped.append(fragment)
 
-    session = get_db_session()
+    owns_session = session is None
+    if owns_session:
+        session = get_db_session()
     try:
         ads: list[Ad] = []
         occurrences: list[Ad_Occurrence] = []
@@ -159,12 +161,18 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
             Ad_Occurrence,
             [occ.attributes() for occ in occurrences],
         )
-        session.commit()
+
+        if owns_session:
+            session.commit()
+        else:
+            session.flush()
 
         logger.info(f"Saved {len(ads)} ads and {len(occurrences)} occurrences.")
 
     except Exception:
-        session.rollback()
+        if owns_session:
+            session.rollback()
         raise
     finally:
-        session.close()
+        if owns_session:
+            session.close()

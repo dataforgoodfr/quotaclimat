@@ -11,13 +11,11 @@ from postgres.schemas.advertising.models import Ad_Occurrence
 from quotaclimat.data_ingestion.advertising.s01_detection.e00_partition_window import (
     partition_week_program,
 )
-from quotaclimat.data_ingestion.advertising.s01_detection.e00b_clean_pre_existing_detection import (
-    clean_pre_existing_detections,
-)
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import processor
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.testimony_data.extract import (
     get_testimony_data,
 )
+from quotaclimat.utils.sentry import sentry_init
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +49,8 @@ def _scaleway_cpu_numbers() -> int:
 
 
 if __name__ == "__main__":
+    sentry_init()
+
     channel = os.environ.get("CHANNEL")
     start_date = os.environ.get("START_DATE")
     if not start_date:
@@ -84,8 +84,6 @@ if __name__ == "__main__":
         )
     else:
         annotations = None
-
-    clean_pre_existing_detections(partition)
 
     asyncio.run(
         processor(

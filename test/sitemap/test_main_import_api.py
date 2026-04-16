@@ -3,6 +3,8 @@ import logging
 import os
 import time as t
 
+import pytest
+
 import modin.pandas as pd
 from modin.pandas.dataframe import DataFrame
 from test_utils import compare_unordered_lists_of_dicts, debug_df, get_localhost
@@ -25,6 +27,19 @@ from quotaclimat.data_processing.mediatree.s3.api_to_s3 import parse_reponse_sub
 from quotaclimat.data_processing.mediatree.stop_word.main import save_append_stop_word
 from quotaclimat.data_processing.mediatree.detect_keywords import filter_and_tag_by_theme, add_primary_key
 from quotaclimat.data_processing.mediatree.update_pg_keywords import get_keywords_columns
+
+
+@pytest.fixture(scope="module", autouse=True)
+def setup_mediatree_db():
+    """Drop, recreate tables and load test data once per module.
+    Yields len_df so test_main_api_import can assert on the inserted row count.
+    """
+    conn = connect_to_db()
+    drop_tables(conn)
+    create_tables(conn)
+    insert_stop_word(conn)
+    len_df = insert_mediatree_json(conn, json_file_path="test/sitemap/light.json")
+    yield len_df
 
 
 def insert_mediatree_json(conn, json_file_path='test/sitemap/mediatree.json'):
@@ -56,13 +71,9 @@ def insert_stop_word(conn):
 
        save_append_stop_word(conn, to_save)
 
-def test_main_api_import():
+def test_main_api_import(setup_mediatree_db):
+        len_df = setup_mediatree_db
         conn = connect_to_db()
-        drop_tables(conn)
-        create_tables(conn)
-        insert_stop_word(conn)
-        len_df = insert_mediatree_json(conn, json_file_path="test/sitemap/light.json")
-
         session = get_db_session(conn)
         saved_keywords = get_keywords_columns(session, start_date="2024-02-01", end_date="2024-02-29")
         assert len(saved_keywords) != 0

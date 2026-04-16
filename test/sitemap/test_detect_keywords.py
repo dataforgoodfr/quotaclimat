@@ -116,9 +116,13 @@ keywords =  [{
             'timestamp': 1706437080216,
             }
         ]
-def test_default_get_themes_keywords_duration():
-    plaintext_nothing = "cheese pizza"
-    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == array_of_none
+@pytest.mark.parametrize("plaintext,reason", [
+    ("cheese pizza", "no climate keywords"),
+    ("abusive", "partial word 'bus' must not match"),
+    ("vingt", "partial word 'ngt' must not match"),
+])
+def test_no_match_get_themes_keywords_duration(plaintext, reason):
+    assert get_themes_keywords_duration(plaintext, subtitles, start) == array_of_none
    
 def test_one_theme_get_themes_keywords_duration():
     plaintext_climat = "réchauffement planétaire test"
@@ -392,16 +396,6 @@ def test_long_sentence_theme_get_themes_keywords_duration():
     assert number_of_biodiversite_solutions_no_hrfp == 0
 
 
-def test_nothing_get_themes_keywords_duration():
-    # should not accept theme 'bus' for keyword "abusive"
-    plaintext_regression_incomplete_word = "abusive"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles, start) == array_of_none
-    
-def test_regression_included_get_themes_keywords_duration():
-    # should not accept theme 'ngt' for keyword "vingt"
-    plaintext_regression_incomplete_word_ngt = "vingt"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == array_of_none
-    
 def test_filter_high_risk_false_positive_without_hrfp():
     result = filter_high_risk_false_positive(keywords_with_timestamp=keywords)
     assert result == keywords

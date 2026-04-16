@@ -22,17 +22,14 @@ from quotaclimat.data_processing.mediatree.i8n.country import (
 )
 import re
 import spacy
-import swifter
+import spacy.util
 from itertools import groupby
 import sentry_sdk
 import modin.pandas as pd
-import dask
 import copy
 from quotaclimat.utils.logger import getLogger
 from collections import defaultdict
 logging.getLogger('modin.logger.default').setLevel(logging.ERROR)
-logging.getLogger('distributed.scheduler').setLevel(logging.ERROR)
-dask.config.set({'dataframe.query-planning': True})
 
 indirectes = 'indirectes'
 MEDIATREE_TRANSCRIPTION_PROBLEM = "<unk> "
@@ -57,22 +54,24 @@ PIPELINES = {}
 
 def get_pipeline(lang):
     if lang not in PIPELINES:
-        subprocess.run(
-            [
-                "poetry",
-                "run",
-                "python",
-                "-m",
-                "spacy",
-                "download",
-                f"{lang}_core_news_sm", 
-            ],
-            check=True,
-        )
+        model_name = f"{lang}_core_news_sm"
+        if not spacy.util.is_package(model_name):
+            subprocess.run(
+                [
+                    "poetry",
+                    "run",
+                    "python",
+                    "-m",
+                    "spacy",
+                    "download",
+                    model_name,
+                ],
+                check=True,
+            )
         PIPELINES[lang] = spacy.load(
-            f"{lang}_core_news_sm", 
+            model_name,
             disable=["parser", "ner", "tagger"]
-        )   
+        )
     return PIPELINES[lang]
 
 
@@ -543,7 +542,7 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], countr
             logging.info(f"Running fo country = {country.code}")
             logging.info(f'tagging plaintext subtitle with keywords and theme : regexp - search taking time...')
             t = get_time()
-            # using swifter to speed up apply https://github.com/jmcarpenter2/swifter
+            # modin parallelizes .apply() via Ray — no need for swifter/Dask on top
             df[
                 ['theme',
                  u'keywords_with_timestamp',
@@ -576,10 +575,10 @@ def filter_and_tag_by_theme(df: pd.DataFrame, stop_words: list[str] = [], countr
                  ,'country'
                 ]
             ] = df[['plaintext','srt', 'start']]\
-                .swifter.apply(\
-                    lambda row: get_themes_keywords_duration(*row, stop_words=stop_words, country=country),\
-                        axis=1,
-                        result_type='expand'
+                .apply(
+                    lambda row: get_themes_keywords_duration(*row, stop_words=stop_words, country=country),
+                    axis=1,
+                    result_type='expand'
                 )
             t_end = get_time()
             logging.info(f"Search took: {t_end - t}s, {(t_end - t) / len(df)}")

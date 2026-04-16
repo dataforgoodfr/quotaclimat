@@ -211,7 +211,10 @@ def get_all_repetitive_context_advertising_for_a_keyword(
                 AND "public"."keywords"."start" < timestamp with time zone {end_date_sql}
                 AND "public"."keywords"."number_of_keywords" > 0
                 AND "public"."keywords"."country" = '{country.name}'
-                AND jsonb_pretty("keywords_with_timestamp"::jsonb) LIKE CONCAT('%"keyword": "', '{escaped_keyword}', '",%')
+                AND EXISTS (
+                    SELECT 1 FROM jsonb_array_elements("keywords_with_timestamp"::jsonb) AS kw
+                    WHERE kw->>'keyword' = '{escaped_keyword}'
+                )
                 ORDER BY "public"."keywords"."number_of_keywords" DESC
             ) tmp
             WHERE LENGTH(SUBSTRING("context_keyword",0,80)) > {min_length_context} -- safety net to not add small generic context

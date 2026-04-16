@@ -54,13 +54,28 @@ else
   echo "✅ mise is already installed"
 fi
 
-# Install all tools pinned in mise.toml (opentofu, terragrunt)
-echo "📦 Installing tools from mise.toml..."
-mise install
+# Ensure mise is activated in the shell RC file so tools are on the PATH.
+if [ -n "$ZSH_VERSION" ] || [ "$SHELL" = "/bin/zsh" ] || [ "$SHELL" = "/usr/bin/zsh" ]; then
+  RC_FILE="$HOME/.zshrc"
+  MISE_ACTIVATE_LINE='eval "$(mise activate zsh)"'
+else
+  RC_FILE="$HOME/.bashrc"
+  MISE_ACTIVATE_LINE='eval "$(mise activate bash)"'
+fi
 
-echo ""
-echo "⚠️  Make sure mise is activated in your shell profile, otherwise tools won't be on your PATH:"
-echo "    echo 'eval \"\$(mise activate zsh)\"' >> ~/.zshrc   # for zsh"
-echo "    echo 'eval \"\$(mise activate bash)\"' >> ~/.bashrc  # for bash"
+if ! grep -qF "mise activate" "$RC_FILE" 2>/dev/null; then
+  echo "Adding mise activation to $RC_FILE..."
+  echo "" >> "$RC_FILE"
+  echo "$MISE_ACTIVATE_LINE" >> "$RC_FILE"
+  # shellcheck disable=SC1090
+  source "$RC_FILE"
+  echo "mise activated in $RC_FILE"
+else
+  echo "mise already activated in $RC_FILE"
+fi
+
+# Install all tools pinned in mise.toml (opentofu, terragrunt)
+echo "Installing tools from mise.toml..."
+mise install
 
 echo "✅ Setup complete!"

@@ -46,28 +46,21 @@ else
   echo "✅ gum is already installed"
 fi
 
-# Install tofuenv if not installed
-if ! command -v tofuenv >/dev/null 2>&1; then
-  echo "📦 Installing tofuenv..."
-  brew install tofuenv
+# Install mise if not installed
+if ! command -v mise >/dev/null 2>&1; then
+  echo "📦 Installing mise..."
+  brew install mise
 else
-  echo "✅ tofuenv is already installed"
+  echo "✅ mise is already installed"
 fi
 
-# Run tofuenv install
-echo "📦 Installing Tofu version from .opentofu-version..."
-tofuenv install  # Don't fail if version is already installed
+# Install all tools pinned in mise.toml (opentofu, terragrunt)
+echo "📦 Installing tools from mise.toml..."
+mise install
 
-# Install tgswitch if not installed
-if ! command -v tgswitch >/dev/null 2>&1; then
-  echo "📦 Installing tgswitch..."
-  brew install warrensbox/tap/tgswitch
-else
-  echo "✅ tgswitch is already installed"
-fi
-
-# Run tgswitch to install the pinned Terragrunt version
-echo "📦 Installing Terragrunt version from .terragrunt-version..."
-tgswitch
+echo ""
+echo "⚠️  Make sure mise is activated in your shell profile, otherwise tools won't be on your PATH:"
+echo "    echo 'eval \"\$(mise activate zsh)\"' >> ~/.zshrc   # for zsh"
+echo "    echo 'eval \"\$(mise activate bash)\"' >> ~/.bashrc  # for bash"
 
 echo "✅ Setup complete!"

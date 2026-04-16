@@ -1,0 +1,3 @@
+[tools]
+opentofu   = "1.11.0"
+terragrunt = "0.69.0"

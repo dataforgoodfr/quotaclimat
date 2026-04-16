@@ -4,14 +4,13 @@ This folder contains the framework and infrastructure definition for the safegua
 ## The Stack
 In order to deploy the infrastructure we use `brew` and `npm` to install dependencies (`npm` not used now but will be used to pull secrets automatically from Vaultwarden - install it now!). These need to be installed before running setup.
 
-We deploy using `OpenTofu` (managed via `tofuenv`) and `Terragrunt` (managed via `tgswitch`). `make` is used as a wrapper for all commands, so it must also be installed before working with this repository.
+We deploy using `OpenTofu` and `Terragrunt`, both managed via `mise`. `make` is used as a wrapper for all commands, so it must also be installed before working with this repository.
 
 ## Project Structure
 
 ```
 insfrastructure/
-├── .opentofu-version          # OpenTofu version pin (read by tofuenv)
-├── .terragrunt-version        # Terragrunt version pin (read by tgswitch)
+├── mise.toml                  # OpenTofu and Terragrunt version pins (read by mise)
 ├── bin/
 │   ├── setup.sh               # Installs all dependencies
 │   └── terragrunt_wrapper.sh  # Sources .env / .env.secrets before running terragrunt
@@ -46,7 +45,7 @@ Once the `.env` file is ready, run:
 ```bash
 make setup
 ```
-This installs OpenTofu (via `tofuenv`) and Terragrunt (via `tgswitch`) at the versions pinned in `.opentofu-version` and `.terragrunt-version`.
+This installs `mise` (if needed) and then runs `mise install`, which installs OpenTofu and Terragrunt at the versions pinned in `mise.toml`. Make sure `mise` is activated in your shell profile so the tools are on your PATH (`eval "$(mise activate zsh)"` in `~/.zshrc` or the bash equivalent).
 
 Each environment also requires an `.env.secrets` file. Create it from the `.env.secrets.dist` template provided in the environment folder. The secrets are available in the [DataForGood Vaultwarden Password Manager](https://vaultwarden.services.dataforgood.fr/) under the collection `Quotaclimat - Désinformation/`.
 

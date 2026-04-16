@@ -8,7 +8,7 @@ endef
 .PHONY: setup tg-init tg-plan tg-apply tg-fmt tg-state-pull tg-state-list tg-destroy
 
 setup:
-	@bash ./bin/setup.sh
+	@$$SHELL ./bin/setup.sh
 
 tg-init:
 	$(call TG_CMD,init)

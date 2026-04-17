@@ -5,7 +5,10 @@ from datetime import datetime
 import json
 from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime, EPOCH__5MIN_MARGIN, EPOCH__1MIN_MARGIN, get_timestamp_from_yyyymmdd,format_hour_minute
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
-from quotaclimat.data_processing.mediatree.i8n.country import *
+from quotaclimat.data_processing.mediatree.i8n.country import (
+    CountryMediaTree,
+    FRANCE,
+)
 
 def generate_program_id(channel_name, weekday, program_name, program_grid_start) -> str:
     data_str = f"{channel_name}-{weekday}-{program_name}-{program_grid_start}"

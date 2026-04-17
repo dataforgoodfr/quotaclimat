@@ -6,21 +6,36 @@ import os
 
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
-from quotaclimat.data_processing.mediatree.utils import *
-from quotaclimat.data_processing.mediatree.config import *
-from quotaclimat.data_processing.mediatree.update_pg_keywords import *
-from quotaclimat.data_processing.mediatree.detect_keywords import *
-from quotaclimat.data_processing.mediatree.channel_program import *
-from quotaclimat.data_processing.mediatree.stop_word.main import get_all_stop_word
+from quotaclimat.data_processing.mediatree.utils import (
+    get_date_now_minus_days,
+    get_now,
+    get_end_of_month,
+    get_start_end_date_env_variable_with_default,
+    get_date_range,
+)
+from quotaclimat.data_processing.mediatree.config import (
+    get_password,
+    get_auth_url,
+    get_user,
+    get_keywords_url,
+)
+from quotaclimat.data_processing.mediatree.update_pg_keywords import update_keywords
+from quotaclimat.data_processing.mediatree.channel_program import get_programs
+from quotaclimat.data_processing.mediatree.stop_word.main import get_all_stop_word, get_stop_words
 from quotaclimat.data_processing.mediatree.api_import_utils.db import get_last_date_and_number_of_delay_saved_in_keywords, KeywordLastStats, get_delay_date
 from quotaclimat.data_processing.mediatree.s3.s3_utils import read_folder_from_s3, transform_raw_keywords
-from quotaclimat.data_processing.mediatree.i8n.country import *
+from quotaclimat.data_processing.mediatree.i8n.country import (
+    CountryMediaTree,
+    FRANCE,
+    FRANCE_CODE,
+    get_country_from_code,
+    get_countries_array,
+)
 from postgres.insert_data import save_to_pg
-from postgres.schemas.models import create_tables, connect_to_db, get_db_session
+from postgres.schemas.models import create_tables, connect_to_db, get_db_session, Stop_Word
 from postgres.schemas.models import keywords_table
 from quotaclimat.data_processing.mediatree.time_monitored.models import save_time_monitored
 from typing import List
-from tenacity import *
 import sentry_sdk
 from sentry_sdk.crons import monitor
 import modin.pandas as pd
@@ -81,26 +96,6 @@ async def update_pg_data(exit_event):
         logging.fatal("Could not update_pg_data %s:(%s)" % (type(err).__name__, err))
         ray.shutdown()
         sys.exit(1)
-
-def get_stop_words(session, validated_only=True, context_only=True, filter_days: int = None, country=FRANCE) -> list[Stop_Word]:
-    logging.info(f"Getting Stop words for {country} with days filter of {filter_days} days...")
-    try:
-        stop_words = get_all_stop_word(session, validated_only=validated_only, filter_days=filter_days, country=country)
-        if(context_only):
-            result = list(map(lambda stop: stop.context, stop_words))
-        else:
-            result = stop_words
-        
-        result_len = len(result)
-        if result_len > 0:
-            logging.info(f"Got {len(result)} stop words")
-        else:
-            logging.warning("No stop words from sql tables")
-
-        return result
-    except Exception as err:
-        logging.error(f"Stop word error {err}")
-        raise Exception
 
 def get_start_time_to_query_from(session, country=FRANCE)      :
     normal_delay_in_days = 1

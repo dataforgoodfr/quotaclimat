@@ -1,14 +1,28 @@
 import logging
 import pytest
-from quotaclimat.data_processing.mediatree.update_pg_keywords import *
-
-from quotaclimat.data_ingestion.scrap_sitemap import (get_consistent_hash)
-
-from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db, drop_tables, empty_tables,keywords_table
+from quotaclimat.data_processing.mediatree.update_pg_keywords import (
+    update_keyword_row,
+    update_keywords,
+    get_top_keyword_of_stop_words,
+    get_timestamp_with_tz,
+    update_program_only,
+)
+from quotaclimat.data_processing.mediatree.stop_word.main import save_append_stop_word
+from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
+from postgres.schemas.models import (
+    create_tables,
+    get_db_session,
+    get_keyword,
+    connect_to_db,
+    drop_tables,
+    empty_tables,
+    keywords_table,
+    Stop_Word,
+)
 from postgres.insert_data import save_to_pg
-from quotaclimat.data_processing.mediatree.detect_keywords import *
+from quotaclimat.data_processing.mediatree.detect_keywords import get_themes_keywords_duration
 import pandas as pd
-from quotaclimat.data_processing.mediatree.stop_word.main import *
+from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
 
 logging.getLogger().setLevel(logging.INFO)
 # original_timestamp = 1706271523 * 1000 # Fri Jan 26 2024 12:18:43 GMT+0000
@@ -98,6 +112,10 @@ themes = [
     "adaptation_climatique_solutions",
     "ressources" # should be removed
 ]
+
+# Pre-compute once at module level — update_keywords() calls this internally per row,
+# so running it again inside each test just doubles the NLP work for no benefit.
+NLP_RESULT = get_themes_keywords_duration(plaintext, srt, start)
 
 
 def test_delete_keywords():
@@ -227,33 +245,33 @@ def test_first_update_keywords():
     update_keywords(session, batch_size=50, start_date="2024-01-01", end_date="2024-01-30")
     result_after_update = get_keyword(primary_key, session)
 
-    new_theme, new_keywords_with_timestamp, new_value \
-        ,number_of_changement_climatique_constat \
-        ,number_of_changement_climatique_causes_directes \
-        ,number_of_changement_climatique_consequences \
-        ,number_of_attenuation_climatique_solutions_directes \
-        ,number_of_adaptation_climatique_solutions_directes \
-        ,number_of_ressources \
-        ,number_of_ressources_solutions \
-        ,number_of_biodiversite_concepts_generaux \
-        ,number_of_biodiversite_causes_directes \
-        ,number_of_biodiversite_consequences \
-        ,number_of_biodiversite_solutions_directes  \
-        ,number_of_keywords_climat \
-        ,number_of_keywords_biodiversite \
-        ,number_of_keywords_ressources \
-        ,number_of_changement_climatique_constat_no_hrfp \
-        ,number_of_changement_climatique_causes_no_hrfp \
-        ,number_of_changement_climatique_consequences_no_hrfp \
-        ,number_of_attenuation_climatique_solutions_no_hrfp \
-        ,number_of_adaptation_climatique_solutions_no_hrfp \
-        ,number_of_ressources_no_hrfp \
-        ,number_of_ressources_solutions_no_hrfp \
-        ,number_of_biodiversite_concepts_generaux_no_hrfp \
-        ,number_of_biodiversite_causes_no_hrfp \
-        ,number_of_biodiversite_consequences_no_hrfp \
-        ,number_of_biodiversite_solutions_no_hrfp \
-        ,country = get_themes_keywords_duration(plaintext, srt, start)
+    (new_theme, new_keywords_with_timestamp, new_value
+        ,number_of_changement_climatique_constat
+        ,number_of_changement_climatique_causes_directes
+        ,number_of_changement_climatique_consequences
+        ,number_of_attenuation_climatique_solutions_directes
+        ,number_of_adaptation_climatique_solutions_directes
+        ,number_of_ressources
+        ,number_of_ressources_solutions
+        ,number_of_biodiversite_concepts_generaux
+        ,number_of_biodiversite_causes_directes
+        ,number_of_biodiversite_consequences
+        ,number_of_biodiversite_solutions_directes
+        ,number_of_keywords_climat
+        ,number_of_keywords_biodiversite
+        ,number_of_keywords_ressources
+        ,number_of_changement_climatique_constat_no_hrfp
+        ,number_of_changement_climatique_causes_no_hrfp
+        ,number_of_changement_climatique_consequences_no_hrfp
+        ,number_of_attenuation_climatique_solutions_no_hrfp
+        ,number_of_adaptation_climatique_solutions_no_hrfp
+        ,number_of_ressources_no_hrfp
+        ,number_of_ressources_solutions_no_hrfp
+        ,number_of_biodiversite_concepts_generaux_no_hrfp
+        ,number_of_biodiversite_causes_no_hrfp
+        ,number_of_biodiversite_consequences_no_hrfp
+        ,number_of_biodiversite_solutions_no_hrfp
+        ,country) = NLP_RESULT
 
     assert result_after_update.id == result_before_update.id
 
@@ -400,33 +418,33 @@ def test_update_only_one_channel():
     result_after_update_m6 = get_keyword(primary_key_m6, session)
     result_after_update_tf1 = get_keyword(primary_key_tf1, session)
 
-    new_theme, new_keywords_with_timestamp, new_value \
-        ,number_of_changement_climatique_constat \
-        ,number_of_changement_climatique_causes_directes \
-        ,number_of_changement_climatique_consequences \
-        ,number_of_attenuation_climatique_solutions_directes \
-        ,number_of_adaptation_climatique_solutions_directes \
-        ,number_of_ressources \
-        ,number_of_ressources_solutions \
-        ,number_of_biodiversite_concepts_generaux \
-        ,number_of_biodiversite_causes_directes \
-        ,number_of_biodiversite_consequences \
-        ,number_of_biodiversite_solutions_directes  \
-        ,number_of_keywords_climat \
-        ,number_of_keywords_biodiversite \
-        ,number_of_keywords_ressources \
-        ,number_of_changement_climatique_constat_no_hrfp \
-        ,number_of_changement_climatique_causes_no_hrfp \
-        ,number_of_changement_climatique_consequences_no_hrfp \
-        ,number_of_attenuation_climatique_solutions_no_hrfp \
-        ,number_of_adaptation_climatique_solutions_no_hrfp \
-        ,number_of_ressources_no_hrfp \
-        ,number_of_ressources_solutions_no_hrfp \
-        ,number_of_biodiversite_concepts_generaux_no_hrfp \
-        ,number_of_biodiversite_causes_no_hrfp \
-        ,number_of_biodiversite_consequences_no_hrfp \
-        ,number_of_biodiversite_solutions_no_hrfp \
-        ,country = get_themes_keywords_duration(plaintext, srt, start)
+    (new_theme, new_keywords_with_timestamp, new_value
+        ,number_of_changement_climatique_constat
+        ,number_of_changement_climatique_causes_directes
+        ,number_of_changement_climatique_consequences
+        ,number_of_attenuation_climatique_solutions_directes
+        ,number_of_adaptation_climatique_solutions_directes
+        ,number_of_ressources
+        ,number_of_ressources_solutions
+        ,number_of_biodiversite_concepts_generaux
+        ,number_of_biodiversite_causes_directes
+        ,number_of_biodiversite_consequences
+        ,number_of_biodiversite_solutions_directes
+        ,number_of_keywords_climat
+        ,number_of_keywords_biodiversite
+        ,number_of_keywords_ressources
+        ,number_of_changement_climatique_constat_no_hrfp
+        ,number_of_changement_climatique_causes_no_hrfp
+        ,number_of_changement_climatique_consequences_no_hrfp
+        ,number_of_attenuation_climatique_solutions_no_hrfp
+        ,number_of_adaptation_climatique_solutions_no_hrfp
+        ,number_of_ressources_no_hrfp
+        ,number_of_ressources_solutions_no_hrfp
+        ,number_of_biodiversite_concepts_generaux_no_hrfp
+        ,number_of_biodiversite_causes_no_hrfp
+        ,number_of_biodiversite_consequences_no_hrfp
+        ,number_of_biodiversite_solutions_no_hrfp
+        ,country) = NLP_RESULT
 
     conn.dispose()
     session.close()
@@ -896,33 +914,33 @@ def test_update_only_keywords_that_includes_some_keywords():
     update_keywords(session, batch_size=50, start_date="2024-01-01", end_date="2024-01-30", stop_word_keyword_only=True)
     result_after_update = get_keyword(primary_key, session)
 
-    new_theme, new_keywords_with_timestamp, new_value \
-        ,number_of_changement_climatique_constat \
-        ,number_of_changement_climatique_causes_directes \
-        ,number_of_changement_climatique_consequences \
-        ,number_of_attenuation_climatique_solutions_directes \
-        ,number_of_adaptation_climatique_solutions_directes \
-        ,number_of_ressources \
-        ,number_of_ressources_solutions \
-        ,number_of_biodiversite_concepts_generaux \
-        ,number_of_biodiversite_causes_directes \
-        ,number_of_biodiversite_consequences \
-        ,number_of_biodiversite_solutions_directes  \
-        ,number_of_keywords_climat \
-        ,number_of_keywords_biodiversite \
-        ,number_of_keywords_ressources \
-        ,number_of_changement_climatique_constat_no_hrfp \
-        ,number_of_changement_climatique_causes_no_hrfp \
-        ,number_of_changement_climatique_consequences_no_hrfp \
-        ,number_of_attenuation_climatique_solutions_no_hrfp \
-        ,number_of_adaptation_climatique_solutions_no_hrfp \
-        ,number_of_ressources_no_hrfp \
-        ,number_of_ressources_solutions_no_hrfp \
-        ,number_of_biodiversite_concepts_generaux_no_hrfp \
-        ,number_of_biodiversite_causes_no_hrfp \
-        ,number_of_biodiversite_consequences_no_hrfp \
-        ,number_of_biodiversite_solutions_no_hrfp \
-        ,country = get_themes_keywords_duration(plaintext, srt, start)
+    (new_theme, new_keywords_with_timestamp, new_value
+        ,number_of_changement_climatique_constat
+        ,number_of_changement_climatique_causes_directes
+        ,number_of_changement_climatique_consequences
+        ,number_of_attenuation_climatique_solutions_directes
+        ,number_of_adaptation_climatique_solutions_directes
+        ,number_of_ressources
+        ,number_of_ressources_solutions
+        ,number_of_biodiversite_concepts_generaux
+        ,number_of_biodiversite_causes_directes
+        ,number_of_biodiversite_consequences
+        ,number_of_biodiversite_solutions_directes
+        ,number_of_keywords_climat
+        ,number_of_keywords_biodiversite
+        ,number_of_keywords_ressources
+        ,number_of_changement_climatique_constat_no_hrfp
+        ,number_of_changement_climatique_causes_no_hrfp
+        ,number_of_changement_climatique_consequences_no_hrfp
+        ,number_of_attenuation_climatique_solutions_no_hrfp
+        ,number_of_adaptation_climatique_solutions_no_hrfp
+        ,number_of_ressources_no_hrfp
+        ,number_of_ressources_solutions_no_hrfp
+        ,number_of_biodiversite_concepts_generaux_no_hrfp
+        ,number_of_biodiversite_causes_no_hrfp
+        ,number_of_biodiversite_consequences_no_hrfp
+        ,number_of_biodiversite_solutions_no_hrfp
+        ,country) = NLP_RESULT
     
     assert result_after_update.id == result_before_update.id
 

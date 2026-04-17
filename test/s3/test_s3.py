@@ -2,8 +2,8 @@ import pytest
 import pandas as pd
 from quotaclimat.data_processing.mediatree.s3.api_to_s3 import get_bucket_key, get_bucket_key_folder, get_partition_s3
 from quotaclimat.data_processing.mediatree.s3.s3_utils import read_folder_from_s3, transform_raw_keywords
-from quotaclimat.data_processing.mediatree.channel_program import *
-from quotaclimat.data_processing.mediatree.i8n.country import *
+from quotaclimat.data_processing.mediatree.channel_program import get_programs
+from quotaclimat.data_processing.mediatree.i8n.country import FRANCE, GERMANY, BRAZIL
 
 def test_get_bucket_key_default():
     friday_6h26 = 1726719981

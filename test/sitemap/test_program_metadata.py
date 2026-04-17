@@ -1,7 +1,16 @@
 from modin.pandas.dataframe import DataFrame
 import pytest
 
-from quotaclimat.data_processing.mediatree.channel_program import *
+from quotaclimat.data_processing.mediatree.channel_program import (
+    add_channel_program,
+    get_programs,
+    get_programs_for_this_day,
+    get_hour_minute,
+    format_hour_minute,
+    get_a_program_with_start_timestamp,
+    compare_weekday,
+    update_programs_and_filter_out_of_scope_programs_from_df,
+)
 from test_utils import get_localhost, debug_df
 import logging
 import pandas as pd

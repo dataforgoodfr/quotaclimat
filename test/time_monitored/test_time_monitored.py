@@ -3,7 +3,13 @@ import pytest
 import pandas as pd
 
 from postgres.schemas.models import get_db_session, connect_to_db, create_tables
-from quotaclimat.data_processing.mediatree.time_monitored.models import *
+from quotaclimat.data_processing.mediatree.time_monitored.models import (
+    Time_Monitored,
+    save_time_monitored,
+    get_time_monitored,
+)
+from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
+from datetime import datetime
 import zoneinfo
 
 @pytest.fixture(scope="module", autouse=True)

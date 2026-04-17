@@ -1,6 +1,6 @@
 [project]
 name = "quotaclimat"
-version = "2.1.36"
+version = "2.1.37"
 description = ""
 authors = [
     {name = "Rambier Estelle", "email"="estelle.rambier@hotmail.fr"},
@@ -16,6 +16,7 @@ log_cli_level = "INFO"
 testpaths = [
     "test"
 ]
+addopts = "--durations=0"
 
 [tool.poetry.dependencies]
 s3fs = {extras = ["boto3"], version = ">=2023.12.0"}

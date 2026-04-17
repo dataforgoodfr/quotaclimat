@@ -1,15 +1,20 @@
 import logging
 import os
-from quotaclimat.data_processing.mediatree.utils import *
-from quotaclimat.data_processing.mediatree.config import *
-# from quotaclimat.data_processing.mediatree.update_pg_keywords import *
-from quotaclimat.data_processing.mediatree.detect_keywords import *
-from quotaclimat.data_processing.mediatree.channel_program import *
-# from quotaclimat.data_processing.mediatree.api_import import *
+from quotaclimat.data_processing.mediatree.detect_keywords import (
+    filter_and_tag_by_theme,
+    add_primary_key,
+)
+from quotaclimat.data_processing.mediatree.channel_program import (
+    update_programs_and_filter_out_of_scope_programs_from_df,
+)
+from quotaclimat.data_processing.mediatree.i8n.country import (
+    CountryMediaTree,
+    FRANCE,
+    FRANCE_CODE,
+)
 import numpy as np
 import shutil
 from typing import List, Optional
-from tenacity import *
 from sentry_sdk.crons import monitor
 import modin.pandas as pd
 import boto3

@@ -1,12 +1,12 @@
 from datetime import date
 import logging
 from typing import Tuple
-from quotaclimat.data_processing.mediatree.utils import *
-from quotaclimat.data_processing.mediatree.config import *
+from quotaclimat.data_processing.mediatree.utils import get_epoch_from_datetime
 from postgres.schemas.models import Keywords
 from sqlalchemy.orm import Session
 from sqlalchemy import Select, select, func, cast, Date, Integer, text, and_
-from quotaclimat.data_processing.mediatree.i8n.country import *
+from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
+from datetime import datetime
 from typing import NamedTuple
 
 class KeywordLastStats(NamedTuple):

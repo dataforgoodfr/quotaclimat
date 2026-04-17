@@ -1,12 +1,31 @@
+import logging
 from datetime import datetime, timezone
 
-import pandas as pd
+import modin.pandas as pd
 import pytest
 from test_utils import compare_unordered_lists_of_dicts, debug_df, get_localhost
 
-from quotaclimat.data_processing.mediatree.detect_keywords import *
+from quotaclimat.data_processing.mediatree.detect_keywords import (
+    get_themes_keywords_duration,
+    remove_stopwords,
+    filter_and_tag_by_theme,
+    is_word_in_sentence_fr,
+    filter_keyword_with_same_timestamp,
+    get_keywords_with_timestamp_with_false_positive,
+    count_keywords_duration_overlap,
+    tag_wanted_duration_second_window_number,
+    filter_high_risk_false_positive,
+    get_cts_in_ms_for_keywords,
+    build_keyword_automaton,
+    format_word_regex,
+    get_words_in_sentence_i18n,
+    filter_indirect_words,
+    count_different_window_number,
+    transform_false_positive_keywords_to_positive
+)
 from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
-from quotaclimat.data_processing.mediatree.utils import *
+from quotaclimat.data_processing.mediatree.utils import get_keyword_time_separation_ms
+from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
 
 localhost = get_localhost()
 original_timestamp = 1706437079004
@@ -97,9 +116,13 @@ keywords =  [{
             'timestamp': 1706437080216,
             }
         ]
-def test_default_get_themes_keywords_duration():
-    plaintext_nothing = "cheese pizza"
-    assert get_themes_keywords_duration(plaintext_nothing, subtitles, start) == array_of_none
+@pytest.mark.parametrize("plaintext,reason", [
+    ("cheese pizza", "no climate keywords"),
+    ("abusive", "partial word 'bus' must not match"),
+    ("vingt", "partial word 'ngt' must not match"),
+])
+def test_no_match_get_themes_keywords_duration(plaintext, reason):
+    assert get_themes_keywords_duration(plaintext, subtitles, start) == array_of_none
    
 def test_one_theme_get_themes_keywords_duration():
     plaintext_climat = "réchauffement planétaire test"
@@ -373,16 +396,6 @@ def test_long_sentence_theme_get_themes_keywords_duration():
     assert number_of_biodiversite_solutions_no_hrfp == 0
 
 
-def test_nothing_get_themes_keywords_duration():
-    # should not accept theme 'bus' for keyword "abusive"
-    plaintext_regression_incomplete_word = "abusive"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word, subtitles, start) == array_of_none
-    
-def test_regression_included_get_themes_keywords_duration():
-    # should not accept theme 'ngt' for keyword "vingt"
-    plaintext_regression_incomplete_word_ngt = "vingt"
-    assert get_themes_keywords_duration(plaintext_regression_incomplete_word_ngt, subtitles, start) == array_of_none
-    
 def test_filter_high_risk_false_positive_without_hrfp():
     result = filter_high_risk_false_positive(keywords_with_timestamp=keywords)
     assert result == keywords

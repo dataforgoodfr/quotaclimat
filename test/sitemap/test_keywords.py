@@ -1,8 +1,7 @@
 import logging
 import os
 import pandas as pd
-from quotaclimat.data_processing.mediatree.utils import *
-from quotaclimat.data_processing.mediatree.detect_keywords import *
+from quotaclimat.data_processing.mediatree.detect_keywords import remove_stopwords, replace_word_with_context
 from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
 
 def test_get_remove_stopwords_recycler():

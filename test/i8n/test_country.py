@@ -1,6 +1,18 @@
 import pytest
 
-from quotaclimat.data_processing.mediatree.i8n.country import *
+import os
+
+from quotaclimat.data_processing.mediatree.i8n.country import (
+    validate_country_code,
+    get_country_from_code,
+    get_channels,
+    get_channel_title_for_name,
+    FRANCE,
+    BRAZIL,
+    GERMANY,
+    POLAND,
+    SPAIN,
+)
 
 def test_validate_country_code_fra():
         france_code = validate_country_code("fra")

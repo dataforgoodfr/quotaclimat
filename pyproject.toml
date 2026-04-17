@@ -16,6 +16,7 @@ log_cli_level = "INFO"
 testpaths = [
     "test"
 ]
+addopts = "--durations=0"
 
 [tool.poetry.dependencies]
 s3fs = {extras = ["boto3"], version = ">=2023.12.0"}

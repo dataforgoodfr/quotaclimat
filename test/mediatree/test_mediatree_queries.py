@@ -2,13 +2,16 @@ import logging
 
 from sqlalchemy import Engine
 
-from quotaclimat.data_processing.mediatree.stop_word.main import *
-from postgres.schemas.models import get_db_session, connect_to_db, drop_tables
-from quotaclimat.data_processing.mediatree.api_import_utils.db import *
+from quotaclimat.data_processing.mediatree.api_import_utils.db import (
+    get_last_date_and_number_of_delay_saved_in_keywords,
+    KeywordLastStats,
+    get_delay_date,
+)
 from postgres.insert_data import save_to_pg
-from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db, drop_tables, empty_tables,keywords_table
+from postgres.schemas.models import create_tables, get_db_session, get_keyword, connect_to_db, drop_tables, empty_tables, keywords_table
 from datetime import date
-from quotaclimat.data_processing.mediatree.update_pg_keywords import *
+from quotaclimat.data_processing.mediatree.update_pg_keywords import delete_keywords_id
+import modin.pandas as pd
 
 conn = connect_to_db()
 session = get_db_session(conn)

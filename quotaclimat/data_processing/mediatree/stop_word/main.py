@@ -4,16 +4,31 @@ import sys
 import os
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
-from quotaclimat.data_processing.mediatree.utils import *
-from quotaclimat.data_processing.mediatree.config import *
+from quotaclimat.data_processing.mediatree.utils import (
+    get_last_X_days,
+    get_now,
+    get_date_sql_query,
+)
+from quotaclimat.data_processing.mediatree.config import (
+    get_password,
+    get_auth_url,
+    get_user,
+    get_keywords_url,
+)
 from quotaclimat.data_processing.mediatree.detect_keywords import MEDIATREE_TRANSCRIPTION_PROBLEM
 from postgres.insert_data import save_to_pg
 from postgres.schemas.models import create_tables, connect_to_db, Stop_Word, get_db_session
 from sqlalchemy.orm import Session
 from sqlalchemy import func, select
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
-from quotaclimat.data_processing.mediatree.i8n.country import *
-from tenacity import *
+from quotaclimat.data_processing.mediatree.i8n.country import (
+    CountryMediaTree,
+    FRANCE,
+    FRANCE_CODE,
+    get_countries_array,
+)
+from datetime import datetime, timedelta
+from typing import List
 from sentry_sdk.crons import monitor
 import modin.pandas as pd
 import pandas as pd
@@ -43,6 +58,26 @@ def is_already_known_stop_word(stop_words: list, context: str) -> bool:
             return True
         
     return False
+
+def get_stop_words(session, validated_only=True, context_only=True, filter_days: int = None, country=FRANCE) -> list[Stop_Word]:
+    logging.info(f"Getting Stop words for {country} with days filter of {filter_days} days...")
+    try:
+        stop_words = get_all_stop_word(session, validated_only=validated_only, filter_days=filter_days, country=country)
+        if(context_only):
+            result = list(map(lambda stop: stop.context, stop_words))
+        else:
+            result = stop_words
+
+        result_len = len(result)
+        if result_len > 0:
+            logging.info(f"Got {len(result)} stop words")
+        else:
+            logging.warning("No stop words from sql tables")
+
+        return result
+    except Exception as err:
+        logging.error(f"Stop word error {err}")
+        raise Exception
 
 def get_all_stop_word(session: Session, offset: int = 0, batch_size: int = 50000, validated_only = True\
                       , filter_days: int = None, country=FRANCE) -> list:
@@ -176,7 +211,10 @@ def get_all_repetitive_context_advertising_for_a_keyword(
                 AND "public"."keywords"."start" < timestamp with time zone {end_date_sql}
                 AND "public"."keywords"."number_of_keywords" > 0
                 AND "public"."keywords"."country" = '{country.name}'
-                AND jsonb_pretty("keywords_with_timestamp"::jsonb) LIKE CONCAT('%"keyword": "', '{escaped_keyword}', '",%')
+                AND EXISTS (
+                    SELECT 1 FROM jsonb_array_elements("keywords_with_timestamp"::jsonb) AS kw
+                    WHERE kw->>'keyword' = '{escaped_keyword}'
+                )
                 ORDER BY "public"."keywords"."number_of_keywords" DESC
             ) tmp
             WHERE LENGTH(SUBSTRING("context_keyword",0,80)) > {min_length_context} -- safety net to not add small generic context

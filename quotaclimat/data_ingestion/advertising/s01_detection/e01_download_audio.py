@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import timedelta
@@ -10,6 +11,11 @@ from tqdm import tqdm
 
 from .e00_partition_window import Segment
 from .tools.mediatree import MediatreeAPI
+
+# When running in a production stack where logs are collected, tqdm's cursor
+# movement codes (\r, ANSI escapes) make all updates appear on a single line.
+# Set TQDM_LOG_MODE=1 to replace progress bars with plain logger.info() lines.
+_LOG_MODE = os.environ.get("TQDM_LOG_MODE", "0") == "1" or not sys.stdout.isatty()
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +104,7 @@ class AudioProcessor:
             unit="file",
             position=0,
             bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}] {postfix}",
+            disable=_LOG_MODE,
         )
         self.proc_bar = tqdm(
             total=self.total,
@@ -105,6 +112,7 @@ class AudioProcessor:
             unit="file",
             position=1,
             bar_format="{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}] {postfix}",
+            disable=_LOG_MODE,
         )
         self._update_postfix()
 
@@ -125,7 +133,10 @@ class AudioProcessor:
             self.dl_bar.close()
             self.proc_bar.close()
 
-        tqdm.write(self.stats.summary())
+        if _LOG_MODE:
+            logger.info(self.stats.summary())
+        else:
+            tqdm.write(self.stats.summary())
 
     def _update_postfix(self):
         self.dl_bar.set_postfix_str(
@@ -187,6 +198,14 @@ class AudioProcessor:
 
             self.proc_bar.update(1)
             self._update_postfix()
+            if _LOG_MODE:
+                logger.info(
+                    "Process %d/%d (processed=%d cached=%d)",
+                    self.stats.proc_processed + self.stats.proc_cached,
+                    self.total,
+                    self.stats.proc_processed,
+                    self.stats.proc_cached,
+                )
 
     async def _download_and_queue(self, segment: Segment):
         audio_file_path, was_cached = await download_audio(self.api, segment)
@@ -199,3 +218,12 @@ class AudioProcessor:
         await self.queue.put((segment, audio_file_path))
         self.dl_bar.update(1)
         self._update_postfix()
+        if _LOG_MODE:
+            logger.info(
+                "Download %d/%d (downloaded=%d cached=%d queue=%d)",
+                self.stats.dl_downloaded + self.stats.dl_cached,
+                self.total,
+                self.stats.dl_downloaded,
+                self.stats.dl_cached,
+                self.queue.qsize(),
+            )

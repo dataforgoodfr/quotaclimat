@@ -156,7 +156,7 @@ async def run(since_date: datetime):
 
 if __name__ == "__main__":
     with monitor(
-        monitor_slug="advertising-detection"
+        monitor_slug="advertising-exportation"
     ):  # https://docs.sentry.io/platforms/python/crons/
         getLogger()
         sentry_init()

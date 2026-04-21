@@ -48,14 +48,7 @@ jobs:
         password: ${{ secrets.SCALEWAY_API_KEY }}
         registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
 
-    - name: Build mediatree_import image
-      run: docker build -f Dockerfile_api_import . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }}
-    - name: Tag mediatree_import latest image
-      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:latest
-    - name: Push mediatree_import Image
-      run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import
-
-    - name: update scaleway job definition with version mediatree_import
+    - name: Update import scaleway job
       uses: jawher/action-scw@v2.54.0
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
@@ -63,7 +56,10 @@ jobs:
         SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
-        args: jobs definition update ${{ secrets.SCALEWAY_JOB_IMPORT_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }}
+        args: >-
+          jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_EXPORTATION }}
+          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+          startup-command.0=./entrypoints/mediatree_import.sh
     
     - name: Build s3 image
       run: docker build -f Dockerfile_api_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
@@ -99,7 +95,7 @@ jobs:
       with:
         args: jobs definition update ${{ secrets.SCALEWAY_STOP_WORDS_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:${{ env.PROJECT_VERSION }}
 
-    - name: update scaleway job update job
+    - name: Update update_job scaleway job
       uses: jawher/action-scw@v2.54.0
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
@@ -107,7 +103,10 @@ jobs:
         SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
-        args: jobs definition update ${{ secrets.SCALEWAY_UPDATE_JOB_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/mediatree_import:${{ env.PROJECT_VERSION }}
+        args: >-
+          jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_EXPORTATION }}
+          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+          startup-command.0=./entrypoints/mediatree_import.sh
 
     - name: Build quotaclimat_base image
       run: docker build -f Dockerfile . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}

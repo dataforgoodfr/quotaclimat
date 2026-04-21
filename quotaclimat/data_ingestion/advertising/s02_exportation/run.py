@@ -2,6 +2,7 @@ import asyncio
 import io
 import logging
 import os
+import sys
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -19,6 +20,8 @@ from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
 
 logger = logging.getLogger(__name__)
+
+_LOG_MODE = os.environ.get("TQDM_LOG_MODE", "0") == "1" or not sys.stdout.isatty()
 
 
 ACCESS_KEY = os.environ.get("BUCKET")
@@ -128,7 +131,7 @@ async def run(since_date: datetime):
 
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_EXPORTS)
         counts = {"cached": 0, "uploaded": 0, "error": 0}
-        progress = tqdm(total=total, desc="Exporting ads")
+        progress = tqdm(total=total, desc="Exporting ads", disable=_LOG_MODE)
 
         async with MediatreeAPI(max_concurrent_requests=MAX_CONCURRENT_EXPORTS) as api:
             for page in iter_ads_pages(session, since_date, PAGE_SIZE):
@@ -144,6 +147,16 @@ async def run(since_date: datetime):
                         finally:
                             progress.update(1)
                             progress.set_postfix(counts)
+                            if _LOG_MODE:
+                                done = counts["cached"] + counts["uploaded"] + counts["error"]
+                                logger.info(
+                                    "Export %d/%d (uploaded=%d cached=%d error=%d)",
+                                    done,
+                                    total,
+                                    counts["uploaded"],
+                                    counts["cached"],
+                                    counts["error"],
+                                )
 
                 tasks = [_limited_process(ad, occurrence) for ad, occurrence in page]
 
@@ -156,7 +169,7 @@ async def run(since_date: datetime):
 
 if __name__ == "__main__":
     with monitor(
-        monitor_slug="advertising-detection"
+        monitor_slug="advertising-exportation"
     ):  # https://docs.sentry.io/platforms/python/crons/
         getLogger()
         sentry_init()

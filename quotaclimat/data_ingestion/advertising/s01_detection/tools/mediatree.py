@@ -101,7 +101,9 @@ class MediatreeAPI:
             )
         return self._client
 
-    async def _request_with_retry(self, method: str, url: str, **kwargs) -> httpx.Response:
+    async def _request_with_retry(
+        self, method: str, url: str, **kwargs
+    ) -> httpx.Response:
         async with self._semaphore:
             return await self._do_with_retry(
                 lambda: self._http.request(method, url, **kwargs)
@@ -109,9 +111,7 @@ class MediatreeAPI:
 
     async def _stream_to_file_with_retry(self, url: str, file_path: str) -> None:
         async with self._semaphore:
-            await self._do_with_retry(
-                lambda: self._stream_to_file(url, file_path)
-            )
+            await self._do_with_retry(lambda: self._stream_to_file(url, file_path))
 
     async def _do_with_retry(self, fn):
         for attempt in range(1, self._max_retries + 1):
@@ -136,6 +136,15 @@ class MediatreeAPI:
             with open(file_path, "wb") as f:
                 async for chunk in response.aiter_bytes(chunk_size=64 * 1024):
                     f.write(chunk)
+        size = os.path.getsize(file_path)
+        # At 32 kbps (lowest MP3 bitrate), 1 second of audio is ~4 KB.
+        # 2 KB is well above any container header and safely below 1 second of real audio.
+        min_expected_bytes = 2 * 1024
+        if size < min_expected_bytes:
+            raise ValueError(
+                f"Downloaded file is suspiciously small ({size} bytes, expected at least"
+                f" {min_expected_bytes}): {file_path}"
+            )
 
     async def _stream_to_fileobj(self, url: str, fileobj) -> None:
         async with self._http.stream("GET", url) as response:
@@ -189,7 +198,9 @@ class MediatreeAPI:
         to_date: datetime,
         media_format: str,
     ) -> bool:
-        return os.path.isfile(self.export_path(channel, from_date, to_date, media_format))
+        return os.path.isfile(
+            self.export_path(channel, from_date, to_date, media_format)
+        )
 
     async def get_single_export_url(
         self,
@@ -211,7 +222,9 @@ class MediatreeAPI:
         )
         json_response = response.json()
         if "src" not in json_response:
-            raise ValueError(f"Unexpected response format ({response.url}): {json_response}")
+            raise ValueError(
+                f"Unexpected response format ({response.url}): {json_response}"
+            )
         return json_response["src"]
 
     async def download_export(
@@ -239,14 +252,18 @@ class MediatreeAPI:
     async def generate_src_url(
         self, channel: str, from_date: datetime, to_date: datetime, media_format: str
     ) -> str:
-        file_name = self._file_name(channel, from_date, to_date, media_format + "-source")
+        file_name = self._file_name(
+            channel, from_date, to_date, media_format + "-source"
+        )
         file_path = os.path.join(self.export_folder, file_name)
 
         if os.path.isfile(file_path):
             with open(file_path, "r") as f:
                 return f.read().strip()
 
-        url = await self.get_single_export_url(channel, from_date, to_date, media_format)
+        url = await self.get_single_export_url(
+            channel, from_date, to_date, media_format
+        )
 
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
         with open(file_path, "w") as f:

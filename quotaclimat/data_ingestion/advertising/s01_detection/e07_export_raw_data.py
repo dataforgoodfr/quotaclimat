@@ -2,7 +2,6 @@ import json
 import logging
 import os
 import time
-from datetime import datetime
 from pathlib import Path
 
 import boto3
@@ -71,15 +70,13 @@ def upload_to_s3(local_path: Path, s3_key: str, s3_client):
 class Report:
     def __init__(
         self,
-        operation_name: str,
+        reports_name: str,
         chunk_hash: str,
         params: dict,
         local_path: str,
     ):
         self.params = params
-        self.reports_name = (
-            f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{operation_name}"
-        )
+        self.reports_name = reports_name
 
         self.html_report_path = local_path / f"{self.reports_name}.html"
         self.text_report_path = local_path / f"{self.reports_name}.txt"

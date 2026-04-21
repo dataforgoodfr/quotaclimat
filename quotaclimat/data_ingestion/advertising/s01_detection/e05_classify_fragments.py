@@ -26,15 +26,18 @@ def higher_classification(
 
 
 class FragmentsClassifier:
-    def __init__(self, repetition_threshold: int = 3):
+    def __init__(
+        self, repetition_threshold: int = 3, tunnel_terminal_threshold: int = 2
+    ):
         self.repetition_threshold = repetition_threshold
+        self.tunnel_terminal_threshold = tunnel_terminal_threshold
 
     def run(
         self, groups: list[ChunkGroup], already_known_fragments: list[Fragment] = []
     ) -> list[Fragment]:
         fragments = self._get_internal_fragments(groups) + already_known_fragments
         fragments.sort(key=lambda f: f.start_sec)
-        self._detect_tunnels(fragments)
+        self._detect_tunnels(fragments, self.tunnel_terminal_threshold)
         self._detect_long_tunnels(fragments, NAD=4, NNAD=3)
         self._detect_long_tunnels(fragments, NAD=5, NNAD=5)
         fragments = self._merge_continous_fragments(fragments)
@@ -77,16 +80,22 @@ class FragmentsClassifier:
 
         return fragments
 
-    def _detect_tunnels(self, fragments: list[Fragment]) -> None:
+    def _detect_tunnels(
+        self,
+        fragments: list[Fragment],
+        tunnel_terminal_threshold: int = 2,
+        maximum_secondes: int = 60,
+    ) -> None:
         """
         Detect ad tunnels in the fragments, which are sequences of continous ads.
         The rule is that if we have a segment tagged as already_known_ad or who is repeated (has a group index) and another segment is an already_known_ad or a new_ad in the next 4 segments in the order,
         Then all those segments are tagged as new_ad, if not tagged already.
         """
         for i, fragment in enumerate(fragments):
-            if (
-                fragment.classification in ("already_known_ad", "new_ad")
-                or fragment.group_id is not None
+            if fragment.classification in ("already_known_ad", "new_ad") or (
+                tunnel_terminal_threshold == 2
+                and fragment.group_id
+                is not None  # this condition is not properly implemented
             ):
                 ad_in_the_block = fragment.classification in (
                     "already_known_ad",
@@ -97,9 +106,13 @@ class FragmentsClassifier:
                     i + 1, min(i + 5, len(fragments))
                 ):  # We accept holes of 3
                     next_fragment = fragments[j]
-                    if (
-                        next_fragment.classification in ("already_known_ad", "new_ad")
-                        or next_fragment.group_id is not None
+                    if next_fragment.classification in (
+                        "already_known_ad",
+                        "new_ad",
+                    ) or (
+                        tunnel_terminal_threshold == 2
+                        and fragment.group_id
+                        is not None  # this condition is not properly implemented
                     ):
                         ad_in_the_block = (
                             ad_in_the_block
@@ -110,15 +123,22 @@ class FragmentsClassifier:
                             )
                         )
                         if ad_in_the_block:
-                            for k in range(i, j + 1):
-                                if fragments[k].classification not in (
-                                    "already_known_ad",
-                                    "new_ad",
-                                ):
-                                    fragments[k].classification = "new_ad"
+                            candidates = [
+                                fragments[k]
+                                for k in range(i, j + 1)
+                                if fragments[k].classification
+                                not in ("already_known_ad", "new_ad")
+                            ]
+                            total_duration = sum(
+                                f.end_sec - f.start_sec for f in candidates
+                            )
+                            if total_duration > maximum_secondes:
+                                continue
+                            for f in candidates:
+                                f.classification = "new_ad"
 
     def _detect_long_tunnels(
-        self, fragments: list[Fragment], NAD: int, NNAD: int
+        self, fragments: list[Fragment], NAD: int, NNAD: int, maximum_secondes: int = 60
     ) -> None:
         """
         Detect long ad tunnels in the fragments, which are sequences of continous ads.
@@ -169,12 +189,18 @@ class FragmentsClassifier:
                         or (start_of_second_block - end_of_first_block <= NNAD)
                         or (end_of_second_block - start_of_second_block >= NAD * 2)
                     ):
-                        for m in range(end_of_first_block, start_of_second_block):
-                            if fragments[m].classification not in (
-                                "already_known_ad",
-                                "new_ad",
-                            ):
-                                fragments[m].classification = "new_ad"
+                        candidates = [
+                            fragments[m]
+                            for m in range(end_of_first_block, start_of_second_block)
+                            if fragments[m].classification
+                            not in ("already_known_ad", "new_ad")
+                        ]
+                        total_duration = sum(
+                            f.end_sec - f.start_sec for f in candidates
+                        )
+                        if total_duration <= maximum_secondes:
+                            for f in candidates:
+                                f.classification = "new_ad"
 
                 start_of_first_block = start_of_second_block
             else:
@@ -388,6 +414,7 @@ class FragmentsClassifier:
         """Returns all constructor parameters as a dict."""
         return {
             "repetition_threshold": self.repetition_threshold,
+            "tunnel_terminal_threshold": self.tunnel_terminal_threshold,
         }
 
     def params_hash(self) -> str:

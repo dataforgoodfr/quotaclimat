@@ -38,15 +38,20 @@ RUN pip install poetry
 
 # App code is include with docker-compose as well
 
-COPY quotaclimat ./quotaclimat
-COPY postgres ./postgres
-COPY alembic/ ./alembic
-COPY alembic.ini ./alembic.ini
-COPY alembic_factiva/ ./alembic_factiva
 COPY alembic_factiva.ini ./alembic_factiva.ini
-COPY transform_program.py ./transform_program.py
-COPY my_dbt_project/ ./my_dbt_project
+COPY alembic_factiva/ ./alembic_factiva
+COPY alembic.ini ./alembic.ini
+COPY alembic/ ./alembic
 COPY entrypoints/ ./entrypoints
+COPY i8n/ ./i8n
+COPY my_dbt_project/ ./my_dbt_project
+COPY postgres ./postgres
+COPY pyproject.toml pyproject.toml
+COPY quotaclimat ./quotaclimat
+COPY transform_program.py ./transform_program.py
+
+# healthcheck
+EXPOSE 5050
 
 # Docker compose overwrite this config to have only one Dockerfile
 CMD ["ls"]

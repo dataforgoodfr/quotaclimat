@@ -394,7 +394,7 @@ poetry run alembic revision --autogenerate -m "Add new column test for table key
 poetry run alembic upgrade head
 ```
 
-Inside our Dockerfile_api_import, we call this line 
+Inside our Dockerfile, we call this line 
 ```
 # to migrate SQL tables schema if needed
 RUN alembic upgrade head

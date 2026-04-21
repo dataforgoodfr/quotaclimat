@@ -4,7 +4,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    entrypoint: ["poetry", "run", "pytest","-vv", "-o", "log_cli=true", "--cov-report", "term:skip-covered", "--cov=quotaclimat", "--cov=postgres", "test/"]
+    entrypoint: [ "poetry", "run", "pytest", "-vv", "-o", "log_cli=true", "--cov-report", "term:skip-covered", "--cov=quotaclimat", "--cov=postgres", "test/" ]
     #entrypoint: ["sleep", "12000"] # use to debug the container if needed
     environment:
       ENV: docker
@@ -39,7 +39,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    entrypoint: ["sleep", "12000"] # use to debug the container if needed
+    entrypoint: [ "sleep", "12000" ] # use to debug the container if needed
     environment:
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project
@@ -55,7 +55,7 @@ services:
       POSTGRES_HOST: postgres_db
       POSTGRES_PORT: 5432
       MODIN_ENGINE: ray
-      MEDIATREE_USER : /run/secrets/username_api
+      MEDIATREE_USER: /run/secrets/username_api
       MEDIATREE_PASSWORD: /run/secrets/pwd_api
       BUCKET: /run/secrets/bucket
       BUCKET_NAME: germany
@@ -64,10 +64,10 @@ services:
       MODIN_CPUS: 4 # "https://modin.readthedocs.io/en/0.11.0/using_modin.html#reducing-or-limiting-the-resources-modin-can-use"
     tty: true # colorize terminal
     secrets:
-       - pwd_api
-       - username_api
-       - bucket
-       - bucket_secret
+      - pwd_api
+      - username_api
+      - bucket
+      - bucket_secret
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/
@@ -86,12 +86,12 @@ services:
       postgres_db:
         condition: service_healthy
 
-
-  nginxtest: # to test locally webpages
+  nginxtest:
+    # to test locally webpages
     container_name: nginxtest
     image: nginx:latest
     healthcheck:
-      test: ["CMD", "service", "nginx", "status"]
+      test: [ "CMD", "service", "nginx", "status" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -108,7 +108,7 @@ services:
       context: ./
       dockerfile: Dockerfile_ingest
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
-    entrypoint: ["python", "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py"]
+    entrypoint: [ "python", "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py" ]
     environment:
       ENV: docker # change me to prod for real cases
       LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log
@@ -128,7 +128,6 @@ services:
         condition: service_healthy
       postgres_db:
         condition: service_healthy
-
 
   stop_word:
     ports:
@@ -170,7 +169,7 @@ services:
     volumes:
       - './pgdata:/var/lib/postgresql/data' # persist data https://stackoverflow.com/a/41650891/3535853
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d barometre"]
+      test: [ "CMD-SHELL", "pg_isready -U user -d barometre" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -180,8 +179,9 @@ services:
       POSTGRES_USER: user
       POSTGRES_DB: barometre
       POSTGRES_PASSWORD: password
-    logging: # no logs for postgres container
-            driver: none
+    logging:
+      # no logs for postgres container
+      driver: none
 
   mediatree:
     shm_size: 6gb
@@ -190,9 +190,8 @@ services:
       - 8265:8265
     build:
       context: ./
-      dockerfile: Dockerfile_api_import
-    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
-    #entrypoint: ["python", "quotaclimat/data_processing/mediatree/api_import.py"]
+      dockerfile: Dockerfile
+    entrypoint: [ "./entrypoints/mediatree_import.sh" ]
     environment:
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project
@@ -215,7 +214,7 @@ services:
       #UPDATE_PROGRAM_ONLY: "true" # to batch update PG but only channel with program
       # START_DATE_UPDATE: "2024-02-01" # to batch update PG from a date
       # NUMBER_OF_DAYS: 7
-      STOP_WORD_KEYWORD_ONLY: "true"  # speed up execution when we only want to update stop words
+      STOP_WORD_KEYWORD_ONLY: "true" # speed up execution when we only want to update stop words
       #END_DATE: "2024-02-29" # optional - otherwise end of the month
       BATCH_SIZE: 100 # number of records to update in one batch
       START_DATE: 1773655596 # to test batch import 
@@ -235,8 +234,8 @@ services:
       - ./test/:/app/test/
       - ./my_dbt_project:/app/my_dbt_project
     secrets:
-       - bucket
-       - bucket_secret
+      - bucket
+      - bucket_secret
     depends_on:
       nginxtest:
         condition: service_healthy
@@ -257,13 +256,13 @@ services:
       PYTHONPATH: /app
       PORT_HS: 5666 # healthcheck
       HEALTHCHECK_SERVER: "0.0.0.0"
-      COUNTRY: bel-fla   # see country.py to get all country 3-letter codes
+      COUNTRY: bel-fla # see country.py to get all country 3-letter codes
       # SENTRY_DSN: prod_only
       #END_DATE: "2024-02-29" # optional - otherwise end of the month
       START_DATE: 1773655596 # to test batch import 
       # CHANNEL : daserste # to reimport only one channel
-      NUMBER_OF_PREVIOUS_DAYS : 3
-      MEDIATREE_USER : /run/secrets/username_api
+      NUMBER_OF_PREVIOUS_DAYS: 3
+      MEDIATREE_USER: /run/secrets/username_api
       MEDIATREE_PASSWORD: /run/secrets/pwd_api
       BUCKET: /run/secrets/bucket
       BUCKET_SECRET: /run/secrets/bucket_secret
@@ -280,10 +279,10 @@ services:
       - ./test/:/app/test/
       - ./s3:/app/s3/
     secrets:
-       - pwd_api
-       - username_api
-       - bucket
-       - bucket_secret
+      - pwd_api
+      - username_api
+      - bucket
+      - bucket_secret
     depends_on:
       nginxtest:
         condition: service_healthy
@@ -291,32 +290,31 @@ services:
         condition: service_healthy
 
   metabase:
-      container_name: metabase_barometre
-      image: metabase/metabase:latest
-      volumes:
-        - './mb-data:/metabase-data'  # Volumes where Metabase data will be persisted
-      ports:
-        - 3000:3000
-      environment:
-        MB_DB_TYPE: postgres
-        MB_DB_DBNAME: barometre
-        MB_DB_PORT: 5432
-        MB_DB_USER: user
-        MB_DB_PASS: password
-        MB_DB_HOST: postgres_db
-        MB_DB_FILE: "/metabase-data/metabase.db" # https://www.metabase.com/docs/latest/operations-guide/running-metabase-on-docker.html#mounting-a-mapped-file-storage-volume
-        JAVA_TIMEZONE: Europe/Paris
-      depends_on:
-        postgres_db:
-          condition: service_healthy
-
+    container_name: metabase_barometre
+    image: metabase/metabase:latest
+    volumes:
+      - './mb-data:/metabase-data' # Volumes where Metabase data will be persisted
+    ports:
+      - 3000:3000
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: barometre
+      MB_DB_PORT: 5432
+      MB_DB_USER: user
+      MB_DB_PASS: password
+      MB_DB_HOST: postgres_db
+      MB_DB_FILE: "/metabase-data/metabase.db" # https://www.metabase.com/docs/latest/operations-guide/running-metabase-on-docker.html#mounting-a-mapped-file-storage-volume
+      JAVA_TIMEZONE: Europe/Paris
+    depends_on:
+      postgres_db:
+        condition: service_healthy
 
   srt:
     shm_size: 6gb
     build:
       context: ./
-      dockerfile: Dockerfile_api_import
-    entrypoint: ["python", "i8n/srt-to-mediatree-format-parquet.py"]
+      dockerfile: Dockerfile
+    entrypoint: [ "python", "i8n/srt-to-mediatree-format-parquet.py" ]
     environment:
       ENV: docker # change me to prod for real cases
       LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log
@@ -341,8 +339,8 @@ services:
       - ./test/:/app/test/
       - ./i8n:/app/i8n
     secrets:
-       - bucket
-       - bucket_secret
+      - bucket
+      - bucket_secret
 
   factiva_to_s3:
     container_name: factiva_to_s3
@@ -458,42 +456,42 @@ services:
       LOOKBACK_DAYS: "30"
       LOCAL_TMP_DIR: "/tmp/s3_factiva_to_postgre"
       # Dictionary update configuration
-      UPDATE_DICTIONARY: "false"         # Update Dictionary, Keyword_Macro_Category, and Source_Classification tables (default: true)
+      UPDATE_DICTIONARY: "false" # Update Dictionary, Keyword_Macro_Category, and Source_Classification tables (default: true)
       # Duplicate detection configuration
-      DETECT_DUPLICATES: "true"          # Detect and mark duplicate articles before DBT processing (default: true)
+      DETECT_DUPLICATES: "true" # Detect and mark duplicate articles before DBT processing (default: true)
       # Article filtering configuration
-      MINIMAL_WORD_COUNT: "200"            # Minimum word count for articles to be included in crisis counts (default: 0)
+      MINIMAL_WORD_COUNT: "200" # Minimum word count for articles to be included in crisis counts (default: 0)
       # DBT configuration
-      RUN_DBT: "true"                    # Run DBT models after processing (default: true)
+      RUN_DBT: "true" # Run DBT models after processing (default: true)
       DBT_PROFILES_DIR: /app/my_dbt_project_print_media/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project_print_media
       # HRFP multipliers for crisis scoring (default: 0 = no HRFP consideration)
-      MULTIPLIER_HRFP_CLIMAT: "0"        # Multiplier for climate HRFP keywords
-      MULTIPLIER_HRFP_BIODIV: "0"        # Multiplier for biodiversity HRFP keywords
-      MULTIPLIER_HRFP_RESSOURCE: "0"     # Multiplier for resource HRFP keywords
+      MULTIPLIER_HRFP_CLIMAT: "0" # Multiplier for climate HRFP keywords
+      MULTIPLIER_HRFP_BIODIV: "0" # Multiplier for biodiversity HRFP keywords
+      MULTIPLIER_HRFP_RESSOURCE: "0" # Multiplier for resource HRFP keywords
       # Article length-based thresholds configuration
-      CONSIDER_ARTICLE_LENGTH: "true"   # Enable article length-based thresholds (default: false)
-      WORD_COUNT_THRESHOLD: "600"            # Article length segments (e.g., "350-600" or "350-600-900")
+      CONSIDER_ARTICLE_LENGTH: "true" # Enable article length-based thresholds (default: false)
+      WORD_COUNT_THRESHOLD: "600" # Article length segments (e.g., "350-600" or "350-600-900")
       # Thresholds for crisis labeling
       # If CONSIDER_ARTICLE_LENGTH=false: single threshold (format: "biodiv,climat,ressource")
       # If CONSIDER_ARTICLE_LENGTH=true: multiple thresholds per length segment (format: "b1,c1,r1 - b2,c2,r2 - b3,c3,r3")
-      THRESHOLD_BIOD_CLIM_RESS: "2,2,2 - 3,2,2"  # Thresholds for biodiversity, climate, resource
+      THRESHOLD_BIOD_CLIM_RESS: "2,2,2 - 3,2,2" # Thresholds for biodiversity, climate, resource
       # Thresholds for causal links labeling
       # If CONSIDER_ARTICLE_LENGTH=false: single threshold per causal link
       # If CONSIDER_ARTICLE_LENGTH=true: multiple thresholds separated by " - "
-      THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT: "2,1,1,1 - 2,1,1,1"  # Biodiversity causal links: constat, cause, consequence, solution
-      THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT: "2,1,1,1 - 2,1,1,1"  # Climate causal links: constat, cause, consequence, solution
-      THRESHOLD_RESS_CONST_SOLUT: "1,1 - 1,1"                  # Resource causal links: constat, solution
+      THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT: "2,1,1,1 - 2,1,1,1" # Biodiversity causal links: constat, cause, consequence, solution
+      THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT: "2,1,1,1 - 2,1,1,1" # Climate causal links: constat, cause, consequence, solution
+      THRESHOLD_RESS_CONST_SOLUT: "1,1 - 1,1" # Resource causal links: constat, solution
       # UPDATE mode configuration (keyword re-detection)
-      UPDATE: "true"                    # Enable UPDATE mode (re-detect keywords on existing data)
-      START_DATE_UPDATE: "2025-11-25"   # Filter on publication_datetime >= this date
-      END_DATE: "2025-11-29"            # Filter on publication_datetime <= this date
+      UPDATE: "true" # Enable UPDATE mode (re-detect keywords on existing data)
+      START_DATE_UPDATE: "2025-11-25" # Filter on publication_datetime >= this date
+      END_DATE: "2025-11-29" # Filter on publication_datetime <= this date
       # BATCH_SIZE: "1000"                # Number of articles per batch
       # # SOURCE_CODE_UPDATE: "LEMOND, FIGARO"  # Comma-separated list of source_code to filter
       # # BIODIVERSITY_ONLY: "true"         # Only update articles with number_of_biodiversite_no_hrfp >= 1
       # # RESSOURCE_ONLY: "true"            # Only update articles with number_of_ressources_no_hrfp >= 1
       # # CLIMATE_ONLY: "true"              # Only update articles with number_of_climat_no_hrfp >= 1
-      THRESHOLD_AGRI_MOBI_BATI_ECON_ENERG_INDU_EAU_ECOS: "2,2,2,1,1,2,1,2"  # Thresholds for each sector (agriculture_alimentation,mobilite,batiments_amenagement,economie_circulaire,energie,industrie,eau,ecosysteme)
+      THRESHOLD_AGRI_MOBI_BATI_ECON_ENERG_INDU_EAU_ECOS: "2,2,2,1,1,2,1,2" # Thresholds for each sector (agriculture_alimentation,mobilite,batiments_amenagement,economie_circulaire,energie,industrie,eau,ecosysteme)
     volumes:
       - ./quotaclimat/:/app/quotaclimat/
       - ./postgres/:/app/postgres/
@@ -515,7 +513,7 @@ services:
     volumes:
       - './pgdata-factiva:/var/lib/postgresql/data' # persist data https://stackoverflow.com/a/41650891/3535853
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U user -d print_media_db"]
+      test: [ "CMD-SHELL", "pg_isready -U user -d print_media_db" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -531,7 +529,7 @@ services:
 
 
   analyse_instagram_data:
-    entrypoint: ["poetry", "run", "python", "analyse/instagram/analyse.py"]
+    entrypoint: [ "poetry", "run", "python", "analyse/instagram/analyse.py" ]
     build:
       context: ./
       dockerfile: duckdb.Dockerfile
@@ -541,17 +539,17 @@ services:
     depends_on:
       - postgres_db
   ftp_server:
-      container_name: my-ftp-server
-      environment:
-          - PUBLIC_IP=192.168.0.1
-          - FTP_PASS=password123
-          - FTP_USER=quotaclimat
-      image: garethflowers/ftp-server
-      ports:
-          - "20-21:20-21/tcp"
-          - "40000-40009:40000-40009/tcp" # For passive mode
-      volumes:
-        - ./quotaclimat/data_ingestion/lemonde_ftp/ftp_data:/home/quotaclimat
+    container_name: my-ftp-server
+    environment:
+      - PUBLIC_IP=192.168.0.1
+      - FTP_PASS=password123
+      - FTP_USER=quotaclimat
+    image: garethflowers/ftp-server
+    ports:
+      - "20-21:20-21/tcp"
+      - "40000-40009:40000-40009/tcp" # For passive mode
+    volumes:
+      - ./quotaclimat/data_ingestion/lemonde_ftp/ftp_data:/home/quotaclimat
 
   lemonde_ftp_to_s3:
     container_name: lemonde_ftp_to_s3
@@ -560,9 +558,9 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile_factiva_to_s3
-    entrypoint: ["python", "quotaclimat/data_ingestion/lemonde_ftp/ftp_to_s3.py"]
+    entrypoint: [ "python", "quotaclimat/data_ingestion/lemonde_ftp/ftp_to_s3.py" ]
     environment:
-      FTP_HOST: ftp_server 
+      FTP_HOST: ftp_server
       # Change to secret to use in prod
       # FTP_HOST: /run/secrets/lemonde_ftp_host
       FTP_USER: quotaclimat
@@ -588,7 +586,8 @@ services:
       ftp_server:
         condition: service_healthy
 
-secrets: # https://docs.docker.com/compose/use-secrets/
+secrets:
+  # https://docs.docker.com/compose/use-secrets/
   pwd_api:
     file: secrets/pwd_api.txt
   username_api:

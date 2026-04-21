@@ -96,8 +96,12 @@ class ChunkCreator:
         of the full signal. The mask is dilated by ~100ms to cover
         silence edges.
         """
-        silence_threshold = np.percentile(energy, self.silence_percentile)
-        silence_mask = (energy < silence_threshold).astype(float)
+        non_zero = energy[energy > 0]
+        if len(non_zero) > 0:
+            silence_threshold = np.percentile(non_zero, self.silence_percentile)
+        else:
+            silence_threshold = np.percentile(energy, self.silence_percentile)
+        silence_mask = (energy <= silence_threshold).astype(float)
 
         dilation_frames = max(1, int(0.1 * self._fps))
         silence_mask = maximum_filter1d(silence_mask, size=dilation_frames * 2 + 1)

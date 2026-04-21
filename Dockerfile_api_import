@@ -48,6 +48,5 @@ EXPOSE 5050
 
 # Use a separate script to handle migrations and start the application
 COPY docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
 
 ENTRYPOINT ["./docker-entrypoint.sh"]

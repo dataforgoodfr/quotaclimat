@@ -66,7 +66,7 @@ jobs:
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
         args: >-
-          jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_EXPORTATION }}
+          jobs definition update ${{ secrets.SCALEWAY_JOB_IMPORT_ID }}
           image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
           startup-command.0=./entrypoints/mediatree_import.sh
     
@@ -113,7 +113,7 @@ jobs:
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
         args: >-
-          jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_EXPORTATION }}
+          jobs definition update ${{ secrets.SCALEWAY_UPDATE_JOB_ID }}
           image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
           startup-command.0=./entrypoints/mediatree_import.sh
 

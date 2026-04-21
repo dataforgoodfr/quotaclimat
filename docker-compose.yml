@@ -191,8 +191,7 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
-    #entrypoint: ["python", "quotaclimat/data_processing/mediatree/api_import.py"]
+    entrypoint: [ "./entrypoints/mediatree_import.sh" ]
     environment:
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project

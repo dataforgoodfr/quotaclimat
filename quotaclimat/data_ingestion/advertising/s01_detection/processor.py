@@ -127,7 +127,8 @@ async def processor(
 
     with timings.measure("fragment_classification"):
         fragment_classifier = FragmentsClassifier(
-            repetition_threshold=(8 if channel == "bfmtv" else 3),
+            repetition_threshold=(7 if channel == "bfmtv" else 3),
+            tunnel_terminal_threshold=(7 if channel == "bfmtv" else 2),
         )
         fragments = fragment_classifier.run(
             groups, already_known_fragments=previously_known_fragments

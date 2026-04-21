@@ -45,9 +45,6 @@ chunk_grouping = ChunkGrouping(
     dt_tol=1,  # ~64 ms per frame tolerance
     offset_tol=2,  # ~128 ms temporal coherence tolerance
 )
-fragment_classifier = FragmentsClassifier(
-    repetition_threshold=3,
-)
 
 
 def process_audio(
@@ -68,6 +65,7 @@ def process_audio(
 
 
 async def processor(
+    channel: str,
     operation_name: str,
     report_folder: str | None,
     segments: list[Segment],
@@ -128,6 +126,9 @@ async def processor(
     #### Fragment classification
 
     with timings.measure("fragment_classification"):
+        fragment_classifier = FragmentsClassifier(
+            repetition_threshold=(8 if channel == "bfmtv" else 3),
+        )
         fragments = fragment_classifier.run(
             groups, already_known_fragments=previously_known_fragments
         )
@@ -141,9 +142,10 @@ async def processor(
 
     with LocalCache(name="reports", version=chunk_hash) as reports_cache:
         reports = Report(
-            operation_name=operation_name,
+            reports_name=f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{channel}_{operation_name}",
             chunk_hash=chunk_hash,
             params={
+                "channel": channel,
                 "operation_name": operation_name,
                 "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
                 "chunk_creator": chunk_creator.params(),

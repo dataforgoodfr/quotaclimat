@@ -77,7 +77,9 @@ class FragmentsClassifier:
 
         return fragments
 
-    def _detect_tunnels(self, fragments: list[Fragment]) -> None:
+    def _detect_tunnels(
+        self, fragments: list[Fragment], maximum_secondes: int = 60
+    ) -> None:
         """
         Detect ad tunnels in the fragments, which are sequences of continous ads.
         The rule is that if we have a segment tagged as already_known_ad or who is repeated (has a group index) and another segment is an already_known_ad or a new_ad in the next 4 segments in the order,
@@ -110,15 +112,22 @@ class FragmentsClassifier:
                             )
                         )
                         if ad_in_the_block:
-                            for k in range(i, j + 1):
-                                if fragments[k].classification not in (
-                                    "already_known_ad",
-                                    "new_ad",
-                                ):
-                                    fragments[k].classification = "new_ad"
+                            candidates = [
+                                fragments[k]
+                                for k in range(i, j + 1)
+                                if fragments[k].classification
+                                not in ("already_known_ad", "new_ad")
+                            ]
+                            total_duration = sum(
+                                f.end_sec - f.start_sec for f in candidates
+                            )
+                            if total_duration > maximum_secondes:
+                                continue
+                            for f in candidates:
+                                f.classification = "new_ad"
 
     def _detect_long_tunnels(
-        self, fragments: list[Fragment], NAD: int, NNAD: int
+        self, fragments: list[Fragment], NAD: int, NNAD: int, maximum_secondes: int = 60
     ) -> None:
         """
         Detect long ad tunnels in the fragments, which are sequences of continous ads.
@@ -169,12 +178,18 @@ class FragmentsClassifier:
                         or (start_of_second_block - end_of_first_block <= NNAD)
                         or (end_of_second_block - start_of_second_block >= NAD * 2)
                     ):
-                        for m in range(end_of_first_block, start_of_second_block):
-                            if fragments[m].classification not in (
-                                "already_known_ad",
-                                "new_ad",
-                            ):
-                                fragments[m].classification = "new_ad"
+                        candidates = [
+                            fragments[m]
+                            for m in range(end_of_first_block, start_of_second_block)
+                            if fragments[m].classification
+                            not in ("already_known_ad", "new_ad")
+                        ]
+                        total_duration = sum(
+                            f.end_sec - f.start_sec for f in candidates
+                        )
+                        if total_duration <= maximum_secondes:
+                            for f in candidates:
+                                f.classification = "new_ad"
 
                 start_of_first_block = start_of_second_block
             else:

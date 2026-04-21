@@ -29,3 +29,18 @@ resource "scaleway_rdb_privilege" "labelstudio_policy" {
 
   depends_on = [scaleway_rdb_user.labelstudio_user, scaleway_rdb_database.labelstudio_db]
 }
+
+resource "scaleway_rdb_user" "dgccrf_user" {
+  instance_id = data.scaleway_rdb_instance.barometre_rdb.id
+  name        = "dgccrf-${var.environment}"
+  password    = var.dgccrf_user_password
+  is_admin    = false
+}
+
+resource "scaleway_rdb_privilege" "dgccrf_user_policy" {
+  instance_id   = data.scaleway_rdb_instance.barometre_rdb.id
+  user_name     = scaleway_rdb_user.dgccrf_user.name
+  database_name = data.scaleway_rdb_database.barometre.name
+  permission    = "readonly"
+  depends_on    = [scaleway_rdb_user.dgccrf_user]
+}

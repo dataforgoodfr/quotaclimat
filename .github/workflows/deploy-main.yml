@@ -118,7 +118,7 @@ jobs:
     - name: Push quotaclimat_base Image
       run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base
 
-    - name: update advertising_detection scaleway job definition with version quotaclimat_base image
+    - name: Update advertising_detection scaleway job
       uses: jawher/action-scw@v2.54.0
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
@@ -126,9 +126,12 @@ jobs:
         SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
-        args: jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_DETECTION_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }} startup-command.0=./entrypoints/advertising_detection.sh
+        args: >-
+          jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_DETECTION_ID }}
+          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+          startup-command.0=./entrypoints/advertising_detection.sh
 
-    - name: update advertising_detection scaleway job definition with version quotaclimat_base image
+    - name: Update advertising_exportation scaleway job
       uses: jawher/action-scw@v2.54.0
       env:
         SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
@@ -136,7 +139,10 @@ jobs:
         SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
-        args: jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_EXPORTATION }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }} startup-command.0=./entrypoints/advertising_exportation.sh
+        args: >-
+          jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_EXPORTATION }}
+          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+          startup-command.0=./entrypoints/advertising_exportation.sh
 
   build-factiva:
     needs: build

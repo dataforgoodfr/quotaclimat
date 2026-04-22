@@ -48,11 +48,24 @@ class FragmentsClassifier:
         ]
         fws.sort(key=lambda f: f.fragment.start_sec)
 
+        # First discrimination based on segment: already known classification or group size
         for fw in fws:
             fw.fragment.classification = self._first_discrimination(fw)
 
+        # Second categorization based on short tunnels: mark repeted segments around identified ads
         for index, fw in enumerate(fws):
-            fw.fragment.classification = self._categorize_fragment(index, fws)
+            if fw.fragment.classification == "unknown" and (
+                self._is_in_short_tunnel(index, fws)
+            ):
+                fw.fragment.classification = "new_ad"
+
+        # Third categorization based on long tunnels: mark segments around long tunnels of identified ad
+        for index, fw in enumerate(fws):
+            if fw.fragment.classification == "unknown" and (
+                self._is_in_long_tunnel(index, fws, 4, 3)
+                or self._is_in_long_tunnel(index, fws, 5, 5)
+            ):
+                fw.fragment.classification = "new_ad"
 
         fragments = self._convert_to_output_fragments(fws)
         fragments = self._merge_continous_fragments(fragments)
@@ -108,25 +121,6 @@ class FragmentsClassifier:
             return "new_ad"
 
         return "unknown"
-
-    def _categorize_fragment(
-        self, index: int, fws: list[_FragmentWrapper]
-    ) -> FragmentClassification:
-        """Decides the final category of a fragment by examining all surrounding context."""
-        base = fws[index].fragment.classification
-
-        if base != "unknown":
-            return base
-
-        if self._is_in_short_tunnel(index, fws):
-            return "new_ad"
-
-        if self._is_in_long_tunnel(index, fws, 4, 3) or self._is_in_long_tunnel(
-            index, fws, 5, 5
-        ):
-            return "new_ad"
-
-        return base
 
     def _is_ad_anchor(self, fw: _FragmentWrapper) -> bool:
         """True if a fragment acts as an ad boundary for tunnel detection."""

@@ -1,6 +1,7 @@
 import hashlib
 import json
 import logging
+from dataclasses import dataclass
 
 from .e04_group_chunks import ChunkGroup
 from .tools.common_objects import Fragment, FragmentClassification
@@ -9,6 +10,13 @@ logger = logging.getLogger(__name__)
 
 IS_AD: tuple[FragmentClassification, ...] = ("already_known_ad", "new_ad")
 MAXIMUM_SECONDS = 60
+
+
+@dataclass
+class _FragmentWrapper:
+    # Class dedicated to computes inside FragmentsClassifier
+    fragment: Fragment
+    group: ChunkGroup | None = None
 
 
 def higher_classification(
@@ -25,11 +33,6 @@ def higher_classification(
     return class1 if order[class1] >= order[class2] else class2
 
 
-def discriminate_fragment(fragment: Fragment) -> FragmentClassification:
-    """Returns a first categorization of a fragment based only on its own properties (group size, known-ad status)."""
-    return fragment.classification
-
-
 class FragmentsClassifier:
     def __init__(
         self, repetition_threshold: int = 3, tunnel_terminal_threshold: int = 2
@@ -40,62 +43,80 @@ class FragmentsClassifier:
     def run(
         self, groups: list[ChunkGroup], already_known_fragments: list[Fragment] = []
     ) -> list[Fragment]:
-        fragments = self._get_internal_fragments(groups) + already_known_fragments
-        fragments.sort(key=lambda f: f.start_sec)
-
-        new_classifications = [
-            self._categorize_fragment(i, fragments) for i in range(len(fragments))
+        fws: list[_FragmentWrapper] = self._get_internal_fragments(groups) + [
+            _FragmentWrapper(fragment=f) for f in already_known_fragments
         ]
-        for fragment, classification in zip(fragments, new_classifications):
-            fragment.classification = classification
+        fws.sort(key=lambda f: f.fragment.start_sec)
 
+        for index, fw in enumerate(fws):
+            fw.fragment.classification = self._categorize_fragment(index, fws)
+
+        fragments = self._convert_to_output_fragments(fws)
         fragments = self._merge_continous_fragments(fragments)
-        return self._convert_to_output_fragments(fragments)
+        return fragments
 
-    def _get_internal_fragments(self, groups: list[ChunkGroup]) -> list[Fragment]:
+    def _get_internal_fragments(
+        self, groups: list[ChunkGroup]
+    ) -> list[_FragmentWrapper]:
         """Classify the chunks of audio files into fragments."""
-        fragments: list[Fragment] = []
+        fws: list[_FragmentWrapper] = []
         for index, group in enumerate(groups):
             if group.count == 1:
                 occ = group.occurrences[0]
-                fragments.append(
-                    Fragment(
-                        start_sec=occ.start_sec,
-                        end_sec=occ.end_sec,
-                        channel=occ.channel,
-                        classification="content",
-                        group_id=None,
-                        chunks=[occ],
-                    )
-                )
-            else:
-                classification = (
-                    "new_ad" if group.count >= self.repetition_threshold else "unknown"
-                )
-                for occ in group.occurrences:
-                    fragments.append(
-                        Fragment(
+                fws.append(
+                    _FragmentWrapper(
+                        fragment=Fragment(
                             start_sec=occ.start_sec,
                             end_sec=occ.end_sec,
                             channel=occ.channel,
-                            classification=classification,
-                            group_id=f"group_{index}",
+                            classification="unknown",
+                            group_id=None,
                             chunks=[occ],
                         )
                     )
+                )
+            else:
+                for occ in group.occurrences:
+                    fws.append(
+                        _FragmentWrapper(
+                            fragment=Fragment(
+                                start_sec=occ.start_sec,
+                                end_sec=occ.end_sec,
+                                channel=occ.channel,
+                                classification="unknown",
+                                group_id=f"group_{index}",
+                                chunks=[occ],
+                            ),
+                            group=group,
+                        )
+                    )
 
-        return fragments
+        return fws
 
-    def _is_ad_anchor(self, fragment: Fragment) -> bool:
+    def _discriminate_fragment(self, fw: _FragmentWrapper) -> FragmentClassification:
+        """Returns a first categorization of a fragment based only on its own properties (group size, known-ad status)."""
+        if fw.fragment.classification != "unknown":
+            return fw.fragment.classification
+
+        if fw.group is None:
+            return "unknown"
+
+        if fw.group.count >= self.repetition_threshold:
+            return "new_ad"
+
+        return "unknown"
+
+    def _is_ad_anchor(self, fw: _FragmentWrapper) -> bool:
         """True if a fragment acts as an ad boundary for tunnel detection."""
-        if discriminate_fragment(fragment) in IS_AD:
-            return True
-        if self.tunnel_terminal_threshold == 2 and fragment.group_id is not None:
+        if (
+            fw.group is not None
+            and fw.group.count >= self.tunnel_terminal_threshold == 2
+        ):
             return True
         return False
 
     def _categorize_fragment(
-        self, index: int, fragments: list[Fragment]
+        self, index: int, fws: list[_FragmentWrapper]
     ) -> FragmentClassification:
         """Decides the final category of a fragment by examining all surrounding context.
 
@@ -104,31 +125,40 @@ class FragmentsClassifier:
           2. Long tunnel (NAD=4, NNAD=3): fragment is in a short gap between two large ad blocks.
           3. Long tunnel (NAD=5, NNAD=5): same with stricter block-size requirements.
         """
-        base = discriminate_fragment(fragments[index])
+        base = self._discriminate_fragment(fws[index])
 
-        if base in IS_AD or base == "content":
+        if base != "unknown":
             return base
 
-        if self._is_in_short_tunnel(index, fragments):
+        if self._is_in_short_tunnel(index, fws):
             return "new_ad"
 
-        for NAD, NNAD in [(4, 3), (5, 5)]:
-            if self._is_in_long_tunnel(index, fragments, NAD, NNAD):
-                return "new_ad"
+        if self._is_in_long_tunnel(index, fws, 4, 3) or self._is_in_long_tunnel(
+            index, fws, 5, 5
+        ):
+            return "new_ad"
 
         return base
 
-    def _is_in_short_tunnel(self, index: int, fragments: list[Fragment]) -> bool:
+    def _is_in_short_tunnel(self, index: int, fws: list[_FragmentWrapper]) -> bool:
         """True if fragment is in a short non-ad gap between two ad anchors.
 
-        Rule: an ad anchor L exists within 4 positions to the left, another ad anchor R
-        exists within L+4 positions to the right, and the total duration of non-ad
-        fragments between L and R is within MAXIMUM_SECONDS.
+        Rule:
+        - an ad exists within 4 positions to the left or the right
+        - an ad anchor exists on the other side (or the fragment itself)
+        - the index between the two is less or equal to 4
+        - the total duration between the two is within MAXIMUM_SECONDS
         """
         # Find nearest ad anchor to the left (within 4 positions)
         left_anchor = None
+        right_anchor = None
+        found_ad = False
         for j in range(index - 1, max(index - 5, -1), -1):
-            if self._is_ad_anchor(fragments[j]):
+            if self._discriminate_fragment(fws[j]) in IS_AD:
+                left_anchor = j
+                found_ad = True
+                break
+            if self._is_ad_anchor(fws[j]):
                 left_anchor = j
                 break
 
@@ -136,19 +166,29 @@ class FragmentsClassifier:
             return False
 
         # Find next ad anchor to the right, but only within 4 positions of left_anchor
-        for j in range(index + 1, min(left_anchor + 5, len(fragments))):
-            if self._is_ad_anchor(fragments[j]):
-                candidates = [
-                    fragments[k]
-                    for k in range(left_anchor + 1, j)
-                    if not self._is_ad_anchor(fragments[k])
-                ]
-                return sum(f.end_sec - f.start_sec for f in candidates) <= MAXIMUM_SECONDS
+        for j in range(index + 1, min(left_anchor + 5, len(fws))):
+            if self._discriminate_fragment(fws[j]) in IS_AD:
+                right_anchor = j
+                found_ad = True
+                break
+            if self._is_ad_anchor(fws[j]):
+                right_anchor = j
+                break
 
-        return False
+        if right_anchor is None:
+            return False
+
+        return (
+            found_ad
+            and (right_anchor - left_anchor <= 4)
+            and (
+                fws[right_anchor].fragment.start_sec - fws[left_anchor].fragment.end_sec
+                <= MAXIMUM_SECONDS
+            )
+        )
 
     def _is_in_long_tunnel(
-        self, index: int, fragments: list[Fragment], NAD: int, NNAD: int
+        self, index: int, fws: list[_FragmentWrapper], NAD: int, NNAD: int
     ) -> bool:
         """True if fragment is in a non-ad gap flanked by two large ad blocks.
 
@@ -158,59 +198,74 @@ class FragmentsClassifier:
         """
         # Find the full extent of the contiguous non-ad gap containing index
         gap_start = index
-        while gap_start > 0 and discriminate_fragment(fragments[gap_start - 1]) not in IS_AD:
+        gap_end = index
+
+        while (
+            gap_start > 0
+            and self._discriminate_fragment(fws[gap_start - 1]) not in IS_AD
+            and gap_end - gap_start <= 2 * NNAD
+        ):
             gap_start -= 1
 
-        gap_end = index
-        while gap_end < len(fragments) - 1 and discriminate_fragment(fragments[gap_end + 1]) not in IS_AD:
+        while (
+            gap_end < len(fws) - 1
+            and self._discriminate_fragment(fws[gap_end + 1]) not in IS_AD
+            and gap_end - gap_start <= 2 * NNAD
+        ):
             gap_end += 1
 
         gap_size = gap_end - gap_start + 1
 
         # Measure the contiguous ad block immediately to the left of the gap
-        if gap_start == 0:
-            return False
-        left_end = gap_start - 1
-        left_start = left_end
-        while left_start > 0 and discriminate_fragment(fragments[left_start - 1]) in IS_AD:
+        left_start = gap_start
+        while (
+            left_start > 0
+            and (
+                fws[left_start].fragment.start_sec
+                - fws[left_start - 1].fragment.end_sec
+                < 1.0  # The two segments are following each others
+            )
+            and self._discriminate_fragment(fws[left_start - 1]) in IS_AD
+            and gap_start - left_start <= 2 * NNAD
+        ):
             left_start -= 1
-        left_size = left_end - left_start + 1
 
         # Measure the contiguous ad block immediately to the right of the gap
-        if gap_end == len(fragments) - 1:
-            return False
-        right_start = gap_end + 1
-        right_end = right_start
-        while right_end < len(fragments) - 1 and discriminate_fragment(fragments[right_end + 1]) in IS_AD:
+        right_end = gap_end
+        while (
+            right_end < len(fws) - 1
+            and (
+                fws[right_end + 1].fragment.start_sec - fws[right_end].fragment.end_sec
+                < 1.0  # The two segments are following each others
+            )
+            and self._discriminate_fragment(fws[right_end + 1]) in IS_AD
+            and right_end - gap_end <= 2 * NNAD
+        ):
             right_end += 1
-        right_size = right_end - right_start + 1
 
-        if not (left_size >= NAD and gap_size <= NNAD * 2 and right_size >= NAD):
+        # Mnimum rules: they all need to be true
+        if not (
+            gap_start - left_start >= NAD
+            and gap_size <= NNAD * 2
+            and right_end - gap_end >= NAD
+        ):
             return False
 
-        if not (left_size >= NAD * 2 or gap_size <= NNAD or right_size >= NAD * 2):
+        # Sufficient rules: only one of them should be true (in addition to the minimum ones)
+        if not (
+            gap_start - left_start >= NAD * 2
+            or gap_size <= NNAD
+            or right_end - gap_end >= NAD * 2
+        ):
             return False
 
-        gap_duration = sum(
-            fragments[k].end_sec - fragments[k].start_sec
-            for k in range(gap_start, gap_end + 1)
-        )
+        gap_duration = fws[gap_end].fragment.start_sec - fws[gap_start].fragment.end_sec
         return gap_duration <= MAXIMUM_SECONDS
 
-    def _convert_to_output_fragments(self, fragments: list[Fragment]) -> list[Fragment]:
-        output_fragments: list[Fragment] = []
-        for fragment in fragments:
-            output_fragments.append(
-                Fragment(
-                    start_sec=fragment.start_sec,
-                    end_sec=fragment.end_sec,
-                    channel=fragment.chunks[0].channel,
-                    classification=fragment.classification,
-                    chunks=fragment.chunks,
-                    group_id=fragment.group_id,
-                )
-            )
-        return output_fragments
+    def _convert_to_output_fragments(
+        self, fragment_wrappers: list[Fragment]
+    ) -> list[Fragment]:
+        return [fw.fragment for fw in fragment_wrappers]
 
     def _merge_continous_fragments(self, fragments: list[Fragment]) -> list[Fragment]:
         """Merge groups whose fragments are almost always continuous.

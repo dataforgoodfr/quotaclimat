@@ -48,6 +48,9 @@ class FragmentsClassifier:
         ]
         fws.sort(key=lambda f: f.fragment.start_sec)
 
+        for fw in fws:
+            fw.fragment.classification = self._first_discrimination(fw)
+
         for index, fw in enumerate(fws):
             fw.fragment.classification = self._categorize_fragment(index, fws)
 
@@ -93,7 +96,7 @@ class FragmentsClassifier:
 
         return fws
 
-    def _discriminate_fragment(self, fw: _FragmentWrapper) -> FragmentClassification:
+    def _first_discrimination(self, fw: _FragmentWrapper) -> FragmentClassification:
         """Returns a first categorization of a fragment based only on its own properties (group size, known-ad status)."""
         if fw.fragment.classification != "unknown":
             return fw.fragment.classification
@@ -106,26 +109,11 @@ class FragmentsClassifier:
 
         return "unknown"
 
-    def _is_ad_anchor(self, fw: _FragmentWrapper) -> bool:
-        """True if a fragment acts as an ad boundary for tunnel detection."""
-        if (
-            fw.group is not None
-            and fw.group.count >= self.tunnel_terminal_threshold == 2
-        ):
-            return True
-        return False
-
     def _categorize_fragment(
         self, index: int, fws: list[_FragmentWrapper]
     ) -> FragmentClassification:
-        """Decides the final category of a fragment by examining all surrounding context.
-
-        Applies three tunnel rules in order using discriminate_fragment on neighbours:
-          1. Short tunnel: fragment sits between two ad anchors within 4 positions.
-          2. Long tunnel (NAD=4, NNAD=3): fragment is in a short gap between two large ad blocks.
-          3. Long tunnel (NAD=5, NNAD=5): same with stricter block-size requirements.
-        """
-        base = self._discriminate_fragment(fws[index])
+        """Decides the final category of a fragment by examining all surrounding context."""
+        base = fws[index].fragment.classification
 
         if base != "unknown":
             return base
@@ -139,6 +127,15 @@ class FragmentsClassifier:
             return "new_ad"
 
         return base
+
+    def _is_ad_anchor(self, fw: _FragmentWrapper) -> bool:
+        """True if a fragment acts as an ad boundary for tunnel detection."""
+        if (
+            fw.group is not None
+            and fw.group.count >= self.tunnel_terminal_threshold == 2
+        ):
+            return True
+        return False
 
     def _is_in_short_tunnel(self, index: int, fws: list[_FragmentWrapper]) -> bool:
         """True if fragment is in a short non-ad gap between two ad anchors.
@@ -154,7 +151,7 @@ class FragmentsClassifier:
         right_anchor = None
         found_ad = False
         for j in range(index - 1, max(index - 5, -1), -1):
-            if self._discriminate_fragment(fws[j]) in IS_AD:
+            if fws[j].fragment.classification in IS_AD:
                 left_anchor = j
                 found_ad = True
                 break
@@ -167,7 +164,7 @@ class FragmentsClassifier:
 
         # Find next ad anchor to the right, but only within 4 positions of left_anchor
         for j in range(index + 1, min(left_anchor + 5, len(fws))):
-            if self._discriminate_fragment(fws[j]) in IS_AD:
+            if fws[j].fragment.classification in IS_AD:
                 right_anchor = j
                 found_ad = True
                 break
@@ -202,14 +199,14 @@ class FragmentsClassifier:
 
         while (
             gap_start > 0
-            and self._discriminate_fragment(fws[gap_start - 1]) not in IS_AD
+            and fws[gap_start - 1].fragment.classification not in IS_AD
             and gap_end - gap_start <= 2 * NNAD
         ):
             gap_start -= 1
 
         while (
             gap_end < len(fws) - 1
-            and self._discriminate_fragment(fws[gap_end + 1]) not in IS_AD
+            and fws[gap_end + 1].fragment.classification not in IS_AD
             and gap_end - gap_start <= 2 * NNAD
         ):
             gap_end += 1
@@ -225,7 +222,7 @@ class FragmentsClassifier:
                 - fws[left_start - 1].fragment.end_sec
                 < 1.0  # The two segments are following each others
             )
-            and self._discriminate_fragment(fws[left_start - 1]) in IS_AD
+            and fws[left_start - 1].fragment.classification in IS_AD
             and gap_start - left_start <= 2 * NNAD
         ):
             left_start -= 1
@@ -238,7 +235,7 @@ class FragmentsClassifier:
                 fws[right_end + 1].fragment.start_sec - fws[right_end].fragment.end_sec
                 < 1.0  # The two segments are following each others
             )
-            and self._discriminate_fragment(fws[right_end + 1]) in IS_AD
+            and fws[right_end + 1].fragment.classification in IS_AD
             and right_end - gap_end <= 2 * NNAD
         ):
             right_end += 1

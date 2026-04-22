@@ -61,6 +61,7 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+.test_cache
 nosetests.xml
 coverage.xml
 *.cover

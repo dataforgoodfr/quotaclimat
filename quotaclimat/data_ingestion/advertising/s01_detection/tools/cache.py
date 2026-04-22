@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-GLOBAL_CACHE_FOLDER = ".cache"
+GLOBAL_CACHE_FOLDER = os.environ.get("GLOBAL_CACHE_FOLDER", ".cache")
 
 
 class LocalCache:

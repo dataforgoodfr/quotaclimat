@@ -1,6 +1,7 @@
 import hashlib
 import json
 import logging
+from collections import defaultdict
 from dataclasses import dataclass
 
 from .e04_group_chunks import ChunkGroup
@@ -35,22 +36,31 @@ def higher_classification(
 
 class FragmentsClassifier:
     def __init__(
-        self, repetition_threshold: int = 3, tunnel_terminal_threshold: int = 2
+        self,
+        repetition_threshold: int = 3,
+        tunnel_terminal_threshold: int = 2,
+        debug_timestamps: list[float] = [],
     ):
         self.repetition_threshold = repetition_threshold
         self.tunnel_terminal_threshold = tunnel_terminal_threshold
+        self.debug_timestamps = debug_timestamps
+        self.debug_result = defaultdict(dict)
 
     def run(
-        self, groups: list[ChunkGroup], already_known_fragments: list[Fragment] = []
+        self,
+        groups: list[ChunkGroup],
+        already_known_fragments: list[Fragment] = [],
     ) -> list[Fragment]:
         fws: list[_FragmentWrapper] = self._get_internal_fragments(groups) + [
             _FragmentWrapper(fragment=f) for f in already_known_fragments
         ]
         fws.sort(key=lambda f: f.fragment.start_sec)
+        self._mark_debug_timestamps("initial_value", fws)
 
         # First discrimination based on segment: already known classification or group size
         for fw in fws:
             fw.fragment.classification = self._first_discrimination(fw)
+        self._mark_debug_timestamps("first_discrimination", fws)
 
         # Second categorization based on short tunnels: mark repeted segments around identified ads
         for index, fw in enumerate(fws):
@@ -58,6 +68,7 @@ class FragmentsClassifier:
                 self._is_in_short_tunnel(index, fws)
             ):
                 fw.fragment.classification = "new_ad"
+        self._mark_debug_timestamps("after_short_tunnel", fws)
 
         # Third categorization based on long tunnels: mark segments around long tunnels of identified ad
         for index, fw in enumerate(fws):
@@ -66,9 +77,12 @@ class FragmentsClassifier:
                 or self._is_in_long_tunnel(index, fws, 5, 5)
             ):
                 fw.fragment.classification = "new_ad"
+        self._mark_debug_timestamps("after_long_tunnels", fws)
 
         fragments = self._convert_to_output_fragments(fws)
         fragments = self._merge_continous_fragments(fragments)
+
+        self._print_debug_result()
         return fragments
 
     def _get_internal_fragments(
@@ -141,42 +155,32 @@ class FragmentsClassifier:
         - the total duration between the two is within MAXIMUM_SECONDS
         """
         # Find nearest ad anchor to the left (within 4 positions)
-        left_anchor = None
-        right_anchor = None
-        found_ad = False
-        for j in range(index - 1, max(index - 5, -1), -1):
-            if fws[j].fragment.classification in IS_AD:
-                left_anchor = j
-                found_ad = True
-                break
-            if self._is_ad_anchor(fws[j]):
-                left_anchor = j
-                break
+        for left in range(index, max(index - 5, -1), -1):
+            if fws[left].fragment.classification in IS_AD:
+                # Find next ad anchor to the right, but only within 4 positions of left anchor
+                for right in range(index + 1, min(left + 5, len(fws))):
+                    if fws[
+                        right
+                    ].fragment.classification in IS_AD or self._is_ad_anchor(
+                        fws[right]
+                    ):
+                        if (
+                            fws[right].fragment.start_sec - fws[left].fragment.end_sec
+                            <= MAXIMUM_SECONDS
+                        ):
+                            return True
 
-        if left_anchor is None:
-            return False
+            elif self._is_ad_anchor(fws[left]):
+                # Find next ad anchor to the right (needs to be an ad), but only within 4 positions of left anchor
+                for right in range(index, min(left + 5, len(fws))):
+                    if fws[right].fragment.classification in IS_AD:
+                        if (
+                            fws[right].fragment.start_sec - fws[left].fragment.end_sec
+                            <= MAXIMUM_SECONDS
+                        ):
+                            return True
 
-        # Find next ad anchor to the right, but only within 4 positions of left_anchor
-        for j in range(index + 1, min(left_anchor + 5, len(fws))):
-            if fws[j].fragment.classification in IS_AD:
-                right_anchor = j
-                found_ad = True
-                break
-            if self._is_ad_anchor(fws[j]):
-                right_anchor = j
-                break
-
-        if right_anchor is None:
-            return False
-
-        return (
-            found_ad
-            and (right_anchor - left_anchor <= 4)
-            and (
-                fws[right_anchor].fragment.start_sec - fws[left_anchor].fragment.end_sec
-                <= MAXIMUM_SECONDS
-            )
-        )
+        return False
 
     def _is_in_long_tunnel(
         self, index: int, fws: list[_FragmentWrapper], NAD: int, NNAD: int
@@ -257,6 +261,21 @@ class FragmentsClassifier:
         self, fragment_wrappers: list[Fragment]
     ) -> list[Fragment]:
         return [fw.fragment for fw in fragment_wrappers]
+
+    def _mark_debug_timestamps(self, key: str, fws: list[_FragmentWrapper]):
+        for ts in self.debug_timestamps:
+            for fw in fws:
+                if fw.fragment.start_sec < ts < fw.fragment.end_sec:
+                    self.debug_result[ts][key] = fw.fragment.classification
+                    break
+            else:
+                logger.info(f"Did not found fragment for ts={ts} key={key}")
+
+    def _print_debug_result(self):
+        for ts, debug in self.debug_result.items():
+            logger.info(
+                f"[DEBUG] ts={ts} " + " ".join([f"{k}={v}" for k, v in debug.items()])
+            )
 
     def _merge_continous_fragments(self, fragments: list[Fragment]) -> list[Fragment]:
         """Merge groups whose fragments are almost always continuous.

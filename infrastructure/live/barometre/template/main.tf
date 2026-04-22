@@ -16,6 +16,14 @@ resource "scaleway_rdb_instance" "barometre_rdb" {
   region         = "fr-par"
 }
 
+# Admin user for the barometre database.
+resource "scaleway_rdb_user" "barometre_dev_admin" {
+  instance_id = scaleway_rdb_instance.barometre_rdb.id
+  name        = "barometre-${var.environment}-admin"
+  password    = var.barometre_admin_password
+  is_admin    = true
+}
+
 # Create the barometre database on the new instance.
 resource "scaleway_rdb_database" "barometre" {
   instance_id = scaleway_rdb_instance.barometre_rdb.id

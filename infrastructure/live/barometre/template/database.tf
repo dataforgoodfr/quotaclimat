@@ -5,15 +5,18 @@ resource "scaleway_account_project" "project" {
 
 # PostgreSQL instance — smallest available node type for dev.
 resource "scaleway_rdb_instance" "barometre_rdb" {
-  name           = "rdb-barometre-${var.environment}"
-  node_type      = "DB-DEV-S"
-  engine         = "PostgreSQL-15"
-  is_ha_cluster  = false
-  disable_backup = true
-  project_id     = scaleway_account_project.project.id
-  user_name      = "barometre-${var.environment}-admin"
-  password       = var.postgres_admin_password
-  region         = "fr-par"
+  name                = "rdb-barometre-${var.environment}"
+  node_type           = var.node_type
+  volume_size_in_gb   = var.volume_size_in_gb
+  volume_type         = var.volume_type
+  engine              = "PostgreSQL-15"
+  is_ha_cluster       = false
+  disable_backup      = true
+  project_id          = scaleway_account_project.project.id
+  user_name           = var.postgres_admin_user
+  password_wo         = var.postgres_admin_password
+  password_wo_version = var.postgres_admin_password_version
+  region              = "fr-par"
 }
 
 # Create the barometre database on the new instance.

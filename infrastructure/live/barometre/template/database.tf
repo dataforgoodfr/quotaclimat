@@ -11,17 +11,9 @@ resource "scaleway_rdb_instance" "barometre_rdb" {
   is_ha_cluster  = false
   disable_backup = true
   project_id     = scaleway_account_project.project.id
-  user_name      = var.postgres_admin_user
+  user_name      = "barometre-${var.environment}-admin"
   password       = var.postgres_admin_password
   region         = "fr-par"
-}
-
-# Admin user for the barometre database.
-resource "scaleway_rdb_user" "barometre_dev_admin" {
-  instance_id = scaleway_rdb_instance.barometre_rdb.id
-  name        = "barometre-${var.environment}-admin"
-  password    = var.barometre_admin_password
-  is_admin    = true
 }
 
 # Create the barometre database on the new instance.

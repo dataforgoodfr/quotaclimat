@@ -62,22 +62,49 @@ class FragmentsClassifier:
             fw.fragment.classification = self._first_discrimination(fw)
         self._mark_debug_timestamps("first_discrimination", fws)
 
+        new_ad_group_ids = set()
+
         # Second categorization based on short tunnels: mark repeted segments around identified ads
-        for index, fw in enumerate(fws):
-            if fw.fragment.classification == "unknown" and (
-                self._is_in_short_tunnel(index, fws)
-            ):
+        new_ads_list = [
+            (
+                fw.fragment.classification == "unknown"
+                and (self._is_in_short_tunnel(index, fws))
+            )
+            for index, fw in enumerate(fws)
+        ]
+        for fw, is_new_ad in zip(fws, new_ads_list):
+            if is_new_ad:
                 fw.fragment.classification = "new_ad"
+                if fw.fragment.group_id is not None:
+                    new_ad_group_ids.add(fw.fragment.group_id)
         self._mark_debug_timestamps("after_short_tunnel", fws)
 
         # Third categorization based on long tunnels: mark segments around long tunnels of identified ad
-        for index, fw in enumerate(fws):
-            if fw.fragment.classification == "unknown" and (
-                self._is_in_long_tunnel(index, fws, 4, 3)
-                or self._is_in_long_tunnel(index, fws, 5, 5)
+        new_ads_list = [
+            (
+                fw.fragment.classification == "unknown"
+                and (
+                    self._is_in_long_tunnel(index, fws, 4, 3)
+                    or self._is_in_long_tunnel(index, fws, 5, 5)
+                )
+            )
+            for index, fw in enumerate(fws)
+        ]
+        for fw, is_new_ad in zip(fws, new_ads_list):
+            if is_new_ad:
+                fw.fragment.classification = "new_ad"
+                if fw.fragment.group_id is not None:
+                    new_ad_group_ids.add(fw.fragment.group_id)
+        self._mark_debug_timestamps("after_long_tunnels", fws)
+
+        for fw in fws:
+            if (
+                fw.fragment.classification == "unknown"
+                and fw.fragment.group_id is not None
+                and fw.fragment.group_id in new_ad_group_ids
             ):
                 fw.fragment.classification = "new_ad"
-        self._mark_debug_timestamps("after_long_tunnels", fws)
+        self._mark_debug_timestamps("after_group_reconciliation", fws)
 
         fragments = self._convert_to_output_fragments(fws)
         fragments = self._merge_continous_fragments(fragments)
@@ -138,9 +165,8 @@ class FragmentsClassifier:
 
     def _is_ad_anchor(self, fw: _FragmentWrapper) -> bool:
         """True if a fragment acts as an ad boundary for tunnel detection."""
-        if (
-            fw.group is not None
-            and fw.group.count >= self.tunnel_terminal_threshold == 2
+        if (fw.group is not None) and (
+            fw.group.count >= self.tunnel_terminal_threshold
         ):
             return True
         return False

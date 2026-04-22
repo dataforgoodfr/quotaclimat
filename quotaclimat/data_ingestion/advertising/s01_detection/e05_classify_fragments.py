@@ -7,6 +7,9 @@ from .tools.common_objects import Fragment, FragmentClassification
 
 logger = logging.getLogger(__name__)
 
+IS_AD: tuple[FragmentClassification, ...] = ("already_known_ad", "new_ad")
+MAXIMUM_SECONDS = 60
+
 
 def higher_classification(
     class1: FragmentClassification, class2: FragmentClassification
@@ -19,10 +22,12 @@ def higher_classification(
         "content": 1,
         "unknown": 0,
     }
-    if order[class1] >= order[class2]:
-        return class1
-    else:
-        return class2
+    return class1 if order[class1] >= order[class2] else class2
+
+
+def discriminate_fragment(fragment: Fragment) -> FragmentClassification:
+    """Returns a first categorization of a fragment based only on its own properties (group size, known-ad status)."""
+    return fragment.classification
 
 
 class FragmentsClassifier:
@@ -37,17 +42,18 @@ class FragmentsClassifier:
     ) -> list[Fragment]:
         fragments = self._get_internal_fragments(groups) + already_known_fragments
         fragments.sort(key=lambda f: f.start_sec)
-        self._detect_tunnels(fragments, self.tunnel_terminal_threshold)
-        self._detect_long_tunnels(fragments, NAD=4, NNAD=3)
-        self._detect_long_tunnels(fragments, NAD=5, NNAD=5)
-        fragments = self._merge_continous_fragments(fragments)
 
+        new_classifications = [
+            self._categorize_fragment(i, fragments) for i in range(len(fragments))
+        ]
+        for fragment, classification in zip(fragments, new_classifications):
+            fragment.classification = classification
+
+        fragments = self._merge_continous_fragments(fragments)
         return self._convert_to_output_fragments(fragments)
 
     def _get_internal_fragments(self, groups: list[ChunkGroup]) -> list[Fragment]:
-        """
-        Classify the chunks of audio files into fragments.
-        """
+        """Classify the chunks of audio files into fragments."""
         fragments: list[Fragment] = []
         for index, group in enumerate(groups):
             if group.count == 1:
@@ -80,131 +86,116 @@ class FragmentsClassifier:
 
         return fragments
 
-    def _detect_tunnels(
-        self,
-        fragments: list[Fragment],
-        tunnel_terminal_threshold: int = 2,
-        maximum_secondes: int = 60,
-    ) -> None:
+    def _is_ad_anchor(self, fragment: Fragment) -> bool:
+        """True if a fragment acts as an ad boundary for tunnel detection."""
+        if discriminate_fragment(fragment) in IS_AD:
+            return True
+        if self.tunnel_terminal_threshold == 2 and fragment.group_id is not None:
+            return True
+        return False
+
+    def _categorize_fragment(
+        self, index: int, fragments: list[Fragment]
+    ) -> FragmentClassification:
+        """Decides the final category of a fragment by examining all surrounding context.
+
+        Applies three tunnel rules in order using discriminate_fragment on neighbours:
+          1. Short tunnel: fragment sits between two ad anchors within 4 positions.
+          2. Long tunnel (NAD=4, NNAD=3): fragment is in a short gap between two large ad blocks.
+          3. Long tunnel (NAD=5, NNAD=5): same with stricter block-size requirements.
         """
-        Detect ad tunnels in the fragments, which are sequences of continous ads.
-        The rule is that if we have a segment tagged as already_known_ad or who is repeated (has a group index) and another segment is an already_known_ad or a new_ad in the next 4 segments in the order,
-        Then all those segments are tagged as new_ad, if not tagged already.
+        base = discriminate_fragment(fragments[index])
+
+        if base in IS_AD or base == "content":
+            return base
+
+        if self._is_in_short_tunnel(index, fragments):
+            return "new_ad"
+
+        for NAD, NNAD in [(4, 3), (5, 5)]:
+            if self._is_in_long_tunnel(index, fragments, NAD, NNAD):
+                return "new_ad"
+
+        return base
+
+    def _is_in_short_tunnel(self, index: int, fragments: list[Fragment]) -> bool:
+        """True if fragment is in a short non-ad gap between two ad anchors.
+
+        Rule: an ad anchor L exists within 4 positions to the left, another ad anchor R
+        exists within L+4 positions to the right, and the total duration of non-ad
+        fragments between L and R is within MAXIMUM_SECONDS.
         """
-        for i, fragment in enumerate(fragments):
-            if fragment.classification in ("already_known_ad", "new_ad") or (
-                tunnel_terminal_threshold == 2
-                and fragment.group_id
-                is not None  # this condition is not properly implemented
-            ):
-                ad_in_the_block = fragment.classification in (
-                    "already_known_ad",
-                    "new_ad",
-                )
+        # Find nearest ad anchor to the left (within 4 positions)
+        left_anchor = None
+        for j in range(index - 1, max(index - 5, -1), -1):
+            if self._is_ad_anchor(fragments[j]):
+                left_anchor = j
+                break
 
-                for j in range(
-                    i + 1, min(i + 5, len(fragments))
-                ):  # We accept holes of 3
-                    next_fragment = fragments[j]
-                    if next_fragment.classification in (
-                        "already_known_ad",
-                        "new_ad",
-                    ) or (
-                        tunnel_terminal_threshold == 2
-                        and fragment.group_id
-                        is not None  # this condition is not properly implemented
-                    ):
-                        ad_in_the_block = (
-                            ad_in_the_block
-                            or next_fragment.classification
-                            in (
-                                "already_known_ad",
-                                "new_ad",
-                            )
-                        )
-                        if ad_in_the_block:
-                            candidates = [
-                                fragments[k]
-                                for k in range(i, j + 1)
-                                if fragments[k].classification
-                                not in ("already_known_ad", "new_ad")
-                            ]
-                            total_duration = sum(
-                                f.end_sec - f.start_sec for f in candidates
-                            )
-                            if total_duration > maximum_secondes:
-                                continue
-                            for f in candidates:
-                                f.classification = "new_ad"
+        if left_anchor is None:
+            return False
 
-    def _detect_long_tunnels(
-        self, fragments: list[Fragment], NAD: int, NNAD: int, maximum_secondes: int = 60
-    ) -> None:
+        # Find next ad anchor to the right, but only within 4 positions of left_anchor
+        for j in range(index + 1, min(left_anchor + 5, len(fragments))):
+            if self._is_ad_anchor(fragments[j]):
+                candidates = [
+                    fragments[k]
+                    for k in range(left_anchor + 1, j)
+                    if not self._is_ad_anchor(fragments[k])
+                ]
+                return sum(f.end_sec - f.start_sec for f in candidates) <= MAXIMUM_SECONDS
+
+        return False
+
+    def _is_in_long_tunnel(
+        self, index: int, fragments: list[Fragment], NAD: int, NNAD: int
+    ) -> bool:
+        """True if fragment is in a non-ad gap flanked by two large ad blocks.
+
+        Rule: the contiguous non-ad gap containing index has at least NAD ads on each side,
+        the gap is at most 2*NNAD wide, and at least one side has 2*NAD ads OR the gap is
+        at most NNAD wide. Total duration of the gap must also fit within MAXIMUM_SECONDS.
         """
-        Detect long ad tunnels in the fragments, which are sequences of continous ads.
-        The rule is that if we have a sequence of fragments between two sequences of already_known_ad or new_ad, then this unkown sequence of fragment is tagged as new_ad (if not already tagged).
-        We can have up to NNAD non-ad segments in the middle, and the two ad blocks on the side must have at least NAD segments.
-        We also accept 2*NNAD non-ad segments if one of the two sides is a very long sequence of 2*NAD ads.
-        """
-        start_of_first_block = 0
-        while start_of_first_block < len(fragments):
-            if fragments[start_of_first_block].classification in (
-                "already_known_ad",
-                "new_ad",
-            ):
-                end_of_first_block = start_of_first_block + 1
-                while end_of_first_block < len(fragments) and fragments[
-                    end_of_first_block
-                ].classification in (
-                    "already_known_ad",
-                    "new_ad",
-                ):
-                    end_of_first_block += 1
+        # Find the full extent of the contiguous non-ad gap containing index
+        gap_start = index
+        while gap_start > 0 and discriminate_fragment(fragments[gap_start - 1]) not in IS_AD:
+            gap_start -= 1
 
-                start_of_second_block = end_of_first_block
-                while start_of_second_block < len(fragments) and fragments[
-                    start_of_second_block
-                ].classification not in (
-                    "already_known_ad",
-                    "new_ad",
-                ):
-                    start_of_second_block += 1
+        gap_end = index
+        while gap_end < len(fragments) - 1 and discriminate_fragment(fragments[gap_end + 1]) not in IS_AD:
+            gap_end += 1
 
-                end_of_second_block = start_of_second_block + 1
-                while end_of_second_block < len(fragments) and fragments[
-                    end_of_second_block
-                ].classification in (
-                    "already_known_ad",
-                    "new_ad",
-                ):
-                    end_of_second_block += 1
+        gap_size = gap_end - gap_start + 1
 
-                if (  # Minimum bot not enough
-                    (end_of_first_block - start_of_first_block >= NAD)
-                    and (start_of_second_block - end_of_first_block <= NNAD * 2)
-                    and (end_of_second_block - start_of_second_block >= NAD)
-                ):
-                    if (  # More restrictive conditions, we only need one of them
-                        (end_of_first_block - start_of_first_block >= NAD * 2)
-                        or (start_of_second_block - end_of_first_block <= NNAD)
-                        or (end_of_second_block - start_of_second_block >= NAD * 2)
-                    ):
-                        candidates = [
-                            fragments[m]
-                            for m in range(end_of_first_block, start_of_second_block)
-                            if fragments[m].classification
-                            not in ("already_known_ad", "new_ad")
-                        ]
-                        total_duration = sum(
-                            f.end_sec - f.start_sec for f in candidates
-                        )
-                        if total_duration <= maximum_secondes:
-                            for f in candidates:
-                                f.classification = "new_ad"
+        # Measure the contiguous ad block immediately to the left of the gap
+        if gap_start == 0:
+            return False
+        left_end = gap_start - 1
+        left_start = left_end
+        while left_start > 0 and discriminate_fragment(fragments[left_start - 1]) in IS_AD:
+            left_start -= 1
+        left_size = left_end - left_start + 1
 
-                start_of_first_block = start_of_second_block
-            else:
-                start_of_first_block += 1
+        # Measure the contiguous ad block immediately to the right of the gap
+        if gap_end == len(fragments) - 1:
+            return False
+        right_start = gap_end + 1
+        right_end = right_start
+        while right_end < len(fragments) - 1 and discriminate_fragment(fragments[right_end + 1]) in IS_AD:
+            right_end += 1
+        right_size = right_end - right_start + 1
+
+        if not (left_size >= NAD and gap_size <= NNAD * 2 and right_size >= NAD):
+            return False
+
+        if not (left_size >= NAD * 2 or gap_size <= NNAD or right_size >= NAD * 2):
+            return False
+
+        gap_duration = sum(
+            fragments[k].end_sec - fragments[k].start_sec
+            for k in range(gap_start, gap_end + 1)
+        )
+        return gap_duration <= MAXIMUM_SECONDS
 
     def _convert_to_output_fragments(self, fragments: list[Fragment]) -> list[Fragment]:
         output_fragments: list[Fragment] = []
@@ -222,9 +213,11 @@ class FragmentsClassifier:
         return output_fragments
 
     def _merge_continous_fragments(self, fragments: list[Fragment]) -> list[Fragment]:
-        """This function will merge groups, of which fragments are almost always continous.
-        For each group, we will look at all the groups that are following the segments of the group.
-        Depending on the repartition of those groups, we will merge the most represented group with the current one."""
+        """Merge groups whose fragments are almost always continuous.
+
+        For each group, look at the groups following its fragments. If one group
+        consistently follows and the relationship is reciprocal, merge them.
+        """
         groups_to_merge: list[tuple[str, str]] = []
 
         groups_fragment_index: dict[str, list[int]] = {}
@@ -326,15 +319,13 @@ class FragmentsClassifier:
             if fragment_index < len(fragments) - 1:
                 next_fragment = fragments[fragment_index + 1]
 
-                if (
-                    next_fragment.start_sec - fragment.end_sec <= 1.0
-                ):  # If the next fragment is within 1 second after the current one
+                if next_fragment.start_sec - fragment.end_sec <= 1.0:
                     next_group_id = next_fragment.group_id
                     if (
                         next_group_id is None
                         or next_fragment.classification == "already_known_ad"
                     ):
-                        next_group_id = "none"  # We use "none" to represent fragments without group or that cannot be matched
+                        next_group_id = "none"
                     if next_group_id not in following_groups_count:
                         following_groups_count[next_group_id] = 0
                     following_groups_count[next_group_id] += 1
@@ -349,14 +340,10 @@ class FragmentsClassifier:
             if fragment_index > 0:
                 previous_fragment = fragments[fragment_index - 1]
 
-                if (
-                    fragment.start_sec - previous_fragment.end_sec <= 1.0
-                ):  # If the previous fragment is within 1 second before the current one
+                if fragment.start_sec - previous_fragment.end_sec <= 1.0:
                     previous_group_id = previous_fragment.group_id
                     if previous_group_id is None:
-                        previous_group_id = (
-                            "none"  # We use "none" to represent fragments without group
-                        )
+                        previous_group_id = "none"
                     if previous_group_id not in preceding_groups_count:
                         preceding_groups_count[previous_group_id] = 0
                     preceding_groups_count[previous_group_id] += 1
@@ -367,8 +354,8 @@ class FragmentsClassifier:
         fragments: list[Fragment],
         group_id_to_merge: int,
         group_id_to_merge_with: int,
-    ) -> None:
-        """Here we keep the second index to be sure it can later be merged with another group"""
+    ) -> list[Fragment]:
+        """Keep the second group id so it can later be merged with another group."""
         new_fragments = []
         i = 0
         while i < len(fragments):
@@ -392,9 +379,9 @@ class FragmentsClassifier:
                         )
                         i += 2
                         continue
-                new_fragments.append(fragment)  # we keep the original group id
+                new_fragments.append(fragment)
             elif fragment.group_id == group_id_to_merge_with:
-                # It has not been merged with the previous one, we remove the group id to avoid future incoherence
+                # Not merged with previous one; clear group_id to avoid future incoherence
                 new_fragments.append(
                     Fragment(
                         start_sec=fragment.start_sec,

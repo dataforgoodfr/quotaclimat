@@ -46,6 +46,18 @@ class FragmentsClassifier:
         self.debug_timestamps = debug_timestamps
         self.debug_result = defaultdict(dict)
 
+    @classmethod
+    def from_channel(cls, channel: str):
+        match channel:
+            case "bfmtv":
+                return cls(repetition_threshold=7, tunnel_terminal_threshold=7)
+            case "test-channel":
+                return cls(repetition_threshold=2, tunnel_terminal_threshold=2)
+        return cls(
+            repetition_threshold=3,
+            tunnel_terminal_threshold=2,
+        )
+
     def run(
         self,
         groups: list[ChunkGroup],

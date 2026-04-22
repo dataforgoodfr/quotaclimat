@@ -126,10 +126,7 @@ async def processor(
     #### Fragment classification
 
     with timings.measure("fragment_classification"):
-        fragment_classifier = FragmentsClassifier(
-            repetition_threshold=(7 if channel == "bfmtv" else 3),
-            tunnel_terminal_threshold=(7 if channel == "bfmtv" else 2),
-        )
+        fragment_classifier = FragmentsClassifier.from_channel(channel)
         fragments = fragment_classifier.run(
             groups, already_known_fragments=previously_known_fragments
         )

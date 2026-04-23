@@ -13,5 +13,5 @@ inputs = {
   postgres_admin_password_version   = 1
   node_type                         = "DB-DEV-S"
   volume_type                       = "sbs_5k"
-  volume_size_in_gb                 = 100
+  volume_size_in_gb                 = 20
 }

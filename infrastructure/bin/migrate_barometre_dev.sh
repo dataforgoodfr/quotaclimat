@@ -35,8 +35,8 @@ DEV_INSTANCE=$(scw rdb instance list \
   region=fr-par \
   -o json | jq -r '.[] | select(.name == "rdb-barometre-dev")')
 
-DEV_HOST=$(echo "$DEV_INSTANCE" | jq -r '.load_balancer[0].ip')
-DEV_PORT=$(echo "$DEV_INSTANCE" | jq -r '.load_balancer[0].port')
+DEV_HOST=$(echo "$DEV_INSTANCE" | jq -r '.endpoints[0].ip')
+DEV_PORT=$(echo "$DEV_INSTANCE" | jq -r '.endpoints[0].port')
 
 if [ -z "$DEV_HOST" ] || [ "$DEV_HOST" = "null" ]; then
   echo "Error: could not resolve dev instance endpoint. Is the ACL configured?"

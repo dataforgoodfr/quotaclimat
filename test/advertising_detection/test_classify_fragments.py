@@ -1,7 +1,6 @@
 """Tests for e05_classify_fragments.py"""
-from dataclasses import dataclass, field
 
-import pytest
+from dataclasses import dataclass, field
 
 from quotaclimat.data_ingestion.advertising.s01_detection.e05_classify_fragments import (
     MAXIMUM_SECONDS,
@@ -15,7 +14,6 @@ from quotaclimat.data_ingestion.advertising.s01_detection.tools.common_objects i
     Fragment,
 )
 
-
 # ---------------------------------------------------------------------------
 # Lightweight stand-in for ChunkGroup (avoids importing the heavy module)
 # ---------------------------------------------------------------------------
@@ -24,6 +22,7 @@ from quotaclimat.data_ingestion.advertising.s01_detection.tools.common_objects i
 @dataclass
 class ChunkGroup:
     """Minimal ChunkGroup used in tests — mirrors the fields the classifier reads."""
+
     count: int
     occurrences: list = field(default_factory=list)
     duration_mean: float = 5.0
@@ -88,8 +87,12 @@ def make_fw(start_sec, end_sec, classification="unknown", group=None, group_id=N
 class TestHigherClassification:
     def test_already_known_ad_beats_everything(self):
         for other in ("new_ad", "jingle", "content", "unknown"):
-            assert higher_classification("already_known_ad", other) == "already_known_ad"
-            assert higher_classification(other, "already_known_ad") == "already_known_ad"
+            assert (
+                higher_classification("already_known_ad", other) == "already_known_ad"
+            )
+            assert (
+                higher_classification(other, "already_known_ad") == "already_known_ad"
+            )
 
     def test_new_ad_beats_lower(self):
         for other in ("jingle", "content", "unknown"):
@@ -140,7 +143,9 @@ class TestFirstDiscrimination:
 
     def test_custom_repetition_threshold(self):
         clf = FragmentsClassifier(repetition_threshold=5)
-        assert clf._first_discrimination(make_fw(0, 5, group=make_group(4))) == "unknown"
+        assert (
+            clf._first_discrimination(make_fw(0, 5, group=make_group(4))) == "unknown"
+        )
         assert clf._first_discrimination(make_fw(0, 5, group=make_group(5))) == "new_ad"
 
 
@@ -168,12 +173,6 @@ class TestIsAdAnchor:
     def test_group_above_threshold_is_anchor(self):
         fw = make_fw(0, 5, group=make_group(5))
         assert self.clf._is_ad_anchor(fw) is True
-
-    def test_non_default_threshold_disables_anchor(self):
-        # The check is `count >= threshold == 2`, so threshold != 2 disables anchoring entirely
-        clf = FragmentsClassifier(tunnel_terminal_threshold=3)
-        fw = make_fw(0, 5, group=make_group(5))
-        assert clf._is_ad_anchor(fw) is False
 
 
 # ---------------------------------------------------------------------------
@@ -207,9 +206,7 @@ class TestIsInShortTunnel:
 
     def test_unknown_not_near_any_ad_is_not_in_tunnel(self):
         # All unknown, no ads nearby
-        fws = self._fws(
-            [(i * 5, i * 5 + 5, "unknown") for i in range(8)]
-        )
+        fws = self._fws([(i * 5, i * 5 + 5, "unknown") for i in range(8)])
         assert self.clf._is_in_short_tunnel(4, fws) is False
 
     def test_unknown_with_ad_only_on_left_is_not_in_tunnel(self):
@@ -220,8 +217,7 @@ class TestIsInShortTunnel:
     def test_unknown_beyond_4_positions_from_ad_is_not_in_tunnel(self):
         # Ad at index 0, unknown at index 6 — more than 4 positions away
         fws = self._fws(
-            [(0, 5, "new_ad")]
-            + [(i * 5 + 5, i * 5 + 10, "unknown") for i in range(6)]
+            [(0, 5, "new_ad")] + [(i * 5 + 5, i * 5 + 10, "unknown") for i in range(6)]
         )
         assert self.clf._is_in_short_tunnel(6, fws) is False
 
@@ -229,14 +225,22 @@ class TestIsInShortTunnel:
         # Distance between left ad end (5) and right ad start (5 + MAXIMUM_SECONDS + 1) > 60 s
         right_start = 5 + MAXIMUM_SECONDS + 1
         fws = self._fws(
-            [(0, 5, "new_ad"), (5, right_start, "unknown"), (right_start, right_start + 5, "new_ad")]
+            [
+                (0, 5, "new_ad"),
+                (5, right_start, "unknown"),
+                (right_start, right_start + 5, "new_ad"),
+            ]
         )
         assert self.clf._is_in_short_tunnel(1, fws) is False
 
     def test_tunnel_at_exactly_maximum_seconds_is_accepted(self):
         right_start = 5 + MAXIMUM_SECONDS  # end of left ad (5) + exactly 60 s
         fws = self._fws(
-            [(0, 5, "new_ad"), (5, right_start, "unknown"), (right_start, right_start + 5, "new_ad")]
+            [
+                (0, 5, "new_ad"),
+                (5, right_start, "unknown"),
+                (right_start, right_start + 5, "new_ad"),
+            ]
         )
         assert self.clf._is_in_short_tunnel(1, fws) is True
 

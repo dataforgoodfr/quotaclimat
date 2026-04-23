@@ -88,3 +88,4 @@ dotenv = "^0.9.9"
 
 [tool.pytest_env]
 CLEAN_CACHE_ON_EXIT=true
+GLOBAL_CACHE_FOLDER=".test_cache"

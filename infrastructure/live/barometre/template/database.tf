@@ -25,6 +25,14 @@ resource "scaleway_rdb_database" "barometre" {
   name        = "barometre"
 }
 
+# Grant the admin user full privileges on the barometre database.
+resource "scaleway_rdb_privilege" "barometre_admin" {
+  instance_id   = scaleway_rdb_instance.barometre_rdb.id
+  user_name     = var.postgres_admin_user
+  database_name = scaleway_rdb_database.barometre.name
+  permission    = "all"
+}
+
 # Allow public access so the migration script can reach the instance.
 # Dev only — restrict to specific IPs in production.
 resource "scaleway_rdb_acl" "public" {

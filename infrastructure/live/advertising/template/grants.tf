@@ -22,7 +22,7 @@ resource "postgresql_grant" "dgccrf_table_write" {
   role        = scaleway_rdb_user.dgccrf_user.name
   schema      = "advertising"
   object_type = "table"
-  objects     = ["ad", "ad_occurences"]
+  objects     = ["ad", "ad_occurrence"]
   privileges  = ["INSERT", "UPDATE", "DELETE"]
   depends_on  = [scaleway_rdb_user.dgccrf_user]
 }

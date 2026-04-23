@@ -4,9 +4,5 @@ terraform {
       source  = "scaleway/scaleway"
       version = "~> 2.57"
     }
-    postgresql = {
-      source  = "cyrilgdn/postgresql"
-      version = "~> 1.22"
-    }
   }
 }

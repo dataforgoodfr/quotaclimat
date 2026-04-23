@@ -77,7 +77,7 @@ make env=dev target=advertising tg-state-pull  # Pull raw state
 ## A note on passwords
 When deploying for the first time you may need to create passwords and tokens. Use the following to generate a secure password:
 ```bash
-openssl rand -base64 16
+LC_ALL=C tr -dc 'A-Za-z0-9!@#$%^&*' < /dev/urandom | head -c 32; echo
 ```
 To generate a Label Studio token (40-character alphanumeric string):
 ```bash

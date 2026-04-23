@@ -99,8 +99,14 @@ async def processor(
 
             chunks: list[Chunk] = []
             for segment in segments:
-                chunk_batch = json.loads(chunk_cache.get(segment.identifier + ".json"))
-                chunks.extend([Chunk.from_dict(d) for d in chunk_batch])
+                try:
+                    chunk_batch = json.loads(
+                        chunk_cache.get(segment.identifier + ".json")
+                    )
+                    chunks.extend([Chunk.from_dict(d) for d in chunk_batch])
+                except:
+                    logger.error(f"Could not get content of {segment.identifier}")
+                    raise
 
             # Sort by start time. Should already be the case, but ensure it.
             chunks.sort(key=lambda c: c.start_sec)

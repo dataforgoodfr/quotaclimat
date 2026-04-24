@@ -74,7 +74,8 @@ if __name__ == "__main__":
         start_date = os.environ.get("START_DATE")
         if not start_date:
             start_date = _get_next_start_date_from_db(channel)
-
+        if not start_date:
+            start_date = os.environ.get("MINIMAL_START_DATE")
         assert start_date is not None, "Need start_date to run the detection process"
 
         num_workers = max(

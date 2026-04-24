@@ -3,7 +3,6 @@
 from dataclasses import dataclass, field
 
 from quotaclimat.data_ingestion.advertising.s01_detection.e05_classify_fragments import (
-    MAXIMUM_SECONDS,
     FragmentsClassifier,
     _FragmentWrapper,
     higher_classification,
@@ -13,6 +12,8 @@ from quotaclimat.data_ingestion.advertising.s01_detection.tools.common_objects i
     Fingerprint,
     Fragment,
 )
+
+DEFAULT_GAP = 60
 
 # ---------------------------------------------------------------------------
 # Lightweight stand-in for ChunkGroup (avoids importing the heavy module)
@@ -222,8 +223,8 @@ class TestIsInShortTunnel:
         assert self.clf._is_in_short_tunnel(6, fws) is False
 
     def test_tunnel_exceeding_maximum_seconds_is_rejected(self):
-        # Distance between left ad end (5) and right ad start (5 + MAXIMUM_SECONDS + 1) > 60 s
-        right_start = 5 + MAXIMUM_SECONDS + 1
+        # Distance between left ad end (5) and right ad start (5 + DEFAULT_GAP + 1) > 60 s
+        right_start = 5 + DEFAULT_GAP + 1
         fws = self._fws(
             [
                 (0, 5, "new_ad"),
@@ -234,7 +235,7 @@ class TestIsInShortTunnel:
         assert self.clf._is_in_short_tunnel(1, fws) is False
 
     def test_tunnel_at_exactly_maximum_seconds_is_accepted(self):
-        right_start = 5 + MAXIMUM_SECONDS  # end of left ad (5) + exactly 60 s
+        right_start = 5 + DEFAULT_GAP  # end of left ad (5) + exactly 60 s
         fws = self._fws(
             [
                 (0, 5, "new_ad"),

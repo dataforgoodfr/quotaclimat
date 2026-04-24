@@ -2,7 +2,7 @@ import asyncio
 import logging
 import math
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from sentry_sdk.crons import monitor
 from sqlalchemy import desc, select
@@ -61,12 +61,21 @@ if __name__ == "__main__":
         sentry_init()
 
         channel = os.environ.get("CHANNEL")
+        if not channel:
+            # This feature allow rotating on channels by specifying ROLLING_CHANNELS=bfmtv,arte
+            # By specifying a cron that run x times every hour (*/x * * * *), the rotation will execute each channel one time every hour
+            rolling_channels = os.environ.get("ROLLING_CHANNELS", "").split(",")
+            if len(rolling_channels) > 0:
+                minute = datetime.now().minute
+                rolling_index = minute * len(rolling_channels) // 60
+                channel = rolling_channels[rolling_index]
         assert channel is not None, "Need channel to run the detection process"
 
         start_date = os.environ.get("START_DATE")
         if not start_date:
             start_date = _get_next_start_date_from_db(channel)
-
+        if not start_date:
+            start_date = os.environ.get("MINIMAL_START_DATE")
         assert start_date is not None, "Need start_date to run the detection process"
 
         num_workers = max(

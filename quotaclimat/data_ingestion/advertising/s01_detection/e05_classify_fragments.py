@@ -10,7 +10,6 @@ from .tools.common_objects import Fragment, FragmentClassification
 logger = logging.getLogger(__name__)
 
 IS_AD: tuple[FragmentClassification, ...] = ("already_known_ad", "new_ad")
-MAXIMUM_SECONDS = 60
 
 
 @dataclass
@@ -39,10 +38,13 @@ class FragmentsClassifier:
         self,
         repetition_threshold: int = 3,
         tunnel_terminal_threshold: int = 2,
+        maximum_gap_for_propagation: int = 60,
         debug_timestamps: list[float] = [],
     ):
         self.repetition_threshold = repetition_threshold
         self.tunnel_terminal_threshold = tunnel_terminal_threshold
+        self.maximum_gap_for_propagation = maximum_gap_for_propagation
+
         self.debug_timestamps = debug_timestamps
         self.debug_result = defaultdict(dict)
 
@@ -50,7 +52,20 @@ class FragmentsClassifier:
     def from_channel(cls, channel: str):
         match channel:
             case "bfmtv":
+                # Info en continue, longue période analysées donc beaucoup de répétition des pubs, on peut augmenter les limites.
+                # C'est même nécessaire car il y a beaucoup de répétition des programmes,
+                # et on désactive le tunnel_terminal_threshold (= à repetition_threshold) pour ne pas attraper de programmes par erreur.
                 return cls(repetition_threshold=7, tunnel_terminal_threshold=7)
+            case "itele":
+                # CNEWS, découpage très éfficace, on peut repérer la pub avec un filtre très haut type repetition >8 avec beaucoup de précision
+                # ci-dessous on abaisse les chiffres, notamment pour attraper les début et fin de tunnel de pub qui comportent parfois moins de répétition
+                # mais pas trop bas non plus car certaines informations sont répétées (tunnel d'info jusqu'à 4 répétitions).
+                # La meteo est particulièrement longue.
+                return cls(
+                    repetition_threshold=6,
+                    tunnel_terminal_threshold=3,
+                    maximum_gap_for_propagation=80,
+                )
             case "test-channel":
                 return cls(repetition_threshold=2, tunnel_terminal_threshold=2)
         return cls(
@@ -204,7 +219,7 @@ class FragmentsClassifier:
                     ):
                         if (
                             fws[right].fragment.start_sec - fws[left].fragment.end_sec
-                            <= MAXIMUM_SECONDS
+                            <= self.maximum_gap_for_propagation
                         ):
                             return True
 
@@ -214,7 +229,7 @@ class FragmentsClassifier:
                     if fws[right].fragment.classification in IS_AD:
                         if (
                             fws[right].fragment.start_sec - fws[left].fragment.end_sec
-                            <= MAXIMUM_SECONDS
+                            <= self.maximum_gap_for_propagation
                         ):
                             return True
 
@@ -293,7 +308,7 @@ class FragmentsClassifier:
             return False
 
         gap_duration = fws[gap_end].fragment.start_sec - fws[gap_start].fragment.end_sec
-        return gap_duration <= MAXIMUM_SECONDS
+        return gap_duration <= self.maximum_gap_for_propagation
 
     def _convert_to_output_fragments(
         self, fragment_wrappers: list[Fragment]

@@ -1,28 +1,19 @@
-provider "postgresql" {
-  host      = var.postgres_host
-  port      = var.postgres_port
-  username  = var.postgres_admin_user
-  password  = var.postgres_admin_password
-  database  = data.scaleway_rdb_database.barometre.name
-  sslmode   = "require"
-  superuser = false
-}
+resource "terraform_data" "dgccrf_grants" {
+  triggers_replace = [
+    scaleway_rdb_user.dgccrf_user.name,
+    data.scaleway_rdb_database.barometre.name,
+  ]
 
-resource "postgresql_grant" "dgccrf_schema_usage" {
-  database    = data.scaleway_rdb_database.barometre.name
-  role        = scaleway_rdb_user.dgccrf_user.name
-  schema      = "advertising"
-  object_type = "schema"
-  privileges  = ["USAGE"]
-  depends_on  = [scaleway_rdb_user.dgccrf_user]
-}
+  provisioner "local-exec" {
+    command = <<-EOF
+      docker run --rm \
+        -e PGPASSWORD="${var.postgres_admin_password}" \
+        postgres:15 psql \
+          "host=${var.postgres_host} port=${var.postgres_port} dbname=${data.scaleway_rdb_database.barometre.name} user=${var.postgres_admin_user} sslmode=require" \
+          -c "GRANT USAGE ON SCHEMA advertising TO \"${scaleway_rdb_user.dgccrf_user.name}\";" \
+          -c "GRANT INSERT, UPDATE, DELETE ON TABLE advertising.ad, advertising.ad_occurrence TO \"${scaleway_rdb_user.dgccrf_user.name}\";"
+    EOF
+  }
 
-resource "postgresql_grant" "dgccrf_table_write" {
-  database    = data.scaleway_rdb_database.barometre.name
-  role        = scaleway_rdb_user.dgccrf_user.name
-  schema      = "advertising"
-  object_type = "table"
-  objects     = ["ad", "ad_occurrence"]
-  privileges  = ["INSERT", "UPDATE", "DELETE"]
-  depends_on  = [scaleway_rdb_user.dgccrf_user]
+  depends_on = [scaleway_rdb_user.dgccrf_user]
 }

@@ -17,6 +17,12 @@ generate "backend" {
   if_exists = "overwrite_terragrunt"
   contents  = <<-EOF
     terraform {
+      required_providers {
+        scaleway = {
+          source  = "scaleway/scaleway"
+          version = "~> 2.57"
+        }
+      }
       backend "s3" {
         bucket                      = "quotaclimat-terraform-states"
         key                         = "${local.project}/${local.environment}/terraform.tfstate"

@@ -63,7 +63,7 @@ if __name__ == "__main__":
         channel = os.environ.get("CHANNEL")
         if not channel:
             # This feature allow rotating on channels by specifying ROLLING_CHANNELS=bfmtv,arte
-            # By specifying a cron that run x times every hour (*/x * * * *), the rotation will execute each channel one time every hour
+            # By specifying a cron that run x times every hour ("*/y * * * *" with y=60/x), the rotation will execute each channel one time every hour
             rolling_channels = os.environ.get("ROLLING_CHANNELS", "").split(",")
             if len(rolling_channels) > 0:
                 minute = datetime.now().minute

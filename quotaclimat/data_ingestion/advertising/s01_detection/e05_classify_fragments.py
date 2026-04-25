@@ -66,7 +66,12 @@ class FragmentsClassifier:
                     tunnel_terminal_threshold=3,
                     maximum_gap_for_propagation=80,
                 )
+            case "lci":
+                # Info en continue, beaucoup de répétition de pub donc la limite peut être haute, cela évite les petite répétition de contenu
+                # Les tunnels à 4 détectent les quelques pubs moins répétées
+                return cls(repetition_threshold=7, tunnel_terminal_threshold=4)
             case "test-channel":
+                # Une limite basse pour qu'une simple répétition soit détectée, pas de tunnel possible dans ce cas
                 return cls(repetition_threshold=2, tunnel_terminal_threshold=2)
         return cls(
             repetition_threshold=3,

@@ -22,6 +22,9 @@ from quotaclimat.utils.sentry import sentry_init
 logger = logging.getLogger(__name__)
 
 
+METABASE_RESULT_QUESTION = os.environ.get("METABASE_RESULT_QUESTION")
+
+
 def _get_next_start_date_from_db(channel: str) -> date | None:
     with get_db_session() as session:
         last_occurrence = session.scalars(
@@ -117,3 +120,10 @@ if __name__ == "__main__":
                 num_workers=num_workers,
             )
         )
+
+        if METABASE_RESULT_QUESTION:
+            matabase_result_url = METABASE_RESULT_QUESTION.format(
+                START_DATE=start_date,
+                CHANNEL_NAME=channel,
+            )
+            logger.info(f"Check results in metabase: {matabase_result_url}")

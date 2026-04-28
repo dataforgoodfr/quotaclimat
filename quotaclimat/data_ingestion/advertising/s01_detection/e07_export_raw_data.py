@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from pathlib import Path
+from urllib.parse import quote
 
 import boto3
 
@@ -14,10 +15,24 @@ logger = logging.getLogger(__name__)
 ACCESS_KEY = os.environ.get("BUCKET")
 SECRET_KEY = os.environ.get("BUCKET_SECRET")
 BUCKET_NAME = os.environ.get("ADVERTISING_BUCKET_NAME")
-REGION = "fr-par"
+REGION = os.environ.get("ADVERTISING_BUCKET_REGION", "fr-par")
 ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
 REPORTS_S3_PREFIX = "reports"
 RAW_CHUNKS_S3_PREFIX = "raw_chunks"
+S3_FOLDER_ACCESS_URL = os.environ.get(
+    "S3_FOLDER_ACCESS_URL",
+    "https://console.scaleway.com/object-storage/buckets/{REGION}/{BUCKET_NAME}/files/{ENCODED_KEY}",
+)
+
+
+def _s3_folder_url(s3_key: str) -> str:
+    encoded_key = quote(s3_key, safe="/")
+
+    return S3_FOLDER_ACCESS_URL.format(
+        REGION=REGION,
+        BUCKET_NAME=BUCKET_NAME,
+        ENCODED_KEY=encoded_key,
+    )
 
 
 class Timer:
@@ -62,7 +77,7 @@ def upload_to_s3(local_path: Path, s3_key: str, s3_client):
             s3_key,
             {"StorageClass": "ONEZONE_IA"},
         )
-        logger.info(f"Uploaded s3://{BUCKET_NAME}/{s3_key}")
+        logger.info(f"Uploaded {_s3_folder_url(s3_key)}")
     except Exception as e:
         logger.error(f"Failed to upload {local_path} to S3: {e}")
 
@@ -112,12 +127,21 @@ class Report:
     def save_to_s3(self, report_folder: str):
         s3_client = get_s3_client()
         s3_folder = f"{REPORTS_S3_PREFIX}/{report_folder}"
-        upload_to_s3(
-            self.html_report_path, f"{s3_folder}/{self.reports_name}.html", s3_client
+
+        s3_client.upload_file(
+            str(self.html_report_path),
+            BUCKET_NAME,
+            f"{s3_folder}/{self.reports_name}.html",
+            {"StorageClass": "ONEZONE_IA"},
         )
-        upload_to_s3(
-            self.text_report_path, f"{s3_folder}/{self.reports_name}.txt", s3_client
+        s3_client.upload_file(
+            str(self.text_report_path),
+            BUCKET_NAME,
+            f"{s3_folder}/{self.reports_name}.txt",
+            {"StorageClass": "ONEZONE_IA"},
         )
+
+        logger.info(f"Reports uploaded in folder: {_s3_folder_url(s3_folder)}")
 
 
 def export_chunks_to_s3(chunks: list[Chunk], report_folder: str):

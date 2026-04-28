@@ -67,13 +67,16 @@ class FragmentsClassifier:
                     maximum_gap_for_propagation=80,
                 )
             case "lci":
-                # Info en continue, beaucoup de répétition de pub donc la limite peut être haute, cela évite les petite répétition de contenu
+                # Info en continue, beaucoup de répétitions de pub donc la limite peut être haute, cela évite les petite répétition de contenu
                 # Les tunnels à 4 détectent les quelques pubs moins répétées
                 return cls(repetition_threshold=7, tunnel_terminal_threshold=4)
             case "france24":
                 # Info en continue, très peu de publicité, très facilement identifiable car prise en sandwich entre 2 jingle.
                 # Ces jingle sont répétées de très nombreuses fois (plus de 250 par semaine) et vont nous permettre d'identifier le tunnel.
                 return cls(repetition_threshold=100, tunnel_terminal_threshold=10)
+            case "franceinfotv":
+                # Info en continue, assez peu de pubs mais très répétées (surtout autour de la météo), pas besoin de trop de recollement
+                return cls(repetition_threshold=9, tunnel_terminal_threshold=9)
             case "test-channel":
                 # Une limite basse pour qu'une simple répétition soit détectée, pas de tunnel possible dans ce cas
                 return cls(repetition_threshold=2, tunnel_terminal_threshold=2)

@@ -21,7 +21,7 @@ REPORTS_S3_PREFIX = "reports"
 RAW_CHUNKS_S3_PREFIX = "raw_chunks"
 S3_FOLDER_ACCESS_URL = os.environ.get(
     "S3_FOLDER_ACCESS_URL",
-    "https://console.scaleway.com/object-storage/buckets/{REGION}/{BUCKET_NAME}/files/{ENCODED_KEY}",
+    "https://console.scaleway.com/object-storage/buckets/{REGION}/{BUCKET_NAME}/files/{ENCODED_KEY}/",
 )
 
 

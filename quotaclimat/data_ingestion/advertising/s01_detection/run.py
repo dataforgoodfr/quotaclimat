@@ -63,11 +63,16 @@ if __name__ == "__main__":
         channel = os.environ.get("CHANNEL")
         if not channel:
             # This feature allow rotating on channels by specifying ROLLING_CHANNELS=bfmtv,arte
-            # By specifying a cron that run x times every hour ("*/y * * * *" with y=60/x), the rotation will execute each channel one time every hour
+            # By specifying a cron that run x times every two hour ("*/y * * * *" with y=120/x), the rotation will execute each channel one time every two hours (the maximum duratio nof the cron)
+            # If it is not easy to split the two hours exactly (for instance 3 channels), just leave blank channels it will just raise an error (but make sure to put the correct number of channels)
             rolling_channels = os.environ.get("ROLLING_CHANNELS", "").split(",")
+            max_hour_duration = 2
             if len(rolling_channels) > 0:
-                minute = datetime.now().minute
-                rolling_index = minute * len(rolling_channels) // 60
+                now = datetime.now()
+                total_minutes = (now.hour % max_hour_duration) * 60 + now.minute
+                rolling_index = (
+                    total_minutes * len(rolling_channels) // (60 * max_hour_duration)
+                )
                 channel = rolling_channels[rolling_index]
         assert channel is not None, "Need channel to run the detection process"
 

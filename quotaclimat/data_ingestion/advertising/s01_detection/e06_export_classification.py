@@ -1,9 +1,9 @@
 import hashlib
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime
 
-from sqlalchemy import and_, or_, update
+from sqlalchemy import and_, delete, or_
 from sqlalchemy.dialects.postgresql import insert
 
 from postgres.database_connection import get_db_session
@@ -26,10 +26,10 @@ BULK_PAGE_SIZE = 1000
 
 
 def clean_pre_existing_detections(segments: list[Segment]) -> int:
-    """Soft-delete all Ad_Occurrence rows whose occurrence_date falls within
+    """Delete all Ad_Occurrence rows whose occurrence_date falls within
     any of the given segments (matched by channel and time window).
 
-    Returns the number of rows soft-deleted.
+    Returns the number of rows deleted.
     """
     if not segments:
         return 0
@@ -43,24 +43,13 @@ def clean_pre_existing_detections(segments: list[Segment]) -> int:
         for segment in segments
     ]
 
-    now = datetime.now(tz=timezone.utc)
-
     session = get_db_session()
     try:
-        result = session.execute(
-            update(Ad_Occurrence)
-            .where(
-                and_(
-                    Ad_Occurrence.deleted_at.is_(None),
-                    or_(*conditions),
-                )
-            )
-            .values(deleted_at=now)
-        )
+        result = session.execute(delete(Ad_Occurrence).where(or_(*conditions)))
         session.commit()
         count = result.rowcount
         logger.info(
-            f"Soft-deleted {count} Ad_Occurrence rows across {len(segments)} segments."
+            f"Deleted {count} Ad_Occurrence rows across {len(segments)} segments."
         )
         return count
     except Exception:
@@ -81,7 +70,9 @@ def _log_duplicates(label: str, rows, key_fn) -> None:
     for row in rows:
         k = row.id
         if k in seen:
-            logger.warning(f"Duplicate {label} id={k}: {key_fn(row)} (also: {key_fn(seen[k])})")
+            logger.warning(
+                f"Duplicate {label} id={k}: {key_fn(row)} (also: {key_fn(seen[k])})"
+            )
         else:
             seen[k] = row
 
@@ -214,8 +205,25 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
                 )
             )
 
-        _log_duplicates("Ad", ads, lambda a: {"id": a.id, "first_detection_date": a.first_detection_date, "fragment_type": a.fragment_type})
-        _log_duplicates("Ad_Occurrence", occurrences, lambda o: {"id": o.id, "occurrence_date": o.occurrence_date, "channel_name": o.channel_name, "ad_id": o.ad_id})
+        _log_duplicates(
+            "Ad",
+            ads,
+            lambda a: {
+                "id": a.id,
+                "first_detection_date": a.first_detection_date,
+                "fragment_type": a.fragment_type,
+            },
+        )
+        _log_duplicates(
+            "Ad_Occurrence",
+            occurrences,
+            lambda o: {
+                "id": o.id,
+                "occurrence_date": o.occurrence_date,
+                "channel_name": o.channel_name,
+                "ad_id": o.ad_id,
+            },
+        )
 
         _bulk_insert_pages(
             session,

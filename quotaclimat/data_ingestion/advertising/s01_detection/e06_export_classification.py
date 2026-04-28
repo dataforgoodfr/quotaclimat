@@ -1,13 +1,15 @@
 import hashlib
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 
+from sqlalchemy import and_, or_, update
 from sqlalchemy.dialects.postgresql import insert
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad, Ad_Occurrence
 
+from .e00_partition_window import Segment
 from .e04_group_chunks import canonical
 from .e05_classify_fragments import Fragment
 
@@ -17,12 +19,75 @@ AD_CLASSIFICATIONS = {"already_known_ad", "new_ad", "jingle"}
 BULK_PAGE_SIZE = 1000
 
 
+# -----------------------
+# ----- First we clean pre_existing ad_occurrences in order to fill a fresh slot in database
+# ----- This should be done as close to the insertions as possible to efficiently address parallel execution (which should not happen in normal cases)
+# ----- In case of parallel execution, having step e03 executed before the previous execution e06 have terminated is not completely problematic but unwanted. Better to clean and restart (launch again is ok)
+
+
+def clean_pre_existing_detections(segments: list[Segment]) -> int:
+    """Soft-delete all Ad_Occurrence rows whose occurrence_date falls within
+    any of the given segments (matched by channel and time window).
+
+    Returns the number of rows soft-deleted.
+    """
+    if not segments:
+        return 0
+
+    conditions = [
+        and_(
+            Ad_Occurrence.channel_name == segment.channel,
+            Ad_Occurrence.occurrence_date >= segment.start_date,
+            Ad_Occurrence.occurrence_date < segment.end_date,
+        )
+        for segment in segments
+    ]
+
+    now = datetime.now(tz=timezone.utc)
+
+    session = get_db_session()
+    try:
+        result = session.execute(
+            update(Ad_Occurrence)
+            .where(
+                and_(
+                    Ad_Occurrence.deleted_at.is_(None),
+                    or_(*conditions),
+                )
+            )
+            .values(deleted_at=now)
+        )
+        session.commit()
+        count = result.rowcount
+        logger.info(
+            f"Soft-deleted {count} Ad_Occurrence rows across {len(segments)} segments."
+        )
+        return count
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+# -----------------------
+# ----- Then: insertion into the database
+# ----- In case of parallel execution, having step e03 executed before the previous execution e06 have terminated (ads inserted) is not completely problematic but unwanted.
+# ----- Better to clean and restart (launch again is ok)
+
+
 def _bulk_insert_pages(session, model, rows: list[dict]) -> None:
     for i in range(0, len(rows), BULK_PAGE_SIZE):
-        session.execute(
-            insert(model).on_conflict_do_nothing(index_elements=["id"]),
-            rows[i : i + BULK_PAGE_SIZE],
+        stmt = insert(model)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["id"],
+            set_={
+                col.name: stmt.excluded[col.name]
+                for col in model.__table__.columns
+                if col.name != "id"
+            },
         )
+        session.execute(stmt, rows[i : i + BULK_PAGE_SIZE])
 
 
 def _ad_id_from_chunks(chunks) -> str:

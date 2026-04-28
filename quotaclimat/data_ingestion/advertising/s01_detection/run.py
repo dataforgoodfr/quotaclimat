@@ -12,9 +12,6 @@ from postgres.schemas.advertising.models import Ad_Occurrence
 from quotaclimat.data_ingestion.advertising.s01_detection.e00_partition_window import (
     partition_week_program,
 )
-from quotaclimat.data_ingestion.advertising.s01_detection.e00b_clean_pre_existing_detection import (
-    clean_pre_existing_detections,
-)
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import processor
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.testimony_data.extract import (
     get_testimony_data,
@@ -23,6 +20,9 @@ from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
 
 logger = logging.getLogger(__name__)
+
+
+METABASE_RESULT_QUESTION = os.environ.get("METABASE_RESULT_QUESTION")
 
 
 def _get_next_start_date_from_db(channel: str) -> date | None:
@@ -63,11 +63,16 @@ if __name__ == "__main__":
         channel = os.environ.get("CHANNEL")
         if not channel:
             # This feature allow rotating on channels by specifying ROLLING_CHANNELS=bfmtv,arte
-            # By specifying a cron that run x times every hour ("*/y * * * *" with y=60/x), the rotation will execute each channel one time every hour
+            # By specifying a cron that run x times every two hour ("*/y * * * *" with y=120/x), the rotation will execute each channel one time every two hours (the maximum duratio nof the cron)
+            # If it is not easy to split the two hours exactly (for instance 3 channels), just leave blank channels it will just raise an error (but make sure to put the correct number of channels)
             rolling_channels = os.environ.get("ROLLING_CHANNELS", "").split(",")
+            max_hour_duration = 2
             if len(rolling_channels) > 0:
-                minute = datetime.now().minute
-                rolling_index = minute * len(rolling_channels) // 60
+                now = datetime.now()
+                total_minutes = (now.hour % max_hour_duration) * 60 + now.minute
+                rolling_index = (
+                    total_minutes * len(rolling_channels) // (60 * max_hour_duration)
+                )
                 channel = rolling_channels[rolling_index]
         assert channel is not None, "Need channel to run the detection process"
 
@@ -110,8 +115,6 @@ if __name__ == "__main__":
         else:
             annotations = None
 
-        clean_pre_existing_detections(partition)
-
         asyncio.run(
             processor(
                 channel=channel,
@@ -122,3 +125,10 @@ if __name__ == "__main__":
                 num_workers=num_workers,
             )
         )
+
+        if METABASE_RESULT_QUESTION:
+            matabase_result_url = METABASE_RESULT_QUESTION.format(
+                START_DATE=start_date,
+                CHANNEL_NAME=channel,
+            )
+            logger.info(f"Check results in metabase: {matabase_result_url}")

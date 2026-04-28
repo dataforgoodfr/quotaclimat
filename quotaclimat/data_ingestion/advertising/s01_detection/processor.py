@@ -10,7 +10,10 @@ from .e02_create_chunks import ChunkCreator
 from .e03_already_identified_advertising import run_chunk_identification
 from .e04_group_chunks import ChunkGrouping
 from .e05_classify_fragments import FragmentsClassifier
-from .e06_export_classification import database_storage_save
+from .e06_export_classification import (
+    clean_pre_existing_detections,
+    database_storage_save,
+)
 from .e07_export_raw_data import Report, TimingCollector, export_chunks_to_s3
 from .tools.cache import LocalCache
 from .tools.common_objects import Chunk
@@ -138,6 +141,9 @@ async def processor(
         )
 
     #### Database storage
+
+    with timings.measure("clean_pre_existing_occurrences"):
+        clean_pre_existing_detections(segments)
 
     with timings.measure("database_storage"):
         database_storage_save(fragments, chunk_hash=chunk_hash)

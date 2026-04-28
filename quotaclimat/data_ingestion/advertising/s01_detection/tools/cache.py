@@ -26,7 +26,8 @@ class LocalCache:
             shutil.rmtree(self.cache_folder, ignore_errors=True)
 
     def exists(self, file_name: str) -> bool:
-        return (self.cache_folder / file_name).is_file()
+        path = self.cache_folder / file_name
+        return path.is_file() and path.stat().st_size > 0
 
     def set(self, file_name: str, data: str):
         file_path = self.cache_folder / file_name

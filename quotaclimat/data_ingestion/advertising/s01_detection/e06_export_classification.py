@@ -78,10 +78,16 @@ def clean_pre_existing_detections(segments: list[Segment]) -> int:
 
 def _bulk_insert_pages(session, model, rows: list[dict]) -> None:
     for i in range(0, len(rows), BULK_PAGE_SIZE):
-        session.execute(
-            insert(model).on_conflict_do_nothing(index_elements=["id"]),
-            rows[i : i + BULK_PAGE_SIZE],
+        stmt = insert(model)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["id"],
+            set_={
+                col.name: stmt.excluded[col.name]
+                for col in model.__table__.columns
+                if col.name != "id"
+            },
         )
+        session.execute(stmt, rows[i : i + BULK_PAGE_SIZE])
 
 
 def _ad_id_from_chunks(chunks) -> str:

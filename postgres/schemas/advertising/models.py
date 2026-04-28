@@ -4,6 +4,7 @@ from sqlalchemy import (
     DateTime,
     Double,
     ForeignKey,
+    Index,
     String,
     Text,
 )
@@ -14,6 +15,7 @@ from postgres.schemas.advertising.base import AdvertisingBase
 
 class Ad(AdvertisingBase):
     __tablename__ = "ad"
+    __table_args__ = (Index("ix_ad_first_detection_date", "first_detection_date"),)
     id = Column(Text, primary_key=True)
     first_detection_date = Column(DateTime(), nullable=False)
     duration_sec = Column(Double, nullable=False)
@@ -48,6 +50,10 @@ class Ad(AdvertisingBase):
 
 class Ad_Occurrence(AdvertisingBase):
     __tablename__ = "ad_occurrence"
+    __table_args__ = (
+        Index("ix_ad_occurrence_ad_id", "ad_id"),
+        Index("ix_ad_occurrence_occurrence_date", "occurrence_date"),
+    )
     id = Column(Text, primary_key=True)
     deleted_at = Column(DateTime(), nullable=True)
 

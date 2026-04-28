@@ -76,17 +76,19 @@ def clean_pre_existing_detections(segments: list[Segment]) -> int:
 # ----- Better to clean and restart (launch again is ok)
 
 
+def _log_duplicates(label: str, rows, key_fn) -> None:
+    seen = {}
+    for row in rows:
+        k = row.id
+        if k in seen:
+            logger.warning(f"Duplicate {label} id={k}: {key_fn(row)} (also: {key_fn(seen[k])})")
+        else:
+            seen[k] = row
+
+
 def _bulk_insert_pages(session, model, rows: list[dict]) -> None:
     for i in range(0, len(rows), BULK_PAGE_SIZE):
-        stmt = insert(model)
-        stmt = stmt.on_conflict_do_update(
-            index_elements=["id"],
-            set_={
-                col.name: stmt.excluded[col.name]
-                for col in model.__table__.columns
-                if col.name != "id"
-            },
-        )
+        stmt = insert(model).on_conflict_do_nothing(index_elements=["id"])
         session.execute(stmt, rows[i : i + BULK_PAGE_SIZE])
 
 
@@ -211,6 +213,9 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
                     ad_id=ad_id,
                 )
             )
+
+        _log_duplicates("Ad", ads, lambda a: {"id": a.id, "first_detection_date": a.first_detection_date, "fragment_type": a.fragment_type})
+        _log_duplicates("Ad_Occurrence", occurrences, lambda o: {"id": o.id, "occurrence_date": o.occurrence_date, "channel_name": o.channel_name, "ad_id": o.ad_id})
 
         _bulk_insert_pages(
             session,

@@ -263,7 +263,7 @@ jobs:
         with:
           username: nologin
           password: ${{ secrets.SCALEWAY_API_KEY }}
-          registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
+          registry: ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}
 
       # Sanitize branch name: lowercase, replace / and _ with -
       # feat/my_feature → feat-my-feature

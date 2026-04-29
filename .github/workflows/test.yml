@@ -3,6 +3,9 @@ name: tests
 on:
   push:
 
+permissions:
+  contents: read
+
 env:
   PYTHON_VERSION: '3.12'
   POETRY_VERSION: '2.1.3'
@@ -215,6 +218,9 @@ jobs:
   coverage_and_reporting:
     needs: [test_first_update_keywords, test_everything_else, stop_word, test_print_media_keywords, verify_poetry_lock]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup

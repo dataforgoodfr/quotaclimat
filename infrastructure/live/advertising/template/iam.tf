@@ -5,7 +5,7 @@ resource "scaleway_account_project" "project" {
 
 # Look up the pre-existing barometre project.
 data "scaleway_account_project" "barometre" {
-  name = "barometre"
+  name = var.barometre_project_name
 }
 
 # IAM application that the Label Studio container authenticates as.

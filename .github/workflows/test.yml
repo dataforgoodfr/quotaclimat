@@ -373,3 +373,52 @@ jobs:
           message: "${{ steps.coverageComment.outputs.tests }} tests - ${{ steps.coverageComment.outputs.coverage }}"
           color: ${{ steps.coverageComment.outputs.color }}
           namedLogo: python
+
+  build_and_push_docker_image:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        id: setup-python
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          virtualenvs-path: .venv
+          installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+          # Sanitize branch name: lowercase, replace / and _ with -
+      # feat/my_feature → feat-my-feature
+      - name: Compute tag
+        id: tag
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          SANITIZED=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/-\+/-/g' | sed 's/^-\|-$//g')
+          SHA="${{ github.sha }}"
+          SHORT_SHA="${SHA:0:7}"
+          echo "value=${SANITIZED}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Build quotaclimat_base image
+        run: docker build -f Dockerfile . -t ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.value }}
+
+      - name: Tag quotaclimat_base latest image
+        run: docker tag ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.value }} ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:latest
+
+      - name: Push quotaclimat_base Image
+        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base
+
+      - name: Print image ref
+        run: |
+          echo "### 🐳 Docker image pushed" >> $GITHUB_STEP_SUMMARY
+          echo "\`${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.value }}\`" >> $GITHUB_STEP_SUMMARY

@@ -44,20 +44,27 @@ program_airings AS (
 ),
 weekly_program_durations AS (
   SELECT
-    channel_title,
-    country,
-    week_start AS week,
-    SUM(duration_minutes) AS weekly_duration_minutes
-  FROM program_airings
-  GROUP BY channel_title, country, week_start
+    pa.channel_title,
+    pa.country,
+    pa.week_start AS week,
+    SUM(pa.duration_minutes) AS weekly_duration_minutes
+  FROM program_airings pa
+  where pa.channel_title!='Das Erste'
+  GROUP BY pa.channel_title, pa.country, pa.week_start
   union all
   select 
-		tm.channel_name channel_title,
+		case 
+      when tm.channel_name='zdf' then 'ZDF'
+      when tm.channel_name='daserste' then 'Das Erste'
+      else tm.channel_name
+    end channel_title,
 		tm.country,
 		DATE_TRUNC('week', tm.start::timestamp)::date as week,
 		SUM(tm.duration_minutes) weekly_duration_minutes
 	from time_monitored tm 
-	where tm.country='belgium'
+	where tm.country='belgium' 
+    or tm.channel_name='zdf' 
+    or tm.channel_name='daserste'
 	group by
 		channel_title,
 		tm.country,

@@ -417,7 +417,7 @@ jobs:
         run: docker tag ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.value }} ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.sanitized }}
 
       - name: Push quotaclimat_base Image
-        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base
+        run: docker push --all-tags ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base
 
       - name: Print image ref
         run: |

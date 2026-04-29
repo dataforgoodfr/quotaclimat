@@ -1,6 +1,6 @@
 [project]
 name = "quotaclimat"
-version = "2.1.37"
+version = "2.1.47"
 description = ""
 authors = [
     {name = "Rambier Estelle", "email"="estelle.rambier@hotmail.fr"},
@@ -88,3 +88,4 @@ dotenv = "^0.9.9"
 
 [tool.pytest_env]
 CLEAN_CACHE_ON_EXIT=true
+GLOBAL_CACHE_FOLDER=".test_cache"

@@ -35,7 +35,7 @@ async def test_extract_fragments_run_successfully():
     AdvertisingBase.metadata.drop_all(conn)
     AdvertisingBase.metadata.create_all(conn, checkfirst=True)
 
-    channel = "tf1"
+    channel = "test-channel"
 
     segments = [
         Segment(
@@ -51,12 +51,13 @@ async def test_extract_fragments_run_successfully():
     ]
 
     fragments = await processor(
+        channel=channel,
         operation_name="test_extract_fragments_run_successfully",
         segments=segments,
         report_folder=None,
     )
 
-    maybe_ads = [f for f in fragments if f.classification == "unknown"]
+    maybe_ads = [f for f in fragments if f.classification == "new_ad"]
     assert len(maybe_ads) == 2
     assert maybe_ads[0].group_id == maybe_ads[1].group_id
 

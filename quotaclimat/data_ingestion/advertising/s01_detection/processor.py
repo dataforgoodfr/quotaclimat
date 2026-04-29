@@ -10,7 +10,10 @@ from .e02_create_chunks import ChunkCreator
 from .e03_already_identified_advertising import run_chunk_identification
 from .e04_group_chunks import ChunkGrouping
 from .e05_classify_fragments import FragmentsClassifier
-from .e06_export_classification import database_storage_save
+from .e06_export_classification import (
+    clean_pre_existing_detections,
+    database_storage_save,
+)
 from .e07_export_raw_data import Report, TimingCollector, export_chunks_to_s3
 from .tools.cache import LocalCache
 from .tools.common_objects import Chunk
@@ -45,9 +48,6 @@ chunk_grouping = ChunkGrouping(
     dt_tol=1,  # ~64 ms per frame tolerance
     offset_tol=2,  # ~128 ms temporal coherence tolerance
 )
-fragment_classifier = FragmentsClassifier(
-    repetition_threshold=3,
-)
 
 
 def process_audio(
@@ -68,6 +68,7 @@ def process_audio(
 
 
 async def processor(
+    channel: str,
     operation_name: str,
     report_folder: str | None,
     segments: list[Segment],
@@ -101,8 +102,14 @@ async def processor(
 
             chunks: list[Chunk] = []
             for segment in segments:
-                chunk_batch = json.loads(chunk_cache.get(segment.identifier + ".json"))
-                chunks.extend([Chunk.from_dict(d) for d in chunk_batch])
+                try:
+                    chunk_batch = json.loads(
+                        chunk_cache.get(segment.identifier + ".json")
+                    )
+                    chunks.extend([Chunk.from_dict(d) for d in chunk_batch])
+                except:
+                    logger.error(f"Could not get content of {segment.identifier}")
+                    raise
 
             # Sort by start time. Should already be the case, but ensure it.
             chunks.sort(key=lambda c: c.start_sec)
@@ -128,11 +135,15 @@ async def processor(
     #### Fragment classification
 
     with timings.measure("fragment_classification"):
+        fragment_classifier = FragmentsClassifier.from_channel(channel)
         fragments = fragment_classifier.run(
             groups, already_known_fragments=previously_known_fragments
         )
 
     #### Database storage
+
+    with timings.measure("clean_pre_existing_occurrences"):
+        clean_pre_existing_detections(segments)
 
     with timings.measure("database_storage"):
         database_storage_save(fragments, chunk_hash=chunk_hash)
@@ -141,9 +152,10 @@ async def processor(
 
     with LocalCache(name="reports", version=chunk_hash) as reports_cache:
         reports = Report(
-            operation_name=operation_name,
+            reports_name=f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{channel}_{operation_name}",
             chunk_hash=chunk_hash,
             params={
+                "channel": channel,
                 "operation_name": operation_name,
                 "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
                 "chunk_creator": chunk_creator.params(),

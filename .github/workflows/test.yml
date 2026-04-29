@@ -407,13 +407,14 @@ jobs:
           SANITIZED=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/-\+/-/g' | sed 's/^-\|-$//g')
           SHA="${{ github.sha }}"
           SHORT_SHA="${SHA:0:7}"
+          echo "sanitized=${SANITIZED}" >> $GITHUB_OUTPUT
           echo "value=${SANITIZED}-${SHORT_SHA}" >> $GITHUB_OUTPUT
 
       - name: Build quotaclimat_base image
         run: docker build -f Dockerfile . -t ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.value }}
 
-      - name: Tag quotaclimat_base latest image
-        run: docker tag ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.value }} ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:latest
+      - name: Tag quotaclimat_base sanitized image
+        run: docker tag ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.value }} ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.sanitized }}
 
       - name: Push quotaclimat_base Image
         run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base
@@ -422,3 +423,4 @@ jobs:
         run: |
           echo "### 🐳 Docker image pushed" >> $GITHUB_STEP_SUMMARY
           echo "\`${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.value }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "\`${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.sanitized }}\`" >> $GITHUB_STEP_SUMMARY

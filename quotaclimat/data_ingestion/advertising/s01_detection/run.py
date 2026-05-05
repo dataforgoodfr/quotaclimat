@@ -56,7 +56,7 @@ def _scaleway_cpu_numbers() -> int:
     return math.floor(cpu)
 
 
-if __name__ == "__main__":
+def _main():
     with monitor(
         monitor_slug="advertising-detection"
     ):  # https://docs.sentry.io/platforms/python/crons/
@@ -67,19 +67,26 @@ if __name__ == "__main__":
         if not channel:
             channel = get_scheduled_rolling_channel()
         if not channel:
-            # This feature allow rotating on channels by specifying ROLLING_CHANNELS=bfmtv,arte
-            # By specifying a cron that run x times every two hour ("*/y * * * *" with y=120/x), the rotation will execute each channel one time every two hours (the maximum duratio nof the cron)
-            # If it is not easy to split the two hours exactly (for instance 3 channels), just leave blank channels it will just raise an error (but make sure to put the correct number of channels)
-            rolling_channels = os.environ.get("ROLLING_CHANNELS", "").split(",")
-            max_hour_duration = 2
-            if len(rolling_channels) > 0:
-                now = datetime.now()
-                total_minutes = (now.hour % max_hour_duration) * 60 + now.minute
-                rolling_index = (
-                    total_minutes * len(rolling_channels) // (60 * max_hour_duration)
-                )
-                channel = rolling_channels[rolling_index]
-        assert channel is not None, "Need channel to run the detection process"
+            rolling_channels_var = os.environ.get("ROLLING_CHANNELS")
+            if rolling_channels_var is not None:
+                # This feature allow rotating on channels by specifying ROLLING_CHANNELS=bfmtv,arte
+                # By specifying a cron that run x times every two hour ("*/y * * * *" with y=120/x), the rotation will execute each channel one time every two hours (the maximum duratio nof the cron)
+                # If it is not easy to split the two hours exactly (for instance 3 channels), just leave blank channels it will just raise an error (but make sure to put the correct number of channels)
+                rolling_channels = rolling_channels_var.split(",")
+                max_hour_duration = 2
+                if len(rolling_channels) > 0:
+                    now = datetime.now()
+                    total_minutes = (now.hour % max_hour_duration) * 60 + now.minute
+                    rolling_index = (
+                        total_minutes
+                        * len(rolling_channels)
+                        // (60 * max_hour_duration)
+                    )
+                    channel = rolling_channels[rolling_index]
+
+        if channel is None:
+            logger.warning("No channel provided, exited")
+            return
 
         start_date = os.environ.get("START_DATE")
         if not start_date:
@@ -137,3 +144,7 @@ if __name__ == "__main__":
                 CHANNEL_NAME=channel,
             )
             logger.info(f"Check results in metabase: {matabase_result_url}")
+
+
+if __name__ == "__main__":
+    _main()

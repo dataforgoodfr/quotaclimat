@@ -108,30 +108,6 @@ class ChunkCreator:
 
         return silence_mask
 
-    def _compute_cosine_dissimilarity(self, stack: np.ndarray) -> np.ndarray:
-        """
-        Step 2: for each frame, measure how much the audio content
-        changes between the past and future context windows.
-
-        Returns a curve where high values indicate a content change.
-        """
-        n_frames = stack.shape[1]
-        kernel = max(4, int(self.context_sec * self._fps))
-
-        cosine_dissim = np.zeros(n_frames)
-        norms = np.linalg.norm(stack, axis=0, keepdims=True) + 1e-8
-        X = stack / norms
-
-        for i in range(kernel, n_frames - kernel):
-            past = X[:, i - kernel : i].mean(axis=1)
-            future = X[:, i : i + kernel].mean(axis=1)
-            cos_sim = np.dot(past, future) / (
-                np.linalg.norm(past) * np.linalg.norm(future) + 1e-8
-            )
-            cosine_dissim[i] = 1.0 - cos_sim
-
-        return cosine_dissim
-
     def _detect_peaks(
         self,
         silence_mask: np.ndarray,

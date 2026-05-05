@@ -13,6 +13,9 @@ from quotaclimat.data_ingestion.advertising.s01_detection.e00_partition_window i
     partition_week_program,
 )
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import processor
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.scheduled_rolling_channels import (
+    get_scheduled_rolling_channel,
+)
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.testimony_data.extract import (
     get_testimony_data,
 )
@@ -61,6 +64,8 @@ if __name__ == "__main__":
         sentry_init()
 
         channel = os.environ.get("CHANNEL")
+        if not channel:
+            channel = get_scheduled_rolling_channel()
         if not channel:
             # This feature allow rotating on channels by specifying ROLLING_CHANNELS=bfmtv,arte
             # By specifying a cron that run x times every two hour ("*/y * * * *" with y=120/x), the rotation will execute each channel one time every two hours (the maximum duratio nof the cron)

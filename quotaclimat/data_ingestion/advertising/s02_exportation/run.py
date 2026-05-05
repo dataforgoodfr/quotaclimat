@@ -141,8 +141,8 @@ async def run(since_date: datetime):
                         try:
                             result = await _process_ad(ad, occurrence, api, fs)
                             counts[result] += 1
-                        except Exception:
-                            logger.error(f"Failed to export ad {ad.id}: {result}")
+                        except Exception as e:
+                            logger.error(f"Failed to export ad {ad.id}: {e}")
                             counts["error"] += 1
                         finally:
                             progress.update(1)

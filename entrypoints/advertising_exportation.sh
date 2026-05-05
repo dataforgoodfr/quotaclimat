@@ -14,11 +14,11 @@ else
 fi
 
 echo "============================================"
-echo "Starting advertising detection pipeline"
+echo "Starting advertising exportation pipeline"
 echo "============================================"
 
 python quotaclimat/data_ingestion/advertising/s02_exportation/run.py
 
 echo "============================================"
-echo "Advertising detection pipeline complete"
+echo "Advertising exportation pipeline complete"
 echo "============================================"

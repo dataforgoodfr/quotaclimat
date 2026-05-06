@@ -85,7 +85,11 @@ jobs:
         SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
-        args: jobs definition update ${{ secrets.SCALEWAY_JOB_S3_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
+        args: >-
+          jobs definition update ${{ secrets.SCALEWAY_JOB_S3_ID }}
+          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+          startup-command.0=python
+          startup-command.1=quotaclimat/data_processing/mediatree/s3/api_to_s3.py
     
     - name: Build stop_word image
       run: docker build -f Dockerfile_stop_word . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:${{ env.PROJECT_VERSION }}

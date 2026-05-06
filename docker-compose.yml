@@ -249,7 +249,8 @@ services:
       - 8265:8265
     build:
       context: ./
-      dockerfile: Dockerfile_api_to_s3
+      dockerfile: Dockerfile
+    entrypoint: [ "python", "quotaclimat/data_processing/mediatree/s3/api_to_s3.py" ]
     environment:
       ENV: docker # change me to prod for real cases
       LOGLEVEL: INFO # Change me to info (debug, info, warning, error) to have less log

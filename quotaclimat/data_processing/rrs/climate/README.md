@@ -90,6 +90,82 @@ A local `.json` or `.csv` file can be used instead via `--input`.
 
 ---
 
+---
+
+# Timeseries Clustering — `cluster_llm_timeseries.py`
+
+An incremental variant that evolves the label taxonomy day-by-day over a date range, rather than processing a static month-slice in one batch.
+
+## How it works
+
+### Warmup phase
+
+The first N days (default 7) are processed exactly like `cluster_llm.py`: Step 1 generates labels, Step 2 merges them into a compact taxonomy, Step 3 classifies every warmup transcript. This establishes the initial label set.
+
+---
+
+### Incremental days
+
+For each day after the warmup window:
+
+**Step 3a — Classify with "other" escape hatch**
+
+Each transcript is classified against the current label list. The prompt includes an extra option: if none of the existing labels apply and the transcript expresses a distinct new narrative, the model returns `["other"]` instead.
+
+**Step 1b + 2b — Discover new clusters**
+
+All "other" docs are collected at end of day. Step 1 runs on them to generate candidate labels for the new narratives. Step 2b then tries to absorb each candidate into the **fixed** existing taxonomy (up to `--max-merge-attempts` rounds, default 3), with progressively stronger prompting on each retry. A candidate that maps to an existing label is discarded; one that remains unmatched after all attempts is appended as a genuinely new label. The existing taxonomy is never reduced or restructured during this step.
+
+**Step 3b — Reclassify**
+
+The "other" docs are re-classified against the updated taxonomy so they receive proper labels rather than being left unassigned.
+
+---
+
+### Label evolution tracking
+
+Every label is recorded in `label_evolution.json` with the date it first entered the taxonomy. Warmup labels receive the warmup end date; labels discovered on incremental days receive that day's date.
+
+---
+
+## Output files
+
+| File | Description |
+|---|---|
+| `labels.json` | Current label list with integer IDs (updated each time new clusters are found) |
+| `labels_YYYY-MM-DD.json` | Per-day label snapshot (optional, `--save-daily-labels`) |
+| `transcript_label_assignments.csv` | One row per (transcript, label) assignment with a `date` column |
+| `other_docs.csv` | Doc IDs flagged as "other" before reclassification (for audit) |
+| `label_evolution.json` | `[{label, label_id, first_seen_date}]` — full history of when each label entered the taxonomy |
+
+---
+
+## Usage
+
+```bash
+python -m quotaclimat.data_processing.rrs.climate.cluster_llm_timeseries \
+  --start-date 2025-07-01 --end-date 2025-07-31 \
+  --warmup-days 7 \
+  --output-dir ./timeseries_output \
+  --max-concurrent 3
+```
+
+### Key options
+
+| Flag | Default | Description |
+|---|---|---|
+| `--start-date` | required | Start of the date range (`YYYY-MM-DD`) |
+| `--end-date` | required | End of the date range (`YYYY-MM-DD`) |
+| `--warmup-days` | `7` | Days used for the warmup phase |
+| `--max-merge-attempts` | `3` | Rounds to try absorbing a new candidate into existing labels before adding it as-is |
+| `--save-daily-labels` | off | Save a `labels_<date>.json` snapshot after each day |
+
+All other flags from `cluster_llm.py` are supported: `--merge-batch-size`, `--max-concurrent`, `--window-size`, `--overlap-tokens`, `--no-seeds`, `--initial-labels-file`, `--skip-merge`, `--country`, `--input`, etc.
+
+---
+
+# `cluster_llm.py` — Static Batch Mode
+
 ## Usage
 
 ```bash

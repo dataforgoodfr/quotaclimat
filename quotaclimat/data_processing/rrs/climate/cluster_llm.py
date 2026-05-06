@@ -345,7 +345,7 @@ async def merge_labels(
     labels = list(label_list)
     round_num = 0
 
-    while len(labels) > 3 * batch_size and round_num < max_rounds:
+    while len(labels) > batch_size and round_num < max_rounds:
         round_num += 1
         random.shuffle(labels)
         chunks = [labels[i:i + batch_size] for i in range(0, len(labels), batch_size)]

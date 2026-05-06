@@ -134,8 +134,8 @@ services:
       - 5002:5002
     build:
       context: ./
-      dockerfile: Dockerfile_stop_word
-    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
+      dockerfile: Dockerfile
+    entrypoint: [ "./entrypoints/stop_word.sh" ]
     environment:
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       ENV: docker # change me to prod for real cases

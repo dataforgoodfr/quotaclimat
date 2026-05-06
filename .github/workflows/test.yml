@@ -8,33 +8,16 @@ env:
   POETRY_VERSION: '2.1.3'
 
 jobs:
- 
+
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        id: setup-python
+      - uses: ./.github/actions/setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-            version: ${{ env.POETRY_VERSION }}
-            virtualenvs-create: true
-            virtualenvs-in-project: true
-            virtualenvs-path: .venv
-            installer-parallel: true
-
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
-      
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: poetry install
-        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction
 
   test_first_update_keywords:
@@ -56,25 +39,10 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        id: setup-python
+      - uses: ./.github/actions/setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          virtualenvs-path: .venv
-          installer-parallel: true
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
-
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: pytest run test_first_update_keywords
         run: |
           set -o pipefail
@@ -107,25 +75,10 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        id: setup-python
+      - uses: ./.github/actions/setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          virtualenvs-path: .venv
-          installer-parallel: true
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
-
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: pytest run stop_word
         run: |
           set -o pipefail
@@ -144,25 +97,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        id: setup-python
+      - uses: ./.github/actions/setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          virtualenvs-path: .venv
-          installer-parallel: true
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
-
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: pytest run print_media keyword detection tests
         run: |
           set -o pipefail
@@ -190,25 +128,10 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        id: setup-python
+      - uses: ./.github/actions/setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          virtualenvs-path: .venv
-          installer-parallel: true
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
-
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: pytest dbt
         run: |
           set -o pipefail
@@ -244,28 +167,12 @@ jobs:
           - 5432:5432
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        id: setup-python
+      - uses: ./.github/actions/setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          virtualenvs-path: .venv
-          installer-parallel: true
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
-
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: docker compose up nginx
         run: docker compose up -d nginxtest
-
       - name: pytest run everything else
         run: |
           set -o pipefail
@@ -283,7 +190,6 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-
       - name: Archive code coverage results
         uses: actions/upload-artifact@v4
         with:
@@ -299,24 +205,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        id: setup-python
+      - uses: ./.github/actions/setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          virtualenvs-path: .venv
-          installer-parallel: true
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: Verify poetry.lock agrees with pyproject.toml
         run: poetry check --lock
 
@@ -325,30 +217,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        id: setup-python
+      - uses: ./.github/actions/setup
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: ${{ env.POETRY_VERSION }}
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-          virtualenvs-path: .venv
-          installer-parallel: true
-      - name: Load cached venv
-        id: cached-poetry-dependencies
-        uses: actions/cache@v4
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
-     
+          poetry-version: ${{ env.POETRY_VERSION }}
       - name: Download a single artifact
         uses: actions/download-artifact@v4
         with:
           name: code-coverage-report
-
       - name: Pytest coverage comment
         if: github.actor != 'dependabot[bot]'
         id: coverageComment
@@ -356,12 +232,10 @@ jobs:
         with:
           pytest-coverage-path: pytest-coverage.txt
           junitxml-path: ./pytest.xml
-
       - name: Check the output coverage
         if: github.actor != 'dependabot[bot]'
         run: |
           echo "Coverage Percentage - ${{ steps.coverageComment.outputs.coverage }}"
-
       - name: Create Awesome Badge
         if: github.ref == 'refs/heads/main'
         uses: schneegans/dynamic-badges-action@v1.7.0
@@ -373,3 +247,47 @@ jobs:
           message: "${{ steps.coverageComment.outputs.tests }} tests - ${{ steps.coverageComment.outputs.coverage }}"
           color: ${{ steps.coverageComment.outputs.color }}
           namedLogo: python
+
+  build_and_push_docker_image:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+
+      - name: Login to Scaleway Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: nologin
+          password: ${{ secrets.SCALEWAY_API_KEY }}
+          registry: ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}
+
+      # Sanitize branch name: lowercase, replace / and _ with -
+      # feat/my_feature → feat-my-feature
+      - name: Compute tag
+        id: tag
+        run: |
+          BRANCH="${{ github.head_ref || github.ref_name }}"
+          SANITIZED=$(echo "$BRANCH" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/-\+/-/g' | sed 's/^-\|-$//g')
+          SHA="${{ github.sha }}"
+          SHORT_SHA="${SHA:0:7}"
+          echo "sanitized=${SANITIZED}" >> $GITHUB_OUTPUT
+          echo "value=${SANITIZED}-${SHORT_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Build quotaclimat_base image
+        run: docker build -f Dockerfile . -t ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.value }}
+
+      - name: Tag quotaclimat_base sanitized image
+        run: docker tag ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.value }} ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.sanitized }}
+
+      - name: Push quotaclimat_base Image
+        run: docker push --all-tags ${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base
+
+      - name: Print image ref
+        run: |
+          echo "### 🐳 Docker image pushed" >> $GITHUB_STEP_SUMMARY
+          echo "\`${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.value }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "\`${{ secrets.DEV_CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ steps.tag.outputs.sanitized }}\`" >> $GITHUB_STEP_SUMMARY

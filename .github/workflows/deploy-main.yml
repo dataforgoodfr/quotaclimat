@@ -83,13 +83,6 @@ jobs:
           image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
           startup-command.0=python
           startup-command.1=quotaclimat/data_processing/mediatree/s3/api_to_s3.py
-    
-    - name: Build stop_word image
-      run: docker build -f Dockerfile_stop_word . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:${{ env.PROJECT_VERSION }}
-    - name: Tag stop_word latest image
-      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:latest
-    - name: Push stop_word Image
-      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:${{ env.PROJECT_VERSION }}
 
     - name: update scaleway job definition with version stopwords
       uses: jawher/action-scw@v2.54.0

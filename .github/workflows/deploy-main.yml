@@ -69,13 +69,6 @@ jobs:
           jobs definition update ${{ secrets.SCALEWAY_JOB_IMPORT_ID }}
           image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
           startup-command.0=./entrypoints/mediatree_import.sh
-    
-    - name: Build s3 image
-      run: docker build -f Dockerfile_api_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
-    - name: Tag s3 latest image
-      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:latest
-    - name: Push s3 Image
-      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
 
     - name: update scaleway job definition with version s3
       uses: jawher/action-scw@v2.54.0
@@ -85,14 +78,11 @@ jobs:
         SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
-        args: jobs definition update ${{ secrets.SCALEWAY_JOB_S3_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/s3:${{ env.PROJECT_VERSION }}
-    
-    - name: Build stop_word image
-      run: docker build -f Dockerfile_stop_word . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:${{ env.PROJECT_VERSION }}
-    - name: Tag stop_word latest image
-      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:latest
-    - name: Push stop_word Image
-      run: docker push ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:${{ env.PROJECT_VERSION }}
+        args: >-
+          jobs definition update ${{ secrets.SCALEWAY_JOB_S3_ID }}
+          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+          startup-command.0=python
+          startup-command.1=quotaclimat/data_processing/mediatree/s3/api_to_s3.py
 
     - name: update scaleway job definition with version stopwords
       uses: jawher/action-scw@v2.54.0
@@ -102,7 +92,10 @@ jobs:
         SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
         SCW_ZONE: ${{ secrets.SCW_ZONE }}
       with:
-        args: jobs definition update ${{ secrets.SCALEWAY_STOP_WORDS_ID }} image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/stop_word:${{ env.PROJECT_VERSION }}
+        args: >-
+          jobs definition update ${{ secrets.SCALEWAY_STOP_WORDS_ID }}
+          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+          startup-command.0=./entrypoints/stop_word.sh
 
     - name: Update update_job scaleway job
       uses: jawher/action-scw@v2.54.0

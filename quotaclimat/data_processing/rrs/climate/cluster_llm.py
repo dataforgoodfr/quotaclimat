@@ -1,5 +1,5 @@
 """
-LLM-based text clustering using Claude Haiku.
+LLM-based text clustering using Mistral Small.
 
 Three-step pipeline:
   1. Generate narrative labels per transcript — async, no shared label list in prompt
@@ -18,8 +18,8 @@ import re
 from pathlib import Path
 from typing import Optional
 
-import anthropic
 import pandas as pd
+from mistralai import Mistral
 from dotenv import load_dotenv
 from tqdm.asyncio import tqdm
 
@@ -32,7 +32,7 @@ from quotaclimat.data_processing.rrs.climate.cluster import (
     split_sentences,
 )
 
-MODEL = "claude-haiku-4-5"
+MODEL = "mistral-small-2506"
 MAX_CONCURRENT = 1
 
 SYSTEM_PROMPT = "You are an assistant helping editors to aggregate claims on climate change discussions."
@@ -46,16 +46,16 @@ SEED_LABELS: list[str] = [
 ]
 
 
-def _build_client() -> anthropic.AsyncAnthropic:
+def _build_client() -> Mistral:
     import os
     load_dotenv()
-    api_key = os.getenv("ANTHROPIC_API_KEY")
+    api_key = os.getenv("MISTRAL_API_KEY")
     if not api_key:
         raise EnvironmentError(
-            "ANTHROPIC_API_KEY is not set. "
-            "Add it to your .env file: ANTHROPIC_API_KEY=sk-ant-..."
+            "MISTRAL_API_KEY is not set. "
+            "Add it to your .env file: MISTRAL_API_KEY=..."
         )
-    return anthropic.AsyncAnthropic(api_key=api_key, max_retries=5)
+    return Mistral(api_key=api_key)
 
 
 def _parse_list_response(raw: str) -> list[str]:
@@ -68,7 +68,7 @@ def _parse_list_response(raw: str) -> list[str]:
 
     start, end = text.find("["), text.rfind("]") + 1
     if start == -1 or end == 0:
-        print(f"  [warn] no list found in response. Raw: {raw[:200]!r}")
+        print(f"  [warn] no list found in response. Raw: {text[:200]!r}")
         return []
     chunk = text[start:end]
 
@@ -87,11 +87,25 @@ def _parse_list_response(raw: str) -> list[str]:
 # Token / cost estimation
 # ---------------------------------------------------------------------------
 
-# Standard API pricing for claude-haiku-4-5 (USD per million tokens).
-# Update these if Anthropic changes pricing: https://www.anthropic.com/pricing
-_INPUT_COST_PER_M = 1.00
-_OUTPUT_COST_PER_M = 5.00
+# Standard API pricing for mistral-small-latest (USD per million tokens).
+# Update these if Mistral changes pricing: https://mistral.ai/technology/
+_INPUT_COST_PER_M = 0.15
+_OUTPUT_COST_PER_M = 0.60
 _AVG_OUTPUT_TOKENS_PER_DOC = 50  # conservative estimate: a few short label strings
+_TOKENIZER_REPO = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
+_tokenizer = None
+
+
+def _get_tokenizer():
+    global _tokenizer
+    if _tokenizer is None:
+        from transformers import AutoTokenizer
+        _tokenizer = AutoTokenizer.from_pretrained(_TOKENIZER_REPO)
+    return _tokenizer
+
+
+def _estimate_tokens(text: str) -> int:
+    return max(1, len(_get_tokenizer().encode(text)))
 
 
 def _step1_prompt(sentences: list[str]) -> str:
@@ -103,35 +117,25 @@ def _step1_prompt(sentences: list[str]) -> str:
         "- Return ONLY a JSON list of label strings with double quotes, e.g. [\"label 1\", \"label 2\"]. No code fences.\n"
         "- Labels must describe specific claims, not generic categories.\n"
         "- Do NOT return meaningless names such as 'new_label_1' or 'unknown_topic'.\n"
-        "- If no climate misinformation is present, return [].\n"
+        "- If no climate misinformation is present, return only []. Nothing else.\n"
         "- The labels must be in french.\n"
         f"Sentences: {sentences}"
     )
 
 
-async def estimate_step1_tokens(
+def estimate_step1_tokens(
     sentences_by_doc: dict,
-    client: anthropic.AsyncAnthropic,
     sample_size: int = 20,
 ) -> None:
-    """Sample documents, count input tokens via the API, and print a cost estimate.
-
-    Uses client.messages.count_tokens — no inference is performed, only tokenisation.
-    Output tokens are estimated (max_tokens=512 per request, typical usage far lower).
-    """
+    """Sample documents, estimate input tokens locally, and print a cost estimate."""
     doc_ids = list(sentences_by_doc.keys())
     n_docs = len(doc_ids)
     sample = random.sample(doc_ids, min(sample_size, n_docs))
 
-    print(f"  Counting tokens on {len(sample)} sampled documents…")
     token_counts: list[int] = []
     for doc_id in sample:
-        result = await client.messages.count_tokens(
-            model=MODEL,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": _step1_prompt(sentences_by_doc[doc_id])}],
-        )
-        token_counts.append(result.input_tokens)
+        prompt_text = SYSTEM_PROMPT + _step1_prompt(sentences_by_doc[doc_id])
+        token_counts.append(_estimate_tokens(prompt_text))
 
     avg_input = sum(token_counts) / len(token_counts)
     total_input = avg_input * n_docs
@@ -146,34 +150,25 @@ async def estimate_step1_tokens(
     print(f"  Total input tokens: ~{total_input:,.0f}")
     print(f"  Total output tokens: ~{total_output:,.0f}  (est. {_AVG_OUTPUT_TOKENS_PER_DOC} per doc)")
     print(f"  Estimated cost: ~${total_cost:.4f}")
-    print(f"  (rates: ${_INPUT_COST_PER_M}/M input, ${_OUTPUT_COST_PER_M}/M output — verify at anthropic.com/pricing)")
+    print(f"  (rates: ${_INPUT_COST_PER_M}/M input, ${_OUTPUT_COST_PER_M}/M output — verify at mistral.ai/technology/)")
 
 
-async def estimate_step2_tokens(
+def estimate_step2_tokens(
     label_list: list[str],
-    client: anthropic.AsyncAnthropic,
     batch_size: int = 30,
 ) -> None:
     """Estimate step 2 cost by simulating hierarchical rounds, assuming 50% reduction per round."""
-    # Simulate rounds: each round has ceil(n/batch_size) calls of batch_size labels,
-    # then n halves. Stop when n <= batch_size (one final call).
     n = len(label_list)
-    rounds: list[int] = []  # number of calls per round
+    rounds: list[int] = []
     while n > batch_size:
         rounds.append(math.ceil(n / batch_size))
         n = max(1, n // 2)
-    rounds.append(1)  # final single call
+    rounds.append(1)
 
     total_calls = sum(rounds)
 
-    # Count tokens on one representative batch
     sample_labels = label_list[:min(batch_size, len(label_list))]
-    result = await client.messages.count_tokens(
-        model=MODEL,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": _step2_prompt(sample_labels)}],
-    )
-    tokens_per_call = result.input_tokens
+    tokens_per_call = _estimate_tokens(SYSTEM_PROMPT + _step2_prompt(sample_labels))
 
     total_input = total_calls * tokens_per_call
     total_output = total_calls * (tokens_per_call // 2)
@@ -187,29 +182,23 @@ async def estimate_step2_tokens(
     print(f"  Total input tokens: ~{total_input:,.0f}")
     print(f"  Total output tokens: ~{total_output:,.0f}")
     print(f"  Estimated cost: ~${total_cost:.4f}")
-    print(f"  (rates: ${_INPUT_COST_PER_M}/M input, ${_OUTPUT_COST_PER_M}/M output — verify at anthropic.com/pricing)")
+    print(f"  (rates: ${_INPUT_COST_PER_M}/M input, ${_OUTPUT_COST_PER_M}/M output — verify at mistral.ai/technology/)")
 
 
-async def estimate_step3_tokens(
+def estimate_step3_tokens(
     sentences_by_doc: dict,
     label_list: list[str],
-    client: anthropic.AsyncAnthropic,
     sample_size: int = 20,
 ) -> None:
-    """Estimate step 3 cost by sampling documents and counting tokens with the final label list."""
+    """Estimate step 3 cost by sampling documents and estimating tokens locally."""
     doc_ids = list(sentences_by_doc.keys())
     n_docs = len(doc_ids)
     sample = random.sample(doc_ids, min(sample_size, n_docs))
 
-    print(f"  Counting tokens on {len(sample)} sampled documents…")
     token_counts: list[int] = []
     for doc_id in sample:
-        result = await client.messages.count_tokens(
-            model=MODEL,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": _step3_prompt(sentences_by_doc[doc_id], label_list)}],
-        )
-        token_counts.append(result.input_tokens)
+        prompt_text = SYSTEM_PROMPT + _step3_prompt(sentences_by_doc[doc_id], label_list)
+        token_counts.append(_estimate_tokens(prompt_text))
 
     avg_input = sum(token_counts) / len(token_counts)
     total_input = avg_input * n_docs
@@ -224,7 +213,7 @@ async def estimate_step3_tokens(
     print(f"  Total input tokens: ~{total_input:,.0f}")
     print(f"  Total output tokens: ~{total_output:,.0f}  (est. {_AVG_OUTPUT_TOKENS_PER_DOC} per doc)")
     print(f"  Estimated cost: ~${total_cost:.4f}")
-    print(f"  (rates: ${_INPUT_COST_PER_M}/M input, ${_OUTPUT_COST_PER_M}/M output — verify at anthropic.com/pricing)")
+    print(f"  (rates: ${_INPUT_COST_PER_M}/M input, ${_OUTPUT_COST_PER_M}/M output — verify at mistral.ai/technology/)")
 
 
 # ---------------------------------------------------------------------------
@@ -234,18 +223,20 @@ async def estimate_step3_tokens(
 async def _step1_call(
     doc_id: str,
     sentences: list[str],
-    client: anthropic.AsyncAnthropic,
+    client: Mistral,
     semaphore: asyncio.Semaphore,
 ) -> tuple[str, list[str]]:
     async with semaphore:
         try:
-            response = await client.messages.create(
+            response = await client.chat.complete_async(
                 model=MODEL,
                 max_tokens=512,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": _step1_prompt(sentences)}],
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": _step1_prompt(sentences)},
+                ],
             )
-            raw = next(b.text for b in response.content if b.type == "text")
+            raw = response.choices[0].message.content
             return doc_id, _parse_list_response(raw)
         except Exception as exc:
             print(f"  [warn] step1 {doc_id} failed: {exc}")
@@ -254,7 +245,7 @@ async def _step1_call(
 
 async def build_labels_from_transcripts(
     sentences_by_doc: dict,
-    client: anthropic.AsyncAnthropic,
+    client: Mistral,
     max_concurrent: int = MAX_CONCURRENT,
 ) -> list[str]:
     """Step 1: Generate labels per transcript in parallel.
@@ -307,18 +298,20 @@ def _step2_prompt(label_list: list[str]) -> str:
     )
 
 
-async def _merge_labels_call(label_list: list[str], client: anthropic.AsyncAnthropic) -> list[str]:
+async def _merge_labels_call(label_list: list[str], client: Mistral) -> list[str]:
     """Merge the flat *label_list*, returning a deduplicated result.
 
     Returns the input list unchanged if the response cannot be parsed.
     """
-    response = await client.messages.create(
+    response = await client.chat.complete_async(
         model=MODEL,
         max_tokens=4096,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": _step2_prompt(label_list)}],
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": _step2_prompt(label_list)},
+        ],
     )
-    raw = next(b.text for b in response.content if b.type == "text")
+    raw = response.choices[0].message.content
     parsed = _parse_list_response(raw)
     if not parsed:
         print(f"  [warn] unparseable merge response — keeping {len(label_list)} labels unchanged.")
@@ -328,7 +321,7 @@ async def _merge_labels_call(label_list: list[str], client: anthropic.AsyncAnthr
 
 async def merge_labels(
     label_list: list[str],
-    client: anthropic.AsyncAnthropic,
+    client: Mistral,
     batch_size: int = 30,
     max_concurrent: int = MAX_CONCURRENT,
     max_rounds: int = 20,
@@ -345,7 +338,7 @@ async def merge_labels(
     labels = list(label_list)
     round_num = 0
 
-    while len(labels) > batch_size and round_num < max_rounds:
+    while len(labels) > 3 * batch_size and round_num < max_rounds:
         round_num += 1
         random.shuffle(labels)
         chunks = [labels[i:i + batch_size] for i in range(0, len(labels), batch_size)]
@@ -389,7 +382,8 @@ def _step3_prompt(sentences: list[str], label_list: list[str]) -> str:
         "the concepts expressed in the sentences.\n"
         f"Label list: {label_list}\n"
         f"Sentences: {sentences}\n"
-        "Return ONLY a JSON array of matching label strings using double quotes. No code fences."
+        "Return ONLY a JSON array of matching label strings using double quotes starting with "
+        "'[' and anding with ']'. No code fences."
     )
 
 
@@ -397,18 +391,20 @@ async def _step3_call(
     doc_id: str,
     sentences: list[str],
     label_list: list[str],
-    client: anthropic.AsyncAnthropic,
+    client: Mistral,
     semaphore: asyncio.Semaphore,
 ) -> tuple[str, list[str]]:
     async with semaphore:
         try:
-            response = await client.messages.create(
+            response = await client.chat.complete_async(
                 model=MODEL,
                 max_tokens=512,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": _step3_prompt(sentences, label_list)}],
+                messages=[
+                    {"role": "system", "content": SYSTEM_PROMPT},
+                    {"role": "user", "content": _step3_prompt(sentences, label_list)},
+                ],
             )
-            raw = next(b.text for b in response.content if b.type == "text")
+            raw = response.choices[0].message.content
             matched = _parse_list_response(raw)
             label_lower = {l.strip().lower(): l for l in label_list}
             valid = [label_lower[m.strip().lower()] for m in matched if m.strip().lower() in label_lower]
@@ -421,7 +417,7 @@ async def _step3_call(
 async def classify_all_transcripts(
     sentences_by_doc: dict,
     label_list: list[str],
-    client: anthropic.AsyncAnthropic,
+    client: Mistral,
     max_concurrent: int = MAX_CONCURRENT,
 ) -> dict:
     """Step 3: Classify all transcripts against the final label list in parallel."""
@@ -555,7 +551,7 @@ async def run(
 
     # --- Step 1: token estimate, then generate labels ---
     print(f"\nStep 1: Estimating token usage for {len(sentences_by_doc)} transcripts...")
-    await estimate_step1_tokens(sentences_by_doc, client)
+    estimate_step1_tokens(sentences_by_doc)
     print(f"\nStep 1: Generating narrative labels (max_concurrent={max_concurrent})...")
     generated_labels = await build_labels_from_transcripts(sentences_by_doc, client, max_concurrent)
 
@@ -572,7 +568,7 @@ async def run(
     # --- Step 2: merge similar labels, assign IDs ---
     if not skip_merge:
         print(f"\nStep 2: Estimating token usage for {len(all_labels)} labels...")
-        await estimate_step2_tokens(all_labels, client, batch_size=merge_batch_size)
+        estimate_step2_tokens(all_labels, batch_size=merge_batch_size)
         print("\nStep 2: Merging semantically similar labels...")
         all_labels = await merge_labels(all_labels, client, batch_size=merge_batch_size, max_concurrent=max_concurrent, max_rounds=merge_max_rounds, log_path=out / "labels_merge_progress.json")
         print(f"  {len(all_labels)} labels after merging.")
@@ -585,7 +581,7 @@ async def run(
 
     # --- Step 3: classify all transcripts against final labels ---
     print(f"\nStep 3: Estimating token usage for {len(sentences_by_doc)} transcripts with {len(all_labels)} labels...")
-    await estimate_step3_tokens(sentences_by_doc, all_labels, client)
+    estimate_step3_tokens(sentences_by_doc, all_labels)
     print(f"\nStep 3: Classifying {len(sentences_by_doc)} transcripts (max_concurrent={max_concurrent})...")
     doc_to_labels = await classify_all_transcripts(sentences_by_doc, all_labels, client, max_concurrent)
 
@@ -637,7 +633,7 @@ async def run(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
-            "LLM-based text clustering with Claude Haiku — "
+            "LLM-based text clustering with Mistral Small — "
             "transcript-level narrative matching (3-step pipeline)."
         )
     )
@@ -666,7 +662,7 @@ if __name__ == "__main__":
     parser.add_argument("--overlap-tokens", type=int, default=30)
     parser.add_argument(
         "--max-concurrent", type=int, default=MAX_CONCURRENT,
-        help=f"Max parallel Anthropic requests for steps 1 and 3. Default: {MAX_CONCURRENT}",
+        help=f"Max parallel Mistral requests for steps 1 and 3. Default: {MAX_CONCURRENT}",
     )
     parser.add_argument(
         "--initial-labels-file",

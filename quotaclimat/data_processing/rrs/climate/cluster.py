@@ -82,10 +82,16 @@ def load_from_hf(
     are kept.  Pass ``country=None`` to load all countries.
     *extra_columns* selects additional columns to include (e.g. a date field).
     """
-    from datasets import load_dataset  # optional dep; imported lazily
+    from datasets import load_dataset, concatenate_datasets  # optional dep; imported lazily
 
     token = _get_hf_token()
-    ds = load_dataset(dataset_name, split=split, token=token)
+    if split == "both":
+        ds = concatenate_datasets([
+            load_dataset(dataset_name, split="train", token=token),
+            load_dataset(dataset_name, split="test", token=token),
+        ])
+    else:
+        ds = load_dataset(dataset_name, split=split, token=token)
 
     needed = [text_column] + HF_META_COLUMNS + (extra_columns or [])
     if country is not None:

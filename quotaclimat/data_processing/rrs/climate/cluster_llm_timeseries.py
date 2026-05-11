@@ -317,6 +317,7 @@ async def run(
     date_column: str = DATE_COLUMN,
     max_concurrent: int = MAX_CONCURRENT,
     max_merge_attempts: int = _MAX_MERGE_ATTEMPTS,
+    skip_absorb: bool = False,
     save_daily_labels: bool = False,
 ) -> None:
     out = Path(output_dir)
@@ -484,7 +485,7 @@ async def run(
                     # Step 2b — try to absorb new candidates into the fixed existing taxonomy.
                     # The existing label list is never reduced; only genuinely unmatched
                     # candidates (after max_merge_attempts tries) are appended.
-                    if not skip_merge:
+                    if not skip_merge and not skip_absorb:
                         print(f"\n  Step 2b: Trying to absorb {len(new_candidates)} candidate(s) into {len(all_labels)} existing labels...")
                         truly_new = await absorb_new_into_existing(
                             new_candidates, all_labels, client, max_attempts=max_merge_attempts
@@ -584,6 +585,10 @@ if __name__ == "__main__":
     parser.add_argument("--merge-max-rounds", type=int, default=10,
                         help="Maximum hierarchical merge rounds. Default: 20.")
     parser.add_argument(
+        "--no-absorb", action="store_true",
+        help="Skip the absorption step — all new candidates are added to the taxonomy as-is.",
+    )
+    parser.add_argument(
         "--max-merge-attempts", type=int, default=_MAX_MERGE_ATTEMPTS,
         help=(
             "Max attempts to absorb a new candidate into the existing taxonomy "
@@ -623,5 +628,6 @@ if __name__ == "__main__":
         date_column=args.date_column,
         max_concurrent=args.max_concurrent,
         max_merge_attempts=args.max_merge_attempts,
+        skip_absorb=args.no_absorb,
         save_daily_labels=args.save_daily_labels,
     ))

@@ -11,11 +11,14 @@ from sqlalchemy.orm import sessionmaker
 
 from postgres.database_connection import connect_to_db
 from postgres.schemas.advertising.models import Ad
-from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.matcher import BrandDictionary, DictMatch
+from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.matcher import (
+    BrandDictionary, DictMatch)
 from quotaclimat.utils.logger import getLogger
 
 
-def select_pending(engine, limit: int | None) -> list[tuple[str, list[dict] | None, str | None]]:
+def select_pending(
+    engine, limit: int | None
+) -> list[tuple[str, list[dict] | None, str | None]]:
     Session = sessionmaker(bind=engine)
     with Session() as session:
         stmt = (
@@ -37,7 +40,9 @@ def _ad_type_entry(prediction: list[dict] | None) -> dict:
     return {}
 
 
-def _build_dict_match_entry(match: DictMatch | None, brand_in: str | None) -> dict | None:
+def _build_dict_match_entry(
+    match: DictMatch | None, brand_in: str | None
+) -> dict | None:
     timestamp = datetime.now(timezone.utc).isoformat()
 
     if match is None:
@@ -143,15 +148,17 @@ def run(batch_size: int = 500, limit: int | None = None) -> dict[str, int]:
                 existing.append(audit_entry)
 
             counts[status] = counts.get(status, 0) + 1
-            buf.append({
-                "b_id": ad_id,
-                "b_prediction": existing,
-                "b_status": status,
-                "b_method": method,
-                "b_sector": sector,
-                "b_subcat": subcat,
-                "b_brand": canonical_brand,
-            })
+            buf.append(
+                {
+                    "b_id": ad_id,
+                    "b_prediction": existing,
+                    "b_status": status,
+                    "b_method": method,
+                    "b_sector": sector,
+                    "b_subcat": subcat,
+                    "b_brand": canonical_brand,
+                }
+            )
             if len(buf) >= batch_size:
                 _flush(session_factory, buf)
                 buf = []

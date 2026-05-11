@@ -15,9 +15,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import normalize, nospace
+from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import (
+    normalize, nospace)
 
-DICT_PATH = Path("quotaclimat/data_ingestion/advertising/s03_classification/reference_data/dictionnaire_marques_secteurs.xlsx")
+DICT_PATH = Path(
+    "quotaclimat/data_ingestion/advertising/s03_classification/reference_data/dictionnaire_marques_secteurs.xlsx"
+)
 
 
 def _brand_key(name: str | None) -> str:
@@ -33,7 +36,9 @@ class DictMatch:
     matched_brand: str
     matched_keyword: str | None = None
     rule_keywords: list[str] | None = None  # the rule's full keyword set, set on hits
-    tried_rules: list[list[str]] | None = None  # every rule's keywords, set on no_kw cases
+    tried_rules: list[
+        list[str]
+    ] | None = None  # every rule's keywords, set on no_kw cases
     haystack: str | None = None
 
 
@@ -54,14 +59,18 @@ class BrandDictionary:
         self.t2 = self._load_tier2(pd.read_excel(path, sheet_name="marques_type_2"))
         self.t3 = self._load_tier3(pd.read_excel(path, sheet_name="marques_type_3"))
         print(f"t1={type(self.t1)}, t2={type(self.t2)}, t3={type(self.t3)}")
-        print(f"t1 keys={len(self.t1) if self.t1 else 0}, t2 keys={len(self.t2) if self.t2 else 0}, t3 keys={len(self.t3) if self.t3 else 0}")
+        print(
+            f"t1 keys={len(self.t1) if self.t1 else 0}, t2 keys={len(self.t2) if self.t2 else 0}, t3 keys={len(self.t3) if self.t3 else 0}"
+        )
 
     @staticmethod
     def _load_tier1(df: pd.DataFrame) -> dict[str, tuple[str, str, str]]:
         """brand_key: (sector, subcat, brand_raw)"""
         return {
             _brand_key(row["nom_marque"]): (
-                row["secteur"], row["catégorie"], row["nom_marque"],
+                row["secteur"],
+                row["catégorie"],
+                row["nom_marque"],
             )
             for _, row in df.iterrows()
         }
@@ -84,19 +93,23 @@ class BrandDictionary:
         return out
 
     @staticmethod
-    def _load_tier3(df: pd.DataFrame) -> dict[str, list[tuple[list[str], str, str, str]]]:
+    def _load_tier3(
+        df: pd.DataFrame,
+    ) -> dict[str, list[tuple[list[str], str, str, str]]]:
         """brand_key: [(keywords, sector, subcat, brand_raw)]"""
         out: dict[str, list[tuple[list[str], str, str, str]]] = {}
         for _, row in df.iterrows():
             b = _brand_key(row["nom_marque"])
             if b not in out:
                 out[b] = []
-            out[b].append((
-                _split_keywords(row.get("mots_clés_produit")),
-                row["secteur"],
-                row["catégorie"],
-                row["nom_marque"],
-            ))
+            out[b].append(
+                (
+                    _split_keywords(row.get("mots_clés_produit")),
+                    row["secteur"],
+                    row["catégorie"],
+                    row["nom_marque"],
+                )
+            )
         return out
 
     @staticmethod

@@ -57,7 +57,9 @@ def build_ad_classification_model(sector_codes) -> type[BaseModel]:
                     )
             else:
                 if self.sector_confidence is None:
-                    raise ValueError("sector_confidence is required when content_type == AD")
+                    raise ValueError(
+                        "sector_confidence is required when content_type == AD"
+                    )
             return self
 
         @model_validator(mode="after")

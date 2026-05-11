@@ -4,7 +4,9 @@ from pathlib import Path
 
 import pandas as pd
 
-FILE_PATH = Path("./quotaclimat/data_ingestion/advertising/s03_classification/reference_data/classification_pub_ome.xlsx")
+FILE_PATH = Path(
+    "./quotaclimat/data_ingestion/advertising/s03_classification/reference_data/classification_pub_ome.xlsx"
+)
 
 
 df_sectors = pd.read_excel(FILE_PATH, sheet_name="secteurs")

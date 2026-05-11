@@ -8,6 +8,7 @@ class ASRSettings(BaseSettings):
     api_url: str = Field(...)
     api_token: str = Field(...)
 
+
 class VLMSettings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="VLM_", extra="ignore")
     model_name: str = Field(...)

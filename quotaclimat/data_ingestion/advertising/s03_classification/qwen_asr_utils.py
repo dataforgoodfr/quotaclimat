@@ -1,6 +1,5 @@
 from typing import Optional, Tuple
 
-
 _ASR_TEXT_TAG = "<asr_text>"
 _LANG_PREFIX = "language "
 
@@ -39,9 +38,9 @@ def detect_and_fix_repetitions(text: str, threshold: int = 20) -> str:
             if count > thresh:
                 res.append(s[i])
             else:
-                res.append(s[i:i + count])
+                res.append(s[i : i + count])
             i += count
-        return ''.join(res)
+        return "".join(res)
 
     if not text:
         return text
@@ -110,7 +109,7 @@ def parse_asr_output(
             continue
         low = line.lower()
         if low.startswith(_LANG_PREFIX):
-            val = line[len(_LANG_PREFIX):].strip()
+            val = line[len(_LANG_PREFIX) :].strip()
             if val:
                 lang = normalize_language_name(val)
             break

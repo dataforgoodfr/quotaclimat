@@ -7,7 +7,6 @@ from botocore.exceptions import ClientError
 
 from quotaclimat.data_processing.mediatree.s3.s3_utils import get_secret_docker
 
-
 AD_S3_PREFIX = "ads"
 
 

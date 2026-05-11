@@ -6,14 +6,16 @@ from collections import defaultdict
 from pathlib import Path
 
 import pandas as pd
-from thefuzz import fuzz
 from sqlalchemy import bindparam, select
 from sqlalchemy.orm import sessionmaker
+from thefuzz import fuzz
 
 from postgres.database_connection import connect_to_db
 from postgres.schemas.advertising.models import Ad
-from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.matcher import BrandDictionary
-from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import normalize, nospace
+from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.matcher import \
+    BrandDictionary
+from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import (
+    normalize, nospace)
 from quotaclimat.utils.logger import getLogger
 
 LEADING_NOISE = {"le", "la", "les", "l", "de", "du", "des", "st", "saint"}
@@ -43,12 +45,14 @@ def _select_rows(engine) -> pd.DataFrame:
         brand = ad_type.get("brand_name")
         if not brand:
             continue
-        out.append({
-            "ad_id": ad_id,
-            "brand_raw": brand,
-            "brand_clean": normalize(brand),
-            "sector": sector,
-        })
+        out.append(
+            {
+                "ad_id": ad_id,
+                "brand_raw": brand,
+                "brand_clean": normalize(brand),
+                "sector": sector,
+            }
+        )
     return pd.DataFrame(out)
 
 
@@ -75,9 +79,7 @@ def build_canonical_map(
     dict_lookup = dict_lookup or {}
     freq = df["brand_clean"].value_counts().to_dict()
     sector_map = (
-        df.groupby("brand_clean")["sector"]
-        .agg(lambda s: set(s.dropna()))
-        .to_dict()
+        df.groupby("brand_clean")["sector"].agg(lambda s: set(s.dropna())).to_dict()
     )
 
     def shares_sector(a: str, b: str) -> bool:
@@ -88,8 +90,8 @@ def build_canonical_map(
         return max(
             variants,
             key=lambda v: (
-                freq.get(v, 0),    # most frequent wins
-                " " in v,   # prefer spaced form
+                freq.get(v, 0),  # most frequent wins
+                " " in v,  # prefer spaced form
                 not any(v.startswith(a + " ") for a in LEADING_NOISE),  # avoid le la"
             ),
         )
@@ -113,7 +115,8 @@ def build_canonical_map(
         threshold = short_threshold if len(key) <= short_len else fuzzy_threshold
         match = next(
             (
-                ck for ck in set(canonical_of.values())
+                ck
+                for ck in set(canonical_of.values())
                 if fuzz.ratio(key, ck) >= threshold
                 and shares_sector(readable, nospace_to_readable[ck])
             ),

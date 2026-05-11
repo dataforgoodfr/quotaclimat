@@ -5,19 +5,19 @@ import time
 
 from dotenv import load_dotenv
 from openai import OpenAI
-from qwen_asr import parse_asr_output
 from sqlalchemy import bindparam, select
 from sqlalchemy.orm import sessionmaker
 
 from postgres.database_connection import connect_to_db
-from quotaclimat.data_ingestion.advertising.s03_classification.presigned_url import (
-    AdvertisingS3Config,
-    get_presigned_url_for_ad,
-    get_s3_client,
-)
 from postgres.schemas.advertising.models import Ad
-from quotaclimat.data_ingestion.advertising.s03_classification.pipeline.runner import StageResult, run_stage
-from quotaclimat.data_ingestion.advertising.s03_classification.settings import ASRSettings
+from quotaclimat.data_ingestion.advertising.s03_classification.pipeline.runner import (
+    StageResult, run_stage)
+from quotaclimat.data_ingestion.advertising.s03_classification.presigned_url import (
+    AdvertisingS3Config, get_presigned_url_for_ad, get_s3_client)
+from quotaclimat.data_ingestion.advertising.s03_classification.qwen_asr_utils import \
+    parse_asr_output
+from quotaclimat.data_ingestion.advertising.s03_classification.settings import \
+    ASRSettings
 from quotaclimat.utils.logger import getLogger
 
 
@@ -63,7 +63,9 @@ def _transcribe_with_retry(
 
 _AD = Ad.__table__
 _TRANSCRIPT_UPDATE = (
-    _AD.update().where(_AD.c.id == bindparam("b_id")).values(transcript=bindparam("b_transcript"))
+    _AD.update()
+    .where(_AD.c.id == bindparam("b_id"))
+    .values(transcript=bindparam("b_transcript"))
 )
 _NO_DATA_UPDATE = (
     _AD.update().where(_AD.c.id == bindparam("b_id")).values(fragment_type="no_data")
@@ -80,7 +82,10 @@ def make_flush(session_factory):
             if ok:
                 session.execute(
                     _TRANSCRIPT_UPDATE,
-                    [{"b_id": r.ad_id, "b_transcript": r.payload["transcript"]} for r in ok],
+                    [
+                        {"b_id": r.ad_id, "b_transcript": r.payload["transcript"]}
+                        for r in ok
+                    ],
                 )
             if no_data:
                 session.execute(_NO_DATA_UPDATE, [{"b_id": r.ad_id} for r in no_data])
@@ -89,7 +94,9 @@ def make_flush(session_factory):
     return flush
 
 
-def make_process_one(s3_client, s3_config, asr_client, model_name, ttl, asr_timeout, retries):
+def make_process_one(
+    s3_client, s3_config, asr_client, model_name, ttl, asr_timeout, retries
+):
     def process_one(ad_id: str) -> StageResult:
         try:
             url = get_presigned_url_for_ad(
@@ -125,7 +132,7 @@ def run(
     limit: int | None = None,
 ) -> dict[str, int]:
     load_dotenv()
-    model_settings = ASRSettings() # type: ignore[call-arg]
+    model_settings = ASRSettings()  # type: ignore[call-arg]
     s3_config = AdvertisingS3Config.from_env()
     s3_client = get_s3_client(s3_config)
     asr_client = OpenAI(
@@ -140,8 +147,13 @@ def run(
         return run_stage(
             ad_ids=ad_ids,
             process_one=make_process_one(
-                s3_client, s3_config, asr_client, model_settings.model_name,
-                ttl, asr_timeout, retries,
+                s3_client,
+                s3_config,
+                asr_client,
+                model_settings.model_name,
+                ttl,
+                asr_timeout,
+                retries,
             ),
             flush=make_flush(session_factory),
             workers=workers,

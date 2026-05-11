@@ -96,7 +96,7 @@ hdbscan = ">=0.8"
 sentence-transformers = ">=3.0"
 datasets = ">=2.18"
 sentencepiece = ">=0.2"
-anthropic = ">=0.50"
+mistralai = ">=1.0"
 
 [tool.pytest_env]
 CLEAN_CACHE_ON_EXIT=true

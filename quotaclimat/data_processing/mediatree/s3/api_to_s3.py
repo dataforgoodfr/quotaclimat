@@ -174,7 +174,6 @@ def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch
         params = get_param_api(media_tree_token, type_sub, start_epoch, channel, end_epoch)
         logging.info(f"Query {KEYWORDS_URL} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, end_epoch)}")
         response = requests.get(get_request_url(KEYWORDS_URL, params=params))
-        logging.info(get_request_url(KEYWORDS_URL, params=params))
         if response.status_code >= 400:
             logging.warning(f"{response.status_code} - Expired token ? - retrying to get a new one {response.content}")
             media_tree_token = get_auth_token(password, USER)

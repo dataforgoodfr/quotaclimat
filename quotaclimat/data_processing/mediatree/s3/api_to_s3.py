@@ -43,7 +43,7 @@ from quotaclimat.data_processing.mediatree.i8n.country import (
 )
 from datetime import datetime
 import shutil
-from typing import List, Optional
+from typing import List, Optional, Dict
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 import sentry_sdk
 from sentry_sdk.crons import monitor
@@ -161,14 +161,20 @@ def parse_total_results(response_sub) -> int :
 def parse_number_pages(response_sub) -> int :
     return int(response_sub.get('number_pages'))
 
+def get_request_url(base_url: str, params: Dict[str, str]):
+    url = base_url + '?' + "&".join([f"{key}={params[key]}" for key in params])
+    return url
+
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
 # @see https://github.com/jd/tenacity/tree/main
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
 def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch):
     try:
+        logging.info(media_tree_token)
         params = get_param_api(media_tree_token, type_sub, start_epoch, channel, end_epoch)
         logging.info(f"Query {KEYWORDS_URL} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, end_epoch)}")
-        response = requests.post(KEYWORDS_URL, json=params)
+        response = requests.get(get_request_url(KEYWORDS_URL, params=params))
+        logging.info(get_request_url(KEYWORDS_URL, params=params))
         if response.status_code >= 400:
             logging.warning(f"{response.status_code} - Expired token ? - retrying to get a new one {response.content}")
             media_tree_token = get_auth_token(password, USER)

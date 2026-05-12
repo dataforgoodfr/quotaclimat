@@ -86,6 +86,18 @@ ipykernel = "^7.0.1"
 ipywidgets = "^8.1.8"
 dotenv = "^0.9.9"
 
+[tool.poetry.group.rrs]
+optional = true
+
+[tool.poetry.group.rrs.dependencies]
+bertopic = ">=0.16"
+umap-learn = ">=0.5"
+hdbscan = ">=0.8"
+sentence-transformers = ">=3.0"
+datasets = ">=2.18"
+sentencepiece = ">=0.2"
+mistralai = ">=1.0"
+
 [tool.pytest_env]
 CLEAN_CACHE_ON_EXIT=true
 GLOBAL_CACHE_FOLDER=".test_cache"

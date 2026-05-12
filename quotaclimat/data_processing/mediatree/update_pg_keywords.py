@@ -228,7 +228,8 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
         and_(
             func.date(Keywords.start) >= start_date, 
             func.date(Keywords.start) <= end_date,
-            Keywords.country == country.name
+            Keywords.country == country.name,
+            Keywords.channel_name.in_(country.channels),
         )
     ).order_by(Keywords.start, Keywords.channel_name, Keywords.plaintext)
 
@@ -272,7 +273,12 @@ def get_total_count_saved_keywords(session: Session, start_date : str, end_date 
         if channel != "":
             statement = statement.filter(Keywords.channel_name == channel)
         
-        statement = statement.filter(Keywords.country == country.name)
+        statement = statement.filter(
+            and_(
+                Keywords.country == country.name,
+                Keywords.channel_name.in_(country.channels),
+            )
+        )
         
         if empty_program_only:
             statement = statement.filter(

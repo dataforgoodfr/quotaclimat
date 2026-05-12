@@ -29,7 +29,7 @@ def test_mediatree_get_last_date_and_number_of_delay_saved_in_keywords():
         "id" : pk,
         "start": start,
         "plaintext": "test",
-        "channel_name": "test",
+        "channel_name": "france2",
         "channel_radio": False,
         "theme":[],
         "keywords_with_timestamp": [],

@@ -33,7 +33,8 @@ def get_last_date_and_number_of_delay_saved_in_keywords(session: Session, days_f
             .where(
                 and_(
                     Keywords.start >= func.now() - text(f"INTERVAL '{days_filter} days'"),
-                    Keywords.country == country.name
+                    Keywords.country == country.name,
+                    Keywords.channel_name.in_(country.channels),
                 )
             )
             .subquery("source")

@@ -12,7 +12,6 @@ Environment variables (defaults match rrs/.env.dist):
     RRS_PG_HOST, RRS_PG_PORT, RRS_PG_DATABASE, RRS_PG_USER, RRS_PG_PASSWORD
 """
 
-import hashlib
 import os
 
 from dotenv import load_dotenv
@@ -24,23 +23,15 @@ from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from rrs.dictionary.subjects import subjects
 from rrs.dictionary.upsert_subjects import subject_id as make_subject_id
 from rrs.schemas.models import DictionaryEntry
+from rrs.utils.generate_id import get_consistent_hash
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 SUBJECT_NAME = "climate"
 
-_BASE36 = "0123456789abcdefghijklmnopqrstuvwxyz"
-
 
 def keyword_id(keyword: str, subject_id: str) -> str:
-    """Stable 12-character base-36 ID derived from (keyword, subject_id)."""
-    raw = f"{keyword}:{subject_id}"
-    n = int(hashlib.md5(raw.encode("utf-8")).hexdigest(), 16)
-    chars = []
-    while n:
-        chars.append(_BASE36[n % 36])
-        n //= 36
-    return "".join(reversed(chars))[:12]
+    return get_consistent_hash(f"{keyword}:{subject_id}")
 
 
 def get_engine():

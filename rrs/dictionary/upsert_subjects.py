@@ -15,7 +15,6 @@ Environment variables (defaults match rrs/.env.dist):
     RRS_PG_HOST, RRS_PG_PORT, RRS_PG_DATABASE, RRS_PG_USER, RRS_PG_PASSWORD
 """
 
-import hashlib
 import os
 
 from dotenv import load_dotenv
@@ -25,21 +24,13 @@ from sqlalchemy.orm import sessionmaker
 
 from rrs.dictionary.subjects import subjects
 from rrs.schemas.models import Subject
+from rrs.utils.generate_id import get_consistent_hash
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 
-_BASE36 = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-
 def subject_id(name: str) -> str:
-    """Stable 12-character base-36 ID derived from the subject name (MD5)."""
-    n = int(hashlib.md5(name.encode("utf-8")).hexdigest(), 16)
-    chars = []
-    while n:
-        chars.append(_BASE36[n % 36])
-        n //= 36
-    return "".join(reversed(chars))[:12]
+    return get_consistent_hash(name)
 
 
 def get_engine():

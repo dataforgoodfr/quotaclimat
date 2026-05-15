@@ -97,6 +97,7 @@ sentence-transformers = ">=3.0"
 datasets = ">=2.18"
 sentencepiece = ">=0.2"
 mistralai = ">=1.0"
+psycopg = {version = ">=3.0", extras = ["binary"]}
 
 [tool.pytest_env]
 CLEAN_CACHE_ON_EXIT=true

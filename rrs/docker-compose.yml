@@ -1,0 +1,54 @@
+services:
+  rrs_db:
+    image: postgres:15
+    ports:
+      - 5434:5432
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d rrs_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    environment:
+      TZ: Europe/Paris
+      POSTGRES_USER: user
+      POSTGRES_DB: rrs_db
+      POSTGRES_PASSWORD: password
+    logging:
+      driver: none
+
+  migrate:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["alembic", "-c", "rrs/alembic.ini", "upgrade", "head"]
+    environment:
+      PG_USER: user
+      PG_DATABASE: rrs_db
+      PG_PASSWORD: password
+      PG_HOST: rrs_db
+      PG_PORT: 5432
+    depends_on:
+      rrs_db:
+        condition: service_healthy
+
+  console:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["sleep", "12000"]
+    environment:
+      PYTHONPATH: /app
+      PG_USER: user
+      PG_DATABASE: rrs_db
+      PG_PASSWORD: password
+      PG_HOST: rrs_db
+      PG_PORT: 5432
+    volumes:
+      - ../rrs/:/app/rrs/
+    tty: true
+    depends_on:
+      rrs_db:
+        condition: service_healthy

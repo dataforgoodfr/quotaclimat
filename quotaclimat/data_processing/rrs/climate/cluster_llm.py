@@ -1,22 +1,29 @@
 """
-LLM-based text clustering using Mistral Small.
+LLM-based text clustering.
 
 Three-step pipeline:
   1. Generate narrative labels per transcript — async, no shared label list in prompt
   2. Merge/deduplicate label list — single LLM call
   3. Classify each transcript against final labels — async
   4. Report mesinfo scores per label
+
+Supports two LLM providers selectable via --provider:
+  mistral   — Mistral Small (default)
+  anthropic — Claude Haiku 4.5
 """
 
 import argparse
 import ast
 import asyncio
+import hashlib
 import json
 import math
 import random
 import re
+from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import pandas as pd
 from mistralai import Mistral
@@ -32,7 +39,15 @@ from quotaclimat.data_processing.rrs.climate.cluster import (
     split_sentences,
 )
 
-MODEL = "mistral-small-2506"
+PROVIDER_MISTRAL = "mistral"
+PROVIDER_ANTHROPIC = "anthropic"
+
+MODEL_MISTRAL = "mistral-small-2506"
+MODEL_ANTHROPIC = "claude-haiku-4-5-20251001"
+
+# Keep for backwards compatibility
+MODEL = MODEL_MISTRAL
+
 MAX_CONCURRENT = 1
 
 SYSTEM_PROMPT = "You are an assistant helping editors to aggregate claims on climate change discussions."
@@ -46,16 +61,60 @@ SEED_LABELS: list[str] = [
 ]
 
 
-def _build_client() -> Mistral:
+@dataclass
+class LLMBackend:
+    """Thin adapter over Mistral or Anthropic async clients."""
+    provider: str
+    model: str
+    client: Any
+
+    async def chat(self, messages: list[dict], max_tokens: int = 512) -> str:
+        """Send user messages and return the text response."""
+        if self.provider == PROVIDER_ANTHROPIC:
+            response = await self.client.messages.create(
+                model=self.model,
+                max_tokens=max_tokens,
+                system=SYSTEM_PROMPT,
+                messages=messages,
+            )
+            return next(b.text for b in response.content if b.type == "text")
+        else:
+            response = await self.client.chat.complete_async(
+                model=self.model,
+                max_tokens=max_tokens,
+                messages=[{"role": "system", "content": SYSTEM_PROMPT}] + messages,
+            )
+            return response.choices[0].message.content
+
+
+def _build_client(provider: str = PROVIDER_MISTRAL) -> LLMBackend:
     import os
     load_dotenv()
-    api_key = os.getenv("MISTRAL_API_KEY")
-    if not api_key:
-        raise EnvironmentError(
-            "MISTRAL_API_KEY is not set. "
-            "Add it to your .env file: MISTRAL_API_KEY=..."
+    if provider == PROVIDER_ANTHROPIC:
+        import anthropic
+        api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise EnvironmentError(
+                "ANTHROPIC_API_KEY is not set. "
+                "Add it to your .env file: ANTHROPIC_API_KEY=..."
+            )
+        return LLMBackend(
+            provider=provider,
+            model=MODEL_ANTHROPIC,
+            client=anthropic.AsyncAnthropic(api_key=api_key),
         )
-    return Mistral(api_key=api_key)
+    else:
+        api_key = os.getenv("MISTRAL_API_KEY")
+        if not api_key:
+            raise EnvironmentError(
+                "MISTRAL_API_KEY is not set. "
+                "Add it to your .env file: MISTRAL_API_KEY=..."
+            )
+        return LLMBackend(
+            provider=provider,
+            model=MODEL_MISTRAL,
+            client=Mistral(api_key=api_key),
+        )
 
 
 def _parse_list_response(raw: str) -> list[str]:
@@ -87,10 +146,14 @@ def _parse_list_response(raw: str) -> list[str]:
 # Token / cost estimation
 # ---------------------------------------------------------------------------
 
-# Standard API pricing for mistral-small-latest (USD per million tokens).
-# Update these if Mistral changes pricing: https://mistral.ai/technology/
-_INPUT_COST_PER_M = 0.15
-_OUTPUT_COST_PER_M = 0.60
+# USD per million tokens — update if providers change pricing.
+# Mistral: https://mistral.ai/technology/
+# Anthropic: https://www.anthropic.com/pricing
+_PRICING: dict[str, dict[str, float]] = {
+    PROVIDER_MISTRAL: {"input": 0.15, "output": 0.60},
+    PROVIDER_ANTHROPIC: {"input": 0.80, "output": 4.00},
+}
+
 _AVG_OUTPUT_TOKENS_PER_DOC = 50  # conservative estimate: a few short label strings
 _TOKENIZER_REPO = "mistralai/Mistral-Small-3.2-24B-Instruct-2506"
 _tokenizer = None
@@ -123,8 +186,20 @@ def _step1_prompt(sentences: list[str]) -> str:
     )
 
 
+def _pricing_note(provider: str) -> str:
+    p = _PRICING.get(provider, _PRICING[PROVIDER_MISTRAL])
+    ref = "mistral.ai/technology/" if provider == PROVIDER_MISTRAL else "anthropic.com/pricing"
+    return f"rates: ${p['input']}/M input, ${p['output']}/M output — verify at {ref}"
+
+
+def _cost(total_input: float, total_output: float, provider: str) -> float:
+    p = _PRICING.get(provider, _PRICING[PROVIDER_MISTRAL])
+    return (total_input / 1_000_000) * p["input"] + (total_output / 1_000_000) * p["output"]
+
+
 def estimate_step1_tokens(
     sentences_by_doc: dict,
+    provider: str = PROVIDER_MISTRAL,
     sample_size: int = 20,
 ) -> None:
     """Sample documents, estimate input tokens locally, and print a cost estimate."""
@@ -140,22 +215,19 @@ def estimate_step1_tokens(
     avg_input = sum(token_counts) / len(token_counts)
     total_input = avg_input * n_docs
     total_output = _AVG_OUTPUT_TOKENS_PER_DOC * n_docs
+    total_cost = _cost(total_input, total_output, provider)
 
-    input_cost = (total_input / 1_000_000) * _INPUT_COST_PER_M
-    output_cost = (total_output / 1_000_000) * _OUTPUT_COST_PER_M
-    total_cost = input_cost + output_cost
-
-    print(f"\n--- Step 1 token estimate ({len(sample)}/{n_docs} docs sampled) ---")
+    print(f"\n--- Step 1 token estimate ({len(sample)}/{n_docs} docs sampled) [{provider}] ---")
     print(f"  Input tokens/doc : avg {avg_input:,.0f}  (min {min(token_counts):,}  max {max(token_counts):,})")
     print(f"  Total input tokens: ~{total_input:,.0f}")
     print(f"  Total output tokens: ~{total_output:,.0f}  (est. {_AVG_OUTPUT_TOKENS_PER_DOC} per doc)")
-    print(f"  Estimated cost: ~${total_cost:.4f}")
-    print(f"  (rates: ${_INPUT_COST_PER_M}/M input, ${_OUTPUT_COST_PER_M}/M output — verify at mistral.ai/technology/)")
+    print(f"  Estimated cost: ~${total_cost:.4f}  ({_pricing_note(provider)})")
 
 
 def estimate_step2_tokens(
     label_list: list[str],
     batch_size: int = 30,
+    provider: str = PROVIDER_MISTRAL,
 ) -> None:
     """Estimate step 2 cost by simulating hierarchical rounds, assuming 50% reduction per round."""
     n = len(label_list)
@@ -166,28 +238,24 @@ def estimate_step2_tokens(
     rounds.append(1)
 
     total_calls = sum(rounds)
-
     sample_labels = label_list[:min(batch_size, len(label_list))]
     tokens_per_call = _estimate_tokens(SYSTEM_PROMPT + _step2_prompt(sample_labels))
 
     total_input = total_calls * tokens_per_call
     total_output = total_calls * (tokens_per_call // 2)
+    total_cost = _cost(total_input, total_output, provider)
 
-    input_cost = (total_input / 1_000_000) * _INPUT_COST_PER_M
-    output_cost = (total_output / 1_000_000) * _OUTPUT_COST_PER_M
-    total_cost = input_cost + output_cost
-
-    print(f"\n--- Step 2 token estimate ({len(rounds)} rounds, calls per round: {rounds}) ---")
+    print(f"\n--- Step 2 token estimate ({len(rounds)} rounds, calls per round: {rounds}) [{provider}] ---")
     print(f"  Total calls: {total_calls}")
     print(f"  Total input tokens: ~{total_input:,.0f}")
     print(f"  Total output tokens: ~{total_output:,.0f}")
-    print(f"  Estimated cost: ~${total_cost:.4f}")
-    print(f"  (rates: ${_INPUT_COST_PER_M}/M input, ${_OUTPUT_COST_PER_M}/M output — verify at mistral.ai/technology/)")
+    print(f"  Estimated cost: ~${total_cost:.4f}  ({_pricing_note(provider)})")
 
 
 def estimate_step3_tokens(
     sentences_by_doc: dict,
     label_list: list[str],
+    provider: str = PROVIDER_MISTRAL,
     sample_size: int = 20,
 ) -> None:
     """Estimate step 3 cost by sampling documents and estimating tokens locally."""
@@ -203,17 +271,13 @@ def estimate_step3_tokens(
     avg_input = sum(token_counts) / len(token_counts)
     total_input = avg_input * n_docs
     total_output = _AVG_OUTPUT_TOKENS_PER_DOC * n_docs
+    total_cost = _cost(total_input, total_output, provider)
 
-    input_cost = (total_input / 1_000_000) * _INPUT_COST_PER_M
-    output_cost = (total_output / 1_000_000) * _OUTPUT_COST_PER_M
-    total_cost = input_cost + output_cost
-
-    print(f"\n--- Step 3 token estimate ({len(sample)}/{n_docs} docs sampled) ---")
+    print(f"\n--- Step 3 token estimate ({len(sample)}/{n_docs} docs sampled) [{provider}] ---")
     print(f"  Input tokens/doc : avg {avg_input:,.0f}  (min {min(token_counts):,}  max {max(token_counts):,})")
     print(f"  Total input tokens: ~{total_input:,.0f}")
     print(f"  Total output tokens: ~{total_output:,.0f}  (est. {_AVG_OUTPUT_TOKENS_PER_DOC} per doc)")
-    print(f"  Estimated cost: ~${total_cost:.4f}")
-    print(f"  (rates: ${_INPUT_COST_PER_M}/M input, ${_OUTPUT_COST_PER_M}/M output — verify at mistral.ai/technology/)")
+    print(f"  Estimated cost: ~${total_cost:.4f}  ({_pricing_note(provider)})")
 
 
 # ---------------------------------------------------------------------------
@@ -223,20 +287,12 @@ def estimate_step3_tokens(
 async def _step1_call(
     doc_id: str,
     sentences: list[str],
-    client: Mistral,
+    backend: LLMBackend,
     semaphore: asyncio.Semaphore,
 ) -> tuple[str, list[str]]:
     async with semaphore:
         try:
-            response = await client.chat.complete_async(
-                model=MODEL,
-                max_tokens=512,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": _step1_prompt(sentences)},
-                ],
-            )
-            raw = response.choices[0].message.content
+            raw = await backend.chat([{"role": "user", "content": _step1_prompt(sentences)}], max_tokens=512)
             return doc_id, _parse_list_response(raw)
         except Exception as exc:
             print(f"  [warn] step1 {doc_id} failed: {exc}")
@@ -245,7 +301,7 @@ async def _step1_call(
 
 async def build_labels_from_transcripts(
     sentences_by_doc: dict,
-    client: Mistral,
+    client: LLMBackend,
     max_concurrent: int = MAX_CONCURRENT,
 ) -> list[str]:
     """Step 1: Generate labels per transcript in parallel.
@@ -259,7 +315,7 @@ async def build_labels_from_transcripts(
 
     results = await tqdm.gather(
         *[_step1_call(doc_id, sentences_by_doc[doc_id], client, semaphore) for doc_id in doc_ids],
-        desc="Step 1 — labelling",
+        desc=f"Step 1 — labelling [{client.provider}]",
     )
 
     labels_lower: set[str] = set()
@@ -298,20 +354,12 @@ def _step2_prompt(label_list: list[str]) -> str:
     )
 
 
-async def _merge_labels_call(label_list: list[str], client: Mistral) -> list[str]:
+async def _merge_labels_call(label_list: list[str], client: LLMBackend) -> list[str]:
     """Merge the flat *label_list*, returning a deduplicated result.
 
     Returns the input list unchanged if the response cannot be parsed.
     """
-    response = await client.chat.complete_async(
-        model=MODEL,
-        max_tokens=4096,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": _step2_prompt(label_list)},
-        ],
-    )
-    raw = response.choices[0].message.content
+    raw = await client.chat([{"role": "user", "content": _step2_prompt(label_list)}], max_tokens=4096)
     parsed = _parse_list_response(raw)
     if not parsed:
         print(f"  [warn] unparseable merge response — keeping {len(label_list)} labels unchanged.")
@@ -321,7 +369,7 @@ async def _merge_labels_call(label_list: list[str], client: Mistral) -> list[str
 
 async def merge_labels(
     label_list: list[str],
-    client: Mistral,
+    client: LLMBackend,
     batch_size: int = 30,
     max_concurrent: int = MAX_CONCURRENT,
     max_rounds: int = 20,
@@ -391,20 +439,14 @@ async def _step3_call(
     doc_id: str,
     sentences: list[str],
     label_list: list[str],
-    client: Mistral,
+    backend: LLMBackend,
     semaphore: asyncio.Semaphore,
 ) -> tuple[str, list[str]]:
     async with semaphore:
         try:
-            response = await client.chat.complete_async(
-                model=MODEL,
-                max_tokens=512,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": _step3_prompt(sentences, label_list)},
-                ],
+            raw = await backend.chat(
+                [{"role": "user", "content": _step3_prompt(sentences, label_list)}], max_tokens=512
             )
-            raw = response.choices[0].message.content
             matched = _parse_list_response(raw)
             label_lower = {l.strip().lower(): l for l in label_list}
             valid = [label_lower[m.strip().lower()] for m in matched if m.strip().lower() in label_lower]
@@ -417,7 +459,7 @@ async def _step3_call(
 async def classify_all_transcripts(
     sentences_by_doc: dict,
     label_list: list[str],
-    client: Mistral,
+    client: LLMBackend,
     max_concurrent: int = MAX_CONCURRENT,
 ) -> dict:
     """Step 3: Classify all transcripts against the final label list in parallel."""
@@ -428,7 +470,7 @@ async def classify_all_transcripts(
             _step3_call(doc_id, sentences, label_list, client, semaphore)
             for doc_id, sentences in sentences_by_doc.items()
         ],
-        desc="Step 3 — classifying",
+        desc=f"Step 3 — classifying [{client.provider}]",
     )
     return dict(results)
 
@@ -439,24 +481,17 @@ async def classify_all_transcripts(
 
 DATE_COLUMN = "data_item_start"  # HF dataset column that holds the broadcast/publication date
 
+# Metadata columns to carry through from the HF dataset into the output CSV.
+_HF_EXTRA_COLS = [
+    "task_aggregate_id", "data_item_start", "project_id",
+    "data_item_id", "data_item_channel_name", "data_item_channel_title",
+]
 
-def _filter_by_month(
-    docs_df: pd.DataFrame,
-    year: int,
-    month: int,
-    date_column: str = DATE_COLUMN,
-) -> pd.DataFrame:
-    """Keep only rows whose *date_column* falls within the given year/month."""
-    if date_column not in docs_df.columns:
-        raise ValueError(
-            f"Date column '{date_column}' not found in dataset. "
-            f"Available columns: {list(docs_df.columns)}"
-        )
-    dates = pd.to_datetime(docs_df[date_column], errors="coerce")
-    mask = (dates.dt.year == year) & (dates.dt.month == month)
-    filtered = docs_df[mask].reset_index(drop=True)
-    print(f"  Date filter {year}-{month:02d}: {len(filtered)}/{len(docs_df)} rows kept.")
-    return filtered
+_OUTPUT_COLUMNS = [
+    "task_completion_aggregate_id", "task_aggregate_id", "data_item_start",
+    "project_id", "country", "data_item_id", "data_item_plaintext_whisper",
+    "data_item_channel_name", "data_item_channel_title", "cluster_id", "cluster_text",
+]
 
 
 def _build_sentences_by_doc(
@@ -494,6 +529,15 @@ def _build_sentences_by_doc(
 
 
 # ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _label_hash(text: str) -> int:
+    """Stable 32-bit integer ID derived from label text (MD5, truncated)."""
+    return int(hashlib.md5(text.encode("utf-8")).hexdigest(), 16) % (2 ** 32)
+
+
+# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
@@ -512,15 +556,16 @@ async def run(
     merge_batch_size: int = 30,
     merge_max_rounds: int = 20,
     country: Optional[str] = "france",
-    filter_year: Optional[int] = 2025,
-    filter_month: Optional[int] = 7,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     date_column: str = DATE_COLUMN,
     max_concurrent: int = MAX_CONCURRENT,
+    provider: str = PROVIDER_MISTRAL,
 ) -> None:
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    client = _build_client()
+    client = _build_client(provider)
 
     # --- Load data ---
     if input_path:
@@ -530,17 +575,27 @@ async def run(
         id_col = None
     else:
         print(f"Loading texts from HuggingFace: {hf_dataset} ({hf_split})...")
-        extra = [date_column] if (filter_year is not None or filter_month is not None) else None
-        docs_df = load_from_hf(hf_dataset, hf_split, hf_text_column, country=country, extra_columns=extra)
+        # Load without country filter so the country column is retained in the output.
+        extra = list(dict.fromkeys([date_column] + _HF_EXTRA_COLS + ["country"]))
+        docs_df = load_from_hf(hf_dataset, hf_split, hf_text_column, country=None, extra_columns=extra)
+        if country is not None:
+            before = len(docs_df)
+            docs_df = docs_df[docs_df["country"].str.lower() == country.lower()].reset_index(drop=True)
+            print(f"  Country filter '{country}': {len(docs_df)}/{before} rows kept.")
         print(f"  {len(docs_df)} documents loaded.")
         id_col = HF_ID_COLUMN if HF_ID_COLUMN in docs_df.columns else None
 
     # --- Optional date filter ---
-    if not input_path and (filter_year is not None or filter_month is not None):
-        year = filter_year or pd.Timestamp.now().year
-        month = filter_month or pd.Timestamp.now().month
-        print(f"\nFiltering to {year}-{month:02d}...")
-        docs_df = _filter_by_month(docs_df, year=year, month=month, date_column=date_column)
+    if not input_path and (start_date is not None or end_date is not None):
+        dates = pd.to_datetime(docs_df[date_column], errors="coerce")
+        mask = pd.Series(True, index=docs_df.index)
+        if start_date is not None:
+            mask &= dates.dt.date >= start_date
+        if end_date is not None:
+            mask &= dates.dt.date <= end_date
+        before = len(docs_df)
+        docs_df = docs_df[mask].reset_index(drop=True)
+        print(f"  Date filter [{start_date} → {end_date}]: {len(docs_df)}/{before} rows kept.")
 
     # --- Split all transcripts into sentences, grouped by document ---
     print(f"Splitting transcripts into sentences (spaCy: {spacy_model}, "
@@ -551,7 +606,7 @@ async def run(
 
     # --- Step 1: token estimate, then generate labels ---
     print(f"\nStep 1: Estimating token usage for {len(sentences_by_doc)} transcripts...")
-    estimate_step1_tokens(sentences_by_doc)
+    estimate_step1_tokens(sentences_by_doc, provider=provider)
     print(f"\nStep 1: Generating narrative labels (max_concurrent={max_concurrent})...")
     generated_labels = await build_labels_from_transcripts(sentences_by_doc, client, max_concurrent)
 
@@ -568,20 +623,20 @@ async def run(
     # --- Step 2: merge similar labels, assign IDs ---
     if not skip_merge:
         print(f"\nStep 2: Estimating token usage for {len(all_labels)} labels...")
-        estimate_step2_tokens(all_labels, batch_size=merge_batch_size)
+        estimate_step2_tokens(all_labels, batch_size=merge_batch_size, provider=provider)
         print("\nStep 2: Merging semantically similar labels...")
         all_labels = await merge_labels(all_labels, client, batch_size=merge_batch_size, max_concurrent=max_concurrent, max_rounds=merge_max_rounds, log_path=out / "labels_merge_progress.json")
         print(f"  {len(all_labels)} labels after merging.")
 
-    label_to_id = {label: i for i, label in enumerate(all_labels)}
-    labels_data = [{"id": i, "label": label} for i, label in enumerate(all_labels)]
+    label_to_id = {label: _label_hash(label) for label in all_labels}
+    labels_data = [{"id": _label_hash(label), "label": label} for label in all_labels]
     labels_path = out / "labels.json"
     labels_path.write_text(json.dumps(labels_data, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"  Final labels with IDs saved to {labels_path}")
 
     # --- Step 3: classify all transcripts against final labels ---
     print(f"\nStep 3: Estimating token usage for {len(sentences_by_doc)} transcripts with {len(all_labels)} labels...")
-    estimate_step3_tokens(sentences_by_doc, all_labels)
+    estimate_step3_tokens(sentences_by_doc, all_labels, provider=provider)
     print(f"\nStep 3: Classifying {len(sentences_by_doc)} transcripts (max_concurrent={max_concurrent})...")
     doc_to_labels = await classify_all_transcripts(sentences_by_doc, all_labels, client, max_concurrent)
 
@@ -590,9 +645,22 @@ async def run(
         for label in matched_labels:
             label_id = label_to_id.get(label)
             if label_id is not None:
-                records.append({"doc_id": doc_id, "label": label, "label_id": label_id})
+                records.append({HF_ID_COLUMN: doc_id, "cluster_id": label_id, "cluster_text": label})
 
-    assignments_df = pd.DataFrame(records, columns=["doc_id", "label", "label_id"])
+    assignments_df = pd.DataFrame(records) if records else pd.DataFrame(columns=[HF_ID_COLUMN, "cluster_id", "cluster_text"])
+
+    # Join HF metadata columns for the final output CSV.
+    if id_col and not input_path and not assignments_df.empty:
+        meta_cols = [c for c in _OUTPUT_COLUMNS[:-2] if c in docs_df.columns and c != HF_ID_COLUMN]
+        meta_df = docs_df[[HF_ID_COLUMN] + meta_cols].drop_duplicates(subset=[HF_ID_COLUMN]).copy()
+        meta_df[HF_ID_COLUMN] = meta_df[HF_ID_COLUMN].astype(str)
+        assignments_df = assignments_df.merge(meta_df, on=HF_ID_COLUMN, how="left")
+
+    for col in _OUTPUT_COLUMNS:
+        if col not in assignments_df.columns:
+            assignments_df[col] = None
+    assignments_df = assignments_df[_OUTPUT_COLUMNS]
+
     assignments_path = out / "transcript_label_assignments.csv"
     assignments_df.to_csv(assignments_path, index=False)
     print(f"\nTranscript-label assignments saved to {assignments_path}")
@@ -601,23 +669,22 @@ async def run(
     print("\nStep 4: Computing mesinfo statistics per label...")
     if id_col and "mesinfo_correct" in docs_df.columns and "mesinfo_incorrect" in docs_df.columns:
         mesinfo_df = (
-            docs_df[[id_col, "mesinfo_correct", "mesinfo_incorrect"]]
+            docs_df[[HF_ID_COLUMN, "mesinfo_correct", "mesinfo_incorrect"]]
             .copy()
-            .assign(**{id_col: docs_df[id_col].astype(str)})
-            .rename(columns={id_col: "doc_id"})
+            .assign(**{HF_ID_COLUMN: docs_df[HF_ID_COLUMN].astype(str)})
         )
-        merged = assignments_df.merge(mesinfo_df, on="doc_id", how="left")
-        deduped = merged.drop_duplicates(subset=["doc_id", "label_id"])
+        merged = assignments_df.merge(mesinfo_df, on=HF_ID_COLUMN, how="left")
+        deduped = merged.drop_duplicates(subset=[HF_ID_COLUMN, "cluster_id"])
 
         stats = (
-            deduped.groupby(["label_id", "label"])
+            deduped.groupby(["cluster_id", "cluster_text"])
             .agg(
-                count=("doc_id", "count"),
+                count=(HF_ID_COLUMN, "count"),
                 sum_mesinfo_correct=("mesinfo_correct", lambda x: (x == 1).sum()),
                 sum_mesinfo_incorrect=("mesinfo_incorrect", lambda x: (x == 1).sum()),
             )
             .reset_index()
-            .sort_values("label_id")
+            .sort_values("cluster_id")
         )
 
         print("\n--- Label mesinfo statistics ---")
@@ -633,8 +700,8 @@ async def run(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=(
-            "LLM-based text clustering with Mistral Small — "
-            "transcript-level narrative matching (3-step pipeline)."
+            "LLM-based text clustering — transcript-level narrative matching (3-step pipeline). "
+            f"Supports providers: {PROVIDER_MISTRAL} (default), {PROVIDER_ANTHROPIC}."
         )
     )
     parser.add_argument(
@@ -661,8 +728,14 @@ if __name__ == "__main__":
     parser.add_argument("--window-size", type=int, default=3)
     parser.add_argument("--overlap-tokens", type=int, default=30)
     parser.add_argument(
+        "--provider",
+        choices=[PROVIDER_MISTRAL, PROVIDER_ANTHROPIC],
+        default=PROVIDER_MISTRAL,
+        help=f"LLM provider to use. Default: {PROVIDER_MISTRAL}.",
+    )
+    parser.add_argument(
         "--max-concurrent", type=int, default=MAX_CONCURRENT,
-        help=f"Max parallel Mistral requests for steps 1 and 3. Default: {MAX_CONCURRENT}",
+        help=f"Max parallel LLM requests for steps 1 and 3. Default: {MAX_CONCURRENT}",
     )
     parser.add_argument(
         "--initial-labels-file",
@@ -689,12 +762,12 @@ if __name__ == "__main__":
         help="Directory for output files. Default: ./bertopic_llm_output",
     )
     parser.add_argument(
-        "--filter-year", type=int, default=2025, metavar="YYYY",
-        help="Keep only records from this year. Default: 2025.",
+        "--start-date", default=None, metavar="YYYY-MM-DD",
+        help="Keep only records on or after this date (inclusive). Default: no lower bound.",
     )
     parser.add_argument(
-        "--filter-month", type=int, default=7, metavar="MM",
-        help="Keep only records from this month (1–12). Default: 7 (July).",
+        "--end-date", default=None, metavar="YYYY-MM-DD",
+        help="Keep only records on or before this date (inclusive). Default: no upper bound.",
     )
     parser.add_argument(
         "--date-column", default=DATE_COLUMN,
@@ -724,8 +797,9 @@ if __name__ == "__main__":
         merge_batch_size=args.merge_batch_size,
         merge_max_rounds=args.merge_max_rounds,
         country=args.country or None,
-        filter_year=args.filter_year,
-        filter_month=args.filter_month,
+        start_date=date.fromisoformat(args.start_date) if args.start_date else None,
+        end_date=date.fromisoformat(args.end_date) if args.end_date else None,
         date_column=args.date_column,
         max_concurrent=args.max_concurrent,
+        provider=args.provider,
     ))

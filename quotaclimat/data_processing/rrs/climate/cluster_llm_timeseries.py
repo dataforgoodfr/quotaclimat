@@ -1,34 +1,37 @@
 """
-Timeseries LLM clustering using Claude Haiku.
+Timeseries LLM clustering.
 
-Builds a label taxonomy from a warmup window, then classifies each subsequent
-day's transcripts against the evolving taxonomy. Docs that don't match any
-known label are flagged as 'other', used to discover new clusters at end of
-day, then reclassified against the updated taxonomy.
+Builds a label taxonomy from a one-week warmup window, then for every
+subsequent day uses a one-week sliding window to regenerate candidate
+clusters. New candidates are compared against the current taxonomy via
+sentence-embedding cosine similarity; only candidates that are sufficiently
+different (similarity below a configurable threshold) are added.
 
 Pipeline:
-  Warmup (first N days):
+  Warmup (first N days, default 7):
     1. Generate narrative labels (Step 1)
     2. Merge/deduplicate labels (Step 2)
     3. Classify warmup docs (Step 3)
 
-  Incremental days:
+  Incremental days (sliding-window approach):
     For each day:
-      3a. Classify with 'other' escape hatch (Step 3+other)
-      1b. Generate new labels from 'other' docs (Step 1)
-      2b. Merge new labels into taxonomy (Step 2)
-      3b. Reclassify 'other' docs against updated taxonomy (Step 3)
+      1b. Generate candidate labels from the past `sliding_window_days` days
+      2b. Merge candidates
+      3b. Filter candidates by embedding similarity to existing labels
+      4b. Add genuinely novel labels to taxonomy
+      5b. Classify today's docs against the updated taxonomy
 """
 
 import argparse
 import asyncio
 import json
-import re
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
 import pandas as pd
+from sentence_transformers import SentenceTransformer
 from tqdm.asyncio import tqdm
 
 from quotaclimat.data_processing.rrs.climate.cluster import (
@@ -42,8 +45,11 @@ from quotaclimat.data_processing.rrs.climate.cluster import (
 from quotaclimat.data_processing.rrs.climate.cluster_llm import (
     MAX_CONCURRENT,
     MODEL,
+    PROVIDER_MISTRAL,
+    PROVIDER_ANTHROPIC,
     SEED_LABELS,
     SYSTEM_PROMPT,
+    LLMBackend,
     _build_client,
     _build_sentences_by_doc,
     _parse_list_response,
@@ -52,173 +58,162 @@ from quotaclimat.data_processing.rrs.climate.cluster_llm import (
     classify_all_transcripts,
 )
 
-_MAX_MERGE_ATTEMPTS = 3
-
 DATE_COLUMN = "data_item_start"
 
-_OTHER_TOKEN = "other"
+_SLIDING_WINDOW_DAYS = 7
+_LOW_THRESHOLD = 0.40          # below → auto-keep (zone 1: different topic)
+_HIGH_THRESHOLD = 0.85         # above → auto-drop (zone 2: near-exact match)
+_TOP_K_CONTEXT = 10            # existing labels shown to LLM per ambiguous candidate
+_CANDIDATE_DEDUP_THRESHOLD = 0.85  # pairwise similarity above which candidates are considered redundant
+_EMBEDDING_MODEL = "dangvantuan/sentence-camembert-large"
 
 
-def _step3_other_prompt(sentences: list[str], label_list: list[str]) -> str:
+# ---------------------------------------------------------------------------
+# Candidate self-deduplication
+# ---------------------------------------------------------------------------
+
+def _deduplicate_candidates(
+    candidates: list[str],
+    model: SentenceTransformer,
+    threshold: float = _CANDIDATE_DEDUP_THRESHOLD,
+) -> list[str]:
+    """Greedily remove near-duplicate candidates by pairwise cosine similarity.
+
+    Iterates through the candidate list in order. A candidate is kept only if
+    its similarity to every already-kept candidate is below *threshold*. This
+    catches redundant labels that survive the LLM merge step because the
+    tournament stops once the list fits within a single batch.
+    """
+    if len(candidates) <= 1:
+        return candidates
+
+    embs = np.array(model.encode(candidates, normalize_embeddings=True, show_progress_bar=False))
+
+    kept_indices: list[int] = [0]
+    for i in range(1, len(candidates)):
+        kept_embs = embs[kept_indices]          # (n_kept, dim)
+        max_sim = (kept_embs @ embs[i]).max()   # scalar
+        if max_sim < threshold:
+            kept_indices.append(i)
+
+    result = [candidates[i] for i in kept_indices]
+    n_dropped = len(candidates) - len(result)
+    print(
+        f"  Candidate dedup (threshold={threshold:.2f}): "
+        f"{n_dropped} near-duplicates removed, {len(result)} kept."
+    )
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Hybrid embedding + LLM stance filter
+# ---------------------------------------------------------------------------
+
+def _zone3_prompt(candidate: str, close_existing: list[str]) -> str:
+    labels_block = "\n".join(f"  - {lb}" for lb in close_existing)
     return (
-        "Given the label list and the sentences, select all labels that describe "
-        "the concepts expressed in the sentences.\n"
-        "If none of the labels apply and the sentences contain a distinct new narrative, "
-        f'return ["{_OTHER_TOKEN}"] instead.\n'
-        f"Label list: {label_list}\n"
-        f"Sentences: {sentences}\n"
-        "Return ONLY a JSON array of matching label strings using double quotes. No code fences."
+        "You are an expert in French climate discourse analysis.\n"
+        "You are given a candidate label and a list of the most semantically close existing labels "
+        "from a taxonomy of French climate claims.\n\n"
+        f"Candidate label:\n  \"{candidate}\"\n\n"
+        f"Closest existing labels:\n{labels_block}\n\n"
+        "Decide whether the candidate expresses essentially the SAME claim as at least one of the "
+        "existing labels.\n"
+        "Reply with a single word, no punctuation:\n"
+        "  YES — the candidate is already covered by an existing label\n"
+        "  NO  — the candidate expresses a distinct claim\n"
     )
 
 
-async def _step3_other_call(
-    doc_id: str,
-    sentences: list[str],
-    label_list: list[str],
-    client,
+async def _zone3_llm_call(
+    candidate: str,
+    close_existing: list[str],
+    client: LLMBackend,
     semaphore: asyncio.Semaphore,
-) -> tuple[str, list[str], bool]:
-    """Returns (doc_id, matched_labels, is_other).
-
-    is_other=True means the doc expressed a new narrative not in label_list.
-    """
+) -> tuple[str, bool]:
+    """Returns (candidate, is_duplicate). Fails open (is_duplicate=False) on any error."""
     async with semaphore:
         try:
-            import anthropic as _anthropic
-            response = await client.messages.create(
-                model=MODEL,
-                max_tokens=512,
-                system=SYSTEM_PROMPT,
-                messages=[{"role": "user", "content": _step3_other_prompt(sentences, label_list)}],
+            raw = await client.chat(
+                [{"role": "user", "content": _zone3_prompt(candidate, close_existing)}],
+                max_tokens=10,
             )
-            raw = next(b.text for b in response.content if b.type == "text")
-            matched = _parse_list_response(raw)
-            label_lower = {lb.strip().lower(): lb for lb in label_list}
-            valid = [label_lower[m.strip().lower()] for m in matched if m.strip().lower() in label_lower]
-            is_other = any(m.strip().lower() == _OTHER_TOKEN for m in matched) and not valid
-            return doc_id, valid, is_other
+            is_duplicate = raw.strip().upper().startswith("YES")
+            return candidate, is_duplicate
         except Exception as exc:
-            print(f"  [warn] step3+other {doc_id} failed: {exc}")
-            return doc_id, [], False
+            print(f"  [warn] zone3 LLM call failed for '{candidate[:60]}': {exc}")
+            return candidate, False
 
 
-async def classify_with_other(
-    sentences_by_doc: dict,
-    label_list: list[str],
-    client,
+async def _filter_by_embedding_similarity_hybrid(
+    new_candidates: list[str],
+    existing_labels: list[str],
+    model: SentenceTransformer,
+    client: LLMBackend,
     max_concurrent: int = MAX_CONCURRENT,
-) -> tuple[dict, list[str]]:
-    """Classify docs; split into matched assignments and 'other' doc IDs.
-
-    Returns:
-        doc_to_labels: {doc_id: [matched labels]} for docs with known labels
-        other_doc_ids: list of doc_ids whose content matched nothing in label_list
-    """
-    semaphore = asyncio.Semaphore(max_concurrent)
-    results = await tqdm.gather(
-        *[
-            _step3_other_call(doc_id, sentences, label_list, client, semaphore)
-            for doc_id, sentences in sentences_by_doc.items()
-        ],
-        desc="Step 3+other — classifying",
-    )
-    doc_to_labels: dict[str, list[str]] = {}
-    other_doc_ids: list[str] = []
-    for doc_id, valid, is_other in results:
-        if is_other:
-            other_doc_ids.append(doc_id)
-        elif valid:
-            doc_to_labels[doc_id] = valid
-    return doc_to_labels, other_doc_ids
-
-
-# ---------------------------------------------------------------------------
-# Incremental merge — absorb new candidates into a fixed existing taxonomy
-# ---------------------------------------------------------------------------
-
-def _absorb_prompt(new_candidates: list[str], existing_labels: list[str], attempt: int) -> str:
-    urgency = (
-        "" if attempt == 1
-        else " Be more aggressive: if a candidate is even roughly similar to an existing label, map it."
-        if attempt == 2
-        else " This is the final attempt. Only mark a candidate as NEW if it is completely unrelated to every existing label."
-    )
-    return (
-        "You have a fixed taxonomy of existing French climate-discussion labels and a short list of new candidate labels.\n"
-        "For each new candidate, decide whether it expresses essentially the same claim as one of the existing labels.\n"
-        "- If yes: return the existing label it should map to (copy it verbatim).\n"
-        "- If no: return \"NEW\".\n"
-        f"{urgency}\n"
-        f"Existing labels: {existing_labels}\n"
-        f"New candidates: {new_candidates}\n"
-        "Return a JSON object mapping each new candidate string to either the matching existing label (verbatim) or \"NEW\".\n"
-        "Example: {\"candidate A\": \"existing label 3\", \"candidate B\": \"NEW\"}\n"
-        "No code fences."
-    )
-
-
-async def _try_absorb_call(
-    new_candidates: list[str],
-    existing_labels: list[str],
-    client,
-    attempt: int,
-) -> dict[str, str]:
-    """Single LLM call that maps each new candidate to an existing label or 'NEW'."""
-    try:
-        response = await client.messages.create(
-            model=MODEL,
-            max_tokens=1024,
-            system=SYSTEM_PROMPT,
-            messages=[{"role": "user", "content": _absorb_prompt(new_candidates, existing_labels, attempt)}],
-        )
-        raw = next(b.text for b in response.content if b.type == "text")
-        raw = re.sub(r"```(?:json|python)?\s*", "", raw).strip()
-        try:
-            mapping = json.loads(raw)
-        except json.JSONDecodeError:
-            print(f"  [warn] absorb attempt {attempt}: could not parse JSON — treating all as NEW.")
-            return {c: "NEW" for c in new_candidates}
-        return {c: str(mapping.get(c, "NEW")) for c in new_candidates}
-    except Exception as exc:
-        print(f"  [warn] absorb attempt {attempt} failed: {exc}")
-        return {c: "NEW" for c in new_candidates}
-
-
-async def absorb_new_into_existing(
-    new_candidates: list[str],
-    existing_labels: list[str],
-    client,
-    max_attempts: int = _MAX_MERGE_ATTEMPTS,
+    low_threshold: float = _LOW_THRESHOLD,
+    high_threshold: float = _HIGH_THRESHOLD,
+    top_k_context: int = _TOP_K_CONTEXT,
 ) -> list[str]:
-    """Try to match each new candidate to an existing label over up to *max_attempts* rounds.
+    """Three-zone hybrid filter combining embedding routing with LLM stance judgment.
 
-    Candidates that are successfully mapped to an existing label are discarded (already
-    represented). Candidates still unmatched after all attempts are returned as-is to be
-    appended to the taxonomy.
-
-    Returns the list of genuinely new labels to add.
+    Zone 1 (max_sim < low_threshold):  auto-keep  — different topic entirely
+    Zone 2 (max_sim > high_threshold):  auto-drop  — near-exact embedding match
+    Zone 3 (low_threshold ≤ max_sim ≤ high_threshold): LLM judgment — same topic,
+        but the LLM checks whether the claim direction/stance is already covered.
     """
-    existing_lower = {lb.strip().lower(): lb for lb in existing_labels}
-    pending = list(new_candidates)
+    if not new_candidates:
+        return []
+    if not existing_labels:
+        return new_candidates
 
-    for attempt in range(1, max_attempts + 1):
-        if not pending:
-            break
-        print(f"  Absorb attempt {attempt}/{max_attempts}: {len(pending)} candidate(s) remaining...")
-        mapping = await _try_absorb_call(pending, existing_labels, client, attempt)
-        still_new = []
-        for candidate, mapped in mapping.items():
-            if mapped.strip().lower() == "new" or mapped.strip().lower() not in existing_lower:
-                still_new.append(candidate)
-            else:
-                print(f"    ✓ '{candidate}' → '{mapped}'")
-        absorbed = len(pending) - len(still_new)
-        print(f"    {absorbed} absorbed, {len(still_new)} still NEW.")
-        pending = still_new
+    new_embs = model.encode(new_candidates, normalize_embeddings=True, show_progress_bar=False)
+    existing_embs = model.encode(existing_labels, normalize_embeddings=True, show_progress_bar=False)
+    sim_matrix = np.array(new_embs) @ np.array(existing_embs).T  # (n_new, n_existing)
+    max_sims = sim_matrix.max(axis=1)
 
-    if pending:
-        print(f"  {len(pending)} candidate(s) added as new labels after {max_attempts} attempts.")
-    return pending
+    zone1: list[str] = []
+    zone2: list[str] = []
+    zone3_candidates: list[str] = []
+    zone3_row_indices: list[int] = []
+
+    for i, (candidate, max_sim) in enumerate(zip(new_candidates, max_sims)):
+        if max_sim < low_threshold:
+            zone1.append(candidate)
+        elif max_sim > high_threshold:
+            zone2.append(candidate)
+        else:
+            zone3_candidates.append(candidate)
+            zone3_row_indices.append(i)
+
+    print(
+        f"  Hybrid filter: zone1 auto-keep={len(zone1)}, "
+        f"zone2 auto-drop={len(zone2)}, "
+        f"zone3 LLM={len(zone3_candidates)}"
+    )
+
+    zone3_kept: list[str] = []
+    if zone3_candidates:
+        semaphore = asyncio.Semaphore(max_concurrent)
+        tasks = []
+        for candidate, row_idx in zip(zone3_candidates, zone3_row_indices):
+            top_k_idx = np.argsort(sim_matrix[row_idx])[::-1][:top_k_context]
+            close_existing = [existing_labels[j] for j in top_k_idx]
+            tasks.append(_zone3_llm_call(candidate, close_existing, client, semaphore))
+
+        results = await tqdm.gather(*tasks, desc="Zone3 — LLM stance judgment")
+        for candidate, is_duplicate in results:
+            if not is_duplicate:
+                zone3_kept.append(candidate)
+
+        print(
+            f"  Zone3 LLM: {len(zone3_candidates) - len(zone3_kept)} dropped, "
+            f"{len(zone3_kept)} kept as distinct claims."
+        )
+
+    truly_new = zone1 + zone3_kept
+    print(f"  Hybrid filter total: {len(new_candidates) - len(truly_new)} dropped, {len(truly_new)} kept.")
+    return truly_new
 
 
 # ---------------------------------------------------------------------------
@@ -285,6 +280,17 @@ def _slice_by_date(docs_df: pd.DataFrame, target_date: date, date_column: str) -
     return docs_df[mask].reset_index(drop=True)
 
 
+def _slice_by_date_range(
+    docs_df: pd.DataFrame,
+    start: date,
+    end: date,
+    date_column: str,
+) -> pd.DataFrame:
+    dates = pd.to_datetime(docs_df[date_column], errors="coerce")
+    mask = (dates.dt.date >= start) & (dates.dt.date <= end)
+    return docs_df[mask].reset_index(drop=True)
+
+
 def _date_range(start: date, end: date):
     current = start
     while current <= end:
@@ -300,7 +306,7 @@ async def run(
     start_date: date,
     end_date: date,
     output_dir: str,
-    warmup_days: int = 7,
+    warmup_days: int = _SLIDING_WINDOW_DAYS,
     input_path: Optional[str] = None,
     text_column: str = "claim_text",
     hf_dataset: str = HF_DATASET,
@@ -316,21 +322,32 @@ async def run(
     country: Optional[str] = "france",
     date_column: str = DATE_COLUMN,
     max_concurrent: int = MAX_CONCURRENT,
-    max_merge_attempts: int = _MAX_MERGE_ATTEMPTS,
-    skip_absorb: bool = False,
+    sliding_window_days: int = _SLIDING_WINDOW_DAYS,
+    low_threshold: float = _LOW_THRESHOLD,
+    high_threshold: float = _HIGH_THRESHOLD,
+    top_k_context: int = _TOP_K_CONTEXT,
+    candidate_dedup_threshold: float = _CANDIDATE_DEDUP_THRESHOLD,
+    embedding_model: str = _EMBEDDING_MODEL,
     save_daily_labels: bool = False,
+    provider: str = PROVIDER_MISTRAL,
 ) -> None:
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
 
-    client = _build_client()
+    client = _build_client(provider)
 
     warmup_end = start_date + timedelta(days=warmup_days - 1)
     if warmup_end > end_date:
         warmup_end = end_date
-    print(f"Date range  : {start_date} → {end_date}")
-    print(f"Warmup      : {start_date} → {warmup_end} ({warmup_days} days)")
-    print(f"Incremental : {warmup_end + timedelta(days=1)} → {end_date}")
+    print(f"Date range      : {start_date} → {end_date}")
+    print(f"Warmup          : {start_date} → {warmup_end} ({warmup_days} days)")
+    print(f"Incremental     : {warmup_end + timedelta(days=1)} → {end_date}")
+    print(f"Sliding window  : {sliding_window_days} days")
+    print(f"Low threshold   : {low_threshold}  (auto-keep below)")
+    print(f"High threshold  : {high_threshold}  (auto-drop above)")
+    print(f"Top-K context   : {top_k_context}  (existing labels shown to LLM per zone-3 candidate)")
+    print(f"Candidate dedup : {candidate_dedup_threshold}  (pairwise self-dedup threshold)")
+    print(f"Embedding model : {embedding_model}")
 
     # --- Load all data ---
     if input_path:
@@ -358,16 +375,12 @@ async def run(
     docs_df = docs_df[mask].reset_index(drop=True)
     print(f"  {len(docs_df)} documents in [{start_date}, {end_date}].")
 
-    # --- Shared column lists ---
+    # --- Output paths ---
     assignments_cols = ["doc_id", "label", "label_id", "date"]
-    other_cols = ["doc_id", "date"]
     assignments_path = out / "transcript_label_assignments.csv"
-    other_path = out / "other_docs.csv"
     evolution_path = out / "label_evolution.json"
 
-    # Remove stale output files so we don't append to old runs
-    for p in [assignments_path, other_path]:
-        p.unlink(missing_ok=True)
+    assignments_path.unlink(missing_ok=True)
 
     # =========================================================================
     # Phase 1 — Warmup
@@ -406,9 +419,7 @@ async def run(
         print(f"  {len(all_labels)} labels after merging.")
 
     label_to_id = _save_labels(out, all_labels)
-    known_labels: set[str] = set(all_labels)
 
-    # Record all warmup labels in evolution (first_seen = warmup_end)
     evolution: list[dict] = [
         {"label": label, "label_id": i, "first_seen_date": warmup_end.isoformat()}
         for i, label in enumerate(all_labels)
@@ -420,103 +431,119 @@ async def run(
             (out / "labels.json").read_text(encoding="utf-8"), encoding="utf-8"
         )
 
-    # Step 3 (warmup — no "other" option)
+    # Step 3 (warmup — classify all warmup docs)
     print("\nWarmup Step 3: Classifying warmup transcripts...")
     warmup_assignments = await classify_all_transcripts(
         warmup_sentences, all_labels, client, max_concurrent
     )
-    # Flatten warmup assignments — use warmup_end as the "date" for all warmup docs
     warmup_records = _assignments_to_records(warmup_assignments, label_to_id, day=warmup_end)
     _append_csv(assignments_path, warmup_records, assignments_cols)
     print(f"  {len(warmup_records)} warmup assignment rows saved.")
 
     # =========================================================================
-    # Phase 2 — Incremental days
+    # Phase 2 — Incremental days (sliding-window cluster discovery)
     # =========================================================================
     incremental_start = warmup_end + timedelta(days=1)
     if incremental_start > end_date:
         print("\nNo incremental days — entire range is within warmup window.")
     else:
+        print(f"\nLoading embedding model '{embedding_model}'...")
+        embed_model = SentenceTransformer(embedding_model)
+
         for current_day in _date_range(incremental_start, end_date):
             print(f"\n{'='*60}")
             print(f"DAY: {current_day.isoformat()}")
             print(f"{'='*60}")
 
+            # Today's documents for classification
             day_df = _slice_by_date(docs_df, current_day, date_column)
             if day_df.empty:
-                print("  No documents for this day — skipping.")
+                print("  No documents for today — skipping.")
                 continue
+            print(f"  {len(day_df)} documents today.")
 
-            print(f"  {len(day_df)} documents.")
+            # --- Sliding window: past `sliding_window_days` days including today ---
+            window_start = current_day - timedelta(days=sliding_window_days - 1)
+            window_df = _slice_by_date_range(docs_df, window_start, current_day, date_column)
+            print(f"  Sliding window [{window_start} → {current_day}]: {len(window_df)} documents.")
+
+            window_sentences = _build_sentences_by_doc(
+                window_df, hf_text_column, id_col, spacy_model, window_size, overlap_tokens
+            )
+            if not window_sentences:
+                print("  No sentence chunks in window — skipping cluster discovery.")
+            else:
+                # Step 1b — generate candidate labels from the sliding window
+                print(f"\n  Step 1b: Generating candidate labels from {len(window_sentences)} window docs...")
+                new_candidates = await build_labels_from_transcripts(
+                    window_sentences, client, max_concurrent
+                )
+                # Drop exact name matches to existing labels
+                known_lower = {lb.strip().lower() for lb in all_labels}
+                new_candidates = [l for l in new_candidates if l.strip().lower() not in known_lower]
+                print(f"  → {len(new_candidates)} novel-name candidates after exact-match filter.")
+
+                # Step 2b — merge candidates among themselves
+                if new_candidates and not skip_merge:
+                    print(f"\n  Step 2b: Merging {len(new_candidates)} candidates...")
+                    new_candidates = await merge_labels(
+                        new_candidates, client,
+                        batch_size=merge_batch_size,
+                        max_concurrent=max_concurrent,
+                        max_rounds=merge_max_rounds,
+                        log_path=out / "labels_merge_progress.json",
+                    )
+                    # Re-apply exact-match filter after merging
+                    new_candidates = [l for l in new_candidates if l.strip().lower() not in known_lower]
+                    print(f"  → {len(new_candidates)} candidates after merge.")
+
+                # Step 2c — pairwise self-dedup among candidates
+                # Catches redundant labels that survive the LLM merge because
+                # the tournament stops once the list fits in a single batch.
+                if len(new_candidates) > 1:
+                    new_candidates = _deduplicate_candidates(
+                        new_candidates, embed_model, candidate_dedup_threshold
+                    )
+
+                # Step 3b — hybrid embedding + LLM stance filter
+                if new_candidates:
+                    truly_new = await _filter_by_embedding_similarity_hybrid(
+                        new_candidates,
+                        all_labels,
+                        embed_model,
+                        client,
+                        max_concurrent=max_concurrent,
+                        low_threshold=low_threshold,
+                        high_threshold=high_threshold,
+                        top_k_context=top_k_context,
+                    )
+
+                    if truly_new:
+                        all_labels = list(all_labels) + truly_new
+                        label_to_id = _save_labels(out, all_labels)
+                        evolution = _update_evolution(
+                            evolution, truly_new, {e["label"] for e in evolution},
+                            label_to_id, current_day.isoformat()
+                        )
+                        evolution_path.write_text(
+                            json.dumps(evolution, ensure_ascii=False, indent=2), encoding="utf-8"
+                        )
+                        print(f"  {len(truly_new)} new label(s) added to taxonomy (total: {len(all_labels)}).")
+                    else:
+                        print("  No genuinely new labels found for today.")
+
+            # Step 4b — classify today's docs against the (possibly updated) taxonomy
             day_sentences = _build_sentences_by_doc(
                 day_df, hf_text_column, id_col, spacy_model, window_size, overlap_tokens
             )
-            if not day_sentences:
-                print("  No sentence chunks produced — skipping.")
-                continue
-
-            # Step 3a — classify with "other" escape hatch
-            print(f"  Classifying {len(day_sentences)} docs against {len(all_labels)} labels...")
-            doc_to_labels, other_ids = await classify_with_other(
-                day_sentences, all_labels, client, max_concurrent
-            )
-            print(f"  → {len(doc_to_labels)} matched, {len(other_ids)} 'other'")
-
-            # Append matched assignments
-            day_records = _assignments_to_records(doc_to_labels, label_to_id, day=current_day)
-            _append_csv(assignments_path, day_records, assignments_cols)
-
-            # Log "other" doc IDs
-            if other_ids:
-                other_records = [{"doc_id": d, "date": current_day.isoformat()} for d in other_ids]
-                _append_csv(other_path, other_records, other_cols)
-
-                # Step 1b — generate new labels from "other" docs
-                other_sentences = {d: day_sentences[d] for d in other_ids if d in day_sentences}
-                print(f"\n  Step 1b: Generating labels from {len(other_sentences)} 'other' docs...")
-                new_candidates = await build_labels_from_transcripts(
-                    other_sentences, client, max_concurrent
+            if day_sentences:
+                print(f"\n  Step 4b: Classifying {len(day_sentences)} docs against {len(all_labels)} labels...")
+                day_assignments = await classify_all_transcripts(
+                    day_sentences, all_labels, client, max_concurrent
                 )
-                # Only keep truly new candidates
-                new_candidates = [l for l in new_candidates if l.strip().lower() not in {lb.strip().lower() for lb in all_labels}]
-                print(f"  → {len(new_candidates)} new candidate labels.")
-
-                if new_candidates:
-                    # Step 2b — try to absorb new candidates into the fixed existing taxonomy.
-                    # The existing label list is never reduced; only genuinely unmatched
-                    # candidates (after max_merge_attempts tries) are appended.
-                    if not skip_merge and not skip_absorb:
-                        print(f"\n  Step 2b: Trying to absorb {len(new_candidates)} candidate(s) into {len(all_labels)} existing labels...")
-                        truly_new = await absorb_new_into_existing(
-                            new_candidates, all_labels, client, max_attempts=max_merge_attempts
-                        )
-                    else:
-                        truly_new = new_candidates
-
-                    all_labels = list(all_labels) + truly_new
-                    label_to_id = _save_labels(out, all_labels)
-                    known_labels = set(all_labels)
-
-                    # Update evolution with new labels
-                    evolution = _update_evolution(
-                        evolution, truly_new, {e["label"] for e in evolution},
-                        label_to_id, current_day.isoformat()
-                    )
-                    evolution_path.write_text(
-                        json.dumps(evolution, ensure_ascii=False, indent=2), encoding="utf-8"
-                    )
-                    print(f"  {len(truly_new)} new label(s) added to taxonomy.")
-
-                    # Step 3b — reclassify "other" docs with updated taxonomy
-                    print(f"  Step 3b: Reclassifying {len(other_sentences)} 'other' docs...")
-                    reclassified = await classify_all_transcripts(
-                        other_sentences, all_labels, client, max_concurrent
-                    )
-                    reclassified_records = _assignments_to_records(
-                        reclassified, label_to_id, day=current_day
-                    )
-                    _append_csv(assignments_path, reclassified_records, assignments_cols)
-                    print(f"  → {len(reclassified_records)} reclassified assignment rows saved.")
+                day_records = _assignments_to_records(day_assignments, label_to_id, day=current_day)
+                _append_csv(assignments_path, day_records, assignments_cols)
+                print(f"  → {len(day_records)} assignment rows saved.")
 
             if save_daily_labels:
                 (out / f"labels_{current_day.isoformat()}.json").write_text(
@@ -525,11 +552,9 @@ async def run(
 
     print(f"\n{'='*60}")
     print("DONE")
-    print(f"  labels.json            : {out / 'labels.json'}")
-    print(f"  label_evolution.json   : {evolution_path}")
-    print(f"  assignments CSV        : {assignments_path}")
-    if other_path.exists():
-        print(f"  other_docs.csv         : {other_path}")
+    print(f"  labels.json          : {out / 'labels.json'}")
+    print(f"  label_evolution.json : {evolution_path}")
+    print(f"  assignments CSV      : {assignments_path}")
     print(f"{'='*60}")
 
 
@@ -544,15 +569,41 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description=(
-            "Timeseries LLM clustering — warmup taxonomy + daily incremental updates."
+            "Timeseries LLM clustering — one-week warmup + sliding-window incremental updates "
+            "with embedding-based novelty filtering."
         )
     )
     parser.add_argument("--start-date", required=True, metavar="YYYY-MM-DD",
                         help="Start of the date range (inclusive).")
     parser.add_argument("--end-date", required=True, metavar="YYYY-MM-DD",
                         help="End of the date range (inclusive).")
-    parser.add_argument("--warmup-days", type=int, default=7,
-                        help="Number of days used for the warmup phase. Default: 7.")
+    parser.add_argument("--warmup-days", type=int, default=_SLIDING_WINDOW_DAYS,
+                        help=f"Number of days used for the warmup phase. Default: {_SLIDING_WINDOW_DAYS}.")
+    parser.add_argument("--sliding-window-days", type=int, default=_SLIDING_WINDOW_DAYS,
+                        help=f"Sliding window size (days) for incremental cluster discovery. Default: {_SLIDING_WINDOW_DAYS}.")
+    parser.add_argument("--low-threshold", type=float, default=_LOW_THRESHOLD,
+                        help=(
+                            f"Embedding similarity below which a candidate is auto-kept (zone 1: "
+                            f"different topic). Default: {_LOW_THRESHOLD}."
+                        ))
+    parser.add_argument("--high-threshold", type=float, default=_HIGH_THRESHOLD,
+                        help=(
+                            f"Embedding similarity above which a candidate is auto-dropped (zone 2: "
+                            f"near-exact match). Default: {_HIGH_THRESHOLD}."
+                        ))
+    parser.add_argument("--top-k-context", type=int, default=_TOP_K_CONTEXT,
+                        help=(
+                            f"Number of closest existing labels shown to the LLM per zone-3 candidate. "
+                            f"Default: {_TOP_K_CONTEXT}."
+                        ))
+    parser.add_argument("--candidate-dedup-threshold", type=float, default=_CANDIDATE_DEDUP_THRESHOLD,
+                        help=(
+                            f"Pairwise cosine similarity above which two candidates are considered "
+                            f"redundant — the later one is dropped. Applied after Step 2b merge. "
+                            f"Default: {_CANDIDATE_DEDUP_THRESHOLD}."
+                        ))
+    parser.add_argument("--embedding-model", default=_EMBEDDING_MODEL,
+                        help=f"SentenceTransformer model for similarity filtering. Default: {_EMBEDDING_MODEL}.")
     parser.add_argument("--output-dir", default="./timeseries_output",
                         help="Directory for output files. Default: ./timeseries_output.")
     parser.add_argument("--input",
@@ -572,8 +623,12 @@ if __name__ == "__main__":
     parser.add_argument("--spacy-model", default="fr_core_news_sm")
     parser.add_argument("--window-size", type=int, default=3)
     parser.add_argument("--overlap-tokens", type=int, default=30)
+    parser.add_argument("--provider",
+                        choices=[PROVIDER_MISTRAL, PROVIDER_ANTHROPIC],
+                        default=PROVIDER_MISTRAL,
+                        help=f"LLM provider to use. Default: {PROVIDER_MISTRAL}.")
     parser.add_argument("--max-concurrent", type=int, default=MAX_CONCURRENT,
-                        help=f"Max parallel Anthropic requests. Default: {MAX_CONCURRENT}.")
+                        help=f"Max parallel LLM requests. Default: {MAX_CONCURRENT}.")
     parser.add_argument("--initial-labels-file",
                         help="Path to a JSON list of seed labels. Overrides built-in SEED_LABELS.")
     parser.add_argument("--no-seeds", action="store_true",
@@ -581,20 +636,9 @@ if __name__ == "__main__":
     parser.add_argument("--skip-merge", action="store_true",
                         help="Skip the label-merging step.")
     parser.add_argument("--merge-batch-size", type=int, default=10,
-                        help="Number of labels per merge call. Default: 30.")
+                        help="Number of labels per merge call. Default: 10.")
     parser.add_argument("--merge-max-rounds", type=int, default=10,
-                        help="Maximum hierarchical merge rounds. Default: 20.")
-    parser.add_argument(
-        "--no-absorb", action="store_true",
-        help="Skip the absorption step — all new candidates are added to the taxonomy as-is.",
-    )
-    parser.add_argument(
-        "--max-merge-attempts", type=int, default=_MAX_MERGE_ATTEMPTS,
-        help=(
-            "Max attempts to absorb a new candidate into the existing taxonomy "
-            f"before adding it as a new label. Default: {_MAX_MERGE_ATTEMPTS}."
-        ),
-    )
+                        help="Maximum hierarchical merge rounds. Default: 10.")
     parser.add_argument("--save-daily-labels", action="store_true",
                         help="Save a per-day labels_<date>.json snapshot.")
 
@@ -627,7 +671,12 @@ if __name__ == "__main__":
         country=args.country or None,
         date_column=args.date_column,
         max_concurrent=args.max_concurrent,
-        max_merge_attempts=args.max_merge_attempts,
-        skip_absorb=args.no_absorb,
+        sliding_window_days=args.sliding_window_days,
+        low_threshold=args.low_threshold,
+        high_threshold=args.high_threshold,
+        top_k_context=args.top_k_context,
+        candidate_dedup_threshold=args.candidate_dedup_threshold,
+        embedding_model=args.embedding_model,
         save_daily_labels=args.save_daily_labels,
+        provider=args.provider,
     ))

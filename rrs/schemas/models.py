@@ -18,16 +18,20 @@ class Subject(RRSBase):
     segments = relationship("Segment", back_populates="subject")
     cases = relationship("Case", back_populates="subject")
     clusters = relationship("Cluster", back_populates="subject")
+    dictionary_entries = relationship("DictionaryEntry", back_populates="subject")
 
 
 class DictionaryEntry(RRSBase):
     __tablename__ = "dictionary"
 
     keyword_id = Column(String, primary_key=True)
+    subject_id = Column(String, ForeignKey("subjects.subject_id"), nullable=True)
     keyword = Column(String, nullable=True)
     high_risk_false_positive = Column(Boolean, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')"))
     updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
+
+    subject = relationship("Subject", back_populates="dictionary_entries")
 
 
 class Segment(RRSBase):

@@ -22,7 +22,7 @@ from sqlalchemy.orm import sessionmaker
 
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from rrs.dictionary.subjects import subjects
-from rrs.scripts.upsert_subjects import subject_id as make_subject_id
+from rrs.dictionary.upsert_subjects import subject_id as make_subject_id
 from rrs.schemas.models import DictionaryEntry
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -59,6 +59,8 @@ def extract_rows(subject_id: str) -> list[dict]:
     for entries in THEME_KEYWORDS.values():
         for entry in entries:
             kw = entry["keyword"]
+            if entry.get("language") != "french":
+                continue
             if kw in seen:
                 continue
             seen.add(kw)

@@ -39,7 +39,7 @@ jobs:
         run: poetry run alembic -c rrs/alembic.ini upgrade head
 
       - name: Upsert subjects
-        run: poetry run python -m rrs.scripts.upsert_subjects
+        run: poetry run python -m rrs.dictionary.upsert_subjects
 
       - name: Upsert dictionary
         run: poetry run python -m rrs.dictionary.upsert_dictionary

@@ -2,6 +2,9 @@ name: tests
 
 on:
   push:
+    paths-ignore:
+      - 'rrs/**'
+      - '.github/workflows/rrs.yaml'
 
 env:
   PYTHON_VERSION: '3.12'

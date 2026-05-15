@@ -25,11 +25,11 @@ services:
       dockerfile: rrs/Dockerfile
     entrypoint: ["alembic", "-c", "rrs/alembic.ini", "upgrade", "head"]
     environment:
-      PG_USER: user
-      PG_DATABASE: rrs_db
-      PG_PASSWORD: password
-      PG_HOST: rrs_db
-      PG_PORT: 5432
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
     depends_on:
       rrs_db:
         condition: service_healthy
@@ -41,11 +41,11 @@ services:
     entrypoint: ["sleep", "12000"]
     environment:
       PYTHONPATH: /app
-      PG_USER: user
-      PG_DATABASE: rrs_db
-      PG_PASSWORD: password
-      PG_HOST: rrs_db
-      PG_PORT: 5432
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
     volumes:
       - ../rrs/:/app/rrs/
     tty: true

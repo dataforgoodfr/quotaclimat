@@ -1,0 +1,58 @@
+name: RRS Migrations
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - 'rrs/**'
+      - '.github/workflows/rrs.yaml'
+  push:
+    branches: [main]
+    paths:
+      - 'rrs/**'
+      - '.github/workflows/rrs.yaml'
+
+jobs:
+  migrate-test:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    environment: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python & Poetry
+        uses: ./.github/actions/setup
+        with:
+          python-version: '3.12'
+          poetry-version: '2.1.3'
+
+      - name: Run RRS Alembic migrations (test)
+        run: poetry run alembic -c rrs/alembic.ini upgrade head
+        env:
+          RRS_PG_HOST: ${{ secrets.RRS_PG_HOST }}
+          RRS_PG_PORT: ${{ secrets.RRS_PG_PORT }}
+          RRS_PG_DATABASE: ${{ secrets.RRS_PG_DATABASE }}
+          RRS_PG_USER: ${{ secrets.RRS_PG_USER }}
+          RRS_PG_PASSWORD: ${{ secrets.RRS_PG_PASSWORD }}
+
+  migrate-prod:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python & Poetry
+        uses: ./.github/actions/setup
+        with:
+          python-version: '3.12'
+          poetry-version: '2.1.3'
+
+      - name: Run RRS Alembic migrations (production)
+        run: poetry run alembic -c rrs/alembic.ini upgrade head
+        env:
+          RRS_PG_HOST: ${{ secrets.RRS_PG_HOST }}
+          RRS_PG_PORT: ${{ secrets.RRS_PG_PORT }}
+          RRS_PG_DATABASE: ${{ secrets.RRS_PG_DATABASE }}
+          RRS_PG_USER: ${{ secrets.RRS_PG_USER }}
+          RRS_PG_PASSWORD: ${{ secrets.RRS_PG_PASSWORD }}

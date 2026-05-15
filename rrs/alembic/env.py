@@ -44,11 +44,11 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     url_tokens = {
-        "PG_USER": os.getenv("PG_USER", "user"),
-        "PG_DATABASE": os.getenv("PG_DATABASE", "postgres"),
-        "PG_PASSWORD": os.getenv("PG_PASSWORD", "supersecret"),
-        "PG_HOST": os.getenv("PG_HOST", "localhost"),
-        "PG_PORT": os.getenv("PG_PORT", "5432"),
+        "RRS_PG_USER": os.getenv("RRS_PG_USER", "user"),
+        "RRS_PG_DATABASE": os.getenv("RRS_PG_DATABASE", "rrs_db"),
+        "RRS_PG_PASSWORD": os.getenv("RRS_PG_PASSWORD", "password"),
+        "RRS_PG_HOST": os.getenv("RRS_PG_HOST", "localhost"),
+        "RRS_PG_PORT": os.getenv("RRS_PG_PORT", "5432"),
     }
 
     url = config.get_main_option("sqlalchemy.url")

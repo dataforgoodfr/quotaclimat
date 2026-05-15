@@ -9,7 +9,7 @@ import duckdb
 # Module-level connection so relations stay valid across calls in interactive sessions.
 _con = duckdb.connect()
 
-from quotaclimat.data_processing.rrs.insecurity.dictionary import (
+from rrs.insecurity.dictionary import (
     correlate_with,
     keywords,
 )

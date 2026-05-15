@@ -9,7 +9,7 @@ import duckdb
 # Module-level connection so relations stay valid across calls in interactive sessions.
 _con = duckdb.connect()
 
-from rrs.insecurity.dictionary import (
+from rrs.dictionary.dictionary import (
     correlate_with,
     keywords,
 )

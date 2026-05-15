@@ -42,6 +42,8 @@ class Segment(RRSBase):
     s3_uri = Column(String, nullable=True)
     n_keywords = Column(Integer, nullable=True)
     start = Column(DateTime(timezone=True), nullable=True)
+    channel_name = Column(String, nullable=True)
+    channel_title = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=text("(now() at time zone 'utc')"))
     updated_at = Column(DateTime(), default=datetime.now, onupdate=text("now() at time zone 'Europe/Paris'"), nullable=True)
 

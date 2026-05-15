@@ -85,7 +85,10 @@ def load_from_hf(
     from datasets import load_dataset, concatenate_datasets  # optional dep; imported lazily
 
     token = _get_hf_token()
-    if split == "both":
+    if split == "db":
+        from quotaclimat.data_processing.rrs.climate.get_data import get_data_from_db
+        ds = get_data_from_db()
+    elif split == "both":
         ds = concatenate_datasets([
             load_dataset(dataset_name, split="train", token=token),
             load_dataset(dataset_name, split="test", token=token),

@@ -104,21 +104,21 @@ The first N days (default 7) are processed exactly like `cluster_llm.py`: Step 1
 
 ---
 
-### Incremental days
+### Incremental days (sliding-window approach)
 
 For each day after the warmup window:
 
-**Step 3a — Classify with "other" escape hatch**
+**Steps 1b + 2b — Generate candidates from sliding window**
 
-Each transcript is classified against the current label list. The prompt includes an extra option: if none of the existing labels apply and the transcript expresses a distinct new narrative, the model returns `["other"]` instead.
+All documents from the past `--sliding-window-days` days (including today) are collected. Steps 1 and 2 run on this window to produce a fresh set of merged candidate labels. Any candidate whose name is already in the taxonomy is dropped immediately.
 
-**Step 1b + 2b — Discover new clusters**
+**Step 3b — Embedding-based novelty filter**
 
-All "other" docs are collected at end of day. Step 1 runs on them to generate candidate labels for the new narratives. Step 2b then tries to absorb each candidate into the **fixed** existing taxonomy (up to `--max-merge-attempts` rounds, default 3), with progressively stronger prompting on each retry. A candidate that maps to an existing label is discarded; one that remains unmatched after all attempts is appended as a genuinely new label. The existing taxonomy is never reduced or restructured during this step.
+Each surviving candidate is embedded with a SentenceTransformer model (`paraphrase-multilingual-MiniLM-L12-v2` by default). Cosine similarity is computed between every candidate and every existing label. Candidates whose maximum similarity to any existing label exceeds `--similarity-threshold` (default `0.85`) are dropped as redundant. The rest are appended to the taxonomy as genuinely new labels.
 
-**Step 3b — Reclassify**
+**Step 4b — Classify today's docs**
 
-The "other" docs are re-classified against the updated taxonomy so they receive proper labels rather than being left unassigned.
+Today's documents are classified against the updated taxonomy.
 
 ---
 
@@ -135,7 +135,6 @@ Every label is recorded in `label_evolution.json` with the date it first entered
 | `labels.json` | Current label list with integer IDs (updated each time new clusters are found) |
 | `labels_YYYY-MM-DD.json` | Per-day label snapshot (optional, `--save-daily-labels`) |
 | `transcript_label_assignments.csv` | One row per (transcript, label) assignment with a `date` column |
-| `other_docs.csv` | Doc IDs flagged as "other" before reclassification (for audit) |
 | `label_evolution.json` | `[{label, label_id, first_seen_date}]` — full history of when each label entered the taxonomy |
 
 ---
@@ -146,6 +145,8 @@ Every label is recorded in `label_evolution.json` with the date it first entered
 python -m quotaclimat.data_processing.rrs.climate.cluster_llm_timeseries \
   --start-date 2025-07-01 --end-date 2025-07-31 \
   --warmup-days 7 \
+  --sliding-window-days 7 \
+  --similarity-threshold 0.85 \
   --output-dir ./timeseries_output \
   --max-concurrent 3
 ```
@@ -157,7 +158,9 @@ python -m quotaclimat.data_processing.rrs.climate.cluster_llm_timeseries \
 | `--start-date` | required | Start of the date range (`YYYY-MM-DD`) |
 | `--end-date` | required | End of the date range (`YYYY-MM-DD`) |
 | `--warmup-days` | `7` | Days used for the warmup phase |
-| `--max-merge-attempts` | `3` | Rounds to try absorbing a new candidate into existing labels before adding it as-is |
+| `--sliding-window-days` | `7` | Size of the sliding window for incremental cluster discovery |
+| `--similarity-threshold` | `0.85` | Cosine similarity above which a candidate is considered redundant and dropped |
+| `--embedding-model` | `paraphrase-multilingual-MiniLM-L12-v2` | SentenceTransformer model for novelty filtering |
 | `--save-daily-labels` | off | Save a `labels_<date>.json` snapshot after each day |
 
 All other flags from `cluster_llm.py` are supported: `--merge-batch-size`, `--max-concurrent`, `--window-size`, `--overlap-tokens`, `--no-seeds`, `--initial-labels-file`, `--skip-merge`, `--country`, `--input`, etc.

@@ -19,6 +19,8 @@ from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normal
 from quotaclimat.utils.logger import getLogger
 
 LEADING_NOISE = {"le", "la", "les", "l", "de", "du", "des", "st", "saint"}
+DICT_FUZZY_THRESHOLD = 92
+DICT_MAX_LENGTH_DIFF = 2
 
 
 def _ad_type_entry(prediction: list[dict] | None) -> dict:
@@ -30,19 +32,26 @@ def _ad_type_entry(prediction: list[dict] | None) -> dict:
     return {}
 
 
-def _select_rows(engine) -> pd.DataFrame:
-    """All rows where we have an LLM brand but no canonical yet"""
+def _select_rows(engine, recanonicalize_existing: bool = False) -> pd.DataFrame:
+    """Rows with an LLM brand to canonicalise.
+
+    By default, only process rows that do not have a canonical brand yet.
+    recanonicalize_existing=True to rerun if changes to merge rules.
+    """
     Session = sessionmaker(bind=engine)
     with Session() as session:
-        rows = session.execute(
-            select(Ad.id, Ad.prediction, Ad.predicted_sector)
-            .where(Ad.predicted_brand.is_(None))
-            .where(Ad.prediction_status.isnot(None))
-        ).all()
+        stmt = select(
+            Ad.id, Ad.prediction, Ad.predicted_sector, Ad.predicted_brand
+        ).where(
+            Ad.prediction_status.isnot(None)
+        )
+        if not recanonicalize_existing:
+            stmt = stmt.where(Ad.predicted_brand.is_(None))
+        rows = session.execute(stmt).all()
     out = []
-    for ad_id, prediction, sector in rows:
+    for ad_id, prediction, sector, predicted_brand in rows:
         ad_type = _ad_type_entry(prediction)
-        brand = ad_type.get("brand_name")
+        brand = predicted_brand if recanonicalize_existing else ad_type.get("brand_name")
         if not brand:
             continue
         out.append(
@@ -78,12 +87,22 @@ def build_canonical_map(
 ) -> dict[str, str]:
     dict_lookup = dict_lookup or {}
     freq = df["brand_clean"].value_counts().to_dict()
+    brand_keys = df["brand_clean"].map(nospace)
+    group_freq = (
+        df.assign(_brand_key=brand_keys)
+        .groupby("_brand_key")["brand_clean"]
+        .agg(lambda values: sum(freq.get(value, 0) for value in values.unique()))
+        .to_dict()
+    )
     sector_map = (
-        df.groupby("brand_clean")["sector"].agg(lambda s: set(s.dropna())).to_dict()
+        df.assign(_brand_key=brand_keys)
+        .groupby("_brand_key")["sector"]
+        .agg(lambda s: set(s.dropna()))
+        .to_dict()
     )
 
-    def shares_sector(a: str, b: str) -> bool:
-        return bool(sector_map.get(a, set()) & sector_map.get(b, set()))
+    def shares_sector(a_key: str, b_key: str) -> bool:
+        return bool(sector_map.get(a_key, set()) & sector_map.get(b_key, set()))
 
     def pick_readable(variants: list[str]) -> str:
         """among spacing variants of the same brand, pick the best display form"""
@@ -96,29 +115,48 @@ def build_canonical_map(
             ),
         )
 
+    def dict_display_for_key(key: str) -> str | None:
+        if key in dict_lookup:
+            return dict_lookup[key]
+
+        matches = [
+            (fuzz.ratio(key, dict_key), abs(len(key) - len(dict_key)), dict_key)
+            for dict_key in dict_lookup
+            if abs(len(key) - len(dict_key)) <= DICT_MAX_LENGTH_DIFF
+        ]
+        if not matches:
+            return None
+
+        score, _length_diff, dict_key = max(matches)
+        if score >= DICT_FUZZY_THRESHOLD:
+            return dict_lookup[dict_key]
+        return None
+
     nospace_groups: dict[str, list[str]] = defaultdict(list)
     for clean in df["brand_clean"].unique():
         nospace_groups[nospace(clean)].append(clean)
 
     nospace_to_readable = {
-        ns: dict_lookup.get(ns) or pick_readable(vs)
+        ns: dict_display_for_key(ns) or pick_readable(vs)
         for ns, vs in nospace_groups.items()
     }
 
     keys_by_freq = sorted(
         nospace_to_readable,
-        key=lambda k: -freq.get(nospace_to_readable[k], 0),
+        key=lambda k: (
+            dict_display_for_key(k) is None,  # prefer dictionary spellings
+            -group_freq.get(k, 0),
+        ),
     )
     canonical_of: dict[str, str] = {}
     for key in keys_by_freq:
-        readable = nospace_to_readable[key]
         threshold = short_threshold if len(key) <= short_len else fuzzy_threshold
         match = next(
             (
                 ck
                 for ck in set(canonical_of.values())
                 if fuzz.ratio(key, ck) >= threshold
-                and shares_sector(readable, nospace_to_readable[ck])
+                and shares_sector(key, ck)
             ),
             None,
         )
@@ -150,10 +188,11 @@ def _flush(session_factory, rows: list[dict], batch_size: int) -> None:
 def run(
     audit_path: str = "data/brand_merges.csv",
     batch_size: int = 1000,
+    recanonicalize_existing: bool = False,
 ) -> dict[str, int]:
     engine = connect_to_db(use_custom_json_serializer=True)
     session_factory = sessionmaker(bind=engine)
-    df = _select_rows(engine)
+    df = _select_rows(engine, recanonicalize_existing=recanonicalize_existing)
     if df.empty:
         logging.info("[canonicalise_brand] nothing to process")
         engine.dispose()
@@ -197,4 +236,5 @@ if __name__ == "__main__":
     run(
         audit_path=os.environ.get("AUDIT_PATH", "data/brand_merges.csv"),
         batch_size=int(os.environ.get("BATCH_SIZE", 1000)),
+        recanonicalize_existing=os.environ.get("RECANONICALIZE_EXISTING", "0") == "1",
     )

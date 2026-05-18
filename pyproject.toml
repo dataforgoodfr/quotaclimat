@@ -1,6 +1,6 @@
 [project]
 name = "quotaclimat"
-version = "2.1.57"
+version = "2.1.58"
 description = ""
 authors = [
     {name = "Rambier Estelle", "email"="estelle.rambier@hotmail.fr"},
@@ -64,7 +64,6 @@ scikit-learn = "^1.8.0"
 pyahocorasick = "^2.3.0"
 spacy = "^3.8.11"
 openai = "^2.33.0"
-qwen-asr = "^0.0.6"
 pydantic-settings = "^2.14.0"
 [build-system]
 requires = ["poetry-core>=1.1"]

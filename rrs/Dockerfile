@@ -9,7 +9,7 @@ ENV VIRTUAL_ENV=/app/.venv \
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
-RUN pip install poetry==2.1.3 && poetry install --no-root --without dev
+RUN pip install poetry==2.1.3 && poetry install --no-root --without dev --with rrs
 
 FROM python:3.12.10-slim AS runtime
 

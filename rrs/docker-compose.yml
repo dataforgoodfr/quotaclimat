@@ -58,6 +58,27 @@ services:
       rrs_db:
         condition: service_healthy
 
+  import_cases:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.keyword_detection.import_cases"]
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+      POSTGRES_HOST: ${POSTGRES_HOST:-localhost}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-barometre}
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    depends_on:
+      rrs_db:
+        condition: service_healthy
+
   console:
     build:
       context: ../

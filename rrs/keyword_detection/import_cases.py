@@ -92,7 +92,8 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
             data_item_id,
             data_item_start,
             data_item_model_result,
-            data_item_model_reason
+            data_item_model_reason,
+            data_item_plaintext_whisper
         FROM barometre.analytics.task_global_completion
         WHERE country = 'france'
         {date_filter}
@@ -111,16 +112,17 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
     df["start"] = df["data_item_start"]
     df["model_score"] = df["data_item_model_result"]
     df["model_reason"] = df["data_item_model_reason"]
+    df["text"] = df["data_item_plaintext_whisper"]
 
-    cases = df[["case_id", "segment_id", "subject_id", "start", "model_score", "model_reason"]]
+    cases = df[["case_id", "segment_id", "subject_id", "start", "model_score", "model_reason", "text"]]
 
     con.register("cases_batch", cases)
     with _masked_db_errors():
         con.execute(f"ATTACH '{rrs_dsn()}' AS rrs (TYPE POSTGRES);")
 
     con.execute("""
-        INSERT INTO rrs.cases (case_id, segment_id, subject_id, start, model_score, model_reason, created_at, updated_at)
-        SELECT case_id, segment_id, subject_id, start, model_score, model_reason, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
+        INSERT INTO rrs.cases (case_id, segment_id, subject_id, start, model_score, model_reason, text, created_at, updated_at)
+        SELECT case_id, segment_id, subject_id, start, model_score, model_reason, text, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
         FROM cases_batch
         ON CONFLICT (case_id) DO UPDATE SET
             segment_id   = EXCLUDED.segment_id,
@@ -128,6 +130,7 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
             start        = EXCLUDED.start,
             model_score  = EXCLUDED.model_score,
             model_reason = EXCLUDED.model_reason,
+            text         = EXCLUDED.text,
             created_at   = CASE WHEN cases.created_at IS NULL THEN now() AT TIME ZONE 'utc' ELSE cases.created_at END,
             updated_at   = now() AT TIME ZONE 'utc'
     """)

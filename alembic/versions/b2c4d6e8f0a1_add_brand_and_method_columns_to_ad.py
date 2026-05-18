@@ -1,7 +1,7 @@
 """Add predicted_brand, prediction_method to ad
 
 Revision ID: b2c4d6e8f0a1
-Revises: 901a1e430bf5
+Revises: 7b1b6e4566fb
 Create Date: 2026-05-04
 
 """
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "b2c4d6e8f0a1"
-down_revision: Union[str, None] = "901a1e430bf5"
+down_revision: Union[str, None] = "7b1b6e4566fb"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

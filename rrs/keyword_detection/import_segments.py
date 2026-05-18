@@ -11,9 +11,12 @@ Usage:
 """
 
 import argparse
+import contextlib
 import logging
 import os
+import re
 from datetime import date
+from urllib.parse import quote
 
 import duckdb
 from dotenv import load_dotenv
@@ -32,8 +35,23 @@ REGION = "fr-par"
 SUBJECT_NAME = "climate"
 
 
+_DSN_PASSWORD_RE = re.compile(r"(postgresql://[^:]+:)[^@]+(@)")
+
+
+def _redact_dsn(msg: str) -> str:
+    return _DSN_PASSWORD_RE.sub(r"\1***\2", msg)
+
+
+@contextlib.contextmanager
+def _masked_db_errors():
+    try:
+        yield
+    except Exception as exc:
+        raise type(exc)(_redact_dsn(str(exc))) from None
+
+
 def _dsn(host, port, db, user, password) -> str:
-    return f"postgresql://{user}:{password}@{host}:{port}/{db}"
+    return f"postgresql://{quote(user, safe='')}:{quote(password, safe='')}@{host}:{port}/{db}"
 
 
 def source_dsn() -> str:
@@ -72,7 +90,8 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
 
     con = duckdb.connect()
     con.execute("INSTALL postgres; LOAD postgres;")
-    con.execute(f"ATTACH '{source_dsn()}' AS qc (TYPE POSTGRES, READ_ONLY);")
+    with _masked_db_errors():
+        con.execute(f"ATTACH '{source_dsn()}' AS barometre (TYPE POSTGRES, READ_ONLY);")
 
     date_filter = ""
     params = {}
@@ -92,11 +111,12 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
             channel_name,
             channel_title,
             number_of_keywords_climat
-        FROM qc.keywords
+        FROM barometre.keywords
         WHERE number_of_keywords_climat > 0
+        AND country='france'
         {date_filter}
         """,
-        list(params.values()) if params else [],
+        params if params else {},
     ).df()
 
     logging.info(f"  {len(df)} row(s) fetched.")
@@ -104,7 +124,7 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
         logging.info("Nothing to upsert.")
         return
 
-    df["segment_id"] = df["id"].apply(get_consistent_hash)
+    df["segment_id"] = df["id"]
     df["subject_id"] = sid
     df["s3_uri"] = df.apply(lambda r: _s3_uri(r["start"], r["channel_name"]), axis=1)
     df["n_keywords"] = df["number_of_keywords_climat"]
@@ -112,11 +132,12 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
     segments = df[["segment_id", "subject_id", "start", "s3_uri", "n_keywords", "channel_name", "channel_title"]]
 
     con.register("segments_batch", segments)
-    con.execute(f"ATTACH '{rrs_dsn()}' AS rrs (TYPE POSTGRES);")
+    with _masked_db_errors():
+        con.execute(f"ATTACH '{rrs_dsn()}' AS rrs (TYPE POSTGRES);")
 
     con.execute("""
-        INSERT INTO rrs.segments (segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title)
-        SELECT segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title
+        INSERT INTO rrs.segments (segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title, created_at, updated_at)
+        SELECT segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
         FROM segments_batch
         ON CONFLICT (segment_id) DO UPDATE SET
             subject_id    = EXCLUDED.subject_id,
@@ -124,7 +145,9 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
             s3_uri        = EXCLUDED.s3_uri,
             n_keywords    = EXCLUDED.n_keywords,
             channel_name  = EXCLUDED.channel_name,
-            channel_title = EXCLUDED.channel_title
+            channel_title = EXCLUDED.channel_title,
+            created_at    = CASE WHEN segments.created_at IS NULL THEN now() AT TIME ZONE 'utc' ELSE segments.created_at END,
+            updated_at    = now() AT TIME ZONE 'utc'
     """)
 
     logging.info(f"  {len(segments)} segment(s) upserted (subject: {SUBJECT_NAME!r}).")

@@ -25,24 +25,26 @@ Pipeline:
 import argparse
 import asyncio
 import json
+import os
+from abc import ABC, abstractmethod
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import pandas as pd
+from dotenv import load_dotenv
 from sentence_transformers import SentenceTransformer
 from tqdm.asyncio import tqdm
 
-from quotaclimat.data_processing.rrs.climate.cluster import (
-    HF_DATASET,
-    HF_ID_COLUMN,
-    HF_TEXT_COLUMN,
+from rrs.clustering.cluster import (
+    ID_COLUMN,
+    TEXT_COLUMN,
     load_claims,
-    load_from_hf,
+    load_from_db,
     split_sentences,
 )
-from quotaclimat.data_processing.rrs.climate.cluster_llm import (
+from rrs.clustering.cluster_llm import (
     MAX_CONCURRENT,
     MODEL,
     PROVIDER_MISTRAL,
@@ -58,7 +60,7 @@ from quotaclimat.data_processing.rrs.climate.cluster_llm import (
     classify_all_transcripts,
 )
 
-DATE_COLUMN = "data_item_start"
+DATE_COLUMN = "start"
 
 _SLIDING_WINDOW_DAYS = 7
 _LOW_THRESHOLD = 0.40          # below → auto-keep (zone 1: different topic)
@@ -66,6 +68,94 @@ _HIGH_THRESHOLD = 0.85         # above → auto-drop (zone 2: near-exact match)
 _TOP_K_CONTEXT = 10            # existing labels shown to LLM per ambiguous candidate
 _CANDIDATE_DEDUP_THRESHOLD = 0.85  # pairwise similarity above which candidates are considered redundant
 _EMBEDDING_MODEL = "dangvantuan/sentence-camembert-large"
+_MISTRAL_EMBED_MODEL = "mistral-embed"
+_MISTRAL_EMBED_BATCH_SIZE = 64
+_MISTRAL_EMBED_PRICING_PER_M = 0.10  # USD per million input tokens — verify at mistral.ai/technology/
+
+EMBEDDING_BACKEND_ST = "sentence-transformer"
+EMBEDDING_BACKEND_MISTRAL = "mistral"
+
+
+# ---------------------------------------------------------------------------
+# Embedding backend abstraction
+# ---------------------------------------------------------------------------
+
+class EmbeddingBackend(ABC):
+    """Common interface for embedding backends, matching SentenceTransformer.encode()."""
+
+    @abstractmethod
+    def encode(
+        self,
+        texts: list[str],
+        normalize_embeddings: bool = True,
+        show_progress_bar: bool = False,
+    ) -> np.ndarray:
+        ...
+
+    def total_cost(self) -> float:
+        """Return accumulated cost in USD. Local backends always return 0."""
+        return 0.0
+
+
+class SentenceTransformerBackend(EmbeddingBackend):
+    def __init__(self, model_name: str = _EMBEDDING_MODEL):
+        self._model = SentenceTransformer(model_name)
+
+    def encode(
+        self,
+        texts: list[str],
+        normalize_embeddings: bool = True,
+        show_progress_bar: bool = False,
+    ) -> np.ndarray:
+        return np.array(
+            self._model.encode(texts, normalize_embeddings=normalize_embeddings, show_progress_bar=show_progress_bar)
+        )
+
+
+class MistralEmbeddingBackend(EmbeddingBackend):
+    """Calls mistral-embed via the Mistral API in batches, returns L2-normalised embeddings."""
+
+    def __init__(self, api_key: str, model: str = _MISTRAL_EMBED_MODEL, batch_size: int = _MISTRAL_EMBED_BATCH_SIZE):
+        from mistralai import Mistral
+        self._client = Mistral(api_key=api_key)
+        self._model = model
+        self._batch_size = batch_size
+        self._input_tokens: int = 0
+
+    def encode(
+        self,
+        texts: list[str],
+        normalize_embeddings: bool = True,
+        show_progress_bar: bool = False,
+    ) -> np.ndarray:
+        all_embs: list[list[float]] = []
+        for i in range(0, len(texts), self._batch_size):
+            batch = texts[i:i + self._batch_size]
+            response = self._client.embeddings.create(model=self._model, inputs=batch)
+            if response.usage:
+                self._input_tokens += response.usage.prompt_tokens or 0
+            all_embs.extend(item.embedding for item in response.data)
+        embs = np.array(all_embs, dtype=np.float32)
+        if normalize_embeddings:
+            norms = np.linalg.norm(embs, axis=1, keepdims=True)
+            embs = embs / np.where(norms == 0, 1, norms)
+        return embs
+
+    def total_cost(self) -> float:
+        return (self._input_tokens / 1_000_000) * _MISTRAL_EMBED_PRICING_PER_M
+
+
+def build_embedding_backend(
+    backend: str = EMBEDDING_BACKEND_ST,
+    model_name: str = _EMBEDDING_MODEL,
+    mistral_api_key: Optional[str] = None,
+) -> EmbeddingBackend:
+    """Instantiate the requested embedding backend."""
+    if backend == EMBEDDING_BACKEND_MISTRAL:
+        if not mistral_api_key:
+            raise EnvironmentError("MISTRAL_API_KEY must be set to use the mistral embedding backend.")
+        return MistralEmbeddingBackend(api_key=mistral_api_key)
+    return SentenceTransformerBackend(model_name)
 
 
 # ---------------------------------------------------------------------------
@@ -74,7 +164,7 @@ _EMBEDDING_MODEL = "dangvantuan/sentence-camembert-large"
 
 def _deduplicate_candidates(
     candidates: list[str],
-    model: SentenceTransformer,
+    model: EmbeddingBackend,
     threshold: float = _CANDIDATE_DEDUP_THRESHOLD,
 ) -> list[str]:
     """Greedily remove near-duplicate candidates by pairwise cosine similarity.
@@ -148,7 +238,7 @@ async def _zone3_llm_call(
 async def _filter_by_embedding_similarity_hybrid(
     new_candidates: list[str],
     existing_labels: list[str],
-    model: SentenceTransformer,
+    model: EmbeddingBackend,
     client: LLMBackend,
     max_concurrent: int = MAX_CONCURRENT,
     low_threshold: float = _LOW_THRESHOLD,
@@ -309,9 +399,6 @@ async def run(
     warmup_days: int = _SLIDING_WINDOW_DAYS,
     input_path: Optional[str] = None,
     text_column: str = "claim_text",
-    hf_dataset: str = HF_DATASET,
-    hf_split: str = "train",
-    hf_text_column: str = HF_TEXT_COLUMN,
     spacy_model: str = "fr_core_news_sm",
     window_size: int = 1,
     overlap_tokens: int = 0,
@@ -319,7 +406,6 @@ async def run(
     skip_merge: bool = False,
     merge_batch_size: int = 30,
     merge_max_rounds: int = 20,
-    country: Optional[str] = "france",
     date_column: str = DATE_COLUMN,
     max_concurrent: int = MAX_CONCURRENT,
     sliding_window_days: int = _SLIDING_WINDOW_DAYS,
@@ -353,20 +439,16 @@ async def run(
     if input_path:
         print(f"\nLoading claims from {input_path}...")
         raw_texts = load_claims(input_path, text_column)
-        docs_df = pd.DataFrame({hf_text_column: raw_texts})
+        docs_df = pd.DataFrame({TEXT_COLUMN: raw_texts})
         id_col = None
         if date_column not in docs_df.columns:
             raise ValueError(
                 f"Local file must contain a '{date_column}' column for timeseries mode."
             )
     else:
-        print(f"\nLoading from HuggingFace: {hf_dataset} ({hf_split})...")
-        docs_df = load_from_hf(
-            hf_dataset, hf_split, hf_text_column,
-            country=country,
-            extra_columns=[date_column],
-        )
-        id_col = HF_ID_COLUMN if HF_ID_COLUMN in docs_df.columns else None
+        print("\nLoading from database...")
+        docs_df = load_from_db()
+        id_col = ID_COLUMN if ID_COLUMN in docs_df.columns else None
         print(f"  {len(docs_df)} documents loaded.")
 
     # Filter to requested date range
@@ -394,7 +476,7 @@ async def run(
     print(f"  {len(warmup_df)} warmup documents.")
 
     warmup_sentences = _build_sentences_by_doc(
-        warmup_df, hf_text_column, id_col, spacy_model, window_size, overlap_tokens
+        warmup_df, id_col, spacy_model, window_size, overlap_tokens
     )
 
     # Step 1
@@ -468,7 +550,7 @@ async def run(
             print(f"  Sliding window [{window_start} → {current_day}]: {len(window_df)} documents.")
 
             window_sentences = _build_sentences_by_doc(
-                window_df, hf_text_column, id_col, spacy_model, window_size, overlap_tokens
+                window_df, id_col, spacy_model, window_size, overlap_tokens
             )
             if not window_sentences:
                 print("  No sentence chunks in window — skipping cluster discovery.")
@@ -534,7 +616,7 @@ async def run(
 
             # Step 4b — classify today's docs against the (possibly updated) taxonomy
             day_sentences = _build_sentences_by_doc(
-                day_df, hf_text_column, id_col, spacy_model, window_size, overlap_tokens
+                day_df, id_col, spacy_model, window_size, overlap_tokens
             )
             if day_sentences:
                 print(f"\n  Step 4b: Classifying {len(day_sentences)} docs against {len(all_labels)} labels...")
@@ -563,8 +645,6 @@ async def run(
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import os
-    from dotenv import load_dotenv
     load_dotenv()
 
     parser = argparse.ArgumentParser(
@@ -608,16 +688,9 @@ if __name__ == "__main__":
                         help="Directory for output files. Default: ./timeseries_output.")
     parser.add_argument("--input",
                         help="Path to a local claims file (.json or .csv). "
-                             "If omitted, loads from HuggingFace.")
+                             "If omitted, loads from the database.")
     parser.add_argument("--text-column", default="claim_text",
                         help="Column/key for claim text in a local file. Default: claim_text.")
-    parser.add_argument("--hf-dataset", default=HF_DATASET)
-    parser.add_argument("--hf-split", default="train")
-    parser.add_argument("--hf-text-column", default=HF_TEXT_COLUMN,
-                        help=f"Text field in the HF dataset. Default: {HF_TEXT_COLUMN}.")
-    parser.add_argument("--country", default="france",
-                        help="Filter dataset to this country. Default: france. "
-                             "Pass empty string to load all countries.")
     parser.add_argument("--date-column", default=DATE_COLUMN,
                         help=f"Dataset column that holds the date. Default: {DATE_COLUMN}.")
     parser.add_argument("--spacy-model", default="fr_core_news_sm")
@@ -658,9 +731,6 @@ if __name__ == "__main__":
         output_dir=args.output_dir,
         input_path=args.input,
         text_column=args.text_column,
-        hf_dataset=args.hf_dataset,
-        hf_split=args.hf_split,
-        hf_text_column=args.hf_text_column,
         spacy_model=args.spacy_model,
         window_size=args.window_size,
         overlap_tokens=args.overlap_tokens,
@@ -668,7 +738,6 @@ if __name__ == "__main__":
         skip_merge=args.skip_merge,
         merge_batch_size=args.merge_batch_size,
         merge_max_rounds=args.merge_max_rounds,
-        country=args.country or None,
         date_column=args.date_column,
         max_concurrent=args.max_concurrent,
         sliding_window_days=args.sliding_window_days,

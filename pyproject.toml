@@ -95,12 +95,17 @@ optional = true
 bertopic = ">=0.16"
 umap-learn = ">=0.5"
 hdbscan = ">=0.8"
-sentence-transformers = ">=3.0"
 datasets = ">=2.18"
 sentencepiece = ">=0.2"
 mistralai = ">=1.0"
 anthropic = "^0.102.0"
 psycopg = {version = ">=3.0", extras = ["binary"]}
+
+[tool.poetry.group.rrs-transformers]
+optional = true
+
+[tool.poetry.group.rrs-transformers.dependencies]
+sentence-transformers = ">=3.0"
 
 [tool.pytest_env]
 CLEAN_CACHE_ON_EXIT=true

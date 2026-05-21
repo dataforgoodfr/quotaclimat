@@ -39,7 +39,7 @@ def get_engine():
     user = os.getenv("RRS_PG_USER", "user")
     password = os.getenv("RRS_PG_PASSWORD", "password")
     return create_engine(
-        f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+        f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
     )
 
 

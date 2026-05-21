@@ -23,5 +23,6 @@ COPY --from=builder ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 
 COPY pyproject.toml poetry.lock ./
 COPY rrs/ ./rrs/
+COPY quotaclimat/ ./quotaclimat/
 
 CMD ["python", "-c", "import rrs; print('rrs ready')"]

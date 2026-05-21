@@ -34,6 +34,38 @@ services:
       rrs_db:
         condition: service_healthy
 
+  upsert_subjects:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.dictionary.upsert_subjects"]
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  upsert_dictionary:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.dictionary.upsert_dictionary"]
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+    depends_on:
+      upsert_subjects:
+        condition: service_completed_successfully
+
   import_segments:
     build:
       context: ../
@@ -75,6 +107,46 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-barometre}
       POSTGRES_USER: ${POSTGRES_USER:-user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    depends_on:
+      rrs_db:
+        condition: service_healthy
+
+  clustering:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint:
+      - sh
+      - -c
+      - |
+        exec python -m rrs.clustering.cluster_llm_v2 \
+          ${START_DATE:+--start-date $START_DATE} \
+          ${END_DATE:+--end-date $END_DATE} \
+          ${PROVIDER:+--provider $PROVIDER} \
+          ${TARGET_CLUSTERS:+--target-clusters $TARGET_CLUSTERS} \
+          ${EXPIRY_DAYS:+--expiry-days $EXPIRY_DAYS} \
+          ${EMBEDDING_BACKEND:+--embedding-backend $EMBEDDING_BACKEND} \
+          --output-dir /app/output \
+          "$@"
+      - --
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      # Clustering parameters — all optional, omit to use defaults
+      # START_DATE: "2025-01-01"
+      # END_DATE: "2025-01-31"
+      # PROVIDER: mistral          # mistral | anthropic
+      # TARGET_CLUSTERS: 20
+      # EXPIRY_DAYS: 30
+      # EMBEDDING_BACKEND: mistral # sentence-transformer | mistral
+    volumes:
+      - ./clustering_output:/app/output
     depends_on:
       rrs_db:
         condition: service_healthy

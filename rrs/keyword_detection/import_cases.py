@@ -190,11 +190,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--start-date",
         metavar="YYYY-MM-DD",
+        default=os.getenv("START_DATE"),
         help="Import rows with data_item_start >= this date.",
     )
     parser.add_argument(
         "--end-date",
         metavar="YYYY-MM-DD",
+        default=os.getenv("END_DATE"),
         help="Import rows with data_item_start < this date.",
     )
     args = parser.parse_args()

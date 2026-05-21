@@ -30,13 +30,7 @@ _MISTRAL_EMBED_PRICING_PER_M = (
     0.10  # USD per million input tokens — verify at mistral.ai/technology/
 )
 
-
 MAX_CONCURRENT = 1
-
-
-# ---------------------------------------------------------------------------
-# Embedding backend abstraction
-# ---------------------------------------------------------------------------
 
 
 class EmbeddingBackend(ABC):
@@ -163,8 +157,3 @@ class LLMBackend:
             f"  Rates       : ${p['input']}/M input, ${p['output']}/M output\n"
             f"  Total cost  : ${cost:.4f}"
         )
-
-
-# ---------------------------------------------------------------------------
-# Candidate self-deduplication
-# ---------------------------------------------------------------------------

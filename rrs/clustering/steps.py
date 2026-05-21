@@ -278,11 +278,6 @@ async def merge_labels(
     return labels
 
 
-# ---------------------------------------------------------------------------
-# Step 3 — classify transcripts against final labels (async)
-# ---------------------------------------------------------------------------
-
-
 async def _step3_call(
     doc_id: str,
     sentences: list[str],
@@ -326,11 +321,6 @@ async def classify_all_transcripts(
         desc=f"Step 3 — classifying [{client.provider}]",
     )
     return dict(results)
-
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 
 
 def _build_sentences_by_doc(

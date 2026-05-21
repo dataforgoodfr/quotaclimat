@@ -115,20 +115,7 @@ services:
     build:
       context: ../
       dockerfile: rrs/Dockerfile
-    entrypoint:
-      - sh
-      - -c
-      - |
-        exec python -m rrs.clustering.cluster_llm_v2 \
-          ${START_DATE:+--start-date $START_DATE} \
-          ${END_DATE:+--end-date $END_DATE} \
-          ${PROVIDER:+--provider $PROVIDER} \
-          ${TARGET_CLUSTERS:+--target-clusters $TARGET_CLUSTERS} \
-          ${EXPIRY_DAYS:+--expiry-days $EXPIRY_DAYS} \
-          ${EMBEDDING_BACKEND:+--embedding-backend $EMBEDDING_BACKEND} \
-          --output-dir /app/output \
-          "$@"
-      - --
+    entrypoint: ["python", "-m", "rrs.clustering.main"]
     environment:
       PYTHONPATH: /app
       RRS_PG_USER: ${RRS_PG_USER:-user}
@@ -158,8 +145,8 @@ services:
       EMBEDDING_MODEL: "dangvantuan/sentence-camembert-large" # ignored if backend == mistral
       EXPIRY_DAYS: 30
       OUTPUT_DIR: /app/output
-      START_DATE: 2026-04-01
-      END_DATE: 2026-05-01
+      START_DATE: "2026-03-01"
+      END_DATE: "2026-03-05"
     volumes:
       - ./clustering_output:/app/output
     depends_on:

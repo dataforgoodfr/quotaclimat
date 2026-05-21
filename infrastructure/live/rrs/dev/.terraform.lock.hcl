@@ -5,7 +5,19 @@ provider "registry.opentofu.org/scaleway/scaleway" {
   version     = "2.75.0"
   constraints = "~> 2.57"
   hashes = [
+    "h1:2e6u1yEX+teAsH3ai1w54PrEM1nvfNc4c0ytgcGwJY0=",
+    "h1:DKnifeE+j5kk/58AuUuj+vvHGv/5HYWHNEZZEOs2CLY=",
+    "h1:DXl2VrNZZKUcx3QTOtMfdNAVKF+rO9Q2zNSf130IKf4=",
+    "h1:MOKOd/tZncsh5/O7GLxLCCvoxEC+LblAKPEwduEWGY4=",
+    "h1:OKw0ydjf54o1n57J/ZBbLw7gPXrXR9zekpOfn9xJJxM=",
+    "h1:U38INE6iJolePPWVnx/jAIdtyroBYvfzBgQyjuhJOY8=",
+    "h1:WfYNsYqm36F39ZZcWqKjaXPPAigfWvFV+TdjG8rwFc0=",
+    "h1:ZlYnO4voKZZmr85c40FPge18ZjmoJZ7f2Sy5vxqpOIE=",
+    "h1:g6CzjEh9hRvbgbt+jm5Jmz4j+UdUEq7md/fugNno3Wo=",
     "h1:k9SfjZLDyy+1uk3GEaEsQZt3r6+zNW+dGcrNicIuUtA=",
+    "h1:mdFTZ8c2M5v5iKLIhuIWMEbZWzSh6kEu2M9dJ+zc5YI=",
+    "h1:wjdKvqynHsar/6uGQeOvozuBJdf/q4Lt7H4cieDuBWg=",
+    "h1:xQ5VKl4CJVclRYmHis/GJ+9RpRNUcsRlggRB4TSZRyE=",
     "zh:000eb75f83e651b76d46b201dde6c6129070b2cfa0c2a7ba63644d8386cfb737",
     "zh:003fb8aabb69ec995b2f5f8f60aa78eac9dd4eddb4c3c91de99765070291a6a3",
     "zh:1e2d23bcf64ba0604e4b9c2a2ea5a0c9e07ce6f65b7e2b124412cdcc36417003",

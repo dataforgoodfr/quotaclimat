@@ -1,3 +1,14 @@
+resource "scaleway_secret" "rrs_job_password" {
+  name       = "rrs-job-password-${var.environment}"
+  project_id = scaleway_account_project.project.id
+  region     = "fr-par"
+}
+
+resource "scaleway_secret_version" "rrs_job_password" {
+  secret_id = scaleway_secret.rrs_job_password.id
+  data      = var.postgres_job_password
+}
+
 resource "scaleway_secret" "mistral_api_key" {
   name       = "rrs-mistral-api-key-${var.environment}"
   project_id = scaleway_account_project.project.id
@@ -31,24 +42,3 @@ resource "scaleway_secret_version" "barometre_rrs_read_password" {
   data      = var.barometre_rrs_read_password
 }
 
-resource "scaleway_secret" "bucket" {
-  name       = "rrs-bucket-access-key-${var.environment}"
-  project_id = scaleway_account_project.project.id
-  region     = "fr-par"
-}
-
-resource "scaleway_secret_version" "bucket" {
-  secret_id = scaleway_secret.bucket.id
-  data      = var.bucket
-}
-
-resource "scaleway_secret" "bucket_secret" {
-  name       = "rrs-bucket-secret-key-${var.environment}"
-  project_id = scaleway_account_project.project.id
-  region     = "fr-par"
-}
-
-resource "scaleway_secret_version" "bucket_secret" {
-  secret_id = scaleway_secret.bucket_secret.id
-  data      = var.bucket_secret
-}

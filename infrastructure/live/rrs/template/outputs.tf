@@ -4,25 +4,25 @@ output "registry_endpoint" {
 }
 
 output "rdb_endpoint_ip" {
-  value       = scaleway_rdb_instance.rrs_rdb.endpoint_ip
+  value       = scaleway_rdb_instance.rrs_rdb.load_balancer[0].ip
   description = "Public endpoint IP of the RDB instance."
 }
 
 output "rdb_endpoint_port" {
-  value       = scaleway_rdb_instance.rrs_rdb.endpoint_port
+  value       = scaleway_rdb_instance.rrs_rdb.load_balancer[0].port
   description = "Public endpoint port of the RDB instance."
 }
 
 output "job_clustering_id" {
-  value = scaleway_serverless_job.rrs_clustering.id
+  value = scaleway_job_definition.rrs_clustering.id
 }
 
 output "job_import_segments_id" {
-  value = scaleway_serverless_job.rrs_import_segments.id
+  value = scaleway_job_definition.rrs_import_segments.id
 }
 
 output "job_import_claims_id" {
-  value = scaleway_serverless_job.rrs_import_cases.id
+  value = scaleway_job_definition.rrs_import_cases.id
 }
 
 output "ci_access_key" {

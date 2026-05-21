@@ -19,9 +19,8 @@ from urllib.parse import quote
 
 import duckdb
 from dotenv import load_dotenv
-
-from rrs.utils.generate_id import get_consistent_hash
 from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
+from rrs.utils.generate_id import get_consistent_hash
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
@@ -97,7 +96,7 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
             data_item_plaintext_whisper
         FROM barometre.analytics.task_global_completion
         WHERE country = 'france'
-        AND data_item_channel in ({', '.join([f'\'{c}\'' for c in FRANCE.channels])})
+        AND data_item_channel in ({", ".join([f"'{c}'" for c in FRANCE.channels])})
         {date_filter}
         """,
         params if params else {},
@@ -116,7 +115,17 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
     df["model_reason"] = df["data_item_model_reason"]
     df["text"] = df["data_item_plaintext_whisper"]
 
-    cases = df[["case_id", "segment_id", "subject_id", "start", "model_score", "model_reason", "text"]]
+    cases = df[
+        [
+            "case_id",
+            "segment_id",
+            "subject_id",
+            "start",
+            "model_score",
+            "model_reason",
+            "text",
+        ]
+    ]
 
     con.register("cases_batch", cases)
     with _masked_db_errors():
@@ -141,9 +150,19 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Import cases from analytics.task_global_completion into RRS DB.")
-    parser.add_argument("--start-date", metavar="YYYY-MM-DD", help="Import rows with data_item_start >= this date.")
-    parser.add_argument("--end-date", metavar="YYYY-MM-DD", help="Import rows with data_item_start < this date.")
+    parser = argparse.ArgumentParser(
+        description="Import cases from analytics.task_global_completion into RRS DB."
+    )
+    parser.add_argument(
+        "--start-date",
+        metavar="YYYY-MM-DD",
+        help="Import rows with data_item_start >= this date.",
+    )
+    parser.add_argument(
+        "--end-date",
+        metavar="YYYY-MM-DD",
+        help="Import rows with data_item_start < this date.",
+    )
     args = parser.parse_args()
 
     import_cases(

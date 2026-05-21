@@ -1,5 +1,5 @@
 keywords = [
-    "zones de non-droit", #=> "Zones" et/oui "non-droit" (exemple d'ajustement)
+    "zones de non-droit",  # => "Zones" et/oui "non-droit" (exemple d'ajustement)
     "ensauvagement",
     "explosion de violence",
     "justice laxiste",

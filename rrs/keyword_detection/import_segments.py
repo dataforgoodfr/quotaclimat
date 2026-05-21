@@ -20,7 +20,6 @@ from urllib.parse import quote
 
 import duckdb
 from dotenv import load_dotenv
-
 from rrs.dictionary.subjects import subjects
 from rrs.dictionary.upsert_subjects import subject_id as make_subject_id
 from rrs.utils.generate_id import get_consistent_hash
@@ -84,7 +83,9 @@ def _s3_uri(start, channel_name: str) -> str:
 
 def import_segments(start_date: date = None, end_date: date = None) -> None:
     if SUBJECT_NAME not in subjects:
-        raise ValueError(f"Subject {SUBJECT_NAME!r} not found in rrs/dictionary/subjects.py")
+        raise ValueError(
+            f"Subject {SUBJECT_NAME!r} not found in rrs/dictionary/subjects.py"
+        )
 
     sid = make_subject_id(SUBJECT_NAME)
 
@@ -129,7 +130,17 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
     df["s3_uri"] = df.apply(lambda r: _s3_uri(r["start"], r["channel_name"]), axis=1)
     df["n_keywords"] = df["number_of_keywords_climat"]
 
-    segments = df[["segment_id", "subject_id", "start", "s3_uri", "n_keywords", "channel_name", "channel_title"]]
+    segments = df[
+        [
+            "segment_id",
+            "subject_id",
+            "start",
+            "s3_uri",
+            "n_keywords",
+            "channel_name",
+            "channel_title",
+        ]
+    ]
 
     con.register("segments_batch", segments)
     with _masked_db_errors():
@@ -154,9 +165,17 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Import climate segments from quotaclimat DB into RRS DB.")
-    parser.add_argument("--start-date", metavar="YYYY-MM-DD", help="Import rows with start >= this date.")
-    parser.add_argument("--end-date", metavar="YYYY-MM-DD", help="Import rows with start < this date.")
+    parser = argparse.ArgumentParser(
+        description="Import climate segments from quotaclimat DB into RRS DB."
+    )
+    parser.add_argument(
+        "--start-date",
+        metavar="YYYY-MM-DD",
+        help="Import rows with start >= this date.",
+    )
+    parser.add_argument(
+        "--end-date", metavar="YYYY-MM-DD", help="Import rows with start < this date."
+    )
     args = parser.parse_args()
 
     import_segments(

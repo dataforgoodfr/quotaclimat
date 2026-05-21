@@ -18,13 +18,12 @@ Environment variables (defaults match rrs/.env.dist):
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import sessionmaker
-
 from rrs.dictionary.subjects import subjects
 from rrs.schemas.models import Subject
 from rrs.utils.generate_id import get_consistent_hash
+from sqlalchemy import create_engine
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import sessionmaker
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
@@ -39,7 +38,9 @@ def get_engine():
     database = os.getenv("RRS_PG_DATABASE", "rrs_db")
     user = os.getenv("RRS_PG_USER", "user")
     password = os.getenv("RRS_PG_PASSWORD", "password")
-    return create_engine(f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}")
+    return create_engine(
+        f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+    )
 
 
 def upsert_subjects() -> None:

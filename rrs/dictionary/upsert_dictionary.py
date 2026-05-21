@@ -15,15 +15,14 @@ Environment variables (defaults match rrs/.env.dist):
 import os
 
 from dotenv import load_dotenv
-from sqlalchemy import create_engine
-from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.orm import sessionmaker
-
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from rrs.dictionary.subjects import subjects
 from rrs.dictionary.upsert_subjects import subject_id as make_subject_id
 from rrs.schemas.models import DictionaryEntry
 from rrs.utils.generate_id import get_consistent_hash
+from sqlalchemy import create_engine
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.orm import sessionmaker
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
@@ -40,7 +39,9 @@ def get_engine():
     database = os.getenv("RRS_PG_DATABASE", "rrs_db")
     user = os.getenv("RRS_PG_USER", "user")
     password = os.getenv("RRS_PG_PASSWORD", "password")
-    return create_engine(f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}")
+    return create_engine(
+        f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+    )
 
 
 def extract_rows(subject_id: str) -> list[dict]:
@@ -55,12 +56,16 @@ def extract_rows(subject_id: str) -> list[dict]:
             if kw in seen:
                 continue
             seen.add(kw)
-            rows.append({
-                "keyword_id": keyword_id(kw, subject_id),
-                "subject_id": subject_id,
-                "keyword": kw,
-                "high_risk_false_positive": entry.get("high_risk_of_false_positive"),
-            })
+            rows.append(
+                {
+                    "keyword_id": keyword_id(kw, subject_id),
+                    "subject_id": subject_id,
+                    "keyword": kw,
+                    "high_risk_false_positive": entry.get(
+                        "high_risk_of_false_positive"
+                    ),
+                }
+            )
     return rows
 
 
@@ -89,7 +94,9 @@ def upsert_dictionary() -> None:
                     set_={
                         "subject_id": insert(DictionaryEntry).excluded.subject_id,
                         "keyword": insert(DictionaryEntry).excluded.keyword,
-                        "high_risk_false_positive": insert(DictionaryEntry).excluded.high_risk_false_positive,
+                        "high_risk_false_positive": insert(
+                            DictionaryEntry
+                        ).excluded.high_risk_false_positive,
                     },
                 )
             )
@@ -97,7 +104,9 @@ def upsert_dictionary() -> None:
             upserted += len(batch)
         session.commit()
 
-    print(f"{upserted} keyword(s) upserted (subject: {SUBJECT_NAME!r}, subject_id: {sid!r}).")
+    print(
+        f"{upserted} keyword(s) upserted (subject: {SUBJECT_NAME!r}, subject_id: {sid!r})."
+    )
 
 
 if __name__ == "__main__":

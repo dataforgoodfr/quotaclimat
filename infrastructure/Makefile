@@ -30,3 +30,6 @@ tg-state-list:
 
 tg-destroy:
 	$(call TG_CMD,destroy)
+
+tg-output:
+	$(call TG_CMD,output)

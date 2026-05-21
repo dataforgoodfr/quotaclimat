@@ -48,12 +48,35 @@ resource "scaleway_rdb_privilege" "rrs_job_user" {
   permission    = "readwrite"
 }
 
-# In dev, allow all traffic. In other environments, restrict to provided CIDRs.
+locals {
+  # IP ranges used by Scaleway serverless job workers.
+  # Serverless jobs cannot attach to a VPC, so the DB must accept traffic from these CIDRs.
+  scaleway_job_cidrs = [
+    { ip = "62.210.0.0/16",    description = "Scaleway DC2" },
+    { ip = "195.154.0.0/16",   description = "Scaleway DC3" },
+    { ip = "212.129.0.0/18",   description = "Scaleway DC4" },
+    { ip = "62.4.0.0/19",      description = "Scaleway DC5" },
+    { ip = "212.83.128.0/19",  description = "Scaleway DC6" },
+    { ip = "212.83.160.0/19",  description = "Scaleway DC7" },
+    { ip = "212.47.224.0/19",  description = "Scaleway DC8" },
+    { ip = "163.172.0.0/16",   description = "Scaleway DC9" },
+    { ip = "51.15.0.0/16",     description = "Scaleway DC10" },
+    { ip = "151.115.0.0/16",   description = "Scaleway DC11" },
+    { ip = "51.158.0.0/15",    description = "Scaleway DC12" },
+    { ip = "78.232.0.0/16",    description = "Scaleway DC13" },
+  ]
+
+  acl_rules = var.environment == "dev" ? concat(
+    local.scaleway_job_cidrs,
+    [{ ip = "0.0.0.0/0", description = "Allow all (dev only)" }]
+  ) : concat(local.scaleway_job_cidrs, var.acl_allowed_ips)
+}
+
 resource "scaleway_rdb_acl" "public" {
   instance_id = scaleway_rdb_instance.rrs_rdb.id
 
   dynamic "acl_rules" {
-    for_each = var.environment == "dev" ? [{ ip = "0.0.0.0/0", description = "Allow all (dev only)" }] : var.acl_allowed_ips
+    for_each = local.acl_rules
     content {
       ip          = acl_rules.value.ip
       description = acl_rules.value.description

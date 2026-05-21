@@ -1,0 +1,171 @@
+services:
+  rrs_db:
+    image: postgres:15
+    ports:
+      - 5434:5432
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d rrs_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    environment:
+      TZ: Europe/Paris
+      POSTGRES_USER: user
+      POSTGRES_DB: rrs_db
+      POSTGRES_PASSWORD: password
+    logging:
+      driver: none
+
+  migrate:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["alembic", "-c", "rrs/alembic.ini", "upgrade", "head"]
+    environment:
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+    depends_on:
+      rrs_db:
+        condition: service_healthy
+
+  upsert_subjects:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.dictionary.upsert_subjects"]
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  upsert_dictionary:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.dictionary.upsert_dictionary"]
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+    depends_on:
+      upsert_subjects:
+        condition: service_completed_successfully
+
+  import_segments:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.keyword_detection.import_segments"]
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+      POSTGRES_HOST: ${POSTGRES_HOST:-localhost}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-barometre}
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      BUCKET_NAME: ${BUCKET_NAME}
+    depends_on:
+      rrs_db:
+        condition: service_healthy
+
+  import_cases:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.keyword_detection.import_cases"]
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+      POSTGRES_HOST: ${POSTGRES_HOST:-localhost}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-barometre}
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    depends_on:
+      rrs_db:
+        condition: service_healthy
+
+  clustering:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.clustering.main"]
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      SPACY_MODEL: fr_core_news_sm
+      WINDOW_SIZE: 3
+      OVERLAP_TOKENS: 30
+      PROVIDER: anthropic
+      MAX_CONCURRENT_REQUESTS: 5
+      # INITIAL_LABELS_FILE: ./labels # overrides seed labels
+      # NO_SEEDS: 0
+      # SKIP_MERGE: 0
+      MERGE_BATCH_SIZE: 30
+      MERGE_MAX_ROUNDS: 5
+      TARGET_CLUSTERS: 5 # Overrides adaptive cluster selection
+      MIN_CLUSTERS: 7
+      MAX_CLUSTERS: 150
+      CLUSTER_SCALE: 1.0
+      LOW_THRESHOLD: 0.4
+      HIGH_THRESHOLD: 0.85
+      EMBEDDING_BACKEND: mistral
+      EMBEDDING_MODEL: "dangvantuan/sentence-camembert-large" # ignored if backend == mistral
+      EXPIRY_DAYS: 30
+      OUTPUT_DIR: /app/output
+      START_DATE: "2026-03-01"
+      END_DATE: "2026-03-05"
+    volumes:
+      - ./clustering_output:/app/output
+    depends_on:
+      rrs_db:
+        condition: service_healthy
+
+  console:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["sleep", "12000"]
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+    volumes:
+      - ../rrs/:/app/rrs/
+    tty: true
+    depends_on:
+      rrs_db:
+        condition: service_healthy

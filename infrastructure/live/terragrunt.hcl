@@ -22,6 +22,10 @@ generate "backend" {
           source  = "scaleway/scaleway"
           version = "~> 2.57"
         }
+        time = {
+          source  = "hashicorp/time"
+          version = "~> 0.12"
+        }
       }
       backend "s3" {
         bucket                      = "quotaclimat-terraform-states"

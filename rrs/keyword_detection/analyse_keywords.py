@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Optional
@@ -9,12 +9,12 @@ import duckdb
 # Module-level connection so relations stay valid across calls in interactive sessions.
 _con = duckdb.connect()
 
-from quotaclimat.data_processing.rrs.insecurity.dictionary import (
-    correlate_with,
-    keywords,
-)
 from quotaclimat.data_processing.mediatree.i8n.france.channel_titles import (
     channel_titles_france,
+)
+from rrs.dictionary.dictionary import (
+    correlate_with,
+    keywords,
 )
 
 ALL_CHANNELS = list(channel_titles_france.keys())
@@ -38,7 +38,7 @@ ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
 PROXIMITY_CHARS = 150
 
 
-_REGEX_SPECIAL = frozenset(r'\.^$*+?()[]{}|')
+_REGEX_SPECIAL = frozenset(r"\.^$*+?()[]{}|")
 
 
 def _escape(term: str) -> str:
@@ -99,7 +99,9 @@ def read_from_s3(
     current = start_date
     while current <= end_date:
         for channel in channels:
-            globs.append(_s3_glob_for_day(current.year, current.month, current.day, channel))
+            globs.append(
+                _s3_glob_for_day(current.year, current.month, current.day, channel)
+            )
         current += timedelta(days=1)
 
     if not globs:
@@ -112,9 +114,13 @@ def read_from_s3(
     existing_files = con.sql(f"SELECT file FROM glob([{all_globs_sql}])").fetchall()
     existing_files = [row[0] for row in existing_files]
 
-    missing = len(globs) - len({f.rsplit("/", 1)[0] + "/*" for f in existing_files} & set(globs))
+    missing = len(globs) - len(
+        {f.rsplit("/", 1)[0] + "/*" for f in existing_files} & set(globs)
+    )
     if missing:
-        logging.warning(f"{missing} channel/day combination(s) had no parquet files on S3 and were skipped.")
+        logging.warning(
+            f"{missing} channel/day combination(s) had no parquet files on S3 and were skipped."
+        )
 
     if not existing_files:
         raise FileNotFoundError(
@@ -124,7 +130,9 @@ def read_from_s3(
 
     file_list = ", ".join(f"'{f}'" for f in existing_files)
     query = f"SELECT * FROM read_parquet([{file_list}], hive_partitioning=true, union_by_name=true)"
-    logging.info(f"Reading {len(existing_files)} parquet file(s) across {len(channels)} channel(s).")
+    logging.info(
+        f"Reading {len(existing_files)} parquet file(s) across {len(channels)} channel(s)."
+    )
     return con.sql(query)
 
 
@@ -146,7 +154,9 @@ def detect_keywords(
     if con is None:
         con = _con
 
-    source = read_from_s3(start_date=start_date, end_date=end_date, channels=channels, con=con)
+    source = read_from_s3(
+        start_date=start_date, end_date=end_date, channels=channels, con=con
+    )
     con.register("source", source)
 
     kw_alt = _build_alternation(keywords)
@@ -200,9 +210,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Detect insecurity keywords and correlates in mediatree parquet data."
     )
-    parser.add_argument("--channel", nargs="*", help="Channel(s) to process (default: all France channels)")
+    parser.add_argument(
+        "--channel",
+        nargs="*",
+        help="Channel(s) to process (default: all France channels)",
+    )
     parser.add_argument("--start-date", required=True, help="Start date YYYY-MM-DD")
-    parser.add_argument("--end-date", help="End date YYYY-MM-DD (inclusive, defaults to start_date)")
+    parser.add_argument(
+        "--end-date", help="End date YYYY-MM-DD (inclusive, defaults to start_date)"
+    )
     args = parser.parse_args()
 
     start = date.fromisoformat(args.start_date)
@@ -214,9 +230,7 @@ if __name__ == "__main__":
 
     end_label = end or start
     out_path = (
-        Path(__file__).parent
-        / "data"
-        / f"insecurity_{start}_{end_label}_no_corr.xlsx"
+        Path(__file__).parent / "data" / f"insecurity_{start}_{end_label}_no_corr.xlsx"
     )
     df = result.df()
     for col in df.select_dtypes(include=["datetimetz"]).columns:

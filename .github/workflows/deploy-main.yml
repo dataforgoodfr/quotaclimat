@@ -3,10 +3,14 @@ name: Build & Deploy to Scaleway
 on:
   push:
       # Sequence of patterns matched against refs/heads
-    branches:    
+    branches:
       - main
+    paths-ignore:
+      - 'rrs/**'
+      - 'infrastructure/**'
+      - '.github/workflows/rrs.yaml'
 
-  # to be able to force deploy    
+  # to be able to force deploy
   workflow_dispatch:
 
 

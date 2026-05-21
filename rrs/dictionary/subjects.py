@@ -1,0 +1,3 @@
+subjects = [
+    "climate",
+]

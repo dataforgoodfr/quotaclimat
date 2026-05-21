@@ -138,13 +138,28 @@ services:
       RRS_PG_PORT: ${RRS_PG_PORT:-5432}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      # Clustering parameters — all optional, omit to use defaults
-      # START_DATE: "2025-01-01"
-      # END_DATE: "2025-01-31"
-      # PROVIDER: mistral          # mistral | anthropic
-      # TARGET_CLUSTERS: 20
-      # EXPIRY_DAYS: 30
-      # EMBEDDING_BACKEND: mistral # sentence-transformer | mistral
+      SPACY_MODEL: fr_core_news_sm
+      WINDOW_SIZE: 3
+      OVERLAP_TOKENS: 30
+      PROVIDER: anthropic
+      MAX_CONCURRENT_REQUESTS: 5
+      # INITIAL_LABELS_FILE: ./labels # overrides seed labels
+      # NO_SEEDS: 0
+      # SKIP_MERGE: 0
+      MERGE_BATCH_SIZE: 30
+      MERGE_MAX_ROUNDS: 5
+      TARGET_CLUSTERS: 5 # Overrides adaptive cluster selection
+      MIN_CLUSTERS: 7
+      MAX_CLUSTERS: 150
+      CLUSTER_SCALE: 1.0
+      LOW_THRESHOLD: 0.4
+      HIGH_THRESHOLD: 0.85
+      EMBEDDING_BACKEND: mistral
+      EMBEDDING_MODEL: "dangvantuan/sentence-camembert-large" # ignored if backend == mistral
+      EXPIRY_DAYS: 30
+      OUTPUT_DIR: /app/output
+      START_DATE: 2026-04-01
+      END_DATE: 2026-05-01
     volumes:
       - ./clustering_output:/app/output
     depends_on:

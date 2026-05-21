@@ -1,5 +1,7 @@
 FROM python:3.12.10 AS builder
 
+ARG SENTENCE_TRANSFORMERS
+
 ENV VIRTUAL_ENV=/app/.venv \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_IN_PROJECT=1 \
@@ -9,7 +11,12 @@ ENV VIRTUAL_ENV=/app/.venv \
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
-RUN pip install poetry==2.1.3 && poetry install --no-root --without dev --with rrs
+RUN pip install poetry==2.1.3 && \
+    if [ -n "$SENTENCE_TRANSFORMERS" ]; then \
+      poetry install --no-root --without dev --with rrs --with rrs-transformers; \
+    else \
+      poetry install --no-root --without dev --with rrs; \
+    fi
 
 FROM python:3.12.10-slim AS runtime
 

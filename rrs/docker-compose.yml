@@ -84,8 +84,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       BUCKET_NAME: ${BUCKET_NAME}
-      BUCKET: ${BUCKET}
-      BUCKET_SECRET: ${BUCKET_SECRET}
     depends_on:
       rrs_db:
         condition: service_healthy

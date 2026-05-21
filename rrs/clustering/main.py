@@ -41,6 +41,8 @@ from rrs.clustering.cost import (
 from rrs.clustering.get_data import (
     ID_COLUMN,
     get_clusters_from_db,
+    get_latest_clustered_date,
+    get_unprocessed_dates,
     load_from_db,
     write_clusters_to_db,
 )
@@ -73,7 +75,7 @@ _OUTPUT_COLUMNS = [
 
 async def _run_day(
     run_date: date,
-    out: Path,
+    out: Optional[Path],
     client: "LLMBackend",
     emb_model: "EmbeddingBackend",
     spacy_model: str,
@@ -94,7 +96,8 @@ async def _run_day(
     expiry_days: int,
 ) -> None:
     """Run the full clustering pipeline for a single day."""
-    out.mkdir(parents=True, exist_ok=True)
+    if out is not None:
+        out.mkdir(parents=True, exist_ok=True)
 
     # --- Load cases for this day ---
     print(f"\nLoading texts from database for {run_date}...")
@@ -126,9 +129,10 @@ async def _run_day(
         l for l in generated_labels if l.strip().lower() not in seeds_lower
     ]
     print(f"  {len(all_labels)} candidate labels (seeds + generated).")
-    (out / "labels_raw.json").write_text(
-        json.dumps(all_labels, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    if out is not None:
+        (out / "labels_raw.json").write_text(
+            json.dumps(all_labels, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
     # --- Step 2: merge similar labels ---
     if not skip_merge:
@@ -157,12 +161,13 @@ async def _run_day(
             batch_size=merge_batch_size,
             max_concurrent=max_concurrent,
             max_rounds=merge_max_rounds,
-            log_path=out / "labels_merge_progress.json",
+            log_path=out / "labels_merge_progress.json" if out is not None else None,
         )
         print(f"  {len(all_labels)} labels after merging.")
-    (out / "labels_merged.json").write_text(
-        json.dumps(sorted(all_labels), ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    if out is not None:
+        (out / "labels_merged.json").write_text(
+            json.dumps(sorted(all_labels), ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
     # --- Step 2b: load active clusters from DB ---
     active_since = run_date - timedelta(days=expiry_days)
@@ -197,10 +202,11 @@ async def _run_day(
         print("  No existing clusters — all new labels are kept.")
         truly_new_labels = all_labels
     print(f"  {len(truly_new_labels)} genuinely new labels after DB deduplication.")
-    (out / "labels_new.json").write_text(
-        json.dumps(sorted(truly_new_labels), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    if out is not None:
+        (out / "labels_new.json").write_text(
+            json.dumps(sorted(truly_new_labels), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
 
     # --- Step 2d: build combined label set for classification ---
     combined_labels = existing_labels + truly_new_labels
@@ -215,9 +221,10 @@ async def _run_day(
         lid = get_consistent_hash(label)
         label_to_id[label] = lid
         new_labels_data.append({"id": lid, "label": label})
-    (out / "labels_new_with_ids.json").write_text(
-        json.dumps(new_labels_data, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    if out is not None:
+        (out / "labels_new_with_ids.json").write_text(
+            json.dumps(new_labels_data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
     # --- Step 3: classify all transcripts against combined label set ---
     print(
@@ -259,16 +266,17 @@ async def _run_day(
             assignments_df[col] = None
     assignments_df = assignments_df[_OUTPUT_COLUMNS]
 
-    assignments_path = out / "transcript_label_assignments.csv"
-    assignments_df.to_csv(assignments_path, index=False)
-    print(f"\nTranscript-label assignments saved to {assignments_path}")
+    if out is not None:
+        assignments_path = out / "transcript_label_assignments.csv"
+        assignments_df.to_csv(assignments_path, index=False)
+        print(f"\nTranscript-label assignments saved to {assignments_path}")
 
     print("\nWriting results to database...")
     write_clusters_to_db(assignments_df)
 
 
 async def run(
-    output_dir: str,
+    output_dir: Optional[str] = None,
     spacy_model: str = "fr_core_news_sm",
     window_size: int = 1,
     overlap_tokens: int = 0,
@@ -278,6 +286,7 @@ async def run(
     merge_max_rounds: int = 20,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    only_recent: bool = True,
     max_concurrent: int = MAX_CONCURRENT,
     provider: str = PROVIDER_MISTRAL,
     target_clusters: Optional[int] = None,
@@ -301,17 +310,31 @@ async def run(
         embedding_backend, model_name=embedding_model, mistral_api_key=mistral_api_key
     )
 
-    # Resolve date range — default to today for any unset bound
-    today = date.today()
-    first_day = start_date or today
-    last_day = end_date or first_day
+    # Resolve date range
+    if start_date is None:
+        print("No start date provided — querying DB for unprocessed days...")
+        days = get_unprocessed_dates()
+        if only_recent:
+            latest_clustered = get_latest_clustered_date()
+            if latest_clustered is not None:
+                print(f"  Filtering to days after latest clustered date: {latest_clustered}")
+                days = [d for d in days if d > latest_clustered]
+        if end_date is not None:
+            days = [d for d in days if d <= end_date]
+        if not days:
+            print("No unprocessed days found — nothing to do.")
+            return
+        print(f"Found {len(days)} unprocessed day(s): {days[0]} → {days[-1]}")
+    else:
+        first_day = start_date
+        last_day = end_date or first_day
+        days = [
+            first_day + timedelta(days=i)
+            for i in range((last_day - first_day).days + 1)
+        ]
+    print(f"Running clustering for {len(days)} day(s): {days[0]} → {days[-1]}")
 
-    days = [
-        first_day + timedelta(days=i) for i in range((last_day - first_day).days + 1)
-    ]
-    print(f"Running clustering for {len(days)} day(s): {first_day} → {last_day}")
-
-    base_out = Path(output_dir)
+    base_out = Path(output_dir) if output_dir else None
     for run_date in days:
         print(f"\n{'=' * 60}")
         print(f"Processing {run_date} ({days.index(run_date) + 1}/{len(days)})")
@@ -320,7 +343,7 @@ async def run(
         emb_cost_before = emb_model.total_cost()
         await _run_day(
             run_date=run_date,
-            out=base_out / str(run_date),
+            out=base_out / str(run_date) if base_out is not None else None,
             client=client,
             emb_model=emb_model,
             spacy_model=spacy_model,
@@ -481,8 +504,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--output-dir",
-        default=os.getenv("OUTPUT_DIR", "./bertopic_llm_output_v2"),
-        help="Directory for output files. Default: ./bertopic_llm_output_v2",
+        default=os.getenv("OUTPUT_DIR"),
+        help="Directory for output files. Omit to skip all file output (DB writes still happen).",
     )
     parser.add_argument(
         "--start-date",
@@ -496,6 +519,16 @@ if __name__ == "__main__":
         metavar="YYYY-MM-DD",
         help="Keep only records on or before this date (inclusive). Default: no upper bound.",
     )
+    parser.add_argument(
+        "--no-only-recent",
+        action="store_true",
+        default=os.getenv("ONLY_RECENT", "true").lower() in ("0", "false", "no"),
+        help=(
+            "When auto-discovering unprocessed days (no --start-date), also include days "
+            "that predate the most recent entry in case_to_clusters. "
+            "Default: off (i.e. only recent days are processed)."
+        ),
+    )
     args = parser.parse_args()
     if args.no_seeds:
         initial = []
@@ -507,6 +540,7 @@ if __name__ == "__main__":
     asyncio.run(
         run(
             output_dir=args.output_dir,
+            only_recent=not args.no_only_recent,
             spacy_model=args.spacy_model,
             window_size=args.window_size,
             overlap_tokens=args.overlap_tokens,

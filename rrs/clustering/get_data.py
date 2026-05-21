@@ -140,6 +140,41 @@ def write_clusters_to_db(assignments_df: pd.DataFrame) -> None:
     )
 
 
+def get_latest_clustered_date() -> Optional[date]:
+    """Return the calendar day of the most recent case that has a cluster assignment, or None."""
+    query = """
+        SELECT MAX(DATE(c.start))
+        FROM cases c
+        JOIN case_to_clusters ctc ON ctc.case_id = c.case_id
+    """
+    with psycopg.connect(_conninfo()) as conn:
+        with conn.cursor() as cur:
+            cur.execute(query)
+            row = cur.fetchone()
+    return row[0] if row and row[0] is not None else None
+
+
+def get_unprocessed_dates() -> list[date]:
+    """Return sorted list of calendar days that have cases but no cluster assignments.
+
+    A day is considered unprocessed if at least one case whose `start` falls on
+    that day has no entry in `case_to_clusters`.
+    """
+    query = """
+        SELECT DISTINCT DATE(c.start) AS day
+        FROM cases c
+        WHERE NOT EXISTS (
+            SELECT 1 FROM case_to_clusters ctc WHERE ctc.case_id = c.case_id
+        )
+        ORDER BY day
+    """
+    with psycopg.connect(_conninfo()) as conn:
+        with conn.cursor() as cur:
+            cur.execute(query)
+            rows = cur.fetchall()
+    return [row[0] for row in rows]
+
+
 def load_from_db(
     start_date=None,
     end_date=None,

@@ -14,10 +14,12 @@ import contextlib
 import logging
 import os
 import re
-from datetime import date
+from datetime import date, timedelta
+from typing import Optional
 from urllib.parse import quote
 
 import duckdb
+import psycopg
 from dotenv import load_dotenv
 from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
 from rrs.utils.generate_id import get_consistent_hash
@@ -67,7 +69,39 @@ def rrs_dsn() -> str:
     )
 
 
+def _rrs_conninfo() -> str:
+    return (
+        f"host={os.getenv('RRS_PG_HOST', 'localhost')} "
+        f"port={os.getenv('RRS_PG_PORT', 5432)} "
+        f"dbname={os.getenv('RRS_PG_DATABASE', 'rrs_db')} "
+        f"user={os.getenv('RRS_PG_USER', 'user')} "
+        f"password={os.getenv('RRS_PG_PASSWORD', 'supersecret')}"
+    )
+
+
+def _get_auto_date_range() -> tuple[Optional[date], Optional[date]]:
+    """Return (max cases.start date, max segments.start date) from the RRS DB."""
+    with psycopg.connect(_rrs_conninfo()) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(start::date) FROM cases")
+            max_cases: Optional[date] = cur.fetchone()[0]
+            cur.execute("SELECT MAX(start::date) FROM segments")
+            max_segments: Optional[date] = cur.fetchone()[0]
+    return max_cases, max_segments
+
+
 def import_cases(start_date: date = None, end_date: date = None) -> None:
+    if start_date is None:
+        logging.info("No start date provided — querying RRS DB for date range...")
+        max_cases, max_segments = _get_auto_date_range()
+        if max_segments is None:
+            logging.info("No segments found in RRS DB — nothing to import.")
+            return
+        start_date = max_cases
+        # end_date filter is exclusive, so add one day to include max_segments date
+        end_date = max_segments + timedelta(days=1)
+        logging.info(f"  Auto range: {start_date} → {max_segments} (end_date exclusive: {end_date})")
+
     subject_id = get_consistent_hash(SUBJECT_NAME)
 
     con = duckdb.connect()

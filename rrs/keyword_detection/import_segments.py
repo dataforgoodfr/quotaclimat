@@ -15,10 +15,12 @@ import contextlib
 import logging
 import os
 import re
-from datetime import date
+from datetime import date, datetime, timezone
+from typing import Optional
 from urllib.parse import quote
 
 import duckdb
+import psycopg
 from dotenv import load_dotenv
 from rrs.dictionary.subjects import subjects
 from rrs.dictionary.upsert_subjects import subject_id as make_subject_id
@@ -81,7 +83,32 @@ def _s3_uri(start, channel_name: str) -> str:
     )
 
 
+def _rrs_conninfo() -> str:
+    return (
+        f"host={os.getenv('RRS_PG_HOST', 'localhost')} "
+        f"port={os.getenv('RRS_PG_PORT', 5432)} "
+        f"dbname={os.getenv('RRS_PG_DATABASE', 'rrs_db')} "
+        f"user={os.getenv('RRS_PG_USER', 'user')} "
+        f"password={os.getenv('RRS_PG_PASSWORD', 'supersecret')}"
+    )
+
+
+def _get_max_segment_date() -> Optional[date]:
+    """Return the calendar day of the most recent segment in the RRS DB, or None."""
+    with psycopg.connect(_rrs_conninfo()) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(start::date) FROM segments")
+            row = cur.fetchone()
+    return row[0] if row and row[0] is not None else None
+
+
 def import_segments(start_date: date = None, end_date: date = None) -> None:
+    if start_date is None:
+        logging.info("No start date provided — querying RRS DB for max segment date...")
+        start_date = _get_max_segment_date()
+        end_date = datetime.now(tz=timezone.utc)
+        logging.info(f"  Auto range: {start_date} → {end_date}")
+
     if SUBJECT_NAME not in subjects:
         raise ValueError(
             f"Subject {SUBJECT_NAME!r} not found in rrs/dictionary/subjects.py"

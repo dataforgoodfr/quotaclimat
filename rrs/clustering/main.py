@@ -25,51 +25,58 @@ from typing import Optional
 
 import pandas as pd
 
-from rrs.clustering.cluster import (
-    ID_COLUMN,
-    TEXT_COLUMN,
-    load_from_db,
-    split_sentences,
-)
-from rrs.clustering.cluster_llm import (
-    MAX_CONCURRENT,
-    PROVIDER_MISTRAL,
-    PROVIDER_ANTHROPIC,
-    SEED_LABELS,
-    LLMBackend,
-    _build_client,
-    _build_sentences_by_doc,
-    _cost,
-    build_labels_from_transcripts,
-    classify_all_transcripts,
-    compute_target_clusters,
-    estimate_step1_tokens,
-    estimate_step2_tokens,
-    estimate_step3_tokens,
-    merge_labels,
-)
+
 from rrs.utils.generate_id import get_consistent_hash
-from rrs.clustering.cluster_llm_timeseries import (
+from rrs.clustering.backends import (
+    LLMBackend,
     EmbeddingBackend,
+    EMBEDDING_BACKEND_MISTRAL,
+    EMBEDDING_BACKEND_ST,
+    _EMBEDDING_MODEL,
+    MAX_CONCURRENT,
+)
+from rrs.clustering.steps import (
+    _build_sentences_by_doc,
+    compute_target_clusters,
+    build_labels_from_transcripts,
+    merge_labels,
     _deduplicate_candidates,
     _filter_by_embedding_similarity_hybrid,
+    classify_all_transcripts,
+    _build_client,
     build_embedding_backend,
     _LOW_THRESHOLD,
     _HIGH_THRESHOLD,
-    _TOP_K_CONTEXT,
-    _CANDIDATE_DEDUP_THRESHOLD,
-    _EMBEDDING_MODEL,
-    EMBEDDING_BACKEND_ST,
-    EMBEDDING_BACKEND_MISTRAL,
+    SEED_LABELS,
 )
-from rrs.clustering.get_data import get_clusters_from_db, write_clusters_to_db
+from rrs.clustering.cost import (
+    estimate_step1_tokens,
+    estimate_step2_tokens,
+    estimate_step3_tokens,
+    _cost,
+)
+from rrs.clustering.providers import PROVIDER_ANTHROPIC, PROVIDER_MISTRAL
+from rrs.clustering.get_data import (
+    get_clusters_from_db,
+    write_clusters_to_db,
+    load_from_db,
+    ID_COLUMN,
+)
 
-_OUTPUT_COLUMNS = ["case_id", "segment_id", "start", "text", "cluster_id", "cluster_text"]
+_OUTPUT_COLUMNS = [
+    "case_id",
+    "segment_id",
+    "start",
+    "text",
+    "cluster_id",
+    "cluster_text",
+]
 
 
 # ---------------------------------------------------------------------------
 # Single-day pipeline
 # ---------------------------------------------------------------------------
+
 
 async def _run_day(
     run_date: date,
@@ -111,14 +118,20 @@ async def _run_day(
     )
 
     # --- Step 1: generate labels ---
-    print(f"\nStep 1: Estimating token usage for {len(sentences_by_doc)} transcripts...")
+    print(
+        f"\nStep 1: Estimating token usage for {len(sentences_by_doc)} transcripts..."
+    )
     estimate_step1_tokens(sentences_by_doc, provider=provider)
     print(f"\nStep 1: Generating narrative labels (max_concurrent={max_concurrent})...")
-    generated_labels = await build_labels_from_transcripts(sentences_by_doc, client, max_concurrent)
+    generated_labels = await build_labels_from_transcripts(
+        sentences_by_doc, client, max_concurrent
+    )
 
     seeds = list(initial_labels or [])
     seeds_lower = {s.strip().lower() for s in seeds}
-    all_labels = seeds + [l for l in generated_labels if l.strip().lower() not in seeds_lower]
+    all_labels = seeds + [
+        l for l in generated_labels if l.strip().lower() not in seeds_lower
+    ]
     print(f"  {len(all_labels)} candidate labels (seeds + generated).")
     (out / "labels_raw.json").write_text(
         json.dumps(all_labels, ensure_ascii=False, indent=2), encoding="utf-8"
@@ -126,15 +139,27 @@ async def _run_day(
 
     # --- Step 2: merge similar labels ---
     if not skip_merge:
-        effective_target = target_clusters if target_clusters is not None else compute_target_clusters(
-            len(sentences_by_doc), min_clusters=min_clusters, max_clusters=max_clusters, scale_factor=cluster_scale
+        effective_target = (
+            target_clusters
+            if target_clusters is not None
+            else compute_target_clusters(
+                len(sentences_by_doc),
+                min_clusters=min_clusters,
+                max_clusters=max_clusters,
+                scale_factor=cluster_scale,
+            )
         )
         print(f"\nStep 2: Estimating token usage for {len(all_labels)} labels...")
-        print(f"  Adaptive cluster target: {effective_target} (n_docs={len(sentences_by_doc)})")
-        estimate_step2_tokens(all_labels, batch_size=merge_batch_size, provider=provider)
+        print(
+            f"  Adaptive cluster target: {effective_target} (n_docs={len(sentences_by_doc)})"
+        )
+        estimate_step2_tokens(
+            all_labels, batch_size=merge_batch_size, provider=provider
+        )
         print("\nStep 2: Merging semantically similar labels...")
         all_labels = await merge_labels(
-            all_labels, client,
+            all_labels,
+            client,
             target_clusters=effective_target,
             batch_size=merge_batch_size,
             max_concurrent=max_concurrent,
@@ -148,16 +173,22 @@ async def _run_day(
 
     # --- Step 2b: load active clusters from DB ---
     active_since = run_date - timedelta(days=expiry_days)
-    print(f"\nStep 2b: Loading active clusters from database "
-          f"(active since {active_since}, {expiry_days}d before {run_date})...")
+    print(
+        f"\nStep 2b: Loading active clusters from database "
+        f"(active since {active_since}, {expiry_days}d before {run_date})..."
+    )
     existing_df = get_clusters_from_db(active_since=active_since)
     existing_labels: list[str] = existing_df["cluster_text"].dropna().tolist()
-    existing_ids: dict[str, str] = dict(zip(existing_df["cluster_text"], existing_df["cluster_id"]))
+    existing_ids: dict[str, str] = dict(
+        zip(existing_df["cluster_text"], existing_df["cluster_id"])
+    )
     print(f"  {len(existing_labels)} existing clusters found in DB.")
 
     # --- Step 2c: filter new labels against existing ones ---
-    print(f"\nStep 2c: Comparing new labels against DB clusters "
-          f"(low={low_threshold}, high={high_threshold})...")
+    print(
+        f"\nStep 2c: Comparing new labels against DB clusters "
+        f"(low={low_threshold}, high={high_threshold})..."
+    )
     all_labels = _deduplicate_candidates(all_labels, emb_model)
     if existing_labels:
         truly_new_labels = await _filter_by_embedding_similarity_hybrid(
@@ -174,13 +205,16 @@ async def _run_day(
         truly_new_labels = all_labels
     print(f"  {len(truly_new_labels)} genuinely new labels after DB deduplication.")
     (out / "labels_new.json").write_text(
-        json.dumps(sorted(truly_new_labels), ensure_ascii=False, indent=2), encoding="utf-8"
+        json.dumps(sorted(truly_new_labels), ensure_ascii=False, indent=2),
+        encoding="utf-8",
     )
 
     # --- Step 2d: build combined label set for classification ---
     combined_labels = existing_labels + truly_new_labels
-    print(f"\nStep 2d: Combined label set: {len(existing_labels)} existing + "
-          f"{len(truly_new_labels)} new = {len(combined_labels)} total.")
+    print(
+        f"\nStep 2d: Combined label set: {len(existing_labels)} existing + "
+        f"{len(truly_new_labels)} new = {len(combined_labels)} total."
+    )
 
     label_to_id: dict[str, str] = {**existing_ids}
     new_labels_data = []
@@ -198,7 +232,9 @@ async def _run_day(
         f"with {len(combined_labels)} labels..."
     )
     estimate_step3_tokens(sentences_by_doc, combined_labels, provider=provider)
-    print(f"\nStep 3: Classifying {len(sentences_by_doc)} transcripts (max_concurrent={max_concurrent})...")
+    print(
+        f"\nStep 3: Classifying {len(sentences_by_doc)} transcripts (max_concurrent={max_concurrent})..."
+    )
     doc_to_labels = await classify_all_transcripts(
         sentences_by_doc, combined_labels, client, max_concurrent
     )
@@ -208,7 +244,9 @@ async def _run_day(
         for label in matched_labels:
             label_id = label_to_id.get(label)
             if label_id is not None:
-                records.append({ID_COLUMN: doc_id, "cluster_id": label_id, "cluster_text": label})
+                records.append(
+                    {ID_COLUMN: doc_id, "cluster_id": label_id, "cluster_text": label}
+                )
 
     assignments_df = (
         pd.DataFrame(records)
@@ -216,8 +254,12 @@ async def _run_day(
         else pd.DataFrame(columns=[ID_COLUMN, "cluster_id", "cluster_text"])
     )
     if id_col and not assignments_df.empty:
-        meta_cols = [c for c in _OUTPUT_COLUMNS if c in docs_df.columns and c != ID_COLUMN]
-        meta_df = docs_df[[ID_COLUMN] + meta_cols].drop_duplicates(subset=[ID_COLUMN]).copy()
+        meta_cols = [
+            c for c in _OUTPUT_COLUMNS if c in docs_df.columns and c != ID_COLUMN
+        ]
+        meta_df = (
+            docs_df[[ID_COLUMN] + meta_cols].drop_duplicates(subset=[ID_COLUMN]).copy()
+        )
         assignments_df = assignments_df.merge(meta_df, on=ID_COLUMN, how="left")
     for col in _OUTPUT_COLUMNS:
         if col not in assignments_df.columns:
@@ -235,6 +277,7 @@ async def _run_day(
 # ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
+
 
 async def run(
     output_dir: str,
@@ -261,15 +304,23 @@ async def run(
 ) -> None:
     # Build shared resources once across all days
     client = _build_client(provider)
-    mistral_api_key = os.getenv("MISTRAL_API_KEY") if embedding_backend == EMBEDDING_BACKEND_MISTRAL else None
-    emb_model = build_embedding_backend(embedding_backend, model_name=embedding_model, mistral_api_key=mistral_api_key)
+    mistral_api_key = (
+        os.getenv("MISTRAL_API_KEY")
+        if embedding_backend == EMBEDDING_BACKEND_MISTRAL
+        else None
+    )
+    emb_model = build_embedding_backend(
+        embedding_backend, model_name=embedding_model, mistral_api_key=mistral_api_key
+    )
 
     # Resolve date range — default to today for any unset bound
     today = date.today()
     first_day = start_date or today
     last_day = end_date or first_day
 
-    days = [first_day + timedelta(days=i) for i in range((last_day - first_day).days + 1)]
+    days = [
+        first_day + timedelta(days=i) for i in range((last_day - first_day).days + 1)
+    ]
     print(f"Running clustering for {len(days)} day(s): {first_day} → {last_day}")
 
     base_out = Path(output_dir)
@@ -321,7 +372,9 @@ async def run(
     total_emb_cost = emb_model.total_cost()
     if total_emb_cost:
         emb_tokens = getattr(emb_model, "_input_tokens", 0)
-        print(f"  Embeddings: ${total_emb_cost:.4f} (mistral-embed, {emb_tokens:,} tokens)")
+        print(
+            f"  Embeddings: ${total_emb_cost:.4f} (mistral-embed, {emb_tokens:,} tokens)"
+        )
     print(f"  Grand total: ${client.total_cost() + total_emb_cost:.4f}")
 
 
@@ -333,9 +386,15 @@ if __name__ == "__main__":
             f"Supports providers: {PROVIDER_MISTRAL} (default), {PROVIDER_ANTHROPIC}."
         )
     )
-    parser.add_argument("--spacy-model", default=os.getenv("SPACY_MODEL", "fr_core_news_sm"))
-    parser.add_argument("--window-size", type=int, default=int(os.getenv("WINDOW_SIZE", "3")))
-    parser.add_argument("--overlap-tokens", type=int, default=int(os.getenv("OVERLAP_TOKENS", "30")))
+    parser.add_argument(
+        "--spacy-model", default=os.getenv("SPACY_MODEL", "fr_core_news_sm")
+    )
+    parser.add_argument(
+        "--window-size", type=int, default=int(os.getenv("WINDOW_SIZE", "3"))
+    )
+    parser.add_argument(
+        "--overlap-tokens", type=int, default=int(os.getenv("OVERLAP_TOKENS", "30"))
+    )
     parser.add_argument(
         "--provider",
         choices=[PROVIDER_MISTRAL, PROVIDER_ANTHROPIC],
@@ -343,7 +402,9 @@ if __name__ == "__main__":
         help=f"LLM provider to use. Default: {PROVIDER_ANTHROPIC}.",
     )
     parser.add_argument(
-        "--max-concurrent", type=int, default=int(os.getenv("MAX_CONCURRENT_REQUESTS", str(MAX_CONCURRENT))),
+        "--max-concurrent",
+        type=int,
+        default=int(os.getenv("MAX_CONCURRENT_REQUESTS", str(MAX_CONCURRENT))),
         help=f"Max parallel LLM requests for steps 1 and 3. Default: {MAX_CONCURRENT}",
     )
     parser.add_argument(
@@ -352,46 +413,65 @@ if __name__ == "__main__":
         help="Path to a JSON list of seed labels. Overrides built-in SEED_LABELS.",
     )
     parser.add_argument(
-        "--no-seeds", action="store_true",
+        "--no-seeds",
+        action="store_true",
         default=os.getenv("NO_SEEDS", "").lower() in ("1", "true", "yes"),
         help="Start with no initial labels; let the LLM generate all labels from scratch.",
     )
     parser.add_argument(
-        "--skip-merge", action="store_true",
+        "--skip-merge",
+        action="store_true",
         default=os.getenv("SKIP_MERGE", "").lower() in ("1", "true", "yes"),
         help="Skip the label-merging step (step 2).",
     )
     parser.add_argument(
-        "--merge-batch-size", type=int, default=int(os.getenv("MERGE_BATCH_SIZE", "30")),
+        "--merge-batch-size",
+        type=int,
+        default=int(os.getenv("MERGE_BATCH_SIZE", "30")),
         help="Number of labels per merge call in step 2. Default: 30.",
     )
     parser.add_argument(
-        "--merge-max-rounds", type=int, default=int(os.getenv("MERGE_MAX_ROUNDS", "20")),
+        "--merge-max-rounds",
+        type=int,
+        default=int(os.getenv("MERGE_MAX_ROUNDS", "20")),
         help="Maximum number of hierarchical merge rounds in step 2. Default: 20.",
     )
     parser.add_argument(
-        "--target-clusters", type=int,
-        default=int(os.getenv("TARGET_CLUSTERS")) if os.getenv("TARGET_CLUSTERS") else None,
+        "--target-clusters",
+        type=int,
+        default=int(os.getenv("TARGET_CLUSTERS"))
+        if os.getenv("TARGET_CLUSTERS")
+        else None,
         help="Explicit target cluster count; overrides adaptive default (sqrt(n_docs)).",
     )
     parser.add_argument(
-        "--min-clusters", type=int, default=int(os.getenv("MIN_CLUSTERS", "7")),
+        "--min-clusters",
+        type=int,
+        default=int(os.getenv("MIN_CLUSTERS", "7")),
         help="Minimum clusters when using adaptive target. Default: 7.",
     )
     parser.add_argument(
-        "--max-clusters", type=int, default=int(os.getenv("MAX_CLUSTERS", "150")),
+        "--max-clusters",
+        type=int,
+        default=int(os.getenv("MAX_CLUSTERS", "150")),
         help="Maximum clusters when using adaptive target. Default: 150.",
     )
     parser.add_argument(
-        "--cluster-scale", type=float, default=float(os.getenv("CLUSTER_SCALE", "1.0")),
+        "--cluster-scale",
+        type=float,
+        default=float(os.getenv("CLUSTER_SCALE", "1.0")),
         help="Multiplier on sqrt(n_docs) for adaptive cluster target. Default: 1.0.",
     )
     parser.add_argument(
-        "--low-threshold", type=float, default=float(os.getenv("LOW_THRESHOLD", str(_LOW_THRESHOLD))),
+        "--low-threshold",
+        type=float,
+        default=float(os.getenv("LOW_THRESHOLD", str(_LOW_THRESHOLD))),
         help=f"Similarity below this → auto-keep new label. Default: {_LOW_THRESHOLD}.",
     )
     parser.add_argument(
-        "--high-threshold", type=float, default=float(os.getenv("HIGH_THRESHOLD", str(_HIGH_THRESHOLD))),
+        "--high-threshold",
+        type=float,
+        default=float(os.getenv("HIGH_THRESHOLD", str(_HIGH_THRESHOLD))),
         help=f"Similarity above this → auto-drop new label. Default: {_HIGH_THRESHOLD}.",
     )
     parser.add_argument(
@@ -401,27 +481,34 @@ if __name__ == "__main__":
         help=f"Embedding backend for similarity. '{EMBEDDING_BACKEND_MISTRAL}' uses mistral-embed via the Mistral API. Default: {EMBEDDING_BACKEND_MISTRAL}.",
     )
     parser.add_argument(
-        "--embedding-model", default=os.getenv("EMBEDDING_MODEL", _EMBEDDING_MODEL),
+        "--embedding-model",
+        default=os.getenv("EMBEDDING_MODEL", _EMBEDDING_MODEL),
         help=f"Model name for the sentence-transformer backend (ignored for mistral). Default: {_EMBEDDING_MODEL}.",
     )
     parser.add_argument(
-        "--expiry-days", type=int, default=int(os.getenv("EXPIRY_DAYS", "30")),
+        "--expiry-days",
+        type=int,
+        default=int(os.getenv("EXPIRY_DAYS", "30")),
         help="Clusters with no case assigned within this many days before start-date are excluded. Default: 30.",
     )
     parser.add_argument(
-        "--output-dir", default=os.getenv("OUTPUT_DIR", "./bertopic_llm_output_v2"),
+        "--output-dir",
+        default=os.getenv("OUTPUT_DIR", "./bertopic_llm_output_v2"),
         help="Directory for output files. Default: ./bertopic_llm_output_v2",
     )
     parser.add_argument(
-        "--start-date", default=os.getenv("START_DATE"), metavar="YYYY-MM-DD",
+        "--start-date",
+        default=os.getenv("START_DATE"),
+        metavar="YYYY-MM-DD",
         help="Keep only records on or after this date (inclusive). Default: no lower bound.",
     )
     parser.add_argument(
-        "--end-date", default=os.getenv("END_DATE"), metavar="YYYY-MM-DD",
+        "--end-date",
+        default=os.getenv("END_DATE"),
+        metavar="YYYY-MM-DD",
         help="Keep only records on or before this date (inclusive). Default: no upper bound.",
     )
     args = parser.parse_args()
-
     if args.no_seeds:
         initial = []
     elif args.initial_labels_file:
@@ -429,26 +516,28 @@ if __name__ == "__main__":
     else:
         initial = SEED_LABELS
 
-    asyncio.run(run(
-        output_dir=args.output_dir,
-        spacy_model=args.spacy_model,
-        window_size=args.window_size,
-        overlap_tokens=args.overlap_tokens,
-        initial_labels=initial,
-        skip_merge=args.skip_merge,
-        merge_batch_size=args.merge_batch_size,
-        merge_max_rounds=args.merge_max_rounds,
-        start_date=date.fromisoformat(args.start_date) if args.start_date else None,
-        end_date=date.fromisoformat(args.end_date) if args.end_date else None,
-        max_concurrent=args.max_concurrent,
-        provider=args.provider,
-        target_clusters=args.target_clusters,
-        min_clusters=args.min_clusters,
-        max_clusters=args.max_clusters,
-        cluster_scale=args.cluster_scale,
-        low_threshold=args.low_threshold,
-        high_threshold=args.high_threshold,
-        embedding_backend=args.embedding_backend,
-        embedding_model=args.embedding_model,
-        expiry_days=args.expiry_days,
-    ))
+    asyncio.run(
+        run(
+            output_dir=args.output_dir,
+            spacy_model=args.spacy_model,
+            window_size=args.window_size,
+            overlap_tokens=args.overlap_tokens,
+            initial_labels=initial,
+            skip_merge=args.skip_merge,
+            merge_batch_size=args.merge_batch_size,
+            merge_max_rounds=args.merge_max_rounds,
+            start_date=date.fromisoformat(args.start_date) if args.start_date else None,
+            end_date=date.fromisoformat(args.end_date) if args.end_date else None,
+            max_concurrent=args.max_concurrent,
+            provider=args.provider,
+            target_clusters=args.target_clusters,
+            min_clusters=args.min_clusters,
+            max_clusters=args.max_clusters,
+            cluster_scale=args.cluster_scale,
+            low_threshold=args.low_threshold,
+            high_threshold=args.high_threshold,
+            embedding_backend=args.embedding_backend,
+            embedding_model=args.embedding_model,
+            expiry_days=args.expiry_days,
+        )
+    )

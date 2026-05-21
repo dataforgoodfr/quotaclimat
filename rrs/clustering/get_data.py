@@ -3,12 +3,16 @@ from datetime import date, timedelta
 from typing import Optional
 
 import pandas as pd
+import spacy
+
 import psycopg
 from dotenv import load_dotenv
 
 from rrs.utils.generate_id import get_consistent_hash
 
 CLIMATE_SUBJECT_ID = get_consistent_hash("climate")
+TEXT_COLUMN = "text"
+ID_COLUMN = "case_id"
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -51,6 +55,7 @@ def get_data_from_db(
             rows = cur.fetchall()
             columns = [desc.name for desc in cur.description]
     return pd.DataFrame(rows, columns=columns)
+
 
 def get_clusters_from_db(
     active_since: Optional[date] = None,
@@ -114,7 +119,10 @@ def write_clusters_to_db(assignments_df: pd.DataFrame) -> None:
                     SET subject_id = EXCLUDED.subject_id,
                         cluster_text = EXCLUDED.cluster_text
                 """,
-                [(row.cluster_id, CLIMATE_SUBJECT_ID, row.cluster_text) for row in clusters.itertuples()],
+                [
+                    (row.cluster_id, CLIMATE_SUBJECT_ID, row.cluster_text)
+                    for row in clusters.itertuples()
+                ],
             )
             cur.execute(
                 "DELETE FROM case_to_clusters WHERE case_id = ANY(%s)",
@@ -129,7 +137,83 @@ def write_clusters_to_db(assignments_df: pd.DataFrame) -> None:
             )
         conn.commit()
 
-    print(f"  Written {len(clusters)} cluster(s) and {len(mappings)} case→cluster mapping(s) to DB.")
+    print(
+        f"  Written {len(clusters)} cluster(s) and {len(mappings)} case→cluster mapping(s) to DB."
+    )
+
+
+def load_from_db(
+    start_date=None,
+    end_date=None,
+) -> pd.DataFrame:
+    """Load data from the RRS database and return a DataFrame."""
+    df = get_data_from_db(start_date=start_date, end_date=end_date)
+    df = df[df[TEXT_COLUMN].notna() & (df[TEXT_COLUMN] != "")]
+    return df.reset_index(drop=True)
+
+
+def split_sentences(
+    df: pd.DataFrame,
+    text_column: str = TEXT_COLUMN,
+    spacy_model: str = "fr_core_news_sm",
+    window_size: int = 1,
+    overlap_tokens: int = 0,
+) -> pd.DataFrame:
+    """Expand each row into overlapping sentence-window chunks.
+
+    Each chunk contains *window_size* consecutive sentences joined by a space.
+    *overlap_tokens* controls how many tokens consecutive chunks share: the
+    algorithm walks back from the end of the current window, accumulating
+    sentences until their combined token count reaches *overlap_tokens*, then
+    starts the next window at that sentence.  Overlap is therefore always a
+    whole-sentence boundary — no sentence is ever split mid-way.
+
+    Short fragments (< 20 chars) are filtered before windowing.
+    Metadata is taken from the source document row (never from individual
+    sentences) so that case_id remains document-scoped.
+    Windows never cross document boundaries.
+
+    window_size=1, overlap_tokens=0 (defaults) → one sentence per row (original behaviour).
+    """
+    try:
+        nlp = spacy.load(spacy_model, disable=["ner", "lemmatizer"])
+    except OSError:
+        print(f"spaCy model '{spacy_model}' not found — downloading...")
+        spacy.cli.download(spacy_model)
+        nlp = spacy.load(spacy_model, disable=["ner", "lemmatizer"])
+
+    meta_cols = [c for c in [ID_COLUMN] if c in df.columns]
+    rows = []
+    texts = df[text_column].tolist()
+    meta = df[meta_cols].to_dict("records")
+
+    for doc, record in zip(nlp.pipe(texts, batch_size=64), meta):
+        sentences: list[tuple[str, int]] = [
+            (span.text.strip(), len(span))
+            for span in doc.sents
+            if len(span.text.strip()) >= 20
+        ]
+        if not sentences:
+            continue
+
+        i = 0
+        while i < len(sentences):
+            window = sentences[i : i + window_size]
+            rows.append({"sentence": " ".join(t for t, _ in window), **record})
+
+            if overlap_tokens == 0:
+                i += window_size
+            else:
+                token_sum = 0
+                suffix_len = 0
+                for _, n_tok in reversed(window):
+                    token_sum += n_tok
+                    suffix_len += 1
+                    if token_sum >= overlap_tokens:
+                        break
+                i += max(1, len(window) - suffix_len)
+
+    return pd.DataFrame(rows)
 
 
 if __name__ == "__main__":

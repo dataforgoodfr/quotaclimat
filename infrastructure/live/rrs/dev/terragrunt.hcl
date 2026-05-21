@@ -24,7 +24,7 @@ inputs = {
 
   # Barometre (main) database connection
   barometre_postgres_host     = get_env("TF_VAR_barometre_postgres_host")
-  barometre_postgres_port     = 5432
+  barometre_postgres_port     = tonumber(get_env("TF_VAR_barometre_postgres_port"))
   barometre_postgres_db       = "barometre"
   barometre_postgres_user     = get_env("TF_VAR_barometre_postgres_user")
   barometre_postgres_password = get_env("TF_VAR_barometre_postgres_password")

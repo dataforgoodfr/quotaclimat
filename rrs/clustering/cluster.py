@@ -1,8 +1,12 @@
 import argparse
 import json
 import pandas as pd
+import numpy as np
+import spacy
 from pathlib import Path
 from typing import Optional
+
+from rrs.utils.generate_id import get_consistent_hash
 
 from bertopic import BERTopic
 from bertopic.representation import KeyBERTInspired, MaximalMarginalRelevance
@@ -10,9 +14,10 @@ from bertopic.vectorizers import ClassTfidfTransformer
 from umap import UMAP
 from hdbscan import HDBSCAN
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
-# French stopwords — spacy is the cleanest source for French.
-# Falls back to a hardcoded minimal set if spacy is not installed.
+from rrs.clustering.get_data import get_data_from_db
+
 try:
     from spacy.lang.fr.stop_words import STOP_WORDS as _fr_stopwords
     FRENCH_STOPWORDS = list(_fr_stopwords)
@@ -56,74 +61,24 @@ SEED_TOPIC_LIST = [
 #     ["voitures électriques", "polluent plus", "voitures thermiques"],
 # ]
 
-HF_DATASET = "DataForGood/climateguard-training"
-HF_TEXT_COLUMN = "data_item_plaintext_whisper"
-HF_ID_COLUMN = "task_completion_aggregate_id"
-HF_META_COLUMNS = [HF_ID_COLUMN, "mesinfo_correct", "mesinfo_incorrect"]
+TEXT_COLUMN = "text"
+ID_COLUMN = "case_id"
 
 
-def _get_hf_token() -> Optional[str]:
-    from dotenv import load_dotenv
-    import os
-    load_dotenv(Path(__file__).resolve().parents[4] / ".env")
-    return os.getenv("HF_TOKEN")
-
-
-def load_from_hf(
-    dataset_name: str = HF_DATASET,
-    split: str = "train",
-    text_column: str = HF_TEXT_COLUMN,
-    country: Optional[str] = "france",
-    extra_columns: Optional[list] = None,
+def load_from_db(
+    start_date=None,
+    end_date=None,
 ) -> pd.DataFrame:
-    """Load the HuggingFace dataset and return a DataFrame with the text and metadata columns.
-
-    If *country* is set, only rows whose ``country`` column matches (case-insensitive)
-    are kept.  Pass ``country=None`` to load all countries.
-    *extra_columns* selects additional columns to include (e.g. a date field).
-    """
-    from datasets import load_dataset, concatenate_datasets  # optional dep; imported lazily
-
-    token = _get_hf_token()
-    if split == "db":
-        from quotaclimat.data_processing.rrs.climate.get_data import get_data_from_db
-        ds = get_data_from_db()
-    elif split == "both":
-        ds = concatenate_datasets([
-            load_dataset(dataset_name, split="train", token=token),
-            load_dataset(dataset_name, split="test", token=token),
-        ])
-    else:
-        ds = load_dataset(dataset_name, split=split, token=token)
-
-    needed = [text_column] + HF_META_COLUMNS + (extra_columns or [])
-    if country is not None:
-        needed = needed + ["country"]
-    # Silently drop any extra columns that don't exist in the dataset
-    needed = [c for c in dict.fromkeys(needed) if c in ds.column_names]
-    required = [text_column] + HF_META_COLUMNS
-    missing = [c for c in required if c not in ds.column_names]
-    if missing:
-        raise ValueError(
-            f"Columns not found: {missing}. Available: {ds.column_names}"
-        )
-
-    df = ds.select_columns(needed).to_pandas()
-    df = df[df[text_column].notna() & (df[text_column] != "")]
-    if country is not None:
-        before = len(df)
-        df = df[df["country"].str.lower() == country.lower()]
-        print(f"  Country filter '{country}': {len(df)}/{before} rows kept.")
-        df = df.drop(columns=["country"])
-    # float16 → float32 to avoid pandas arithmetic surprises
-    for col in ["mesinfo_correct", "mesinfo_incorrect"]:
-        df[col] = df[col].astype("float32")
+    """Load data from the RRS database and return a DataFrame."""
+    df = get_data_from_db(start_date=start_date, end_date=end_date)
+    print(df.head())
+    df = df[df[TEXT_COLUMN].notna() & (df[TEXT_COLUMN] != "")]
     return df.reset_index(drop=True)
 
 
 def split_sentences(
     df: pd.DataFrame,
-    text_column: str = HF_TEXT_COLUMN,
+    text_column: str = TEXT_COLUMN,
     spacy_model: str = "fr_core_news_sm",
     window_size: int = 1,
     overlap_tokens: int = 0,
@@ -139,13 +94,11 @@ def split_sentences(
 
     Short fragments (< 20 chars) are filtered before windowing.
     Metadata is taken from the source document row (never from individual
-    sentences) so that task_completion_aggregate_id and mesinfo values remain
-    document-scoped.  Windows never cross document boundaries.
+    sentences) so that case_id remains document-scoped.
+    Windows never cross document boundaries.
 
     window_size=1, overlap_tokens=0 (defaults) → one sentence per row (original behaviour).
     """
-    import spacy
-
     try:
         nlp = spacy.load(spacy_model, disable=["ner", "lemmatizer"])
     except OSError:
@@ -153,7 +106,7 @@ def split_sentences(
         spacy.cli.download(spacy_model)
         nlp = spacy.load(spacy_model, disable=["ner", "lemmatizer"])
 
-    meta_cols = [c for c in HF_META_COLUMNS if c in df.columns]
+    meta_cols = [c for c in [ID_COLUMN] if c in df.columns]
     rows = []
     texts = df[text_column].tolist()
     meta = df[meta_cols].to_dict("records")
@@ -318,9 +271,6 @@ def merge_similar_topics(
       - 0.90  : similar but not identical topics merged (BERTopic "auto" territory)
       - 0.85  : more aggressive — use when you still have too many topics
     """
-    import numpy as np
-    from sklearn.metrics.pairwise import cosine_similarity
-
     embeddings = np.array(model.topic_embeddings_)
     # Index 0 is the outlier topic (-1); skip it
     topic_ids = [t for t in model.get_topics() if t != -1]
@@ -366,15 +316,11 @@ def merge_similar_topics(
 def run(
     output_dir: str,
     input_path: Optional[str] = None,
-    text_column: str = "claim_text",
-    hf_dataset: str = HF_DATASET,
-    hf_split: str = "train",
-    hf_text_column: str = HF_TEXT_COLUMN,
+    text_column: str = TEXT_COLUMN,
     sentence_split: bool = True,
     spacy_model: str = "fr_core_news_sm",
     window_size: int = 1,
     overlap_tokens: int = 0,
-    country: Optional[str] = "france",
     nr_topics: Optional[int] = None,
     merge_threshold: Optional[float] = 0.92,
     year: Optional[int] = 2025,
@@ -393,21 +339,18 @@ def run(
         if sentence_split:
             print(f"Splitting into sentences (spaCy model: {spacy_model})...")
             sentences_df = split_sentences(
-                sentences_df.rename(columns={"sentence": hf_text_column}),
-                text_column=hf_text_column,
+                sentences_df.rename(columns={"sentence": text_column}),
+                text_column=text_column,
                 spacy_model=spacy_model,
                 window_size=window_size,
                 overlap_tokens=overlap_tokens,
             )
     else:
-        print(f"Loading texts from HuggingFace: {hf_dataset} ({hf_split})...")
-        docs_df = load_from_hf(
-            hf_dataset, hf_split, hf_text_column, country=country,
-            extra_columns=["data_item_start"],
-        )
+        print("Loading texts from database...")
+        docs_df = load_from_db()
         if year is not None or month is not None:
             before = len(docs_df)
-            dates = pd.to_datetime(docs_df["data_item_start"], errors="coerce", utc=True)
+            dates = pd.to_datetime(docs_df["start"], errors="coerce", utc=True)
             mask = pd.Series(True, index=docs_df.index)
             if year is not None:
                 mask &= dates.dt.year == year
@@ -422,14 +365,14 @@ def run(
                   f"window={window_size}, overlap_tokens={overlap_tokens})...")
             sentences_df = split_sentences(
                 docs_df,
-                text_column=hf_text_column,
+                text_column=text_column,
                 spacy_model=spacy_model,
                 window_size=window_size,
                 overlap_tokens=overlap_tokens,
             )
             print(f"  {len(sentences_df)} chunks after splitting.")
         else:
-            sentences_df = docs_df.rename(columns={hf_text_column: "sentence"})
+            sentences_df = docs_df.rename(columns={text_column: "sentence"})
 
     claims = sentences_df["sentence"].tolist()
     print(f"  {len(claims)} claims to cluster.")
@@ -495,31 +438,6 @@ def run(
     print(topic_info[["Topic", "Count", "Name"]].to_string(index=False))
     print()
 
-    # --- Per-document mesinfo sums per cluster ---
-    # Deduplicate by (topic_id, task_completion_aggregate_id) so that documents
-    # contributing multiple sentences to the same cluster are counted only once.
-    if HF_ID_COLUMN in sentences_df.columns:
-        doc_topic = (
-            sentences_df[[HF_ID_COLUMN, "topic_id", "mesinfo_correct", "mesinfo_incorrect"]]
-            .drop_duplicates(subset=[HF_ID_COLUMN, "topic_id"])
-        )
-        cluster_mesinfo = (
-            doc_topic.groupby("topic_id")
-            .agg(
-                sum_mesinfo_correct=("mesinfo_correct", "sum"),
-                sum_mesinfo_incorrect=("mesinfo_incorrect", "sum"),
-                count_mesinfo_correct=("mesinfo_correct", lambda x: (x == 1).sum()),
-                total_records=("mesinfo_correct", "count"),
-            )
-            .reset_index()
-        )
-        topic_info = topic_info.merge(cluster_mesinfo, left_on="Topic", right_on="topic_id", how="left")
-        topic_info.drop(columns=["topic_id"], inplace=True)
-
-        print("\n--- Records per topic (deduplicated by document) ---")
-        display_cols = ["Topic", "Name", "total_records", "count_mesinfo_correct"]
-        print(topic_info[display_cols].to_string(index=False))
-
     # --- Save CSVs ---
     csv_path = out / "sentences_with_topics.csv"
     sentences_df.to_csv(csv_path, index=False)
@@ -527,41 +445,20 @@ def run(
 
     topic_csv_path = out / "topic_summary.csv"
     topic_info.to_csv(topic_csv_path, index=False)
-    print(f"Topic summary (with mesinfo sums) saved to {topic_csv_path}")
+    print(f"Topic summary saved to {topic_csv_path}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Seeded BERTopic clustering for French disinformation claims."
     )
-    # Local file input (optional — if omitted, loads from HuggingFace)
     parser.add_argument(
         "--input",
-        help="Path to local claims file (.json or .csv). "
-             "If omitted, loads from --hf-dataset instead."
+        help="Path to local claims file (.json or .csv). If omitted, loads from the database."
     )
     parser.add_argument(
         "--text-column", default="claim_text",
         help="Column/key name for claim text in a local file. Default: claim_text"
-    )
-    # HuggingFace source
-    parser.add_argument(
-        "--hf-dataset", default=HF_DATASET,
-        help=f"HuggingFace dataset name. Default: {HF_DATASET}"
-    )
-    parser.add_argument(
-        "--hf-split", default="train",
-        help="HuggingFace dataset split. Default: train"
-    )
-    parser.add_argument(
-        "--hf-text-column", default=HF_TEXT_COLUMN,
-        help=f"Field to extract from the HF dataset. Default: {HF_TEXT_COLUMN}"
-    )
-    # Country filter
-    parser.add_argument(
-        "--country", default="france",
-        help="Filter dataset to this country (case-insensitive). Default: france. "
-             "Pass empty string to load all countries."
     )
     # Sentence splitting
     parser.add_argument(
@@ -612,15 +509,14 @@ if __name__ == "__main__":
         "--no-reduce-outliers", action="store_true",
         help="Disable outlier reduction entirely."
     )
-    # Date filter (HuggingFace source only)
     parser.add_argument(
         "--year", type=int, default=2025,
-        help="Keep only records whose data_item_start falls in this year. Default: 2025. "
+        help="Keep only records whose start falls in this year. Default: 2025. "
              "Pass 0 to disable year filtering."
     )
     parser.add_argument(
         "--month", type=int, default=7,
-        help="Keep only records whose data_item_start falls in this month (1–12). Default: 7 (July). "
+        help="Keep only records whose start falls in this month (1–12). Default: 7 (July). "
              "Pass 0 to disable month filtering."
     )
     args = parser.parse_args()
@@ -629,14 +525,10 @@ if __name__ == "__main__":
         output_dir=args.output_dir,
         input_path=args.input,
         text_column=args.text_column,
-        hf_dataset=args.hf_dataset,
-        hf_split=args.hf_split,
-        hf_text_column=args.hf_text_column,
         sentence_split=not args.no_sentence_split,
         spacy_model=args.spacy_model,
         window_size=args.window_size,
         overlap_tokens=args.overlap_tokens,
-        country=args.country or None,
         nr_topics=args.nr_topics,
         merge_threshold=None if args.no_merge else args.merge_threshold,
         year=args.year or None,

@@ -27,7 +27,4 @@ inputs = {
 
   # S3 / Scaleway Object Storage
   bucket_name   = get_env("TF_VAR_bucket_name")
-  bucket        = get_env("TF_VAR_bucket")
-  bucket_secret = get_env("TF_VAR_bucket_secret")
-
 }

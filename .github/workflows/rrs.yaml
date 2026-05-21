@@ -36,7 +36,7 @@ jobs:
           poetry-version: '2.1.3'
 
       - name: Install dependencies
-        run: poetry install --no-interaction --only main --with rrs
+        run: poetry install --no-interaction --without dev --with rrs
 
       - name: Run RRS Alembic migrations
         run: poetry run alembic -c rrs/alembic.ini upgrade head

@@ -23,30 +23,22 @@ from pathlib import Path
 from typing import Any, Optional
 
 import anthropic
-import pandas as pd
 import numpy as np
+import pandas as pd
 from dotenv import load_dotenv
 from mistralai import Mistral
-from transformers import AutoTokenizer
-from tqdm.asyncio import tqdm
-
-from rrs.clustering.get_data import TEXT_COLUMN, split_sentences
-from rrs.clustering.providers import (
-    PROVIDER_ANTHROPIC,
-    PROVIDER_MISTRAL,
-    MODEL_ANTHROPIC,
-    MODEL_MISTRAL,
-)
 from rrs.clustering.backends import (
-    LLMBackend,
-    EmbeddingBackend,
-    MAX_CONCURRENT,
+    _EMBEDDING_MODEL,
     EMBEDDING_BACKEND_MISTRAL,
     EMBEDDING_BACKEND_ST,
+    MAX_CONCURRENT,
+    EmbeddingBackend,
+    LLMBackend,
     MistralEmbeddingBackend,
     SentenceTransformerBackend,
-    _EMBEDDING_MODEL,
 )
+from rrs.clustering.cost import _cost
+from rrs.clustering.get_data import TEXT_COLUMN, split_sentences
 from rrs.clustering.prompts import (
     SYSTEM_PROMPT,
     _step1_prompt,
@@ -54,8 +46,14 @@ from rrs.clustering.prompts import (
     _step3_prompt,
     _zone3_prompt,
 )
-from rrs.clustering.cost import _cost
-
+from rrs.clustering.providers import (
+    MODEL_ANTHROPIC,
+    MODEL_MISTRAL,
+    PROVIDER_ANTHROPIC,
+    PROVIDER_MISTRAL,
+)
+from tqdm.asyncio import tqdm
+from transformers import AutoTokenizer
 
 _LOW_THRESHOLD = 0.40  # below → auto-keep (zone 1: different topic)
 _HIGH_THRESHOLD = 0.85  # above → auto-drop (zone 2: near-exact match)

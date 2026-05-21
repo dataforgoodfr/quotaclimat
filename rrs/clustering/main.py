@@ -24,44 +24,42 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
-
-
-from rrs.utils.generate_id import get_consistent_hash
 from rrs.clustering.backends import (
-    LLMBackend,
-    EmbeddingBackend,
+    _EMBEDDING_MODEL,
     EMBEDDING_BACKEND_MISTRAL,
     EMBEDDING_BACKEND_ST,
-    _EMBEDDING_MODEL,
     MAX_CONCURRENT,
-)
-from rrs.clustering.steps import (
-    _build_sentences_by_doc,
-    compute_target_clusters,
-    build_labels_from_transcripts,
-    merge_labels,
-    _deduplicate_candidates,
-    _filter_by_embedding_similarity_hybrid,
-    classify_all_transcripts,
-    _build_client,
-    build_embedding_backend,
-    _LOW_THRESHOLD,
-    _HIGH_THRESHOLD,
-    SEED_LABELS,
+    EmbeddingBackend,
+    LLMBackend,
 )
 from rrs.clustering.cost import (
+    _cost,
     estimate_step1_tokens,
     estimate_step2_tokens,
     estimate_step3_tokens,
-    _cost,
+)
+from rrs.clustering.get_data import (
+    ID_COLUMN,
+    get_clusters_from_db,
+    load_from_db,
+    write_clusters_to_db,
 )
 from rrs.clustering.providers import PROVIDER_ANTHROPIC, PROVIDER_MISTRAL
-from rrs.clustering.get_data import (
-    get_clusters_from_db,
-    write_clusters_to_db,
-    load_from_db,
-    ID_COLUMN,
+from rrs.clustering.steps import (
+    _HIGH_THRESHOLD,
+    _LOW_THRESHOLD,
+    SEED_LABELS,
+    _build_client,
+    _build_sentences_by_doc,
+    _deduplicate_candidates,
+    _filter_by_embedding_similarity_hybrid,
+    build_embedding_backend,
+    build_labels_from_transcripts,
+    classify_all_transcripts,
+    compute_target_clusters,
+    merge_labels,
 )
+from rrs.utils.generate_id import get_consistent_hash
 
 _OUTPUT_COLUMNS = [
     "case_id",

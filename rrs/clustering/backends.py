@@ -7,22 +7,21 @@ taxonomy and keep only the ones that express genuinely new claims.
 
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Optional, Any
 from dataclasses import dataclass
+from typing import Any, Optional
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
-from tqdm.asyncio import tqdm
-
-from rrs.clustering.steps import MAX_CONCURRENT, LLMBackend
-from rrs.clustering.cost import _cost, _PRICING
+from rrs.clustering.cost import _PRICING, _cost
+from rrs.clustering.prompts import SYSTEM_PROMPT
 from rrs.clustering.providers import (
-    PROVIDER_MISTRAL,
-    PROVIDER_ANTHROPIC,
     EMBEDDING_BACKEND_MISTRAL,
     EMBEDDING_BACKEND_ST,
+    PROVIDER_ANTHROPIC,
+    PROVIDER_MISTRAL,
 )
-from rrs.clustering.prompts import SYSTEM_PROMPT
+from rrs.clustering.steps import MAX_CONCURRENT, LLMBackend
+from sentence_transformers import SentenceTransformer
+from tqdm.asyncio import tqdm
 
 _EMBEDDING_MODEL = "dangvantuan/sentence-camembert-large"
 _MISTRAL_EMBED_MODEL = "mistral-embed"

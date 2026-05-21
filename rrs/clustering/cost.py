@@ -1,16 +1,14 @@
-import random
 import math
+import random
 
-from transformers import AutoTokenizer
-
-from rrs.clustering.providers import PROVIDER_ANTHROPIC, PROVIDER_MISTRAL
 from rrs.clustering.prompts import (
     SYSTEM_PROMPT,
     _step1_prompt,
     _step2_prompt,
     _step3_prompt,
 )
-
+from rrs.clustering.providers import PROVIDER_ANTHROPIC, PROVIDER_MISTRAL
+from transformers import AutoTokenizer
 
 # USD per million tokens — update if providers change pricing.
 # Mistral: https://mistral.ai/technology/

@@ -3,11 +3,9 @@ from datetime import date, timedelta
 from typing import Optional
 
 import pandas as pd
-import spacy
-
 import psycopg
+import spacy
 from dotenv import load_dotenv
-
 from rrs.utils.generate_id import get_consistent_hash
 
 CLIMATE_SUBJECT_ID = get_consistent_hash("climate")

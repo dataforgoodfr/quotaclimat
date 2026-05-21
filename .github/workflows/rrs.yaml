@@ -62,7 +62,7 @@ jobs:
           registry: rg.fr-par.scw.cloud/rrs-${{ env.REGISTRY_ENV }}
 
       - name: Build RRS image
-        run: docker build -f rrs/Dockerfile rrs/ -t rg.fr-par.scw.cloud/rrs-${{ env.REGISTRY_ENV }}/rrs:${{ env.IMAGE_TAG }}
+        run: docker build -f rrs/Dockerfile . -t rg.fr-par.scw.cloud/rrs-${{ env.REGISTRY_ENV }}/rrs:${{ env.IMAGE_TAG }}
 
       - name: Push RRS image
         run: docker push rg.fr-par.scw.cloud/rrs-${{ env.REGISTRY_ENV }}/rrs:${{ env.IMAGE_TAG }}

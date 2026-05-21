@@ -4,6 +4,7 @@ on:
   push:
     paths-ignore:
       - 'rrs/**'
+      - 'infrastructure/**'
       - '.github/workflows/rrs.yaml'
 
 env:

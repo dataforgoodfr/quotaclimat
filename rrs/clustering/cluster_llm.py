@@ -5,7 +5,7 @@ Three-step pipeline:
   1. Generate narrative labels per transcript — async, no shared label list in prompt
   2. Merge/deduplicate label list — single LLM call
   3. Classify each transcript against final labels — async
-  4. Report mesinfo scores per label
+  4. Save results
 
 Supports two LLM providers selectable via --provider:
   mistral   — Mistral Small (default)
@@ -15,9 +15,9 @@ Supports two LLM providers selectable via --provider:
 import argparse
 import ast
 import asyncio
-import hashlib
 import json
 import math
+import os
 import random
 import re
 from dataclasses import dataclass
@@ -25,19 +25,21 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Optional
 
+import anthropic
 import pandas as pd
-from mistralai import Mistral
 from dotenv import load_dotenv
+from mistralai import Mistral
+from transformers import AutoTokenizer
 from tqdm.asyncio import tqdm
 
-from quotaclimat.data_processing.rrs.climate.cluster import (
-    HF_DATASET,
-    HF_ID_COLUMN,
-    HF_TEXT_COLUMN,
-    load_claims,
-    load_from_hf,
+from rrs.clustering.cluster import (
+    ID_COLUMN,
+    TEXT_COLUMN,
+    load_from_db,
     split_sentences,
 )
+from rrs.clustering.get_data import write_clusters_to_db
+from rrs.utils.generate_id import get_consistent_hash
 
 PROVIDER_MISTRAL = "mistral"
 PROVIDER_ANTHROPIC = "anthropic"
@@ -67,31 +69,54 @@ class LLMBackend:
     provider: str
     model: str
     client: Any
+    _input_tokens: int = 0
+    _output_tokens: int = 0
 
     async def chat(self, messages: list[dict], max_tokens: int = 512) -> str:
-        """Send user messages and return the text response."""
+        """Send user messages, accumulate real token usage, and return the text response."""
         if self.provider == PROVIDER_ANTHROPIC:
             response = await self.client.messages.create(
                 model=self.model,
                 max_tokens=max_tokens,
+                temperature=0,
                 system=SYSTEM_PROMPT,
                 messages=messages,
             )
+            self._input_tokens += response.usage.input_tokens
+            self._output_tokens += response.usage.output_tokens
             return next(b.text for b in response.content if b.type == "text")
         else:
             response = await self.client.chat.complete_async(
                 model=self.model,
                 max_tokens=max_tokens,
+                temperature=0,
                 messages=[{"role": "system", "content": SYSTEM_PROMPT}] + messages,
             )
+            if response.usage:
+                self._input_tokens += response.usage.prompt_tokens or 0
+                self._output_tokens += response.usage.completion_tokens or 0
             return response.choices[0].message.content
+
+    def total_cost(self) -> float:
+        """Return the total cost in USD based on accumulated token usage."""
+        return _cost(self._input_tokens, self._output_tokens, self.provider)
+
+    def cost_summary(self) -> str:
+        """Return a human-readable cost summary string."""
+        p = _PRICING.get(self.provider, _PRICING[PROVIDER_MISTRAL])
+        cost = self.total_cost()
+        return (
+            f"  Provider    : {self.provider} ({self.model})\n"
+            f"  Input tokens: {self._input_tokens:,}\n"
+            f"  Output tokens: {self._output_tokens:,}\n"
+            f"  Rates       : ${p['input']}/M input, ${p['output']}/M output\n"
+            f"  Total cost  : ${cost:.4f}"
+        )
 
 
 def _build_client(provider: str = PROVIDER_MISTRAL) -> LLMBackend:
-    import os
     load_dotenv()
     if provider == PROVIDER_ANTHROPIC:
-        import anthropic
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
             raise EnvironmentError(
@@ -162,7 +187,6 @@ _tokenizer = None
 def _get_tokenizer():
     global _tokenizer
     if _tokenizer is None:
-        from transformers import AutoTokenizer
         _tokenizer = AutoTokenizer.from_pretrained(_TOKENIZER_REPO)
     return _tokenizer
 
@@ -367,9 +391,24 @@ async def _merge_labels_call(label_list: list[str], client: LLMBackend) -> list[
     return parsed
 
 
+def compute_target_clusters(
+    n_docs: int,
+    min_clusters: int = 5,
+    max_clusters: int = 150,
+    scale_factor: float = 1.0,
+) -> int:
+    """Return a target cluster count that scales with corpus size.
+
+    Uses sqrt(n_docs) as the base heuristic, clamped to [min_clusters, max_clusters].
+    """
+    target = int(scale_factor * math.sqrt(n_docs))
+    return max(min_clusters, min(target, max_clusters))
+
+
 async def merge_labels(
     label_list: list[str],
     client: LLMBackend,
+    target_clusters: int,
     batch_size: int = 30,
     max_concurrent: int = MAX_CONCURRENT,
     max_rounds: int = 20,
@@ -380,13 +419,14 @@ async def merge_labels(
     Each round splits the current label list into chunks of *batch_size*, merges
     each chunk in parallel, then flattens the results. Labels are shuffled before
     each round so that different labels end up in the same group each time.
-    Stops when the list fits in a single batch or *max_rounds* is reached,
-    then makes one final merge call.
+    Stops when the label count reaches *target_clusters* (or 3*batch_size if not
+    set) or *max_rounds* is reached, then makes one final merge call.
     """
     labels = list(label_list)
     round_num = 0
+    print(f"  Merge target: ≤{target_clusters} labels (from {len(labels)} candidates)")
 
-    while len(labels) > 3 * batch_size and round_num < max_rounds:
+    while len(labels) > target_clusters and round_num < max_rounds:
         round_num += 1
         random.shuffle(labels)
         chunks = [labels[i:i + batch_size] for i in range(0, len(labels), batch_size)]
@@ -432,6 +472,7 @@ def _step3_prompt(sentences: list[str], label_list: list[str]) -> str:
         f"Sentences: {sentences}\n"
         "Return ONLY a JSON array of matching label strings using double quotes starting with "
         "'[' and anding with ']'. No code fences."
+        "If no labels match the sentences return '[]'."
     )
 
 
@@ -479,24 +520,11 @@ async def classify_all_transcripts(
 # Helpers
 # ---------------------------------------------------------------------------
 
-DATE_COLUMN = "data_item_start"  # HF dataset column that holds the broadcast/publication date
-
-# Metadata columns to carry through from the HF dataset into the output CSV.
-_HF_EXTRA_COLS = [
-    "task_aggregate_id", "data_item_start", "project_id",
-    "data_item_id", "data_item_channel_name", "data_item_channel_title",
-]
-
-_OUTPUT_COLUMNS = [
-    "task_completion_aggregate_id", "task_aggregate_id", "data_item_start",
-    "project_id", "country", "data_item_id", "data_item_plaintext_whisper",
-    "data_item_channel_name", "data_item_channel_title", "cluster_id", "cluster_text",
-]
+_OUTPUT_COLUMNS = ["case_id", "segment_id", "start", "text", "cluster_id", "cluster_text"]
 
 
 def _build_sentences_by_doc(
     docs_df: pd.DataFrame,
-    hf_text_column: str,
     id_col: Optional[str],
     spacy_model: str,
     window_size: int,
@@ -505,7 +533,7 @@ def _build_sentences_by_doc(
     """Split transcripts into sentences grouped by document ID."""
     if id_col:
         sentences_df = split_sentences(
-            docs_df, text_column=hf_text_column, spacy_model=spacy_model,
+            docs_df, text_column=TEXT_COLUMN, spacy_model=spacy_model,
             window_size=window_size, overlap_tokens=overlap_tokens,
         )
         print(f"  {len(sentences_df)} sentence chunks total.")
@@ -516,10 +544,10 @@ def _build_sentences_by_doc(
     else:
         sentences_by_doc: dict[str, list[str]] = {}
         for i, row in enumerate(docs_df.itertuples()):
-            text = getattr(row, hf_text_column)
-            tmp = pd.DataFrame({hf_text_column: [text]})
+            text = getattr(row, TEXT_COLUMN)
+            tmp = pd.DataFrame({TEXT_COLUMN: [text]})
             s_df = split_sentences(
-                tmp, text_column=hf_text_column, spacy_model=spacy_model,
+                tmp, text_column=TEXT_COLUMN, spacy_model=spacy_model,
                 window_size=window_size, overlap_tokens=overlap_tokens,
             )
             sentences_by_doc[str(i)] = s_df["sentence"].tolist()
@@ -529,25 +557,11 @@ def _build_sentences_by_doc(
 
 
 # ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _label_hash(text: str) -> int:
-    """Stable 32-bit integer ID derived from label text (MD5, truncated)."""
-    return int(hashlib.md5(text.encode("utf-8")).hexdigest(), 16) % (2 ** 32)
-
-
-# ---------------------------------------------------------------------------
 # Main entry point
 # ---------------------------------------------------------------------------
 
 async def run(
     output_dir: str,
-    input_path: Optional[str] = None,
-    text_column: str = "claim_text",
-    hf_dataset: str = HF_DATASET,
-    hf_split: str = "train",
-    hf_text_column: str = HF_TEXT_COLUMN,
     spacy_model: str = "fr_core_news_sm",
     window_size: int = 1,
     overlap_tokens: int = 0,
@@ -555,12 +569,14 @@ async def run(
     skip_merge: bool = False,
     merge_batch_size: int = 30,
     merge_max_rounds: int = 20,
-    country: Optional[str] = "france",
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
-    date_column: str = DATE_COLUMN,
     max_concurrent: int = MAX_CONCURRENT,
     provider: str = PROVIDER_MISTRAL,
+    target_clusters: Optional[int] = None,
+    min_clusters: int = 5,
+    max_clusters: int = 150,
+    cluster_scale: float = 1.0,
 ) -> None:
     out = Path(output_dir)
     out.mkdir(parents=True, exist_ok=True)
@@ -568,40 +584,16 @@ async def run(
     client = _build_client(provider)
 
     # --- Load data ---
-    if input_path:
-        print(f"Loading claims from {input_path}...")
-        raw_texts = load_claims(input_path, text_column)
-        docs_df = pd.DataFrame({hf_text_column: raw_texts})
-        id_col = None
-    else:
-        print(f"Loading texts from HuggingFace: {hf_dataset} ({hf_split})...")
-        # Load without country filter so the country column is retained in the output.
-        extra = list(dict.fromkeys([date_column] + _HF_EXTRA_COLS + ["country"]))
-        docs_df = load_from_hf(hf_dataset, hf_split, hf_text_column, country=None, extra_columns=extra)
-        if country is not None:
-            before = len(docs_df)
-            docs_df = docs_df[docs_df["country"].str.lower() == country.lower()].reset_index(drop=True)
-            print(f"  Country filter '{country}': {len(docs_df)}/{before} rows kept.")
-        print(f"  {len(docs_df)} documents loaded.")
-        id_col = HF_ID_COLUMN if HF_ID_COLUMN in docs_df.columns else None
-
-    # --- Optional date filter ---
-    if not input_path and (start_date is not None or end_date is not None):
-        dates = pd.to_datetime(docs_df[date_column], errors="coerce")
-        mask = pd.Series(True, index=docs_df.index)
-        if start_date is not None:
-            mask &= dates.dt.date >= start_date
-        if end_date is not None:
-            mask &= dates.dt.date <= end_date
-        before = len(docs_df)
-        docs_df = docs_df[mask].reset_index(drop=True)
-        print(f"  Date filter [{start_date} → {end_date}]: {len(docs_df)}/{before} rows kept.")
+    print(f"Loading texts from database [{start_date} → {end_date}]...")
+    docs_df = load_from_db(start_date=start_date, end_date=end_date)
+    print(f"  {len(docs_df)} documents loaded.")
+    id_col = ID_COLUMN if ID_COLUMN in docs_df.columns else None
 
     # --- Split all transcripts into sentences, grouped by document ---
     print(f"Splitting transcripts into sentences (spaCy: {spacy_model}, "
           f"window={window_size}, overlap={overlap_tokens})...")
     sentences_by_doc = _build_sentences_by_doc(
-        docs_df, hf_text_column, id_col, spacy_model, window_size, overlap_tokens
+        docs_df, id_col, spacy_model, window_size, overlap_tokens
     )
 
     # --- Step 1: token estimate, then generate labels ---
@@ -622,14 +614,18 @@ async def run(
 
     # --- Step 2: merge similar labels, assign IDs ---
     if not skip_merge:
+        effective_target = target_clusters if target_clusters is not None else compute_target_clusters(
+            len(sentences_by_doc), min_clusters=min_clusters, max_clusters=max_clusters, scale_factor=cluster_scale
+        )
         print(f"\nStep 2: Estimating token usage for {len(all_labels)} labels...")
+        print(f"  Adaptive cluster target: {effective_target} (n_docs={len(sentences_by_doc)})")
         estimate_step2_tokens(all_labels, batch_size=merge_batch_size, provider=provider)
         print("\nStep 2: Merging semantically similar labels...")
-        all_labels = await merge_labels(all_labels, client, batch_size=merge_batch_size, max_concurrent=max_concurrent, max_rounds=merge_max_rounds, log_path=out / "labels_merge_progress.json")
+        all_labels = await merge_labels(all_labels, client, batch_size=merge_batch_size, max_concurrent=max_concurrent, max_rounds=merge_max_rounds, log_path=out / "labels_merge_progress.json", target_clusters=effective_target)
         print(f"  {len(all_labels)} labels after merging.")
 
-    label_to_id = {label: _label_hash(label) for label in all_labels}
-    labels_data = [{"id": _label_hash(label), "label": label} for label in all_labels]
+    label_to_id = {label: get_consistent_hash(label) for label in all_labels}
+    labels_data = [{"id": get_consistent_hash(label), "label": label} for label in all_labels]
     labels_path = out / "labels.json"
     labels_path.write_text(json.dumps(labels_data, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"  Final labels with IDs saved to {labels_path}")
@@ -645,16 +641,14 @@ async def run(
         for label in matched_labels:
             label_id = label_to_id.get(label)
             if label_id is not None:
-                records.append({HF_ID_COLUMN: doc_id, "cluster_id": label_id, "cluster_text": label})
+                records.append({ID_COLUMN: doc_id, "cluster_id": label_id, "cluster_text": label})
 
-    assignments_df = pd.DataFrame(records) if records else pd.DataFrame(columns=[HF_ID_COLUMN, "cluster_id", "cluster_text"])
+    assignments_df = pd.DataFrame(records) if records else pd.DataFrame(columns=[ID_COLUMN, "cluster_id", "cluster_text"])
 
-    # Join HF metadata columns for the final output CSV.
-    if id_col and not input_path and not assignments_df.empty:
-        meta_cols = [c for c in _OUTPUT_COLUMNS[:-2] if c in docs_df.columns and c != HF_ID_COLUMN]
-        meta_df = docs_df[[HF_ID_COLUMN] + meta_cols].drop_duplicates(subset=[HF_ID_COLUMN]).copy()
-        meta_df[HF_ID_COLUMN] = meta_df[HF_ID_COLUMN].astype(str)
-        assignments_df = assignments_df.merge(meta_df, on=HF_ID_COLUMN, how="left")
+    if id_col and not assignments_df.empty:
+        meta_cols = [c for c in _OUTPUT_COLUMNS if c in docs_df.columns and c != ID_COLUMN]
+        meta_df = docs_df[[ID_COLUMN] + meta_cols].drop_duplicates(subset=[ID_COLUMN]).copy()
+        assignments_df = assignments_df.merge(meta_df, on=ID_COLUMN, how="left")
 
     for col in _OUTPUT_COLUMNS:
         if col not in assignments_df.columns:
@@ -665,36 +659,8 @@ async def run(
     assignments_df.to_csv(assignments_path, index=False)
     print(f"\nTranscript-label assignments saved to {assignments_path}")
 
-    # --- Step 4: mesinfo statistics per label ---
-    print("\nStep 4: Computing mesinfo statistics per label...")
-    if id_col and "mesinfo_correct" in docs_df.columns and "mesinfo_incorrect" in docs_df.columns:
-        mesinfo_df = (
-            docs_df[[HF_ID_COLUMN, "mesinfo_correct", "mesinfo_incorrect"]]
-            .copy()
-            .assign(**{HF_ID_COLUMN: docs_df[HF_ID_COLUMN].astype(str)})
-        )
-        merged = assignments_df.merge(mesinfo_df, on=HF_ID_COLUMN, how="left")
-        deduped = merged.drop_duplicates(subset=[HF_ID_COLUMN, "cluster_id"])
-
-        stats = (
-            deduped.groupby(["cluster_id", "cluster_text"])
-            .agg(
-                count=(HF_ID_COLUMN, "count"),
-                sum_mesinfo_correct=("mesinfo_correct", lambda x: (x == 1).sum()),
-                sum_mesinfo_incorrect=("mesinfo_incorrect", lambda x: (x == 1).sum()),
-            )
-            .reset_index()
-            .sort_values("cluster_id")
-        )
-
-        print("\n--- Label mesinfo statistics ---")
-        print(stats.to_string(index=False))
-
-        stats_path = out / "label_mesinfo_stats.csv"
-        stats.to_csv(stats_path, index=False)
-        print(f"\nLabel mesinfo stats saved to {stats_path}")
-    else:
-        print("  Skipping: id column or mesinfo columns not found in data.")
+    print("\nWriting results to database...")
+    write_clusters_to_db(assignments_df)
 
 
 if __name__ == "__main__":
@@ -703,26 +669,6 @@ if __name__ == "__main__":
             "LLM-based text clustering — transcript-level narrative matching (3-step pipeline). "
             f"Supports providers: {PROVIDER_MISTRAL} (default), {PROVIDER_ANTHROPIC}."
         )
-    )
-    parser.add_argument(
-        "--input",
-        help="Path to a local claims file (.json or .csv). "
-             "If omitted, loads from --hf-dataset.",
-    )
-    parser.add_argument(
-        "--text-column", default="claim_text",
-        help="Column/key for claim text in a local file. Default: claim_text",
-    )
-    parser.add_argument("--hf-dataset", default=HF_DATASET)
-    parser.add_argument("--hf-split", default="train")
-    parser.add_argument(
-        "--hf-text-column", default=HF_TEXT_COLUMN,
-        help=f"Text field in the HF dataset. Default: {HF_TEXT_COLUMN}",
-    )
-    parser.add_argument(
-        "--country", default="france",
-        help="Filter dataset to this country. Default: france. "
-             "Pass empty string to load all countries.",
     )
     parser.add_argument("--spacy-model", default="fr_core_news_sm")
     parser.add_argument("--window-size", type=int, default=3)
@@ -758,6 +704,22 @@ if __name__ == "__main__":
         help="Maximum number of hierarchical merge rounds in step 2. Default: 20.",
     )
     parser.add_argument(
+        "--target-clusters", type=int, default=None,
+        help="Explicit target cluster count; overrides adaptive default (sqrt(n_docs)).",
+    )
+    parser.add_argument(
+        "--min-clusters", type=int, default=5,
+        help="Minimum clusters when using adaptive target. Default: 5.",
+    )
+    parser.add_argument(
+        "--max-clusters", type=int, default=150,
+        help="Maximum clusters when using adaptive target. Default: 150.",
+    )
+    parser.add_argument(
+        "--cluster-scale", type=float, default=1.0,
+        help="Multiplier on sqrt(n_docs) for adaptive cluster target. Default: 1.0.",
+    )
+    parser.add_argument(
         "--output-dir", default="./bertopic_llm_output",
         help="Directory for output files. Default: ./bertopic_llm_output",
     )
@@ -768,10 +730,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--end-date", default=None, metavar="YYYY-MM-DD",
         help="Keep only records on or before this date (inclusive). Default: no upper bound.",
-    )
-    parser.add_argument(
-        "--date-column", default=DATE_COLUMN,
-        help=f"Dataset column that holds the date. Default: {DATE_COLUMN}",
     )
     args = parser.parse_args()
 
@@ -784,11 +742,6 @@ if __name__ == "__main__":
 
     asyncio.run(run(
         output_dir=args.output_dir,
-        input_path=args.input,
-        text_column=args.text_column,
-        hf_dataset=args.hf_dataset,
-        hf_split=args.hf_split,
-        hf_text_column=args.hf_text_column,
         spacy_model=args.spacy_model,
         window_size=args.window_size,
         overlap_tokens=args.overlap_tokens,
@@ -796,10 +749,12 @@ if __name__ == "__main__":
         skip_merge=args.skip_merge,
         merge_batch_size=args.merge_batch_size,
         merge_max_rounds=args.merge_max_rounds,
-        country=args.country or None,
         start_date=date.fromisoformat(args.start_date) if args.start_date else None,
         end_date=date.fromisoformat(args.end_date) if args.end_date else None,
-        date_column=args.date_column,
         max_concurrent=args.max_concurrent,
         provider=args.provider,
+        target_clusters=args.target_clusters,
+        min_clusters=args.min_clusters,
+        max_clusters=args.max_clusters,
+        cluster_scale=args.cluster_scale,
     ))

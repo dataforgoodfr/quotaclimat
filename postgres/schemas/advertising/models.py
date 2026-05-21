@@ -38,6 +38,9 @@ class Ad(AdvertisingBase):
     predicted_sector = Column(String, nullable=True)
     predicted_product_category = Column(String, nullable=True)
 
+    predicted_brand = Column(String, nullable=True)
+    prediction_method = Column(String, nullable=True)
+
     def attributes(self):
         return {
             "id": self.id,

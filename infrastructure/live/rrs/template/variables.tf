@@ -91,29 +91,10 @@ variable "anthropic_api_key" {
   sensitive = true
 }
 
-# Barometre (main) database connection (import jobs)
-
-variable "barometre_postgres_host" {
-  type = string
-}
-
-variable "barometre_postgres_port" {
-  type    = number
-  default = 5432
-}
-
-variable "barometre_postgres_db" {
-  type    = string
-  default = "barometre"
-}
-
-variable "barometre_postgres_user" {
-  type = string
-}
-
-variable "barometre_postgres_password" {
-  type      = string
-  sensitive = true
+variable "barometre_rrs_read_password" {
+  type        = string
+  sensitive   = true
+  description = "Password for the rrs-read-{env} user on the barometre database."
 }
 
 # S3 / Scaleway Object Storage (import_segments job)

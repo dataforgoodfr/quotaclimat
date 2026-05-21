@@ -14,14 +14,14 @@ locals {
   }
 
   barometre_env = {
-    POSTGRES_HOST = var.barometre_postgres_host
-    POSTGRES_PORT = tostring(var.barometre_postgres_port)
-    POSTGRES_DB   = var.barometre_postgres_db
-    POSTGRES_USER = var.barometre_postgres_user
+    POSTGRES_HOST = data.scaleway_rdb_instance.barometre.endpoint_ip
+    POSTGRES_PORT = tostring(data.scaleway_rdb_instance.barometre.endpoint_port)
+    POSTGRES_DB   = data.scaleway_rdb_database.barometre.name
+    POSTGRES_USER = scaleway_rdb_user.rrs_read.name
   }
 
   barometre_secret_env = {
-    POSTGRES_PASSWORD = scaleway_secret_version.barometre_postgres_password.data
+    POSTGRES_PASSWORD = scaleway_rdb_user.rrs_read.password
   }
 }
 

@@ -20,15 +20,15 @@ resource "scaleway_secret_version" "anthropic_api_key" {
   data      = var.anthropic_api_key
 }
 
-resource "scaleway_secret" "barometre_postgres_password" {
-  name       = "rrs-barometre-postgres-password-${var.environment}"
+resource "scaleway_secret" "barometre_rrs_read_password" {
+  name       = "rrs-barometre-read-password-${var.environment}"
   project_id = scaleway_account_project.project.id
   region     = "fr-par"
 }
 
-resource "scaleway_secret_version" "barometre_postgres_password" {
-  secret_id = scaleway_secret.barometre_postgres_password.id
-  data      = var.barometre_postgres_password
+resource "scaleway_secret_version" "barometre_rrs_read_password" {
+  secret_id = scaleway_secret.barometre_rrs_read_password.id
+  data      = var.barometre_rrs_read_password
 }
 
 resource "scaleway_secret" "bucket" {

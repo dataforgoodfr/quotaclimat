@@ -22,12 +22,8 @@ inputs = {
   mistral_api_key   = get_env("TF_VAR_mistral_api_key")
   anthropic_api_key = get_env("TF_VAR_anthropic_api_key")
 
-  # Barometre (main) database connection
-  barometre_postgres_host     = get_env("TF_VAR_barometre_postgres_host")
-  barometre_postgres_port     = tonumber(get_env("TF_VAR_barometre_postgres_port"))
-  barometre_postgres_db       = "barometre"
-  barometre_postgres_user     = get_env("TF_VAR_barometre_postgres_user")
-  barometre_postgres_password = get_env("TF_VAR_barometre_postgres_password")
+  # Barometre rrs-read user
+  barometre_rrs_read_password = get_env("TF_VAR_barometre_rrs_read_password")
 
   # S3 / Scaleway Object Storage
   bucket_name   = get_env("TF_VAR_bucket_name")

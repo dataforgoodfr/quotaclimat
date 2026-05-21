@@ -1,125 +1,136 @@
 import os
-from datetime import date, datetime, timedelta
-from typing import List
+from datetime import date, timedelta
+from typing import Optional
 
-import numpy as np
 import pandas as pd
 import psycopg
-import requests
-from datasets import Dataset, DatasetDict, load_dataset
 from dotenv import load_dotenv
+
+from rrs.utils.generate_id import get_consistent_hash
+
+CLIMATE_SUBJECT_ID = get_consistent_hash("climate")
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 
-def fetch_articles(columns: List[str] = None) -> pd.DataFrame:
-    conninfo = (
-        f"host={os.getenv('PG_HOST', 'localhost')} port={os.getenv('PG_PORT', 5432)} "
-        f"dbname={os.getenv('PG_DATABASE', 'postgres')} user={os.getenv('PG_USER', 'user')} "
-        f"password={os.getenv('PG_PASSWORD', 'supersecret')}"
+def _conninfo() -> str:
+    return (
+        f"host={os.getenv('RRS_PG_HOST', 'localhost')} "
+        f"port={os.getenv('RRS_PG_PORT', 5432)} "
+        f"dbname={os.getenv('RRS_PG_DATABASE', 'rrs_db')} "
+        f"user={os.getenv('RRS_PG_USER', 'user')} "
+        f"password={os.getenv('RRS_PG_PASSWORD', 'supersecret')}"
     )
-    columns_str = ", ".join(columns) if columns else "*"
+
+
+def get_data_from_db(
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+) -> pd.DataFrame:
+    conditions = []
+    params: list = []
+    if start_date is not None:
+        conditions.append("c.start >= %s")
+        params.append(start_date)
+    if end_date is not None:
+        conditions.append("c.start < %s")
+        params.append(end_date + timedelta(days=1))
+    where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
     query = f"""
-        SELECT {columns_str}
-        FROM analytics.task_global_completion
+        SELECT
+            c.case_id,
+            c.segment_id,
+            c.start,
+            c.text
+        FROM cases c
+        {where}
     """
-    with psycopg.connect(conninfo) as conn:
+    with psycopg.connect(_conninfo()) as conn:
         with conn.cursor() as cur:
-            cur.execute(query)
+            cur.execute(query, params)
             rows = cur.fetchall()
             columns = [desc.name for desc in cur.description]
+    return pd.DataFrame(rows, columns=columns)
 
+def get_clusters_from_db(
+    active_since: Optional[date] = None,
+) -> pd.DataFrame:
+    """Return clusters from the database.
+
+    If active_since is given, only clusters that have had at least one case
+    assigned on or after that date are returned.
+    Columns: cluster_id, cluster_text.
+    """
+    if active_since is not None:
+        query = """
+            SELECT cl.cluster_id, cl.cluster_text
+            FROM clusters cl
+            JOIN case_to_clusters ctc ON ctc.cluster_id = cl.cluster_id
+            JOIN cases c ON c.case_id = ctc.case_id
+            GROUP BY cl.cluster_id, cl.cluster_text
+            HAVING MAX(c.start) >= %s
+        """
+        params: list = [active_since]
+    else:
+        query = "SELECT cluster_id, cluster_text FROM clusters"
+        params = []
+    with psycopg.connect(_conninfo()) as conn:
+        with conn.cursor() as cur:
+            cur.execute(query, params)
+            rows = cur.fetchall()
+            columns = [desc.name for desc in cur.description]
     return pd.DataFrame(rows, columns=columns)
 
 
-def get_week_number(record):
-    format_str = "%Y-%m-%dT%H:%M:%S"
-    if len(record["data_item_start"]) > 19:
-        format_str = format_str + "%z"
-    week_number = (
-        datetime.strptime(record["data_item_start"], format_str).isocalendar().week
+def write_clusters_to_db(assignments_df: pd.DataFrame) -> None:
+    """Upsert clusters and case→cluster mappings into the database.
+
+    Expects assignments_df to have at least: case_id, cluster_id, cluster_text.
+    """
+    if assignments_df.empty:
+        print("  No assignments to write to DB.")
+        return
+
+    clusters = (
+        assignments_df[["cluster_id", "cluster_text"]]
+        .dropna(subset=["cluster_id"])
+        .drop_duplicates(subset=["cluster_id"])
     )
-    return week_number
-
-def cast_to_int_with_nan(col: pd.Series, int_type: str='uint8'):
-    col = col.fillna(-1)
-    col = col.astype(int_type)
-    col[col==-1] = np.nan
-    return col
-
-
-def format_dtypes(df: pd.DataFrame):
-    df.data_item_day = df.data_item_day.astype('f2')
-    df.data_item_month = df.data_item_month.astype('f2')
-    df.data_item_year = df.data_item_year.astype('f2')
-    df.data_item_model_result = df.data_item_model_result.astype('f2')
-    df.mesinfo_correct = df.mesinfo_correct.astype('f2')
-    df.mesinfo_incorrect = df.mesinfo_incorrect.astype('f2')
-    df.speaker_journalist = df.speaker_journalist.astype('f2')
-    df.speaker_commentator = df.speaker_commentator.astype('f2')
-    df.speaker_guest = df.speaker_guest.astype('f2')
-    df.speaker_politician = df.speaker_politician.astype('f2')
-    df.speaker_audience = df.speaker_audience.astype('f2')
-    df.speaker_unknown = df.speaker_unknown.astype('f2')
-    df.mesinfo_corrected_bool = df.mesinfo_corrected_bool.astype('f2')
-    df.mesinfo_corrected = df.mesinfo_corrected.fillna("")
-    return df
-
-def generate_hf_dataset(df):
-    df.data_item_start = df.data_item_start.dt.strftime(
-        "%Y-%m-%dT%H:%M:%S%z"
+    mappings = (
+        assignments_df[["case_id", "cluster_id"]]
+        .dropna(subset=["case_id", "cluster_id"])
+        .drop_duplicates()
     )
-    dataset = Dataset.from_pandas(df)
-    return dataset
 
-DATASET_COLUMNS = [
-    "task_completion_aggregate_id",
-    "task_aggregate_id",
-    "created_at",
-    "updated_at",
-    "is_labeled",
-    "project_id",
-    "country",
-    "data_item_id",
-    "data_item_channel",
-    "data_item_channel_name",
-    "data_item_channel_title",
-    "data_item_channel_program",
-    "data_item_channel_program_type",
-    "data_item_day",
-    "data_item_month",
-    "data_item_year",
-    "data_item_start",
-    "data_item_model_name",
-    "data_item_model_reason",
-    "data_item_model_result",
-    "data_item_plaintext",
-    "data_item_plaintext_whisper",
-    "data_item_url_mediatree",
-    "mesinfo_choice",
-    "locuteur_choice",
-    "mesinfo_correct",
-    "mesinfo_incorrect",
-    "speaker_journalist",
-    "speaker_commentator",
-    "speaker_guest",
-    "speaker_politician",
-    "speaker_audience",
-    "speaker_unknown",
-    "mesinfo_corrected",
-    "mesinfo_corrected_bool",
-    "debunk_references",
-    "claims",
-    "explanations",
-    "other_comments",
-]
+    case_ids = mappings["case_id"].unique().tolist()
 
+    with psycopg.connect(_conninfo()) as conn:
+        with conn.cursor() as cur:
+            cur.executemany(
+                """
+                INSERT INTO clusters (cluster_id, subject_id, cluster_text)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (cluster_id) DO UPDATE
+                    SET subject_id = EXCLUDED.subject_id,
+                        cluster_text = EXCLUDED.cluster_text
+                """,
+                [(row.cluster_id, CLIMATE_SUBJECT_ID, row.cluster_text) for row in clusters.itertuples()],
+            )
+            cur.execute(
+                "DELETE FROM case_to_clusters WHERE case_id = ANY(%s)",
+                (case_ids,),
+            )
+            cur.executemany(
+                """
+                INSERT INTO case_to_clusters (case_id, cluster_id)
+                VALUES (%s, %s)
+                """,
+                [(row.case_id, row.cluster_id) for row in mappings.itertuples()],
+            )
+        conn.commit()
 
-def get_data_from_db():
-    df = fetch_articles(DATASET_COLUMNS)
-    df = format_dtypes(df)
-    dataset = generate_hf_dataset(df)
-    return dataset
+    print(f"  Written {len(clusters)} cluster(s) and {len(mappings)} case→cluster mapping(s) to DB.")
+
 
 if __name__ == "__main__":
     get_data_from_db()

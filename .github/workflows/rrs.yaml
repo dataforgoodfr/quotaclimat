@@ -12,6 +12,9 @@ on:
       - 'rrs/**'
       - '.github/workflows/rrs.yaml'
 
+permissions:
+  contents: read
+
 env:
   RRS_PG_HOST: ${{ secrets.RRS_PG_HOST }}
   RRS_PG_PORT: ${{ secrets.RRS_PG_PORT }}

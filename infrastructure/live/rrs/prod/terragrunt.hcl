@@ -29,5 +29,5 @@ inputs = {
   bucket_name   = get_env("TF_VAR_bucket_name")
 
   # In prod, restrict DB access to Scaleway serverless job ranges only (no 0.0.0.0/0).
-  acl_allowed_ips = []
+  acl_allowed_ips = jsondecode(get_env("TF_VAR_acl_allowed_ips"))
 }

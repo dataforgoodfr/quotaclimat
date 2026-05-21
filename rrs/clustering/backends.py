@@ -19,7 +19,6 @@ from rrs.clustering.providers import (
     PROVIDER_ANTHROPIC,
     PROVIDER_MISTRAL,
 )
-from rrs.clustering.steps import MAX_CONCURRENT, LLMBackend
 from sentence_transformers import SentenceTransformer
 from tqdm.asyncio import tqdm
 

@@ -3,6 +3,12 @@ resource "scaleway_account_project" "project" {
   name = "rrs-${var.environment}"
 }
 
+# Scaleway sometimes returns 403 immediately after project creation before it has fully propagated.
+resource "time_sleep" "wait_for_project" {
+  create_duration = "10s"
+  depends_on      = [scaleway_account_project.project]
+}
+
 # PostgreSQL instance.
 resource "scaleway_rdb_instance" "rrs_rdb" {
   name                = "rdb-rrs-${var.environment}"
@@ -14,6 +20,7 @@ resource "scaleway_rdb_instance" "rrs_rdb" {
   disable_backup      = true
   project_id          = scaleway_account_project.project.id
   user_name           = "rrs-admin-${var.environment}"
+  depends_on          = [time_sleep.wait_for_project]
   password_wo         = var.postgres_admin_password
   password_wo_version = var.postgres_admin_password_version
   region              = "fr-par"

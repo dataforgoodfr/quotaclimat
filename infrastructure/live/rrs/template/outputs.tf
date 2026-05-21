@@ -4,12 +4,12 @@ output "registry_endpoint" {
 }
 
 output "rdb_endpoint_ip" {
-  value       = scaleway_rdb_instance.rrs_rdb.load_balancer[0].ip
+  value       = try(scaleway_rdb_instance.rrs_rdb.load_balancer[0].ip, null)
   description = "Public endpoint IP of the RDB instance."
 }
 
 output "rdb_endpoint_port" {
-  value       = scaleway_rdb_instance.rrs_rdb.load_balancer[0].port
+  value       = try(scaleway_rdb_instance.rrs_rdb.load_balancer[0].port, null)
   description = "Public endpoint port of the RDB instance."
 }
 

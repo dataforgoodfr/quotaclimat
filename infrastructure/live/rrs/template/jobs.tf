@@ -2,16 +2,16 @@ locals {
   image_uri = "${scaleway_registry_namespace.rrs.endpoint}/rrs-base:${var.image_tag}"
 
   rrs_pg_env = {
-    RRS_PG_HOST     = scaleway_rdb_instance.rrs_rdb.load_balancer[0].ip
-    RRS_PG_PORT     = tostring(scaleway_rdb_instance.rrs_rdb.load_balancer[0].port)
+    RRS_PG_HOST     = try(scaleway_rdb_instance.rrs_rdb.load_balancer[0].ip, null)
+    RRS_PG_PORT     = try(tostring(scaleway_rdb_instance.rrs_rdb.load_balancer[0].port), null)
     RRS_PG_DATABASE = scaleway_rdb_database.rrs.name
     RRS_PG_USER     = scaleway_rdb_user.rrs_job_user.name
     PYTHONPATH      = "/app"
   }
 
   barometre_env = {
-    POSTGRES_HOST = data.scaleway_rdb_instance.barometre.load_balancer[0].ip
-    POSTGRES_PORT = tostring(data.scaleway_rdb_instance.barometre.load_balancer[0].port)
+    POSTGRES_HOST = try(data.scaleway_rdb_instance.barometre.load_balancer[0].ip, null)
+    POSTGRES_PORT = try(tostring(data.scaleway_rdb_instance.barometre.load_balancer[0].port), null)
     POSTGRES_DB   = data.scaleway_rdb_database.barometre.name
     POSTGRES_USER = scaleway_rdb_user.rrs_read.name
   }

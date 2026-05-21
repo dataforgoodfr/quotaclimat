@@ -9,8 +9,7 @@ RRS is a multi-module analysis system built to detect, cluster, and track disinf
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ DATA SOURCES                                                    │
-│   PostgreSQL (analytics.task_global_completion)                 │
-│   HuggingFace (DataForGood/climateguard-training)               │
+│   PostgreSQL (RRS database — cases table)                       │
 │   S3 / Scaleway parquet files                                   │
 └────────────────────────────┬────────────────────────────────────┘
                              │
@@ -28,15 +27,11 @@ RRS is a multi-module analysis system built to detect, cluster, and track disinf
 └──────┬─────────────────────┬──────────────────────┬────────────┘
        │                     │                      │
        ▼                     ▼                      ▼
-┌──────────────┐  ┌──────────────────┐  ┌──────────────────────┐
-│ cluster.py   │  │ cluster_llm.py   │  │ cluster_llm_          │
-│              │  │                  │  │ timeseries.py         │
-│ BERTopic     │  │ 3-step LLM       │  │ 7-day warmup +       │
-│ static       │  │ pipeline         │  │ sliding-window       │
-│ clustering   │  │ (Mistral/Claude) │  │ incremental updates  │
-└──────┬───────┘  └────────┬─────────┘  └──────────┬───────────┘
-       │                   │                        │
-       └───────────────────┴────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│ cluster_llm_v2.py                                               │
+│   3-step LLM pipeline (Mistral / Claude Haiku)                  │
+│   DB-aware deduplication against active clusters                │
+└────────────────────────────┬────────────────────────────────────┘
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
@@ -67,9 +62,10 @@ rrs/
 │
 ├── clustering/
 │   ├── README.md                    # Clustering-specific docs
-│   ├── cluster.py                   # BERTopic static clustering
-│   ├── cluster_llm.py               # LLM 3-step pipeline
-│   ├── cluster_llm_timeseries.py    # Incremental daily clustering
+│   ├── cluster_llm_v2.py            # Runnable entry point (LLM pipeline + DB dedup)
+│   ├── cluster.py                   # Library: text loading + sentence chunking
+│   ├── cluster_llm.py               # Library: 3-step LLM pipeline building blocks
+│   ├── cluster_llm_timeseries.py    # Library: embedding backends + novelty filter
 │   └── get_data.py                  # PostgreSQL data loader
 │
 ├── keyword_detection/
@@ -85,167 +81,66 @@ rrs/
 
 ## Modules
 
-### `clustering/cluster.py` — BERTopic Static Clustering
+### `clustering/cluster_llm_v2.py` — Runnable Entry Point
 
-Fits a seeded BERTopic model on a corpus of French climate transcripts and produces a static topic map.
+The only runnable script in the clustering package. Runs a daily LLM clustering job that builds a fresh label set from the day's transcripts, deduplicates it against the clusters already in the database, and persists the assignments.
 
-**Input:** HuggingFace dataset (`DataForGood/climateguard-training`) or a local `.json`/`.csv` file.
+The other files in `clustering/` (`cluster.py`, `cluster_llm.py`, `cluster_llm_timeseries.py`) are library modules consumed by `cluster_llm_v2.py` — they are no longer runnable on their own.
 
-**Processing:**
-- 18 seeded topics covering climate skepticism narratives (ZFE, renewables, electric cars, etc.)
-- French sentence embeddings via `dangvantuan/sentence-camembert-large`
-- Dimensionality reduction with UMAP + density clustering with HDBSCAN
-- Automatic topic merging by cosine similarity (default threshold: 0.92)
-- Outlier reduction with configurable strategy
-
-**Output** (in `./bertopic_output/` by default):
-- `sentences_with_topics.csv` — sentence-level topic assignments
-- `topic_summary.csv` — per-topic mesinfo fact-check statistics
-
-**Example:**
-```bash
-# From HuggingFace, France 2025 data, 3-sentence windows
-python -m rrs.clustering.cluster \
-  --output-dir ./bertopic_output \
-  --window-size 3 \
-  --overlap-tokens 30 \
-  --country france \
-  --year 2025
-
-# From a local CSV file
-python -m rrs.clustering.cluster \
-  --input ./data/claims.csv \
-  --text-column claim_text \
-  --output-dir ./bertopic_output
-```
-
-**Key options:**
-
-| Flag | Default | Description |
-|---|---|---|
-| `--input` | — | Local file path; omit to load from HuggingFace |
-| `--hf-dataset` | `DataForGood/climateguard-training` | HuggingFace dataset |
-| `--country` | `france` | Country filter; pass `""` for all |
-| `--year` | `2025` | Year filter; pass `0` to disable |
-| `--window-size` | `3` | Sentences per chunk |
-| `--overlap-tokens` | `30` | Overlap between consecutive windows |
-| `--merge-threshold` | `0.92` | Cosine similarity threshold for topic merging |
-| `--nr-topics` | — | Hard merge down to N topics after fitting |
-| `--no-reduce-outliers` | off | Disable outlier reassignment |
-| `--output-dir` | `./bertopic_output` | Output directory |
-
----
-
-### `clustering/cluster_llm.py` — LLM 3-Step Pipeline
-
-Uses an LLM to generate, merge, and classify narrative labels without requiring a predefined topic list. Supports Mistral Small and Claude Haiku 4.5.
-
-**Pipeline:**
+**Pipeline (per day):**
 1. **Generate** — each transcript is sent to the LLM independently; it returns a list of narrative labels present in the text (async, configurable concurrency)
-2. **Merge** — all generated labels are deduplicated in a hierarchical tournament of LLM merge calls (30 labels per batch by default)
-3. **Classify** — every transcript is classified against the final consolidated label list (async)
-4. **Report** — mesinfo fact-check scores aggregated per label
+2. **Merge** — generated labels are deduplicated in a hierarchical tournament of LLM merge calls
+3. **DB-aware filter** — active clusters (those with at least one case assigned within `--expiry-days` of the run date) are loaded from the database. New candidate labels are compared against them using the embedding + LLM stance hybrid filter; only genuinely new labels survive
+4. **Classify** — every transcript is classified against `surviving new labels + active DB labels` (async)
+5. **Persist** — assignments and any new clusters are written back to the database
 
-A **token cost estimate** is printed before each step so you can abort early if the run would be too expensive.
+A token cost estimate is printed before each step.
 
-**Output** (in `./bertopic_llm_output/` by default):
-- `labels.json` — final label list with stable MD5-derived IDs
+**Output** (in `./bertopic_llm_output_v2/<run-date>/` by default):
 - `labels_raw.json` — unmerged labels from step 1
+- `labels_merged.json` — labels after merge
+- `labels_new.json` — labels that survived DB deduplication
+- `labels_new_with_ids.json` — new labels with their stable IDs
 - `transcript_label_assignments.csv` — per-transcript label assignments
-- `label_mesinfo_stats.csv` — fact-check stats per label
-- `labels_merge_progress.json` — merge step intermediate state
 
 **Example:**
 ```bash
-# Using Mistral (default), from HuggingFace
-python -m rrs.clustering.cluster_llm \
-  --output-dir ./bertopic_llm_output \
-  --provider mistral \
-  --country france \
+python -m rrs.clustering.cluster_llm_v2 \
   --start-date 2025-01-01 \
-  --end-date 2025-03-31
-
-# Using Claude Haiku, from a local file
-python -m rrs.clustering.cluster_llm \
-  --input ./data/claims.csv \
-  --text-column claim_text \
+  --end-date 2025-01-07 \
   --provider anthropic \
-  --output-dir ./output_anthropic
+  --output-dir ./bertopic_llm_output_v2
 ```
 
 **Key options:**
 
 | Flag | Default | Description |
 |---|---|---|
-| `--provider` | `mistral` | LLM provider: `mistral` or `anthropic` |
+| `--start-date` / `--end-date` | today | Inclusive date range (`YYYY-MM-DD`) — one job per day in the range |
+| `--provider` | `anthropic` | LLM provider: `mistral` or `anthropic` |
 | `--max-concurrent` | `1` | Parallel LLM requests for steps 1 and 3 |
 | `--merge-batch-size` | `30` | Labels per merge call (step 2) |
 | `--merge-max-rounds` | `20` | Max hierarchical merge rounds |
+| `--target-clusters` | adaptive | Explicit cluster target; otherwise `sqrt(n_docs)` clamped by min/max |
+| `--low-threshold` | `0.40` | Below → auto-keep candidate (zone 1) |
+| `--high-threshold` | `0.85` | Above → auto-drop candidate (zone 2) |
+| `--embedding-backend` | `mistral` | `mistral` or `sentence-transformer` |
+| `--embedding-model` | `dangvantuan/sentence-camembert-large` | Model name for the sentence-transformer backend |
+| `--expiry-days` | `30` | DB clusters inactive for this many days before `start-date` are excluded |
 | `--initial-labels-file` | — | JSON file of seed labels; overrides built-in seeds |
 | `--no-seeds` | off | Start with no seed labels |
 | `--skip-merge` | off | Skip the deduplication step |
-| `--start-date` / `--end-date` | — | Date range filter (`YYYY-MM-DD`) |
-| `--output-dir` | `./bertopic_llm_output` | Output directory |
+| `--output-dir` | `./bertopic_llm_output_v2` | Output directory |
 
----
-
-### `clustering/cluster_llm_timeseries.py` — Incremental Daily Clustering
-
-Builds and evolves a label taxonomy day-by-day over a date range. Designed for tracking how new narratives emerge over time.
-
-**Pipeline:**
-
-*Warmup phase (first N days, default 7):*
-- Runs the full 3-step LLM pipeline on the warmup window to establish an initial taxonomy
-
-*Incremental phase (remaining days):*
-- For each day, generates candidate labels from the past `sliding_window_days` of data
-- Filters candidates against the existing taxonomy using CamemBERT embeddings and a 3-zone hybrid strategy:
-  - **Zone 1** (similarity < 0.40) — auto-keep: sufficiently different topic
-  - **Zone 2** (similarity > 0.85) — auto-drop: near-exact match already in taxonomy
-  - **Zone 3** (in between) — LLM judges whether the candidate is genuinely novel
-- Adds confirmed new labels to the taxonomy and records their first-seen date
-- Classifies today's documents against the updated taxonomy
-
-**Output** (in `./timeseries_output/` by default):
-- `labels.json` — cumulative label taxonomy (updated each day)
-- `label_evolution.json` — per-label first-seen dates
-- `transcript_label_assignments.csv` — daily assignments, appended incrementally
-- `labels_<date>.json` — per-day snapshots (with `--save-daily-labels`)
-
-**Example:**
-```bash
-python -m rrs.clustering.cluster_llm_timeseries \
-  --start-date 2025-01-01 \
-  --end-date 2025-06-30 \
-  --provider mistral \
-  --warmup-days 7 \
-  --output-dir ./timeseries_output \
-  --save-daily-labels
-```
-
-**Key options:**
-
-| Flag | Default | Description |
-|---|---|---|
-| `--start-date` | required | Start of date range (`YYYY-MM-DD`) |
-| `--end-date` | required | End of date range (`YYYY-MM-DD`) |
-| `--warmup-days` | `7` | Days used for initial taxonomy |
-| `--sliding-window-days` | `7` | Window size for candidate generation |
-| `--low-threshold` | `0.40` | Below → auto-keep (zone 1) |
-| `--high-threshold` | `0.85` | Above → auto-drop (zone 2) |
-| `--top-k-context` | `10` | Closest existing labels shown to LLM per zone-3 candidate |
-| `--embedding-model` | `dangvantuan/sentence-camembert-large` | SentenceTransformer model |
-| `--save-daily-labels` | off | Write a `labels_<date>.json` snapshot per day |
-| `--provider` | `mistral` | LLM provider: `mistral` or `anthropic` |
+All flags can also be supplied via the equivalent environment variables (see `--help`).
 
 ---
 
 ### `clustering/get_data.py` — PostgreSQL Data Loader
 
-Fetches annotated transcript data from a production PostgreSQL instance (`analytics.task_global_completion`) and returns it as a HuggingFace `Dataset`.
+Fetches transcript cases from the RRS PostgreSQL database and returns them as a pandas DataFrame. Also exposes helpers for reading and upserting clusters and case→cluster mappings.
 
-Used by the clustering scripts as an alternative to loading from HuggingFace. Requires the `RRS_PG_*` environment variables (or the equivalent `PG_*` vars in `.env`).
+Used by `cluster_llm_v2.py`. Requires the `RRS_PG_*` environment variables.
 
 ---
 
@@ -340,9 +235,8 @@ poetry run alembic -c rrs/alembic.ini current
 
 | Variable | Used by | Description |
 |---|---|---|
-| `MISTRAL_API_KEY` | `cluster_llm.py`, `cluster_llm_timeseries.py` | Mistral API key |
-| `ANTHROPIC_API_KEY` | `cluster_llm.py`, `cluster_llm_timeseries.py` | Anthropic API key |
-| `HF_TOKEN` | `cluster.py`, `cluster_llm.py`, `cluster_llm_timeseries.py` | HuggingFace token (for private datasets) |
+| `MISTRAL_API_KEY` | `cluster_llm_v2.py` | Mistral API key |
+| `ANTHROPIC_API_KEY` | `cluster_llm_v2.py` | Anthropic API key |
 
 ### S3 / Object Storage
 
@@ -431,12 +325,11 @@ The workflow only fires when files under `rrs/**` change, so it never runs unnec
 | Layer | Technology |
 |---|---|
 | Language | Python 3.12 |
-| Static clustering | BERTopic, HDBSCAN, UMAP |
 | LLM clustering | Mistral Small 2506, Claude Haiku 4.5 |
-| Embeddings | `dangvantuan/sentence-camembert-large` (SentenceTransformers) |
+| Embeddings | `dangvantuan/sentence-camembert-large` (SentenceTransformers) or `mistral-embed` |
 | NLP / tokenisation | spaCy `fr_core_news_sm` |
 | Async LLM calls | `asyncio`, `tqdm.asyncio` |
-| Data loading | pandas, HuggingFace `datasets` |
+| Data loading | pandas |
 | S3 querying | DuckDB |
 | Database ORM | SQLAlchemy 2.x |
 | Migrations | Alembic |

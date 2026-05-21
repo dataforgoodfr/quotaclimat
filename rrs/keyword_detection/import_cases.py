@@ -21,6 +21,7 @@ import duckdb
 from dotenv import load_dotenv
 
 from rrs.utils.generate_id import get_consistent_hash
+from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
@@ -96,6 +97,7 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
             data_item_plaintext_whisper
         FROM barometre.analytics.task_global_completion
         WHERE country = 'france'
+        AND data_item_channel in ({', '.join([f'\'{c}\'' for c in FRANCE.channels])})
         {date_filter}
         """,
         params if params else {},

@@ -9,6 +9,7 @@ terraform {
 inputs = {
   environment                      = "dev"
   postgres_admin_password          = get_env("TF_VAR_postgres_admin_password")
+  db_metabase_user_password        = get_env("TF_VAR_db_metabase_user_password")
   postgres_admin_password_version  = 1
   postgres_job_password            = get_env("TF_VAR_postgres_job_password")
   node_type                        = "DB-DEV-S"

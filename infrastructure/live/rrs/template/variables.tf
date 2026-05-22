@@ -16,6 +16,10 @@ variable "postgres_job_password" {
   type      = string
   sensitive = true
 }
+variable "db_metabase_user_password" {
+  type      = string
+  sensitive = true
+}
 
 variable "acl_allowed_ips" {
   type = list(object({

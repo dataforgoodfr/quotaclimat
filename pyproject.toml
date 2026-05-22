@@ -18,6 +18,11 @@ testpaths = [
 ]
 addopts = "--durations=0"
 
+[[tool.poetry.source]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+priority = "explicit"
+
 [tool.poetry.dependencies]
 s3fs = {extras = ["boto3"], version = ">=2023.12.0"}
 boto3 = "*"
@@ -92,14 +97,11 @@ dotenv = "^0.9.9"
 optional = true
 
 [tool.poetry.group.rrs.dependencies]
+torch = {version = ">=2.0", source = "pytorch-cpu"}
+transformers = ">=4.0"
 mistralai = ">=1.0"
 anthropic = "^0.102.0"
 psycopg = {version = ">=3.0", extras = ["binary"]}
-
-[tool.poetry.group.rrs-transformers]
-optional = true
-
-[tool.poetry.group.rrs-transformers.dependencies]
 sentence-transformers = ">=3.0"
 sentencepiece = ">=0.2"
 

@@ -11,6 +11,7 @@ inputs = {
   postgres_admin_password          = get_env("TF_VAR_postgres_admin_password")
   postgres_admin_password_version  = 1
   postgres_job_password            = get_env("TF_VAR_postgres_job_password")
+  db_metabase_user_password        = get_env("TF_VAR_db_metabase_user_password")
   node_type                        = "DB-DEV-S"
   volume_type                      = "sbs_5k"
   volume_size_in_gb                = 30

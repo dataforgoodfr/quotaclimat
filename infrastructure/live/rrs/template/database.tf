@@ -54,7 +54,7 @@ resource "scaleway_rdb_privilege" "rrs_migrate_user" {
   instance_id   = scaleway_rdb_instance.rrs_rdb.id
   user_name     = scaleway_rdb_user.rrs_migrate_user.name
   database_name = scaleway_rdb_database.rrs.name
-  permission    = "readwrite"
+  permission    = "all"
 }
 
 # Job user with read_write access.

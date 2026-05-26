@@ -11,6 +11,7 @@ resource "scaleway_iam_policy" "rrs_ci" {
     project_ids          = [scaleway_account_project.project.id]
     permission_set_names = [
       "ContainerRegistryFullAccess",
+      "ServerlessJobsFullAccess"
     ]
   }
 }

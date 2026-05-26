@@ -17,6 +17,33 @@ locals {
   }
 }
 
+resource "scaleway_job_definition" "rrs_migrate" {
+  name         = "rrs-migrate-${var.environment}"
+  cpu_limit    = 140
+  memory_limit = 256
+  image_uri    = local.image_uri
+  project_id   = scaleway_account_project.project.id
+  region       = "fr-par"
+  timeout      = "20m"
+  local_storage_capacity  = 1024
+
+
+  startup_command = ["sh", "rrs/scripts/migrate_and_seed.sh"]
+
+  env = {
+    RRS_PG_USER     = scaleway_rdb_instance.rrs_rdb.user_name
+    RRS_PG_PORT     = try(tostring(scaleway_rdb_instance.rrs_rdb.load_balancer[0].port), null)
+    RRS_PG_DATABASE = scaleway_rdb_database.rrs.name
+    RRS_PG_HOST     = try(scaleway_rdb_instance.rrs_rdb.load_balancer[0].ip, null)
+    PYTHONPATH      = "/app"
+  }
+
+  secret_reference {
+    secret_id   = scaleway_secret.postgres_admin_password.id
+    environment = "RRS_PG_PASSWORD"
+  }
+}
+
 resource "scaleway_job_definition" "rrs_clustering" {
   name                    = "rrs-clustering-${var.environment}"
   cpu_limit               = var.job_cpu_limit_clustering

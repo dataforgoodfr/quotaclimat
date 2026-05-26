@@ -13,6 +13,11 @@ output "rdb_endpoint_port" {
   description = "Public endpoint port of the RDB instance."
 }
 
+output "job_migrate_id" {
+  value       = scaleway_job_definition.rrs_migrate.id
+  description = "Migration job ID — trigger with: scw jobs start-run job-definition-id=<id>"
+}
+
 output "job_clustering_id" {
   value = scaleway_job_definition.rrs_clustering.id
 }

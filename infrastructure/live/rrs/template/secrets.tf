@@ -1,3 +1,14 @@
+resource "scaleway_secret" "postgres_admin_password" {
+  name       = "rrs-admin-password-${var.environment}"
+  project_id = scaleway_account_project.project.id
+  region     = "fr-par"
+}
+
+resource "scaleway_secret_version" "postgres_admin_password" {
+  secret_id = scaleway_secret.postgres_admin_password.id
+  data      = var.postgres_admin_password
+}
+
 resource "scaleway_secret" "rrs_job_password" {
   name       = "rrs-job-password-${var.environment}"
   project_id = scaleway_account_project.project.id

@@ -40,6 +40,23 @@ resource "scaleway_rdb_privilege" "rrs_admin" {
   permission    = "all"
 }
 
+# Migration user — admin so it can run DDL (CREATE/ALTER TABLE via Alembic).
+# Using a standalone scaleway_rdb_user keeps the password in sync with the secret,
+# unlike the instance-level password_wo which is write-only and can silently diverge.
+resource "scaleway_rdb_user" "rrs_migrate_user" {
+  instance_id = scaleway_rdb_instance.rrs_rdb.id
+  name        = "rrs-migrate-${var.environment}"
+  password    = var.postgres_migrate_password
+  is_admin    = true
+}
+
+resource "scaleway_rdb_privilege" "rrs_migrate_user" {
+  instance_id   = scaleway_rdb_instance.rrs_rdb.id
+  user_name     = scaleway_rdb_user.rrs_migrate_user.name
+  database_name = scaleway_rdb_database.rrs.name
+  permission    = "readwrite"
+}
+
 # Job user with read_write access.
 resource "scaleway_rdb_user" "rrs_job_user" {
   instance_id = scaleway_rdb_instance.rrs_rdb.id

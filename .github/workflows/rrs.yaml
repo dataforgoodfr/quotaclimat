@@ -53,7 +53,7 @@ jobs:
           access-key: ${{ secrets.RRS_SCW_ACCESS_KEY }}
           secret-key: ${{ secrets.RRS_SCW_SECRET_KEY }}
           default-project-id: ${{ secrets.RRS_SCW_PROJECT_ID }}
-          default-organization-id: ${{ secrets.RRS_SCW_DEFAULT_ORGANIZATION_ID }}
+          default-organization-id: ${{ secrets.SCW_DEFAULT_ORGANIZATION_ID }}
 
       - name: Trigger and wait for migrate-and-seed job
         run: |

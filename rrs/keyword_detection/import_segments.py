@@ -25,6 +25,7 @@ from dotenv import load_dotenv
 from rrs.dictionary.subjects import subjects
 from rrs.dictionary.upsert_subjects import subject_id as make_subject_id
 from rrs.utils.generate_id import get_consistent_hash
+from rrs.utils.mediatree import get_url_mediatree
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
@@ -156,6 +157,13 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
     df["subject_id"] = sid
     df["s3_uri"] = df.apply(lambda r: _s3_uri(r["start"], r["channel_name"]), axis=1)
     df["n_keywords"] = df["number_of_keywords_climat"]
+    df["url_mediatree"] = df.apply(
+        lambda r: get_url_mediatree(
+            r["start"], 
+            r["channel_name"]
+        ),
+        axis=1
+    )
 
     segments = df[
         [
@@ -166,6 +174,7 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
             "n_keywords",
             "channel_name",
             "channel_title",
+            "url_mediatree"
         ]
     ]
 
@@ -174,8 +183,8 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
         con.execute(f"ATTACH '{rrs_dsn()}' AS rrs (TYPE POSTGRES);")
 
     con.execute("""
-        INSERT INTO rrs.segments (segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title, created_at, updated_at)
-        SELECT segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
+        INSERT INTO rrs.segments (segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title, url_mediatree, created_at, updated_at)
+        SELECT segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title, url_mediatree, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
         FROM segments_batch
         ON CONFLICT (segment_id) DO UPDATE SET
             subject_id    = EXCLUDED.subject_id,
@@ -184,6 +193,7 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
             n_keywords    = EXCLUDED.n_keywords,
             channel_name  = EXCLUDED.channel_name,
             channel_title = EXCLUDED.channel_title,
+            url_mediatree = EXCLUDED.url_mediatree,
             created_at    = CASE WHEN segments.created_at IS NULL THEN now() AT TIME ZONE 'utc' ELSE segments.created_at END,
             updated_at    = now() AT TIME ZONE 'utc'
     """)

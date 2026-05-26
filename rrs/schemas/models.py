@@ -58,6 +58,7 @@ class Segment(RRSBase):
     start = Column(DateTime(timezone=True), nullable=True)
     channel_name = Column(String, nullable=True)
     channel_title = Column(String, nullable=True)
+    url_mediatree = Column(String, nullable=True)
     created_at = Column(
         DateTime(timezone=True), server_default=sql_text("(now() at time zone 'utc')")
     )

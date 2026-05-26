@@ -70,6 +70,7 @@ def create_test_roles(db_connection):
     yield
     with db_connection.cursor() as cur:
         for role in GRANT_ROLES:
+            cur.execute(f'DROP OWNED BY "{role}"')
             cur.execute(f'DROP ROLE IF EXISTS "{role}"')
     db_connection.commit()
 

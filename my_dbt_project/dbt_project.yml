@@ -32,6 +32,16 @@ clean-targets:         # directories to be removed by `dbt clean`
 models:
   my_dbt_project:
     # Config indicated by + and applies to all files under models/example/
+    analytics:
+      +grants:
+        select:
+          - '"rrs-read-dev"' 
+          - '"rrs-read-prod"'
+          - '"climateguard-reader-user"'
+    dashboards:
+      +grants:
+        select:
+          - '"climateguard-reader-user"'
     homepage:
       +materialized: view
 

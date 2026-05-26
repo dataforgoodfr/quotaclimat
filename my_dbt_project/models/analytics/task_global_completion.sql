@@ -77,6 +77,7 @@ tgc as (
 		select
 			versioned_choices.task_completion_aggregate_id as task_completion_aggregate_id,
 			labelstudio_task_aggregate.task_aggregate_id AS task_aggregate_id,
+			labelstudio_task_aggregate.id AS task_id,
 			labelstudio_task_aggregate.created_at AS created_at,
 			labelstudio_task_aggregate.updated_at AS updated_at,
 			labelstudio_task_aggregate.is_labeled AS is_labeled,

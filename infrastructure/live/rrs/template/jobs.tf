@@ -31,15 +31,15 @@ resource "scaleway_job_definition" "rrs_migrate" {
   startup_command = ["sh", "rrs/scripts/migrate_and_seed.sh"]
 
   env = {
-    RRS_PG_USER     = scaleway_rdb_instance.rrs_rdb.user_name
+    RRS_PG_HOST     = try(scaleway_rdb_instance.rrs_rdb.load_balancer[0].ip, null)
     RRS_PG_PORT     = try(tostring(scaleway_rdb_instance.rrs_rdb.load_balancer[0].port), null)
     RRS_PG_DATABASE = scaleway_rdb_database.rrs.name
-    RRS_PG_HOST     = try(scaleway_rdb_instance.rrs_rdb.load_balancer[0].ip, null)
     PYTHONPATH      = "/app"
+    RRS_PG_USER     = scaleway_rdb_user.rrs_migrate_user.name
   }
 
   secret_reference {
-    secret_id   = scaleway_secret.postgres_admin_password.id
+    secret_id   = scaleway_secret.postgres_migrate_password.id
     environment = "RRS_PG_PASSWORD"
   }
 }

@@ -1,12 +1,12 @@
-resource "scaleway_secret" "postgres_admin_password" {
-  name       = "rrs-admin-password-${var.environment}"
+resource "scaleway_secret" "postgres_migrate_password" {
+  name       = "rrs-migrate-password-${var.environment}"
   project_id = scaleway_account_project.project.id
   region     = "fr-par"
 }
 
-resource "scaleway_secret_version" "postgres_admin_password" {
-  secret_id = scaleway_secret.postgres_admin_password.id
-  data      = var.postgres_admin_password
+resource "scaleway_secret_version" "postgres_migrate_password" {
+  secret_id = scaleway_secret.postgres_migrate_password.id
+  data      = scaleway_rdb_user.rrs_migrate_user.password
 }
 
 resource "scaleway_secret" "rrs_job_password" {

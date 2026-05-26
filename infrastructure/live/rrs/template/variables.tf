@@ -16,6 +16,11 @@ variable "postgres_job_password" {
   type      = string
   sensitive = true
 }
+
+variable "postgres_migrate_password" {
+  type      = string
+  sensitive = true
+}
 variable "db_metabase_user_password" {
   type      = string
   sensitive = true

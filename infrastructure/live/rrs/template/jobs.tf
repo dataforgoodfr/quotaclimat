@@ -25,6 +25,8 @@ resource "scaleway_job_definition" "rrs_migrate" {
   project_id   = scaleway_account_project.project.id
   region       = "fr-par"
   timeout      = "20m"
+  local_storage_capacity  = 1024
+
 
   startup_command = ["sh", "rrs/scripts/migrate_and_seed.sh"]
 

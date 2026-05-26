@@ -41,6 +41,26 @@ def seed_dbt():
 
 seed_dbt()
 
+GRANT_ROLES = ["climateguard-reader-user"]
+
+
+def create_test_roles():
+    conn = psycopg2.connect(
+        dbname=os.getenv("POSTGRES_DB", ""),
+        user=os.getenv("POSTGRES_USER", ""),
+        password=os.getenv("POSTGRES_PASSWORD", ""),
+        host=os.getenv("POSTGRES_HOST", ""),
+        port=os.getenv("POSTGRES_PORT", ""),
+    )
+    with conn.cursor() as cur:
+        for role in GRANT_ROLES:
+            cur.execute(f'CREATE ROLE IF NOT EXISTS "{role}"')
+    conn.commit()
+    conn.close()
+
+
+create_test_roles()
+
 @pytest.fixture(scope="module", autouse=True)
 def run_core_query_thematics_keywords():
     """Run dbt for the thematics model once before related tests."""

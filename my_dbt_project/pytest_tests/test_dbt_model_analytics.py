@@ -53,8 +53,24 @@ def seed_dbt_labelstudio():
 
 seed_dbt_labelstudio()
 
+GRANT_ROLES = ["rrs-read-dev", "rrs-read-prod", "climateguard-reader-user"]
+
+
+@pytest.fixture(scope="module")
+def create_test_roles(db_connection):
+    with db_connection.cursor() as cur:
+        for role in GRANT_ROLES:
+            cur.execute(f'CREATE ROLE IF NOT EXISTS "{role}"')
+    db_connection.commit()
+    yield
+    with db_connection.cursor() as cur:
+        for role in GRANT_ROLES:
+            cur.execute(f'DROP ROLE IF EXISTS "{role}"')
+    db_connection.commit()
+
+
 @pytest.fixture(scope="module", autouse=True)
-def run_analytics():
+def run_analytics(create_test_roles):
     logging.info("Run dbt for the thematics model once before related tests.")
     run_dbt_command(
         [

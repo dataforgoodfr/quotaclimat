@@ -65,8 +65,7 @@ jobs:
           echo "Starting job: $JOB_NAME ($JOB_ID)"
 
           RUN=$(scw jobs definition start "$JOB_ID" -o json)
-          echo $RUN
-          RUN_ID=$(echo "$RUN" | jq -r '.id')
+          RUN_ID=$(echo "$RUN" | jq -r '.job_runs[0].id')
           if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
             echo "Error: failed to start job run. Response: $RUN"
             exit 1

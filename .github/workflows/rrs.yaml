@@ -15,40 +15,8 @@ on:
 permissions:
   contents: read
 
-env:
-  RRS_PG_HOST: ${{ secrets.RRS_PG_HOST }}
-  RRS_PG_PORT: ${{ secrets.RRS_PG_PORT }}
-  RRS_PG_DATABASE: ${{ secrets.RRS_PG_DATABASE }}
-  RRS_PG_USER: ${{ secrets.RRS_PG_USER }}
-  RRS_PG_PASSWORD: ${{ secrets.RRS_PG_PASSWORD }}
-
 jobs:
-  migrate-and-seed:
-    runs-on: ubuntu-latest
-    environment: ${{ github.event_name == 'push' && 'production' || 'test' }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python & Poetry
-        uses: ./.github/actions/setup
-        with:
-          python-version: '3.12'
-          poetry-version: '2.1.3'
-
-      - name: Install dependencies
-        run: poetry install --no-interaction --without dev --with rrs
-
-      - name: Run RRS Alembic migrations
-        run: poetry run alembic -c rrs/alembic.ini upgrade head
-
-      - name: Upsert subjects
-        run: poetry run python -m rrs.dictionary.upsert_subjects
-
-      - name: Upsert dictionary
-        run: poetry run python -m rrs.dictionary.upsert_dictionary
-
   build-and-push:
-    needs: migrate-and-seed
     runs-on: ubuntu-latest
     environment: ${{ github.event_name == 'push' && 'production' || 'test' }}
     env:
@@ -69,3 +37,37 @@ jobs:
 
       - name: Push RRS image
         run: docker push rg.fr-par.scw.cloud/rrs-${{ env.REGISTRY_ENV }}/rrs-base:${{ env.IMAGE_TAG }}
+
+  migrate-and-seed:
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'push' && 'production' || 'test' }}
+    env:
+      JOB_NAME: rrs-migrate-${{ github.event_name == 'push' && 'prod' || 'dev' }}
+    steps:
+      - name: Setup Scaleway CLI
+        uses: scaleway/action-scw@v0
+        with:
+          save-config: true
+          export-config: true
+          access-key: ${{ secrets.RRS_SCW_ACCESS_KEY }}
+          secret-key: ${{ secrets.RRS_SCW_SECRET_KEY }}
+          default-project-id: ${{ secrets.RRS_SCW_PROJECT_ID }}
+
+      - name: Trigger and wait for migrate-and-seed job
+        run: |
+          JOB_ID=$(scw jobs definition list -o json | jq -r --arg name "$JOB_NAME" '.[] | select(.name == $name) | .id')
+          echo "Starting job: $JOB_NAME ($JOB_ID)"
+
+          RUN_ID=$(scw jobs run create job-definition-id="$JOB_ID" -o json | jq -r '.id')
+          echo "Job run ID: $RUN_ID"
+
+          while true; do
+            STATUS=$(scw jobs run get "$RUN_ID" -o json | jq -r '.state')
+            echo "Status: $STATUS"
+            case "$STATUS" in
+              succeeded) echo "Job succeeded"; exit 0 ;;
+              failed|canceled|error) echo "Job failed with status: $STATUS"; exit 1 ;;
+            esac
+            sleep 15
+          done

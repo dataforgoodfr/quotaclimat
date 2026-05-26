@@ -68,11 +68,6 @@ def create_test_roles(db_connection):
             """)
     db_connection.commit()
     yield
-    with db_connection.cursor() as cur:
-        for role in GRANT_ROLES:
-            cur.execute(f'DROP OWNED BY "{role}"')
-            cur.execute(f'DROP ROLE IF EXISTS "{role}"')
-    db_connection.commit()
 
 
 @pytest.fixture(scope="module", autouse=True)

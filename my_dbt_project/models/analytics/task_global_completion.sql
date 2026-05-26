@@ -3,9 +3,9 @@
         materialized='table',
         grants={
             'select': [
-				'rrs-read-dev', 
-				'rrs-read-prod', 
-				'climateguard-reader-user'
+				'"rrs-read-dev"', 
+				'"rrs-read-prod"', 
+				'"climateguard-reader-user"'
 			]
         },
     )

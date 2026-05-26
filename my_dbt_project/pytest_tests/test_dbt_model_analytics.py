@@ -60,7 +60,12 @@ GRANT_ROLES = ["rrs-read-dev", "rrs-read-prod", "climateguard-reader-user"]
 def create_test_roles(db_connection):
     with db_connection.cursor() as cur:
         for role in GRANT_ROLES:
-            cur.execute(f'CREATE ROLE IF NOT EXISTS "{role}"')
+            cur.execute(f"""
+                DO $$ BEGIN
+                    CREATE ROLE "{role}";
+                EXCEPTION WHEN duplicate_object THEN NULL;
+                END $$;
+            """)
     db_connection.commit()
     yield
     with db_connection.cursor() as cur:

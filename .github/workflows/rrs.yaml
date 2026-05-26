@@ -58,9 +58,18 @@ jobs:
       - name: Trigger and wait for migrate-and-seed job
         run: |
           JOB_ID=$(scw jobs definition list -o json | jq -r --arg name "$JOB_NAME" '.[] | select(.name == $name) | .id')
+          if [ -z "$JOB_ID" ] || [ "$JOB_ID" = "null" ]; then
+            echo "Error: job definition '$JOB_NAME' not found"
+            exit 1
+          fi
           echo "Starting job: $JOB_NAME ($JOB_ID)"
 
-          RUN_ID=$(scw jobs run create job-definition-id="$JOB_ID" -o json | jq -r '.id')
+          RUN=$(scw jobs definition start-run "$JOB_ID" -o json)
+          RUN_ID=$(echo "$RUN" | jq -r '.id')
+          if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+            echo "Error: failed to start job run. Response: $RUN"
+            exit 1
+          fi
           echo "Job run ID: $RUN_ID"
 
           while true; do

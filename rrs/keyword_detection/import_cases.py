@@ -176,8 +176,8 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
         con.execute(f"ATTACH '{rrs_dsn()}' AS rrs (TYPE POSTGRES);")
 
     con.execute("""
-        INSERT INTO rrs.cases (case_id, segment_id, subject_id, start, model_score, model_reason, text, created_at, updated_at)
-        SELECT case_id, segment_id, subject_id, start, model_score, model_reason, text, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
+        INSERT INTO rrs.cases (case_id, segment_id, subject_id, start, model_score, model_reason, text, url_labelstudio, created_at, updated_at)
+        SELECT case_id, segment_id, subject_id, start, model_score, model_reason, text, url_labelstudio, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
         FROM cases_batch
         ON CONFLICT (case_id, segment_id, subject_id) DO UPDATE SET
             start           = EXCLUDED.start,

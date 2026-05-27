@@ -156,7 +156,7 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
     df["model_score"] = df["data_item_model_result"]
     df["model_reason"] = df["data_item_model_reason"]
     df["text"] = df["data_item_plaintext_whisper"]
-    df["url_labelstudio"] = df.apply(lambda r: get_url_labelstudio(r["task_id"]))
+    df["url_labelstudio"] = df.apply(lambda r: get_url_labelstudio(r["task_id"]), axis=1)
 
     cases = df[
         [

@@ -90,6 +90,13 @@ def _get_auto_date_range() -> tuple[Optional[date], Optional[date]]:
     return max_cases, max_segments
 
 
+def get_url_labelstudio(task_id, tab_id=121):
+    return (
+        "https://barometre7kfudatm-labelstudio.functions.fnc.fr-par.scw.cloud/"
+        f"projects/6/data?tab={tab_id}&task={task_id}"
+    )
+
+
 def import_cases(start_date: date = None, end_date: date = None) -> None:
     if start_date is None:
         logging.info("No start date provided — querying RRS DB for date range...")
@@ -123,6 +130,7 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
         f"""
         SELECT
             task_aggregate_id,
+            task_id,
             data_item_id,
             data_item_start,
             data_item_model_result,
@@ -148,6 +156,7 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
     df["model_score"] = df["data_item_model_result"]
     df["model_reason"] = df["data_item_model_reason"]
     df["text"] = df["data_item_plaintext_whisper"]
+    df["url_labelstudio"] = df.apply(lambda r: get_url_labelstudio(r["task_id"]), axis=1)
 
     cases = df[
         [
@@ -158,6 +167,7 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
             "model_score",
             "model_reason",
             "text",
+            "url_labelstudio"
         ]
     ]
 
@@ -166,18 +176,17 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
         con.execute(f"ATTACH '{rrs_dsn()}' AS rrs (TYPE POSTGRES);")
 
     con.execute("""
-        INSERT INTO rrs.cases (case_id, segment_id, subject_id, start, model_score, model_reason, text, created_at, updated_at)
-        SELECT case_id, segment_id, subject_id, start, model_score, model_reason, text, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
+        INSERT INTO rrs.cases (case_id, segment_id, subject_id, start, model_score, model_reason, text, url_labelstudio, created_at, updated_at)
+        SELECT case_id, segment_id, subject_id, start, model_score, model_reason, text, url_labelstudio, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
         FROM cases_batch
-        ON CONFLICT (case_id) DO UPDATE SET
-            segment_id   = EXCLUDED.segment_id,
-            subject_id   = EXCLUDED.subject_id,
-            start        = EXCLUDED.start,
-            model_score  = EXCLUDED.model_score,
-            model_reason = EXCLUDED.model_reason,
-            text         = EXCLUDED.text,
-            created_at   = CASE WHEN cases.created_at IS NULL THEN now() AT TIME ZONE 'utc' ELSE cases.created_at END,
-            updated_at   = now() AT TIME ZONE 'utc'
+        ON CONFLICT (case_id, segment_id, subject_id) DO UPDATE SET
+            start           = EXCLUDED.start,
+            model_score     = EXCLUDED.model_score,
+            model_reason    = EXCLUDED.model_reason,
+            text            = EXCLUDED.text,
+            url_labelstudio = EXCLUDED.url_labelstudio,
+            created_at      = CASE WHEN cases.created_at IS NULL THEN now() AT TIME ZONE 'utc' ELSE cases.created_at END,
+            updated_at      = now() AT TIME ZONE 'utc'
     """)
 
     logging.info(f"  {len(cases)} case(s) upserted (subject: {SUBJECT_NAME!r}).")

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import text as sql_text
 
@@ -50,6 +50,7 @@ class DictionaryEntry(RRSBase):
 
 class Segment(RRSBase):
     __tablename__ = "segments"
+    __table_args__ = (UniqueConstraint("segment_id", "subject_id", name="uq_segments_segment_subject"),)
 
     segment_id = Column(String, primary_key=True)
     subject_id = Column(String, ForeignKey("subjects.subject_id"), nullable=True)
@@ -75,6 +76,7 @@ class Segment(RRSBase):
 
 class Case(RRSBase):
     __tablename__ = "cases"
+    __table_args__ = (UniqueConstraint("case_id", "segment_id", "subject_id", name="uq_cases_case_segment_subject"),)
 
     case_id = Column(String, primary_key=True)
     segment_id = Column(String, ForeignKey("segments.segment_id"), nullable=True)
@@ -83,6 +85,7 @@ class Case(RRSBase):
     model_reason = Column(String, nullable=True)
     start = Column(DateTime(timezone=True), nullable=True)
     text = Column(Text, nullable=True)
+    url_labelstudio = Column(String, nullable=True)
     created_at = Column(
         DateTime(timezone=True), server_default=sql_text("(now() at time zone 'utc')")
     )

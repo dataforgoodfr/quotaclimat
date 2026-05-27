@@ -13,9 +13,9 @@ Environment variables (defaults match rrs/.env.dist):
 """
 
 import os
+from typing import Dict, List, Any, Union
 
 from dotenv import load_dotenv
-from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 from rrs.dictionary.subjects import subjects
 from rrs.dictionary.upsert_subjects import subject_id as make_subject_id
 from rrs.schemas.models import DictionaryEntry
@@ -44,11 +44,11 @@ def get_engine():
     )
 
 
-def extract_rows(subject_id: str) -> list[dict]:
+def extract_rows_climate(subject_id: str, keywords: Dict[str, Any]) -> list[dict]:
     """Flatten THEME_KEYWORDS into upsertable rows, deduplicating by keyword."""
     seen: set[str] = set()
     rows = []
-    for entries in THEME_KEYWORDS.values():
+    for entries in keywords.values():
         for entry in entries:
             kw = entry["keyword"]
             if entry.get("language") != "french":
@@ -69,44 +69,66 @@ def extract_rows(subject_id: str) -> list[dict]:
     return rows
 
 
-def upsert_dictionary() -> None:
-    if SUBJECT_NAME not in subjects:
-        raise ValueError(
-            f"Subject {SUBJECT_NAME!r} not found in rrs/dictionary/subjects.py"
+def extract_rows(subject_id: str, keywords: List[Dict[str, Any]]) -> list[dict]:
+    """Flatten THEME_KEYWORDS into upsertable rows, deduplicating by keyword."""
+    seen: set[str] = set()
+    rows = []
+    for record in keywords:
+        if record["keyword"] in seen:
+            continue
+        seen.add(record["keyword"])
+        rows.append(
+            {
+                "keyword_id": keyword_id(record["keyword"], subject_id),
+                "subject_id": subject_id,
+                "keyword": record["keyword"],
+                "high_risk_false_positive": record.get(
+                    "high_risk_of_false_positive",
+                    False
+                ),
+            }
         )
+    return rows
 
-    sid = make_subject_id(SUBJECT_NAME)
-    rows = extract_rows(sid)
 
-    engine = get_engine()
-    Session = sessionmaker(bind=engine)
+def upsert_dictionary() -> None:
+    for subject, keywords in subjects.items():
 
-    batch_size = 500
-    upserted = 0
-    with Session() as session:
-        for i in range(0, len(rows), batch_size):
-            batch = rows[i : i + batch_size]
-            stmt = (
-                insert(DictionaryEntry)
-                .values(batch)
-                .on_conflict_do_update(
-                    index_elements=["keyword_id"],
-                    set_={
-                        "subject_id": insert(DictionaryEntry).excluded.subject_id,
-                        "keyword": insert(DictionaryEntry).excluded.keyword,
-                        "high_risk_false_positive": insert(
-                            DictionaryEntry
-                        ).excluded.high_risk_false_positive,
-                    },
+        sid = make_subject_id(subject)
+        if subject == "climate":
+            rows = extract_rows_climate(sid, keywords=keywords)
+        else:
+            rows = extract_rows(sid, keywords=keywords)
+
+        engine = get_engine()
+        Session = sessionmaker(bind=engine)
+
+        batch_size = 500
+        upserted = 0
+        with Session() as session:
+            for i in range(0, len(rows), batch_size):
+                batch = rows[i : i + batch_size]
+                stmt = (
+                    insert(DictionaryEntry)
+                    .values(batch)
+                    .on_conflict_do_update(
+                        index_elements=["keyword_id"],
+                        set_={
+                            "subject_id": insert(DictionaryEntry).excluded.subject_id,
+                            "keyword": insert(DictionaryEntry).excluded.keyword,
+                            "high_risk_false_positive": insert(
+                                DictionaryEntry
+                            ).excluded.high_risk_false_positive,
+                        },
+                    )
                 )
-            )
-            session.execute(stmt)
-            upserted += len(batch)
-        session.commit()
+                session.execute(stmt)
+                upserted += len(batch)
+            session.commit()
 
-    print(
-        f"{upserted} keyword(s) upserted (subject: {SUBJECT_NAME!r}, subject_id: {sid!r})."
-    )
+        print(
+            f"{upserted} keyword(s) upserted (subject: {SUBJECT_NAME!r}, subject_id: {sid!r})."
+        )
 
 
 if __name__ == "__main__":

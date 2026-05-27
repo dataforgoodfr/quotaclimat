@@ -2,22 +2,29 @@ import logging
 import os
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Iterator, Optional
+
+import pandas as pd
 
 import duckdb
-
-# Module-level connection so relations stay valid across calls in interactive sessions.
-_con = duckdb.connect()
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from quotaclimat.data_processing.mediatree.i8n.france.channel_titles import (
     channel_titles_france,
 )
-from rrs.dictionary.dictionary import (
-    correlate_with,
-    keywords,
-)
+from rrs.dictionary.upsert_subjects import subject_id as make_subject_id
+from rrs.schemas.models import DictionaryEntry
+
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 ALL_CHANNELS = list(channel_titles_france.keys())
+
+# Module-level connection so relations stay valid across calls in interactive sessions.
+_con = duckdb.connect()
+
+CLIMATE_SUBJECT_NAME = "climate"
 
 
 def get_secret_docker(secret_name: str) -> str:
@@ -33,9 +40,6 @@ SECRET_KEY = get_secret_docker("BUCKET_SECRET")
 BUCKET_NAME = os.environ.get("BUCKET_NAME")
 REGION = "fr-par"
 ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
-
-# Characters to search around a keyword match for a correlate (~20 words)
-PROXIMITY_CHARS = 150
 
 
 _REGEX_SPECIAL = frozenset(r"\.^$*+?()[]{}|")
@@ -58,6 +62,51 @@ def _build_alternation(terms: list[str]) -> str:
     # Longest terms first so the regex engine prefers them
     by_length = sorted(terms, key=len, reverse=True)
     return "(" + "|".join(_escape(t) for t in by_length) + ")"
+
+
+def _get_engine():
+    host = os.getenv("RRS_PG_HOST", "localhost")
+    port = os.getenv("RRS_PG_PORT", "5432")
+    database = os.getenv("RRS_PG_DATABASE", "rrs_db")
+    user = os.getenv("RRS_PG_USER", "user")
+    password = os.getenv("RRS_PG_PASSWORD", "password")
+    return create_engine(
+        f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
+    )
+
+
+def get_keywords_by_subject(
+    exclude_subject_name: str = CLIMATE_SUBJECT_NAME,
+) -> dict[str, tuple[list[str], list[str]]]:
+    """Return {subject_id: (all_keywords, high_risk_keywords)} for all subjects except the excluded one."""
+    climate_id = make_subject_id(exclude_subject_name)
+    Session = sessionmaker(bind=_get_engine())
+
+    with Session() as session:
+        entries = (
+            session.query(DictionaryEntry)
+            .filter(DictionaryEntry.subject_id != climate_id)
+            .all()
+        )
+
+    all_kws: dict[str, list[str]] = {}
+    high_risk_kws: dict[str, list[str]] = {}
+    for entry in entries:
+        if not entry.keyword:
+            continue
+        all_kws.setdefault(entry.subject_id, []).append(entry.keyword)
+        if entry.high_risk_false_positive:
+            high_risk_kws.setdefault(entry.subject_id, []).append(entry.keyword)
+
+    keywords_by_subject = {
+        sid: (all_kws[sid], high_risk_kws.get(sid, []))
+        for sid in all_kws
+    }
+    logging.info(
+        f"Loaded keywords for {len(keywords_by_subject)} subject(s) "
+        f"(excluding '{exclude_subject_name}')."
+    )
+    return keywords_by_subject
 
 
 def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
@@ -107,9 +156,6 @@ def read_from_s3(
     if not globs:
         raise ValueError("Date range produced no S3 paths.")
 
-    # Resolve which globs actually have files on S3 before passing to read_parquet,
-    # so missing channel/date combinations are skipped with a warning instead of
-    # raising an IOException.
     all_globs_sql = ", ".join(f"'{g}'" for g in globs)
     existing_files = con.sql(f"SELECT file FROM glob([{all_globs_sql}])").fetchall()
     existing_files = [row[0] for row in existing_files]
@@ -136,70 +182,89 @@ def read_from_s3(
     return con.sql(query)
 
 
+def _build_day_query(keywords_by_subject: dict[str, tuple[list[str], list[str]]]) -> str:
+    """Build a UNION ALL query that detects keywords for every subject against 'source'.
+
+    Each subject entry is (all_keywords, high_risk_keywords). The query adds:
+      - n_keywords_found     : total matched keywords
+      - n_hrfp_found    : matched keywords flagged high_risk_false_positive
+    """
+    union_parts = []
+    for subject_id, (kws, high_risk_kws) in keywords_by_subject.items():
+        if not kws:
+            continue
+        kw_alt = _build_alternation(kws)
+        if high_risk_kws:
+            hr_alt = _build_alternation(high_risk_kws)
+            hr_expr = f"len(regexp_extract_all(lower(plaintext), '(?i){hr_alt}'))"
+        else:
+            hr_expr = "0"
+        union_parts.append(f"""
+            with detections as (
+                SELECT
+                    '{subject_id}' AS subject_id,
+                    * EXCLUDE srt,
+                    regexp_extract_all(lower(plaintext), '(?i){kw_alt}') AS keywords_found,
+                    len(regexp_extract_all(lower(plaintext), '(?i){kw_alt}')) AS n_keywords_found,
+                    {hr_expr} AS n_hrfp_found
+                FROM source
+                WHERE len(regexp_extract_all(lower(plaintext), '(?i){kw_alt}')) > 0
+            )
+            SELECT 
+                *
+            FROM detections
+            WHERE n_keywords_found > 2 * n_hrfp_found
+        """)
+    if not union_parts:
+        raise ValueError("No keywords to search for any subject.")
+    return " UNION ALL ".join(union_parts)
+
+
 def detect_keywords(
     start_date: date,
     end_date: Optional[date] = None,
     channels: Optional[list[str]] = None,
     con: Optional[duckdb.DuckDBPyConnection] = None,
-) -> duckdb.DuckDBPyRelation:
-    """Detect insecurity keywords in plaintext and check for nearby correlates.
+) -> Iterator[tuple[date, pd.DataFrame]]:
+    """Yield (day, DataFrame) for each day in the date range.
 
-    Defaults to all France channels when channels is None.
-
-    For each row that contains at least one keyword, the result includes:
-      - keywords_found      : list of matched keywords
-      - correlates_found    : list of matched correlate_with terms (only when a keyword is present)
-      - has_nearby_correlate: true when a correlate appears within ~20 words of a keyword
+    Fetches keywords once from the DB, then processes one day at a time from S3
+    so peak memory stays bounded to a single day's data. Each DataFrame contains:
+      - subject_id      : identifier of the matched subject
+      - keywords_found  : list of matched keywords from that subject
+      - n_keywords_found: count of matched keywords
+    Only rows with at least one keyword match are included.
     """
     if con is None:
         con = _con
 
-    source = read_from_s3(
-        start_date=start_date, end_date=end_date, channels=channels, con=con
-    )
-    con.register("source", source)
+    keywords_by_subject = get_keywords_by_subject()
+    if not keywords_by_subject:
+        raise ValueError("No keyword subjects found (excluding climate).")
 
-    kw_alt = _build_alternation(keywords)
-    corr_alt = _build_alternation(correlate_with)
+    query = _build_day_query(keywords_by_subject)
 
-    # Proximity pattern: correlate ... keyword  OR  keyword ... correlate
-    proximity = (
-        f"(?i){corr_alt}.{{0,{PROXIMITY_CHARS}}}{kw_alt}"
-        f"|(?i){kw_alt}.{{0,{PROXIMITY_CHARS}}}{corr_alt}"
-    )
+    if end_date is None:
+        end_date = start_date
 
-    query = f"""
-        WITH keyword_matches AS (
-            SELECT
-                *,
-                regexp_extract_all(lower(plaintext), '(?i){kw_alt}') AS keywords_found
-            FROM source
-        )
-        SELECT
-            * EXCLUDE (keywords_found),
-            keywords_found,
-            len(keywords_found) AS n_keywords_found,
-            CASE
-                WHEN len(keywords_found) > 0
-                    THEN regexp_extract_all(lower(plaintext), '(?i){corr_alt}')
-                ELSE []
-            END AS correlates_found,
-            CASE
-                WHEN len(keywords_found) > 0
-                    THEN len(regexp_extract_all(lower(plaintext), '(?i){corr_alt}'))
-                ELSE 0
-            END AS n_correlates_found,
-            CASE
-                WHEN len(keywords_found) > 0
-                    THEN regexp_matches(lower(plaintext), '{proximity}')
-                ELSE false
-            END AS has_nearby_correlate
-        FROM keyword_matches
-        WHERE len(keywords_found) > 0
-            -- AND regexp_matches(lower(plaintext), '{proximity}')
-    """
-    logging.info("Running keyword + correlate detection query.")
-    return con.sql(query)
+    current = start_date
+    while current <= end_date:
+        logging.info(f"Processing {current} ({len(keywords_by_subject)} subject(s)).")
+        try:
+            source = read_from_s3(
+                start_date=current, end_date=current, channels=channels, con=con
+            )
+        except FileNotFoundError as exc:
+            logging.warning(f"Skipping {current}: {exc}")
+            current += timedelta(days=1)
+            continue
+
+        con.register("source", source)
+        df = con.sql(query).df()
+        logging.info(f"  {current}: {len(df)} match(es).")
+        yield current, df
+
+        current += timedelta(days=1)
 
 
 if __name__ == "__main__":
@@ -208,7 +273,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(
-        description="Detect insecurity keywords and correlates in mediatree parquet data."
+        description="Detect dictionary keywords (all subjects except climate) in mediatree parquet data."
     )
     parser.add_argument(
         "--channel",
@@ -223,17 +288,27 @@ if __name__ == "__main__":
 
     start = date.fromisoformat(args.start_date)
     end = date.fromisoformat(args.end_date) if args.end_date else None
-    channels = args.channel or None  # None triggers the ALL_CHANNELS default
+    channels = args.channel or None
 
-    result = detect_keywords(start_date=start, end_date=end, channels=channels)
-    result.show()
+    frames: list[pd.DataFrame] = []
+    for day, df in detect_keywords(start_date=start, end_date=end, channels=channels):
+        frames.append(df)
 
-    end_label = end or start
-    out_path = (
-        Path(__file__).parent / "data" / f"insecurity_{start}_{end_label}_no_corr.xlsx"
-    )
-    df = result.df()
-    for col in df.select_dtypes(include=["datetimetz"]).columns:
-        df[col] = df[col].dt.tz_localize(None)
-    df.to_excel(out_path, index=False)
-    logging.info(f"Written {len(df)} row(s) to {out_path}")
+    if not frames:
+        logging.warning("No matches found for the requested date range.")
+    else:
+        result = pd.concat(frames, ignore_index=True)
+        logging.info(f"Total matches: {len(result)}")
+
+        end_label = end or start
+        out_path = (
+            Path(__file__).parent / "data" / f"keywords_{start}_{end_label}_full_hrfp.xlsx"
+        )
+        out_path_csv = (
+            Path(__file__).parent / "data" / f"keywords_{start}_{end_label}_full_hrfp.csv"
+        )
+        for col in result.select_dtypes(include=["datetimetz"]).columns:
+            result[col] = result[col].dt.tz_localize(None)
+        result.to_excel(out_path, index=False)
+        result.to_csv(out_path_csv, index=False)
+        logging.info(f"Written {len(result)} row(s) to {out_path}")

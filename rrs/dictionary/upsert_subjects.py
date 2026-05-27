@@ -48,7 +48,7 @@ def upsert_subjects() -> None:
     Session = sessionmaker(bind=engine)
 
     rows = [{"subject_id": subject_id(name), "name": name} for name in subjects.keys()]
-
+    print(len(rows))
     with Session() as session:
         stmt = (
             insert(Subject)
@@ -67,4 +67,5 @@ def upsert_subjects() -> None:
 
 
 if __name__ == "__main__":
+    print("start")
     upsert_subjects()

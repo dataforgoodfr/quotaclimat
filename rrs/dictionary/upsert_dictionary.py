@@ -70,7 +70,7 @@ def extract_rows_climate(subject_id: str, keywords: Dict[str, Any]) -> list[dict
 
 
 def extract_rows(subject_id: str, keywords: List[Dict[str, Any]]) -> list[dict]:
-    """Flatten THEME_KEYWORDS into upsertable rows, deduplicating by keyword."""
+    """Upsert rows removing duplicates."""
     seen: set[str] = set()
     rows = []
     for record in keywords:
@@ -83,7 +83,7 @@ def extract_rows(subject_id: str, keywords: List[Dict[str, Any]]) -> list[dict]:
                 "subject_id": subject_id,
                 "keyword": record["keyword"],
                 "high_risk_false_positive": record.get(
-                    "high_risk_of_false_positive",
+                    "high_risk_false_positive",
                     False
                 ),
             }
@@ -127,7 +127,7 @@ def upsert_dictionary() -> None:
             session.commit()
 
         print(
-            f"{upserted} keyword(s) upserted (subject: {SUBJECT_NAME!r}, subject_id: {sid!r})."
+            f"{upserted} keyword(s) upserted (subject: {subject!r}, subject_id: {sid!r})."
         )
 
 

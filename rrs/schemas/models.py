@@ -83,6 +83,7 @@ class Case(RRSBase):
     model_reason = Column(String, nullable=True)
     start = Column(DateTime(timezone=True), nullable=True)
     text = Column(Text, nullable=True)
+    url_mediatree = Column(String, nullable=True)
     created_at = Column(
         DateTime(timezone=True), server_default=sql_text("(now() at time zone 'utc')")
     )

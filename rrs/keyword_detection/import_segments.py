@@ -186,8 +186,7 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
         INSERT INTO rrs.segments (segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title, url_mediatree, created_at, updated_at)
         SELECT segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title, url_mediatree, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
         FROM segments_batch
-        ON CONFLICT (segment_id) DO UPDATE SET
-            subject_id    = EXCLUDED.subject_id,
+        ON CONFLICT (segment_id, subject_id) DO UPDATE SET
             start         = EXCLUDED.start,
             s3_uri        = EXCLUDED.s3_uri,
             n_keywords    = EXCLUDED.n_keywords,

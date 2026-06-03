@@ -9,7 +9,6 @@ import os
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import (
-    EPOCH__5MIN_MARGIN,
     is_it_tuesday,
     get_start_end_date_env_variable_with_default,
     get_date_range,
@@ -85,13 +84,13 @@ def get_auth_token(password=password, user_name=USER):
         logging.error("Could not get token %s:(%s) %s" % (type(err).__name__, err))
 
 # see : https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
-def get_param_api(token, type_sub, start_epoch, channel, end_epoch):
+def get_param_api(token, type_sub, start_epoch, channel, end_epoch, country: CountryMediaTree):
 
     return {
         "channel": channel,
         "token": token,
-        "start_gte": int(start_epoch) - EPOCH__5MIN_MARGIN,
-        "start_lte": int(end_epoch) + EPOCH__5MIN_MARGIN,
+        "start_gte": int(start_epoch) - country.epoch_margin,
+        "start_lte": int(end_epoch) + country.epoch_margin,
         "type": type_sub,
         "size": "1000" #  range 1-1000
     }
@@ -168,11 +167,11 @@ def get_request_url(base_url: str, params: Dict[str, str]):
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
 # @see https://github.com/jd/tenacity/tree/main
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
-def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch):
+def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch, country: CountryMediaTree = FRANCE):
     try:
         logging.info(media_tree_token)
-        params = get_param_api(media_tree_token, type_sub, start_epoch, channel, end_epoch)
-        logging.info(f"Query {KEYWORDS_URL} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, end_epoch)}")
+        params = get_param_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, country)
+        logging.info(f"Query {KEYWORDS_URL} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, end_epoch, country)}")
         response = requests.get(get_request_url(KEYWORDS_URL, params=params))
         if response.status_code >= 400:
             logging.warning(f"{response.status_code} - Expired token ? - retrying to get a new one {response.content}")
@@ -187,7 +186,7 @@ def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
 def get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type, program_metadata_id, country: CountryMediaTree = FRANCE):
     try:
-        response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch)
+        response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch, country)
 
         return parse_reponse_subtitle(response_sub, channel, channel_program, channel_program_type, program_metadata_id, country=country)
     except Exception as err:

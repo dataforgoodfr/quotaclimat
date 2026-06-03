@@ -214,6 +214,7 @@ def _build_day_query(keywords_by_subject: dict[str, tuple[list[str], list[str]]]
                 *
             FROM detections
             WHERE n_keywords_found > 2 * n_hrfp_found
+            -- where n_hrfp_found=0
         """)
     if not union_parts:
         raise ValueError("No keywords to search for any subject.")
@@ -302,10 +303,10 @@ if __name__ == "__main__":
 
         end_label = end or start
         out_path = (
-            Path(__file__).parent / "data" / f"keywords_{start}_{end_label}_full_hrfp.xlsx"
+            Path(__file__).parent / "data" / f"keywords_{start}_{end_label}_half_hrfp.xlsx"
         )
         out_path_csv = (
-            Path(__file__).parent / "data" / f"keywords_{start}_{end_label}_full_hrfp.csv"
+            Path(__file__).parent / "data" / f"keywords_{start}_{end_label}_half_hrfp.csv"
         )
         for col in result.select_dtypes(include=["datetimetz"]).columns:
             result[col] = result[col].dt.tz_localize(None)

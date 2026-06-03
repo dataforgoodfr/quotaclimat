@@ -30,10 +30,10 @@ from quotaclimat.data_processing.mediatree.i8n.belgium_flanders import (
     channels_programs_belgium_flanders,
     channel_titles_belgium_flanders,
 )
-from quotaclimat.data_processing.mediatree.utils import (
-    EPOCH__5MIN_MARGIN,
-    EPOCH__1MIN_MARGIN,
-)
+
+EPOCH__5MIN_MARGIN = 300
+EPOCH__1MIN_MARGIN = 60 # to add margin for program
+
 
 # Define country codes as Literal types
 # from https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3

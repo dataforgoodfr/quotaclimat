@@ -67621,21 +67621,6 @@ MACRO_CATEGORIES = [
         "keyword_id": "f0fdcf8b5ccd9fe59c166cb625eba6b8c207e66b4d7853bade13c6d354dd50e8"
     },
     {
-        "keyword": "klimaatdienst",
-        "is_empty": False,
-        "general": True,
-        "agriculture": False,
-        "transport": False,
-        "batiments": False,
-        "energie": False,
-        "industrie": False,
-        "eau": False,
-        "ecosysteme": False,
-        "economie_ressources": False,
-        "language": "dutch",
-        "keyword_id": "309f5029f82519171bbcbdf8bf174b6ca4f4ec661d80dc88ae0d1146ba27f3f4"
-    },
-    {
         "keyword": "witte waterstof",
         "is_empty": False,
         "general": False,

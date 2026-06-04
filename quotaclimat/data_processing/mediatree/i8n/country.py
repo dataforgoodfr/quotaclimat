@@ -30,6 +30,11 @@ from quotaclimat.data_processing.mediatree.i8n.belgium_flanders import (
     channels_programs_belgium_flanders,
     channel_titles_belgium_flanders,
 )
+
+EPOCH__5MIN_MARGIN = 300
+EPOCH__1MIN_MARGIN = 60 # to add margin for program
+
+
 # Define country codes as Literal types
 # from https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
 FranceCode = Literal["fra"]
@@ -88,7 +93,7 @@ def get_country_name_from_code(code: CountryCode) -> str:
 
 
 class CountryMediaTree:   
-    def __init__(self, code: CountryCode, language: str, channels: List[str], programs: Optional[List[str]], timezone: str, titles: Dict[str, str]={}):
+    def __init__(self, code: CountryCode, language: str, channels: List[str], programs: Optional[List[str]], timezone: str, titles: Dict[str, str]={}, epoch_margin: int=EPOCH__5MIN_MARGIN):
         """
         Initialize a CountryMediaTree instance.
         
@@ -104,10 +109,11 @@ class CountryMediaTree:
         self.programs = programs
         self.timezone = timezone
         self.titles = titles
+        self.epoch_margin = epoch_margin
 
     def __str__(self):
         """Return a string representation of the CountryMediaTree."""
-        return f"CountryMediaTree(code='{self.code}', channels={self.channels}, programs={self.programs}, language={self.language}, name={self.name}, timezone='{self.timezone}')"
+        return f"CountryMediaTree(code='{self.code}', channels={self.channels}, programs={self.programs}, language={self.language}, name={self.name}, timezone='{self.timezone}', epoch_margin='{self.epoch_margin}')"
 
 
 FRANCE_CODE : FranceCode = "fra"
@@ -148,7 +154,15 @@ BELGIUM_CHANNELS_MEDIATREE = [
 ]
 BELGIUM_TZ = "Europe/Brussels"
 BELGIUM_LANGUAGE = "french"
-BELGIUM = CountryMediaTree(code=BELGIUM_CODE,channels=BELGIUM_CHANNELS, timezone=BELGIUM_TZ, language=BELGIUM_LANGUAGE, programs=channels_programs_belgium, titles=channel_titles_belgium)
+BELGIUM = CountryMediaTree(
+    code=BELGIUM_CODE,
+    channels=BELGIUM_CHANNELS,
+    timezone=BELGIUM_TZ,
+    language=BELGIUM_LANGUAGE,
+    programs=channels_programs_belgium,
+    titles=channel_titles_belgium,
+    epoch_margin=EPOCH__1MIN_MARGIN,
+)
 
 BELGIUM_FLANDERS_CODE : BelgiumCode = "bel-fla"
 BELGIUM_FLANDERS_CHANNELS= [
@@ -164,7 +178,15 @@ BELGIUM_FLANDERS_CHANNELS= [
 
 BELGIUM_FLANDERS_TZ = "Europe/Brussels"
 BELGIUM_FLANDERS_LANGUAGE = "dutch"
-BELGIUM_FLANDERS = CountryMediaTree(code=BELGIUM_FLANDERS_CODE,channels=BELGIUM_FLANDERS_CHANNELS, timezone=BELGIUM_FLANDERS_TZ, language=BELGIUM_FLANDERS_LANGUAGE, programs=channels_programs_belgium_flanders, titles=channel_titles_belgium_flanders)
+BELGIUM_FLANDERS = CountryMediaTree(
+    code=BELGIUM_FLANDERS_CODE,
+    channels=BELGIUM_FLANDERS_CHANNELS, 
+    timezone=BELGIUM_FLANDERS_TZ, 
+    language=BELGIUM_FLANDERS_LANGUAGE, 
+    programs=channels_programs_belgium_flanders, 
+    titles=channel_titles_belgium_flanders,
+    epoch_margin=EPOCH__1MIN_MARGIN,
+)
 
 GERMANY_CODE: GermanyCode ="deu"
 GERMANY_CHANNELS= ["daserste" # from srt import

@@ -6,11 +6,10 @@ from zoneinfo import ZoneInfo
 import modin.pandas as pd
 import os 
 from pandas.tseries.offsets import MonthEnd
+
 from quotaclimat.data_processing.mediatree.i8n.country import CountryMediaTree, FRANCE
 
 timezone_paris=FRANCE.timezone
-EPOCH__5MIN_MARGIN = 300
-EPOCH__1MIN_MARGIN = 60 # to add margin for program
 
 def get_keyword_time_separation_ms(duration_seconds: int = 20):
     return duration_seconds * 1000

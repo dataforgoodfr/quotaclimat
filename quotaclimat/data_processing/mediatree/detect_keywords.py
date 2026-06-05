@@ -139,7 +139,6 @@ def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dic
         all_keywords = multiple_keyword["keyword"].split() # case with multiple words such as 'economie circulaire'
 
         match = find_matching_subtitle(subtitle_duration, pos_in_text, all_keywords[0], country)
-        logging.info(f"got following timestamp: {match['cts_in_ms']}")
         if match is not None:
             cts_in_ms = match['cts_in_ms']
         else:

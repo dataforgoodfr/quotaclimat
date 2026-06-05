@@ -94,7 +94,8 @@ def get_keywords_by_subject(
     for entry in entries:
         if not entry.keyword:
             continue
-        all_kws.setdefault(entry.subject_id, []).append(entry.keyword)
+        if not entry.high_risk_false_positive:
+            all_kws.setdefault(entry.subject_id, []).append(entry.keyword)
         if entry.high_risk_false_positive:
             high_risk_kws.setdefault(entry.subject_id, []).append(entry.keyword)
 
@@ -213,7 +214,7 @@ def _build_day_query(keywords_by_subject: dict[str, tuple[list[str], list[str]]]
             SELECT 
                 *
             FROM detections
-            WHERE n_keywords_found > 2 * n_hrfp_found
+            -- WHERE n_keywords_found > 2 * n_hrfp_found
             -- where n_hrfp_found=0
         """)
     if not union_parts:
@@ -303,10 +304,10 @@ if __name__ == "__main__":
 
         end_label = end or start
         out_path = (
-            Path(__file__).parent / "data" / f"keywords_{start}_{end_label}_half_hrfp.xlsx"
+            Path(__file__).parent / "data" / f"keywords_{start}_{end_label}_no_hrfp.xlsx"
         )
         out_path_csv = (
-            Path(__file__).parent / "data" / f"keywords_{start}_{end_label}_half_hrfp.csv"
+            Path(__file__).parent / "data" / f"keywords_{start}_{end_label}_no_hrfp.csv"
         )
         for col in result.select_dtypes(include=["datetimetz"]).columns:
             result[col] = result[col].dt.tz_localize(None)

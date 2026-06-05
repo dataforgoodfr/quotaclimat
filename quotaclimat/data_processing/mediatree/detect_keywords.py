@@ -24,6 +24,7 @@ import re
 import spacy
 import spacy.util
 from itertools import groupby
+from functools import lru_cache
 import sentry_sdk
 import modin.pandas as pd
 import copy
@@ -138,7 +139,7 @@ def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dic
         all_keywords = multiple_keyword["keyword"].split() # case with multiple words such as 'economie circulaire'
 
         match = find_matching_subtitle(subtitle_duration, pos_in_text, all_keywords[0], country)
-
+        logging.info(f"got following timestamp: {match['cts_in_ms']}")
         if match is not None:
             cts_in_ms = match['cts_in_ms']
         else:
@@ -236,18 +237,47 @@ def is_keyword_in_text(keyword: str, text: str) -> bool:
     # Search (case-insensitivity already in the pattern)
     return bool(re.search(pattern, text))
 
+@lru_cache(maxsize=256)
+def _build_automaton(padded_keywords: frozenset) -> ahocorasick.Automaton:
+    """Build and cache an Aho-Corasick automaton for a given frozenset of space-padded keywords.
+
+    Cached because the keyword set per theme+language is fixed across all subtitle rows.
+    """
+    automaton = ahocorasick.Automaton()
+    for padded_kw in padded_keywords:
+        automaton.add_word(padded_kw, padded_kw)
+    automaton.make_automaton()
+    return automaton
+
+
 def get_words_in_sentence_regex_i18n(keywords_lemmas, text: str) -> Set[str]:
-    logging.info("Running regex matching with lemmas for i18n languages")
-  
-    found = set()
-    word_positions = []
-    for idx in keywords_lemmas:
-        pattern = r"(?i)(?:^|\b)" + re.escape(keywords_lemmas[idx]) + r"(?![\w-])"
-        match = re.search(pattern, text)
-        if match:
-            found.add(idx)
-            word_idx = len(text[:match.start()].split())
-            word_positions.append(word_idx)
+    """Multi-keyword search via Aho-Corasick: O(text_length + matches) regardless of dictionary size.
+
+    Both `keywords_lemmas` values and `text` must already be space-padded so that space
+    characters act as implicit word boundaries (no regex lookarounds needed).
+    """
+    logging.info("Running Aho-Corasick matching for i18n languages")
+    if not keywords_lemmas:
+        return set(), []
+
+    # Multiple keywords can share the same surface form after lemmatisation
+    kw_to_indices = defaultdict(list)
+    for idx, kw in keywords_lemmas.items():
+        padded = " " + kw + " "
+        kw_to_indices[padded].append(idx)
+
+    automaton = _build_automaton(frozenset(kw_to_indices.keys()))
+
+    matches = {}  # idx -> word position (first occurrence wins)
+    for end_pos, padded_kw in automaton.iter(text):
+        start_pos = end_pos - len(padded_kw) + 1
+        word_pos = len(text[:start_pos].split())
+        for idx in kw_to_indices[padded_kw]:
+            if idx not in matches:
+                matches[idx] = word_pos
+
+    found = set(matches.keys())
+    word_positions = [matches[idx] for idx in found]
     return found, word_positions
 
 def filter_already_contained_keyword(keywords_with_timestamp: List[dict]) -> List[dict]:
@@ -339,19 +369,33 @@ def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: Cou
     else:
         lang = LANGUAGE_CODES[country.language]
         kw_lemmas = dict()
+        kw_originals = dict()
         keywords = [keyword_dict["keyword"].lower() for keyword_dict in keywords_dict]
         for idx, kw in enumerate(keywords):
             lemmas = get_lemmas(kw, lang)
-            key = " ".join(lemmas)
-            kw_lemmas[idx] = key
+            kw_lemmas[idx] = " ".join(lemmas)
+            kw_originals[idx] = kw
+
         text_lemmas = get_lemmas(text, lang)
         lemmatised_text = " " + " ".join(text_lemmas) + " "
-        return get_words_in_sentence_regex_i18n(kw_lemmas, lemmatised_text)
+        # Normalise punctuation to spaces so the space-padding word-boundary trick works for prose
+        original_text = " " + re.sub(r"[^\w\s]", " ", text.lower()) + " "
+
+        lemma_found, lemma_positions = get_words_in_sentence_regex_i18n(kw_lemmas, lemmatised_text)
+        exact_found, exact_positions = get_words_in_sentence_regex_i18n(kw_originals, original_text)
+
+        # Union: lemma match takes precedence for position; exact match adds indices not caught by lemmatization
+        position_map = dict(zip(exact_found, exact_positions))
+        position_map.update(zip(lemma_found, lemma_positions))
+        combined_found = lemma_found | exact_found
+        combined_positions = [position_map[idx] for idx in combined_found]
+        return combined_found, combined_positions
 
 
 # def get_detected_keywords(automaton: ahocorasick.Automaton, plaintext_without_stopwords: str, keywords_dict, country=FRANCE):
 def get_detected_keywords(plaintext_without_stopwords: str, keywords_dict, country=FRANCE):
     found_idx, word_positions = get_words_in_sentence(keywords_dict, plaintext_without_stopwords, country)
+    logging.debug(f"found: {found_idx}")
     # found_idx = get_words_in_sentence(automaton, keywords_dict, plaintext_without_stopwords, country)
     matching_words = [get_keyword_matching_json(keywords_dict[idx], country=country) for idx in found_idx]
     if matching_words:

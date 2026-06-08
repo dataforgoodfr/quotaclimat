@@ -237,6 +237,15 @@ def is_keyword_in_text(keyword: str, text: str) -> bool:
     return bool(re.search(pattern, text))
 
 @lru_cache(maxsize=None)
+def _compile_fr_keyword_patterns(keywords_tuple: tuple) -> dict:
+    compiled = {}
+    for idx, kw in enumerate(keywords_tuple):
+        pattern_str = " ".join(format_word_regex(w) for w in kw.split(" "))
+        compiled[idx] = re.compile(rf"\b{pattern_str}(?![\w-])", re.IGNORECASE)
+    return compiled
+
+
+@lru_cache(maxsize=None)
 def _lemmatize_keywords(keywords_tuple: tuple, lang: str):
     kw_lemmas = {}
     kw_originals = {}
@@ -364,7 +373,9 @@ def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
 def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
     if country.code=='fra':
         logging.info("Using regex for france")
-        words = set([idx for idx, kw in enumerate(keywords_dict) if is_word_in_sentence_fr(kw["keyword"], text)])
+        keywords_tuple = tuple(kw["keyword"] for kw in keywords_dict)
+        compiled_patterns = _compile_fr_keyword_patterns(keywords_tuple)
+        words = set(idx for idx, pattern in compiled_patterns.items() if pattern.search(text))
         return words, [None] * len(words)
     else:
         lang = LANGUAGE_CODES[country.language]

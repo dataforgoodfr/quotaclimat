@@ -1,0 +1,39 @@
+id: stop-word
+namespace: quotaclimat.barometre
+description: |
+  Stop word detection and processing.
+  Runs migrations then processes stop words in media content.
+
+labels:
+  pipeline: barometre
+  source: mediatree
+
+inputs:
+  - id: image_tag
+    type: STRING
+    defaults: latest
+
+triggers:
+  - id: daily
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 8 * * *"
+    # TODO: adjust schedule
+
+tasks:
+  - id: stop_word
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ kv('CONTAINER_REGISTRY') }}/quotaclimat_base:{{ inputs.image_tag }}"
+    commands:
+      - ./entrypoints/stop_word.sh
+    env:
+      ENV: prod
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+      PORT: "5002"
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
+      POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
+      POSTGRES_DB: "{{ kv('POSTGRES_DB') }}"
+      POSTGRES_HOST: "{{ kv('POSTGRES_HOST') }}"
+      POSTGRES_PORT: "{{ kv('POSTGRES_PORT') }}"

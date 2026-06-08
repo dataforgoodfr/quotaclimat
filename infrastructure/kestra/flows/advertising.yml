@@ -1,0 +1,51 @@
+id: advertising
+namespace: quotaclimat.barometre
+description: |
+  Advertising pipeline: detection then exportation.
+  Runs sequentially — detection must complete before exportation starts.
+
+labels:
+  pipeline: barometre
+  source: advertising
+
+inputs:
+  - id: image_tag
+    type: STRING
+    defaults: latest
+
+triggers:
+  - id: daily
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 9 * * *"
+    # TODO: adjust schedule
+
+tasks:
+  - id: advertising_detection
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ kv('CONTAINER_REGISTRY') }}/quotaclimat_base:{{ inputs.image_tag }}"
+    commands:
+      - ./entrypoints/advertising_detection.sh
+    env:
+      ENV: prod
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
+      POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
+      POSTGRES_DB: "{{ kv('POSTGRES_DB') }}"
+      POSTGRES_HOST: "{{ kv('POSTGRES_HOST') }}"
+      POSTGRES_PORT: "{{ kv('POSTGRES_PORT') }}"
+
+  - id: advertising_exportation
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ kv('CONTAINER_REGISTRY') }}/quotaclimat_base:{{ inputs.image_tag }}"
+    commands:
+      - ./entrypoints/advertising_exportation.sh
+    env:
+      ENV: prod
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
+      POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
+      POSTGRES_DB: "{{ kv('POSTGRES_DB') }}"
+      POSTGRES_HOST: "{{ kv('POSTGRES_HOST') }}"
+      POSTGRES_PORT: "{{ kv('POSTGRES_PORT') }}"

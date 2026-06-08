@@ -1,0 +1,74 @@
+---
+- name: Provision orchestrator VM
+  hosts: orchestrator
+  become: true
+
+  vars:
+    base_domain: "{{ lookup('env', 'BASE_DOMAIN') }}"
+    acme_email: "{{ lookup('env', 'ACME_EMAIL') }}"
+
+    # Traefik
+    traefik_dashboard_auth: "{{ lookup('env', 'TRAEFIK_DASHBOARD_AUTH') }}"
+
+    # Kestra
+    kestra_basic_auth: "{{ lookup('env', 'KESTRA_BASIC_AUTH') }}"
+    kestra_db_user: "{{ lookup('env', 'KESTRA_DB_USER') }}"
+    kestra_db_password: "{{ lookup('env', 'KESTRA_DB_PASSWORD') }}"
+    kestra_db_name: "{{ lookup('env', 'KESTRA_DB_NAME') }}"
+
+    # GlitchTip
+    glitchtip_db_user: "{{ lookup('env', 'GLITCHTIP_DB_USER') }}"
+    glitchtip_db_password: "{{ lookup('env', 'GLITCHTIP_DB_PASSWORD') }}"
+    glitchtip_db_name: "{{ lookup('env', 'GLITCHTIP_DB_NAME') }}"
+    glitchtip_secret_key: "{{ lookup('env', 'GLITCHTIP_SECRET_KEY') }}"
+
+    # Managed Postgres
+    postgres_host: "{{ lookup('env', 'POSTGRES_HOST') }}"
+    postgres_port: "{{ lookup('env', 'POSTGRES_PORT') | default('5432', true) }}"
+
+    # Kestra secrets (for flow execution)
+    kestra_secrets:
+      POSTGRES_USER: "{{ lookup('env', 'KESTRA_FLOW_POSTGRES_USER') }}"
+      POSTGRES_PASSWORD: "{{ lookup('env', 'KESTRA_FLOW_POSTGRES_PASSWORD') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ lookup('env', 'LABELSTUDIO_INGESTION_POSTGRES_USER') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ lookup('env', 'LABELSTUDIO_INGESTION_POSTGRES_PASSWORD') }}"
+      MEDIATREE_USER: "{{ lookup('env', 'MEDIATREE_USER') }}"
+      MEDIATREE_PASSWORD: "{{ lookup('env', 'MEDIATREE_PASSWORD') }}"
+      SCW_BUCKET: "{{ lookup('env', 'SCW_BUCKET') }}"
+      SCW_BUCKET_SECRET: "{{ lookup('env', 'SCW_BUCKET_SECRET') }}"
+      FACTIVA_USERKEY: "{{ lookup('env', 'FACTIVA_USERKEY') }}"
+      FACTIVA_SUBSCRIPTION_ID: "{{ lookup('env', 'FACTIVA_SUBSCRIPTION_ID') }}"
+      FACTIVA_POSTGRES_USER: "{{ lookup('env', 'FACTIVA_POSTGRES_USER') }}"
+      FACTIVA_POSTGRES_PASSWORD: "{{ lookup('env', 'FACTIVA_POSTGRES_PASSWORD') }}"
+      LEMONDE_FTP_HOST: "{{ lookup('env', 'LEMONDE_FTP_HOST') }}"
+      LEMONDE_FTP_USER: "{{ lookup('env', 'LEMONDE_FTP_USER') }}"
+      LEMONDE_FTP_PASS: "{{ lookup('env', 'LEMONDE_FTP_PASS') }}"
+      RRS_PG_USER: "{{ lookup('env', 'RRS_PG_USER') }}"
+      RRS_PG_PASSWORD: "{{ lookup('env', 'RRS_PG_PASSWORD') }}"
+      MISTRAL_API_KEY: "{{ lookup('env', 'MISTRAL_API_KEY') }}"
+      ANTHROPIC_API_KEY: "{{ lookup('env', 'ANTHROPIC_API_KEY') }}"
+
+    # Kestra KV store (non-secret configuration)
+    kestra_kvs:
+      CONTAINER_REGISTRY: "{{ lookup('env', 'CONTAINER_REGISTRY') }}"
+      POSTGRES_DB: "{{ lookup('env', 'KESTRA_FLOW_POSTGRES_DB') }}"
+      POSTGRES_HOST: "{{ lookup('env', 'KESTRA_FLOW_POSTGRES_HOST') }}"
+      POSTGRES_PORT: "{{ lookup('env', 'KESTRA_FLOW_POSTGRES_PORT') | default('5432', true) }}"
+      BUCKET_NAME: "{{ lookup('env', 'BUCKET_NAME') }}"
+      FACTIVA_POSTGRES_DB: "{{ lookup('env', 'FACTIVA_POSTGRES_DB') }}"
+      FACTIVA_POSTGRES_HOST: "{{ lookup('env', 'FACTIVA_POSTGRES_HOST') }}"
+      FACTIVA_POSTGRES_PORT: "{{ lookup('env', 'FACTIVA_POSTGRES_PORT') | default('5432', true) }}"
+      RRS_REGISTRY: "{{ lookup('env', 'RRS_REGISTRY') }}"
+      RRS_PG_HOST: "{{ lookup('env', 'RRS_PG_HOST') }}"
+      RRS_PG_PORT: "{{ lookup('env', 'RRS_PG_PORT') | default('5432', true) }}"
+      RRS_PG_DATABASE: "{{ lookup('env', 'RRS_PG_DATABASE') }}"
+
+  roles:
+    - role: common
+      tags: [common]
+    - role: traefik
+      tags: [traefik]
+    - role: kestra
+      tags: [kestra]
+    - role: glitchtip
+      tags: [glitchtip]

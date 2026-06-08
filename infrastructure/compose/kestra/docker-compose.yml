@@ -1,0 +1,37 @@
+services:
+  kestra:
+    image: kestra/kestra:latest
+    container_name: kestra
+    restart: unless-stopped
+    command: server local
+    env_file: .env
+    volumes:
+      - kestra-data:/app/storage
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - traefik-public
+      - kestra-internal
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.kestra.rule=Host(`kestra.${BASE_DOMAIN}`)
+      - traefik.http.routers.kestra.entrypoints=websecure
+      - traefik.http.routers.kestra.tls.certresolver=letsencrypt
+      - traefik.http.services.kestra.loadbalancer.server.port=8080
+      - traefik.http.routers.kestra.middlewares=kestra-auth,security-headers,rate-limit
+      - "traefik.http.middlewares.kestra-auth.basicauth.users=${BASIC_AUTH_USERS}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/configs || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  kestra-data:
+
+networks:
+  traefik-public:
+    external: true
+  kestra-internal:

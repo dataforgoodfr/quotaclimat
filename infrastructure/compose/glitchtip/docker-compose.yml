@@ -1,0 +1,61 @@
+services:
+  glitchtip-web:
+    image: glitchtip/glitchtip:latest
+    container_name: glitchtip-web
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - traefik-public
+      - glitchtip-internal
+    depends_on:
+      glitchtip-redis:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.glitchtip.rule=Host(`glitchtip.${BASE_DOMAIN}`)
+      - traefik.http.routers.glitchtip.entrypoints=websecure
+      - traefik.http.routers.glitchtip.tls.certresolver=letsencrypt
+      - traefik.http.services.glitchtip.loadbalancer.server.port=8000
+      - traefik.http.routers.glitchtip.middlewares=security-headers,rate-limit
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8000/_health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  glitchtip-worker:
+    image: glitchtip/glitchtip:latest
+    container_name: glitchtip-worker
+    restart: unless-stopped
+    command: ./bin/run-celery-with-beat.sh
+    env_file: .env
+    networks:
+      - glitchtip-internal
+    depends_on:
+      glitchtip-redis:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+
+  glitchtip-redis:
+    image: redis:7-alpine
+    container_name: glitchtip-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 64mb --maxmemory-policy allkeys-lru
+    networks:
+      - glitchtip-internal
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+networks:
+  traefik-public:
+    external: true
+  glitchtip-internal:

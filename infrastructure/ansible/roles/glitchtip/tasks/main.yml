@@ -1,0 +1,30 @@
+---
+- name: Create glitchtip directory
+  file:
+    path: /opt/services/glitchtip
+    state: directory
+    mode: "0755"
+
+- name: Copy glitchtip docker-compose
+  copy:
+    src: "{{ playbook_dir }}/../compose/glitchtip/docker-compose.yml"
+    dest: /opt/services/glitchtip/docker-compose.yml
+    mode: "0644"
+
+- name: Template glitchtip .env
+  template:
+    src: "{{ playbook_dir }}/../compose/glitchtip/.env.j2"
+    dest: /opt/services/glitchtip/.env
+    mode: "0600"
+
+- name: Start glitchtip
+  community.docker.docker_compose_v2:
+    project_src: /opt/services/glitchtip
+    state: present
+    pull: always
+
+- name: Run GlitchTip migrations
+  community.docker.docker_container_exec:
+    container: glitchtip-web
+    command: ./manage.py migrate
+  changed_when: true

@@ -1,0 +1,50 @@
+id: lemonde-ftp
+namespace: quotaclimat.factiva
+description: |
+  Le Monde FTP pipeline:
+  1. Download articles from FTP to S3
+  2. Process from S3 to PostgreSQL
+  Uses the lemonde_web image which handles both steps via entrypoint.
+
+labels:
+  pipeline: factiva
+  source: lemonde
+
+inputs:
+  - id: image_tag
+    type: STRING
+    defaults: latest
+  - id: number_days_prior
+    type: STRING
+    defaults: "7"
+
+triggers:
+  - id: daily
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 6 * * *"
+    # TODO: adjust schedule
+
+tasks:
+  - id: lemonde_ftp_to_postgre
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ kv('CONTAINER_REGISTRY') }}/lemonde_web:{{ inputs.image_tag }}"
+    env:
+      ENV: prod
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      FTP_HOST: "{{ secret('LEMONDE_FTP_HOST') }}"
+      FTP_USER: "{{ secret('LEMONDE_FTP_USER') }}"
+      FTP_PASS: "{{ secret('LEMONDE_FTP_PASS') }}"
+      FTP_PORT: "21"
+      NUMBER_DAYS_PRIOR: "{{ inputs.number_days_prior }}"
+      OVERRIDE: "false"
+      S3_BUCKET_NAME: "{{ kv('BUCKET_NAME') }}"
+      S3_REGION: fr-par
+      S3_ACCESS_KEY: "{{ secret('SCW_BUCKET') }}"
+      S3_SECRET_KEY: "{{ secret('SCW_BUCKET_SECRET') }}"
+      S3_ENDPOINT_URL: https://s3.fr-par.scw.cloud
+      POSTGRES_USER: "{{ secret('FACTIVA_POSTGRES_USER') }}"
+      POSTGRES_PASSWORD: "{{ secret('FACTIVA_POSTGRES_PASSWORD') }}"
+      POSTGRES_DB: "{{ kv('FACTIVA_POSTGRES_DB') }}"
+      POSTGRES_HOST: "{{ kv('FACTIVA_POSTGRES_HOST') }}"
+      POSTGRES_PORT: "{{ kv('FACTIVA_POSTGRES_PORT') }}"

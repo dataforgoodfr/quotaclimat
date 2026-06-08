@@ -1,0 +1,79 @@
+---
+- name: Create kestra directory
+  file:
+    path: /opt/services/kestra
+    state: directory
+    mode: "0755"
+
+- name: Copy kestra docker-compose
+  copy:
+    src: "{{ playbook_dir }}/../compose/kestra/docker-compose.yml"
+    dest: /opt/services/kestra/docker-compose.yml
+    mode: "0644"
+
+- name: Template kestra .env
+  template:
+    src: "{{ playbook_dir }}/../compose/kestra/.env.j2"
+    dest: /opt/services/kestra/.env
+    mode: "0600"
+
+- name: Start kestra
+  community.docker.docker_compose_v2:
+    project_src: /opt/services/kestra
+    state: present
+    pull: always
+
+- name: Wait for Kestra API to be ready
+  uri:
+    url: "http://localhost:8080/api/v1/configs"
+    method: GET
+    status_code: 200
+  register: kestra_health
+  retries: 30
+  delay: 5
+  until: kestra_health.status == 200
+
+- name: Provision Kestra secrets
+  uri:
+    url: "http://localhost:8080/api/v1/secrets"
+    method: PUT
+    body_format: json
+    body:
+      namespace: "quotaclimat"
+      key: "{{ item.key }}"
+      value: "{{ item.value }}"
+    status_code: [200, 204]
+  loop: "{{ kestra_secrets | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  no_log: true
+  when: item.value | length > 0
+
+- name: Provision Kestra KV store
+  uri:
+    url: "http://localhost:8080/api/v1/namespaces/quotaclimat/kv/{{ item.key }}"
+    method: PUT
+    body_format: json
+    body:
+      value: "{{ item.value }}"
+    status_code: [200, 204]
+  loop: "{{ kestra_kvs | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  when: item.value | length > 0
+
+- name: Upload Kestra flows
+  uri:
+    url: "http://localhost:8080/api/v1/flows/import"
+    method: POST
+    body_format: form-multipart
+    body:
+      fileUpload:
+        filename: "{{ item | basename }}"
+        src: "{{ item }}"
+        mime: "application/x-yaml"
+    status_code: [200, 204]
+  with_fileglob:
+    - "{{ playbook_dir }}/../kestra/flows/*.yml"
+  loop_control:
+    label: "{{ item | basename }}"

@@ -1,0 +1,24 @@
+---
+- name: Create traefik directory
+  file:
+    path: /opt/services/traefik
+    state: directory
+    mode: "0755"
+
+- name: Copy traefik docker-compose
+  copy:
+    src: "{{ playbook_dir }}/../compose/traefik/docker-compose.yml"
+    dest: /opt/services/traefik/docker-compose.yml
+    mode: "0644"
+
+- name: Template traefik .env
+  template:
+    src: "{{ playbook_dir }}/../compose/traefik/.env.j2"
+    dest: /opt/services/traefik/.env
+    mode: "0600"
+
+- name: Start traefik
+  community.docker.docker_compose_v2:
+    project_src: /opt/services/traefik
+    state: present
+    pull: always

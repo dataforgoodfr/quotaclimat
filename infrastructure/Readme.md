@@ -209,6 +209,10 @@ When deploying for the first time you may need to create passwords and tokens. U
 ```bash
 LC_ALL=C tr -dc 'A-Za-z0-9!@#$%^&*' < /dev/urandom | head -c 32; echo
 ```
+To generate a Label Studio token (40-character alphanumeric string):
+```bash
+openssl rand -base64 30 | tr -dc 'A-Za-z0-9' | head -c 40; echo
+```
 To generate a Traefik basicAuth password:
 ```bash
 htpasswd -nB admin | sed -e 's/\$/\$\$/g'

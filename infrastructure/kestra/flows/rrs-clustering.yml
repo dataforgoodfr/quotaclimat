@@ -18,12 +18,6 @@ inputs:
     type: STRING
     defaults: anthropic
 
-triggers:
-  - id: daily
-    type: io.kestra.plugin.core.trigger.Schedule
-    cron: "0 12 * * *"
-    # TODO: adjust schedule — should run after rrs-import completes
-
 tasks:
   - id: clustering
     type: io.kestra.plugin.docker.Run

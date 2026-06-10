@@ -14,12 +14,6 @@ inputs:
     type: STRING
     defaults: latest
 
-triggers:
-  - id: daily
-    type: io.kestra.plugin.core.trigger.Schedule
-    cron: "0 10 * * *"
-    # TODO: adjust schedule — should run after mediatree-import completes
-
 tasks:
   - id: import_parallel
     type: io.kestra.plugin.core.flow.Parallel

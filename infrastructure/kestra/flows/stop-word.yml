@@ -13,12 +13,6 @@ inputs:
     type: STRING
     defaults: latest
 
-triggers:
-  - id: daily
-    type: io.kestra.plugin.core.trigger.Schedule
-    cron: "0 8 * * *"
-    # TODO: adjust schedule
-
 tasks:
   - id: stop_word
     type: io.kestra.plugin.docker.Run

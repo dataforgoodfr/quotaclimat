@@ -19,12 +19,6 @@ inputs:
     type: STRING
     defaults: "3"
 
-triggers:
-  - id: daily
-    type: io.kestra.plugin.core.trigger.Schedule
-    cron: "0 7 * * *"
-    # TODO: adjust schedule
-
 tasks:
   - id: api_to_s3
     type: io.kestra.plugin.docker.Run

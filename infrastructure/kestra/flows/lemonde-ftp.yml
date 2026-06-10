@@ -18,12 +18,6 @@ inputs:
     type: STRING
     defaults: "7"
 
-triggers:
-  - id: daily
-    type: io.kestra.plugin.core.trigger.Schedule
-    cron: "0 6 * * *"
-    # TODO: adjust schedule
-
 tasks:
   - id: lemonde_ftp_to_postgre
     type: io.kestra.plugin.docker.Run

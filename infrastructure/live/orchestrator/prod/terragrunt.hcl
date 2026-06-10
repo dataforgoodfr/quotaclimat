@@ -12,7 +12,7 @@ inputs = {
 
   # Managed Postgres (reuse existing barometre instance)
   pg_instance_name = get_env("TF_VAR_pg_instance_name", "rdb-poc")
-  pg_project_name  = get_env("TF_VAR_pg_project_name", "barometre-dev")
+  pg_project_name  = get_env("TF_VAR_pg_project_name", "barometre")
 
   # DB passwords
   postgres_password_kestra    = get_env("TF_VAR_postgres_password_kestra")

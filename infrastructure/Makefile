@@ -2,7 +2,7 @@ env    ?= dev
 target ?= advertising
 tags   ?=
 
-SHELL := /bin/bash
+SHELL := $(shell which bash)
 .SHELLFLAGS := -euo pipefail -c
 
 # --- Setup ---

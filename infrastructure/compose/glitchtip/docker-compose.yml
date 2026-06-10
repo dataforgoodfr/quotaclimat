@@ -14,7 +14,7 @@ services:
       - no-new-privileges:true
     labels:
       - traefik.enable=true
-      - traefik.http.routers.glitchtip.rule=Host(`glitchtip.${BASE_DOMAIN}`)
+      - traefik.http.routers.glitchtip.rule=Host(`${GLITCHTIP_DOMAIN}`)
       - traefik.http.routers.glitchtip.entrypoints=websecure
       - traefik.http.routers.glitchtip.tls.certresolver=letsencrypt
       - traefik.http.services.glitchtip.loadbalancer.server.port=8000

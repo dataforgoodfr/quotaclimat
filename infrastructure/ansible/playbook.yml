@@ -4,8 +4,12 @@
   become: true
 
   vars:
-    base_domain: "{{ lookup('env', 'BASE_DOMAIN') }}"
     acme_email: "{{ lookup('env', 'ACME_EMAIL') }}"
+
+    # Per-service domains
+    traefik_domain: "{{ lookup('env', 'TRAEFIK_DOMAIN') }}"
+    kestra_domain: "{{ lookup('env', 'KESTRA_DOMAIN') }}"
+    glitchtip_domain: "{{ lookup('env', 'GLITCHTIP_DOMAIN') }}"
 
     # Traefik
     traefik_dashboard_auth: "{{ lookup('env', 'TRAEFIK_DASHBOARD_AUTH') }}"

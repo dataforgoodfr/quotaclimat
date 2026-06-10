@@ -4,9 +4,7 @@
 
 INFRA_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-# Vaultwarden collection ID for quotaclimat orchestrator secrets.
-# TODO: Create this collection in Vaultwarden and update the ID.
-VAULTWARDEN_COLLECTION_ID="${VAULTWARDEN_COLLECTION_ID:-CHANGEME}"
+VAULTWARDEN_COLLECTION_ID="${VAULTWARDEN_COLLECTION_ID:-f964ef67-cb71-421e-90f1-fff328449b4b}"
 VAULTWARDEN_SERVER="${VAULTWARDEN_SERVER:-https://vaultwarden.services.dataforgood.fr}"
 
 ENV_FILE="$INFRA_DIR/.env.secrets"
@@ -29,22 +27,22 @@ get_bw_session() {
 }
 
 refresh_vaultwarden_secrets() {
-  if [ "$VAULTWARDEN_COLLECTION_ID" = "CHANGEME" ]; then
-    echo "WARNING: VAULTWARDEN_COLLECTION_ID not set. Skipping secrets refresh."
-    echo "Set it in your environment or update bin/lib/common.sh."
-    return
-  fi
-
   get_bw_session
   bw sync
 
   echo "Fetching secrets from Vaultwarden collection..."
 
-  # Fetch all secure notes from the collection and write as KEY=VALUE
-  bw list items --collectionid "$VAULTWARDEN_COLLECTION_ID" \
-    | jq -r '.[] | select(.type == 2) | .notes' \
-    > "$ENV_FILE"
+  SECRETS=$(bw list items --collectionid "$VAULTWARDEN_COLLECTION_ID" --session "$BW_SESSION" \
+    | jq -r '.[] | select(.type == 2) | .notes')
 
+  if [ -z "$SECRETS" ]; then
+    echo "ERROR: No secrets found in collection $VAULTWARDEN_COLLECTION_ID."
+    echo "Check that you are a member of the Quotaclimat/Orchestrator collection."
+    return 1
+  fi
+
+  echo -e '#!/usr/bin/env bash\n' > "$ENV_FILE"
+  echo "$SECRETS" >> "$ENV_FILE"
   chmod 600 "$ENV_FILE"
   echo "Secrets written to $ENV_FILE"
 }

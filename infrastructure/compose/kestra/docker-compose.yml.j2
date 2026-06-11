@@ -6,6 +6,12 @@ services:
     command: server standalone
     environment:
       KESTRA_CONFIGURATION: |
+        micronaut:
+          io:
+            watch:
+              enabled: true
+              paths:
+                - /app/flows
         datasources:
           postgres:
             url: jdbc:postgresql://{{ postgres_host }}:{{ postgres_port }}/{{ kestra_db_name }}
@@ -13,6 +19,11 @@ services:
             username: {{ kestra_db_user }}
             password: "{{ kestra_db_password }}"
         kestra:
+        local-files:
+          allowed-paths:
+            - /app/flows
+          tutorial-flows:
+            enabled: false
           repository:
             type: postgres
           storage:
@@ -24,6 +35,7 @@ services:
     volumes:
       - kestra-data:/app/storage
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./flows:/app/flows:rw
     networks:
       - traefik-public
       - kestra-internal

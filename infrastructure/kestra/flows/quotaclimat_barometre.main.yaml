@@ -1,0 +1,37 @@
+id: main
+namespace: barometre
+
+tasks:
+  - id: ingest_data_to_s3
+    type: io.kestra.plugin.docker.Run
+    containerImage: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
+    pullPolicy: ALWAYS
+    credentials:
+      registry: rg.fr-par.scw.cloud
+      username: nologin
+      password: "{{ secret('SCW_SECRET_KEY') }}"
+    entryPoint:
+      - python
+      - quotaclimat/data_processing/mediatree/s3/api_to_s3.py
+
+  - id: detect_keywords
+    type: io.kestra.plugin.docker.Run
+    containerImage: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
+    pullPolicy: ALWAYS
+    credentials:
+      registry: rg.fr-par.scw.cloud
+      username: nologin
+      password: "{{ secret('SCW_SECRET_KEY') }}"
+    entryPoint:
+      - ./entrypoints/detect_keywords.sh
+
+  - id: dbt_run_transformations
+    type: io.kestra.plugin.docker.Run
+    containerImage: rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest
+    pullPolicy: ALWAYS
+    credentials:
+      registry: rg.fr-par.scw.cloud
+      username: nologin
+      password: "{{ secret('SCW_SECRET_KEY') }}"
+    entryPoint:
+      - ./entrypoints/dbt.sh

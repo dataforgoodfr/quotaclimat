@@ -12,6 +12,13 @@
   loop:
     - /opt/services/kestra/.env
     - /opt/services/kestra/application.yml
+    - /opt/services/kestra/flows
+
+- name: Copy kestra flow definitions
+  copy:
+    src: "{{ playbook_dir }}/../kestra/flows/"
+    dest: /opt/services/kestra/flows/
+    mode: "0644"
 
 - name: Template kestra docker-compose
   template:

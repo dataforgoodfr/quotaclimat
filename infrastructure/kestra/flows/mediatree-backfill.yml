@@ -1,0 +1,64 @@
+id: mediatree-backfill
+namespace: quotaclimat.barometre
+description: |
+  Mediatree backfill/update job.
+  Same image as mediatree-import but with UPDATE=true.
+  Used to retroactively reprocess historical data.
+
+labels:
+  pipeline: barometre
+  source: mediatree
+
+inputs:
+  - id: image_tag
+    type: STRING
+    defaults: latest
+  - id: country
+    type: STRING
+    defaults: fra
+  - id: start_date_update
+    type: STRING
+    description: "Start date for update range (YYYY-MM-DD)"
+  - id: end_date
+    type: STRING
+    description: "End date for update range (YYYY-MM-DD)"
+  - id: batch_size
+    type: STRING
+    defaults: "100"
+  - id: biodiversity_only
+    type: STRING
+    defaults: "false"
+
+# No automatic trigger — manual only
+
+tasks:
+  - id: backfill
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ kv('CONTAINER_REGISTRY') }}/quotaclimat_base:{{ inputs.image_tag }}"
+    commands:
+      - ./entrypoints/mediatree_import.sh
+    env:
+      ENV: prod
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+      DBT_PROJECT_DIR: /app/my_dbt_project
+      COUNTRY: "{{ inputs.country }}"
+      UPDATE: "true"
+      START_DATE_UPDATE: "{{ inputs.start_date_update }}"
+      END_DATE: "{{ inputs.end_date }}"
+      BATCH_SIZE: "{{ inputs.batch_size }}"
+      BIODIVERSITY_ONLY: "{{ inputs.biodiversity_only }}"
+      MODIN_ENGINE: ray
+      MODIN_CPUS: "8"
+      RAY_memory_usage_threshold: "1"
+      PORT_HS: "5050"
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
+      POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
+      POSTGRES_DB: "{{ kv('POSTGRES_DB') }}"
+      POSTGRES_HOST: "{{ kv('POSTGRES_HOST') }}"
+      POSTGRES_PORT: "{{ kv('POSTGRES_PORT') }}"
+      BUCKET: "{{ secret('SCW_BUCKET') }}"
+      BUCKET_NAME: "{{ kv('BUCKET_NAME') }}"
+      BUCKET_SECRET: "{{ secret('SCW_BUCKET_SECRET') }}"

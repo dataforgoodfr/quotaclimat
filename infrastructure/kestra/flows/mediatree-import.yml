@@ -1,0 +1,57 @@
+id: mediatree-import
+namespace: quotaclimat.barometre
+description: |
+  Mediatree import pipeline: migrations, program metadata, API import,
+  LabelStudio ingest, DBT models, and monthly causal links.
+
+labels:
+  pipeline: barometre
+  source: mediatree
+
+inputs:
+  - id: image_tag
+    type: STRING
+    defaults: latest
+  - id: country
+    type: STRING
+    defaults: fra
+  - id: number_of_previous_days
+    type: STRING
+    defaults: "3"
+  - id: batch_size
+    type: STRING
+    defaults: "100"
+
+tasks:
+  - id: mediatree_import
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ kv('CONTAINER_REGISTRY') }}/quotaclimat_base:{{ inputs.image_tag }}"
+    commands:
+      - ./entrypoints/mediatree_import.sh
+    env:
+      ENV: prod
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+      DBT_PROJECT_DIR: /app/my_dbt_project
+      COUNTRY: "{{ inputs.country }}"
+      NUMBER_OF_PREVIOUS_DAYS: "{{ inputs.number_of_previous_days }}"
+      BATCH_SIZE: "{{ inputs.batch_size }}"
+      STOP_WORD_KEYWORD_ONLY: "true"
+      MODIN_ENGINE: ray
+      MODIN_CPUS: "8"
+      RAY_memory_usage_threshold: "1"
+      PORT_HS: "5050"
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
+      POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
+      POSTGRES_DB: "{{ kv('POSTGRES_DB') }}"
+      POSTGRES_HOST: "{{ kv('POSTGRES_HOST') }}"
+      POSTGRES_PORT: "{{ kv('POSTGRES_PORT') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ secret('LABELSTUDIO_INGESTION_POSTGRES_USER') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ secret('LABELSTUDIO_INGESTION_POSTGRES_PASSWORD') }}"
+      MEDIATREE_USER: "{{ secret('MEDIATREE_USER') }}"
+      MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
+      BUCKET: "{{ secret('SCW_BUCKET') }}"
+      BUCKET_NAME: "{{ kv('BUCKET_NAME') }}"
+      BUCKET_SECRET: "{{ secret('SCW_BUCKET_SECRET') }}"

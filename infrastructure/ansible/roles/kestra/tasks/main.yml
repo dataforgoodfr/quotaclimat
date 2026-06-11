@@ -1,0 +1,34 @@
+---
+- name: Create kestra directory
+  file:
+    path: /opt/services/kestra
+    state: directory
+    mode: "0755"
+
+- name: Remove stale config files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /opt/services/kestra/.env
+    - /opt/services/kestra/application.yml
+
+- name: Template kestra docker-compose
+  template:
+    src: "{{ playbook_dir }}/../compose/kestra/docker-compose.yml.j2"
+    dest: /opt/services/kestra/docker-compose.yml
+    mode: "0644"
+
+- name: Start kestra
+  community.docker.docker_compose_v2:
+    project_src: /opt/services/kestra
+    state: present
+    pull: always
+
+- name: Wait for Kestra to be healthy
+  shell: docker exec kestra curl -sf http://localhost:8080/api/v1/configs
+  register: kestra_health
+  retries: 30
+  delay: 5
+  until: kestra_health.rc == 0
+  changed_when: false

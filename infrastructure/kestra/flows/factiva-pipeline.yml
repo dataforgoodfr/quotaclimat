@@ -1,0 +1,83 @@
+id: factiva-pipeline
+namespace: quotaclimat.factiva
+description: |
+  Factiva print media pipeline:
+  1. Extract statistics from Factiva API → S3
+  2. Process articles + stats from S3 → PostgreSQL (with keyword detection + DBT)
+
+  factiva_to_s3 (streaming) runs as a separate long-lived flow.
+
+labels:
+  pipeline: factiva
+  source: factiva-api
+
+inputs:
+  - id: factiva_stats_image_tag
+    type: STRING
+    defaults: latest
+  - id: s3_to_pg_image_tag
+    type: STRING
+    defaults: latest
+  - id: lookback_days
+    type: STRING
+    defaults: "30"
+
+tasks:
+  - id: factiva_stats_to_s3
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ kv('CONTAINER_REGISTRY') }}/factiva_stats_to_s3:{{ inputs.factiva_stats_image_tag }}"
+    env:
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      PORT: "5000"
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      FACTIVA_USERKEY: "{{ secret('FACTIVA_USERKEY') }}"
+      FACTIVA_MINIMAL_WORD_COUNT: "0"
+      FACTIVA_LANGUAGE_CODE: fr
+      FACTIVA_DAYS_BEFORE_TODAY: "7"
+      FACTIVA_STATS_ANALYSIS_DURATION: "7"
+      EXTRACT_STATS: "true"
+      SELECT_DATE: "false"
+      FACTIVA_LOCAL_TMP: /tmp/factiva_stats
+      FACTIVA_S3_BUCKET: factiva
+      FACTIVA_S3_PREFIX: country_france
+      BUCKET: "{{ secret('SCW_BUCKET') }}"
+      BUCKET_SECRET: "{{ secret('SCW_BUCKET_SECRET') }}"
+
+  - id: s3_factiva_to_postgre
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ kv('CONTAINER_REGISTRY') }}/s3_factiva_to_postgre:{{ inputs.s3_to_pg_image_tag }}"
+    env:
+      ENV: prod
+      LOGLEVEL: INFO
+      PYTHONPATH: /app
+      PORT: "5000"
+      HEALTHCHECK_SERVER: "0.0.0.0"
+      POSTGRES_USER: "{{ secret('FACTIVA_POSTGRES_USER') }}"
+      POSTGRES_PASSWORD: "{{ secret('FACTIVA_POSTGRES_PASSWORD') }}"
+      POSTGRES_DB: "{{ kv('FACTIVA_POSTGRES_DB') }}"
+      POSTGRES_HOST: "{{ kv('FACTIVA_POSTGRES_HOST') }}"
+      POSTGRES_PORT: "{{ kv('FACTIVA_POSTGRES_PORT') }}"
+      S3_BUCKET_NAME: factiva
+      S3_REGION: fr-par
+      S3_ACCESS_KEY: "{{ secret('SCW_BUCKET') }}"
+      S3_SECRET_KEY: "{{ secret('SCW_BUCKET_SECRET') }}"
+      S3_ENDPOINT_URL: https://s3.fr-par.scw.cloud
+      S3_BASE_PREFIX: country_france
+      PROCESS_ARTICLES: "true"
+      PROCESS_STATS: "true"
+      LOOKBACK_DAYS: "{{ inputs.lookback_days }}"
+      LOCAL_TMP_DIR: /tmp/s3_factiva_to_postgre
+      UPDATE_DICTIONARY: "false"
+      DETECT_DUPLICATES: "true"
+      MINIMAL_WORD_COUNT: "200"
+      RUN_DBT: "true"
+      DBT_PROFILES_DIR: /app/my_dbt_project_print_media/dbt
+      DBT_PROJECT_DIR: /app/my_dbt_project_print_media
+      CONSIDER_ARTICLE_LENGTH: "true"
+      WORD_COUNT_THRESHOLD: "600"
+      THRESHOLD_BIOD_CLIM_RESS: "2,2,2 - 3,2,2"
+      THRESHOLD_BIOD_CONST_CAUSE_CONSE_SOLUT: "2,1,1,1 - 2,1,1,1"
+      THRESHOLD_CLIM_CONST_CAUSE_CONSE_SOLUT: "2,1,1,1 - 2,1,1,1"
+      THRESHOLD_RESS_CONST_SOLUT: "1,1 - 1,1"
+      THRESHOLD_AGRI_MOBI_BATI_ECON_ENERG_INDU_EAU_ECOS: "2,2,2,1,1,2,1,2"

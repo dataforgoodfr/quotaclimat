@@ -1,0 +1,60 @@
+id: rrs-import
+namespace: quotaclimat.rrs
+description: |
+  RRS data import pipeline:
+  1. Import keyword detection segments from Barometre
+  2. Import cases/claims from Barometre
+  Both run in parallel since they are independent.
+
+labels:
+  pipeline: rrs
+
+inputs:
+  - id: image_tag
+    type: STRING
+    defaults: latest
+
+tasks:
+  - id: import_parallel
+    type: io.kestra.plugin.core.flow.Parallel
+    tasks:
+      - id: import_segments
+        type: io.kestra.plugin.docker.Run
+        containerImage: "{{ kv('RRS_REGISTRY') }}/rrs-base:{{ inputs.image_tag }}"
+        commands:
+          - python
+          - -m
+          - rrs.keyword_detection.import_segments
+        env:
+          PYTHONPATH: /app
+          RRS_PG_HOST: "{{ kv('RRS_PG_HOST') }}"
+          RRS_PG_PORT: "{{ kv('RRS_PG_PORT') }}"
+          RRS_PG_DATABASE: "{{ kv('RRS_PG_DATABASE') }}"
+          RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
+          RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
+          POSTGRES_HOST: "{{ kv('POSTGRES_HOST') }}"
+          POSTGRES_PORT: "{{ kv('POSTGRES_PORT') }}"
+          POSTGRES_DB: "{{ kv('POSTGRES_DB') }}"
+          POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
+          POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
+          BUCKET_NAME: "{{ kv('BUCKET_NAME') }}"
+
+      - id: import_cases
+        type: io.kestra.plugin.docker.Run
+        containerImage: "{{ kv('RRS_REGISTRY') }}/rrs-base:{{ inputs.image_tag }}"
+        commands:
+          - python
+          - -m
+          - rrs.keyword_detection.import_cases
+        env:
+          PYTHONPATH: /app
+          RRS_PG_HOST: "{{ kv('RRS_PG_HOST') }}"
+          RRS_PG_PORT: "{{ kv('RRS_PG_PORT') }}"
+          RRS_PG_DATABASE: "{{ kv('RRS_PG_DATABASE') }}"
+          RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
+          RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
+          POSTGRES_HOST: "{{ kv('POSTGRES_HOST') }}"
+          POSTGRES_PORT: "{{ kv('POSTGRES_PORT') }}"
+          POSTGRES_DB: "{{ kv('POSTGRES_DB') }}"
+          POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
+          POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"

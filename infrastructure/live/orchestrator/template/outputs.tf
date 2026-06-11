@@ -2,6 +2,10 @@ output "instance_ip" {
   value = scaleway_instance_ip.orchestrator.address
 }
 
+output "data_volume_id" {
+  value = scaleway_block_volume.data.id
+}
+
 output "postgres_host" {
   value = data.scaleway_rdb_instance.shared.endpoint_ip
 }

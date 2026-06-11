@@ -3,8 +3,24 @@ services:
     image: kestra/kestra:latest
     container_name: kestra
     restart: unless-stopped
-    command: server local
-    env_file: .env
+    command: server standalone
+    environment:
+      KESTRA_CONFIGURATION: |
+        datasources:
+          postgres:
+            url: jdbc:postgresql://{{ postgres_host }}:{{ postgres_port }}/{{ kestra_db_name }}
+            driverClassName: org.postgresql.Driver
+            username: {{ kestra_db_user }}
+            password: "{{ kestra_db_password }}"
+        kestra:
+          repository:
+            type: postgres
+          storage:
+            type: local
+            local:
+              base-path: /app/storage
+          queue:
+            type: postgres
     volumes:
       - kestra-data:/app/storage
       - /var/run/docker.sock:/var/run/docker.sock
@@ -15,12 +31,12 @@ services:
       - no-new-privileges:true
     labels:
       - traefik.enable=true
-      - traefik.http.routers.kestra.rule=Host(`${KESTRA_DOMAIN}`)
+      - traefik.http.routers.kestra.rule=Host(`{{ kestra_domain }}`)
       - traefik.http.routers.kestra.entrypoints=websecure
       - traefik.http.routers.kestra.tls.certresolver=letsencrypt
       - traefik.http.services.kestra.loadbalancer.server.port=8080
-      - traefik.http.routers.kestra.middlewares=kestra-auth,security-headers,rate-limit
-      - "traefik.http.middlewares.kestra-auth.basicauth.users=${BASIC_AUTH_USERS}"
+      - traefik.http.routers.kestra.middlewares=kestra-auth
+      - "traefik.http.middlewares.kestra-auth.basicauth.users={{ kestra_basic_auth }}"
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/configs || exit 1"]
       interval: 30s

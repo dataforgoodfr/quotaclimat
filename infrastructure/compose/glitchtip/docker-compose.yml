@@ -14,13 +14,13 @@ services:
       - no-new-privileges:true
     labels:
       - traefik.enable=true
-      - traefik.http.routers.glitchtip.rule=Host(`${GLITCHTIP_DOMAIN}`)
+      - traefik.http.routers.glitchtip.rule=Host(`${GLITCHTIP_HOST}`)
       - traefik.http.routers.glitchtip.entrypoints=websecure
       - traefik.http.routers.glitchtip.tls.certresolver=letsencrypt
       - traefik.http.services.glitchtip.loadbalancer.server.port=8000
-      - traefik.http.routers.glitchtip.middlewares=security-headers,rate-limit
+      # security-headers and rate-limit defined on traefik container
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8000/_health/"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/_health/')\""]
       interval: 30s
       timeout: 10s
       retries: 5

@@ -11,6 +11,12 @@ variable "instance_image" {
   description = "Scaleway image label (e.g. ubuntu_noble, debian_bookworm)."
 }
 
+variable "data_volume_size" {
+  type        = number
+  default     = 100
+  description = "Size in GB of the block storage volume for Docker data."
+}
+
 # --- Managed Postgres ---
 
 variable "pg_instance_name" {

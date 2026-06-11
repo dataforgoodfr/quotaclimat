@@ -62,3 +62,19 @@ resource "scaleway_instance_server" "orchestrator" {
 
   tags = ["orchestrator"]
 }
+
+# --- Block storage for Docker data ---
+
+resource "scaleway_block_volume" "data" {
+  name       = "orchestrator-data"
+  project_id = scaleway_account_project.project.id
+  iops       = 5000
+  size_in_gb = var.data_volume_size
+}
+
+resource "scaleway_block_snapshot" "data" {
+  name      = "orchestrator-data-snapshot"
+  volume_id = scaleway_block_volume.data.id
+
+  count = 0 # enable later for scheduled snapshots
+}

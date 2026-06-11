@@ -68,6 +68,8 @@
       RRS_PG_DATABASE: "{{ lookup('env', 'RRS_PG_DATABASE') }}"
 
   roles:
+    - role: ssh-keys
+      tags: [ssh-keys]
     - role: common
       tags: [common]
     - role: traefik

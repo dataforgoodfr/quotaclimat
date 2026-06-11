@@ -1,0 +1,13 @@
+---
+- name: Manage SSH authorized keys
+  authorized_key:
+    user: root
+    key: "{{ item.key }}"
+    comment: "{{ item.name }}"
+    state: "{{ item.state | default('present') }}"
+  loop:
+    - name: paul@dataforgood.fr
+      key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBXjyIJ/Kp3iSV10p+zZcPSXVqk/1CMbyY9z89XdijhM
+      state: present
+  loop_control:
+    label: "{{ item.name }}"

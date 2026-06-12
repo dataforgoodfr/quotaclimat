@@ -32,6 +32,12 @@ services:
               base-path: /app/storage
           queue:
             type: postgres
+{% for key, value in kestra_secrets.items() %}
+      SECRET_{{ key }}: "{{ value | b64encode }}"
+{% endfor %}
+{% for key, value in kestra_kvs.items() %}
+      {{ key }}: "{{ value }}"
+{% endfor %}
     volumes:
       - kestra-data:/app/storage
       - /var/run/docker.sock:/var/run/docker.sock

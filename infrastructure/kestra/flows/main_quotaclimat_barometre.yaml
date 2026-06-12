@@ -1,5 +1,5 @@
-id: main
-namespace: barometre
+id: barometre
+namespace: quotaclimat
 
 tasks:
   - id: ingest_data_to_s3

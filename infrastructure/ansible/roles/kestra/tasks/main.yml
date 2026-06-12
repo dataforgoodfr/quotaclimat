@@ -14,11 +14,6 @@
     - /opt/services/kestra/application.yml
     - /opt/services/kestra/flows
 
-- name: Copy kestra flow definitions
-  copy:
-    src: "{{ playbook_dir }}/../kestra/flows/"
-    dest: /opt/services/kestra/flows/
-    mode: "0644"
 
 - name: Template kestra docker-compose
   template:
@@ -26,11 +21,33 @@
     dest: /opt/services/kestra/docker-compose.yml
     mode: "0644"
 
+- name: Copy kestra flow definitions
+  copy:
+    src: "{{ playbook_dir }}/../kestra/flows/"
+    dest: /opt/services/kestra/flows/
+
+- name: Set ownership of flows directory to kestra container user (uid/gid 1000)
+  file:
+    path: /opt/services/kestra/flows
+    state: directory
+    recurse: true
+    owner: "1000"
+    group: "1000"
+    mode: "u=rwX,g=rwX,o=rX"
+
 - name: Start kestra
   community.docker.docker_compose_v2:
     project_src: /opt/services/kestra
     state: present
     pull: always
+  register: kestra_compose
+
+- name: Restart kestra to pick up flow changes
+  community.docker.docker_container:
+    name: kestra
+    state: started
+    restart: true
+  when: not kestra_compose.changed
 
 - name: Wait for Kestra to be healthy
   shell: docker exec kestra curl -sf http://localhost:8080/api/v1/configs

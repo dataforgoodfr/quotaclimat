@@ -19,9 +19,9 @@ services:
             username: {{ kestra_db_user }}
             password: "{{ kestra_db_password }}"
         kestra:
-        local-files:
-          allowed-paths:
-            - /app/flows
+          local-files:
+            allowed-paths:
+              - /app/flows
           tutorial-flows:
             enabled: false
           repository:

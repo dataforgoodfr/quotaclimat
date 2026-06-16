@@ -15,6 +15,15 @@
     - /opt/services/kestra/flows
 
 
+- name: Get docker.sock group id on host
+  stat:
+    path: /var/run/docker.sock
+  register: docker_sock_stat
+
+- name: Set kestra docker group id fact
+  set_fact:
+    kestra_docker_gid: "{{ docker_sock_stat.stat.gid }}"
+
 - name: Template kestra docker-compose
   template:
     src: "{{ playbook_dir }}/../compose/kestra/docker-compose.yml.j2"

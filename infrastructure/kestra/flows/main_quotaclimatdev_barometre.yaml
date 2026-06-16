@@ -4,15 +4,16 @@ namespace: quotaclimat-dev
 tasks:
   - id: ingest_data_to_s3
     type: io.kestra.plugin.docker.Run
-    containerImage: "rg.fr-par.scw.cloud/namespace-barometre:latest"
+    containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
     pullPolicy: ALWAYS
     credentials:
-      registry: "rg.fr-par.scw.cloud/namespace-barometre"
+      registry: rg.fr-par.scw.cloud/namespace-barometre
       username: nologin
       password: "{{ secret('SCW_SECRET') }}"
     entryPoint:
-      - python
-      - quotaclimat/data_processing/mediatree/s3/api_to_s3.py
+      - /bin/sh
+      - -c
+      - cd /app && python /app/quotaclimat/data_processing/mediatree/s3/api_to_s3.py
     shmSize: 2gb
     env: 
       API_TO_S3_CONCURRENCY: 10
@@ -36,14 +37,16 @@ tasks:
   - id: detect_keywords
     shmSize: 2gb
     type: io.kestra.plugin.docker.Run
-    containerImage: "rg.fr-par.scw.cloud/namespace-barometre:latest"
+    containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
     pullPolicy: ALWAYS
     credentials:
-      registry: "rg.fr-par.scw.cloud/namespace-barometre"
+      registry: rg.fr-par.scw.cloud/namespace-barometre
       username: nologin
       password: "{{ secret('SCW_SECRET') }}"
     entryPoint:
-      - ./entrypoints/detect_keywords.sh
+      - /bin/sh
+      - -c
+      - cd /app && /app/entrypoints/detect_keywords.sh
     env:
       BATCH_SIZE: 5000
       BUCKET_NAME: test-bucket-mediatree
@@ -76,12 +79,15 @@ tasks:
   - id: detect_misinformation
     shmSize: 2gb
     type: io.kestra.plugin.docker.Run
-    containerImage: "rg.fr-par.scw.cloud/misinformation:latest"
+    containerImage: "rg.fr-par.scw.cloud/misinformation/label-misinformation:latest"
     pullPolicy: ALWAYS
     credentials:
-      registry: "rg.fr-par.scw.cloud/misinformation"
-      username: nologin
-      password: "{{ secret('SCW_SECRET') }}"
+      registry: rg.fr-par.scw.cloud/misinformation
+      registryToken: "{{ secret('SCW_SECRET') }}"
+    entryPoint:
+      - /bin/sh
+      - -c
+      - cd /app && python /app/main.py
     env: 
       APP_NAME: label-misinformation
       AWS_DEFAULT_REGION: fr-par
@@ -115,14 +121,16 @@ tasks:
   - id: dbt_run_transformations
     shmSize: 2gb
     type: io.kestra.plugin.docker.Run
-    containerImage: "rg.fr-par.scw.cloud/namespace-barometre:latest"
+    containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
     pullPolicy: ALWAYS
     credentials:
-      registry: "rg.fr-par.scw.cloud/namespace-barometre"
+      registry: rg.fr-par.scw.cloud/namespace-barometre
       username: nologin
       password: "{{ secret('SCW_SECRET') }}"
     entryPoint:
-      - ./entrypoints/dbt.sh
+      - /bin/sh
+      - -c
+      - cd /app && /app/entrypoints/dbt.sh
     env:
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project

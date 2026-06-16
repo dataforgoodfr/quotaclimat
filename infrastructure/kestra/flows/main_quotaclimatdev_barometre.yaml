@@ -95,20 +95,12 @@ tasks:
       ENV: production
       KEYWORDS_URL: https://keywords.mediatree.fr/api/v2/subtitle/
       LABEL_STUDIO_PROJECT: 6
-      LABEL_STUDIO_PROJECT_BELGIUM: 17
-      LABEL_STUDIO_PROJECT_BRAZIL: 9
-      LABEL_STUDIO_PROJECT_GERMANY: 20
       LABEL_STUDIO_PROJECT_ID: 4
-      LABEL_STUDIO_PROJECT_ID_BELGIUM: 12
-      LABEL_STUDIO_PROJECT_ID_BRAZIL: 5
-      LABEL_STUDIO_PROJECT_ID_GERMANY: 14
       LABEL_STUDIO_URL: https://barometre7kfudatm-labelstudio.functions.fnc.fr-par.scw.cloud
       LOGLEVEL: INFO
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
       MEDIATREE_USER: quotaclimat
       MODEL_NAME: ft:gpt-4o-mini-2024-07-18:personal::B1xWiJRm
-      MODEL_NAME_BRAZIL: ft:gpt-4o-mini-2024-07-18:personal::BJfrFQR1
-      MODEL_NAME_GERMANY: ft:gpt-4o-mini-2024-07-18:personal::BWhlTPnX
       MODIN_MEMORY: 2000000000
       POSTGRES_DB: barometre
       POSTGRES_PORT: 17975
@@ -144,8 +136,10 @@ tasks:
       POSTGRES_DB: barometre
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
-      LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ secret('POSTGRES_USER_DEV') }}"
-      LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_DEV') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ secret('LABELSTUDIO_INGESTION_POSTGRES_USER') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ secret('LABELSTUDIO_INGESTION_POSTGRES_PASSWORD') }}"
+      LABELSTUDIO_POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
+      LABELSTUDIO_POSTGRES_PORT: 22737
       POSTGRES_USER: "{{ secret('POSTGRES_USER_DEV') }}"
       POSTGRES_HOST: "{{ secret('POSTGRES_HOST_DEV') }}"
       POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_DEV') }}"

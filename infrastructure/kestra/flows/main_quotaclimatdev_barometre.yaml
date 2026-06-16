@@ -74,6 +74,7 @@ tasks:
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
 
   - id: detect_misinformation
+    shmSize: 2gb
     type: io.kestra.plugin.docker.Run
     containerImage: "{{ envs.container_registry_misinformation }}:latest"
     pullPolicy: ALWAYS
@@ -123,6 +124,7 @@ tasks:
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
 
   - id: dbt_run_transformations
+    shmSize: 2gb
     type: io.kestra.plugin.docker.Run
     containerImage: "{{ envs.container_registry_barometre }}:latest"
     pullPolicy: ALWAYS

@@ -38,9 +38,10 @@
       MEDIATREE_USER: "{{ lookup('env', 'MEDIATREE_USER') }}"
       MEDIATREE_PASSWORD: "{{ lookup('env', 'MEDIATREE_PASSWORD') }}"
       MISTRAL_API_KEY: "{{ lookup('env', 'MISTRAL_API_KEY') }}"
-      POSTGRES_HOST: "{{ lookup('env', 'KESTRA_FLOW_POSTGRES_HOST') }}"
-      POSTGRES_PASSWORD: "{{ lookup('env', 'KESTRA_FLOW_POSTGRES_PASSWORD') }}"
-      POSTGRES_USER: "{{ lookup('env', 'KESTRA_FLOW_POSTGRES_USER') }}"
+      OPENAI_API_KEY: "{{ lookup('env', 'OPENAI_API_KEY') }}"
+      POSTGRES_HOST: "{{ lookup('env', 'BAROMETRE_POSTGRES_HOST') }}"
+      POSTGRES_PASSWORD: "{{ lookup('env', 'BAROMETRE_POSTGRES_PASSWORD') }}"
+      POSTGRES_USER: "{{ lookup('env', 'BAROMETRE_POSTGRES_USER') }}"
       RRS_PG_HOST: "{{ lookup('env', 'RRS_PG_HOST') }}"
       RRS_PG_PASSWORD: "{{ lookup('env', 'RRS_PG_PASSWORD') }}"
       RRS_PG_USER: "{{ lookup('env', 'RRS_PG_USER') }}"
@@ -50,14 +51,12 @@
 
     # Kestra secrets (for flow execution)
     kestra_secrets_dev:
-      POSTGRES_HOST_DEV: "{{ lookup('env', 'KESTRA_FLOW_POSTGRES_HOST') }}"
-      POSTGRES_PASSWORD_DEV: "{{ lookup('env', 'KESTRA_FLOW_POSTGRES_PASSWORD') }}"
-      POSTGRES_USER_DEV: "{{ lookup('env', 'KESTRA_FLOW_POSTGRES_USER') }}"
-      RRS_PG_HOST_DEV: "{{ lookup('env', 'RRS_PG_HOST') }}"
-      RRS_PG_PASSWORD_DEV: "{{ lookup('env', 'RRS_PG_PASSWORD') }}"
-      RRS_PG_USER_DEV: "{{ lookup('env', 'RRS_PG_USER') }}"
-
-
+      POSTGRES_HOST_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_HOST_DEV') }}"
+      POSTGRES_PASSWORD_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_PASSWORD_DEV') }}"
+      POSTGRES_USER_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_USER_DEV') }}"
+      RRS_PG_HOST_DEV: "{{ lookup('env', 'RRS_PG_HOST_DEV') }}"
+      RRS_PG_PASSWORD_DEV: "{{ lookup('env', 'RRS_PG_PASSWORD_DEV') }}"
+      RRS_PG_USER_DEV: "{{ lookup('env', 'RRS_PG_USER_DEV') }}"
 
 
   roles:

@@ -1,0 +1,95 @@
+id: barometre
+namespace: quotaclimat-dev
+
+tasks:
+  - id: ingest_data_to_s3
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ envs.container_registry_barometre }}:latest"
+    pullPolicy: ALWAYS
+    credentials:
+      registry: "{{ envs.container_registry_barometre }}"
+      username: nologin
+      password: "{{ secret('SCW_SECRET') }}"
+    entryPoint:
+      - python
+      - quotaclimat/data_processing/mediatree/s3/api_to_s3.py
+    shmSize: 2gb
+    env: 
+      API_TO_S3_CONCURRENCY: 10
+      BUCKET_NAME: mediatree
+      COUNTRY: all
+      ENV: prod
+      KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/
+      LOGLEVEL: INFO
+      MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
+      MEDIATREE_USER: quotaclimat
+      MODIN_CPUS: 2
+      MODIN_ENGINE: ray
+      MODIN_MEMORY: 2000000000
+      OMP_NUM_THREADS: 3
+      PORT_HS: 5666
+      BUCKET: "{{ secret('SCW_ACCESS') }}"
+      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
+      SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+
+  - id: detect_keywords
+    shmSize: 2gb
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ envs.container_registry_barometre }}:latest"
+    pullPolicy: ALWAYS
+    credentials:
+      registry: "{{ envs.container_registry_barometre }}"
+      username: nologin
+      password: "{{ secret('SCW_SECRET') }}"
+    entryPoint:
+      - ./entrypoints/detect_keywords.sh
+    env:
+      BATCH_SIZE: 5000
+      BUCKET_NAME: mediatree
+      COMPARE_DURATION: true
+      COUNTRY: all
+      DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+      DBT_PROJECT_DIR: /app/my_dbt_project
+      ENV: prod
+      FILTER_DAYS_STOP_WORD: 3000
+      HEALTHCHECK_SERVER: 0.0.0.0
+      KEYWORDS_URL: https://keywords.mediatree.fr/api/v2/subtitle/
+      LABELSTUDIO_INGESTION_POSTGRES_USER: labelstudiod4g
+      LOGLEVEL: INFO
+      MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
+      MEDIATREE_USER: quotaclimat
+      MODIN_CPUS: 2
+      MODIN_ENGINE: ray
+      MODIN_MEMORY: 2000000000
+      POSTGRES_DB: barometre
+      POSTGRES_HOST: 
+      POSTGRES_USER
+      RAY_COLOR_PREFIX
+      RAY_memory_monitor_refresh_ms
+      BUCKET: "{{ secret('SCW_ACCESS') }}"
+      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_PASSWORD
+      MEDIATREE_PASSWORD: 
+      POSTGRES_PASSWORD:
+      SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+
+  - id: detect_misinformation
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ envs.container_registry_misinformation }}:latest"
+    pullPolicy: ALWAYS
+    credentials:
+      registry: "{{ envs.container_registry_misinformation }}"
+      username: nologin
+      password: "{{ secret('SCW_SECRET') }}"
+
+  - id: dbt_run_transformations
+    type: io.kestra.plugin.docker.Run
+    containerImage: "{{ envs.container_registry_barometre }}:latest"
+    pullPolicy: ALWAYS
+    credentials:
+      registry: "{{ envs.container_registry_barometre }}"
+      username: nologin
+      password: "{{ secret('SCW_SECRET') }}"
+    entryPoint:
+      - ./entrypoints/dbt.sh

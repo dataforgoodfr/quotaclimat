@@ -85,12 +85,9 @@ tasks:
     env: 
       APP_NAME: label-misinformation
       AWS_DEFAULT_REGION: fr-par
-      BUCKET_INPUT: test-bucket-mediatree
+      BUCKET_INPUT: mediatree
       BUCKET_OUTPUT: test-bucket-mediatree
-      BUCKET_OUTPUT_BELGIUM: test-bucket-mediatree
-      BUCKET_OUTPUT_BRAZIL: test-bucket-mediatree
-      BUCKET_OUTPUT_FOLDER: test-bucket-mediatree
-      BUCKET_OUTPUT_GERMANY: test-bucket-mediatree
+      BUCKET_OUTPUT_FOLDER: label-misinformation-input
       COUNTRY: france
       ENV: production
       KEYWORDS_URL: https://keywords.mediatree.fr/api/v2/subtitle/

@@ -1,20 +1,27 @@
-# --- VM ---
+# --- Bare-metal server (Elastic Metal) ---
 
-variable "instance_type" {
-  type    = string
-  default = "DEV1-M"
-}
-
-variable "instance_image" {
+variable "zone" {
   type        = string
-  default     = "ubuntu_noble"
-  description = "Scaleway image label (e.g. ubuntu_noble, debian_bookworm)."
+  default     = "fr-par-2"
+  description = "Scaleway zone for the Elastic Metal server (must stock the offer)."
 }
 
-variable "data_volume_size" {
-  type        = number
-  default     = 100
-  description = "Size in GB of the block storage volume for Docker data."
+variable "offer_name" {
+  type        = string
+  default     = "EM-A610R-NVMe"
+  description = "Elastic Metal offer name (data.scaleway_baremetal_offer)."
+}
+
+variable "os_name" {
+  type        = string
+  default     = "Ubuntu"
+  description = "Elastic Metal OS name (data.scaleway_baremetal_os)."
+}
+
+variable "os_version" {
+  type        = string
+  default     = "24.04 LTS (Noble Numbat)"
+  description = "Elastic Metal OS version string, must match the Scaleway catalog exactly."
 }
 
 # --- Managed Postgres ---

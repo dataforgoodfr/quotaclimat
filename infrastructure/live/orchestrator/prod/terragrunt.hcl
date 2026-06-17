@@ -7,8 +7,7 @@ terraform {
 }
 
 inputs = {
-  # VM
-  instance_type = "DEV1-M"
+  # Elastic Metal server defaults (offer/zone/os) live in variables.tf; override here if needed.
 
   # Managed Postgres (reuse existing barometre instance)
   pg_instance_name = get_env("TF_VAR_pg_instance_name", "rdb-poc")

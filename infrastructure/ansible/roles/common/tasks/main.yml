@@ -98,7 +98,7 @@
     - { key: net.ipv4.tcp_syncookies, value: "1" }
     - { key: net.ipv4.conf.all.log_martians, value: "1" }
 
-# --- Firewall (belt + suspenders with Scaleway security group) ---
+# --- Firewall (UFW is the sole firewall — Elastic Metal has no Scaleway security group) ---
 
 - name: Set UFW default deny incoming
   community.general.ufw:

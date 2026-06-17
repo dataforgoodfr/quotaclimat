@@ -24,11 +24,11 @@ infrastructure/
 │   ├── advertising/           # Label Studio + advertising detection infra
 │   ├── barometre/              # Barometre database infra
 │   ├── rrs/                   # RRS database + serverless jobs
-│   └── orchestrator/          # Kestra + GlitchTip VM (single shared instance)
+│   └── orchestrator/          # Kestra + GlitchTip Elastic Metal server (single shared instance)
 │       ├── prod/
 │       │   └── terragrunt.hcl
 │       └── template/
-│           ├── instance.tf    # VM, security group, SSH key, IP
+│           ├── instance.tf    # Elastic Metal server (EM-A610R-NVMe), SSH keys, offer/OS
 │           ├── database.tf    # Kestra + GlitchTip databases on managed PG
 │           ├── variables.tf
 │           └── outputs.tf
@@ -154,7 +154,7 @@ cp inventory.yml.j2 inventory.yml
 
 ## Orchestrator deployment
 
-The orchestrator VM hosts [Kestra](https://kestra.io) (workflow orchestration) and [GlitchTip](https://glitchtip.com) (error tracking), fronted by Traefik with automatic TLS.
+The orchestrator runs on a Scaleway **Elastic Metal** bare-metal server (EM-A610R-NVMe) hosting [Kestra](https://kestra.io) (workflow orchestration) and [GlitchTip](https://glitchtip.com) (error tracking), fronted by Traefik with automatic TLS. Docker data lives on the local NVMe (no attached block volume), and the firewall is UFW only (Elastic Metal has no Scaleway security group).
 
 Unlike other targets, the orchestrator is a **single shared instance** — there is no dev/prod split. Kestra uses namespaces to separate environments, and GlitchTip uses projects.
 
@@ -168,7 +168,7 @@ make setup
 cp .env.dist .env                    # Add SCW_ACCESS_KEY / SCW_SECRET_KEY
 make sync-secrets                    # Or: cp .env.secrets.dist .env.secrets
 
-# 3. Provision infrastructure (VM + databases)
+# 3. Provision infrastructure (Elastic Metal server + databases)
 make env=prod target=orchestrator tg-init
 make env=prod target=orchestrator tg-plan
 make env=prod target=orchestrator tg-apply
@@ -178,8 +178,11 @@ make env=prod target=orchestrator tg-output
 cd ansible && cp inventory.yml.j2 inventory.yml
 # Edit inventory.yml: replace {{ instance_ip }} with the actual IP
 
-# 5. Point DNS records to the VM IP
-#    traefik.<domain>, kestra.<domain>, glitchtip.<domain>
+# 5a. Allow-list the server IP on the managed PG (rdb-poc) ACL — Scaleway console
+#     (rdb-poc's ACL is managed outside this repo). On migration, remove the old IP.
+
+# 5b. Point DNS records to the server IP
+#     traefik.<domain>, kestra.<domain>, glitchtip.<domain>
 
 # 6. Deploy services
 cd .. && make ansible

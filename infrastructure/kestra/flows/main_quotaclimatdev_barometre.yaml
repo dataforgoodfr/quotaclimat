@@ -16,16 +16,16 @@ tasks:
       - cd /app && python /app/quotaclimat/data_processing/mediatree/s3/api_to_s3.py
     shmSize: 2gb
     env: 
-      API_TO_S3_CONCURRENCY: 10
+      API_TO_S3_CONCURRENCY: 3
       BUCKET_NAME: test-bucket-mediatree
-      COUNTRY: all
+      COUNTRY: fra
       ENV: prod
       KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/
       LOGLEVEL: INFO
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
       MEDIATREE_USER: quotaclimat
       MODIN_CPUS: 2
-      MODIN_ENGINE: ray
+      MODIN_ENGINE: python
       MODIN_MEMORY: 2000000000
       OMP_NUM_THREADS: 3
       PORT_HS: 5666

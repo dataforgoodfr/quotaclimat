@@ -4,77 +4,57 @@ resource "scaleway_account_project" "project" {
   name = "orchestrator"
 }
 
-# --- Security Group ---
+# --- SSH keys ---
+# Elastic Metal installs the OS with these keys baked in (no flexible IP / no
+# Scaleway auto-injection like instances). Public keys mirror the deploy keys the
+# ansible `ssh-keys` role manages on the host.
 
-resource "scaleway_instance_security_group" "orchestrator" {
-  name                    = "orchestrator"
-  project_id              = scaleway_account_project.project.id
-  inbound_default_policy  = "drop"
-  outbound_default_policy = "accept"
-
-  # SSH
-  inbound_rule {
-    action   = "accept"
-    port     = 22
-    protocol = "TCP"
-  }
-
-  # HTTP (for Let's Encrypt ACME challenge)
-  inbound_rule {
-    action   = "accept"
-    port     = 80
-    protocol = "TCP"
-  }
-
-  # HTTPS
-  inbound_rule {
-    action   = "accept"
-    port     = 443
-    protocol = "TCP"
-  }
+resource "scaleway_iam_ssh_key" "paul" {
+  name       = "orchestrator-paul"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBXjyIJ/Kp3iSV10p+zZcPSXVqk/1CMbyY9z89XdijhM paul@dataforgood.fr"
 }
 
-# --- Instance ---
-
-resource "scaleway_instance_ip" "orchestrator" {
-  project_id = scaleway_account_project.project.id
+resource "scaleway_iam_ssh_key" "gmguarino" {
+  name       = "orchestrator-gmguarino"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIOIZMzVkOuJVUb31YAGMhiKksvLc8r6kqcBMxRPr37l gmguarino1@gmail.com"
 }
 
-resource "scaleway_instance_server" "orchestrator" {
+# --- Bare-metal server (Elastic Metal) ---
+
+data "scaleway_baremetal_offer" "orchestrator" {
+  zone = var.zone
+  name = var.offer_name
+}
+
+data "scaleway_baremetal_os" "orchestrator" {
+  zone    = var.zone
+  name    = var.os_name
+  version = var.os_version
+}
+
+resource "scaleway_baremetal_server" "orchestrator" {
   name       = "orchestrator"
+  zone       = var.zone
   project_id = scaleway_account_project.project.id
-  type       = var.instance_type
-  image      = var.instance_image
 
-  ip_id             = scaleway_instance_ip.orchestrator.id
-  security_group_id = scaleway_instance_security_group.orchestrator.id
+  offer = data.scaleway_baremetal_offer.orchestrator.id
+  os    = data.scaleway_baremetal_os.orchestrator.id
 
-  # Minimal cloud-init: install Python for Ansible
-  user_data = {
-    cloud-init = <<-EOF
-      #cloud-config
-      package_update: true
-      packages:
-        - python3
-        - python3-apt
-    EOF
-  }
+  ssh_key_ids = [
+    scaleway_iam_ssh_key.paul.id,
+    scaleway_iam_ssh_key.gmguarino.id,
+  ]
+
+  # Elastic Metal has no instance security group — UFW (ansible common role) is
+  # the firewall. Storage is the local NVMe (no attachable block volume).
+  # Minimal cloud-init so Ansible has Python available.
+  cloud_init = <<-EOF
+    #cloud-config
+    package_update: true
+    packages:
+      - python3
+      - python3-apt
+  EOF
 
   tags = ["orchestrator"]
-}
-
-# --- Block storage for Docker data ---
-
-resource "scaleway_block_volume" "data" {
-  name       = "orchestrator-data"
-  project_id = scaleway_account_project.project.id
-  iops       = 5000
-  size_in_gb = var.data_volume_size
-}
-
-resource "scaleway_block_snapshot" "data" {
-  name      = "orchestrator-data-snapshot"
-  volume_id = scaleway_block_volume.data.id
-
-  count = 0 # enable later for scheduled snapshots
 }

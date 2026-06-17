@@ -1,9 +1,5 @@
 output "instance_ip" {
-  value = scaleway_instance_ip.orchestrator.address
-}
-
-output "data_volume_id" {
-  value = scaleway_block_volume.data.id
+  value = scaleway_baremetal_server.orchestrator.ipv4[0].address
 }
 
 output "postgres_host" {

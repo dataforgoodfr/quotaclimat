@@ -1,4 +1,5 @@
 [tools]
+ansible = { version = "latest", pipx_args = "--include-deps", uvx = "false" }
 opentofu   = "1.12.0"
 terragrunt = "0.69.0"
 # ansible installed separately (NixOS: use system package or nix shell)

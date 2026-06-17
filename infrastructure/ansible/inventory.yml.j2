@@ -5,5 +5,5 @@ all:
   hosts:
     orchestrator:
       ansible_host: {{ instance_ip }}
-      ansible_user: root
+      ansible_user: ubuntu
       ansible_ssh_extra_args: -o ControlPath=none

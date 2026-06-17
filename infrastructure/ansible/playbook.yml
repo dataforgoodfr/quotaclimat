@@ -1,6 +1,7 @@
 ---
 - name: Provision orchestrator VM
   hosts: orchestrator
+  remote_user: ubuntu
   become: true
 
   vars:

@@ -31,7 +31,7 @@ tasks:
       MEDIATREE_USER: quotaclimat
       MODIN_CPUS: 2
       MODIN_ENGINE: python
-      MODIN_MEMORY: 2000000000
+      MODIN_MEMORY: 3000000000
       OMP_NUM_THREADS: 3
       PORT_HS: 5666
       BUCKET: "{{ secret('SCW_ACCESS') }}"
@@ -69,7 +69,7 @@ tasks:
       MEDIATREE_USER: quotaclimat
       MODIN_CPUS: 2
       MODIN_ENGINE: ray
-      MODIN_MEMORY: 2000000000
+      MODIN_MEMORY: 3000000000
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RAY_COLOR_PREFIX: 1
@@ -112,7 +112,7 @@ tasks:
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
       MEDIATREE_USER: quotaclimat
       MODEL_NAME: ft:gpt-4o-mini-2024-07-18:personal::B1xWiJRm
-      MODIN_MEMORY: 2000000000
+      MODIN_MEMORY: 3000000000
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RAY_COLOR_PREFIX: 1
@@ -146,7 +146,7 @@ tasks:
       LOGLEVEL: INFO
       MODIN_CPUS: 2
       MODIN_ENGINE: python
-      MODIN_MEMORY: 2000000000
+      MODIN_MEMORY: 3000000000
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       BUCKET: "{{ secret('SCW_ACCESS') }}"

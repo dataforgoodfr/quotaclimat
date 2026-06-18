@@ -5,6 +5,7 @@ triggers:
   - id: daily_schedule
     type: io.kestra.plugin.core.trigger.Schedule
     cron: "0 1 * * *"
+    timezone: Europe/Paris
 
 tasks:
   - id: ingest_data_to_s3

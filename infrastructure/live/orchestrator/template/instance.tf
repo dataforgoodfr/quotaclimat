@@ -6,12 +6,14 @@ resource "scaleway_account_project" "project" {
 
 # --- SSH keys ---
 # Elastic Metal installs the OS with these keys baked in (no flexible IP / no
-# Scaleway auto-injection like instances). Public keys mirror the deploy keys the
-# ansible `ssh-keys` role manages on the host.
+# Scaleway auto-injection like instances), so this list is the ONLY way to get
+# machine access — keep it in sync with reality or a future apply will reinstall.
+# (The ansible `ssh-keys` role still manages root authorized_keys separately and
+# needs the same update.)
 
-resource "scaleway_iam_ssh_key" "paul" {
-  name       = "orchestrator-paul"
-  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBXjyIJ/Kp3iSV10p+zZcPSXVqk/1CMbyY9z89XdijhM paul@dataforgood.fr"
+resource "scaleway_iam_ssh_key" "paul_gabriel" {
+  name       = "orchestrator-paul-gabriel"
+  public_key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC4YJqfMxnUGCGbzZDZFg3P5B4d2G5DJnaa3WOKXBO99"
 }
 
 resource "scaleway_iam_ssh_key" "gmguarino" {
@@ -41,7 +43,7 @@ resource "scaleway_baremetal_server" "orchestrator" {
   os    = data.scaleway_baremetal_os.orchestrator.id
 
   ssh_key_ids = [
-    scaleway_iam_ssh_key.paul.id,
+    scaleway_iam_ssh_key.paul_gabriel.id,
     scaleway_iam_ssh_key.gmguarino.id,
   ]
 

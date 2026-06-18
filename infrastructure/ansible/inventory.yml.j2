@@ -5,5 +5,7 @@ all:
   hosts:
     orchestrator:
       ansible_host: {{ instance_ip }}
+      # Elastic Metal installs Ubuntu with a sudo-enabled `ubuntu` user (no root SSH).
       ansible_user: ubuntu
+      ansible_become: true
       ansible_ssh_extra_args: -o ControlPath=none

@@ -6,8 +6,8 @@
     comment: "{{ item.name }}"
     state: "{{ item.state | default('present') }}"
   loop:
-    - name: paul@dataforgood.fr
-      key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBXjyIJ/Kp3iSV10p+zZcPSXVqk/1CMbyY9z89XdijhM
+    - name: paul-gabriel
+      key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC4YJqfMxnUGCGbzZDZFg3P5B4d2G5DJnaa3WOKXBO99
       state: present
     - name: gmguarino1@gmail.com
       key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIOIZMzVkOuJVUb31YAGMhiKksvLc8r6kqcBMxRPr37l

@@ -34,14 +34,12 @@ models:
     # Config indicated by + and applies to all files under models/example/
     analytics:
       +grants:
-        select:
-          - '"rrs-read-dev"' 
-          - '"rrs-read-prod"'
-          - '"climateguard-reader-user"'
+        # grant nothing in dev; set DBT_ENV=prod to enable grants in prod
+        select: "{{ ['\"rrs-read-dev\"', '\"rrs-read-prod\"', '\"climateguard-reader-user\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"'] }}"
     dashboards:
       +grants:
-        select:
-          - '"climateguard-reader-user"'
+        # grant nothing in dev; set DBT_ENV=prod to enable grants in prod
+        select: "{{ ['\"climateguard-reader-user\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"'] }}"
     homepage:
       +materialized: view
 

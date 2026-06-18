@@ -12,6 +12,10 @@ variable "postgres_admin_password" {
   type      = string
   sensitive = true
 }
+variable "barometre_rrs_read_password" {
+  type      = string
+  sensitive = true
+}
 
 variable "postgres_admin_password_version" {
   type    = number

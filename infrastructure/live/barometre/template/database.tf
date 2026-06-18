@@ -33,6 +33,20 @@ resource "scaleway_rdb_privilege" "barometre_admin" {
   permission    = "all"
 }
 
+resource "scaleway_rdb_user" "rrs_read" {
+  instance_id = scaleway_rdb_instance.barometre_rdb.id
+  name        = "rrs-read-${var.environment}"
+  password    = var.barometre_rrs_read_password
+  is_admin    = false
+}
+
+resource "scaleway_rdb_privilege" "rrs_read" {
+  instance_id   = scaleway_rdb_instance.barometre_rdb.id
+  user_name     = scaleway_rdb_user.rrs_read.name
+  database_name = scaleway_rdb_database.barometre.name
+  permission    = "readonly"
+}
+
 # Allow public access so the migration script can reach the instance.
 # Dev only — restrict to specific IPs in production.
 resource "scaleway_rdb_acl" "public" {

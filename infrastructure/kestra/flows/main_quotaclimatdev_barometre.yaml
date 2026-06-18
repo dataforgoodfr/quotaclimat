@@ -14,9 +14,9 @@ tasks:
       - /bin/sh
       - -c
       - cd /app && python /app/quotaclimat/data_processing/mediatree/s3/api_to_s3.py
-    shmSize: 2gb
+    shmSize: 10gb
     env: 
-      API_TO_S3_CONCURRENCY: 3
+      API_TO_S3_CONCURRENCY: 10
       BUCKET_NAME: test-bucket-mediatree
       COUNTRY: fra
       ENV: prod
@@ -35,6 +35,7 @@ tasks:
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
 
   - id: detect_keywords
+    logLevel: WARN          # filter per-row INFO spam at the Kestra level (UI freeze fix)
     shmSize: 2gb
     type: io.kestra.plugin.docker.Run
     containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
@@ -77,13 +78,15 @@ tasks:
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
 
   - id: detect_misinformation
+    logLevel: WARN          # filter per-row INFO spam at the Kestra level (UI freeze fix)
     shmSize: 2gb
     type: io.kestra.plugin.docker.Run
     containerImage: "rg.fr-par.scw.cloud/misinformation/label-misinformation:latest"
     pullPolicy: ALWAYS
     credentials:
       registry: rg.fr-par.scw.cloud/misinformation
-      registryToken: "{{ secret('SCW_SECRET') }}"
+      username: nologin
+      password: "{{ secret('SCW_SECRET') }}"
     entryPoint:
       - /bin/sh
       - -c
@@ -106,16 +109,16 @@ tasks:
       MODEL_NAME: ft:gpt-4o-mini-2024-07-18:personal::B1xWiJRm
       MODIN_MEMORY: 2000000000
       POSTGRES_DB: barometre
-      POSTGRES_PORT: 17975
+      POSTGRES_PORT: 22737
       RAY_COLOR_PREFIX: 1
       API_LABEL_STUDIO_KEY: "{{ secret('API_LABEL_STUDIO_KEY_DEV') }}"
       BUCKET_ACCESS: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
       OPENAI_API_KEY: "{{ secret('OPENAI_API_KEY') }}"
-      POSTGRES_HOST: "{{ secret('POSTGRES_HOST_DEV') }}"
-      POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_DEV') }}"
-      POSTGRES_USER: "{{ secret('POSTGRES_USER_DEV') }}"
+      POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
+      POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_READ') }}"
+      POSTGRES_USER: "{{ secret('POSTGRES_USER_READ') }}"
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
 
   - id: dbt_run_transformations
@@ -132,6 +135,7 @@ tasks:
       - -c
       - cd /app && /app/entrypoints/dbt.sh
     env:
+      DBT_ENV: dev
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project
       LOGLEVEL: INFO
@@ -139,10 +143,11 @@ tasks:
       MODIN_ENGINE: python
       MODIN_MEMORY: 2000000000
       POSTGRES_DB: barometre
+      POSTGRES_PORT: 17975
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
-      LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ secret('LABELSTUDIO_INGESTION_POSTGRES_USER') }}"
-      LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ secret('LABELSTUDIO_INGESTION_POSTGRES_PASSWORD') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ secret('POSTGRES_USER_READ') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_READ') }}"
       LABELSTUDIO_POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
       LABELSTUDIO_POSTGRES_PORT: 22737
       POSTGRES_USER: "{{ secret('POSTGRES_USER_DEV') }}"

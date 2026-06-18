@@ -1,6 +1,7 @@
 ---
 - name: Provision orchestrator VM
   hosts: orchestrator
+  remote_user: ubuntu
   become: true
 
   vars:
@@ -32,6 +33,7 @@
 
     # Kestra secrets (for flow execution)
     kestra_secrets:
+      API_LABEL_STUDIO_KEY: "{{ lookup('env', 'API_LABEL_STUDIO_KEY') }}"
       ANTHROPIC_API_KEY: "{{ lookup('env', 'ANTHROPIC_API_KEY') }}"
       LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ lookup('env', 'LABELSTUDIO_INGESTION_POSTGRES_USER') }}"
       LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ lookup('env', 'LABELSTUDIO_INGESTION_POSTGRES_PASSWORD') }}"
@@ -42,6 +44,8 @@
       POSTGRES_HOST: "{{ lookup('env', 'BAROMETRE_POSTGRES_HOST') }}"
       POSTGRES_PASSWORD: "{{ lookup('env', 'BAROMETRE_POSTGRES_PASSWORD') }}"
       POSTGRES_USER: "{{ lookup('env', 'BAROMETRE_POSTGRES_USER') }}"
+      POSTGRES_PASSWORD_READ: "{{ lookup('env', 'BAROMETRE_POSTGRES_PASSWORD_READ') }}"
+      POSTGRES_USER_READ: "{{ lookup('env', 'BAROMETRE_POSTGRES_USER_READ') }}"
       RRS_PG_HOST: "{{ lookup('env', 'RRS_PG_HOST') }}"
       RRS_PG_PASSWORD: "{{ lookup('env', 'RRS_PG_PASSWORD') }}"
       RRS_PG_USER: "{{ lookup('env', 'RRS_PG_USER') }}"
@@ -51,6 +55,7 @@
 
     # Kestra secrets (for flow execution)
     kestra_secrets_dev:
+      API_LABEL_STUDIO_KEY_DEV: "{{ lookup('env', 'API_LABEL_STUDIO_KEY_DEV') }}"
       POSTGRES_HOST_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_HOST_DEV') }}"
       POSTGRES_PASSWORD_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_PASSWORD_DEV') }}"
       POSTGRES_USER_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_USER_DEV') }}"

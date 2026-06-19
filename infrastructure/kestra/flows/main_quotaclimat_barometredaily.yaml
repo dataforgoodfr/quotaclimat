@@ -141,7 +141,7 @@ tasks:
       - -c
       - cd /app && /app/entrypoints/dbt.sh
     env:
-      DBT_ENV: dev
+      DBT_ENV: prod
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project
       LOGLEVEL: INFO

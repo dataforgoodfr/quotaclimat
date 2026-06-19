@@ -7,6 +7,11 @@ triggers:
     cron: "30 12 * * *"
     timezone: Europe/Paris
 
+  - id: evening_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "10 23 * * *"
+    timezone: Europe/Paris
+
 tasks:
   - id: ingest_data_to_s3
     type: io.kestra.plugin.docker.Run

@@ -1,0 +1,63 @@
+id: pulsar-themes
+namespace: quotaclimat-dev
+
+# New Kestra model (#590): no kv() — all config is a secret() (injected as SECRET_*
+# from `kestra_secrets`), hardcoded registry + `credentials:` block, no cron trigger
+# (scheduling is external).
+#
+# CONFIRM with the team — RRS isn't yet ported to the new model on main, so these
+# were inferred from the barometre flow + the rrs Terraform:
+#   - registry endpoint `rg.fr-par.scw.cloud/rrs-prod` (the rrs-${env} namespace)
+#   - namespace `quotaclimat-dev` (vs a dedicated rrs namespace)
+#   - RRS_PG_DATABASE / RRS_PG_PORT in `kestra_secrets` (playbook.yml) — managed PG port isn't 5432.
+
+description: |
+  Pull Pulsar TRAC "Themes" into the standalone pulsar_* tables, one search per
+  parallel branch. Each branch runs the whole pipeline in the lean image:
+  download the themes XLS + capture the session token (login → Export → XLS),
+  parse themes + topics, then fetch each theme's top posts via GraphQL and store
+  searches / themes / topics / posts. Fan out over `searches`.
+
+labels:
+  pipeline: rrs
+
+inputs:
+  # One entry per Pulsar search to pull. Add objects to scale to X instances.
+  - id: searches
+    type: JSON
+    defaults: |
+      [
+        {"name": "renewables", "folder_id": "529", "search_id": "201830"}
+      ]
+
+tasks:
+  - id: per_search
+    type: io.kestra.plugin.core.flow.EachParallel
+    value: "{{ inputs.searches }}"
+    tasks:
+      - id: pulsar
+        type: io.kestra.plugin.docker.Run
+        containerImage: "rg.fr-par.scw.cloud/rrs-prod/rrs-pulsar-downloader:latest"
+        pullPolicy: ALWAYS
+        credentials:
+          registry: rg.fr-par.scw.cloud/rrs-prod
+          username: nologin
+          password: "{{ secret('SCW_SECRET') }}"
+        commands:
+          - python
+          - -m
+          - rrs.pulsar.run
+        env:
+          PYTHONPATH: /app
+          PULSAR_BASE_URL: "{{ secret('PULSAR_BASE_URL') }}"
+          PULSAR_EMAIL: "{{ secret('PULSAR_EMAIL') }}"
+          PULSAR_PASSWORD: "{{ secret('PULSAR_PASSWORD') }}"
+          PULSAR_FOLDER_ID: "{{ json(taskrun.value).folder_id }}"
+          PULSAR_SEARCH_ID: "{{ json(taskrun.value).search_id }}"
+          PULSAR_TOP_N: "30"
+          PULSAR_THEMES_OUTPUT: "themes.xlsx"
+          RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
+          RRS_PG_PORT: "{{ secret('RRS_PG_PORT') }}"
+          RRS_PG_DATABASE: "{{ secret('RRS_PG_DATABASE') }}"
+          RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
+          RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"

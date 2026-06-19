@@ -104,6 +104,21 @@ anthropic = "^0.102.0"
 psycopg = {version = ">=3.0", extras = ["binary"]}
 sentence-transformers = ">=3.0"
 sentencepiece = ">=0.2"
+openpyxl = ">=3.1"
+
+# Pulsar themes downloader only — Playwright/Chromium is heavy, so it is isolated
+# in its own optional group and its own (lean) image, kept out of rrs-base.
+# Pin must match the Playwright base image tag in rrs/Dockerfile.pulsar.
+[tool.poetry.group.pulsar]
+optional = true
+
+[tool.poetry.group.pulsar.dependencies]
+playwright = "1.60.0"
+openpyxl = ">=3.1"
+psycopg = {version = ">=3.0", extras = ["binary"]}
+requests = "^2.32.3"
+tenacity = "^8.2.3"
+python-dotenv = ">=1.0"
 
 [tool.pytest_env]
 CLEAN_CACHE_ON_EXIT=true

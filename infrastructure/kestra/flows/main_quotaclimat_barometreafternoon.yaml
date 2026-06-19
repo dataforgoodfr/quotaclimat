@@ -111,7 +111,7 @@ tasks:
       COUNTRY: france
       ENV: production
       KEYWORDS_URL: https://keywords.mediatree.fr/api/v2/subtitle/
-      LABEL_MISINFORMATION_OVERWRITE=1
+      LABEL_MISINFORMATION_OVERWRITE: 1
       LABEL_STUDIO_PROJECT: 6
       LABEL_STUDIO_PROJECT_ID: 4
       LABEL_STUDIO_URL: https://barometre7kfudatm-labelstudio.functions.fnc.fr-par.scw.cloud

@@ -66,7 +66,7 @@ tasks:
       BATCH_SIZE: 5000
       BUCKET_NAME: mediatree
       COMPARE_DURATION: true
-      COUNTRY: all
+      COUNTRY: fra
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project
       ENV: prod

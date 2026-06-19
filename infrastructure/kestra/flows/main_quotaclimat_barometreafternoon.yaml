@@ -42,7 +42,7 @@ tasks:
       NUMBER_OF_PREVIOUS_DAYS: 1
       OMP_NUM_THREADS: 3
       PORT_HS: 5666
-      START_DATE: "{{ now() | date('X') }}"
+      START_DATE: "{{ now() | timestamp() }}"
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
@@ -84,7 +84,7 @@ tasks:
       POSTGRES_PORT: 22737
       RAY_COLOR_PREFIX: 1
       RAY_memory_monitor_refresh_ms: 0
-      START_DATE: "{{ now() | date('X') }}"
+      START_DATE: "{{ now() | timestamp() }}"
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"

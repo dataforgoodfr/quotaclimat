@@ -1,6 +1,6 @@
 # S3 bucket for storing Mediatree video files.
 resource "scaleway_object_bucket" "mediatree_videos" {
-  name       = "mediatree-videos"
+  name       = "mediatree-videos-${var.environment}"
   region     = "fr-par"
   project_id = scaleway_account_project.project.id
 }

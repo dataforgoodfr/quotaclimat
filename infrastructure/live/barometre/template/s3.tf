@@ -10,12 +10,12 @@ resource "scaleway_object_bucket" "mediatree_videos" {
 # this key technically covers any bucket in the project, not just
 # mediatree-videos — there is only one bucket in this project today.
 resource "scaleway_iam_application" "mediatree_videos_application" {
-  name        = "app-advertising-${var.environment}-mediatree-videos"
+  name        = "app-${var.environment}-mediatree-videos"
   description = "Application with read/write access to the mediatree-videos bucket"
 }
 
 resource "scaleway_iam_policy" "mediatree_videos_policy" {
-  name           = "app-advertising-${var.environment}-mediatree-videos-policy"
+  name           = "app-${var.environment}-mediatree-videos-policy"
   application_id = scaleway_iam_application.mediatree_videos_application.id
 
   rule {
@@ -33,6 +33,6 @@ resource "scaleway_iam_policy" "mediatree_videos_policy" {
 
 resource "scaleway_iam_api_key" "mediatree_videos_api_key" {
   application_id     = scaleway_iam_application.mediatree_videos_application.id
-  description        = "API key for app-advertising-${var.environment}-mediatree-videos"
+  description        = "API key for app-${var.environment}-mediatree-videos"
   default_project_id = scaleway_account_project.project.id
 }

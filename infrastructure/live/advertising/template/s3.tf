@@ -5,45 +5,34 @@ resource "scaleway_object_bucket" "mediatree_videos" {
   project_id = scaleway_account_project.project.id
 }
 
-# Dedicated IAM application/API key scoped to only this bucket.
+# Dedicated IAM application/API key scoped to the advertising project.
+# Scaleway IAM policies can only scope by project (not by bucket), so
+# this key technically covers any bucket in the project, not just
+# mediatree-videos — there is only one bucket in this project today.
 resource "scaleway_iam_application" "mediatree_videos_application" {
   name        = "app-advertising-${var.environment}-mediatree-videos"
-  description = "Application with read/write access to the mediatree-videos bucket only"
+  description = "Application with read/write access to the mediatree-videos bucket"
 }
 
-# Bucket policy grants the application read/write access on this bucket
-# only, instead of an IAM policy (which can only scope by project).
-resource "scaleway_object_bucket_policy" "mediatree_videos_policy" {
-  bucket = scaleway_object_bucket.mediatree_videos.name
-  region = scaleway_object_bucket.mediatree_videos.region
+resource "scaleway_iam_policy" "mediatree_videos_policy" {
+  name           = "app-advertising-${var.environment}-mediatree-videos-policy"
+  application_id = scaleway_iam_application.mediatree_videos_application.id
 
-  policy = jsonencode({
-    Version = "2023-04-17"
-    Id      = "mediatree-videos-read-write"
-    Statement = [
-      {
-        Sid    = "AllowMediatreeVideosReadWrite"
-        Effect = "Allow"
-        Principal = {
-          SCW = "application_id:${scaleway_iam_application.mediatree_videos_application.id}"
-        }
-        Action = [
-          "s3:GetObject",
-          "s3:PutObject",
-          "s3:DeleteObject",
-          "s3:ListBucket",
-        ]
-        Resource = [
-          scaleway_object_bucket.mediatree_videos.name,
-          "${scaleway_object_bucket.mediatree_videos.name}/*",
-        ]
-      }
+  rule {
+    project_ids = [
+      scaleway_account_project.project.id,
     ]
-  })
+    permission_set_names = [
+      "ObjectStorageObjectsRead",
+      "ObjectStorageObjectsWrite",
+      "ObjectStorageBucketsRead",
+      "ObjectStorageBucketsWrite",
+    ]
+  }
 }
 
 resource "scaleway_iam_api_key" "mediatree_videos_api_key" {
   application_id     = scaleway_iam_application.mediatree_videos_application.id
-  description        = "API key restricted to the mediatree-videos bucket (read/write)"
+  description        = "API key for app-advertising-${var.environment}-mediatree-videos"
   default_project_id = scaleway_account_project.project.id
 }

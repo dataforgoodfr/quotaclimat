@@ -2,6 +2,9 @@ variable "environment" {
   type = string
 }
 
+variable "rdb_instance_name" {
+  type = string
+}
 
 variable "postgres_admin_user" {
   type      = string
@@ -35,5 +38,14 @@ variable "volume_type" {
 variable "volume_size_in_gb" {
   type    = number
   default = 10
+}
+
+variable "acl_allowed_ips" {
+  type = list(object({
+    ip          = string
+    description = string
+  }))
+  default     = []
+  description = "List of CIDRs allowed to reach the database. Ignored in dev (0.0.0.0/0 is used instead)."
 }
 

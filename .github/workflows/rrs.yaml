@@ -38,6 +38,28 @@ jobs:
       - name: Push RRS image
         run: docker push rg.fr-par.scw.cloud/rrs-${{ env.REGISTRY_ENV }}/rrs-base:${{ env.IMAGE_TAG }}
 
+  build-and-push-pulsar:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'push' && 'production' || 'test' }}
+    env:
+      REGISTRY_ENV: ${{ github.event_name == 'push' && 'prod' || 'dev' }}
+      IMAGE_TAG: ${{ github.event_name == 'push' && 'prod' || 'latest' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to Scaleway Container Registry
+        uses: docker/login-action@v3
+        with:
+          username: nologin
+          password: ${{ secrets.RRS_SCW_SECRET_KEY }}
+          registry: rg.fr-par.scw.cloud/rrs-${{ env.REGISTRY_ENV }}
+
+      - name: Build RRS Pulsar image
+        run: docker build --platform linux/amd64 -f rrs/Dockerfile.pulsar . -t rg.fr-par.scw.cloud/rrs-${{ env.REGISTRY_ENV }}/rrs-pulsar:${{ env.IMAGE_TAG }}
+
+      - name: Push RRS Pulsar image
+        run: docker push rg.fr-par.scw.cloud/rrs-${{ env.REGISTRY_ENV }}/rrs-pulsar:${{ env.IMAGE_TAG }}
+
   migrate-and-seed:
     needs: [build-and-push]
     runs-on: ubuntu-latest

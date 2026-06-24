@@ -1,15 +1,5 @@
 id: pulsar-themes
-namespace: quotaclimat-dev
-
-# New Kestra model (#590): no kv() — all config is a secret() (injected as SECRET_*
-# from `kestra_secrets`), hardcoded registry + `credentials:` block, no cron trigger
-# (scheduling is external).
-#
-# CONFIRM with the team — RRS isn't yet ported to the new model on main, so these
-# were inferred from the barometre flow + the rrs Terraform:
-#   - registry endpoint `rg.fr-par.scw.cloud/rrs-prod` (the rrs-${env} namespace)
-#   - namespace `quotaclimat-dev` (vs a dedicated rrs namespace)
-#   - RRS_PG_DATABASE / RRS_PG_PORT in `kestra_secrets` (playbook.yml) — managed PG port isn't 5432.
+namespace: rrs-dev
 
 description: |
   Pull Pulsar TRAC "Themes" into the standalone pulsar_* tables, one search per

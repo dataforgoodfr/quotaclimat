@@ -1,6 +1,14 @@
 id: rrs-climate
 namespace: quotaclimat
 
+inputs:
+  - id: start_date
+    type: STRING
+    required: false
+  - id: end_date
+    type: STRING
+    required: false
+
 triggers:
   - id: after_barometre_daily
     type: io.kestra.plugin.core.trigger.Flow
@@ -37,6 +45,8 @@ tasks:
       - rrs.keyword_detection.import_segments
     env:
       PYTHONPATH: /app
+      START_DATE: "{{ inputs.start_date }}"
+      END_DATE: "{{ inputs.end_date }}"
       BUCKET_NAME: mediatree
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
@@ -67,6 +77,8 @@ tasks:
       - rrs.keyword_detection.import_cases
     env:
       PYTHONPATH: /app
+      START_DATE: "{{ inputs.start_date }}"
+      END_DATE: "{{ inputs.end_date }}"
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RRS_PG_DATABASE: rrs
@@ -94,6 +106,8 @@ tasks:
       - rrs.clustering.main
     env:
       PYTHONPATH: /app
+      START_DATE: "{{ inputs.start_date }}"
+      END_DATE: "{{ inputs.end_date }}"
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18492
       SPACY_MODEL: fr_core_news_sm

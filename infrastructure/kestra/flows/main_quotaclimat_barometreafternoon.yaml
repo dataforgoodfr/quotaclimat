@@ -129,7 +129,7 @@ tasks:
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RAY_COLOR_PREFIX: 1
-      START_DATE: "{{ now() | date('yyyy-MM-dd') }}"
+      DATE: "{{ now() | date('yyyy-MM-dd') }}"
       API_LABEL_STUDIO_KEY: "{{ secret('API_LABEL_STUDIO_KEY') }}"
       BUCKET_ACCESS: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"

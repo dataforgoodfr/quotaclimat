@@ -7,9 +7,13 @@ terraform {
 }
 
 inputs = {
-  environment                      = "dev"
+  environment                       = "dev"
+  project_name                      = "barometre-dev"
+  rdb_instance_name                 = "rdb-barometre-dev"
   postgres_admin_user               = get_env("TF_VAR_postgres_admin_user")
   postgres_admin_password           = get_env("TF_VAR_postgres_admin_password")
+  # Dev's instance root admin doubles as the database admin (no separate role like prod's barometreclimat).
+  database_admin_user                = get_env("TF_VAR_postgres_admin_user")
   postgres_admin_password_version   = 1
   node_type                         = "DB-DEV-S"
   volume_type                       = "sbs_5k"

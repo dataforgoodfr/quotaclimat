@@ -20,7 +20,7 @@ generate "backend" {
       required_providers {
         scaleway = {
           source  = "scaleway/scaleway"
-          version = "~> 2.57"
+          version = "~> 2.76"
         }
         time = {
           source  = "hashicorp/time"

@@ -14,6 +14,7 @@ from rrs.schemas.models import (  # noqa: F401 — import models so metadata is 
     Segment,
     Subject,
 )
+from rrs.schemas import pulsar_models  # noqa: F401 — register pulsar_* tables
 
 config = context.config
 

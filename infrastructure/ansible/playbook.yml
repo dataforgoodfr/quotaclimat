@@ -50,10 +50,13 @@
       PULSAR_EMAIL: "{{ lookup('env', 'PULSAR_EMAIL') }}"
       PULSAR_PASSWORD: "{{ lookup('env', 'PULSAR_PASSWORD') }}"
       RRS_PG_DATABASE: "{{ lookup('env', 'RRS_PG_DATABASE') }}"
+      RRS_BAROMETRE_READ_PASSWORD: "{{ lookup('env', 'RRS_BAROMETRE_READ_PASSWORD') }}"
+      RRS_BAROMETRE_READ_USER: "{{ lookup('env', 'RRS_BAROMETRE_READ_USER') }}"
       RRS_PG_HOST: "{{ lookup('env', 'RRS_PG_HOST') }}"
       RRS_PG_PASSWORD: "{{ lookup('env', 'RRS_PG_PASSWORD') }}"
       RRS_PG_PORT: "{{ lookup('env', 'RRS_PG_PORT') | default('5432', true) }}"
       RRS_PG_USER: "{{ lookup('env', 'RRS_PG_USER') }}"
+      RRS_SCW_SECRET: "{{ lookup('env', 'RRS_SCW_SECRET') }}"
       SCW_ACCESS: "{{ lookup('env', 'SCW_ACCESS') }}"
       SCW_SECRET: "{{ lookup('env', 'SCW_SECRET') }}"
       SENTRY_DSN: "{{ lookup('env', 'SENTRY_DSN') }}"
@@ -67,6 +70,7 @@
       RRS_PG_HOST_DEV: "{{ lookup('env', 'RRS_PG_HOST_DEV') }}"
       RRS_PG_PASSWORD_DEV: "{{ lookup('env', 'RRS_PG_PASSWORD_DEV') }}"
       RRS_PG_USER_DEV: "{{ lookup('env', 'RRS_PG_USER_DEV') }}"
+      RRS_SCW_SECRET_DEV: "{{ lookup('env', 'RRS_SCW_SECRET_DEV') }}"
 
   roles:
     - role: ssh-keys

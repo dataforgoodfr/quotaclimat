@@ -365,7 +365,9 @@ async def main():
 
             context = ray.init(
                 dashboard_host="0.0.0.0", # for docker dashboard
-                # runtime_env=dict(worker_process_setup_hook=sentry_init),
+                # Configure logging in each Ray worker so its logs go to stdout
+                # (INFO) instead of stderr, which Kestra would otherwise flag as ERROR.
+                runtime_env=dict(worker_process_setup_hook=getLogger),
             )
             logging.info(f"Ray context dahsboard available at : {context.dashboard_url}")
             logging.warning(f"Ray Information about the env: {ray.available_resources()}")

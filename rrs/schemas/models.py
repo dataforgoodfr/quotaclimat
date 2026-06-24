@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import text as sql_text
 
@@ -59,6 +60,8 @@ class Segment(RRSBase):
     start = Column(DateTime(timezone=True), nullable=True)
     channel_name = Column(String, nullable=True)
     channel_title = Column(String, nullable=True)
+    channel_program = Column(String, nullable=True)
+    keywords = Column(ARRAY(Text), nullable=True)
     url_mediatree = Column(String, nullable=True)
     created_at = Column(
         DateTime(timezone=True), server_default=sql_text("(now() at time zone 'utc')")
@@ -86,6 +89,8 @@ class Case(RRSBase):
     start = Column(DateTime(timezone=True), nullable=True)
     text = Column(Text, nullable=True)
     url_labelstudio = Column(String, nullable=True)
+    is_labeled = Column(Boolean, nullable=True)
+    mesinfo_choice = Column(String, nullable=True)
     created_at = Column(
         DateTime(timezone=True), server_default=sql_text("(now() at time zone 'utc')")
     )

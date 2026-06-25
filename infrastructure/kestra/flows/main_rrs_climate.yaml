@@ -8,6 +8,10 @@ inputs:
   - id: end_date
     type: STRING
     required: false
+  - id: run_clustering
+    type: BOOLEAN
+    required: true
+    defaults: true
 
 triggers:
   - id: after_barometre_daily
@@ -92,6 +96,7 @@ tasks:
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
 
   - id: clustering
+    runIf: "{{ inputs.run_clustering }}"
     shmSize: 6gb
     type: io.kestra.plugin.docker.Run
     containerImage: "rg.fr-par.scw.cloud/rrs-prod/rrs-base:prod"

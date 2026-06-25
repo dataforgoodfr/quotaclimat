@@ -1,0 +1,120 @@
+id: rrs-climate
+namespace: rrs
+
+inputs:
+  - id: start_date
+    type: STRING
+    required: false
+  - id: end_date
+    type: STRING
+    required: false
+  - id: run_clustering
+    type: BOOLEAN
+    required: true
+    defaults: false
+
+
+tasks:
+  - id: import_segments
+    shmSize: 6gb
+    type: io.kestra.plugin.docker.Run
+    containerImage: "rg.fr-par.scw.cloud/rrs-prod/rrs-base:prod"
+    pullPolicy: ALWAYS
+    credentials:
+      registry: rg.fr-par.scw.cloud/rrs-prod
+      username: nologin
+      password: "{{ secret('RRS_SCW_SECRET') }}"
+    entryPoint:
+      - python
+      - -m
+      - rrs.keyword_detection.import_segments
+    env:
+      PYTHONPATH: /app
+      START_DATE: "{{ inputs.start_date ?? '' }}"
+      END_DATE: "{{ inputs.end_date ?? '' }}"
+      BUCKET_NAME: mediatree
+      POSTGRES_DB: barometre
+      POSTGRES_PORT: 22737
+      RRS_PG_DATABASE: rrs
+      RRS_PG_PORT: 18492
+      BUCKET: "{{ secret('SCW_ACCESS') }}"
+      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
+      POSTGRES_USER: "{{ secret('RRS_BAROMETRE_READ_USER') }}"
+      POSTGRES_PASSWORD: "{{ secret('RRS_BAROMETRE_READ_PASSWORD') }}"
+      RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
+      RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
+      RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
+      SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+
+  - id: import_cases
+    shmSize: 6gb
+    type: io.kestra.plugin.docker.Run
+    containerImage: "rg.fr-par.scw.cloud/rrs-prod/rrs-base:prod"
+    pullPolicy: ALWAYS
+    credentials:
+      registry: rg.fr-par.scw.cloud/rrs-prod
+      username: nologin
+      password: "{{ secret('RRS_SCW_SECRET') }}"
+    entryPoint:
+      - python
+      - -m
+      - rrs.keyword_detection.import_cases
+    env:
+      PYTHONPATH: /app
+      START_DATE: "{{ inputs.start_date ?? '' }}"
+      END_DATE: "{{ inputs.end_date ?? '' }}"
+      POSTGRES_DB: barometre
+      POSTGRES_PORT: 22737
+      RRS_PG_DATABASE: rrs
+      RRS_PG_PORT: 18492
+      POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
+      POSTGRES_USER: "{{ secret('RRS_BAROMETRE_READ_USER') }}"
+      POSTGRES_PASSWORD: "{{ secret('RRS_BAROMETRE_READ_PASSWORD') }}"
+      RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
+      RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
+      RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
+      SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+
+  - id: clustering
+    runIf: "{{ inputs.run_clustering }}"
+    shmSize: 6gb
+    type: io.kestra.plugin.docker.Run
+    containerImage: "rg.fr-par.scw.cloud/rrs-prod/rrs-base:prod"
+    pullPolicy: ALWAYS
+    credentials:
+      registry: rg.fr-par.scw.cloud/rrs-prod
+      username: nologin
+      password: "{{ secret('RRS_SCW_SECRET') }}"
+    entryPoint:
+      - python
+      - -m
+      - rrs.clustering.main
+    env:
+      PYTHONPATH: /app
+      START_DATE: "{{ inputs.start_date ?? '' }}"
+      END_DATE: "{{ inputs.end_date ?? '' }}"
+      RRS_PG_DATABASE: rrs
+      RRS_PG_PORT: 18492
+      SPACY_MODEL: fr_core_news_sm
+      WINDOW_SIZE: 3
+      OVERLAP_TOKENS: 30
+      PROVIDER: anthropic
+      MAX_CONCURRENT_REQUESTS: 5
+      MERGE_BATCH_SIZE: 30
+      MERGE_MAX_ROUNDS: 5
+      TARGET_CLUSTERS: 5
+      MIN_CLUSTERS: 7
+      MAX_CLUSTERS: 150
+      CLUSTER_SCALE: 1.0
+      LOW_THRESHOLD: 0.4
+      HIGH_THRESHOLD: 0.85
+      EMBEDDING_BACKEND: mistral
+      EXPIRY_DAYS: 30
+      OUTPUT_DIR: /app/output
+      RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
+      RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
+      RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
+      MISTRAL_API_KEY: "{{ secret('MISTRAL_API_KEY') }}"
+      ANTHROPIC_API_KEY: "{{ secret('ANTHROPIC_API_KEY') }}"
+      SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"

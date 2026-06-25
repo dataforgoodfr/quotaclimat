@@ -215,7 +215,7 @@ def _build_day_query(keywords_by_subject: dict[str, tuple[list[str], list[str]]]
                 *
             FROM detections
             -- WHERE n_keywords_found > 2 * n_hrfp_found
-            -- where n_hrfp_found=0
+            where n_hrfp_found=0
         """)
     if not union_parts:
         raise ValueError("No keywords to search for any subject.")

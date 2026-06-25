@@ -293,10 +293,12 @@ def main(conn_kwargs, target_conn_kwargs):
 
 
 if __name__ == "__main__":
+    POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+    POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", 5432))
     conn_kwargs = dict(
         user=os.getenv("LABELSTUDIO_INGESTION_POSTGRES_USER", "user"),
-        host=os.getenv("POSTGRES_HOST", "localhost"),
-        port=int(os.getenv("POSTGRES_PORT", 5432)),
+        host=os.getenv("LABELSTUDIO_POSTGRES_HOST", POSTGRES_HOST),
+        port=int(os.getenv("LABELSTUDIO_POSTGRES_PORT", POSTGRES_PORT)),
         password=os.getenv("LABELSTUDIO_INGESTION_POSTGRES_PASSWORD", "password"),
     )
 

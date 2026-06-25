@@ -1,2 +1,5 @@
 **/.terragrunt-cache
 *.dump
+.env
+.env.secrets
+**/.env.secrets

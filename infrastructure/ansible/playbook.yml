@@ -1,0 +1,85 @@
+---
+- name: Provision orchestrator VM
+  hosts: orchestrator
+  remote_user: ubuntu
+  become: true
+
+  vars:
+    acme_email: "{{ lookup('env', 'ACME_EMAIL') }}"
+
+    # Per-service domains
+    traefik_domain: "{{ lookup('env', 'TRAEFIK_DOMAIN') }}"
+    kestra_domain: "{{ lookup('env', 'KESTRA_DOMAIN') }}"
+    glitchtip_domain: "{{ lookup('env', 'GLITCHTIP_DOMAIN') }}"
+
+    # Traefik
+    traefik_dashboard_auth: "{{ lookup('env', 'TRAEFIK_DASHBOARD_AUTH') }}"
+
+    # Kestra
+    kestra_basic_auth: "{{ lookup('env', 'KESTRA_BASIC_AUTH') }}"
+    kestra_db_user: "{{ lookup('env', 'KESTRA_DB_USER') }}"
+    kestra_db_password: "{{ lookup('env', 'KESTRA_DB_PASSWORD') }}"
+    kestra_db_name: "{{ lookup('env', 'KESTRA_DB_NAME') }}"
+
+    # GlitchTip
+    glitchtip_db_user: "{{ lookup('env', 'GLITCHTIP_DB_USER') }}"
+    glitchtip_db_password: "{{ lookup('env', 'GLITCHTIP_DB_PASSWORD') }}"
+    glitchtip_db_name: "{{ lookup('env', 'GLITCHTIP_DB_NAME') }}"
+    glitchtip_secret_key: "{{ lookup('env', 'GLITCHTIP_SECRET_KEY') }}"
+
+    # Managed Postgres
+    postgres_host: "{{ lookup('env', 'POSTGRES_HOST') }}"
+    postgres_port: "{{ lookup('env', 'POSTGRES_PORT') | default('5432', true) }}"
+
+    # Kestra secrets (for flow execution)
+    kestra_secrets:
+      API_LABEL_STUDIO_KEY: "{{ lookup('env', 'API_LABEL_STUDIO_KEY') }}"
+      ANTHROPIC_API_KEY: "{{ lookup('env', 'ANTHROPIC_API_KEY') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ lookup('env', 'LABELSTUDIO_INGESTION_POSTGRES_USER') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ lookup('env', 'LABELSTUDIO_INGESTION_POSTGRES_PASSWORD') }}"
+      MEDIATREE_USER: "{{ lookup('env', 'MEDIATREE_USER') }}"
+      MEDIATREE_PASSWORD: "{{ lookup('env', 'MEDIATREE_PASSWORD') }}"
+      MISTRAL_API_KEY: "{{ lookup('env', 'MISTRAL_API_KEY') }}"
+      OPENAI_API_KEY: "{{ lookup('env', 'OPENAI_API_KEY') }}"
+      POSTGRES_HOST: "{{ lookup('env', 'BAROMETRE_POSTGRES_HOST') }}"
+      POSTGRES_PASSWORD: "{{ lookup('env', 'BAROMETRE_POSTGRES_PASSWORD') }}"
+      POSTGRES_USER: "{{ lookup('env', 'BAROMETRE_POSTGRES_USER') }}"
+      POSTGRES_PASSWORD_READ: "{{ lookup('env', 'BAROMETRE_POSTGRES_PASSWORD_READ') }}"
+      POSTGRES_USER_READ: "{{ lookup('env', 'BAROMETRE_POSTGRES_USER_READ') }}"
+      PULSAR_BASE_URL: "{{ lookup('env', 'PULSAR_BASE_URL') }}"
+      PULSAR_EMAIL: "{{ lookup('env', 'PULSAR_EMAIL') }}"
+      PULSAR_PASSWORD: "{{ lookup('env', 'PULSAR_PASSWORD') }}"
+      RRS_PG_DATABASE: "{{ lookup('env', 'RRS_PG_DATABASE') }}"
+      RRS_BAROMETRE_READ_PASSWORD: "{{ lookup('env', 'RRS_BAROMETRE_READ_PASSWORD') }}"
+      RRS_BAROMETRE_READ_USER: "{{ lookup('env', 'RRS_BAROMETRE_READ_USER') }}"
+      RRS_PG_HOST: "{{ lookup('env', 'RRS_PG_HOST') }}"
+      RRS_PG_PASSWORD: "{{ lookup('env', 'RRS_PG_PASSWORD') }}"
+      RRS_PG_PORT: "{{ lookup('env', 'RRS_PG_PORT') | default('5432', true) }}"
+      RRS_PG_USER: "{{ lookup('env', 'RRS_PG_USER') }}"
+      RRS_SCW_SECRET: "{{ lookup('env', 'RRS_SCW_SECRET') }}"
+      SCW_ACCESS: "{{ lookup('env', 'SCW_ACCESS') }}"
+      SCW_SECRET: "{{ lookup('env', 'SCW_SECRET') }}"
+      SENTRY_DSN: "{{ lookup('env', 'SENTRY_DSN') }}"
+
+    # Kestra secrets (for flow execution)
+    kestra_secrets_dev:
+      API_LABEL_STUDIO_KEY_DEV: "{{ lookup('env', 'API_LABEL_STUDIO_KEY_DEV') }}"
+      POSTGRES_HOST_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_HOST_DEV') }}"
+      POSTGRES_PASSWORD_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_PASSWORD_DEV') }}"
+      POSTGRES_USER_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_USER_DEV') }}"
+      RRS_PG_HOST_DEV: "{{ lookup('env', 'RRS_PG_HOST_DEV') }}"
+      RRS_PG_PASSWORD_DEV: "{{ lookup('env', 'RRS_PG_PASSWORD_DEV') }}"
+      RRS_PG_USER_DEV: "{{ lookup('env', 'RRS_PG_USER_DEV') }}"
+      RRS_SCW_SECRET_DEV: "{{ lookup('env', 'RRS_SCW_SECRET_DEV') }}"
+
+  roles:
+    - role: ssh-keys
+      tags: [ssh-keys]
+    - role: common
+      tags: [common]
+    - role: traefik
+      tags: [traefik]
+    - role: kestra
+      tags: [kestra]
+    - role: glitchtip
+      tags: [glitchtip]

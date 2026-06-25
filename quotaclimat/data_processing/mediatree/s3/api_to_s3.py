@@ -2,6 +2,7 @@ import json
 import logging
 import asyncio
 import requests
+import aiohttp
 from time import sleep
 import sys
 import os
@@ -9,7 +10,6 @@ import os
 from quotaclimat.utils.healthcheck_config import run_health_check_server
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.data_processing.mediatree.utils import (
-    EPOCH__5MIN_MARGIN,
     is_it_tuesday,
     get_start_end_date_env_variable_with_default,
     get_date_range,
@@ -62,6 +62,7 @@ password = get_password()
 AUTH_URL = get_auth_url()
 USER = get_user()
 KEYWORDS_URL = get_keywords_url()
+API_TO_S3_CONCURRENCY = int(os.environ.get("API_TO_S3_CONCURRENCY", 10))
 
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
 # @see https://github.com/jd/tenacity/tree/main
@@ -85,13 +86,13 @@ def get_auth_token(password=password, user_name=USER):
         logging.error("Could not get token %s:(%s) %s" % (type(err).__name__, err))
 
 # see : https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
-def get_param_api(token, type_sub, start_epoch, channel, end_epoch):
+def get_param_api(token, type_sub, start_epoch, channel, end_epoch, country: CountryMediaTree):
 
     return {
         "channel": channel,
         "token": token,
-        "start_gte": int(start_epoch) - EPOCH__5MIN_MARGIN,
-        "start_lte": int(end_epoch) + EPOCH__5MIN_MARGIN,
+        "start_gte": int(start_epoch) - country.epoch_margin,
+        "start_lte": int(end_epoch) + country.epoch_margin,
         "type": type_sub,
         "size": "1000" #  range 1-1000
     }
@@ -148,12 +149,12 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
             logging.warning(f"No result (total_results = 0) for this channel {channel} - {channel_program}")
             return None
 
-def parse_raw_json(response):
-    if response.status_code == 504:
-        logging.error(f"Mediatree API server error 504 (retry enabled)\n {response.content}")
+def parse_raw_json(content: bytes, status_code: int):
+    if status_code == 504:
+        logging.error(f"Mediatree API server error 504 (retry enabled)\n {content}")
         raise Exception
     else:
-        return json.loads(response.content.decode('utf_8'))
+        return json.loads(content.decode('utf_8'))
 
 def parse_total_results(response_sub) -> int :
     return response_sub.get('total_results')
@@ -168,26 +169,26 @@ def get_request_url(base_url: str, params: Dict[str, str]):
 # "Randomly wait up to 2^x * 1 seconds between each retry until the range reaches 60 seconds, then randomly up to 60 seconds afterwards"
 # @see https://github.com/jd/tenacity/tree/main
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
-def get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch):
+async def get_post_request(session: aiohttp.ClientSession, media_tree_token, type_sub, start_epoch, channel, end_epoch, country: CountryMediaTree = FRANCE):
     try:
-        logging.info(media_tree_token)
-        params = get_param_api(media_tree_token, type_sub, start_epoch, channel, end_epoch)
-        logging.info(f"Query {KEYWORDS_URL} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, end_epoch)}")
-        response = requests.get(get_request_url(KEYWORDS_URL, params=params))
-        if response.status_code >= 400:
-            logging.warning(f"{response.status_code} - Expired token ? - retrying to get a new one {response.content}")
-            media_tree_token = get_auth_token(password, USER)
-            raise Exception
-        
-        return parse_raw_json(response)
+        params = get_param_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, country)
+        logging.info(f"Query {KEYWORDS_URL} with params:\n {get_param_api('fake_token_for_log', type_sub, start_epoch, channel, end_epoch, country)}")
+        async with session.get(get_request_url(KEYWORDS_URL, params=params)) as response:
+            content = await response.read()
+            if response.status >= 400:
+                logging.warning(f"{response.status} - Expired token ? - retrying to get a new one {content}")
+                await asyncio.to_thread(get_auth_token, password, USER)
+                raise Exception
+
+            return parse_raw_json(content, response.status)
     except Exception as err:
         logging.error("Retry - Could not query API :(%s) %s" % (type(err).__name__, err))
         raise Exception
-    
+
 @retry(wait=wait_random_exponential(multiplier=1, max=60),stop=stop_after_attempt(7))
-def get_df_api(media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type, program_metadata_id, country: CountryMediaTree = FRANCE):
+async def get_df_api(session: aiohttp.ClientSession, media_tree_token, type_sub, start_epoch, channel, end_epoch, channel_program, channel_program_type, program_metadata_id, country: CountryMediaTree = FRANCE):
     try:
-        response_sub = get_post_request(media_tree_token, type_sub, start_epoch, channel, end_epoch)
+        response_sub = await get_post_request(session, media_tree_token, type_sub, start_epoch, channel, end_epoch, country)
 
         return parse_reponse_subtitle(response_sub, channel, channel_program, channel_program_type, program_metadata_id, country=country)
     except Exception as err:
@@ -262,41 +263,54 @@ def save_to_s3(
         sys.exit(1)
 
 
-def get_data_from_api(programs_for_this_day: pd.DataFrame, channel: str, country: str, token: str, type_sub: str):
+async def get_data_from_api(
+        session: aiohttp.ClientSession,
+        programs_for_this_day: pd.DataFrame,
+        channel: str,
+        country: str,
+        token: str,
+        type_sub: str,
+        semaphore: asyncio.Semaphore
+    ):
     """
-    Performs api request for all the programs for a given channel/country/date combo. 
+    Performs api request for all the programs for a given channel/country/date combo,
+    in parallel (bounded by semaphore).
     """
-    df_res = pd.DataFrame()
-    for program in programs_for_this_day.itertuples(index=False):
-        try:
-            start_epoch = program.start
-            end_epoch = program.end
-            channel_program = str(program.program_name)
-            channel_program_type = str(program.program_type)
-            program_metadata_id = program.id
-            logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
-            df = get_df_api(token, type_sub, start_epoch, channel, end_epoch, \
-                            channel_program, channel_program_type,program_metadata_id=program_metadata_id, country=country)
+    async def fetch(program):
+        start_epoch = program.start
+        end_epoch = program.end
+        channel_program = str(program.program_name)
+        channel_program_type = str(program.program_type)
+        program_metadata_id = program.id
+        logging.info(f"Querying API for {channel} - {channel_program} - {channel_program_type} - {start_epoch} - {end_epoch}")
+        async with semaphore:
+            df = await get_df_api(session, token, type_sub, start_epoch, channel, end_epoch, \
+                            channel_program, channel_program_type, program_metadata_id=program_metadata_id, country=country)
 
-            if (df is not None):
-                df_res = pd.concat([df_res, df ], ignore_index=True)
-            else:
-                logging.info(f"Nothing to extract for {channel} {channel_program} - {start_epoch} - {end_epoch}")
-        except Exception as e:
-            logging.error(f"Error retreiving data from API for channel: {channel}, channel_program: {channel_program}, start: {start_epoch},  end: {end_epoch}")
-            logging.error(e)
-            raise e
+        if df is None:
+            logging.info(f"Nothing to extract for {channel} {channel_program} - {start_epoch} - {end_epoch}")
+        return df
+
+    tasks = [fetch(program) for program in programs_for_this_day.itertuples(index=False)]
+    results = await asyncio.gather(*tasks)
+
+    df_res = pd.DataFrame()
+    for df in results:
+        if df is not None:
+            df_res = pd.concat([df_res, df], ignore_index=True)
     return df_res
 
 
-def get_program_data_for_day_api(
-        df_programs: pd.DataFrame, 
-        channel: str, 
-        country: str, 
-        day: datetime, 
-        timezone: str, 
-        token: str, 
-        type_sub: str
+async def get_program_data_for_day_api(
+        df_programs: pd.DataFrame,
+        channel: str,
+        country: str,
+        day: datetime,
+        timezone: str,
+        token: str,
+        type_sub: str,
+        session: aiohttp.ClientSession,
+        semaphore: asyncio.Semaphore
     ):
     """
     Obtains programs for the specified date and queries the API
@@ -305,14 +319,16 @@ def get_program_data_for_day_api(
     programs_for_this_day = get_programs_for_this_day(day.tz_localize(timezone), channel, df_programs, timezone=timezone)
     if programs_for_this_day is None:
         logging.info(f"No program for {day} and {channel}, skipping")
-        return
+        return None
 
-    df_res = get_data_from_api(
+    df_res = await get_data_from_api(
+        session=session,
         programs_for_this_day=programs_for_this_day,
         channel=channel,
         country=country,
         token=token,
         type_sub=type_sub,
+        semaphore=semaphore,
     )
     return df_res
 
@@ -329,31 +345,44 @@ async def get_and_save_api_data(exit_event):
             country_code: str = os.environ.get("COUNTRY", FRANCE_CODE)
             logging.info(f"Country used is (default {FRANCE_CODE}) : {country_code}")
             # We are ingesting belgium as well partially via api
-            countries = get_countries_array(country_code=country_code, no_belgium=False) 
+            countries = get_countries_array(country_code=country_code, no_belgium=False)
+            semaphore = asyncio.Semaphore(API_TO_S3_CONCURRENCY)
+            logging.info(f"API_TO_S3_CONCURRENCY (max parallel API requests) : {API_TO_S3_CONCURRENCY}")
 
-            for country in countries:
-                logging.info(f"Country : {country}")
-                df_programs = get_programs(country)
-                channels = country.channels
-                channels = get_mediatree_channels(channels, country)
-                timezone = country.timezone
-                (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, \
-                                                                                            minus_days=number_of_previous_days,\
-                                                                                            timezone=country.timezone)
+            async with aiohttp.ClientSession() as session:
+                for country in countries:
+                    logging.info(f"Country : {country}")
+                    df_programs = get_programs(country)
+                    channels = country.channels
+                    channels = get_mediatree_channels(channels, country)
+                    timezone = country.timezone
+                    (start_date_to_query, end_date) = get_start_end_date_env_variable_with_default(start_date, \
+                                                                                                minus_days=number_of_previous_days,\
+                                                                                                timezone=country.timezone)
 
-                day_range: pd.DatetimeIndex = get_date_range(start_date_to_query, end_date, number_of_previous_days, country=country)
-                logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
-                for day in day_range:
-                    token = refresh_token(token, day)
-                    
-                    for channel in channels:
-                        
+                    day_range: pd.DatetimeIndex = get_date_range(start_date_to_query, end_date, number_of_previous_days, country=country)
+                    logging.info(f"Number of days to query : {len(day_range)} - day_range : {day_range}")
+                    for day in day_range:
+                        token = refresh_token(token, day)
+
                         # if object already exists, skip
                         # If the API_DATA_OVERWRITE environment variable is set to true, then overwrite data in s3 target.
                         # Theoretically mediatree API should be idempotent, but often it is not stable.
-                        if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client, country=country) or bool(os.getenv("API_DATA_OVERWRITE", False)):
-                            try:
-                                df_res = get_program_data_for_day_api(
+                        channels_to_query = []
+                        for channel in channels:
+                            if not check_if_object_exists_in_s3(day, channel,s3_client=s3_client, country=country) or bool(os.getenv("API_DATA_OVERWRITE", False)):
+                                channels_to_query.append(channel)
+                            else:
+                                logging.info(f"Object already exists for {day} and {channel}, skipping")
+
+                        if not channels_to_query:
+                            continue
+
+                        # all the API requests for this day, across all channels, run in parallel
+                        # bounded by the semaphore
+                        results = await asyncio.gather(
+                            *[
+                                get_program_data_for_day_api(
                                     df_programs=df_programs,
                                     channel=channel,
                                     country=country,
@@ -361,12 +390,23 @@ async def get_and_save_api_data(exit_event):
                                     timezone=timezone,
                                     token=token,
                                     type_sub=type_sub,
+                                    session=session,
+                                    semaphore=semaphore,
                                 )
+                                for channel in channels_to_query
+                            ],
+                            return_exceptions=True,
+                        )
+
+                        for channel, df_res in zip(channels_to_query, results):
+                            try:
+                                if isinstance(df_res, Exception):
+                                    raise df_res
 
                                 if df_res is None:
                                     continue
                                 # save to S3
-                                
+
                                 # This returns None is there is no object in s3 for that date/channel/country combo
                                 # If there is a hit it returns the object key. This allows us to overwrite with the same filename
                                 # On s3 if we have to catch up data.
@@ -375,15 +415,13 @@ async def get_and_save_api_data(exit_event):
                                 else:
                                     set_filename = None # No need if not overwriting api data
 
-                                # If set_filename is not None, it will correspond to an object key, this way we will save and 
+                                # If set_filename is not None, it will correspond to an object key, this way we will save and
                                 # Upload the data overwriting the old object key to avoid duplication.
                                 save_to_s3(df_res, channel, day, s3_client=s3_client, country=country, set_filename=set_filename)
-                                
+
                             except Exception as err:
                                 logging.error(f"continuing loop but met error : {err}")
                                 continue
-                        else:
-                            logging.info(f"Object already exists for {day} and {channel}, skipping")
             exit_event.set()
         except Exception as err:
             logging.fatal("get_and_save_api_data (%s) %s" % (type(err).__name__, err))
@@ -401,7 +439,9 @@ async def main():
 
             context = ray.init(
                 dashboard_host="0.0.0.0", # for docker dashboard
-                # runtime_env=dict(worker_process_setup_hook=sentry_init),
+                # Configure logging in each Ray worker so its logs go to stdout
+                # (INFO) instead of stderr, which Kestra would otherwise flag as ERROR.
+                runtime_env=dict(worker_process_setup_hook=getLogger),
             )
             logging.info(f"Ray context dahsboard available at : {context.dashboard_url}")
             logging.warning(f"Ray Information about the env: {ray.available_resources()}")

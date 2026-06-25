@@ -135,7 +135,9 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
             data_item_start,
             data_item_model_result,
             data_item_model_reason,
-            data_item_plaintext_whisper
+            data_item_plaintext_whisper,
+            is_labeled,
+            mesinfo_choice
         FROM barometre.analytics.task_global_completion
         WHERE country = 'france'
         AND data_item_channel in ({", ".join([f"'{c}'" for c in FRANCE.channels])})
@@ -167,7 +169,9 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
             "model_score",
             "model_reason",
             "text",
-            "url_labelstudio"
+            "url_labelstudio",
+            "is_labeled",
+            "mesinfo_choice",
         ]
     ]
 
@@ -176,8 +180,8 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
         con.execute(f"ATTACH '{rrs_dsn()}' AS rrs (TYPE POSTGRES);")
 
     con.execute("""
-        INSERT INTO rrs.cases (case_id, segment_id, subject_id, start, model_score, model_reason, text, url_labelstudio, created_at, updated_at)
-        SELECT case_id, segment_id, subject_id, start, model_score, model_reason, text, url_labelstudio, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
+        INSERT INTO rrs.cases (case_id, segment_id, subject_id, start, model_score, model_reason, text, url_labelstudio, is_labeled, mesinfo_choice, created_at, updated_at)
+        SELECT case_id, segment_id, subject_id, start, model_score, model_reason, text, url_labelstudio, is_labeled, mesinfo_choice, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
         FROM cases_batch
         ON CONFLICT (case_id, segment_id, subject_id) DO UPDATE SET
             start           = EXCLUDED.start,
@@ -185,6 +189,8 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
             model_reason    = EXCLUDED.model_reason,
             text            = EXCLUDED.text,
             url_labelstudio = EXCLUDED.url_labelstudio,
+            is_labeled      = EXCLUDED.is_labeled,
+            mesinfo_choice  = EXCLUDED.mesinfo_choice,
             created_at      = CASE WHEN cases.created_at IS NULL THEN now() AT TIME ZONE 'utc' ELSE cases.created_at END,
             updated_at      = now() AT TIME ZONE 'utc'
     """)

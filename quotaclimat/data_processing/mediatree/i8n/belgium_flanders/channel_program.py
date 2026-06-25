@@ -74,21 +74,20 @@ channels_programs_belgium_flanders = [
     {"channel_name": "qmusic", "start": "19:00", "end": "19:10", "weekday": "*", "program_name": "Flash Info 19:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     
     {"channel_name": "vrt1", "start": "13:00", "end": "13:20", "weekday": "weekday", "program_name": "VRT NWS Journaal 13:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "vrt1", "start": "18:00", "end": "18:25", "weekday": "weekday", "program_name": "VRT NWS Journaal 18:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "vrt1", "start": "19:00", "end": "19:45", "weekday": "weekday", "program_name": "VRT NWS Journaal 19:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "vrt1", "start": "19:00", "end": "19:30", "weekday": "weekday", "program_name": "VRT NWS Journaal 19:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "vrt1", "start": "22:30", "end": "22:50", "weekday": "weekday", "program_name": "VRT NWS Journaal 22:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "vrt1", "start": "13:00", "end": "13:15", "weekday": "weekend", "program_name": "VRT NWS Journaal 13:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "vrt1", "start": "19:00", "end": "19:35", "weekday": "weekend", "program_name": "VRT NWS Journaal 19:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "vrt1", "start": "22:30", "end": "22:45", "weekday": "weekend", "program_name": "VRT NWS Journaal 22:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "vrt1", "start": "13:00", "end": "13:30", "weekday": "weekend", "program_name": "VRT NWS Journaal 13:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "vrt1", "start": "19:00", "end": "19:30", "weekday": "weekend", "program_name": "VRT NWS Journaal 19:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "vrt1", "start": "18:00", "end": "18:10", "weekday": "weekend", "program_name": "VRT NWS Journaal 18:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
 
     {"channel_name": "canvas", "start": "20:00", "end": "20:30", "weekday": "weekday", "program_name": "Terzake", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "canvas", "start": "20:35", "end": "21:20", "weekday": "weekday", "program_name": "De Afspraak", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "canvas", "start": "20:40", "end": "21:25", "weekday": "weekday", "program_name": "De Afspraak", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     
-    {"channel_name": "vtm", "start": "19:00", "end": "19:30", "weekday": "weekday", "program_name": "VTM Daily News", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "vtm", "start": "19:00", "end": "19:35", "weekday": "weekday", "program_name": "VTM Daily News", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "vtm", "start": "19:00", "end": "19:25", "weekday": "weekend", "program_name": "VTM Daily News", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     
     {"channel_name": "play", "start": "20:00", "end": "21:15", "weekday": "0", "program_name": "De Tafel van Gert", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "play", "start": "20:00", "end": "21:15", "weekday": "1", "program_name": "De Tafel van Gert", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "play", "start": "20:00", "end": "21:15", "weekday": "2", "program_name": "De Tafel van Gert", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "play", "start": "20:00", "end": "21:15", "weekday": "4", "program_name": "De Tafel van Gert", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "play", "start": "20:00", "end": "21:15", "weekday": "3", "program_name": "De Tafel van Gert", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
 ]

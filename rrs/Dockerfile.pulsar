@@ -1,0 +1,20 @@
+# Lean image for the whole Pulsar pipeline (rrs.pulsar.run): download themes XLS +
+# capture token (Playwright) → parse → store + fetch posts (GraphQL).
+#
+# Playwright + Chromium are heavy and used ONLY for this scrape, so they live in
+# this dedicated image instead of bloating rrs-base (which every other rrs job
+# pulls). The official Playwright base image ships Chromium + all OS deps + the
+# matching playwright python package; we add only the light deps the pipeline needs
+# (no ML stack). The tag MUST match the playwright pin in pyproject group "pulsar".
+FROM mcr.microsoft.com/playwright/python:v1.60.0-jammy
+
+WORKDIR /app
+ENV PYTHONPATH=/app
+
+# Light deps for parse (openpyxl), GraphQL fetch (requests/tenacity), DB (psycopg),
+# and config (python-dotenv). No torch/transformers/spacy.
+RUN pip install --no-cache-dir openpyxl "psycopg[binary]" requests tenacity python-dotenv
+
+COPY rrs/ ./rrs/
+
+CMD ["python", "-m", "rrs.pulsar.run"]

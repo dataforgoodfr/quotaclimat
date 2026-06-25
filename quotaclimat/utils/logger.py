@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 class CustomFormatter(logging.Formatter):
 
     grey = "\x1b[38;20m"
@@ -30,7 +31,7 @@ def getLogger():
     # create console handler with a higher log level
     if (logger.hasHandlers()):
         logger.handlers.clear()
-    ch = logging.StreamHandler()
+    ch = logging.StreamHandler(sys.stdout)                                                                                                                                                                                        
     ch.setFormatter(CustomFormatter())
     logger.addHandler(ch)
 

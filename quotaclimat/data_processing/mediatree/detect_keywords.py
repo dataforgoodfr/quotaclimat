@@ -24,6 +24,7 @@ import re
 import spacy
 import spacy.util
 from itertools import groupby
+from functools import lru_cache
 import sentry_sdk
 import modin.pandas as pd
 import copy
@@ -138,7 +139,6 @@ def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dic
         all_keywords = multiple_keyword["keyword"].split() # case with multiple words such as 'economie circulaire'
 
         match = find_matching_subtitle(subtitle_duration, pos_in_text, all_keywords[0], country)
-
         if match is not None:
             cts_in_ms = match['cts_in_ms']
         else:
@@ -236,18 +236,57 @@ def is_keyword_in_text(keyword: str, text: str) -> bool:
     # Search (case-insensitivity already in the pattern)
     return bool(re.search(pattern, text))
 
+@lru_cache(maxsize=None)
+def _compile_fr_keyword_patterns(keywords_tuple: tuple) -> dict:
+    compiled = {}
+    for idx, kw in enumerate(keywords_tuple):
+        pattern_str = " ".join(format_word_regex(w) for w in kw.split(" "))
+        compiled[idx] = re.compile(rf"\b{pattern_str}(?![\w-])", re.IGNORECASE)
+    return compiled
+
+
+@lru_cache(maxsize=None)
+def _lemmatize_keywords(keywords_tuple: tuple, lang: str):
+    kw_lemmas = {}
+    kw_originals = {}
+    for idx, kw in enumerate(keywords_tuple):
+        lemmas = get_lemmas(kw, lang)
+        kw_lemmas[idx] = " ".join(lemmas)
+        kw_originals[idx] = kw
+    return kw_lemmas, kw_originals
+
+
+@lru_cache(maxsize=None)
+def _compile_keyword_pattern(kw_items: tuple):
+    kw_to_indices = defaultdict(list)
+    for idx, kw in kw_items:
+        kw_to_indices[kw].append(idx)
+    sorted_kws = sorted(kw_to_indices.keys(), key=len, reverse=True)
+    compiled = re.compile(
+        r"(?:^|\b)(" + "|".join(re.escape(kw) for kw in sorted_kws) + r")(?![\w-])",
+        re.IGNORECASE,
+    )
+    return compiled, kw_to_indices
+
+
 def get_words_in_sentence_regex_i18n(keywords_lemmas, text: str) -> Set[str]:
     logging.info("Running regex matching with lemmas for i18n languages")
-  
-    found = set()
-    word_positions = []
-    for idx in keywords_lemmas:
-        pattern = r"(?i)(?:^|\b)" + re.escape(keywords_lemmas[idx]) + r"(?![\w-])"
-        match = re.search(pattern, text)
-        if match:
-            found.add(idx)
-            word_idx = len(text[:match.start()].split())
-            word_positions.append(word_idx)
+    if not keywords_lemmas:
+        return set(), []
+
+    kw_items = tuple(sorted(keywords_lemmas.items()))
+    combined, kw_to_indices = _compile_keyword_pattern(kw_items)
+
+    matches = {}  # idx -> word position (first occurrence wins)
+    for m in combined.finditer(text):
+        matched_kw = m.group(1).lower()
+        word_pos = len(text[:m.start()].split())
+        for idx in kw_to_indices[matched_kw]:
+            if idx not in matches:
+                matches[idx] = word_pos
+
+    found = set(matches.keys())
+    word_positions = [matches[idx] for idx in found]
     return found, word_positions
 
 def filter_already_contained_keyword(keywords_with_timestamp: List[dict]) -> List[dict]:
@@ -334,24 +373,35 @@ def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
 def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
     if country.code=='fra':
         logging.info("Using regex for france")
-        words = set([idx for idx, kw in enumerate(keywords_dict) if is_word_in_sentence_fr(kw["keyword"], text)])
+        keywords_tuple = tuple(kw["keyword"] for kw in keywords_dict)
+        compiled_patterns = _compile_fr_keyword_patterns(keywords_tuple)
+        words = set(idx for idx, pattern in compiled_patterns.items() if pattern.search(text))
         return words, [None] * len(words)
     else:
         lang = LANGUAGE_CODES[country.language]
-        kw_lemmas = dict()
-        keywords = [keyword_dict["keyword"].lower() for keyword_dict in keywords_dict]
-        for idx, kw in enumerate(keywords):
-            lemmas = get_lemmas(kw, lang)
-            key = " ".join(lemmas)
-            kw_lemmas[idx] = key
+        keywords_tuple = tuple(keyword_dict["keyword"].lower() for keyword_dict in keywords_dict)
+        kw_lemmas, kw_originals = _lemmatize_keywords(keywords_tuple, lang)
+
         text_lemmas = get_lemmas(text, lang)
         lemmatised_text = " " + " ".join(text_lemmas) + " "
-        return get_words_in_sentence_regex_i18n(kw_lemmas, lemmatised_text)
+        # Normalise punctuation to spaces so the space-padding word-boundary trick works for prose
+        original_text = " " + re.sub(r"[^\w\s]", " ", text.lower()) + " "
+
+        lemma_found, lemma_positions = get_words_in_sentence_regex_i18n(kw_lemmas, lemmatised_text)
+        exact_found, exact_positions = get_words_in_sentence_regex_i18n(kw_originals, original_text)
+
+        # Union: lemma match takes precedence for position; exact match adds indices not caught by lemmatization
+        position_map = dict(zip(exact_found, exact_positions))
+        position_map.update(zip(lemma_found, lemma_positions))
+        combined_found = lemma_found | exact_found
+        combined_positions = [position_map[idx] for idx in combined_found]
+        return combined_found, combined_positions
 
 
 # def get_detected_keywords(automaton: ahocorasick.Automaton, plaintext_without_stopwords: str, keywords_dict, country=FRANCE):
 def get_detected_keywords(plaintext_without_stopwords: str, keywords_dict, country=FRANCE):
     found_idx, word_positions = get_words_in_sentence(keywords_dict, plaintext_without_stopwords, country)
+    logging.debug(f"found: {found_idx}")
     # found_idx = get_words_in_sentence(automaton, keywords_dict, plaintext_without_stopwords, country)
     matching_words = [get_keyword_matching_json(keywords_dict[idx], country=country) for idx in found_idx]
     if matching_words:

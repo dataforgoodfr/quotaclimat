@@ -12,4 +12,4 @@ def test_macro_category():
     """ Check that there is no duplicate keyword in the macro category """
     keywords = pd.DataFrame.from_records(MACRO_CATEGORIES)
 
-    assert len(keywords) == len(keywords.drop_duplicates()), "There is a duplicate keyword in the macro category"
+    assert len(keywords) == len(keywords.drop_duplicates()), f"There is a duplicate keyword in the macro category: \n{keywords[keywords.duplicated]}"

@@ -11,27 +11,8 @@ inputs:
   - id: run_clustering
     type: BOOLEAN
     required: true
-    defaults: true
+    defaults: false
 
-triggers:
-  - id: after_barometre_daily
-    type: io.kestra.plugin.core.trigger.Flow
-    conditions:
-      - type: io.kestra.plugin.core.condition.ExecutionFlowCondition
-        namespace: quotaclimat
-        flowId: barometre-daily
-      - type: io.kestra.plugin.core.condition.ExecutionStatusCondition
-        in:
-          - SUCCESS
-  - id: after_barometre_afternoon
-    type: io.kestra.plugin.core.trigger.Flow
-    conditions:
-      - type: io.kestra.plugin.core.condition.ExecutionFlowCondition
-        namespace: quotaclimat
-        flowId: barometre-afternoon
-      - type: io.kestra.plugin.core.condition.ExecutionStatusCondition
-        in:
-          - SUCCESS
 
 tasks:
   - id: import_segments

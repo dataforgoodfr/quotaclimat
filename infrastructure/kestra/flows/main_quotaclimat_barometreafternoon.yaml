@@ -125,11 +125,11 @@ tasks:
       MEDIATREE_USER: quotaclimat
       MODEL_NAME: ft:gpt-4o-mini-2024-07-18:personal::B1xWiJRm
       MODIN_MEMORY: 3000000000
-      NUMBER_OF_PREVIOUS_DAYS: 1
+      NUMBER_OF_PREVIOUS_DAYS: 2
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RAY_COLOR_PREFIX: 1
-      START_DATE: "{{ now() | date('yyyy-MM-dd') }}"
+      DATE: "{{ now() | dateAdd(1, 'DAYS') | date('yyyy-MM-dd') }}"
       API_LABEL_STUDIO_KEY: "{{ secret('API_LABEL_STUDIO_KEY') }}"
       BUCKET_ACCESS: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"

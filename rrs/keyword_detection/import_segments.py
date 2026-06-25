@@ -12,6 +12,7 @@ Usage:
 
 import argparse
 import contextlib
+import json
 import logging
 import os
 import re
@@ -94,6 +95,14 @@ def _rrs_conninfo() -> str:
     )
 
 
+def _extract_keywords(raw) -> Optional[list]:
+    """Pull the list of keyword strings out of a keywords_with_timestamp JSON value."""
+    if raw is None:
+        return None
+    items = json.loads(raw) if isinstance(raw, str) else raw
+    return [item["keyword"] for item in items]
+
+
 def _get_max_segment_date() -> Optional[date]:
     """Return the calendar day of the most recent segment in the RRS DB, or None."""
     with psycopg.connect(_rrs_conninfo()) as conn:
@@ -139,7 +148,9 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
             start,
             channel_name,
             channel_title,
-            number_of_keywords_climat
+            channel_program,
+            number_of_keywords_climat,
+            keywords_with_timestamp
         FROM barometre.keywords
         WHERE number_of_keywords_climat > 0
         AND country='france'
@@ -157,6 +168,7 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
     df["subject_id"] = sid
     df["s3_uri"] = df.apply(lambda r: _s3_uri(r["start"], r["channel_name"]), axis=1)
     df["n_keywords"] = df["number_of_keywords_climat"]
+    df["keywords"] = df["keywords_with_timestamp"].apply(_extract_keywords)
     df["url_mediatree"] = df.apply(
         lambda r: get_url_mediatree(
             r["start"], 
@@ -174,6 +186,8 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
             "n_keywords",
             "channel_name",
             "channel_title",
+            "channel_program",
+            "keywords",
             "url_mediatree"
         ]
     ]
@@ -183,18 +197,20 @@ def import_segments(start_date: date = None, end_date: date = None) -> None:
         con.execute(f"ATTACH '{rrs_dsn()}' AS rrs (TYPE POSTGRES);")
 
     con.execute("""
-        INSERT INTO rrs.segments (segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title, url_mediatree, created_at, updated_at)
-        SELECT segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title, url_mediatree, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
+        INSERT INTO rrs.segments (segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title, channel_program, keywords, url_mediatree, created_at, updated_at)
+        SELECT segment_id, subject_id, start, s3_uri, n_keywords, channel_name, channel_title, channel_program, keywords, url_mediatree, now() AT TIME ZONE 'utc', now() AT TIME ZONE 'utc'
         FROM segments_batch
         ON CONFLICT (segment_id, subject_id) DO UPDATE SET
-            start         = EXCLUDED.start,
-            s3_uri        = EXCLUDED.s3_uri,
-            n_keywords    = EXCLUDED.n_keywords,
-            channel_name  = EXCLUDED.channel_name,
-            channel_title = EXCLUDED.channel_title,
-            url_mediatree = EXCLUDED.url_mediatree,
-            created_at    = CASE WHEN segments.created_at IS NULL THEN now() AT TIME ZONE 'utc' ELSE segments.created_at END,
-            updated_at    = now() AT TIME ZONE 'utc'
+            start            = EXCLUDED.start,
+            s3_uri           = EXCLUDED.s3_uri,
+            n_keywords       = EXCLUDED.n_keywords,
+            channel_name     = EXCLUDED.channel_name,
+            channel_title    = EXCLUDED.channel_title,
+            channel_program  = EXCLUDED.channel_program,
+            keywords         = EXCLUDED.keywords,
+            url_mediatree    = EXCLUDED.url_mediatree,
+            created_at       = CASE WHEN segments.created_at IS NULL THEN now() AT TIME ZONE 'utc' ELSE segments.created_at END,
+            updated_at       = now() AT TIME ZONE 'utc'
     """)
 
     logging.info(f"  {len(segments)} segment(s) upserted (subject: {SUBJECT_NAME!r}).")

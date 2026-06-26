@@ -11,9 +11,10 @@ FROM mcr.microsoft.com/playwright/python:v1.60.0-jammy
 WORKDIR /app
 ENV PYTHONPATH=/app
 
-# Light deps for parse (openpyxl), GraphQL fetch (requests/tenacity), DB (psycopg),
-# and config (python-dotenv). No torch/transformers/spacy.
-RUN pip install --no-cache-dir openpyxl "psycopg[binary]" requests tenacity python-dotenv
+RUN pip install --no-cache-dir poetry && poetry config virtualenvs.create false
+
+COPY pyproject.toml poetry.lock ./
+RUN poetry install --only pulsar --no-root --no-interaction
 
 COPY rrs/ ./rrs/
 

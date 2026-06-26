@@ -32,7 +32,7 @@ tasks:
         credentials:
           registry: rg.fr-par.scw.cloud/rrs-dev
           username: nologin
-          password: "{{ secret('RRS_SCW_SECRET') }}"
+          password: "{{ secret('RRS_SCW_SECRET_DEV') }}"
         commands:
           - python
           - -m

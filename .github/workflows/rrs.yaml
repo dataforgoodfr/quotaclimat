@@ -6,11 +6,13 @@ on:
     paths:
       - 'rrs/**'
       - '.github/workflows/rrs.yaml'
+      - 'infrastructure/kestra/flows'
   push:
     branches: [main]
     paths:
       - 'rrs/**'
       - '.github/workflows/rrs.yaml'
+      - 'infrastructure/kestra/flows'
 
 permissions:
   contents: read

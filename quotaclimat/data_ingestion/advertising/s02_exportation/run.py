@@ -117,7 +117,8 @@ async def _process_ad(
         return "cached"
 
     logger.debug(f"Processing ad {ad.id} (channel={occurrence.channel_name})")
-    await _export_ad(ad, occurrence, api, fs)
+    if False: # Use new mediatree pipeline
+        await _export_ad(ad, occurrence, api, fs)
     return "uploaded"
 
 

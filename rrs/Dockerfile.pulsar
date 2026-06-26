@@ -12,7 +12,9 @@ WORKDIR /app
 ENV PYTHONPATH=/app
 
 COPY pyproject.toml poetry.lock ./
-RUN pip install --no-cache-dir poetry && poetry install --only pulsar --no-root --no-interaction
+RUN pip install --no-cache-dir poetry \
+    && poetry config virtualenvs.create false \
+    && poetry install --only pulsar --no-root --no-interaction
 COPY rrs/ ./rrs/
 
 CMD ["python", "-m", "rrs.pulsar.run"]

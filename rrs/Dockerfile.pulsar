@@ -11,11 +11,8 @@ FROM mcr.microsoft.com/playwright/python:v1.60.0-jammy
 WORKDIR /app
 ENV PYTHONPATH=/app
 
-RUN pip install --no-cache-dir poetry && poetry config virtualenvs.create false
-
 COPY pyproject.toml poetry.lock ./
-RUN poetry install --only pulsar --no-root --no-interaction
-
+RUN pip install --no-cache-dir poetry && poetry install --only pulsar --no-root --no-interaction
 COPY rrs/ ./rrs/
 
 CMD ["python", "-m", "rrs.pulsar.run"]

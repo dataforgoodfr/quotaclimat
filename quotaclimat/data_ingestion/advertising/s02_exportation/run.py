@@ -108,6 +108,7 @@ async def _process_ad(
     occurrence: Ad_Occurrence,
     api: MediatreeAPI,
     fs: s3fs.S3FileSystem,
+    missing_ads: list,
 ) -> str:
     """Check if an ad already exists in S3, and export it if not.
     Returns 'cached' if already in S3, 'uploaded' otherwise.
@@ -117,14 +118,18 @@ async def _process_ad(
         return "cached"
 
     logger.debug(f"Processing ad {ad.id} (channel={occurrence.channel_name})")
-    if False: # Use new mediatree pipeline
+    if False:  # Use new mediatree pipeline
         await _export_ad(ad, occurrence, api, fs)
+    else:
+        missing_ads.append(ad.id)
     return "uploaded"
 
 
 async def run(since_date: datetime):
     session = get_db_session()
     fs = get_s3_filesystem()
+
+    missing_ads = []
 
     try:
         total = count_ads_since(session, since_date)
@@ -140,7 +145,9 @@ async def run(since_date: datetime):
                 async def _limited_process(ad, occurrence):
                     async with semaphore:
                         try:
-                            result = await _process_ad(ad, occurrence, api, fs)
+                            result = await _process_ad(
+                                ad, occurrence, api, fs, missing_ads
+                            )
                             counts[result] += 1
                         except Exception as e:
                             logger.error(f"Failed to export ad {ad.id}: {e}")
@@ -149,7 +156,11 @@ async def run(since_date: datetime):
                             progress.update(1)
                             progress.set_postfix(counts)
                             if _LOG_MODE:
-                                done = counts["cached"] + counts["uploaded"] + counts["error"]
+                                done = (
+                                    counts["cached"]
+                                    + counts["uploaded"]
+                                    + counts["error"]
+                                )
                                 logger.info(
                                     "Export %d/%d (uploaded=%d cached=%d error=%d)",
                                     done,
@@ -165,6 +176,8 @@ async def run(since_date: datetime):
 
         progress.close()
     finally:
+        logger.info(f"Finished, here are the {len(missing_ads)} missing ads")
+        logger.info(",".join(missing_ads))
         session.close()
 
 

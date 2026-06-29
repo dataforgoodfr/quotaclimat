@@ -129,7 +129,7 @@ async def _process_ad(
     """
     if await ad_folder_exists_in_s3(ad.id, fs):
         mp4_size = await get_raw_mp4_size_in_s3(ad.id, fs)
-        min_expected_size = ad.duration_sec * MIN_BYTES_PER_SECOND_VIDEO
+        min_expected_size = (ad.duration_sec + 2) * MIN_BYTES_PER_SECOND_VIDEO
         if mp4_size is not None and mp4_size < min_expected_size:
             missing_ads.append(ad.id)
             return "uploaded"

@@ -15,7 +15,7 @@ from rrs.pulsar.settings import PulsarSettings
 
 def run() -> None:
     s = PulsarSettings.from_env()
-    max_iter = 3
+    max_iter = 5
     iter = 0
     while True:
         # 1. Drive the dashboard: download the themes XLS + capture the session token.

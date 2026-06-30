@@ -27,12 +27,12 @@ tasks:
     tasks:
       - id: pulsar
         type: io.kestra.plugin.docker.Run
-        containerImage: "rg.fr-par.scw.cloud/rrs-prod/rrs-pulsar-downloader:latest"
+        containerImage: "rg.fr-par.scw.cloud/rrs-dev/rrs-pulsar:latest"
         pullPolicy: ALWAYS
         credentials:
-          registry: rg.fr-par.scw.cloud/rrs-prod
+          registry: rg.fr-par.scw.cloud/rrs-dev
           username: nologin
-          password: "{{ secret('SCW_SECRET') }}"
+          password: "{{ secret('RRS_SCW_SECRET_DEV') }}"
         commands:
           - python
           - -m
@@ -46,8 +46,8 @@ tasks:
           PULSAR_SEARCH_ID: "{{ json(taskrun.value).search_id }}"
           PULSAR_TOP_N: "30"
           PULSAR_THEMES_OUTPUT: "themes.xlsx"
-          RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
-          RRS_PG_PORT: "{{ secret('RRS_PG_PORT') }}"
-          RRS_PG_DATABASE: "{{ secret('RRS_PG_DATABASE') }}"
-          RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
-          RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
+          RRS_PG_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
+          RRS_PG_PORT: 18047
+          RRS_PG_DATABASE: rrs
+          RRS_PG_USER: "{{ secret('RRS_PG_USER_DEV') }}"
+          RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD_DEV') }}"

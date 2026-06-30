@@ -4,6 +4,7 @@ via GraphQL → store posts.
 
 Run with: python -m rrs.pulsar.run
 """
+from time import sleep
 
 from rrs.pulsar import store
 from rrs.pulsar.download_themes import download_themes_xlsx
@@ -14,20 +15,32 @@ from rrs.pulsar.settings import PulsarSettings
 
 def run() -> None:
     s = PulsarSettings.from_env()
+    max_iter = 5
+    iter = 0
+    while True:
+        # 1. Drive the dashboard: download the themes XLS + capture the session token.
+        dl = download_themes_xlsx(
+            email=s.email,
+            password=s.password,
+            folder_id=s.folder_id,
+            search_id=s.search_id,
+            output_path=s.themes_xlsx,
+            base_url=s.base_url,
+            headless=s.headless,
+        )
 
-    # 1. Drive the dashboard: download the themes XLS + capture the session token.
-    dl = download_themes_xlsx(
-        email=s.email,
-        password=s.password,
-        folder_id=s.folder_id,
-        search_id=s.search_id,
-        output_path=s.themes_xlsx,
-        base_url=s.base_url,
-        headless=s.headless,
-    )
+        # 2. Parse themes + topic breakdown.
+        export = parse_themes_xlsx(dl.xlsx_path)
 
-    # 2. Parse themes + topic breakdown.
-    export = parse_themes_xlsx(dl.xlsx_path)
+        if len(export.themes) > 0:
+            break
+        iter += 1
+        if iter > max_iter:
+            print(f"Could not find themes after {max_iter} iterations")
+            break
+        print("Sleeping 10 seconds")
+        sleep(10)
+            
     print(f"  parsed {len(export.themes)} theme(s) from '{export.search_name}' "
           f"({export.date_from} → {export.date_to})")
 

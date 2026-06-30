@@ -104,56 +104,66 @@ tasks:
         uri: "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/fr-par/job-definitions/{{ taskrun.value }}/start"
         method: POST
         headers:
-          X-Auth-Token: "{{ secret('SCW_SECRET') }}"
+          X-Auth-Token: "{{ secret('CLIMATESAFEGUARDS_SCW_SECRET') }}"
         contentType: application/json
         body: |
           {"replicas": 1}
-      - id: wait_for_completion
-        type: io.kestra.plugin.core.flow.WaitFor
-        condition: "{{ json(outputs.poll_job.body).status in ['succeeded', 'failed', 'interrupted', 'retrying'] }}"
-        checkFrequency:
-          type: constant
-          interval: PT30S
-        tasks:
-          - id: poll_job
-            type: io.kestra.plugin.core.http.Request
-            uri: "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/fr-par/job-runs/{{ json(outputs.trigger_job.body).id }}"
-            method: GET
-            headers:
-              X-Auth-Token: "{{ secret('SCW_SECRET') }}"
-      - id: log_result
-        type: io.kestra.plugin.core.log.Log
-        message: "Job {{ taskrun.value }} finished: {{ json(outputs.poll_job.body) }}"
+      # 
+      # - id: wait_for_completion
+      #   type: io.kestra.plugin.core.flow.LoopUntil
+      #   condition: 
+      #     - type: io.kestra.plugin.core.condition.Or
+      #       conditions:
+      #         - type: io.kestra.plugin.core.condition.Expression
+      #           expression: "{{ json(outputs.poll_job.body).state == 'succeeded' }}"
+      #         - type: io.kestra.plugin.core.condition.Expression
+      #           expression: "{{ json(outputs.poll_job.body).state == 'interrupted' }}"
+      #         - type: io.kestra.plugin.core.condition.Expression
+      #           expression: "{{ json(outputs.poll_job.body).state == 'failed' }}"
+      #   checkFrequency:
+      #     type: constant
+      #     interval: PT30S
+      #   maxDuration: PT4H
+      #   tasks:
+      #     - id: poll_job
+      #       type: io.kestra.plugin.core.http.Request
+      #       uri: "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/fr-par/job-runs/{{ json(outputs.trigger_job[parent.taskrun.value].body).job_runs[0].id }}"
+      #       method: GET
+      #       headers:
+      #         X-Auth-Token: "{{ secret('CLIMATESAFEGUARDS_SCW_SECRET') }}"
+      # - id: log_result
+      #   type: io.kestra.plugin.core.log.Log
+      #   message: "Job {{ taskrun.value }} finished with state: {{ json(outputs.poll_job.body).state }}"
 
-  - id: dbt_run_transformations
-    shmSize: 6gb
-    type: io.kestra.plugin.docker.Run
-    containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
-    pullPolicy: ALWAYS
-    credentials:
-      registry: rg.fr-par.scw.cloud/namespace-barometre
-      username: nologin
-      password: "{{ secret('SCW_SECRET') }}"
-    entryPoint:
-      - /bin/sh
-      - -c
-      - cd /app && /app/entrypoints/dbt.sh
-    env:
-      DBT_ENV: prod
-      DBT_PROFILES_DIR: /app/my_dbt_project/dbt
-      DBT_PROJECT_DIR: /app/my_dbt_project
-      LOGLEVEL: INFO
-      MODIN_CPUS: 2
-      MODIN_ENGINE: python
-      MODIN_MEMORY: 3000000000
-      POSTGRES_DB: barometre
-      POSTGRES_PORT: 22737
-      BUCKET: "{{ secret('SCW_ACCESS') }}"
-      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
-      LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ secret('POSTGRES_USER_READ') }}"
-      LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_READ') }}"
-      LABELSTUDIO_POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
-      LABELSTUDIO_POSTGRES_PORT: 22737
-      POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
-      POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
-      POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
+  # - id: dbt_run_transformations
+  #   shmSize: 6gb
+  #   type: io.kestra.plugin.docker.Run
+  #   containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
+  #   pullPolicy: ALWAYS
+  #   credentials:
+  #     registry: rg.fr-par.scw.cloud/namespace-barometre
+  #     username: nologin
+  #     password: "{{ secret('SCW_SECRET') }}"
+  #   entryPoint:
+  #     - /bin/sh
+  #     - -c
+  #     - cd /app && /app/entrypoints/dbt.sh
+  #   env:
+  #     DBT_ENV: prod
+  #     DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+  #     DBT_PROJECT_DIR: /app/my_dbt_project
+  #     LOGLEVEL: INFO
+  #     MODIN_CPUS: 2
+  #     MODIN_ENGINE: python
+  #     MODIN_MEMORY: 3000000000
+  #     POSTGRES_DB: barometre
+  #     POSTGRES_PORT: 22737
+  #     BUCKET: "{{ secret('SCW_ACCESS') }}"
+  #     BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+  #     LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ secret('POSTGRES_USER_READ') }}"
+  #     LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_READ') }}"
+  #     LABELSTUDIO_POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
+  #     LABELSTUDIO_POSTGRES_PORT: 22737
+  #     POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
+  #     POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
+  #     POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"

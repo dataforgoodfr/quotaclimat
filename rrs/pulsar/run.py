@@ -38,6 +38,7 @@ def run() -> None:
         if iter > max_iter:
             print(f"Could not find themes after {max_iter} iterations")
             break
+        print("Sleeping 10 seconds")
         sleep(10)
             
     print(f"  parsed {len(export.themes)} theme(s) from '{export.search_name}' "

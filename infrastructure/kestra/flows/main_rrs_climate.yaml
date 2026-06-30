@@ -19,19 +19,11 @@ triggers:
     conditions:
       - type: io.kestra.plugin.core.condition.ExecutionFlowCondition
         namespace: quotaclimat
-        flowId: barometre-daily
+        flowId: barometre
       - type: io.kestra.plugin.core.condition.ExecutionStatusCondition
         in:
           - SUCCESS
-  - id: after_barometre_afternoon
-    type: io.kestra.plugin.core.trigger.Flow
-    conditions:
-      - type: io.kestra.plugin.core.condition.ExecutionFlowCondition
-        namespace: quotaclimat
-        flowId: barometre-afternoon
-      - type: io.kestra.plugin.core.condition.ExecutionStatusCondition
-        in:
-          - SUCCESS
+
 
 tasks:
   - id: import_segments

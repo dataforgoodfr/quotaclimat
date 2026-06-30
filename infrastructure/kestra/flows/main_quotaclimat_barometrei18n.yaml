@@ -104,7 +104,7 @@ tasks:
         uri: "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/fr-par/job-definitions/{{ taskrun.value }}/start"
         method: POST
         headers:
-          X-Auth-Token: "{{ secret('SCW_SECRET_KEY') }}"
+          X-Auth-Token: "{{ secret('SCW_SECRET') }}"
         contentType: application/json
         body: |
           {"replicas": 1}
@@ -120,7 +120,7 @@ tasks:
             uri: "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/fr-par/job-runs/{{ json(outputs.trigger_job.body).id }}"
             method: GET
             headers:
-              X-Auth-Token: "{{ secret('SCW_SECRET_KEY') }}"
+              X-Auth-Token: "{{ secret('SCW_SECRET') }}"
       - id: log_result
         type: io.kestra.plugin.core.log.Log
         message: "Job {{ taskrun.value }} finished: {{ json(outputs.poll_job.body) }}"

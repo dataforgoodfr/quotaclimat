@@ -1,0 +1,36 @@
+name: Build & Deploy team tools to Scaleway
+
+on:
+  push:
+      # Sequence of patterns matched against refs/heads
+    branches:
+      - main
+    paths:
+      - 'metabase_proxy/**'
+
+  # to be able to force deploy
+  workflow_dispatch:
+
+
+env:
+  PYTHON_VERSION: '3.12'
+  POETRY_VERSION: '2.1.3'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Login to Scaleway Container Registry
+      uses: docker/login-action@v3
+      with:
+        username: nologin
+        password: ${{ secrets.SCALEWAY_API_KEY }}
+        registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
+
+    - name: Build metabase_proxy image
+      run: docker build -f metabase_proxy/Dockerfile metabase_proxy/ -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/metabase_proxy:${{ env.PROJECT_VERSION }}
+    - name: Tag metabase_proxy latest image
+      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/metabase_proxy:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/metabase_proxy:latest
+    - name: Push metabase_proxy Image
+      run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/metabase_proxy

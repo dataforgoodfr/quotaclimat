@@ -1,0 +1,159 @@
+id: barometre-i18n
+namespace: quotaclimat
+
+triggers:
+  - id: morning_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "7 04 * * *"
+    timezone: Europe/Paris
+
+tasks:
+  - id: i18n_loop
+    type: io.kestra.plugin.core.flow.ForEach
+    values: ["bel", "bel-fla", "deu", "esp", "pol"]
+    concurrencyLimit: 1
+    tasks:
+      - id: ingest_data_to_s3
+        type: io.kestra.plugin.docker.Run
+        containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
+        pullPolicy: ALWAYS
+        credentials:
+          registry: rg.fr-par.scw.cloud/namespace-barometre
+          username: nologin
+          password: "{{ secret('SCW_SECRET') }}"
+        entryPoint:
+          - /bin/sh
+          - -c
+          - cd /app && python /app/quotaclimat/data_processing/mediatree/s3/api_to_s3.py
+        shmSize: 6gb
+        env:
+          API_TO_S3_CONCURRENCY: 10
+          BUCKET_NAME: mediatree
+          COUNTRY: "{{ taskrun.value }}"
+          ENV: prod
+          KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/
+          LOGLEVEL: INFO
+          MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
+          MEDIATREE_USER: quotaclimat
+          MODIN_CPUS: 2
+          MODIN_ENGINE: python
+          MODIN_MEMORY: 3000000000
+          NUMBER_OF_PREVIOUS_DAYS: 1
+          OMP_NUM_THREADS: 3
+          PORT_HS: 5666
+          BUCKET: "{{ secret('SCW_ACCESS') }}"
+          BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+          MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
+          SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+
+      - id: detect_keywords
+        logLevel: WARN          # filter per-row INFO spam at the Kestra level (UI freeze fix)
+        shmSize: 6gb
+        type: io.kestra.plugin.docker.Run
+        containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
+        pullPolicy: ALWAYS
+        credentials:
+          registry: rg.fr-par.scw.cloud/namespace-barometre
+          username: nologin
+          password: "{{ secret('SCW_SECRET') }}"
+        entryPoint:
+          - /bin/sh
+          - -c
+          - cd /app && /app/entrypoints/detect_keywords.sh
+        env:
+          BATCH_SIZE: 5000
+          BUCKET_NAME: mediatree
+          COMPARE_DURATION: true
+          COUNTRY: "{{ taskrun.value }}"
+          DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+          DBT_PROJECT_DIR: /app/my_dbt_project
+          ENV: prod
+          FILTER_DAYS_STOP_WORD: 3000
+          HEALTHCHECK_SERVER: 0.0.0.0
+          KEYWORDS_URL: https://keywords.mediatree.fr/api/v2/subtitle/
+          LOGLEVEL: INFO
+          MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
+          MEDIATREE_USER: quotaclimat
+          MODIN_CPUS: 2
+          MODIN_ENGINE: ray
+          MODIN_MEMORY: 3000000000
+          POSTGRES_DB: barometre
+          POSTGRES_PORT: 22737
+          RAY_COLOR_PREFIX: 1
+          RAY_memory_monitor_refresh_ms: 0
+          BUCKET: "{{ secret('SCW_ACCESS') }}"
+          BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+          MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
+          POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
+          POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
+          POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
+          SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+
+  - id: detect_misinformation
+    type: io.kestra.plugin.core.flow.ForEach
+    values:
+      - "d8bd69ed-3e9b-423a-acc7-b059f3f64ece" # belgium
+      - "95ddceb1-83c3-46a7-93ef-9a019d6f342d" # belgium-flanders
+      - "2bbff9be-1816-49a1-bc64-04c21e6684e1" # germany
+      - "3437feae-0cb9-4b1c-9030-cae45858f3e0" # spain
+      - "6177a49a-7208-456f-bc05-cfc57e0f7d0a" # poland
+    concurrencyLimit: 5
+    tasks:
+      - id: trigger_job
+        type: io.kestra.plugin.core.http.Request
+        uri: "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/fr-par/job-definitions/{{ taskrun.value }}/start"
+        method: POST
+        headers:
+          X-Auth-Token: "{{ secret('SCW_SECRET_KEY') }}"
+        contentType: application/json
+        body: |
+          {"replicas": 1}
+      - id: wait_for_completion
+        type: io.kestra.plugin.core.flow.WaitFor
+        condition: "{{ json(outputs.poll_job.body).status in ['succeeded', 'failed', 'interrupted', 'retrying'] }}"
+        checkFrequency:
+          type: constant
+          interval: PT30S
+        tasks:
+          - id: poll_job
+            type: io.kestra.plugin.core.http.Request
+            uri: "https://api.scaleway.com/serverless-jobs/v1alpha1/regions/fr-par/job-runs/{{ json(outputs.trigger_job.body).id }}"
+            method: GET
+            headers:
+              X-Auth-Token: "{{ secret('SCW_SECRET_KEY') }}"
+      - id: log_result
+        type: io.kestra.plugin.core.log.Log
+        message: "Job {{ taskrun.value }} finished: {{ json(outputs.poll_job.body) }}"
+
+  - id: dbt_run_transformations
+    shmSize: 6gb
+    type: io.kestra.plugin.docker.Run
+    containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
+    pullPolicy: ALWAYS
+    credentials:
+      registry: rg.fr-par.scw.cloud/namespace-barometre
+      username: nologin
+      password: "{{ secret('SCW_SECRET') }}"
+    entryPoint:
+      - /bin/sh
+      - -c
+      - cd /app && /app/entrypoints/dbt.sh
+    env:
+      DBT_ENV: prod
+      DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+      DBT_PROJECT_DIR: /app/my_dbt_project
+      LOGLEVEL: INFO
+      MODIN_CPUS: 2
+      MODIN_ENGINE: python
+      MODIN_MEMORY: 3000000000
+      POSTGRES_DB: barometre
+      POSTGRES_PORT: 22737
+      BUCKET: "{{ secret('SCW_ACCESS') }}"
+      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ secret('POSTGRES_USER_READ') }}"
+      LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_READ') }}"
+      LABELSTUDIO_POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
+      LABELSTUDIO_POSTGRES_PORT: 22737
+      POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
+      POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
+      POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"

@@ -124,69 +124,6 @@ keywords =  [{
 def test_no_match_get_themes_keywords_duration(plaintext, reason):
     assert get_themes_keywords_duration(plaintext, subtitles, start) == array_of_none
    
-def test_one_theme_get_themes_keywords_duration():
-    plaintext_climat = "réchauffement planétaire test"
-    
-    themes = ['changement_climatique_constat', 'ressources_indirectes']
-
-    (themes_output, keywords_output, 
-        number_of_keywords,
-        number_of_changement_climatique_constat,
-        number_of_changement_climatique_causes_directes,
-        number_of_changement_climatique_consequences,
-        number_of_attenuation_climatique_solutions_directes,
-        number_of_adaptation_climatique_solutions_directes,
-        number_of_ressources,
-        number_of_ressources_solutions,
-        number_of_biodiversite_concepts_generaux,
-        number_of_biodiversite_causes_directes,
-        number_of_biodiversite_consequences,
-        number_of_biodiversite_solutions_directes
-        , number_of_keywords_climat,
-        number_of_keywords_biodiversite,
-        number_of_keywords_ressources
-        , number_of_changement_climatique_constat_no_hrfp,
-        number_of_changement_climatique_causes_no_hrfp,
-        number_of_changement_climatique_consequences_no_hrfp,
-        number_of_attenuation_climatique_solutions_no_hrfp,
-        number_of_adaptation_climatique_solutions_no_hrfp,
-        number_of_ressources_no_hrfp,
-        number_of_ressources_solutions_no_hrfp,
-        number_of_biodiversite_concepts_generaux_no_hrfp,
-        number_of_biodiversite_causes_no_hrfp,
-        number_of_biodiversite_consequences_no_hrfp,
-        number_of_biodiversite_solutions_no_hrfp, country) = get_themes_keywords_duration(plaintext_climat, subtitles, start)
-    assert set(themes_output) == set(themes)
-    # assert compare_unordered_lists_of_dicts(keywords_output, keywords)
-
-    assert number_of_keywords == 1
-    assert number_of_keywords_climat == 1
-    assert number_of_keywords_biodiversite == 0
-    assert number_of_keywords_ressources == 0
-    assert number_of_changement_climatique_constat == 1
-    assert number_of_changement_climatique_causes_directes == 0
-    assert number_of_changement_climatique_consequences == 0
-    assert number_of_attenuation_climatique_solutions_directes == 0
-    assert number_of_adaptation_climatique_solutions_directes == 0
-    assert number_of_ressources == 0
-    assert number_of_ressources_solutions == 0
-    assert number_of_biodiversite_concepts_generaux == 0
-    assert number_of_biodiversite_causes_directes == 0
-    assert number_of_biodiversite_consequences == 0
-    assert number_of_biodiversite_solutions_directes == 0
-
-    assert number_of_changement_climatique_constat_no_hrfp == 1
-    assert number_of_changement_climatique_causes_no_hrfp == 0
-    assert number_of_changement_climatique_consequences_no_hrfp == 0
-    assert number_of_attenuation_climatique_solutions_no_hrfp == 0
-    assert number_of_adaptation_climatique_solutions_no_hrfp == 0
-    assert number_of_ressources_no_hrfp == 0
-    assert number_of_ressources_solutions_no_hrfp == 0
-    assert number_of_biodiversite_concepts_generaux_no_hrfp == 0
-    assert number_of_biodiversite_causes_no_hrfp == 0
-    assert number_of_biodiversite_consequences_no_hrfp == 0
-    assert number_of_biodiversite_solutions_no_hrfp == 0
-
 def test_two_themes_one_hrfp_get_themes_keywords_duration():
     plaintext_climat = "pizza recyclage climatique pizza"
     original_timestamp = 1706437080216

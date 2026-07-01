@@ -110,8 +110,8 @@ tasks:
     env: 
       APP_NAME: label-misinformation
       AWS_DEFAULT_REGION: fr-par
-      BUCKET_INPUT: mediatree
-      BUCKET_OUTPUT: mediatree
+      BUCKET_INPUT: climateguard
+      BUCKET_OUTPUT: climateguard
       BUCKET_OUTPUT_FOLDER: label-misinformation-input
       COUNTRY: france
       ENV: production

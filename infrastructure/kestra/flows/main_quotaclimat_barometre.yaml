@@ -1,15 +1,15 @@
-id: barometre-afternoon
+id: barometre
 namespace: quotaclimat
 
 triggers:
-  - id: daily_schedule
+  - id: morning_schedule
     type: io.kestra.plugin.core.trigger.Schedule
-    cron: "30 12 * * *"
+    cron: "10 01 * * *"
     timezone: Europe/Paris
 
-  - id: evening_schedule
+  - id: afternoon_schedule
     type: io.kestra.plugin.core.trigger.Schedule
-    cron: "10 23 * * *"
+    cron: "30 12 * * *"
     timezone: Europe/Paris
 
 tasks:
@@ -110,8 +110,8 @@ tasks:
     env: 
       APP_NAME: label-misinformation
       AWS_DEFAULT_REGION: fr-par
-      BUCKET_INPUT: mediatree
-      BUCKET_OUTPUT: mediatree
+      BUCKET_INPUT: climateguard
+      BUCKET_OUTPUT: climateguard
       BUCKET_OUTPUT_FOLDER: label-misinformation-input
       COUNTRY: france
       ENV: production
@@ -129,7 +129,7 @@ tasks:
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RAY_COLOR_PREFIX: 1
-      DATE: "{{ now() | dateAdd(1, 'DAYS') | date('yyyy-MM-dd') }}"
+      DATE: "{{ now() | date('yyyy-MM-dd') }}"
       API_LABEL_STUDIO_KEY: "{{ secret('API_LABEL_STUDIO_KEY') }}"
       BUCKET_ACCESS: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"

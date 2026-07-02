@@ -33,6 +33,10 @@ AD_S3_PREFIX = "ads"
 
 MARGIN_ON_MEDIA_EXPORT = timedelta(seconds=1)
 
+MIN_BYTES_PER_SECOND_VIDEO = (
+    10_000  # ~80 kbps; below this threshold the mp4 is likely corrupted
+)
+
 PAGE_SIZE = 100
 MAX_CONCURRENT_EXPORTS = 10
 
@@ -54,11 +58,21 @@ async def ad_folder_exists_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> bool:
         return False
 
 
+async def get_raw_mp4_size_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> int | None:
+    path = f"{BUCKET_NAME}/{AD_S3_PREFIX}/{ad_id}/raw.mp4"
+    try:
+        info = await fs._info(path)
+        return info.get("size")
+    except Exception:
+        return None
+
+
 def _base_ads_query(since_date: datetime):
     return (
         select(Ad, Ad_Occurrence)
         .join(Ad_Occurrence, Ad_Occurrence.ad_id == Ad.id)
         .where(Ad.first_detection_date >= since_date)
+        .where(Ad.fragment_type != "no_data")
         .distinct(Ad.id)
     )
 
@@ -108,22 +122,34 @@ async def _process_ad(
     occurrence: Ad_Occurrence,
     api: MediatreeAPI,
     fs: s3fs.S3FileSystem,
+    missing_ads: list,
 ) -> str:
     """Check if an ad already exists in S3, and export it if not.
     Returns 'cached' if already in S3, 'uploaded' otherwise.
     """
     if await ad_folder_exists_in_s3(ad.id, fs):
+        mp4_size = await get_raw_mp4_size_in_s3(ad.id, fs)
+        min_expected_size = (ad.duration_sec + 2) * MIN_BYTES_PER_SECOND_VIDEO
+        if mp4_size is not None and mp4_size < min_expected_size:
+            missing_ads.append(ad.id)
+            return "uploaded"
+
         logger.debug(f"Ad {ad.id} already in S3, skipping")
         return "cached"
 
     logger.debug(f"Processing ad {ad.id} (channel={occurrence.channel_name})")
-    await _export_ad(ad, occurrence, api, fs)
+    if False:  # Use new mediatree pipeline
+        await _export_ad(ad, occurrence, api, fs)
+    else:
+        missing_ads.append(ad.id)
     return "uploaded"
 
 
 async def run(since_date: datetime):
     session = get_db_session()
     fs = get_s3_filesystem()
+
+    missing_ads = []
 
     try:
         total = count_ads_since(session, since_date)
@@ -139,7 +165,9 @@ async def run(since_date: datetime):
                 async def _limited_process(ad, occurrence):
                     async with semaphore:
                         try:
-                            result = await _process_ad(ad, occurrence, api, fs)
+                            result = await _process_ad(
+                                ad, occurrence, api, fs, missing_ads
+                            )
                             counts[result] += 1
                         except Exception as e:
                             logger.error(f"Failed to export ad {ad.id}: {e}")
@@ -148,7 +176,11 @@ async def run(since_date: datetime):
                             progress.update(1)
                             progress.set_postfix(counts)
                             if _LOG_MODE:
-                                done = counts["cached"] + counts["uploaded"] + counts["error"]
+                                done = (
+                                    counts["cached"]
+                                    + counts["uploaded"]
+                                    + counts["error"]
+                                )
                                 logger.info(
                                     "Export %d/%d (uploaded=%d cached=%d error=%d)",
                                     done,
@@ -164,6 +196,8 @@ async def run(since_date: datetime):
 
         progress.close()
     finally:
+        logger.info(f"Finished, here are the {len(missing_ads)} missing ads")
+        logger.info(",".join(missing_ads))
         session.close()
 
 

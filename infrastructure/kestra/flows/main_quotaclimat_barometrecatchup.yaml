@@ -1,10 +1,10 @@
-id: barometre-daily
+id: barometre-catchup
 namespace: quotaclimat
 
 triggers:
   - id: daily_schedule
     type: io.kestra.plugin.core.trigger.Schedule
-    cron: "0 1 * * *"
+    cron: "0 3 * * *"
     timezone: Europe/Paris
 
 tasks:
@@ -33,6 +33,7 @@ tasks:
       MODIN_CPUS: 2
       MODIN_ENGINE: python
       MODIN_MEMORY: 3000000000
+      NUMBER_OF_PREVIOUS_DAYS: 7
       OMP_NUM_THREADS: 3
       PORT_HS: 5666
       BUCKET: "{{ secret('SCW_ACCESS') }}"
@@ -58,7 +59,7 @@ tasks:
       BATCH_SIZE: 5000
       BUCKET_NAME: mediatree
       COMPARE_DURATION: true
-      COUNTRY: all
+      COUNTRY: fra
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project
       ENV: prod
@@ -114,6 +115,7 @@ tasks:
       MEDIATREE_USER: quotaclimat
       MODEL_NAME: ft:gpt-4o-mini-2024-07-18:personal::B1xWiJRm
       MODIN_MEMORY: 3000000000
+      NUMBER_OF_PREVIOUS_DAYS: 7
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RAY_COLOR_PREFIX: 1

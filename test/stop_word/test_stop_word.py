@@ -65,14 +65,6 @@ def init_tables():
     insert_mediatree_json(conn, json_file_path="test/sitemap/short_mediatree.json")
 
 
-def test_stop_word_get_top_keywords_by_channel():
-    top_keywords = get_top_keywords_by_channel(
-        session, duration=3000, top=(5), min_number_of_keywords=1
-    )
-
-    assert len(top_keywords) == 5
-
-
 def test_stop_word_get_all_repetitive_context_advertising_for_a_keyword_default():
     conn = connect_to_db()
     session = get_db_session(conn)

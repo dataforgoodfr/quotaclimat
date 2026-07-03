@@ -4,6 +4,7 @@ import os
 from datetime import datetime
 from functools import partial
 
+from ..tools.fingerprints import fingerprint_computer
 from .e00_partition_window import Segment
 from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import ChunkCreator
@@ -71,13 +72,13 @@ async def processor(
 ):
     timings = TimingCollector()
 
-    chunk_hash = chunk_creator.params_hash()
-    logger.info(f"Process is run with chunk_hash={chunk_hash}")
+    fingerprint_hash = fingerprint_computer.params_hash()
+    logger.info(f"Process is run with fingerprint_hash={fingerprint_hash}")
 
     #### Audio processing
 
     with timings.measure("audio_processing"):
-        with LocalCache(name="chunks", version=chunk_hash) as chunk_cache:
+        with LocalCache(name="chunks", version=fingerprint_hash) as chunk_cache:
             process_media = partial(
                 process_audio, chunk_creator=chunk_creator, cache=chunk_cache
             )
@@ -112,7 +113,7 @@ async def processor(
     with timings.measure("chunk_identification"):
         previously_known_fragments, unknown_chunks = await run_chunk_identification(
             chunks,
-            params_hash=chunk_hash,
+            params_hash=fingerprint_hash,
             min_matching_pairs=chunk_grouping.min_matching_pairs,
             similarity_threshold=chunk_grouping.similarity_threshold,
             freq_tol=chunk_grouping.freq_tol,
@@ -139,14 +140,13 @@ async def processor(
         clean_pre_existing_detections(segments)
 
     with timings.measure("database_storage"):
-        database_storage_save(fragments, chunk_hash=chunk_hash)
+        database_storage_save(fragments, fingerprint_hash=fingerprint_hash)
 
     #### Results exportation
 
-    with LocalCache(name="reports", version=chunk_hash) as reports_cache:
+    with LocalCache(name="reports", version=fingerprint_hash) as reports_cache:
         reports = Report(
             reports_name=f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{channel}_{operation_name}",
-            chunk_hash=chunk_hash,
             params={
                 "channel": channel,
                 "operation_name": operation_name,

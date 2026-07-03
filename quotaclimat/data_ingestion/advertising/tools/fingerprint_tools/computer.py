@@ -3,7 +3,7 @@ import numpy as np
 from scipy.ndimage import maximum_filter
 
 from .fingerprint import Fingerprint
-from .pairs import PairGenerator
+from .pairs import PairGenerator, make_params_hash
 
 
 class FingerprintComputer:
@@ -29,6 +29,8 @@ class FingerprintComputer:
         self.neighborhood = neighborhood
         self.min_amplitude = min_amplitude
         self.n_peaks = n_peaks
+        self.fan_out = fan_out
+        self.max_pairs = max_pairs
         self._pair_generator = PairGenerator(fan_out=fan_out, max_pairs=max_pairs)
 
     def _extract_peaks(self, y_seg: np.ndarray) -> list:
@@ -63,7 +65,9 @@ class FingerprintComputer:
         """Build a Fingerprint reusing already-computed descriptors; only peaks and pairs come from the audio."""
         peaks = self._extract_peaks(y_seg)
         pairs = self._pair_generator.generate(
-            np.array(peaks, dtype=np.int32) if peaks else np.empty((0, 2), dtype=np.int32)
+            np.array(peaks, dtype=np.int32)
+            if peaks
+            else np.empty((0, 2), dtype=np.int32)
         )
         return Fingerprint(
             duration_sec=round(duration_sec, 2),
@@ -85,7 +89,9 @@ class FingerprintComputer:
 
         peaks = self._extract_peaks(y_seg)
         pairs = self._pair_generator.generate(
-            np.array(peaks, dtype=np.int32) if peaks else np.empty((0, 2), dtype=np.int32)
+            np.array(peaks, dtype=np.int32)
+            if peaks
+            else np.empty((0, 2), dtype=np.int32)
         )
         return Fingerprint(
             duration_sec=round(duration_sec, 2),
@@ -95,3 +101,18 @@ class FingerprintComputer:
             peaks=peaks,
             pairs=pairs,
         )
+
+    def params(self) -> dict:
+        return {
+            "sr": self.sr,
+            "hop_length": self.hop_length,
+            "n_fft": self.n_fft,
+            "neighborhood": self.neighborhood,
+            "min_amplitude": self.min_amplitude,
+            "n_peaks": self.n_peaks,
+            "fan_out": self.fan_out,
+            "max_pairs": self.max_pairs,
+        }
+
+    def params_hash(self) -> str:
+        return make_params_hash(self.params())

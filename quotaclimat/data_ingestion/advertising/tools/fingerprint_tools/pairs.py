@@ -1,21 +1,15 @@
 from __future__ import annotations
 
-import hashlib
-import json
 from collections import Counter, defaultdict
-from typing import TYPE_CHECKING, List, Tuple
+from typing import List, Tuple
 
 import numpy as np
 
 from .fingerprint import Fingerprint
 
-
 # 27 neighbor offsets for 3D adjacency (±1 in each of f1, f2, dt)
 _ADJ_3D = [
-    (df1, df2, ddt)
-    for df1 in (-1, 0, 1)
-    for df2 in (-1, 0, 1)
-    for ddt in (-1, 0, 1)
+    (df1, df2, ddt) for df1 in (-1, 0, 1) for df2 in (-1, 0, 1) for ddt in (-1, 0, 1)
 ]
 
 
@@ -37,11 +31,13 @@ def build_pairs_index(
         if not pairs:
             continue
         arr = np.array(pairs, dtype=np.int32)
-        for key in set(zip(
-            (arr[:, 0] // freq_tol).tolist(),
-            (arr[:, 1] // freq_tol).tolist(),
-            (arr[:, 2] // dt_tol).tolist(),
-        )):
+        for key in set(
+            zip(
+                (arr[:, 0] // freq_tol).tolist(),
+                (arr[:, 1] // freq_tol).tolist(),
+                (arr[:, 2] // dt_tol).tolist(),
+            )
+        ):
             index[key].add(i)
     return dict(index)
 
@@ -65,17 +61,20 @@ def query_pairs_index(
     if not pairs:
         return set()
     arr = np.array(pairs, dtype=np.int32)
-    keys = list(zip(
-        (arr[:, 0] // freq_tol).tolist(),
-        (arr[:, 1] // freq_tol).tolist(),
-        (arr[:, 2] // dt_tol).tolist(),
-    ))
+    keys = list(
+        zip(
+            (arr[:, 0] // freq_tol).tolist(),
+            (arr[:, 1] // freq_tol).tolist(),
+            (arr[:, 2] // dt_tol).tolist(),
+        )
+    )
     neighbor_counts: Counter[int] = Counter()
     for kf1, kf2, kdt in keys:
         for df1, df2, ddt in _ADJ_3D:
             for j in index.get((kf1 + df1, kf2 + df2, kdt + ddt), ()):
                 neighbor_counts[j] += 1
     return {j for j, count in neighbor_counts.items() if count >= min_matching_pairs}
+
 
 class PairGenerator:
     """
@@ -118,14 +117,7 @@ class PairGenerator:
                     count += 1
                 j += 1
 
-        return pairs[:self.max_pairs]
-
-
-
-def make_params_hash(params: dict) -> str:
-    """Stable 16-char hash of a parameter dict, used as a cache/DB key."""
-    serialized = json.dumps(params, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(serialized.encode()).hexdigest()[:16]
+        return pairs[: self.max_pairs]
 
 
 def _score(
@@ -181,7 +173,9 @@ def _score(
         )
         close_idxs = np.where(close_mask)[0]
         if len(close_idxs) > 0:
-            dists = np.abs(pairs_a[i, :3] - candidates_sorted[close_idxs, :3]).sum(axis=1)
+            dists = np.abs(pairs_a[i, :3] - candidates_sorted[close_idxs, :3]).sum(
+                axis=1
+            )
             best_local = close_idxs[dists.argmin()]
             matched_a.append(i)
             matched_b.append(int(order_b[lo + best_local]))

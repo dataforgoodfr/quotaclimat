@@ -16,10 +16,11 @@ import librosa
 import numpy as np
 from scipy.ndimage import maximum_filter1d
 
+from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_hash
+
 from ..tools.fingerprints import fingerprint_computer
 from .e00_partition_window import Segment
 from .tools.common_objects import Chunk
-from .tools.fingerprint.pairs import make_params_hash
 
 
 class ChunkCreator:

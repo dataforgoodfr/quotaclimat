@@ -16,9 +16,11 @@ import librosa
 import numpy as np
 from scipy.ndimage import maximum_filter1d
 
+from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.computer import (
+    FingerprintComputer,
+)
 from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_hash
 
-from ..tools.fingerprints import fingerprint_computer
 from .e00_partition_window import Segment
 from .tools.common_objects import Chunk
 
@@ -33,11 +35,13 @@ class ChunkCreator:
 
     def __init__(
         self,
+        fingerprint_computer: FingerprintComputer,
         min_chunk_sec: float = 5.0,  # Minimum duration (seconds) between two boundaries.
         #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
         silence_percentile: float = 5.0,  # Energy percentile below which a frame is silent.
         #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
     ):
+        self.fingerprint_computer = fingerprint_computer
         self.min_chunk_sec = min_chunk_sec
         self.silence_percentile = silence_percentile
 
@@ -182,7 +186,7 @@ class ChunkCreator:
 
             s_start = int(t_start * self.sr)
             s_end = int(t_end * self.sr)
-            fingerprint = fingerprint_computer.from_audio_with_precomputed(
+            fingerprint = self.fingerprint_computer.from_audio_with_precomputed(
                 y[s_start:s_end],
                 duration_sec=float(dur),
                 energy_mean=e,

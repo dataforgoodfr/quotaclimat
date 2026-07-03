@@ -14,8 +14,7 @@ import numpy as np
 from tqdm import tqdm
 
 from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.pairs import (
-    FingerprintsIndex,
-    are_fingerprints_similar,
+    FingerprintsCompare,
 )
 from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_hash
 
@@ -80,7 +79,18 @@ def _cluster(
 
     # Step 1: build index over all chunks
     fps = [c.fingerprint for c in tqdm(chunks, desc="Indexation fingerprints")]
-    index = FingerprintsIndex(freq_tol, dt_tol, min_matching_pairs).build(fps)
+    compare = FingerprintsCompare(
+        min_matching_pairs,
+        similarity_threshold,
+        freq_tol,
+        dt_tol,
+        offset_tol,
+        duration_tol,
+        rms_tol,
+        centroid_tol,
+        zcr_tol,
+    )
+    index = compare.build_similarity_index(fps)
 
     # Step 2: for each chunk query the index to find candidates with j > i
     candidates: set[tuple[int, int]] = set()
@@ -101,19 +111,7 @@ def _cluster(
         desc="Comparaison fingerprints",
         total=len(candidates),
     ):
-        if are_fingerprints_similar(
-            chunks[i].fingerprint,
-            chunks[j].fingerprint,
-            min_matching_pairs,
-            similarity_threshold,
-            freq_tol,
-            dt_tol,
-            offset_tol,
-            duration_tol,
-            rms_tol,
-            centroid_tol,
-            zcr_tol,
-        ):
+        if compare.is_similar(chunks[i].fingerprint, chunks[j].fingerprint):
             union(i, j)
             matches += 1
 

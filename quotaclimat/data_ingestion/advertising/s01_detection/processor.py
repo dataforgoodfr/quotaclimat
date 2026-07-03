@@ -75,7 +75,6 @@ async def processor(
     annotations: list[dict] = [],
     num_workers: int = 1,
 ):
-    """Original signal-based pipeline (e02 → e03 → e04 → e05 → e06 → e07)."""
     timings = TimingCollector()
 
     chunk_hash = chunk_creator.params_hash()

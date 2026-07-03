@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import hashlib
 import json
 from collections import Counter, defaultdict
-from typing import List, Tuple
+from typing import TYPE_CHECKING, List, Tuple
 
 import numpy as np
 
-from ..common_objects import Fingerprint
+from .fingerprint import Fingerprint
 
 
 # 27 neighbor offsets for 3D adjacency (±1 in each of f1, f2, dt)

@@ -5,6 +5,8 @@ from typing import List, Tuple
 
 import numpy as np
 
+from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_hash
+
 from .fingerprint import Fingerprint
 
 # 27 neighbor offsets for 3D adjacency (±1 in each of f1, f2, dt)
@@ -265,6 +267,22 @@ class FingerprintsCompare:
         if not self._features_compatible(fp_a, fp_b):
             return False
         return self._score(fp_a, fp_b) >= self.similarity_threshold
+
+    def params(self) -> dict:
+        return {
+            "min_matching_pairs": self.min_matching_pairs,
+            "similarity_threshold": self.similarity_threshold,
+            "freq_tol": self.freq_tol,
+            "dt_tol": self.dt_tol,
+            "offset_tol": self.offset_tol,
+            "duration_tol": self.duration_tol,
+            "rms_tol": self.rms_tol,
+            "centroid_tol": self.centroid_tol,
+            "zcr_tol": self.zcr_tol,
+        }
+
+    def params_hash(self) -> str:
+        return make_params_hash(self.params())
 
     def build_similarity_index(
         self, fingerprints: list[Fingerprint]

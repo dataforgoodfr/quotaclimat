@@ -4,12 +4,13 @@ import os
 from datetime import datetime
 from functools import partial
 
+from ..tools.fingerprint_tools.pairs import FingerprintsCompare
 from ..tools.fingerprints import fingerprint_computer
 from .e00_partition_window import Segment
 from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import ChunkCreator
 from .e03_already_identified_advertising import run_chunk_identification
-from .e04_group_chunks import ChunkGrouping
+from .e04_group_chunks import group_chunks
 from .e05_classify_fragments import FragmentsClassifier
 from .e06_export_classification import (
     clean_pre_existing_detections,
@@ -22,22 +23,20 @@ from .tools.common_objects import Chunk
 logger = logging.getLogger(__name__)
 
 
-# --- Signal-based pipeline (default, existing) ---
-
 chunk_creator = ChunkCreator(
     min_chunk_sec=1.0,
     silence_percentile=5.0,
 )
-chunk_grouping = ChunkGrouping(
+fingerprints_compare = FingerprintsCompare(
+    min_matching_pairs=10,
+    similarity_threshold=0.05,  # C'est bas, mais les tol ci-dessous font un pré filtre très éfficace déjà
+    freq_tol=2,  # ~15.6 Hz per bin tolerance
+    dt_tol=1,  # ~64 ms per frame tolerance
+    offset_tol=2,  # ~128 ms temporal coherence tolerance
     duration_tol=1.0,  # C'est relativement haut, mais les autres filtres affinent bien. 1 = durée minimum d'un segment, pour que l'absorption ou non d'un micro segment ne soit pas discriminant
     rms_tol=0.1,
     centroid_tol=0.05,
     zcr_tol=0.1,
-    similarity_threshold=0.05,  # C'est bas, mais les tol ci-dessus font un pré filtre très éfficace déjà
-    min_matching_pairs=10,
-    freq_tol=2,  # ~15.6 Hz per bin tolerance
-    dt_tol=1,  # ~64 ms per frame tolerance
-    offset_tol=2,  # ~128 ms temporal coherence tolerance
 )
 
 
@@ -110,17 +109,13 @@ async def processor(
         previously_known_fragments, unknown_chunks = await run_chunk_identification(
             chunks,
             params_hash=fingerprint_hash,
-            min_matching_pairs=chunk_grouping.min_matching_pairs,
-            similarity_threshold=chunk_grouping.similarity_threshold,
-            freq_tol=chunk_grouping.freq_tol,
-            dt_tol=chunk_grouping.dt_tol,
-            offset_tol=chunk_grouping.offset_tol,
+            compare=fingerprints_compare,
         )
 
     #### Chunk grouping
 
     with timings.measure("chunk_grouping"):
-        groups = chunk_grouping.run(unknown_chunks)
+        groups = group_chunks(unknown_chunks, compare=fingerprints_compare)
 
     #### Fragment classification
 
@@ -148,7 +143,7 @@ async def processor(
                 "operation_name": operation_name,
                 "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
                 "chunk_creator": chunk_creator.params(),
-                "chunk_grouping": chunk_grouping.params(),
+                "fingerprints_compare": fingerprints_compare.params(),
                 "fragment_classifier": fragment_classifier.params(),
             },
             local_path=reports_cache.cache_folder,

@@ -14,7 +14,7 @@ Usage programmatique :
         generate_chunk_comparator,
     )
     from quotaclimat.data_ingestion.advertising.s01_detection.e02_create_chunks import Chunk, ChunkCreator
-    from quotaclimat.data_ingestion.advertising.tools.fingerprints import fingerprint_computer
+    from quotaclimat.data_ingestion.advertising.tools.fingerprints import fingerprinter
 
     html = generate_chunk_comparator(
         chunk_a=chunk_a,           # Chunk
@@ -23,7 +23,7 @@ Usage programmatique :
         audio_b_path="path/b.mp3", # fichier audio contenant le chunk B
         segment_a_start_epoch=..., # epoch du début du segment audio A
         segment_b_start_epoch=..., # epoch du début du segment audio B
-        chunk_creator=ChunkCreator(fingerprint_computer=fingerprint_computer),
+        chunk_creator=ChunkCreator(fingerprinter=fingerprinter),
     )
 
 Dépendances : librosa, numpy, scipy (déjà présentes dans le projet)
@@ -44,7 +44,7 @@ from quotaclimat.data_ingestion.advertising.s01_detection.e02_create_chunks impo
     ChunkCreator,
 )
 from quotaclimat.data_ingestion.advertising.tools.fingerprints import (
-    fingerprint_computer,
+    fingerprinter,
 )
 
 TEMPLATE_PATH = Path(__file__).parent / "chunk_comparator.html"
@@ -257,7 +257,7 @@ def generate_chunk_comparator(
 
     Retourne : chaîne HTML complète
     """
-    cc = chunk_creator or ChunkCreator(fingerprint_computer=fingerprint_computer)
+    cc = chunk_creator or ChunkCreator(fingerprinter=fingerprinter)
 
     if not TEMPLATE_PATH.exists():
         raise FileNotFoundError(f"Template HTML introuvable : {str(TEMPLATE_PATH)}")

@@ -6,7 +6,7 @@ from sqlalchemy import select
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
-from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.pairs import (
+from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.compare import (
     FingerprintsCompare,
 )
 

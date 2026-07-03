@@ -1,4 +1,4 @@
-from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.computer import (
+from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.generate import (
     FingerprintComputer,
 )
 

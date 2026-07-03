@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from functools import partial
 
-from ..tools.fingerprint_tools.pairs import FingerprintsCompare
+from ..tools.fingerprint_tools.compare import FingerprintsCompare
 from ..tools.fingerprints import fingerprint_computer
 from .e00_partition_window import Segment
 from .e01_download_audio import AudioProcessor

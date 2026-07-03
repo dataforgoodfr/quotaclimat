@@ -16,7 +16,7 @@ import librosa
 import numpy as np
 from scipy.ndimage import maximum_filter1d
 
-from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.computer import (
+from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.generate import (
     FingerprintComputer,
 )
 from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_hash

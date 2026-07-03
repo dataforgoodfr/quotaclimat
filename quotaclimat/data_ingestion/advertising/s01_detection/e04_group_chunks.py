@@ -13,7 +13,7 @@ from typing import Dict, List
 import numpy as np
 from tqdm import tqdm
 
-from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.pairs import (
+from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.compare import (
     FingerprintsCompare,
 )
 

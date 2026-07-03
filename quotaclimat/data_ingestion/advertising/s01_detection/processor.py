@@ -25,12 +25,8 @@ logger = logging.getLogger(__name__)
 # --- Signal-based pipeline (default, existing) ---
 
 chunk_creator = ChunkCreator(
-    sr=16000,
-    hop_length=1024,
-    n_mfcc=13,
     min_chunk_sec=1.0,
     silence_percentile=5.0,
-    max_pairs=30,
 )
 chunk_grouping = ChunkGrouping(
     duration_tol=1.0,  # C'est relativement haut, mais les autres filtres affinent bien. 1 = durée minimum d'un segment, pour que l'absorption ou non d'un micro segment ne soit pas discriminant

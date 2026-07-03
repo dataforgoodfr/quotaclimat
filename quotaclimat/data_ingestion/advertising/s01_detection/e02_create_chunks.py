@@ -32,40 +32,30 @@ class ChunkCreator:
 
     def __init__(
         self,
-        sr: int = 22050,  # Sample rate (Hz). Standard for audio analysis.
-        hop_length: int = 512,  # STFT hop size (samples). Controls frame rate: fps = sr/hop_length ≈ 43.
-        n_mfcc: int = 20,  # Number of MFCC coefficients for feature extraction.
         min_chunk_sec: float = 5.0,  # Minimum duration (seconds) between two boundaries.
         #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
         silence_percentile: float = 5.0,  # Energy percentile below which a frame is silent.
         #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
     ):
-        self.sr = sr
-        self.hop_length = hop_length
-        self.n_mfcc = n_mfcc
         self.min_chunk_sec = min_chunk_sec
         self.silence_percentile = silence_percentile
-        self._fps = sr / hop_length
+
+        self.sr = fingerprint_computer.sr
+        self.hop_length = fingerprint_computer.hop_length
+        self._fps = self.sr / self.hop_length
 
     def load(self, path: str) -> np.ndarray:
         y, _ = librosa.load(path, sr=self.sr, mono=True)
         return y
 
     def extract_features(self, y: np.ndarray) -> dict:
-        mfcc = librosa.feature.mfcc(
-            y=y, sr=self.sr, n_mfcc=self.n_mfcc, hop_length=self.hop_length
-        )
-        delta = librosa.feature.delta(mfcc)
         energy = librosa.feature.rms(y=y, hop_length=self.hop_length)[0]
         centroid = librosa.feature.spectral_centroid(
             y=y, sr=self.sr, hop_length=self.hop_length
         )[0]
         zcr = librosa.feature.zero_crossing_rate(y, hop_length=self.hop_length)[0]
 
-        stack = np.vstack([mfcc, delta, energy, centroid / centroid.max(), zcr])
-
         return {
-            "stack": stack,
             "energy": energy,
             "centroid": centroid,
             "zcr": zcr,
@@ -234,7 +224,6 @@ class ChunkCreator:
         return {
             "sr": self.sr,
             "hop_length": self.hop_length,
-            "n_mfcc": self.n_mfcc,
             "min_chunk_sec": self.min_chunk_sec,
             "silence_percentile": self.silence_percentile,
         }

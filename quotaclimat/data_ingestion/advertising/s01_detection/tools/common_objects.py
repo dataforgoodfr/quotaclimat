@@ -1,7 +1,9 @@
 from dataclasses import asdict, dataclass
 from typing import Literal
 
-from .fingerprint.fingerprint import Fingerprint
+from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.fingerprint import (
+    Fingerprint,
+)
 
 
 @dataclass

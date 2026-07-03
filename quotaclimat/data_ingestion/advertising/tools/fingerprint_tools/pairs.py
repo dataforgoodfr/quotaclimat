@@ -13,7 +13,7 @@ _ADJ_3D = [
 ]
 
 
-def build_pairs_index(
+def _build_pairs_index(
     fingerprints: list[Fingerprint],
     freq_tol: int = 2,
     dt_tol: int = 1,
@@ -42,7 +42,7 @@ def build_pairs_index(
     return dict(index)
 
 
-def query_pairs_index(
+def _query_pairs_index(
     query_fp: Fingerprint,
     index: dict[tuple[int, int, int], set[int]],
     freq_tol: int = 2,
@@ -74,6 +74,47 @@ def query_pairs_index(
             for j in index.get((kf1 + df1, kf2 + df2, kdt + ddt), ()):
                 neighbor_counts[j] += 1
     return {j for j, count in neighbor_counts.items() if count >= min_matching_pairs}
+
+
+class FingerprintsIndex:
+    """
+    Inverted index of quantized pair keys, for candidate lookup by fingerprint similarity.
+
+    Wraps build_pairs_index()/query_pairs_index() so tolerances are set once
+    at construction and reused consistently across build() and query() calls.
+    """
+
+    def __init__(
+        self,
+        freq_tol: int = 2,
+        dt_tol: int = 1,
+        min_matching_pairs: int = 5,
+    ):
+        self.freq_tol = freq_tol
+        self.dt_tol = dt_tol
+        self.min_matching_pairs = min_matching_pairs
+        self._index: dict[tuple[int, int, int], set[int]] = {}
+
+    def build(self, fingerprints: list[Fingerprint]) -> "FingerprintsIndex":
+        """Build the index over the given fingerprints, keyed by their position in the list."""
+        self._index = _build_pairs_index(fingerprints, self.freq_tol, self.dt_tol)
+        return self
+
+    def get_similar_indices(
+        self,
+        query_fp: Fingerprint,
+        min_matching_pairs: int | None = None,
+    ) -> set[int]:
+        """Return indices (as passed to build()) of candidate matches for query_fp."""
+        return _query_pairs_index(
+            query_fp,
+            self._index,
+            self.freq_tol,
+            self.dt_tol,
+            min_matching_pairs
+            if min_matching_pairs is not None
+            else self.min_matching_pairs,
+        )
 
 
 class PairGenerator:

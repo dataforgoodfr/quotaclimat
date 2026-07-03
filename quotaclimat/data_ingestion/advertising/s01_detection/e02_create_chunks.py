@@ -16,9 +16,9 @@ import librosa
 import numpy as np
 from scipy.ndimage import maximum_filter1d
 
+from ..tools.fingerprints import fingerprint_computer
 from .e00_partition_window import Segment
 from .tools.common_objects import Chunk
-from .tools.fingerprint.computer import FingerprintComputer
 from .tools.fingerprint.pairs import make_params_hash
 
 
@@ -35,44 +35,17 @@ class ChunkCreator:
         sr: int = 22050,  # Sample rate (Hz). Standard for audio analysis.
         hop_length: int = 512,  # STFT hop size (samples). Controls frame rate: fps = sr/hop_length ≈ 43.
         n_mfcc: int = 20,  # Number of MFCC coefficients for feature extraction.
-        context_sec: float = 1.0,  # Context window (seconds) on each side for cosine dissimilarity.
-        #   1.0s = good general balance. Increase (1.5-3s) if too many false positives.
-        novelty_smooth_sec: float = 0.5,  # Smoothing window (seconds) applied to the novelty curve.
-        #   Filters out short fluctuations before peak detection.
         min_chunk_sec: float = 5.0,  # Minimum duration (seconds) between two boundaries.
         #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
         silence_percentile: float = 5.0,  # Energy percentile below which a frame is silent.
         #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
-        n_fft: int = 2048,  # FFT size for constellation map. 2048 ≈ 93ms @ 22050Hz.
-        n_peaks: int = 30,  # Max spectral peaks retained per chunk (constellation map).
-        neighborhood: int = 15,  # Local max filter size for peak detection in time×frequency plane.
-        min_amplitude: float = 0.01,  # Min normalized amplitude (0-1) for a spectral peak to be retained.
-        fan_out: int = 4,  # Pairs per peak for fingerprinting. 4 is sufficient with distance-based matching.
-        max_pairs: int = 80,
     ):
         self.sr = sr
         self.hop_length = hop_length
         self.n_mfcc = n_mfcc
-        self.context_sec = context_sec
-        self.novelty_smooth_sec = novelty_smooth_sec
         self.min_chunk_sec = min_chunk_sec
         self.silence_percentile = silence_percentile
-        self.n_fft = n_fft
-        self.n_peaks = n_peaks
-        self.neighborhood = neighborhood
-        self.min_amplitude = min_amplitude
-        self.fan_out = fan_out
         self._fps = sr / hop_length
-        self._fc = FingerprintComputer(
-            sr=sr,
-            hop_length=hop_length,
-            n_fft=n_fft,
-            neighborhood=neighborhood,
-            min_amplitude=min_amplitude,
-            n_peaks=n_peaks,
-            fan_out=fan_out,
-            max_pairs=max_pairs,
-        )
 
     def load(self, path: str) -> np.ndarray:
         y, _ = librosa.load(path, sr=self.sr, mono=True)
@@ -218,7 +191,7 @@ class ChunkCreator:
 
             s_start = int(t_start * self.sr)
             s_end = int(t_end * self.sr)
-            fingerprint = self._fc.from_audio_with_precomputed(
+            fingerprint = fingerprint_computer.from_audio_with_precomputed(
                 y[s_start:s_end],
                 duration_sec=float(dur),
                 energy_mean=e,
@@ -262,15 +235,8 @@ class ChunkCreator:
             "sr": self.sr,
             "hop_length": self.hop_length,
             "n_mfcc": self.n_mfcc,
-            "context_sec": self.context_sec,
-            "novelty_smooth_sec": self.novelty_smooth_sec,
             "min_chunk_sec": self.min_chunk_sec,
             "silence_percentile": self.silence_percentile,
-            "n_fft": self.n_fft,
-            "n_peaks": self.n_peaks,
-            "neighborhood": self.neighborhood,
-            "min_amplitude": self.min_amplitude,
-            "fan_out": self.fan_out,
         }
 
     def params_hash(self) -> str:

@@ -5,7 +5,7 @@ from datetime import datetime
 from functools import partial
 
 from ..tools.fingerprint_tools.compare import FingerprintsCompare
-from ..tools.fingerprints import fingerprint_computer
+from ..tools.fingerprints import fingerprinter
 from .e00_partition_window import Segment
 from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import ChunkCreator
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 chunk_creator = ChunkCreator(
-    fingerprint_computer=fingerprint_computer,
+    fingerprinter=fingerprinter,
     min_chunk_sec=1.0,
     silence_percentile=5.0,
 )
@@ -68,7 +68,7 @@ async def processor(
 ):
     timings = TimingCollector()
 
-    fingerprint_hash = fingerprint_computer.params_hash()
+    fingerprint_hash = fingerprinter.params_hash()
     logger.info(f"Process is run with fingerprint_hash={fingerprint_hash}")
 
     #### Audio processing

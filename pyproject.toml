@@ -117,6 +117,7 @@ requests = "^2.32.3"
 tenacity = "^8.2.3"
 python-dotenv = ">=1.0"
 tzdata = "^2026.2"
+openpyxl = "^3.1.5"
 
 [tool.pytest_env]
 CLEAN_CACHE_ON_EXIT=true

@@ -97,7 +97,7 @@ def _occurrence_id(ad_id: str, occurrence_sec: float, channel: str) -> str:
     return hashlib.sha256(raw.encode()).hexdigest()[:32]
 
 
-def database_storage_save(fragments: list[Fragment], chunk_hash: str):
+def database_storage_save(fragments: list[Fragment], fingerprint_hash: str):
     ad_fragments = [f for f in fragments if f.classification in AD_CLASSIFICATIONS]
 
     if not ad_fragments:
@@ -150,7 +150,7 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
                         ),
                         chunks=[
                             {
-                                "hash": chunk_hash,
+                                "hash": fingerprint_hash,
                                 "fingerprints": [
                                     c.fingerprint.to_dict() for c in canonical_chunks
                                 ],
@@ -187,7 +187,7 @@ def database_storage_save(fragments: list[Fragment], chunk_hash: str):
                     duration_sec=(fragment.end_sec - fragment.start_sec),
                     chunks=[
                         {
-                            "hash": chunk_hash,
+                            "hash": fingerprint_hash,
                             "fingerprints": [c.fingerprint.to_dict() for c in chunks],
                         }
                     ],

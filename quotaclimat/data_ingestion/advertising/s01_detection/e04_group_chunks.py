@@ -13,14 +13,13 @@ from typing import Dict, List
 import numpy as np
 from tqdm import tqdm
 
+from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.pairs import (
+    FingerprintsIndex,
+    are_fingerprints_similar,
+)
 from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_hash
 
 from .tools.common_objects import Chunk, Fingerprint
-from .tools.fingerprint.pairs import (
-    are_fingerprints_similar,
-    build_pairs_index,
-    query_pairs_index,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -81,12 +80,12 @@ def _cluster(
 
     # Step 1: build index over all chunks
     fps = [c.fingerprint for c in tqdm(chunks, desc="Indexation fingerprints")]
-    index = build_pairs_index(fps, freq_tol, dt_tol)
+    index = FingerprintsIndex(freq_tol, dt_tol, min_matching_pairs).build(fps)
 
     # Step 2: for each chunk query the index to find candidates with j > i
     candidates: set[tuple[int, int]] = set()
     for i, fp in tqdm(enumerate(fps), desc="Recherche candidats", total=n):
-        for j in query_pairs_index(fp, index, freq_tol, dt_tol, min_matching_pairs):
+        for j in index.get_similar_indices(fp):
             if j > i:
                 candidates.add((i, j))
 

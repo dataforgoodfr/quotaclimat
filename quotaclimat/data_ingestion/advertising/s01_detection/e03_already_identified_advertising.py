@@ -6,13 +6,12 @@ from sqlalchemy import select
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
+from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.pairs import (
+    FingerprintsIndex,
+    are_fingerprints_similar,
+)
 
 from .tools.common_objects import Chunk, Fingerprint, Fragment
-from .tools.fingerprint.pairs import (
-    are_fingerprints_similar,
-    build_pairs_index,
-    query_pairs_index,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -61,8 +60,8 @@ async def run_chunk_identification(
     matches: dict[int, list[AdChunkMatch]] = defaultdict(list)
 
     # Build inverted index over local chunks once — queried for each DB fingerprint
-    local_index = build_pairs_index(
-        [c.fingerprint for c in chunks], freq_tol, dt_tol
+    local_index = FingerprintsIndex(freq_tol, dt_tol, min_matching_pairs).build(
+        [c.fingerprint for c in chunks]
     )
 
     total_db_fingerprints = 0
@@ -81,9 +80,7 @@ async def run_chunk_identification(
                         db_fp = Fingerprint.from_dict(fp_dict)
                         total_db_fingerprints += 1
 
-                        candidates = query_pairs_index(
-                            db_fp, local_index, freq_tol, dt_tol, min_matching_pairs
-                        )
+                        candidates = local_index.get_similar_indices(db_fp)
                         for local_idx in candidates:
                             if are_fingerprints_similar(
                                 chunks[local_idx].fingerprint,
@@ -102,7 +99,9 @@ async def run_chunk_identification(
                                     )
                                 )
 
-    logger.info(f"Loaded {total_db_fingerprints} DB fingerprints (params_hash={params_hash})")
+    logger.info(
+        f"Loaded {total_db_fingerprints} DB fingerprints (params_hash={params_hash})"
+    )
 
     # --- Build final lists ---
     known_fragments: list[Fragment] = []

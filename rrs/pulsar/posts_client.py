@@ -112,6 +112,6 @@ class PulsarPostsClient:
         filter_ = {**_BASE_FILTER, "searchIds": [search_id], "topics": topics,
                    "dateFrom": _iso(date_from), "dateTo": _iso(date_to)}
         options = {"limit": limit, "sort": "DESC", "sortBy": "VISIBILITY", "cursor": "*",
-                   "forceCacheRefresh": True, "engine": "SOLR"}
+                   "forceCacheRefresh": True}
         data = self._post({"filter": filter_, "options": options})
         return (data.get("topContent") or {}).get("results") or []

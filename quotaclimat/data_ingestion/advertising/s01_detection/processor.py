@@ -27,14 +27,8 @@ chunk_creator = ChunkCreator(
     sr=16000,
     hop_length=1024,
     n_mfcc=13,
-    context_sec=1.0,
-    novelty_smooth_sec=0.5,
     min_chunk_sec=1.0,
     silence_percentile=5.0,
-    n_fft=2048,
-    n_peaks=20,
-    neighborhood=15,
-    min_amplitude=0.01,
     max_pairs=30,
 )
 chunk_grouping = ChunkGrouping(

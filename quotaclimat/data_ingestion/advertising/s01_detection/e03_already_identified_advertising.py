@@ -7,8 +7,7 @@ from sqlalchemy import select
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
 from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.pairs import (
-    FingerprintsIndex,
-    are_fingerprints_similar,
+    FingerprintsCompare,
 )
 
 from .tools.common_objects import Chunk, Fingerprint, Fragment
@@ -59,10 +58,11 @@ async def run_chunk_identification(
     # matches[local_idx] accumulates AdChunkMatch across all pages
     matches: dict[int, list[AdChunkMatch]] = defaultdict(list)
 
-    # Build inverted index over local chunks once — queried for each DB fingerprint
-    local_index = FingerprintsIndex(freq_tol, dt_tol, min_matching_pairs).build(
-        [c.fingerprint for c in chunks]
+    compare = FingerprintsCompare(
+        min_matching_pairs, similarity_threshold, freq_tol, dt_tol, offset_tol
     )
+    # Build inverted index over local chunks once — queried for each DB fingerprint
+    local_index = compare.build_similarity_index([c.fingerprint for c in chunks])
 
     total_db_fingerprints = 0
 
@@ -82,15 +82,7 @@ async def run_chunk_identification(
 
                         candidates = local_index.get_similar_indices(db_fp)
                         for local_idx in candidates:
-                            if are_fingerprints_similar(
-                                chunks[local_idx].fingerprint,
-                                db_fp,
-                                min_matching_pairs,
-                                similarity_threshold,
-                                freq_tol,
-                                dt_tol,
-                                offset_tol,
-                            ):
+                            if compare.is_similar(chunks[local_idx].fingerprint, db_fp):
                                 matches[local_idx].append(
                                     AdChunkMatch(
                                         ad=ad,

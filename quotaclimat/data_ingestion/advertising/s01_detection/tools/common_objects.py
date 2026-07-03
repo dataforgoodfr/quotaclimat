@@ -1,28 +1,7 @@
 from dataclasses import asdict, dataclass
 from typing import Literal
 
-
-@dataclass
-class Fingerprint:
-    duration_sec: float
-    energy_mean: float
-    spectral_centroid: float
-    zcr_mean: float
-    peaks: list = None
-    pairs: list = None
-
-    def to_dict(self):
-        return asdict(self)
-
-    @classmethod
-    def from_dict(cls, d):
-        d = dict(d)  # shallow copy to avoid mutating the caller's dict
-        d.setdefault("peaks", None)
-        d.setdefault("pairs", d.pop("hashes", None))
-        # Convert pairs from JSON lists back to tuples
-        if d["pairs"] is not None:
-            d["pairs"] = [tuple(p) for p in d["pairs"]]
-        return cls(**d)
+from .fingerprint.fingerprint import Fingerprint
 
 
 @dataclass

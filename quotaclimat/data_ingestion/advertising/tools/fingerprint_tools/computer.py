@@ -2,8 +2,10 @@ import librosa
 import numpy as np
 from scipy.ndimage import maximum_filter
 
+from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_hash
+
 from .fingerprint import Fingerprint
-from .pairs import PairGenerator, make_params_hash
+from .pairs import PairGenerator
 
 
 class FingerprintComputer:

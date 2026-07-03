@@ -13,11 +13,12 @@ from typing import Dict, List
 import numpy as np
 from tqdm import tqdm
 
+from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_hash
+
 from .tools.common_objects import Chunk, Fingerprint
 from .tools.fingerprint.pairs import (
     are_fingerprints_similar,
     build_pairs_index,
-    make_params_hash,
     query_pairs_index,
 )
 
@@ -97,7 +98,9 @@ def _cluster(
     # Step 4: full comparison on candidates only
     matches = 0
     for i, j in tqdm(
-        candidates, desc="Comparaison fingerprints", total=len(candidates),
+        candidates,
+        desc="Comparaison fingerprints",
+        total=len(candidates),
     ):
         if are_fingerprints_similar(
             chunks[i].fingerprint,
@@ -223,7 +226,7 @@ def canonical(chunks: list[Chunk], freq_tol: int = 2, dt_tol: int = 1) -> Chunk:
     # Pool all tuples tagged by occurrence index
     all_tuples = []  # (f1, f2, dt, t_offset, occurrence_idx)
     for occ_idx, chunk in enumerate(chunks):
-        for pair in (chunk.fingerprint.pairs or []):
+        for pair in chunk.fingerprint.pairs or []:
             all_tuples.append((*pair[:4], occ_idx))
 
     if not all_tuples:
@@ -253,21 +256,25 @@ def canonical(chunks: list[Chunk], freq_tol: int = 2, dt_tol: int = 1) -> Chunk:
             other = all_tuples_arr[jdx]
             if int(other[4]) in cluster_occurrences:
                 continue  # one per occurrence
-            if (abs(int(ref[0]) - int(other[0])) <= freq_tol
-                    and abs(int(ref[1]) - int(other[1])) <= freq_tol
-                    and abs(int(ref[2]) - int(other[2])) <= dt_tol):
+            if (
+                abs(int(ref[0]) - int(other[0])) <= freq_tol
+                and abs(int(ref[1]) - int(other[1])) <= freq_tol
+                and abs(int(ref[2]) - int(other[2])) <= dt_tol
+            ):
                 visited[jdx] = True
                 cluster_members.append(jdx)
                 cluster_occurrences.add(int(other[4]))
 
         if len(cluster_occurrences) >= min_freq:
             members = all_tuples_arr[cluster_members]
-            canonical_pairs.append((
-                int(np.median(members[:, 0])),
-                int(np.median(members[:, 1])),
-                int(np.median(members[:, 2])),
-                int(np.median(members[:, 3])),
-            ))
+            canonical_pairs.append(
+                (
+                    int(np.median(members[:, 0])),
+                    int(np.median(members[:, 1])),
+                    int(np.median(members[:, 2])),
+                    int(np.median(members[:, 3])),
+                )
+            )
 
     # Fallback: if too few stable pairs, take pairs from the richest occurrence
     if len(canonical_pairs) < MIN_CANONICAL_PAIRS:
@@ -329,8 +336,12 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
     print("\n[1] Minimum duration filter (>= 0.5 s)")
     a_ok = a.fingerprint.duration_sec >= 0.5
     b_ok = b.fingerprint.duration_sec >= 0.5
-    print(f"    A duration: {a.fingerprint.duration_sec:.3f}s  {PASS if a_ok else FAIL}")
-    print(f"    B duration: {b.fingerprint.duration_sec:.3f}s  {PASS if b_ok else FAIL}")
+    print(
+        f"    A duration: {a.fingerprint.duration_sec:.3f}s  {PASS if a_ok else FAIL}"
+    )
+    print(
+        f"    B duration: {b.fingerprint.duration_sec:.3f}s  {PASS if b_ok else FAIL}"
+    )
     if not (a_ok and b_ok):
         print(
             "  → BLOCKED: one or both chunks are too short and would be filtered out."
@@ -421,7 +432,7 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
     )
 
     if n_matched > 0:
-        print(f"    Sample matches (first 5):")
+        print("    Sample matches (first 5):")
         for k in range(min(5, n_matched)):
             ia, ib = matched_a[k], matched_b[k]
             pa, pb = arr_a[ia], arr_b[ib]
@@ -450,7 +461,9 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
 
     min_pairs = min(len(arr_a), len(arr_b)) + 1
     score = best_count / min_pairs
-    print(f"    best offset cluster: center={best_offset}, coherent={best_count}/{n_matched}")
+    print(
+        f"    best offset cluster: center={best_offset}, coherent={best_count}/{n_matched}"
+    )
     print(f"    score = {best_count} / {min_pairs} = {score:.4f}")
     print(f"    similarity_threshold = {grouping.similarity_threshold}")
     score_ok = score >= grouping.similarity_threshold

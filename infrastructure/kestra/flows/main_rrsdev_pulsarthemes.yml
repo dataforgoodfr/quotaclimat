@@ -19,6 +19,15 @@ inputs:
       [
         {"name": "renewables", "folder_id": "529", "search_id": "201830"}
       ]
+  - id: relevance_mention_tag_ids
+    type: JSON
+    defaults: "[]"
+  - id: days_back
+    type: INT
+    defaults: 1
+  - id: n_top_posts
+    type: INT
+    defaults: 30
 
 tasks:
   - id: per_search
@@ -36,16 +45,18 @@ tasks:
         commands:
           - python
           - -m
-          - rrs.pulsar.run
+          - rrs.pulsar.fetch_weekly_themes_client
         env:
           PYTHONPATH: /app
+          PULSAR_API_KEY: "{{ secret('PULSAR_API_KEY') }}"
           PULSAR_BASE_URL: "{{ secret('PULSAR_BASE_URL') }}"
           PULSAR_EMAIL: "{{ secret('PULSAR_EMAIL') }}"
           PULSAR_PASSWORD: "{{ secret('PULSAR_PASSWORD') }}"
+          PULSAR_RELEVANCE_MENTION_TAG_IDS: "{{ json(inputs.relevance_mention_tag_ids) }}"
           PULSAR_FOLDER_ID: "{{ json(taskrun.value).folder_id }}"
           PULSAR_SEARCH_ID: "{{ json(taskrun.value).search_id }}"
-          PULSAR_TOP_N: "30"
-          PULSAR_THEMES_OUTPUT: "themes.xlsx"
+          PULSAR_TOP_N: "{{ inputs.n_top_posts }}"
+          PULSAR_DAYS_BACK: "{{ inputs.days_back }}"
           RRS_PG_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
           RRS_PG_PORT: 18047
           RRS_PG_DATABASE: rrs

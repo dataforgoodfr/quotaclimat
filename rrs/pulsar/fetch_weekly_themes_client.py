@@ -279,7 +279,8 @@ def run() -> None:
     total_posts = 0
 
     with store.connect() as conn:
-        store.upsert_search(conn, s.search_id, name=s.search_id, folder_id="", base_url="")
+        store.upsert_search(conn, s.search_id, name=s.search_id, folder_id="", base_url="",
+                            subject_id=s.subject_id)
         for theme_data in enriched:
             theme = Theme(
                 title=theme_data["title"],
@@ -288,7 +289,8 @@ def run() -> None:
                 sentiment=theme_data["sentiment"],
                 topics=[Topic(label=t["label"], volume=t["volume"]) for t in theme_data["topics"]],
             )
-            theme_id = store.insert_theme(conn, s.search_id, theme, date_from_dt, date_to_dt)
+            theme_id = store.insert_theme(conn, s.search_id, theme, date_from_dt, date_to_dt,
+                                          subject_id=s.subject_id)
 
             topic_labels = [t["label"] for t in theme_data["topics"]]
             posts = posts_client.fetch_theme_posts(

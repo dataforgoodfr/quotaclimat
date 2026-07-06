@@ -10,6 +10,8 @@ from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
 
+from rrs.utils.generate_id import get_consistent_hash
+
 DEFAULT_BASE_URL = "https://lessurligneurs.pulsarplatform.com"
 
 
@@ -27,6 +29,7 @@ class PulsarSettings:
     api_key: str | None = None
     relevance_mention_tag_ids: list[str] = field(default_factory=list)
     days_back: int = 7
+    subject_id: str | None = None
 
     @classmethod
     def from_env(cls) -> "PulsarSettings":
@@ -67,4 +70,5 @@ class PulsarSettings:
             api_key=os.getenv("PULSAR_API_KEY"),
             relevance_mention_tag_ids=relevance_mention_tag_ids,
             days_back=int(os.getenv("PULSAR_DAYS_BACK", "7")),
+            subject_id=get_consistent_hash(subject) if (subject := os.getenv("SUBJECT")) else None,
         )

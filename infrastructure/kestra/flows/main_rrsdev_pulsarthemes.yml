@@ -63,7 +63,7 @@ tasks:
           PULSAR_BASE_URL: "{{ secret('PULSAR_BASE_URL') }}"
           PULSAR_EMAIL: "{{ secret('PULSAR_EMAIL') }}"
           PULSAR_PASSWORD: "{{ secret('PULSAR_PASSWORD') }}"
-          PULSAR_RELEVANCE_MENTION_TAG_IDS: "{{ json(inputs.relevance_mention_tag_ids) }}"
+          PULSAR_RELEVANCE_MENTION_TAG_IDS: "{{ inputs.relevance_mention_tag_ids }}"
           PULSAR_FOLDER_ID: "{{ json(taskrun.value).folder_id }}"
           PULSAR_SEARCH_ID: "{{ json(taskrun.value).search_id }}"
           PULSAR_TOP_N: "{{ inputs.n_top_posts }}"

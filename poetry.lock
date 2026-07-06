@@ -515,7 +515,7 @@ version = "4.13.4"
 description = "Screen-scraping library"
 optional = false
 python-versions = ">=3.7.0"
-groups = ["main"]
+groups = ["main", "pulsar"]
 files = [
     {file = "beautifulsoup4-4.13.4-py3-none-any.whl", hash = "sha256:9bbbb14bfde9d79f38b8cd5f8c7c85f4b8f2523190ebed90e950a8dea4cb1c4b"},
     {file = "beautifulsoup4-4.13.4.tar.gz", hash = "sha256:dbb3c4e1ceae6aefebdaf2423247260cd062430a410e38c66f2baa50a8437195"},
@@ -1665,6 +1665,27 @@ files = [
     {file = "decorator-5.2.1-py3-none-any.whl", hash = "sha256:d316bb415a2d9e2d2b3abcc4084c6502fc09240e292cd76a76afc106a1c8e04a"},
     {file = "decorator-5.2.1.tar.gz", hash = "sha256:65f266143752f734b0a7cc83c46f4618af75b8c5911b00ccb61d0ac9b6da0360"},
 ]
+
+[[package]]
+name = "deep-translator"
+version = "1.11.4"
+description = "A flexible free and unlimited python tool to translate between different languages in a simple way using multiple translators"
+optional = false
+python-versions = ">=3.7,<4.0"
+groups = ["pulsar"]
+files = [
+    {file = "deep_translator-1.11.4-py3-none-any.whl", hash = "sha256:d635df037e23fa35d12fd42dab72a0b55c9dd19e6292009ee7207e3f30b9e60a"},
+    {file = "deep_translator-1.11.4.tar.gz", hash = "sha256:801260c69231138707ea88a0955e484db7d40e210c9e0ae0f77372ffda5f4bf5"},
+]
+
+[package.dependencies]
+beautifulsoup4 = ">=4.9.1,<5.0.0"
+requests = ">=2.23.0,<3.0.0"
+
+[package.extras]
+ai = ["openai (>=0.27.6,<0.28.0) ; python_full_version >= \"3.7.1\" and python_full_version < \"4.0.0\""]
+docx = ["docx2txt (>=0.8,<0.9)"]
+pdf = ["pypdf (>=3.3.0,<4.0.0)"]
 
 [[package]]
 name = "deepdiff"
@@ -7912,7 +7933,7 @@ version = "2.7"
 description = "A modern CSS selector implementation for Beautiful Soup."
 optional = false
 python-versions = ">=3.8"
-groups = ["main"]
+groups = ["main", "pulsar"]
 files = [
     {file = "soupsieve-2.7-py3-none-any.whl", hash = "sha256:6e60cc5c1ffaf1cebcc12e8188320b72071e922c2e897f737cadce79ad5d30c4"},
     {file = "soupsieve-2.7.tar.gz", hash = "sha256:ad282f9b6926286d2ead4750552c8a6142bc4c783fd66b0293547c8fe6ae126a"},
@@ -8904,7 +8925,6 @@ files = [
     {file = "typing_extensions-4.14.1-py3-none-any.whl", hash = "sha256:d1e1e3b58374dc93031d6eda2420a48ea44a36c2b4766a4fdeb3710755731d76"},
     {file = "typing_extensions-4.14.1.tar.gz", hash = "sha256:38b39f4aeeab64884ce9f74c94263ef78f3c22467c8724005483154c26648d36"},
 ]
-markers = {pulsar = "python_version < \"3.13\""}
 
 [[package]]
 name = "typing-inspection"
@@ -9545,4 +9565,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<=3.13"
-content-hash = "dc2e3877f0e082f58534589a725872f1d958ee1fc8c53a9263093491610ef341"
+content-hash = "9689bdc65bf19ba1a9710c0555b4b9c1bf2b4fb4483351ea17ca9c6c3e1f8de4"

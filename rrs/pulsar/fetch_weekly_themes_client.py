@@ -61,6 +61,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 import requests
+from deep_translator import GoogleTranslator
 
 from rrs.pulsar import store
 from rrs.pulsar.parse_themes import Theme, Topic
@@ -80,6 +81,24 @@ OUT_JSON = "themes_{date}.json"
 # `stat.metric` is COUNT (verified: value matched the platform's post count
 # regardless of which StatEnum value was used here) — any valid value works.
 STAT_TYPE = "VISIBILITY"
+
+_SENTIMENT_FR = {
+    "positive": "positif",
+    "negative": "négatif",
+    "neutral": "neutre",
+    "mixed": "mixte",
+}
+
+
+def _translate_to_french(title: str, body: str) -> tuple[str, str]:
+    """Translate title and body to French in a single batch call."""
+    texts = [t for t in (title, body) if t]
+    if not texts:
+        return title, body
+    translated = GoogleTranslator(source="auto", target="fr").translate_batch(texts)
+    it = iter(translated)
+    return (next(it) if title else title), (next(it) if body else body)
+
 
 TOPICS_QUERY = """
 query Topics($filter: FilterInput!, $options: OptionsInput, $stat: StatInput) {
@@ -242,6 +261,14 @@ def run() -> None:
         enriched.append(theme_data)
         print(f"  [{theme_data['sentiment']}] {theme_data['title']} ({theme_data['post_volume']:,} posts)")
         time.sleep(0.5)
+
+    print(f"\nTranslating {len(enriched)} theme(s) to French...")
+    all_texts = [t for theme in enriched for t in (theme["title"], theme["body"])]
+    translated = GoogleTranslator(source="auto", target="fr").translate_batch(all_texts)
+    for i, theme in enumerate(enriched):
+        theme["title"] = translated[i * 2]
+        theme["body"] = translated[i * 2 + 1]
+        theme["sentiment"] = _SENTIMENT_FR.get((theme["sentiment"] or "").lower(), theme["sentiment"])
 
     out_file = OUT_JSON.format(date=datetime.now(timezone.utc).strftime("%Y-%m-%d"))
     with open(out_file, "w") as f:

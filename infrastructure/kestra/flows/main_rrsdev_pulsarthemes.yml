@@ -17,17 +17,20 @@ inputs:
     type: JSON
     defaults: |
       [
-        {"name": "renewables", "folder_id": "529", "search_id": "201830"}
+        {"name": "renewables", "folder_id": "529", "search_id": "201830", "subject": "climate"}
       ]
+    description: "JSON string defining the details of the searches from which to extract the themes."
   - id: relevance_mention_tag_ids
     type: JSON
     defaults: "[]"
   - id: days_back
     type: INT
     defaults: 1
+    description: "Look-back window in days"
   - id: n_top_posts
     type: INT
     defaults: 30
+    description: "Top posts to fetch per theme"
   - id: start_date
     type: STRING
     required: false

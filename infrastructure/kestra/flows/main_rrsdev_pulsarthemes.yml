@@ -66,6 +66,7 @@ tasks:
           PULSAR_RELEVANCE_MENTION_TAG_IDS: "{{ inputs.relevance_mention_tag_ids }}"
           PULSAR_FOLDER_ID: "{{ json(taskrun.value).folder_id }}"
           PULSAR_SEARCH_ID: "{{ json(taskrun.value).search_id }}"
+          SUBJECT: "{{ json(taskrun.value).subject }}"
           PULSAR_TOP_N: "{{ inputs.n_top_posts }}"
           PULSAR_DAYS_BACK: "{{ inputs.days_back }}"
           PULSAR_START_DATE: "{{ inputs.start_date ?? '' }}"

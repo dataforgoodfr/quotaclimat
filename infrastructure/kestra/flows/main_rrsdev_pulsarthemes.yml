@@ -65,8 +65,8 @@ tasks:
           PULSAR_SEARCH_ID: "{{ json(taskrun.value).search_id }}"
           PULSAR_TOP_N: "{{ inputs.n_top_posts }}"
           PULSAR_DAYS_BACK: "{{ inputs.days_back }}"
-          PULSAR_START_DATE: "{{ inputs.start_date }}"
-          PULSAR_END_DATE: "{{ inputs.end_date }}"
+          PULSAR_START_DATE: "{{ inputs.start_date ?? '' }}"
+          PULSAR_END_DATE: "{{ inputs.end_date ?? '' }}"
           RRS_PG_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
           RRS_PG_PORT: 18047
           RRS_PG_DATABASE: rrs

@@ -7,10 +7,17 @@ runs in the lean image, so no embedding/LLM config here.
 import json
 import os
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 
 from rrs.utils.generate_id import get_consistent_hash
+
+_DATE_FMT = "%Y-%m-%d"
+
+
+def _parse_date(value: str) -> datetime:
+    return datetime.strptime(value, _DATE_FMT).replace(tzinfo=timezone.utc)
 
 DEFAULT_BASE_URL = "https://lessurligneurs.pulsarplatform.com"
 
@@ -30,6 +37,8 @@ class PulsarSettings:
     relevance_mention_tag_ids: list[str] = field(default_factory=list)
     days_back: int = 7
     subject_id: str | None = None
+    start_date: datetime | None = None  # explicit window start; falls back to days_back if unset
+    end_date: datetime | None = None    # explicit window end; falls back to now() if unset
 
     @classmethod
     def from_env(cls) -> "PulsarSettings":
@@ -71,4 +80,6 @@ class PulsarSettings:
             relevance_mention_tag_ids=relevance_mention_tag_ids,
             days_back=int(os.getenv("PULSAR_DAYS_BACK", "7")),
             subject_id=get_consistent_hash(subject) if (subject := os.getenv("SUBJECT")) else None,
+            start_date=_parse_date(v) if (v := os.getenv("PULSAR_START_DATE")) else None,
+            end_date=_parse_date(v) if (v := os.getenv("PULSAR_END_DATE")) else None,
         )

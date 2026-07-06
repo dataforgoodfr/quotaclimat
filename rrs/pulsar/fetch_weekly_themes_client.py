@@ -237,8 +237,8 @@ def run() -> None:
 
     headers = _make_headers(s.api_key)
     now = datetime.now(timezone.utc)
-    date_to_dt = now
-    date_from_dt = now - timedelta(days=s.days_back)
+    date_to_dt = s.end_date or now
+    date_from_dt = s.start_date or (date_to_dt - timedelta(days=s.days_back))
     date_to_str = date_to_dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
     date_from_str = date_from_dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 

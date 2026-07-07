@@ -3,6 +3,7 @@ import os
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Iterator, Optional
+from urllib.parse import quote
 
 import pandas as pd
 
@@ -16,6 +17,7 @@ from quotaclimat.data_processing.mediatree.i8n.france.channel_titles import (
 )
 from rrs.dictionary.upsert_subjects import subject_id as make_subject_id
 from rrs.schemas.models import DictionaryEntry
+from rrs.utils.mediatree import get_url_mediatree
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
@@ -73,6 +75,88 @@ def _get_engine():
     return create_engine(
         f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
     )
+
+
+def _rrs_dsn() -> str:
+    user = quote(os.getenv("RRS_PG_USER", "user"), safe="")
+    password = quote(os.getenv("RRS_PG_PASSWORD", "password"), safe="")
+    host = os.getenv("RRS_PG_HOST", "localhost")
+    port = os.getenv("RRS_PG_PORT", "5432")
+    database = os.getenv("RRS_PG_DATABASE", "rrs_db")
+    return f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
+
+def _s3_uri(start, channel_name: str) -> str:
+    return (
+        f"s3://{BUCKET_NAME}"
+        f"/year={start.year}/month={start.month}/day={start.day}"
+        f"/channel={channel_name}/"
+    )
+
+
+def save_segments_to_db(df: pd.DataFrame) -> None:
+    """Upsert a detection DataFrame into the RRS segments table."""
+    if df.empty:
+        return
+
+    segments = df.copy()
+    segments["segment_id"] = segments["id"]
+    segments["n_keywords"] = segments["n_keywords_found"]
+    segments["keywords"] = segments["keywords_found"]
+    segments["s3_uri"] = segments.apply(
+        lambda r: _s3_uri(r["start"], r["channel_name"]), axis=1
+    )
+    segments["url_mediatree"] = segments.apply(
+        lambda r: get_url_mediatree(r["start"], r["channel_name"]), axis=1
+    )
+    if "channel_program" not in segments.columns:
+        segments["channel_program"] = None
+
+    batch = segments[
+        [
+            "segment_id",
+            "subject_id",
+            "start",
+            "s3_uri",
+            "n_keywords",
+            "channel_name",
+            "channel_title",
+            "channel_program",
+            "keywords",
+            "url_mediatree",
+        ]
+    ]
+
+    con = duckdb.connect()
+    con.execute("INSTALL postgres; LOAD postgres;")
+    con.execute(f"ATTACH '{_rrs_dsn()}' AS rrs (TYPE POSTGRES);")
+    con.register("segments_batch", batch)
+    con.execute("""
+        INSERT INTO rrs.segments (
+            segment_id, subject_id, start, s3_uri, n_keywords,
+            channel_name, channel_title, channel_program, keywords,
+            url_mediatree, created_at, updated_at
+        )
+        SELECT
+            segment_id, subject_id, start, s3_uri, n_keywords,
+            channel_name, channel_title, channel_program, keywords,
+            url_mediatree,
+            now() AT TIME ZONE 'utc',
+            now() AT TIME ZONE 'utc'
+        FROM segments_batch
+        ON CONFLICT (segment_id, subject_id) DO UPDATE SET
+            start           = EXCLUDED.start,
+            s3_uri          = EXCLUDED.s3_uri,
+            n_keywords      = EXCLUDED.n_keywords,
+            channel_name    = EXCLUDED.channel_name,
+            channel_title   = EXCLUDED.channel_title,
+            channel_program = EXCLUDED.channel_program,
+            keywords        = EXCLUDED.keywords,
+            url_mediatree   = EXCLUDED.url_mediatree,
+            updated_at      = now() AT TIME ZONE 'utc'
+    """)
+    con.close()
+    logging.info(f"  {len(batch)} segment(s) upserted into DB.")
 
 
 def get_keywords_by_subject(
@@ -292,25 +376,12 @@ if __name__ == "__main__":
     end = date.fromisoformat(args.end_date) if args.end_date else None
     channels = args.channel or None
 
-    frames: list[pd.DataFrame] = []
+    total = 0
     for day, df in detect_keywords(start_date=start, end_date=end, channels=channels):
-        frames.append(df)
+        save_segments_to_db(df)
+        total += len(df)
 
-    if not frames:
+    if total == 0:
         logging.warning("No matches found for the requested date range.")
     else:
-        result = pd.concat(frames, ignore_index=True)
-        logging.info(f"Total matches: {len(result)}")
-
-        end_label = end or start
-        out_path = (
-            Path(__file__).parent / "data" / f"keywords_{start}_{end_label}_no_hrfp.xlsx"
-        )
-        out_path_csv = (
-            Path(__file__).parent / "data" / f"keywords_{start}_{end_label}_no_hrfp.csv"
-        )
-        for col in result.select_dtypes(include=["datetimetz"]).columns:
-            result[col] = result[col].dt.tz_localize(None)
-        result.to_excel(out_path, index=False)
-        result.to_csv(out_path_csv, index=False)
-        logging.info(f"Written {len(result)} row(s) to {out_path}")
+        logging.info(f"Done. {total} segment(s) upserted in total.")

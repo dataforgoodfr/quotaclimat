@@ -18,6 +18,7 @@ from quotaclimat.data_processing.mediatree.i8n.france.channel_titles import (
 from rrs.dictionary.upsert_subjects import subject_id as make_subject_id
 from rrs.schemas.models import DictionaryEntry
 from rrs.utils.mediatree import get_url_mediatree
+from rrs.utils.generate_id import get_consistent_hash
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
@@ -98,9 +99,11 @@ def save_segments_to_db(df: pd.DataFrame) -> None:
     """Upsert a detection DataFrame into the RRS segments table."""
     if df.empty:
         return
-
+    print(df.columns)
     segments = df.copy()
-    segments["segment_id"] = segments["id"]
+    segments["segment_id"] = (
+        segments["start"].astype(str) + segments["channel_name"]
+    ).apply(get_consistent_hash)
     segments["n_keywords"] = segments["n_keywords_found"]
     segments["keywords"] = segments["keywords_found"]
     segments["s3_uri"] = segments.apply(
@@ -366,14 +369,30 @@ if __name__ == "__main__":
         nargs="*",
         help="Channel(s) to process (default: all France channels)",
     )
-    parser.add_argument("--start-date", required=True, help="Start date YYYY-MM-DD")
     parser.add_argument(
-        "--end-date", help="End date YYYY-MM-DD (inclusive, defaults to start_date)"
+        "--days-prior",
+        type=int,
+        default=int(os.environ.get("DAYS_PRIOR", "1")),
+        help="Number of days before end-date to use as start-date (default: 1, env: DAYS_PRIOR)",
+    )
+    parser.add_argument(
+        "--start-date",
+        default=os.environ.get("START_DATE"),
+        help="Start date YYYY-MM-DD — overrides --days-prior if set (env: START_DATE)",
+    )
+    parser.add_argument(
+        "--end-date",
+        default=os.environ.get("END_DATE"),
+        help="End date YYYY-MM-DD inclusive (default: today, env: END_DATE)",
     )
     args = parser.parse_args()
 
-    start = date.fromisoformat(args.start_date)
-    end = date.fromisoformat(args.end_date) if args.end_date else None
+    end = date.fromisoformat(args.end_date) if args.end_date else date.today()
+    start = (
+        date.fromisoformat(args.start_date)
+        if args.start_date
+        else end - timedelta(days=args.days_prior)
+    )
     channels = args.channel or None
 
     total = 0

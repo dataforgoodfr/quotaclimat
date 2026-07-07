@@ -24,31 +24,34 @@ def _conninfo() -> str:
     )
 
 
-def upsert_search(conn, search_id: str, name: str, folder_id: str, base_url: str) -> None:
+def upsert_search(conn, search_id: str, name: str, folder_id: str, base_url: str,
+                  subject_id: str | None = None) -> None:
     conn.execute(
         """
-        INSERT INTO pulsar_searches (search_id, name, folder_id, base_url, updated_at)
-        VALUES (%s, %s, %s, %s, now())
+        INSERT INTO pulsar_searches (search_id, subject_id, name, folder_id, base_url, updated_at)
+        VALUES (%s, %s, %s, %s, %s, now())
         ON CONFLICT (search_id) DO UPDATE
-            SET name = EXCLUDED.name, folder_id = EXCLUDED.folder_id,
-                base_url = EXCLUDED.base_url, updated_at = now()
+            SET subject_id = EXCLUDED.subject_id, name = EXCLUDED.name,
+                folder_id = EXCLUDED.folder_id, base_url = EXCLUDED.base_url, updated_at = now()
         """,
-        (search_id, name, folder_id, base_url),
+        (search_id, subject_id, name, folder_id, base_url),
     )
 
 
-def insert_theme(conn, search_id: str, theme: Theme, date_from, date_to) -> str:
+def insert_theme(conn, search_id: str, theme: Theme, date_from, date_to,
+                 subject_id: str | None = None) -> str:
     """Insert/refresh a theme + its topics for this pull window; return the theme_id."""
     theme_id = get_consistent_hash(f"pulsar-theme:{search_id}:{date_from}:{date_to}:{theme.title}")
     conn.execute(
         """
         INSERT INTO pulsar_themes
-            (theme_id, search_id, title, summary, sentiment, volume, date_from, date_to)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            (theme_id, search_id, subject_id, title, summary, sentiment, volume, date_from, date_to)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (theme_id) DO UPDATE
-            SET summary = EXCLUDED.summary, sentiment = EXCLUDED.sentiment, volume = EXCLUDED.volume
+            SET subject_id = EXCLUDED.subject_id, summary = EXCLUDED.summary,
+                sentiment = EXCLUDED.sentiment, volume = EXCLUDED.volume
         """,
-        (theme_id, search_id, theme.title, theme.summary, theme.sentiment, theme.volume, date_from, date_to),
+        (theme_id, search_id, subject_id, theme.title, theme.summary, theme.sentiment, theme.volume, date_from, date_to),
     )
     for t in theme.topics:
         topic_id = get_consistent_hash(f"pulsar-topic:{theme_id}:{t.label}")

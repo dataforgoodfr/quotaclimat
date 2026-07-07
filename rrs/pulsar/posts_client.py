@@ -69,14 +69,18 @@ def _iso(dt: datetime | None) -> str | None:
 
 
 class PulsarPostsClient:
-    def __init__(self, authorization: str, team: str):
-        # `authorization` is the verbatim header value captured from the session (e.g. "Bearer eyJ…").
-        self._headers = {
-            "authorization": authorization,
-            "x-pulsar-team": team,
-            "content-type": "application/json",
-        }
+    def __init__(self, authorization: str, team: str | None = None):
+        # `authorization` is the verbatim header value (e.g. "Bearer eyJ…").
+        # `team` is the x-pulsar-team header, required for session tokens but not for API keys.
+        self._headers = {"authorization": authorization, "content-type": "application/json"}
+        if team:
+            self._headers["x-pulsar-team"] = team
         self._last_request_at = 0.0
+
+    @classmethod
+    def from_api_key(cls, api_key: str) -> "PulsarPostsClient":
+        """Create a client authenticated with a permanent Pulsar API key."""
+        return cls(authorization=f"Bearer {api_key}")
 
     def _throttle(self) -> None:
         elapsed = time.monotonic() - self._last_request_at
@@ -108,6 +112,6 @@ class PulsarPostsClient:
         filter_ = {**_BASE_FILTER, "searchIds": [search_id], "topics": topics,
                    "dateFrom": _iso(date_from), "dateTo": _iso(date_to)}
         options = {"limit": limit, "sort": "DESC", "sortBy": "VISIBILITY", "cursor": "*",
-                   "forceCacheRefresh": True, "engine": "SOLR"}
+                   "forceCacheRefresh": True}
         data = self._post({"filter": filter_, "options": options})
         return (data.get("topContent") or {}).get("results") or []

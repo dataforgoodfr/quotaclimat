@@ -32,6 +32,7 @@ class PulsarSearch(RRSBase):
     __tablename__ = "pulsar_searches"
 
     search_id = Column(String, primary_key=True)  # Pulsar search id, e.g. "201830"
+    subject_id = Column(String, ForeignKey("subjects.subject_id"), nullable=True)
     name = Column(String, nullable=True)
     folder_id = Column(String, nullable=True)
     base_url = Column(String, nullable=True)
@@ -51,6 +52,7 @@ class PulsarTheme(RRSBase):
 
     theme_id = Column(String, primary_key=True)  # surrogate (hash of search+window+title)
     search_id = Column(String, ForeignKey("pulsar_searches.search_id"), nullable=False)
+    subject_id = Column(String, ForeignKey("subjects.subject_id"), nullable=True)
     title = Column(String, nullable=True)
     summary = Column(Text, nullable=True)
     sentiment = Column(String, nullable=True)

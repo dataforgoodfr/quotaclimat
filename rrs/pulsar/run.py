@@ -1,4 +1,6 @@
-"""Pulsar pipeline (one search): download themes XLS + capture session token →
+"""
+DEPRECATED
+Pulsar pipeline (one search): download themes XLS + capture session token →
 parse (themes + topics) → store into pulsar_* tables → fetch each theme's top posts
 via GraphQL → store posts.
 

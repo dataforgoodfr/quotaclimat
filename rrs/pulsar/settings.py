@@ -4,10 +4,20 @@ Light by design — the whole pipeline (download → parse → store → fetch p
 runs in the lean image, so no embedding/LLM config here.
 """
 
+import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
+
+from rrs.utils.generate_id import get_consistent_hash
+
+_DATE_FMT = "%Y-%m-%d"
+
+
+def _parse_date(value: str) -> datetime:
+    return datetime.strptime(value, _DATE_FMT).replace(tzinfo=timezone.utc)
 
 DEFAULT_BASE_URL = "https://lessurligneurs.pulsarplatform.com"
 
@@ -22,6 +32,13 @@ class PulsarSettings:
     themes_xlsx: str = "pulsar_themes.xlsx"
     top_n: int = 30
     headless: bool = True
+    # API-key-based pipeline (fetch_weekly_themes_client)
+    api_key: str | None = None
+    relevance_mention_tag_ids: list[str] = field(default_factory=list)
+    days_back: int = 7
+    subject_id: str | None = None
+    start_date: datetime | None = None  # explicit window start; falls back to days_back if unset
+    end_date: datetime | None = None    # explicit window end; falls back to now() if unset
 
     @classmethod
     def from_env(cls) -> "PulsarSettings":
@@ -45,6 +62,11 @@ class PulsarSettings:
                 f"Missing Pulsar config: {', '.join(missing)}. "
                 "Set them in your environment (1Password locally; Vaultwarden→Kestra secret in prod)."
             )
+        raw_tag_ids = os.getenv("PULSAR_RELEVANCE_MENTION_TAG_IDS", "[]")
+        try:
+            relevance_mention_tag_ids = json.loads(raw_tag_ids)
+        except json.JSONDecodeError:
+            relevance_mention_tag_ids = []
         return cls(
             email=email,
             password=password,
@@ -54,4 +76,10 @@ class PulsarSettings:
             themes_xlsx=os.getenv("PULSAR_THEMES_OUTPUT", f"pulsar_themes_{search_id}.xlsx"),
             top_n=int(os.getenv("PULSAR_TOP_N", "30")),
             headless=os.getenv("PULSAR_HEADLESS", "true").lower() not in ("0", "false", "no"),
+            api_key=os.getenv("PULSAR_API_KEY"),
+            relevance_mention_tag_ids=relevance_mention_tag_ids,
+            days_back=int(os.getenv("PULSAR_DAYS_BACK", "7")),
+            subject_id=get_consistent_hash(subject) if (subject := os.getenv("SUBJECT")) else None,
+            start_date=_parse_date(v) if (v := os.getenv("PULSAR_START_DATE")) else None,
+            end_date=_parse_date(v) if (v := os.getenv("PULSAR_END_DATE")) else None,
         )

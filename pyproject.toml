@@ -1,6 +1,6 @@
 [project]
 name = "quotaclimat"
-version = "2.1.79"
+version = "2.1.80"
 description = ""
 authors = [
     {name = "Rambier Estelle", "email"="estelle.rambier@hotmail.fr"},
@@ -103,17 +103,19 @@ mistralai = "^2.5.0"
 mcp = "^1.28.1"
 griffe = "^2.1.0"
 
+# Pulsar themes pipeline — API-key-based, no browser automation.
+# Kept as a separate optional group so it doesn't bloat rrs-base.
 [tool.poetry.group.pulsar]
 optional = true
 
 [tool.poetry.group.pulsar.dependencies]
-playwright = "1.60.0"
-openpyxl = ">=3.1"
 psycopg = {version = ">=3.0", extras = ["binary"]}
 requests = "^2.32.3"
 tenacity = "^8.2.3"
 python-dotenv = ">=1.0"
 tzdata = "^2026.2"
+deep-translator = "^1.11"
+openpyxl = "^3.1.5"
 
 [tool.pytest_env]
 CLEAN_CACHE_ON_EXIT=true

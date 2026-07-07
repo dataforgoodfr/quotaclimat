@@ -48,6 +48,7 @@
       POSTGRES_USER: "{{ lookup('env', 'BAROMETRE_POSTGRES_USER') }}"
       POSTGRES_PASSWORD_READ: "{{ lookup('env', 'BAROMETRE_POSTGRES_PASSWORD_READ') }}"
       POSTGRES_USER_READ: "{{ lookup('env', 'BAROMETRE_POSTGRES_USER_READ') }}"
+      PULSAR_API_KEY: "{{ lookup('env', 'PULSAR_API_KEY') }}"
       PULSAR_BASE_URL: "{{ lookup('env', 'PULSAR_BASE_URL') }}"
       PULSAR_EMAIL: "{{ lookup('env', 'PULSAR_EMAIL') }}"
       PULSAR_PASSWORD: "{{ lookup('env', 'PULSAR_PASSWORD') }}"

@@ -1,6 +1,14 @@
 id: barometre
 namespace: quotaclimat-dev
 
+description: |
+  Dev pipeline for the main OME flow.
+
+labels:
+  pipeline: ome
+  environment: dev
+  scope: france
+
 tasks:
   - id: ingest_data_to_s3
     type: io.kestra.plugin.docker.Run

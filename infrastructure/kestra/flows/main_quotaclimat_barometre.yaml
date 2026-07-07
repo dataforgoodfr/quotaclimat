@@ -1,6 +1,17 @@
 id: barometre
 namespace: quotaclimat
 
+description: |
+  Main detection pipeline for the OME. Ingests data from Mediatree into S3, 
+  detects the presence of keywords using a validation methodology for high 
+  risk false positives, detects possible misinformation using an LLM and 
+  aggregates data using DBT.
+
+labels:
+  pipeline: ome
+  environment: prod
+  scope: france
+
 triggers:
   - id: morning_schedule
     type: io.kestra.plugin.core.trigger.Schedule

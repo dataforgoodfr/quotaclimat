@@ -1,6 +1,15 @@
 id: barometre-i18n
 namespace: quotaclimat
 
+description: |
+  OME pipeline for international scope. The misinformation detection uses scaleway 
+  serverless jobs at the moment to run everything in parallel.
+
+labels:
+  pipeline: ome
+  environment: prod
+  scope: i18n
+
 triggers:
   - id: morning_schedule
     type: io.kestra.plugin.core.trigger.Schedule

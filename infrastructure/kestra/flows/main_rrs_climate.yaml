@@ -1,6 +1,15 @@
 id: rrs-climate
 namespace: rrs
 
+description: |
+  Climate pipeline for RRS imports data from the OME database and performs clustering
+  for audiovisual data sourced from Mediatree.
+
+labels:
+  pipeline: rrs
+  environment: prod
+  scope: france
+
 inputs:
   - id: start_date
     type: STRING

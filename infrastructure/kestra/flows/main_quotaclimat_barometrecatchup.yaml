@@ -1,6 +1,15 @@
 id: barometre-catchup
 namespace: quotaclimat
 
+description: |
+  Catchup pipeline for the OME. Runs over the last week skipping days that 
+  have been analysed already.
+
+labels:
+  pipeline: ome
+  environment: prod
+  scope: france
+
 triggers:
   - id: daily_schedule
     type: io.kestra.plugin.core.trigger.Schedule

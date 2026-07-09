@@ -30,18 +30,6 @@ inputs:
     required: true
     defaults: true
 
-triggers:
-  - id: after_barometre_daily
-    type: io.kestra.plugin.core.trigger.Flow
-    conditions:
-      - type: io.kestra.plugin.core.condition.ExecutionFlowCondition
-        namespace: quotaclimat
-        flowId: barometre
-      - type: io.kestra.plugin.core.condition.ExecutionStatusCondition
-        in:
-          - SUCCESS
-
-
 tasks:
   - id: analyse_keywords
     shmSize: 6gb

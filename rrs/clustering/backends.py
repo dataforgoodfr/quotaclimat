@@ -12,7 +12,7 @@ from typing import Any, Optional
 
 import numpy as np
 from rrs.clustering.cost import _PRICING, _cost
-from rrs.clustering.prompts import SYSTEM_PROMPT
+from rrs.clustering.prompts import get_system_prompt
 from rrs.clustering.providers import (
     EMBEDDING_BACKEND_MISTRAL,
     EMBEDDING_BACKEND_ST,
@@ -76,7 +76,7 @@ class MistralEmbeddingBackend(EmbeddingBackend):
         model: str = _MISTRAL_EMBED_MODEL,
         batch_size: int = _MISTRAL_EMBED_BATCH_SIZE,
     ):
-        from mistralai import Mistral
+        from mistralai.client import Mistral
 
         self._client = Mistral(api_key=api_key)
         self._model = model
@@ -113,6 +113,7 @@ class LLMBackend:
     provider: str
     model: str
     client: Any
+    system_prompt: str = ""
     _input_tokens: int = 0
     _output_tokens: int = 0
 
@@ -123,7 +124,7 @@ class LLMBackend:
                 model=self.model,
                 max_tokens=max_tokens,
                 temperature=0,
-                system=SYSTEM_PROMPT,
+                system=self.system_prompt,
                 messages=messages,
             )
             self._input_tokens += response.usage.input_tokens
@@ -134,7 +135,7 @@ class LLMBackend:
                 model=self.model,
                 max_tokens=max_tokens,
                 temperature=0,
-                messages=[{"role": "system", "content": SYSTEM_PROMPT}] + messages,
+                messages=[{"role": "system", "content": self.system_prompt}] + messages,
             )
             if response.usage:
                 self._input_tokens += response.usage.prompt_tokens or 0

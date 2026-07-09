@@ -26,7 +26,7 @@ import anthropic
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
-from mistralai import Mistral
+from mistralai.client import Mistral
 from rrs.clustering.backends import (
     _EMBEDDING_MODEL,
     EMBEDDING_BACKEND_MISTRAL,
@@ -40,7 +40,7 @@ from rrs.clustering.backends import (
 from rrs.clustering.cost import _cost
 from rrs.clustering.get_data import TEXT_COLUMN, split_sentences
 from rrs.clustering.prompts import (
-    SYSTEM_PROMPT,
+    get_system_prompt,
     _step1_prompt,
     _step2_prompt,
     _step3_prompt,
@@ -61,17 +61,34 @@ _TOP_K_CONTEXT = 10  # existing labels shown to LLM per ambiguous candidate
 _CANDIDATE_DEDUP_THRESHOLD = (
     0.85  # pairwise similarity above which candidates are considered redundant
 )
-SEED_LABELS: list[str] = [
-    "Les renouvelables augmentent le coût de l'électricité",
-    "Il est inutile de réduire les rejets de gaz à effet de serre de la France",
-    "Les populations sont manipulées de façon injustifiée.",
-    "L'élevage est neutre voire avantageux pour le climat",
-    "Les voitures électriques polluent plus que les voitures thermiques",
-]
+SEED_LABELS_BY_SUBJECT: dict[str, list[str]] = {
+    "climate": [
+        "Les renouvelables augmentent le coût de l'électricité",
+        "Il est inutile de réduire les rejets de gaz à effet de serre de la France",
+        "Les populations sont manipulées de façon injustifiée.",
+        "L'élevage est neutre voire avantageux pour le climat",
+        "Les voitures électriques polluent plus que les voitures thermiques",
+    ],
+    "insecurity": [
+        "L'insécurité est en constante augmentation en France",
+        "L'immigration est liée à l'augmentation de la criminalité",
+        "Les zones de non-droit prolifèrent dans les grandes villes",
+        "La justice est trop laxiste face à la délinquance",
+        "L'ensauvagement de la société est une réalité",
+    ],
+}
+
+# Keep for backwards compatibility
+SEED_LABELS = SEED_LABELS_BY_SUBJECT["climate"]
 
 
-def _build_client(provider: str = PROVIDER_MISTRAL) -> LLMBackend:
+def get_seed_labels(subject: str) -> list[str]:
+    return SEED_LABELS_BY_SUBJECT.get(subject, [])
+
+
+def _build_client(provider: str = PROVIDER_MISTRAL, subject: str = "climate") -> LLMBackend:
     load_dotenv()
+    system_prompt = get_system_prompt(subject)
     if provider == PROVIDER_ANTHROPIC:
         api_key = os.getenv("ANTHROPIC_API_KEY")
         if not api_key:
@@ -83,6 +100,7 @@ def _build_client(provider: str = PROVIDER_MISTRAL) -> LLMBackend:
             provider=provider,
             model=MODEL_ANTHROPIC,
             client=anthropic.AsyncAnthropic(api_key=api_key),
+            system_prompt=system_prompt,
         )
     else:
         api_key = os.getenv("MISTRAL_API_KEY")
@@ -95,6 +113,7 @@ def _build_client(provider: str = PROVIDER_MISTRAL) -> LLMBackend:
             provider=provider,
             model=MODEL_MISTRAL,
             client=Mistral(api_key=api_key),
+            system_prompt=system_prompt,
         )
 
 
@@ -143,11 +162,12 @@ async def _step1_call(
     sentences: list[str],
     backend: LLMBackend,
     semaphore: asyncio.Semaphore,
+    subject: str = "climate",
 ) -> tuple[str, list[str]]:
     async with semaphore:
         try:
             raw = await backend.chat(
-                [{"role": "user", "content": _step1_prompt(sentences)}], max_tokens=512
+                [{"role": "user", "content": _step1_prompt(sentences, subject=subject)}], max_tokens=512
             )
             return doc_id, _parse_list_response(raw)
         except Exception as exc:
@@ -159,6 +179,7 @@ async def build_labels_from_transcripts(
     sentences_by_doc: dict,
     client: LLMBackend,
     max_concurrent: int = MAX_CONCURRENT,
+    subject: str = "climate",
 ) -> list[str]:
     """Step 1: Generate labels per transcript in parallel.
 
@@ -171,7 +192,7 @@ async def build_labels_from_transcripts(
 
     results = await tqdm.gather(
         *[
-            _step1_call(doc_id, sentences_by_doc[doc_id], client, semaphore)
+            _step1_call(doc_id, sentences_by_doc[doc_id], client, semaphore, subject=subject)
             for doc_id in doc_ids
         ],
         desc=f"Step 1 — labelling [{client.provider}]",
@@ -190,13 +211,13 @@ async def build_labels_from_transcripts(
     return labels
 
 
-async def _merge_labels_call(label_list: list[str], client: LLMBackend) -> list[str]:
+async def _merge_labels_call(label_list: list[str], client: LLMBackend, subject: str = "climate") -> list[str]:
     """Merge the flat *label_list*, returning a deduplicated result.
 
     Returns the input list unchanged if the response cannot be parsed.
     """
     raw = await client.chat(
-        [{"role": "user", "content": _step2_prompt(label_list)}], max_tokens=4096
+        [{"role": "user", "content": _step2_prompt(label_list, subject=subject)}], max_tokens=4096
     )
     parsed = _parse_list_response(raw)
     if not parsed:
@@ -229,6 +250,7 @@ async def merge_labels(
     max_concurrent: int = MAX_CONCURRENT,
     max_rounds: int = 20,
     log_path: Optional[Path] = None,
+    subject: str = "climate",
 ) -> list[str]:
     """Step 2: Hierarchical (tournament-style) merge.
 
@@ -254,7 +276,7 @@ async def merge_labels(
 
         async def _merge_with_semaphore(chunk: list[str]) -> list[str]:
             async with semaphore:
-                return await _merge_labels_call(chunk, client)
+                return await _merge_labels_call(chunk, client, subject=subject)
 
         results = await asyncio.gather(*[_merge_with_semaphore(c) for c in chunks])
         labels = [label for group in results for label in group]
@@ -267,7 +289,7 @@ async def merge_labels(
             )
 
     print(f"  Final merge call: {len(labels)} labels")
-    labels = await _merge_labels_call(labels, client)
+    labels = await _merge_labels_call(labels, client, subject=subject)
     print(f"    → {len(labels)} labels after final merge")
 
     if log_path is not None:
@@ -402,12 +424,13 @@ async def _zone3_llm_call(
     close_existing: list[str],
     client: LLMBackend,
     semaphore: asyncio.Semaphore,
+    subject: str = "climate",
 ) -> tuple[str, bool]:
     """Returns (candidate, is_duplicate). Fails open (is_duplicate=False) on any error."""
     async with semaphore:
         try:
             raw = await client.chat(
-                [{"role": "user", "content": _zone3_prompt(candidate, close_existing)}],
+                [{"role": "user", "content": _zone3_prompt(candidate, close_existing, subject=subject)}],
                 max_tokens=10,
             )
             is_duplicate = raw.strip().upper().startswith("YES")
@@ -426,6 +449,7 @@ async def _filter_by_embedding_similarity_hybrid(
     low_threshold: float = _LOW_THRESHOLD,
     high_threshold: float = _HIGH_THRESHOLD,
     top_k_context: int = _TOP_K_CONTEXT,
+    subject: str = "climate",
 ) -> list[str]:
     """Three-zone hybrid filter combining embedding routing with LLM stance judgment.
 
@@ -475,7 +499,7 @@ async def _filter_by_embedding_similarity_hybrid(
         for candidate, row_idx in zip(zone3_candidates, zone3_row_indices):
             top_k_idx = np.argsort(sim_matrix[row_idx])[::-1][:top_k_context]
             close_existing = [existing_labels[j] for j in top_k_idx]
-            tasks.append(_zone3_llm_call(candidate, close_existing, client, semaphore))
+            tasks.append(_zone3_llm_call(candidate, close_existing, client, semaphore, subject=subject))
 
         results = await tqdm.gather(*tasks, desc="Zone3 — LLM stance judgment")
         for candidate, is_duplicate in results:

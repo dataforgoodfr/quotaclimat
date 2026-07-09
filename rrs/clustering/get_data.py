@@ -8,7 +8,6 @@ import spacy
 from dotenv import load_dotenv
 from rrs.utils.generate_id import get_consistent_hash
 
-CLIMATE_SUBJECT_ID = get_consistent_hash("climate")
 TEXT_COLUMN = "text"
 ID_COLUMN = "case_id"
 
@@ -28,9 +27,13 @@ def _conninfo() -> str:
 def get_data_from_db(
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    subject_id: Optional[str] = None,
 ) -> pd.DataFrame:
     conditions = []
     params: list = []
+    if subject_id is not None:
+        conditions.append("c.subject_id = %s")
+        params.append(subject_id)
     if start_date is not None:
         conditions.append("c.start >= %s")
         params.append(start_date)
@@ -57,6 +60,7 @@ def get_data_from_db(
 
 def get_clusters_from_db(
     active_since: Optional[date] = None,
+    subject_id: Optional[str] = None,
 ) -> pd.DataFrame:
     """Return clusters from the database.
 
@@ -65,15 +69,20 @@ def get_clusters_from_db(
     Columns: cluster_id, cluster_text.
     """
     if active_since is not None:
-        query = """
+        where = "WHERE cl.subject_id = %s" if subject_id else ""
+        query = f"""
             SELECT cl.cluster_id, cl.cluster_text
             FROM clusters cl
             JOIN case_to_clusters ctc ON ctc.cluster_id = cl.cluster_id
             JOIN cases c ON c.case_id = ctc.case_id
+            {where}
             GROUP BY cl.cluster_id, cl.cluster_text
             HAVING MAX(c.start) >= %s
         """
-        params: list = [active_since]
+        params: list = ([subject_id] if subject_id else []) + [active_since]
+    elif subject_id is not None:
+        query = "SELECT cluster_id, cluster_text FROM clusters WHERE subject_id = %s"
+        params = [subject_id]
     else:
         query = "SELECT cluster_id, cluster_text FROM clusters"
         params = []
@@ -85,7 +94,7 @@ def get_clusters_from_db(
     return pd.DataFrame(rows, columns=columns)
 
 
-def write_clusters_to_db(assignments_df: pd.DataFrame) -> None:
+def write_clusters_to_db(assignments_df: pd.DataFrame, subject_id: str) -> None:
     """Upsert clusters and case→cluster mappings into the database.
 
     Expects assignments_df to have at least: case_id, cluster_id, cluster_text.
@@ -118,7 +127,7 @@ def write_clusters_to_db(assignments_df: pd.DataFrame) -> None:
                         cluster_text = EXCLUDED.cluster_text
                 """,
                 [
-                    (row.cluster_id, CLIMATE_SUBJECT_ID, row.cluster_text)
+                    (row.cluster_id, subject_id, row.cluster_text)
                     for row in clusters.itertuples()
                 ],
             )
@@ -140,37 +149,43 @@ def write_clusters_to_db(assignments_df: pd.DataFrame) -> None:
     )
 
 
-def get_latest_clustered_date() -> Optional[date]:
+def get_latest_clustered_date(subject_id: Optional[str] = None) -> Optional[date]:
     """Return the calendar day of the most recent case that has a cluster assignment, or None."""
-    query = """
+    subject_filter = "WHERE c.subject_id = %s" if subject_id else ""
+    query = f"""
         SELECT MAX(DATE(c.start))
         FROM cases c
         JOIN case_to_clusters ctc ON ctc.case_id = c.case_id
+        {subject_filter}
     """
+    params = [subject_id] if subject_id else []
     with psycopg.connect(_conninfo()) as conn:
         with conn.cursor() as cur:
-            cur.execute(query)
+            cur.execute(query, params)
             row = cur.fetchone()
     return row[0] if row and row[0] is not None else None
 
 
-def get_unprocessed_dates() -> list[date]:
+def get_unprocessed_dates(subject_id: Optional[str] = None) -> list[date]:
     """Return sorted list of calendar days that have cases but no cluster assignments.
 
     A day is considered unprocessed if at least one case whose `start` falls on
     that day has no entry in `case_to_clusters`.
     """
-    query = """
+    subject_filter = "AND c.subject_id = %s" if subject_id else ""
+    query = f"""
         SELECT DISTINCT DATE(c.start) AS day
         FROM cases c
         WHERE NOT EXISTS (
             SELECT 1 FROM case_to_clusters ctc WHERE ctc.case_id = c.case_id
         )
+        {subject_filter}
         ORDER BY day
     """
+    params = [subject_id] if subject_id else []
     with psycopg.connect(_conninfo()) as conn:
         with conn.cursor() as cur:
-            cur.execute(query)
+            cur.execute(query, params)
             rows = cur.fetchall()
     return [row[0] for row in rows]
 
@@ -178,9 +193,10 @@ def get_unprocessed_dates() -> list[date]:
 def load_from_db(
     start_date=None,
     end_date=None,
+    subject_id: Optional[str] = None,
 ) -> pd.DataFrame:
     """Load data from the RRS database and return a DataFrame."""
-    df = get_data_from_db(start_date=start_date, end_date=end_date)
+    df = get_data_from_db(start_date=start_date, end_date=end_date, subject_id=subject_id)
     df = df[df[TEXT_COLUMN].notna() & (df[TEXT_COLUMN] != "")]
     return df.reset_index(drop=True)
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import text as sql_text
@@ -52,10 +52,9 @@ class DictionaryEntry(RRSBase):
 
 class Segment(RRSBase):
     __tablename__ = "segments"
-    __table_args__ = (UniqueConstraint("segment_id", "subject_id", name="uq_segments_segment_subject"),)
 
     segment_id = Column(String, primary_key=True)
-    subject_id = Column(String, ForeignKey("subjects.subject_id"), nullable=True)
+    subject_id = Column(String, ForeignKey("subjects.subject_id"), primary_key=True)
     s3_uri = Column(String, nullable=True)
     n_keywords = Column(Integer, nullable=True)
     start = Column(DateTime(timezone=True), nullable=True)
@@ -80,10 +79,17 @@ class Segment(RRSBase):
 
 class Case(RRSBase):
     __tablename__ = "cases"
-    __table_args__ = (UniqueConstraint("case_id", "segment_id", "subject_id", name="uq_cases_case_segment_subject"),)
+    __table_args__ = (
+        UniqueConstraint("case_id", "segment_id", "subject_id", name="uq_cases_case_segment_subject"),
+        ForeignKeyConstraint(
+            ["segment_id", "subject_id"],
+            ["segments.segment_id", "segments.subject_id"],
+            name="cases_segment_id_subject_id_fkey",
+        ),
+    )
 
     case_id = Column(String, primary_key=True)
-    segment_id = Column(String, ForeignKey("segments.segment_id"), nullable=True)
+    segment_id = Column(String, nullable=True)
     subject_id = Column(String, ForeignKey("subjects.subject_id"), nullable=True)
     model_score = Column(String, nullable=True)
     model_reason = Column(String, nullable=True)

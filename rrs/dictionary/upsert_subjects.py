@@ -47,24 +47,33 @@ def upsert_subjects() -> None:
     engine = get_engine()
     Session = sessionmaker(bind=engine)
 
-    rows = [{"subject_id": subject_id(name), "name": name} for name in subjects]
-
+    rows = [
+        {
+            "subject_id": subject_id(name), 
+            "name": name, 
+            "subject_title": subject_items["title"]
+        } for name, subject_items in subjects.items()
+    ]
     with Session() as session:
         stmt = (
             insert(Subject)
             .values(rows)
             .on_conflict_do_update(
                 index_elements=["subject_id"],
-                set_={"name": insert(Subject).excluded.name},
+                set_={
+                    "name": insert(Subject).excluded.name,
+                    "subject_title": insert(Subject).excluded.subject_title,
+                },
             )
         )
         session.execute(stmt)
         session.commit()
 
     for row in rows:
-        print(f"  upserted: {row['subject_id']!r}  ({row['name']!r})")
+        print(f"  upserted: {row['subject_id']!r}  ({row['name']!r} - {row['subject_title']!r})")
     print(f"\n{len(rows)} subject(s) upserted.")
 
 
 if __name__ == "__main__":
+    print("start")
     upsert_subjects()

@@ -1,0 +1,82 @@
+id: pulsar-themes
+namespace: rrs
+
+description: |
+  Pull Pulsar TRAC "Themes" into the standalone pulsar_* tables, one search per
+  parallel branch. Each branch runs the whole pipeline in the lean image:
+  download the themes XLS + capture the session token (login → Export → XLS),
+  parse themes + topics, then fetch each theme's top posts via GraphQL and store
+  searches / themes / topics / posts. Fan out over `searches`.
+
+labels:
+  pipeline: rrs
+  environment: prod
+  scope: france
+
+inputs:
+  # One entry per Pulsar search to pull. Add objects to scale to X instances.
+  - id: searches
+    type: JSON
+    defaults: |
+      [
+        {"name": "renewables", "folder_id": "529", "search_id": "201823", "subject": "climate"},
+        {"name": "renewables", "folder_id": "529", "search_id": "201830", "subject": "climate"}
+      ]
+    description: "JSON string defining the details of the searches from which to extract the themes."
+  - id: relevance_mention_tag_ids
+    type: JSON
+    defaults: "[]"
+  - id: days_back
+    type: INT
+    defaults: 1
+    description: "Look-back window in days"
+  - id: n_top_posts
+    type: INT
+    defaults: 30
+    description: "Top posts to fetch per theme"
+  - id: start_date
+    type: STRING
+    required: false
+    description: "Start of the analysis window (YYYY-MM-DD). Overrides days_back when set."
+  - id: end_date
+    type: STRING
+    required: false
+    description: "End of the analysis window (YYYY-MM-DD). Defaults to now when not set."
+
+tasks:
+  - id: per_search
+    type: io.kestra.plugin.core.flow.ForEach
+    values: "{{ inputs.searches }}"
+    concurrencyLimit: 1
+    tasks:
+      - id: pulsar
+        type: io.kestra.plugin.docker.Run
+        containerImage: "rg.fr-par.scw.cloud/rrs-prod/rrs-pulsar:prod"
+        pullPolicy: ALWAYS
+        credentials:
+          registry: rg.fr-par.scw.cloud/rrs-prod
+          username: nologin
+          password: "{{ secret('RRS_SCW_SECRET') }}"
+        commands:
+          - python
+          - -m
+          - rrs.pulsar.fetch_weekly_themes_client
+        env:
+          PYTHONPATH: /app
+          PULSAR_API_KEY: "{{ secret('PULSAR_API_KEY') }}"
+          PULSAR_BASE_URL: "{{ secret('PULSAR_BASE_URL') }}"
+          PULSAR_EMAIL: "{{ secret('PULSAR_EMAIL') }}"
+          PULSAR_PASSWORD: "{{ secret('PULSAR_PASSWORD') }}"
+          PULSAR_RELEVANCE_MENTION_TAG_IDS: "{{ inputs.relevance_mention_tag_ids }}"
+          PULSAR_FOLDER_ID: "{{ json(taskrun.value).folder_id }}"
+          PULSAR_SEARCH_ID: "{{ json(taskrun.value).search_id }}"
+          SUBJECT: "{{ json(taskrun.value).subject }}"
+          PULSAR_TOP_N: "{{ inputs.n_top_posts }}"
+          PULSAR_DAYS_BACK: "{{ inputs.days_back }}"
+          PULSAR_START_DATE: "{{ inputs.start_date ?? '' }}"
+          PULSAR_END_DATE: "{{ inputs.end_date ?? '' }}"
+          RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
+          RRS_PG_PORT: 18492
+          RRS_PG_DATABASE: rrs
+          RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
+          RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"

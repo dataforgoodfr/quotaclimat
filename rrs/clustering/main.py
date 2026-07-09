@@ -50,7 +50,7 @@ from rrs.clustering.providers import PROVIDER_ANTHROPIC, PROVIDER_MISTRAL
 from rrs.clustering.steps import (
     _HIGH_THRESHOLD,
     _LOW_THRESHOLD,
-    SEED_LABELS,
+    get_seed_labels,
     _build_client,
     _build_sentences_by_doc,
     _deduplicate_candidates,
@@ -94,6 +94,8 @@ async def _run_day(
     low_threshold: float,
     high_threshold: float,
     expiry_days: int,
+    subject: str = "climate",
+    subject_id: Optional[str] = None,
 ) -> None:
     """Run the full clustering pipeline for a single day."""
     if out is not None:
@@ -101,7 +103,7 @@ async def _run_day(
 
     # --- Load cases for this day ---
     print(f"\nLoading texts from database for {run_date}...")
-    docs_df = load_from_db(start_date=run_date, end_date=run_date)
+    docs_df = load_from_db(start_date=run_date, end_date=run_date, subject_id=subject_id)
     print(f"  {len(docs_df)} documents loaded.")
     if docs_df.empty:
         print("  No documents for this day — skipping.")
@@ -117,10 +119,10 @@ async def _run_day(
     print(
         f"\nStep 1: Estimating token usage for {len(sentences_by_doc)} transcripts..."
     )
-    estimate_step1_tokens(sentences_by_doc, provider=provider)
+    estimate_step1_tokens(sentences_by_doc, provider=provider, subject=subject)
     print(f"\nStep 1: Generating narrative labels (max_concurrent={max_concurrent})...")
     generated_labels = await build_labels_from_transcripts(
-        sentences_by_doc, client, max_concurrent
+        sentences_by_doc, client, max_concurrent, subject=subject
     )
 
     seeds = list(initial_labels or [])
@@ -151,7 +153,7 @@ async def _run_day(
             f"  Adaptive cluster target: {effective_target} (n_docs={len(sentences_by_doc)})"
         )
         estimate_step2_tokens(
-            all_labels, batch_size=merge_batch_size, provider=provider
+            all_labels, batch_size=merge_batch_size, provider=provider, subject=subject
         )
         print("\nStep 2: Merging semantically similar labels...")
         all_labels = await merge_labels(
@@ -162,6 +164,7 @@ async def _run_day(
             max_concurrent=max_concurrent,
             max_rounds=merge_max_rounds,
             log_path=out / "labels_merge_progress.json" if out is not None else None,
+            subject=subject,
         )
         print(f"  {len(all_labels)} labels after merging.")
     if out is not None:
@@ -175,7 +178,7 @@ async def _run_day(
         f"\nStep 2b: Loading active clusters from database "
         f"(active since {active_since}, {expiry_days}d before {run_date})..."
     )
-    existing_df = get_clusters_from_db(active_since=active_since)
+    existing_df = get_clusters_from_db(active_since=active_since, subject_id=subject_id)
     existing_labels: list[str] = existing_df["cluster_text"].dropna().tolist()
     existing_ids: dict[str, str] = dict(
         zip(existing_df["cluster_text"], existing_df["cluster_id"])
@@ -197,6 +200,7 @@ async def _run_day(
             max_concurrent=max_concurrent,
             low_threshold=low_threshold,
             high_threshold=high_threshold,
+            subject=subject,
         )
     else:
         print("  No existing clusters — all new labels are kept.")
@@ -231,7 +235,7 @@ async def _run_day(
         f"\nStep 3: Estimating token usage for {len(sentences_by_doc)} transcripts "
         f"with {len(combined_labels)} labels..."
     )
-    estimate_step3_tokens(sentences_by_doc, combined_labels, provider=provider)
+    estimate_step3_tokens(sentences_by_doc, combined_labels, provider=provider, subject=subject)
     print(
         f"\nStep 3: Classifying {len(sentences_by_doc)} transcripts (max_concurrent={max_concurrent})..."
     )
@@ -272,7 +276,7 @@ async def _run_day(
         print(f"\nTranscript-label assignments saved to {assignments_path}")
 
     print("\nWriting results to database...")
-    write_clusters_to_db(assignments_df)
+    write_clusters_to_db(assignments_df, subject_id=subject_id)
 
 
 async def run(
@@ -286,6 +290,7 @@ async def run(
     merge_max_rounds: int = 20,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    days_prior: Optional[int] = None,
     only_recent: bool = True,
     max_concurrent: int = MAX_CONCURRENT,
     provider: str = PROVIDER_MISTRAL,
@@ -298,9 +303,11 @@ async def run(
     embedding_backend: str = EMBEDDING_BACKEND_ST,
     embedding_model: str = _EMBEDDING_MODEL,
     expiry_days: int = 30,
+    subject: str = "climate",
 ) -> None:
+    subject_id = get_consistent_hash(subject)
     # Build shared resources once across all days
-    client = _build_client(provider)
+    client = _build_client(provider, subject=subject)
     mistral_api_key = (
         os.getenv("MISTRAL_API_KEY")
         if embedding_backend == EMBEDDING_BACKEND_MISTRAL
@@ -311,11 +318,26 @@ async def run(
     )
 
     # Resolve date range
-    if start_date is None:
+    if start_date is not None:
+        first_day = start_date
+        last_day = end_date or first_day
+        days = [
+            first_day + timedelta(days=i)
+            for i in range((last_day - first_day).days + 1)
+        ]
+    elif days_prior is not None:
+        last_day = end_date or date.today()
+        first_day = last_day - timedelta(days=days_prior)
+        days = [
+            first_day + timedelta(days=i)
+            for i in range((last_day - first_day).days + 1)
+        ]
+        print(f"Using --days-prior={days_prior}: {first_day} → {last_day}")
+    else:
         print("No start date provided — querying DB for unprocessed days...")
-        days = get_unprocessed_dates()
+        days = get_unprocessed_dates(subject_id=subject_id)
         if only_recent:
-            latest_clustered = get_latest_clustered_date()
+            latest_clustered = get_latest_clustered_date(subject_id=subject_id)
             if latest_clustered is not None:
                 print(f"  Filtering to days after latest clustered date: {latest_clustered}")
                 days = [d for d in days if d > latest_clustered]
@@ -325,13 +347,6 @@ async def run(
             print("No unprocessed days found — nothing to do.")
             return
         print(f"Found {len(days)} unprocessed day(s): {days[0]} → {days[-1]}")
-    else:
-        first_day = start_date
-        last_day = end_date or first_day
-        days = [
-            first_day + timedelta(days=i)
-            for i in range((last_day - first_day).days + 1)
-        ]
     print(f"Running clustering for {len(days)} day(s): {days[0]} → {days[-1]}")
 
     base_out = Path(output_dir) if output_dir else None
@@ -362,6 +377,8 @@ async def run(
             low_threshold=low_threshold,
             high_threshold=high_threshold,
             expiry_days=expiry_days,
+            subject=subject,
+            subject_id=subject_id,
         )
         day_input = client._input_tokens - tokens_before[0]
         day_output = client._output_tokens - tokens_before[1]
@@ -396,6 +413,11 @@ if __name__ == "__main__":
             "New clusters are filtered against existing DB clusters before classification. "
             f"Supports providers: {PROVIDER_MISTRAL} (default), {PROVIDER_ANTHROPIC}."
         )
+    )
+    parser.add_argument(
+        "--subject",
+        default=os.getenv("SUBJECT", "climate"),
+        help="Subject to cluster (e.g. 'climate', 'insecurity'). Controls DB filter and prompt domain. Default: climate (env: SUBJECT).",
     )
     parser.add_argument(
         "--spacy-model", default=os.getenv("SPACY_MODEL", "fr_core_news_sm")
@@ -511,13 +533,19 @@ if __name__ == "__main__":
         "--start-date",
         default=os.getenv("START_DATE"),
         metavar="YYYY-MM-DD",
-        help="Keep only records on or after this date (inclusive). Default: no lower bound.",
+        help="Start date inclusive. Overrides --days-prior if set (env: START_DATE).",
     )
     parser.add_argument(
         "--end-date",
         default=os.getenv("END_DATE"),
         metavar="YYYY-MM-DD",
-        help="Keep only records on or before this date (inclusive). Default: no upper bound.",
+        help="End date inclusive. Defaults to today when --days-prior is used (env: END_DATE).",
+    )
+    parser.add_argument(
+        "--days-prior",
+        type=int,
+        default=int(os.getenv("DAYS_PRIOR")) if os.getenv("DAYS_PRIOR") else None,
+        help="Number of days before end-date to use as start-date when no --start-date is given (env: DAYS_PRIOR).",
     )
     parser.add_argument(
         "--no-only-recent",
@@ -535,7 +563,7 @@ if __name__ == "__main__":
     elif args.initial_labels_file:
         initial = json.loads(Path(args.initial_labels_file).read_text(encoding="utf-8"))
     else:
-        initial = SEED_LABELS
+        initial = get_seed_labels(args.subject)
 
     asyncio.run(
         run(
@@ -550,6 +578,7 @@ if __name__ == "__main__":
             merge_max_rounds=args.merge_max_rounds,
             start_date=date.fromisoformat(args.start_date) if args.start_date else None,
             end_date=date.fromisoformat(args.end_date) if args.end_date else None,
+            days_prior=args.days_prior,
             max_concurrent=args.max_concurrent,
             provider=args.provider,
             target_clusters=args.target_clusters,
@@ -561,5 +590,6 @@ if __name__ == "__main__":
             embedding_backend=args.embedding_backend,
             embedding_model=args.embedding_model,
             expiry_days=args.expiry_days,
+            subject=args.subject,
         )
     )

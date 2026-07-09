@@ -2,7 +2,7 @@ import math
 import random
 
 from rrs.clustering.prompts import (
-    SYSTEM_PROMPT,
+    get_system_prompt,
     _step1_prompt,
     _step2_prompt,
     _step3_prompt,
@@ -55,15 +55,17 @@ def estimate_step1_tokens(
     sentences_by_doc: dict,
     provider: str = PROVIDER_MISTRAL,
     sample_size: int = 20,
+    subject: str = "climate",
 ) -> None:
     """Sample documents, estimate input tokens locally, and print a cost estimate."""
     doc_ids = list(sentences_by_doc.keys())
     n_docs = len(doc_ids)
     sample = random.sample(doc_ids, min(sample_size, n_docs))
 
+    system_prompt = get_system_prompt(subject)
     token_counts: list[int] = []
     for doc_id in sample:
-        prompt_text = SYSTEM_PROMPT + _step1_prompt(sentences_by_doc[doc_id])
+        prompt_text = system_prompt + _step1_prompt(sentences_by_doc[doc_id], subject=subject)
         token_counts.append(_estimate_tokens(prompt_text))
 
     avg_input = sum(token_counts) / len(token_counts)
@@ -88,6 +90,7 @@ def estimate_step2_tokens(
     label_list: list[str],
     batch_size: int = 30,
     provider: str = PROVIDER_MISTRAL,
+    subject: str = "climate",
 ) -> None:
     """Estimate step 2 cost by simulating hierarchical rounds, assuming 50% reduction per round."""
     n = len(label_list)
@@ -99,7 +102,7 @@ def estimate_step2_tokens(
 
     total_calls = sum(rounds)
     sample_labels = label_list[: min(batch_size, len(label_list))]
-    tokens_per_call = _estimate_tokens(SYSTEM_PROMPT + _step2_prompt(sample_labels))
+    tokens_per_call = _estimate_tokens(get_system_prompt(subject) + _step2_prompt(sample_labels, subject=subject))
 
     total_input = total_calls * tokens_per_call
     total_output = total_calls * (tokens_per_call // 2)
@@ -119,15 +122,17 @@ def estimate_step3_tokens(
     label_list: list[str],
     provider: str = PROVIDER_MISTRAL,
     sample_size: int = 20,
+    subject: str = "climate",
 ) -> None:
     """Estimate step 3 cost by sampling documents and estimating tokens locally."""
     doc_ids = list(sentences_by_doc.keys())
     n_docs = len(doc_ids)
     sample = random.sample(doc_ids, min(sample_size, n_docs))
 
+    system_prompt = get_system_prompt(subject)
     token_counts: list[int] = []
     for doc_id in sample:
-        prompt_text = SYSTEM_PROMPT + _step3_prompt(
+        prompt_text = system_prompt + _step3_prompt(
             sentences_by_doc[doc_id], label_list
         )
         token_counts.append(_estimate_tokens(prompt_text))

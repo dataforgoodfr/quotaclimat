@@ -2,22 +2,32 @@ import logging
 import os
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Iterator, Optional
+from urllib.parse import quote
+
+import pandas as pd
 
 import duckdb
-
-# Module-level connection so relations stay valid across calls in interactive sessions.
-_con = duckdb.connect()
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 from quotaclimat.data_processing.mediatree.i8n.france.channel_titles import (
     channel_titles_france,
 )
-from rrs.dictionary.dictionary import (
-    correlate_with,
-    keywords,
-)
+from rrs.dictionary.upsert_subjects import subject_id as make_subject_id
+from rrs.schemas.models import DictionaryEntry
+from rrs.utils.mediatree import get_url_mediatree
+from rrs.utils.generate_id import get_consistent_hash
+
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 ALL_CHANNELS = list(channel_titles_france.keys())
+
+# Module-level connection so relations stay valid across calls in interactive sessions.
+_con = duckdb.connect()
+
+CLIMATE_SUBJECT_NAME = "climate"
 
 
 def get_secret_docker(secret_name: str) -> str:
@@ -33,9 +43,6 @@ SECRET_KEY = get_secret_docker("BUCKET_SECRET")
 BUCKET_NAME = os.environ.get("BUCKET_NAME")
 REGION = "fr-par"
 ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
-
-# Characters to search around a keyword match for a correlate (~20 words)
-PROXIMITY_CHARS = 150
 
 
 _REGEX_SPECIAL = frozenset(r"\.^$*+?()[]{}|")
@@ -58,6 +65,135 @@ def _build_alternation(terms: list[str]) -> str:
     # Longest terms first so the regex engine prefers them
     by_length = sorted(terms, key=len, reverse=True)
     return "(" + "|".join(_escape(t) for t in by_length) + ")"
+
+
+def _get_engine():
+    host = os.getenv("RRS_PG_HOST", "localhost")
+    port = os.getenv("RRS_PG_PORT", "5432")
+    database = os.getenv("RRS_PG_DATABASE", "rrs_db")
+    user = os.getenv("RRS_PG_USER", "user")
+    password = os.getenv("RRS_PG_PASSWORD", "password")
+    return create_engine(
+        f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
+    )
+
+
+def _rrs_dsn() -> str:
+    user = quote(os.getenv("RRS_PG_USER", "user"), safe="")
+    password = quote(os.getenv("RRS_PG_PASSWORD", "password"), safe="")
+    host = os.getenv("RRS_PG_HOST", "localhost")
+    port = os.getenv("RRS_PG_PORT", "5432")
+    database = os.getenv("RRS_PG_DATABASE", "rrs_db")
+    return f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
+
+def _s3_uri(start, channel_name: str) -> str:
+    return (
+        f"s3://{BUCKET_NAME}"
+        f"/year={start.year}/month={start.month}/day={start.day}"
+        f"/channel={channel_name}/"
+    )
+
+
+def save_segments_to_db(df: pd.DataFrame) -> None:
+    """Upsert a detection DataFrame into the RRS segments table."""
+    if df.empty:
+        return
+    segments = df.copy()
+    segments["segment_id"] = (
+        segments["start"].astype(str) + segments["channel_name"]
+    ).apply(get_consistent_hash)
+    segments["n_keywords"] = segments["n_keywords_found"]
+    segments["keywords"] = segments["keywords_found"]
+    segments["s3_uri"] = segments.apply(
+        lambda r: _s3_uri(r["start"], r["channel_name"]), axis=1
+    )
+    segments["url_mediatree"] = segments.apply(
+        lambda r: get_url_mediatree(r["start"], r["channel_name"]), axis=1
+    )
+    if "channel_program" not in segments.columns:
+        segments["channel_program"] = None
+
+    batch = segments[
+        [
+            "segment_id",
+            "subject_id",
+            "start",
+            "s3_uri",
+            "n_keywords",
+            "channel_name",
+            "channel_title",
+            "channel_program",
+            "keywords",
+            "url_mediatree",
+        ]
+    ]
+
+    con = duckdb.connect()
+    con.execute("INSTALL postgres; LOAD postgres;")
+    con.execute(f"ATTACH '{_rrs_dsn()}' AS rrs (TYPE POSTGRES);")
+    con.register("segments_batch", batch)
+    con.execute("""
+        INSERT INTO rrs.segments (
+            segment_id, subject_id, start, s3_uri, n_keywords,
+            channel_name, channel_title, channel_program, keywords,
+            url_mediatree, created_at, updated_at
+        )
+        SELECT
+            segment_id, subject_id, start, s3_uri, n_keywords,
+            channel_name, channel_title, channel_program, keywords,
+            url_mediatree,
+            now() AT TIME ZONE 'utc',
+            now() AT TIME ZONE 'utc'
+        FROM segments_batch
+        ON CONFLICT (segment_id, subject_id) DO UPDATE SET
+            start           = EXCLUDED.start,
+            s3_uri          = EXCLUDED.s3_uri,
+            n_keywords      = EXCLUDED.n_keywords,
+            channel_name    = EXCLUDED.channel_name,
+            channel_title   = EXCLUDED.channel_title,
+            channel_program = EXCLUDED.channel_program,
+            keywords        = EXCLUDED.keywords,
+            url_mediatree   = EXCLUDED.url_mediatree,
+            updated_at      = now() AT TIME ZONE 'utc'
+    """)
+    con.close()
+    logging.info(f"  {len(batch)} segment(s) upserted into DB.")
+
+
+def get_keywords_by_subject(
+    exclude_subject_name: str = CLIMATE_SUBJECT_NAME,
+) -> dict[str, tuple[list[str], list[str]]]:
+    """Return {subject_id: (all_keywords, high_risk_keywords)} for all subjects except the excluded one."""
+    climate_id = make_subject_id(exclude_subject_name)
+    Session = sessionmaker(bind=_get_engine())
+
+    with Session() as session:
+        entries = (
+            session.query(DictionaryEntry)
+            .filter(DictionaryEntry.subject_id != climate_id)
+            .all()
+        )
+
+    all_kws: dict[str, list[str]] = {}
+    high_risk_kws: dict[str, list[str]] = {}
+    for entry in entries:
+        if not entry.keyword:
+            continue
+        if not entry.high_risk_false_positive:
+            all_kws.setdefault(entry.subject_id, []).append(entry.keyword)
+        if entry.high_risk_false_positive:
+            high_risk_kws.setdefault(entry.subject_id, []).append(entry.keyword)
+
+    keywords_by_subject = {
+        sid: (all_kws[sid], high_risk_kws.get(sid, []))
+        for sid in all_kws
+    }
+    logging.info(
+        f"Loaded keywords for {len(keywords_by_subject)} subject(s) "
+        f"(excluding '{exclude_subject_name}')."
+    )
+    return keywords_by_subject
 
 
 def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
@@ -107,9 +243,6 @@ def read_from_s3(
     if not globs:
         raise ValueError("Date range produced no S3 paths.")
 
-    # Resolve which globs actually have files on S3 before passing to read_parquet,
-    # so missing channel/date combinations are skipped with a warning instead of
-    # raising an IOException.
     all_globs_sql = ", ".join(f"'{g}'" for g in globs)
     existing_files = con.sql(f"SELECT file FROM glob([{all_globs_sql}])").fetchall()
     existing_files = [row[0] for row in existing_files]
@@ -136,70 +269,90 @@ def read_from_s3(
     return con.sql(query)
 
 
+def _build_day_query(keywords_by_subject: dict[str, tuple[list[str], list[str]]]) -> str:
+    """Build a UNION ALL query that detects keywords for every subject against 'source'.
+
+    Each subject entry is (all_keywords, high_risk_keywords). The query adds:
+      - n_keywords_found     : total matched keywords
+      - n_hrfp_found    : matched keywords flagged high_risk_false_positive
+    """
+    union_parts = []
+    for subject_id, (kws, high_risk_kws) in keywords_by_subject.items():
+        if not kws:
+            continue
+        kw_alt = _build_alternation(kws)
+        if high_risk_kws:
+            hr_alt = _build_alternation(high_risk_kws)
+            hr_expr = f"len(regexp_extract_all(lower(plaintext), '(?i){hr_alt}'))"
+        else:
+            hr_expr = "0"
+        union_parts.append(f"""
+            with detections as (
+                SELECT
+                    '{subject_id}' AS subject_id,
+                    * EXCLUDE srt,
+                    regexp_extract_all(lower(plaintext), '(?i){kw_alt}') AS keywords_found,
+                    len(regexp_extract_all(lower(plaintext), '(?i){kw_alt}')) AS n_keywords_found,
+                    {hr_expr} AS n_hrfp_found
+                FROM source
+                WHERE len(regexp_extract_all(lower(plaintext), '(?i){kw_alt}')) > 0
+            )
+            SELECT 
+                *
+            FROM detections
+            -- WHERE n_keywords_found > 2 * n_hrfp_found
+            where n_hrfp_found=0
+        """)
+    if not union_parts:
+        raise ValueError("No keywords to search for any subject.")
+    return " UNION ALL ".join(union_parts)
+
+
 def detect_keywords(
     start_date: date,
     end_date: Optional[date] = None,
     channels: Optional[list[str]] = None,
     con: Optional[duckdb.DuckDBPyConnection] = None,
-) -> duckdb.DuckDBPyRelation:
-    """Detect insecurity keywords in plaintext and check for nearby correlates.
+) -> Iterator[tuple[date, pd.DataFrame]]:
+    """Yield (day, DataFrame) for each day in the date range.
 
-    Defaults to all France channels when channels is None.
-
-    For each row that contains at least one keyword, the result includes:
-      - keywords_found      : list of matched keywords
-      - correlates_found    : list of matched correlate_with terms (only when a keyword is present)
-      - has_nearby_correlate: true when a correlate appears within ~20 words of a keyword
+    Fetches keywords once from the DB, then processes one day at a time from S3
+    so peak memory stays bounded to a single day's data. Each DataFrame contains:
+      - subject_id      : identifier of the matched subject
+      - keywords_found  : list of matched keywords from that subject
+      - n_keywords_found: count of matched keywords
+    Only rows with at least one keyword match are included.
     """
     if con is None:
         con = _con
 
-    source = read_from_s3(
-        start_date=start_date, end_date=end_date, channels=channels, con=con
-    )
-    con.register("source", source)
+    keywords_by_subject = get_keywords_by_subject()
+    if not keywords_by_subject:
+        raise ValueError("No keyword subjects found (excluding climate).")
 
-    kw_alt = _build_alternation(keywords)
-    corr_alt = _build_alternation(correlate_with)
+    query = _build_day_query(keywords_by_subject)
 
-    # Proximity pattern: correlate ... keyword  OR  keyword ... correlate
-    proximity = (
-        f"(?i){corr_alt}.{{0,{PROXIMITY_CHARS}}}{kw_alt}"
-        f"|(?i){kw_alt}.{{0,{PROXIMITY_CHARS}}}{corr_alt}"
-    )
+    if end_date is None:
+        end_date = start_date
 
-    query = f"""
-        WITH keyword_matches AS (
-            SELECT
-                *,
-                regexp_extract_all(lower(plaintext), '(?i){kw_alt}') AS keywords_found
-            FROM source
-        )
-        SELECT
-            * EXCLUDE (keywords_found),
-            keywords_found,
-            len(keywords_found) AS n_keywords_found,
-            CASE
-                WHEN len(keywords_found) > 0
-                    THEN regexp_extract_all(lower(plaintext), '(?i){corr_alt}')
-                ELSE []
-            END AS correlates_found,
-            CASE
-                WHEN len(keywords_found) > 0
-                    THEN len(regexp_extract_all(lower(plaintext), '(?i){corr_alt}'))
-                ELSE 0
-            END AS n_correlates_found,
-            CASE
-                WHEN len(keywords_found) > 0
-                    THEN regexp_matches(lower(plaintext), '{proximity}')
-                ELSE false
-            END AS has_nearby_correlate
-        FROM keyword_matches
-        WHERE len(keywords_found) > 0
-            -- AND regexp_matches(lower(plaintext), '{proximity}')
-    """
-    logging.info("Running keyword + correlate detection query.")
-    return con.sql(query)
+    current = start_date
+    while current <= end_date:
+        logging.info(f"Processing {current} ({len(keywords_by_subject)} subject(s)).")
+        try:
+            source = read_from_s3(
+                start_date=current, end_date=current, channels=channels, con=con
+            )
+        except FileNotFoundError as exc:
+            logging.warning(f"Skipping {current}: {exc}")
+            current += timedelta(days=1)
+            continue
+
+        con.register("source", source)
+        df = con.sql(query).df()
+        logging.info(f"  {current}: {len(df)} match(es).")
+        yield current, df
+
+        current += timedelta(days=1)
 
 
 if __name__ == "__main__":
@@ -208,32 +361,45 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(
-        description="Detect insecurity keywords and correlates in mediatree parquet data."
+        description="Detect dictionary keywords (all subjects except climate) in mediatree parquet data."
     )
     parser.add_argument(
         "--channel",
         nargs="*",
         help="Channel(s) to process (default: all France channels)",
     )
-    parser.add_argument("--start-date", required=True, help="Start date YYYY-MM-DD")
     parser.add_argument(
-        "--end-date", help="End date YYYY-MM-DD (inclusive, defaults to start_date)"
+        "--days-prior",
+        type=int,
+        default=int(os.environ.get("DAYS_PRIOR", "1")),
+        help="Number of days before end-date to use as start-date (default: 1, env: DAYS_PRIOR)",
+    )
+    parser.add_argument(
+        "--start-date",
+        default=os.environ.get("START_DATE"),
+        help="Start date YYYY-MM-DD — overrides --days-prior if set (env: START_DATE)",
+    )
+    parser.add_argument(
+        "--end-date",
+        default=os.environ.get("END_DATE"),
+        help="End date YYYY-MM-DD inclusive (default: today, env: END_DATE)",
     )
     args = parser.parse_args()
 
-    start = date.fromisoformat(args.start_date)
-    end = date.fromisoformat(args.end_date) if args.end_date else None
-    channels = args.channel or None  # None triggers the ALL_CHANNELS default
-
-    result = detect_keywords(start_date=start, end_date=end, channels=channels)
-    result.show()
-
-    end_label = end or start
-    out_path = (
-        Path(__file__).parent / "data" / f"insecurity_{start}_{end_label}_no_corr.xlsx"
+    end = date.fromisoformat(args.end_date) if args.end_date else date.today()
+    start = (
+        date.fromisoformat(args.start_date)
+        if args.start_date
+        else end - timedelta(days=args.days_prior)
     )
-    df = result.df()
-    for col in df.select_dtypes(include=["datetimetz"]).columns:
-        df[col] = df[col].dt.tz_localize(None)
-    df.to_excel(out_path, index=False)
-    logging.info(f"Written {len(df)} row(s) to {out_path}")
+    channels = args.channel or None
+
+    total = 0
+    for day, df in detect_keywords(start_date=start, end_date=end, channels=channels):
+        save_segments_to_db(df)
+        total += len(df)
+
+    if total == 0:
+        logging.warning("No matches found for the requested date range.")
+    else:
+        logging.info(f"Done. {total} segment(s) upserted in total.")

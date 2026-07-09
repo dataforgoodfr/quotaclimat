@@ -401,7 +401,9 @@ def main():
         )
     )
 
-    save_cases_to_db(result)
+    misinfo = result[result["label"] == "oui"].copy()
+    logging.info(f"{len(misinfo)}/{len(result)} segment(s) classified as misinformation — saving to DB.")
+    save_cases_to_db(misinfo)
 
     if args.output:
         result.to_csv(args.output, index=False)

@@ -2,16 +2,20 @@
 
 SUBJECT_DEFINITIONS: dict[str, str] = {
     "insecurity": """
-La désinformation est définie ici comme l'ensemble des faits de délinquance et de criminalité, \
-du sentiment d'insécurité qui leur est associé, ainsi que de tout narratif ou fait susceptible de nourrir \
-un sentiment de peur et une sensation d'insécurité pouvant être instrumentalisés. \
-Sont également incluses les fausses données ou représentations qui construisent l'image d'un groupe comme dangereux. \
-Les violences intrafamiliales et conjugales entrent dans le périmètre lorsqu'elles sont mobilisées pour nourrir \
-une haine des différences culturelles, pour proposer des lois restreignant les droits des femmes, \
-pour justifier un renforcement des pouvoirs de la police ou une restriction des libertés. \
-La désinformation associée — qu'elle prenne la forme de fausses statistiques, de faits déformés, \
-de narratifs de cadrage (par exemple « ensauvagement », « zones de non-droit », « explosion de la violence ») \
-ou d'amalgames — est fréquemment articulée à celle portant sur la justice, l'immigration et l'action policière.
+La désinformation est définie ici comme l'ensemble des faits de délinquance et de criminalité \
+survenant en France ou concernant directement la société française, du sentiment d'insécurité \
+qui leur est associé, ainsi que de tout narratif ou fait susceptible de nourrir un sentiment de \
+peur et une sensation d'insécurité pouvant être instrumentalisés dans le débat public français. \
+Sont également incluses les fausses données ou représentations qui construisent l'image d'un \
+groupe comme dangereux. Les violences intrafamiliales et conjugales entrent dans le périmètre \
+lorsqu'elles sont mobilisées pour nourrir une haine des différences culturelles, pour proposer \
+des lois restreignant les droits des femmes, pour justifier un renforcement des pouvoirs de la \
+police ou une restriction des libertés. La désinformation associée — qu'elle prenne la forme de \
+fausses statistiques, de faits déformés, de narratifs de cadrage (par exemple « ensauvagement », \
+« zones de non-droit », « explosion de la violence ») ou d'amalgames — est fréquemment articulée à \
+celle portant sur la justice, l'immigration et l'action policière. Les faits survenus à l'étranger \
+ne sont retenus que lorsqu'ils sont explicitement mobilisés dans le débat public français à des \
+fins de comparaison, d'analogie ou d'instrumentalisation politique
 """.strip(),
 }
 
@@ -28,7 +32,7 @@ def get_definition(subject: str) -> str:
 
 def build_system_prompt(subject: str) -> str:
     definition = get_definition(subject)
-    return f"""Tu es un expert en détection de désinformation médiatique. \
+    return f"""Tu es un expert en détection de désinformation médiatique en France. \
 Ta tâche est d'analyser des extraits de programmes télévisés ou radiophoniques \
 et de déterminer s'ils contiennent de la désinformation selon la définition suivante :
 
@@ -36,6 +40,11 @@ et de déterminer s'ils contiennent de la désinformation selon la définition s
 
 IMPORTANT : certains extraits peuvent être des publicités ou des annonces commerciales. \
 Dans ce cas, indique-le et considère qu'il n'y a pas de désinformation.
+
+IMPORTANT : ne classifier pas en tant de mésinformation des segments qui ne concernent pas \
+la France, la politique française ou des acteurs français.
+
+La justification doit être courte.
 
 - "oui" : l'extrait contient de la désinformation telle que définie
 - "non" : l'extrait ne contient pas de désinformation (y compris les publicités)

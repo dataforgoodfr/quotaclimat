@@ -106,6 +106,7 @@ def upsert_dictionary() -> None:
 
         batch_size = 500
         upserted = 0
+        current_ids = [row["keyword_id"] for row in rows]
         with Session() as session:
             for i in range(0, len(rows), batch_size):
                 batch = rows[i : i + batch_size]
@@ -125,10 +126,19 @@ def upsert_dictionary() -> None:
                 )
                 session.execute(stmt)
                 upserted += len(batch)
+
+            deleted = (
+                session.query(DictionaryEntry)
+                .filter(
+                    DictionaryEntry.subject_id == sid,
+                    DictionaryEntry.keyword_id.notin_(current_ids),
+                )
+                .delete(synchronize_session=False)
+            )
             session.commit()
 
         print(
-            f"{upserted} keyword(s) upserted (subject: {subject!r}, subject_id: {sid!r})."
+            f"{upserted} keyword(s) upserted, {deleted} removed (subject: {subject!r}, subject_id: {sid!r})."
         )
 
 

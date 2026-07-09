@@ -109,6 +109,55 @@ services:
       rrs_db:
         condition: service_healthy
 
+  analyse_keywords:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.keyword_detection.analyse_keywords"]
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+      BUCKET: ${BUCKET}
+      BUCKET_SECRET: ${BUCKET_SECRET}
+      BUCKET_NAME: ${BUCKET_NAME}
+      START_DATE: ${START_DATE:-}
+      END_DATE: ${END_DATE:-}
+      DAYS_PRIOR: ${DAYS_PRIOR:-1}
+    depends_on:
+      upsert_dictionary:
+        condition: service_completed_successfully
+
+  detect_misinformation:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.misinformation_detection.main"]
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+      BUCKET: ${BUCKET}
+      BUCKET_SECRET: ${BUCKET_SECRET}
+      BUCKET_NAME: ${BUCKET_NAME}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+      SUBJECT: ${SUBJECT:-insecurity}
+      START_DATE: ${START_DATE:-}
+      END_DATE: ${END_DATE:-}
+      DAYS_PRIOR: ${DAYS_PRIOR:-1}
+      MISTRAL_MODEL: ${MISTRAL_MODEL:-mistral-small-2603}
+      CONCURRENCY: ${CONCURRENCY:-10}
+      OUTPUT_PATH: ${OUTPUT_PATH:-}
+    # depends_on:
+    #   analyse_keywords:
+    #     condition: service_completed_successfully
+
   clustering:
     build:
       context: ../
@@ -123,6 +172,7 @@ services:
       RRS_PG_PORT: ${RRS_PG_PORT:-5432}
       MISTRAL_API_KEY: ${MISTRAL_API_KEY}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      SUBJECT: ${SUBJECT:-insecurity}
       SPACY_MODEL: fr_core_news_sm
       WINDOW_SIZE: 3
       OVERLAP_TOKENS: 30
@@ -143,10 +193,9 @@ services:
       EMBEDDING_MODEL: "dangvantuan/sentence-camembert-large" # ignored if backend == mistral
       EXPIRY_DAYS: 30
       OUTPUT_DIR: /app/output
-      START_DATE: "2026-03-01"
-      END_DATE: "2026-03-05"
-    volumes:
-      - ./clustering_output:/app/output
+      START_DATE: ${START_DATE:-}
+      END_DATE: ${END_DATE:-}
+      DAYS_PRIOR: ${DAYS_PRIOR:-}
     depends_on:
       rrs_db:
         condition: service_healthy

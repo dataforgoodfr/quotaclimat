@@ -13,6 +13,7 @@ class Subject(RRSBase):
 
     subject_id = Column(Text, primary_key=True)
     name = Column(Text, nullable=True)
+    subject_title = Column(Text, nullable=True)
     created_at = Column(
         DateTime(timezone=True), server_default=sql_text("(now() at time zone 'utc')")
     )

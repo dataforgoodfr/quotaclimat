@@ -92,7 +92,8 @@ def extract_rows(subject_id: str, keywords: List[Dict[str, Any]]) -> list[dict]:
 
 
 def upsert_dictionary() -> None:
-    for subject, keywords in subjects.items():
+    for subject, subject_items in subjects.items():
+        keywords = subject_items["keywords"]
 
         sid = make_subject_id(subject)
         if subject == "climate":

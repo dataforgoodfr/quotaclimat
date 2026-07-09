@@ -99,7 +99,6 @@ def save_segments_to_db(df: pd.DataFrame) -> None:
     """Upsert a detection DataFrame into the RRS segments table."""
     if df.empty:
         return
-    print(df.columns)
     segments = df.copy()
     segments["segment_id"] = (
         segments["start"].astype(str) + segments["channel_name"]

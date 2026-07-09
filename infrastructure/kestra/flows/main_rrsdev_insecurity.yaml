@@ -1,5 +1,5 @@
-id: rrs-climate
-namespace: rrs
+id: rrs-insecurity
+namespace: rrs-dev
 
 description: |
   Climate pipeline for RRS imports data from the OME database and performs clustering
@@ -7,7 +7,7 @@ description: |
 
 labels:
   pipeline: rrs
-  environment: prod
+  environment: dev
   scope: france
 
 inputs:
@@ -43,66 +43,67 @@ triggers:
 
 
 tasks:
-  - id: import_segments
+  - id: analyse_keywords
     shmSize: 6gb
     type: io.kestra.plugin.docker.Run
-    containerImage: "rg.fr-par.scw.cloud/rrs-prod/rrs-base:prod"
+    containerImage: "rg.fr-par.scw.cloud/rrs-dev/rrs-base:latest"
     pullPolicy: ALWAYS
     credentials:
-      registry: rg.fr-par.scw.cloud/rrs-prod
+      registry: rg.fr-par.scw.cloud/rrs-dev
       username: nologin
-      password: "{{ secret('RRS_SCW_SECRET') }}"
+      password: "{{ secret('RRS_SCW_SECRET_DEV') }}"
     entryPoint:
       - python
       - -m
-      - rrs.keyword_detection.import_segments
+      - rrs.keyword_detection.analyse_keywords
     env:
       PYTHONPATH: /app
       START_DATE: "{{ inputs.start_date ?? '' }}"
       END_DATE: "{{ inputs.end_date ?? '' }}"
+      DAYS_PRIOR: "{{ inputs.days_back ?? '' }}"
       BUCKET_NAME: mediatree
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RRS_PG_DATABASE: rrs
-      RRS_PG_PORT: 18492
+      RRS_PG_PORT: 18047
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
-      POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
-      POSTGRES_USER: "{{ secret('RRS_BAROMETRE_READ_USER') }}"
-      POSTGRES_PASSWORD: "{{ secret('RRS_BAROMETRE_READ_PASSWORD') }}"
-      RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
-      RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
-      RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
-      SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+      RRS_PG_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
+      RRS_PG_USER: "{{ secret('RRS_PG_USER_DEV') }}"
+      RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD_DEV') }}"
 
-  - id: import_cases
+  - id: detect_misinformation
     shmSize: 6gb
     type: io.kestra.plugin.docker.Run
     containerImage: "rg.fr-par.scw.cloud/rrs-prod/rrs-base:prod"
     pullPolicy: ALWAYS
     credentials:
-      registry: rg.fr-par.scw.cloud/rrs-prod
+      registry: rg.fr-par.scw.cloud/rrs-dev
       username: nologin
-      password: "{{ secret('RRS_SCW_SECRET') }}"
+      password: "{{ secret('RRS_SCW_SECRET_DEV') }}"
     entryPoint:
       - python
       - -m
-      - rrs.keyword_detection.import_cases
+      - rrs.misinformation_detection.main
     env:
       PYTHONPATH: /app
       START_DATE: "{{ inputs.start_date ?? '' }}"
       END_DATE: "{{ inputs.end_date ?? '' }}"
+      DAYS_PRIOR: "{{ inputs.days_back ?? '' }}"
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RRS_PG_DATABASE: rrs
-      RRS_PG_PORT: 18492
-      POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
-      POSTGRES_USER: "{{ secret('RRS_BAROMETRE_READ_USER') }}"
-      POSTGRES_PASSWORD: "{{ secret('RRS_BAROMETRE_READ_PASSWORD') }}"
-      RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
-      RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
-      RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
-      SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+      RRS_PG_PORT: 18047
+      BUCKET_NAME: mediatree
+      BUCKET: "{{ secret('SCW_ACCESS') }}"
+      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      RRS_PG_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
+      RRS_PG_USER: "{{ secret('RRS_PG_USER_DEV') }}"
+      RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD_DEV') }}"
+      SUBJECT: insecurity
+      MISTRAL_API_KEY: "{{ secret('MISTRAL_API_KEY') }}"
+      MISTRAL_MODEL: mistral-small-2603
+      CONCURRENCY: 10
 
   - id: clustering
     runIf: "{{ inputs.run_clustering }}"
@@ -124,7 +125,7 @@ tasks:
       END_DATE: "{{ inputs.end_date ?? '' }}"
       DAYS_PRIOR: "{{ inputs.days_back ?? '' }}"
       RRS_PG_DATABASE: rrs
-      RRS_PG_PORT: 18492
+      RRS_PG_PORT: 18047
       SPACY_MODEL: fr_core_news_sm
       WINDOW_SIZE: 3
       OVERLAP_TOKENS: 30
@@ -141,10 +142,10 @@ tasks:
       EMBEDDING_BACKEND: mistral
       EXPIRY_DAYS: 30
       OUTPUT_DIR: /app/output
-      RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
-      RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
-      RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
+      RRS_PG_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
+      RRS_PG_USER: "{{ secret('RRS_PG_USER_DEV') }}"
+      RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD_DEV') }}"
       MISTRAL_API_KEY: "{{ secret('MISTRAL_API_KEY') }}"
       ANTHROPIC_API_KEY: "{{ secret('ANTHROPIC_API_KEY') }}"
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
-      SUBJECT: climate
+      SUBJECT: insecurity

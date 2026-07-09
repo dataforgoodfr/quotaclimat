@@ -74,7 +74,7 @@ class Segment(RRSBase):
     )
 
     subject = relationship("Subject", back_populates="segments")
-    cases = relationship("Case", back_populates="segment")
+    cases = relationship("Case", back_populates="segment", overlaps="subject,cases")
 
 
 class Case(RRSBase):
@@ -108,8 +108,8 @@ class Case(RRSBase):
         nullable=True,
     )
 
-    segment = relationship("Segment", back_populates="cases")
-    subject = relationship("Subject", back_populates="cases")
+    segment = relationship("Segment", back_populates="cases", overlaps="subject,cases")
+    subject = relationship("Subject", back_populates="cases", overlaps="segment,cases")
     case_to_clusters = relationship("CaseToCluster", back_populates="case")
 
 

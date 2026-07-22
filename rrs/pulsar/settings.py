@@ -36,7 +36,8 @@ class PulsarSettings:
     api_key: str | None = None
     relevance_mention_tag_ids: list[str] = field(default_factory=list)
     days_back: int = 7
-    subject_id: str | None = None
+    subject: str | None = None          # raw subject name (e.g. "climate"), used for prompts
+    subject_id: str | None = None       # SHA-256 hash of subject, used as FK
     start_date: datetime | None = None  # explicit window start; falls back to days_back if unset
     end_date: datetime | None = None    # explicit window end; falls back to now() if unset
 
@@ -79,7 +80,8 @@ class PulsarSettings:
             api_key=os.getenv("PULSAR_API_KEY"),
             relevance_mention_tag_ids=relevance_mention_tag_ids,
             days_back=int(os.getenv("PULSAR_DAYS_BACK", "7")),
-            subject_id=get_consistent_hash(subject) if (subject := os.getenv("SUBJECT")) else None,
+            subject=subject if (subject := os.getenv("SUBJECT")) else None,
+            subject_id=get_consistent_hash(subject) if subject else None,
             start_date=_parse_date(v) if (v := os.getenv("PULSAR_START_DATE")) else None,
             end_date=_parse_date(v) if (v := os.getenv("PULSAR_END_DATE")) else None,
         )

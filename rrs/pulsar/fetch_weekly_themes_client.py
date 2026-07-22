@@ -91,7 +91,9 @@ STAT_TYPE = "VISIBILITY"
 
 _SENTIMENT_FR = {
     "positive": "positif",
+    "VERY_POSITIVE": "positif",
     "negative": "négatif",
+    "VERY_NEGATIVE": "négatif",
     "neutral": "neutre",
     "mixed": "mixte",
 }

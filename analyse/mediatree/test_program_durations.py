@@ -21,9 +21,6 @@ logging.basicConfig(
     filename="channel_coverages.log", encoding="utf-8", level=logging.INFO
 )
 
-from quotaclimat.data_processing.mediatree.i8n.brazil.channel_program import (
-    channels_programs_brazil,
-)
 from quotaclimat.data_processing.mediatree.i8n.france.channel_program import (
     channels_programs_france,
 )
@@ -44,10 +41,6 @@ channels_programs_poland = [
     dict(country="poland", **channel_program)
     for channel_program in channels_programs_poland
 ]
-channels_programs_brazil = [
-    dict(country="brazil", **channel_program)
-    for channel_program in channels_programs_brazil
-]
 channels_programs_spain = [
     dict(country="spain", **channel_program)
     for channel_program in channels_programs_spain
@@ -64,7 +57,6 @@ channels_programs_belgium = [
 channel_programs_map = {
     "poland": channels_programs_poland,
     "spain": channels_programs_spain,
-    "brazil": channels_programs_brazil,
     "france": channels_programs_france,
     "germany": channels_programs_germany,
     "belgium": channels_programs_belgium,
@@ -73,7 +65,6 @@ timezones = {
     "poland": "Europe/Warsaw",
     "spain": "Europe/Madrid",
     "germany": "Europe/Berlin",
-    "brazil": "America/Sao_Paulo",
     "france": "Europe/Paris",
     "belgium": "Europe/Brussels",
 }
@@ -141,7 +132,7 @@ def get_coverages_for_day(day, country, channel_programs):
     retry = 0
     while True:
         if idx == len(channel_programs):
-            tqdm.write(f"Finshed programs")
+            tqdm.write("Finshed programs")
             break
         elif retry > 7:
             tqdm.write(f"break on {channel_programs[idx]} retry {retry}")
@@ -166,12 +157,12 @@ def get_coverages_for_day(day, country, channel_programs):
                     {
                         "date": day.strftime("%Y-%m-%d"),
                         "country": country,
-                        "channel_name": channel_program["channel_name"],
+                        "channel_name": channel_program["channel_name"] if channel_program["channel_name"] != "sud-radio" else "sudradio",
                         "start": channel_program["start"],
                         "end": channel_program["end"],
                         "coverage": get_percentage_coverage(
                             token,
-                            channel_program["channel_name"],
+                            channel_program["channel_name"] if channel_program["channel_name"] != "sud-radio" else "sudradio",
                             day,
                             channel_program["start"],
                             channel_program["end"],
@@ -186,12 +177,12 @@ def get_coverages_for_day(day, country, channel_programs):
                     {
                         "date": day.strftime("%Y-%m-%d"),
                         "country": country,
-                        "channel_name": channel_program["channel_name"],
+                        "channel_name": channel_program["channel_name"] if channel_program["channel_name"] != "sud-radio" else "sudradio",
                         "start": channel_program["start"],
                         "end": channel_program["end"],
                         "coverage": get_percentage_coverage(
                             token,
-                            channel_program["channel_name"],
+                            channel_program["channel_name"] if channel_program["channel_name"] != "sud-radio" else "sudradio",
                             day,
                             channel_program["start"],
                             channel_program["end"],
@@ -203,12 +194,12 @@ def get_coverages_for_day(day, country, channel_programs):
                     {
                         "date": day.strftime("%Y-%m-%d"),
                         "country": country,
-                        "channel_name": channel_program["channel_name"],
+                        "channel_name": channel_program["channel_name"] if channel_program["channel_name"] != "sud-radio" else "sudradio",
                         "start": channel_program["start"],
                         "end": channel_program["end"],
                         "coverage": get_percentage_coverage(
                             token,
-                            channel_program["channel_name"],
+                            channel_program["channel_name"] if channel_program["channel_name"] != "sud-radio" else "sudradio",
                             day,
                             channel_program["start"],
                             channel_program["end"],
@@ -223,7 +214,7 @@ def get_coverages_for_day(day, country, channel_programs):
                 {
                     "date": day.strftime("%Y-%m-%d"),
                     "country": country,
-                    "channel_name": channel_program["channel_name"],
+                    "channel_name": channel_program["channel_name"] if channel_program["channel_name"] != "sud-radio" else "sudradio",
                     "start": channel_program["start"],
                     "end": channel_program["end"],
                 }
@@ -318,7 +309,7 @@ async def get_percentage_coverage_async(
     return {
         "date": date.strftime("%Y-%m-%d"),
         "country": country,
-        "channel_name": channel_name,
+        "channel_name": channel_name if channel_name != "sud-radio" else "sudradio",
         "start": start,
         "end": end,
         "total_results": result["total_results"],
@@ -368,7 +359,7 @@ async def async_get_percentage_coverage_for_day(
             and channel_program["channel_name"] != "d8"
             and channel_program["channel_name"] != "daserste"
             and channel_program["channel_name"] != "zdf-neo"
-            and not channel_program["channel_name"] in excluded_channels
+            and channel_program["channel_name"] not in excluded_channels
         ):
             if not channel_program["channel_name"] == "daserste":
                 valid_channel_programs.append(channel_program)
@@ -381,7 +372,7 @@ async def async_get_percentage_coverage_for_day(
             get_percentage_coverage_async(
                 token,
                 country,
-                channel_program["channel_name"],
+                channel_program["channel_name"] if channel_program["channel_name"] != "sud-radio" else "sudradio",
                 day,
                 channel_program["start"],
                 channel_program["end"],

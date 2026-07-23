@@ -87,7 +87,7 @@ def get_auth_token(password=password, user_name=USER):
 
 # see : https://keywords.mediatree.fr/docs/#api-Subtitle-SubtitleList
 def get_param_api(token, type_sub, start_epoch, channel, end_epoch, country: CountryMediaTree):
-
+    channel = channel if channel != "sud-radio" else "sudradio"
     return {
         "channel": channel,
         "token": token,

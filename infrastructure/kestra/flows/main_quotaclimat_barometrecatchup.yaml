@@ -19,7 +19,7 @@ triggers:
 inputs:
   - id: days_back
     type: INT
-    default: 7
+    defaults: 7
     description: Days prior to current date. Defaults to 7.
   - id: selected_channel
     type: STRING

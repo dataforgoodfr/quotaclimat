@@ -128,7 +128,7 @@ async def _classify_posts_async(posts: list[dict], subject: str, model: str,
             return {**post, "misinfo_label": misinfo.label, "misinfo_score": misinfo.score,
                     "misinfo_justification": misinfo.justification}
         except Exception as exc:
-            logging.error(f"  misinfo classification error on post {i}: {exc}")
+            logging.error(f"  misinfo classification error on post {i}:\n {post}\n{exc}")
             return post
 
     tasks = [_safe_classify(i, p) for i, p in enumerate(posts)]

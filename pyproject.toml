@@ -118,6 +118,7 @@ deep-translator = "^1.11"
 openpyxl = "^3.1.5"
 mistralai = "^2.5.0"
 mcp = "^1.28.1"
+griffe = "^2.1.0"
 
 [tool.pytest_env]
 CLEAN_CACHE_ON_EXIT=true

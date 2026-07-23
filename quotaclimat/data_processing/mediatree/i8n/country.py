@@ -311,6 +311,7 @@ def get_channels(country_code=FRANCE.code) -> List[str]:
     
 
 def get_channel_title_for_name(channel_name: str, country: CountryMediaTree = FRANCE) -> str:
+    channel_name = channel_name if channel_name != "sudradio" else "sud-radio"
     logging.debug(f"Getting channel title for {channel_name} in {country.code}")
     channel_title = country.titles[channel_name]
     if channel_title is None: 

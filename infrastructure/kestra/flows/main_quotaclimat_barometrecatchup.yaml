@@ -115,7 +115,7 @@ tasks:
       BUCKET_OUTPUT_FOLDER: label-misinformation-input
       COUNTRY: france
       ENV: production
-      KEYWORDS_URL: https://keywords.mediatree.fr/api/v2/subtitle/
+      KEYWORDS_URL: https://keywords.mediatree.fr/api/export/single
       LABEL_STUDIO_PROJECT: 6
       LABEL_STUDIO_PROJECT_ID: 4
       LABEL_STUDIO_URL: https://barometre7kfudatm-labelstudio.functions.fnc.fr-par.scw.cloud

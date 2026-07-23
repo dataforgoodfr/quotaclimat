@@ -16,6 +16,16 @@ triggers:
     cron: "0 3 * * *"
     timezone: Europe/Paris
 
+inputs:
+  - id: days_back
+    type: INT
+    default: 7
+    description: Days prior to current date. Defaults to 7.
+  - id: selected_channel
+    type: STRING
+    required: false
+    description: "Runs the pipeline on a single channel."
+
 tasks:
   - id: ingest_data_to_s3
     type: io.kestra.plugin.docker.Run
@@ -34,6 +44,7 @@ tasks:
       API_TO_S3_CONCURRENCY: 10
       BUCKET_NAME: mediatree
       COUNTRY: fra
+      CHANNEL: "{{ inputs.selected_channel }}"
       ENV: prod
       KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/
       LOGLEVEL: INFO
@@ -42,7 +53,7 @@ tasks:
       MODIN_CPUS: 2
       MODIN_ENGINE: python
       MODIN_MEMORY: 3000000000
-      NUMBER_OF_PREVIOUS_DAYS: 7
+      NUMBER_OF_PREVIOUS_DAYS: "{{ inputs.days_back }}"
       OMP_NUM_THREADS: 3
       PORT_HS: 5666
       BUCKET: "{{ secret('SCW_ACCESS') }}"
@@ -69,6 +80,7 @@ tasks:
       BUCKET_NAME: mediatree
       COMPARE_DURATION: true
       COUNTRY: fra
+      CHANNEL: "{{ inputs.selected_channel }}"
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project
       ENV: prod
@@ -81,6 +93,7 @@ tasks:
       MODIN_CPUS: 2
       MODIN_ENGINE: ray
       MODIN_MEMORY: 3000000000
+      NUMBER_OF_PREVIOUS_DAYS: "{{ inputs.days_back }}"
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RAY_COLOR_PREFIX: 1
@@ -114,6 +127,7 @@ tasks:
       BUCKET_OUTPUT: mediatree
       BUCKET_OUTPUT_FOLDER: label-misinformation-input
       COUNTRY: france
+      CHANNEL: "{{ inputs.selected_channel }}"
       ENV: production
       KEYWORDS_URL: https://keywords.mediatree.fr/api/export/single
       LABEL_STUDIO_PROJECT: 6
@@ -124,7 +138,7 @@ tasks:
       MEDIATREE_USER: quotaclimat
       MODEL_NAME: ft:gpt-4o-mini-2024-07-18:personal::B1xWiJRm
       MODIN_MEMORY: 3000000000
-      NUMBER_OF_PREVIOUS_DAYS: 7
+      NUMBER_OF_PREVIOUS_DAYS: "{{ inputs.days_back }}"
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RAY_COLOR_PREFIX: 1

@@ -56,12 +56,19 @@ CONFIG (environment variables):
                                 running this script standalone.
 """
 
+import asyncio
 import json
+import logging
+import os
 import time
 from datetime import datetime, timedelta, timezone
 
 import requests
 from deep_translator import GoogleTranslator
+from mistralai.client import Mistral
+
+from rrs.misinformation_detection.classifier import classify_one
+from rrs.pulsar.prompts import build_pulsar_system_prompt
 
 from rrs.pulsar import store
 from rrs.pulsar.parse_themes import Theme, Topic
@@ -84,10 +91,60 @@ STAT_TYPE = "VISIBILITY"
 
 _SENTIMENT_FR = {
     "positive": "positif",
+    "VERY_POSITIVE": "positif",
     "negative": "négatif",
+    "VERY_NEGATIVE": "négatif",
     "neutral": "neutre",
     "mixed": "mixte",
 }
+
+
+_MISINFO_MAX_CHARS = 3000  # cap per post to control token usage
+_MISINFO_MODEL_DEFAULT = "mistral-small-2603"
+_MISINFO_CONCURRENCY = 5
+
+
+async def _classify_posts_async(posts: list[dict], subject: str, model: str,
+                                concurrency: int) -> list[dict]:
+    api_key = os.environ.get("MISTRAL_API_KEY")
+    if not api_key:
+        logging.warning("MISTRAL_API_KEY not set — skipping misinformation classification.")
+        return posts
+
+    system_prompt = build_pulsar_system_prompt(subject or "climate")
+    client = Mistral(api_key=api_key)
+    semaphore = asyncio.Semaphore(concurrency)
+
+    async def _safe_classify(i, post):
+        text = ((post.get("content") or "") + "\n\n" + (post.get("title") or "")).strip()
+        text = text[:_MISINFO_MAX_CHARS]
+        if not text:
+            return post
+        try:
+            misinfo, _, _ = await classify_one(
+                client, semaphore, system_prompt, i, len(posts), text, model,
+                user_prefix="Analyse cet article :\n\n",
+            )
+            return {**post, "misinfo_label": misinfo.label, "misinfo_score": misinfo.score,
+                    "misinfo_justification": misinfo.justification}
+        except Exception as exc:
+            logging.error(f"  misinfo classification error on post {i}:\n {post}\n{exc}")
+            return post
+
+    tasks = [_safe_classify(i, p) for i, p in enumerate(posts)]
+    return list(await asyncio.gather(*tasks))
+
+
+def classify_posts(posts: list[dict], subject: str | None,
+                   model: str = _MISINFO_MODEL_DEFAULT,
+                   concurrency: int = _MISINFO_CONCURRENCY) -> list[dict]:
+    """Classify posts for misinformation using Mistral. Returns posts with misinfo_* fields added.
+
+    Skips silently if MISTRAL_API_KEY is not set.
+    """
+    if not posts:
+        return posts
+    return asyncio.run(_classify_posts_async(posts, subject or "", model, concurrency))
 
 
 def _translate_to_french(title: str, body: str) -> tuple[str, str]:
@@ -296,6 +353,8 @@ def run() -> None:
             posts = posts_client.fetch_theme_posts(
                 s.search_id, topic_labels, date_from_dt, date_to_dt, limit=s.top_n
             )
+            posts = classify_posts(posts, subject=s.subject)
+            posts = [p for p in posts if p.get("misinfo_label") != "non"]
             total_posts += store.upsert_posts(conn, s.search_id, theme_id, posts)
         conn.commit()
 

@@ -17,6 +17,34 @@ celle portant sur la justice, l'immigration et l'action policière. Les faits su
 ne sont retenus que lorsqu'ils sont explicitement mobilisés dans le débat public français à des \
 fins de comparaison, d'analogie ou d'instrumentalisation politique
 """.strip(),
+
+    "climate": """
+La désinformation est définie ici comme tout contenu qui contredit le consensus scientifique \
+établi ou propage des narratifs trompeurs sur le changement climatique, en couvrant trois \
+dimensions : la science climatique, l'action climatique, et l'ensemble des solutions \
+d'atténuation et d'adaptation telles que décrites dans les rapports du GIEC.
+
+Science climatique : sont visées les affirmations niant ou minimisant les causes humaines du \
+réchauffement climatique, contestant l'existence ou la gravité de la crise climatique, \
+déformant les projections scientifiques du GIEC, ou présentant le consensus scientifique comme \
+incertain ou fabriqué.
+
+Action climatique : sont visés les narratifs discréditant les politiques climatiques nationales \
+ou internationales (Accord de Paris, taxonomie verte, lois climat), les affirmations présentant \
+l'inaction comme légitime ou la transition comme inutile, ainsi que les contenus instrumentalisant \
+de fausses données économiques ou sociales pour bloquer toute régulation climatique.
+
+Solutions d'atténuation et d'adaptation : sont visées les affirmations trompant sur l'efficacité, \
+le coût ou la faisabilité des solutions reconnues par le GIEC — énergies renouvelables, efficacité \
+énergétique, reforestation, agriculture bas-carbone, capture de carbone, adaptation des \
+infrastructures — ainsi que les comparaisons déloyales avec les énergies fossiles ou le nucléaire \
+visant à disqualifier ces solutions sans base factuelle sérieuse.
+
+Sont également concernés les chiffres falsifiés ou sortis de contexte, les corrélations abusives, \
+les théories du complot sur les motivations des scientifiques ou des acteurs de la transition, et \
+tout amalgame visant à associer l'action climatique à des agendas idéologiques sans rapport avec \
+les faits
+""".strip(),
 }
 
 
@@ -31,6 +59,7 @@ def get_definition(subject: str) -> str:
 
 
 def build_system_prompt(subject: str) -> str:
+    """Prompt for TV/radio transcript classification."""
     definition = get_definition(subject)
     return f"""Tu es un expert en détection de désinformation médiatique en France. \
 Ta tâche est d'analyser des extraits de programmes télévisés ou radiophoniques \
@@ -50,3 +79,5 @@ La justification doit être courte.
 - "non" : l'extrait ne contient pas de désinformation (y compris les publicités)
 - "incertain" : l'extrait est ambigu ou insuffisant pour conclure
 """
+
+

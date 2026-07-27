@@ -75,7 +75,6 @@ channels_programs_belgium_flanders = [
     
     {"channel_name": "vrt1", "start": "13:00", "end": "13:20", "weekday": "weekday", "program_name": "VRT NWS Journaal 13:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "vrt1", "start": "19:00", "end": "19:30", "weekday": "weekday", "program_name": "VRT NWS Journaal 19:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "vrt1", "start": "22:30", "end": "22:50", "weekday": "weekday", "program_name": "VRT NWS Journaal 22:30", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "vrt1", "start": "13:00", "end": "13:30", "weekday": "weekend", "program_name": "VRT NWS Journaal 13:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "vrt1", "start": "19:00", "end": "19:30", "weekday": "weekend", "program_name": "VRT NWS Journaal 19:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "vrt1", "start": "18:00", "end": "18:10", "weekday": "weekend", "program_name": "VRT NWS Journaal 18:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},

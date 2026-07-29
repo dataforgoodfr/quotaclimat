@@ -64,6 +64,7 @@ def extract_rows_climate(subject_id: str, keywords: Dict[str, Any]) -> list[dict
                     "high_risk_false_positive": entry.get(
                         "high_risk_of_false_positive"
                     ),
+                    "validated": entry.get("validated", True),
                 }
             )
     return rows
@@ -86,6 +87,7 @@ def extract_rows(subject_id: str, keywords: List[Dict[str, Any]]) -> list[dict]:
                     "high_risk_false_positive",
                     False
                 ),
+                "validated": record.get("validated", True),
             }
         )
     return rows
@@ -121,6 +123,7 @@ def upsert_dictionary() -> None:
                             "high_risk_false_positive": insert(
                                 DictionaryEntry
                             ).excluded.high_risk_false_positive,
+                            "validated": insert(DictionaryEntry).excluded.validated,
                         },
                     )
                 )

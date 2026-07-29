@@ -1,6 +1,4 @@
 channels_programs_belgium_flanders = [
-    {"channel_name": "radio-1", "start": "07:00", "end": "07:10", "weekday": "*", "program_name": "Het Journaal 07:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "radio-1", "start": "08:00", "end": "08:10", "weekday": "*", "program_name": "Het Journaal 08:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "radio-1", "start": "09:00", "end": "09:10", "weekday": "*", "program_name": "Het Journaal 09:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "radio-1", "start": "10:00", "end": "10:10", "weekday": "*", "program_name": "Het Journaal 10:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "radio-1", "start": "11:00", "end": "11:10", "weekday": "*", "program_name": "Het Journaal 11:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},

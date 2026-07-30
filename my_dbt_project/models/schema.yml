@@ -246,3 +246,140 @@ models:
         description: "Country of channel."
       - name: total_mesinfo
         description: "Total instances of misinformation detected."
+
+  - name: core_query_environmental_shares_Be
+      description: >
+        International environmental shares (Belgium). Denominator is the effectively
+        monitored time: restricted to declared program slots for channels with an
+        editorial grid (program_metadata), full time_monitored for channels without one.
+      columns:
+        - name: start
+          description: Start of the ISO week of the observation (week truncated).
+        - name: channel_name
+          description: Technical channel identifier, join key with program_metadata and time_monitored.
+        - name: channel_title
+          description: Human-readable channel name, resolved from keywords.
+        - name: country
+          description: Country of the channel (belgium).
+        - name: has_grid
+          description: >
+            True when the channel has an editorial grid in program_metadata. Indicates which
+            denominator rule applies (in-perimeter captured minutes vs full time_monitored).
+        - name: sum_duration_minutes
+          description: >
+            Effective denominator in minutes. In-perimeter captured minutes when has_grid is
+            true, total time_monitored otherwise.
+        - name: sum_time_monitored
+          description: >
+            Control column. Total minutes ingested by Mediatree (captured chunks x 2 min),
+            regardless of the editorial grid.
+        - name: sum_monitored_in_perimeter_min
+          description: >
+            Control column. Minutes captured within declared program slots. Only populated
+            for channels with a grid. The gap with sum_time_monitored measures
+            out-of-perimeter ingestion.
+        - name: environnement_total_pct
+          description: 'Original: % environnement total'
+        - name: climat_pct
+          description: 'Original: % climat'
+        - name: climat_cause_pct
+          description: 'Original: % climat cause'
+        - name: climat_solutions_adaptation_pct
+          description: 'Original: % climat solutions adaptation'
+        - name: climat_consequences_pct
+          description: 'Original: % climat consequences'
+        - name: climat_solutions_attenuation_pct
+          description: 'Original: % climat solutions attenuation'
+        - name: climat_constat_pct
+          description: 'Original: % climat constat'
+        - name: biodiversite_pct
+          description: 'Original: % biodiversite'
+        - name: biodiversite_constat_pct
+          description: 'Original: % biodiversité constat'
+        - name: biodiversite_solutions_pct
+          description: 'Original: % biodiversité solutions'
+        - name: biodiversite_consequences_pct
+          description: 'Original: % biodiversité conséquences'
+        - name: biodiversite_causes_pct
+          description: 'Original: % biodiversité causes'
+        - name: ressources_pct
+          description: 'Original: % ressources'
+        - name: ressources_constat_pct
+          description: 'Original: % ressources constat'
+        - name: ressources_solutions_pct
+          description: 'Original: % ressources solutions'
+
+  - name: core_query_thematics_keywords_Be
+    description: >
+      International thematic keyword occurrences (Belgium), one row per week, channel,
+      category, theme and keyword. Only meaningful when keyword, theme and category are
+      read together, since a keyword present in several themes appears once per theme.
+      Shares the denominator definition of core_query_environmental_shares_i8n.
+    columns:
+      - name: channel_title
+        description: Human-readable channel name, resolved from keywords.
+      - name: channel_name
+        description: Technical channel identifier, join key with program_metadata and time_monitored.
+      - name: country
+        description: Country of the channel (belgium).
+      - name: week
+        description: Start of the ISO week of the occurrence (week truncated).
+      - name: has_grid
+        description: >
+          True when the channel has an editorial grid in program_metadata. Indicates which
+          denominator rule applies.
+      - name: category
+        description: Keyword category from the dictionary, defaulted to Transversal when empty.
+      - name: high_risk_of_false_positive
+        description: Dictionary flag marking keywords prone to false positives (HRFP).
+      - name: is_solution
+        description: True when the theme refers to solutions.
+      - name: is_consequence
+        description: True when the theme refers to consequences.
+      - name: is_cause
+        description: True when the theme refers to causes.
+      - name: is_general_concepts
+        description: True when the theme refers to general concepts.
+      - name: is_statement
+        description: True when the theme refers to a constat (statement of fact).
+      - name: crise_type
+        description: >
+          Crisis family derived from the theme. One of Crise climatique,
+          Crise de la biodiversité, Crise des ressources, Autre.
+      - name: theme
+        description: Raw theme of the keyword occurrence. Indirect themes are excluded upstream.
+      - name: keyword
+        description: Detected keyword.
+      - name: general
+        description: Macro-category flag from keyword_macro_category.
+      - name: agriculture
+        description: Macro-category flag from keyword_macro_category.
+      - name: transport
+        description: Macro-category flag from keyword_macro_category.
+      - name: batiments
+        description: Macro-category flag from keyword_macro_category.
+      - name: energie
+        description: Macro-category flag from keyword_macro_category.
+      - name: industrie
+        description: Macro-category flag from keyword_macro_category.
+      - name: eau
+        description: Macro-category flag from keyword_macro_category.
+      - name: ecosysteme
+        description: Macro-category flag from keyword_macro_category.
+      - name: economie_ressources
+        description: Macro-category flag from keyword_macro_category.
+      - name: count
+        description: Number of keyword occurrences for the group.
+      - name: sum_duration_minutes
+        description: >
+          Effective denominator in minutes for the week and channel. In-perimeter captured
+          minutes when has_grid is true, total time_monitored otherwise. Repeated on every
+          row of the group, so it must be aggregated with MAX or MIN, never SUM.
+      - name: sum_time_monitored
+        description: >
+          Control column. Total minutes ingested by Mediatree for the week and channel.
+          Repeated on every row of the group.
+      - name: sum_monitored_in_perimeter_min
+        description: >
+          Control column. Minutes captured within declared program slots for the week and
+          channel. Repeated on every row of the group.

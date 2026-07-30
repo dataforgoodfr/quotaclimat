@@ -5869,7 +5869,7 @@
         "start": "19:00",
         "end": "19:35",
         "weekday": 1,
-        "program_name": "VTM Daily News",
+        "program_name": "VTM Daily News 19:00",
         "program_type": "",
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
@@ -5879,7 +5879,24 @@
         "infocontinue": false,
         "radio": true,
         "country": "belgium",
-        "id": "8dc86a96be2e64b9974190eb5f3213873673ee2774cd518f02d83a2f107b5bf8"
+        "id": "ca3b13d0a2649ab56e792c31a7f9ac40b1ded4b97ca01cbcbba7b9ce8fe4b914"
+    },
+    {
+        "channel_name": "vtm",
+        "start": "13:00",
+        "end": "13:30",
+        "weekday": 1,
+        "program_name": "VTM Daily News 13:00",
+        "program_type": "",
+        "program_grid_start": "2023-04-01",
+        "program_grid_end": "2100-01-01",
+        "duration": 30,
+        "channel_title": "VTM",
+        "public": false,
+        "infocontinue": false,
+        "radio": true,
+        "country": "belgium",
+        "id": "d8578ce7bba2cfd6ef6f6e76683fe6362697991fdf14e7bb7f64f97db337bfdf"
     },
     {
         "channel_name": "wpolsce24",
@@ -12125,7 +12142,7 @@
         "start": "19:00",
         "end": "19:35",
         "weekday": 2,
-        "program_name": "VTM Daily News",
+        "program_name": "VTM Daily News 19:00",
         "program_type": "",
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
@@ -12135,7 +12152,24 @@
         "infocontinue": false,
         "radio": true,
         "country": "belgium",
-        "id": "e652abf3f9962a397839f134486a98b76321e864ded34dc17f0f1dcdbe19e52c"
+        "id": "26c19629753c0e8e91b846f4a527c21f25232dde62e8f7aa2a70cf92a0b4077a"
+    },
+    {
+        "channel_name": "vtm",
+        "start": "13:00",
+        "end": "13:30",
+        "weekday": 2,
+        "program_name": "VTM Daily News 13:00",
+        "program_type": "",
+        "program_grid_start": "2023-04-01",
+        "program_grid_end": "2100-01-01",
+        "duration": 30,
+        "channel_title": "VTM",
+        "public": false,
+        "infocontinue": false,
+        "radio": true,
+        "country": "belgium",
+        "id": "9737d34a5a33be2c2c35dc09b59e46eefb714f907d96f00cac01766181c8e240"
     },
     {
         "channel_name": "wpolsce24",
@@ -18381,7 +18415,7 @@
         "start": "19:00",
         "end": "19:35",
         "weekday": 3,
-        "program_name": "VTM Daily News",
+        "program_name": "VTM Daily News 19:00",
         "program_type": "",
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
@@ -18391,7 +18425,24 @@
         "infocontinue": false,
         "radio": true,
         "country": "belgium",
-        "id": "dfacf8abee97ed31d2df92caf64e3f2ea73c52ef0272ff58373f3774ff5affa1"
+        "id": "4ca718e7868568e80fcb36060c375e7694835ef1077c11317636e48148feea00"
+    },
+    {
+        "channel_name": "vtm",
+        "start": "13:00",
+        "end": "13:30",
+        "weekday": 3,
+        "program_name": "VTM Daily News 13:00",
+        "program_type": "",
+        "program_grid_start": "2023-04-01",
+        "program_grid_end": "2100-01-01",
+        "duration": 30,
+        "channel_title": "VTM",
+        "public": false,
+        "infocontinue": false,
+        "radio": true,
+        "country": "belgium",
+        "id": "c12238088abee260f33a2bd18068d8adc582e7ef254f935e61486afb013f3410"
     },
     {
         "channel_name": "wpolsce24",
@@ -24671,7 +24722,7 @@
         "start": "19:00",
         "end": "19:35",
         "weekday": 4,
-        "program_name": "VTM Daily News",
+        "program_name": "VTM Daily News 19:00",
         "program_type": "",
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
@@ -24681,7 +24732,24 @@
         "infocontinue": false,
         "radio": true,
         "country": "belgium",
-        "id": "37bcca892a61b98a35e72ac00311bb75ca41e864716f830790dcd296ad3f4079"
+        "id": "5b5204f240dd3d1a4dd4e9b31b28b0dbd5a0e56f5f95ca20983e5ab988dd63c1"
+    },
+    {
+        "channel_name": "vtm",
+        "start": "13:00",
+        "end": "13:30",
+        "weekday": 4,
+        "program_name": "VTM Daily News 13:00",
+        "program_type": "",
+        "program_grid_start": "2023-04-01",
+        "program_grid_end": "2100-01-01",
+        "duration": 30,
+        "channel_title": "VTM",
+        "public": false,
+        "infocontinue": false,
+        "radio": true,
+        "country": "belgium",
+        "id": "4b1763de0305553c07414edf55be850cb7d3629e53add7d107864d27cfdd2d80"
     },
     {
         "channel_name": "wpolsce24",
@@ -30893,7 +30961,7 @@
         "start": "19:00",
         "end": "19:35",
         "weekday": 5,
-        "program_name": "VTM Daily News",
+        "program_name": "VTM Daily News 19:00",
         "program_type": "",
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
@@ -30903,7 +30971,24 @@
         "infocontinue": false,
         "radio": true,
         "country": "belgium",
-        "id": "da883c17bc46fdbabd9ee6741eea05a10b948d9ba58e441986e95455eb55a6d3"
+        "id": "3541eedc3bd8f8ae1414f90e45175f5dfcd4b85104312c7339e14b90e848e1af"
+    },
+    {
+        "channel_name": "vtm",
+        "start": "13:00",
+        "end": "13:30",
+        "weekday": 5,
+        "program_name": "VTM Daily News 13:00",
+        "program_type": "",
+        "program_grid_start": "2023-04-01",
+        "program_grid_end": "2100-01-01",
+        "duration": 30,
+        "channel_title": "VTM",
+        "public": false,
+        "infocontinue": false,
+        "radio": true,
+        "country": "belgium",
+        "id": "02faf52c734c5bc94c2001d675331783b1436660df1724fb51e4e8af51f8a5d7"
     },
     {
         "channel_name": "wpolsce24",
@@ -35687,7 +35772,7 @@
         "start": "19:00",
         "end": "19:25",
         "weekday": 6,
-        "program_name": "VTM Daily News",
+        "program_name": "VTM Daily News 19:00",
         "program_type": "",
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
@@ -35697,7 +35782,24 @@
         "infocontinue": false,
         "radio": true,
         "country": "belgium",
-        "id": "77c5d4f1dda2388441299c8451562b8cd26d87830523594d9a4c7fd01fda36d9"
+        "id": "a80c455e65b7c91a734ef4ea6ad2f35bfb863cde2c9dd5bb67434d825cc526a9"
+    },
+    {
+        "channel_name": "vtm",
+        "start": "13:00",
+        "end": "13:35",
+        "weekday": 6,
+        "program_name": "VTM Daily News 13:00",
+        "program_type": "",
+        "program_grid_start": "2023-04-01",
+        "program_grid_end": "2100-01-01",
+        "duration": 35,
+        "channel_title": "VTM",
+        "public": false,
+        "infocontinue": false,
+        "radio": true,
+        "country": "belgium",
+        "id": "c0a3595bd0916687f1d6751b92bdcad04f892278002b523380d3be6ef2c4668d"
     },
     {
         "channel_name": "wpolsce24",
@@ -40464,7 +40566,7 @@
         "start": "19:00",
         "end": "19:25",
         "weekday": 7,
-        "program_name": "VTM Daily News",
+        "program_name": "VTM Daily News 19:00",
         "program_type": "",
         "program_grid_start": "2023-04-01",
         "program_grid_end": "2100-01-01",
@@ -40474,7 +40576,24 @@
         "infocontinue": false,
         "radio": true,
         "country": "belgium",
-        "id": "b2d8dfc67f5fbbb3bad4a7ecd8a716d739ab4cfab0e2bac6c3db033edc273bf3"
+        "id": "6c765f652a58bb17ed5ffc61cfc4e1cdd0caff71474d33c078381ae7fd13e63b"
+    },
+    {
+        "channel_name": "vtm",
+        "start": "13:00",
+        "end": "13:35",
+        "weekday": 7,
+        "program_name": "VTM Daily News 13:00",
+        "program_type": "",
+        "program_grid_start": "2023-04-01",
+        "program_grid_end": "2100-01-01",
+        "duration": 35,
+        "channel_title": "VTM",
+        "public": false,
+        "infocontinue": false,
+        "radio": true,
+        "country": "belgium",
+        "id": "d9e99fc687f9c7358a9a49df590936de6818cd5c860ba6dcac37f558b6882576"
     },
     {
         "channel_name": "wpolsce24",

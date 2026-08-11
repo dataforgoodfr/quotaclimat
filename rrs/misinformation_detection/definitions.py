@@ -86,6 +86,13 @@ Dans ce cas, indique-le et considère qu'il n'y a pas de désinformation.
 IMPORTANT : ne classifier pas en tant de mésinformation des segments qui ne concernent pas \
 la France, la politique française ou des acteurs français.
 
+Avant de conclure, réponds successivement aux questions suivantes dans le champ "analysis". \
+Reprends chaque question telle quelle, suivie de sa réponse strictement par "oui" ou "non" \
+(une question par ligne, au format "<question> <oui/non>") :
+1. L'extrait comporte-t-il une affirmation précise, une opinion, un jugement de valeur ou une promesse ?
+2. L'affirmation est-elle suffisamment précise ? (Date, lieu, institution etc.)
+3. Porte-t-elle sur un événement observable ?
+
 La justification doit être courte.
 
 - "oui" : l'extrait contient de la désinformation telle que définie

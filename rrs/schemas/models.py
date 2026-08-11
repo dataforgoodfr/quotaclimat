@@ -99,6 +99,7 @@ class Case(RRSBase):
     url_labelstudio = Column(String, nullable=True)
     is_labeled = Column(Boolean, nullable=True)
     mesinfo_choice = Column(String, nullable=True)
+    analysis = Column(Text, nullable=True)
     created_at = Column(
         DateTime(timezone=True), server_default=sql_text("(now() at time zone 'utc')")
     )

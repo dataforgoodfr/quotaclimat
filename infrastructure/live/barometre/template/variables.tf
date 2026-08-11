@@ -70,3 +70,28 @@ variable "acl_allowed_ips" {
   description = "JSON-encoded list of {ip, description} objects allowed to reach the database. Ignored in dev (0.0.0.0/0 is used instead)."
 }
 
+# --- GPU instance ---
+
+variable "gpu_zone" {
+  type        = string
+  default     = "fr-par-1"
+  description = "Scaleway zone for the GPU instance (must stock the L4 GPU offer)."
+}
+
+variable "gpu_instance_type" {
+  type        = string
+  default     = "L4-1-24G"
+  description = "Scaleway GPU instance commercial type."
+}
+
+variable "gpu_image_label" {
+  type        = string
+  default     = "ubuntu_jammy_gpu_os_12"
+  description = "Marketplace image label compatible with GPU instances (bundles NVIDIA drivers)."
+}
+
+variable "gpu_root_volume_size_in_gb" {
+  type    = number
+  default = 100
+}
+

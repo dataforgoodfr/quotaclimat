@@ -29,3 +29,7 @@ output "mediatree_videos_api_key_secret_key" {
   value     = scaleway_iam_api_key.mediatree_videos_api_key.secret_key
   sensitive = true
 }
+
+output "gpu_instance_ip" {
+  value = scaleway_instance_server.gpu.public_ip
+}

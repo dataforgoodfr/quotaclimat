@@ -43,6 +43,12 @@ inputs:
     required: false
     description: "End of the analysis window (YYYY-MM-DD). Defaults to now when not set."
 
+triggers:
+  - id: daily_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "30 00 * * *"
+    timezone: Europe/Paris
+
 tasks:
   - id: per_search
     type: io.kestra.plugin.core.flow.ForEach

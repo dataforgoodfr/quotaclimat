@@ -83,7 +83,7 @@ locals {
 
   acl_rules = var.environment == "dev" ? [
     { ip = "0.0.0.0/0", description = "Allow all (dev only)" }
-  ]: concat(local.scaleway_job_cidrs, jsondecode(var.acl_allowed_ips))
+  ] : concat(local.scaleway_job_cidrs, jsondecode(var.acl_allowed_ips))
 }
 
 resource "scaleway_rdb_acl" "public" {

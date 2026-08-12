@@ -31,5 +31,5 @@ output "mediatree_videos_api_key_secret_key" {
 }
 
 output "gpu_instance_ip" {
-  value = scaleway_instance_server.gpu.public_ips[0].address
+  value = scaleway_instance_ip.gpu.address
 }

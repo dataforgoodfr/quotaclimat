@@ -5,8 +5,15 @@
 # resource is needed here.
 
 data "scaleway_marketplace_image" "gpu_os" {
-  zone  = var.gpu_zone
-  label = var.gpu_image_label
+  zone          = var.gpu_zone
+  label         = var.gpu_image_label
+  instance_type = var.gpu_instance_type
+  image_type    = "instance_sbs"
+}
+
+resource "scaleway_instance_ip" "gpu" {
+  zone       = var.gpu_zone
+  project_id = scaleway_account_project.project.id
 }
 
 resource "scaleway_instance_server" "gpu" {
@@ -15,6 +22,7 @@ resource "scaleway_instance_server" "gpu" {
   image      = data.scaleway_marketplace_image.gpu_os.id
   zone       = var.gpu_zone
   project_id = scaleway_account_project.project.id
+  ip_id      = scaleway_instance_ip.gpu.id
 
   root_volume {
     volume_type           = "sbs_volume"
@@ -34,9 +42,9 @@ resource "scaleway_instance_server" "gpu" {
       - curl
       - ca-certificates
     runcmd:
-      - curl -LsSf https://astral.sh/uv/install.sh | sh
+      - UV_INSTALL_DIR=/usr/local/bin sh -c "curl -LsSf https://astral.sh/uv/install.sh | sh"
       %{if var.environment == "prod"~}
-      - /root/.local/bin/uv pip install --system vllm
+      - /usr/local/bin/uv pip install --system vllm
       %{endif~}
   EOF
 

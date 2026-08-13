@@ -37,6 +37,7 @@ class DictionaryEntry(RRSBase):
     subject_id = Column(String, ForeignKey("subjects.subject_id"), nullable=True)
     keyword = Column(String, nullable=True)
     high_risk_false_positive = Column(Boolean, nullable=True)
+    validated = Column(Boolean, nullable=True)
     created_at = Column(
         DateTime(timezone=True), server_default=sql_text("(now() at time zone 'utc')")
     )
@@ -98,6 +99,7 @@ class Case(RRSBase):
     url_labelstudio = Column(String, nullable=True)
     is_labeled = Column(Boolean, nullable=True)
     mesinfo_choice = Column(String, nullable=True)
+    analysis = Column(Text, nullable=True)
     created_at = Column(
         DateTime(timezone=True), server_default=sql_text("(now() at time zone 'utc')")
     )

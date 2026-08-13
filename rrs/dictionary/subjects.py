@@ -3,5 +3,5 @@ from rrs.dictionary.subject import insecurity
 
 subjects = {
     "climate": {"keywords": THEME_KEYWORDS, "title": "Changement Climatique"},
-    "insecurity": {"keywords": insecurity.keywords, "title": "Insécurité"}
+    "insecurity": {"keywords": insecurity.keywords, "title": "Immigration"}
 }

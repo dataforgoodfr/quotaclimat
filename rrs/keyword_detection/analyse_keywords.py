@@ -166,19 +166,30 @@ NON_VALIDATED_KEYWORD_THRESHOLD = int(os.environ.get("NON_VALIDATED_KEYWORD_THRE
 
 def get_keywords_by_subject(
     exclude_subject_name: str = CLIMATE_SUBJECT_NAME,
+    only_subject_name: Optional[str] = None,
 ) -> dict[str, tuple[list[str], list[str], list[str]]]:
-    """Return {subject_id: (validated_keywords, high_risk_keywords, non_validated_keywords)}
-    for all subjects except the excluded one.
+    """Return {subject_id: (validated_keywords, high_risk_keywords, non_validated_keywords)}.
+
+    If only_subject_name is given, restrict to that single subject. Otherwise return
+    all subjects except the excluded one.
     """
-    climate_id = make_subject_id(exclude_subject_name)
     Session = sessionmaker(bind=_get_engine())
 
     with Session() as session:
-        entries = (
-            session.query(DictionaryEntry)
-            .filter(DictionaryEntry.subject_id != climate_id)
-            .all()
-        )
+        if only_subject_name:
+            only_id = make_subject_id(only_subject_name)
+            entries = (
+                session.query(DictionaryEntry)
+                .filter(DictionaryEntry.subject_id == only_id)
+                .all()
+            )
+        else:
+            climate_id = make_subject_id(exclude_subject_name)
+            entries = (
+                session.query(DictionaryEntry)
+                .filter(DictionaryEntry.subject_id != climate_id)
+                .all()
+            )
 
     validated_kws: dict[str, list[str]] = {}
     high_risk_kws: dict[str, list[str]] = {}
@@ -203,10 +214,13 @@ def get_keywords_by_subject(
         )
         for sid in subject_ids
     }
-    logging.info(
-        f"Loaded keywords for {len(keywords_by_subject)} subject(s) "
-        f"(excluding '{exclude_subject_name}')."
-    )
+    if only_subject_name:
+        logging.info(f"Loaded keywords for subject '{only_subject_name}' only.")
+    else:
+        logging.info(
+            f"Loaded keywords for {len(keywords_by_subject)} subject(s) "
+            f"(excluding '{exclude_subject_name}')."
+        )
     return keywords_by_subject
 
 
@@ -352,6 +366,7 @@ def detect_keywords(
     end_date: Optional[date] = None,
     channels: Optional[list[str]] = None,
     con: Optional[duckdb.DuckDBPyConnection] = None,
+    subject: Optional[str] = None,
 ) -> Iterator[tuple[date, pd.DataFrame]]:
     """Yield (day, DataFrame) for each day in the date range.
 
@@ -365,12 +380,16 @@ def detect_keywords(
       - n_non_validated_found: count of matched non-validated keywords
     Rows are included if they have at least one validated keyword match, or at
     least NON_VALIDATED_KEYWORD_THRESHOLD non-validated keyword matches.
+
+    If subject is given, only that subject's keywords are searched for.
     """
     if con is None:
         con = _con
 
-    keywords_by_subject = get_keywords_by_subject()
+    keywords_by_subject = get_keywords_by_subject(only_subject_name=subject)
     if not keywords_by_subject:
+        if subject:
+            raise ValueError(f"No keywords found for subject '{subject}'.")
         raise ValueError("No keyword subjects found (excluding climate).")
 
     query = _build_day_query(keywords_by_subject)
@@ -412,6 +431,11 @@ if __name__ == "__main__":
         help="Channel(s) to process (default: all France channels)",
     )
     parser.add_argument(
+        "--subject",
+        default=os.environ.get("SUBJECT"),
+        help="Only analyse this subject (default: all subjects except climate, env: SUBJECT)",
+    )
+    parser.add_argument(
         "--days-prior",
         type=int,
         default=int(os.environ.get("DAYS_PRIOR", "1")),
@@ -438,7 +462,9 @@ if __name__ == "__main__":
     channels = args.channel or None
 
     total = 0
-    for day, df in detect_keywords(start_date=start, end_date=end, channels=channels):
+    for day, df in detect_keywords(
+        start_date=start, end_date=end, channels=channels, subject=args.subject
+    ):
         save_segments_to_db(df)
         total += len(df)
 

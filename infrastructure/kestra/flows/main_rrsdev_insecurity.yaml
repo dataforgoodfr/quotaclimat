@@ -59,6 +59,7 @@ tasks:
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
       RRS_PG_USER: "{{ secret('RRS_PG_USER_DEV') }}"
       RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD_DEV') }}"
+      SUBJECT: insecurity
 
   - id: detect_misinformation
     shmSize: 6gb

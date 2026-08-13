@@ -16,6 +16,7 @@ Environment variables (defaults match rrs/.env.dist):
 """
 
 import os
+from urllib.parse import quote
 
 from dotenv import load_dotenv
 from rrs.dictionary.subjects import subjects
@@ -36,8 +37,8 @@ def get_engine():
     host = os.getenv("RRS_PG_HOST", "localhost")
     port = os.getenv("RRS_PG_PORT", "5432")
     database = os.getenv("RRS_PG_DATABASE", "rrs_db")
-    user = os.getenv("RRS_PG_USER", "user")
-    password = os.getenv("RRS_PG_PASSWORD", "password")
+    user = quote(os.getenv("RRS_PG_USER", "user"), safe="")
+    password = quote(os.getenv("RRS_PG_PASSWORD", "password"), safe="")
     return create_engine(
         f"postgresql+psycopg://{user}:{password}@{host}:{port}/{database}"
     )

@@ -181,23 +181,26 @@ async def classify_segments(
 
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
-    labels, scores, justifications = [], [], []
+    labels, scores, justifications, analyses = [], [], [], []
     total_input = total_output = 0
     for i, result in enumerate(results):
         if result is None:
             labels.append(None)
             scores.append(None)
             justifications.append(None)
+            analyses.append(None)
         elif isinstance(result, Exception):
             logging.error(f"  Error on row {i}: {result}")
             labels.append("error")
             scores.append(None)
             justifications.append(str(result))
+            analyses.append(None)
         else:
             misinfo, in_tok, out_tok = result
             labels.append(misinfo.label)
             scores.append(misinfo.score)
             justifications.append(misinfo.justification)
+            analyses.append(misinfo.analysis)
             total_input += in_tok
             total_output += out_tok
 
@@ -219,6 +222,7 @@ async def classify_segments(
     out["label"] = labels
     out["score"] = scores
     out["justification"] = justifications
+    out["analysis"] = analyses
     return out
 
 
@@ -257,6 +261,7 @@ def save_cases_to_db(result: pd.DataFrame) -> None:
             "url_labelstudio",
             "is_labeled",
             "mesinfo_choice",
+            "analysis",
         ]
     ]
 
@@ -268,13 +273,13 @@ def save_cases_to_db(result: pd.DataFrame) -> None:
         INSERT INTO rrs.cases (
             case_id, segment_id, subject_id, start,
             model_score, model_reason, text,
-            url_labelstudio, is_labeled, mesinfo_choice,
+            url_labelstudio, is_labeled, mesinfo_choice, analysis,
             created_at, updated_at
         )
         SELECT
             case_id, segment_id, subject_id, start,
             model_score, model_reason, text,
-            url_labelstudio, is_labeled, mesinfo_choice,
+            url_labelstudio, is_labeled, mesinfo_choice, analysis,
             now() AT TIME ZONE 'utc',
             now() AT TIME ZONE 'utc'
         FROM cases_batch
@@ -284,6 +289,7 @@ def save_cases_to_db(result: pd.DataFrame) -> None:
             text            = EXCLUDED.text,
             is_labeled      = EXCLUDED.is_labeled,
             mesinfo_choice  = EXCLUDED.mesinfo_choice,
+            analysis        = EXCLUDED.analysis,
             updated_at      = now() AT TIME ZONE 'utc'
     """)
     con.close()
@@ -369,3 +375,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

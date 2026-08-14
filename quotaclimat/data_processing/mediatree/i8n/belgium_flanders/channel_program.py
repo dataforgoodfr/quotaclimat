@@ -80,8 +80,8 @@ channels_programs_belgium_flanders = [
     {"channel_name": "canvas", "start": "20:00", "end": "20:30", "weekday": "weekday", "program_name": "Terzake", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "canvas", "start": "20:40", "end": "21:25", "weekday": "weekday", "program_name": "De Afspraak", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     
-    {"channel_name": "vtm", "start": "19:00", "end": "19:35", "weekday": "weekday", "program_name": "VTM Daily News 19:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
-    {"channel_name": "vtm", "start": "19:00", "end": "19:25", "weekday": "weekend", "program_name": "VTM Daily News 19:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "vtm", "start": "19:00", "end": "19:35", "weekday": "weekday", "program_name": "VTM Daily News", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    {"channel_name": "vtm", "start": "19:00", "end": "19:25", "weekday": "weekend", "program_name": "VTM Daily News", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "vtm", "start": "13:00", "end": "13:30", "weekday": "weekday", "program_name": "VTM Daily News 13:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "vtm", "start": "13:00", "end": "13:35", "weekday": "weekend", "program_name": "VTM Daily News 13:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     

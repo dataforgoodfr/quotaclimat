@@ -41,9 +41,10 @@ weekly_aggregates AS (
         ptk.media_all,
         ptk.source_type,
         ptk.keyword,
+        ptk.keyword_lemma,
         ptk.sector,
         ptk.is_hrfp,
-        
+
         -- Sum all counts across the week
         SUM(ptk.nb_articles) AS nb_articles,
         SUM(ptk.nb_keyword_occurences) AS nb_keyword_occurences
@@ -75,6 +76,7 @@ weekly_aggregates AS (
         ptk.media_all,
         ptk.source_type,
         ptk.keyword,
+        ptk.keyword_lemma,
         ptk.sector,
         ptk.is_hrfp
 )
@@ -86,13 +88,14 @@ SELECT
     media_all,
     source_type,
     keyword,
+    keyword_lemma,
     sector,
     nb_articles,
     nb_keyword_occurences,
     is_hrfp,
     CURRENT_TIMESTAMP AS created_at,
     CURRENT_TIMESTAMP AS updated_at
-    
+
 FROM weekly_aggregates
 
 ORDER BY

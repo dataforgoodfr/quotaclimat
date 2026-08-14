@@ -98,6 +98,7 @@ keyword_aggregates AS (
         dk.publication_day,
         dk.source_code,
         dk.keyword,
+        to_tsvector('french', dk.keyword) AS keyword_lemma,
         BOOL_AND(dk.is_hrfp) AS is_hrfp,
         COUNT(DISTINCT dk.an) AS nb_articles,
         SUM(dk.count_keyword) AS nb_keyword_occurences
@@ -114,10 +115,11 @@ keywords_with_sectors AS (
         ka.publication_day,
         ka.source_code,
         ka.keyword,
+        ka.keyword_lemma,
         ka.is_hrfp,
         ka.nb_articles,
         ka.nb_keyword_occurences,
-        CASE 
+        CASE
             WHEN sector_col = 'is_empty' THEN 'empty'
             WHEN sector_col = 'general' THEN 'General'
             WHEN sector_col = 'agriculture' THEN 'Agriculture & Alimentation'
@@ -154,6 +156,7 @@ daily_aggregates AS (
         kws.publication_day,
         kws.source_code,
         kws.keyword,
+        kws.keyword_lemma,
         kws.sector,
         kws.is_hrfp,
         kws.nb_articles,
@@ -177,6 +180,7 @@ SELECT
     sc.source_type,
     sc.media_all,
     da.keyword,
+    da.keyword_lemma,
     da.sector,
     da.nb_articles,
     da.nb_keyword_occurences,

@@ -59,11 +59,12 @@ tasks:
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
       RRS_PG_USER: "{{ secret('RRS_PG_USER_DEV') }}"
       RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD_DEV') }}"
+      SUBJECT: insecurity
 
   - id: detect_misinformation
     shmSize: 6gb
     type: io.kestra.plugin.docker.Run
-    containerImage: "rg.fr-par.scw.cloud/rrs-prod/rrs-base:prod"
+    containerImage: "rg.fr-par.scw.cloud/rrs-dev/rrs-base:latest"
     pullPolicy: ALWAYS
     credentials:
       registry: rg.fr-par.scw.cloud/rrs-dev
@@ -97,12 +98,12 @@ tasks:
     runIf: "{{ inputs.run_clustering }}"
     shmSize: 6gb
     type: io.kestra.plugin.docker.Run
-    containerImage: "rg.fr-par.scw.cloud/rrs-prod/rrs-base:prod"
+    containerImage: "rg.fr-par.scw.cloud/rrs-dev/rrs-base:latest"
     pullPolicy: ALWAYS
     credentials:
-      registry: rg.fr-par.scw.cloud/rrs-prod
+      registry: rg.fr-par.scw.cloud/rrs-dev
       username: nologin
-      password: "{{ secret('RRS_SCW_SECRET') }}"
+      password: "{{ secret('RRS_SCW_SECRET_DEV') }}"
     entryPoint:
       - python
       - -m

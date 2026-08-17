@@ -22,6 +22,7 @@ PRICING = {
 
 
 class MisinfoResult(BaseModel):
+    analysis: str
     label: Literal["oui", "non", "incertain"]
     score: float
     justification: str

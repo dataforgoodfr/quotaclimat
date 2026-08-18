@@ -247,12 +247,12 @@ models:
       - name: total_mesinfo
         description: "Total instances of misinformation detected."
 
-  - name: core_query_environmental_shares_Be
-      description: >
+  - name: core_query_environmental_shares_be
+    description: >
         International environmental shares (Belgium). Denominator is the effectively
         monitored time: restricted to declared program slots for channels with an
         editorial grid (program_metadata), full time_monitored for channels without one.
-      columns:
+    columns:
         - name: start
           description: Start of the ISO week of the observation (week truncated).
         - name: channel_name
@@ -309,7 +309,7 @@ models:
         - name: ressources_solutions_pct
           description: 'Original: % ressources solutions'
 
-  - name: core_query_thematics_keywords_Be
+  - name: core_query_thematics_keywords_be
     description: >
       International thematic keyword occurrences (Belgium), one row per week, channel,
       category, theme and keyword. Only meaningful when keyword, theme and category are

@@ -1,0 +1,36 @@
+name: Reingest BE Flanders program update (issue 620)
+on:
+  workflow_dispatch:
+jobs:
+  update-be-programs:
+    strategy:
+      max-parallel: 1   # une exécution à la fois, pour ménager la DB et suivre les logs
+      fail-fast: false
+      matrix:
+        channel: [ "radio-1", "vrt1", "play" ]
+        dates:
+          - { start_date: "2026-01-01", end_date: "2026-02-01" }
+          - { start_date: "2026-02-01", end_date: "2026-03-01" }
+          - { start_date: "2026-03-01", end_date: "2026-04-01" }
+          - { start_date: "2026-04-01", end_date: "2026-05-01" }
+          - { start_date: "2026-05-01", end_date: "2026-06-01" }
+          - { start_date: "2026-06-01", end_date: "2026-07-01" }
+          - { start_date: "2026-07-01", end_date: "2026-08-01" }
+    runs-on: ubuntu-latest
+    steps:
+    - name: start program-only update job for BE flanders
+      uses: jawher/action-scw@v2.54.0
+      env:
+        SCW_ACCESS_KEY: ${{ secrets.SCW_ACCESS_KEY }}
+        SCW_SECRET_KEY: ${{ secrets.SCW_SECRET_KEY }}
+        SCW_ORGANIZATION_ID: ${{ secrets.SCW_ORGANIZATION_ID }}
+        SCW_ZONE: ${{ secrets.SCW_ZONE }}
+      with:
+        args: >-
+          jobs definition start ${{ secrets.SCALEWAY_JOB_IMPORT_ID }}
+          environment-variables.UPDATE=true
+          environment-variables.UPDATE_PROGRAM_ONLY=true
+          environment-variables.COUNTRY=bel-fla
+          environment-variables.CHANNEL=${{ matrix.channel }}
+          environment-variables.START_DATE_UPDATE=${{ matrix.dates.start_date }}
+          environment-variables.END_DATE=${{ matrix.dates.end_date }}

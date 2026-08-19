@@ -12,16 +12,14 @@ WITH grid_channels AS (
     ]) AS channel_name
 ),
 
-channel_map AS (   -- une seule ligne par channel_name, pour éviter tout fan-out
+channel_map AS (
     SELECT channel_name, MAX(channel_title) AS channel_title
     FROM "public"."keywords"
     WHERE country = 'belgium'
     GROUP BY channel_name
 ),
 
--- ===== PÉRIMÈTRE : chunks retenus (identique à la core query env shares) =====
 kw_scoped AS (
-    -- chaînes de grille : uniquement les chunks tombant dans un créneau program_metadata
     SELECT k.*
     FROM "public"."keywords" k
     WHERE k.country = 'belgium'
@@ -37,25 +35,44 @@ kw_scoped AS (
                                           AND CAST(pm.program_grid_end   AS date)
       )
     UNION ALL
-    -- chaînes hors grille : tous les chunks
     SELECT k.*
     FROM "public"."keywords" k
     WHERE k.country = 'belgium'
       AND k.channel_name NOT IN (SELECT channel_name FROM grid_channels)
 ),
 
--- ===== DÉNOMINATEUR =====
-kw_chunks_daily AS (          -- minutes captées DANS le périmètre
+kw_chunks_daily AS (
     SELECT CAST(start AS date) AS day, channel_name, COUNT(*) * 2 AS kw_chunks_min
     FROM kw_scoped
     GROUP BY 1, 2
 ),
-tm_daily AS (                 -- minutes captées au total
+tm_daily AS (
     SELECT channel_name, CAST(start AS date) AS day, SUM(duration_minutes) AS duration_minutes
     FROM "public"."time_monitored"
     WHERE country = 'belgium'
     GROUP BY 1, 2
 ),
+
+-- ===== garde-fou + durée théorique =====
+jours_captes AS (
+    SELECT channel_name, CAST(start AS date) AS day
+    FROM "public"."keywords"
+    WHERE country = 'belgium'
+    GROUP BY 1, 2
+),
+theorique_daily AS (
+    SELECT j.channel_name,
+           j.day,
+           SUM(EXTRACT(EPOCH FROM (pm."end"::time - pm.start::time)) / 60.0) AS theorique_min
+    FROM jours_captes j
+    JOIN "public"."program_metadata" pm
+      ON pm.country      = 'belgium'
+     AND pm.channel_name = j.channel_name
+     AND pm.weekday      = COALESCE(NULLIF(((EXTRACT(DOW FROM j.day)::int + 1 + 6) % 7), 0), 7)
+     AND j.day BETWEEN CAST(pm.program_grid_start AS date) AND CAST(pm.program_grid_end AS date)
+    GROUP BY 1, 2
+),
+
 spine AS (
     SELECT channel_name, day FROM tm_daily
     UNION
@@ -69,14 +86,17 @@ denom_daily AS (
         COALESCE(tm.duration_minutes, 0) AS time_monitored_min,
         CASE WHEN s.channel_name IN (SELECT channel_name FROM grid_channels)
              THEN COALESCE(kwc.kw_chunks_min, 0) END AS monitored_in_perimeter_min,
-        -- >>> dénominateur effectif <
         CASE WHEN s.channel_name IN (SELECT channel_name FROM grid_channels)
-             THEN COALESCE(kwc.kw_chunks_min, 0)      -- chaîne à grille -> périmètre seul
-             ELSE COALESCE(tm.duration_minutes, 0)    -- chaîne sans grille -> time_monitored
+             THEN COALESCE(th.theorique_min, 0) END AS theorique_min,
+        -- >>> DÉNOMINATEUR : théorique pour les chaînes à grille <
+        CASE WHEN s.channel_name IN (SELECT channel_name FROM grid_channels)
+             THEN COALESCE(th.theorique_min, 0)
+             ELSE COALESCE(tm.duration_minutes, 0)
         END AS denominator_min
     FROM spine s
     LEFT JOIN tm_daily        tm  ON tm.channel_name  = s.channel_name AND tm.day  = s.day
     LEFT JOIN kw_chunks_daily kwc ON kwc.channel_name = s.channel_name AND kwc.day = s.day
+    LEFT JOIN theorique_daily th  ON th.channel_name  = s.channel_name AND th.day  = s.day
 ),
 denom_weekly AS (
     SELECT
@@ -84,13 +104,13 @@ denom_weekly AS (
         channel_name,
         bool_or(has_grid)                   AS has_grid,
         SUM(denominator_min)                AS weekly_denominator_min,
+        SUM(theorique_min)                  AS weekly_theorique_min,
         SUM(time_monitored_min)             AS weekly_time_monitored_min,
         SUM(monitored_in_perimeter_min)     AS weekly_in_perimeter_min
     FROM denom_daily
     GROUP BY 1, 2
 ),
 
--- ===== NUMÉRATEUR : occurrences de mots-clés =====
 keyword_occurrences AS (
     SELECT DISTINCT
         ks.channel_name,
@@ -142,12 +162,13 @@ SELECT
     kmc.economie_ressources,
     COUNT(*) AS count,
     COALESCE(dw.weekly_denominator_min,    0) AS sum_duration_minutes,
+    COALESCE(dw.weekly_theorique_min,      0) AS sum_theorique_min,
     COALESCE(dw.weekly_time_monitored_min, 0) AS sum_time_monitored,
     COALESCE(dw.weekly_in_perimeter_min,   0) AS sum_monitored_in_perimeter_min
 FROM keyword_occurrences ko
 LEFT JOIN "public"."dictionary" d
        ON d.keyword = ko.keyword
-      AND d.theme LIKE ko.theme || '%'   -- matche aussi les variantes "indirect" du dictionnaire
+      AND d.theme LIKE ko.theme || '%'
 LEFT JOIN denom_weekly dw
        ON dw.channel_name = ko.channel_name
       AND dw.week         = ko.week
@@ -158,30 +179,14 @@ LEFT JOIN channel_map cm
 WHERE COALESCE(cm.channel_title, ko.channel_name) NOT IN ('LN24','LATROIS','CANALZ')
 GROUP BY
     COALESCE(cm.channel_title, ko.channel_name),
-    ko.channel_name,
-    ko.country,
-    ko.week,
-    dw.has_grid,
+    ko.channel_name, ko.country, ko.week, dw.has_grid,
     COALESCE(NULLIF(d.category, ''), 'Transversal'),
     d.high_risk_of_false_positive,
-    ko.is_solution,
-    ko.is_consequence,
-    ko.is_cause,
-    ko.is_general_concepts,
-    ko.is_statement,
-    ko.crise_type,
-    ko.theme,
-    ko.keyword,
-    kmc.general,
-    kmc.agriculture,
-    kmc.transport,
-    kmc.batiments,
-    kmc.energie,
-    kmc.industrie,
-    kmc.eau,
-    kmc.ecosysteme,
-    kmc.economie_ressources,
-    dw.weekly_denominator_min,
-    dw.weekly_time_monitored_min,
-    dw.weekly_in_perimeter_min
+    ko.is_solution, ko.is_consequence, ko.is_cause,
+    ko.is_general_concepts, ko.is_statement,
+    ko.crise_type, ko.theme, ko.keyword,
+    kmc.general, kmc.agriculture, kmc.transport, kmc.batiments,
+    kmc.energie, kmc.industrie, kmc.eau, kmc.ecosysteme, kmc.economie_ressources,
+    dw.weekly_denominator_min, dw.weekly_theorique_min,
+    dw.weekly_time_monitored_min, dw.weekly_in_perimeter_min
 ORDER BY channel_title, ko.week, ko.crise_type

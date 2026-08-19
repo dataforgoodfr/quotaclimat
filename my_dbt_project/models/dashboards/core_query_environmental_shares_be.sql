@@ -11,16 +11,14 @@ WITH grid_channels AS (
     ]) AS channel_name
 ),
 
-channel_map AS (   -- une seule ligne par channel_name, pour éviter tout fan-out
+channel_map AS (
     SELECT channel_name, MAX(channel_title) AS channel_title
     FROM "public"."keywords"
     WHERE country = 'belgium'
     GROUP BY channel_name
 ),
 
--- ===== NUMÉRATEUR : chunks retenus (inchangé) =====
 kw_scoped AS (
-    -- chaînes de grille : uniquement les chunks tombant dans un créneau program_metadata
     SELECT k.*
     FROM "public"."keywords" k
     WHERE k.country = 'belgium'
@@ -36,7 +34,6 @@ kw_scoped AS (
                                           AND CAST(pm.program_grid_end   AS date)
       )
     UNION ALL
-    -- chaînes hors grille : tous les chunks
     SELECT k.*
     FROM "public"."keywords" k
     WHERE k.country = 'belgium'
@@ -77,14 +74,34 @@ tm_daily AS (
     GROUP BY 1, 2
 ),
 
--- épine dorsale : ne perd ni un jour capté sans mots-clés, ni un jour de keywords sans ligne time_monitored
+-- ===== jours réellement captés (garde-fou) =====
+jours_captes AS (
+    SELECT channel_name, CAST(start AS date) AS day
+    FROM "public"."keywords"
+    WHERE country = 'belgium'
+    GROUP BY 1, 2
+),
+
+-- ===== durée théorique des créneaux actifs, par jour capté =====
+theorique_daily AS (
+    SELECT j.channel_name,
+           j.day,
+           SUM(EXTRACT(EPOCH FROM (pm."end"::time - pm.start::time)) / 60.0) AS theorique_min
+    FROM jours_captes j
+    JOIN "public"."program_metadata" pm
+      ON pm.country      = 'belgium'
+     AND pm.channel_name = j.channel_name
+     AND pm.weekday      = COALESCE(NULLIF(((EXTRACT(DOW FROM j.day)::int + 1 + 6) % 7), 0), 7)
+     AND j.day BETWEEN CAST(pm.program_grid_start AS date) AND CAST(pm.program_grid_end AS date)
+    GROUP BY 1, 2
+),
+
 spine AS (
     SELECT channel_name, day FROM tm_daily
     UNION
     SELECT channel_name, day FROM kw_daily
 ),
 
--- ===== DÉNOMINATEUR : in-perimeter si grille, time_monitored sinon =====
 daily AS (
     SELECT
         s.day,
@@ -94,14 +111,15 @@ daily AS (
         (s.channel_name IN (SELECT channel_name FROM grid_channels)) AS has_grid,
 
         COALESCE(tm.duration_minutes, 0)  AS time_monitored_min,
-        -- n'a de sens que pour les chaînes à grille
         CASE WHEN s.channel_name IN (SELECT channel_name FROM grid_channels)
              THEN COALESCE(kw.kw_chunks_min, 0) END AS monitored_in_perimeter_min,
-
-        -- >>> le dénominateur effectif <
         CASE WHEN s.channel_name IN (SELECT channel_name FROM grid_channels)
-             THEN COALESCE(kw.kw_chunks_min, 0)        -- chaîne à grille -> périmètre seul
-             ELSE COALESCE(tm.duration_minutes, 0)     -- chaîne sans grille -> time_monitored
+             THEN COALESCE(th.theorique_min, 0) END AS theorique_min,
+
+        -- >>> DÉNOMINATEUR : théorique pour les chaînes à grille <
+        CASE WHEN s.channel_name IN (SELECT channel_name FROM grid_channels)
+             THEN COALESCE(th.theorique_min, 0)
+             ELSE COALESCE(tm.duration_minutes, 0)
         END AS denominator_min,
 
         COALESCE(kw.env_min,0) env_min, COALESCE(kw.climat_min,0) climat_min,
@@ -118,9 +136,10 @@ daily AS (
         COALESCE(kw.ressource_constat_min,0) ressource_constat_min,
         COALESCE(kw.ressource_solution_min,0) ressource_solution_min
     FROM spine s
-    LEFT JOIN tm_daily    tm ON tm.channel_name = s.channel_name AND tm.day = s.day
-    LEFT JOIN kw_daily    kw ON kw.channel_name = s.channel_name AND kw.day = s.day
-    LEFT JOIN channel_map cm ON cm.channel_name = s.channel_name
+    LEFT JOIN tm_daily        tm ON tm.channel_name = s.channel_name AND tm.day = s.day
+    LEFT JOIN kw_daily        kw ON kw.channel_name = s.channel_name AND kw.day = s.day
+    LEFT JOIN theorique_daily th ON th.channel_name = s.channel_name AND th.day = s.day
+    LEFT JOIN channel_map     cm ON cm.channel_name = s.channel_name
     WHERE COALESCE(cm.channel_title, s.channel_name) NOT IN ('LN24','LATROIS','CANALZ')
 )
 
@@ -132,8 +151,11 @@ SELECT
     bool_or(has_grid)                                                   AS has_grid,
 
     SUM(denominator_min)                                                AS sum_duration_minutes,
+    SUM(theorique_min)                                                  AS sum_theorique_min,
     SUM(time_monitored_min)                                             AS sum_time_monitored,
     SUM(monitored_in_perimeter_min)                                     AS sum_monitored_in_perimeter_min,
+    ROUND(100.0 * SUM(monitored_in_perimeter_min)
+                / NULLIF(SUM(theorique_min),0), 1)                      AS couverture_dictionnaire_pct,
 
     CAST(SUM(env_min)                AS float)/NULLIF(SUM(denominator_min),0) AS "% environnement total",
     CAST(SUM(climat_min)             AS float)/NULLIF(SUM(denominator_min),0) AS "% climat",
@@ -151,11 +173,5 @@ SELECT
     CAST(SUM(ressource_constat_min)  AS float)/NULLIF(SUM(denominator_min),0) AS "% ressources constat",
     CAST(SUM(ressource_solution_min) AS float)/NULLIF(SUM(denominator_min),0) AS "% ressources solutions"
 FROM daily
-GROUP BY
-  "start",
-  channel_name,
-  channel_title,
-  country
-ORDER BY
-  "start" ASC,
-  channel_name ASC
+GROUP BY "start", channel_name, channel_title, country
+ORDER BY "start" ASC, channel_title ASC

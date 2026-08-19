@@ -82,6 +82,7 @@ channels_programs_belgium_flanders = [
     
     {"channel_name": "vtm", "start": "19:00", "end": "19:35", "weekday": "weekday", "program_name": "VTM Daily News", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "vtm", "start": "19:00", "end": "19:25", "weekday": "weekend", "program_name": "VTM Daily News", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+    # TEMPORAIRE (#620) : borne a 2025-12-31 car les chunks 13h n'ont jamais ete telecharges cote Mediatree. Remettre "" apres le re-telechargement api_to_s3.
     {"channel_name": "vtm", "start": "13:00", "end": "13:30", "weekday": "weekday", "program_name": "VTM Daily News 13:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "2025-12-31",},
     {"channel_name": "vtm", "start": "13:00", "end": "13:35", "weekday": "weekend", "program_name": "VTM Daily News 13:00", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "2025-12-30",},
     

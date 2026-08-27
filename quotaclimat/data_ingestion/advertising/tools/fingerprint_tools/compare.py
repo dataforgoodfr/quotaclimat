@@ -217,6 +217,74 @@ class FingerprintsCompare:
 
         return best_count / (min(len(pairs_a), len(pairs_b)) + 1)
 
+    def _score_alt(self, fp_a: Fingerprint, fp_b: Fingerprint) -> float:
+        """
+        Alternate scoring, structured to mirror a plain SQL query instead of a
+        numpy perf-optimized scan. Same result shape as _score(), but drops the
+        sum-based binary-search prefilter (reverts to an O(Na*Nb) join) and
+        replaces the exact sliding-window offset scan with a bucketed histogram.
+
+        SQL equivalent (conceptually):
+            WITH matches AS (
+              SELECT a.id AS a_id, b.id AS b_id, a.t_offset - b.t_offset AS offset,
+                     ROW_NUMBER() OVER (
+                       PARTITION BY a.id
+                       ORDER BY abs(a.f1-b.f1) + abs(a.f2-b.f2) + abs(a.dt-b.dt)
+                     ) AS rn
+              FROM pairs_a a JOIN pairs_b b
+                ON abs(a.f1 - b.f1) <= freq_tol
+               AND abs(a.f2 - b.f2) <= freq_tol
+               AND abs(a.dt - b.dt) <= dt_tol
+            ),
+            nearest AS (SELECT * FROM matches WHERE rn = 1),
+            buckets AS (
+              SELECT round(offset / (2.0 * offset_tol)) AS bucket, count(*) AS n
+              FROM nearest GROUP BY bucket
+            )
+            SELECT max(n) FROM buckets  -- best_count
+        """
+        pairs_a_raw = fp_a.pairs or []
+        pairs_b_raw = fp_b.pairs or []
+        if (
+            len(pairs_a_raw) < self.min_matching_pairs
+            or len(pairs_b_raw) < self.min_matching_pairs
+        ):
+            return 0.0
+
+        pairs_a = np.array(pairs_a_raw, dtype=np.int32)  # (Na, 4): f1, f2, dt, t_offset
+        pairs_b = np.array(pairs_b_raw, dtype=np.int32)  # (Nb, 4)
+
+        # JOIN pairs_a a, pairs_b b ON per-dimension tolerance
+        close_mask = (
+            np.abs(pairs_a[:, None, 0] - pairs_b[None, :, 0]) <= self.freq_tol
+        ) & (
+            np.abs(pairs_a[:, None, 1] - pairs_b[None, :, 1]) <= self.freq_tol
+        ) & (
+            np.abs(pairs_a[:, None, 2] - pairs_b[None, :, 2]) <= self.dt_tol
+        )
+
+        offsets = []
+        for i in range(len(pairs_a)):
+            j_candidates = np.where(close_mask[i])[0]
+            if len(j_candidates) == 0:
+                continue
+            # ORDER BY distance ... QUALIFY ROW_NUMBER() OVER (...) = 1
+            dists = np.abs(pairs_a[i, :3] - pairs_b[j_candidates, :3]).sum(axis=1)
+            best_j = j_candidates[dists.argmin()]
+            offsets.append(int(pairs_a[i, 3]) - int(pairs_b[best_j, 3]))
+
+        if len(offsets) < self.min_matching_pairs:
+            return 0.0
+
+        # GROUP BY round(offset / (2*offset_tol)), take the largest bucket
+        bucket_width = 2 * self.offset_tol
+        buckets = Counter(
+            round(offset / bucket_width) for offset in offsets
+        )
+        best_count = max(buckets.values())
+
+        return best_count / (min(len(pairs_a), len(pairs_b)) + 1)
+
     def is_similar(self, fp_a: Fingerprint, fp_b: Fingerprint) -> bool:
         """Return True if two fingerprints pass the acoustic pre-filter and the similarity threshold."""
         if not self._features_compatible(fp_a, fp_b):

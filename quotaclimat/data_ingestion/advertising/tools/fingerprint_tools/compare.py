@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from typing import List, Tuple
 
 import numpy as np
 
@@ -13,50 +12,6 @@ from .fingerprint import Fingerprint
 _ADJ_3D = [
     (df1, df2, ddt) for df1 in (-1, 0, 1) for df2 in (-1, 0, 1) for ddt in (-1, 0, 1)
 ]
-
-
-class PairGenerator:
-    """
-    Generate peak-pair fingerprint tuples from a constellation map.
-
-    Each pair = (freq1, freq2, delta_t, time_offset) — shift-invariant,
-    noise-tolerant when matched with distance-based scoring.
-    """
-
-    def __init__(
-        self,
-        fan_out: int = 4,
-        time_delta_max: int = 100,
-        time_delta_min: int = 1,
-        max_pairs: int = 80,
-    ):
-        self.fan_out = fan_out
-        self.time_delta_max = time_delta_max
-        self.time_delta_min = time_delta_min
-        self.max_pairs = max_pairs
-
-    def generate(self, peaks: np.ndarray) -> List[Tuple[int, int, int, int]]:
-        if len(peaks) < 2:
-            return []
-
-        peaks = peaks[peaks[:, 0].argsort()]
-
-        pairs = []
-        for i, (t1, f1) in enumerate(peaks):
-            j = i + 1
-            count = 0
-            while j < len(peaks) and count < self.fan_out:
-                t2, f2 = peaks[j]
-                delta_t = t2 - t1
-
-                if delta_t > self.time_delta_max:
-                    break
-                if delta_t >= self.time_delta_min:
-                    pairs.append((int(f1), int(f2), int(delta_t), int(t1)))
-                    count += 1
-                j += 1
-
-        return pairs[: self.max_pairs]
 
 
 class FingerprintsIndex:

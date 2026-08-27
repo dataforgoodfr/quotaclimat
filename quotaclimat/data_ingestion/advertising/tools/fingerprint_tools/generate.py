@@ -15,6 +15,11 @@ class PairGenerator:
 
     Each pair = (freq1, freq2, delta_t, time_offset) — shift-invariant,
     noise-tolerant when matched with distance-based scoring.
+
+    Peaks are expected as (time, freq, amplitude) rows. Within each anchor's
+    time window, the most intense candidate targets are preferred; across all
+    anchors, the resulting candidate pairs are ranked by combined intensity so
+    that the most intense peaks pair up first, and the top max_pairs survive.
     """
 
     def __init__(
@@ -34,23 +39,32 @@ class PairGenerator:
             return []
 
         peaks = peaks[peaks[:, 0].argsort()]
+        times = peaks[:, 0]
+        n = len(peaks)
 
-        pairs = []
-        for i, (t1, f1) in enumerate(peaks):
+        candidates = []  # (intensity, f1, f2, delta_t, t1)
+        for i in range(n):
+            t1, f1, a1 = peaks[i]
+
+            window = []
             j = i + 1
-            count = 0
-            while j < len(peaks) and count < self.fan_out:
-                t2, f2 = peaks[j]
-                delta_t = t2 - t1
-
+            while j < n:
+                delta_t = times[j] - t1
                 if delta_t > self.time_delta_max:
                     break
                 if delta_t >= self.time_delta_min:
-                    pairs.append((int(f1), int(f2), int(delta_t), int(t1)))
-                    count += 1
+                    window.append(j)
                 j += 1
 
-        return pairs[: self.max_pairs]
+            window.sort(key=lambda idx: -peaks[idx][2])
+            for idx in window[: self.fan_out]:
+                t2, f2, a2 = peaks[idx]
+                candidates.append(
+                    (a1 + a2, int(f1), int(f2), int(t2 - t1), int(t1))
+                )
+
+        candidates.sort(key=lambda c: -c[0])
+        return [(f1, f2, dt, t1) for _, f1, f2, dt, t1 in candidates[: self.max_pairs]]
 
 
 class FingerprintGenerator:
@@ -97,9 +111,10 @@ class FingerprintGenerator:
 
         amplitudes = D_norm[freq_idxs, time_idxs]
         order = np.argsort(-amplitudes)[: self.n_peaks]
-        return np.column_stack(
-            [time_idxs[order].astype(np.int32), freq_idxs[order].astype(np.int32)]
-        ).tolist()
+        return [
+            [int(time_idxs[o]), int(freq_idxs[o]), round(float(amplitudes[o]), 4)]
+            for o in order
+        ]
 
     def from_audio_with_precomputed(
         self,
@@ -112,9 +127,9 @@ class FingerprintGenerator:
         """Build a Fingerprint reusing already-computed descriptors; only peaks and pairs come from the audio."""
         peaks = self._extract_peaks(y_seg)
         pairs = self._pair_generator.generate(
-            np.array(peaks, dtype=np.int32)
+            np.array(peaks, dtype=np.float64)
             if peaks
-            else np.empty((0, 2), dtype=np.int32)
+            else np.empty((0, 3), dtype=np.float64)
         )
         return Fingerprint(
             duration_sec=round(duration_sec, 2),
@@ -136,9 +151,9 @@ class FingerprintGenerator:
 
         peaks = self._extract_peaks(y_seg)
         pairs = self._pair_generator.generate(
-            np.array(peaks, dtype=np.int32)
+            np.array(peaks, dtype=np.float64)
             if peaks
-            else np.empty((0, 2), dtype=np.int32)
+            else np.empty((0, 3), dtype=np.float64)
         )
         return Fingerprint(
             duration_sec=round(duration_sec, 2),

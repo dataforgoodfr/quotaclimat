@@ -13,8 +13,10 @@ class PairGenerator:
     """
     Generate peak-pair fingerprint tuples from a constellation map.
 
-    Each pair = (freq1, freq2, delta_t, time_offset) — shift-invariant,
-    noise-tolerant when matched with distance-based scoring.
+    Each pair = (freq1, freq2, delta_t, time_offset, amplitude) — shift-invariant,
+    noise-tolerant when matched with distance-based scoring. Amplitude is the
+    combined intensity of the two peaks (a1 + a2), quantized to an integer
+    (x1000) so it stays consistent with the other int32 fields.
 
     Peaks are expected as (time, freq, amplitude) rows. Within each anchor's
     time window, the most intense candidate targets are preferred; across all
@@ -59,12 +61,16 @@ class PairGenerator:
             window.sort(key=lambda idx: -peaks[idx][2])
             for idx in window[: self.fan_out]:
                 t2, f2, a2 = peaks[idx]
+                intensity = a1 + a2
                 candidates.append(
-                    (a1 + a2, int(f1), int(f2), int(t2 - t1), int(t1))
+                    (intensity, int(f1), int(f2), int(t2 - t1), int(t1), round(intensity * 1000))
                 )
 
         candidates.sort(key=lambda c: -c[0])
-        return [(f1, f2, dt, t1) for _, f1, f2, dt, t1 in candidates[: self.max_pairs]]
+        return [
+            (f1, f2, dt, t1, amp)
+            for _, f1, f2, dt, t1, amp in candidates[: self.max_pairs]
+        ]
 
 
 class FingerprintGenerator:

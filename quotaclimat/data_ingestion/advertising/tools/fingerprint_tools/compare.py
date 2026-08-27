@@ -114,6 +114,7 @@ class FingerprintsCompare:
         rms_tol: float = 0.05,
         centroid_tol: float = 0.05,
         zcr_tol: float = 0.1,
+        amp_tol: int = 100,
     ):
         self.min_matching_pairs = min_matching_pairs
         self.similarity_threshold = similarity_threshold
@@ -124,6 +125,9 @@ class FingerprintsCompare:
         self.rms_tol = rms_tol
         self.centroid_tol = centroid_tol
         self.zcr_tol = zcr_tol
+        # Tolerance on quantized combined peak amplitude (a1+a2, x1000), used
+        # only by _score_alt as an extra join filter — see PairGenerator.
+        self.amp_tol = amp_tol
 
     def _features_compatible(self, a: Fingerprint, b: Fingerprint) -> bool:
         """Acoustic pre-filter: reject pairs that differ too much in basic features."""
@@ -224,6 +228,11 @@ class FingerprintsCompare:
         sum-based binary-search prefilter (reverts to an O(Na*Nb) join) and
         replaces the exact sliding-window offset scan with a bucketed histogram.
 
+        Also uses the pair's combined peak amplitude (5th field, see
+        PairGenerator) as an extra join condition, narrowing candidates
+        further before the distance check. Falls back to no amplitude filter
+        for pairs generated before this field existed (4-tuples).
+
         SQL equivalent (conceptually):
             WITH matches AS (
               SELECT a.id AS a_id, b.id AS b_id, a.t_offset - b.t_offset AS offset,
@@ -235,6 +244,7 @@ class FingerprintsCompare:
                 ON abs(a.f1 - b.f1) <= freq_tol
                AND abs(a.f2 - b.f2) <= freq_tol
                AND abs(a.dt - b.dt) <= dt_tol
+               AND abs(a.amp - b.amp) <= amp_tol
             ),
             nearest AS (SELECT * FROM matches WHERE rn = 1),
             buckets AS (
@@ -251,8 +261,9 @@ class FingerprintsCompare:
         ):
             return 0.0
 
-        pairs_a = np.array(pairs_a_raw, dtype=np.int32)  # (Na, 4): f1, f2, dt, t_offset
-        pairs_b = np.array(pairs_b_raw, dtype=np.int32)  # (Nb, 4)
+        pairs_a = np.array(pairs_a_raw, dtype=np.int32)  # (Na, 4 or 5): f1, f2, dt, t_offset[, amp]
+        pairs_b = np.array(pairs_b_raw, dtype=np.int32)  # (Nb, 4 or 5)
+        has_amp = pairs_a.shape[1] >= 5 and pairs_b.shape[1] >= 5
 
         # JOIN pairs_a a, pairs_b b ON per-dimension tolerance
         close_mask = (
@@ -262,6 +273,10 @@ class FingerprintsCompare:
         ) & (
             np.abs(pairs_a[:, None, 2] - pairs_b[None, :, 2]) <= self.dt_tol
         )
+        if has_amp:
+            close_mask &= (
+                np.abs(pairs_a[:, None, 4] - pairs_b[None, :, 4]) <= self.amp_tol
+            )
 
         offsets = []
         for i in range(len(pairs_a)):
@@ -302,6 +317,7 @@ class FingerprintsCompare:
             "rms_tol": self.rms_tol,
             "centroid_tol": self.centroid_tol,
             "zcr_tol": self.zcr_tol,
+            "amp_tol": self.amp_tol,
         }
 
     def params_hash(self) -> str:

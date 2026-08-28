@@ -1,3 +1,0 @@
----
-services_base_dir: /opt/services
-docker_network_name: traefik-public

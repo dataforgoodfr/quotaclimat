@@ -1,3 +1,0 @@
----
-kestra_service_dir: /opt/services/kestra
-kestra_api_url: http://localhost:8080

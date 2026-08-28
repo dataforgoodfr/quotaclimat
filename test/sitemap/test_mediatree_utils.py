@@ -21,7 +21,7 @@ localhost = get_localhost()
 
 def test_get_date_sql_query():
     date = datetime(2024, 12, 12, 0, 0, 0)
-    expected =  "'2024-12-12 00:00:00.000 +00:00'"
+    expected =  "'2024-12-13 00:00:00.000 +00:00'"  # BREAK-TEST: mauvaise date intentionnelle (Point 3 de la consigne)
 
     assert get_date_sql_query(date) == expected
 

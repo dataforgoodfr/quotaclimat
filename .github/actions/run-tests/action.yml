@@ -23,8 +23,9 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: actions/checkout@v4
-
+    # Pas de "actions/checkout" ici : le job appelant doit déjà avoir fait le
+    # checkout avant d'utiliser cette action (impossible de trouver cette
+    # action locale sur le disque avant que le repo soit récupéré).
     - uses: ./.github/actions/setup
       with:
         python-version: ${{ inputs.python-version }}

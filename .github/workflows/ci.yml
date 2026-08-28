@@ -8,6 +8,12 @@ on:
     branches: ["**"]
   pull_request:
 
+# If you push again to the same branch while a run is still going, cancel
+# the older run instead of letting both finish — saves CI minutes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   PYTHON_VERSION: "3.12"
   POETRY_VERSION: "2.1.3"

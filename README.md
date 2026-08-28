@@ -1,4 +1,6 @@
-# L’Observatoire des médias sur l’écologie (OME) ![badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/polomarcus/579237daab71afbb359338e2706b7f36/raw/test.json)
+# L’Observatoire des médias sur l’écologie (OME) [![CI](https://github.com/Adamsad97/quotaclimat/actions/workflows/ci.yml/badge.svg)](https://github.com/Adamsad97/quotaclimat/actions/workflows/ci.yml)
+
+> ⚠️ **Note DevOps (à jour au 2026-08-29)** : l'ancienne infrastructure (`docker-compose.yml`, ses services `metabase`/`ingest_to_db`/`mediatree`/`nginx`/`testconsole`, le déploiement Scaleway, `docker-entrypoint.sh`) a été retirée pour reconstruire le DevOps du projet. Certaines commandes `docker compose up ...` plus bas dans ce document (Docker, Test, Deploy, et des exemples dans les sections dbt/mediatree/labelstudio) datent d'avant ce changement et ne fonctionnent plus telles quelles. Le contenu métier qu'elles illustrent reste valable, seule l'exécution via ces services a changé.
 
 
 ![](quotaclimat/utils/coverquotaclimat.png)
@@ -182,6 +184,8 @@ poetry self update
 After commiting to the repo, other team members will be able to use the exact same environment you are using. 
 
 ## Docker
+⚠️ **Obsolète** : cette section décrit l'ancien `docker-compose.yml` (services `metabase`, `ingest_to_db`, `mediatree`, `test`...), supprimé lors de la reconstruction DevOps. À réécrire une fois la nouvelle stack docker-compose en place.
+
 First, have docker and compose [installed on your computer](https://docs.docker.com/compose/install/#installation-scenarios)
 
 Then to start the different services
@@ -239,6 +243,8 @@ Learn more about [site maps here](https://developers.google.com/search/docs/craw
 By default, we use a env variable `ENV` to only parse from localhost. If you set this value to another thing that `docker` or `dev`, it will parse everything.
 
 ## Test
+⚠️ **Obsolète** : le conteneur `nginx` mentionné ici a été supprimé. Les tests qui en dépendaient utilisent maintenant un simple serveur de fichiers statique Python, démarré directement dans `.github/workflows/ci.yml`.
+
 Thanks to the nginx container, we can have a local server for sitemap :
 * http://localhost:8000/sitemap_news_figaro_3.xml
 
@@ -254,9 +260,11 @@ docker compose up test # test is the container name running pytest test
 ```
 
 ## Deploy
-Every commit on the `main` branch will build an deploy to the Scaleway container registry a new image that will be deployed. Have a look to `.github/deploy-main.yml`.
+⚠️ **Obsolète** : `.github/deploy-main.yml` et le déploiement Scaleway décrits ici ont été retirés lors de la reconstruction DevOps. Le déploiement actuel se fait via `.github/workflows/ci.yml` : chaque push sur `main` build et pousse l'image vers GitHub Container Registry (`ghcr.io`).
 
-Learn [more here.](https://www.scaleway.com/en/docs/tutorials/use-container-registry-github-actions/)
+~~Every commit on the `main` branch will build an deploy to the Scaleway container registry a new image that will be deployed. Have a look to `.github/deploy-main.yml`.~~
+
+~~Learn [more here.](https://www.scaleway.com/en/docs/tutorials/use-container-registry-github-actions/)~~
 
 ## Monitoring
 With Sentry, with env variable `SENTRY_DSN`.

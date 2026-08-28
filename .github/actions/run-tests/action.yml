@@ -1,0 +1,54 @@
+# Action composite réutilisable pour un job de test : regroupe
+# checkout + setup + lancement de pytest + upload du rapport, pour ne pas
+# recopier ce bloc dans les 4 jobs de test de ci.yml.
+name: Run test suite
+description: Checkout, setup, run a pytest selection, and upload its report
+
+inputs:
+  python-version:
+    required: true
+  poetry-version:
+    required: true
+  pytest-args:
+    required: true
+    description: Arguments passed to `poetry run pytest` (ex. "-k 'stop_word' test/")
+  report-name:
+    required: true
+    description: Suffix used to name the uploaded test-report artifact
+  pre-run:
+    required: false
+    default: ""
+    description: Optional shell command run just before pytest (ex. démarrer un serveur de fixtures)
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v4
+
+    - uses: ./.github/actions/setup
+      with:
+        python-version: ${{ inputs.python-version }}
+        poetry-version: ${{ inputs.poetry-version }}
+
+    - name: Pre-run command
+      if: inputs.pre-run != ''
+      shell: bash
+      run: ${{ inputs.pre-run }}
+
+    - name: Run tests
+      shell: bash
+      run: poetry run pytest ${{ inputs.pytest-args }} --junitxml=test-report.xml
+      env:
+        ENV: dev
+        POSTGRES_USER: user
+        POSTGRES_DB: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+
+    - name: Upload test report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-report-${{ inputs.report-name }}
+        path: test-report.xml

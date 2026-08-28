@@ -68,28 +68,12 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/run-tests
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
-
-      - name: Run tests
-        run: poetry run pytest -k 'test_update_pg_keywords' test/ --junitxml=test-report.xml
-        env: &pytest-db-env
-          ENV: dev
-          POSTGRES_USER: user
-          POSTGRES_DB: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_HOST: localhost
-          POSTGRES_PORT: 5432
-
-      - name: Upload test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-report-update-pg-keywords
-          path: test-report.xml
+          pytest-args: "-k 'test_update_pg_keywords' test/"
+          report-name: update-pg-keywords
 
   # Same isolation reason as above — stop_word tests also call drop_tables()
   # on the shared keywords table.
@@ -101,22 +85,12 @@ jobs:
     services:
       postgres: *postgres-service
     steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/run-tests
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
-
-      - name: Run tests
-        run: poetry run pytest -k 'stop_word' test/ --junitxml=test-report.xml
-        env: *pytest-db-env
-
-      - name: Upload test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-report-stop-word
-          path: test-report.xml
+          pytest-args: "-k 'stop_word' test/"
+          report-name: stop-word
 
   # Pure keyword-matching logic, no database involved — kept separate so it
   # doesn't need to wait for a Postgres service at all.
@@ -126,28 +100,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/run-tests
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
-
-      - name: Run tests
-        run: poetry run pytest test/print_media/test_print_media_detect_keywords.py --junitxml=test-report.xml
-        env:
-          ENV: dev
-
-      - name: Upload test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-report-print-media
-          path: test-report.xml
+          pytest-args: "test/print_media/test_print_media_detect_keywords.py"
+          report-name: print-media
 
   # Everything else. Some of these tests (test/sitemap/test_scrap_html.py)
   # fetch fixture pages over HTTP from localhost:8000 — the previous CI
   # served them with an nginx container; here a plain Python static file
-  # server does the same job for the same mockwebsite/ fixtures.
+  # server (pre-run) does the same job for the same mockwebsite/ fixtures.
   test-everything-else:
     name: Run tests (everything else)
     needs: install
@@ -156,28 +119,16 @@ jobs:
     services:
       postgres: *postgres-service
     steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
+      - uses: ./.github/actions/run-tests
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
-
-      - name: Serve mockwebsite/ fixtures on localhost:8000
-        run: python3 -m http.server 8000 --directory mockwebsite &
-
-      - name: Run tests
-        run: |
-          poetry run pytest -k 'not test_update_pg_keywords and not stop_word' \
-            --ignore=test/print_media/test_print_media_detect_keywords.py \
-            test/ --junitxml=test-report.xml
-        env: *pytest-db-env
-
-      - name: Upload test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-report-everything-else
-          path: test-report.xml
+          pre-run: "python3 -m http.server 8000 --directory mockwebsite &"
+          pytest-args: >-
+            -k 'not test_update_pg_keywords and not stop_word'
+            --ignore=test/print_media/test_print_media_detect_keywords.py
+            test/
+          report-name: everything-else
 
   # Stage 3: check code style with ruff
   lint:

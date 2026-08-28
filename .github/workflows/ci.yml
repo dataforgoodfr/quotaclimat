@@ -1,6 +1,7 @@
 # Basic CI/CD pipeline.
-# Each job below is one "stage": install deps -> test -> lint -> security scan
-# -> build the Docker image -> push it to the registry (main branch only).
+# Stages: install deps -> tests (split into 4 isolated jobs, see comment
+# below) -> lint -> security scan -> build the Docker image -> push it to
+# the registry (main branch only).
 name: CI
 
 # Déclencheurs : sur un push vers N'IMPORTE QUELLE branche (on veut voir les
@@ -37,26 +38,30 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           poetry-version: ${{ env.POETRY_VERSION }}
 
-  # Stage 2: run the test suite against a real Postgres database
-  test:
-    name: Run tests
+  # Stage 2: run the test suite against a real Postgres database.
+  #
+  # Split into 4 isolated jobs instead of one "pytest test/" — mirrors what
+  # this repo's previous CI did, for a concrete reason found by trial and
+  # error: test_update_pg_keywords and stop_word both call drop_tables()
+  # (DROP TABLE) on a shared "keywords" table using a session-scoped DB
+  # connection (test/conftest.py). Run them in the same pytest process as
+  # other DB tests and a leftover open transaction can make DROP TABLE wait
+  # forever on a Postgres lock — that's exactly what hung this pipeline for
+  # 26+ minutes earlier. Running them in their own job = a fresh process,
+  # fresh connection, nothing to block on.
+  test-update-pg-keywords:
+    name: Run tests (update pg keywords)
     needs: install
     runs-on: ubuntu-latest
-    # Safety net: without this, a hung test (e.g. a DB lock wait) would run
-    # until GitHub's own 6h default job limit instead of failing fast.
     timeout-minutes: 15
-    # GitHub Actions lance ce conteneur Postgres à côté du job et le rend
-    # joignable sur localhost:5432 — les tests ont besoin d'une vraie base.
     services:
-      postgres:
+      postgres: &postgres-service
         image: postgres:15
         env:
           POSTGRES_USER: user
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
         ports: ["5432:5432"]
-        # Attend que Postgres soit prêt à accepter des connexions avant de
-        # démarrer les étapes suivantes du job.
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -70,21 +75,108 @@ jobs:
           poetry-version: ${{ env.POETRY_VERSION }}
 
       - name: Run tests
-        # --junitxml produit le "test report" attendu comme livrable
-        run: poetry run pytest test/ --junitxml=test-report.xml
-        env:
+        run: poetry run pytest -k 'test_update_pg_keywords' test/ --junitxml=test-report.xml
+        env: &pytest-db-env
           ENV: dev
           POSTGRES_USER: user
           POSTGRES_DB: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_HOST: localhost # le service postgres ci-dessus est exposé ici
+          POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
 
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-report
+          name: test-report-update-pg-keywords
+          path: test-report.xml
+
+  # Same isolation reason as above — stop_word tests also call drop_tables()
+  # on the shared keywords table.
+  test-stop-word:
+    name: Run tests (stop word)
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres: *postgres-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+
+      - name: Run tests
+        run: poetry run pytest -k 'stop_word' test/ --junitxml=test-report.xml
+        env: *pytest-db-env
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-stop-word
+          path: test-report.xml
+
+  # Pure keyword-matching logic, no database involved — kept separate so it
+  # doesn't need to wait for a Postgres service at all.
+  test-print-media:
+    name: Run tests (print media)
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+
+      - name: Run tests
+        run: poetry run pytest test/print_media/test_print_media_detect_keywords.py --junitxml=test-report.xml
+        env:
+          ENV: dev
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-print-media
+          path: test-report.xml
+
+  # Everything else. Some of these tests (test/sitemap/test_scrap_html.py)
+  # fetch fixture pages over HTTP from localhost:8000 — the previous CI
+  # served them with an nginx container; here a plain Python static file
+  # server does the same job for the same mockwebsite/ fixtures.
+  test-everything-else:
+    name: Run tests (everything else)
+    needs: install
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres: *postgres-service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+
+      - name: Serve mockwebsite/ fixtures on localhost:8000
+        run: python3 -m http.server 8000 --directory mockwebsite &
+
+      - name: Run tests
+        run: |
+          poetry run pytest -k 'not test_update_pg_keywords and not stop_word' \
+            --ignore=test/print_media/test_print_media_detect_keywords.py \
+            test/ --junitxml=test-report.xml
+        env: *pytest-db-env
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-everything-else
           path: test-report.xml
 
   # Stage 3: check code style with ruff
@@ -138,7 +230,13 @@ jobs:
     name: Build Docker image
     # On ne build l'image que si tests/lint/security-scan sont passés avant
     # — inutile de construire une image sur du code qui a un problème.
-    needs: [test, lint, security-scan]
+    needs:
+      - test-update-pg-keywords
+      - test-stop-word
+      - test-print-media
+      - test-everything-else
+      - lint
+      - security-scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

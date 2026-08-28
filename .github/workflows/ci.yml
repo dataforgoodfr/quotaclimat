@@ -3,6 +3,9 @@
 # -> build the Docker image -> push it to the registry (main branch only).
 name: CI
 
+# Déclencheurs : sur un push vers N'IMPORTE QUELLE branche (on veut voir les
+# erreurs avant de merger, pas juste au moment du merge) et sur les pull
+# requests. Seul le dernier job (push-image) est ensuite restreint à main.
 on:
   push:
     branches: ["**"]
@@ -14,6 +17,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Variables partagées par tous les jobs, pour ne changer une version qu'à un
+# seul endroit. REGISTRY/IMAGE_NAME servent uniquement au job push-image.
 env:
   PYTHON_VERSION: "3.12"
   POETRY_VERSION: "2.1.3"
@@ -40,6 +45,8 @@ jobs:
     # Safety net: without this, a hung test (e.g. a DB lock wait) would run
     # until GitHub's own 6h default job limit instead of failing fast.
     timeout-minutes: 15
+    # GitHub Actions lance ce conteneur Postgres à côté du job et le rend
+    # joignable sur localhost:5432 — les tests ont besoin d'une vraie base.
     services:
       postgres:
         image: postgres:15
@@ -48,6 +55,8 @@ jobs:
           POSTGRES_PASSWORD: postgres
           POSTGRES_DB: postgres
         ports: ["5432:5432"]
+        # Attend que Postgres soit prêt à accepter des connexions avant de
+        # démarrer les étapes suivantes du job.
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -61,13 +70,14 @@ jobs:
           poetry-version: ${{ env.POETRY_VERSION }}
 
       - name: Run tests
+        # --junitxml produit le "test report" attendu comme livrable
         run: poetry run pytest test/ --junitxml=test-report.xml
         env:
           ENV: dev
           POSTGRES_USER: user
           POSTGRES_DB: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_HOST: localhost
+          POSTGRES_HOST: localhost # le service postgres ci-dessus est exposé ici
           POSTGRES_PORT: 5432
 
       - name: Upload test report
@@ -109,6 +119,9 @@ jobs:
           poetry-version: ${{ env.POETRY_VERSION }}
 
       - name: Run bandit
+        # bandit = analyse statique de sécurité pour Python (détecte les
+        # patterns dangereux : eval(), secrets en dur, etc.) -f json -o pour
+        # produire le "scan code report" attendu comme livrable.
         run: |
           poetry run pip install bandit
           poetry run bandit -r quotaclimat -f json -o bandit-report.json
@@ -123,15 +136,22 @@ jobs:
   # Stage 5: build the Docker image and scan it for known vulnerabilities
   build-image:
     name: Build Docker image
+    # On ne build l'image que si tests/lint/security-scan sont passés avant
+    # — inutile de construire une image sur du code qui a un problème.
     needs: [test, lint, security-scan]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - name: Build image
+        # Taggée avec le SHA du commit : chaque run produit une image
+        # identifiable et traçable, pas juste "latest" à chaque fois.
         run: docker build -t quotaclimat:${{ github.sha }} .
 
       - name: Scan image with Trivy
+        # Trivy = scanner de vulnérabilités connues (CVE) dans l'image
+        # buildée (dépendances système + Python). Produit le "Trivy report"
+        # attendu comme livrable.
         uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: quotaclimat:${{ github.sha }}
@@ -139,6 +159,9 @@ jobs:
           output: trivy-report.json
 
       - name: Generate VEX file from the Trivy report
+        # VEX (Vulnerability Exploitability eXchange) : dit, pour chaque CVE
+        # trouvée par Trivy, si elle affecte réellement le projet ou non.
+        # Voir scripts/generate_vex.py pour le détail.
         run: python3 scripts/generate_vex.py trivy-report.json vex.json
 
       - name: Upload Trivy + VEX report
@@ -155,6 +178,8 @@ jobs:
     needs: build-image
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    # Droits minimum nécessaires pour ce job : lire le code, écrire un
+    # package sur ghcr.io. Rien de plus (principe du moindre privilège).
     permissions:
       contents: read
       packages: write
@@ -173,6 +198,8 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
+        # Deux tags : "latest" (toujours la dernière version de main) et le
+        # SHA du commit (pour pouvoir revenir précisément à une version).
         uses: docker/build-push-action@v6
         with:
           context: .

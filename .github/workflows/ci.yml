@@ -250,7 +250,7 @@ jobs:
         # Trivy = scanner de vulnérabilités connues (CVE) dans l'image
         # buildée (dépendances système + Python). Produit le "Trivy report"
         # attendu comme livrable.
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: quotaclimat:${{ github.sha }}
           format: json

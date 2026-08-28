@@ -37,6 +37,9 @@ jobs:
     name: Run tests
     needs: install
     runs-on: ubuntu-latest
+    # Safety net: without this, a hung test (e.g. a DB lock wait) would run
+    # until GitHub's own 6h default job limit instead of failing fast.
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:15

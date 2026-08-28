@@ -70,6 +70,14 @@ pyahocorasick = "^2.3.0"
 spacy = "^3.8.11"
 openai = "^2.33.0"
 pydantic-settings = "^2.14.0"
+[tool.ruff]
+# These are generated keyword/data dictionaries (100k+ lines), not hand-written
+# code — linting them is noise, not signal.
+extend-exclude = [
+    "quotaclimat/data_processing/mediatree/keyword/keyword.py",
+    "quotaclimat/data_processing/mediatree/keyword/macro_category.py",
+]
+
 [build-system]
 requires = ["poetry-core>=1.1"]
 build-backend = "poetry.core.masonry.api"

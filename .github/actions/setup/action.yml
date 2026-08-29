@@ -14,7 +14,7 @@ runs:
   using: composite
   steps:
     # 1) Installe la version de Python demandée sur le runner
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v7
       with:
         python-version: ${{ inputs.python-version }}
 
@@ -29,7 +29,7 @@ runs:
     # 3) Réutilise le venv d'un run précédent si poetry.lock n'a pas changé
     #    -> évite de retélécharger toutes les dépendances à chaque run
     - name: Restore cached dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         path: .venv
         key: venv-${{ runner.os }}-${{ hashFiles('poetry.lock') }}

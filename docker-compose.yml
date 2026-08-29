@@ -1,0 +1,37 @@
+services:
+  postgres_db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: barometre
+    ports:
+      - "5432:5432"
+
+  # Expose /metrics sur le port 8000 (Partie 2 de la consigne)
+  metrics:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python3 quotaclimat/monitoring/metrics_server.py
+    ports:
+      - "8000:8000"
+
+  # UI sur http://localhost:9090 - va chercher les métriques du service
+  # "metrics" toutes les 15s (voir monitoring/prometheus.yml)
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  # UI sur http://localhost:3000 (login: admin/admin) - datasource Prometheus
+  # et dashboard pré-chargés automatiquement (voir monitoring/grafana/)
+  grafana:
+    image: grafana/grafana:11.4.0
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/dashboards:ro
+    ports:
+      - "3000:3000"

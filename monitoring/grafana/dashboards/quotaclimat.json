@@ -1,0 +1,29 @@
+{
+  "title": "QuotaClimat - Metrics",
+  "uid": "quotaclimat",
+  "schemaVersion": 39,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Heartbeat rate",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "rate(quotaclimat_heartbeat_total[1m])", "refId": "A" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Process memory (bytes)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "process_resident_memory_bytes", "refId": "A" }
+      ]
+    }
+  ]
+}

@@ -70,6 +70,7 @@ pyahocorasick = "^2.3.0"
 spacy = "^3.8.11"
 openai = "^2.33.0"
 pydantic-settings = "^2.14.0"
+prometheus-client = "^0.21.0"
 [tool.ruff]
 # These are generated keyword/data dictionaries (100k+ lines), not hand-written
 # code — linting them is noise, not signal.

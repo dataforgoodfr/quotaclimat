@@ -1,6 +1,6 @@
 services:
   kestra:
-    image: kestra/kestra:latest
+    image: kestra/kestra:v1.3
     container_name: kestra
     restart: unless-stopped
     command: server standalone
@@ -14,11 +14,25 @@ services:
                 - /app/flows
         datasources:
           postgres:
-            url: jdbc:postgresql://{{ postgres_host }}:{{ postgres_port }}/{{ kestra_db_name }}
+            url: jdbc:postgresql://{{ postgres_host }}:{{ postgres_port }}/{{ kestra_db_name }}?tcpKeepAlive=true&connectTimeout=10&socketTimeout=60&ApplicationName=kestra
             driverClassName: org.postgresql.Driver
             username: {{ kestra_db_user }}
             password: "{{ kestra_db_password }}"
+            maximum-pool-size: 12
+            minimum-idle: 2
+            max-lifetime: 600000
+            keepalive-time: 60000
+            connection-timeout: 30000
+            validation-timeout: 5000
+            initialization-fail-timeout: -1
         kestra:
+          server:
+            liveness:
+              enabled: true
+              interval: 5s
+              heartbeat-interval: 3s
+              timeout: 45s
+              initial-delay: 45s
           local-files:
             allowed-paths:
               - /app/flows
@@ -59,12 +73,27 @@ services:
       - traefik.http.services.kestra.loadbalancer.server.port=8080
       - traefik.http.routers.kestra.middlewares=kestra-auth
       - "traefik.http.middlewares.kestra-auth.basicauth.users={{ kestra_basic_auth }}"
+      - autoheal=true
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8080/api/v1/configs || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 120s
+
+  autoheal:
+    image: willfarrell/autoheal:latest
+    container_name: autoheal
+    restart: always
+    environment:
+      AUTOHEAL_CONTAINER_LABEL: autoheal
+      AUTOHEAL_INTERVAL: 30
+      AUTOHEAL_START_PERIOD: 120
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    security_opt:
+      - no-new-privileges:true
+    network_mode: none
 
 volumes:
   kestra-data:

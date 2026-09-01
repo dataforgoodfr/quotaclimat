@@ -2,7 +2,7 @@
 
 SUBJECT_DEFINITIONS: dict[str, str] = {
     "insecurity": """
-La désinformation est définie ici comme tout extrait qui porte sur les personnes étrangères, immigrées, réfugiées, demandeuses d'asile, \ 
+La désinformation est définie ici comme tout extrait qui porte sur les personnes étrangères, immigrées, réfugiées, demandeuses d'asile, \
 sans-papiers, exilées ou d'origine étrangère, qu'elles soient désignées explicitement — par leur statut administratif, \
 leur nationalité, leur religion, leur origine réelle ou supposée — ou par substitution, au moyen de formules telles que \
 « certaines populations », « quartiers sensibles », « personnes issues de », « nouveaux arrivants », « communautés », \

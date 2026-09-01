@@ -101,7 +101,7 @@ _SENTIMENT_FR = {
 
 _MISINFO_MAX_CHARS = 3000  # cap per post to control token usage
 _MISINFO_MODEL_DEFAULT = "mistral-small-2603"
-_MISINFO_CONCURRENCY = 5
+_MISINFO_CONCURRENCY = int(os.getenv("CONCURRENCY", "5"))
 
 
 async def _classify_posts_async(posts: list[dict], subject: str, model: str,
@@ -202,7 +202,8 @@ def _post(endpoint: str, query: str, variables: dict, headers: dict, retries: in
         if resp.status_code == 200:
             payload = resp.json()
             if "errors" in payload:
-                raise RuntimeError(payload["errors"])
+                #logging.error(json.dumps({"query": query, "variables": variables}))
+                raise RuntimeError(json.dumps({"query": query, "variables": variables, "errors": payload["errors"]}))
             return payload
         wait = 5 * (attempt + 1)
         print(f"    got {resp.status_code}, retrying in {wait}s (attempt {attempt + 1}/{retries})...")
@@ -259,8 +260,12 @@ def get_top_themes(search_id: str, date_from_str: str, date_to_str: str,
 
 
 def build_theme(candidate: dict, search_id: str, date_from_str: str, date_to_str: str,
-                relevance_mention_tag_ids: list, headers: dict) -> dict | None:
-    """Enrich a candidate theme with AI title/sentiment/body via Pulsar API."""
+                relevance_mention_tag_ids: list, headers: dict) -> tuple[dict | None, str | None]:
+    """Enrich a candidate theme with AI title/sentiment/body via Pulsar API.
+
+    Returns (theme_data, None) on success, or (None, skip_reason) if the theme
+    could not be enriched.
+    """
     topic_labels = [t["label"] for t in candidate["topics"]]
     sresp = _post(DATA_ENDPOINT, SUMMARY_QUERY, {
         "filter": _build_filter(search_id, date_from_str, date_to_str, relevance_mention_tag_ids),
@@ -272,9 +277,13 @@ def build_theme(candidate: dict, search_id: str, date_from_str: str, date_to_str
     }, headers)
     sentences = sresp["data"]["summary"]["relevantSentences"]
     if not sentences:
-        return None
+        return None, "no representative posts"
 
-    nresp = _post(APP_ENDPOINT, NARRATIVE_QUERY, {"contents": sentences}, headers)
+    try:
+        nresp = _post(APP_ENDPOINT, NARRATIVE_QUERY, {"contents": sentences}, headers)
+    except RuntimeError as exc:
+        logging.error(f"  narrativesSummarization failed for {topic_labels}: {exc}")
+        return None, "narrativesSummarization API error"
     n = nresp["data"]["narrativesSummarization"]
 
     return {
@@ -284,7 +293,7 @@ def build_theme(candidate: dict, search_id: str, date_from_str: str, date_to_str
         "sentiment": n["sentiment"],
         "body": n["body"],
         "example_posts": sentences,
-    }
+    }, None
 
 
 def run() -> None:
@@ -309,11 +318,11 @@ def run() -> None:
 
     enriched = []
     for candidate in candidates:
-        theme_data = build_theme(
+        theme_data, skip_reason = build_theme(
             candidate, s.search_id, date_from_str, date_to_str, s.relevance_mention_tag_ids, headers
         )
         if theme_data is None:
-            print(f"  {[t['label'] for t in candidate['topics']]}: no representative posts, skipped")
+            print(f"  {[t['label'] for t in candidate['topics']]}: {skip_reason}, skipped")
             continue
         enriched.append(theme_data)
         print(f"  [{theme_data['sentiment']}] {theme_data['title']} ({theme_data['post_volume']:,} posts)")

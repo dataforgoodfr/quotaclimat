@@ -200,6 +200,35 @@ services:
       rrs_db:
         condition: service_healthy
 
+  pulsar:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile.pulsar
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+      SUBJECT: ${SUBJECT:-climate}
+      PULSAR_EMAIL: ${PULSAR_EMAIL}
+      PULSAR_PASSWORD: ${PULSAR_PASSWORD}
+      PULSAR_SEARCH_ID: ${PULSAR_SEARCH_ID:-201823}
+      PULSAR_FOLDER_ID: ${PULSAR_FOLDER_ID:-529}
+      PULSAR_API_KEY: ${PULSAR_API_KEY}
+      PULSAR_BASE_URL: ${PULSAR_BASE_URL:-}
+      PULSAR_TOP_N: ${PULSAR_TOP_N:-30}
+      PULSAR_DAYS_BACK: ${PULSAR_DAYS_BACK:-1}
+      PULSAR_START_DATE: ${PULSAR_START_DATE:-}
+      PULSAR_END_DATE: ${PULSAR_END_DATE:-}
+      PULSAR_RELEVANCE_MENTION_TAG_IDS: ${PULSAR_RELEVANCE_MENTION_TAG_IDS:-[]}
+      CONCURRENCY: ${CONCURRENCY:-1}
+    depends_on:
+      rrs_db:
+        condition: service_healthy
+
   console:
     build:
       context: ../

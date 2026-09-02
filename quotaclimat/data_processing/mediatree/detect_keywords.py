@@ -157,9 +157,14 @@ def format_word_regex(word: str) -> str:
     word = word.replace('\'', '\' ?') # case for d'eau -> d' eau
     if not word.endswith('s') and not word.endswith('x') and not word.endswith('à'):
         return word + "s?"
-    elif word.endswith('s'):
-        return word + '?'
-    elif word.endswith('x'):
+    elif word.endswith('s') or word.endswith('x'):
+        # Making the trailing letter optional only makes sense when the
+        # remaining stem is long enough to still be a meaningful word
+        # (e.g. "crises" -> "crise?s"). For short words/acronyms like "ets",
+        # dropping the last letter yields an unrelated, very common word
+        # ("et"), causing massive false positives - so keep those literal.
+        if len(word) <= 3:
+            return word
         return word + '?'
     else:
         return word

@@ -66,6 +66,7 @@ from datetime import datetime, timedelta, timezone
 import requests
 from mistralai.client import Mistral
 from mistralai.client.types import BaseModel
+from mistralai.client.utils import BackoffStrategy, RetryConfig
 from mistralai.extra.run.context import RunContext
 
 from rrs.misinformation_detection.classifier import classify_one
@@ -100,6 +101,27 @@ _SENTIMENT_FR = {
 }
 
 
+# Retries Mistral calls on 429/500/502/503/504 with backoff — covers transient
+# upstream errors (e.g. "502 ... invalid response was received from the
+# upstream server") that would otherwise fail a translation/classification on
+# the first try. Applies to all `beta.conversations.run_async` calls made
+# through a client built with this config (client-level default).
+_MISTRAL_RETRY_CONFIG = RetryConfig(
+    strategy="backoff",
+    backoff=BackoffStrategy(
+        initial_interval=500,     # ms
+        max_interval=10_000,      # ms
+        exponent=1.5,
+        max_elapsed_time=30_000,  # ms — bounded so one stuck item can't stall the batch
+    ),
+    retry_connection_errors=True,
+)
+
+
+def _mistral_client(api_key: str) -> Mistral:
+    return Mistral(api_key=api_key, retry_config=_MISTRAL_RETRY_CONFIG)
+
+
 _MISINFO_MAX_CHARS = 3000  # cap per post to control token usage
 _MISINFO_MODEL_DEFAULT = "ministral-8b-2512"
 _MISINFO_CONCURRENCY = int(os.getenv("CONCURRENCY", "5"))
@@ -113,7 +135,7 @@ async def _classify_posts_async(posts: list[dict], subject: str, model: str,
         return posts
 
     system_prompt = build_pulsar_system_prompt(subject or "climate")
-    client = Mistral(api_key=api_key)
+    client = _mistral_client(api_key)
     semaphore = asyncio.Semaphore(concurrency)
 
     async def _safe_classify(i, post):
@@ -185,7 +207,7 @@ async def _translate_batch_async(texts: list[str], concurrency: int) -> list[str
     if not api_key:
         raise EnvironmentError("MISTRAL_API_KEY is required to translate themes to French.")
 
-    client = Mistral(api_key=api_key)
+    client = _mistral_client(api_key)
     semaphore = asyncio.Semaphore(concurrency)
 
     async def _safe_translate(i, text):

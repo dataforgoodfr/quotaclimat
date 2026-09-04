@@ -224,7 +224,7 @@ services:
       PULSAR_START_DATE: ${PULSAR_START_DATE:-}
       PULSAR_END_DATE: ${PULSAR_END_DATE:-}
       PULSAR_RELEVANCE_MENTION_TAG_IDS: ${PULSAR_RELEVANCE_MENTION_TAG_IDS:-[]}
-      CONCURRENCY: ${CONCURRENCY:-1}
+      CONCURRENCY: ${CONCURRENCY:-5}
     depends_on:
       rrs_db:
         condition: service_healthy

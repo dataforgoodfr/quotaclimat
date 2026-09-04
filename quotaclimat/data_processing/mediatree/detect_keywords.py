@@ -376,7 +376,7 @@ def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
 
 # def get_words_in_sentence(automaton: ahocorasick.Automaton, keywords_dict: Dict[str, str], text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
 def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
-    if country.code=='fra':
+    if country.language=='french':
         logging.info("Using regex for france")
         keywords_tuple = tuple(kw["keyword"] for kw in keywords_dict)
         compiled_patterns = _compile_fr_keyword_patterns(keywords_tuple)

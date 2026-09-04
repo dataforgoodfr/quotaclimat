@@ -10,7 +10,7 @@ from quotaclimat.data_processing.mediatree.detect_keywords import get_themes_key
 from typing import List
 from quotaclimat.data_processing.mediatree.stop_word.main import get_stop_words
 from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp
-from sqlalchemy import func, select, and_, or_
+from sqlalchemy import func, select, and_, or_, tuple_
 from quotaclimat.data_processing.mediatree.i8n.country import FRANCE, get_channel_title_for_name
 
 def get_keyword_else_context(stop_word_object: Stop_Word):
@@ -97,12 +97,17 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
         batch_size = total_updates
 
     logging.info(f"Updating {country.name} - {total_updates} saved keywords from {start_date} date to {end_date} for channel {channel} - batch size {batch_size} - totals rows")
-    
-    for i in range(0, total_updates, batch_size):
-        current_batch_saved_keywords = get_keywords_columns(session, i, batch_size, start_date, end_date, channel, \
+
+    cursor = None
+    processed = 0
+    while True:
+        current_batch_saved_keywords = get_keywords_columns(session, cursor, batch_size, start_date, end_date, channel, \
                                                             empty_program_only, keywords_to_includes=top_keyword_of_stop_words, \
                                                             biodiversity_only=biodiversity_only, country=country)
-        logging.info(f"Updating {len(current_batch_saved_keywords)} elements from {i} offsets - batch size {batch_size} - until offset {total_updates}")
+        if not current_batch_saved_keywords:
+            break
+
+        logging.info(f"Updating {len(current_batch_saved_keywords)} elements after cursor {cursor} - batch size {batch_size} - total {total_updates}")
         for keyword_id, plaintext, keywords_with_timestamp, number_of_keywords, start, srt, theme, channel_name, channel_title in current_batch_saved_keywords:
             if channel_title is None:
                 logging.warning(f"channel_title none, set it using channel_name {channel_name}")
@@ -204,16 +209,24 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
                 except Exception as err:
                     logging.error(f"update_program_only - continuing loop but met error : {err}")
                     continue
-        logging.info(f"bulk update done {i} out of {total_updates} - (max offset {total_updates})")
+        last_row = current_batch_saved_keywords[-1]
+        cursor = (last_row[4], last_row[7], last_row[1], last_row[0])  # (start, channel_name, plaintext, id)
+        processed += len(current_batch_saved_keywords)
+        logging.info(f"bulk update done {processed} out of {total_updates} - cursor {cursor}")
         session.commit()
 
     logging.info("updated all keywords")
 
 
-def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30",\
+def get_keywords_columns(session: Session, cursor: tuple = None, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30",\
                          channel: str = "", empty_program_only: bool = False, keywords_to_includes: list[str] = [], \
                          biodiversity_only = False, country = FRANCE) -> list:
-    logging.info(f"Getting {batch_size} elements from offset {offset} with timezone {country.timezone}")
+    # Keyset pagination ((start, channel_name, plaintext, id) > cursor) instead of OFFSET:
+    # rows can be deleted mid-run (see update_keyword_row) when a row's themes recompute to
+    # empty, which shifts OFFSET-based pages and silently skips rows straddling the boundary.
+    # id is included only to break ties deterministically (it is unique), keeping the original
+    # chronological ordering intact.
+    logging.info(f"Getting {batch_size} elements after cursor {cursor} with timezone {country.timezone}")
     query = session.query(
             Keywords.id,
             Keywords.plaintext,
@@ -226,12 +239,17 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
             Keywords.channel_title,
         ).filter(
         and_(
-            func.date(Keywords.start) >= start_date, 
+            func.date(Keywords.start) >= start_date,
             func.date(Keywords.start) <= end_date,
             Keywords.country == country.name,
             Keywords.channel_name.in_(country.channels),
         )
-    ).order_by(Keywords.start, Keywords.channel_name, Keywords.plaintext)
+    ).order_by(Keywords.start, Keywords.channel_name, Keywords.plaintext, Keywords.id)
+
+    if cursor is not None:
+        query = query.filter(
+            tuple_(Keywords.start, Keywords.channel_name, Keywords.plaintext, Keywords.id) > cursor
+        )
 
     if channel != "":
         query = query.filter(Keywords.channel_name == channel)
@@ -260,9 +278,7 @@ def get_keywords_columns(session: Session, offset: int = 0, batch_size: int = 50
             or_(*[Keywords.plaintext.ilike(f"%{word}%") for word in keywords_to_includes])
         )
 
-    return query.offset(offset) \
-        .limit(batch_size) \
-        .all()
+    return query.limit(batch_size).all()
 
 def get_total_count_saved_keywords(session: Session, start_date : str, end_date : str, channel: str, empty_program_only: bool,\
                                     keywords_to_includes= [], biodiversity_only = False, country= FRANCE) -> int:

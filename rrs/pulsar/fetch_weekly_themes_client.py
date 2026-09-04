@@ -207,7 +207,7 @@ async def _translate_batch_async(texts: list[str], concurrency: int) -> list[str
     if not api_key:
         raise EnvironmentError("MISTRAL_API_KEY is required to translate themes to French.")
 
-    client = _mistral_client(api_key)
+    client = Mistral(api_key=api_key)
     semaphore = asyncio.Semaphore(concurrency)
 
     async def _safe_translate(i, text):

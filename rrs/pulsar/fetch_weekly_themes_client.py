@@ -60,6 +60,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import time
 from datetime import datetime, timedelta, timezone
 
@@ -99,6 +100,35 @@ _SENTIMENT_FR = {
     "neutral": "neutre",
     "mixed": "mixte",
 }
+
+# Pulsar's narrativesSummarization occasionally mis-splits its own internal
+# LLM output into title/sentiment/body (same root cause as its documented
+# "Incorrect delimiter for splitting the summary into title and body" error,
+# just not always surfaced as a GraphQL error) — a sentiment fragment like
+# "1. VERY_POSITIVE" can leak into `title` or `body` instead of real content.
+# Catch that here, before it's ever translated or stored.
+_MIN_BODY_WORDS = 8
+_SENTIMENT_TOKENS = {k.lower() for k in _SENTIMENT_FR} | {v.lower() for v in _SENTIMENT_FR.values()}
+_LIST_MARKER_RE = re.compile(r"^\s*[\d\-•*]+[\.\):]?\s*")
+
+
+def _looks_like_sentiment_fragment(text: str) -> bool:
+    """True if `text` is (or is just a list marker plus) a bare sentiment token."""
+    core = _LIST_MARKER_RE.sub("", text or "").strip().lower()
+    return core in _SENTIMENT_TOKENS
+
+
+def _validate_narrative(n: dict) -> str | None:
+    """Return a skip reason if narrativesSummarization output looks malformed, else None."""
+    title = (n.get("title") or "").strip()
+    body = (n.get("body") or "").strip()
+    if not title or not body:
+        return "empty title or body"
+    if _looks_like_sentiment_fragment(title) or _looks_like_sentiment_fragment(body):
+        return "title/body is a stray sentiment token, not real content"
+    if len(body.split()) < _MIN_BODY_WORDS:
+        return "body too short to be a real summary"
+    return None
 
 
 # Retries Mistral calls on 429/500/502/503/504 with backoff — covers transient
@@ -393,6 +423,14 @@ def build_theme(candidate: dict, search_id: str, date_from_str: str, date_to_str
             f"after {_NARRATIVE_RETRIES} attempts: {exc}"
         )
         return None, "narrativesSummarization API error"
+
+    skip_reason = _validate_narrative(n)
+    if skip_reason:
+        logging.error(
+            f"  narrativesSummarization returned malformed output for {topic_labels}: "
+            f"{skip_reason} — {n}"
+        )
+        return None, skip_reason
 
     return {
         "topics": candidate["topics"],

@@ -60,12 +60,14 @@ import asyncio
 import json
 import logging
 import os
+import re
 import time
 from datetime import datetime, timedelta, timezone
 
 import requests
 from mistralai.client import Mistral
 from mistralai.client.types import BaseModel
+from mistralai.client.utils import BackoffStrategy, RetryConfig
 from mistralai.extra.run.context import RunContext
 
 from rrs.misinformation_detection.classifier import classify_one
@@ -99,6 +101,56 @@ _SENTIMENT_FR = {
     "mixed": "mixte",
 }
 
+# Pulsar's narrativesSummarization occasionally mis-splits its own internal
+# LLM output into title/sentiment/body (same root cause as its documented
+# "Incorrect delimiter for splitting the summary into title and body" error,
+# just not always surfaced as a GraphQL error) — a sentiment fragment like
+# "1. VERY_POSITIVE" can leak into `title` or `body` instead of real content.
+# Catch that here, before it's ever translated or stored.
+_MIN_BODY_WORDS = 8
+_SENTIMENT_TOKENS = {k.lower() for k in _SENTIMENT_FR} | {v.lower() for v in _SENTIMENT_FR.values()}
+_LIST_MARKER_RE = re.compile(r"^\s*[\d\-•*]+[\.\):]?\s*")
+
+
+def _looks_like_sentiment_fragment(text: str) -> bool:
+    """True if `text` is (or is just a list marker plus) a bare sentiment token."""
+    core = _LIST_MARKER_RE.sub("", text or "").strip().lower()
+    return core in _SENTIMENT_TOKENS
+
+
+def _validate_narrative(n: dict) -> str | None:
+    """Return a skip reason if narrativesSummarization output looks malformed, else None."""
+    title = (n.get("title") or "").strip()
+    body = (n.get("body") or "").strip()
+    if not title or not body:
+        return "empty title or body"
+    if _looks_like_sentiment_fragment(title) or _looks_like_sentiment_fragment(body):
+        return "title/body is a stray sentiment token, not real content"
+    if len(body.split()) < _MIN_BODY_WORDS:
+        return "body too short to be a real summary"
+    return None
+
+
+# Retries Mistral calls on 429/500/502/503/504 with backoff — covers transient
+# upstream errors (e.g. "502 ... invalid response was received from the
+# upstream server") that would otherwise fail a translation/classification on
+# the first try. Applies to all `beta.conversations.run_async` calls made
+# through a client built with this config (client-level default).
+_MISTRAL_RETRY_CONFIG = RetryConfig(
+    strategy="backoff",
+    backoff=BackoffStrategy(
+        initial_interval=500,     # ms
+        max_interval=10_000,      # ms
+        exponent=1.5,
+        max_elapsed_time=30_000,  # ms — bounded so one stuck item can't stall the batch
+    ),
+    retry_connection_errors=True,
+)
+
+
+def _mistral_client(api_key: str) -> Mistral:
+    return Mistral(api_key=api_key, retry_config=_MISTRAL_RETRY_CONFIG)
+
 
 _MISINFO_MAX_CHARS = 3000  # cap per post to control token usage
 _MISINFO_MODEL_DEFAULT = "ministral-8b-2512"
@@ -113,7 +165,7 @@ async def _classify_posts_async(posts: list[dict], subject: str, model: str,
         return posts
 
     system_prompt = build_pulsar_system_prompt(subject or "climate")
-    client = Mistral(api_key=api_key)
+    client = _mistral_client(api_key)
     semaphore = asyncio.Semaphore(concurrency)
 
     async def _safe_classify(i, post):
@@ -371,6 +423,14 @@ def build_theme(candidate: dict, search_id: str, date_from_str: str, date_to_str
             f"after {_NARRATIVE_RETRIES} attempts: {exc}"
         )
         return None, "narrativesSummarization API error"
+
+    skip_reason = _validate_narrative(n)
+    if skip_reason:
+        logging.error(
+            f"  narrativesSummarization returned malformed output for {topic_labels}: "
+            f"{skip_reason} — {n}"
+        )
+        return None, skip_reason
 
     return {
         "topics": candidate["topics"],

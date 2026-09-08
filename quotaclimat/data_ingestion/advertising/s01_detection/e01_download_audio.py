@@ -4,34 +4,54 @@ import os
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-from datetime import timedelta
 from typing import Callable, Generator
 
+import s3fs
 from tqdm import tqdm
 
+from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree import (
+    download_mediatree_audio,
+    get_s3_filesystem,
+)
+
 from .e00_partition_window import Segment
-from .tools.mediatree import MediatreeAPI
 
 # When running in a production stack where logs are collected, tqdm's cursor
 # movement codes (\r, ANSI escapes) make all updates appear on a single line.
 # Set TQDM_LOG_MODE=1 to replace progress bars with plain logger.info() lines.
 _LOG_MODE = os.environ.get("TQDM_LOG_MODE", "0") == "1" or not sys.stdout.isatty()
 
+EXPORT_FOLDER = "./.cache/mediatree"
+MEDIA_FORMAT = "mp3"
+
 logger = logging.getLogger(__name__)
 
 
-async def download_audio(api: MediatreeAPI, segment: Segment) -> tuple[str, bool]:
-    end_date = segment.end_date + timedelta(minutes=1)
-    was_cached = api.export_exists(segment.channel, segment.start_date, end_date, "mp3")
+def _local_export_path(segment: Segment) -> str:
+    return os.path.join(EXPORT_FOLDER, f"{segment.identifier}.{MEDIA_FORMAT}")
 
-    audio_file_path = await api.download_export(
-        segment.channel,
-        segment.start_date,
-        end_date,
-        "mp3",
+
+async def download_audio(
+    fs: s3fs.S3FileSystem, segment: Segment, s3_keys: list[str]
+) -> tuple[str, bool]:
+    """Download a segment's audio parts from S3 and merge them into a single file.
+
+    `s3_keys` must be ordered chronologically: parts are downloaded concurrently
+    but merged back in the given order. Uses the local cache if the merged file
+    already exists.
+    """
+    file_path = _local_export_path(segment)
+
+    if os.path.isfile(file_path):
+        return file_path, True
+
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+    await download_mediatree_audio(
+        fs, file_path, segment.channel, segment.start_date, segment.end_date
     )
 
-    return audio_file_path, was_cached
+    return file_path, False
 
 
 ###############################
@@ -93,8 +113,7 @@ class AudioProcessor:
         self.stats = PipelineStats()
         self.process_media = process_media
 
-        # Semaphore and retry are handled inside MediatreeAPI
-        self.api = MediatreeAPI(max_concurrent_requests=max_concurrent_downloads)
+        self.fs = get_s3_filesystem()
         self.delete_files_after_processing = delete_files_after_processing
 
     async def run(self):
@@ -117,18 +136,17 @@ class AudioProcessor:
         self._update_postfix()
 
         try:
-            async with self.api:
-                # Use threads instead of processes: the heavy CPU work
-                # (librosa, numpy, scipy) releases the GIL so threads
-                # give real parallelism. ProcessPoolExecutor fails in
-                # Docker/Scaleway because child processes re-import the
-                # entire module tree (including mediatree secrets, DB
-                # models, etc.) which crashes or deadlocks silently.
-                with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
-                    async with asyncio.TaskGroup() as tg:
-                        tg.create_task(self._download_worker())
-                        for i in range(self.num_workers):
-                            tg.create_task(self._process_worker(executor, i))
+            # Use threads instead of processes: the heavy CPU work
+            # (librosa, numpy, scipy) releases the GIL so threads
+            # give real parallelism. ProcessPoolExecutor fails in
+            # Docker/Scaleway because child processes re-import the
+            # entire module tree (including mediatree secrets, DB
+            # models, etc.) which crashes or deadlocks silently.
+            with ThreadPoolExecutor(max_workers=self.num_workers) as executor:
+                async with asyncio.TaskGroup() as tg:
+                    tg.create_task(self._download_worker())
+                    for i in range(self.num_workers):
+                        tg.create_task(self._process_worker(executor, i))
         finally:
             self.dl_bar.close()
             self.proc_bar.close()
@@ -208,7 +226,7 @@ class AudioProcessor:
                 )
 
     async def _download_and_queue(self, segment: Segment):
-        audio_file_path, was_cached = await download_audio(self.api, segment)
+        audio_file_path, was_cached = await download_audio(self.fs, segment)
 
         if was_cached:
             self.stats.dl_cached += 1

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.program import (
@@ -86,6 +86,33 @@ def partition_week_program(
         for segment_start_date, segment_end_date in _all_intervals_for_program(
             program, week_start_date, timedelta(minutes=30)
         )
+    ]
+
+
+_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+def _ceil_to_multiple(dt: datetime, rounding_drift: timedelta) -> datetime:
+    remainder = (dt - _EPOCH) % rounding_drift
+    if remainder == timedelta():
+        return dt
+    return dt + (rounding_drift - remainder)
+
+
+def add_rounding_drift(
+    segments: list[Segment], rounding_drift: timedelta
+) -> list[Segment]:
+    """This function ensures all segments start and stop at times that are multiples of the rounding_drift, to match provider file format.
+    If a segment start or end time is not aligned, it will be adjusted to the next multiple of rounding_drift.
+    For instance with a rounding_drift=timedelta(minutes=2), a segment starting at 10:01:30 will be adjusted to start at 10:02:00, and a segment ending at 10:03:45 will be adjusted to end at 10:04:00.
+    """
+    return [
+        Segment(
+            start_date=_ceil_to_multiple(segment.start_date, rounding_drift),
+            end_date=_ceil_to_multiple(segment.end_date, rounding_drift),
+            channel=segment.channel,
+        )
+        for segment in segments
     ]
 
 

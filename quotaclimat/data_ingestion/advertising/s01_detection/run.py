@@ -10,6 +10,7 @@ from sqlalchemy import desc, select
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad_Occurrence
 from quotaclimat.data_ingestion.advertising.s01_detection.e00_partition_window import (
+    add_rounding_drift,
     partition_week_program,
 )
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import processor
@@ -109,6 +110,8 @@ if __name__ == "__main__":
             start_date=start_date,
             margin=timedelta(minutes=15),
         )
+        # This is specific to the mediatree sent files into our bucket: they drift asked interval in order to match their two minutes file format.
+        partition = add_rounding_drift(partition, rounding_drift=timedelta(minutes=2))
 
         if testimony_channel:
             annotations = get_testimony_data(

@@ -159,7 +159,7 @@ async def _merge_audio_parts(
         os.remove(filelist_path)
 
 
-async def download_audio(
+async def download_mediatree_audio(
     fs: s3fs.S3FileSystem,
     file_path: str,
     channel: str,

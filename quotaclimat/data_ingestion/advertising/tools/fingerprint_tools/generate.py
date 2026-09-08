@@ -63,7 +63,14 @@ class PairGenerator:
                 t2, f2, a2 = peaks[idx]
                 intensity = a1 + a2
                 candidates.append(
-                    (intensity, int(f1), int(f2), int(t2 - t1), int(t1), round(intensity * 1000))
+                    (
+                        intensity,
+                        int(f1),
+                        int(f2),
+                        int(t2 - t1),
+                        int(t1),
+                        round(intensity * 1000),
+                    )
                 )
 
         candidates.sort(key=lambda c: -c[0])
@@ -172,6 +179,7 @@ class FingerprintGenerator:
 
     def params(self) -> dict:
         return {
+            "generator_version": 1,
             "sr": self.sr,
             "hop_length": self.hop_length,
             "n_fft": self.n_fft,

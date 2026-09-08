@@ -6,13 +6,11 @@ from sqlalchemy import select
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
+from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.compare import (
+    FingerprintsCompare,
+)
 
 from .tools.common_objects import Chunk, Fingerprint, Fragment
-from .tools.fingerprint.pairs import (
-    are_fingerprints_similar,
-    build_pairs_index,
-    query_pairs_index,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -29,11 +27,7 @@ class AdChunkMatch:
 async def run_chunk_identification(
     chunks: list[Chunk],
     params_hash: str,
-    min_matching_pairs: int = 5,
-    similarity_threshold: float = 0.05,
-    freq_tol: int = 2,
-    dt_tol: int = 1,
-    offset_tol: int = 2,
+    compare: FingerprintsCompare,
 ) -> tuple[list[Fragment], list[Chunk]]:
     """
     Identifie les chunks déjà connus (présents dans la DB) et les chunks inconnus.
@@ -48,11 +42,7 @@ async def run_chunk_identification(
     Args:
         chunks: Les chunks locaux à identifier.
         params_hash: Hash des paramètres ChunkCreator, pour filtrer les chunks DB compatibles.
-        min_matching_pairs: Nombre minimum de paires proches pour considérer deux chunks similaires.
-        similarity_threshold: Score minimum (cohérence temporelle) pour valider une correspondance.
-        freq_tol: Tolerance on frequency bin indices for pair matching.
-        dt_tol: Tolerance on time delta for pair matching.
-        offset_tol: Tolerance on temporal coherence offset.
+        compare: FingerprintsCompare configuré avec les tolérances/seuils à utiliser.
 
     Returns:
         (known_chunks, unknown_chunks): chunks reconnus (avec leurs Ad correspondantes) et inconnus.
@@ -61,9 +51,7 @@ async def run_chunk_identification(
     matches: dict[int, list[AdChunkMatch]] = defaultdict(list)
 
     # Build inverted index over local chunks once — queried for each DB fingerprint
-    local_index = build_pairs_index(
-        [c.fingerprint for c in chunks], freq_tol, dt_tol
-    )
+    local_index = compare.build_similarity_index([c.fingerprint for c in chunks])
 
     total_db_fingerprints = 0
 
@@ -81,19 +69,9 @@ async def run_chunk_identification(
                         db_fp = Fingerprint.from_dict(fp_dict)
                         total_db_fingerprints += 1
 
-                        candidates = query_pairs_index(
-                            db_fp, local_index, freq_tol, dt_tol, min_matching_pairs
-                        )
+                        candidates = local_index.get_similar_indices(db_fp)
                         for local_idx in candidates:
-                            if are_fingerprints_similar(
-                                chunks[local_idx].fingerprint,
-                                db_fp,
-                                min_matching_pairs,
-                                similarity_threshold,
-                                freq_tol,
-                                dt_tol,
-                                offset_tol,
-                            ):
+                            if compare.is_similar(chunks[local_idx].fingerprint, db_fp):
                                 matches[local_idx].append(
                                     AdChunkMatch(
                                         ad=ad,
@@ -102,7 +80,9 @@ async def run_chunk_identification(
                                     )
                                 )
 
-    logger.info(f"Loaded {total_db_fingerprints} DB fingerprints (params_hash={params_hash})")
+    logger.info(
+        f"Loaded {total_db_fingerprints} DB fingerprints (params_hash={params_hash})"
+    )
 
     # --- Build final lists ---
     known_fragments: list[Fragment] = []

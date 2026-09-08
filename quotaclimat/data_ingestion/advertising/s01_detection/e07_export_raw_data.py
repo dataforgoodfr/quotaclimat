@@ -86,7 +86,6 @@ class Report:
     def __init__(
         self,
         reports_name: str,
-        chunk_hash: str,
         params: dict,
         local_path: str,
     ):

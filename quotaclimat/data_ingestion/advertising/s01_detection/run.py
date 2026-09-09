@@ -9,7 +9,7 @@ from sqlalchemy import desc, select
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad_Occurrence
-from quotaclimat.data_ingestion.advertising.s01_detection.e00_partition_window import (
+from quotaclimat.data_ingestion.advertising.s01_detection.e01_check_partition_cover import (
     add_rounding_drift,
     partition_week_program,
 )

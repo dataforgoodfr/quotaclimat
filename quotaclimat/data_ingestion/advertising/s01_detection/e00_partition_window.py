@@ -84,7 +84,7 @@ def partition_week_program(
             channel=channel,
         )
         for segment_start_date, segment_end_date in _all_intervals_for_program(
-            program, week_start_date, timedelta(minutes=30)
+            program, week_start_date, timedelta(minutes=10)
         )
     ]
 

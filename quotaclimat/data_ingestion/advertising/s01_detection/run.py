@@ -64,7 +64,7 @@ if __name__ == "__main__":
         getLogger()
         sentry_init()
 
-        channel = os.environ.get("CHANNEL")
+        channel = os.environ.get("CHANNEL", "france2")
         if not channel:
             channel = get_scheduled_rolling_channel()
         if not channel:
@@ -82,7 +82,7 @@ if __name__ == "__main__":
                 channel = rolling_channels[rolling_index]
         assert channel is not None, "Need channel to run the detection process"
 
-        start_date = os.environ.get("START_DATE")
+        start_date = os.environ.get("START_DATE", "2026-08-31")
         if not start_date:
             start_date = _get_next_start_date_from_db(channel)
         if not start_date:
@@ -112,6 +112,9 @@ if __name__ == "__main__":
         )
         # This is specific to the mediatree sent files into our bucket: they drift asked interval in order to match their two minutes file format.
         partition = add_rounding_drift(partition, rounding_drift=timedelta(minutes=2))
+
+        for segment in partition:
+            print(f"Segment: {segment.start_date} - {segment.end_date}")
 
         if testimony_channel:
             annotations = get_testimony_data(

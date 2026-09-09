@@ -11,10 +11,12 @@ from dataclasses import asdict, dataclass
 from typing import Dict, List
 
 import numpy as np
-from tqdm import tqdm
 
 from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.compare import (
     FingerprintsCompare,
+)
+from quotaclimat.data_ingestion.advertising.tools.interactive_tqdm import (
+    interactive_tqdm,
 )
 
 from .tools.common_objects import Chunk, Fingerprint
@@ -69,12 +71,15 @@ def _cluster(
     # --- Inverted index on 3D pair keys to prune candidate pairs ---
 
     # Step 1: build index over all chunks
-    fps = [c.fingerprint for c in tqdm(chunks, desc="Indexation fingerprints")]
+    fps = [
+        c.fingerprint
+        for c in interactive_tqdm(chunks, desc="Indexation fingerprints")
+    ]
     index = compare.build_similarity_index(fps)
 
     # Step 2: for each chunk query the index to find candidates with j > i
     candidates: set[tuple[int, int]] = set()
-    for i, fp in tqdm(enumerate(fps), desc="Recherche candidats", total=n):
+    for i, fp in interactive_tqdm(enumerate(fps), desc="Recherche candidats", total=n):
         for j in index.get_similar_indices(fp):
             if j > i:
                 candidates.add((i, j))
@@ -86,7 +91,7 @@ def _cluster(
 
     # Step 4: full comparison on candidates only
     matches = 0
-    for i, j in tqdm(
+    for i, j in interactive_tqdm(
         candidates,
         desc="Comparaison fingerprints",
         total=len(candidates),

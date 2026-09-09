@@ -14,7 +14,9 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any, Callable
 
-import tqdm
+from quotaclimat.data_ingestion.advertising.tools.interactive_tqdm import (
+    interactive_tqdm,
+)
 
 
 @dataclass
@@ -39,7 +41,7 @@ def run_stage(
 
     counts: Counter[str] = Counter()
     buf: list[StageResult] = []
-    progress = tqdm.tqdm(total=len(ad_ids), desc=desc, smoothing=0.05)
+    progress = interactive_tqdm(total=len(ad_ids), desc=desc, smoothing=0.05)
     pool = cf.ThreadPoolExecutor(max_workers=workers)
 
     try:

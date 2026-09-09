@@ -80,7 +80,7 @@ async def processor(
     #### Download all weeks audio segments
 
     with timings.measure("audio_download"):
-        await download_days_audio_parts(
+        audio_files = await download_days_audio_parts(
             fs=get_s3_filesystem(),
             channel=channel,
             # list all days between start_date and end_date
@@ -90,6 +90,9 @@ async def processor(
             ],
             dest_dir="./.cache/mediatree",
             max_concurrent_downloads=10,
+        )
+        logger.info(
+            f"Downloaded {len(audio_files)} audio files for channel {channel} between {start_date} and {end_date}"
         )
 
     #### Audio processing

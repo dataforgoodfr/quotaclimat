@@ -5,7 +5,6 @@ import os
 from datetime import datetime, timezone
 from typing import Any
 
-import tqdm
 from sqlalchemy import bindparam, select
 from sqlalchemy.orm import sessionmaker
 
@@ -13,6 +12,9 @@ from postgres.database_connection import connect_to_db
 from postgres.schemas.advertising.models import Ad
 from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.matcher import (
     BrandDictionary, DictMatch)
+from quotaclimat.data_ingestion.advertising.tools.interactive_tqdm import (
+    interactive_tqdm,
+)
 from quotaclimat.utils.logger import getLogger
 
 
@@ -109,7 +111,7 @@ def run(batch_size: int = 500, limit: int | None = None) -> dict[str, int]:
     bd = BrandDictionary()
     counts: dict[str, int] = {}
     buf: list[dict] = []
-    progress = tqdm.tqdm(pending, desc="dict_match", smoothing=0.05)
+    progress = interactive_tqdm(pending, desc="dict_match", smoothing=0.05)
 
     try:
         for ad_id, prediction, transcript in progress:

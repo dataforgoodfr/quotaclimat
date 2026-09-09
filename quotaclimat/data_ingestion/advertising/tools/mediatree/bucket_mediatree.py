@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 import s3fs
 from dotenv import load_dotenv
 
+from ..interactive_tqdm import interactive_tqdm
 from . import overlay_correction
 
 logger = logging.getLogger(__name__)
@@ -147,19 +148,33 @@ async def download_days_audio_parts(
     os.makedirs(dest_dir, exist_ok=True)
     inflight = asyncio.Semaphore(max_concurrent_downloads)
 
+    progress = interactive_tqdm(
+        total=len(s3_keys),
+        desc="Downloading mediatree parts",
+        unit="file",
+    )
+
     async def _bounded_download(s3_key: str, archive_dir: str) -> str:
         audio_name = f"{os.path.splitext(os.path.basename(s3_key))[0]}.mp3"
         audio_path = os.path.join(dest_dir, audio_name)
-        if os.path.isfile(audio_path):
-            return audio_path
+        try:
+            if os.path.isfile(audio_path):
+                return audio_path
 
-        async with inflight:
-            return await _download_and_extract_audio(fs, s3_key, archive_dir, dest_dir)
+            async with inflight:
+                return await _download_and_extract_audio(
+                    fs, s3_key, archive_dir, dest_dir
+                )
+        finally:
+            progress.update(1)
 
-    with tempfile.TemporaryDirectory(dir=dest_dir) as archive_dir:
-        return await asyncio.gather(
-            *(_bounded_download(s3_key, archive_dir) for s3_key in s3_keys)
-        )
+    try:
+        with tempfile.TemporaryDirectory(dir=dest_dir) as archive_dir:
+            return await asyncio.gather(
+                *(_bounded_download(s3_key, archive_dir) for s3_key in s3_keys)
+            )
+    finally:
+        progress.close()
 
 
 async def _merge_audio_parts(

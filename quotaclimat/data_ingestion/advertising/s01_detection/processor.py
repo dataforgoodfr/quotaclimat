@@ -121,7 +121,8 @@ async def processor(
         with LocalCache(name="chunks", version=fingerprint_hash) as chunk_cache:
             chunks: list[Chunk] = []
 
-            for segment, audio_file_path in interactive_tqdm(audio_segments):
+            progress = interactive_tqdm(audio_segments)
+            for segment, audio_file_path in progress:
                 file_name = segment.identifier + ".json"
 
                 if chunk_cache.exists(file_name):
@@ -129,11 +130,13 @@ async def processor(
                         chunk_cache.get(segment.identifier + ".json")
                     )
                     chunk_batch = [Chunk.from_dict(d) for d in chunk_dicts]
+                    progress.count("cached")
                 else:
                     chunk_batch = chunk_creator.run(segment, audio_file_path)
                     chunk_cache.set(
                         file_name, json.dumps([c.to_dict() for c in chunk_batch])
                     )
+                    progress.count("computed")
 
                 chunks.extend(chunk_batch)
 

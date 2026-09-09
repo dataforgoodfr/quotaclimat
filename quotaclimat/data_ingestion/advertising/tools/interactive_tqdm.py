@@ -32,17 +32,42 @@ class _InteractiveTqdm(tqdm):
             total = len(args[0])
         self._log_total = total
         self._completed = 0
+        self._counts: dict[str, int] = {}
 
         kwargs.setdefault("disable", _LOG_MODE)
         super().__init__(*args, **kwargs)
+
+    @property
+    def counts(self) -> dict[str, int]:
+        return self._counts
+
+    def count(self, label: str, n: int = 1) -> None:
+        """Track a named sub-count (e.g. "cached" vs "computed") alongside the bar.
+
+        Shows up as tqdm's own postfix (`set_postfix`) when the bar is live, and is
+        folded into the periodic log-mode lines otherwise, so both code paths surface
+        the same breakdown without callers handling the two modes themselves.
+        """
+        self._counts[label] = self._counts.get(label, 0) + n
+        if not self.disable:
+            self.set_postfix(**self._counts, refresh=False)
 
     def update(self, n=1):
         result = super().update(n)
         if _LOG_MODE:
             self._completed += n
             if self._completed % _LOG_INTERVAL == 0 or self._completed == self._log_total:
+                counts_suffix = (
+                    f" ({', '.join(f'{k}={v}' for k, v in self._counts.items())})"
+                    if self._counts
+                    else ""
+                )
                 logger.info(
-                    "%s: %d/%s", self._log_desc, self._completed, self._log_total or "?"
+                    "%s: %d/%s%s",
+                    self._log_desc,
+                    self._completed,
+                    self._log_total or "?",
+                    counts_suffix,
                 )
         return result
 

@@ -6,7 +6,7 @@ from functools import partial
 
 from ..tools.fingerprint_tools.compare import FingerprintsCompare
 from ..tools.fingerprints import fingerprinter
-from .e00_partition_window import Segment
+from ..tools.segments import Segment
 from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import ChunkCreator
 from .e03_already_identified_advertising import run_chunk_identification

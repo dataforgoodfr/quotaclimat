@@ -9,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad, Ad_Occurrence
 
-from .e00_partition_window import Segment
+from ..tools.segments import Segment
 from .e04_group_chunks import canonical
 from .e05_classify_fragments import Fragment
 

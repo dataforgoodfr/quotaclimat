@@ -14,7 +14,7 @@ from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree imp
     get_s3_filesystem,
 )
 
-from .e00_partition_window import Segment
+from ..tools.segments import Segment
 
 # When running in a production stack where logs are collected, tqdm's cursor
 # movement codes (\r, ANSI escapes) make all updates appear on a single line.

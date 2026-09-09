@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -7,19 +6,9 @@ from quotaclimat.data_ingestion.advertising.s01_detection.tools.program import (
     extend_program_by,
     get_channel_program,
 )
+from quotaclimat.data_ingestion.advertising.tools.segments import Segment
 
 tz_paris = ZoneInfo("Europe/Paris")
-
-
-@dataclass
-class Segment:
-    start_date: datetime
-    end_date: datetime
-    channel: str
-
-    @property
-    def identifier(self) -> str:
-        return f"{self.channel}_{self.start_date.strftime('%Y-%m-%d_%H-%M-%S')}"
 
 
 def _all_intervals_between(

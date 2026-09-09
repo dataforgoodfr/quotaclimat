@@ -13,7 +13,7 @@ from ..tools.mediatree.bucket_mediatree import (
     get_s3_filesystem,
 )
 from ..tools.segments import Segment
-from .e02_create_chunks import ChunkCreator
+from .e02_create_chunks import ChunkCreator, ChunkCreatorJob
 from .e03_already_identified_advertising import run_chunk_identification
 from .e04_group_chunks import group_chunks
 from .e05_classify_fragments import FragmentsClassifier
@@ -32,6 +32,8 @@ chunk_creator = ChunkCreator(
     fingerprinter=fingerprinter,
     min_chunk_sec=1.0,
     silence_percentile=5.0,
+    seconds_reserved_for_previous_segment=5,
+    margin_extracted_from_next_segment=30,
 )
 fingerprints_compare = FingerprintsCompare(
     min_matching_pairs=10,
@@ -47,18 +49,17 @@ fingerprints_compare = FingerprintsCompare(
 
 
 def process_audio(
-    segment: Segment,
-    audio_file_path: str,
+    job: ChunkCreatorJob,
     cache: LocalCache,
     chunk_creator: ChunkCreator,
 ) -> bool:
     """Returns True if processing was cached (skipped), False if actually processed."""
-    file_name = segment.identifier + ".json"
+    file_name = job.segment.identifier + ".json"
 
     if cache.exists(file_name):
         return True
     else:
-        chunks = chunk_creator.run(segment, audio_file_path)
+        chunks = chunk_creator.run(job.segment, job.audio_file_path)
         cache.set(file_name, json.dumps([c.to_dict() for c in chunks]))
         return False
 
@@ -116,12 +117,37 @@ async def processor(
             for f in audio_files
         ]
 
+    #### Analyze the week partition
+
+    chunks_creator_jobs: list[ChunkCreatorJob] = []
+
+    for i, (segment, audio_file_path) in enumerate(audio_segments):
+        is_previous_contiguous = (
+            i > 0 and audio_segments[i - 1][0].end_date == segment.start_date
+        )
+        next_contiguous = (
+            audio_segments[i + 1]
+            if (
+                i < len(audio_segments) - 1
+                and audio_segments[i + 1][0].start_date == segment.end_date
+            )
+            else None
+        )
+        chunks_creator_jobs.append(
+            ChunkCreatorJob(
+                segment=segment,
+                audio_file_path=audio_file_path,
+                has_previous_segment=is_previous_contiguous,
+                next_audio_file_path=next_contiguous[1] if next_contiguous else None,
+            )
+        )
+
     #### Audio processing
 
     with timings.measure("audio_processing"):
         with LocalCache(name="chunks", version=fingerprint_hash) as chunk_cache:
             progress = interactive_tqdm(
-                total=len(audio_segments), desc="Processing audio segments"
+                total=len(chunks_creator_jobs), desc="Processing audio segments"
             )
 
             worker = partial(
@@ -130,8 +156,7 @@ async def processor(
             with ProcessPoolExecutor(max_workers=num_workers) as executor:
                 for was_cached in executor.map(
                     worker,
-                    (segment for segment, _ in audio_segments),
-                    (audio_file_path for _, audio_file_path in audio_segments),
+                    (job for job in chunks_creator_jobs),
                 ):
                     progress.count("cached" if was_cached else "computed")
                     progress.update(1)

@@ -4,6 +4,7 @@ import os
 import tarfile
 import tempfile
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import s3fs
 from dotenv import load_dotenv
@@ -35,7 +36,10 @@ def _get_s3_archive_key_for_part(
 ) -> str:
     # /mediatree-videos-prod/output/franceinfotv/2026/09/07/franceinfotv_2026-09-07T04-36-00Z_2026-09-07T04-38-00Z.tar
 
-    return f"/{BUCKET_NAME}/output/{channel}/{start_date.strftime('%Y/%m/%d')}/{channel}_{start_date.strftime('%Y-%m-%dT%H-%M-%SZ')}_{end_date.strftime('%Y-%m-%dT%H-%M-%SZ')}.tar"
+    start_date_utc = start_date.astimezone(tz=ZoneInfo("UTC"))
+    end_date_utc = end_date.astimezone(tz=ZoneInfo("UTC"))
+
+    return f"/{BUCKET_NAME}/output/{channel}/{start_date_utc.strftime('%Y/%m/%d')}/{channel}_{start_date_utc.strftime('%Y-%m-%dT%H-%M-%SZ')}_{end_date_utc.strftime('%Y-%m-%dT%H-%M-%SZ')}.tar"
 
 
 def _floor_to_2_minutes(dt: datetime) -> datetime:
@@ -74,7 +78,11 @@ def _extract_audio_from_archive(
 async def _download_part(fs: s3fs.S3FileSystem, s3_key: str, dest_dir: str) -> str:
     basename = os.path.basename(s3_key)
     archive_path = os.path.join(dest_dir, basename)
-    await fs._get_file(s3_key, archive_path)
+    try:
+        await fs._get_file(s3_key, archive_path)
+    except Exception as e:
+        logger.error(f"Error downloading {s3_key} from S3: {e}")
+        raise
 
     extract_dir = os.path.join(dest_dir, os.path.splitext(basename)[0])
     audio_name = f"{os.path.splitext(basename)[0]}.mp3"
@@ -190,6 +198,7 @@ async def download_mediatree_audio(
     trim_duration = end_date - start_date
 
     with tempfile.TemporaryDirectory(dir=os.path.dirname(file_path)) as tmp_dir:
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         part_paths = await asyncio.gather(
             *(_download_part(fs, s3_key, tmp_dir) for s3_key in s3_archive_keys)
         )
@@ -204,7 +213,7 @@ if __name__ == "__main__":
     END_DATE = "2026-09-07T05:05:03Z"
 
     asyncio.run(
-        download_audio(
+        download_mediatree_audio(
             get_s3_filesystem(),
             f"{CHANNEL}_{START_DATE}_{END_DATE}.mp3",
             CHANNEL,

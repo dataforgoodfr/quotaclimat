@@ -31,9 +31,7 @@ def _local_export_path(segment: Segment) -> str:
     return os.path.join(EXPORT_FOLDER, f"{segment.identifier}.{MEDIA_FORMAT}")
 
 
-async def download_audio(
-    fs: s3fs.S3FileSystem, segment: Segment, s3_keys: list[str]
-) -> tuple[str, bool]:
+async def download_audio(fs: s3fs.S3FileSystem, segment: Segment) -> tuple[str, bool]:
     """Download a segment's audio parts from S3 and merge them into a single file.
 
     `s3_keys` must be ordered chronologically: parts are downloaded concurrently

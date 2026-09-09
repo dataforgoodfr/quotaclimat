@@ -32,15 +32,41 @@ def get_s3_filesystem() -> s3fs.S3FileSystem:
     )
 
 
+def _get_s3_folder(channel: str, day: date) -> str:
+    # /mediatree-videos-prod/output/franceinfotv/2026/09/07/
+    return f"/{BUCKET_NAME}/output/{channel}/{day.strftime('%Y/%m/%d')}"
+
+
+def _get_s3_file_basename(
+    channel: str, start_date: datetime, end_date: datetime
+) -> str:
+    # franceinfotv_2026-09-07T04-36-00Z_2026-09-07T04-38-00Z.tar
+    start_date_utc = start_date.astimezone(tz=ZoneInfo("UTC"))
+    end_date_utc = end_date.astimezone(tz=ZoneInfo("UTC"))
+    return f"{channel}_{start_date_utc.strftime('%Y-%m-%dT%H-%M-%SZ')}_{end_date_utc.strftime('%Y-%m-%dT%H-%M-%SZ')}"
+
+
 def _get_s3_archive_key_for_part(
     channel: str, start_date: datetime, end_date: datetime
 ) -> str:
     # /mediatree-videos-prod/output/franceinfotv/2026/09/07/franceinfotv_2026-09-07T04-36-00Z_2026-09-07T04-38-00Z.tar
 
-    start_date_utc = start_date.astimezone(tz=ZoneInfo("UTC"))
-    end_date_utc = end_date.astimezone(tz=ZoneInfo("UTC"))
+    folder = _get_s3_folder(channel, start_date.date())
+    basename = _get_s3_file_basename(channel, start_date, end_date)
+    return f"{folder}/{basename}.tar"
 
-    return f"/{BUCKET_NAME}/output/{channel}/{start_date_utc.strftime('%Y/%m/%d')}/{channel}_{start_date_utc.strftime('%Y-%m-%dT%H-%M-%SZ')}_{end_date_utc.strftime('%Y-%m-%dT%H-%M-%SZ')}.tar"
+
+def get_datetime_from_basename(basename: str) -> datetime:
+    # franceinfotv_2026-09-07T04-36-00Z_2026-09-07T04-38-00Z.tar
+    # Extract the start and end datetime from the basename
+    (channel, start_str, end_str) = basename.split("_")
+    start_dt = datetime.strptime(start_str, "%Y-%m-%dT%H-%M-%SZ").replace(
+        tzinfo=ZoneInfo("UTC")
+    )
+    end_dt = datetime.strptime(end_str, "%Y-%m-%dT%H-%M-%SZ").replace(
+        tzinfo=ZoneInfo("UTC")
+    )
+    return start_dt, end_dt
 
 
 def _floor_to_2_minutes(dt: datetime) -> datetime:
@@ -97,11 +123,6 @@ async def _download_part(fs: s3fs.S3FileSystem, s3_key: str, dest_dir: str) -> s
     return part_path
 
 
-def _get_s3_day_prefix(channel: str, day: date) -> str:
-    # /mediatree-videos-prod/output/franceinfotv/2026/09/07/
-    return f"/{BUCKET_NAME}/output/{channel}/{day.strftime('%Y/%m/%d')}"
-
-
 async def _download_and_extract_audio(
     fs: s3fs.S3FileSystem, s3_key: str, archive_dir: str, audio_dir: str
 ) -> str:
@@ -139,7 +160,7 @@ async def download_days_audio_parts(
     chronologically.
     """
     keys_per_day = await asyncio.gather(
-        *(fs._ls(_get_s3_day_prefix(channel, day)) for day in days)
+        *(fs._ls(_get_s3_folder(channel, day)) for day in days)
     )
     s3_keys = sorted(
         key for keys in keys_per_day for key in keys if key.endswith(".tar")

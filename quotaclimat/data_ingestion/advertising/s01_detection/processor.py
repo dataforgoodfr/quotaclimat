@@ -59,7 +59,7 @@ def process_audio(
     if cache.exists(file_name):
         return True
     else:
-        chunks = chunk_creator.run(job.segment, job.audio_file_path)
+        chunks = chunk_creator.run(job)
         cache.set(file_name, json.dumps([c.to_dict() for c in chunks]))
         return False
 

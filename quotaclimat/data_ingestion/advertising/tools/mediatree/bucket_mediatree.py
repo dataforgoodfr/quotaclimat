@@ -159,20 +159,24 @@ async def download_days_audio_parts(
         audio_path = os.path.join(dest_dir, audio_name)
         try:
             if os.path.isfile(audio_path):
+                progress.count("cached")
                 return audio_path
 
             async with inflight:
-                return await _download_and_extract_audio(
+                result = await _download_and_extract_audio(
                     fs, s3_key, archive_dir, dest_dir
                 )
+                progress.count("downloaded")
+                return result
         finally:
             progress.update(1)
 
     try:
         with tempfile.TemporaryDirectory(dir=dest_dir) as archive_dir:
-            return await asyncio.gather(
+            result = await asyncio.gather(
                 *(_bounded_download(s3_key, archive_dir) for s3_key in s3_keys)
             )
+            return result
     finally:
         progress.close()
 

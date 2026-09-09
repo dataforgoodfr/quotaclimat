@@ -218,7 +218,8 @@ class ChunkCreator:
             t_end = peaks_sec[i + 1]
             dur = t_end - t_start
 
-            # Skip chunks that would end after the segment's end time (can happen if the last peak is close to the end)
+            # Only the chunk's start is checked against end_epoch, not its end: the last
+            # chunk starting before the cutoff is kept even though it finishes after it.
             if float(t_start) + start_epoch > end_epoch:
                 continue
 
@@ -277,13 +278,26 @@ class ChunkCreator:
         # Step 2: find boundaries at deepest silences
         peaks_sec = self._detect_peaks(silence_mask, features["energy"])
 
+        if job.has_previous_segment:
+            # The previous segment's own extraction already covered this leading window
+            # (via its margin_extracted_from_next_segment); drop peaks in it so chunk
+            # creation only starts at seconds_reserved_for_previous_segment.
+            peaks_sec = peaks_sec[peaks_sec >= self.seconds_reserved_for_previous_segment]
+
+        chunk_start_cutoff_epoch = job.segment.end_date.timestamp()
+        if job.next_audio_file_path is not None:
+            # Allow chunks to start into the appended margin, but only up to
+            # seconds_reserved_for_previous_segment past the original audio's end — the
+            # next segment's own run (has_previous_segment=True) picks up from there.
+            chunk_start_cutoff_epoch += self.seconds_reserved_for_previous_segment
+
         return self.build_chunks(
             peaks_sec,
             features,
             duration,
             y,
             job.segment.start_date.timestamp(),
-            job.segment.end_date.timestamp(),
+            chunk_start_cutoff_epoch,
             channel=job.segment.channel,
         )
 

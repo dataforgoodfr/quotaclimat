@@ -1,6 +1,8 @@
 import json
 import logging
+from concurrent.futures import ProcessPoolExecutor
 from datetime import datetime, timedelta
+from functools import partial
 from zoneinfo import ZoneInfo
 
 from ..tools.fingerprint_tools.compare import FingerprintsCompare
@@ -96,7 +98,6 @@ async def processor(
 
         # audio file names look like: franceinfotv_2026-09-07T04-36-00Z_2026-09-07T04-38-00Z.mp3
         filename_dt_format = "%Y-%m-%dT%H-%M-%SZ"
-        logger.info(audio_files)
         audio_segments = [
             (
                 Segment(
@@ -119,26 +120,33 @@ async def processor(
 
     with timings.measure("audio_processing"):
         with LocalCache(name="chunks", version=fingerprint_hash) as chunk_cache:
-            chunks: list[Chunk] = []
+            progress = interactive_tqdm(
+                total=len(audio_segments), desc="Processing audio segments"
+            )
 
-            progress = interactive_tqdm(audio_segments)
-            for segment, audio_file_path in progress:
-                file_name = segment.identifier + ".json"
+            worker = partial(
+                process_audio, cache=chunk_cache, chunk_creator=chunk_creator
+            )
+            with ProcessPoolExecutor(max_workers=num_workers) as executor:
+                for was_cached in executor.map(
+                    worker,
+                    (segment for segment, _ in audio_segments),
+                    (audio_file_path for _, audio_file_path in audio_segments),
+                ):
+                    progress.count("cached" if was_cached else "computed")
+                    progress.update(1)
 
-                if chunk_cache.exists(file_name):
-                    chunk_dicts = json.loads(
-                        chunk_cache.get(segment.identifier + ".json")
-                    )
-                    chunk_batch = [Chunk.from_dict(d) for d in chunk_dicts]
-                    progress.count("cached")
-                else:
-                    chunk_batch = chunk_creator.run(segment, audio_file_path)
-                    chunk_cache.set(
-                        file_name, json.dumps([c.to_dict() for c in chunk_batch])
-                    )
-                    progress.count("computed")
+            progress.close()
+            logger.info(f"Audio processing: {progress.counts}")
 
-                chunks.extend(chunk_batch)
+            chunks: list[Chunk] = [
+                chunk
+                for segment, _ in audio_segments
+                for chunk in (
+                    Chunk.from_dict(d)
+                    for d in json.loads(chunk_cache.get(segment.identifier + ".json"))
+                )
+            ]
 
             # Sort by start time. Should already be the case, but ensure it.
             chunks.sort(key=lambda c: c.start_sec)

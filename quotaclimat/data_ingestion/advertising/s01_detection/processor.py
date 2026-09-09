@@ -1,17 +1,16 @@
 import json
 import logging
-import os
 from datetime import datetime, timedelta
-from functools import partial
+from zoneinfo import ZoneInfo
 
 from ..tools.fingerprint_tools.compare import FingerprintsCompare
 from ..tools.fingerprints import fingerprinter
+from ..tools.interactive_tqdm import interactive_tqdm
 from ..tools.mediatree.bucket_mediatree import (
     download_days_audio_parts,
     get_s3_filesystem,
 )
 from ..tools.segments import Segment
-from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import ChunkCreator
 from .e03_already_identified_advertising import run_chunk_identification
 from .e04_group_chunks import group_chunks
@@ -68,7 +67,7 @@ async def processor(
     end_date: datetime,
     operation_name: str,
     report_folder: str | None,
-    segments: list[Segment],
+    partition: list[Segment],
     annotations: list[dict] = [],
     num_workers: int = 1,
 ):
@@ -95,35 +94,48 @@ async def processor(
             f"Downloaded {len(audio_files)} audio files for channel {channel} between {start_date} and {end_date}"
         )
 
+        # audio file names look like: franceinfotv_2026-09-07T04-36-00Z_2026-09-07T04-38-00Z.mp3
+        filename_dt_format = "%Y-%m-%dT%H-%M-%SZ"
+        logger.info(audio_files)
+        audio_segments = [
+            (
+                Segment(
+                    start_date=datetime.strptime(
+                        f.split("/")[-1].split(".")[0].split("_")[1],
+                        filename_dt_format,
+                    ).replace(tzinfo=ZoneInfo("UTC")),
+                    end_date=datetime.strptime(
+                        f.split("/")[-1].split(".")[0].split("_")[2],
+                        filename_dt_format,
+                    ).replace(tzinfo=ZoneInfo("UTC")),
+                    channel=channel,
+                ),
+                f,
+            )
+            for f in audio_files
+        ]
+
     #### Audio processing
 
     with timings.measure("audio_processing"):
         with LocalCache(name="chunks", version=fingerprint_hash) as chunk_cache:
-            process_media = partial(
-                process_audio, chunk_creator=chunk_creator, cache=chunk_cache
-            )
-
-            await AudioProcessor(
-                num_workers=num_workers,
-                segments=segments,
-                process_media=process_media,
-                max_concurrent_downloads=5,
-                max_queue_size=10,
-                delete_files_after_processing=(
-                    os.environ.get("OPTIMIZE_MEMORY", "true").lower() == "true"
-                ),
-            ).run()
-
             chunks: list[Chunk] = []
-            for segment in segments:
-                try:
-                    chunk_batch = json.loads(
+
+            for segment, audio_file_path in interactive_tqdm(audio_segments):
+                file_name = segment.identifier + ".json"
+
+                if chunk_cache.exists(file_name):
+                    chunk_dicts = json.loads(
                         chunk_cache.get(segment.identifier + ".json")
                     )
-                    chunks.extend([Chunk.from_dict(d) for d in chunk_batch])
-                except:
-                    logger.error(f"Could not get content of {segment.identifier}")
-                    raise
+                    chunk_batch = [Chunk.from_dict(d) for d in chunk_dicts]
+                else:
+                    chunk_batch = chunk_creator.run(segment, audio_file_path)
+                    chunk_cache.set(
+                        file_name, json.dumps([c.to_dict() for c in chunk_batch])
+                    )
+
+                chunks.extend(chunk_batch)
 
             # Sort by start time. Should already be the case, but ensure it.
             chunks.sort(key=lambda c: c.start_sec)
@@ -153,7 +165,7 @@ async def processor(
     #### Database storage
 
     with timings.measure("clean_pre_existing_occurrences"):
-        clean_pre_existing_detections(segments)
+        clean_pre_existing_detections([segment for segment, _ in audio_segments])
 
     with timings.measure("database_storage"):
         database_storage_save(fragments, fingerprint_hash=fingerprint_hash)

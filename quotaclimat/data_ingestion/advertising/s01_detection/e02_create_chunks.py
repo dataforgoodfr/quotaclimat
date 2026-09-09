@@ -17,6 +17,9 @@ import librosa
 import numpy as np
 from scipy.ndimage import maximum_filter1d
 
+from quotaclimat.data_ingestion.advertising.tools.correlation import (
+    find_best_correlation,
+)
 from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.generate import (
     FingerprintGenerator,
 )
@@ -24,6 +27,14 @@ from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_has
 from quotaclimat.data_ingestion.advertising.tools.segments import Segment
 
 from .tools.common_objects import Chunk
+
+# Consecutive 2-minutes mediatree parts sometimes share a bit of duplicate audio at their
+# boundary. Rather than assume a fixed size, we cross-correlate a short window near the
+# join (same approach as overlay_correction.detect_overlap) and only trim what's actually
+# found, so a boundary with no overlap is left untouched.
+_CORRELATION_SEARCH_SEC = 3.0
+_CORRELATION_MATCH_SEC = 0.15
+_CORRELATION_THRESHOLD = 0.6
 
 
 @dataclass
@@ -58,14 +69,47 @@ class ChunkCreator:
         self.fingerprinter = fingerprinter
         self.min_chunk_sec = min_chunk_sec
         self.silence_percentile = silence_percentile
+        self.seconds_reserved_for_previous_segment = (
+            seconds_reserved_for_previous_segment
+        )
+        self.margin_extracted_from_next_segment = margin_extracted_from_next_segment
 
         self.sr = fingerprinter.sr
         self.hop_length = fingerprinter.hop_length
         self._fps = self.sr / self.hop_length
 
-    def load(self, path: str) -> np.ndarray:
-        y, _ = librosa.load(path, sr=self.sr, mono=True)
+    def load(self, path: str, duration: float | None = None) -> np.ndarray:
+        y, _ = librosa.load(path, sr=self.sr, mono=True, duration=duration)
         return y
+
+    def _extend_with_next_segment(
+        self, y: np.ndarray, next_audio_file_path: str
+    ) -> np.ndarray:
+        """Append the first `margin_extracted_from_next_segment` seconds of the next
+        segment's audio to `y`, after trimming away any duplicate content shared with
+        the end of `y` (see the module-level `_CORRELATION_*` constants).
+        """
+        next_y = self.load(
+            next_audio_file_path,
+            duration=self.margin_extracted_from_next_segment + _CORRELATION_SEARCH_SEC,
+        )
+
+        search_samples = int(_CORRELATION_SEARCH_SEC * self.sr)
+        match_samples = int(_CORRELATION_MATCH_SEC * self.sr)
+
+        tail = y[-search_samples:]
+        needle = next_y[:match_samples]
+
+        overlap_samples = 0
+        if len(needle) == match_samples and len(tail) > len(needle):
+            start, correlation = find_best_correlation(tail, needle)
+            if correlation >= _CORRELATION_THRESHOLD:
+                overlap_samples = len(tail) - start
+
+        margin_samples = int(self.margin_extracted_from_next_segment * self.sr)
+        margin = next_y[overlap_samples : overlap_samples + margin_samples]
+
+        return np.concatenate([y, margin])
 
     def extract_features(self, y: np.ndarray) -> dict:
         energy = librosa.feature.rms(y=y, hop_length=self.hop_length)[0]
@@ -219,8 +263,12 @@ class ChunkCreator:
 
         return chunks
 
-    def run(self, segment: Segment, audio_file_path: str) -> List[Chunk]:
-        y = self.load(audio_file_path)
+    def run(self, job: ChunkCreatorJob) -> List[Chunk]:
+        y = self.load(job.audio_file_path)
+
+        if job.next_audio_file_path is not None:
+            y = self._extend_with_next_segment(y, job.next_audio_file_path)
+
         features = self.extract_features(y)
         duration = len(y) / self.sr
 
@@ -234,9 +282,9 @@ class ChunkCreator:
             features,
             duration,
             y,
-            segment.start_date.timestamp(),
-            segment.end_date.timestamp(),
-            channel=segment.channel,
+            job.segment.start_date.timestamp(),
+            job.segment.end_date.timestamp(),
+            channel=job.segment.channel,
         )
 
     def params(self) -> dict:

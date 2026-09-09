@@ -1,9 +1,9 @@
 import logging
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 
 from ..tools.mediatree.bucket_mediatree import (
     download_days_audio_parts,
+    get_datetime_from_basename,
     get_s3_filesystem,
 )
 from ..tools.segments import Segment
@@ -30,25 +30,20 @@ async def download_all_audio_parts(
         f"Downloaded {len(audio_files)} audio files for channel {channel} between {start_date} and {end_date}"
     )
 
-    # audio file names look like: franceinfotv_2026-09-07T04-36-00Z_2026-09-07T04-38-00Z.mp3
-    filename_dt_format = "%Y-%m-%dT%H-%M-%SZ"
-    audio_segments = [
-        (
-            Segment(
-                start_date=datetime.strptime(
-                    f.split("/")[-1].split(".")[0].split("_")[1],
-                    filename_dt_format,
-                ).replace(tzinfo=ZoneInfo("UTC")),
-                end_date=datetime.strptime(
-                    f.split("/")[-1].split(".")[0].split("_")[2],
-                    filename_dt_format,
-                ).replace(tzinfo=ZoneInfo("UTC")),
-                channel=channel,
-            ),
-            f,
+    audio_segments = []
+    for f in audio_files:
+        basename = f.split("/")[-1].split(".")[0]
+        (start_date, end_date) = get_datetime_from_basename(basename)
+        audio_segments.append(
+            (
+                Segment(
+                    start_date=start_date,
+                    end_date=end_date,
+                    channel=channel,
+                ),
+                f,
+            )
         )
-        for f in audio_files
-    ]
 
     chunks_creator_jobs: list[ChunkCreatorJob] = []
 

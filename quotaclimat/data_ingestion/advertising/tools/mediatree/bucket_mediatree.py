@@ -3,7 +3,7 @@ import logging
 import os
 import tarfile
 import tempfile
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import s3fs
@@ -69,8 +69,11 @@ def _split_segment_into_parts(
 def _extract_audio_from_archive(
     archive_path: str, dest_dir: str, audio_name: str
 ) -> str:
+    # Each tar also contains per-part thumbnail jpgs and an mp4; extract only the mp3
+    # rather than everything, so callers sharing one dest_dir across many tars don't
+    # get flooded with unrelated files.
     with tarfile.open(archive_path) as tar:
-        tar.extractall(dest_dir, filter="data")
+        tar.extract(audio_name, dest_dir, filter="data")
 
     return os.path.join(dest_dir, audio_name)
 
@@ -91,6 +94,65 @@ async def _download_part(fs: s3fs.S3FileSystem, s3_key: str, dest_dir: str) -> s
         _extract_audio_from_archive, archive_path, extract_dir, audio_name
     )
     return part_path
+
+
+def _get_s3_day_prefix(channel: str, day: date) -> str:
+    # /mediatree-videos-prod/output/franceinfotv/2026/09/07/
+    return f"/{BUCKET_NAME}/output/{channel}/{day.strftime('%Y/%m/%d')}"
+
+
+async def _download_and_extract_audio(
+    fs: s3fs.S3FileSystem, s3_key: str, archive_dir: str, audio_dir: str
+) -> str:
+    basename = os.path.basename(s3_key)
+    archive_path = os.path.join(archive_dir, basename)
+    try:
+        await fs._get_file(s3_key, archive_path)
+    except Exception as e:
+        logger.error(f"Error downloading {s3_key} from S3: {e}")
+        raise
+
+    audio_name = f"{os.path.splitext(basename)[0]}.mp3"
+    try:
+        return await asyncio.to_thread(
+            _extract_audio_from_archive, archive_path, audio_dir, audio_name
+        )
+    finally:
+        os.remove(archive_path)
+
+
+async def download_days_audio_parts(
+    fs: s3fs.S3FileSystem,
+    channel: str,
+    days: list[date],
+    dest_dir: str,
+    max_concurrent_downloads: int = 10,
+) -> list[str]:
+    """Download every 2-minutes tar archive for `channel` on each of `days` (UTC calendar
+    dates, matching how mediatree lays out its S3 bucket) and extract each one's mp3 into
+    `dest_dir`. Only the extracted mp3s are kept; the tar archives themselves are
+    discarded once extracted.
+
+    Returns the extracted mp3 paths, sorted chronologically.
+    """
+    keys_per_day = await asyncio.gather(
+        *(fs._ls(_get_s3_day_prefix(channel, day)) for day in days)
+    )
+    s3_keys = sorted(
+        key for keys in keys_per_day for key in keys if key.endswith(".tar")
+    )
+
+    os.makedirs(dest_dir, exist_ok=True)
+    inflight = asyncio.Semaphore(max_concurrent_downloads)
+
+    async def _bounded_download(s3_key: str, archive_dir: str) -> str:
+        async with inflight:
+            return await _download_and_extract_audio(fs, s3_key, archive_dir, dest_dir)
+
+    with tempfile.TemporaryDirectory(dir=dest_dir) as archive_dir:
+        return await asyncio.gather(
+            *(_bounded_download(s3_key, archive_dir) for s3_key in s3_keys)
+        )
 
 
 async def _merge_audio_parts(

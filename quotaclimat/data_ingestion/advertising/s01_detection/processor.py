@@ -1,11 +1,15 @@
 import json
 import logging
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import partial
 
 from ..tools.fingerprint_tools.compare import FingerprintsCompare
 from ..tools.fingerprints import fingerprinter
+from ..tools.mediatree.bucket_mediatree import (
+    download_days_audio_parts,
+    get_s3_filesystem,
+)
 from ..tools.segments import Segment
 from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import ChunkCreator
@@ -60,6 +64,8 @@ def process_audio(
 
 async def processor(
     channel: str,
+    start_date: datetime,
+    end_date: datetime,
     operation_name: str,
     report_folder: str | None,
     segments: list[Segment],
@@ -70,6 +76,21 @@ async def processor(
 
     fingerprint_hash = fingerprinter.params_hash()
     logger.info(f"Process is run with fingerprint_hash={fingerprint_hash}")
+
+    #### Download all weeks audio segments
+
+    with timings.measure("audio_download"):
+        await download_days_audio_parts(
+            fs=get_s3_filesystem(),
+            channel=channel,
+            # list all days between start_date and end_date
+            days=[
+                start_date.date() + timedelta(days=i)
+                for i in range((end_date.date() - start_date.date()).days)
+            ],
+            dest_dir="./.cache/mediatree",
+            max_concurrent_downloads=10,
+        )
 
     #### Audio processing
 

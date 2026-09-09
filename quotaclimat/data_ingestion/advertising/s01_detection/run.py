@@ -126,9 +126,14 @@ if __name__ == "__main__":
         else:
             annotations = None
 
+        start_datetime = datetime.fromisoformat(start_date)
+        end_datetime = start_datetime + timedelta(days=7)
+
         asyncio.run(
             processor(
                 channel=channel,
+                start_date=start_datetime,
+                end_date=end_datetime,
                 operation_name=f"week-{start_date}",
                 report_folder=f"year={start_date[:4]}/month={start_date[5:7]}/day={start_date[8:10]}/channel={channel}",
                 segments=partition,

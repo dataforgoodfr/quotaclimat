@@ -23,6 +23,8 @@ REGION = "fr-par"
 ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
 AD_S3_PREFIX = "ads"
 
+MEDIATREE_CHANNEL_MAPPING = {"fr3-idf": "france3"}
+
 
 def get_s3_filesystem() -> s3fs.S3FileSystem:
     return s3fs.S3FileSystem(
@@ -34,7 +36,8 @@ def get_s3_filesystem() -> s3fs.S3FileSystem:
 
 def _get_s3_folder(channel: str, day: date) -> str:
     # /mediatree-videos-prod/output/franceinfotv/2026/09/07/
-    return f"/{BUCKET_NAME}/output/{channel}/{day.strftime('%Y/%m/%d')}"
+    mediatree_channel = MEDIATREE_CHANNEL_MAPPING.get(channel, channel)
+    return f"/{BUCKET_NAME}/output/{mediatree_channel}/{day.strftime('%Y/%m/%d')}"
 
 
 def _get_s3_file_basename(

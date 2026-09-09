@@ -131,9 +131,11 @@ async def download_days_audio_parts(
     """Download every 2-minutes tar archive for `channel` on each of `days` (UTC calendar
     dates, matching how mediatree lays out its S3 bucket) and extract each one's mp3 into
     `dest_dir`. Only the extracted mp3s are kept; the tar archives themselves are
-    discarded once extracted.
+    discarded once extracted. Parts whose mp3 is already present in `dest_dir` are left
+    untouched rather than re-downloaded.
 
-    Returns the extracted mp3 paths, sorted chronologically.
+    Returns the mp3 path of every part (both pre-existing and newly downloaded), sorted
+    chronologically.
     """
     keys_per_day = await asyncio.gather(
         *(fs._ls(_get_s3_day_prefix(channel, day)) for day in days)
@@ -146,6 +148,11 @@ async def download_days_audio_parts(
     inflight = asyncio.Semaphore(max_concurrent_downloads)
 
     async def _bounded_download(s3_key: str, archive_dir: str) -> str:
+        audio_name = f"{os.path.splitext(os.path.basename(s3_key))[0]}.mp3"
+        audio_path = os.path.join(dest_dir, audio_name)
+        if os.path.isfile(audio_path):
+            return audio_path
+
         async with inflight:
             return await _download_and_extract_audio(fs, s3_key, archive_dir, dest_dir)
 

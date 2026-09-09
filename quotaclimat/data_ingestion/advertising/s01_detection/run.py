@@ -113,9 +113,6 @@ if __name__ == "__main__":
         # This is specific to the mediatree sent files into our bucket: they drift asked interval in order to match their two minutes file format.
         partition = add_rounding_drift(partition, rounding_drift=timedelta(minutes=2))
 
-        for segment in partition:
-            print(f"Segment: {segment.start_date} - {segment.end_date}")
-
         if testimony_channel:
             annotations = get_testimony_data(
                 channel=testimony_channel,

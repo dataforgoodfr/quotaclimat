@@ -10,6 +10,7 @@ Deux étapes explicites :
      où le contenu audio change réellement (critère secondaire)
 """
 
+from dataclasses import dataclass
 from typing import List
 
 import librosa
@@ -23,6 +24,14 @@ from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_has
 from quotaclimat.data_ingestion.advertising.tools.segments import Segment
 
 from .tools.common_objects import Chunk
+
+
+@dataclass
+class ChunkCreatorJob:
+    segment: Segment
+    audio_file_path: str
+    has_previous_segment: bool
+    next_audio_file_path: str | None = None
 
 
 class ChunkCreator:
@@ -40,6 +49,11 @@ class ChunkCreator:
         #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
         silence_percentile: float = 5.0,  # Energy percentile below which a frame is silent.
         #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
+        # Constant assigning audio signal margins between contiguous segments.
+        seconds_reserved_for_previous_segment: float = 5,  # seconds
+        # Peaks are not extracted from the first 5 seconds, so the first extracted chunk start after that.
+        margin_extracted_from_next_segment: float = 30,  # seconds
+        # But peaks are extracted from the 30 seconds after the audio, keeping only one after 5 seconds, so the first chunks of the next segment are extracted here, as well as the one overpassing 5 seconds.
     ):
         self.fingerprinter = fingerprinter
         self.min_chunk_sec = min_chunk_sec

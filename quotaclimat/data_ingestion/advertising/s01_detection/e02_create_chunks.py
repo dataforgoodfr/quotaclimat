@@ -20,8 +20,8 @@ from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.generate imp
     FingerprintGenerator,
 )
 from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_hash
+from quotaclimat.data_ingestion.advertising.tools.segments import Segment
 
-from .e00_partition_window import Segment
 from .tools.common_objects import Chunk
 
 

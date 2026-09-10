@@ -38,9 +38,10 @@ from rrs.clustering.backends import (
     SentenceTransformerBackend,
 )
 from rrs.clustering.cost import _cost
-from rrs.clustering.get_data import TEXT_COLUMN, split_sentences
+from rrs.clustering.get_data import ID_COLUMN, TEXT_COLUMN, split_sentences
 from rrs.clustering.prompts import (
     get_system_prompt,
+    _relevance_prompt,
     _step1_prompt,
     _step2_prompt,
     _step3_prompt,
@@ -70,11 +71,16 @@ SEED_LABELS_BY_SUBJECT: dict[str, list[str]] = {
         "Les voitures électriques polluent plus que les voitures thermiques",
     ],
     "insecurity": [
-        "L'insécurité est en constante augmentation en France",
-        "L'immigration est liée à l'augmentation de la criminalité",
-        "Les zones de non-droit prolifèrent dans les grandes villes",
-        "La justice est trop laxiste face à la délinquance",
-        "L'ensauvagement de la société est une réalité",
+        "Les personnes détenues ou condamnées de nationalité étrangère sont surreprésentées dans "
+        "les statistiques judiciaires et carcérales",
+        "Les obligations de quitter le territoire français (OQTF) ne sont pas exécutées, ce qui "
+        "illustre l'incapacité de la France à expulser les personnes en situation irrégulière",
+        "Les personnes régularisées en Espagne peuvent ensuite circuler ou s'installer librement "
+        "en France ou dans le reste de l'Union européenne",
+        "Les personnes entrées irrégulièrement par Ceuta peuvent ensuite circuler librement dans "
+        "l'espace Schengen",
+        "La France connaît un niveau d'immigration record, assimilé à une submersion ou une "
+        "invasion migratoire",
     ],
 }
 
@@ -155,6 +161,56 @@ def _parse_list_response(raw: str) -> list[str]:
     except (ValueError, SyntaxError):
         print(f"  [warn] failed to parse list. Raw: {raw[:200]!r}")
         return []
+
+
+async def _relevance_call(
+    case_id: str,
+    text: str,
+    backend: LLMBackend,
+    semaphore: asyncio.Semaphore,
+    subject: str = "climate",
+) -> tuple[str, bool]:
+    async with semaphore:
+        try:
+            raw = await backend.chat(
+                [{"role": "user", "content": _relevance_prompt(text, subject=subject)}], max_tokens=8
+            )
+            return case_id, raw.strip().lower().startswith("oui")
+        except Exception as exc:
+            print(f"  [warn] relevance filter {case_id} failed: {exc}")
+            return case_id, True  # fail open: keep the case if the classifier errors
+
+
+async def filter_cases_by_relevance(
+    docs_df: "pd.DataFrame",
+    client: LLMBackend,
+    subject: str = "climate",
+    max_concurrent: int = MAX_CONCURRENT,
+) -> "pd.DataFrame":
+    """Step 0: drop cases whose text doesn't actually center on the subject's core theme.
+
+    Cases reaching this pipeline already passed the (broader) upstream misinformation gate;
+    this re-checks each one against a narrower, subject-specific criterion so an already
+    collected case set can be re-clustered more precisely without waiting on the upstream
+    gate to be re-run over new data.
+    """
+    if ID_COLUMN not in docs_df.columns or TEXT_COLUMN not in docs_df.columns:
+        return docs_df
+    rows = [
+        (case_id, text)
+        for case_id, text in docs_df[[ID_COLUMN, TEXT_COLUMN]].itertuples(index=False, name=None)
+        if isinstance(text, str) and text.strip()
+    ]
+    semaphore = asyncio.Semaphore(max_concurrent)
+    results = await tqdm.gather(
+        *[
+            _relevance_call(case_id, text, client, semaphore, subject=subject)
+            for case_id, text in rows
+        ],
+        desc=f"Step 0 — relevance filtering [{client.provider}]",
+    )
+    keep_ids = {case_id for case_id, keep in results if keep}
+    return docs_df[docs_df[ID_COLUMN].isin(keep_ids)]
 
 
 async def _step1_call(

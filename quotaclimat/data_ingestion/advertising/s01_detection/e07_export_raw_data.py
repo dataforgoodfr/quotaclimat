@@ -100,6 +100,7 @@ class Report:
         fragments: list[Fragment],
         timings: TimingCollector,
         annotations: list[dict] | None = None,
+        missing_segments: str | None = None,
     ):
         html_report = generate_weekly_viewer(
             fragments=fragments,
@@ -110,18 +111,19 @@ class Report:
         with open(self.html_report_path, "w", encoding="utf-8") as f:
             f.write(html_report)
 
-        timing_lines = [
-            "Timing report for:",
-            json.dumps(self.params),
-            "",
-        ]
-        for step, duration in timings.durations:
-            timing_lines.append(f"  {step:<30} {duration:>8.2f}s")
-
-        timing_report = "\n".join(timing_lines)
-
         with open(self.text_report_path, "w", encoding="utf-8") as f:
-            f.write(timing_report)
+            f.write("Timing report for:\n")
+            f.write(json.dumps(self.params))
+            f.write("\n\n")
+
+            for step, duration in timings.durations:
+                f.write(f"  {step:<30} {duration:>8.2f}s\n")
+            f.write("\n\n")
+
+            if missing_segments:
+                f.write("Missing segments:\n")
+                f.write(missing_segments)
+                f.write("\n\n")
 
     def save_to_s3(self, report_folder: str):
         s3_client = get_s3_client()

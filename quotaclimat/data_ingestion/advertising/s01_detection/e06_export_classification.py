@@ -3,13 +3,12 @@ import json
 import logging
 from datetime import datetime
 
-from sqlalchemy import and_, delete, or_
+from sqlalchemy import and_, delete
 from sqlalchemy.dialects.postgresql import insert
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad, Ad_Occurrence
 
-from ..tools.segments import Segment
 from .e04_group_chunks import canonical
 from .e05_classify_fragments import Fragment
 
@@ -25,32 +24,26 @@ BULK_PAGE_SIZE = 1000
 # ----- In case of parallel execution, having step e03 executed before the previous execution e06 have terminated is not completely problematic but unwanted. Better to clean and restart (launch again is ok)
 
 
-def clean_pre_existing_detections(segments: list[Segment]) -> int:
+def clean_pre_existing_detections(
+    start_date: datetime, end_date: datetime, channel: str
+) -> int:
     """Delete all Ad_Occurrence rows whose occurrence_date falls within
-    any of the given segments (matched by channel and time window).
+    any the given window.
 
     Returns the number of rows deleted.
     """
-    if not segments:
-        return 0
-
-    conditions = [
-        and_(
-            Ad_Occurrence.channel_name == segment.channel,
-            Ad_Occurrence.occurrence_date >= segment.start_date,
-            Ad_Occurrence.occurrence_date < segment.end_date,
-        )
-        for segment in segments
-    ]
+    condition = and_(
+        Ad_Occurrence.channel_name == channel,
+        Ad_Occurrence.occurrence_date >= start_date,
+        Ad_Occurrence.occurrence_date < end_date,
+    )
 
     session = get_db_session()
     try:
-        result = session.execute(delete(Ad_Occurrence).where(or_(*conditions)))
+        result = session.execute(delete(Ad_Occurrence).where(condition))
         session.commit()
         count = result.rowcount
-        logger.info(
-            f"Deleted {count} Ad_Occurrence rows across {len(segments)} segments."
-        )
+        logger.info(f"Deleted {count} Ad_Occurrence rows.")
         return count
     except Exception:
         session.rollback()

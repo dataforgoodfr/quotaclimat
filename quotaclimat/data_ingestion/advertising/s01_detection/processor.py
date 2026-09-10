@@ -154,7 +154,7 @@ async def processor(
     #### Database storage
 
     with timings.measure("clean_pre_existing_occurrences"):
-        clean_pre_existing_detections([job.segment for job in chunks_creator_jobs])
+        clean_pre_existing_detections(start_date, end_date, channel)
 
     with timings.measure("database_storage"):
         database_storage_save(fragments, fingerprint_hash=fingerprint_hash)
@@ -171,7 +171,6 @@ async def processor(
                 "chunk_creator": chunk_creator.params(),
                 "fingerprints_compare": fingerprints_compare.params(),
                 "fragment_classifier": fragment_classifier.params(),
-                "missing_segments": missing_segments,
             },
             local_path=reports_cache.cache_folder,
         )
@@ -179,6 +178,7 @@ async def processor(
             fragments=fragments,
             annotations=annotations,
             timings=timings,
+            missing_segments=missing_segments,
         )
 
         print(f"""Reports generated:

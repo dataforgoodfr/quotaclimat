@@ -9,16 +9,9 @@ from sqlalchemy import desc, select
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad_Occurrence
-from quotaclimat.data_ingestion.advertising.s01_detection.e01_check_partition_cover import (
-    add_rounding_drift,
-    partition_week_program,
-)
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import processor
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.scheduled_rolling_channels import (
     get_scheduled_rolling_channel,
-)
-from quotaclimat.data_ingestion.advertising.s01_detection.tools.testimony_data.extract import (
-    get_testimony_data,
 )
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
@@ -101,28 +94,6 @@ if __name__ == "__main__":
             f"Start processing of 1 week of {channel} starting from {start_date} on {num_workers} cpu"
         )
 
-        # Annotations, for local run
-        testimony_channel = os.environ.get("TESTIMONY_CHANNEL")
-        testimony_file = os.environ.get("TESTIMONY_FILE", "export.csv")
-
-        partition = partition_week_program(
-            channel=channel,
-            start_date=start_date,
-            margin=timedelta(minutes=15),
-        )
-        # This is specific to the mediatree sent files into our bucket: they drift asked interval in order to match their two minutes file format.
-        partition = add_rounding_drift(partition, rounding_drift=timedelta(minutes=2))
-
-        if testimony_channel:
-            annotations = get_testimony_data(
-                channel=testimony_channel,
-                from_date=partition[0].start_date,
-                to_date=partition[-1].end_date,
-                source_file=testimony_file,
-            )
-        else:
-            annotations = None
-
         start_datetime = datetime.fromisoformat(start_date)
         end_datetime = start_datetime + timedelta(days=7)
 
@@ -133,8 +104,7 @@ if __name__ == "__main__":
                 end_date=end_datetime,
                 operation_name=f"week-{start_date}",
                 report_folder=f"year={start_date[:4]}/month={start_date[5:7]}/day={start_date[8:10]}/channel={channel}",
-                partition=partition,
-                annotations=annotations,
+                annotations=None,
                 num_workers=num_workers,
             )
         )

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 
-@dataclass
+@dataclass(frozen=True, order=True)
 class Segment:
     start_date: datetime
     end_date: datetime

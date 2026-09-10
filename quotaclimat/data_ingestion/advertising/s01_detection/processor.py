@@ -7,8 +7,8 @@ from functools import partial
 from ..tools.fingerprint_tools.compare import FingerprintsCompare
 from ..tools.fingerprints import fingerprinter
 from ..tools.interactive_tqdm import interactive_tqdm
-from ..tools.segments import Segment
 from .e00_download_audio import download_all_audio_parts
+from .e01_check_partition_cover import check_partition_cover
 from .e02_create_chunks import ChunkCreator, ChunkCreatorJob
 from .e03_already_identified_advertising import run_chunk_identification
 from .e04_group_chunks import group_chunks
@@ -66,7 +66,6 @@ async def processor(
     end_date: datetime,
     operation_name: str,
     report_folder: str | None,
-    partition: list[Segment],
     annotations: list[dict] = [],
     num_workers: int = 1,
 ):
@@ -86,6 +85,14 @@ async def processor(
         logger.info(
             f"Downloaded {len(chunks_creator_jobs)} audio files for channel {channel} between {start_date} and {end_date}"
         )
+
+    #### Check partition cover
+
+    missing_segments = check_partition_cover(
+        segments=[job.segment for job in chunks_creator_jobs],
+        start_date=start_date.isoformat(),
+        channel=channel,
+    )
 
     #### Audio processing
 
@@ -107,7 +114,6 @@ async def processor(
                     progress.update(1)
 
             progress.close()
-            logger.info(f"Audio processing: {progress.counts}")
 
             chunks: list[Chunk] = [
                 chunk
@@ -165,6 +171,7 @@ async def processor(
                 "chunk_creator": chunk_creator.params(),
                 "fingerprints_compare": fingerprints_compare.params(),
                 "fragment_classifier": fragment_classifier.params(),
+                "missing_segments": missing_segments,
             },
             local_path=reports_cache.cache_folder,
         )

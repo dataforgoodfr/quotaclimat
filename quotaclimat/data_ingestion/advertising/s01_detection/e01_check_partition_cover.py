@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -7,6 +8,8 @@ from quotaclimat.data_ingestion.advertising.s01_detection.tools.program import (
     get_channel_program,
 )
 from quotaclimat.data_ingestion.advertising.tools.segments import Segment
+
+logger = logging.getLogger(__name__)
 
 tz_paris = ZoneInfo("Europe/Paris")
 
@@ -33,7 +36,34 @@ def _all_intervals_for_program(
             yield (segment_start_date, segment_end_date)
 
 
-def partition_week(
+def _merge_segments(segments: list[Segment]) -> list[Segment]:
+    # This function merge consecutive shows in the same channel into a single show.
+    # For example, if there are two shows on TF1 on Monday from 20:00 to 21:00 and from 21:00 to 22:00, they would be merged into a single show from 20:00 to 22:00.
+    if not segments:
+        return []
+
+    # Sort shows by start time
+    segments.sort(key=lambda segment: segment.start_date)
+    merged_segments = [segments[0]]
+    for segment in segments[1:]:
+        last_segment = merged_segments[-1]
+        if (
+            segment.channel == last_segment.channel
+            and segment.start_date <= last_segment.end_date
+        ):
+            # Merge segments by extending the end time of the last segment
+            merged_segments[-1] = Segment(
+                channel=last_segment.channel,
+                start_date=last_segment.start_date,
+                end_date=max(last_segment.end_date, segment.end_date),
+            )
+        else:
+            merged_segments.append(segment)
+
+    return merged_segments
+
+
+def _partition_week(
     start_date: str,  # Start of the analyzed week, format iso 2026-12-31
     channel: str,
 ) -> list[Segment]:
@@ -50,10 +80,11 @@ def partition_week(
     ]
 
 
-def partition_week_program(
+def _partition_week_program(
     start_date: str,  # Start of the analyzed week, format iso 2026-12-31
     channel: str,
     margin: timedelta,
+    segment_size: timedelta = timedelta(minutes=10),
 ) -> list[Segment]:
     week_start_date = datetime.fromisoformat(start_date).replace(tzinfo=tz_paris)
 
@@ -73,7 +104,7 @@ def partition_week_program(
             channel=channel,
         )
         for segment_start_date, segment_end_date in _all_intervals_for_program(
-            program, week_start_date, timedelta(minutes=10)
+            program, week_start_date, segment_size
         )
     ]
 
@@ -88,7 +119,7 @@ def _ceil_to_multiple(dt: datetime, rounding_drift: timedelta) -> datetime:
     return dt + (rounding_drift - remainder)
 
 
-def add_rounding_drift(
+def _add_rounding_drift(
     segments: list[Segment], rounding_drift: timedelta
 ) -> list[Segment]:
     """This function ensures all segments start and stop at times that are multiples of the rounding_drift, to match provider file format.
@@ -105,13 +136,61 @@ def add_rounding_drift(
     ]
 
 
+def check_partition_cover(
+    segments: list[Segment], start_date: str, channel: str
+) -> None | str:
+    expected_segments = _partition_week_program(
+        channel=channel,
+        start_date=start_date,
+        margin=timedelta(minutes=15),
+        segment_size=timedelta(minutes=2),
+    )
+    # This is specific to the mediatree sent files into our bucket: they drift asked interval in order to match their two minutes file format.
+    expected_segments = _add_rounding_drift(
+        expected_segments, rounding_drift=timedelta(minutes=2)
+    )
+
+    expected_bounds = {*expected_segments}
+    actual_bounds = {*segments}
+
+    missing = sorted(expected_bounds - actual_bounds)
+    unexpected = sorted(actual_bounds - expected_bounds)
+
+    if unexpected:
+        unexpected_windows = _merge_segments(unexpected)
+        unexpected_windows_str = "\n".join(
+            [
+                f"Unexpected segment on weekday={s.start_date.weekday()} from {s.start_date.astimezone(tz_paris).strftime('%H:%M')} to {s.end_date.astimezone(tz_paris).strftime('%H:%M')}"
+                for s in unexpected_windows
+            ]
+        )
+        logger.info(
+            f"{len(unexpected)} downloaded segment(s) not expected by the program "
+            f"for channel={channel} start_date={start_date}: {unexpected_windows_str}"
+        )
+    if missing:
+        missing_windows = _merge_segments(missing)
+        missing_windows_str = "\n".join(
+            [
+                f"Missing segment on weekday={s.start_date.weekday()} from {s.start_date.astimezone(tz_paris).strftime('%H:%M')} to {s.end_date.astimezone(tz_paris).strftime('%H:%M')}"
+                for s in missing_windows
+            ]
+        )
+        logger.warning(
+            f"{len(missing)} expected segment(s) missing from downloaded segments "
+            f"for channel={channel} start_date={start_date}: {missing_windows_str}"
+        )
+
+        return missing_windows_str
+
+
 if __name__ == "__main__":
     channel = "tf1"
     start_date = "2025-05-05"
     margin = timedelta(minutes=30)
 
     print(
-        partition_week_program(
+        _partition_week_program(
             channel=channel,
             start_date=start_date,
             margin=margin,

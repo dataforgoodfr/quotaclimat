@@ -25,6 +25,7 @@ inputs = {
   acl_allowed_ips = "[]"
 
   # GPU instance defaults (see template/variables.tf) — override here if dev needs something non-default.
+  multi_zone                 = false
   gpu_zone                   = "fr-par-1"
   gpu_instance_type          = "L4-1-24G"
   gpu_image_label            = "ubuntu_jammy_gpu_os_12"

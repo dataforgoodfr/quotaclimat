@@ -72,6 +72,12 @@ variable "acl_allowed_ips" {
 
 # --- GPU instance ---
 
+variable "multi_zone" {
+  type        = bool
+  default     = false
+  description = "If true, provisions a second, independent GPU instance in fr-par-2 alongside the primary one in gpu_zone. If false, only the primary GPU instance is created."
+}
+
 variable "gpu_zone" {
   type        = string
   default     = "fr-par-1"

@@ -25,6 +25,9 @@ from typing import Optional
 from quotaclimat.data_ingestion.advertising.s01_detection.e05_classify_fragments import (
     Fragment,
 )
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.common_objects import (
+    Chunk,
+)
 
 TEMPLATE_PATH = Path(__file__).parent / "weekly_viewer.html"
 S3_BASE_URL = "https://console.scaleway.com/object-storage/buckets/fr-par/test-advertising-detection/files/ads/"
@@ -47,10 +50,53 @@ def _build_player_url(channel: str, start_epoch: float, end_epoch: float) -> str
     )
 
 
+def _compute_duration_histogram(
+    chunks: list[Chunk] | None, bin_width: float = 0.5, max_sec: float = 20.0
+) -> dict:
+    """Bucket chunk durations into fixed-width bins, with an overflow bucket for
+    anything at or past `max_sec`, so the payload stays small regardless of how
+    many chunks there are."""
+    if not chunks:
+        return {
+            "binWidth": bin_width,
+            "maxSec": max_sec,
+            "counts": [],
+            "overflow": 0,
+            "total": 0,
+            "mean": 0,
+            "median": 0,
+        }
+
+    durations = sorted(c.end_sec - c.start_sec for c in chunks)
+    n_bins = int(max_sec / bin_width)
+    counts = [0] * n_bins
+    overflow = 0
+    for d in durations:
+        if d >= max_sec:
+            overflow += 1
+        else:
+            counts[min(n_bins - 1, int(d / bin_width))] += 1
+
+    total = len(durations)
+    mid = total // 2
+    median = durations[mid] if total % 2 else (durations[mid - 1] + durations[mid]) / 2
+
+    return {
+        "binWidth": bin_width,
+        "maxSec": max_sec,
+        "counts": counts,
+        "overflow": overflow,
+        "total": total,
+        "mean": round(sum(durations) / total, 3),
+        "median": round(median, 3),
+    }
+
+
 def generate_weekly_viewer(
     fragments: list[Fragment],
     annotations: list[dict] | None = None,
     params_summary: Optional[dict] = None,
+    chunks: list[Chunk] | None = None,
 ) -> None:
     """
     Génère un fichier HTML autonome de visualisation des fragments.
@@ -61,6 +107,8 @@ def generate_weekly_viewer(
         annotations     : liste optionnelle d'annotations (testimony_table)
                           Chaque annotation : {type: str, start: float (epoch), end: float (epoch)}
         params_summary  : dictionnaire de paramètres à afficher dans le rapport
+        chunks          : liste optionnelle de Chunk (avant groupement/classification),
+                          utilisée pour afficher la répartition des tailles de chunks
     """
     params_summary = params_summary or {}
     annotations = annotations or []
@@ -181,11 +229,15 @@ def generate_weekly_viewer(
 
     unique_groups = set(f["groupId"] for f in processed_fragments if f["groupId"])
 
+    # ── Histogramme des tailles de chunks ───────────────────────
+    chunk_duration_histogram = _compute_duration_histogram(chunks)
+
     # ── Payload ────────────────────────────────────────────────
     payload = {
         "fragments": processed_fragments,
         "annotations": processed_annotations,
         "density": density,
+        "chunkDurationHistogram": chunk_duration_histogram,
         "params": params_summary,
         "timeRange": {
             "min": time_min if time_min != float("inf") else 0,

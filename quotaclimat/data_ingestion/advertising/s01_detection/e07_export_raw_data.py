@@ -101,11 +101,13 @@ class Report:
         timings: TimingCollector,
         annotations: list[dict] | None = None,
         missing_segments: str | None = None,
+        chunks: list[Chunk] | None = None,
     ):
         html_report = generate_weekly_viewer(
             fragments=fragments,
             annotations=annotations,
             params_summary=self.params,
+            chunks=chunks,
         )
 
         with open(self.html_report_path, "w", encoding="utf-8") as f:

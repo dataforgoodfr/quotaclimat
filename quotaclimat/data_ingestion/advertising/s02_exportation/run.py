@@ -231,6 +231,7 @@ async def run(since_date: datetime):
                         part_starts,
                         local_dir,
                         max_concurrent_downloads=MAX_CONCURRENT_EXPORTS,
+                        disable_progress=True,
                     )
                 except Exception as e:
                     logger.error(

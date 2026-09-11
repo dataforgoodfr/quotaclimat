@@ -61,6 +61,7 @@ from rrs.clustering.steps import (
     compute_target_clusters,
     filter_cases_by_relevance,
     merge_labels,
+    RELEVANCE_FILTER_SUBJECTS,
 )
 from rrs.utils.generate_id import get_consistent_hash
 
@@ -112,7 +113,9 @@ async def _run_day(
         return
 
     # --- Step 0: filter out cases that don't actually center on the theme ---
-    if not skip_relevance_filter:
+    # Only applied to subjects the filter has been tuned/validated for — see
+    # RELEVANCE_FILTER_SUBJECTS. Other subjects (e.g. climate) keep their prior behavior.
+    if not skip_relevance_filter and subject in RELEVANCE_FILTER_SUBJECTS:
         print("\nStep 0: Filtering cases by topical relevance...")
         docs_df = await filter_cases_by_relevance(docs_df, client, subject, max_concurrent)
         print(f"  {len(docs_df)} documents remain after relevance filtering.")

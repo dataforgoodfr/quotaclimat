@@ -87,6 +87,10 @@ SEED_LABELS_BY_SUBJECT: dict[str, list[str]] = {
 # Keep for backwards compatibility
 SEED_LABELS = SEED_LABELS_BY_SUBJECT["climate"]
 
+# Subjects the Step 0 relevance filter has been tuned/validated for. Climate is deliberately
+# excluded — its clustering behavior must stay exactly as it was before this filter existed.
+RELEVANCE_FILTER_SUBJECTS: set[str] = {"insecurity"}
+
 
 def get_seed_labels(subject: str) -> list[str]:
     return SEED_LABELS_BY_SUBJECT.get(subject, [])

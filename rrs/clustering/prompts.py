@@ -82,6 +82,21 @@ def _relevance_prompt(text: str, subject: str = "climate") -> str:
 
 def _step1_prompt(sentences: list[str], subject: str = "climate") -> str:
     domain = _DOMAIN_LABELS.get(subject, subject)
+    if subject == "climate":
+        # Kept byte-for-byte identical to the pre-existing behavior: climate's clustering
+        # quality was not part of the "insecurity" precision fix and must not change.
+        return (
+            "Given these sentences from a news transcript, identify "
+            "narrative(s)/concepts they express. Generate a concise, meaningful label for each distinct "
+            "narrative present. Limit yourself to 1 or 2 labels.\n"
+            "Rules:\n"
+            '- Return ONLY a JSON list of label strings with double quotes, e.g. ["label 1", "label 2"]. No code fences.\n'
+            "- Labels must describe specific claims, not generic categories.\n"
+            "- Do NOT return meaningless names such as 'new_label_1' or 'unknown_topic'.\n"
+            f"- If no {domain} misinformation is present, return only []. Nothing else.\n"
+            "- The labels must be in french.\n"
+            f"Sentences: {sentences}"
+        )
     return (
         "Given these sentences from a news transcript, identify "
         "narrative(s)/concepts they express. Generate a concise, meaningful label for each distinct "
@@ -106,6 +121,22 @@ def _step1_prompt(sentences: list[str], subject: str = "climate") -> str:
 def _step2_prompt(label_list: list[str], subject: str = "climate") -> str:
     domain = _DOMAIN_LABELS.get(subject, subject)
     example = _DOMAIN_EXAMPLES.get(subject, "")
+    if subject == "climate":
+        # Kept byte-for-byte identical to the pre-existing behavior: climate's clustering
+        # quality was not part of the "insecurity" precision fix and must not change.
+        return (
+            f"You are merging a list of French {domain}-discussion labels into a shorter, cleaner list.\n"
+            "Group labels that share the same core subject and overall message, even if the wording differs.\n"
+            "Be AGGRESSIVE: if several labels all make a similar point about the same topic, collapse them into one.\n"
+            + (f"Example: {example}\n" if example else "")
+            + "Rules:\n"
+            "- Merge any labels that share the same subject AND a closely related claim AND are on the same side of a debate.\n"
+            "- Write the merged label as a short, conversational French sentence starting with its subject.\n"
+            "- Prefer fewer, broader labels over many narrow ones.\n"
+            "- Do NOT keep two labels if they could reasonably be covered by one.\n"
+            f"Here is the list of labels:\n{label_list}.\n"
+            "Produce the final merged list as a JSON array in French, using double quotes. No code fences."
+        )
     return (
         f"You are merging a list of French {domain}-discussion labels into a shorter, cleaner list.\n"
         "Merge two labels ONLY if they express the SAME underlying claim in different words — same "

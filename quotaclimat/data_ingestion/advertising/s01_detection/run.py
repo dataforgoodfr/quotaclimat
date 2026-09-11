@@ -75,7 +75,7 @@ if __name__ == "__main__":
                 channel = rolling_channels[rolling_index]
         assert channel is not None, "Need channel to run the detection process"
 
-        start_date = os.environ.get("START_DATE", "2026-08-31")
+        start_date = os.environ.get("START_DATE", "2026-08-24")
         if not start_date:
             start_date = _get_next_start_date_from_db(channel)
         if not start_date:

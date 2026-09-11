@@ -72,7 +72,10 @@ async def processor(
     timings = TimingCollector()
 
     fingerprint_hash = fingerprinter.params_hash()
-    logger.info(f"Process is run with fingerprint_hash={fingerprint_hash}")
+    chunk_creator_hash = chunk_creator.params_hash()
+    logger.info(
+        f"Process is run with fingerprint_hash={fingerprint_hash} chunk_creator_hash={chunk_creator_hash}"
+    )
 
     #### Download all weeks audio segments
 
@@ -97,7 +100,9 @@ async def processor(
     #### Audio processing
 
     with timings.measure("audio_processing"):
-        with LocalCache(name="chunks", version=fingerprint_hash) as chunk_cache:
+        with LocalCache(
+            name="chunks", version=f"{fingerprint_hash}_{chunk_creator_hash}"
+        ) as chunk_cache:
             progress = interactive_tqdm(
                 total=len(chunks_creator_jobs), desc="Processing audio segments"
             )
@@ -179,6 +184,7 @@ async def processor(
             annotations=annotations,
             timings=timings,
             missing_segments=missing_segments,
+            chunks=chunks,
         )
 
         print(f"""Reports generated:

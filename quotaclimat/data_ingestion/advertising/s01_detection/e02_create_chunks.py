@@ -15,7 +15,7 @@ from typing import List
 
 import librosa
 import numpy as np
-from scipy.ndimage import maximum_filter1d
+from scipy.ndimage import maximum_filter1d, percentile_filter
 
 from quotaclimat.data_ingestion.advertising.tools.correlation import (
     find_best_correlation,
@@ -35,6 +35,11 @@ from .tools.common_objects import Chunk
 _CORRELATION_SEARCH_SEC = 3.0
 _CORRELATION_MATCH_SEC = 0.15
 _CORRELATION_THRESHOLD = 0.6
+
+# Bump this when the detection algorithm itself changes (not just its parameter
+# values), so that params_hash() changes too and the on-disk chunk cache is
+# invalidated even though the visible config didn't change.
+_ALGO_VERSION = 2
 
 
 @dataclass
@@ -129,15 +134,24 @@ class ChunkCreator:
         Step 1: build a binary mask of silent frames.
 
         A frame is silent if its energy is below the `silence_percentile`
-        of the full signal. The mask is dilated by ~100ms to cover
-        silence edges.
+        computed *locally*, over a window of +/- seconds_reserved_for_previous_segment
+        around it, rather than over the whole signal. This is what makes boundary
+        detection reproducible across two independent runs that only share a few
+        seconds of overlapping audio (this segment's job and the previous/next
+        segment's job): since the threshold at a given point only depends on audio
+        within that shared window, both runs land on the exact same peak there,
+        so one job's last chunk end and the neighbouring job's first chunk start
+        always coincide instead of leaving a gap (or overlap).
+
+        The mask is then dilated by ~100ms to cover silence edges.
         """
-        non_zero = energy[energy > 0]
-        if len(non_zero) > 0:
-            silence_threshold = np.percentile(non_zero, self.silence_percentile)
-        else:
-            silence_threshold = np.percentile(energy, self.silence_percentile)
-        silence_mask = (energy <= silence_threshold).astype(float)
+        window_frames = (
+            2 * int(round(self.seconds_reserved_for_previous_segment * self._fps)) + 1
+        )
+        local_threshold = percentile_filter(
+            energy, percentile=self.silence_percentile, size=window_frames, mode="nearest"
+        )
+        silence_mask = (energy <= local_threshold).astype(float)
 
         dilation_frames = max(1, int(0.1 * self._fps))
         silence_mask = maximum_filter1d(silence_mask, size=dilation_frames * 2 + 1)
@@ -303,10 +317,13 @@ class ChunkCreator:
 
     def params(self) -> dict:
         return {
+            "algo_version": _ALGO_VERSION,
             "sr": self.sr,
             "hop_length": self.hop_length,
             "min_chunk_sec": self.min_chunk_sec,
             "silence_percentile": self.silence_percentile,
+            "seconds_reserved_for_previous_segment": self.seconds_reserved_for_previous_segment,
+            "margin_extracted_from_next_segment": self.margin_extracted_from_next_segment,
         }
 
     def params_hash(self) -> str:

@@ -390,6 +390,7 @@ async def download_media_parts(
     dest_dir: str,
     formats: tuple[str, ...] = EXPORT_MEDIA_FORMATS,
     max_concurrent_downloads: int = 10,
+    disable_progress: bool = False,
 ) -> dict[datetime, dict[str, str]]:
     """Download and extract exactly the given 2-minutes tar archives for `channel`
     (each identified by its UTC start datetime, 2-minutes aligned) into `dest_dir`,
@@ -410,6 +411,7 @@ async def download_media_parts(
         total=len(sorted_starts),
         desc=f"Downloading {channel} parts",
         unit="file",
+        disable=disable_progress,
     )
 
     parts: dict[datetime, dict[str, str]] = {}

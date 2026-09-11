@@ -3,8 +3,8 @@ chunk_comparator.py
 ===================
 Génère un fichier HTML autonome pour comparer visuellement deux chunks
 côte à côte, avec toutes les courbes audio intermédiaires (RMS, centroïde
-spectral, ZCR, masque de silence, dissimilarité cosinus, courbe de nouveauté,
-spectrogramme + constellation map).
+spectral, ZCR, masque de silence, spectrogramme + constellation map) telles
+que produites par le pipeline de segmentation réel (ChunkCreator).
 
 Ajoute ±1 seconde de contexte autour de chaque chunk pour voir les
 frontières de découpage.
@@ -37,7 +37,7 @@ from pathlib import Path
 import librosa
 import numpy as np
 import scipy.io.wavfile
-from scipy.ndimage import maximum_filter, maximum_filter1d, uniform_filter1d
+from scipy.ndimage import maximum_filter
 
 from quotaclimat.data_ingestion.advertising.s01_detection.e02_create_chunks import (
     Chunk,
@@ -98,50 +98,21 @@ def _extract_chunk_data(
 
     window_duration = len(y) / cc.sr
     fps = cc.sr / cc.hop_length
+    fp = cc.fingerprinter
 
-    # ── Features frame-level ────────────────────────────
-    mfcc = librosa.feature.mfcc(
-        y=y, sr=cc.sr, n_mfcc=cc.n_mfcc, hop_length=cc.hop_length
-    )
-    delta = librosa.feature.delta(mfcc)
-    energy = librosa.feature.rms(y=y, hop_length=cc.hop_length)[0]
-    centroid = librosa.feature.spectral_centroid(
-        y=y, sr=cc.sr, hop_length=cc.hop_length
-    )[0]
-    zcr = librosa.feature.zero_crossing_rate(y, hop_length=cc.hop_length)[0]
+    # ── Features frame-level (identiques au pipeline réel, cf. ChunkCreator.extract_features) ──
+    features = cc.extract_features(y)
+    energy = features["energy"]
+    centroid = features["centroid"]
+    zcr = features["zcr"]
 
     n_frames = energy.shape[0]
 
-    # ── Silence mask ────────────────────────────────────
-    silence_threshold = np.percentile(energy, cc.silence_percentile)
-    silence_mask = (energy < silence_threshold).astype(float)
-    dilation_frames = max(1, int(0.1 * fps))
-    silence_mask_dilated = maximum_filter1d(silence_mask, size=dilation_frames * 2 + 1)
-
-    # ── Cosine dissimilarity ────────────────────────────
-    centroid_max = centroid.max() if centroid.max() > 0 else 1.0
-    stack = np.vstack([mfcc, delta, energy, centroid / centroid_max, zcr])
-
-    kernel = max(4, int(cc.context_sec * fps))
-    cosine_dissim = np.zeros(n_frames)
-    norms = np.linalg.norm(stack, axis=0, keepdims=True) + 1e-8
-    X = stack / norms
-
-    for i in range(kernel, n_frames - kernel):
-        past = X[:, i - kernel : i].mean(axis=1)
-        future = X[:, i : i + kernel].mean(axis=1)
-        cos_sim = np.dot(past, future) / (
-            np.linalg.norm(past) * np.linalg.norm(future) + 1e-8
-        )
-        cosine_dissim[i] = 1.0 - cos_sim
-
-    # ── Novelty curve ───────────────────────────────────
-    novelty = silence_mask_dilated * cosine_dissim
-    smooth_frames = max(3, int(cc.novelty_smooth_sec * fps))
-    novelty_smooth = uniform_filter1d(novelty, size=smooth_frames)
+    # ── Silence mask (identique à ChunkCreator._compute_silence_mask) ──
+    silence_mask_dilated = cc._compute_silence_mask(energy)
 
     # ── Spectrogram ─────────────────────────────────────
-    D = np.abs(librosa.stft(y, n_fft=cc.n_fft, hop_length=cc.hop_length))
+    D = np.abs(librosa.stft(y, n_fft=fp.n_fft, hop_length=cc.hop_length))
     D_db = librosa.amplitude_to_db(D, ref=np.max)
     # Downsample frequency axis
     freq_bins = D_db.shape[0]
@@ -158,18 +129,18 @@ def _extract_chunk_data(
     y_chunk = y[chunk_s_start:chunk_s_end]
     if len(y_chunk) >= cc.sr * 0.5:
         D_chunk = np.abs(
-            librosa.stft(y_chunk, n_fft=cc.n_fft, hop_length=cc.hop_length)
+            librosa.stft(y_chunk, n_fft=fp.n_fft, hop_length=cc.hop_length)
         )
         D_chunk_db = librosa.amplitude_to_db(D_chunk, ref=np.max)
         D_chunk_norm = (D_chunk_db - D_chunk_db.min()) / (
             D_chunk_db.max() - D_chunk_db.min() + 1e-8
         )
-        local_max = maximum_filter(D_chunk_norm, size=cc.neighborhood)
-        is_peak = (D_chunk_norm == local_max) & (D_chunk_norm > cc.min_amplitude)
+        local_max = maximum_filter(D_chunk_norm, size=fp.neighborhood)
+        is_peak = (D_chunk_norm == local_max) & (D_chunk_norm > fp.min_amplitude)
         freq_idxs, time_idxs = np.where(is_peak)
         if len(freq_idxs) > 0:
             amplitudes = D_chunk_norm[freq_idxs, time_idxs]
-            order = np.argsort(-amplitudes)[: cc.n_peaks]
+            order = np.argsort(-amplitudes)[: fp.n_peaks]
             # Décaler les time_idxs pour les positionner dans la fenêtre paddée
             chunk_frame_offset = int(chunk_rel_start * fps)
             constellation_peaks = [
@@ -220,8 +191,6 @@ def _extract_chunk_data(
         "centroid": [round(float(v), 2) for v in centroid],
         "zcr": [round(float(v), 6) for v in zcr],
         "silenceMask": [round(float(v), 2) for v in silence_mask_dilated],
-        "cosineDissim": [round(float(v), 6) for v in cosine_dissim],
-        "novelty": [round(float(v), 6) for v in novelty_smooth],
         # Spectrogramme (matrice 2D aplatie + dimensions)
         "spectrogram": {
             "data": [round(float(v), 3) for v in D_norm.flatten()],

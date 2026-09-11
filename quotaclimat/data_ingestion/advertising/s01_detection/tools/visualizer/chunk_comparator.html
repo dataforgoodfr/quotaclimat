@@ -640,16 +640,6 @@
       drawSilenceMask(ctx, chunk.silenceMask, chunk.frameTimes, w, h, color, chunk);
     });
 
-    // 7. Cosine dissimilarity
-    addChartRow("Dissimilarité Cosinus", (ctx, chunk, w, h, color) => {
-      drawLinePlot(ctx, chunk.cosineDissim, chunk.frameTimes, w, h, color, chunk, "CosDissim");
-    });
-
-    // 8. Novelty curve (final combined)
-    addChartRow("Courbe de Nouveauté (silence × dissimilarité)", (ctx, chunk, w, h, color) => {
-      drawLinePlot(ctx, chunk.novelty, chunk.frameTimes, w, h, color, chunk, "Novelty");
-    });
-
     // ── Params section ─────────────────────────────────
     const paramsEl = document.getElementById("params-section");
     let paramsHtml = `<details><summary>Paramètres ChunkCreator</summary><div class="params-grid">`;

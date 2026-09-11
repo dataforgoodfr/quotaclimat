@@ -46,7 +46,8 @@ def _get_s3_file_basename(
     # franceinfotv_2026-09-07T04-36-00Z_2026-09-07T04-38-00Z.tar
     start_date_utc = start_date.astimezone(tz=ZoneInfo("UTC"))
     end_date_utc = end_date.astimezone(tz=ZoneInfo("UTC"))
-    return f"{channel}_{start_date_utc.strftime('%Y-%m-%dT%H-%M-%SZ')}_{end_date_utc.strftime('%Y-%m-%dT%H-%M-%SZ')}"
+    mediatree_channel = MEDIATREE_CHANNEL_MAPPING.get(channel, channel)
+    return f"{mediatree_channel}_{start_date_utc.strftime('%Y-%m-%dT%H-%M-%SZ')}_{end_date_utc.strftime('%Y-%m-%dT%H-%M-%SZ')}"
 
 
 def _get_s3_archive_key_for_part(

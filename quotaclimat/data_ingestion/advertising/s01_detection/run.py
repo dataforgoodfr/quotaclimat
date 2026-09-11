@@ -57,7 +57,7 @@ if __name__ == "__main__":
         getLogger()
         sentry_init()
 
-        channel = os.environ.get("CHANNEL", "fr3-idf")
+        channel = os.environ.get("CHANNEL", "tf1")
         if not channel:
             channel = get_scheduled_rolling_channel()
         if not channel:

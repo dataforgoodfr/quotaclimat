@@ -32,7 +32,9 @@ logger = logging.getLogger(__name__)
 BUCKET_NAME = os.environ.get("ADVERTISING_BUCKET_NAME")
 AD_S3_PREFIX = "ads"
 
-MARGIN_ON_MEDIA_EXPORT = timedelta(seconds=0.1)
+MARGIN_ON_MEDIA_EXPORT = timedelta(
+    seconds=float(os.environ.get("MARGIN_ON_MEDIA_EXPORT", 0.1))
+)
 
 MIN_BYTES_PER_SECOND_VIDEO = (
     10_000  # ~80 kbps; below this threshold the mp4 is likely corrupted

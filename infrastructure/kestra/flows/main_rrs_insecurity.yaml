@@ -37,9 +37,6 @@ triggers:
       - type: io.kestra.plugin.core.condition.ExecutionFlowCondition
         namespace: rrs
         flowId: rrs-climate
-      - type: io.kestra.plugin.core.condition.ExecutionStatusCondition
-        in:
-          - SUCCESS
 
 tasks:
   - id: analyse_keywords

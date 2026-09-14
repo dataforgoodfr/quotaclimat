@@ -13,13 +13,11 @@ from typing import Dict, List
 import numpy as np
 from tqdm import tqdm
 
-from .tools.common_objects import Chunk, Fingerprint
-from .tools.fingerprint.pairs import (
-    are_fingerprints_similar,
-    build_pairs_index,
-    make_params_hash,
-    query_pairs_index,
+from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.compare import (
+    FingerprintsCompare,
 )
+
+from .tools.common_objects import Chunk, Fingerprint
 
 logger = logging.getLogger(__name__)
 
@@ -46,15 +44,7 @@ class ChunkGroup:
 
 def _cluster(
     chunks: list[Chunk],
-    min_matching_pairs: int,
-    similarity_threshold: float,
-    freq_tol: int = 2,
-    dt_tol: int = 1,
-    offset_tol: int = 2,
-    duration_tol: float = 0.3,
-    rms_tol: float = 0.05,
-    centroid_tol: float = 0.05,
-    zcr_tol: float = 0.1,
+    compare: FingerprintsCompare,
 ) -> Dict[int, List[int]]:
     """
     Group similar chunks using inverted index on pair sums + Union-Find.
@@ -80,12 +70,12 @@ def _cluster(
 
     # Step 1: build index over all chunks
     fps = [c.fingerprint for c in tqdm(chunks, desc="Indexation fingerprints")]
-    index = build_pairs_index(fps, freq_tol, dt_tol)
+    index = compare.build_similarity_index(fps)
 
     # Step 2: for each chunk query the index to find candidates with j > i
     candidates: set[tuple[int, int]] = set()
     for i, fp in tqdm(enumerate(fps), desc="Recherche candidats", total=n):
-        for j in query_pairs_index(fp, index, freq_tol, dt_tol, min_matching_pairs):
+        for j in index.get_similar_indices(fp):
             if j > i:
                 candidates.add((i, j))
 
@@ -97,21 +87,11 @@ def _cluster(
     # Step 4: full comparison on candidates only
     matches = 0
     for i, j in tqdm(
-        candidates, desc="Comparaison fingerprints", total=len(candidates),
+        candidates,
+        desc="Comparaison fingerprints",
+        total=len(candidates),
     ):
-        if are_fingerprints_similar(
-            chunks[i].fingerprint,
-            chunks[j].fingerprint,
-            min_matching_pairs,
-            similarity_threshold,
-            freq_tol,
-            dt_tol,
-            offset_tol,
-            duration_tol,
-            rms_tol,
-            centroid_tol,
-            zcr_tol,
-        ):
+        if compare.is_similar(chunks[i].fingerprint, chunks[j].fingerprint):
             union(i, j)
             matches += 1
 
@@ -124,81 +104,29 @@ def _cluster(
     return dict(groups)
 
 
-class ChunkGrouping:
-    def __init__(
-        self,
-        similarity_threshold: float = 0.08,  # Min fingerprint score to consider two chunks identical.
-        min_matching_pairs: int = 5,  # Min close pairs before considering a match.
-        freq_tol: int = 2,  # Frequency bin tolerance for pair matching (~15.6 Hz per bin).
-        dt_tol: int = 1,  # Time delta tolerance for pair matching (~64 ms per frame).
-        offset_tol: int = 2,  # Temporal coherence tolerance (~128 ms).
-        duration_tol: float = 0.3,
-        rms_tol: float = 0.05,
-        centroid_tol: float = 0.05,
-        zcr_tol: float = 0.1,
-    ):
-        self.similarity_threshold = similarity_threshold
-        self.min_matching_pairs = min_matching_pairs
-        self.freq_tol = freq_tol
-        self.dt_tol = dt_tol
-        self.offset_tol = offset_tol
-        self.duration_tol = duration_tol
-        self.rms_tol = rms_tol
-        self.centroid_tol = centroid_tol
-        self.zcr_tol = zcr_tol
+def group_chunks(source: List[Chunk], compare: FingerprintsCompare) -> list[ChunkGroup]:
+    # Filter out very short chunks
+    chunks = [c for c in source if c.fingerprint.duration_sec >= 0.5]
+    logger.debug(f"{len(chunks)} chunks to group")
 
-    def params(self) -> dict:
-        return {
-            "similarity_threshold": self.similarity_threshold,
-            "min_matching_pairs": self.min_matching_pairs,
-            "freq_tol": self.freq_tol,
-            "dt_tol": self.dt_tol,
-            "offset_tol": self.offset_tol,
-            "duration_tol": self.duration_tol,
-            "rms_tol": self.rms_tol,
-            "centroid_tol": self.centroid_tol,
-            "zcr_tol": self.zcr_tol,
-        }
+    groups = _cluster(chunks, compare)
 
-    def params_hash(self) -> str:
-        return make_params_hash(self.params())
+    report_groups: list[ChunkGroup] = []
+    for member_idxs in groups.values():
+        members = sorted([chunks[i] for i in member_idxs], key=lambda c: c.start_sec)
+        durations = [c.fingerprint.duration_sec for c in members]
 
-    def run(self, source: List[Chunk]) -> list[ChunkGroup]:
-        # Filter out very short chunks
-        chunks = [c for c in source if c.fingerprint.duration_sec >= 0.5]
-        logger.debug(f"{len(chunks)} chunks to group")
-
-        groups = _cluster(
-            chunks,
-            self.min_matching_pairs,
-            self.similarity_threshold,
-            self.freq_tol,
-            self.dt_tol,
-            self.offset_tol,
-            self.duration_tol,
-            self.rms_tol,
-            self.centroid_tol,
-            self.zcr_tol,
+        report_groups.append(
+            ChunkGroup(
+                count=len(members),
+                duration_mean=round(float(np.mean(durations)), 2),
+                duration_std=round(float(np.std(durations)), 2),
+                occurrences=members,
+            )
         )
 
-        report_groups: list[ChunkGroup] = []
-        for member_idxs in groups.values():
-            members = sorted(
-                [chunks[i] for i in member_idxs], key=lambda c: c.start_sec
-            )
-            durations = [c.fingerprint.duration_sec for c in members]
-
-            report_groups.append(
-                ChunkGroup(
-                    count=len(members),
-                    duration_mean=round(float(np.mean(durations)), 2),
-                    duration_std=round(float(np.std(durations)), 2),
-                    occurrences=members,
-                )
-            )
-
-        report_groups.sort(key=lambda g: -g.count)
-        return report_groups
+    report_groups.sort(key=lambda g: -g.count)
+    return report_groups
 
 
 def canonical(chunks: list[Chunk], freq_tol: int = 2, dt_tol: int = 1) -> Chunk:
@@ -223,7 +151,7 @@ def canonical(chunks: list[Chunk], freq_tol: int = 2, dt_tol: int = 1) -> Chunk:
     # Pool all tuples tagged by occurrence index
     all_tuples = []  # (f1, f2, dt, t_offset, occurrence_idx)
     for occ_idx, chunk in enumerate(chunks):
-        for pair in (chunk.fingerprint.pairs or []):
+        for pair in chunk.fingerprint.pairs or []:
             all_tuples.append((*pair[:4], occ_idx))
 
     if not all_tuples:
@@ -253,21 +181,25 @@ def canonical(chunks: list[Chunk], freq_tol: int = 2, dt_tol: int = 1) -> Chunk:
             other = all_tuples_arr[jdx]
             if int(other[4]) in cluster_occurrences:
                 continue  # one per occurrence
-            if (abs(int(ref[0]) - int(other[0])) <= freq_tol
-                    and abs(int(ref[1]) - int(other[1])) <= freq_tol
-                    and abs(int(ref[2]) - int(other[2])) <= dt_tol):
+            if (
+                abs(int(ref[0]) - int(other[0])) <= freq_tol
+                and abs(int(ref[1]) - int(other[1])) <= freq_tol
+                and abs(int(ref[2]) - int(other[2])) <= dt_tol
+            ):
                 visited[jdx] = True
                 cluster_members.append(jdx)
                 cluster_occurrences.add(int(other[4]))
 
         if len(cluster_occurrences) >= min_freq:
             members = all_tuples_arr[cluster_members]
-            canonical_pairs.append((
-                int(np.median(members[:, 0])),
-                int(np.median(members[:, 1])),
-                int(np.median(members[:, 2])),
-                int(np.median(members[:, 3])),
-            ))
+            canonical_pairs.append(
+                (
+                    int(np.median(members[:, 0])),
+                    int(np.median(members[:, 1])),
+                    int(np.median(members[:, 2])),
+                    int(np.median(members[:, 3])),
+                )
+            )
 
     # Fallback: if too few stable pairs, take pairs from the richest occurrence
     if len(canonical_pairs) < MIN_CANONICAL_PAIRS:
@@ -306,12 +238,12 @@ def _build_canonical_chunk(
     )
 
 
-def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
+def debug_pair(a: Chunk, b: Chunk, compare: "FingerprintsCompare") -> None:
     """
     Print a step-by-step explanation of why two chunks are or are not grouped.
 
     Usage:
-        debug_pair(chunks[i], chunks[j], chunk_grouping)
+        debug_pair(chunks[i], chunks[j], fingerprints_compare)
     """
     PASS = "✓"
     FAIL = "✗"
@@ -329,8 +261,12 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
     print("\n[1] Minimum duration filter (>= 0.5 s)")
     a_ok = a.fingerprint.duration_sec >= 0.5
     b_ok = b.fingerprint.duration_sec >= 0.5
-    print(f"    A duration: {a.fingerprint.duration_sec:.3f}s  {PASS if a_ok else FAIL}")
-    print(f"    B duration: {b.fingerprint.duration_sec:.3f}s  {PASS if b_ok else FAIL}")
+    print(
+        f"    A duration: {a.fingerprint.duration_sec:.3f}s  {PASS if a_ok else FAIL}"
+    )
+    print(
+        f"    B duration: {b.fingerprint.duration_sec:.3f}s  {PASS if b_ok else FAIL}"
+    )
     if not (a_ok and b_ok):
         print(
             "  → BLOCKED: one or both chunks are too short and would be filtered out."
@@ -343,17 +279,17 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
     fp_a, fp_b = a.fingerprint, b.fingerprint
 
     dur_diff = abs(fp_a.duration_sec - fp_b.duration_sec)
-    dur_ok = dur_diff <= grouping.duration_tol
+    dur_ok = dur_diff <= compare.duration_tol
     print(
-        f"    duration |A-B| = {dur_diff:.3f}s  (tol={grouping.duration_tol})  {PASS if dur_ok else FAIL}"
+        f"    duration |A-B| = {dur_diff:.3f}s  (tol={compare.duration_tol})  {PASS if dur_ok else FAIL}"
     )
 
     rms_ok = True
     if fp_a.energy_mean > 0 and fp_b.energy_mean > 0:
         rms_diff = rel_diff(fp_a.energy_mean, fp_b.energy_mean)
-        rms_ok = rms_diff <= grouping.rms_tol
+        rms_ok = rms_diff <= compare.rms_tol
         print(
-            f"    energy_mean rel_diff = {rms_diff:.4f}  (tol={grouping.rms_tol})  {PASS if rms_ok else FAIL}"
+            f"    energy_mean rel_diff = {rms_diff:.4f}  (tol={compare.rms_tol})  {PASS if rms_ok else FAIL}"
             f"  (A={fp_a.energy_mean:.4f}, B={fp_b.energy_mean:.4f})"
         )
     else:
@@ -362,9 +298,9 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
     centroid_ok = True
     if fp_a.spectral_centroid > 0 and fp_b.spectral_centroid > 0:
         centroid_diff = rel_diff(fp_a.spectral_centroid, fp_b.spectral_centroid)
-        centroid_ok = centroid_diff <= grouping.centroid_tol
+        centroid_ok = centroid_diff <= compare.centroid_tol
         print(
-            f"    spectral_centroid rel_diff = {centroid_diff:.4f}  (tol={grouping.centroid_tol})  {PASS if centroid_ok else FAIL}"
+            f"    spectral_centroid rel_diff = {centroid_diff:.4f}  (tol={compare.centroid_tol})  {PASS if centroid_ok else FAIL}"
             f"  (A={fp_a.spectral_centroid:.1f}, B={fp_b.spectral_centroid:.1f})"
         )
     else:
@@ -373,9 +309,9 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
     zcr_ok = True
     if fp_a.zcr_mean > 0 and fp_b.zcr_mean > 0:
         zcr_diff = rel_diff(fp_a.zcr_mean, fp_b.zcr_mean)
-        zcr_ok = zcr_diff <= grouping.zcr_tol
+        zcr_ok = zcr_diff <= compare.zcr_tol
         print(
-            f"    zcr_mean rel_diff = {zcr_diff:.4f}  (tol={grouping.zcr_tol})  {PASS if zcr_ok else FAIL}"
+            f"    zcr_mean rel_diff = {zcr_diff:.4f}  (tol={compare.zcr_tol})  {PASS if zcr_ok else FAIL}"
             f"  (A={fp_a.zcr_mean:.4f}, B={fp_b.zcr_mean:.4f})"
         )
     else:
@@ -400,9 +336,9 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
     arr_b = np.array(pairs_b, dtype=np.int32)
 
     close = (
-        (np.abs(arr_a[:, None, 0] - arr_b[None, :, 0]) <= grouping.freq_tol)
-        & (np.abs(arr_a[:, None, 1] - arr_b[None, :, 1]) <= grouping.freq_tol)
-        & (np.abs(arr_a[:, None, 2] - arr_b[None, :, 2]) <= grouping.dt_tol)
+        (np.abs(arr_a[:, None, 0] - arr_b[None, :, 0]) <= compare.freq_tol)
+        & (np.abs(arr_a[:, None, 1] - arr_b[None, :, 1]) <= compare.freq_tol)
+        & (np.abs(arr_a[:, None, 2] - arr_b[None, :, 2]) <= compare.dt_tol)
     )
 
     matched_a, matched_b = [], []
@@ -415,13 +351,13 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
             matched_b.append(best)
 
     n_matched = len(matched_a)
-    match_ok = n_matched >= grouping.min_matching_pairs
+    match_ok = n_matched >= compare.min_matching_pairs
     print(
-        f"    close matches: {n_matched}  (min={grouping.min_matching_pairs})  {PASS if match_ok else FAIL}"
+        f"    close matches: {n_matched}  (min={compare.min_matching_pairs})  {PASS if match_ok else FAIL}"
     )
 
     if n_matched > 0:
-        print(f"    Sample matches (first 5):")
+        print("    Sample matches (first 5):")
         for k in range(min(5, n_matched)):
             ia, ib = matched_a[k], matched_b[k]
             pa, pb = arr_a[ia], arr_b[ib]
@@ -441,7 +377,7 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
     best_offset = 0
     left = 0
     for right in range(len(sorted_offsets)):
-        while sorted_offsets[right] - sorted_offsets[left] > 2 * grouping.offset_tol:
+        while sorted_offsets[right] - sorted_offsets[left] > 2 * compare.offset_tol:
             left += 1
         count = right - left + 1
         if count > best_count:
@@ -450,10 +386,12 @@ def debug_pair(a: Chunk, b: Chunk, grouping: "ChunkGrouping") -> None:
 
     min_pairs = min(len(arr_a), len(arr_b)) + 1
     score = best_count / min_pairs
-    print(f"    best offset cluster: center={best_offset}, coherent={best_count}/{n_matched}")
+    print(
+        f"    best offset cluster: center={best_offset}, coherent={best_count}/{n_matched}"
+    )
     print(f"    score = {best_count} / {min_pairs} = {score:.4f}")
-    print(f"    similarity_threshold = {grouping.similarity_threshold}")
-    score_ok = score >= grouping.similarity_threshold
+    print(f"    similarity_threshold = {compare.similarity_threshold}")
+    score_ok = score >= compare.similarity_threshold
     print(
         f"    {PASS if score_ok else FAIL} score {'≥' if score_ok else '<'} threshold"
     )
@@ -618,9 +556,9 @@ if __name__ == "__main__":
                 ],
             }
         ),
-        ChunkGrouping(
-            similarity_threshold=0.05,
+        FingerprintsCompare(
             min_matching_pairs=5,
+            similarity_threshold=0.05,
             duration_tol=0.4,
             rms_tol=0.05,
             centroid_tol=0.05,

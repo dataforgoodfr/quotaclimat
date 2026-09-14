@@ -132,6 +132,11 @@ def parse_reponse_subtitle(response_sub, channel = None, channel_program = "", c
                         inplace=True
             )
 
+            logging.debug("normalizing channel_name")
+            # Mediatree API returns "sudradio" (no dash) - normalize to "sud-radio" so it matches
+            # the channel_name used everywhere else (channels list, program metadata, DB records)
+            new_df['channel_name'] = new_df['channel_name'].apply(lambda x: x if x != "sudradio" else "sud-radio")
+
             logging.debug("setting channel_title")
             new_df['channel_title'] = new_df.apply(lambda x: get_channel_title_for_name(x['channel_name'], country=country), axis=1)
             

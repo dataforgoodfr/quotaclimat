@@ -629,7 +629,7 @@ version = "4.15.0"
 description = "Screen-scraping library"
 optional = false
 python-versions = ">=3.7.0"
-groups = ["main", "pulsar"]
+groups = ["main"]
 files = [
     {file = "beautifulsoup4-4.15.0-py3-none-any.whl", hash = "sha256:d6f88de62e1d4e38ecb1077eb9724cd0eff29d2a08ca16a401e9b9e93f117cf9"},
     {file = "beautifulsoup4-4.15.0.tar.gz", hash = "sha256:288e3ca7d54b06f2ac191970bc275c1939cb46d450b255bf6718b04aa37ab4f7"},
@@ -1950,27 +1950,6 @@ files = [
     {file = "decorator-5.3.1-py3-none-any.whl", hash = "sha256:f47fe6fdbd2edd623ecfe36875d37aba411624e2670dd395dddae1358689bb3c"},
     {file = "decorator-5.3.1.tar.gz", hash = "sha256:4cbcdd55a6efadb9dbea26b858f4fb3264567b52d69ca0d25b721b553f60ea82"},
 ]
-
-[[package]]
-name = "deep-translator"
-version = "1.11.4"
-description = "A flexible free and unlimited python tool to translate between different languages in a simple way using multiple translators"
-optional = false
-python-versions = ">=3.7,<4.0"
-groups = ["pulsar"]
-files = [
-    {file = "deep_translator-1.11.4-py3-none-any.whl", hash = "sha256:d635df037e23fa35d12fd42dab72a0b55c9dd19e6292009ee7207e3f30b9e60a"},
-    {file = "deep_translator-1.11.4.tar.gz", hash = "sha256:801260c69231138707ea88a0955e484db7d40e210c9e0ae0f77372ffda5f4bf5"},
-]
-
-[package.dependencies]
-beautifulsoup4 = ">=4.9.1,<5.0.0"
-requests = ">=2.23.0,<3.0.0"
-
-[package.extras]
-ai = ["openai (>=0.27.6,<0.28.0) ; python_full_version >= \"3.7.1\" and python_full_version < \"4.0.0\""]
-docx = ["docx2txt (>=0.8,<0.9)"]
-pdf = ["pypdf (>=3.3.0,<4.0.0)"]
 
 [[package]]
 name = "deepdiff"
@@ -8834,7 +8813,7 @@ version = "2.8.4"
 description = "A modern CSS selector implementation for Beautiful Soup."
 optional = false
 python-versions = ">=3.9"
-groups = ["main", "pulsar"]
+groups = ["main"]
 files = [
     {file = "soupsieve-2.8.4-py3-none-any.whl", hash = "sha256:e7e6b0769c8f51ed59acab6e994b00621096cfb1c640a7509295987388fbaf65"},
     {file = "soupsieve-2.8.4.tar.gz", hash = "sha256:e121fd02e975c695e4e9e8774a5ee35d74714b59307868dcc5319ad2d9e3328e"},
@@ -10431,4 +10410,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<=3.13"
-content-hash = "86c68810d8dcdb905278776ae2a31d745600b706a9ce4f9bc5c35a45e6698a3b"
+content-hash = "0d356f79d94ac43cd76da0916005d45f8ca8329b7b51b0d9de0ee3e31b6ced6f"

@@ -4,11 +4,13 @@ import os
 from datetime import datetime
 from functools import partial
 
+from ..tools.fingerprint_tools.compare import FingerprintsCompare
+from ..tools.fingerprints import fingerprinter
 from .e00_partition_window import Segment
 from .e01_download_audio import AudioProcessor
 from .e02_create_chunks import ChunkCreator
 from .e03_already_identified_advertising import run_chunk_identification
-from .e04_group_chunks import ChunkGrouping
+from .e04_group_chunks import group_chunks
 from .e05_classify_fragments import FragmentsClassifier
 from .e06_export_classification import (
     clean_pre_existing_detections,
@@ -21,32 +23,21 @@ from .tools.common_objects import Chunk
 logger = logging.getLogger(__name__)
 
 
-# --- Signal-based pipeline (default, existing) ---
-
 chunk_creator = ChunkCreator(
-    sr=16000,
-    hop_length=1024,
-    n_mfcc=13,
-    context_sec=1.0,
-    novelty_smooth_sec=0.5,
+    fingerprinter=fingerprinter,
     min_chunk_sec=1.0,
     silence_percentile=5.0,
-    n_fft=2048,
-    n_peaks=20,
-    neighborhood=15,
-    min_amplitude=0.01,
-    max_pairs=30,
 )
-chunk_grouping = ChunkGrouping(
+fingerprints_compare = FingerprintsCompare(
+    min_matching_pairs=10,
+    similarity_threshold=0.05,  # C'est bas, mais les tol ci-dessous font un pré filtre très éfficace déjà
+    freq_tol=2,  # ~15.6 Hz per bin tolerance
+    dt_tol=1,  # ~64 ms per frame tolerance
+    offset_tol=2,  # ~128 ms temporal coherence tolerance
     duration_tol=1.0,  # C'est relativement haut, mais les autres filtres affinent bien. 1 = durée minimum d'un segment, pour que l'absorption ou non d'un micro segment ne soit pas discriminant
     rms_tol=0.1,
     centroid_tol=0.05,
     zcr_tol=0.1,
-    similarity_threshold=0.05,  # C'est bas, mais les tol ci-dessus font un pré filtre très éfficace déjà
-    min_matching_pairs=10,
-    freq_tol=2,  # ~15.6 Hz per bin tolerance
-    dt_tol=1,  # ~64 ms per frame tolerance
-    offset_tol=2,  # ~128 ms temporal coherence tolerance
 )
 
 
@@ -75,16 +66,15 @@ async def processor(
     annotations: list[dict] = [],
     num_workers: int = 1,
 ):
-    """Original signal-based pipeline (e02 → e03 → e04 → e05 → e06 → e07)."""
     timings = TimingCollector()
 
-    chunk_hash = chunk_creator.params_hash()
-    logger.info(f"Process is run with chunk_hash={chunk_hash}")
+    fingerprint_hash = fingerprinter.params_hash()
+    logger.info(f"Process is run with fingerprint_hash={fingerprint_hash}")
 
     #### Audio processing
 
     with timings.measure("audio_processing"):
-        with LocalCache(name="chunks", version=chunk_hash) as chunk_cache:
+        with LocalCache(name="chunks", version=fingerprint_hash) as chunk_cache:
             process_media = partial(
                 process_audio, chunk_creator=chunk_creator, cache=chunk_cache
             )
@@ -119,18 +109,14 @@ async def processor(
     with timings.measure("chunk_identification"):
         previously_known_fragments, unknown_chunks = await run_chunk_identification(
             chunks,
-            params_hash=chunk_hash,
-            min_matching_pairs=chunk_grouping.min_matching_pairs,
-            similarity_threshold=chunk_grouping.similarity_threshold,
-            freq_tol=chunk_grouping.freq_tol,
-            dt_tol=chunk_grouping.dt_tol,
-            offset_tol=chunk_grouping.offset_tol,
+            params_hash=fingerprint_hash,
+            compare=fingerprints_compare,
         )
 
     #### Chunk grouping
 
     with timings.measure("chunk_grouping"):
-        groups = chunk_grouping.run(unknown_chunks)
+        groups = group_chunks(unknown_chunks, compare=fingerprints_compare)
 
     #### Fragment classification
 
@@ -146,20 +132,19 @@ async def processor(
         clean_pre_existing_detections(segments)
 
     with timings.measure("database_storage"):
-        database_storage_save(fragments, chunk_hash=chunk_hash)
+        database_storage_save(fragments, fingerprint_hash=fingerprint_hash)
 
     #### Results exportation
 
-    with LocalCache(name="reports", version=chunk_hash) as reports_cache:
+    with LocalCache(name="reports", version=fingerprint_hash) as reports_cache:
         reports = Report(
             reports_name=f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{channel}_{operation_name}",
-            chunk_hash=chunk_hash,
             params={
                 "channel": channel,
                 "operation_name": operation_name,
                 "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
                 "chunk_creator": chunk_creator.params(),
-                "chunk_grouping": chunk_grouping.params(),
+                "fingerprints_compare": fingerprints_compare.params(),
                 "fragment_classifier": fragment_classifier.params(),
             },
             local_path=reports_cache.cache_folder,

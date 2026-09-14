@@ -14,11 +14,15 @@ from typing import List
 
 import librosa
 import numpy as np
-from scipy.ndimage import maximum_filter, maximum_filter1d
+from scipy.ndimage import maximum_filter1d
+
+from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.generate import (
+    FingerprintGenerator,
+)
+from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_hash
 
 from .e00_partition_window import Segment
-from .tools.common_objects import Chunk, Fingerprint
-from .tools.fingerprint.pairs import PairGenerator, make_params_hash
+from .tools.common_objects import Chunk
 
 
 class ChunkCreator:
@@ -31,58 +35,32 @@ class ChunkCreator:
 
     def __init__(
         self,
-        sr: int = 22050,  # Sample rate (Hz). Standard for audio analysis.
-        hop_length: int = 512,  # STFT hop size (samples). Controls frame rate: fps = sr/hop_length ≈ 43.
-        n_mfcc: int = 20,  # Number of MFCC coefficients for feature extraction.
-        context_sec: float = 1.0,  # Context window (seconds) on each side for cosine dissimilarity.
-        #   1.0s = good general balance. Increase (1.5-3s) if too many false positives.
-        novelty_smooth_sec: float = 0.5,  # Smoothing window (seconds) applied to the novelty curve.
-        #   Filters out short fluctuations before peak detection.
+        fingerprinter: FingerprintGenerator,
         min_chunk_sec: float = 5.0,  # Minimum duration (seconds) between two boundaries.
         #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
         silence_percentile: float = 5.0,  # Energy percentile below which a frame is silent.
         #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
-        n_fft: int = 2048,  # FFT size for constellation map. 2048 ≈ 93ms @ 22050Hz.
-        n_peaks: int = 30,  # Max spectral peaks retained per chunk (constellation map).
-        neighborhood: int = 15,  # Local max filter size for peak detection in time×frequency plane.
-        min_amplitude: float = 0.01,  # Min normalized amplitude (0-1) for a spectral peak to be retained.
-        fan_out: int = 4,  # Pairs per peak for fingerprinting. 4 is sufficient with distance-based matching.
-        max_pairs: int = 80,
     ):
-        self.sr = sr
-        self.hop_length = hop_length
-        self.n_mfcc = n_mfcc
-        self.context_sec = context_sec
-        self.novelty_smooth_sec = novelty_smooth_sec
+        self.fingerprinter = fingerprinter
         self.min_chunk_sec = min_chunk_sec
         self.silence_percentile = silence_percentile
-        self.n_fft = n_fft
-        self.n_peaks = n_peaks
-        self.neighborhood = neighborhood
-        self.min_amplitude = min_amplitude
-        self.fan_out = fan_out
-        self._fps = sr / hop_length
-        self._pair_generator = PairGenerator(fan_out=fan_out, max_pairs=max_pairs)
+
+        self.sr = fingerprinter.sr
+        self.hop_length = fingerprinter.hop_length
+        self._fps = self.sr / self.hop_length
 
     def load(self, path: str) -> np.ndarray:
         y, _ = librosa.load(path, sr=self.sr, mono=True)
         return y
 
     def extract_features(self, y: np.ndarray) -> dict:
-        mfcc = librosa.feature.mfcc(
-            y=y, sr=self.sr, n_mfcc=self.n_mfcc, hop_length=self.hop_length
-        )
-        delta = librosa.feature.delta(mfcc)
         energy = librosa.feature.rms(y=y, hop_length=self.hop_length)[0]
         centroid = librosa.feature.spectral_centroid(
             y=y, sr=self.sr, hop_length=self.hop_length
         )[0]
         zcr = librosa.feature.zero_crossing_rate(y, hop_length=self.hop_length)[0]
 
-        stack = np.vstack([mfcc, delta, energy, centroid / centroid.max(), zcr])
-
         return {
-            "stack": stack,
             "energy": energy,
             "centroid": centroid,
             "zcr": zcr,
@@ -163,28 +141,6 @@ class ChunkCreator:
 
         return np.array(selected_frames) / self._fps
 
-    def _extract_peaks(self, y_seg: np.ndarray) -> list:
-        """Extract constellation map peaks from a chunk's audio."""
-        if len(y_seg) < self.sr * 0.5:
-            return []
-
-        D = np.abs(librosa.stft(y_seg, n_fft=self.n_fft, hop_length=self.hop_length))
-        D_log = librosa.amplitude_to_db(D, ref=np.max)
-        D_norm = (D_log - D_log.min()) / (D_log.max() - D_log.min() + 1e-8)
-
-        local_max = maximum_filter(D_norm, size=self.neighborhood)
-        is_peak = (D_norm == local_max) & (D_norm > self.min_amplitude)
-
-        freq_idxs, time_idxs = np.where(is_peak)
-        if len(freq_idxs) == 0:
-            return []
-
-        amplitudes = D_norm[freq_idxs, time_idxs]
-        order = np.argsort(-amplitudes)[: self.n_peaks]
-        return np.column_stack(
-            [time_idxs[order].astype(np.int32), freq_idxs[order].astype(np.int32)]
-        ).tolist()
-
     def build_chunks(
         self,
         peaks_sec: np.ndarray,
@@ -230,28 +186,20 @@ class ChunkCreator:
 
             s_start = int(t_start * self.sr)
             s_end = int(t_end * self.sr)
-            seg_peaks = self._extract_peaks(y[s_start:s_end])
-
-            peaks_array = (
-                np.array(seg_peaks, dtype=np.int32)
-                if seg_peaks
-                else np.empty((0, 2), dtype=np.int32)
+            fingerprint = self.fingerprinter.from_audio_with_precomputed(
+                y[s_start:s_end],
+                duration_sec=float(dur),
+                energy_mean=e,
+                spectral_centroid=c,
+                zcr_mean=z,
             )
-            seg_pairs = self._pair_generator.generate(peaks_array)
 
             chunks.append(
                 Chunk(
                     start_sec=round(start_epoch + float(t_start), 2),
                     end_sec=round(start_epoch + float(t_end), 2),
                     channel=channel,
-                    fingerprint=Fingerprint(
-                        duration_sec=round(float(dur), 2),
-                        energy_mean=round(e, 2),
-                        spectral_centroid=round(c, 2),
-                        zcr_mean=round(z, 2),
-                        peaks=seg_peaks,
-                        pairs=seg_pairs,
-                    ),
+                    fingerprint=fingerprint,
                 )
             )
 
@@ -281,16 +229,8 @@ class ChunkCreator:
         return {
             "sr": self.sr,
             "hop_length": self.hop_length,
-            "n_mfcc": self.n_mfcc,
-            "context_sec": self.context_sec,
-            "novelty_smooth_sec": self.novelty_smooth_sec,
             "min_chunk_sec": self.min_chunk_sec,
             "silence_percentile": self.silence_percentile,
-            "n_fft": self.n_fft,
-            "n_peaks": self.n_peaks,
-            "neighborhood": self.neighborhood,
-            "min_amplitude": self.min_amplitude,
-            "fan_out": self.fan_out,
         }
 
     def params_hash(self) -> str:

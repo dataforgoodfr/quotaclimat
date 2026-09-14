@@ -87,3 +87,4 @@ tasks:
           RRS_PG_DATABASE: rrs
           RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
           RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
+          CONCURRENCY: 1

@@ -2,33 +2,33 @@
 
 SUBJECT_DEFINITIONS: dict[str, str] = {
     "insecurity": """
-La désinformation est définie ici comme tout extrait qui porte sur les personnes étrangères, immigrées, réfugiées, demandeuses d'asile, \ 
-sans-papiers, exilées ou d'origine étrangère, qu'elles soient désignées explicitement — par leur statut administratif, \
-leur nationalité, leur religion, leur origine réelle ou supposée — ou par substitution, au moyen de formules telles que \
-« certaines populations », « quartiers sensibles », « personnes issues de », « nouveaux arrivants », « communautés », \
-de prénoms, ou de toute autre allusion tenue pour révélatrice d'une origine. Relève de ce périmètre tout extrait qui avance, \
-commente, compare ou conteste des données chiffrées sur les migrations et sur la présence d'étrangers, en France comme dans \
-n'importe quel autre pays, que ces chiffres soient exacts, approximatifs, anciens, non sourcés, déformés, sortis de leur périmètre \
-ou entièrement inventés ; tout extrait qui traite de leurs droits et des dispositifs qui les concernent, qu'il les décrive, \
-en réclame l'extension, en demande la restriction ou la suppression, les présente comme excessifs, indus ou détournés, \
-ou qu'il en dénonce au contraire la violation ; tout extrait qui traite de leur culture, de leur religion, de leur langue, \
-de leurs mœurs, de leur famille, de leur mode de vie, de leur intégration ou de leur prétendu refus de s'intégrer ; \
-tout extrait qui les associe, directement ou par allusion, à des faits de violence, de délinquance ou de désordre, \
-y compris lorsque l'association ne passe que par la mention du statut, de la nationalité, de l'origine ou de la religion \
-dans le récit d'un fait divers, y compris lorsque le fait rapporté est avéré et judiciairement établi, et y compris lorsque \
-cette mention est présentée comme une simple information de contexte ; et tout extrait qui, par la généralisation d'un cas au groupe, \
-l'essentialisation par l'origine ou la religion, l'opposition entre « eux » et « nous », la hiérarchisation entre nationaux et étrangers, \
-l'imputation d'un projet collectif de conquête ou de remplacement, les métaphores de la masse, du flux, de l'invasion, de la maladie ou de l'animalité, \
-le récit sériel de faits divers, l'appel à l'exclusion, à des mesures d'exception ou à la violence, ou l'emploi à contresens de formules positives, \
-alimente la haine, le stéréotype ou la déshumanisation à leur égard. Le fait qu'un extrait soit exact, sourcé, mesuré, \
-courtois, ou qu'il émane d'une autorité publique, d'un chercheur, d'un magistrat ou d'un journaliste, ne le fait pas \
-sortir du périmètre : celui-ci est thématique et volontairement large, et seule la qualification en aval distingue la \
-couverture légitime de l'instrumentalisation. N'est pas retenu l'extrait qui mentionne une personne étrangère ou d'origine \
-étrangère sans que cette qualité n'y soit thématisée ni ne joue aucun rôle dans le propos ; l'extrait où les mots du filtre \
-relèvent manifestement d'un autre champ, notamment le sport, la migration animale, la migration de données, le commerce, \
-la météorologie ou la publicité ; la fiction et la satire clairement identifiées ; le fact-checking et le \
-contre-discours qui citent une narrative pour la réfuter, enregistrés séparément ; et la couverture d'un événement \
-étranger qui ne comporte ni donnée, ni jugement, ni propos sur les personnes migrantes ou étrangères
+La désinformation est définie ici comme tout extrait dont le thème central est l'immigration, \
+les personnes étrangères, immigrées, réfugiées, demandeuses d'asile, sans-papiers, exilées ou \
+d'origine étrangère — désignées explicitement ou par substitution manifeste (« certaines \
+populations », « quartiers sensibles », etc.) — ET dont le propos fait de cette dimension \
+migratoire un élément moteur de l'argumentation, non une simple mention incidente.
+
+Relève de ce périmètre : les données chiffrées sur les migrations, flux ou demandes d'asile ; \
+les droits, statuts, dispositifs ou politiques migratoires (accueil, asile, éloignement, \
+régularisation, OQTF, aides sociales, circulation intra-européenne liée au statut migratoire) ; \
+les récits présentant l'immigration ou une politique migratoire comme cause ou facteur \
+aggravant de l'insécurité, de la délinquance ou d'un fait divers précis (y compris si le fait \
+rapporté est avéré) ; les statistiques sur la part d'étrangers parmi les personnes détenues ou \
+condamnées ; et les propos essentialisants, généralisants ou déshumanisants visant les personnes \
+étrangères ou migrantes (métaphores de flux, d'invasion, de submersion ou de remplacement).
+
+N'est PAS retenu, même s'il porte sur la sécurité, la délinquance ou la justice, l'extrait dont \
+l'immigration n'est pas l'élément moteur du propos, notamment : la délinquance, le laxisme \
+judiciaire, les violences urbaines ou les cambriolages sans lien migratoire thématisé ; \
+l'antisémitisme, le racisme ou l'antiracisme sans lien migratoire explicite ; l'islam ou la \
+pratique religieuse sans lien explicite à l'immigration ; la responsabilité parentale ou \
+éducative sans lien migratoire ; et la baisse de la natalité française, sauf lien explicite à \
+l'immigration (ex. argument de remplacement démographique).
+
+N'est pas non plus retenu l'extrait relevant manifestement d'un autre champ (sport, migration \
+animale ou de données, commerce, météo, publicité), la fiction/satire identifiée, le \
+fact-checking citant une narrative pour la réfuter, ou la couverture d'un événement étranger sans \
+donnée ni jugement sur des personnes migrantes ou étrangères.
 """.strip(),
 
     "climate": """

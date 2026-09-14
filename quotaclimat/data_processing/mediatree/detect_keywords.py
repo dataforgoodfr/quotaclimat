@@ -157,9 +157,14 @@ def format_word_regex(word: str) -> str:
     word = word.replace('\'', '\' ?') # case for d'eau -> d' eau
     if not word.endswith('s') and not word.endswith('x') and not word.endswith('à'):
         return word + "s?"
-    elif word.endswith('s'):
-        return word + '?'
-    elif word.endswith('x'):
+    elif word.endswith('s') or word.endswith('x'):
+        # Making the trailing letter optional only makes sense when the
+        # remaining stem is long enough to still be a meaningful word
+        # (e.g. "crises" -> "crise?s"). For short words/acronyms like "ets",
+        # dropping the last letter yields an unrelated, very common word
+        # ("et"), causing massive false positives - so keep those literal.
+        if len(word) <= 3:
+            return word
         return word + '?'
     else:
         return word
@@ -371,7 +376,7 @@ def get_keyword_matching_json(keyword_dict: List[dict], country=FRANCE) -> dict:
 
 # def get_words_in_sentence(automaton: ahocorasick.Automaton, keywords_dict: Dict[str, str], text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
 def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: CountryMediaTree=FRANCE) -> Set[str]:
-    if country.code=='fra':
+    if country.language=='french':
         logging.info("Using regex for france")
         keywords_tuple = tuple(kw["keyword"] for kw in keywords_dict)
         compiled_patterns = _compile_fr_keyword_patterns(keywords_tuple)
@@ -642,7 +647,6 @@ def add_primary_key(row):
     try:
         if str(row['start'].tzinfo) == 'Europe/Paris':
             # legacy
-            logging.info("PK must be UTC - Timezone is Europe/Paris, converting to UTC")
             row['start'] = row['start'].tz_convert('UTC')
         hash_id = get_consistent_hash(str(row["start"]) + row["channel_name"])
         return hash_id

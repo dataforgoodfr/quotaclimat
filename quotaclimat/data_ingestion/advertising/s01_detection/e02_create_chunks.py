@@ -328,3 +328,163 @@ class ChunkCreator:
 
     def params_hash(self) -> str:
         return make_params_hash(self.params())
+
+
+def debug_split(job: ChunkCreatorJob, cc: ChunkCreator, verbose: bool = True) -> dict:
+    """
+    Print a step-by-step explanation of how a single audio window gets split
+    into chunks, and return the intermediate values (silence mask, candidate
+    peaks, accepted/dropped peaks, final chunks, ...) so a visualizer can
+    reuse them without recomputing everything.
+
+    Usage:
+        trace = debug_split(job, chunk_creator)
+    """
+
+    def log(*args):
+        if verbose:
+            print(*args)
+
+    log("=" * 60)
+    log("DEBUG: audio window splitting analysis")
+    log(f"  segment: [{job.segment.start_date} -> {job.segment.end_date}]  channel={job.segment.channel}")
+    log(f"  audio_file_path: {job.audio_file_path}")
+    log(f"  has_previous_segment={job.has_previous_segment}  next_audio_file_path={job.next_audio_file_path}")
+    log("=" * 60)
+
+    # ── [1] Load audio (+ optional next-segment margin) ─────────────────
+    y = cc.load(job.audio_file_path)
+    log(f"\n[1] Load audio: {len(y)} samples @ {cc.sr}Hz = {len(y) / cc.sr:.2f}s")
+
+    if job.next_audio_file_path is not None:
+        base_len = len(y)
+        y = cc._extend_with_next_segment(y, job.next_audio_file_path)
+        added_sec = (len(y) - base_len) / cc.sr
+        log(
+            f"    + extended with next segment margin: +{added_sec:.2f}s "
+            f"(target {cc.margin_extracted_from_next_segment:.2f}s)"
+        )
+
+    features = cc.extract_features(y)
+    duration = len(y) / cc.sr
+    log(f"    total window duration (with margin): {duration:.2f}s, {len(features['energy'])} frames")
+
+    # ── [2] Silence mask ─────────────────────────────────────────────────
+    log("\n[2] Silence mask (local percentile threshold)")
+    window_frames = 2 * int(round(cc.seconds_reserved_for_previous_segment * cc._fps)) + 1
+    local_threshold = percentile_filter(
+        features["energy"], percentile=cc.silence_percentile, size=window_frames, mode="nearest"
+    )
+    silence_mask = cc._compute_silence_mask(features["energy"])
+    n_silent = int(silence_mask.sum())
+    log(f"    silence_percentile={cc.silence_percentile}  window=±{cc.seconds_reserved_for_previous_segment}s")
+    log(f"    silent frames: {n_silent}/{len(silence_mask)} ({100 * n_silent / len(silence_mask):.1f}%)")
+
+    # ── [3] Peak candidates (deepest point of each silence region) ───────
+    log("\n[3] Peak candidates (deepest point of each silence region)")
+    n_frames = len(silence_mask)
+    diff = np.diff(np.concatenate([[0], silence_mask, [0]]))
+    starts = np.where(diff > 0.5)[0]
+    ends = np.where(diff < -0.5)[0]
+
+    region_candidates = []
+    for s, e in zip(starts, ends):
+        e = min(e, n_frames)
+        region_energy = features["energy"][s:e]
+        if len(region_energy) == 0:
+            continue
+        min_idx = s + int(np.argmin(region_energy))
+        region_candidates.append(
+            {
+                "region": (int(s), int(e)),
+                "frame": min_idx,
+                "energy": float(features["energy"][min_idx]),
+                "time_sec": min_idx / cc._fps,
+            }
+        )
+
+    log(f"    {len(region_candidates)} silence regions found -> {len(region_candidates)} candidate peaks")
+    for rc in region_candidates[:10]:
+        log(f"      region[{rc['region'][0]}:{rc['region'][1]}] -> t={rc['time_sec']:.2f}s energy={rc['energy']:.5f}")
+    if len(region_candidates) > 10:
+        log(f"      ... and {len(region_candidates) - 10} more")
+
+    # ── [4] Minimum spacing filter ─────────────────────────────────────────
+    log(f"\n[4] Minimum spacing filter (min_chunk_sec={cc.min_chunk_sec:.2f}s)")
+    min_dist_frames = int(cc.min_chunk_sec * cc._fps)
+    sorted_by_energy = sorted(region_candidates, key=lambda c: c["energy"])
+    accepted_frames: list[int] = []
+    accepted_candidates = []
+    dropped_candidates = []
+    for rc in sorted_by_energy:
+        frame = rc["frame"]
+        if all(abs(frame - s) >= min_dist_frames for s in accepted_frames):
+            accepted_frames.append(frame)
+            accepted_candidates.append(rc)
+        else:
+            blocker = min(accepted_frames, key=lambda s: abs(frame - s))
+            dropped_candidates.append({**rc, "blocked_by_time_sec": blocker / cc._fps})
+
+    accepted_frames_sorted = sorted(accepted_frames)
+    peaks_sec = np.array(accepted_frames_sorted) / cc._fps
+
+    log(
+        f"    kept {len(accepted_frames_sorted)}/{len(region_candidates)} peaks, "
+        f"dropped {len(dropped_candidates)} (too close to a deeper silence)"
+    )
+    for d in dropped_candidates[:10]:
+        log(f"      dropped t={d['time_sec']:.2f}s energy={d['energy']:.5f}  (blocked by peak @ {d['blocked_by_time_sec']:.2f}s)")
+    if len(dropped_candidates) > 10:
+        log(f"      ... and {len(dropped_candidates) - 10} more")
+
+    # ── [5] Drop peaks covered by the previous job ────────────────────────
+    kept_peaks_sec = peaks_sec
+    if job.has_previous_segment:
+        before = len(kept_peaks_sec)
+        kept_peaks_sec = kept_peaks_sec[kept_peaks_sec >= cc.seconds_reserved_for_previous_segment]
+        log(
+            f"\n[5] Drop peaks before seconds_reserved_for_previous_segment="
+            f"{cc.seconds_reserved_for_previous_segment}s (covered by the previous job)"
+        )
+        log(f"    kept {len(kept_peaks_sec)}/{before} peaks")
+    else:
+        log("\n[5] No previous segment: keep all peaks from t=0")
+
+    # ── [6] Build final chunks ─────────────────────────────────────────────
+    chunk_start_cutoff_epoch = job.segment.end_date.timestamp()
+    if job.next_audio_file_path is not None:
+        chunk_start_cutoff_epoch += cc.seconds_reserved_for_previous_segment
+
+    chunks = cc.build_chunks(
+        kept_peaks_sec,
+        features,
+        duration,
+        y,
+        job.segment.start_date.timestamp(),
+        chunk_start_cutoff_epoch,
+        channel=job.segment.channel,
+    )
+
+    log(f"\n[6] Final chunks built: {len(chunks)}")
+    for c in chunks:
+        log(
+            f"      [{c.start_sec:.2f} -> {c.end_sec:.2f}]  dur={c.fingerprint.duration_sec:.2f}s  "
+            f"energy={c.fingerprint.energy_mean:.4f}  centroid={c.fingerprint.spectral_centroid:.1f}Hz"
+        )
+
+    log("\n" + "=" * 60)
+
+    return {
+        "y": y,
+        "features": features,
+        "duration": duration,
+        "silence_mask": silence_mask,
+        "local_threshold": local_threshold,
+        "region_candidates": region_candidates,
+        "accepted_candidates": accepted_candidates,
+        "dropped_candidates": dropped_candidates,
+        "peaks_sec": peaks_sec,
+        "kept_peaks_sec": kept_peaks_sec,
+        "chunk_start_cutoff_sec": chunk_start_cutoff_epoch - job.segment.start_date.timestamp(),
+        "chunks": chunks,
+    }

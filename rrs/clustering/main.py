@@ -59,7 +59,9 @@ from rrs.clustering.steps import (
     build_labels_from_transcripts,
     classify_all_transcripts,
     compute_target_clusters,
+    filter_cases_by_relevance,
     merge_labels,
+    RELEVANCE_FILTER_SUBJECTS,
 )
 from rrs.utils.generate_id import get_consistent_hash
 
@@ -83,6 +85,7 @@ async def _run_day(
     overlap_tokens: int,
     initial_labels: list[str],
     skip_merge: bool,
+    skip_relevance_filter: bool,
     merge_batch_size: int,
     merge_max_rounds: int,
     max_concurrent: int,
@@ -108,6 +111,18 @@ async def _run_day(
     if docs_df.empty:
         print("  No documents for this day — skipping.")
         return
+
+    # --- Step 0: filter out cases that don't actually center on the theme ---
+    # Only applied to subjects the filter has been tuned/validated for — see
+    # RELEVANCE_FILTER_SUBJECTS. Other subjects (e.g. climate) keep their prior behavior.
+    if not skip_relevance_filter and subject in RELEVANCE_FILTER_SUBJECTS:
+        print("\nStep 0: Filtering cases by topical relevance...")
+        docs_df = await filter_cases_by_relevance(docs_df, client, subject, max_concurrent)
+        print(f"  {len(docs_df)} documents remain after relevance filtering.")
+        if docs_df.empty:
+            print("  No relevant documents for this day — skipping.")
+            return
+
     id_col = ID_COLUMN if ID_COLUMN in docs_df.columns else None
 
     # --- Split into sentences ---
@@ -286,6 +301,7 @@ async def run(
     overlap_tokens: int = 0,
     initial_labels: list[str] = None,
     skip_merge: bool = False,
+    skip_relevance_filter: bool = False,
     merge_batch_size: int = 30,
     merge_max_rounds: int = 20,
     start_date: Optional[date] = None,
@@ -366,6 +382,7 @@ async def run(
             overlap_tokens=overlap_tokens,
             initial_labels=initial_labels,
             skip_merge=skip_merge,
+            skip_relevance_filter=skip_relevance_filter,
             merge_batch_size=merge_batch_size,
             merge_max_rounds=merge_max_rounds,
             max_concurrent=max_concurrent,
@@ -456,6 +473,12 @@ if __name__ == "__main__":
         action="store_true",
         default=os.getenv("SKIP_MERGE", "").lower() in ("1", "true", "yes"),
         help="Skip the label-merging step (step 2).",
+    )
+    parser.add_argument(
+        "--skip-relevance-filter",
+        action="store_true",
+        default=os.getenv("SKIP_RELEVANCE_FILTER", "").lower() in ("1", "true", "yes"),
+        help="Skip the case-level topical relevance filter (step 0).",
     )
     parser.add_argument(
         "--merge-batch-size",
@@ -564,7 +587,6 @@ if __name__ == "__main__":
         initial = json.loads(Path(args.initial_labels_file).read_text(encoding="utf-8"))
     else:
         initial = get_seed_labels(args.subject)
-
     asyncio.run(
         run(
             output_dir=args.output_dir,
@@ -574,6 +596,7 @@ if __name__ == "__main__":
             overlap_tokens=args.overlap_tokens,
             initial_labels=initial,
             skip_merge=args.skip_merge,
+            skip_relevance_filter=args.skip_relevance_filter,
             merge_batch_size=args.merge_batch_size,
             merge_max_rounds=args.merge_max_rounds,
             start_date=date.fromisoformat(args.start_date) if args.start_date else None,

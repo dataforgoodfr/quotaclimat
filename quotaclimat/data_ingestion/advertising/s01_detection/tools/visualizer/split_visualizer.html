@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuotaClimat — Chunk Comparator</title>
+  <title>QuotaClimat — Split Visualizer</title>
   <style>
     :root {
       --bg: #0c0c18;
@@ -20,8 +20,6 @@
       --text: #e8ecf2;
       --text2: #b8c2d4;
       --text3: #8890a8;
-      --chunk-zone: rgba(0, 210, 160, 0.12);
-      --chunk-border: rgba(0, 210, 160, 0.6);
       --radius: 6px;
       --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
       --mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
@@ -49,7 +47,7 @@
     #logo .c { color: var(--accent); }
     #header-info { font-size: 12px; color: var(--text2); }
 
-    /* ─── Metadata comparison ────────────────────────── */
+    /* ─── Metadata ───────────────────────────────────── */
     .meta-section {
       display: grid; grid-template-columns: 1fr 1fr;
       gap: 12px; padding: 16px 20px;
@@ -69,26 +67,6 @@
     .meta-table td { padding: 3px 8px; }
     .meta-table td:first-child { color: var(--text3); white-space: nowrap; }
     .meta-table td:last-child { font-family: var(--mono); text-align: right; }
-
-    /* ─── Diff table ─────────────────────────────────── */
-    .diff-section { padding: 0 20px 12px; }
-    .diff-table {
-      width: 100%; border-collapse: collapse;
-      font-size: 12px; background: var(--surface);
-      border: 1px solid var(--border); border-radius: var(--radius);
-      overflow: hidden;
-    }
-    .diff-table th {
-      background: var(--surface2); padding: 6px 12px;
-      text-align: left; color: var(--text3); font-weight: 600;
-    }
-    .diff-table td { padding: 5px 12px; border-top: 1px solid var(--border); }
-    .diff-table .val-a { color: var(--primary); font-family: var(--mono); text-align: right; }
-    .diff-table .val-b { color: var(--accent); font-family: var(--mono); text-align: right; }
-    .diff-table .val-diff { font-family: var(--mono); text-align: right; }
-    .diff-positive { color: #60d080; }
-    .diff-negative { color: #e06060; }
-    .diff-zero { color: var(--text3); }
 
     /* ─── Charts ─────────────────────────────────────── */
     .charts-section { padding: 8px 20px; }
@@ -111,6 +89,33 @@
     .chart-container.side-b h4 span.side-label { color: var(--accent); }
     canvas { width: 100%; border-radius: 3px; display: block; }
 
+    /* ─── Tables ─────────────────────────────────────── */
+    .tables-section {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px; padding: 0 20px 12px;
+    }
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px 14px;
+    }
+    .table-card h4 {
+      font-size: 12px; color: var(--text2); margin-bottom: 6px;
+    }
+    .table-card table { width: 100%; font-size: 11px; border-collapse: collapse; }
+    .table-card th {
+      text-align: left; color: var(--text3); font-weight: 600;
+      padding: 4px 6px; border-bottom: 1px solid var(--border);
+    }
+    .table-card td {
+      padding: 3px 6px; font-family: var(--mono); border-bottom: 1px solid rgba(42,42,74,0.4);
+    }
+    .table-card tbody { display: block; max-height: 220px; overflow-y: auto; }
+    .table-card thead, .table-card tbody tr { display: table; width: 100%; table-layout: fixed; }
+    .row-accepted { color: var(--primary); }
+    .row-dropped { color: var(--danger); }
+
     /* ─── Params ─────────────────────────────────────── */
     .params-section {
       padding: 12px 20px;
@@ -124,25 +129,20 @@
     }
     .params-section summary { cursor: pointer; color: var(--text2); }
     .params-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 4px 16px; margin-top: 8px;
     }
     .params-grid span { font-family: var(--mono); }
 
     /* ─── Legend ──────────────────────────────────────── */
     .legend {
-      display: flex; gap: 16px; align-items: center;
+      display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
       padding: 8px 20px; font-size: 11px; color: var(--text3);
     }
     .legend-item { display: flex; align-items: center; gap: 4px; }
-    .legend-swatch {
-      width: 24px; height: 3px; border-radius: 2px;
-    }
-    .legend-zone {
-      width: 24px; height: 12px; border-radius: 2px;
-      border: 1px dashed var(--chunk-border);
-      background: var(--chunk-zone);
-    }
+    .legend-swatch { width: 24px; height: 3px; border-radius: 2px; }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .legend-zone { width: 24px; height: 12px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.15); }
 
     /* ─── Audio Player ────────────────────────────────── */
     .audio-section {
@@ -158,9 +158,7 @@
     }
     .audio-player.side-a { border-color: var(--primary-dim); }
     .audio-player.side-b { border-color: var(--accent-dim); }
-    .audio-player-row {
-      display: flex; align-items: center; gap: 10px;
-    }
+    .audio-player-row { display: flex; align-items: center; gap: 10px; }
     .play-btn {
       background: var(--surface3); border: 1px solid var(--border);
       border-radius: 4px; color: var(--text); cursor: pointer;
@@ -174,19 +172,14 @@
       font-family: var(--mono); font-size: 11px; color: var(--text3);
       flex-shrink: 0; min-width: 100px;
     }
-    .seek-bar {
-      flex: 1; cursor: pointer; height: 4px;
-      accent-color: var(--primary);
-    }
+    .seek-bar { flex: 1; cursor: pointer; height: 4px; accent-color: var(--primary); }
     .audio-player.side-b .seek-bar { accent-color: var(--accent); }
-    .audio-label {
-      font-size: 12px; font-weight: 600; margin-bottom: 2px;
-    }
+    .audio-label { font-size: 12px; font-weight: 600; margin-bottom: 2px; }
     .audio-player.side-a .audio-label { color: var(--primary); }
     .audio-player.side-b .audio-label { color: var(--accent); }
 
     /* ─── Playhead overlay ────────────────────────────── */
-    .canvas-wrapper { position: relative; }
+    .canvas-wrapper { position: relative; cursor: crosshair; }
     .playhead {
       position: absolute; top: 0; bottom: 0;
       width: 2px; background: rgba(255,255,255,0.85);
@@ -194,26 +187,28 @@
       transform: translateX(-50%);
       z-index: 2;
     }
-    .canvas-wrapper { cursor: crosshair; }
   </style>
 </head>
 
 <body>
   <div id="header">
-    <div id="logo"><span class="q">Quota</span><span class="c">Climat</span> — Chunk Comparator</div>
+    <div id="logo"><span class="q">Quota</span><span class="c">Climat</span> — Split Visualizer (e02)</div>
     <div id="header-info"></div>
   </div>
 
   <div class="legend">
-    <div class="legend-item"><div class="legend-zone"></div> Zone du chunk (hors padding)</div>
-    <div class="legend-item"><div class="legend-swatch" style="background:var(--primary)"></div> Chunk A</div>
-    <div class="legend-item"><div class="legend-swatch" style="background:var(--accent)"></div> Chunk B</div>
+    <div class="legend-item"><div class="legend-zone" style="background:rgba(0,210,160,0.10)"></div> Zone d'un chunk retenu</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#60d080"></div> Pic accepté (frontière de chunk)</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#e06060"></div> Pic candidat rejeté (espacement minimum)</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#f0c040"></div> Seuil de silence local</div>
+    <div class="legend-item"><div class="legend-zone" style="background:rgba(255,255,255,0.08)"></div> Marge réservée (segment précédent/suivant)</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#ffffff;height:1px;border-top:1px dashed #ffffff"></div> Timestamp investigué</div>
   </div>
 
   <div class="meta-section" id="meta-section"></div>
-  <div class="diff-section" id="diff-section"></div>
   <div class="audio-section" id="audio-section"></div>
   <div class="charts-section" id="charts-section"></div>
+  <div class="tables-section" id="tables-section"></div>
   <div class="params-section" id="params-section"></div>
 
   <script id="embedded-data" type="application/json">null</script>
@@ -222,91 +217,45 @@
     "use strict";
 
     const DATA = JSON.parse(document.getElementById("embedded-data").textContent);
-    const A = DATA.chunkA;
-    const B = DATA.chunkB;
+    const A = DATA.windowA;
+    const B = DATA.windowB;
     const PARAMS = DATA.params;
-    const PADDING = DATA.paddingSec;
 
     // ── Utilities ──────────────────────────────────────
-    function epochToStr(epoch) {
-      const d = new Date(epoch * 1000);
-      return d.toISOString().replace("T", " ").replace("Z", "") + " UTC";
-    }
+    function isoStr(iso) { return iso; }
     function fmt(v, decimals = 4) {
       if (v === null || v === undefined) return "—";
       return Number(v).toFixed(decimals);
     }
-    function relDiff(a, b) {
-      const denom = Math.max(Math.abs(a), Math.abs(b), 1e-8);
-      return (a - b) / denom;
-    }
 
     // ── Header info ────────────────────────────────────
     document.getElementById("header-info").textContent =
-      `Padding: ±${PADDING}s | SR: ${PARAMS.sr} Hz | Hop: ${PARAMS.hop_length}`;
+      `SR: ${PARAMS.sr} Hz | min_chunk_sec: ${PARAMS.min_chunk_sec}s | silence_percentile: ${PARAMS.silence_percentile}`;
 
     // ── Metadata cards ─────────────────────────────────
-    function buildMetaCard(chunk, side) {
+    function buildMetaCard(win, side) {
       const cls = side === "b" ? "meta-card side-b" : "meta-card";
-      const label = side === "a" ? "Chunk A" : "Chunk B";
-      const m = chunk.metadata;
-      const w = chunk.window;
       return `<div class="${cls}">
-        <h3>${label} — ${chunk.channel}</h3>
+        <h3>${win.label} — ${win.channel}</h3>
         <table class="meta-table">
-          <tr><td>Epoch start</td><td>${fmt(chunk.absStart, 2)}</td></tr>
-          <tr><td>Epoch end</td><td>${fmt(chunk.absEnd, 2)}</td></tr>
-          <tr><td>Date start</td><td style="font-size:11px">${epochToStr(chunk.absStart)}</td></tr>
-          <tr><td>Duration</td><td>${fmt(chunk.duration, 3)} s</td></tr>
-          <tr><td>Energy (RMS)</td><td>${fmt(m.energy_mean, 6)}</td></tr>
-          <tr><td>Spectral Centroid</td><td>${fmt(m.spectral_centroid, 2)} Hz</td></tr>
-          <tr><td>ZCR</td><td>${fmt(m.zcr_mean, 6)}</td></tr>
-          <tr><td>Constellation peaks</td><td>${m.n_peaks}</td></tr>
-          <tr><td>Fingerprint pairs</td><td>${m.n_pairs}</td></tr>
-          <tr><td>Window analysée</td><td>${fmt(w.windowDuration, 2)} s</td></tr>
+          <tr><td>Segment</td><td style="font-size:11px">${win.segmentStart} → ${win.segmentEnd}</td></tr>
+          <tr><td>Window duration</td><td>${fmt(win.duration, 2)} s</td></tr>
+          <tr><td>Displayed range</td><td>${win.focusSec !== null ? `zoom ±${fmt((win.waveformDuration)/2, 1)}s around focus` : `${fmt(win.waveformDuration, 2)} s from start`}</td></tr>
+          <tr><td>has_previous_segment</td><td>${win.hasPreviousSegment}</td></tr>
+          <tr><td>has_next_segment</td><td>${win.hasNextSegment}</td></tr>
+          <tr><td>Candidate peaks</td><td>${win.regionCandidates.length}</td></tr>
+          <tr><td>Accepted peaks</td><td>${win.keptPeaksSec.length}</td></tr>
+          <tr><td>Dropped peaks</td><td>${win.droppedCandidates.length}</td></tr>
+          <tr><td>Chunks produced</td><td>${win.chunks.length}</td></tr>
         </table>
       </div>`;
     }
     document.getElementById("meta-section").innerHTML =
       buildMetaCard(A, "a") + buildMetaCard(B, "b");
 
-    // ── Diff table ─────────────────────────────────────
-    function diffCell(va, vb, decimals = 4, invert = false) {
-      const diff = va - vb;
-      const rel = relDiff(va, vb);
-      const pct = (rel * 100).toFixed(1);
-      let cls = "diff-zero";
-      if (Math.abs(rel) > 0.001) cls = diff > 0 ? "diff-positive" : "diff-negative";
-      if (invert && cls !== "diff-zero") cls = cls === "diff-positive" ? "diff-negative" : "diff-positive";
-      return `<td class="val-diff ${cls}">${diff >= 0 ? "+" : ""}${fmt(diff, decimals)} (${pct}%)</td>`;
-    }
-    function buildDiffTable() {
-      const ma = A.metadata, mb = B.metadata;
-      const rows = [
-        ["Duration (s)", A.duration, B.duration, 3],
-        ["Energy (RMS)", ma.energy_mean, mb.energy_mean, 6],
-        ["Spectral Centroid (Hz)", ma.spectral_centroid, mb.spectral_centroid, 2],
-        ["ZCR", ma.zcr_mean, mb.zcr_mean, 6],
-        ["Constellation peaks", ma.n_peaks, mb.n_peaks, 0],
-        ["Fingerprint pairs", ma.n_pairs, mb.n_pairs, 0],
-      ];
-      let html = `<table class="diff-table">
-        <tr><th>Métrique</th><th style="text-align:right">Chunk A</th>
-            <th style="text-align:right">Chunk B</th><th style="text-align:right">Δ (A−B)</th></tr>`;
-      for (const [name, va, vb, dec] of rows) {
-        html += `<tr><td>${name}</td>
-          <td class="val-a">${fmt(va, dec)}</td>
-          <td class="val-b">${fmt(vb, dec)}</td>
-          ${diffCell(va, vb, dec)}</tr>`;
-      }
-      html += "</table>";
-      return html;
-    }
-    document.getElementById("diff-section").innerHTML = buildDiffTable();
-
     // ── Chart drawing ──────────────────────────────────
-    const CHART_H = 120;
-    const SPEC_H = 160;
+    const CHART_H = 130;
+    const SPEC_H = 170;
     const COLORS = { a: "#00d2a0", b: "#f0c040" };
     const BG = "#12122a";
 
@@ -322,67 +271,76 @@
       return { canvas: c, ctx, w, h };
     }
 
-    function drawChunkZone(ctx, chunk, w, h) {
-      const win = chunk.window;
-      const dur = win.windowDuration;
-      if (dur <= 0) return;
-      const x0 = (win.chunkRelStart / dur) * w;
-      const x1 = (win.chunkRelEnd / dur) * w;
+    function timeToX(t, tMax, w) { return (t / tMax) * w; }
 
-      ctx.fillStyle = "rgba(0,210,160,0.08)";
-      ctx.fillRect(x0, 0, x1 - x0, h);
+    function drawMarginZones(ctx, win, tMax, w, h) {
+      // Reserved margin at the start (covered by the previous job)
+      if (win.hasPreviousSegment) {
+        const x = timeToX(win.reservedSec, tMax, w);
+        ctx.fillStyle = "rgba(255,255,255,0.06)";
+        ctx.fillRect(0, 0, x, h);
+      }
+      // Beyond the cutoff, chunk starts belong to the next job
+      const xCut = timeToX(win.chunkStartCutoffSec, tMax, w);
+      if (xCut < w) {
+        ctx.fillStyle = "rgba(255,255,255,0.06)";
+        ctx.fillRect(xCut, 0, w - xCut, h);
+      }
+    }
 
-      ctx.strokeStyle = "rgba(0,210,160,0.5)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([4, 3]);
+    function drawChunkZones(ctx, win, tMax, w, h) {
+      win.chunks.forEach((c, i) => {
+        const x0 = timeToX(c.startSec, tMax, w);
+        const x1 = timeToX(c.endSec, tMax, w);
+        ctx.fillStyle = i % 2 === 0 ? "rgba(0,210,160,0.08)" : "rgba(0,210,160,0.04)";
+        ctx.fillRect(x0, 0, x1 - x0, h);
+      });
+      // Boundary lines at accepted peaks
+      ctx.strokeStyle = "rgba(96,208,128,0.7)";
+      ctx.lineWidth = 1.2;
+      for (const p of win.keptPeaksSec) {
+        const x = timeToX(p, tMax, w);
+        ctx.beginPath();
+        ctx.moveTo(x, 0); ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+    }
+
+    function drawDroppedMarkers(ctx, win, tMax, w, h) {
+      ctx.fillStyle = "#e06060";
+      for (const d of win.droppedCandidates) {
+        const x = timeToX(d.timeSec, tMax, w);
+        ctx.beginPath();
+        ctx.arc(x, h - 6, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawFocusMarker(ctx, win, tMax, w, h) {
+      if (win.focusSec === null || win.focusSec === undefined) return;
+      const x = timeToX(win.focusSec, tMax, w);
+      if (x < 0 || x > w) return;
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([2, 2]);
       ctx.beginPath();
-      ctx.moveTo(x0, 0); ctx.lineTo(x0, h);
-      ctx.moveTo(x1, 0); ctx.lineTo(x1, h);
+      ctx.moveTo(x, 0); ctx.lineTo(x, h);
       ctx.stroke();
       ctx.setLineDash([]);
     }
 
-    function drawTimeCurve(ctx, data, times, w, h, color, yMin, yMax) {
-      if (!data || data.length === 0) return;
-      const range = yMax - yMin || 1;
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      const tMax = times[times.length - 1] || 1;
-      for (let i = 0; i < data.length; i++) {
-        const x = (times[i] / tMax) * w;
-        const y = h - ((data[i] - yMin) / range) * (h - 4) - 2;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-    }
-
-    function drawFilledCurve(ctx, data, times, w, h, color, alpha) {
-      if (!data || data.length === 0) return;
-      const yMax = Math.max(...data) || 1;
-      const tMax = times[times.length - 1] || 1;
-      ctx.fillStyle = color.replace(")", `,${alpha})`).replace("rgb", "rgba");
-      ctx.beginPath();
-      ctx.moveTo(0, h);
-      for (let i = 0; i < data.length; i++) {
-        const x = (times[i] / tMax) * w;
-        const y = h - (data[i] / yMax) * (h - 4) - 2;
-        ctx.lineTo(x, y);
-      }
-      ctx.lineTo(w, h);
-      ctx.closePath();
-      ctx.fill();
-    }
-
-    function drawWaveform(ctx, data, w, h, color, chunk) {
+    function drawWaveform(ctx, win, w, h) {
       ctx.fillStyle = BG;
       ctx.fillRect(0, 0, w, h);
-      drawChunkZone(ctx, chunk, w, h);
+      const tMax = win.waveformDuration || 1;
+      drawMarginZones(ctx, win, tMax, w, h);
+      drawChunkZones(ctx, win, tMax, w, h);
 
+      const data = win.waveform;
       const absMax = Math.max(...data.map(Math.abs)) || 1;
-      ctx.strokeStyle = color;
+      ctx.strokeStyle = "#c8d0e0";
       ctx.lineWidth = 1;
-      ctx.globalAlpha = 0.8;
+      ctx.globalAlpha = 0.85;
       ctx.beginPath();
       for (let i = 0; i < data.length; i++) {
         const x = (i / data.length) * w;
@@ -391,105 +349,104 @@
       }
       ctx.stroke();
       ctx.globalAlpha = 1;
+      drawDroppedMarkers(ctx, win, tMax, w, h);
+      drawFocusMarker(ctx, win, tMax, w, h);
     }
 
-    function drawLinePlot(ctx, data, times, w, h, color, chunk, label) {
+    function drawEnergy(ctx, win, w, h) {
       ctx.fillStyle = BG;
       ctx.fillRect(0, 0, w, h);
-      drawChunkZone(ctx, chunk, w, h);
+      const tMax = win.frameTimes[win.frameTimes.length - 1] || 1;
+      drawMarginZones(ctx, win, tMax, w, h);
+      drawChunkZones(ctx, win, tMax, w, h);
 
-      const yMin = Math.min(...data);
-      const yMax = Math.max(...data);
-      drawTimeCurve(ctx, data, times, w, h, color, yMin, yMax);
+      const energy = win.energy;
+      const thr = win.localThreshold;
+      const yMax = Math.max(...energy) || 1;
 
-      // Y-axis labels
+      function plot(data, color, lw) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lw;
+        ctx.beginPath();
+        for (let i = 0; i < data.length; i++) {
+          const x = timeToX(win.frameTimes[i], tMax, w);
+          const y = h - (data[i] / yMax) * (h - 6) - 3;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+      plot(thr, "#f0c040", 1);
+      plot(energy, "#00d2a0", 1.2);
+      drawDroppedMarkers(ctx, win, tMax, w, h);
+      drawFocusMarker(ctx, win, tMax, w, h);
+
       ctx.fillStyle = "rgba(255,255,255,0.3)";
       ctx.font = "9px monospace";
-      ctx.fillText(fmt(yMax, 3), 2, 10);
-      ctx.fillText(fmt(yMin, 3), 2, h - 2);
+      ctx.fillText(`max=${fmt(yMax, 4)}`, 2, 10);
     }
 
-    function drawSilenceMask(ctx, data, times, w, h, color, chunk) {
+    function drawSilenceMask(ctx, win, w, h) {
       ctx.fillStyle = BG;
       ctx.fillRect(0, 0, w, h);
-      drawChunkZone(ctx, chunk, w, h);
+      const tMax = win.frameTimes[win.frameTimes.length - 1] || 1;
+      drawMarginZones(ctx, win, tMax, w, h);
+      drawChunkZones(ctx, win, tMax, w, h);
 
-      const tMax = times[times.length - 1] || 1;
-      ctx.fillStyle = color.includes("d2a0") ? "rgba(0,210,160,0.3)" : "rgba(240,192,64,0.3)";
+      const data = win.silenceMask;
+      ctx.fillStyle = "rgba(240,192,64,0.35)";
       for (let i = 0; i < data.length; i++) {
         if (data[i] > 0.5) {
-          const x = (times[i] / tMax) * w;
+          const x = timeToX(win.frameTimes[i], tMax, w);
           const xw = Math.max(1, w / data.length);
           ctx.fillRect(x, 0, xw, h);
         }
       }
+      drawDroppedMarkers(ctx, win, tMax, w, h);
+      drawFocusMarker(ctx, win, tMax, w, h);
 
       ctx.fillStyle = "rgba(255,255,255,0.3)";
       ctx.font = "9px monospace";
       ctx.fillText("silent", 2, 10);
     }
 
-    function drawSpectrogram(ctx, spec, w, h, color, chunk, peaks) {
+    function drawSpectrogram(ctx, win, w, h) {
       ctx.fillStyle = BG;
       ctx.fillRect(0, 0, w, h);
-
-      const { data, nFreq, nTime } = spec;
+      const { data, nFreq, nTime } = win.spectrogram;
       const cellW = w / nTime;
       const cellH = h / nFreq;
 
-      // Colormap: dark → colored
-      const isA = color.includes("d2a0");
       for (let f = 0; f < nFreq; f++) {
         for (let t = 0; t < nTime; t++) {
           const v = data[f * nTime + t];
           if (v < 0.05) continue;
           const intensity = Math.pow(v, 0.6);
-          if (isA) {
-            ctx.fillStyle = `rgba(0,${Math.round(210 * intensity)},${Math.round(160 * intensity)},${0.3 + intensity * 0.7})`;
-          } else {
-            ctx.fillStyle = `rgba(${Math.round(240 * intensity)},${Math.round(192 * intensity)},${Math.round(64 * intensity)},${0.3 + intensity * 0.7})`;
-          }
-          // Flip Y axis: low freq at bottom
+          ctx.fillStyle = `rgba(${Math.round(180 * intensity)},${Math.round(200 * intensity)},${Math.round(255 * intensity)},${0.3 + intensity * 0.7})`;
           ctx.fillRect(t * cellW, (nFreq - 1 - f) * cellH, Math.ceil(cellW), Math.ceil(cellH));
         }
       }
 
-      // Draw chunk zone borders
-      drawChunkZone(ctx, chunk, w, h);
-
-      // Draw constellation peaks
-      if (peaks && peaks.length > 0) {
-        ctx.fillStyle = "#ffffff";
-        for (const [tIdx, fIdx] of peaks) {
-          const x = (tIdx / nTime) * w;
-          // Downsample freq index if needed
-          const fRatio = fIdx / (1025); // Original n_fft/2+1
-          const y = (1 - fRatio) * h;
-          ctx.beginPath();
-          ctx.arc(x, y, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
+      const tMax = win.waveformDuration || 1;
+      drawChunkZones(ctx, win, tMax, w, h);
+      drawFocusMarker(ctx, win, tMax, w, h);
     }
 
     // ── Audio players ──────────────────────────────────
     const audioA = new Audio(`data:audio/wav;base64,${A.audioBase64}`);
     const audioB = new Audio(`data:audio/wav;base64,${B.audioBase64}`);
-
     const playheadsA = [];
     const playheadsB = [];
 
-    function buildAudioPlayer(chunk, side) {
+    function buildAudioPlayer(win, side) {
       const audio = side === "a" ? audioA : audioB;
-      const color = side === "a" ? "side-a" : "side-b";
-      const label = side === "a" ? "Chunk A" : "Chunk B";
+      const colorClass = side === "a" ? "side-a" : "side-b";
 
       const player = document.createElement("div");
-      player.className = `audio-player ${color}`;
+      player.className = `audio-player ${colorClass}`;
 
       const labelEl = document.createElement("div");
       labelEl.className = "audio-label";
-      labelEl.textContent = `${label} — ${chunk.channel} — ${chunk.window.windowDuration.toFixed(2)}s (±${PADDING}s padding)`;
+      labelEl.textContent = `${win.label} — ${win.channel} — ${win.waveformDuration.toFixed(2)}s affichées`;
       player.appendChild(labelEl);
 
       const row = document.createElement("div");
@@ -502,10 +459,7 @@
       const seekBar = document.createElement("input");
       seekBar.type = "range";
       seekBar.className = "seek-bar";
-      seekBar.min = 0;
-      seekBar.max = 1000;
-      seekBar.value = 0;
-      seekBar.step = 1;
+      seekBar.min = 0; seekBar.max = 1000; seekBar.value = 0; seekBar.step = 1;
 
       const timeDisplay = document.createElement("div");
       timeDisplay.className = "time-display";
@@ -516,7 +470,6 @@
       row.appendChild(timeDisplay);
       player.appendChild(row);
 
-      // Update playheads and time display
       function syncUI() {
         const ratio = audio.duration ? audio.currentTime / audio.duration : 0;
         const playheads = side === "a" ? playheadsA : playheadsB;
@@ -536,13 +489,8 @@
       audio.addEventListener("ended", () => { btn.textContent = "▶"; });
 
       btn.addEventListener("click", () => {
-        if (audio.paused) {
-          audio.play();
-          btn.textContent = "⏸";
-        } else {
-          audio.pause();
-          btn.textContent = "▶";
-        }
+        if (audio.paused) { audio.play(); btn.textContent = "⏸"; }
+        else { audio.pause(); btn.textContent = "▶"; }
       });
 
       seekBar.addEventListener("input", () => {
@@ -570,7 +518,7 @@
       // before any container/canvas is added.
       chartsEl.appendChild(row);
 
-      for (const [chunk, side, color] of [[A, "a", COLORS.a], [B, "b", COLORS.b]]) {
+      for (const [win, side] of [[A, "a"], [B, "b"]]) {
         const container = document.createElement("div");
         container.className = `chart-container side-${side}`;
         container.innerHTML = `<h4><span class="side-label">${side === "a" ? "A" : "B"}</span> — ${title}</h4>`;
@@ -586,9 +534,8 @@
         const cw = Math.max(200, Math.round(container.clientWidth - paddingX));
         const ch = title.includes("Spectrogramme") ? SPEC_H : CHART_H;
         const { canvas, ctx, w, h } = createCanvas(cw, ch);
-        drawFn(ctx, chunk, w, h, color);
+        drawFn(ctx, win, w, h);
 
-        // Wrapper for playhead overlay
         const wrapper = document.createElement("div");
         wrapper.className = "canvas-wrapper";
         wrapper.appendChild(canvas);
@@ -600,7 +547,6 @@
         if (side === "a") playheadsA.push(playhead);
         else playheadsB.push(playhead);
 
-        // Click/drag to seek
         if (clickToSeek) {
           const audio = side === "a" ? audioA : audioB;
           function seek(e) {
@@ -619,35 +565,47 @@
       }
     }
 
-    // 1. Waveform (click-to-seek enabled)
-    addChartRow("Forme d'onde", (ctx, chunk, w, h, color) => {
-      drawWaveform(ctx, chunk.waveform, w, h, color, chunk);
-    }, true);
+    addChartRow("Forme d'onde + chunks", drawWaveform, true);
+    addChartRow("Spectrogramme + frontières", drawSpectrogram);
+    addChartRow("Énergie (RMS) + seuil de silence local", drawEnergy);
+    addChartRow("Masque de silence", drawSilenceMask);
 
-    // 2. Spectrogram + constellation
-    addChartRow("Spectrogramme + Constellation", (ctx, chunk, w, h, color) => {
-      drawSpectrogram(ctx, chunk.spectrogram, w, h, color, chunk, chunk.constellationPeaks);
-    });
+    // ── Tables: candidates + chunks ─────────────────────
+    function buildCandidatesTable(win) {
+      const rows = win.regionCandidates
+        .slice()
+        .sort((a, b) => a.timeSec - b.timeSec)
+        .map((rc) => {
+          const dropped = win.droppedCandidates.find((d) => Math.abs(d.timeSec - rc.timeSec) < 1e-6);
+          const cls = rc.accepted ? "row-accepted" : "row-dropped";
+          const note = dropped ? `blocked by t=${fmt(dropped.blockedByTimeSec, 2)}s` : (rc.accepted ? "kept" : "");
+          return `<tr class="${cls}"><td>${fmt(rc.timeSec, 2)}s</td><td>${fmt(rc.energy, 5)}</td><td>${rc.accepted ? "✓" : "✗"}</td><td>${note}</td></tr>`;
+        })
+        .join("");
+      return `<div class="table-card">
+        <h4>Pics candidats (${win.label})</h4>
+        <table>
+          <thead><tr><th>t</th><th>energy</th><th>kept</th><th>note</th></tr></thead>
+          <tbody>${rows || "<tr><td colspan=4>—</td></tr>"}</tbody>
+        </table>
+      </div>`;
+    }
 
-    // 3. Energy (RMS)
-    addChartRow("Énergie (RMS)", (ctx, chunk, w, h, color) => {
-      drawLinePlot(ctx, chunk.energy, chunk.frameTimes, w, h, color, chunk, "RMS");
-    });
+    function buildChunksTable(win) {
+      const rows = win.chunks
+        .map((c) => `<tr><td>${fmt(c.startSec, 2)}→${fmt(c.endSec, 2)}</td><td>${fmt(c.duration, 2)}s</td><td>${fmt(c.energyMean, 4)}</td><td>${fmt(c.spectralCentroid, 0)}Hz</td><td>${c.nPeaks}/${c.nPairs}</td></tr>`)
+        .join("");
+      return `<div class="table-card">
+        <h4>Chunks produits (${win.label})</h4>
+        <table>
+          <thead><tr><th>rel. t</th><th>dur</th><th>energy</th><th>centroid</th><th>peaks/pairs</th></tr></thead>
+          <tbody>${rows || "<tr><td colspan=5>—</td></tr>"}</tbody>
+        </table>
+      </div>`;
+    }
 
-    // 4. Spectral Centroid
-    addChartRow("Centroïde Spectral (Hz)", (ctx, chunk, w, h, color) => {
-      drawLinePlot(ctx, chunk.centroid, chunk.frameTimes, w, h, color, chunk, "Centroid");
-    });
-
-    // 5. ZCR
-    addChartRow("Zero-Crossing Rate", (ctx, chunk, w, h, color) => {
-      drawLinePlot(ctx, chunk.zcr, chunk.frameTimes, w, h, color, chunk, "ZCR");
-    });
-
-    // 6. Silence mask
-    addChartRow("Masque de Silence", (ctx, chunk, w, h, color) => {
-      drawSilenceMask(ctx, chunk.silenceMask, chunk.frameTimes, w, h, color, chunk);
-    });
+    document.getElementById("tables-section").innerHTML =
+      buildChunksTable(A) + buildChunksTable(B) + buildCandidatesTable(A) + buildCandidatesTable(B);
 
     // ── Params section ─────────────────────────────────
     const paramsEl = document.getElementById("params-section");

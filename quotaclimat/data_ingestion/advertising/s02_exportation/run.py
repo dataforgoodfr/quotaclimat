@@ -26,6 +26,8 @@ from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree imp
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
 
+from .ad_bucket import ad_media_s3_key, ad_prefix_in_bucket
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,7 +56,7 @@ def get_s3_filesystem() -> s3fs.S3FileSystem:
 
 
 async def ad_folder_exists_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> bool:
-    path = f"{BUCKET_NAME}/{AD_S3_PREFIX}/{ad_id}"
+    path = ad_prefix_in_bucket(ad_id)
     try:
         return await fs._exists(path)
     except Exception as e:
@@ -63,7 +65,7 @@ async def ad_folder_exists_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> bool:
 
 
 async def get_raw_mp4_size_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> int | None:
-    path = f"{BUCKET_NAME}/{AD_S3_PREFIX}/{ad_id}/raw.mp4"
+    path = ad_media_s3_key(ad_id, "mp4")
     try:
         info = await fs._info(path)
         return info.get("size")
@@ -161,7 +163,7 @@ async def _export_ad(
                 f"(channel={occurrence.channel_name}, format={media_format})"
             )
 
-        s3_key = f"{BUCKET_NAME}/{AD_S3_PREFIX}/{ad.id}/raw.{media_format}"
+        s3_key = ad_media_s3_key(ad.id, media_format)
         try:
             await fs._put_file(local_path, s3_key, StorageClass="ONEZONE_IA")
             logger.debug(f"Uploaded s3://{s3_key}")

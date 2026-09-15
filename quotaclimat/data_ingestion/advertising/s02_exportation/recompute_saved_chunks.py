@@ -11,6 +11,7 @@ from postgres.schemas.advertising.models import Ad
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
 
+from ..s01_detection.processor import chunk_creator
 from ..tools.fingerprints import fingerprinter
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,15 @@ MARGIN_ON_MEDIA_EXPORT_HISTORY = [
 
 CLEAN_OTHER_CHUNKS = os.environ.get("CLEAN_OTHER_CHUNKS", False)
 CURSOR_BATCH_SIZE = os.environ.get("CURSOR_BATCH_SIZE", 500)
+
+
+def _get_margin_from_detection_date(d: datetime) -> timedelta:
+    """Depending on the downloading processs, media and thus detection may vary in quality.
+    We do change the margins during extraction process depending on this quality.
+    This function helps find back what margin did we apply when the Ad was extracted."""
+    for start, value in MARGIN_ON_MEDIA_EXPORT_HISTORY.reverse():
+        if d > start:
+            return value
 
 
 async def run():
@@ -43,7 +53,12 @@ async def run():
                         ad.chunks = [existing_chunk_entry]
                         write_session.add(ad)
                 else:
-                    chunks = None
+                    margin = _get_margin_from_detection_date(ad.first_detection_date)
+                    chunks = chunk_creator.run_on_audio_file(  # HERE fingerprints
+                        audio_file_path=ad.download_audio_file(),  # HERE
+                        start_sec=margin,
+                        end_sec=margin + ad.duration_sec,
+                    )
                     new_chunk_entry = Ad.generate_chunk_dict(fingerprint_hash, chunks)
                     if CLEAN_OTHER_CHUNKS or len(ad.chunks) == 0:
                         ad.chunks = [new_chunk_entry]

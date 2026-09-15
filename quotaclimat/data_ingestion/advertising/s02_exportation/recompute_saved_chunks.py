@@ -28,8 +28,8 @@ CURSOR_BATCH_SIZE = os.environ.get("CURSOR_BATCH_SIZE", 500)
 async def run():
     fingerprint_hash = fingerprinter.params_hash()
 
-    with get_db_session() as session:
-        for ads in session.scalars(
+    with get_db_session() as read_session, get_db_session() as write_session:
+        for ads in read_session.scalars(
             select(Ad).execution_options(yield_per=CURSOR_BATCH_SIZE)
         ).partitions():
             for ad in ads:
@@ -40,16 +40,18 @@ async def run():
                 )
                 if existing_chunk_entry:
                     if CLEAN_OTHER_CHUNKS and len(ad.chunks) > 1:
-                        # we should clean
-                        pass
+                        ad.chunks = [existing_chunk_entry]
+                        write_session.add(ad)
                 else:
                     new_chunk_entry = None
                     if CLEAN_OTHER_CHUNKS or len(ad.chunks) == 0:
-                        # we save only the new
-                        pass
+                        ad.chunks = [new_chunk_entry]
+                        write_session.add(ad)
                     else:
-                        # we add and save
-                        pass
+                        ad.chunks.append(ad)
+                        write_session.add(ad)
+
+            write_session.commit()
 
 
 if __name__ == "__main__":

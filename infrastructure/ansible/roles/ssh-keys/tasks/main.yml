@@ -12,5 +12,8 @@
     - name: gmguarino1@gmail.com
       key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIOIZMzVkOuJVUb31YAGMhiKksvLc8r6kqcBMxRPr37l
       state: present
+    - name: ivana.campolongo@proton.me
+      key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICTYP39F64V0yL65/OB28iD+HK/wqqkTTEq665Q4szQC
+      state: present
   loop_control:
     label: "{{ item.name }}"

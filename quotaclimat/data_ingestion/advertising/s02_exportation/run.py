@@ -11,6 +11,10 @@ from sqlalchemy.orm import aliased
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad, Ad_Occurrence
+from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
+    ad_media_s3_key,
+    ad_prefix_in_bucket,
+)
 from quotaclimat.data_ingestion.advertising.tools.interactive_tqdm import (
     interactive_tqdm,
 )
@@ -25,8 +29,6 @@ from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree imp
 )
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
-
-from .ad_bucket import ad_media_s3_key, ad_prefix_in_bucket
 
 logger = logging.getLogger(__name__)
 

@@ -6,17 +6,20 @@ from datetime import datetime, timedelta
 
 import s3fs
 from sentry_sdk.crons import monitor
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad
+from quotaclimat.data_ingestion.advertising.s01_detection.processor import chunk_creator
+from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
+    ad_media_s3_key,
+)
+from quotaclimat.data_ingestion.advertising.s02_exportation.run import (
+    get_s3_filesystem,
+)
+from quotaclimat.data_ingestion.advertising.tools.fingerprints import fingerprinter
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
-
-from ..s01_detection.processor import chunk_creator
-from ..tools.fingerprints import fingerprinter
-from .ad_bucket import ad_media_s3_key
-from .run import get_s3_filesystem
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +37,7 @@ def _get_margin_from_detection_date(d: datetime) -> timedelta:
     """Depending on the downloading processs, media and thus detection may vary in quality.
     We do change the margins during extraction process depending on this quality.
     This function helps find back what margin did we apply when the Ad was extracted."""
-    for start, value in MARGIN_ON_MEDIA_EXPORT_HISTORY.reverse():
+    for start, value in reversed(MARGIN_ON_MEDIA_EXPORT_HISTORY):
         if d > start:
             return value
 
@@ -57,54 +60,91 @@ async def run():
     fingerprint_hash = fingerprinter.params_hash()
     fs = get_s3_filesystem()
 
+    counters = {
+        "ads_seen": 0,
+        "already_had_chunk": 0,
+        "cleaned_other_chunks": 0,
+        "download_failed": 0,
+        "chunk_computed": 0,
+    }
+
     with get_db_session() as read_session, get_db_session() as write_session:
         for ads in read_session.scalars(
             select(Ad).execution_options(yield_per=CURSOR_BATCH_SIZE)
         ).partitions():
             for ad in ads:
+                counters["ads_seen"] += 1
                 existing_chunk_entry = next(
                     filter(
                         lambda chunk: chunk.get("hash") == fingerprint_hash, ad.chunks
-                    )
+                    ),
+                    None,
                 )
                 if existing_chunk_entry:
+                    counters["already_had_chunk"] += 1
                     if CLEAN_OTHER_CHUNKS and len(ad.chunks) > 1:
-                        ad.chunks = [existing_chunk_entry]
-                        write_session.add(ad)
+                        counters["cleaned_other_chunks"] += 1
+                        write_session.execute(
+                            update(Ad)
+                            .where(Ad.id == ad.id)
+                            .values(chunks=[existing_chunk_entry])
+                        )
                 else:
                     with tempfile.TemporaryDirectory() as dest_dir:
                         audio_file_path = await _download_audio_file(
                             fs, ad.id, dest_dir
                         )
 
-                        if audio_file_path is not None:
-                            margin = _get_margin_from_detection_date(
+                        if audio_file_path is None:
+                            counters["download_failed"] += 1
+                        else:
+                            margin_sec = _get_margin_from_detection_date(
                                 ad.first_detection_date
-                            )
+                            ).total_seconds()
                             fingerprints = chunk_creator.run_on_audio_file(
                                 audio_file_path=audio_file_path,
-                                start_sec=margin,
-                                end_sec=margin + ad.duration_sec,
+                                start_sec=margin_sec,
+                                end_sec=margin_sec + ad.duration_sec,
                             )
                             new_chunk_entry = Ad.generate_chunk_dict(
                                 fingerprint_hash, fingerprints
                             )
+                            counters["chunk_computed"] += 1
 
                             if CLEAN_OTHER_CHUNKS or len(ad.chunks) == 0:
-                                ad.chunks = [new_chunk_entry]
-                                write_session.add(ad)
+                                write_session.execute(
+                                    update(Ad)
+                                    .where(Ad.id == ad.id)
+                                    .values(chunks=[new_chunk_entry])
+                                )
                             else:
-                                ad.chunks.append(ad)
-                                write_session.add(ad)
+                                write_session.execute(
+                                    update(Ad)
+                                    .where(Ad.id == ad.id)
+                                    .values(chunks=[*ad.chunks, new_chunk_entry])
+                                )
 
             write_session.commit()
 
+    logger.info(f"Recompute saved chunks finished: {counters}")
+
 
 if __name__ == "__main__":
-    with monitor(
-        monitor_slug="advertising-exportation"
-    ):  # https://docs.sentry.io/platforms/python/crons/
-        getLogger()
-        sentry_init()
+    if True:
+        with get_db_session() as session:
+            ad = session.scalar(
+                select(Ad).filter(Ad.id == "13b1a1e60b770a1e2bb8b8bf0862585b").limit(1)
+            )
+            print(ad.id)
+            print(ad.chunks)
+            # ad.chunks = []
+            # session.add(ad)
+            # session.commit()
+    else:
+        with monitor(
+            monitor_slug="advertising-exportation"
+        ):  # https://docs.sentry.io/platforms/python/crons/
+            getLogger()
+            sentry_init()
 
-        asyncio.run(run())
+            asyncio.run(run())

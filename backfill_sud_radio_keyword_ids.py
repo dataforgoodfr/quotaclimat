@@ -35,12 +35,21 @@ Why program_metadata_id was never set:
     match now with the corrected channel_name backfills those columns
     using the same program grid the pipeline uses today.
 
+Batching:
+    Processed one calendar day (Europe/Paris) at a time, each in its own
+    transaction. This keeps memory/row-count per batch small enough to run
+    from a laptop, and makes the script resumable: a day that's already been
+    fixed no longer shows up in the "still sudradio" query, so re-running
+    after an interruption just picks up where it left off. Use --limit-days
+    to cap how many days a single invocation processes.
+
 Usage:
     POSTGRES_HOST=... POSTGRES_USER=... POSTGRES_DB=... POSTGRES_PASSWORD=... \
-        poetry run python3 backfill_sud_radio_keyword_ids.py [--dry-run]
+        poetry run python3 backfill_sud_radio_keyword_ids.py [--dry-run] [--limit-days N]
 """
+import argparse
 import os
-import sys
+from datetime import timedelta
 
 import pandas as pd
 from sqlalchemy import text
@@ -56,27 +65,30 @@ OLD_NAME = "sudradio"
 NEW_NAME = "sud-radio"
 
 
-def main(dry_run: bool) -> None:
-    print(
-        "Connecting to "
-        f"host={os.environ.get('POSTGRES_HOST', 'localhost')} "
-        f"db={os.environ.get('POSTGRES_DB', 'barometre')} "
-        f"user={os.environ.get('POSTGRES_USER', 'user')} "
-        f"port={os.environ.get('POSTGRES_PORT', 5432)}"
-    )
-    engine = connect_to_db()
-    df_programs = get_programs()
+def get_pending_days(engine) -> list:
+    with engine.connect() as conn:
+        rows = conn.execute(
+            text(
+                "SELECT DISTINCT date(start) AS d FROM keywords "
+                "WHERE channel_name = :old ORDER BY d"
+            ),
+            {"old": OLD_NAME},
+        ).fetchall()
+    return [r[0] for r in rows]
+
+
+def process_day(engine, df_programs, day, dry_run: bool) -> dict:
+    day_start = day
+    day_end = day + timedelta(days=1)
 
     with engine.begin() as conn:
         rows = conn.execute(
-            text("SELECT id, start FROM keywords WHERE channel_name = :old"),
-            {"old": OLD_NAME},
+            text(
+                "SELECT id, start FROM keywords WHERE channel_name = :old "
+                "AND start >= :day_start AND start < :day_end"
+            ),
+            {"old": OLD_NAME, "day_start": day_start, "day_end": day_end},
         ).fetchall()
-
-        print(f"Found {len(rows)} rows with channel_name = '{OLD_NAME}'")
-        if rows:
-            starts = [start for _, start in rows]
-            print(f"Date range impacted: {min(starts)} -> {max(starts)}")
 
         updates = []
         seen_new_ids = {}
@@ -118,7 +130,7 @@ def main(dry_run: bool) -> None:
             })
 
         if no_program_found:
-            print(f"WARNING: no matching program grid entry found for {no_program_found} row(s) - channel_program/program_metadata_id will stay empty/NULL for those.")
+            print(f"  WARNING: no matching program grid entry found for {no_program_found} row(s) on {day} - channel_program/program_metadata_id will stay empty/NULL for those.")
 
         # make sure none of the new ids already exist under a different start
         # (would violate the (id, start) primary key - shouldn't happen since
@@ -128,8 +140,7 @@ def main(dry_run: bool) -> None:
             {"ids": [u["new_id"] for u in updates]},
         ).fetchall()
         if existing:
-            print(f"ABORT: {len(existing)} target ids already exist in keywords - investigate before rerunning.")
-            sys.exit(1)
+            raise RuntimeError(f"{len(existing)} target ids already exist in keywords for {day} - investigate before rerunning.")
 
         # program_metadata_id is a foreign key to program_metadata.id - make sure
         # every non-null value we computed actually exists there before writing.
@@ -144,35 +155,70 @@ def main(dry_run: bool) -> None:
             }
             missing = program_ids - found
             if missing:
-                print(f"ABORT: {len(missing)} computed program_metadata_id value(s) don't exist in program_metadata - investigate before rerunning: {missing}")
-                sys.exit(1)
+                raise RuntimeError(f"{len(missing)} computed program_metadata_id value(s) don't exist in program_metadata for {day} - investigate before rerunning: {missing}")
 
-        if dry_run:
-            print(f"[dry-run] Would update {len(updates)} rows (id + channel_name + program metadata).")
-            for u in updates[:5]:
-                print(f"  {u['old_id']} -> {u['new_id']} | program_metadata_id={u['program_metadata_id']}")
-            return
+        if not dry_run:
+            for u in updates:
+                conn.execute(
+                    text(
+                        "UPDATE keywords SET id = :new_id, channel_name = :new_name, "
+                        "channel_program = :channel_program, channel_program_type = :channel_program_type, "
+                        "program_metadata_id = :program_metadata_id "
+                        "WHERE id = :old_id"
+                    ),
+                    {
+                        "new_id": u["new_id"],
+                        "new_name": NEW_NAME,
+                        "channel_program": u["channel_program"],
+                        "channel_program_type": u["channel_program_type"],
+                        "program_metadata_id": u["program_metadata_id"],
+                        "old_id": u["old_id"],
+                    },
+                )
 
-        for u in updates:
-            conn.execute(
-                text(
-                    "UPDATE keywords SET id = :new_id, channel_name = :new_name, "
-                    "channel_program = :channel_program, channel_program_type = :channel_program_type, "
-                    "program_metadata_id = :program_metadata_id "
-                    "WHERE id = :old_id"
-                ),
-                {
-                    "new_id": u["new_id"],
-                    "new_name": NEW_NAME,
-                    "channel_program": u["channel_program"],
-                    "channel_program_type": u["channel_program_type"],
-                    "program_metadata_id": u["program_metadata_id"],
-                    "old_id": u["old_id"],
-                },
-            )
+    return {"found": len(rows), "updated": len(updates), "no_program_found": no_program_found}
 
-        print(f"Updated {len(updates)} rows: channel_name '{OLD_NAME}' -> '{NEW_NAME}', id recomputed, program metadata backfilled.")
+
+def main(dry_run: bool, limit_days: int = None) -> None:
+    print(
+        "Connecting to "
+        f"host={os.environ.get('POSTGRES_HOST', 'localhost')} "
+        f"db={os.environ.get('POSTGRES_DB', 'barometre')} "
+        f"user={os.environ.get('POSTGRES_USER', 'user')} "
+        f"port={os.environ.get('POSTGRES_PORT', 5432)}"
+    )
+    engine = connect_to_db()
+    df_programs = get_programs()
+
+    days = get_pending_days(engine)
+    print(f"Found {len(days)} distinct day(s) with channel_name = '{OLD_NAME}'")
+    if days:
+        print(f"Date range impacted: {days[0]} -> {days[-1]}")
+
+    if limit_days is not None:
+        days = days[:limit_days]
+        print(f"Processing only the first {len(days)} day(s) this run (--limit-days {limit_days})")
+
+    total_found = 0
+    total_updated = 0
+    total_no_program = 0
+    for i, day in enumerate(days, start=1):
+        stats = process_day(engine, df_programs, day, dry_run)
+        total_found += stats["found"]
+        total_updated += stats["updated"]
+        total_no_program += stats["no_program_found"]
+        action = "would update" if dry_run else "updated"
+        print(f"[{i}/{len(days)}] {day}: {stats['found']} row(s) found, {action} {stats['updated']}")
+
+    prefix = "[dry-run] Would update" if dry_run else "Updated"
+    print(f"{prefix} {total_updated} rows total across {len(days)} day(s) "
+          f"(channel_name '{OLD_NAME}' -> '{NEW_NAME}', id recomputed, program metadata backfilled). "
+          f"{total_no_program} row(s) had no matching program grid entry.")
 
 
 if __name__ == "__main__":
-    main(dry_run="--dry-run" in sys.argv)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--limit-days", type=int, default=None, help="Only process the first N pending days, then stop.")
+    args = parser.parse_args()
+    main(dry_run=args.dry_run, limit_days=args.limit_days)

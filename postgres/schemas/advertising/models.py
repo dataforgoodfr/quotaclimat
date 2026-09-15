@@ -54,7 +54,9 @@ class Ad(AdvertisingBase):
         }
 
     @classmethod
-    def generate_chunk_dict(fingerprint_hash: str, fingerprints: list[Fingerprint]):
+    def generate_chunk_dict(
+        cls, fingerprint_hash: str, fingerprints: list[Fingerprint]
+    ):
         return {
             "hash": fingerprint_hash,
             "fingerprints": [f.to_dict() for f in fingerprints],

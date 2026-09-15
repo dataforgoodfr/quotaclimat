@@ -224,7 +224,7 @@ class ChunkCreator:
         y: np.ndarray,
         min_start_sec: float | None,
         max_start_sec: float | None,
-    ) -> List[tuple(float, float, Fingerprint)]:
+    ) -> List[tuple[float, float, Fingerprint]]:
         """Build fingerprints with descriptors and constellation maps."""
 
         features = self.extract_features(y)
@@ -335,8 +335,8 @@ class ChunkCreator:
         y = self.load(audio_file_path)
         return self.split_in_chunks_and_build_fingerprints(
             y=y,
-            max_start_sec=start_sec,
-            max_end_sec=end_sec,
+            min_start_sec=start_sec,
+            max_start_sec=end_sec,
         )
 
     def params(self) -> dict:

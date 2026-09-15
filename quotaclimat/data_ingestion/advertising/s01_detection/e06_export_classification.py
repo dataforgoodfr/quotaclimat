@@ -142,12 +142,7 @@ def database_storage_save(fragments: list[Fragment], fingerprint_hash: str):
                             first_fragment.end_sec - first_fragment.start_sec
                         ),
                         chunks=[
-                            {
-                                "hash": fingerprint_hash,
-                                "fingerprints": [
-                                    c.fingerprint.to_dict() for c in canonical_chunks
-                                ],
-                            }
+                            Ad.generate_chunk_dict(fingerprint_hash, canonical_chunks)
                         ],
                         fragment_type=fragment_type,
                     )
@@ -178,12 +173,7 @@ def database_storage_save(fragments: list[Fragment], fingerprint_hash: str):
                     id=ad_id,
                     first_detection_date=datetime.fromtimestamp(fragment.start_sec),
                     duration_sec=(fragment.end_sec - fragment.start_sec),
-                    chunks=[
-                        {
-                            "hash": fingerprint_hash,
-                            "fingerprints": [c.fingerprint.to_dict() for c in chunks],
-                        }
-                    ],
+                    chunks=[Ad.generate_chunk_dict(fingerprint_hash, chunks)],
                     fragment_type=fragment_type,
                 )
             )

@@ -86,8 +86,12 @@ class ChunkCreator:
         self.hop_length = fingerprinter.hop_length
         self._fps = self.sr / self.hop_length
 
-    def load(self, path: str, duration: float | None = None) -> np.ndarray:
-        y, _ = librosa.load(path, sr=self.sr, mono=True, duration=duration)
+    def load(
+        self, path: str, duration: float | None = None, offset: float = 0.0
+    ) -> np.ndarray:
+        y, _ = librosa.load(
+            path, sr=self.sr, mono=True, duration=duration, offset=offset
+        )
         return y
 
     def _extend_with_next_segment(
@@ -222,8 +226,8 @@ class ChunkCreator:
     def split_in_chunks_and_build_fingerprints(
         self,
         y: np.ndarray,
-        min_start_sec: float | None,
-        max_start_sec: float | None,
+        min_start_sec: float | None = None,
+        max_start_sec: float | None = None,
     ) -> List[tuple[float, float, Fingerprint]]:
         """Build fingerprints with descriptors and constellation maps."""
 
@@ -326,18 +330,21 @@ class ChunkCreator:
         ]
 
     def run_on_audio_file(
-        self, audio_file_path: str, start_sec: float, end_sec: float
+        self, audio_file_path: str, offset: float, duration: float
     ) -> List[Fingerprint]:
         """Alternative function in order to run the same extraction from a different payload.
         The argument is only an audio_file_path, which means we do not know where and when it happens, we extract relative timestamps.
         We only return the fingerprint of chunks, which is the part of the chunks that only depend on the content, not the position in time and space.
+
+        `start_sec`/`end_sec` are assumed to already be natural boundaries (e.g.
+        the audio was split there when the file was created), so we crop the
+        signal to that window and make sure the returned chunks cover it fully.
         """
-        y = self.load(audio_file_path)
-        return self.split_in_chunks_and_build_fingerprints(
-            y=y,
-            min_start_sec=start_sec,
-            max_start_sec=end_sec,
-        )
+        y = self.load(audio_file_path, offset=offset, duration=duration)
+
+        fingerprints = self.split_in_chunks_and_build_fingerprints(y=y)
+
+        return [fingerprint for (start, end, fingerprint) in fingerprints]
 
     def params(self) -> dict:
         return {

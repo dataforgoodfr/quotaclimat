@@ -98,13 +98,14 @@ async def run():
                         if audio_file_path is None:
                             counters["download_failed"] += 1
                         else:
-                            margin_sec = _get_margin_from_detection_date(
-                                ad.first_detection_date
-                            ).total_seconds()
                             fingerprints = chunk_creator.run_on_audio_file(
                                 audio_file_path=audio_file_path,
-                                start_sec=margin_sec,
-                                end_sec=margin_sec + ad.duration_sec,
+                                offset=(
+                                    _get_margin_from_detection_date(
+                                        ad.first_detection_date
+                                    ).total_seconds()
+                                ),
+                                duration=ad.duration_sec,
                             )
                             new_chunk_entry = Ad.generate_chunk_dict(
                                 fingerprint_hash, fingerprints
@@ -130,21 +131,10 @@ async def run():
 
 
 if __name__ == "__main__":
-    if True:
-        with get_db_session() as session:
-            ad = session.scalar(
-                select(Ad).filter(Ad.id == "13b1a1e60b770a1e2bb8b8bf0862585b").limit(1)
-            )
-            print(ad.id)
-            print(ad.chunks)
-            # ad.chunks = []
-            # session.add(ad)
-            # session.commit()
-    else:
-        with monitor(
-            monitor_slug="advertising-exportation"
-        ):  # https://docs.sentry.io/platforms/python/crons/
-            getLogger()
-            sentry_init()
+    with monitor(
+        monitor_slug="advertising-exportation"
+    ):  # https://docs.sentry.io/platforms/python/crons/
+        getLogger()
+        sentry_init()
 
-            asyncio.run(run())
+        asyncio.run(run())

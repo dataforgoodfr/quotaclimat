@@ -13,10 +13,11 @@ labels:
 inputs:
   - id: days_back
     type: INT
-    required: false
+    required: true
     description: |
       Days prior to current date. Only applicable if `start_date` and `end_date` not set.
       If not set automatic logic will kick in.
+    defaults: 1
   - id: start_date
     type: STRING
     required: false

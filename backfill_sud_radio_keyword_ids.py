@@ -138,19 +138,31 @@ def process_day(engine, df_programs, day, dry_run: bool) -> dict:
         if no_program_found:
             print(f"  WARNING: no matching program grid entry found for {no_program_found} row(s) on {day} - channel_program/program_metadata_id will stay empty/NULL for those.")
 
-        # make sure none of the new ids already exist under a different start
-        # (would violate the (id, start) primary key - shouldn't happen since
-        # no "sud-radio" rows exist yet, but check before writing).
-        existing = conn.execute(
-            text("SELECT id FROM keywords WHERE id = ANY(:ids)"),
+        # A target id can already exist if this day was already reprocessed by
+        # the (now fixed) pipeline after our channel_name fix landed - i.e. a
+        # correct "sud-radio" row already sits at that id. Since id = sha256(start
+        # + channel_name), that can only happen for the exact same broadcast
+        # moment, so the old "sudradio" row is now a stale duplicate: delete it
+        # instead of trying to update it onto an id that's already taken.
+        existing_rows = conn.execute(
+            text("SELECT id, channel_name FROM keywords WHERE id = ANY(:ids)"),
             {"ids": [u["new_id"] for u in updates]},
         ).fetchall()
-        if existing:
-            raise RuntimeError(f"{len(existing)} target ids already exist in keywords for {day} - investigate before rerunning.")
+        existing_by_id = {row[0]: row[1] for row in existing_rows}
+
+        anomalies = [eid for eid, cname in existing_by_id.items() if cname != NEW_NAME]
+        if anomalies:
+            raise RuntimeError(
+                f"{len(anomalies)} target id(s) already exist in keywords for {day} with an "
+                f"unexpected channel_name (not '{NEW_NAME}') - investigate before rerunning: {anomalies}"
+            )
+
+        to_update = [u for u in updates if u["new_id"] not in existing_by_id]
+        to_delete = [u for u in updates if u["new_id"] in existing_by_id]
 
         # program_metadata_id is a foreign key to program_metadata.id - make sure
         # every non-null value we computed actually exists there before writing.
-        program_ids = {u["program_metadata_id"] for u in updates if u["program_metadata_id"] is not None}
+        program_ids = {u["program_metadata_id"] for u in to_update if u["program_metadata_id"] is not None}
         if program_ids:
             found = {
                 row[0]
@@ -163,8 +175,11 @@ def process_day(engine, df_programs, day, dry_run: bool) -> dict:
             if missing:
                 raise RuntimeError(f"{len(missing)} computed program_metadata_id value(s) don't exist in program_metadata for {day} - investigate before rerunning: {missing}")
 
+        if to_delete:
+            print(f"  {len(to_delete)} row(s) on {day} already superseded by an existing '{NEW_NAME}' row - deleting the stale duplicate.")
+
         if not dry_run:
-            for u in updates:
+            for u in to_update:
                 conn.execute(
                     text(
                         "UPDATE keywords SET id = :new_id, channel_name = :new_name, "
@@ -181,8 +196,18 @@ def process_day(engine, df_programs, day, dry_run: bool) -> dict:
                         "old_id": u["old_id"],
                     },
                 )
+            if to_delete:
+                conn.execute(
+                    text("DELETE FROM keywords WHERE id = ANY(:ids)"),
+                    {"ids": [u["old_id"] for u in to_delete]},
+                )
 
-    return {"found": len(rows), "updated": len(updates), "no_program_found": no_program_found}
+    return {
+        "found": len(rows),
+        "updated": len(to_update),
+        "deleted_duplicates": len(to_delete),
+        "no_program_found": no_program_found,
+    }
 
 
 def main(dry_run: bool, limit_days: int = None) -> None:
@@ -207,18 +232,22 @@ def main(dry_run: bool, limit_days: int = None) -> None:
 
     total_found = 0
     total_updated = 0
+    total_deleted = 0
     total_no_program = 0
     for i, day in enumerate(days, start=1):
         stats = process_day(engine, df_programs, day, dry_run)
         total_found += stats["found"]
         total_updated += stats["updated"]
+        total_deleted += stats["deleted_duplicates"]
         total_no_program += stats["no_program_found"]
         action = "would update" if dry_run else "updated"
-        print(f"[{i}/{len(days)}] {day}: {stats['found']} row(s) found, {action} {stats['updated']}")
+        delete_note = f", {stats['deleted_duplicates']} stale duplicate(s) to delete" if stats["deleted_duplicates"] else ""
+        print(f"[{i}/{len(days)}] {day}: {stats['found']} row(s) found, {action} {stats['updated']}{delete_note}")
 
     prefix = "[dry-run] Would update" if dry_run else "Updated"
     print(f"{prefix} {total_updated} rows total across {len(days)} day(s) "
           f"(channel_name '{OLD_NAME}' -> '{NEW_NAME}', id recomputed, program metadata backfilled). "
+          f"{total_deleted} stale duplicate(s) {'would be' if dry_run else 'were'} deleted. "
           f"{total_no_program} row(s) had no matching program grid entry.")
 
 

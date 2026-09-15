@@ -11,6 +11,9 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from postgres.schemas.advertising.base import AdvertisingBase
+from quotaclimat.data_ingestion.advertising.s01_detection.tools.common_objects import (
+    Chunk,
+)
 
 
 class Ad(AdvertisingBase):
@@ -48,6 +51,13 @@ class Ad(AdvertisingBase):
             "duration_sec": self.duration_sec,
             "chunks": self.chunks,
             "fragment_type": self.fragment_type,
+        }
+
+    @classmethod
+    def generate_chunk_dict(fingerprint_hash: str, chunks: Chunk):
+        return {
+            "hash": fingerprint_hash,
+            "fingerprints": [c.fingerprint.to_dict() for c in chunks],
         }
 
 

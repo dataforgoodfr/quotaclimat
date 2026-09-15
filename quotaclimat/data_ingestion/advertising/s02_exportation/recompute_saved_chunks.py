@@ -43,7 +43,8 @@ async def run():
                         ad.chunks = [existing_chunk_entry]
                         write_session.add(ad)
                 else:
-                    new_chunk_entry = None
+                    chunks = None
+                    new_chunk_entry = Ad.generate_chunk_dict(fingerprint_hash, chunks)
                     if CLEAN_OTHER_CHUNKS or len(ad.chunks) == 0:
                         ad.chunks = [new_chunk_entry]
                         write_session.add(ad)

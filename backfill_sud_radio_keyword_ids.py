@@ -51,6 +51,12 @@ import argparse
 import os
 from datetime import timedelta
 
+# add_primary_key/get_programs pull in modin.pandas, which by default boots a
+# local Ray cluster on first use. This script's batches are tiny (one day at
+# a time), so force Modin to delegate to plain pandas instead - must be set
+# before those modules are imported.
+os.environ.setdefault("MODIN_ENGINE", "python")
+
 import pandas as pd
 from sqlalchemy import text
 

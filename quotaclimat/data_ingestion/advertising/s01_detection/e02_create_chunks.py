@@ -10,19 +10,47 @@ Deux étapes explicites :
      où le contenu audio change réellement (critère secondaire)
 """
 
+from dataclasses import dataclass
 from typing import List
 
 import librosa
 import numpy as np
-from scipy.ndimage import maximum_filter1d
+from scipy.ndimage import maximum_filter1d, percentile_filter
 
+from quotaclimat.data_ingestion.advertising.tools.correlation import (
+    find_best_correlation,
+)
+from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.fingerprint import (
+    Fingerprint,
+)
 from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.generate import (
     FingerprintGenerator,
 )
 from quotaclimat.data_ingestion.advertising.tools.hashing import make_params_hash
+from quotaclimat.data_ingestion.advertising.tools.segments import Segment
 
-from .e00_partition_window import Segment
 from .tools.common_objects import Chunk
+
+# Consecutive 2-minutes mediatree parts sometimes share a bit of duplicate audio at their
+# boundary. Rather than assume a fixed size, we cross-correlate a short window near the
+# join (same approach as overlay_correction.detect_overlap) and only trim what's actually
+# found, so a boundary with no overlap is left untouched.
+_CORRELATION_SEARCH_SEC = 3.0
+_CORRELATION_MATCH_SEC = 0.15
+_CORRELATION_THRESHOLD = 0.6
+
+# Bump this when the detection algorithm itself changes (not just its parameter
+# values), so that params_hash() changes too and the on-disk chunk cache is
+# invalidated even though the visible config didn't change.
+_ALGO_VERSION = 2
+
+
+@dataclass
+class ChunkCreatorJob:
+    segment: Segment
+    audio_file_path: str
+    has_previous_segment: bool = False
+    next_audio_file_path: str | None = None
 
 
 class ChunkCreator:
@@ -40,18 +68,60 @@ class ChunkCreator:
         #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
         silence_percentile: float = 5.0,  # Energy percentile below which a frame is silent.
         #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
+        # Constant assigning audio signal margins between contiguous segments.
+        seconds_reserved_for_previous_segment: float = 5,  # seconds
+        # Peaks are not extracted from the first 5 seconds, so the first extracted chunk start after that.
+        margin_extracted_from_next_segment: float = 30,  # seconds
+        # But peaks are extracted from the 30 seconds after the audio, keeping only one after 5 seconds, so the first chunks of the next segment are extracted here, as well as the one overpassing 5 seconds.
     ):
         self.fingerprinter = fingerprinter
         self.min_chunk_sec = min_chunk_sec
         self.silence_percentile = silence_percentile
+        self.seconds_reserved_for_previous_segment = (
+            seconds_reserved_for_previous_segment
+        )
+        self.margin_extracted_from_next_segment = margin_extracted_from_next_segment
 
         self.sr = fingerprinter.sr
         self.hop_length = fingerprinter.hop_length
         self._fps = self.sr / self.hop_length
 
-    def load(self, path: str) -> np.ndarray:
-        y, _ = librosa.load(path, sr=self.sr, mono=True)
+    def load(
+        self, path: str, duration: float | None = None, offset: float = 0.0
+    ) -> np.ndarray:
+        y, _ = librosa.load(
+            path, sr=self.sr, mono=True, duration=duration, offset=offset
+        )
         return y
+
+    def _extend_with_next_segment(
+        self, y: np.ndarray, next_audio_file_path: str
+    ) -> np.ndarray:
+        """Append the first `margin_extracted_from_next_segment` seconds of the next
+        segment's audio to `y`, after trimming away any duplicate content shared with
+        the end of `y` (see the module-level `_CORRELATION_*` constants).
+        """
+        next_y = self.load(
+            next_audio_file_path,
+            duration=self.margin_extracted_from_next_segment + _CORRELATION_SEARCH_SEC,
+        )
+
+        search_samples = int(_CORRELATION_SEARCH_SEC * self.sr)
+        match_samples = int(_CORRELATION_MATCH_SEC * self.sr)
+
+        tail = y[-search_samples:]
+        needle = next_y[:match_samples]
+
+        overlap_samples = 0
+        if len(needle) == match_samples and len(tail) > len(needle):
+            start, correlation = find_best_correlation(tail, needle)
+            if correlation >= _CORRELATION_THRESHOLD:
+                overlap_samples = len(tail) - start
+
+        margin_samples = int(self.margin_extracted_from_next_segment * self.sr)
+        margin = next_y[overlap_samples : overlap_samples + margin_samples]
+
+        return np.concatenate([y, margin])
 
     def extract_features(self, y: np.ndarray) -> dict:
         energy = librosa.feature.rms(y=y, hop_length=self.hop_length)[0]
@@ -71,15 +141,27 @@ class ChunkCreator:
         Step 1: build a binary mask of silent frames.
 
         A frame is silent if its energy is below the `silence_percentile`
-        of the full signal. The mask is dilated by ~100ms to cover
-        silence edges.
+        computed *locally*, over a window of +/- seconds_reserved_for_previous_segment
+        around it, rather than over the whole signal. This is what makes boundary
+        detection reproducible across two independent runs that only share a few
+        seconds of overlapping audio (this segment's job and the previous/next
+        segment's job): since the threshold at a given point only depends on audio
+        within that shared window, both runs land on the exact same peak there,
+        so one job's last chunk end and the neighbouring job's first chunk start
+        always coincide instead of leaving a gap (or overlap).
+
+        The mask is then dilated by ~100ms to cover silence edges.
         """
-        non_zero = energy[energy > 0]
-        if len(non_zero) > 0:
-            silence_threshold = np.percentile(non_zero, self.silence_percentile)
-        else:
-            silence_threshold = np.percentile(energy, self.silence_percentile)
-        silence_mask = (energy <= silence_threshold).astype(float)
+        window_frames = (
+            2 * int(round(self.seconds_reserved_for_previous_segment * self._fps)) + 1
+        )
+        local_threshold = percentile_filter(
+            energy,
+            percentile=self.silence_percentile,
+            size=window_frames,
+            mode="nearest",
+        )
+        silence_mask = (energy <= local_threshold).astype(float)
 
         dilation_frames = max(1, int(0.1 * self._fps))
         silence_mask = maximum_filter1d(silence_mask, size=dilation_frames * 2 + 1)
@@ -141,31 +223,34 @@ class ChunkCreator:
 
         return np.array(selected_frames) / self._fps
 
-    def build_chunks(
+    def split_in_chunks_and_build_fingerprints(
         self,
-        peaks_sec: np.ndarray,
-        features: dict,
-        duration_sec: float,
         y: np.ndarray,
-        start_epoch: float,
-        end_epoch: float,
-        channel: str,
-    ) -> List[Chunk]:
-        """Build chunks with descriptors and constellation maps."""
-        frames_per_sec = self._fps
-        chunks = []
+        min_start_sec: float | None = None,
+        max_start_sec: float | None = None,
+    ) -> List[tuple[float, float, Fingerprint]]:
+        """Build fingerprints with descriptors and constellation maps."""
+
+        features = self.extract_features(y)
+
+        silence_mask = self._compute_silence_mask(features["energy"])
+        peaks_sec = self._detect_peaks(silence_mask, features["energy"])
+
+        if min_start_sec is not None:
+            peaks_sec = peaks_sec[peaks_sec >= min_start_sec]
+
+        fingerprints: List[tuple(float, float, Fingerprint)] = []
 
         for i in range(len(peaks_sec) - 1):
             t_start = peaks_sec[i]
             t_end = peaks_sec[i + 1]
             dur = t_end - t_start
 
-            # Skip chunks that would end after the segment's end time (can happen if the last peak is close to the end)
-            if float(t_start) + start_epoch > end_epoch:
+            if max_start_sec is not None and float(t_start) > max_start_sec:
                 continue
 
-            f_start = int(t_start * frames_per_sec)
-            f_end = int(t_end * frames_per_sec)
+            f_start = int(t_start * self._fps)
+            f_end = int(t_end * self._fps)
             if f_end <= f_start:
                 continue
 
@@ -194,44 +279,267 @@ class ChunkCreator:
                 zcr_mean=z,
             )
 
-            chunks.append(
-                Chunk(
-                    start_sec=round(start_epoch + float(t_start), 2),
-                    end_sec=round(start_epoch + float(t_end), 2),
-                    channel=channel,
-                    fingerprint=fingerprint,
-                )
-            )
+            fingerprints.append((t_start, t_end, fingerprint))
 
-        return chunks
+        return fingerprints
 
-    def run(self, segment: Segment, audio_file_path: str) -> List[Chunk]:
-        y = self.load(audio_file_path)
-        features = self.extract_features(y)
-        duration = len(y) / self.sr
+    def run(self, job: ChunkCreatorJob) -> List[Chunk]:
+        """Main usage of the ChunkCreator:
+        The function extract chunk, which are identified segments on specific timestamps on a specific media.
+        A ChunkCreatorJob object is the only argument, it describe the spec of the extraction.
+        """
+        start_epoch = job.segment.start_date.timestamp()
+        end_epoch = job.segment.end_date.timestamp()
+        duration = end_epoch - start_epoch
 
-        # Step 1: identify silent frames
-        silence_mask = self._compute_silence_mask(features["energy"])
-        # Step 2: find boundaries at deepest silences
-        peaks_sec = self._detect_peaks(silence_mask, features["energy"])
+        y = self.load(job.audio_file_path)
 
-        return self.build_chunks(
-            peaks_sec,
-            features,
-            duration,
-            y,
-            segment.start_date.timestamp(),
-            segment.end_date.timestamp(),
-            channel=segment.channel,
+        if job.next_audio_file_path is not None:
+            y = self._extend_with_next_segment(y, job.next_audio_file_path)
+
+        # The previous segment's own extraction already covered this leading window
+        # (via its margin_extracted_from_next_segment); drop peaks in it so chunk
+        # creation only starts at seconds_reserved_for_previous_segment.
+        min_start_sec = (
+            self.seconds_reserved_for_previous_segment
+            if job.has_previous_segment
+            else None
         )
+
+        max_start_sec = duration
+        if job.next_audio_file_path is not None:
+            # Allow chunks to start into the appended margin, but only up to
+            # seconds_reserved_for_previous_segment past the original audio's end — the
+            # next segment's own run (has_previous_segment=True) picks up from there.
+            max_start_sec += self.seconds_reserved_for_previous_segment
+
+        fingerprints = self.split_in_chunks_and_build_fingerprints(
+            y=y,
+            min_start_sec=min_start_sec,
+            max_start_sec=max_start_sec,
+        )
+
+        return [
+            Chunk(
+                start_sec=round(start_epoch + float(t_start), 2),
+                end_sec=round(start_epoch + float(t_end), 2),
+                channel=job.segment.channel,
+                fingerprint=fingerprint,
+            )
+            for (t_start, t_end, fingerprint) in fingerprints
+        ]
+
+    def run_on_audio_file(
+        self, audio_file_path: str, offset: float, duration: float
+    ) -> List[Fingerprint]:
+        """Alternative function in order to run the same extraction from a different payload.
+        The argument is only an audio_file_path, which means we do not know where and when it happens, we extract relative timestamps.
+        We only return the fingerprint of chunks, which is the part of the chunks that only depend on the content, not the position in time and space.
+
+        `start_sec`/`end_sec` are assumed to already be natural boundaries (e.g.
+        the audio was split there when the file was created), so we crop the
+        signal to that window and make sure the returned chunks cover it fully.
+        """
+        y = self.load(audio_file_path, offset=offset, duration=duration)
+
+        fingerprints = self.split_in_chunks_and_build_fingerprints(y=y)
+
+        return [fingerprint for (start, end, fingerprint) in fingerprints]
 
     def params(self) -> dict:
         return {
+            "algo_version": _ALGO_VERSION,
             "sr": self.sr,
             "hop_length": self.hop_length,
             "min_chunk_sec": self.min_chunk_sec,
             "silence_percentile": self.silence_percentile,
+            "seconds_reserved_for_previous_segment": self.seconds_reserved_for_previous_segment,
+            "margin_extracted_from_next_segment": self.margin_extracted_from_next_segment,
         }
 
     def params_hash(self) -> str:
         return make_params_hash(self.params())
+
+
+def debug_split(job: ChunkCreatorJob, cc: ChunkCreator, verbose: bool = True) -> dict:
+    """
+    Print a step-by-step explanation of how a single audio window gets split
+    into chunks, and return the intermediate values (silence mask, candidate
+    peaks, accepted/dropped peaks, final chunks, ...) so a visualizer can
+    reuse them without recomputing everything.
+
+    Usage:
+        trace = debug_split(job, chunk_creator)
+    """
+
+    def log(*args):
+        if verbose:
+            print(*args)
+
+    log("=" * 60)
+    log("DEBUG: audio window splitting analysis")
+    log(
+        f"  segment: [{job.segment.start_date} -> {job.segment.end_date}]  channel={job.segment.channel}"
+    )
+    log(f"  audio_file_path: {job.audio_file_path}")
+    log(
+        f"  has_previous_segment={job.has_previous_segment}  next_audio_file_path={job.next_audio_file_path}"
+    )
+    log("=" * 60)
+
+    # ── [1] Load audio (+ optional next-segment margin) ─────────────────
+    y = cc.load(job.audio_file_path)
+    log(f"\n[1] Load audio: {len(y)} samples @ {cc.sr}Hz = {len(y) / cc.sr:.2f}s")
+
+    if job.next_audio_file_path is not None:
+        base_len = len(y)
+        y = cc._extend_with_next_segment(y, job.next_audio_file_path)
+        added_sec = (len(y) - base_len) / cc.sr
+        log(
+            f"    + extended with next segment margin: +{added_sec:.2f}s "
+            f"(target {cc.margin_extracted_from_next_segment:.2f}s)"
+        )
+
+    features = cc.extract_features(y)
+    duration = len(y) / cc.sr
+    log(
+        f"    total window duration (with margin): {duration:.2f}s, {len(features['energy'])} frames"
+    )
+
+    # ── [2] Silence mask ─────────────────────────────────────────────────
+    log("\n[2] Silence mask (local percentile threshold)")
+    window_frames = (
+        2 * int(round(cc.seconds_reserved_for_previous_segment * cc._fps)) + 1
+    )
+    local_threshold = percentile_filter(
+        features["energy"],
+        percentile=cc.silence_percentile,
+        size=window_frames,
+        mode="nearest",
+    )
+    silence_mask = cc._compute_silence_mask(features["energy"])
+    n_silent = int(silence_mask.sum())
+    log(
+        f"    silence_percentile={cc.silence_percentile}  window=±{cc.seconds_reserved_for_previous_segment}s"
+    )
+    log(
+        f"    silent frames: {n_silent}/{len(silence_mask)} ({100 * n_silent / len(silence_mask):.1f}%)"
+    )
+
+    # ── [3] Peak candidates (deepest point of each silence region) ───────
+    log("\n[3] Peak candidates (deepest point of each silence region)")
+    n_frames = len(silence_mask)
+    diff = np.diff(np.concatenate([[0], silence_mask, [0]]))
+    starts = np.where(diff > 0.5)[0]
+    ends = np.where(diff < -0.5)[0]
+
+    region_candidates = []
+    for s, e in zip(starts, ends):
+        e = min(e, n_frames)
+        region_energy = features["energy"][s:e]
+        if len(region_energy) == 0:
+            continue
+        min_idx = s + int(np.argmin(region_energy))
+        region_candidates.append(
+            {
+                "region": (int(s), int(e)),
+                "frame": min_idx,
+                "energy": float(features["energy"][min_idx]),
+                "time_sec": min_idx / cc._fps,
+            }
+        )
+
+    log(
+        f"    {len(region_candidates)} silence regions found -> {len(region_candidates)} candidate peaks"
+    )
+    for rc in region_candidates[:10]:
+        log(
+            f"      region[{rc['region'][0]}:{rc['region'][1]}] -> t={rc['time_sec']:.2f}s energy={rc['energy']:.5f}"
+        )
+    if len(region_candidates) > 10:
+        log(f"      ... and {len(region_candidates) - 10} more")
+
+    # ── [4] Minimum spacing filter ─────────────────────────────────────────
+    log(f"\n[4] Minimum spacing filter (min_chunk_sec={cc.min_chunk_sec:.2f}s)")
+    min_dist_frames = int(cc.min_chunk_sec * cc._fps)
+    sorted_by_energy = sorted(region_candidates, key=lambda c: c["energy"])
+    accepted_frames: list[int] = []
+    accepted_candidates = []
+    dropped_candidates = []
+    for rc in sorted_by_energy:
+        frame = rc["frame"]
+        if all(abs(frame - s) >= min_dist_frames for s in accepted_frames):
+            accepted_frames.append(frame)
+            accepted_candidates.append(rc)
+        else:
+            blocker = min(accepted_frames, key=lambda s: abs(frame - s))
+            dropped_candidates.append({**rc, "blocked_by_time_sec": blocker / cc._fps})
+
+    accepted_frames_sorted = sorted(accepted_frames)
+    peaks_sec = np.array(accepted_frames_sorted) / cc._fps
+
+    log(
+        f"    kept {len(accepted_frames_sorted)}/{len(region_candidates)} peaks, "
+        f"dropped {len(dropped_candidates)} (too close to a deeper silence)"
+    )
+    for d in dropped_candidates[:10]:
+        log(
+            f"      dropped t={d['time_sec']:.2f}s energy={d['energy']:.5f}  (blocked by peak @ {d['blocked_by_time_sec']:.2f}s)"
+        )
+    if len(dropped_candidates) > 10:
+        log(f"      ... and {len(dropped_candidates) - 10} more")
+
+    # ── [5] Drop peaks covered by the previous job ────────────────────────
+    kept_peaks_sec = peaks_sec
+    if job.has_previous_segment:
+        before = len(kept_peaks_sec)
+        kept_peaks_sec = kept_peaks_sec[
+            kept_peaks_sec >= cc.seconds_reserved_for_previous_segment
+        ]
+        log(
+            f"\n[5] Drop peaks before seconds_reserved_for_previous_segment="
+            f"{cc.seconds_reserved_for_previous_segment}s (covered by the previous job)"
+        )
+        log(f"    kept {len(kept_peaks_sec)}/{before} peaks")
+    else:
+        log("\n[5] No previous segment: keep all peaks from t=0")
+
+    # ── [6] Build final chunks ─────────────────────────────────────────────
+    chunk_start_cutoff_epoch = job.segment.end_date.timestamp()
+    if job.next_audio_file_path is not None:
+        chunk_start_cutoff_epoch += cc.seconds_reserved_for_previous_segment
+
+    chunks = cc.build_chunks(
+        kept_peaks_sec,
+        features,
+        duration,
+        y,
+        job.segment.start_date.timestamp(),
+        chunk_start_cutoff_epoch,
+        channel=job.segment.channel,
+    )
+
+    log(f"\n[6] Final chunks built: {len(chunks)}")
+    for c in chunks:
+        log(
+            f"      [{c.start_sec:.2f} -> {c.end_sec:.2f}]  dur={c.fingerprint.duration_sec:.2f}s  "
+            f"energy={c.fingerprint.energy_mean:.4f}  centroid={c.fingerprint.spectral_centroid:.1f}Hz"
+        )
+
+    log("\n" + "=" * 60)
+
+    return {
+        "y": y,
+        "features": features,
+        "duration": duration,
+        "silence_mask": silence_mask,
+        "local_threshold": local_threshold,
+        "region_candidates": region_candidates,
+        "accepted_candidates": accepted_candidates,
+        "dropped_candidates": dropped_candidates,
+        "peaks_sec": peaks_sec,
+        "kept_peaks_sec": kept_peaks_sec,
+        "chunk_start_cutoff_sec": chunk_start_cutoff_epoch
+        - job.segment.start_date.timestamp(),
+        "chunks": chunks,
+    }

@@ -147,6 +147,36 @@
       color: var(--accent);
     }
 
+    /* ─── Chunks Panel ───────────────────────────────── */
+    #chunks-panel {
+      display: none;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      flex-shrink: 0;
+    }
+
+    #chunks-panel.open {
+      display: block;
+    }
+
+    #chunks-panel-stats {
+      font-size: 12px;
+      color: var(--text2);
+      font-family: var(--mono);
+      margin-bottom: 6px;
+    }
+
+    #chunks-panel-stats span {
+      color: var(--accent);
+    }
+
+    #chunks-histogram-canvas {
+      display: block;
+      width: 100%;
+      height: 110px;
+    }
+
     /* ─── Legend ──────────────────────────────────────── */
     #legend-bar {
       display: flex;
@@ -609,10 +639,16 @@
       <div><span class="stat-val" id="stat-groups">0</span> groupes</div>
       <div><span class="stat-val" id="stat-annotations">0</span> annotations</div>
     </div>
+    <button id="chunks-toggle">Chunks</button>
     <button id="params-toggle">Paramètres</button>
   </div>
 
   <div id="params-panel"></div>
+
+  <div id="chunks-panel">
+    <div id="chunks-panel-stats"></div>
+    <canvas id="chunks-histogram-canvas"></canvas>
+  </div>
 
   <div id="legend-bar"></div>
 
@@ -676,6 +712,7 @@
       const FRAGMENTS = DATA.fragments;
       const ANNOTATIONS = DATA.annotations;
       const DENSITY = DATA.density;
+      const CHUNK_DURATION_HISTOGRAM = DATA.chunkDurationHistogram;
       const PARAMS = DATA.params;
       const T_MIN = DATA.timeRange.min;
       const T_MAX = DATA.timeRange.max;
@@ -811,6 +848,55 @@
         resizeCanvas(densityCanvas, document.getElementById("density-row"));
         resizeCanvas(timelineCanvas, document.getElementById("timeline-row"));
         render();
+        if (document.getElementById("chunks-panel").classList.contains("open")) {
+          drawChunkHistogram();
+        }
+      }
+
+      // ───────────────────────────────────────────────────────────
+      //  Render: Chunk duration histogram
+      // ───────────────────────────────────────────────────────────
+      const chunksHistogramCanvas = document.getElementById("chunks-histogram-canvas");
+      const chunksHistogramCtx = chunksHistogramCanvas.getContext("2d");
+
+      function drawChunkHistogram() {
+        const h = CHUNK_DURATION_HISTOGRAM;
+        if (!h || !h.total) return;
+
+        const { w, h: ch } = resizeCanvas(chunksHistogramCanvas, chunksHistogramCanvas);
+        const ctx = chunksHistogramCtx;
+        ctx.clearRect(0, 0, w, ch);
+
+        const bars = h.counts.concat([h.overflow]);
+        const maxCount = Math.max(1, ...bars);
+        const padLeft = 4, padRight = 4, padTop = 6, padBottom = 16;
+        const plotW = w - padLeft - padRight;
+        const plotH = ch - padTop - padBottom;
+        const barGap = 1;
+        const barW = Math.max(1, plotW / bars.length - barGap);
+
+        bars.forEach((count, i) => {
+          const barH = (count / maxCount) * plotH;
+          const x = padLeft + i * (barW + barGap);
+          const y = padTop + (plotH - barH);
+          const isOverflow = i === bars.length - 1;
+          ctx.fillStyle = isOverflow ? "#a08020" : "#00d2a0";
+          ctx.fillRect(x, y, barW, barH);
+        });
+
+        // Axis labels
+        ctx.fillStyle = "#8890a8";
+        ctx.font = "10px sans-serif";
+        ctx.textBaseline = "top";
+        ctx.fillText("0s", padLeft, ch - padBottom + 3);
+        ctx.textAlign = "center";
+        ctx.fillText(h.maxSec + "s+", padLeft + plotW, ch - padBottom + 3);
+        ctx.textAlign = "left";
+
+        // Stats line
+        document.getElementById("chunks-panel-stats").innerHTML =
+          `${h.total} chunks · moyenne <span>${h.mean.toFixed(2)}s</span> · médiane <span>${h.median.toFixed(2)}s</span>` +
+          (h.overflow ? ` · <span>${h.overflow}</span> ≥ ${h.maxSec}s (hors graphe)` : "");
       }
 
       // ───────────────────────────────────────────────────────────
@@ -1497,6 +1583,12 @@
         document.getElementById("params-panel").classList.toggle("open");
       });
 
+      document.getElementById("chunks-toggle").addEventListener("click", () => {
+        const panel = document.getElementById("chunks-panel");
+        panel.classList.toggle("open");
+        if (panel.classList.contains("open")) drawChunkHistogram();
+      });
+
       document.getElementById("focus-btn").addEventListener("click", handleFocusInput);
       document.getElementById("focus-input").addEventListener("keydown", (e) => {
         if (e.key === "Enter") { e.preventDefault(); handleFocusInput(); }
@@ -1533,6 +1625,11 @@
           document.getElementById("params-panel").innerHTML = html;
         } else {
           document.getElementById("params-toggle").style.display = "none";
+        }
+
+        // Chunk duration histogram
+        if (!CHUNK_DURATION_HISTOGRAM || !CHUNK_DURATION_HISTOGRAM.total) {
+          document.getElementById("chunks-toggle").style.display = "none";
         }
 
         // Legend bar (classification filter)

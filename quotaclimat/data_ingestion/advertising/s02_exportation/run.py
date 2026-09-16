@@ -1,37 +1,44 @@
 import asyncio
-import io
 import logging
 import os
-import sys
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import s3fs
 from sentry_sdk.crons import monitor
 from sqlalchemy import func, select
-from tqdm import tqdm
+from sqlalchemy.orm import aliased
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad, Ad_Occurrence
-from quotaclimat.data_ingestion.advertising.s01_detection.tools.mediatree import (
-    MediatreeAPI,
+from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
+    ad_media_s3_key,
+    ad_prefix_in_bucket,
+)
+from quotaclimat.data_ingestion.advertising.tools.interactive_tqdm import (
+    interactive_tqdm,
+)
+from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree import (
+    cleanup_day_media_parts,
+    download_media_parts,
+    extract_segment,
+    required_part_starts,
+)
+from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree import (
+    get_s3_filesystem as get_mediatree_s3_filesystem,
 )
 from quotaclimat.utils.logger import getLogger
 from quotaclimat.utils.sentry import sentry_init
 
 logger = logging.getLogger(__name__)
 
-_LOG_MODE = os.environ.get("TQDM_LOG_MODE", "0") == "1" or not sys.stdout.isatty()
 
-
-ACCESS_KEY = os.environ.get("BUCKET")
-SECRET_KEY = os.environ.get("BUCKET_SECRET")
 BUCKET_NAME = os.environ.get("ADVERTISING_BUCKET_NAME")
-REGION = "fr-par"
-ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
 AD_S3_PREFIX = "ads"
 
-MARGIN_ON_MEDIA_EXPORT = timedelta(seconds=1)
+MARGIN_ON_MEDIA_EXPORT = timedelta(
+    seconds=float(os.environ.get("MARGIN_ON_MEDIA_EXPORT", 0.1))
+)
 
 MIN_BYTES_PER_SECOND_VIDEO = (
     10_000  # ~80 kbps; below this threshold the mp4 is likely corrupted
@@ -40,17 +47,18 @@ MIN_BYTES_PER_SECOND_VIDEO = (
 PAGE_SIZE = 100
 MAX_CONCURRENT_EXPORTS = 10
 
+LOCAL_CACHE_DIR = "./.cache/mediatree_export"
+
 
 def get_s3_filesystem() -> s3fs.S3FileSystem:
-    return s3fs.S3FileSystem(
-        key=ACCESS_KEY,
-        secret=SECRET_KEY,
-        client_kwargs={"endpoint_url": ENDPOINT_URL, "region_name": REGION},
-    )
+    # Both the mediatree source bucket and the advertising destination bucket live on
+    # the same endpoint/credentials; the bucket name is already part of every S3 path
+    # used below, so one filesystem instance can read from one and write to the other.
+    return get_mediatree_s3_filesystem()
 
 
 async def ad_folder_exists_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> bool:
-    path = f"{BUCKET_NAME}/{AD_S3_PREFIX}/{ad_id}"
+    path = ad_prefix_in_bucket(ad_id)
     try:
         return await fs._exists(path)
     except Exception as e:
@@ -59,7 +67,7 @@ async def ad_folder_exists_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> bool:
 
 
 async def get_raw_mp4_size_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> int | None:
-    path = f"{BUCKET_NAME}/{AD_S3_PREFIX}/{ad_id}/raw.mp4"
+    path = ad_media_s3_key(ad_id, "mp4")
     try:
         info = await fs._info(path)
         return info.get("size")
@@ -84,65 +92,95 @@ def count_ads_since(session, since_date: datetime) -> int:
     return result.scalar()
 
 
-def iter_ads_pages(session, since_date: datetime, page_size: int):
-    """Yield pages of (Ad, Ad_Occurrence) using a server-side cursor."""
+def _grouped_ads_query(since_date: datetime):
+    """Same rows as `_base_ads_query`, but read back out of its DISTINCT ON result so
+    they can be ordered by channel/date -- Postgres requires DISTINCT ON's own ORDER BY
+    to start with the distinct-on expression (Ad.id here), so this order has to be
+    applied on top of it rather than combined into the same query.
+    """
+    inner = _base_ads_query(since_date).subquery()
+    ad_alias = aliased(Ad, inner)
+    occurrence_alias = aliased(Ad_Occurrence, inner)
+    return select(ad_alias, occurrence_alias).order_by(
+        occurrence_alias.channel_name, occurrence_alias.occurrence_date
+    )
+
+
+def iter_ads_by_channel_day(session, since_date: datetime, page_size: int):
+    """Stream (Ad, Ad_Occurrence) rows from Postgres via a server-side cursor, ordered
+    by channel and occurrence date, yielding one (channel, day) group -- where day is
+    the occurrence's UTC calendar date, matching how mediatree lays out its S3 bucket --
+    at a time as the sorted stream progresses. Only one group is ever held in memory,
+    rather than every ad since `since_date`.
+    """
     result = session.execute(
-        _base_ads_query(since_date),
+        _grouped_ads_query(since_date),
         execution_options={"stream_results": True},
     )
-    yield from result.yield_per(page_size).partitions()
+
+    current_key = None
+    current_group: list[tuple[Ad, Ad_Occurrence]] = []
+
+    for ad, occurrence in result.yield_per(page_size):
+        key = (occurrence.channel_name, occurrence.occurrence_date.date())
+        if current_key is not None and key != current_key:
+            yield current_key, current_group
+            current_group = []
+        current_key = key
+        current_group.append((ad, occurrence))
+
+    if current_group:
+        yield current_key, current_group
+
+
+def _ad_export_window(ad: Ad, occurrence: Ad_Occurrence) -> tuple[datetime, datetime]:
+    occurrence_start = occurrence.occurrence_date.replace(tzinfo=ZoneInfo("UTC"))
+    occurrence_end = occurrence_start + timedelta(seconds=ad.duration_sec)
+
+    from_date = occurrence_start - MARGIN_ON_MEDIA_EXPORT
+    to_date = occurrence_end + MARGIN_ON_MEDIA_EXPORT
+    return from_date, to_date
 
 
 async def _export_ad(
-    ad: Ad, occurrence: Ad_Occurrence, api: MediatreeAPI, fs: s3fs.S3FileSystem
-):
-    """Export an ad to S3 based on one of its occurrences.
-    Streams the media file directly to S3 to avoid writing it locally.
-    """
-    occurence_start_date = occurrence.occurrence_date
-    occurence_end_date = occurence_start_date + timedelta(seconds=ad.duration_sec)
-    channel = occurrence.channel_name
-
-    from_date = occurence_start_date - MARGIN_ON_MEDIA_EXPORT
-    to_date = occurence_end_date + MARGIN_ON_MEDIA_EXPORT
-
-    for media_format in ("mp3", "mp4"):
-        buf = io.BytesIO()
-        await api.stream_export(channel, from_date, to_date, media_format, buf)
-
-        s3_key = f"{BUCKET_NAME}/{AD_S3_PREFIX}/{ad.id}/raw.{media_format}"
-        await fs._pipe_file(s3_key, buf.getvalue(), StorageClass="ONEZONE_IA")
-        logger.debug(
-            f"Uploaded s3://{BUCKET_NAME}/{AD_S3_PREFIX}/{ad.id}/raw.{media_format}"
-        )
-
-
-async def _process_ad(
     ad: Ad,
     occurrence: Ad_Occurrence,
-    api: MediatreeAPI,
+    from_date: datetime,
+    to_date: datetime,
+    parts: dict[datetime, dict[str, str]],
+    local_dir: str,
     fs: s3fs.S3FileSystem,
-    missing_ads: list,
-) -> str:
-    """Check if an ad already exists in S3, and export it if not.
-    Returns 'cached' if already in S3, 'uploaded' otherwise.
+):
+    """Extract an ad's segment out of the downloaded mediatree parts and upload it to
+    S3, for both the mp3 and mp4 formats.
     """
-    if await ad_folder_exists_in_s3(ad.id, fs):
-        mp4_size = await get_raw_mp4_size_in_s3(ad.id, fs)
-        min_expected_size = (ad.duration_sec + 2) * MIN_BYTES_PER_SECOND_VIDEO
-        if mp4_size is not None and mp4_size < min_expected_size:
-            missing_ads.append(ad.id)
-            return "uploaded"
+    for media_format in ("mp3", "mp4"):
+        local_path = os.path.join(local_dir, f"{ad.id}.{media_format}")
+        found = await extract_segment(
+            parts, from_date, to_date, media_format, local_path
+        )
+        if not found:
+            raise RuntimeError(
+                f"Missing mediatree parts in bucket for ad {ad.id} "
+                f"(channel={occurrence.channel_name}, format={media_format})"
+            )
 
-        logger.debug(f"Ad {ad.id} already in S3, skipping")
-        return "cached"
+        s3_key = ad_media_s3_key(ad.id, media_format)
+        try:
+            await fs._put_file(local_path, s3_key, StorageClass="ONEZONE_IA")
+            logger.debug(f"Uploaded s3://{s3_key}")
+        finally:
+            os.remove(local_path)
 
-    logger.debug(f"Processing ad {ad.id} (channel={occurrence.channel_name})")
-    if False:  # Use new mediatree pipeline
-        await _export_ad(ad, occurrence, api, fs)
-    else:
-        missing_ads.append(ad.id)
-    return "uploaded"
+
+async def _ad_needs_export(ad: Ad, fs: s3fs.S3FileSystem) -> bool:
+    """True if the ad is missing from S3, or present with a suspiciously small mp4."""
+    if not await ad_folder_exists_in_s3(ad.id, fs):
+        return True
+
+    mp4_size = await get_raw_mp4_size_in_s3(ad.id, fs)
+    min_expected_size = (ad.duration_sec + 2) * MIN_BYTES_PER_SECOND_VIDEO
+    return mp4_size is not None and mp4_size < min_expected_size
 
 
 async def run(since_date: datetime):
@@ -156,43 +194,84 @@ async def run(since_date: datetime):
         logger.info(f"Found {total} ads since {since_date}")
 
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_EXPORTS)
-        counts = {"cached": 0, "uploaded": 0, "error": 0}
-        progress = tqdm(total=total, desc="Exporting ads", disable=_LOG_MODE)
+        progress = interactive_tqdm(total=total, desc="Exporting ads")
 
-        async with MediatreeAPI(max_concurrent_requests=MAX_CONCURRENT_EXPORTS) as api:
-            for page in iter_ads_pages(session, since_date, PAGE_SIZE):
+        for (channel, day), ads in iter_ads_by_channel_day(
+            session, since_date, PAGE_SIZE
+        ):
 
-                async def _limited_process(ad, occurrence):
+            async def _check(ad, occurrence):
+                async with semaphore:
+                    return (ad, occurrence, await _ad_needs_export(ad, fs))
+
+            checked = await asyncio.gather(
+                *(_check(ad, occurrence) for ad, occurrence in ads)
+            )
+
+            # (ad, occurrence, from_date, to_date) for ads that still need exporting.
+            needs_export = []
+            for ad, occurrence, needs in checked:
+                if needs:
+                    from_date, to_date = _ad_export_window(ad, occurrence)
+                    needs_export.append((ad, occurrence, from_date, to_date))
+                else:
+                    progress.count("cached")
+                    progress.update(1)
+
+            if not needs_export:
+                continue
+
+            # Only fetch the 2-minutes archives actually covering these ads' segments,
+            # not the whole day -- a day can hold ~720 parts while most days only have
+            # a handful of ads to export.
+            part_starts = required_part_starts(
+                [(from_date, to_date) for _, _, from_date, to_date in needs_export]
+            )
+
+            local_dir = os.path.join(LOCAL_CACHE_DIR, channel, day.isoformat())
+            try:
+                try:
+                    parts = await download_media_parts(
+                        fs,
+                        channel,
+                        part_starts,
+                        local_dir,
+                        max_concurrent_downloads=MAX_CONCURRENT_EXPORTS,
+                        disable_progress=True,
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to download mediatree archives for {channel}/{day}: {e}"
+                    )
+                    for ad, _, _, _ in needs_export:
+                        missing_ads.append(ad.id)
+                        progress.count("error")
+                        progress.update(1)
+                    continue
+
+                async def _limited_export(ad, occurrence, from_date, to_date):
                     async with semaphore:
                         try:
-                            result = await _process_ad(
-                                ad, occurrence, api, fs, missing_ads
+                            await _export_ad(
+                                ad, occurrence, from_date, to_date, parts, local_dir, fs
                             )
-                            counts[result] += 1
+                            progress.count("uploaded")
                         except Exception as e:
                             logger.error(f"Failed to export ad {ad.id}: {e}")
-                            counts["error"] += 1
+                            missing_ads.append(ad.id)
+                            progress.count("error")
                         finally:
                             progress.update(1)
-                            progress.set_postfix(counts)
-                            if _LOG_MODE:
-                                done = (
-                                    counts["cached"]
-                                    + counts["uploaded"]
-                                    + counts["error"]
-                                )
-                                logger.info(
-                                    "Export %d/%d (uploaded=%d cached=%d error=%d)",
-                                    done,
-                                    total,
-                                    counts["uploaded"],
-                                    counts["cached"],
-                                    counts["error"],
-                                )
 
-                tasks = [_limited_process(ad, occurrence) for ad, occurrence in page]
-
-                await asyncio.gather(*tasks, return_exceptions=True)
+                await asyncio.gather(
+                    *(
+                        _limited_export(ad, occurrence, from_date, to_date)
+                        for ad, occurrence, from_date, to_date in needs_export
+                    ),
+                    return_exceptions=True,
+                )
+            finally:
+                cleanup_day_media_parts(local_dir)
 
         progress.close()
     finally:

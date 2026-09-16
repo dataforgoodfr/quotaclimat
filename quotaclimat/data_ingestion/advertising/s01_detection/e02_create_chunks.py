@@ -290,7 +290,7 @@ class ChunkCreator:
         """
         start_epoch = job.segment.start_date.timestamp()
         end_epoch = job.segment.end_date.timestamp()
-        duration = start_epoch - end_epoch
+        duration = end_epoch - start_epoch
 
         y = self.load(job.audio_file_path)
 

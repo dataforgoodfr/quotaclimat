@@ -27,7 +27,6 @@ logger = logging.getLogger(__name__)
 chunk_creator = ChunkCreator(
     fingerprinter=fingerprinter,
     min_chunk_sec=1.0,
-    silence_percentile=5.0,
     seconds_reserved_for_previous_segment=5,
     margin_extracted_from_next_segment=30,
 )

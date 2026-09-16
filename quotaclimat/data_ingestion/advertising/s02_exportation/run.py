@@ -75,30 +75,37 @@ async def get_raw_mp4_size_in_s3(ad_id: str, fs: s3fs.S3FileSystem) -> int | Non
         return None
 
 
-def _base_ads_query(since_date: datetime):
-    return (
-        select(Ad, Ad_Occurrence)
-        .join(Ad_Occurrence, Ad_Occurrence.ad_id == Ad.id)
-        .where(Ad.first_detection_date >= since_date)
-        .where(Ad.fragment_type != "no_data")
-        .distinct(Ad.id)
+def _base_ads_query(start_date: datetime | None, end_date: datetime | None):
+    base_query = select(Ad, Ad_Occurrence).join(
+        Ad_Occurrence, Ad_Occurrence.ad_id == Ad.id
     )
 
+    if start_date:
+        base_query = base_query.where(Ad.first_detection_date >= start_date)
+    if end_date:
+        base_query = base_query.where(Ad.first_detection_date < end_date)
 
-def count_ads_since(session, since_date: datetime) -> int:
+    return base_query.distinct(Ad.id)
+
+
+def count_ads_since(
+    session, start_date: datetime | None, end_date: datetime | None
+) -> int:
     result = session.execute(
-        select(func.count()).select_from(_base_ads_query(since_date).subquery())
+        select(func.count()).select_from(
+            _base_ads_query(start_date, end_date).subquery()
+        )
     )
     return result.scalar()
 
 
-def _grouped_ads_query(since_date: datetime):
+def _grouped_ads_query(start_date: datetime | None, end_date: datetime | None):
     """Same rows as `_base_ads_query`, but read back out of its DISTINCT ON result so
     they can be ordered by channel/date -- Postgres requires DISTINCT ON's own ORDER BY
     to start with the distinct-on expression (Ad.id here), so this order has to be
     applied on top of it rather than combined into the same query.
     """
-    inner = _base_ads_query(since_date).subquery()
+    inner = _base_ads_query(start_date, end_date).subquery()
     ad_alias = aliased(Ad, inner)
     occurrence_alias = aliased(Ad_Occurrence, inner)
     return select(ad_alias, occurrence_alias).order_by(
@@ -106,15 +113,17 @@ def _grouped_ads_query(since_date: datetime):
     )
 
 
-def iter_ads_by_channel_day(session, since_date: datetime, page_size: int):
+def iter_ads_by_channel_day(
+    session, start_date: datetime | None, end_date: datetime | None, page_size: int
+):
     """Stream (Ad, Ad_Occurrence) rows from Postgres via a server-side cursor, ordered
     by channel and occurrence date, yielding one (channel, day) group -- where day is
     the occurrence's UTC calendar date, matching how mediatree lays out its S3 bucket --
     at a time as the sorted stream progresses. Only one group is ever held in memory,
-    rather than every ad since `since_date`.
+    rather than every ad inside the start and end dates.
     """
     result = session.execute(
-        _grouped_ads_query(since_date),
+        _grouped_ads_query(start_date, end_date),
         execution_options={"stream_results": True},
     )
 
@@ -183,21 +192,21 @@ async def _ad_needs_export(ad: Ad, fs: s3fs.S3FileSystem) -> bool:
     return mp4_size is not None and mp4_size < min_expected_size
 
 
-async def run(since_date: datetime):
+async def run(start_date: datetime | None, end_date: datetime | None):
     session = get_db_session()
     fs = get_s3_filesystem()
 
     missing_ads = []
 
     try:
-        total = count_ads_since(session, since_date)
-        logger.info(f"Found {total} ads since {since_date}")
+        total = count_ads_since(session, start_date, end_date)
+        logger.info(f"Found {total} ads from {start_date} to {end_date}")
 
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_EXPORTS)
         progress = interactive_tqdm(total=total, desc="Exporting ads")
 
         for (channel, day), ads in iter_ads_by_channel_day(
-            session, since_date, PAGE_SIZE
+            session, start_date, end_date, PAGE_SIZE
         ):
 
             async def _check(ad, occurrence):
@@ -288,8 +297,21 @@ if __name__ == "__main__":
         sentry_init()
 
         str_start_date = os.environ.get("START_DATE")
-        start_date = datetime.fromisoformat(str_start_date).replace(
-            tzinfo=ZoneInfo("Europe/Paris")
+        start_date = (
+            datetime.fromisoformat(str_start_date).replace(
+                tzinfo=ZoneInfo("Europe/Paris")
+            )
+            if str_start_date
+            else None
         )
 
-        asyncio.run(run(start_date))
+        str_end_date = os.environ.get("END_DATE")
+        end_date = (
+            datetime.fromisoformat(str_end_date).replace(
+                tzinfo=ZoneInfo("Europe/Paris")
+            )
+            if str_end_date
+            else None
+        )
+
+        asyncio.run(run(start_date=start_date, end_date=end_date))

@@ -80,7 +80,6 @@ def _base_ads_query(since_date: datetime):
         select(Ad, Ad_Occurrence)
         .join(Ad_Occurrence, Ad_Occurrence.ad_id == Ad.id)
         .where(Ad.first_detection_date >= since_date)
-        .where(Ad.fragment_type != "no_data")
         .distinct(Ad.id)
     )
 

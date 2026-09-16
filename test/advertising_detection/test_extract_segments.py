@@ -8,12 +8,10 @@ from postgres.schemas.advertising.models import AdvertisingBase
 from postgres.schemas.models import (
     connect_to_db,
 )
-from quotaclimat.data_ingestion.advertising.s01_detection.e00_partition_window import (
-    Segment,
-)
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import (
     processor,
 )
+from quotaclimat.data_ingestion.advertising.tools.segments import Segment
 
 
 async def mock_download_audio(api, task: Segment) -> tuple[str, bool]:

@@ -61,6 +61,15 @@ jobs:
     - name: Push quotaclimat_base Image
       run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base
 
+    - name: Build quotaclimat_with_media_tools image
+      run: docker build -f Dockerfile.with_media_tools --build-arg BASE_IMAGE=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }} . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }}
+
+    - name: Tag quotaclimat_with_media_tools latest image
+      run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:latest
+
+    - name: Push quotaclimat_with_media_tools Image
+      run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools
+
     - name: Update import scaleway job
       uses: jawher/action-scw@v2.54.0
       env:
@@ -124,7 +133,7 @@ jobs:
       with:
         args: >-
           jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_DETECTION_ID }}
-          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }}
           startup-command.0=./entrypoints/advertising_detection.sh
 
     - name: Update advertising_exportation scaleway job
@@ -137,7 +146,7 @@ jobs:
       with:
         args: >-
           jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_EXPORTATION }}
-          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
+          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }}
           startup-command.0=./entrypoints/advertising_exportation.sh
 
   build-factiva:

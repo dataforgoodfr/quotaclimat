@@ -10,6 +10,7 @@ from typing import List
 
 import librosa
 import numpy as np
+import soundfile as sf
 from scipy.ndimage import maximum_filter1d, percentile_filter, uniform_filter1d
 
 from quotaclimat.data_ingestion.advertising.tools.correlation import (
@@ -58,7 +59,14 @@ class ChunkCreator:
     def __init__(
         self,
         fingerprinter: FingerprintGenerator,
-        sr: int = 22050,  # Sample rate (Hz) used for splitting/feature extraction.
+        sr: int = 48000,  # Sample rate (Hz) used for splitting/feature extraction.
+        # Matches mediatree's own MP3 export rate (checked via ffprobe on cached
+        # segments: 48000Hz), so librosa.load's resample step is a no-op instead of
+        # up/downsampling. Picking a rate other than the source's just interpolates
+        # or discards samples without adding real information, and can introduce
+        # filter artifacts (ringing near transients, non-zero noise floor in silence)
+        # that shift where energy minima land — exactly what silence-based peak
+        # detection depends on.
         # Decoupled from fingerprinter.sr: the two audio uses have different needs
         # (fine-grained silence detection here vs. stable, cache-friendly fingerprints
         # there), so segments are resampled to fingerprinter.sr before being fingerprinted.
@@ -70,7 +78,7 @@ class ChunkCreator:
         #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
         silence_percentile: float = 5.0,  # Energy percentile below which a frame is silent.
         #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
-        energy_smoothing_sec: float = 0,  # seconds
+        energy_smoothing_sec: float = 0.1,  # seconds
         # Moving-average window applied to the energy curve before it's used for
         # silence detection. Absorbs single-frame noise (e.g. mp3-encoding artifacts)
         # so the same audio, encoded twice, doesn't flip silent/non-silent on a frame
@@ -113,6 +121,14 @@ class ChunkCreator:
     def load(
         self, path: str, duration: float | None = None, offset: float = 0.0
     ) -> np.ndarray:
+        native_sr = sf.info(path).samplerate
+        if native_sr != self.sr:
+            raise ValueError(
+                f"{path} is encoded at {native_sr}Hz, expected {self.sr}Hz "
+                f"(ChunkCreator.sr). Loading it would resample rather than read "
+                f"the audio as-is, which silence detection is not tuned for."
+            )
+
         y, _ = librosa.load(
             path, sr=self.sr, mono=True, duration=duration, offset=offset
         )

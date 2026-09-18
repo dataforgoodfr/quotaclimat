@@ -76,7 +76,7 @@ class ChunkCreator:
         # hop_length like librosa's own default ratio, just scaled down for more detail.
         min_chunk_sec: float = 0.8,  # Minimum duration (seconds) between two boundaries.
         #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
-        silence_percentile: float = 5.0,  # Energy percentile below which a frame is silent.
+        silence_percentile: float = 8.0,  # Energy percentile below which a frame is silent.
         #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
         energy_smoothing_sec: float = 0.1,  # seconds
         # Moving-average window applied to the energy curve before it's used for

@@ -422,10 +422,20 @@ async def download_media_parts(
         )
         try:
             async with inflight:
-                parts[part_start] = await _download_and_extract_media(
-                    fs, s3_key, archive_dir, dest_dir, formats
-                )
-                progress.count("downloaded")
+                try:
+                    parts[part_start] = await _download_and_extract_media(
+                        fs, s3_key, archive_dir, dest_dir, formats
+                    )
+                    progress.count("downloaded")
+                except Exception as e:
+                    # Some parts are legitimately absent from mediatree's bucket (e.g.
+                    # short/low-priority archives that were never purchased). Leaving
+                    # this part out of `parts` rather than failing the whole batch lets
+                    # every other part still download, and ads that don't need this
+                    # specific part still get exported -- extract_segment already
+                    # treats a missing part as "can't export this ad" on its own.
+                    logger.warning(f"Skipping missing/unreadable part {s3_key}: {e}")
+                    progress.count("missing")
         finally:
             progress.update(1)
 

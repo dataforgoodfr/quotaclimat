@@ -10,6 +10,10 @@ from quotaclimat.data_processing.mediatree.i8n.france import (
     channel_titles_france,
     channels_programs_france,
 )
+from quotaclimat.data_processing.mediatree.i8n.extended_france import (
+    channel_titles_extended_france,
+    channels_programs_extended_france,
+) # Pour Droit à l'info - RRS
 from quotaclimat.data_processing.mediatree.i8n.germany import (
     channel_titles_germany,
     channels_programs_germany,
@@ -38,6 +42,7 @@ EPOCH__1MIN_MARGIN = 60 # to add margin for program
 # Define country codes as Literal types
 # from https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3
 FranceCode = Literal["fra"]
+ExtendedFranceCode = Literal["ext-fra"]
 GermanyCode = Literal["deu"]
 BrazilCode = Literal["bra"]
 BelgiumCode = Literal["bel"]
@@ -47,6 +52,7 @@ PolandCode = Literal["pol"]
 AllCode = Literal["all"]
 CountryCode = Union[
     FranceCode,
+    ExtendedFranceCode,
     GermanyCode,
     BelgiumCode,
     BelgiumFlandersCode,
@@ -59,6 +65,8 @@ CountryCode = Union[
 def get_country_name_from_code(code: CountryCode) -> str:
     match code:
         case "fra":
+            return 'france'
+        case "ext-fra":
             return 'france'
         case "deu":
             return 'germany'
@@ -121,6 +129,26 @@ FRANCE_CHANNELS= ["tf1", "france2", "fr3-idf", "m6", "arte", "bfmtv", "lci", "fr
 FRANCE_TZ = "Europe/Paris"
 FRANCE_LANGUAGE = "french"
 FRANCE = CountryMediaTree(code=FRANCE_CODE,channels=FRANCE_CHANNELS, timezone=FRANCE_TZ, language=FRANCE_LANGUAGE, programs=channels_programs_france, titles=channel_titles_france)
+
+# Extended perimeter for france to be used only for Droit à l'info
+EXTENDED_FRANCE_CODE : ExtendedFranceCode = "ext-fra"
+EXTENDED_FRANCE_CHANNELS = [
+    "tf1",
+    "france2",
+    "fr3-idf",
+    "rtl",
+    "france5",
+    "tmc",
+    "lcp",
+]
+EXTENDED_FRANCE = CountryMediaTree(
+    code=EXTENDED_FRANCE_CODE,
+    channels=EXTENDED_FRANCE_CHANNELS, 
+    timezone=FRANCE_TZ, 
+    language=FRANCE_LANGUAGE, 
+    programs=channels_programs_extended_france, 
+    titles=channel_titles_extended_france
+)
 
 BELGIUM_CODE : BelgiumCode = "bel"
 BELGIUM_CHANNELS= [
@@ -257,6 +285,7 @@ POLAND = CountryMediaTree(code=POLAND_CODE,channels=POLAND_CHANNELS, timezone=PO
 
 COUNTRIES = {
     FRANCE.code: FRANCE,
+    EXTENDED_FRANCE.code: EXTENDED_FRANCE,
     GERMANY.code: GERMANY,
     BRAZIL.code: BRAZIL,
     BELGIUM.code: BELGIUM,
@@ -286,7 +315,7 @@ def get_all_countries(no_belgium = False):
 
 def validate_country_code(code: str) -> CountryCode:
     """Validate that a string is a valid country code."""
-    if code in (FRANCE_CODE, GERMANY_CODE, BRAZIL_CODE, BELGIUM_CODE, BELGIUM_FLANDERS_CODE, POLAND_CODE, SPAIN_CODE, ALL_COUNTRIES_CODE):
+    if code in list(COUNTRIES.keys()) + [ALL_COUNTRIES_CODE]:
         return code
     raise ValueError(f"Invalid country code: {code}")
 
@@ -334,9 +363,9 @@ def get_countries_array(country_code: str, no_belgium = True):
 
 def get_mediatree_channels(channels, country: CountryMediaTree):
     if country == GERMANY:
-        logging.warning(f"Removing channels daserste and zdf-neo and using GERMANY_CHANNELS_MEDIATREE as import via SRT")
+        logging.warning("Removing channels daserste and zdf-neo and using GERMANY_CHANNELS_MEDIATREE as import via SRT")
         channels = GERMANY_CHANNELS_MEDIATREE
     elif country == BELGIUM:
-        logging.warning(f"Removing channels for BELGIUM imported directly and leaving only BELGIUM_CHANNELS_MEDIATREE")
+        logging.warning("Removing channels for BELGIUM imported directly and leaving only BELGIUM_CHANNELS_MEDIATREE")
         channels = BELGIUM_CHANNELS_MEDIATREE
     return channels

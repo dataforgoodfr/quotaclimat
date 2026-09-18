@@ -40,6 +40,20 @@ resource "scaleway_rdb_privilege" "rrs_admin" {
   permission    = "all"
 }
 
+# Create the extended-perimeter database on the instance.
+resource "scaleway_rdb_database" "extended_perimeter" {
+  instance_id = scaleway_rdb_instance.rrs_rdb.id
+  name        = "extended-perimeter"
+}
+
+# Grant the admin user full privileges on the extended-perimeter database.
+resource "scaleway_rdb_privilege" "extended_perimeter_admin" {
+  instance_id   = scaleway_rdb_instance.rrs_rdb.id
+  user_name     = "rrs-admin-${var.environment}"
+  database_name = scaleway_rdb_database.extended_perimeter.name
+  permission    = "all"
+}
+
 # Migration user — admin so it can run DDL (CREATE/ALTER TABLE via Alembic).
 # Using a standalone scaleway_rdb_user keeps the password in sync with the secret,
 # unlike the instance-level password_wo which is write-only and can silently diverge.
@@ -54,6 +68,13 @@ resource "scaleway_rdb_privilege" "rrs_migrate_user" {
   instance_id   = scaleway_rdb_instance.rrs_rdb.id
   user_name     = scaleway_rdb_user.rrs_migrate_user.name
   database_name = scaleway_rdb_database.rrs.name
+  permission    = "all"
+}
+
+resource "scaleway_rdb_privilege" "extended_perimeter_migrate_user" {
+  instance_id   = scaleway_rdb_instance.rrs_rdb.id
+  user_name     = scaleway_rdb_user.rrs_migrate_user.name
+  database_name = scaleway_rdb_database.extended_perimeter.name
   permission    = "all"
 }
 
@@ -72,6 +93,13 @@ resource "scaleway_rdb_privilege" "rrs_job_user" {
   permission    = "readwrite"
 }
 
+resource "scaleway_rdb_privilege" "extended_perimeter_job_user" {
+  instance_id   = scaleway_rdb_instance.rrs_rdb.id
+  user_name     = scaleway_rdb_user.rrs_job_user.name
+  database_name = scaleway_rdb_database.extended_perimeter.name
+  permission    = "readwrite"
+}
+
 resource "scaleway_rdb_user" "rrs_metabase_user" {
   instance_id = scaleway_rdb_instance.rrs_rdb.id
   name        = "rrs-metabase-${var.environment}"
@@ -83,6 +111,13 @@ resource "scaleway_rdb_privilege" "rrs_metabase_user" {
   instance_id   = scaleway_rdb_instance.rrs_rdb.id
   user_name     = scaleway_rdb_user.rrs_metabase_user.name
   database_name = scaleway_rdb_database.rrs.name
+  permission    = "readonly"
+}
+
+resource "scaleway_rdb_privilege" "extended_perimeter_metabase_user" {
+  instance_id   = scaleway_rdb_instance.rrs_rdb.id
+  user_name     = scaleway_rdb_user.rrs_metabase_user.name
+  database_name = scaleway_rdb_database.extended_perimeter.name
   permission    = "readonly"
 }
 

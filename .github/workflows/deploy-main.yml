@@ -181,15 +181,6 @@ jobs:
           password: ${{ secrets.SCALEWAY_API_KEY }}
           registry: ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}
 
-      - name: Build factiva_stats_to_s3 image
-        run: docker build -f Dockerfile_factiva_stats_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:${{ env.PROJECT_VERSION }}
-
-      - name: Tag factiva_stats_to_s3 latest image
-        run: docker tag ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:${{ env.PROJECT_VERSION }} ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3:latest
-
-      - name: Push factiva_stats_to_s3 Image
-        run: docker push --all-tags ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_stats_to_s3
-
       - name: Build factiva_to_s3 image
         run: docker build -f Dockerfile_factiva_to_s3 . -t ${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/factiva_to_s3:${{ env.PROJECT_VERSION }}
 

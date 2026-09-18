@@ -3,11 +3,6 @@ Détection de ruptures dans un flux audio (TV/Radio)
 =====================================================
 Chunke automatiquement un fichier audio en unités naturelles,
 en coupant dans les micro silences où le contenu change.
-
-Deux étapes explicites :
-  1. Détection de pics dans les zones de silence (critère primaire)
-  2. Filtrage par dissimilarité cosinus : ne garder que les silences
-     où le contenu audio change réellement (critère secondaire)
 """
 
 from dataclasses import dataclass
@@ -55,31 +50,45 @@ class ChunkCreatorJob:
 
 class ChunkCreator:
     """
-    Stratégie en deux passes :
+    Stratégie :
       1. Trouver les pics de silence (transitions naturelles)
-      2. Ne garder que ceux où le contenu audio change (dissimilarité cosinus)
-      3. Extraire les descripteurs et la constellation map par chunk
+      2. Extraire les descripteurs et la constellation map par chunk
     """
 
     def __init__(
         self,
         fingerprinter: FingerprintGenerator,
-        min_chunk_sec: float = 5.0,  # Minimum duration (seconds) between two boundaries.
+        sr: int = 22050,  # Sample rate (Hz) used for splitting/feature extraction.
+        # Decoupled from fingerprinter.sr: the two audio uses have different needs
+        # (fine-grained silence detection here vs. stable, cache-friendly fingerprints
+        # there), so segments are resampled to fingerprinter.sr before being fingerprinted.
+        hop_length: int = 512,  # STFT/RMS hop size (samples). Controls frame rate: fps = sr/hop_length ≈ 43.
+        frame_length: int = 1024,  # Analysis window (samples) for RMS/centroid/ZCR.
+        # Smaller than hop_length*2 default would give a noisier curve; kept at 2x
+        # hop_length like librosa's own default ratio, just scaled down for more detail.
+        min_chunk_sec: float = 0.8,  # Minimum duration (seconds) between two boundaries.
         #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
         silence_percentile: float = 5.0,  # Energy percentile below which a frame is silent.
         #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
-        energy_smoothing_sec: float = 0.15,  # seconds
+        energy_smoothing_sec: float = 0,  # seconds
         # Moving-average window applied to the energy curve before it's used for
         # silence detection. Absorbs single-frame noise (e.g. mp3-encoding artifacts)
         # so the same audio, encoded twice, doesn't flip silent/non-silent on a frame
         # that happens to sit right on the threshold.
-        silence_margin: float = 0.05,  # fraction of the local threshold
+        silence_margin: float = 0.1,  # fraction of the local threshold
         # A frame must be below `local_threshold * (1 - silence_margin)` to count as
         # silent, not just below `local_threshold`. Biases borderline frames toward
         # "not silent" so small energy differences between two encodings of the same
         # audio are less likely to be the thing deciding the outcome.
-        # Constant assigning audio signal margins between contiguous segments.
-        silence_mask_sec: float = 5,  # seconds
+        silence_mask_sec: float = 2,  # seconds
+        # Half-width of the rolling window used to compute the local silence
+        # threshold: at each frame, silence_percentile is taken over the
+        # +/- silence_mask_sec of energy around it, instead of over the whole
+        # signal. Keeps the threshold reproducible across two jobs that only
+        # share a few seconds of overlapping audio at a segment boundary
+        # (see _local_silence_threshold). Larger = threshold adapts more
+        # slowly to loudness changes; smaller = more locally reactive but
+        # noisier.
         seconds_reserved_for_previous_segment: float = 5,  # seconds
         # Peaks are not extracted from the first 5 seconds, so the first extracted chunk start after that.
         margin_extracted_from_next_segment: float = 30,  # seconds
@@ -96,8 +105,9 @@ class ChunkCreator:
         self.margin_extracted_from_next_segment = margin_extracted_from_next_segment
         self.silence_mask_sec = silence_mask_sec
 
-        self.sr = fingerprinter.sr
-        self.hop_length = fingerprinter.hop_length
+        self.sr = sr
+        self.hop_length = hop_length
+        self.frame_length = frame_length
         self._fps = self.sr / self.hop_length
 
     def load(
@@ -138,11 +148,15 @@ class ChunkCreator:
         return np.concatenate([y, margin])
 
     def extract_features(self, y: np.ndarray) -> dict:
-        energy = librosa.feature.rms(y=y, hop_length=self.hop_length)[0]
-        centroid = librosa.feature.spectral_centroid(
-            y=y, sr=self.sr, hop_length=self.hop_length
+        energy = librosa.feature.rms(
+            y=y, frame_length=self.frame_length, hop_length=self.hop_length
         )[0]
-        zcr = librosa.feature.zero_crossing_rate(y, hop_length=self.hop_length)[0]
+        centroid = librosa.feature.spectral_centroid(
+            y=y, sr=self.sr, n_fft=self.frame_length, hop_length=self.hop_length
+        )[0]
+        zcr = librosa.feature.zero_crossing_rate(
+            y, frame_length=self.frame_length, hop_length=self.hop_length
+        )[0]
 
         return {
             "energy": energy,
@@ -173,7 +187,9 @@ class ChunkCreator:
         audio.
         """
         smoothing_frames = max(1, int(round(self.energy_smoothing_sec * self._fps)))
-        smoothed_energy = uniform_filter1d(energy, size=smoothing_frames, mode="nearest")
+        smoothed_energy = uniform_filter1d(
+            energy, size=smoothing_frames, mode="nearest"
+        )
 
         window_frames = 2 * int(round(self.silence_mask_sec * self._fps)) + 1
         local_threshold = percentile_filter(
@@ -308,8 +324,15 @@ class ChunkCreator:
 
         s_start = int(t_start * self.sr)
         s_end = int(t_end * self.sr)
+        y_seg = y[s_start:s_end]
+        if self.sr != self.fingerprinter.sr:
+            # The fingerprinter has its own sr, decoupled from ours, so segments must be
+            # resampled to it before fingerprinting rather than fingerprinted as-is.
+            y_seg = librosa.resample(
+                y_seg, orig_sr=self.sr, target_sr=self.fingerprinter.sr
+            )
         return self.fingerprinter.from_audio_with_precomputed(
-            y[s_start:s_end],
+            y_seg,
             duration_sec=float(dur),
             energy_mean=e,
             spectral_centroid=c,
@@ -440,6 +463,7 @@ class ChunkCreator:
             "algo_version": _ALGO_VERSION,
             "sr": self.sr,
             "hop_length": self.hop_length,
+            "frame_length": self.frame_length,
             "min_chunk_sec": self.min_chunk_sec,
             "silence_percentile": self.silence_percentile,
             "energy_smoothing_sec": self.energy_smoothing_sec,
@@ -500,7 +524,7 @@ def debug_split(job: ChunkCreatorJob, cc: ChunkCreator, verbose: bool = True) ->
 
     # ── [2] Silence mask ─────────────────────────────────────────────────
     log("\n[2] Silence mask (local percentile threshold)")
-    _, local_threshold = cc._local_silence_threshold(features["energy"])
+    smoothed_energy, local_threshold = cc._local_silence_threshold(features["energy"])
     silence_mask = cc._compute_silence_mask(features["energy"])
     n_silent = int(silence_mask.sum())
     log(
@@ -622,6 +646,7 @@ def debug_split(job: ChunkCreatorJob, cc: ChunkCreator, verbose: bool = True) ->
         "features": features,
         "duration": duration,
         "silence_mask": silence_mask,
+        "smoothed_energy": smoothed_energy,
         "local_threshold": local_threshold,
         "region_candidates": region_candidates,
         "accepted_candidates": accepted_candidates,

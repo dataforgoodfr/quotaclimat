@@ -363,9 +363,9 @@ def get_countries_array(country_code: str, no_belgium = True):
 
 def get_mediatree_channels(channels, country: CountryMediaTree):
     if country == GERMANY:
-        logging.warning(f"Removing channels daserste and zdf-neo and using GERMANY_CHANNELS_MEDIATREE as import via SRT")
+        logging.warning("Removing channels daserste and zdf-neo and using GERMANY_CHANNELS_MEDIATREE as import via SRT")
         channels = GERMANY_CHANNELS_MEDIATREE
     elif country == BELGIUM:
-        logging.warning(f"Removing channels for BELGIUM imported directly and leaving only BELGIUM_CHANNELS_MEDIATREE")
+        logging.warning("Removing channels for BELGIUM imported directly and leaving only BELGIUM_CHANNELS_MEDIATREE")
         channels = BELGIUM_CHANNELS_MEDIATREE
     return channels

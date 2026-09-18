@@ -40,3 +40,8 @@ output "ci_secret_key" {
   sensitive   = true
   description = "Secret key for the rrs-ci application — set as CI secret SCW_SECRET_KEY."
 }
+
+output "mediatree_extended_perimeter_bucket_name" {
+  value       = scaleway_object_bucket.mediatree_extended_perimeter.name
+  description = "Name of the mediatree-extended-perimeter bucket."
+}

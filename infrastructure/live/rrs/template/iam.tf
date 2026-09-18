@@ -8,10 +8,14 @@ resource "scaleway_iam_policy" "rrs_ci" {
   application_id = scaleway_iam_application.rrs_ci.id
 
   rule {
-    project_ids          = [scaleway_account_project.project.id]
+    project_ids = [scaleway_account_project.project.id]
     permission_set_names = [
       "ContainerRegistryFullAccess",
-      "ServerlessJobsFullAccess"
+      "ServerlessJobsFullAccess",
+      "ObjectStorageObjectsRead",
+      "ObjectStorageObjectsWrite",
+      "ObjectStorageBucketsRead",
+      "ObjectStorageBucketsWrite",
     ]
   }
 }

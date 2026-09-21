@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 
 import s3fs
 from sentry_sdk.crons import monitor
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import aliased
 
 from postgres.database_connection import get_db_session
@@ -210,6 +210,7 @@ async def _process_group(
     semaphore: asyncio.Semaphore,
     progress,
     missing_ads: list,
+    reset_no_data_ads: list,
 ) -> None:
     """Check, download and export every ad in one (channel, day) group. Groups are
     independent of each other (own local_dir, own downloaded parts), so this is meant
@@ -278,6 +279,11 @@ async def _process_group(
                         ad, occurrence, from_date, to_date, parts, local_dir, fs
                     )
                     progress.count("uploaded")
+                    if ad.fragment_type == "no_data":
+                        # The ad was previously marked "no_data" because its media
+                        # wasn't in the bucket yet; now that the export succeeded,
+                        # clear it so downstream classification picks it back up.
+                        reset_no_data_ads.append(ad.id)
                 except Exception as e:
                     logger.error(f"Failed to export ad {ad.id}: {e}")
                     missing_ads.append(ad.id)
@@ -310,6 +316,7 @@ async def run(start_date: datetime | None, end_date: datetime | None):
     fs = get_s3_filesystem()
 
     missing_ads = []
+    reset_no_data_ads = []
 
     try:
         total = count_ads_since(session, start_date, end_date)
@@ -323,7 +330,14 @@ async def run(start_date: datetime | None, end_date: datetime | None):
         async def _bounded_group(channel, day, ads):
             try:
                 await _process_group(
-                    channel, day, ads, fs, semaphore, progress, missing_ads
+                    channel,
+                    day,
+                    ads,
+                    fs,
+                    semaphore,
+                    progress,
+                    missing_ads,
+                    reset_no_data_ads,
                 )
             finally:
                 group_semaphore.release()
@@ -339,6 +353,24 @@ async def run(start_date: datetime | None, end_date: datetime | None):
             tasks.append(asyncio.create_task(_bounded_group(channel, day, ads)))
 
         await asyncio.gather(*tasks)
+
+        # Done only now that the streaming cursor above is fully consumed and every
+        # group task has finished, so nothing else is using the session concurrently.
+        if reset_no_data_ads:
+            # fragment_type is NOT NULL, so fall back to "advertising" -- same default
+            # e02_classify_ad uses -- just to clear it out of "no_data" and let it be
+            # picked back up by the transcribe/classify pipeline stages.
+            session.execute(
+                update(Ad)
+                .where(Ad.id.in_(reset_no_data_ads))
+                .values(fragment_type="advertising")
+            )
+            session.commit()
+            logger.info(
+                f"Reset fragment_type for {len(reset_no_data_ads)} "
+                "previously no_data ads:"
+            )
+            logger.info(",".join(reset_no_data_ads))
 
         progress.close()
         logger.info(f"Total export run time: {time.monotonic() - run_start:.1f}s")

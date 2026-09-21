@@ -232,6 +232,10 @@ async def _process_group(
             from_date, to_date = _ad_export_window(ad, occurrence)
             needs_export.append((ad, occurrence, from_date, to_date))
         else:
+            if ad.fragment_type == "no_data":
+                # The media is already in the bucket, so whatever previously marked
+                # this ad "no_data" no longer reflects the bucket's actual state.
+                reset_no_data_ads.append(ad.id)
             progress.count("cached")
             progress.update(1)
 

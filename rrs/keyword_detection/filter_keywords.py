@@ -10,12 +10,12 @@ same way as rrs.keyword_detection.import_segments, from the
 keywords_with_timestamp column of the quotaclimat PostgreSQL DB — and just
 filters them against the target dictionary's keyword list.
 
-A segment is kept only if it contains at least one already-detected
-keyword that matches a validated, non-high-risk keyword of the target
-dictionary, and none that matches a high-risk-false-positive one. A match
-is either an exact (lowercased) string match, or the two keywords sharing
-the same set of lemmas (e.g. "pesticides" vs "pesticide"), using the same
-spaCy lemmatizer as the main detection pipeline.
+A segment is kept if it contains at least one already-detected keyword
+that matches any validated keyword of the target dictionary — high-risk-
+false-positive keywords included. A match is either an exact (lowercased)
+string match, or the two keywords sharing the same set of lemmas (e.g.
+"pesticides" vs "pesticide"), using the same spaCy lemmatizer as the main
+detection pipeline.
 
 Usage:
     poetry run python -m rrs.keyword_detection.filter_keywords
@@ -134,10 +134,11 @@ def _index_keywords(keywords: list) -> dict:
     }
 
 
-def get_dictionary_keywords(subject_name: str) -> tuple[dict, dict]:
-    """Return (validated_index, high_risk_index) for subject_name.
+def get_dictionary_keywords(subject_name: str) -> dict:
+    """Return an index of every validated keyword for subject_name (high-risk-
+    false-positive keywords included).
 
-    Each index has a "strings" set (lowercased keywords) and a "lemmas" set
+    The index has a "strings" set (lowercased keywords) and a "lemmas" set
     (frozenset-of-lemmas per keyword), so a detected keyword can be matched
     either verbatim or by sharing the same set of lemmas.
     """
@@ -146,17 +147,8 @@ def get_dictionary_keywords(subject_name: str) -> tuple[dict, dict]:
             f"Subject {subject_name!r} not found in rrs/dictionary/subjects.py"
         )
     entries = subjects[subject_name]["keywords"]
-    validated_kws = [
-        entry["keyword"]
-        for entry in entries
-        if entry.get("validated", True) and not entry.get("high_risk_false_positive")
-    ]
-    high_risk_kws = [
-        entry["keyword"]
-        for entry in entries
-        if entry.get("validated", True) and entry.get("high_risk_false_positive")
-    ]
-    return _index_keywords(validated_kws), _index_keywords(high_risk_kws)
+    kws = [entry["keyword"] for entry in entries if entry.get("validated", True)]
+    return _index_keywords(kws)
 
 
 def _keyword_matches(kw: str, index: dict) -> bool:
@@ -167,21 +159,17 @@ def _keyword_matches(kw: str, index: dict) -> bool:
     return bool(lemmas) and lemmas in index["lemmas"]
 
 
-def _matching_keywords(found_keywords: list, validated_index: dict) -> list:
+def _matching_keywords(found_keywords: list, index: dict) -> list:
     seen = set()
     matches = []
     for kw in found_keywords:
         low = kw.lower()
         if low in seen:
             continue
-        if _keyword_matches(kw, validated_index):
+        if _keyword_matches(kw, index):
             seen.add(low)
             matches.append(kw)
     return matches
-
-
-def _has_high_risk_match(found_keywords: list, high_risk_index: dict) -> bool:
-    return any(_keyword_matches(kw, high_risk_index) for kw in found_keywords)
 
 
 def _get_max_segment_date(sid: str) -> Optional[date]:
@@ -200,8 +188,8 @@ def filter_keywords(
     start_date: date = None,
     end_date: date = None,
 ) -> None:
-    validated, high_risk = get_dictionary_keywords(subject_name)
-    if not validated["strings"]:
+    keywords_index = get_dictionary_keywords(subject_name)
+    if not keywords_index["strings"]:
         raise ValueError(f"No validated keywords found for subject {subject_name!r}.")
 
     sid = make_subject_id(subject_name)
@@ -237,7 +225,7 @@ def filter_keywords(
             channel_program,
             keywords_with_timestamp
         FROM barometre.keywords
-        WHERE number_of_keywords_climat > 0
+        WHERE number_of_keywords_biodiversite > 0
         AND country='france'
         {date_filter}
         """,
@@ -250,8 +238,7 @@ def filter_keywords(
         return
 
     df["keywords_found"] = df["keywords_with_timestamp"].apply(_extract_keywords)
-    df = df[~df["keywords_found"].apply(lambda kws: _has_high_risk_match(kws, high_risk))]
-    df["keywords"] = df["keywords_found"].apply(lambda kws: _matching_keywords(kws, validated))
+    df["keywords"] = df["keywords_found"].apply(lambda kws: _matching_keywords(kws, keywords_index))
     df = df[df["keywords"].apply(len) > 0]
 
     logging.info(f"  {len(df)} segment(s) matched the {subject_name!r} dictionary.")

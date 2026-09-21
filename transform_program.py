@@ -1,12 +1,16 @@
 # generate program metadata for postgres database "program metadata" content
 
 import json
+import os
 from datetime import datetime
 import sys
 import logging
 from quotaclimat.data_processing.mediatree.channel_program import generate_program_id
 from quotaclimat.data_processing.mediatree.i8n.france.channel_program import (
     channels_programs_france,
+)
+from quotaclimat.data_processing.mediatree.i8n.extended_france.channel_program import (
+    channels_programs_extended_france,
 )
 from quotaclimat.data_processing.mediatree.i8n.germany.channel_program import (
     channels_programs_germany,
@@ -36,6 +40,8 @@ from quotaclimat.data_processing.mediatree.i8n.country import (
     SPAIN,
     BELGIUM,
 )
+
+EXTENDED_PERIMETER = os.getenv("EXTENDED_PERIMETER", "false").lower() == "true"
 
 logging.basicConfig(level=logging.INFO)
 
@@ -185,6 +191,28 @@ channel_mapping = {
         "public": True,
         "infocontinue": False,
         "radio": True,
+        "country": FRANCE.name,
+    },
+    # 🇫🇷 France - extended perimeter
+    "tmc": {
+        "title": "TMC",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": FRANCE.name,
+    },
+    "lcp": {
+        "title": "LCP",
+        "public": True,
+        "infocontinue": False,
+        "radio": False,
+        "country": FRANCE.name,
+    },
+    "france5": {
+        "title": "France 5",
+        "public": True,
+        "infocontinue": False,
+        "radio": False,
         "country": FRANCE.name,
     },
     # 🇩🇪 Germany
@@ -522,6 +550,10 @@ channels_programs = (
     + channels_programs_belgium
     + channels_programs_belgium_flanders
 )
+
+if EXTENDED_PERIMETER:
+    logging.info("EXTENDED_PERIMETER is true - importing extended perimeter programs for France")
+    channels_programs = channels_programs + channels_programs_extended_france
 for program_data in channels_programs:
     start_time = program_data["start"]
     end_time = program_data["end"]

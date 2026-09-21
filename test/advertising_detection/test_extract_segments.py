@@ -11,7 +11,7 @@ from postgres.schemas.advertising.models import AdvertisingBase
 from postgres.schemas.models import (
     connect_to_db,
 )
-from quotaclimat.data_ingestion.advertising.s01_detection.e02_create_chunks import (
+from quotaclimat.data_ingestion.advertising.s01_detection.e02_split_in_chunks import (
     ChunkCreatorJob,
 )
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import (

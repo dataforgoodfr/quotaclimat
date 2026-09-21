@@ -9,7 +9,7 @@ from ..tools.fingerprints import fingerprinter
 from ..tools.interactive_tqdm import interactive_tqdm
 from .e00_download_audio import download_all_audio_parts
 from .e01_check_partition_cover import check_partition_cover
-from .e02_create_chunks import ChunkCreator, ChunkCreatorJob
+from .e02_split_in_chunks import ChunkCreator, ChunkCreatorJob
 from .e03_already_identified_advertising import run_chunk_identification
 from .e04_group_chunks import group_chunks
 from .e05_classify_fragments import FragmentsClassifier

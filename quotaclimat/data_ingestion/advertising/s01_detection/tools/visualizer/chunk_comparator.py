@@ -13,7 +13,7 @@ Usage programmatique :
     from quotaclimat.data_ingestion.advertising.s01_detection.tools.visualizer.chunk_comparator import (
         generate_chunk_comparator,
     )
-    from quotaclimat.data_ingestion.advertising.s01_detection.e02_create_chunks import Chunk, ChunkCreator
+    from quotaclimat.data_ingestion.advertising.s01_detection.e02_split_in_chunks import Chunk, ChunkCreator
     from quotaclimat.data_ingestion.advertising.tools.fingerprints import fingerprinter
 
     html = generate_chunk_comparator(
@@ -39,7 +39,7 @@ import numpy as np
 import scipy.io.wavfile
 from scipy.ndimage import maximum_filter
 
-from quotaclimat.data_ingestion.advertising.s01_detection.e02_create_chunks import (
+from quotaclimat.data_ingestion.advertising.s01_detection.e02_split_in_chunks import (
     Chunk,
     ChunkCreator,
 )

@@ -165,9 +165,9 @@ seeds:
               IF EXISTS (
                 SELECT FROM information_schema.tables 
                 WHERE table_schema = 'public' 
-                AND table_name = 'time_monitored'
+                AND table_name = 'labelstudio_task_aggregate'
               ) THEN
-                EXECUTE 'DELETE FROM public.time_monitored';
+                EXECUTE 'DELETE FROM public.labelstudio_task_aggregate';
               END IF;
             END
             $$;
@@ -187,9 +187,9 @@ seeds:
               IF EXISTS (
                 SELECT FROM information_schema.tables 
                 WHERE table_schema = 'public' 
-                AND table_name = 'time_monitored'
+                AND table_name = 'labelstudio_task_completion_aggregate'
               ) THEN
-                EXECUTE 'DELETE FROM public.time_monitored';
+                EXECUTE 'DELETE FROM public.labelstudio_task_completion_aggregate';
               END IF;
             END
             $$;

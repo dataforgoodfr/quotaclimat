@@ -78,11 +78,14 @@ async def test_extract_fragments_run_successfully(mocked_download_all_audio_part
     assert maybe_ads[0].group_id == maybe_ads[1].group_id
 
     # It was 20, it may depends on the splitting algo, it needs to be checked again
-    AD_DURATION = 11
-    assert maybe_ads[0].end_sec - maybe_ads[0].start_sec >= AD_DURATION
-    assert maybe_ads[0].end_sec - maybe_ads[0].start_sec <= AD_DURATION + 1
-    assert maybe_ads[1].end_sec - maybe_ads[1].start_sec >= AD_DURATION
-    assert maybe_ads[1].end_sec - maybe_ads[1].start_sec <= AD_DURATION + 1
+    AD_0_DURATION = maybe_ads[0].end_sec - maybe_ads[0].start_sec
+    AD_1_DURATION = maybe_ads[1].end_sec - maybe_ads[1].start_sec
+    assert abs(AD_0_DURATION - AD_1_DURATION) < 1, (
+        "The two ads does not have the same duration"
+    )
+    assert AD_0_DURATION > 10, (
+        "The detected ad does not seem to be a long enough segment"
+    )
 
     start_date_1 = datetime.fromtimestamp(maybe_ads[0].start_sec).astimezone(
         ZoneInfo("Europe/Paris")

@@ -13,7 +13,7 @@ Usage programmatique :
     from quotaclimat.data_ingestion.advertising.s01_detection.tools.visualizer.chunk_comparator import (
         generate_chunk_comparator,
     )
-    from quotaclimat.data_ingestion.advertising.s01_detection.e02_create_chunks import Chunk, ChunkCreator
+    from quotaclimat.data_ingestion.advertising.s01_detection.e02_split_in_chunks import Chunk, ChunkCreator
     from quotaclimat.data_ingestion.advertising.tools.fingerprints import fingerprinter
 
     html = generate_chunk_comparator(
@@ -39,7 +39,7 @@ import numpy as np
 import scipy.io.wavfile
 from scipy.ndimage import maximum_filter
 
-from quotaclimat.data_ingestion.advertising.s01_detection.e02_create_chunks import (
+from quotaclimat.data_ingestion.advertising.s01_detection.e02_split_in_chunks import (
     Chunk,
     ChunkCreator,
 )
@@ -112,7 +112,9 @@ def _extract_chunk_data(
     silence_mask_dilated = cc._compute_silence_mask(energy)
 
     # ── Spectrogram ─────────────────────────────────────
-    D = np.abs(librosa.stft(y, n_fft=fp.n_fft, hop_length=cc.hop_length))
+    # y is sampled at cc.sr, so the display spectrogram must use cc's own window
+    # params (fingerprinter.n_fft assumes fingerprinter.sr, which may differ).
+    D = np.abs(librosa.stft(y, n_fft=cc.frame_length, hop_length=cc.hop_length))
     D_db = librosa.amplitude_to_db(D, ref=np.max)
     # Downsample frequency axis
     freq_bins = D_db.shape[0]
@@ -129,7 +131,7 @@ def _extract_chunk_data(
     y_chunk = y[chunk_s_start:chunk_s_end]
     if len(y_chunk) >= cc.sr * 0.5:
         D_chunk = np.abs(
-            librosa.stft(y_chunk, n_fft=fp.n_fft, hop_length=cc.hop_length)
+            librosa.stft(y_chunk, n_fft=cc.frame_length, hop_length=cc.hop_length)
         )
         D_chunk_db = librosa.amplitude_to_db(D_chunk, ref=np.max)
         D_chunk_norm = (D_chunk_db - D_chunk_db.min()) / (

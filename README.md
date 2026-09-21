@@ -429,6 +429,19 @@ Program data will not be updated to avoid lock concurrent issues when using `UPD
 
 **With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.**
 
+### Extended perimeter (Droit à l'info)
+For the "Droit à l'info" scope, we track an extended set of France programs (`tf1`, `france2`, `fr3-idf`, `rtl`, `france5`, `tmc`, `lcp`) on top of the regular France perimeter, defined in `quotaclimat/data_processing/mediatree/i8n/extended_france/`. This uses the country code `ext-fra` (`EXTENDED_FRANCE` in `country.py`), which shares the `french` language and subtitle format with `fra`/`bel`.
+
+Set the env variable `EXTENDED_PERIMETER` to `"true"` when running `transform_program.py` to also include these extended perimeter programs in `postgres/program_metadata.json`:
+```
+EXTENDED_PERIMETER=true poetry run python3 transform_program.py
+```
+
+The extended perimeter data lives in its own infrastructure, isolated from the main `rrs`/`barometre` databases:
+* An `extended-perimeter` Postgres database on the `rrs` RDB instance (`infrastructure/live/rrs/template/database.tf`), with the same per-user privileges (admin/migrate/job/metabase) as the `rrs` database.
+* A dedicated `mediatree-extended-perimeter-<env>` S3 bucket (`infrastructure/live/rrs/template/s3.tf`), with the existing `rrs-ci` IAM application/policy granted object storage read/write access.
+* A Kestra dev flow (`infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml`) that ingests Mediatree data to that bucket, then runs `entrypoints/detect_keywords.sh` (which always runs `alembic upgrade head` first) against the `extended-perimeter` database, followed by misinformation detection.
+
 # Mediatre to S3
 For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway) with partition :
 * country/year/month/day/channel

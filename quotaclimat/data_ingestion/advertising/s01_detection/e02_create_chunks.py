@@ -78,7 +78,7 @@ class ChunkCreator:
         #   Chunks shorter than this are merged. Increase (10-15s) for long programs.
         silence_percentile: float = 8.0,  # Energy percentile below which a frame is silent.
         #   5 = bottom 5% frames. Increase (8-15) if silences are less clear.
-        energy_smoothing_sec: float = 0.1,  # seconds
+        energy_smoothing_sec: float = 0.5,  # seconds
         # Moving-average window applied to the energy curve before it's used for
         # silence detection. Absorbs single-frame noise (e.g. mp3-encoding artifacts)
         # so the same audio, encoded twice, doesn't flip silent/non-silent on a frame
@@ -88,7 +88,7 @@ class ChunkCreator:
         # silent, not just below `local_threshold`. Biases borderline frames toward
         # "not silent" so small energy differences between two encodings of the same
         # audio are less likely to be the thing deciding the outcome.
-        silence_mask_sec: float = 2,  # seconds
+        silence_mask_sec: float = 3,  # seconds
         # Half-width of the rolling window used to compute the local silence
         # threshold: at each frame, silence_percentile is taken over the
         # +/- silence_mask_sec of energy around it, instead of over the whole

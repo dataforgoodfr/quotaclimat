@@ -103,7 +103,7 @@ variable "anthropic_api_key" {
 variable "barometre_rrs_read_password" {
   type        = string
   sensitive   = true
-  description = "Password for the rrs-read-{env} user on the barometre database."
+  description = "Password for the rrs-read-{env} user on the barometre and extended-perimeter databases."
 }
 
 # S3 / Scaleway Object Storage (import_segments job)

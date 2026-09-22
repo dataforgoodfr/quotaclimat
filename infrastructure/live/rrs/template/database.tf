@@ -71,13 +71,6 @@ resource "scaleway_rdb_privilege" "rrs_migrate_user" {
   permission    = "all"
 }
 
-resource "scaleway_rdb_privilege" "extended_perimeter_migrate_user" {
-  instance_id   = scaleway_rdb_instance.rrs_rdb.id
-  user_name     = scaleway_rdb_user.rrs_migrate_user.name
-  database_name = scaleway_rdb_database.extended_perimeter.name
-  permission    = "all"
-}
-
 # Job user with read_write access.
 resource "scaleway_rdb_user" "rrs_job_user" {
   instance_id = scaleway_rdb_instance.rrs_rdb.id
@@ -114,9 +107,16 @@ resource "scaleway_rdb_privilege" "rrs_metabase_user" {
   permission    = "readonly"
 }
 
-resource "scaleway_rdb_privilege" "extended_perimeter_metabase_user" {
+resource "scaleway_rdb_user" "extended_perimeter_read" {
+  instance_id = scaleway_rdb_instance.rrs_rdb.id
+  name        = "rrs-read-${var.environment}"
+  password    = var.barometre_rrs_read_password
+  is_admin    = false
+}
+
+resource "scaleway_rdb_privilege" "extended_perimeter_read" {
   instance_id   = scaleway_rdb_instance.rrs_rdb.id
-  user_name     = scaleway_rdb_user.rrs_metabase_user.name
+  user_name     = scaleway_rdb_user.extended_perimeter_read.name
   database_name = scaleway_rdb_database.extended_perimeter.name
   permission    = "readonly"
 }

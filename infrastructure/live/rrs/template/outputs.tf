@@ -45,3 +45,12 @@ output "mediatree_extended_perimeter_bucket_name" {
   value       = scaleway_object_bucket.mediatree_extended_perimeter.name
   description = "Name of the mediatree-extended-perimeter bucket."
 }
+
+output "misinformation_extended_perimeter_bucket_name" {
+  value       = scaleway_object_bucket.misinformation_extended_perimeter.name
+  description = "Name of the misinformation-extended-perimeter bucket."
+}
+
+output "extended_perimeter_read_user" {
+  value = scaleway_rdb_user.extended_perimeter_read.name
+}

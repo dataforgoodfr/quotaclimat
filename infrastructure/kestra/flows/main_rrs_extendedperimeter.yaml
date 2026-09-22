@@ -80,10 +80,12 @@ tasks:
       BUCKET: "{{ secret('RRS_SCW_ACCESS_DEV') }}"
       BUCKET_SECRET: "{{ secret('RRS_SCW_SECRET_DEV') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
-      POSTGRES_USER: "{{ secret('RRS_PG_USER_DEV') }}"
+      POSTGRES_USER: "{{ secret('RRS_PG_USER_DEV') }}" # needs to be admin user to generate migrations
       POSTGRES_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
       POSTGRES_PASSWORD: "{{ secret('RRS_PG_PASSWORD_DEV') }}"
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
+      EXTENDED_PERIMETER: true
+
 
   - id: detect_misinformation
     logLevel: WARN          # filter per-row INFO spam at the Kestra level (UI freeze fix)

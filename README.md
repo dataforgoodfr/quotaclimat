@@ -211,6 +211,14 @@ If you add a new dependency, don't forget to rebuild
 ```
 docker compose build test # or ingest_to_db, mediatree etc
 ```
+
+### Media tools image (used for advertising detection)
+```
+docker build -f Dockerfile -t quotaclimat_base:latest .
+docker build -f Dockerfile.ffmpeg -t quotaclimat_base_ffmpeg:latest .
+```
+In CI, it's built `FROM` the freshly pushed `quotaclimat_base:${PROJECT_VERSION}` image and pushed as `quotaclimat_base_ffmpeg`, which is what the `advertising_detection` Scaleway job runs.
+
 ### Explore postgres data using Metabase - a BI tool
 ```
 docker compose up metabase -d

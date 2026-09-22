@@ -20,7 +20,9 @@ inputs:
     defaults: |
       [
         {"name": "renewables", "folder_id": "529", "search_id": "201823", "subject": "climate"},
-        {"name": "renewables", "folder_id": "529", "search_id": "201830", "subject": "climate"}
+        {"name": "renewables", "folder_id": "529", "search_id": "201830", "subject": "climate"},
+        {"name": "Immigration - News", "folder_id": "529", "search_id": "213277", "subject": "insecurity"},
+        {"name": "Immigration - Social", "folder_id": "529", "search_id": "213278", "subject": "insecurity"}
       ]
     description: "JSON string defining the details of the searches from which to extract the themes."
   - id: relevance_mention_tag_ids

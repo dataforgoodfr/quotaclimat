@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import time
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -45,7 +46,16 @@ MIN_BYTES_PER_SECOND_VIDEO = (
 )
 
 PAGE_SIZE = 100
-MAX_CONCURRENT_EXPORTS = 10
+MAX_CONCURRENT_EXPORTS = 20
+# How many (channel, day) groups to check/download/export at once. Groups write to
+# their own local_dir and don't share state, so this overlaps one group's downloads
+# with another's ffmpeg extraction/upload instead of running the pipeline in lockstep.
+MAX_CONCURRENT_GROUPS = 3
+# Each concurrent group opens its own download batch, so split the download budget
+# across them to keep total simultaneous S3 downloads close to MAX_CONCURRENT_EXPORTS.
+MAX_CONCURRENT_DOWNLOADS_PER_GROUP = max(
+    1, MAX_CONCURRENT_EXPORTS // MAX_CONCURRENT_GROUPS
+)
 
 LOCAL_CACHE_DIR = "./.cache/mediatree_export"
 
@@ -192,6 +202,109 @@ async def _ad_needs_export(ad: Ad, fs: s3fs.S3FileSystem) -> bool:
     return mp4_size is not None and mp4_size < min_expected_size
 
 
+async def _process_group(
+    channel: str,
+    day,
+    ads: list,
+    fs: s3fs.S3FileSystem,
+    semaphore: asyncio.Semaphore,
+    progress,
+    missing_ads: list,
+) -> None:
+    """Check, download and export every ad in one (channel, day) group. Groups are
+    independent of each other (own local_dir, own downloaded parts), so this is meant
+    to be run concurrently across groups by the caller.
+    """
+    group_start = time.monotonic()
+
+    async def _check(ad, occurrence):
+        async with semaphore:
+            return (ad, occurrence, await _ad_needs_export(ad, fs))
+
+    checked = await asyncio.gather(*(_check(ad, occurrence) for ad, occurrence in ads))
+    check_elapsed = time.monotonic() - group_start
+
+    # (ad, occurrence, from_date, to_date) for ads that still need exporting.
+    needs_export = []
+    for ad, occurrence, needs in checked:
+        if needs:
+            from_date, to_date = _ad_export_window(ad, occurrence)
+            needs_export.append((ad, occurrence, from_date, to_date))
+        else:
+            progress.count("cached")
+            progress.update(1)
+
+    if not needs_export:
+        logger.info(
+            f"[{channel}/{day}] {len(ads)} ads all cached, checked in "
+            f"{check_elapsed:.1f}s"
+        )
+        return
+
+    # Only fetch the 2-minutes archives actually covering these ads' segments, not the
+    # whole day -- a day can hold ~720 parts while most days only have a handful of ads
+    # to export.
+    part_starts = required_part_starts(
+        [(from_date, to_date) for _, _, from_date, to_date in needs_export]
+    )
+
+    local_dir = os.path.join(LOCAL_CACHE_DIR, channel, day.isoformat())
+    try:
+        download_start = time.monotonic()
+        try:
+            parts = await download_media_parts(
+                fs,
+                channel,
+                part_starts,
+                local_dir,
+                max_concurrent_downloads=MAX_CONCURRENT_DOWNLOADS_PER_GROUP,
+                disable_progress=True,
+            )
+        except Exception as e:
+            logger.error(
+                f"Failed to download mediatree archives for {channel}/{day}: {e}"
+            )
+            for ad, _, _, _ in needs_export:
+                missing_ads.append(ad.id)
+                progress.count("error")
+                progress.update(1)
+            return
+        download_elapsed = time.monotonic() - download_start
+
+        async def _limited_export(ad, occurrence, from_date, to_date):
+            async with semaphore:
+                try:
+                    await _export_ad(
+                        ad, occurrence, from_date, to_date, parts, local_dir, fs
+                    )
+                    progress.count("uploaded")
+                except Exception as e:
+                    logger.error(f"Failed to export ad {ad.id}: {e}")
+                    missing_ads.append(ad.id)
+                    progress.count("error")
+                finally:
+                    progress.update(1)
+
+        export_start = time.monotonic()
+        await asyncio.gather(
+            *(
+                _limited_export(ad, occurrence, from_date, to_date)
+                for ad, occurrence, from_date, to_date in needs_export
+            ),
+            return_exceptions=True,
+        )
+        export_elapsed = time.monotonic() - export_start
+
+        logger.info(
+            f"[{channel}/{day}] {len(ads)} ads, {len(needs_export)} exported "
+            f"({len(part_starts)} parts): checked in {check_elapsed:.1f}s, "
+            f"downloaded in {download_elapsed:.1f}s, exported in "
+            f"{export_elapsed:.1f}s"
+        )
+    finally:
+        cleanup_day_media_parts(local_dir)
+
+
 async def run(start_date: datetime | None, end_date: datetime | None):
     session = get_db_session()
     fs = get_s3_filesystem()
@@ -203,86 +316,32 @@ async def run(start_date: datetime | None, end_date: datetime | None):
         logger.info(f"Found {total} ads from {start_date} to {end_date}")
 
         semaphore = asyncio.Semaphore(MAX_CONCURRENT_EXPORTS)
+        group_semaphore = asyncio.Semaphore(MAX_CONCURRENT_GROUPS)
         progress = interactive_tqdm(total=total, desc="Exporting ads")
+        run_start = time.monotonic()
 
+        async def _bounded_group(channel, day, ads):
+            try:
+                await _process_group(
+                    channel, day, ads, fs, semaphore, progress, missing_ads
+                )
+            finally:
+                group_semaphore.release()
+
+        tasks = []
         for (channel, day), ads in iter_ads_by_channel_day(
             session, start_date, end_date, PAGE_SIZE
         ):
+            # Acquired here rather than inside _bounded_group, so this loop -- and the
+            # streaming DB cursor behind iter_ads_by_channel_day -- pauses until a slot
+            # frees up, instead of eagerly materializing every group's ads in memory.
+            await group_semaphore.acquire()
+            tasks.append(asyncio.create_task(_bounded_group(channel, day, ads)))
 
-            async def _check(ad, occurrence):
-                async with semaphore:
-                    return (ad, occurrence, await _ad_needs_export(ad, fs))
-
-            checked = await asyncio.gather(
-                *(_check(ad, occurrence) for ad, occurrence in ads)
-            )
-
-            # (ad, occurrence, from_date, to_date) for ads that still need exporting.
-            needs_export = []
-            for ad, occurrence, needs in checked:
-                if needs:
-                    from_date, to_date = _ad_export_window(ad, occurrence)
-                    needs_export.append((ad, occurrence, from_date, to_date))
-                else:
-                    progress.count("cached")
-                    progress.update(1)
-
-            if not needs_export:
-                continue
-
-            # Only fetch the 2-minutes archives actually covering these ads' segments,
-            # not the whole day -- a day can hold ~720 parts while most days only have
-            # a handful of ads to export.
-            part_starts = required_part_starts(
-                [(from_date, to_date) for _, _, from_date, to_date in needs_export]
-            )
-
-            local_dir = os.path.join(LOCAL_CACHE_DIR, channel, day.isoformat())
-            try:
-                try:
-                    parts = await download_media_parts(
-                        fs,
-                        channel,
-                        part_starts,
-                        local_dir,
-                        max_concurrent_downloads=MAX_CONCURRENT_EXPORTS,
-                        disable_progress=True,
-                    )
-                except Exception as e:
-                    logger.error(
-                        f"Failed to download mediatree archives for {channel}/{day}: {e}"
-                    )
-                    for ad, _, _, _ in needs_export:
-                        missing_ads.append(ad.id)
-                        progress.count("error")
-                        progress.update(1)
-                    continue
-
-                async def _limited_export(ad, occurrence, from_date, to_date):
-                    async with semaphore:
-                        try:
-                            await _export_ad(
-                                ad, occurrence, from_date, to_date, parts, local_dir, fs
-                            )
-                            progress.count("uploaded")
-                        except Exception as e:
-                            logger.error(f"Failed to export ad {ad.id}: {e}")
-                            missing_ads.append(ad.id)
-                            progress.count("error")
-                        finally:
-                            progress.update(1)
-
-                await asyncio.gather(
-                    *(
-                        _limited_export(ad, occurrence, from_date, to_date)
-                        for ad, occurrence, from_date, to_date in needs_export
-                    ),
-                    return_exceptions=True,
-                )
-            finally:
-                cleanup_day_media_parts(local_dir)
+        await asyncio.gather(*tasks)
 
         progress.close()
+        logger.info(f"Total export run time: {time.monotonic() - run_start:.1f}s")
     finally:
         logger.info(f"Finished, here are the {len(missing_ads)} missing ads")
         logger.info(",".join(missing_ads))

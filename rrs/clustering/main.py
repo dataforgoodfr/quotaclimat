@@ -26,6 +26,7 @@ from typing import Optional
 import pandas as pd
 from rrs.clustering.backends import (
     _EMBEDDING_MODEL,
+    _MISTRAL_EMBED_MODEL,
     EMBEDDING_BACKEND_MISTRAL,
     EMBEDDING_BACKEND_ST,
     MAX_CONCURRENT,
@@ -46,7 +47,12 @@ from rrs.clustering.get_data import (
     load_from_db,
     write_clusters_to_db,
 )
-from rrs.clustering.providers import PROVIDER_ANTHROPIC, PROVIDER_MISTRAL
+from rrs.clustering.providers import (
+    MODEL_ANTHROPIC,
+    MODEL_MISTRAL,
+    PROVIDER_ANTHROPIC,
+    PROVIDER_MISTRAL,
+)
 from rrs.clustering.steps import (
     _HIGH_THRESHOLD,
     _LOW_THRESHOLD,
@@ -310,6 +316,7 @@ async def run(
     only_recent: bool = True,
     max_concurrent: int = MAX_CONCURRENT,
     provider: str = PROVIDER_MISTRAL,
+    llm_model: Optional[str] = None,
     target_clusters: Optional[int] = None,
     min_clusters: int = 5,
     max_clusters: int = 150,
@@ -323,7 +330,7 @@ async def run(
 ) -> None:
     subject_id = get_consistent_hash(subject)
     # Build shared resources once across all days
-    client = _build_client(provider, subject=subject)
+    client = _build_client(provider, subject=subject, model=llm_model)
     mistral_api_key = (
         os.getenv("MISTRAL_API_KEY")
         if embedding_backend == EMBEDDING_BACKEND_MISTRAL
@@ -452,6 +459,15 @@ if __name__ == "__main__":
         help=f"LLM provider to use. Default: {PROVIDER_ANTHROPIC}.",
     )
     parser.add_argument(
+        "--llm-model",
+        default=os.getenv("LLM_MODEL"),
+        help=(
+            "Model name for the chosen --provider. Overrides the provider's built-in "
+            f"default ({PROVIDER_ANTHROPIC}: {MODEL_ANTHROPIC}, {PROVIDER_MISTRAL}: {MODEL_MISTRAL})."
+            " (env: LLM_MODEL)"
+        ),
+    )
+    parser.add_argument(
         "--max-concurrent",
         type=int,
         default=int(os.getenv("MAX_CONCURRENT_REQUESTS", str(MAX_CONCURRENT))),
@@ -538,8 +554,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--embedding-model",
-        default=os.getenv("EMBEDDING_MODEL", _EMBEDDING_MODEL),
-        help=f"Model name for the sentence-transformer backend (ignored for mistral). Default: {_EMBEDDING_MODEL}.",
+        default=os.getenv("EMBEDDING_MODEL"),
+        help=(
+            "Model name for the chosen --embedding-backend. Overrides the backend's "
+            f"built-in default ({EMBEDDING_BACKEND_ST}: {_EMBEDDING_MODEL}, "
+            f"{EMBEDDING_BACKEND_MISTRAL}: {_MISTRAL_EMBED_MODEL}). (env: EMBEDDING_MODEL)"
+        ),
     )
     parser.add_argument(
         "--expiry-days",
@@ -604,6 +624,7 @@ if __name__ == "__main__":
             days_prior=args.days_prior,
             max_concurrent=args.max_concurrent,
             provider=args.provider,
+            llm_model=args.llm_model,
             target_clusters=args.target_clusters,
             min_clusters=args.min_clusters,
             max_clusters=args.max_clusters,

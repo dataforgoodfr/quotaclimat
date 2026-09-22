@@ -29,6 +29,7 @@ from dotenv import load_dotenv
 from mistralai.client import Mistral
 from rrs.clustering.backends import (
     _EMBEDDING_MODEL,
+    _MISTRAL_EMBED_MODEL,
     EMBEDDING_BACKEND_MISTRAL,
     EMBEDDING_BACKEND_ST,
     MAX_CONCURRENT,
@@ -96,7 +97,11 @@ def get_seed_labels(subject: str) -> list[str]:
     return SEED_LABELS_BY_SUBJECT.get(subject, [])
 
 
-def _build_client(provider: str = PROVIDER_MISTRAL, subject: str = "climate") -> LLMBackend:
+def _build_client(
+    provider: str = PROVIDER_MISTRAL,
+    subject: str = "climate",
+    model: Optional[str] = None,
+) -> LLMBackend:
     load_dotenv()
     system_prompt = get_system_prompt(subject)
     if provider == PROVIDER_ANTHROPIC:
@@ -108,7 +113,7 @@ def _build_client(provider: str = PROVIDER_MISTRAL, subject: str = "climate") ->
             )
         return LLMBackend(
             provider=provider,
-            model=MODEL_ANTHROPIC,
+            model=model or MODEL_ANTHROPIC,
             client=anthropic.AsyncAnthropic(api_key=api_key),
             system_prompt=system_prompt,
         )
@@ -121,7 +126,7 @@ def _build_client(provider: str = PROVIDER_MISTRAL, subject: str = "climate") ->
             )
         return LLMBackend(
             provider=provider,
-            model=MODEL_MISTRAL,
+            model=model or MODEL_MISTRAL,
             client=Mistral(api_key=api_key),
             system_prompt=system_prompt,
         )
@@ -129,7 +134,7 @@ def _build_client(provider: str = PROVIDER_MISTRAL, subject: str = "climate") ->
 
 def build_embedding_backend(
     backend: str = EMBEDDING_BACKEND_ST,
-    model_name: str = _EMBEDDING_MODEL,
+    model_name: Optional[str] = None,
     mistral_api_key: Optional[str] = None,
 ) -> EmbeddingBackend:
     """Instantiate the requested embedding backend."""
@@ -138,8 +143,8 @@ def build_embedding_backend(
             raise EnvironmentError(
                 "MISTRAL_API_KEY must be set to use the mistral embedding backend."
             )
-        return MistralEmbeddingBackend(api_key=mistral_api_key)
-    return SentenceTransformerBackend(model_name)
+        return MistralEmbeddingBackend(api_key=mistral_api_key, model=model_name or _MISTRAL_EMBED_MODEL)
+    return SentenceTransformerBackend(model_name or _EMBEDDING_MODEL)
 
 
 def _parse_list_response(raw: str) -> list[str]:

@@ -118,7 +118,8 @@ tasks:
       SPACY_MODEL: fr_core_news_sm
       WINDOW_SIZE: 3
       OVERLAP_TOKENS: 30
-      PROVIDER: anthropic
+      PROVIDER: mistral
+      LLM_MODEL: mistral-small-2603
       MAX_CONCURRENT_REQUESTS: 5
       MERGE_BATCH_SIZE: 30
       MERGE_MAX_ROUNDS: 5

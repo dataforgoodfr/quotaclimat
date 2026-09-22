@@ -23,7 +23,13 @@ infrastructure/
 │   ├── terragrunt.hcl         # Root config: backend, provider, terraform_binary
 │   ├── advertising/           # Label Studio + advertising detection infra
 │   ├── barometre/              # Barometre database infra
-│   ├── rrs/                   # RRS database + serverless jobs
+│   ├── rrs/                   # RRS database + serverless jobs + extended perimeter (Droit à l'info)
+│   │   └── template/
+│   │       ├── database.tf    # rrs + extended-perimeter databases, users/privileges, ACL
+│   │       ├── s3.tf          # mediatree-extended-perimeter / misinformation-extended-perimeter buckets
+│   │       ├── iam.tf         # rrs-ci application/policy/key (registry, jobs, object storage)
+│   │       ├── secrets.tf     # Scaleway Secret Manager entries for job/migrate/read passwords, API keys
+│   │       └── jobs.tf        # rrs-migrate/clustering/import-segments/import-cases job definitions
 │   └── orchestrator/          # Kestra + GlitchTip Elastic Metal server (single shared instance)
 │       ├── prod/
 │       │   └── terragrunt.hcl
@@ -207,6 +213,19 @@ To add or update a flow, edit the YAML in `kestra/flows/` and run:
 make tags=kestra ansible
 ```
 
+## RRS: extended perimeter (Droit à l'info)
+
+On top of the regular `rrs` database, jobs and registry, the `rrs` target provisions a second, isolated set of resources for the "Droit à l'info" extended France perimeter (see the root [README's "Extended perimeter (Droit à l'info)" section](../README.md#extended-perimeter-droit-à-linfo) for the application-level `EXTENDED_PERIMETER` behaviour):
+* An `extended-perimeter` Postgres database on the same `rrs` RDB instance (`live/rrs/template/database.tf`), with `admin` (full) and `job` (readwrite) privileges only, plus a dedicated readonly `rrs-read-<env>` user sharing its password with the `rrs-read-<env>` user on the `barometre` database — no migrate or metabase user access, unlike the `rrs` database.
+* Two S3 buckets, `mediatree-extended-perimeter-<env>` and `misinformation-extended-perimeter-<env>` (`live/rrs/template/s3.tf`), read/write accessible via the existing `rrs-ci` IAM application/policy (`iam.tf`) — Scaleway IAM policies scope by project, not by bucket, so this key covers every bucket in the `rrs` project.
+* The Kestra flow `infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml` (dev only), which ingests Mediatree data to the `mediatree-extended-perimeter` bucket, runs keyword detection with `EXTENDED_PERIMETER: true` against the `extended-perimeter` database (using the admin user, since Alembic migrations there need DDL rights), then runs misinformation detection writing to the `misinformation-extended-perimeter` bucket.
+
+To deploy/update just this target:
+```bash
+make env=dev target=rrs tg-plan
+make env=dev target=rrs tg-apply
+```
+
 ## A note on passwords
 When deploying for the first time you may need to create passwords and tokens. Use the following to generate a secure password:
 ```bash
@@ -220,3 +239,91 @@ To generate a Traefik basicAuth password:
 ```bash
 htpasswd -nB admin | sed -e 's/\$/\$\$/g'
 ```
+
+## Resource inventory
+
+Every target below is deployed once per environment (`dev`/`prod`) from its `template/`, except `orchestrator` which is a single shared instance (`prod` only — `orchestrator/dev` has no `terragrunt.hcl`). List `make env=<env> target=<target> tg-state-list` for the authoritative, live state.
+
+### `advertising` (`live/advertising/template/`)
+| Resource | Address | Purpose |
+|---|---|---|
+| Scaleway Project | `scaleway_account_project.project` | Dedicated project for the target/environment |
+| Container Namespace | `scaleway_container_namespace.container_namespace` | Namespace for the Label Studio container |
+| Container | `scaleway_container.labelstudio_container` | Label Studio serverless container |
+| RDB user | `scaleway_rdb_user.labelstudio_user` | Label Studio app DB user |
+| RDB database | `scaleway_rdb_database.labelstudio_db` | Label Studio database |
+| RDB privilege | `scaleway_rdb_privilege.labelstudio_policy` | Grants for `labelstudio_user` |
+| RDB user | `scaleway_rdb_user.dgccrf_user` | DGCCRF-scoped DB user |
+| RDB privilege | `scaleway_rdb_privilege.dgccrf_user_policy` | Grants for `dgccrf_user` |
+| Terraform data (null resource) | `terraform_data.dgccrf_grants` | Additional grant provisioning for `dgccrf_user` |
+| IAM Application | `scaleway_iam_application.project_application` | App identity for advertising detection jobs |
+| IAM Policy | `scaleway_iam_policy.project_policy` | Permissions for `project_application` |
+| IAM API key | `scaleway_iam_api_key.project_api_key` | Credentials for `project_application` |
+
+### `barometre` (`live/barometre/template/`)
+| Resource | Address | Purpose |
+|---|---|---|
+| Scaleway Project | `scaleway_account_project.project` | Dedicated project for the target/environment |
+| RDB instance | `scaleway_rdb_instance.barometre_rdb` | Main Postgres instance (`rdb-poc`) backing the barometre pipeline |
+| RDB database | `scaleway_rdb_database.barometre` | `barometre` database (keywords, program_metadata, stop_word, ...) |
+| RDB user | `scaleway_rdb_user.database_admin` | Admin user for `barometre` (distinct from instance root admin) |
+| RDB privilege | `scaleway_rdb_privilege.barometre_admin` | Full privileges for `database_admin` on `barometre` |
+| RDB user | `scaleway_rdb_user.rrs_read` | Readonly user consumed cross-target by `rrs` (`import_segments`/`import_cases` jobs) |
+| RDB privilege | `scaleway_rdb_privilege.rrs_read` | Readonly grant for `rrs_read` on `barometre` |
+| RDB ACL | `scaleway_rdb_acl.public` | IP allow-list (Scaleway job CIDRs + dev/prod extra IPs) |
+| Instance IP | `scaleway_instance_ip.gpu` | Flexible IP for the GPU instance |
+| Instance server | `scaleway_instance_server.gpu` | GPU instance (Whisper transcription / ML workloads) |
+| Object bucket | `scaleway_object_bucket.mediatree_videos` | Stores Mediatree video files |
+| IAM Application | `scaleway_iam_application.mediatree_videos_application` | App identity scoped to the `mediatree-videos` bucket (project-wide in practice) |
+| IAM Policy | `scaleway_iam_policy.mediatree_videos_policy` | Object storage read/write for `mediatree_videos_application` |
+| IAM API key | `scaleway_iam_api_key.mediatree_videos_api_key` | Credentials for `mediatree_videos_application` |
+
+### `rrs` (`live/rrs/template/`)
+| Resource | Address | Purpose |
+|---|---|---|
+| Scaleway Project | `scaleway_account_project.project` | Dedicated project for the target/environment |
+| Time sleep | `time_sleep.wait_for_project` | Works around Scaleway 403s right after project creation |
+| RDB instance | `scaleway_rdb_instance.rrs_rdb` | Postgres instance backing `rrs` and `extended-perimeter` |
+| RDB database | `scaleway_rdb_database.rrs` | Main RRS (misinformation clustering) database |
+| RDB privilege | `scaleway_rdb_privilege.rrs_admin` | Full privileges for the instance admin user on `rrs` |
+| RDB database | `scaleway_rdb_database.extended_perimeter` | Extended perimeter (Droit à l'info) database |
+| RDB privilege | `scaleway_rdb_privilege.extended_perimeter_admin` | Full privileges for the instance admin user on `extended-perimeter` |
+| RDB user | `scaleway_rdb_user.rrs_migrate_user` | Admin-capable user for running Alembic migrations on `rrs` |
+| RDB privilege | `scaleway_rdb_privilege.rrs_migrate_user` | Full privileges for `rrs_migrate_user` on `rrs` |
+| RDB user | `scaleway_rdb_user.rrs_job_user` | Readwrite user used by RRS jobs |
+| RDB privilege | `scaleway_rdb_privilege.rrs_job_user` | Readwrite grant for `rrs_job_user` on `rrs` |
+| RDB privilege | `scaleway_rdb_privilege.extended_perimeter_job_user` | Readwrite grant for `rrs_job_user` on `extended-perimeter` |
+| RDB user | `scaleway_rdb_user.rrs_metabase_user` | Readonly user for Metabase on `rrs` |
+| RDB privilege | `scaleway_rdb_privilege.rrs_metabase_user` | Readonly grant for `rrs_metabase_user` on `rrs` |
+| RDB user | `scaleway_rdb_user.extended_perimeter_read` | Readonly `rrs-read-<env>` user, shares its password with `barometre`'s `rrs_read` |
+| RDB privilege | `scaleway_rdb_privilege.extended_perimeter_read` | Readonly grant for `extended_perimeter_read` on `extended-perimeter` |
+| RDB ACL | `scaleway_rdb_acl.public` | IP allow-list (Scaleway job CIDRs + dev/prod extra IPs) |
+| IAM Application | `scaleway_iam_application.rrs_ci` | CI app identity for pushing images / triggering jobs |
+| IAM Policy | `scaleway_iam_policy.rrs_ci` | Registry, serverless jobs and object storage permissions for `rrs_ci` |
+| IAM API key | `scaleway_iam_api_key.rrs_ci` | Credentials for `rrs_ci` (CI `SCW_ACCESS_KEY`/`SCW_SECRET_KEY`) |
+| Job definition | `scaleway_job_definition.rrs_migrate` | Runs `rrs/scripts/migrate_and_seed.sh` against `rrs` |
+| Job definition | `scaleway_job_definition.rrs_clustering` | Misinformation clustering job |
+| Job definition | `scaleway_job_definition.rrs_import_segments` | Imports keyword segments from `barometre` into `rrs` |
+| Job definition | `scaleway_job_definition.rrs_import_cases` | Imports claims/cases from `barometre` into `rrs` |
+| Registry namespace | `scaleway_registry_namespace.rrs` | Container registry for `rrs-base` images |
+| Object bucket | `scaleway_object_bucket.mediatree_extended_perimeter` | Extended perimeter Mediatree ingestion data |
+| Object bucket | `scaleway_object_bucket.misinformation_extended_perimeter` | Extended perimeter misinformation detection data |
+| Secret + version | `scaleway_secret.postgres_migrate_password` / `..._version` | `rrs_migrate_user` password |
+| Secret + version | `scaleway_secret.rrs_job_password` / `..._version` | `rrs_job_user` password |
+| Secret + version | `scaleway_secret.mistral_api_key` / `..._version` | Mistral API key (clustering job) |
+| Secret + version | `scaleway_secret.anthropic_api_key` / `..._version` | Anthropic API key (clustering job) |
+| Secret + version | `scaleway_secret.barometre_rrs_read_password` / `..._version` | Shared password for `rrs-read-<env>` on both `barometre` and `extended-perimeter` |
+
+### `orchestrator` (`live/orchestrator/template/`, `prod` only)
+| Resource | Address | Purpose |
+|---|---|---|
+| Scaleway Project | `scaleway_account_project.project` | Dedicated project for the orchestrator |
+| RDB user | `scaleway_rdb_user.kestra` | Kestra app DB user |
+| RDB database | `scaleway_rdb_database.kestra` | Kestra database |
+| RDB privilege | `scaleway_rdb_privilege.kestra` | Grants for `kestra` user |
+| RDB user | `scaleway_rdb_user.glitchtip` | GlitchTip app DB user |
+| RDB database | `scaleway_rdb_database.glitchtip` | GlitchTip database |
+| RDB privilege | `scaleway_rdb_privilege.glitchtip` | Grants for `glitchtip` user |
+| IAM SSH key | `scaleway_iam_ssh_key.paul_gabriel` | SSH access to the baremetal server |
+| IAM SSH key | `scaleway_iam_ssh_key.gmguarino` | SSH access to the baremetal server |
+| Baremetal server | `scaleway_baremetal_server.orchestrator` | Elastic Metal server (EM-A610R-NVMe) hosting Kestra + GlitchTip via Docker Compose/Ansible |

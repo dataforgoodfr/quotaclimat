@@ -430,17 +430,20 @@ Program data will not be updated to avoid lock concurrent issues when using `UPD
 **With the docker-entrypoint.sh this command is done automatically, so for production uses, you will not have to run this command.**
 
 ### Extended perimeter (Droit à l'info)
-For the "Droit à l'info" scope, we track an extended set of France programs (`tf1`, `france2`, `fr3-idf`, `rtl`, `france5`, `tmc`, `lcp`) on top of the regular France perimeter, defined in `quotaclimat/data_processing/mediatree/i8n/extended_france/`. This uses the country code `ext-fra` (`EXTENDED_FRANCE` in `country.py`), which shares the `french` language and subtitle format with `fra`/`bel`.
+For the "Droit à l'info" scope, we track an extended set of France programs (`tf1`, `france2`, `fr3-idf`, `rtl`, `france5`, `tmc`, `lcp`) on top of the regular France perimeter, defined in `quotaclimat/data_processing/mediatree/i8n/extended_france/`. This uses the country code `ext-fra` (`EXTENDED_FRANCE` in `country.py`), which shares the `french` language and subtitle format with `fra`/`bel` - subtitle matching in `detect_keywords.py` is routed by `country.language == "french"`, not by a per-country code allowlist, so extended perimeter automatically reuses the same French subtitle matching logic.
 
-Set the env variable `EXTENDED_PERIMETER` to `"true"` when running `transform_program.py` to also include these extended perimeter programs in `postgres/program_metadata.json`:
-```
-EXTENDED_PERIMETER=true poetry run python3 transform_program.py
-```
+The `EXTENDED_PERIMETER` env variable (`"true"`/`"false"`, default `"false"`) toggles extended perimeter behaviour across the pipeline:
+* `transform_program.py`: also includes the extended perimeter programs in `postgres/program_metadata.json`.
+  ```
+  EXTENDED_PERIMETER=true poetry run python3 transform_program.py
+  ```
+* `quotaclimat/data_ingestion/labelstudio/ingest_labelstudio.py`: uses `db_config_extended_perimeter` (`quotaclimat/data_ingestion/labelstudio/configs.py`) instead of the regular `db_config`, to only ingest the extended perimeter's Label Studio project into the aggregate tables.
+* `my_dbt_project/dbt_project.yml`: the `analytics`/`dashboards` model grants only select to the `rrs-read` user matching `DBT_ENV` (`rrs-read-dev` or `rrs-read-prod`) instead of the regular grant list, since the extended-perimeter database has no `climateguard-reader-user`.
 
-The extended perimeter data lives in its own infrastructure, isolated from the main `rrs`/`barometre` databases:
-* An `extended-perimeter` Postgres database on the `rrs` RDB instance (`infrastructure/live/rrs/template/database.tf`), with the same per-user privileges (admin/migrate/job/metabase) as the `rrs` database.
-* A dedicated `mediatree-extended-perimeter-<env>` S3 bucket (`infrastructure/live/rrs/template/s3.tf`), with the existing `rrs-ci` IAM application/policy granted object storage read/write access.
-* A Kestra dev flow (`infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml`) that ingests Mediatree data to that bucket, then runs `entrypoints/detect_keywords.sh` (which always runs `alembic upgrade head` first) against the `extended-perimeter` database, followed by misinformation detection.
+The extended perimeter data lives in its own infrastructure, isolated from the main `rrs`/`barometre` databases (`infrastructure/live/rrs/template/`):
+* An `extended-perimeter` Postgres database on the `rrs` RDB instance (`database.tf`), with admin (full) and job (readwrite) privileges only - no migrate or metabase user access, unlike the `rrs` database - plus a dedicated readonly `rrs-read-<env>` user (used for dbt's `select` grants above, and sharing its password with the `rrs-read-<env>` user on the `barometre` database in `infrastructure/live/barometre/template/database.tf`).
+* Two dedicated S3 buckets, `mediatree-extended-perimeter-<env>` and `misinformation-extended-perimeter-<env>` (`s3.tf`), with the existing `rrs-ci` IAM application/policy granted object storage read/write access.
+* A Kestra dev flow (`infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml`) that ingests Mediatree data to the `mediatree-extended-perimeter` bucket, then runs `entrypoints/detect_keywords.sh` with `EXTENDED_PERIMETER: true` (which always runs `alembic upgrade head` first, using the admin user since it needs DDL rights) against the `extended-perimeter` database, followed by misinformation detection writing to the `misinformation-extended-perimeter` bucket.
 
 # Mediatre to S3
 For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway) with partition :

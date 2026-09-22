@@ -88,6 +88,31 @@ services:
       rrs_db:
         condition: service_healthy
 
+  filter_keywords:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.keyword_detection.filter_keywords"]
+    environment:
+      PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+      POSTGRES_HOST: ${POSTGRES_HOST:-localhost}
+      POSTGRES_PORT: ${POSTGRES_PORT:-5432}
+      POSTGRES_DB: ${POSTGRES_DB:-barometre}
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      BUCKET_NAME: ${BUCKET_NAME}
+      SUBJECT: ${SUBJECT:-environmental_health}
+      START_DATE: ${START_DATE:-}
+      END_DATE: ${END_DATE:-}
+    depends_on:
+      upsert_subjects:
+        condition: service_completed_successfully
+
   import_cases:
     build:
       context: ../

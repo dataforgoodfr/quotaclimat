@@ -4,7 +4,10 @@ import logging
 import os
 
 from quotaclimat.data_ingestion.labelstudio import models
-from quotaclimat.data_ingestion.labelstudio.configs import db_config
+from quotaclimat.data_ingestion.labelstudio.configs import (
+    db_config,
+    db_config_extended_perimeter,
+)
 from quotaclimat.data_ingestion.scrap_sitemap import get_consistent_hash
 from postgres.database_connection import connect_to_db, get_db_session
 from sqlalchemy import (
@@ -87,6 +90,20 @@ def get_labelstudio_data(
     return output
 
 
+def dataframe_from_labelstudio_rows(table: DeclarativeMeta, rows) -> pd.DataFrame:
+    """
+    Build a DataFrame from get_labelstudio_data() rows, keeping the source table's
+    columns (plus the "country" column added by get_labelstudio_data) even when
+    rows is empty - pd.DataFrame([]) otherwise has no columns at all, which breaks
+    downstream code (e.g. create_hash_id) expecting "id"/"project_id"/"country".
+    """
+    if rows:
+        return pd.DataFrame(rows)
+
+    columns = [column.name for column in table.__table__.columns] + ["country"]
+    return pd.DataFrame(columns=columns)
+
+
 def create_hash_id(
     df: pd.DataFrame, column_name: str, id_column: str = "id", position: int = 0
 ):
@@ -150,6 +167,10 @@ def upsert_labelstudio_data_optimized(
     Returns:
         int: Number of records processed
     """
+    if df.empty:
+        logging.info(f"No data to upsert for {table_class.__tablename__}, skipping.")
+        return 0
+
     try:
         # convert nan to None
         # Convert to dict and remove SQLAlchemy internal attributes if present
@@ -190,7 +211,7 @@ def collect_task_data(config, conn_kwargs):
     task_data = get_labelstudio_data(
         models.LabelStudioTaskSource, config=config, conn_kwargs=conn_kwargs
     )
-    task_df = pd.DataFrame(task_data)
+    task_df = dataframe_from_labelstudio_rows(models.LabelStudioTaskSource, task_data)
     task_df = create_hash_id(task_df, "task_aggregate_id", "id")
 
     logging.info(
@@ -199,8 +220,10 @@ def collect_task_data(config, conn_kwargs):
     task_completion_data = get_labelstudio_data(
         models.LabelStudioTaskCompletionSource, config=config, conn_kwargs=conn_kwargs
     )
-    task_completion_df = pd.DataFrame(task_completion_data)
-
+    task_completion_df = dataframe_from_labelstudio_rows(
+        models.LabelStudioTaskCompletionSource, task_completion_data
+    )
+    print(task_completion_df)
     # Create hash IDs for task completions
     task_completion_df = create_hash_id(
         task_completion_df,
@@ -277,13 +300,14 @@ def upsert_data_to_target(target_conn_kwargs, tasks_df, task_completions_df):
         target_session.close()
 
 
-def main(conn_kwargs, target_conn_kwargs):
+def main(conn_kwargs, target_conn_kwargs, db_config=db_config):
     """
     Main processing function that orchestrates the entire workflow.
 
     Args:
         conn_kwargs (dict): Source database connection parameters
         target_conn_kwargs (dict): Target database connection parameters
+        db_config (list): Source database configurations to ingest from
     """
     # Collect data from all sources
     tasks_df, task_completions_df = collect_all_data(db_config, conn_kwargs)
@@ -293,6 +317,8 @@ def main(conn_kwargs, target_conn_kwargs):
 
 
 if __name__ == "__main__":
+    EXTENDED_PERIMETER = os.getenv("EXTENDED_PERIMETER", "false").lower() == "true"
+
     POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
     POSTGRES_PORT = int(os.getenv("POSTGRES_PORT", 5432))
     conn_kwargs = dict(
@@ -310,4 +336,8 @@ if __name__ == "__main__":
         password=os.getenv("POSTGRES_PASSWORD", "password"),
     )
 
-    main(conn_kwargs, target_conn_kwargs)
+    main(
+        conn_kwargs,
+        target_conn_kwargs,
+        db_config=db_config_extended_perimeter if EXTENDED_PERIMETER else db_config,
+    )

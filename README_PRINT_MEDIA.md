@@ -163,7 +163,7 @@ Docker images are built and deployed via **GitHub Actions**: [`.github/workflows
 
 - For each extraction job, an **extraction ID** is returned by Factiva; this ID is also stored in S3. This allows the pipeline to later check for and recover previous extractions that may have failed or were not downloaded, ensuring completeness and robustness over time.
 
-**Docker**: [`Dockerfile_factiva_stats_to_s3`](Dockerfile_factiva_stats_to_s3)  
+**Docker**: [`quotaclimat_base`](Dockerfile)  
 **Python entry point**: [`quotaclimat/data_ingestion/factiva/factiva_to_s3/factiva_stats_to_s3.py`](quotaclimat/data_ingestion/factiva/factiva_to_s3/factiva_stats_to_s3.py)
 
 **Key features**:

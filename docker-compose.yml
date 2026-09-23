@@ -106,7 +106,7 @@ services:
       - 5000:5000
     build:
       context: ./
-      dockerfile: Dockerfile_ingest
+      dockerfile: Dockerfile
     #entrypoint: ["sleep", "1200"] # use to debug the container if needed
     entrypoint: [ "python", "quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py" ]
     environment:
@@ -386,8 +386,8 @@ services:
       - 5003:5000
     build:
       context: ./
-      dockerfile: Dockerfile_factiva_stats_to_s3
-    #entrypoint: ["sleep", "1200"] # use to debug the container if needed
+      dockerfile: Dockerfile
+    command: python -m quotaclimat.data_ingestion.factiva.factiva_to_s3.factiva_stats_to_s3
     environment:
       LOGLEVEL: INFO
       PYTHONPATH: /app

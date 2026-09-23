@@ -35,11 +35,15 @@ models:
     analytics:
       +grants:
         # grant nothing in dev; set DBT_ENV=prod to enable grants in prod
-        select: "{{ ['\"rrs-read-dev\"', '\"rrs-read-prod\"', '\"climateguard-reader-user\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"'] }}"
+        # the extended-perimeter DB only has a rrs-read-{dev,prod} user (no climateguard-reader-user),
+        # so when EXTENDED_PERIMETER is true, grant only to the rrs-read user matching DBT_ENV
+        select: "{{ (['\"rrs-read-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"']) if env_var('EXTENDED_PERIMETER', 'false') == 'true' else (['\"rrs-read-dev\"', '\"rrs-read-prod\"', '\"climateguard-reader-user\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"']) }}"
     dashboards:
       +grants:
         # grant nothing in dev; set DBT_ENV=prod to enable grants in prod
-        select: "{{ ['\"climateguard-reader-user\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"'] }}"
+        # the extended-perimeter DB only has a rrs-read-{dev,prod} user (no climateguard-reader-user),
+        # so when EXTENDED_PERIMETER is true, grant only to the rrs-read user matching DBT_ENV
+        select: "{{ (['\"rrs-read-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"']) if env_var('EXTENDED_PERIMETER', 'false') == 'true' else (['\"climateguard-reader-user\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"']) }}"
     homepage:
       +materialized: view
 
@@ -165,9 +169,9 @@ seeds:
               IF EXISTS (
                 SELECT FROM information_schema.tables 
                 WHERE table_schema = 'public' 
-                AND table_name = 'time_monitored'
+                AND table_name = 'labelstudio_task_aggregate'
               ) THEN
-                EXECUTE 'DELETE FROM public.time_monitored';
+                EXECUTE 'DELETE FROM public.labelstudio_task_aggregate';
               END IF;
             END
             $$;
@@ -187,9 +191,9 @@ seeds:
               IF EXISTS (
                 SELECT FROM information_schema.tables 
                 WHERE table_schema = 'public' 
-                AND table_name = 'time_monitored'
+                AND table_name = 'labelstudio_task_completion_aggregate'
               ) THEN
-                EXECUTE 'DELETE FROM public.time_monitored';
+                EXECUTE 'DELETE FROM public.labelstudio_task_completion_aggregate';
               END IF;
             END
             $$;

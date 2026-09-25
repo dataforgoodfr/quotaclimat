@@ -3,7 +3,6 @@ import logging
 import os
 import subprocess
 
-import pandas as pd
 import psycopg2
 import pytest
 import yaml
@@ -77,17 +76,22 @@ def create_test_roles(db_connection):
 PRODUCTION_EXTERNAL_SOURCES_CONFIG = "my_dbt_project/external_sources.yml"
 
 
-def classification_test_source(workbook_path) -> dict:
-    """Production classification source settings, reading a local workbook instead of the Google Sheet."""
+TEST_FOLDER_ID = "FAKE_folder_id_123"
+
+
+def classification_test_source() -> dict:
+    """Production classification source settings."""
     config = yaml.safe_load(open(PRODUCTION_EXTERNAL_SOURCES_CONFIG))
-    source = next(s for s in config["sources"] if s["name"] == "classification_pub_ome")
-    return {**source, "url_env": None, "url": str(workbook_path)}
+    return next(s for s in config["sources"] if s["name"] == "classification_pub_ome")
 
 
-def write_workbook(path, sheets: dict[str, pd.DataFrame]):
-    with pd.ExcelWriter(path) as writer:
-        for name, df in sheets.items():
-            df.to_excel(writer, sheet_name=name, index=False)
+def fake_fetch(sheets: dict[str, list[list]]):
+    """Stands for the Google Drive / Sheets API calls: returns the rows the API would return."""
+    def fetch(folder_id, spreadsheet_name):
+        assert folder_id == TEST_FOLDER_ID
+        assert spreadsheet_name == classification_test_source()["spreadsheet"]
+        return sheets
+    return fetch
 
 
 @pytest.fixture(scope="module")
@@ -167,29 +171,33 @@ def db_engine():
 
 
 @pytest.fixture(scope="module")
-def load_test_external_sources(db_engine, tmp_path_factory):
-    """Same loading step as entrypoints/dbt.sh, from a local workbook instead of the Google Sheet."""
-    workbook = tmp_path_factory.mktemp("external_sources") / "classification.xlsx"
-    write_workbook(workbook, {
-        "secteurs": pd.DataFrame({
-            "sector_code": ["PYTEST_AUTO", " PYTEST_FOOD ", None],
-            "sector_label_fr": ["Automobile", "Alimentation", None],
-            "sector_label_en": ["Cars", "Food", None],
-        }),
-        "catégories": pd.DataFrame({
-            "sector_code": ["PYTEST_AUTO", "PYTEST_AUTO", "PYTEST_FOOD"],
-            "cat_code": ["PYTEST_AUTO_EV", "PYTEST_AUTO_ICE", "PYTEST_FOOD_SNACK"],
-            "product_category_fr": ["Voiture électrique", "Voiture thermique", "Snacks"],
-        }),
-        "Notes de version": pd.DataFrame({"date": ["2026-07-16"], "note": ["v1"]}),
-    })
-    results = load_source(db_engine, classification_test_source(workbook))
+def load_test_external_sources(db_engine):
+    """Same loading step as entrypoints/dbt.sh, with the Google API calls replaced by test rows."""
+    os.environ["EXTERNAL_SOURCES_DRIVE_FOLDER"] = f"https://drive.google.com/drive/folders/{TEST_FOLDER_ID}?usp=sharing"
+    sheets = {
+        # the API drops trailing empty cells
+        "secteurs": [
+            ["sector_code", "sector_label_fr", "sector_label_en"],
+            ["PYTEST_AUTO", "Automobile", "Cars"],
+            [" PYTEST_FOOD ", "Alimentation", "Food"],
+            [],
+        ],
+        "catégories": [
+            ["sector_code", "cat_code", "product_category_fr"],
+            ["PYTEST_AUTO", "PYTEST_AUTO_EV", "Voiture électrique"],
+            ["PYTEST_AUTO", "PYTEST_AUTO_ICE", "Voiture thermique"],
+            ["PYTEST_FOOD", "PYTEST_FOOD_SNACK", "Snacks"],
+        ],
+        "Notes de version": [["date", "note"], ["2026-07-16", "v1"]],
+    }
+    results = load_source(db_engine, classification_test_source(), fetch=fake_fetch(sheets))
     assert results == {
         "ref_classification_pub_ome_secteurs": True,
         "ref_classification_pub_ome_categories": True,
         "ref_classification_pub_ome_notes_de_version": True,
     }
     yield
+    os.environ.pop("EXTERNAL_SOURCES_DRIVE_FOLDER", None)
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -365,8 +373,14 @@ def test_external_source_loaded(db_connection):
         cur.execute("SELECT * FROM public.ref_classification_pub_ome_notes_de_version")
         notes = cur.fetchall()
         cur.execute("""
-            SELECT table_name, row_count FROM public.ref_external_source_load
-            WHERE name = 'classification_pub_ome' ORDER BY table_name
+            SELECT DISTINCT ON (table_name) table_name, row_count FROM public.ref_external_source_load
+            WHERE name = 'classification_pub_ome'
+              AND table_name IN (
+                'ref_classification_pub_ome_categories',
+                'ref_classification_pub_ome_notes_de_version',
+                'ref_classification_pub_ome_secteurs'
+              )
+            ORDER BY table_name, loaded_at DESC
         """)
         history = cur.fetchall()
     # values are stripped, empty rows are dropped, extra columns and tabs are kept
@@ -386,61 +400,140 @@ def test_external_source_loaded(db_connection):
     "categories",
     [
         # missing required column
-        pd.DataFrame({"sector_code": ["A"], "cat_code": ["A1"]}),
+        [["sector_code", "cat_code"], ["A", "A1"]],
         # duplicated unique key
-        pd.DataFrame({"sector_code": ["A", "B"], "cat_code": ["A1", "A1"], "product_category_fr": ["P", "P"]}),
+        [["sector_code", "cat_code", "product_category_fr"], ["A", "A1", "P"], ["B", "A1", "P"]],
         # no rows
-        pd.DataFrame({"sector_code": [], "cat_code": [], "product_category_fr": []}),
+        [["sector_code", "cat_code", "product_category_fr"]],
+        # duplicated column names
+        [["sector_code", "cat_code", "cat_code", "product_category_fr"], ["A", "A1", "A1", "P"]],
     ],
 )
-def test_external_source_invalid_tab_keeps_table(db_connection, db_engine, tmp_path, categories):
-    workbook = tmp_path / "invalid.xlsx"
-    write_workbook(workbook, {
-        "secteurs": pd.DataFrame({"sector_code": ["PYTEST_AUTO"], "sector_label_fr": ["Automobile"]}),
-        "catégories": categories,
-    })
-    source = classification_test_source(workbook)
-    source["sheets"] = {"catégories": source["sheets"]["catégories"]}  # do not touch the secteurs table
-    source["sheets"]["secteurs"] = {"skip": True}
-    assert load_source(db_engine, source) == {"ref_classification_pub_ome_categories": False}
+def test_external_source_invalid_tab_keeps_table(db_connection, db_engine, monkeypatch, categories):
+    monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", TEST_FOLDER_ID)
+    source = classification_test_source()
+    source["sheets"] = {"catégories": source["sheets"]["catégories"]}
+    assert load_source(db_engine, source, fetch=fake_fetch({"catégories": categories})) == {
+        "ref_classification_pub_ome_categories": False
+    }
     with db_connection.cursor() as cur:
         cur.execute("SELECT count(*) FROM public.ref_classification_pub_ome_categories")
         assert cur.fetchone()[0] == 3
 
 
-def test_external_source_unreachable_keeps_tables(db_connection, db_engine, tmp_path):
-    source = classification_test_source(tmp_path / "does_not_exist.xlsx")
-    assert load_source(db_engine, source) == {}
+def test_external_source_only_writes_ref_tables(db_connection, db_engine, monkeypatch):
+    monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", TEST_FOLDER_ID)
+    source = classification_test_source()
+    source["sheets"] = {"catégories": {"table": "keywords"}}
+    sheets = {"catégories": [["a"], ["b"]], "Tab'; DROP TABLE keywords; --": [["a"], ["b"]]}
+    assert load_source(db_engine, source, fetch=fake_fetch(sheets)) == {
+        "ref_classification_pub_ome_tab_drop_table_keywords": True
+    }
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT count(*) FROM public.keywords")
+        assert cur.fetchone()[0] > 0
+
+
+def test_external_source_unreachable_keeps_tables(db_connection, db_engine, monkeypatch):
+    monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", TEST_FOLDER_ID)
+
+    def failing_fetch(folder_id, spreadsheet_name):
+        raise RuntimeError("403 Forbidden")
+
+    assert load_source(db_engine, classification_test_source(), fetch=failing_fetch) == {}
     with db_connection.cursor() as cur:
         cur.execute("SELECT count(*) FROM public.ref_classification_pub_ome_categories")
         assert cur.fetchone()[0] == 3
 
 
-def test_external_source_without_url_is_skipped(db_connection, db_engine, monkeypatch):
-    monkeypatch.delenv("CLASSIFICATION_PUB_OME_SHEET_URL", raising=False)
-    config = yaml.safe_load(open(PRODUCTION_EXTERNAL_SOURCES_CONFIG))
-    source = next(s for s in config["sources"] if s["name"] == "classification_pub_ome")
-    assert load_source(db_engine, source) == {}
+def test_external_source_without_folder_is_skipped(db_connection, db_engine, monkeypatch):
+    monkeypatch.delenv("EXTERNAL_SOURCES_DRIVE_FOLDER", raising=False)
+    assert load_source(db_engine, classification_test_source(), fetch=fake_fetch({})) == {}
     with db_connection.cursor() as cur:
         cur.execute("SELECT count(*) FROM public.ref_classification_pub_ome_categories")
         assert cur.fetchone()[0] == 3
 
 
-def test_spreadsheet_export_url():
+def test_external_source_helpers():
     from quotaclimat.data_ingestion.external_sources.load_external_sources import (
-        spreadsheet_export_url,
+        ExternalSourceError,
+        drive_query_literal,
+        parse_folder_id,
         to_snake_case,
     )
 
-    assert spreadsheet_export_url(
-        "https://docs.google.com/spreadsheets/d/FAKE_sheet-id_123/edit?gid=42#gid=42"
-    ) == "https://docs.google.com/spreadsheets/d/FAKE_sheet-id_123/export?format=xlsx"
-    assert spreadsheet_export_url("local/file.xlsx") == "local/file.xlsx"
-    # only docs.google.com itself is rewritten
-    for url in [
-        "https://evil.example/docs.google.com/spreadsheets/d/abc/edit",
-        "https://docs.google.com.evil.example/spreadsheets/d/abc/edit",
-        "http://docs.google.com/spreadsheets/d/abc/edit",
+    assert parse_folder_id("FAKE_folder_id_123") == "FAKE_folder_id_123"
+    assert parse_folder_id("https://drive.google.com/drive/folders/FAKE_folder_id_123?usp=sharing") == "FAKE_folder_id_123"
+    assert parse_folder_id("https://drive.google.com/drive/u/0/folders/FAKE_folder_id_123") == "FAKE_folder_id_123"
+    for value in [
+        "https://evil.example/drive.google.com/drive/folders/FAKE_folder_id_123",
+        "https://drive.google.com.evil.example/drive/folders/FAKE_folder_id_123",
+        "' or name contains 'a",
     ]:
-        assert spreadsheet_export_url(url) == url
+        with pytest.raises(ExternalSourceError):
+            parse_folder_id(value)
+    assert drive_query_literal("it's a \\ test") == "'it\\'s a \\\\ test'"
     assert to_snake_case("Catégories Transversales (v2)") == "categories_transversales_v2"
+
+
+class FakeResponse:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return self.payload
+
+
+def test_fetch_google_sheet_api_calls(monkeypatch):
+    """Checks the Drive / Sheets API requests with a fake authorized session."""
+    from quotaclimat.data_ingestion.external_sources import load_external_sources as loader
+
+    calls = []
+
+    class FakeSession:
+        def get(self, url, params, timeout):
+            calls.append((url, params))
+            if url == loader.DRIVE_FILES_API_URL:
+                return FakeResponse({"files": [{"id": "SHEET_ID_1234567890", "name": "classification_pub_ome"}]})
+            if url.endswith("/values:batchGet"):
+                return FakeResponse({"valueRanges": [{"values": [["a"], ["1"]]}, {}]})
+            return FakeResponse({"sheets": [
+                {"properties": {"title": "secteurs", "sheetType": "GRID"}},
+                {"properties": {"title": "Tab 'quoted'", "sheetType": "GRID"}},
+                {"properties": {"title": "Chart", "sheetType": "OBJECT"}},
+            ]})
+
+    monkeypatch.setattr(loader, "get_session", lambda: FakeSession())
+    sheets = loader.fetch_google_sheet("FOLDER_ID_123", "classification_pub_ome")
+
+    assert sheets == {"secteurs": [["a"], ["1"]], "Tab 'quoted'": []}
+    assert calls[0][1]["q"] == (
+        "'FOLDER_ID_123' in parents and name = 'classification_pub_ome'"
+        " and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false"
+    )
+    assert calls[1][0] == f"{loader.SHEETS_API_URL}/SHEET_ID_1234567890"
+    assert calls[2][1]["ranges"] == ["'secteurs'", "'Tab ''quoted'''"]
+    assert calls[2][1]["valueRenderOption"] == "FORMATTED_VALUE"
+
+
+def test_fetch_google_sheet_requires_exactly_one_file(monkeypatch):
+    from quotaclimat.data_ingestion.external_sources import load_external_sources as loader
+
+    class FakeSession:
+        def get(self, url, params, timeout):
+            return FakeResponse({"files": [{"id": "a"}, {"id": "b"}]})
+
+    monkeypatch.setattr(loader, "get_session", lambda: FakeSession())
+    with pytest.raises(loader.ExternalSourceError, match="2 spreadsheets"):
+        loader.fetch_google_sheet("FOLDER_ID_123", "classification_pub_ome")
+
+
+def test_get_session_requires_credentials(monkeypatch):
+    from quotaclimat.data_ingestion.external_sources import load_external_sources as loader
+
+    monkeypatch.delenv(loader.CREDENTIALS_ENV, raising=False)
+    with pytest.raises(loader.ExternalSourceError, match="no Google service account credentials"):
+        loader.get_session()

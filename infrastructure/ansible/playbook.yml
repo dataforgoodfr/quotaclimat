@@ -33,7 +33,8 @@
 
     # Kestra secrets (for flow execution)
     kestra_secrets:
-      CLASSIFICATION_PUB_OME_SHEET_URL: "{{ lookup('env', 'CLASSIFICATION_PUB_OME_SHEET_URL') }}"
+      EXTERNAL_SOURCES_DRIVE_FOLDER: "{{ lookup('env', 'EXTERNAL_SOURCES_DRIVE_FOLDER') }}"
+      GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON: "{{ lookup('env', 'GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON') }}"
       API_LABEL_STUDIO_KEY: "{{ lookup('env', 'API_LABEL_STUDIO_KEY') }}"
       ANTHROPIC_API_KEY: "{{ lookup('env', 'ANTHROPIC_API_KEY') }}"
       CLIMATESAFEGUARDS_SCW_ACCESS: "{{ lookup('env', 'CLIMATESAFEGUARDS_SCW_ACCESS') }}"

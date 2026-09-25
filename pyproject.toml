@@ -50,6 +50,7 @@ matplotlib = "^3.10.7"
 factiva-analytics = "^0.3.0"
 python-dotenv = "^1.2.1"
 google-cloud-pubsub = "^2.33.0"
+google-auth = "^2.55.1"
 
 
 plotly = "^6.5.0"

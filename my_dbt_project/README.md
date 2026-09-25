@@ -46,16 +46,21 @@ Tables built from the `advertising` schema (ad detection and classification pipe
 * `ad_occurrence_tunnels` (`materialized='table'`): one row per non-`OTHER`, non-deleted occurrence with its `tunnel_id`. An ad tunnel is a sequence of consecutive fragments on a channel where each one starts at most `ad_tunnel_tolerance_sec` seconds (default 5) after the end of the previous ones; overlapping fragments stay in the same tunnel. `tunnel_id` is `channel_name@<epoch of the tunnel start_date>`.
 * `ad_tunnels` (`materialized='table'`): one row per tunnel (start, end), aggregated from `ad_occurrence_tunnels`. `ad_occurrences_classified` also carries the `tunnel_id` of each occurrence.
 
-## External sources (Google Sheets)
-Reference data maintained in Google Sheets is loaded into `public` before `dbt run`, by `entrypoints/dbt.sh` (and `mediatree_import.sh`):
+## External sources (private Google Sheets)
+Reference data maintained in private Google Sheets is loaded into `public` before `dbt run`, by `entrypoints/dbt.sh` (and `mediatree_import.sh`):
 ```
 poetry run python -m quotaclimat.data_ingestion.external_sources.load_external_sources [config_path]
 ```
-Sources are listed in `external_sources.yml`. For a `spreadsheet` source, the whole Google Sheet (shared by link, viewer) is exported as xlsx in one request and every tab is loaded into `<table_prefix><tab name in snake_case>`, e.g. tab `catégories` of the classification sheet -> `ref_classification_pub_ome_categories`. Per-tab settings (required columns, unique key, table name, skip) are keyed by the exact tab name. A `csv` source loads a single CSV.
+Sources are listed in `external_sources.yml` by spreadsheet name. Each spreadsheet is looked up by its exact name in a Google Drive folder, then every tab is read with the Google Sheets API (displayed values only, never formulas or files) and loaded into `<table_prefix><tab name in snake_case>`, e.g. tab `catégories` of `classification_pub_ome` -> `ref_classification_pub_ome_categories`. Per-tab settings (required columns, unique key, table name, skip) are keyed by the exact tab name. Target tables must start with `ref_`, whatever the tab names or the config say.
 
-Each table is replaced in its own transaction, only when it validates: a tab with missing columns, duplicated keys or no rows, or a failed download, leaves the previous version in place and logs an error (sent to Sentry). Every load is recorded in `public.ref_external_source_load` (table, row count, SHA-256 of the downloaded file), to know which version of a sheet a run used.
+Each table is replaced in its own transaction, only when it validates: a tab with missing or duplicated columns, duplicated keys or no rows, or a failed download, leaves the previous version in place and logs an error (sent to Sentry). Every load is recorded in `public.ref_external_source_load` (table, row count, SHA-256 of the values), to know which version of a sheet a run used.
 
-The sheet link is not stored in this public repo: `url_env` names the environment variable holding it. For the classification sheet, `CLASSIFICATION_PUB_OME_SHEET_URL` is a Kestra secret (value in Vaultwarden, listed in `infrastructure/.env.secrets.dist`, provisioned by `make tags=kestra ansible`) passed to the `dbt_run_transformations` tasks. Without it, the source is skipped and the previous tables are kept.
+### Access
+The loader authenticates as a Google service account, with read-only scopes (`drive.metadata.readonly` to find the spreadsheet in the folder, `spreadsheets.readonly` to read it). Two Kestra secrets (values in Vaultwarden, listed in `infrastructure/.env.secrets.dist`, provisioned by `make tags=kestra ansible`) are passed to the `dbt_run_transformations` tasks:
+* `EXTERNAL_SOURCES_DRIVE_FOLDER`: id or link of the Drive folder holding the spreadsheets.
+* `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON`: JSON key of the service account.
+
+The folder must be shared as **Viewer** with the service account email. Without these secrets, the sources are skipped and the previous tables are kept.
 
 A new tab is loaded automatically on the next run. To use a table in a model, declare it as a dbt source; `source_or_empty` (`macros/`) lets a model build with an empty table where the reference data is not loaded.
 

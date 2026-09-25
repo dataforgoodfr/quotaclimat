@@ -1,30 +1,29 @@
-# External reference data loaded into Postgres (schema public) before `dbt run`,
+# Reference data from private Google Sheets, loaded into Postgres (schema public) before `dbt run`,
 # by quotaclimat/data_ingestion/external_sources/load_external_sources.py (called in entrypoints/dbt.sh).
+#
+# The spreadsheets are looked up by name in a Google Drive folder, shared as viewer with the Google
+# service account whose JSON key is in GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON. Only the folder id (or link)
+# is kept out of the repo, in the env variable named by `folder_env`.
 #
 # Each source:
 #   name:          identifier, used in logs and in the public.ref_external_source_load history table
-#   type:          spreadsheet (Google Sheet, every tab loaded) or csv (single file)
-#   url_env:       environment variable holding the link (preferred: keeps the link out of this public repo)
-#   url:           link used when url_env is not set: Google Sheet (any /edit link works) or CSV (URL or local path)
-#
-# spreadsheet only:
-#   table_prefix:  every tab is loaded into <table_prefix><tab name in snake_case>
+#   folder_env:    env variable holding the Drive folder id or https://drive.google.com/drive/folders/<id> link
+#   spreadsheet:   exact name of the spreadsheet in that folder (exactly one match expected)
+#   table_prefix:  every tab is loaded into <table_prefix><tab name in snake_case>, must start with ref_
 #                  (e.g. "Catégories" -> ref_classification_pub_ome_categories)
 #   sheets:        optional per-tab settings, keyed by the exact tab name:
-#                    table:   table name instead of the default one
+#                    table:   table name instead of the default one (must start with ref_)
 #                    columns: columns that must be present (extra columns are kept)
 #                    unique:  columns that must be non-empty and unique together
 #                    skip:    true to not load this tab
-# csv only:
-#   table, columns, unique: same as the per-tab settings above
 #
-# The sheet must be shared by link (viewer). When no link is configured, the source is skipped. When the download or the validation of a tab fails,
-# its table is left unchanged. Declare the tables as dbt sources to use them in models.
+# When the folder or credentials are not configured, the download fails or the validation of a tab
+# fails, its table is left unchanged. Declare the tables as dbt sources to use them in models.
 
 sources:
   - name: classification_pub_ome
-    type: spreadsheet
-    url_env: CLASSIFICATION_PUB_OME_SHEET_URL
+    folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER
+    spreadsheet: classification_pub_ome
     table_prefix: ref_classification_pub_ome_
     sheets:
       secteurs:

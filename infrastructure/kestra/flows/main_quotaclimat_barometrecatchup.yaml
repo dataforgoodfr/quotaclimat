@@ -169,7 +169,8 @@ tasks:
       - -c
       - cd /app && /app/entrypoints/dbt.sh
     env:
-      CLASSIFICATION_PUB_OME_SHEET_URL: "{{ secret('CLASSIFICATION_PUB_OME_SHEET_URL') }}"
+      EXTERNAL_SOURCES_DRIVE_FOLDER: "{{ secret('EXTERNAL_SOURCES_DRIVE_FOLDER') }}"
+      GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON: "{{ secret('GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON') }}"
       DBT_ENV: prod
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project

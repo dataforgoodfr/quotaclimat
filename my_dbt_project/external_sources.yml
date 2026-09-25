@@ -10,7 +10,7 @@
 #   folder_env:    env variable holding the Drive folder id or https://drive.google.com/drive/folders/<id> link
 #   spreadsheet:   exact name of the spreadsheet in that folder (exactly one match expected)
 #   table_prefix:  every tab is loaded into <table_prefix><tab name in snake_case>, must start with ref_
-#                  (e.g. "Catégories" -> ref_classification_pub_ome_categories)
+#                  (e.g. "catégories" -> ref_ome_categories)
 #   sheets:        optional per-tab settings, keyed by the exact tab name:
 #                    table:   table name instead of the default one (must start with ref_)
 #                    columns: columns that must be present (extra columns are kept)
@@ -21,10 +21,11 @@
 # fails, its table is left unchanged. Declare the tables as dbt sources to use them in models.
 
 sources:
-  - name: classification_pub_ome
+  # brand dictionary and sector / category taxonomy of the ad classification pipeline
+  - name: ome_dictionnaire_marques_secteurs
     folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER
-    spreadsheet: classification_pub_ome
-    table_prefix: ref_classification_pub_ome_
+    spreadsheet: OME_dictionnaire_marques_secteurs
+    table_prefix: ref_ome_
     sheets:
       secteurs:
         columns: [sector_code, sector_label_fr]

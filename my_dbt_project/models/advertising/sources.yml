@@ -13,7 +13,7 @@ sources:
       # Sector / product category reference, loaded from the classification Google Sheet
       # before dbt runs (see my_dbt_project/external_sources.yml)
       - name: ad_sectors
-        identifier: ref_classification_pub_ome_secteurs
+        identifier: ref_ome_secteurs
       - name: ad_categories
-        identifier: ref_classification_pub_ome_categories
+        identifier: ref_ome_categories
       - name: program_metadata

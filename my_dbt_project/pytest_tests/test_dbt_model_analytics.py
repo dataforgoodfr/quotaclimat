@@ -82,7 +82,7 @@ TEST_FOLDER_ID = "FAKE_folder_id_123"
 def classification_test_source() -> dict:
     """Production classification source settings."""
     config = yaml.safe_load(open(PRODUCTION_EXTERNAL_SOURCES_CONFIG))
-    return next(s for s in config["sources"] if s["name"] == "classification_pub_ome")
+    return next(s for s in config["sources"] if s["name"] == "ome_dictionnaire_marques_secteurs")
 
 
 def fake_fetch(sheets: dict[str, list[list]]):
@@ -192,9 +192,9 @@ def load_test_external_sources(db_engine):
     }
     results = load_source(db_engine, classification_test_source(), fetch=fake_fetch(sheets))
     assert results == {
-        "ref_classification_pub_ome_secteurs": True,
-        "ref_classification_pub_ome_categories": True,
-        "ref_classification_pub_ome_notes_de_version": True,
+        "ref_ome_secteurs": True,
+        "ref_ome_categories": True,
+        "ref_ome_notes_de_version": True,
     }
     yield
     os.environ.pop("EXTERNAL_SOURCES_DRIVE_FOLDER", None)
@@ -366,19 +366,19 @@ def test_external_source_loaded(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT sector_code, sector_label_fr, sector_label_en
-            FROM public.ref_classification_pub_ome_secteurs
+            FROM public.ref_ome_secteurs
             ORDER BY sector_code
         """)
         sectors = cur.fetchall()
-        cur.execute("SELECT * FROM public.ref_classification_pub_ome_notes_de_version")
+        cur.execute("SELECT * FROM public.ref_ome_notes_de_version")
         notes = cur.fetchall()
         cur.execute("""
             SELECT DISTINCT ON (table_name) table_name, row_count FROM public.ref_external_source_load
-            WHERE name = 'classification_pub_ome'
+            WHERE name = 'ome_dictionnaire_marques_secteurs'
               AND table_name IN (
-                'ref_classification_pub_ome_categories',
-                'ref_classification_pub_ome_notes_de_version',
-                'ref_classification_pub_ome_secteurs'
+                'ref_ome_categories',
+                'ref_ome_notes_de_version',
+                'ref_ome_secteurs'
               )
             ORDER BY table_name, loaded_at DESC
         """)
@@ -390,9 +390,9 @@ def test_external_source_loaded(db_connection):
     ]
     assert notes == [("2026-07-16", "v1")]
     assert history == [
-        ("ref_classification_pub_ome_categories", 3),
-        ("ref_classification_pub_ome_notes_de_version", 1),
-        ("ref_classification_pub_ome_secteurs", 2),
+        ("ref_ome_categories", 3),
+        ("ref_ome_notes_de_version", 1),
+        ("ref_ome_secteurs", 2),
     ]
 
 
@@ -414,10 +414,10 @@ def test_external_source_invalid_tab_keeps_table(db_connection, db_engine, monke
     source = classification_test_source()
     source["sheets"] = {"catégories": source["sheets"]["catégories"]}
     assert load_source(db_engine, source, fetch=fake_fetch({"catégories": categories})) == {
-        "ref_classification_pub_ome_categories": False
+        "ref_ome_categories": False
     }
     with db_connection.cursor() as cur:
-        cur.execute("SELECT count(*) FROM public.ref_classification_pub_ome_categories")
+        cur.execute("SELECT count(*) FROM public.ref_ome_categories")
         assert cur.fetchone()[0] == 3
 
 
@@ -427,7 +427,7 @@ def test_external_source_only_writes_ref_tables(db_connection, db_engine, monkey
     source["sheets"] = {"catégories": {"table": "keywords"}}
     sheets = {"catégories": [["a"], ["b"]], "Tab'; DROP TABLE keywords; --": [["a"], ["b"]]}
     assert load_source(db_engine, source, fetch=fake_fetch(sheets)) == {
-        "ref_classification_pub_ome_tab_drop_table_keywords": True
+        "ref_ome_tab_drop_table_keywords": True
     }
     with db_connection.cursor() as cur:
         cur.execute("SELECT count(*) FROM public.keywords")
@@ -442,7 +442,7 @@ def test_external_source_unreachable_keeps_tables(db_connection, db_engine, monk
 
     assert load_source(db_engine, classification_test_source(), fetch=failing_fetch) == {}
     with db_connection.cursor() as cur:
-        cur.execute("SELECT count(*) FROM public.ref_classification_pub_ome_categories")
+        cur.execute("SELECT count(*) FROM public.ref_ome_categories")
         assert cur.fetchone()[0] == 3
 
 
@@ -450,7 +450,7 @@ def test_external_source_without_folder_is_skipped(db_connection, db_engine, mon
     monkeypatch.delenv("EXTERNAL_SOURCES_DRIVE_FOLDER", raising=False)
     assert load_source(db_engine, classification_test_source(), fetch=fake_fetch({})) == {}
     with db_connection.cursor() as cur:
-        cur.execute("SELECT count(*) FROM public.ref_classification_pub_ome_categories")
+        cur.execute("SELECT count(*) FROM public.ref_ome_categories")
         assert cur.fetchone()[0] == 3
 
 
@@ -497,7 +497,7 @@ def test_fetch_google_sheet_api_calls(monkeypatch):
         def get(self, url, params, timeout):
             calls.append((url, params))
             if url == loader.DRIVE_FILES_API_URL:
-                return FakeResponse({"files": [{"id": "SHEET_ID_1234567890", "name": "classification_pub_ome"}]})
+                return FakeResponse({"files": [{"id": "SHEET_ID_1234567890", "name": "OME_dictionnaire_marques_secteurs"}]})
             if url.endswith("/values:batchGet"):
                 return FakeResponse({"valueRanges": [{"values": [["a"], ["1"]]}, {}]})
             return FakeResponse({"sheets": [
@@ -507,11 +507,14 @@ def test_fetch_google_sheet_api_calls(monkeypatch):
             ]})
 
     monkeypatch.setattr(loader, "get_session", lambda: FakeSession())
-    sheets = loader.fetch_google_sheet("FOLDER_ID_123", "classification_pub_ome")
+    checked = []
+    monkeypatch.setattr(loader, "ensure_not_public", lambda spreadsheet: checked.append(spreadsheet["id"]))
+    sheets = loader.fetch_google_sheet("FOLDER_ID_123", "OME_dictionnaire_marques_secteurs")
 
     assert sheets == {"secteurs": [["a"], ["1"]], "Tab 'quoted'": []}
+    assert checked == ["SHEET_ID_1234567890"]
     assert calls[0][1]["q"] == (
-        "'FOLDER_ID_123' in parents and name = 'classification_pub_ome'"
+        "'FOLDER_ID_123' in parents and name = 'OME_dictionnaire_marques_secteurs'"
         " and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false"
     )
     assert calls[1][0] == f"{loader.SHEETS_API_URL}/SHEET_ID_1234567890"
@@ -528,7 +531,7 @@ def test_fetch_google_sheet_requires_exactly_one_file(monkeypatch):
 
     monkeypatch.setattr(loader, "get_session", lambda: FakeSession())
     with pytest.raises(loader.ExternalSourceError, match="2 spreadsheets"):
-        loader.fetch_google_sheet("FOLDER_ID_123", "classification_pub_ome")
+        loader.fetch_google_sheet("FOLDER_ID_123", "OME_dictionnaire_marques_secteurs")
 
 
 def test_get_session_requires_credentials(monkeypatch):
@@ -537,3 +540,69 @@ def test_get_session_requires_credentials(monkeypatch):
     monkeypatch.delenv(loader.CREDENTIALS_ENV, raising=False)
     with pytest.raises(loader.ExternalSourceError, match="no Google service account credentials"):
         loader.get_session()
+
+
+class FakeAnonymousResponse:
+    def __init__(self, status_code, headers=None):
+        self.status_code = status_code
+        self.headers = headers or {}
+        self.closed = False
+
+    def close(self):
+        self.closed = True
+
+
+@pytest.mark.parametrize(
+    "status, headers",
+    [
+        (302, {"Location": "https://accounts.google.com/ServiceLogin?continue=..."}),
+        (401, {}),
+        (403, {}),
+        (404, {}),
+    ],
+)
+def test_ensure_not_public_accepts_private_spreadsheet(status, headers):
+    from quotaclimat.data_ingestion.external_sources.load_external_sources import ensure_not_public
+
+    calls = []
+
+    def anonymous_get(url, **kwargs):
+        calls.append((url, kwargs))
+        return FakeAnonymousResponse(status, headers)
+
+    ensure_not_public({"id": "SHEET_ID_1234567890", "permissionIds": ["12345", "67890"]}, anonymous_get)
+    url, kwargs = calls[0]
+    assert url == "https://docs.google.com/spreadsheets/d/SHEET_ID_1234567890/export?format=csv"
+    assert kwargs["allow_redirects"] is False and kwargs["stream"] is True
+    assert "headers" not in kwargs and "auth" not in kwargs
+
+
+@pytest.mark.parametrize(
+    "permission_ids, status, headers, message",
+    [
+        # shared "anyone with the link" / public on the web, seen in the Drive permissions
+        (["12345", "anyoneWithLink"], 302, {"Location": "https://accounts.google.com/"}, "shared publicly"),
+        (["anyone"], 302, {"Location": "https://accounts.google.com/"}, "shared publicly"),
+        # readable without credentials, even if the permission is not listed
+        (["12345"], 307, {"Location": "https://doc-0s-sheets.googleusercontent.com/export/..."}, "readable without credentials"),
+        (["12345"], 200, {"Content-Type": "text/csv"}, "readable without credentials"),
+        # cannot conclude: refused too
+        (["12345"], 200, {"Content-Type": "text/html"}, "could not check"),
+        (["12345"], 500, {}, "could not check"),
+    ],
+)
+def test_ensure_not_public_refuses_public_spreadsheet(permission_ids, status, headers, message):
+    from quotaclimat.data_ingestion.external_sources.load_external_sources import (
+        ExternalSourceError,
+        ensure_not_public,
+    )
+
+    responses = []
+
+    def anonymous_get(url, **kwargs):
+        responses.append(FakeAnonymousResponse(status, headers))
+        return responses[-1]
+
+    with pytest.raises(ExternalSourceError, match=message):
+        ensure_not_public({"id": "SHEET_ID_1234567890", "permissionIds": permission_ids}, anonymous_get)
+    assert all(r.closed for r in responses)

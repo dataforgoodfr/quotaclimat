@@ -4,7 +4,8 @@ Sources are listed in my_dbt_project/external_sources.yml, by spreadsheet name. 
 looked up by name in a Google Drive folder (id or link in the env variable named by `folder_env`),
 shared as viewer with a Google service account. They are read with the Google Drive and Sheets APIs
 with read-only scopes: no public link is needed, and only displayed cell values are read (never
-formulas or files).
+formulas or files). A spreadsheet readable without credentials (shared "anyone with the link" or
+published on the web) is refused.
 
 Every tab of a sheet is loaded into its own table, <table_prefix><tab name in snake_case>, replaced in
 its own transaction, so a failed download or validation leaves the previous version in place.
@@ -19,9 +20,10 @@ import re
 import sys
 import unicodedata
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import urlparse
 
 import pandas as pd
+import requests
 import yaml
 from google.auth.transport.requests import AuthorizedSession
 from google.oauth2 import service_account
@@ -41,6 +43,10 @@ GOOGLE_SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets.readonly",  # read its cell values
 ]
 SPREADSHEET_MIME_TYPE = "application/vnd.google-apps.spreadsheet"
+# Drive permission ids of the "anyone" permissions (public on the web / anyone with the link)
+PUBLIC_PERMISSION_IDS = {"anyone", "anyoneWithLink"}
+ANONYMOUS_EXPORT_URL = "https://docs.google.com/spreadsheets/d/{spreadsheet_id}/export?format=csv"
+GOOGLE_LOGIN_HOSTS = {"accounts.google.com"}
 CREDENTIALS_ENV = "GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON"
 DOWNLOAD_TIMEOUT_SEC = 60
 MAX_CELLS_PER_SHEET = 1_000_000
@@ -86,8 +92,9 @@ def get_session() -> AuthorizedSession:
     return AuthorizedSession(credentials)
 
 
-def find_spreadsheet_id(session: AuthorizedSession, folder_id: str, spreadsheet_name: str) -> str:
-    """Id of the spreadsheet named exactly spreadsheet_name in the folder (not in sub-folders)."""
+def find_spreadsheet(session: AuthorizedSession, folder_id: str, spreadsheet_name: str) -> dict:
+    """Drive file (id, name, permissionIds) of the spreadsheet named exactly spreadsheet_name in the
+    folder (not in sub-folders)."""
     response = session.get(
         DRIVE_FILES_API_URL,
         params={
@@ -96,7 +103,7 @@ def find_spreadsheet_id(session: AuthorizedSession, folder_id: str, spreadsheet_
                 f" and name = {drive_query_literal(spreadsheet_name)}"
                 f" and mimeType = '{SPREADSHEET_MIME_TYPE}' and trashed = false"
             ),
-            "fields": "files(id,name)",
+            "fields": "files(id,name,permissionIds)",
             "supportsAllDrives": "true",
             "includeItemsFromAllDrives": "true",
         },
@@ -108,13 +115,42 @@ def find_spreadsheet_id(session: AuthorizedSession, folder_id: str, spreadsheet_
         raise ExternalSourceError(
             f"{len(files)} spreadsheets named {spreadsheet_name!r} in the folder, expected exactly 1"
         )
-    return files[0]["id"]
+    return files[0]
+
+
+def ensure_not_public(spreadsheet: dict, anonymous_get=None) -> None:
+    """Refuses a spreadsheet readable by anyone, checked in two independent ways. Fails closed: when
+    the anonymous check cannot conclude, the spreadsheet is refused too."""
+    public_permissions = PUBLIC_PERMISSION_IDS & set(spreadsheet.get("permissionIds") or [])
+    if public_permissions:
+        raise ExternalSourceError(f"spreadsheet is shared publicly ({sorted(public_permissions)}), refused")
+
+    # try to read it without any credentials, like anyone who got the link
+    response = (anonymous_get or requests.get)(
+        ANONYMOUS_EXPORT_URL.format(spreadsheet_id=spreadsheet["id"]),
+        allow_redirects=False,
+        stream=True,  # never download the content
+        timeout=DOWNLOAD_TIMEOUT_SEC,
+    )
+    try:
+        status = response.status_code
+        location_host = urlparse(response.headers.get("Location", "")).hostname
+        content_type = response.headers.get("Content-Type", "")
+    finally:
+        response.close()
+    if status in (401, 403, 404) or (300 <= status < 400 and location_host in GOOGLE_LOGIN_HOSTS):
+        return  # login required: private
+    if (status == 200 and "text/html" not in content_type) or 300 <= status < 400:
+        raise ExternalSourceError("spreadsheet is readable without credentials, refused")
+    raise ExternalSourceError(f"could not check that the spreadsheet is private (HTTP {status}), refused")
 
 
 def fetch_google_sheet(folder_id: str, spreadsheet_name: str) -> dict[str, list[list[str]]]:
     """Returns {tab name: rows of displayed values} for every grid tab of the spreadsheet."""
     session = get_session()
-    spreadsheet_id = find_spreadsheet_id(session, folder_id, spreadsheet_name)
+    spreadsheet = find_spreadsheet(session, folder_id, spreadsheet_name)
+    ensure_not_public(spreadsheet)
+    spreadsheet_id = spreadsheet["id"]
     response = session.get(
         f"{SHEETS_API_URL}/{spreadsheet_id}",
         params={"fields": "sheets.properties(title,sheetType)"},

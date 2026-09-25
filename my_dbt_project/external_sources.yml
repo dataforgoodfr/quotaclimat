@@ -1,0 +1,23 @@
+# External CSV sources (e.g. Google Sheets) loaded into Postgres before `dbt run`,
+# by quotaclimat/data_ingestion/external_sources/load_external_sources.py (called in entrypoints/dbt.sh).
+#
+# Each source:
+#   name:     identifier, used in logs and in the public.ref_external_source_load history table
+#   table:    target table in the public schema (declare it as a dbt source to use it in models)
+#   url_env:  environment variable holding the CSV URL (preferred, keeps the URL out of this public repo)
+#   url:      CSV URL or local path, used when url_env is not set
+#   columns:  columns that must be present (extra columns are kept)
+#   unique:   optional list of columns that must be non-empty and unique together
+#
+# Google Sheet shared by link, CSV export URL of one tab:
+#   https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<TAB_GID>
+#
+# When the URL is missing, the download fails or the validation fails, the table is left
+# unchanged and the next source is processed.
+
+sources:
+  - name: ad_classification
+    table: ref_ad_classification
+    url_env: AD_CLASSIFICATION_SHEET_URL
+    columns: [sector_code, cat_code, sector_label_fr, product_category_fr]
+    unique: [cat_code]

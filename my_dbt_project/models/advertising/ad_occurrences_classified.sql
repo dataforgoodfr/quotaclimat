@@ -4,8 +4,8 @@
     )
 }}
 
-{#- The classification reference table only exists in the main database (Metabase upload):
-    elsewhere (CI, extended perimeter), labels are left empty instead of failing the run. -#}
+{#- The classification reference table is loaded from a Google Sheet (external_sources.yml) only where
+    its URL is configured: elsewhere (extended perimeter), labels are left empty instead of failing the run. -#}
 {%- set classif_relation = load_relation(source('public', 'ad_classification')) if execute else none -%}
 {%- if execute and classif_relation is none -%}
   {{ log("ad_occurrences_classified: " ~ source('public', 'ad_classification') ~ " not found, labels will be NULL", info=True) }}

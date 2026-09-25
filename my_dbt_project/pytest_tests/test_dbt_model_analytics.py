@@ -7,6 +7,11 @@ import psycopg2
 import pytest
 
 from my_dbt_project.pytest_tests.test_dbt_model_homepage import run_dbt_command
+from postgres.database_connection import connect_to_db
+from quotaclimat.data_ingestion.external_sources.load_external_sources import (
+    load_external_sources,
+    load_source,
+)
 
 
 @pytest.fixture(scope="module")
@@ -70,7 +75,7 @@ def create_test_roles(db_connection):
     yield
 
 
-AD_CLASSIFICATION_TABLE = "download_classification_pub_ome_20260716171520"
+EXTERNAL_SOURCES_TEST_CONFIG = "my_dbt_project/pytest_tests/data/external_sources_test.yml"
 
 
 @pytest.fixture(scope="module")
@@ -106,18 +111,6 @@ def create_advertising_tables(db_connection):
                 ad_id text REFERENCES advertising.ad (id)
             )
         """)
-        cur.execute(f"""
-            CREATE TABLE IF NOT EXISTS public.{AD_CLASSIFICATION_TABLE} (
-                sector_code text, cat_code text, sector_label_fr text, product_category_fr text
-            )
-        """)
-        cur.execute(f"DELETE FROM public.{AD_CLASSIFICATION_TABLE}")
-        cur.execute(f"""
-            INSERT INTO public.{AD_CLASSIFICATION_TABLE} VALUES
-                ('PYTEST_AUTO', 'PYTEST_AUTO_EV', 'Automobile', 'Voiture électrique'),
-                ('PYTEST_AUTO', 'PYTEST_AUTO_ICE', 'Automobile', 'Voiture thermique'),
-                ('PYTEST_FOOD', 'PYTEST_FOOD_SNACK', 'Alimentation', 'Snacks')
-        """)
         cur.execute("DELETE FROM advertising.ad_occurrence WHERE id LIKE 'pytest_%'")
         cur.execute("DELETE FROM advertising.ad WHERE id LIKE 'pytest_%'")
         cur.execute("""
@@ -148,8 +141,29 @@ def create_advertising_tables(db_connection):
     yield
 
 
+@pytest.fixture(scope="module")
+def db_engine():
+    engine = connect_to_db(
+        database=os.getenv("POSTGRES_DB", ""),
+        user=os.getenv("POSTGRES_USER", ""),
+        password=os.getenv("POSTGRES_PASSWORD", ""),
+        host=os.getenv("POSTGRES_HOST", ""),
+        port=os.getenv("POSTGRES_PORT", ""),
+    )
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture(scope="module")
+def load_test_external_sources(db_engine):
+    """Same loading step as entrypoints/dbt.sh, from a local test CSV instead of the Google Sheet."""
+    results = load_external_sources(EXTERNAL_SOURCES_TEST_CONFIG, engine=db_engine)
+    assert results == {"ad_classification": True}
+    yield
+
+
 @pytest.fixture(scope="module", autouse=True)
-def run_analytics(create_test_roles, create_advertising_tables):
+def run_analytics(create_test_roles, create_advertising_tables, load_test_external_sources):
     logging.info("Run dbt for the thematics model once before related tests.")
     run_dbt_command(
         [
@@ -285,3 +299,64 @@ def test_advertising_grants(db_connection):
         """)
         rows = cur.fetchall()
     assert rows == [("ad_occurrences_classified",), ("ad_tunnels",)]
+
+
+def test_external_source_loaded(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT sector_code, cat_code, sector_label_fr, product_category_fr, extra_column
+            FROM public.ref_ad_classification
+            ORDER BY cat_code
+        """)
+        rows = cur.fetchall()
+        cur.execute("""
+            SELECT row_count FROM public.ref_external_source_load
+            WHERE name = 'ad_classification' ORDER BY loaded_at DESC LIMIT 1
+        """)
+        row_count = cur.fetchone()[0]
+    # values are stripped, empty cells are NULL, empty rows are dropped, extra columns are kept
+    assert rows == [
+        ("PYTEST_AUTO", "PYTEST_AUTO_EV", "Automobile", "Voiture électrique", "kept"),
+        ("PYTEST_AUTO", "PYTEST_AUTO_ICE", "Automobile", "Voiture thermique", None),
+        ("PYTEST_FOOD", "PYTEST_FOOD_SNACK", "Alimentation", "Snacks", None),
+    ]
+    assert row_count == 3
+
+
+@pytest.mark.parametrize(
+    "csv_content",
+    [
+        # missing required column
+        "sector_code,cat_code,sector_label_fr\nA,A1,Label\n",
+        # duplicated unique key
+        "sector_code,cat_code,sector_label_fr,product_category_fr\nA,A1,L,P\nB,A1,L,P\n",
+        # no rows
+        "sector_code,cat_code,sector_label_fr,product_category_fr\n",
+    ],
+)
+def test_external_source_invalid_keeps_table(db_connection, db_engine, tmp_path, csv_content):
+    csv_path = tmp_path / "invalid.csv"
+    csv_path.write_text(csv_content)
+    source = {
+        "name": "ad_classification",
+        "table": "ref_ad_classification",
+        "url": str(csv_path),
+        "columns": ["sector_code", "cat_code", "sector_label_fr", "product_category_fr"],
+        "unique": ["cat_code"],
+    }
+    assert load_source(db_engine, source) is False
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT count(*) FROM public.ref_ad_classification")
+        assert cur.fetchone()[0] == 3
+
+
+def test_external_source_without_url_keeps_table(db_connection, db_engine):
+    source = {
+        "name": "ad_classification",
+        "table": "ref_ad_classification",
+        "url_env": "AD_CLASSIFICATION_SHEET_URL_TEST_UNSET",
+    }
+    assert load_source(db_engine, source) is False
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT count(*) FROM public.ref_ad_classification")
+        assert cur.fetchone()[0] == 3

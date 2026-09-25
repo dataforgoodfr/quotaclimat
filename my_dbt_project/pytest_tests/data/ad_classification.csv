@@ -1,0 +1,5 @@
+sector_code,cat_code,sector_label_fr,product_category_fr,extra_column
+PYTEST_AUTO,PYTEST_AUTO_EV,Automobile,Voiture électrique,kept
+PYTEST_AUTO,PYTEST_AUTO_ICE,Automobile,Voiture thermique,
+ PYTEST_FOOD , PYTEST_FOOD_SNACK ,Alimentation,Snacks,
+,,,,

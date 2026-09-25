@@ -42,8 +42,19 @@ Intermediate/pre-aggregated tables (used by dashboards, or directly as a faster 
 
 ### `advertising/`
 Tables built from the `advertising` schema (ad detection and classification pipelines, tables created by alembic), in the default target schema (`public`), as part of the regular `dbt run`. Sources are declared in `models/advertising/sources.yml`. Occurrences with a `deleted_at` are ignored.
-* `ad_occurrences_classified` (`materialized='table'`): one row per occurrence of a classified ad, with channel metadata from `program_metadata` and French sector / product category labels. The reference table is a Metabase CSV upload whose name carries a timestamp; after a new upload, pass `--vars '{"ad_classification_table": "<new_name>"}'`. When that table does not exist (CI, extended perimeter database), the model still builds, with empty labels.
+* `ad_occurrences_classified` (`materialized='table'`): one row per occurrence of a classified ad, with channel metadata from `program_metadata` and French sector / product category labels from `ref_ad_classification` (see External sources below). When that table does not exist (extended perimeter database), the model still builds, with empty labels.
 * `ad_tunnels` (`materialized='table'`): ad tunnels per channel, i.e. consecutive non-`OTHER` fragments where each one starts at most `ad_tunnel_tolerance_sec` seconds (default 5) after the end of the previous ones; overlapping fragments stay in the same tunnel. `tunnel_id` is `channel_name@<epoch of start_date>`.
+
+## External sources (Google Sheets)
+Reference data maintained in Google Sheets is loaded into `public` before `dbt run`, by `entrypoints/dbt.sh` (and `mediatree_import.sh`):
+```
+poetry run python -m quotaclimat.data_ingestion.external_sources.load_external_sources [config_path]
+```
+Sources are listed in `external_sources.yml` (target table, URL or env variable holding it, required columns, unique key). Each table is replaced in one transaction, only when the CSV downloads and validates, otherwise the previous version is kept and the error is logged (and sent to Sentry). Every load is recorded in `public.ref_external_source_load` (row count, SHA-256 of the CSV), to know which version of a sheet a run used.
+
+For a Google Sheet shared by link, use the CSV export URL of the tab: `https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<TAB_GID>`. The URL is kept out of this public repo: it is stored as a Kestra secret (`AD_CLASSIFICATION_SHEET_URL` in Vaultwarden, `infrastructure/.env.secrets.dist`, provisioned by `make tags=kestra ansible`) and passed to the `dbt_run_transformations` tasks.
+
+To add a sheet: add an entry in `external_sources.yml`, a secret in Vaultwarden + `infrastructure/ansible/playbook.yml` + the flows' `dbt_run_transformations` env, and declare the table as a dbt source.
 
 ### Access grants (`+grants` in `dbt_project.yml`)
 `analytics`/`dashboards`/`advertising` models grant `select` conditionally (`advertising` uses the same list as `analytics`):

@@ -1,0 +1,7 @@
+sources:
+  - name: ad_classification
+    table: ref_ad_classification
+    url_env: AD_CLASSIFICATION_SHEET_URL_TEST_UNSET
+    url: my_dbt_project/pytest_tests/data/ad_classification.csv
+    columns: [sector_code, cat_code, sector_label_fr, product_category_fr]
+    unique: [cat_code]

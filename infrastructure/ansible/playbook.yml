@@ -33,6 +33,7 @@
 
     # Kestra secrets (for flow execution)
     kestra_secrets:
+      AD_CLASSIFICATION_SHEET_URL: "{{ lookup('env', 'AD_CLASSIFICATION_SHEET_URL') }}"
       API_LABEL_STUDIO_KEY: "{{ lookup('env', 'API_LABEL_STUDIO_KEY') }}"
       ANTHROPIC_API_KEY: "{{ lookup('env', 'ANTHROPIC_API_KEY') }}"
       CLIMATESAFEGUARDS_SCW_ACCESS: "{{ lookup('env', 'CLIMATESAFEGUARDS_SCW_ACCESS') }}"

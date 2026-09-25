@@ -35,12 +35,16 @@ else
   poetry run dbt run --full-refresh \
     --exclude core_query_causal_links \
     --exclude task_global_completion \
-    --exclude environmental_shares_with_desinfo_counts
+    --exclude environmental_shares_with_desinfo_counts \
+    --exclude path:models/advertising
 
   echo "apply dbt models to build analytics tables in 'analytics' schema."
   poetry run dbt run --full-refresh --target analytics \
     --select task_global_completion \
     --select environmental_shares_with_desinfo_counts
+
+  echo "apply dbt advertising models (needs the advertising schema and the ad classification reference table)"
+  poetry run dbt run --full-refresh --select path:models/advertising
 
   echo "Causal query case: Checking if today is the first of the month..."
   day=$(date +%d)

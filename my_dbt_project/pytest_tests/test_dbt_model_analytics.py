@@ -82,6 +82,8 @@ def run_analytics(create_test_roles):
             "task_global_completion",
             "--exclude",
             "environmental_shares_with_desinfo_counts",
+            "--exclude",
+            "path:models/advertising",
             "--full-refresh",
         ]
     )

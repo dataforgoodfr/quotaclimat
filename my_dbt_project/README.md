@@ -40,6 +40,11 @@ Intermediate/pre-aggregated tables (used by dashboards, or directly as a faster 
 * `task_global_completion` (`materialized='table'`): joins `labelstudio_task_aggregate`/`labelstudio_task_completion_aggregate` with `keywords` to produce one row per fact-checked segment, with model classification, speaker type one-hot columns, and misinformation percentage by week/program.
 * `environmental_shares_with_desinfo_counts` (`materialized='incremental'`, keyed on `start`/`channel_name`/`country`): weekly environmental airtime share alongside misinformation counts (from `task_global_completion`) per channel.
 
+### `advertising/`
+Tables built from the `advertising` schema (ad detection and classification pipelines), in the default target schema (`public`). Sources are declared in `models/advertising/sources.yml`. They are excluded from the generic `dbt run` and built in a dedicated step (`dbt run --full-refresh --select path:models/advertising`), because the `advertising` schema and the classification reference table do not exist in every database (CI Postgres, extended perimeter):
+* `ad_occurrences_classified` (`materialized='table'`): one row per occurrence of a classified ad, with channel metadata from `program_metadata` and French sector / product category labels. The reference table is a Metabase CSV upload whose name carries a timestamp; after a new upload, pass `--vars '{"ad_classification_table": "<new_name>"}'`.
+* `ad_tunnels` (`materialized='table'`): ad tunnels per channel, i.e. consecutive non-`OTHER` fragments separated by at most `ad_tunnel_tolerance_sec` seconds (default 5). `tunnel_id` is `channel_name@<epoch of start_date>`.
+
 ### Access grants (`+grants` in `dbt_project.yml`)
 `analytics`/`dashboards` models grant `select` conditionally:
 * **Regular perimeter** (`EXTENDED_PERIMETER` unset/`false`): nothing granted when `DBT_ENV` is unset/`dev`; `rrs-read-dev`, `rrs-read-prod` and `climateguard-reader-user` (only `climateguard-reader-user` for `dashboards`) granted when `DBT_ENV=prod`.

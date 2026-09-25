@@ -1,0 +1,18 @@
+version: 2
+
+sources:
+  - name: advertising
+    schema: advertising
+    tables:
+      - name: ad
+      - name: ad_occurrence
+
+  - name: public
+    schema: public
+    tables:
+      # Sector / product category reference, uploaded as CSV through Metabase.
+      # The table name carries the upload timestamp: override it with
+      # --vars '{"ad_classification_table": "<new_name>"}' after a new upload.
+      - name: ad_classification
+        identifier: "{{ var('ad_classification_table', 'download_classification_pub_ome_20260716171520') }}"
+      - name: program_metadata

@@ -3,13 +3,13 @@
 # `dbt seed --full-refresh --select path:seeds/ref` (see entrypoints/dbt.sh).
 #
 # The spreadsheets are looked up by name in a Google Drive folder, shared as viewer with the Google
-# service account whose JSON key is in GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON. Only the folder id (or link)
+# service account whose JSON key is in GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON. Only the folder id
 # is kept out of the repo, in the env variable named by `folder_env`. A spreadsheet readable without
 # credentials is refused.
 #
 # Each source:
 #   name:          identifier, used in logs
-#   folder_env:    env variable holding the Drive folder id or https://drive.google.com/drive/folders/<id> link
+#   folder_env:    env variable holding the Drive folder id (last part of https://drive.google.com/drive/folders/<id>)
 #   spreadsheet:   exact name of the spreadsheet in that folder (exactly one match expected)
 #   table_prefix:  every tab becomes the seed / table <table_prefix><tab name in snake_case>, must start
 #                  with ref_ (e.g. "catégories" -> ref_ome_categories)

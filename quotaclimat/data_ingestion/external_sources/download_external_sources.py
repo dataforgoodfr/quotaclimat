@@ -1,7 +1,7 @@
 """Download reference data from private Google Sheets as dbt seeds, before `dbt seed` loads them.
 
 Sources are listed in my_dbt_project/external_sources.yml, by spreadsheet name. The spreadsheets are
-looked up by name in a Google Drive folder (id or link in the env variable named by `folder_env`),
+looked up by name in a Google Drive folder (id in the env variable named by `folder_env`),
 shared as viewer with a Google service account. They are read with the Google Drive and Sheets APIs
 with read-only scopes: no public link is needed, and only displayed cell values are read (never
 formulas or files). A spreadsheet readable without credentials (shared "anyone with the link" or
@@ -48,9 +48,6 @@ CREDENTIALS_ENV = "GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON"
 DOWNLOAD_TIMEOUT_SEC = 60
 MAX_CELLS_PER_SHEET = 1_000_000
 DRIVE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{10,}$")
-DRIVE_FOLDER_URL_PATTERN = re.compile(
-    r"^https://drive\.google\.com/drive/(?:u/\d+/)?folders/([A-Za-z0-9_-]{10,})(?:[/?#].*)?$"
-)
 
 
 class ExternalSourceError(Exception):
@@ -64,14 +61,11 @@ def to_snake_case(name: str) -> str:
 
 
 def parse_folder_id(value: str) -> str:
-    """Accepts a Drive folder id or a https://drive.google.com/drive/folders/<id> link."""
+    """Drive folder id: the last part of https://drive.google.com/drive/folders/<id>."""
     value = value.strip()
-    if DRIVE_ID_PATTERN.match(value):
-        return value
-    match = DRIVE_FOLDER_URL_PATTERN.match(value)
-    if match:
-        return match.group(1)
-    raise ExternalSourceError("not a Google Drive folder id or https://drive.google.com/drive/folders/<id> link")
+    if not DRIVE_ID_PATTERN.match(value):
+        raise ExternalSourceError("not a Google Drive folder id")
+    return value
 
 
 def drive_query_literal(value: str) -> str:

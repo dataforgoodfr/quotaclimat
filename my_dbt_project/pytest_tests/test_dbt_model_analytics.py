@@ -160,7 +160,7 @@ def create_advertising_tables(db_connection):
 def load_test_external_sources():
     """Same steps as entrypoints/dbt.sh (download, dbt seed, dbt test), with the Google API calls
     replaced by test rows."""
-    os.environ["EXTERNAL_SOURCES_DRIVE_FOLDER"] = f"https://drive.google.com/drive/folders/{TEST_FOLDER_ID}?usp=sharing"
+    os.environ["EXTERNAL_SOURCES_DRIVE_FOLDER"] = TEST_FOLDER_ID
     sheets = {
         # the API drops trailing empty cells
         "secteurs": [
@@ -446,12 +446,9 @@ def test_external_source_helpers():
         to_snake_case,
     )
 
-    assert parse_folder_id("FAKE_folder_id_123") == "FAKE_folder_id_123"
-    assert parse_folder_id("https://drive.google.com/drive/folders/FAKE_folder_id_123?usp=sharing") == "FAKE_folder_id_123"
-    assert parse_folder_id("https://drive.google.com/drive/u/0/folders/FAKE_folder_id_123") == "FAKE_folder_id_123"
+    assert parse_folder_id(" FAKE_folder_id_123 ") == "FAKE_folder_id_123"
     for value in [
-        "https://evil.example/drive.google.com/drive/folders/FAKE_folder_id_123",
-        "https://drive.google.com.evil.example/drive/folders/FAKE_folder_id_123",
+        "https://drive.google.com/drive/folders/FAKE_folder_id_123",
         "' or name contains 'a",
     ]:
         with pytest.raises(ExternalSourceError):

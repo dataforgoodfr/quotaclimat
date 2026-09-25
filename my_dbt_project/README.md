@@ -40,8 +40,40 @@ Intermediate/pre-aggregated tables (used by dashboards, or directly as a faster 
 * `task_global_completion` (`materialized='table'`): joins `labelstudio_task_aggregate`/`labelstudio_task_completion_aggregate` with `keywords` to produce one row per fact-checked segment, with model classification, speaker type one-hot columns, and misinformation percentage by week/program.
 * `environmental_shares_with_desinfo_counts` (`materialized='incremental'`, keyed on `start`/`channel_name`/`country`): weekly environmental airtime share alongside misinformation counts (from `task_global_completion`) per channel.
 
+### `advertising/`
+Tables built from the `advertising` schema (ad detection and classification pipelines, tables created by alembic), in the default target schema (`public`), as part of the regular `dbt run`. Sources are declared in `models/advertising/sources.yml`. Occurrences with a `deleted_at` are ignored.
+* `ad_occurrences_classified` (`materialized='table'`): one row per occurrence of a classified ad, with channel metadata from `program_metadata` and French sector / product category labels from the `secteurs` and `catégories` tabs of the classification sheet (see External sources below). When those tables do not exist (extended perimeter database), the model still builds, with empty labels.
+* `ad_occurrence_tunnels` (`materialized='table'`): one row per non-`OTHER`, non-deleted occurrence with its `tunnel_id`. An ad tunnel is a sequence of consecutive fragments on a channel where each one starts at most `ad_tunnel_tolerance_sec` seconds (default 5) after the end of the previous ones; overlapping fragments stay in the same tunnel. `tunnel_id` is `channel_name@<epoch of the tunnel start_date>`.
+* `ad_tunnels` (`materialized='table'`): one row per tunnel (start, end), aggregated from `ad_occurrence_tunnels`. `ad_occurrences_classified` also carries the `tunnel_id` of each occurrence.
+
+## External sources (private Google Sheets)
+Reference data maintained in private Google Sheets is downloaded as dbt seeds, then loaded and tested, before `dbt run` (`entrypoints/dbt.sh` and `mediatree_import.sh`):
+```
+poetry run python -m quotaclimat.data_ingestion.external_sources.download_external_sources
+poetry run dbt seed --full-refresh --select path:seeds/ref
+poetry run dbt test --select path:seeds/ref
+```
+Sources are listed in `external_sources.yml` by spreadsheet name. Each spreadsheet is looked up by its exact name in a Google Drive folder, then every tab is read with the Google Sheets API (displayed values only, never formulas or files) and written to `seeds/ref/<table_prefix><tab name in snake_case>.csv` (not versioned), e.g. tab `catégories` of `OME_dictionnaire_marques_secteurs` -> seed and table `ref_ome_categories`. A new tab is loaded automatically on the next run. Seed names must start with `ref_`, whatever the tab names or the config say.
+
+Column types are inferred by `dbt seed`, except the identifiers pinned as `text` in `seeds/ref/_ref_seeds.yml` (a code `001` would otherwise become `1`), which also holds the seed tests (`unique`, `not_null`). A failing test is logged but does not block the run.
+
+When a spreadsheet cannot be downloaded (not configured, API error, public spreadsheet), no CSV is written for it and its tables keep their previous version. A tab without header, with duplicated column names, values without header or no rows is not written either. A tab that is written replaces its table, even if its tests fail afterwards.
+
+**Always select `path:seeds/ref` when seeding in production**: the other seeds (`keywords`, `program_metadata`...) are test data whose pre-hook empties the table, and their `target.name != 'prod'` guard does not apply to the Kestra runs (target `docker`).
+
+### Access
+The script authenticates as a Google service account, with read-only scopes (`drive.metadata.readonly` to find the spreadsheet in the folder, `spreadsheets.readonly` to read it). Two Kestra secrets (values in Vaultwarden, collection `Quotaclimat - Orchestrator`, as `export NAME=value` lines in a secure note; listed in `infrastructure/.env.secrets.dist`, provisioned by `make tags=kestra ansible`) are passed to the `dbt_run_transformations` tasks:
+* `EXTERNAL_SOURCES_DRIVE_FOLDER`: id of the Drive folder holding the spreadsheets (last part of `https://drive.google.com/drive/folders/<id>`).
+* `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON`: JSON key of the service account (one line, single-quoted).
+
+The folder must be shared as **Viewer** with the service account email.
+
+A spreadsheet readable by anyone is refused, checked in two ways before reading it: its Drive permissions must not include `anyone` / `anyoneWithLink`, and an anonymous request (no credentials) to its export URL must be sent to the Google login page. When the anonymous check cannot conclude, the spreadsheet is refused too. Sharing with a whole Google Workspace domain is not detected.
+
+To use a reference table in a model, declare it as a dbt source; `source_or_empty` (`macros/`) lets a model build with an empty table where the reference data is not loaded.
+
 ### Access grants (`+grants` in `dbt_project.yml`)
-`analytics`/`dashboards` models grant `select` conditionally:
+`analytics`/`dashboards`/`advertising` models grant `select` conditionally (`advertising` uses the same list as `analytics`):
 * **Regular perimeter** (`EXTENDED_PERIMETER` unset/`false`): nothing granted when `DBT_ENV` is unset/`dev`; `rrs-read-dev`, `rrs-read-prod` and `climateguard-reader-user` (only `climateguard-reader-user` for `dashboards`) granted when `DBT_ENV=prod`.
 * **Extended perimeter** (`EXTENDED_PERIMETER=true`, see the root README's "Extended perimeter (Droit à l'info)" section): the `extended-perimeter` database only has `rrs-read-{dev,prod}` users (no `climateguard-reader-user`), so only the `rrs-read` user matching `DBT_ENV` is granted `select`.
 

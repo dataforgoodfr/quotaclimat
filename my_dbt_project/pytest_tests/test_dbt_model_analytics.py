@@ -5,8 +5,10 @@ import subprocess
 
 import psycopg2
 import pytest
+import yaml
 
 from my_dbt_project.pytest_tests.test_dbt_model_homepage import run_dbt_command
+from quotaclimat.data_ingestion.external_sources.download_external_sources import SEEDS_DIR, download_source
 
 
 @pytest.fixture(scope="module")
@@ -70,8 +72,128 @@ def create_test_roles(db_connection):
     yield
 
 
+PRODUCTION_EXTERNAL_SOURCES_CONFIG = "my_dbt_project/external_sources.yml"
+
+
+TEST_FOLDER_ID = "FAKE_folder_id_123"
+
+
+def classification_test_source() -> dict:
+    """Production classification source settings."""
+    config = yaml.safe_load(open(PRODUCTION_EXTERNAL_SOURCES_CONFIG))
+    return next(s for s in config["sources"] if s["name"] == "ome_dictionnaire_marques_secteurs")
+
+
+def fake_fetch(sheets: dict[str, list[list]]):
+    """Stands for the Google Drive / Sheets API calls: returns the rows the API would return."""
+    def fetch(folder_id, spreadsheet_name):
+        assert folder_id == TEST_FOLDER_ID
+        assert spreadsheet_name == classification_test_source()["spreadsheet"]
+        return sheets
+    return fetch
+
+
+@pytest.fixture(scope="module")
+def create_advertising_tables(db_connection):
+    """The advertising tables are created by alembic in production, which the dbt CI job
+    does not run: create them here (same columns as postgres/schemas/advertising/models.py)
+    with a few test rows, dated 2000-01-01 to not mix with real data in a local database."""
+    with db_connection.cursor() as cur:
+        cur.execute("CREATE SCHEMA IF NOT EXISTS advertising")
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS advertising.ad (
+                id text PRIMARY KEY,
+                first_detection_date timestamp NOT NULL,
+                duration_sec double precision NOT NULL,
+                chunks json NOT NULL,
+                fragment_type varchar NOT NULL,
+                transcript text,
+                prediction json,
+                prediction_status varchar,
+                prediction_confidence double precision,
+                predicted_sector varchar,
+                predicted_product_category varchar,
+                predicted_brand varchar,
+                prediction_method varchar
+            )
+        """)
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS advertising.ad_occurrence (
+                id text PRIMARY KEY,
+                deleted_at timestamp,
+                occurrence_date timestamp NOT NULL,
+                channel_name varchar NOT NULL,
+                ad_id text REFERENCES advertising.ad (id)
+            )
+        """)
+        cur.execute("DELETE FROM advertising.ad_occurrence WHERE id LIKE 'pytest_%'")
+        cur.execute("DELETE FROM advertising.ad WHERE id LIKE 'pytest_%'")
+        cur.execute("""
+            INSERT INTO advertising.ad (
+                id, first_detection_date, duration_sec, chunks, fragment_type,
+                prediction_status, predicted_sector, predicted_product_category
+            ) VALUES
+                ('pytest_ad_1', '2000-01-01', 30, '[]', 'AD', 'subcat_done', 'PYTEST_AUTO', 'PYTEST_AUTO_EV'),
+                ('pytest_ad_2', '2000-01-01', 20, '[]', 'AD', 'dict_tier1', 'PYTEST_FOOD', NULL),
+                ('pytest_ad_3', '2000-01-01', 10, '[]', 'AD', 'pending', NULL, NULL),
+                ('pytest_other', '2000-01-01', 15, '[]', 'OTHER', 'pending', NULL, NULL)
+        """)
+        cur.execute("""
+            INSERT INTO advertising.ad_occurrence (id, deleted_at, occurrence_date, channel_name, ad_id) VALUES
+                -- tunnel 1: 10:00:00 -> 10:00:52
+                ('pytest_occ_1', NULL, '2000-01-01 10:00:00', 'arte', 'pytest_ad_1'),
+                ('pytest_occ_1_duplicate', NULL, '2000-01-01 10:00:00', 'arte', 'pytest_ad_1'),
+                ('pytest_occ_2', NULL, '2000-01-01 10:00:32', 'arte', 'pytest_ad_2'),
+                ('pytest_occ_3_overlap', NULL, '2000-01-01 10:00:35', 'arte', 'pytest_ad_3'),
+                -- deleted: ignored
+                ('pytest_occ_deleted', '2000-01-02', '2000-01-01 10:30:00', 'arte', 'pytest_ad_1'),
+                -- tunnel 2: 11:00:00 -> 11:00:30
+                ('pytest_occ_4', NULL, '2000-01-01 11:00:00', 'arte', 'pytest_ad_1'),
+                -- OTHER fragment: ignored by tunnels
+                ('pytest_occ_other', NULL, '2000-01-01 12:00:00', 'arte', 'pytest_other')
+        """)
+    db_connection.commit()
+    yield
+
+
+@pytest.fixture(scope="module")
+def load_test_external_sources():
+    """Same steps as entrypoints/dbt.sh (download, dbt seed, dbt test), with the Google API calls
+    replaced by test rows."""
+    os.environ["EXTERNAL_SOURCES_DRIVE_FOLDER"] = TEST_FOLDER_ID
+    sheets = {
+        # the API drops trailing empty cells
+        "secteurs": [
+            ["sector_code", "sector_label_fr", "sector_label_en"],
+            ["PYTEST_AUTO", "Automobile", "Cars"],
+            [" PYTEST_FOOD ", "Alimentation", "Food"],
+            ["001", "Code numérique", "Numeric code"],
+            [],
+        ],
+        "catégories": [
+            ["sector_code", "cat_code", "product_category_fr"],
+            ["PYTEST_AUTO", "PYTEST_AUTO_EV", "Voiture électrique"],
+            ["PYTEST_AUTO", "PYTEST_AUTO_ICE", "Voiture thermique"],
+            ["PYTEST_FOOD", "PYTEST_FOOD_SNACK", "Snacks"],
+        ],
+        "Notes de version": [["version", "date", "note"], ["1", "2026-07-16", "v1"], ["2", "2026-09-25", "v2"]],
+    }
+    results = download_source(classification_test_source(), SEEDS_DIR, fetch=fake_fetch(sheets))
+    assert results == {
+        "ref_ome_secteurs": True,
+        "ref_ome_categories": True,
+        "ref_ome_notes_de_version": True,
+    }
+    run_dbt_command(["seed", "--full-refresh", "--select", "path:seeds/ref"])
+    run_dbt_command(["test", "--select", "path:seeds/ref"])
+    yield
+    os.environ.pop("EXTERNAL_SOURCES_DRIVE_FOLDER", None)
+    for csv_file in SEEDS_DIR.glob("ref_*.csv"):
+        csv_file.unlink()
+
+
 @pytest.fixture(scope="module", autouse=True)
-def run_analytics(create_test_roles):
+def run_analytics(create_test_roles, create_advertising_tables, load_test_external_sources):
     logging.info("Run dbt for the thematics model once before related tests.")
     run_dbt_command(
         [
@@ -147,3 +269,321 @@ def test_environmental_shares_desinfo(db_connection):
         0,
     )
     assert row == expected
+
+
+def test_ad_tunnels(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT tunnel_id, channel_name, start_date, end_date
+            FROM public.ad_tunnels
+            WHERE channel_name = 'arte' AND start_date::date = '2000-01-01'
+            ORDER BY start_date
+        """)
+        rows = cur.fetchall()
+    epoch_10h = int(datetime.datetime(2000, 1, 1, 10, tzinfo=datetime.timezone.utc).timestamp())
+    epoch_11h = int(datetime.datetime(2000, 1, 1, 11, tzinfo=datetime.timezone.utc).timestamp())
+    expected = [
+        (
+            f"arte@{epoch_10h}",
+            "arte",
+            datetime.datetime(2000, 1, 1, 10, 0, 0),
+            datetime.datetime(2000, 1, 1, 10, 0, 52),
+        ),
+        (
+            f"arte@{epoch_11h}",
+            "arte",
+            datetime.datetime(2000, 1, 1, 11, 0, 0),
+            datetime.datetime(2000, 1, 1, 11, 0, 30),
+        ),
+    ]
+    assert rows == expected
+
+
+def test_ad_occurrence_tunnels(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT occurrence_id, tunnel_id
+            FROM public.ad_occurrence_tunnels
+            WHERE occurrence_id LIKE 'pytest_%'
+            ORDER BY occurrence_id
+        """)
+        rows = cur.fetchall()
+    epoch_10h = int(datetime.datetime(2000, 1, 1, 10, tzinfo=datetime.timezone.utc).timestamp())
+    epoch_11h = int(datetime.datetime(2000, 1, 1, 11, tzinfo=datetime.timezone.utc).timestamp())
+    # deleted occurrences and OTHER fragments are not part of tunnels
+    assert rows == [
+        ("pytest_occ_1", f"arte@{epoch_10h}"),
+        ("pytest_occ_1_duplicate", f"arte@{epoch_10h}"),
+        ("pytest_occ_2", f"arte@{epoch_10h}"),
+        ("pytest_occ_3_overlap", f"arte@{epoch_10h}"),
+        ("pytest_occ_4", f"arte@{epoch_11h}"),
+    ]
+
+
+def test_ad_occurrences_classified(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT occurrence_id, channel_title, sector_label_fr, product_category_fr, label_final, tunnel_id
+            FROM public.ad_occurrences_classified
+            WHERE occurrence_id LIKE 'pytest_%'
+            ORDER BY occurrence_id
+        """)
+        rows = cur.fetchall()
+    epoch_10h = int(datetime.datetime(2000, 1, 1, 10, tzinfo=datetime.timezone.utc).timestamp())
+    epoch_11h = int(datetime.datetime(2000, 1, 1, 11, tzinfo=datetime.timezone.utc).timestamp())
+    expected = [
+        ("pytest_occ_1", "Arte", "Automobile", "Voiture électrique", "Voiture électrique", f"arte@{epoch_10h}"),
+        ("pytest_occ_1_duplicate", "Arte", "Automobile", "Voiture électrique", "Voiture électrique", f"arte@{epoch_10h}"),
+        ("pytest_occ_2", "Arte", "Alimentation", None, "Alimentation", f"arte@{epoch_10h}"),
+        ("pytest_occ_4", "Arte", "Automobile", "Voiture électrique", "Voiture électrique", f"arte@{epoch_11h}"),
+    ]
+    assert rows == expected
+
+
+def test_advertising_grants(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT table_name
+            FROM information_schema.role_table_grants
+            WHERE grantee = 'rrs-read-dev'
+              AND privilege_type = 'SELECT'
+              AND table_name IN ('ad_tunnels', 'ad_occurrences_classified', 'ad_occurrence_tunnels')
+            ORDER BY table_name
+        """)
+        rows = cur.fetchall()
+    assert rows == [("ad_occurrence_tunnels",), ("ad_occurrences_classified",), ("ad_tunnels",)]
+
+
+def test_external_source_loaded(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT sector_code, sector_label_fr, sector_label_en
+            FROM public.ref_ome_secteurs
+            ORDER BY sector_code
+        """)
+        sectors = cur.fetchall()
+        cur.execute("SELECT version, note FROM public.ref_ome_notes_de_version ORDER BY version")
+        notes = cur.fetchall()
+    # values are stripped, empty rows are dropped, extra columns and tabs are kept,
+    # identifiers stay text (column_types in _ref_seeds.yml), other types are inferred by dbt
+    assert sectors == [
+        ("001", "Code numérique", "Numeric code"),
+        ("PYTEST_AUTO", "Automobile", "Cars"),
+        ("PYTEST_FOOD", "Alimentation", "Food"),
+    ]
+    assert notes == [(1, "v1"), (2, "v2")]
+
+
+@pytest.mark.parametrize(
+    "categories",
+    [
+        # no header
+        [],
+        # duplicated column names
+        [["sector_code", "cat_code", "cat_code"], ["A", "A1", "A1"]],
+        # values without header
+        [["sector_code", "", "cat_code"], ["A", "oops", "A1"]],
+        # no rows
+        [["sector_code", "cat_code"], []],
+    ],
+)
+def test_external_source_invalid_tab_is_not_written(tmp_path, monkeypatch, categories):
+    monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", TEST_FOLDER_ID)
+    sheets = {"catégories": categories, "secteurs": [["sector_code"], ["A"]]}
+    assert download_source(classification_test_source(), tmp_path, fetch=fake_fetch(sheets)) == {
+        "ref_ome_categories": False,
+        "ref_ome_secteurs": True,
+    }
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["ref_ome_secteurs.csv"]
+
+
+def test_external_source_only_writes_ref_tables(tmp_path, monkeypatch):
+    monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", TEST_FOLDER_ID)
+    source = classification_test_source()
+    source["sheets"] = {"catégories": {"table": "keywords"}, "secteurs": {"skip": True}}
+    sheets = {
+        "catégories": [["a"], ["b"]],
+        "secteurs": [["a"], ["b"]],
+        "Tab'; DROP TABLE keywords; --": [["a"], ["b"]],
+        # same table name as the previous tab
+        "Tab DROP TABLE keywords": [["a"], ["b"]],
+    }
+    assert download_source(source, tmp_path, fetch=fake_fetch(sheets)) == {"ref_ome_tab_drop_table_keywords": True}
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["ref_ome_tab_drop_table_keywords.csv"]
+
+
+def test_external_source_unreachable_writes_nothing(tmp_path, monkeypatch):
+    monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", TEST_FOLDER_ID)
+
+    def failing_fetch(folder_id, spreadsheet_name):
+        raise RuntimeError("403 Forbidden")
+
+    assert download_source(classification_test_source(), tmp_path, fetch=failing_fetch) == {}
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_external_source_without_folder_is_skipped(tmp_path, monkeypatch):
+    monkeypatch.delenv("EXTERNAL_SOURCES_DRIVE_FOLDER", raising=False)
+    assert download_source(classification_test_source(), tmp_path, fetch=fake_fetch({})) == {}
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_download_external_sources_removes_previous_seeds(tmp_path, monkeypatch):
+    from quotaclimat.data_ingestion.external_sources import download_external_sources as downloader
+
+    monkeypatch.delenv("EXTERNAL_SOURCES_DRIVE_FOLDER", raising=False)
+    (tmp_path / "ref_ome_old_tab.csv").write_text("a\nb\n")
+    (tmp_path / "_ref_seeds.yml").write_text("version: 2\n")
+    downloader.download_external_sources(PRODUCTION_EXTERNAL_SOURCES_CONFIG, tmp_path)
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["_ref_seeds.yml"]
+
+
+def test_external_source_helpers():
+    from quotaclimat.data_ingestion.external_sources.download_external_sources import (
+        ExternalSourceError,
+        drive_query_literal,
+        parse_folder_id,
+        to_snake_case,
+    )
+
+    assert parse_folder_id(" FAKE_folder_id_123 ") == "FAKE_folder_id_123"
+    for value in [
+        "https://drive.google.com/drive/folders/FAKE_folder_id_123",
+        "' or name contains 'a",
+    ]:
+        with pytest.raises(ExternalSourceError):
+            parse_folder_id(value)
+    assert drive_query_literal("it's a \\ test") == "'it\\'s a \\\\ test'"
+    assert to_snake_case("Catégories Transversales (v2)") == "categories_transversales_v2"
+
+
+class FakeResponse:
+    def __init__(self, payload):
+        self.payload = payload
+
+    def raise_for_status(self):
+        pass
+
+    def json(self):
+        return self.payload
+
+
+def test_fetch_google_sheet_api_calls(monkeypatch):
+    """Checks the Drive / Sheets API requests with a fake authorized session."""
+    from quotaclimat.data_ingestion.external_sources import download_external_sources as loader
+
+    calls = []
+
+    class FakeSession:
+        def get(self, url, params, timeout):
+            calls.append((url, params))
+            if url == loader.DRIVE_FILES_API_URL:
+                return FakeResponse({"files": [{"id": "SHEET_ID_1234567890", "name": "OME_dictionnaire_marques_secteurs"}]})
+            if url.endswith("/values:batchGet"):
+                return FakeResponse({"valueRanges": [{"values": [["a"], ["1"]]}, {}]})
+            return FakeResponse({"sheets": [
+                {"properties": {"title": "secteurs", "sheetType": "GRID"}},
+                {"properties": {"title": "Tab 'quoted'", "sheetType": "GRID"}},
+                {"properties": {"title": "Chart", "sheetType": "OBJECT"}},
+            ]})
+
+    monkeypatch.setattr(loader, "get_session", lambda: FakeSession())
+    checked = []
+    monkeypatch.setattr(loader, "ensure_not_public", lambda spreadsheet: checked.append(spreadsheet["id"]))
+    sheets = loader.fetch_google_sheet("FOLDER_ID_123", "OME_dictionnaire_marques_secteurs")
+
+    assert sheets == {"secteurs": [["a"], ["1"]], "Tab 'quoted'": []}
+    assert checked == ["SHEET_ID_1234567890"]
+    assert calls[0][1]["q"] == (
+        "'FOLDER_ID_123' in parents and name = 'OME_dictionnaire_marques_secteurs'"
+        " and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false"
+    )
+    assert calls[1][0] == f"{loader.SHEETS_API_URL}/SHEET_ID_1234567890"
+    assert calls[2][1]["ranges"] == ["'secteurs'", "'Tab ''quoted'''"]
+    assert calls[2][1]["valueRenderOption"] == "FORMATTED_VALUE"
+
+
+def test_fetch_google_sheet_requires_exactly_one_file(monkeypatch):
+    from quotaclimat.data_ingestion.external_sources import download_external_sources as loader
+
+    class FakeSession:
+        def get(self, url, params, timeout):
+            return FakeResponse({"files": [{"id": "a"}, {"id": "b"}]})
+
+    monkeypatch.setattr(loader, "get_session", lambda: FakeSession())
+    with pytest.raises(loader.ExternalSourceError, match="2 spreadsheets"):
+        loader.fetch_google_sheet("FOLDER_ID_123", "OME_dictionnaire_marques_secteurs")
+
+
+def test_get_session_requires_credentials(monkeypatch):
+    from quotaclimat.data_ingestion.external_sources import download_external_sources as loader
+
+    monkeypatch.delenv(loader.CREDENTIALS_ENV, raising=False)
+    with pytest.raises(loader.ExternalSourceError, match="no Google service account credentials"):
+        loader.get_session()
+
+
+class FakeAnonymousResponse:
+    def __init__(self, status_code, headers=None):
+        self.status_code = status_code
+        self.headers = headers or {}
+        self.closed = False
+
+    def close(self):
+        self.closed = True
+
+
+@pytest.mark.parametrize(
+    "status, headers",
+    [
+        (302, {"Location": "https://accounts.google.com/ServiceLogin?continue=..."}),
+        (401, {}),
+        (403, {}),
+        (404, {}),
+    ],
+)
+def test_ensure_not_public_accepts_private_spreadsheet(status, headers):
+    from quotaclimat.data_ingestion.external_sources.download_external_sources import ensure_not_public
+
+    calls = []
+
+    def anonymous_get(url, **kwargs):
+        calls.append((url, kwargs))
+        return FakeAnonymousResponse(status, headers)
+
+    ensure_not_public({"id": "SHEET_ID_1234567890", "permissionIds": ["12345", "67890"]}, anonymous_get)
+    url, kwargs = calls[0]
+    assert url == "https://docs.google.com/spreadsheets/d/SHEET_ID_1234567890/export?format=csv"
+    assert kwargs["allow_redirects"] is False and kwargs["stream"] is True
+    assert "headers" not in kwargs and "auth" not in kwargs
+
+
+@pytest.mark.parametrize(
+    "permission_ids, status, headers, message",
+    [
+        # shared "anyone with the link" / public on the web, seen in the Drive permissions
+        (["12345", "anyoneWithLink"], 302, {"Location": "https://accounts.google.com/"}, "shared publicly"),
+        (["anyone"], 302, {"Location": "https://accounts.google.com/"}, "shared publicly"),
+        # readable without credentials, even if the permission is not listed
+        (["12345"], 307, {"Location": "https://doc-0s-sheets.googleusercontent.com/export/..."}, "readable without credentials"),
+        (["12345"], 200, {"Content-Type": "text/csv"}, "readable without credentials"),
+        # cannot conclude: refused too
+        (["12345"], 200, {"Content-Type": "text/html"}, "could not check"),
+        (["12345"], 500, {}, "could not check"),
+    ],
+)
+def test_ensure_not_public_refuses_public_spreadsheet(permission_ids, status, headers, message):
+    from quotaclimat.data_ingestion.external_sources.download_external_sources import (
+        ExternalSourceError,
+        ensure_not_public,
+    )
+
+    responses = []
+
+    def anonymous_get(url, **kwargs):
+        responses.append(FakeAnonymousResponse(status, headers))
+        return responses[-1]
+
+    with pytest.raises(ExternalSourceError, match=message):
+        ensure_not_public({"id": "SHEET_ID_1234567890", "permissionIds": permission_ids}, anonymous_get)
+    assert all(r.closed for r in responses)

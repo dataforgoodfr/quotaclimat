@@ -383,3 +383,79 @@ models:
         description: >
           Control column. Minutes captured within declared program slots for the week and
           channel. Repeated on every row of the group.
+  - name: ad_occurrences_classified
+    description: >
+      One row per ad occurrence whose ad went through the classification pipeline
+      (dictionary match or sub-category LLM step), enriched with channel metadata
+      from program_metadata and French sector / product category labels from the
+      classification reference table.
+    columns:
+      - name: occurrence_id
+        description: Identifier of the occurrence (advertising.ad_occurrence.id).
+        tests:
+          - unique
+          - not_null
+      - name: occurrence_date
+        description: Broadcast timestamp of the occurrence.
+      - name: channel_name
+        description: Technical channel identifier, join key with program_metadata.
+      - name: ad_id
+        description: Identifier of the ad (advertising.ad.id).
+      - name: tunnel_id
+        description: >
+          Ad tunnel the occurrence belongs to (see ad_tunnels). NULL for OTHER fragments,
+          which are not part of tunnels.
+        tests:
+          - relationships:
+              to: ref('ad_tunnels')
+              field: tunnel_id
+      - name: duration_sec
+        description: Duration of the ad in seconds.
+      - name: prediction_status
+        description: Step of the classification pipeline that produced the prediction.
+      - name: sector_label_fr
+        description: French label of the predicted sector.
+      - name: product_category_fr
+        description: French label of the predicted product category.
+      - name: label_final
+        description: Product category label when available, sector label otherwise.
+
+  - name: ad_occurrence_tunnels
+    description: >
+      One row per non-OTHER, non-deleted ad occurrence with the ad tunnel it belongs to.
+      An ad tunnel is a sequence of consecutive fragments on a channel, where each one starts
+      at most ad_tunnel_tolerance_sec (default 5) seconds after the end of the previous ones;
+      overlapping fragments stay in the same tunnel.
+    columns:
+      - name: occurrence_id
+        description: Identifier of the occurrence (advertising.ad_occurrence.id).
+        tests:
+          - unique
+          - not_null
+      - name: tunnel_id
+        description: Tunnel identifier, built as channel_name@epoch_of_tunnel_start_date (seconds).
+        tests:
+          - not_null
+      - name: channel_name
+        description: Technical channel identifier.
+      - name: start_date
+        description: Start of the occurrence.
+      - name: end_date
+        description: End of the occurrence (start + ad duration).
+
+  - name: ad_tunnels
+    description: >
+      Ad tunnels, one row per tunnel, aggregated from ad_occurrence_tunnels (see its
+      description for the tunnel definition).
+    columns:
+      - name: tunnel_id
+        description: Tunnel identifier, built as channel_name@epoch_of_start_date (seconds).
+        tests:
+          - unique
+          - not_null
+      - name: channel_name
+        description: Technical channel identifier.
+      - name: start_date
+        description: Start of the first fragment of the tunnel.
+      - name: end_date
+        description: End of the last fragment of the tunnel.

@@ -1,4 +1,4 @@
-"""Load reference data from private Google Sheets into Postgres before dbt runs.
+"""Download reference data from private Google Sheets as dbt seeds, before `dbt seed` loads them.
 
 Sources are listed in my_dbt_project/external_sources.yml, by spreadsheet name. The spreadsheets are
 looked up by name in a Google Drive folder (id or link in the env variable named by `folder_env`),
@@ -7,12 +7,13 @@ with read-only scopes: no public link is needed, and only displayed cell values 
 formulas or files). A spreadsheet readable without credentials (shared "anyone with the link" or
 published on the web) is refused.
 
-Every tab of a sheet is loaded into its own table, <table_prefix><tab name in snake_case>, replaced in
-its own transaction, so a failed download or validation leaves the previous version in place.
+Every tab is written to my_dbt_project/seeds/ref/<table_prefix><tab name in snake_case>.csv, then
+`dbt seed --select path:seeds/ref` loads it into the table of the same name, and the seed tests
+(my_dbt_project/seeds/ref/_ref_seeds.yml) check it. When a spreadsheet cannot be downloaded, no CSV
+is written for it and its tables keep their previous version.
 """
 
-import datetime
-import hashlib
+import csv
 import json
 import logging
 import os
@@ -22,19 +23,15 @@ import unicodedata
 from pathlib import Path
 from urllib.parse import urlparse
 
-import pandas as pd
 import requests
 import yaml
 from google.auth.transport.requests import AuthorizedSession
 from google.oauth2 import service_account
-from sqlalchemy import text
 
-from postgres.database_connection import connect_to_db
 from quotaclimat.utils.sentry import sentry_init
 
 DEFAULT_CONFIG_PATH = Path("my_dbt_project/external_sources.yml")
-LOAD_HISTORY_TABLE = "ref_external_source_load"
-SCHEMA = "public"
+SEEDS_DIR = Path("my_dbt_project/seeds/ref")
 TABLE_PREFIX_REQUIRED = "ref_"
 SHEETS_API_URL = "https://sheets.googleapis.com/v4/spreadsheets"
 DRIVE_FILES_API_URL = "https://www.googleapis.com/drive/v3/files"
@@ -180,51 +177,30 @@ def fetch_google_sheet(folder_id: str, spreadsheet_name: str) -> dict[str, list[
     return {title: vr.get("values", []) for title, vr in zip(titles, value_ranges)}
 
 
-def rows_to_dataframe(rows: list[list[str]]) -> pd.DataFrame:
-    """First row is the header; the API drops trailing empty cells, so rows are padded."""
-    if not rows:
-        return pd.DataFrame()
+def rows_to_csv_rows(rows: list[list[str]]) -> list[list[str]]:
+    """First row is the header. Pads rows (the API drops trailing empty cells), strips values,
+    drops empty rows and columns without header nor values."""
     n_cells = sum(len(r) for r in rows)
     if n_cells > MAX_CELLS_PER_SHEET:
         raise ExternalSourceError(f"{n_cells} cells, more than the {MAX_CELLS_PER_SHEET} limit")
+    if not rows or not any(str(c).strip() for c in rows[0]):
+        raise ExternalSourceError("no header row")
     width = max(len(r) for r in rows)
-    header = [str(c).strip() if c is not None else "" for c in rows[0]] + [""] * (width - len(rows[0]))
-    header = [c or f"unnamed_{i}" for i, c in enumerate(header)]
-    body = [list(r) + [None] * (width - len(r)) for r in rows[1:]]
-    return pd.DataFrame(body, columns=header, dtype=object)
-
-
-def clean(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.astype(object).where(df.notna(), None)
-    df.columns = [str(c).strip() for c in df.columns]
-    if len(set(df.columns)) != len(df.columns):
-        raise ExternalSourceError(f"duplicated column names {list(df.columns)}")
-    # columns without header and without values (spreadsheet leftovers)
-    df = df[[c for c in df.columns if not (c.startswith("unnamed_") and df[c].isna().all())]]
-    df = df.apply(lambda col: col.map(lambda v: str(v).strip() if v is not None else None))
-    df = df.replace("", None)
-    return df.dropna(how="all")
-
-
-def validate(df: pd.DataFrame, settings: dict) -> None:
-    missing = [c for c in settings.get("columns", []) if c not in df.columns]
-    if missing:
-        raise ExternalSourceError(f"missing columns {missing}, got {list(df.columns)}")
-    if df.empty:
+    padded = [[str(c).strip() for c in r] + [""] * (width - len(r)) for r in rows]
+    header, body = padded[0], [r for r in padded[1:] if any(r)]
+    kept = [i for i, name in enumerate(header) if name or any(r[i] for r in body)]
+    if any(not header[i] for i in kept):
+        raise ExternalSourceError("a column has values but no header")
+    names = [header[i] for i in kept]
+    if len(set(names)) != len(names):
+        raise ExternalSourceError(f"duplicated column names {names}")
+    if not body:
         raise ExternalSourceError("no rows")
-    unique = settings.get("unique") or []
-    if unique:
-        if df[unique].isna().any().any():
-            raise ExternalSourceError(f"empty values in unique columns {unique}")
-        duplicated = df[df.duplicated(subset=unique, keep=False)]
-        if not duplicated.empty:
-            raise ExternalSourceError(
-                f"duplicated values for {unique}: {duplicated[unique].drop_duplicates().values.tolist()}"
-            )
+    return [names] + [[r[i] for i in kept] for r in body]
 
 
-def target_tables(source: dict, sheets: dict) -> dict[str, tuple[str, dict]]:
-    """Returns {tab name: (table name, validation settings)} for the tabs to load."""
+def target_tables(source: dict, sheets: dict) -> dict[str, str]:
+    """Returns {tab name: table name} for the tabs to download."""
     sheets_settings = source.get("sheets") or {}
     unknown = set(sheets_settings) - set(sheets)
     if unknown:
@@ -242,33 +218,15 @@ def target_tables(source: dict, sheets: dict) -> dict[str, tuple[str, dict]]:
         if not re.fullmatch(rf"{TABLE_PREFIX_REQUIRED}[a-z0-9_]+", table) or len(table) > 63:
             logging.error("External source %s / %s: invalid table name %s, skipped", source["name"], sheet_name, table)
             continue
-        targets[sheet_name] = (table, {**settings, "label": f"{source['name']} / {sheet_name}"})
+        if table in targets.values():
+            logging.error("External source %s / %s: table %s already used by another tab, skipped", source["name"], sheet_name, table)
+            continue
+        targets[sheet_name] = table
     return targets
 
 
-def record_load(conn, name: str, table: str, row_count: int, content_sha256: str) -> None:
-    conn.execute(text(f"""
-        CREATE TABLE IF NOT EXISTS {SCHEMA}.{LOAD_HISTORY_TABLE} (
-            name text, table_name text, loaded_at timestamp, row_count integer, content_sha256 text
-        )
-    """))
-    conn.execute(
-        text(f"""
-            INSERT INTO {SCHEMA}.{LOAD_HISTORY_TABLE}
-            VALUES (:name, :table_name, :loaded_at, :row_count, :content_sha256)
-        """),
-        {
-            "name": name,
-            "table_name": table,
-            "loaded_at": datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=None),
-            "row_count": row_count,
-            "content_sha256": content_sha256,
-        },
-    )
-
-
-def load_source(engine, source: dict, fetch=fetch_google_sheet) -> dict[str, bool]:
-    """Returns {table name: loaded}. A table that fails validation is left unchanged."""
+def download_source(source: dict, seeds_dir: Path = SEEDS_DIR, fetch=fetch_google_sheet) -> dict[str, bool]:
+    """Writes one seed CSV per tab. Returns {table name: written}."""
     name = source["name"]
     folder = os.environ.get(source.get("folder_env", ""), "").strip()
     if not folder:
@@ -281,37 +239,35 @@ def load_source(engine, source: dict, fetch=fetch_google_sheet) -> dict[str, boo
         logging.error("External source %s: %s, tables left unchanged", name, e)
         return {}
 
+    seeds_dir.mkdir(parents=True, exist_ok=True)
     results = {}
-    for sheet_name, (table, settings) in target_tables(source, sheets).items():
-        rows = sheets[sheet_name]
+    for sheet_name, table in target_tables(source, sheets).items():
         try:
-            df = clean(rows_to_dataframe(rows))
-            validate(df, settings)
-            content_sha256 = hashlib.sha256(json.dumps(rows, ensure_ascii=False).encode()).hexdigest()
-            with engine.begin() as conn:
-                df.to_sql(table, conn, schema=SCHEMA, if_exists="replace", index=False)
-                record_load(conn, name, table, len(df), content_sha256)
-        except Exception as e:
-            logging.error("External source %s: %s, table %s left unchanged", settings["label"], e, table)
+            csv_rows = rows_to_csv_rows(sheets[sheet_name])
+        except ExternalSourceError as e:
+            logging.error("External source %s / %s: %s, table %s left unchanged", name, sheet_name, e, table)
             results[table] = False
             continue
-        logging.info("External source %s: %s rows loaded into %s.%s", settings["label"], len(df), SCHEMA, table)
+        with open(seeds_dir / f"{table}.csv", "w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerows(csv_rows)
+        logging.info("External source %s / %s: %s rows written for %s", name, sheet_name, len(csv_rows) - 1, table)
         results[table] = True
     return results
 
 
-def load_external_sources(config_path: Path = DEFAULT_CONFIG_PATH, engine=None) -> dict[str, bool]:
+def download_external_sources(config_path: Path = DEFAULT_CONFIG_PATH, seeds_dir: Path = SEEDS_DIR) -> dict[str, bool]:
     config = yaml.safe_load(Path(config_path).read_text())
-    engine = engine or connect_to_db()
+    # seeds of a previous run in the same container must not be loaded again
+    for old_csv in seeds_dir.glob("ref_*.csv"):
+        old_csv.unlink()
     results = {}
     for source in config.get("sources", []):
-        results.update(load_source(engine, source))
+        results.update(download_source(source, seeds_dir))
     return results
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=os.getenv("LOGLEVEL", "INFO"))
     sentry_init()
-    config_path = Path(sys.argv[1]) if len(sys.argv) > 1 else DEFAULT_CONFIG_PATH
-    results = load_external_sources(config_path)
-    logging.info("External sources loaded: %s", results)
+    results = download_external_sources()
+    logging.info("External sources downloaded: %s", results)

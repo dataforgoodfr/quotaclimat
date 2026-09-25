@@ -1,0 +1,37 @@
+version: 2
+
+# Reference seeds downloaded from private Google Sheets (see my_dbt_project/external_sources.yml).
+# The CSV files are not versioned: they are written by download_external_sources before
+# `dbt seed --select path:seeds/ref`. Column types are inferred by dbt, except identifiers that must
+# stay text (e.g. a code "001" would otherwise become the number 1).
+
+seeds:
+  - name: ref_ome_secteurs
+    config:
+      column_types:
+        sector_code: text
+    columns:
+      - name: sector_code
+        tests:
+          - unique
+          - not_null
+      - name: sector_label_fr
+        tests:
+          - not_null
+
+  - name: ref_ome_categories
+    config:
+      column_types:
+        sector_code: text
+        cat_code: text
+    columns:
+      - name: cat_code
+        tests:
+          - unique
+          - not_null
+      - name: sector_code
+        tests:
+          - not_null
+      - name: product_category_fr
+        tests:
+          - not_null

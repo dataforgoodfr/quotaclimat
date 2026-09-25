@@ -47,24 +47,30 @@ Tables built from the `advertising` schema (ad detection and classification pipe
 * `ad_tunnels` (`materialized='table'`): one row per tunnel (start, end), aggregated from `ad_occurrence_tunnels`. `ad_occurrences_classified` also carries the `tunnel_id` of each occurrence.
 
 ## External sources (private Google Sheets)
-Reference data maintained in private Google Sheets is loaded into `public` before `dbt run`, by `entrypoints/dbt.sh` (and `mediatree_import.sh`):
+Reference data maintained in private Google Sheets is downloaded as dbt seeds, then loaded and tested, before `dbt run` (`entrypoints/dbt.sh` and `mediatree_import.sh`):
 ```
-poetry run python -m quotaclimat.data_ingestion.external_sources.load_external_sources [config_path]
+poetry run python -m quotaclimat.data_ingestion.external_sources.download_external_sources
+poetry run dbt seed --full-refresh --select path:seeds/ref
+poetry run dbt test --select path:seeds/ref
 ```
-Sources are listed in `external_sources.yml` by spreadsheet name. Each spreadsheet is looked up by its exact name in a Google Drive folder, then every tab is read with the Google Sheets API (displayed values only, never formulas or files) and loaded into `<table_prefix><tab name in snake_case>`, e.g. tab `catégories` of `OME_dictionnaire_marques_secteurs` -> `ref_ome_categories`. Per-tab settings (required columns, unique key, table name, skip) are keyed by the exact tab name. Target tables must start with `ref_`, whatever the tab names or the config say.
+Sources are listed in `external_sources.yml` by spreadsheet name. Each spreadsheet is looked up by its exact name in a Google Drive folder, then every tab is read with the Google Sheets API (displayed values only, never formulas or files) and written to `seeds/ref/<table_prefix><tab name in snake_case>.csv` (not versioned), e.g. tab `catégories` of `OME_dictionnaire_marques_secteurs` -> seed and table `ref_ome_categories`. A new tab is loaded automatically on the next run. Seed names must start with `ref_`, whatever the tab names or the config say.
 
-Each table is replaced in its own transaction, only when it validates: a tab with missing or duplicated columns, duplicated keys or no rows, or a failed download, leaves the previous version in place and logs an error (sent to Sentry). Every load is recorded in `public.ref_external_source_load` (table, row count, SHA-256 of the values), to know which version of a sheet a run used.
+Column types are inferred by `dbt seed`, except the identifiers pinned as `text` in `seeds/ref/_ref_seeds.yml` (a code `001` would otherwise become `1`), which also holds the seed tests (`unique`, `not_null`). A failing test is logged but does not block the run.
+
+When a spreadsheet cannot be downloaded (not configured, API error, public spreadsheet), no CSV is written for it and its tables keep their previous version. A tab without header, with duplicated column names, values without header or no rows is not written either. A tab that is written replaces its table, even if its tests fail afterwards.
+
+**Always select `path:seeds/ref` when seeding in production**: the other seeds (`keywords`, `program_metadata`...) are test data whose pre-hook empties the table, and their `target.name != 'prod'` guard does not apply to the Kestra runs (target `docker`).
 
 ### Access
-The loader authenticates as a Google service account, with read-only scopes (`drive.metadata.readonly` to find the spreadsheet in the folder, `spreadsheets.readonly` to read it). Two Kestra secrets (values in Vaultwarden, listed in `infrastructure/.env.secrets.dist`, provisioned by `make tags=kestra ansible`) are passed to the `dbt_run_transformations` tasks:
+The script authenticates as a Google service account, with read-only scopes (`drive.metadata.readonly` to find the spreadsheet in the folder, `spreadsheets.readonly` to read it). Two Kestra secrets (values in Vaultwarden, collection `Quotaclimat - Orchestrator`, as `export NAME=value` lines in a secure note; listed in `infrastructure/.env.secrets.dist`, provisioned by `make tags=kestra ansible`) are passed to the `dbt_run_transformations` tasks:
 * `EXTERNAL_SOURCES_DRIVE_FOLDER`: id or link of the Drive folder holding the spreadsheets.
-* `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON`: JSON key of the service account.
+* `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON`: JSON key of the service account (one line, single-quoted).
 
 The folder must be shared as **Viewer** with the service account email.
 
-A spreadsheet readable by anyone is refused (its tables are left unchanged), checked in two ways before reading it: its Drive permissions must not include `anyone` / `anyoneWithLink`, and an anonymous request (no credentials) to its export URL must be sent to the Google login page. When the anonymous check cannot conclude, the spreadsheet is refused too. Sharing with a whole Google Workspace domain is not detected. Without these secrets, the sources are skipped and the previous tables are kept.
+A spreadsheet readable by anyone is refused, checked in two ways before reading it: its Drive permissions must not include `anyone` / `anyoneWithLink`, and an anonymous request (no credentials) to its export URL must be sent to the Google login page. When the anonymous check cannot conclude, the spreadsheet is refused too. Sharing with a whole Google Workspace domain is not detected.
 
-A new tab is loaded automatically on the next run. To use a table in a model, declare it as a dbt source; `source_or_empty` (`macros/`) lets a model build with an empty table where the reference data is not loaded.
+To use a reference table in a model, declare it as a dbt source; `source_or_empty` (`macros/`) lets a model build with an empty table where the reference data is not loaded.
 
 ### Access grants (`+grants` in `dbt_project.yml`)
 `analytics`/`dashboards`/`advertising` models grant `select` conditionally (`advertising` uses the same list as `analytics`):

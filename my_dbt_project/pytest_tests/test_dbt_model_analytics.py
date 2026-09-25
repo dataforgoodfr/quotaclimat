@@ -8,8 +8,7 @@ import pytest
 import yaml
 
 from my_dbt_project.pytest_tests.test_dbt_model_homepage import run_dbt_command
-from postgres.database_connection import connect_to_db
-from quotaclimat.data_ingestion.external_sources.load_external_sources import load_source
+from quotaclimat.data_ingestion.external_sources.download_external_sources import SEEDS_DIR, download_source
 
 
 @pytest.fixture(scope="module")
@@ -158,21 +157,9 @@ def create_advertising_tables(db_connection):
 
 
 @pytest.fixture(scope="module")
-def db_engine():
-    engine = connect_to_db(
-        database=os.getenv("POSTGRES_DB", ""),
-        user=os.getenv("POSTGRES_USER", ""),
-        password=os.getenv("POSTGRES_PASSWORD", ""),
-        host=os.getenv("POSTGRES_HOST", ""),
-        port=os.getenv("POSTGRES_PORT", ""),
-    )
-    yield engine
-    engine.dispose()
-
-
-@pytest.fixture(scope="module")
-def load_test_external_sources(db_engine):
-    """Same loading step as entrypoints/dbt.sh, with the Google API calls replaced by test rows."""
+def load_test_external_sources():
+    """Same steps as entrypoints/dbt.sh (download, dbt seed, dbt test), with the Google API calls
+    replaced by test rows."""
     os.environ["EXTERNAL_SOURCES_DRIVE_FOLDER"] = f"https://drive.google.com/drive/folders/{TEST_FOLDER_ID}?usp=sharing"
     sheets = {
         # the API drops trailing empty cells
@@ -180,6 +167,7 @@ def load_test_external_sources(db_engine):
             ["sector_code", "sector_label_fr", "sector_label_en"],
             ["PYTEST_AUTO", "Automobile", "Cars"],
             [" PYTEST_FOOD ", "Alimentation", "Food"],
+            ["001", "Code numérique", "Numeric code"],
             [],
         ],
         "catégories": [
@@ -188,16 +176,20 @@ def load_test_external_sources(db_engine):
             ["PYTEST_AUTO", "PYTEST_AUTO_ICE", "Voiture thermique"],
             ["PYTEST_FOOD", "PYTEST_FOOD_SNACK", "Snacks"],
         ],
-        "Notes de version": [["date", "note"], ["2026-07-16", "v1"]],
+        "Notes de version": [["version", "date", "note"], ["1", "2026-07-16", "v1"], ["2", "2026-09-25", "v2"]],
     }
-    results = load_source(db_engine, classification_test_source(), fetch=fake_fetch(sheets))
+    results = download_source(classification_test_source(), SEEDS_DIR, fetch=fake_fetch(sheets))
     assert results == {
         "ref_ome_secteurs": True,
         "ref_ome_categories": True,
         "ref_ome_notes_de_version": True,
     }
+    run_dbt_command(["seed", "--full-refresh", "--select", "path:seeds/ref"])
+    run_dbt_command(["test", "--select", "path:seeds/ref"])
     yield
     os.environ.pop("EXTERNAL_SOURCES_DRIVE_FOLDER", None)
+    for csv_file in SEEDS_DIR.glob("ref_*.csv"):
+        csv_file.unlink()
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -370,92 +362,84 @@ def test_external_source_loaded(db_connection):
             ORDER BY sector_code
         """)
         sectors = cur.fetchall()
-        cur.execute("SELECT * FROM public.ref_ome_notes_de_version")
+        cur.execute("SELECT version, note FROM public.ref_ome_notes_de_version ORDER BY version")
         notes = cur.fetchall()
-        cur.execute("""
-            SELECT DISTINCT ON (table_name) table_name, row_count FROM public.ref_external_source_load
-            WHERE name = 'ome_dictionnaire_marques_secteurs'
-              AND table_name IN (
-                'ref_ome_categories',
-                'ref_ome_notes_de_version',
-                'ref_ome_secteurs'
-              )
-            ORDER BY table_name, loaded_at DESC
-        """)
-        history = cur.fetchall()
-    # values are stripped, empty rows are dropped, extra columns and tabs are kept
+    # values are stripped, empty rows are dropped, extra columns and tabs are kept,
+    # identifiers stay text (column_types in _ref_seeds.yml), other types are inferred by dbt
     assert sectors == [
+        ("001", "Code numérique", "Numeric code"),
         ("PYTEST_AUTO", "Automobile", "Cars"),
         ("PYTEST_FOOD", "Alimentation", "Food"),
     ]
-    assert notes == [("2026-07-16", "v1")]
-    assert history == [
-        ("ref_ome_categories", 3),
-        ("ref_ome_notes_de_version", 1),
-        ("ref_ome_secteurs", 2),
-    ]
+    assert notes == [(1, "v1"), (2, "v2")]
 
 
 @pytest.mark.parametrize(
     "categories",
     [
-        # missing required column
-        [["sector_code", "cat_code"], ["A", "A1"]],
-        # duplicated unique key
-        [["sector_code", "cat_code", "product_category_fr"], ["A", "A1", "P"], ["B", "A1", "P"]],
-        # no rows
-        [["sector_code", "cat_code", "product_category_fr"]],
+        # no header
+        [],
         # duplicated column names
-        [["sector_code", "cat_code", "cat_code", "product_category_fr"], ["A", "A1", "A1", "P"]],
+        [["sector_code", "cat_code", "cat_code"], ["A", "A1", "A1"]],
+        # values without header
+        [["sector_code", "", "cat_code"], ["A", "oops", "A1"]],
+        # no rows
+        [["sector_code", "cat_code"], []],
     ],
 )
-def test_external_source_invalid_tab_keeps_table(db_connection, db_engine, monkeypatch, categories):
+def test_external_source_invalid_tab_is_not_written(tmp_path, monkeypatch, categories):
+    monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", TEST_FOLDER_ID)
+    sheets = {"catégories": categories, "secteurs": [["sector_code"], ["A"]]}
+    assert download_source(classification_test_source(), tmp_path, fetch=fake_fetch(sheets)) == {
+        "ref_ome_categories": False,
+        "ref_ome_secteurs": True,
+    }
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["ref_ome_secteurs.csv"]
+
+
+def test_external_source_only_writes_ref_tables(tmp_path, monkeypatch):
     monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", TEST_FOLDER_ID)
     source = classification_test_source()
-    source["sheets"] = {"catégories": source["sheets"]["catégories"]}
-    assert load_source(db_engine, source, fetch=fake_fetch({"catégories": categories})) == {
-        "ref_ome_categories": False
+    source["sheets"] = {"catégories": {"table": "keywords"}, "secteurs": {"skip": True}}
+    sheets = {
+        "catégories": [["a"], ["b"]],
+        "secteurs": [["a"], ["b"]],
+        "Tab'; DROP TABLE keywords; --": [["a"], ["b"]],
+        # same table name as the previous tab
+        "Tab DROP TABLE keywords": [["a"], ["b"]],
     }
-    with db_connection.cursor() as cur:
-        cur.execute("SELECT count(*) FROM public.ref_ome_categories")
-        assert cur.fetchone()[0] == 3
+    assert download_source(source, tmp_path, fetch=fake_fetch(sheets)) == {"ref_ome_tab_drop_table_keywords": True}
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["ref_ome_tab_drop_table_keywords.csv"]
 
 
-def test_external_source_only_writes_ref_tables(db_connection, db_engine, monkeypatch):
-    monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", TEST_FOLDER_ID)
-    source = classification_test_source()
-    source["sheets"] = {"catégories": {"table": "keywords"}}
-    sheets = {"catégories": [["a"], ["b"]], "Tab'; DROP TABLE keywords; --": [["a"], ["b"]]}
-    assert load_source(db_engine, source, fetch=fake_fetch(sheets)) == {
-        "ref_ome_tab_drop_table_keywords": True
-    }
-    with db_connection.cursor() as cur:
-        cur.execute("SELECT count(*) FROM public.keywords")
-        assert cur.fetchone()[0] > 0
-
-
-def test_external_source_unreachable_keeps_tables(db_connection, db_engine, monkeypatch):
+def test_external_source_unreachable_writes_nothing(tmp_path, monkeypatch):
     monkeypatch.setenv("EXTERNAL_SOURCES_DRIVE_FOLDER", TEST_FOLDER_ID)
 
     def failing_fetch(folder_id, spreadsheet_name):
         raise RuntimeError("403 Forbidden")
 
-    assert load_source(db_engine, classification_test_source(), fetch=failing_fetch) == {}
-    with db_connection.cursor() as cur:
-        cur.execute("SELECT count(*) FROM public.ref_ome_categories")
-        assert cur.fetchone()[0] == 3
+    assert download_source(classification_test_source(), tmp_path, fetch=failing_fetch) == {}
+    assert list(tmp_path.iterdir()) == []
 
 
-def test_external_source_without_folder_is_skipped(db_connection, db_engine, monkeypatch):
+def test_external_source_without_folder_is_skipped(tmp_path, monkeypatch):
     monkeypatch.delenv("EXTERNAL_SOURCES_DRIVE_FOLDER", raising=False)
-    assert load_source(db_engine, classification_test_source(), fetch=fake_fetch({})) == {}
-    with db_connection.cursor() as cur:
-        cur.execute("SELECT count(*) FROM public.ref_ome_categories")
-        assert cur.fetchone()[0] == 3
+    assert download_source(classification_test_source(), tmp_path, fetch=fake_fetch({})) == {}
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_download_external_sources_removes_previous_seeds(tmp_path, monkeypatch):
+    from quotaclimat.data_ingestion.external_sources import download_external_sources as downloader
+
+    monkeypatch.delenv("EXTERNAL_SOURCES_DRIVE_FOLDER", raising=False)
+    (tmp_path / "ref_ome_old_tab.csv").write_text("a\nb\n")
+    (tmp_path / "_ref_seeds.yml").write_text("version: 2\n")
+    downloader.download_external_sources(PRODUCTION_EXTERNAL_SOURCES_CONFIG, tmp_path)
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["_ref_seeds.yml"]
 
 
 def test_external_source_helpers():
-    from quotaclimat.data_ingestion.external_sources.load_external_sources import (
+    from quotaclimat.data_ingestion.external_sources.download_external_sources import (
         ExternalSourceError,
         drive_query_literal,
         parse_folder_id,
@@ -489,7 +473,7 @@ class FakeResponse:
 
 def test_fetch_google_sheet_api_calls(monkeypatch):
     """Checks the Drive / Sheets API requests with a fake authorized session."""
-    from quotaclimat.data_ingestion.external_sources import load_external_sources as loader
+    from quotaclimat.data_ingestion.external_sources import download_external_sources as loader
 
     calls = []
 
@@ -523,7 +507,7 @@ def test_fetch_google_sheet_api_calls(monkeypatch):
 
 
 def test_fetch_google_sheet_requires_exactly_one_file(monkeypatch):
-    from quotaclimat.data_ingestion.external_sources import load_external_sources as loader
+    from quotaclimat.data_ingestion.external_sources import download_external_sources as loader
 
     class FakeSession:
         def get(self, url, params, timeout):
@@ -535,7 +519,7 @@ def test_fetch_google_sheet_requires_exactly_one_file(monkeypatch):
 
 
 def test_get_session_requires_credentials(monkeypatch):
-    from quotaclimat.data_ingestion.external_sources import load_external_sources as loader
+    from quotaclimat.data_ingestion.external_sources import download_external_sources as loader
 
     monkeypatch.delenv(loader.CREDENTIALS_ENV, raising=False)
     with pytest.raises(loader.ExternalSourceError, match="no Google service account credentials"):
@@ -562,7 +546,7 @@ class FakeAnonymousResponse:
     ],
 )
 def test_ensure_not_public_accepts_private_spreadsheet(status, headers):
-    from quotaclimat.data_ingestion.external_sources.load_external_sources import ensure_not_public
+    from quotaclimat.data_ingestion.external_sources.download_external_sources import ensure_not_public
 
     calls = []
 
@@ -592,7 +576,7 @@ def test_ensure_not_public_accepts_private_spreadsheet(status, headers):
     ],
 )
 def test_ensure_not_public_refuses_public_spreadsheet(permission_ids, status, headers, message):
-    from quotaclimat.data_ingestion.external_sources.load_external_sources import (
+    from quotaclimat.data_ingestion.external_sources.download_external_sources import (
         ExternalSourceError,
         ensure_not_public,
     )

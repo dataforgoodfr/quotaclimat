@@ -1,24 +1,23 @@
-# Reference data from private Google Sheets, loaded into Postgres (schema public) before `dbt run`,
-# by quotaclimat/data_ingestion/external_sources/load_external_sources.py (called in entrypoints/dbt.sh).
+# Reference data from private Google Sheets, downloaded as dbt seeds before `dbt run`, by
+# quotaclimat/data_ingestion/external_sources/download_external_sources.py, then loaded by
+# `dbt seed --full-refresh --select path:seeds/ref` (see entrypoints/dbt.sh).
 #
 # The spreadsheets are looked up by name in a Google Drive folder, shared as viewer with the Google
 # service account whose JSON key is in GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON. Only the folder id (or link)
-# is kept out of the repo, in the env variable named by `folder_env`.
+# is kept out of the repo, in the env variable named by `folder_env`. A spreadsheet readable without
+# credentials is refused.
 #
 # Each source:
-#   name:          identifier, used in logs and in the public.ref_external_source_load history table
+#   name:          identifier, used in logs
 #   folder_env:    env variable holding the Drive folder id or https://drive.google.com/drive/folders/<id> link
 #   spreadsheet:   exact name of the spreadsheet in that folder (exactly one match expected)
-#   table_prefix:  every tab is loaded into <table_prefix><tab name in snake_case>, must start with ref_
-#                  (e.g. "catégories" -> ref_ome_categories)
+#   table_prefix:  every tab becomes the seed / table <table_prefix><tab name in snake_case>, must start
+#                  with ref_ (e.g. "catégories" -> ref_ome_categories)
 #   sheets:        optional per-tab settings, keyed by the exact tab name:
 #                    table:   table name instead of the default one (must start with ref_)
-#                    columns: columns that must be present (extra columns are kept)
-#                    unique:  columns that must be non-empty and unique together
-#                    skip:    true to not load this tab
+#                    skip:    true to not download this tab
 #
-# When the folder or credentials are not configured, the download fails or the validation of a tab
-# fails, its table is left unchanged. Declare the tables as dbt sources to use them in models.
+# Column types and tests of the seeds: my_dbt_project/seeds/ref/_ref_seeds.yml.
 
 sources:
   # brand dictionary and sector / category taxonomy of the ad classification pipeline
@@ -26,10 +25,3 @@ sources:
     folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER
     spreadsheet: OME_dictionnaire_marques_secteurs
     table_prefix: ref_ome_
-    sheets:
-      secteurs:
-        columns: [sector_code, sector_label_fr]
-        unique: [sector_code]
-      catégories:
-        columns: [sector_code, cat_code, product_category_fr]
-        unique: [cat_code]

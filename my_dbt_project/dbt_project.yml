@@ -54,6 +54,11 @@ models:
 # delete tables when seed are executed to have a clean start
 seeds:
   my_dbt_project:
+    # reference data downloaded from Google Sheets (quotaclimat/data_ingestion/external_sources),
+    # always loaded with `dbt seed --full-refresh --select path:seeds/ref`
+    ref:
+      +quote_columns: true
+
     keywords:
       table: keywords
       enabled: "{{ target.name != 'prod' }}" # safe guard

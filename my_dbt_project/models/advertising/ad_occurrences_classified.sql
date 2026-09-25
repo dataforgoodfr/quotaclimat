@@ -4,9 +4,25 @@
     )
 }}
 
+{#- The classification reference table only exists in the main database (Metabase upload):
+    elsewhere (CI, extended perimeter), labels are left empty instead of failing the run. -#}
+{%- set classif_relation = load_relation(source('public', 'ad_classification')) if execute else none -%}
+{%- if execute and classif_relation is none -%}
+  {{ log("ad_occurrences_classified: " ~ source('public', 'ad_classification') ~ " not found, labels will be NULL", info=True) }}
+{%- endif %}
+
 WITH classif AS (
+  {%- if classif_relation is not none %}
   SELECT sector_code, cat_code, sector_label_fr, product_category_fr
-  FROM {{ source('public', 'ad_classification') }}
+  FROM {{ classif_relation }}
+  {%- else %}
+  SELECT
+    NULL::text AS sector_code,
+    NULL::text AS cat_code,
+    NULL::text AS sector_label_fr,
+    NULL::text AS product_category_fr
+  WHERE FALSE
+  {%- endif %}
 ),
 sector_ref AS (
   SELECT DISTINCT sector_code, sector_label_fr
@@ -54,3 +70,4 @@ WHERE a.prediction_status IN (
     'dict_miss','dict_tier1','dict_tier2','dict_tier2_no_kw',
     'dict_tier3','dict_tier3_no_kw','subcat_done'
   )
+  AND occ.deleted_at IS NULL

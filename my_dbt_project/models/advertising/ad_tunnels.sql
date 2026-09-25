@@ -4,8 +4,11 @@
     )
 }}
 
+{% set tolerance_sec = var('ad_tunnel_tolerance_sec', 5) %}
+
 -- An ad tunnel is a sequence of consecutive ads on a channel, where each ad starts
--- within {{ var('ad_tunnel_tolerance_sec', 5) }} seconds of the end of the previous one.
+-- at most {{ tolerance_sec }} seconds after the end of all the previous ads of the tunnel.
+-- Overlapping ads (starting before the previous one ends) stay in the same tunnel.
 WITH occ AS (
     SELECT
         o.channel_name,
@@ -14,25 +17,32 @@ WITH occ AS (
     FROM {{ source('advertising', 'ad_occurrence') }} o
     JOIN {{ source('advertising', 'ad') }} a ON a.id = o.ad_id
     WHERE a.fragment_type != 'OTHER'
+      AND o.deleted_at IS NULL
 ),
 flagged AS (
     SELECT
         occ.*,
         CASE
-            WHEN LAG(end_date) OVER w IS NULL
-                 OR ABS(EXTRACT(EPOCH FROM (start_date - LAG(end_date) OVER w))) > {{ var('ad_tunnel_tolerance_sec', 5) }}
+            WHEN MAX(end_date) OVER w_previous IS NULL
+                 OR start_date > MAX(end_date) OVER w_previous + interval '{{ tolerance_sec }} seconds'
             THEN 1
             ELSE 0
         END AS is_new_tunnel
     FROM occ
-    WINDOW w AS (PARTITION BY channel_name ORDER BY start_date)
+    WINDOW w_previous AS (
+        PARTITION BY channel_name ORDER BY start_date, end_date
+        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+    )
 ),
 grouped AS (
     SELECT
         channel_name,
         start_date,
         end_date,
-        SUM(is_new_tunnel) OVER (PARTITION BY channel_name ORDER BY start_date) AS tunnel_seq
+        SUM(is_new_tunnel) OVER (
+            PARTITION BY channel_name ORDER BY start_date, end_date
+            ROWS UNBOUNDED PRECEDING
+        ) AS tunnel_seq
     FROM flagged
 )
 SELECT

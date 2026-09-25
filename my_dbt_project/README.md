@@ -41,12 +41,12 @@ Intermediate/pre-aggregated tables (used by dashboards, or directly as a faster 
 * `environmental_shares_with_desinfo_counts` (`materialized='incremental'`, keyed on `start`/`channel_name`/`country`): weekly environmental airtime share alongside misinformation counts (from `task_global_completion`) per channel.
 
 ### `advertising/`
-Tables built from the `advertising` schema (ad detection and classification pipelines), in the default target schema (`public`). Sources are declared in `models/advertising/sources.yml`. They are excluded from the generic `dbt run` and built in a dedicated step (`dbt run --full-refresh --select path:models/advertising`), because the `advertising` schema and the classification reference table do not exist in every database (CI Postgres, extended perimeter):
-* `ad_occurrences_classified` (`materialized='table'`): one row per occurrence of a classified ad, with channel metadata from `program_metadata` and French sector / product category labels. The reference table is a Metabase CSV upload whose name carries a timestamp; after a new upload, pass `--vars '{"ad_classification_table": "<new_name>"}'`.
-* `ad_tunnels` (`materialized='table'`): ad tunnels per channel, i.e. consecutive non-`OTHER` fragments separated by at most `ad_tunnel_tolerance_sec` seconds (default 5). `tunnel_id` is `channel_name@<epoch of start_date>`.
+Tables built from the `advertising` schema (ad detection and classification pipelines, tables created by alembic), in the default target schema (`public`), as part of the regular `dbt run`. Sources are declared in `models/advertising/sources.yml`. Occurrences with a `deleted_at` are ignored.
+* `ad_occurrences_classified` (`materialized='table'`): one row per occurrence of a classified ad, with channel metadata from `program_metadata` and French sector / product category labels. The reference table is a Metabase CSV upload whose name carries a timestamp; after a new upload, pass `--vars '{"ad_classification_table": "<new_name>"}'`. When that table does not exist (CI, extended perimeter database), the model still builds, with empty labels.
+* `ad_tunnels` (`materialized='table'`): ad tunnels per channel, i.e. consecutive non-`OTHER` fragments where each one starts at most `ad_tunnel_tolerance_sec` seconds (default 5) after the end of the previous ones; overlapping fragments stay in the same tunnel. `tunnel_id` is `channel_name@<epoch of start_date>`.
 
 ### Access grants (`+grants` in `dbt_project.yml`)
-`analytics`/`dashboards` models grant `select` conditionally:
+`analytics`/`dashboards`/`advertising` models grant `select` conditionally (`advertising` uses the same list as `analytics`):
 * **Regular perimeter** (`EXTENDED_PERIMETER` unset/`false`): nothing granted when `DBT_ENV` is unset/`dev`; `rrs-read-dev`, `rrs-read-prod` and `climateguard-reader-user` (only `climateguard-reader-user` for `dashboards`) granted when `DBT_ENV=prod`.
 * **Extended perimeter** (`EXTENDED_PERIMETER=true`, see the root README's "Extended perimeter (Droit à l'info)" section): the `extended-perimeter` database only has `rrs-read-{dev,prod}` users (no `climateguard-reader-user`), so only the `rrs-read` user matching `DBT_ENV` is granted `select`.
 

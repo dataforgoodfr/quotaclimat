@@ -10,8 +10,10 @@ sources:
   - name: public
     schema: public
     tables:
-      # Sector / product category reference, loaded from a Google Sheet before dbt runs
-      # (see my_dbt_project/external_sources.yml)
-      - name: ad_classification
-        identifier: ref_ad_classification
+      # Sector / product category reference, loaded from the classification Google Sheet
+      # before dbt runs (see my_dbt_project/external_sources.yml)
+      - name: ad_sectors
+        identifier: ref_classification_pub_ome_secteurs
+      - name: ad_categories
+        identifier: ref_classification_pub_ome_categories
       - name: program_metadata

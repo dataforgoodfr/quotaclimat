@@ -4,33 +4,13 @@
     )
 }}
 
-{#- The classification reference table is loaded from a Google Sheet (external_sources.yml) only where
-    its URL is configured: elsewhere (extended perimeter), labels are left empty instead of failing the run. -#}
-{%- set classif_relation = load_relation(source('public', 'ad_classification')) if execute else none -%}
-{%- if execute and classif_relation is none -%}
-  {{ log("ad_occurrences_classified: " ~ source('public', 'ad_classification') ~ " not found, labels will be NULL", info=True) }}
-{%- endif %}
-
-WITH classif AS (
-  {%- if classif_relation is not none %}
-  SELECT sector_code, cat_code, sector_label_fr, product_category_fr
-  FROM {{ classif_relation }}
-  {%- else %}
-  SELECT
-    NULL::text AS sector_code,
-    NULL::text AS cat_code,
-    NULL::text AS sector_label_fr,
-    NULL::text AS product_category_fr
-  WHERE FALSE
-  {%- endif %}
-),
-sector_ref AS (
-  SELECT DISTINCT sector_code, sector_label_fr
-  FROM classif
+{#- The classification reference tables are loaded from a Google Sheet (external_sources.yml) before dbt
+    runs: where they are missing (e.g. extended perimeter), labels are left empty instead of failing the run. -#}
+WITH sector_ref AS (
+  {{ source_or_empty('public', 'ad_sectors', ['sector_code', 'sector_label_fr']) }}
 ),
 cat_ref AS (
-  SELECT cat_code, product_category_fr
-  FROM classif
+  {{ source_or_empty('public', 'ad_categories', ['cat_code', 'product_category_fr']) }}
 ),
 channel_ref AS (
   SELECT DISTINCT

@@ -42,7 +42,7 @@ Intermediate/pre-aggregated tables (used by dashboards, or directly as a faster 
 
 ### `advertising/`
 Tables built from the `advertising` schema (ad detection and classification pipelines, tables created by alembic), in the default target schema (`public`), as part of the regular `dbt run`. Sources are declared in `models/advertising/sources.yml`. Occurrences with a `deleted_at` are ignored.
-* `ad_occurrences_classified` (`materialized='table'`): one row per occurrence of a classified ad, with channel metadata from `program_metadata` and French sector / product category labels from `ref_ad_classification` (see External sources below). When that table does not exist (extended perimeter database), the model still builds, with empty labels.
+* `ad_occurrences_classified` (`materialized='table'`): one row per occurrence of a classified ad, with channel metadata from `program_metadata` and French sector / product category labels from the `secteurs` and `catégories` tabs of the classification sheet (see External sources below). When those tables do not exist (extended perimeter database), the model still builds, with empty labels.
 * `ad_tunnels` (`materialized='table'`): ad tunnels per channel, i.e. consecutive non-`OTHER` fragments where each one starts at most `ad_tunnel_tolerance_sec` seconds (default 5) after the end of the previous ones; overlapping fragments stay in the same tunnel. `tunnel_id` is `channel_name@<epoch of start_date>`.
 
 ## External sources (Google Sheets)
@@ -50,11 +50,13 @@ Reference data maintained in Google Sheets is loaded into `public` before `dbt r
 ```
 poetry run python -m quotaclimat.data_ingestion.external_sources.load_external_sources [config_path]
 ```
-Sources are listed in `external_sources.yml` (target table, URL or env variable holding it, required columns, unique key). Each table is replaced in one transaction, only when the CSV downloads and validates, otherwise the previous version is kept and the error is logged (and sent to Sentry). Every load is recorded in `public.ref_external_source_load` (row count, SHA-256 of the CSV), to know which version of a sheet a run used.
+Sources are listed in `external_sources.yml`. For a `spreadsheet` source, the whole Google Sheet (shared by link, viewer) is exported as xlsx in one request and every tab is loaded into `<table_prefix><tab name in snake_case>`, e.g. tab `catégories` of the classification sheet -> `ref_classification_pub_ome_categories`. Per-tab settings (required columns, unique key, table name, skip) are keyed by the exact tab name. A `csv` source loads a single CSV.
 
-For a Google Sheet shared by link, use the CSV export URL of the tab: `https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=csv&gid=<TAB_GID>`. The URL is kept out of this public repo: it is stored as a Kestra secret (`AD_CLASSIFICATION_SHEET_URL` in Vaultwarden, `infrastructure/.env.secrets.dist`, provisioned by `make tags=kestra ansible`) and passed to the `dbt_run_transformations` tasks.
+Each table is replaced in its own transaction, only when it validates: a tab with missing columns, duplicated keys or no rows, or a failed download, leaves the previous version in place and logs an error (sent to Sentry). Every load is recorded in `public.ref_external_source_load` (table, row count, SHA-256 of the downloaded file), to know which version of a sheet a run used.
 
-To add a sheet: add an entry in `external_sources.yml`, a secret in Vaultwarden + `infrastructure/ansible/playbook.yml` + the flows' `dbt_run_transformations` env, and declare the table as a dbt source.
+The sheet link is not stored in this public repo: `url_env` names the environment variable holding it. For the classification sheet, `CLASSIFICATION_PUB_OME_SHEET_URL` is a Kestra secret (value in Vaultwarden, listed in `infrastructure/.env.secrets.dist`, provisioned by `make tags=kestra ansible`) passed to the `dbt_run_transformations` tasks. Without it, the source is skipped and the previous tables are kept.
+
+A new tab is loaded automatically on the next run. To use a table in a model, declare it as a dbt source; `source_or_empty` (`macros/`) lets a model build with an empty table where the reference data is not loaded.
 
 ### Access grants (`+grants` in `dbt_project.yml`)
 `analytics`/`dashboards`/`advertising` models grant `select` conditionally (`advertising` uses the same list as `analytics`):

@@ -165,7 +165,7 @@ tasks:
       - -c
       - cd /app && /app/entrypoints/dbt.sh
     env:
-      AD_CLASSIFICATION_SHEET_URL: "{{ secret('AD_CLASSIFICATION_SHEET_URL') }}"
+      CLASSIFICATION_PUB_OME_SHEET_URL: "{{ secret('CLASSIFICATION_PUB_OME_SHEET_URL') }}"
       DBT_ENV: prod
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project

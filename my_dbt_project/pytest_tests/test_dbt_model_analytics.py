@@ -3,15 +3,14 @@ import logging
 import os
 import subprocess
 
+import pandas as pd
 import psycopg2
 import pytest
+import yaml
 
 from my_dbt_project.pytest_tests.test_dbt_model_homepage import run_dbt_command
 from postgres.database_connection import connect_to_db
-from quotaclimat.data_ingestion.external_sources.load_external_sources import (
-    load_external_sources,
-    load_source,
-)
+from quotaclimat.data_ingestion.external_sources.load_external_sources import load_source
 
 
 @pytest.fixture(scope="module")
@@ -75,7 +74,20 @@ def create_test_roles(db_connection):
     yield
 
 
-EXTERNAL_SOURCES_TEST_CONFIG = "my_dbt_project/pytest_tests/data/external_sources_test.yml"
+PRODUCTION_EXTERNAL_SOURCES_CONFIG = "my_dbt_project/external_sources.yml"
+
+
+def classification_test_source(workbook_path) -> dict:
+    """Production classification source settings, reading a local workbook instead of the Google Sheet."""
+    config = yaml.safe_load(open(PRODUCTION_EXTERNAL_SOURCES_CONFIG))
+    source = next(s for s in config["sources"] if s["name"] == "classification_pub_ome")
+    return {**source, "url_env": None, "url": str(workbook_path)}
+
+
+def write_workbook(path, sheets: dict[str, pd.DataFrame]):
+    with pd.ExcelWriter(path) as writer:
+        for name, df in sheets.items():
+            df.to_excel(writer, sheet_name=name, index=False)
 
 
 @pytest.fixture(scope="module")
@@ -155,10 +167,28 @@ def db_engine():
 
 
 @pytest.fixture(scope="module")
-def load_test_external_sources(db_engine):
-    """Same loading step as entrypoints/dbt.sh, from a local test CSV instead of the Google Sheet."""
-    results = load_external_sources(EXTERNAL_SOURCES_TEST_CONFIG, engine=db_engine)
-    assert results == {"ad_classification": True}
+def load_test_external_sources(db_engine, tmp_path_factory):
+    """Same loading step as entrypoints/dbt.sh, from a local workbook instead of the Google Sheet."""
+    workbook = tmp_path_factory.mktemp("external_sources") / "classification.xlsx"
+    write_workbook(workbook, {
+        "secteurs": pd.DataFrame({
+            "sector_code": ["PYTEST_AUTO", " PYTEST_FOOD ", None],
+            "sector_label_fr": ["Automobile", "Alimentation", None],
+            "sector_label_en": ["Cars", "Food", None],
+        }),
+        "catégories": pd.DataFrame({
+            "sector_code": ["PYTEST_AUTO", "PYTEST_AUTO", "PYTEST_FOOD"],
+            "cat_code": ["PYTEST_AUTO_EV", "PYTEST_AUTO_ICE", "PYTEST_FOOD_SNACK"],
+            "product_category_fr": ["Voiture électrique", "Voiture thermique", "Snacks"],
+        }),
+        "Notes de version": pd.DataFrame({"date": ["2026-07-16"], "note": ["v1"]}),
+    })
+    results = load_source(db_engine, classification_test_source(workbook))
+    assert results == {
+        "ref_classification_pub_ome_secteurs": True,
+        "ref_classification_pub_ome_categories": True,
+        "ref_classification_pub_ome_notes_de_version": True,
+    }
     yield
 
 
@@ -304,59 +334,90 @@ def test_advertising_grants(db_connection):
 def test_external_source_loaded(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT sector_code, cat_code, sector_label_fr, product_category_fr, extra_column
-            FROM public.ref_ad_classification
-            ORDER BY cat_code
+            SELECT sector_code, sector_label_fr, sector_label_en
+            FROM public.ref_classification_pub_ome_secteurs
+            ORDER BY sector_code
         """)
-        rows = cur.fetchall()
+        sectors = cur.fetchall()
+        cur.execute("SELECT * FROM public.ref_classification_pub_ome_notes_de_version")
+        notes = cur.fetchall()
         cur.execute("""
-            SELECT row_count FROM public.ref_external_source_load
-            WHERE name = 'ad_classification' ORDER BY loaded_at DESC LIMIT 1
+            SELECT table_name, row_count FROM public.ref_external_source_load
+            WHERE name = 'classification_pub_ome' ORDER BY table_name
         """)
-        row_count = cur.fetchone()[0]
-    # values are stripped, empty cells are NULL, empty rows are dropped, extra columns are kept
-    assert rows == [
-        ("PYTEST_AUTO", "PYTEST_AUTO_EV", "Automobile", "Voiture électrique", "kept"),
-        ("PYTEST_AUTO", "PYTEST_AUTO_ICE", "Automobile", "Voiture thermique", None),
-        ("PYTEST_FOOD", "PYTEST_FOOD_SNACK", "Alimentation", "Snacks", None),
+        history = cur.fetchall()
+    # values are stripped, empty rows are dropped, extra columns and tabs are kept
+    assert sectors == [
+        ("PYTEST_AUTO", "Automobile", "Cars"),
+        ("PYTEST_FOOD", "Alimentation", "Food"),
     ]
-    assert row_count == 3
+    assert notes == [("2026-07-16", "v1")]
+    assert history == [
+        ("ref_classification_pub_ome_categories", 3),
+        ("ref_classification_pub_ome_notes_de_version", 1),
+        ("ref_classification_pub_ome_secteurs", 2),
+    ]
 
 
 @pytest.mark.parametrize(
-    "csv_content",
+    "categories",
     [
         # missing required column
-        "sector_code,cat_code,sector_label_fr\nA,A1,Label\n",
+        pd.DataFrame({"sector_code": ["A"], "cat_code": ["A1"]}),
         # duplicated unique key
-        "sector_code,cat_code,sector_label_fr,product_category_fr\nA,A1,L,P\nB,A1,L,P\n",
+        pd.DataFrame({"sector_code": ["A", "B"], "cat_code": ["A1", "A1"], "product_category_fr": ["P", "P"]}),
         # no rows
-        "sector_code,cat_code,sector_label_fr,product_category_fr\n",
+        pd.DataFrame({"sector_code": [], "cat_code": [], "product_category_fr": []}),
     ],
 )
-def test_external_source_invalid_keeps_table(db_connection, db_engine, tmp_path, csv_content):
-    csv_path = tmp_path / "invalid.csv"
-    csv_path.write_text(csv_content)
-    source = {
-        "name": "ad_classification",
-        "table": "ref_ad_classification",
-        "url": str(csv_path),
-        "columns": ["sector_code", "cat_code", "sector_label_fr", "product_category_fr"],
-        "unique": ["cat_code"],
-    }
-    assert load_source(db_engine, source) is False
+def test_external_source_invalid_tab_keeps_table(db_connection, db_engine, tmp_path, categories):
+    workbook = tmp_path / "invalid.xlsx"
+    write_workbook(workbook, {
+        "secteurs": pd.DataFrame({"sector_code": ["PYTEST_AUTO"], "sector_label_fr": ["Automobile"]}),
+        "catégories": categories,
+    })
+    source = classification_test_source(workbook)
+    source["sheets"] = {"catégories": source["sheets"]["catégories"]}  # do not touch the secteurs table
+    source["sheets"]["secteurs"] = {"skip": True}
+    assert load_source(db_engine, source) == {"ref_classification_pub_ome_categories": False}
     with db_connection.cursor() as cur:
-        cur.execute("SELECT count(*) FROM public.ref_ad_classification")
+        cur.execute("SELECT count(*) FROM public.ref_classification_pub_ome_categories")
         assert cur.fetchone()[0] == 3
 
 
-def test_external_source_without_url_keeps_table(db_connection, db_engine):
-    source = {
-        "name": "ad_classification",
-        "table": "ref_ad_classification",
-        "url_env": "AD_CLASSIFICATION_SHEET_URL_TEST_UNSET",
-    }
-    assert load_source(db_engine, source) is False
+def test_external_source_unreachable_keeps_tables(db_connection, db_engine, tmp_path):
+    source = classification_test_source(tmp_path / "does_not_exist.xlsx")
+    assert load_source(db_engine, source) == {}
     with db_connection.cursor() as cur:
-        cur.execute("SELECT count(*) FROM public.ref_ad_classification")
+        cur.execute("SELECT count(*) FROM public.ref_classification_pub_ome_categories")
         assert cur.fetchone()[0] == 3
+
+
+def test_external_source_without_url_is_skipped(db_connection, db_engine, monkeypatch):
+    monkeypatch.delenv("CLASSIFICATION_PUB_OME_SHEET_URL", raising=False)
+    config = yaml.safe_load(open(PRODUCTION_EXTERNAL_SOURCES_CONFIG))
+    source = next(s for s in config["sources"] if s["name"] == "classification_pub_ome")
+    assert load_source(db_engine, source) == {}
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT count(*) FROM public.ref_classification_pub_ome_categories")
+        assert cur.fetchone()[0] == 3
+
+
+def test_spreadsheet_export_url():
+    from quotaclimat.data_ingestion.external_sources.load_external_sources import (
+        spreadsheet_export_url,
+        to_snake_case,
+    )
+
+    assert spreadsheet_export_url(
+        "https://docs.google.com/spreadsheets/d/FAKE_sheet-id_123/edit?gid=42#gid=42"
+    ) == "https://docs.google.com/spreadsheets/d/FAKE_sheet-id_123/export?format=xlsx"
+    assert spreadsheet_export_url("local/file.xlsx") == "local/file.xlsx"
+    # only docs.google.com itself is rewritten
+    for url in [
+        "https://evil.example/docs.google.com/spreadsheets/d/abc/edit",
+        "https://docs.google.com.evil.example/spreadsheets/d/abc/edit",
+        "http://docs.google.com/spreadsheets/d/abc/edit",
+    ]:
+        assert spreadsheet_export_url(url) == url
+    assert to_snake_case("Catégories Transversales (v2)") == "categories_transversales_v2"

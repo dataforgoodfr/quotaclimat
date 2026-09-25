@@ -32,6 +32,7 @@ SELECT
   ch.public,
   ch.country,
   occ.ad_id,
+  t.tunnel_id,
   a.duration_sec,
   a.predicted_sector,
   a.predicted_product_category,
@@ -46,6 +47,7 @@ JOIN {{ source('advertising', 'ad') }} a ON occ.ad_id = a.id
 LEFT JOIN sector_ref  s  ON s.sector_code  = a.predicted_sector
 LEFT JOIN cat_ref     c  ON c.cat_code     = a.predicted_product_category
 LEFT JOIN channel_ref ch ON ch.channel_name = occ.channel_name
+LEFT JOIN {{ ref('ad_occurrence_tunnels') }} t ON t.occurrence_id = occ.id
 WHERE a.prediction_status IN (
     'dict_miss','dict_tier1','dict_tier2','dict_tier2_no_kw',
     'dict_tier3','dict_tier3_no_kw','subcat_done'

@@ -401,6 +401,14 @@ models:
         description: Technical channel identifier, join key with program_metadata.
       - name: ad_id
         description: Identifier of the ad (advertising.ad.id).
+      - name: tunnel_id
+        description: >
+          Ad tunnel the occurrence belongs to (see ad_tunnels). NULL for OTHER fragments,
+          which are not part of tunnels.
+        tests:
+          - relationships:
+              to: ref('ad_tunnels')
+              field: tunnel_id
       - name: duration_sec
         description: Duration of the ad in seconds.
       - name: prediction_status
@@ -412,11 +420,33 @@ models:
       - name: label_final
         description: Product category label when available, sector label otherwise.
 
+  - name: ad_occurrence_tunnels
+    description: >
+      One row per non-OTHER, non-deleted ad occurrence with the ad tunnel it belongs to.
+      An ad tunnel is a sequence of consecutive fragments on a channel, where each one starts
+      at most ad_tunnel_tolerance_sec (default 5) seconds after the end of the previous ones;
+      overlapping fragments stay in the same tunnel.
+    columns:
+      - name: occurrence_id
+        description: Identifier of the occurrence (advertising.ad_occurrence.id).
+        tests:
+          - unique
+          - not_null
+      - name: tunnel_id
+        description: Tunnel identifier, built as channel_name@epoch_of_tunnel_start_date (seconds).
+        tests:
+          - not_null
+      - name: channel_name
+        description: Technical channel identifier.
+      - name: start_date
+        description: Start of the occurrence.
+      - name: end_date
+        description: End of the occurrence (start + ad duration).
+
   - name: ad_tunnels
     description: >
-      Ad tunnels: sequences of consecutive non-OTHER fragments on a channel, where each
-      fragment starts within ad_tunnel_tolerance_sec (default 5) seconds of the end of
-      the previous one.
+      Ad tunnels, one row per tunnel, aggregated from ad_occurrence_tunnels (see its
+      description for the tunnel definition).
     columns:
       - name: tunnel_id
         description: Tunnel identifier, built as channel_name@epoch_of_start_date (seconds).

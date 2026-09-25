@@ -299,20 +299,43 @@ def test_ad_tunnels(db_connection):
     assert rows == expected
 
 
+def test_ad_occurrence_tunnels(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT occurrence_id, tunnel_id
+            FROM public.ad_occurrence_tunnels
+            WHERE occurrence_id LIKE 'pytest_%'
+            ORDER BY occurrence_id
+        """)
+        rows = cur.fetchall()
+    epoch_10h = int(datetime.datetime(2000, 1, 1, 10, tzinfo=datetime.timezone.utc).timestamp())
+    epoch_11h = int(datetime.datetime(2000, 1, 1, 11, tzinfo=datetime.timezone.utc).timestamp())
+    # deleted occurrences and OTHER fragments are not part of tunnels
+    assert rows == [
+        ("pytest_occ_1", f"arte@{epoch_10h}"),
+        ("pytest_occ_1_duplicate", f"arte@{epoch_10h}"),
+        ("pytest_occ_2", f"arte@{epoch_10h}"),
+        ("pytest_occ_3_overlap", f"arte@{epoch_10h}"),
+        ("pytest_occ_4", f"arte@{epoch_11h}"),
+    ]
+
+
 def test_ad_occurrences_classified(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT occurrence_id, channel_title, sector_label_fr, product_category_fr, label_final
+            SELECT occurrence_id, channel_title, sector_label_fr, product_category_fr, label_final, tunnel_id
             FROM public.ad_occurrences_classified
             WHERE occurrence_id LIKE 'pytest_%'
             ORDER BY occurrence_id
         """)
         rows = cur.fetchall()
+    epoch_10h = int(datetime.datetime(2000, 1, 1, 10, tzinfo=datetime.timezone.utc).timestamp())
+    epoch_11h = int(datetime.datetime(2000, 1, 1, 11, tzinfo=datetime.timezone.utc).timestamp())
     expected = [
-        ("pytest_occ_1", "Arte", "Automobile", "Voiture électrique", "Voiture électrique"),
-        ("pytest_occ_1_duplicate", "Arte", "Automobile", "Voiture électrique", "Voiture électrique"),
-        ("pytest_occ_2", "Arte", "Alimentation", None, "Alimentation"),
-        ("pytest_occ_4", "Arte", "Automobile", "Voiture électrique", "Voiture électrique"),
+        ("pytest_occ_1", "Arte", "Automobile", "Voiture électrique", "Voiture électrique", f"arte@{epoch_10h}"),
+        ("pytest_occ_1_duplicate", "Arte", "Automobile", "Voiture électrique", "Voiture électrique", f"arte@{epoch_10h}"),
+        ("pytest_occ_2", "Arte", "Alimentation", None, "Alimentation", f"arte@{epoch_10h}"),
+        ("pytest_occ_4", "Arte", "Automobile", "Voiture électrique", "Voiture électrique", f"arte@{epoch_11h}"),
     ]
     assert rows == expected
 
@@ -324,11 +347,11 @@ def test_advertising_grants(db_connection):
             FROM information_schema.role_table_grants
             WHERE grantee = 'rrs-read-dev'
               AND privilege_type = 'SELECT'
-              AND table_name IN ('ad_tunnels', 'ad_occurrences_classified')
+              AND table_name IN ('ad_tunnels', 'ad_occurrences_classified', 'ad_occurrence_tunnels')
             ORDER BY table_name
         """)
         rows = cur.fetchall()
-    assert rows == [("ad_occurrences_classified",), ("ad_tunnels",)]
+    assert rows == [("ad_occurrence_tunnels",), ("ad_occurrences_classified",), ("ad_tunnels",)]
 
 
 def test_external_source_loaded(db_connection):

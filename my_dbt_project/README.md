@@ -43,7 +43,8 @@ Intermediate/pre-aggregated tables (used by dashboards, or directly as a faster 
 ### `advertising/`
 Tables built from the `advertising` schema (ad detection and classification pipelines, tables created by alembic), in the default target schema (`public`), as part of the regular `dbt run`. Sources are declared in `models/advertising/sources.yml`. Occurrences with a `deleted_at` are ignored.
 * `ad_occurrences_classified` (`materialized='table'`): one row per occurrence of a classified ad, with channel metadata from `program_metadata` and French sector / product category labels from the `secteurs` and `catégories` tabs of the classification sheet (see External sources below). When those tables do not exist (extended perimeter database), the model still builds, with empty labels.
-* `ad_tunnels` (`materialized='table'`): ad tunnels per channel, i.e. consecutive non-`OTHER` fragments where each one starts at most `ad_tunnel_tolerance_sec` seconds (default 5) after the end of the previous ones; overlapping fragments stay in the same tunnel. `tunnel_id` is `channel_name@<epoch of start_date>`.
+* `ad_occurrence_tunnels` (`materialized='table'`): one row per non-`OTHER`, non-deleted occurrence with its `tunnel_id`. An ad tunnel is a sequence of consecutive fragments on a channel where each one starts at most `ad_tunnel_tolerance_sec` seconds (default 5) after the end of the previous ones; overlapping fragments stay in the same tunnel. `tunnel_id` is `channel_name@<epoch of the tunnel start_date>`.
+* `ad_tunnels` (`materialized='table'`): one row per tunnel (start, end), aggregated from `ad_occurrence_tunnels`. `ad_occurrences_classified` also carries the `tunnel_id` of each occurrence.
 
 ## External sources (Google Sheets)
 Reference data maintained in Google Sheets is loaded into `public` before `dbt run`, by `entrypoints/dbt.sh` (and `mediatree_import.sh`):

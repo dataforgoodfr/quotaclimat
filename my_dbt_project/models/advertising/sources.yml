@@ -6,14 +6,14 @@ sources:
     tables:
       - name: ad
       - name: ad_occurrence
-
-  - name: public
-    schema: public
-    tables:
-      # Sector / product category reference, loaded from the classification Google Sheet
-      # before dbt runs (see my_dbt_project/external_sources.yml)
+      # Sector / product category reference: dbt seeds downloaded from the classification Google Sheet
+      # before dbt runs (see my_dbt_project/external_sources.yml), built in this schema
       - name: ad_sectors
         identifier: ref_ome_secteurs
       - name: ad_categories
         identifier: ref_ome_categories
+
+  - name: public
+    schema: public
+    tables:
       - name: program_metadata

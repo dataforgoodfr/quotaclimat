@@ -8,10 +8,10 @@
     before dbt runs (see my_dbt_project/external_sources.yml): where they are missing (e.g. extended perimeter),
     labels are left empty instead of failing the run. -#}
 WITH sector_ref AS (
-  {{ source_or_empty('public', 'ad_sectors', ['sector_code', 'sector_label_fr']) }}
+  {{ source_or_empty('advertising', 'ad_sectors', ['sector_code', 'sector_label_fr']) }}
 ),
 cat_ref AS (
-  {{ source_or_empty('public', 'ad_categories', ['cat_code', 'product_category_fr']) }}
+  {{ source_or_empty('advertising', 'ad_categories', ['cat_code', 'product_category_fr']) }}
 ),
 channel_ref AS (
   SELECT DISTINCT

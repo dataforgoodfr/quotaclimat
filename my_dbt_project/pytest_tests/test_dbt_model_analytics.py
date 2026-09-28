@@ -359,11 +359,11 @@ def test_external_source_loaded(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT sector_code, sector_label_fr, sector_label_en
-            FROM public.ref_ome_secteurs
+            FROM advertising.ref_ome_secteurs
             ORDER BY sector_code
         """)
         sectors = cur.fetchall()
-        cur.execute("SELECT version, note FROM public.ref_ome_notes_de_version ORDER BY version")
+        cur.execute("SELECT version, note FROM advertising.ref_ome_notes_de_version ORDER BY version")
         notes = cur.fetchall()
     # values are stripped, empty rows are dropped, extra columns and tabs are kept,
     # identifiers stay text (column_types in _ref_seeds.yml), other types are inferred by dbt
@@ -591,15 +591,15 @@ def test_ensure_not_public_refuses_public_spreadsheet(permission_ids, status, he
 
 
 def test_advertising_models_schema(db_connection):
-    """The advertising models are built in the advertising schema (+schema, generate_schema_name),
-    the other models stay in the target schema."""
+    """The advertising models and the reference seeds are built in the advertising schema (+schema,
+    generate_schema_name), the other models and seeds stay in the target schema."""
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT table_schema, table_name
             FROM information_schema.tables
             WHERE table_name IN (
-                'ad_tunnels', 'ad_occurrences_classified', 'ad_occurrence_tunnels',
-                'core_query_environmental_shares', 'task_global_completion'
+                'ad_tunnels', 'ad_occurrences_classified', 'ad_occurrence_tunnels', 'ref_ome_secteurs',
+                'core_query_environmental_shares', 'task_global_completion', 'keywords'
             )
             ORDER BY table_name
         """)
@@ -609,5 +609,7 @@ def test_advertising_models_schema(db_connection):
         ("advertising", "ad_occurrences_classified"),
         ("advertising", "ad_tunnels"),
         ("public", "core_query_environmental_shares"),
+        ("public", "keywords"),
+        ("advertising", "ref_ome_secteurs"),
         ("analytics", "task_global_completion"),
     ]

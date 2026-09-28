@@ -8,7 +8,7 @@ formulas or files). A spreadsheet readable without credentials (shared "anyone w
 published on the web) is refused.
 
 Every tab is written to my_dbt_project/seeds/ref/<table_prefix><tab name in snake_case>.csv, then
-`dbt seed --select path:seeds/ref` loads it into the table of the same name, and the seed tests
+`dbt seed --select path:seeds/ref` loads it into the table of the same name (schema advertising), and the seed tests
 (my_dbt_project/seeds/ref/_ref_seeds.yml) check it. When a spreadsheet cannot be downloaded, no CSV
 is written for it and its tables keep their previous version.
 """

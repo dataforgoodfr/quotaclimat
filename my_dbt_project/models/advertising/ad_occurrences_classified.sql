@@ -4,21 +4,14 @@
     )
 }}
 
-{#- TEMPORARY: labels come from the classification table uploaded in Metabase, until the Google Sheet seeds
-    are configured (see my_dbt_project/external_sources.yml). Then build sector_ref and cat_ref with
-    source_or_empty on the ad_sectors (sector_code, sector_label_fr) and ad_categories (cat_code,
-    product_category_fr) sources instead of classif.
-    Where the table is missing (e.g. extended perimeter, CI), labels are left empty instead of failing the run. -#}
-WITH classif AS (
-  {{ source_or_empty('public', 'ad_classification_upload', ['sector_code', 'cat_code', 'sector_label_fr', 'product_category_fr']) }}
-),
-sector_ref AS (
-  SELECT DISTINCT sector_code, sector_label_fr
-  FROM classif
+{#- The classification reference tables are the ref_ome_* seeds, downloaded from the private Google Sheet
+    before dbt runs (see my_dbt_project/external_sources.yml): where they are missing (e.g. extended perimeter),
+    labels are left empty instead of failing the run. -#}
+WITH sector_ref AS (
+  {{ source_or_empty('public', 'ad_sectors', ['sector_code', 'sector_label_fr']) }}
 ),
 cat_ref AS (
-  SELECT DISTINCT cat_code, product_category_fr
-  FROM classif
+  {{ source_or_empty('public', 'ad_categories', ['cat_code', 'product_category_fr']) }}
 ),
 channel_ref AS (
   SELECT DISTINCT

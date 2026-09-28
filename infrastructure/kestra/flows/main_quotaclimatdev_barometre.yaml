@@ -143,6 +143,8 @@ tasks:
       - -c
       - cd /app && /app/entrypoints/dbt.sh
     env:
+      EXTERNAL_SOURCES_DRIVE_FOLDER: "{{ secret('EXTERNAL_SOURCES_DRIVE_FOLDER') }}"
+      GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON: "{{ secret('GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON') }}"
       DBT_ENV: dev
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project

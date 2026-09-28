@@ -93,9 +93,6 @@ def fake_fetch(sheets: dict[str, list[list]]):
     return fetch
 
 
-AD_CLASSIFICATION_UPLOAD_TABLE = "download_classification_pub_ome_20260716171520"
-
-
 @pytest.fixture(scope="module")
 def create_advertising_tables(db_connection):
     """The advertising tables are created by alembic in production, which the dbt CI job
@@ -129,19 +126,6 @@ def create_advertising_tables(db_connection):
                 ad_id text REFERENCES advertising.ad (id)
             )
         """)
-        # TEMPORARY: classification table uploaded in Metabase, read by ad_occurrences_classified
-        cur.execute(f"""
-            CREATE TABLE IF NOT EXISTS public.{AD_CLASSIFICATION_UPLOAD_TABLE} (
-                sector_code text, cat_code text, sector_label_fr text, product_category_fr text
-            )
-        """)
-        cur.execute(f"DELETE FROM public.{AD_CLASSIFICATION_UPLOAD_TABLE} WHERE sector_code LIKE 'PYTEST_%'")
-        cur.execute(f"""
-            INSERT INTO public.{AD_CLASSIFICATION_UPLOAD_TABLE} VALUES
-                ('PYTEST_AUTO', 'PYTEST_AUTO_EV', 'Automobile', 'Voiture électrique'),
-                ('PYTEST_AUTO', 'PYTEST_AUTO_ICE', 'Automobile', 'Voiture thermique'),
-                ('PYTEST_FOOD', 'PYTEST_FOOD_SNACK', 'Alimentation', 'Snacks')
-        """)
         cur.execute("DELETE FROM advertising.ad_occurrence WHERE id LIKE 'pytest_%'")
         cur.execute("DELETE FROM advertising.ad WHERE id LIKE 'pytest_%'")
         cur.execute("""
@@ -170,9 +154,6 @@ def create_advertising_tables(db_connection):
         """)
     db_connection.commit()
     yield
-    with db_connection.cursor() as cur:
-        cur.execute(f"DELETE FROM public.{AD_CLASSIFICATION_UPLOAD_TABLE} WHERE sector_code LIKE 'PYTEST_%'")
-    db_connection.commit()
 
 
 @pytest.fixture(scope="module")

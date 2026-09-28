@@ -3,6 +3,11 @@
 echo "ingest labelstudio data into barometre database"
 poetry run python -m quotaclimat.data_ingestion.labelstudio.ingest_labelstudio
 
+echo "download reference Google Sheets as dbt seeds, then load and test them"
+poetry run python -m quotaclimat.data_ingestion.external_sources.download_external_sources
+poetry run dbt seed --full-refresh --select path:seeds/ref
+poetry run dbt test --select path:seeds/ref
+
 echo "apply dbt models - except causal links and analytics tables"
 poetry run dbt run --full-refresh \
 --exclude core_query_causal_links \

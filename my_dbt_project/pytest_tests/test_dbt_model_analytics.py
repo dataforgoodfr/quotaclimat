@@ -294,7 +294,7 @@ def test_ad_tunnels(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT tunnel_id, channel_name, start_date, end_date
-            FROM public.ad_tunnels
+            FROM advertising.ad_tunnels
             WHERE channel_name = 'arte' AND start_date::date = '2000-01-01'
             ORDER BY start_date
         """)
@@ -322,7 +322,7 @@ def test_ad_occurrence_tunnels(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT occurrence_id, tunnel_id
-            FROM public.ad_occurrence_tunnels
+            FROM advertising.ad_occurrence_tunnels
             WHERE occurrence_id LIKE 'pytest_%'
             ORDER BY occurrence_id
         """)
@@ -343,7 +343,7 @@ def test_ad_occurrences_classified(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT occurrence_id, channel_title, sector_label_fr, product_category_fr, label_final, tunnel_id
-            FROM public.ad_occurrences_classified
+            FROM advertising.ad_occurrences_classified
             WHERE occurrence_id LIKE 'pytest_%'
             ORDER BY occurrence_id
         """)
@@ -366,6 +366,7 @@ def test_advertising_grants(db_connection):
             FROM information_schema.role_table_grants
             WHERE grantee = 'rrs-read-dev'
               AND privilege_type = 'SELECT'
+              AND table_schema = 'advertising'
               AND table_name IN ('ad_tunnels', 'ad_occurrences_classified', 'ad_occurrence_tunnels')
             ORDER BY table_name
         """)
@@ -606,3 +607,26 @@ def test_ensure_not_public_refuses_public_spreadsheet(permission_ids, status, he
     with pytest.raises(ExternalSourceError, match=message):
         ensure_not_public({"id": "SHEET_ID_1234567890", "permissionIds": permission_ids}, anonymous_get)
     assert all(r.closed for r in responses)
+
+
+def test_advertising_models_schema(db_connection):
+    """The advertising models are built in the advertising schema (+schema, generate_schema_name),
+    the other models stay in the target schema."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT table_schema, table_name
+            FROM information_schema.tables
+            WHERE table_name IN (
+                'ad_tunnels', 'ad_occurrences_classified', 'ad_occurrence_tunnels',
+                'core_query_environmental_shares', 'task_global_completion'
+            )
+            ORDER BY table_name
+        """)
+        rows = cur.fetchall()
+    assert rows == [
+        ("advertising", "ad_occurrence_tunnels"),
+        ("advertising", "ad_occurrences_classified"),
+        ("advertising", "ad_tunnels"),
+        ("public", "core_query_environmental_shares"),
+        ("analytics", "task_global_completion"),
+    ]

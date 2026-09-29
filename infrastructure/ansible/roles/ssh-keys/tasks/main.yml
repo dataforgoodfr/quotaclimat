@@ -1,22 +1,24 @@
 ---
 - name: Manage SSH authorized keys
   authorized_key:
-    user: root
-    key: "{{ item.key }}"
-    comment: "{{ item.name }}"
-    state: "{{ item.state | default('present') }}"
-  loop:
-    - name: paul-gabriel
-      key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC4YJqfMxnUGCGbzZDZFg3P5B4d2G5DJnaa3WOKXBO99
-      state: present
-    - name: gmguarino1@gmail.com
-      key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIOIZMzVkOuJVUb31YAGMhiKksvLc8r6kqcBMxRPr37l
-      state: present
-    - name: ivana.campolongo@proton.me
-      key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICTYP39F64V0yL65/OB28iD+HK/wqqkTTEq665Q4szQC
-      state: present
-    - name: alexis.pibrac@quotaclimat.org
-      key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBu6sRYMnooy0jkpyc2aYzR7XALxOAwfyz7FujQaUpZf
-      state: present
+    user: "{{ item.0 }}"
+    key: "{{ item.1.key }}"
+    comment: "{{ item.1.name }}"
+    state: "{{ item.1.state | default('present') }}"
+  loop: "{{ ['root', 'ubuntu'] | product(ssh_authorized_keys) | list }}"
   loop_control:
-    label: "{{ item.name }}"
+    label: "{{ item.0 }} <- {{ item.1.name }}"
+  vars:
+    ssh_authorized_keys:
+      - name: paul-gabriel
+        key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC4YJqfMxnUGCGbzZDZFg3P5B4d2G5DJnaa3WOKXBO99
+        state: present
+      - name: gmguarino1@gmail.com
+        key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIOIZMzVkOuJVUb31YAGMhiKksvLc8r6kqcBMxRPr37l
+        state: present
+      - name: ivana.campolongo@proton.me
+        key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICTYP39F64V0yL65/OB28iD+HK/wqqkTTEq665Q4szQC
+        state: present
+      - name: alexis.pibrac@quotaclimat.org
+        key: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBu6sRYMnooy0jkpyc2aYzR7XALxOAwfyz7FujQaUpZf
+        state: present

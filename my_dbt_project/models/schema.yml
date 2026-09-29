@@ -389,6 +389,7 @@ models:
       (dictionary match or sub-category LLM step), enriched with channel metadata
       from program_metadata and French sector / product category labels from the
       classification reference table.
+      Only occurrences from ad_analysis_start_date (dbt var, default 2025-09-29, UTC) onwards.
     columns:
       - name: occurrence_id
         description: Identifier of the occurrence (advertising.ad_occurrence.id).

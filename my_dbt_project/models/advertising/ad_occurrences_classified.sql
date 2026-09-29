@@ -54,3 +54,5 @@ WHERE a.prediction_status IN (
     'dict_tier3','dict_tier3_no_kw','subcat_done'
   )
   AND occ.deleted_at IS NULL
+  -- first day of the ads analysed (occurrence_date is stored in UTC)
+  AND occ.occurrence_date >= '{{ var("ad_analysis_start_date", "2025-09-29") }}'::timestamp

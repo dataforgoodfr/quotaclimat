@@ -204,6 +204,9 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "task_global_completion",
             "--exclude",
             "environmental_shares_with_desinfo_counts",
+            # the advertising test rows are dated 2000-01-01, before the real analysis start date
+            "--vars",
+            '{"ad_analysis_start_date": "2000-01-01"}',
             "--full-refresh",
         ]
     )
@@ -613,3 +616,23 @@ def test_advertising_models_schema(db_connection):
         ("advertising", "ref_ome_secteurs"),
         ("analytics", "task_global_completion"),
     ]
+
+
+def test_ad_occurrences_classified_start_date(db_connection):
+    """Occurrences before ad_analysis_start_date are excluded (run last: rebuilds the model)."""
+    # end the transaction left open by the previous SELECTs: its lock on the table would block dbt
+    db_connection.rollback()
+    run_dbt_command([
+        "run", "--select", "ad_occurrences_classified",
+        "--vars", '{"ad_analysis_start_date": "2000-01-01 10:30:00"}',
+    ])
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT occurrence_id
+            FROM advertising.ad_occurrences_classified
+            WHERE occurrence_id LIKE 'pytest_%'
+            ORDER BY occurrence_id
+        """)
+        rows = cur.fetchall()
+    # pytest_occ_1, pytest_occ_1_duplicate and pytest_occ_2 are at 10:00, before the start date
+    assert rows == [("pytest_occ_4",)]

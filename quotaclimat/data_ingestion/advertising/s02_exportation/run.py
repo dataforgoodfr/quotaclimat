@@ -97,7 +97,6 @@ def _base_ads_query(start_date: datetime | None, end_date: datetime | None):
 
     # DISTINCT ON keeps the first row of each Ad.id in ORDER BY order, so this makes it
     # deterministically keep the ad's most recent occurrence rather than an arbitrary one.
-    # Other occurrences are only tried as a fallback, see `_retry_with_other_occurrences`.
     return base_query.distinct(Ad.id).order_by(
         Ad.id, Ad_Occurrence.occurrence_date.desc()
     )
@@ -166,10 +165,6 @@ def _ad_export_window(ad: Ad, occurrence: Ad_Occurrence) -> tuple[datetime, date
     return from_date, to_date
 
 
-class MissingMediaPartsError(RuntimeError):
-    """The mediatree parts covering an occurrence's segment aren't in the bucket."""
-
-
 async def _export_ad(
     ad: Ad,
     occurrence: Ad_Occurrence,
@@ -188,7 +183,7 @@ async def _export_ad(
             parts, from_date, to_date, media_format, local_path
         )
         if not found:
-            raise MissingMediaPartsError(
+            raise RuntimeError(
                 f"Missing mediatree parts in bucket for ad {ad.id} "
                 f"(channel={occurrence.channel_name}, format={media_format})"
             )
@@ -220,15 +215,10 @@ async def _process_group(
     progress,
     missing_ads: list,
     reset_no_data_ads: list,
-    retry_ads: list,
 ) -> None:
     """Check, download and export every ad in one (channel, day) group. Groups are
     independent of each other (own local_dir, own downloaded parts), so this is meant
     to be run concurrently across groups by the caller.
-
-    Ads whose occurrence has no media parts in the bucket are appended to `retry_ads`
-    as (ad, occurrence) rather than `missing_ads`, without updating `progress`: they
-    are retried with the ad's other occurrences by `_retry_with_other_occurrences`.
     """
     group_start = time.monotonic()
 
@@ -302,15 +292,12 @@ async def _process_group(
                         # wasn't in the bucket yet; now that the export succeeded,
                         # clear it so downstream classification picks it back up.
                         reset_no_data_ads.append(ad.id)
-                except MissingMediaPartsError as e:
-                    logger.warning(f"{e}, will retry with its other occurrences")
-                    retry_ads.append((ad, occurrence))
-                    return
                 except Exception as e:
                     logger.error(f"Failed to export ad {ad.id}: {e}")
                     missing_ads.append(ad.id)
                     progress.count("error")
-                progress.update(1)
+                finally:
+                    progress.update(1)
 
         export_start = time.monotonic()
         await asyncio.gather(
@@ -332,90 +319,12 @@ async def _process_group(
         cleanup_day_media_parts(local_dir)
 
 
-def _other_occurrences_by_ad(
-    session, retry_ads: list[tuple[Ad, Ad_Occurrence]]
-) -> dict[str, list[Ad_Occurrence]]:
-    """For each ad to retry, its occurrences other than the one already tried, most
-    recent first.
-    """
-    tried_ids = {occurrence.id for _, occurrence in retry_ads}
-    ad_ids = [ad.id for ad, _ in retry_ads]
-    result = session.execute(
-        select(Ad_Occurrence)
-        .where(Ad_Occurrence.ad_id.in_(ad_ids))
-        .order_by(Ad_Occurrence.ad_id, Ad_Occurrence.occurrence_date.desc())
-    )
-    occurrences_by_ad: dict[str, list[Ad_Occurrence]] = {ad_id: [] for ad_id in ad_ids}
-    for occurrence in result.scalars():
-        if occurrence.id not in tried_ids:
-            occurrences_by_ad[occurrence.ad_id].append(occurrence)
-    return occurrences_by_ad
-
-
-async def _retry_with_other_occurrences(
-    ad: Ad,
-    occurrences: list[Ad_Occurrence],
-    fs: s3fs.S3FileSystem,
-    semaphore: asyncio.Semaphore,
-    progress,
-    missing_ads: list,
-    reset_no_data_ads: list,
-) -> None:
-    """Try exporting `ad` from each of `occurrences` in turn, stopping at the first one
-    whose media parts are in the bucket. Each occurrence can be on a different channel
-    or day, so each attempt downloads its own parts into its own local_dir.
-    """
-    try:
-        for occurrence in occurrences:
-            from_date, to_date = _ad_export_window(ad, occurrence)
-            local_dir = os.path.join(LOCAL_CACHE_DIR, "retry", ad.id, occurrence.id)
-            try:
-                parts = await download_media_parts(
-                    fs,
-                    occurrence.channel_name,
-                    required_part_starts([(from_date, to_date)]),
-                    local_dir,
-                    max_concurrent_downloads=MAX_CONCURRENT_DOWNLOADS_PER_GROUP,
-                    disable_progress=True,
-                )
-                async with semaphore:
-                    await _export_ad(
-                        ad, occurrence, from_date, to_date, parts, local_dir, fs
-                    )
-            except MissingMediaPartsError as e:
-                logger.info(f"{e}, trying next occurrence")
-                continue
-            except Exception as e:
-                logger.error(
-                    f"Failed to export ad {ad.id} from occurrence {occurrence.id}: {e}"
-                )
-                break
-            finally:
-                cleanup_day_media_parts(local_dir)
-
-            logger.info(
-                f"Exported ad {ad.id} from fallback occurrence {occurrence.id} "
-                f"({occurrence.channel_name}, {occurrence.occurrence_date})"
-            )
-            progress.count("uploaded")
-            if ad.fragment_type == "no_data":
-                reset_no_data_ads.append(ad.id)
-            return
-
-        logger.error(f"No occurrence of ad {ad.id} has its media parts in the bucket")
-        missing_ads.append(ad.id)
-        progress.count("error")
-    finally:
-        progress.update(1)
-
-
 async def run(start_date: datetime | None, end_date: datetime | None):
     session = get_db_session()
     fs = get_s3_filesystem()
 
     missing_ads = []
     reset_no_data_ads = []
-    retry_ads: list[tuple[Ad, Ad_Occurrence]] = []
 
     try:
         total = count_ads_since(session, start_date, end_date)
@@ -437,7 +346,6 @@ async def run(start_date: datetime | None, end_date: datetime | None):
                     progress,
                     missing_ads,
                     reset_no_data_ads,
-                    retry_ads,
                 )
             finally:
                 group_semaphore.release()
@@ -453,26 +361,6 @@ async def run(start_date: datetime | None, end_date: datetime | None):
             tasks.append(asyncio.create_task(_bounded_group(channel, day, ads)))
 
         await asyncio.gather(*tasks)
-
-        # Only now that the streaming cursor above is fully consumed can the session be
-        # queried again, for the occurrences of ads whose chosen one had no media.
-        if retry_ads:
-            logger.info(f"Retrying {len(retry_ads)} ads with their other occurrences")
-            occurrences_by_ad = _other_occurrences_by_ad(session, retry_ads)
-
-            async def _bounded_retry(ad):
-                async with group_semaphore:
-                    await _retry_with_other_occurrences(
-                        ad,
-                        occurrences_by_ad[ad.id],
-                        fs,
-                        semaphore,
-                        progress,
-                        missing_ads,
-                        reset_no_data_ads,
-                    )
-
-            await asyncio.gather(*(_bounded_retry(ad) for ad, _ in retry_ads))
 
         # Done only now that the streaming cursor above is fully consumed and every
         # group task has finished, so nothing else is using the session concurrently.

@@ -407,8 +407,9 @@ models:
           which are not part of tunnels.
         tests:
           - relationships:
-              to: ref('ad_tunnels')
-              field: tunnel_id
+              arguments:
+                to: ref('ad_tunnels')
+                field: tunnel_id
       - name: duration_sec
         description: Duration of the ad in seconds.
       - name: prediction_status

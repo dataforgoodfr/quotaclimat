@@ -7,8 +7,10 @@ from quotaclimat.data_ingestion.advertising.tools.fingerprint_tools.generate imp
 # so they must remain consistent across all runs of the pipeline, or the fingerprints should all be recomputed.
 
 fingerprinter = FingerprintGenerator(
-    sr=16000,  # Sample rate (Hz).
-    hop_length=1024,  # STFT hop size (samples). Controls frame rate: fps = sr/hop_length ≈ 16.
+    sr=16000,  # Sample rate (Hz). Kept independent from ChunkCreator's own sr/hop_length
+    # (used for chunk splitting), which can be tuned separately without invalidating
+    # existing fingerprints.
+    hop_length=1024,  # STFT hop size (samples). Controls frame rate: fps = sr/hop_length ≈ 15.6.
     n_fft=2048,  # FFT size for constellation map. 2048 ≈ 128ms @ 16KHz.
     neighborhood=15,  # Local max filter size for peak detection in time×frequency plane.
     min_amplitude=0.01,  # Min normalized amplitude (0-1) for a spectral peak to be retained.

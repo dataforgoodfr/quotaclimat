@@ -7,7 +7,7 @@ from ..tools.mediatree.bucket_mediatree import (
     get_s3_filesystem,
 )
 from ..tools.segments import Segment
-from .e02_create_chunks import ChunkCreatorJob
+from .e02_split_in_chunks import ChunkCreatorJob
 
 logger = logging.getLogger(__name__)
 

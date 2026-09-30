@@ -13,7 +13,7 @@ Usage programmatique :
     from quotaclimat.data_ingestion.advertising.s01_detection.tools.visualizer.split_visualizer import (
         generate_split_visualizer,
     )
-    from quotaclimat.data_ingestion.advertising.s01_detection.e02_create_chunks import (
+    from quotaclimat.data_ingestion.advertising.s01_detection.e02_split_in_chunks import (
         ChunkCreatorJob,
     )
     from quotaclimat.data_ingestion.advertising.s01_detection.processor import chunk_creator
@@ -36,9 +36,8 @@ from pathlib import Path
 import librosa
 import numpy as np
 import scipy.io.wavfile
-from scipy.ndimage import maximum_filter
 
-from quotaclimat.data_ingestion.advertising.s01_detection.e02_create_chunks import (
+from quotaclimat.data_ingestion.advertising.s01_detection.e02_split_in_chunks import (
     ChunkCreator,
     ChunkCreatorJob,
     debug_split,
@@ -108,16 +107,20 @@ def _extract_window_data(
     f_end = min(n_frames, int(np.ceil(crop_end * fps)))
     frame_times = [round(shift(i / fps), 4) for i in range(f_start, f_end)]
     energy_crop = features["energy"][f_start:f_end]
+    smoothed_energy_crop = trace["smoothed_energy"][f_start:f_end]
     local_threshold_crop = trace["local_threshold"][f_start:f_end]
     silence_mask_crop = trace["silence_mask"][f_start:f_end]
 
     # ── Audio/spectrogram/waveform cropped to the same display window ───
-    fp = cc.fingerprinter
     s_start = int(crop_start * cc.sr)
     s_end = min(len(y), int(crop_end * cc.sr))
     audio_crop = y[s_start:s_end]
 
-    D = np.abs(librosa.stft(audio_crop, n_fft=fp.n_fft, hop_length=cc.hop_length))
+    # audio_crop is sampled at cc.sr, so the display spectrogram must use cc's own
+    # window params (fingerprinter.n_fft assumes fingerprinter.sr, which may differ).
+    D = np.abs(
+        librosa.stft(audio_crop, n_fft=cc.frame_length, hop_length=cc.hop_length)
+    )
     D_db = librosa.amplitude_to_db(D, ref=np.max)
     freq_bins = D_db.shape[0]
     if freq_bins > _MAX_FREQ_BINS:
@@ -181,6 +184,7 @@ def _extract_window_data(
         "focusSec": round(shift(focus_sec), 3) if focus_sec is not None else None,
         "frameTimes": frame_times,
         "energy": [round(float(v), 6) for v in energy_crop],
+        "smoothedEnergy": [round(float(v), 6) for v in smoothed_energy_crop],
         "localThreshold": [round(float(v), 6) for v in local_threshold_crop],
         "silenceMask": [round(float(v), 2) for v in silence_mask_crop],
         "regionCandidates": region_candidates_payload,
@@ -212,7 +216,7 @@ def generate_split_visualizer(
 ) -> str:
     """
     Génère un fichier HTML autonome visualisant le découpage en chunks
-    (e02_create_chunks) de deux fenêtres audio, côte à côte.
+    (e02_split_in_chunks) de deux fenêtres audio, côte à côte.
 
     Arguments :
         job_a, job_b     : les deux ChunkCreatorJob à analyser (mêmes objets
@@ -236,8 +240,12 @@ def generate_split_visualizer(
     if not TEMPLATE_PATH.exists():
         raise FileNotFoundError(f"Template HTML introuvable : {str(TEMPLATE_PATH)}")
 
-    data_a = _extract_window_data(job_a, chunk_creator, label_a, max_audio_sec, focus_epoch_a, zoom_sec)
-    data_b = _extract_window_data(job_b, chunk_creator, label_b, max_audio_sec, focus_epoch_b, zoom_sec)
+    data_a = _extract_window_data(
+        job_a, chunk_creator, label_a, max_audio_sec, focus_epoch_a, zoom_sec
+    )
+    data_b = _extract_window_data(
+        job_b, chunk_creator, label_b, max_audio_sec, focus_epoch_b, zoom_sec
+    )
 
     payload = {
         "windowA": data_a,

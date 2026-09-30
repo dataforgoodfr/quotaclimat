@@ -126,7 +126,7 @@ def create_advertising_tables(db_connection):
                 ad_id text REFERENCES advertising.ad (id)
             )
         """)
-        cur.execute("DELETE FROM advertising.ad_occurrence WHERE id LIKE 'pytest_%'")
+        cur.execute("DELETE FROM advertising.ad_occurrence WHERE id LIKE 'pytest_%' OR id LIKE 'mesinfo_pytest_%' OR id LIKE 'program_pytest_%'")
         cur.execute("DELETE FROM advertising.ad WHERE id LIKE 'pytest_%'")
         cur.execute("""
             INSERT INTO advertising.ad (
@@ -151,6 +151,35 @@ def create_advertising_tables(db_connection):
                 ('pytest_occ_4', NULL, '2000-01-01 11:00:00', 'arte', 'pytest_ad_1'),
                 -- OTHER fragment: ignored by tunnels
                 ('pytest_occ_other', NULL, '2000-01-01 12:00:00', 'arte', 'pytest_other')
+        """)
+        # next to the validated misinformation of the labelstudio seeds (not prefixed pytest_,
+        # to leave the other advertising tests as they are)
+        cur.execute("""
+            INSERT INTO advertising.ad_occurrence (id, deleted_at, occurrence_date, channel_name, ad_id) VALUES
+                -- 30 min after a 'Correct' misinformation (2025-04-05 13:08)
+                ('mesinfo_pytest_near', NULL, '2025-04-05 13:38:00', 'franceinfotv', 'pytest_ad_1'),
+                -- between two 'Correct' ones (2025-04-02 09:10 and 2025-04-06 07:10): the nearest
+                ('mesinfo_pytest_between', NULL, '2025-04-04 09:10:00', 'sud-radio', 'pytest_ad_1'),
+                -- annotated twice (2025-04-10 04:54): the first annotation only
+                ('mesinfo_pytest_two_versions', NULL, '2025-04-10 05:00:00', 'lci', 'pytest_ad_1'),
+                -- only an 'Incorrect' one (2025-06-12 20:34)
+                ('mesinfo_pytest_incorrect', NULL, '2025-06-12 20:40:00', 'itele', 'pytest_ad_1'),
+                -- 15 days after the nearest 'Correct' one: out of the window
+                ('mesinfo_pytest_out_of_window', NULL, '2025-04-20 13:08:00', 'franceinfotv', 'pytest_ad_1'),
+                -- deleted: ignored
+                ('mesinfo_pytest_deleted', '2025-04-06', '2025-04-05 13:10:00', 'franceinfotv', 'pytest_ad_1')
+        """)
+        # around the france2 programs of Monday 2025-04-07 (Paris time, UTC+2), 30 s tunnels
+        cur.execute("""
+            INSERT INTO advertising.ad_occurrence (id, deleted_at, occurrence_date, channel_name, ad_id) VALUES
+                -- 13:10 Paris: inside the JT 13h (13:00 - 13:40)
+                ('program_pytest_inside', NULL, '2025-04-07 11:10:00', 'france2', 'pytest_ad_1'),
+                -- 13:45 Paris: 5 min after the JT 13h, next program (19:55) out of the window
+                ('program_pytest_after_news', NULL, '2025-04-07 11:45:00', 'france2', 'pytest_ad_1'),
+                -- 19:50 Paris: JT 13h out of the window, 4 min 30 s before the JT 20h (19:55)
+                ('program_pytest_before_news', NULL, '2025-04-07 17:50:00', 'france2', 'pytest_ad_1'),
+                -- 13:39:50 Paris: starts in the JT 13h, ends after it
+                ('program_pytest_overlap_end', NULL, '2025-04-07 11:39:50', 'france2', 'pytest_ad_1')
         """)
     db_connection.commit()
     yield
@@ -204,9 +233,8 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "task_global_completion",
             "--exclude",
             "environmental_shares_with_desinfo_counts",
-            # the advertising test rows are dated 2000-01-01, before the real analysis start date
-            "--vars",
-            '{"ad_analysis_start_date": "2000-01-01"}',
+            "--exclude",
+            "path:models/advertising",
             "--full-refresh",
         ]
     )
@@ -220,6 +248,18 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "environmental_shares_with_desinfo_counts",
             "--target",
             "analytics",
+            "--full-refresh",
+        ]
+    )
+    logging.info("pytest running dbt advertising models, after the analytics tables they read")
+    run_dbt_command(
+        [
+            "run",
+            "--select",
+            "path:models/advertising",
+            # the advertising test rows are dated 2000-01-01, before the real analysis start date
+            "--vars",
+            '{"ad_analysis_start_date": "2000-01-01"}',
             "--full-refresh",
         ]
     )
@@ -341,6 +381,46 @@ def test_ad_occurrences_classified(db_connection):
         ("pytest_occ_4", "Arte", "Automobile", "Voiture électrique", "Voiture électrique", f"arte@{epoch_11h}"),
     ]
     assert rows == expected
+
+
+def test_ad_occurrences_classified_mesinfo(db_connection):
+    """Distance to the nearest validated misinformation on the same channel, within 7 days."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT occurrence_id, mesinfo_distance_sec, nearest_mesinfo_task_aggregate_id
+            FROM advertising.ad_occurrences_classified
+            WHERE occurrence_id LIKE 'mesinfo_pytest_%'
+            ORDER BY occurrence_id
+        """)
+        rows = cur.fetchall()
+    assert rows == [
+        ("mesinfo_pytest_between", 165600, "1b8930946a8c392c3c101869f111f3d1aed359c4aabf952de62b30d98aef1ded"),
+        ("mesinfo_pytest_incorrect", None, None),
+        ("mesinfo_pytest_near", 1800, "70ff0eebb0d606feacde156e1584139ef1bea0d3a5f6b100dec9cb437617a23a"),
+        ("mesinfo_pytest_out_of_window", None, None),
+        ("mesinfo_pytest_two_versions", 360, "1b7df93021fa55a3c9291fb572edbb7d73822a12db7e6262c360a8b971bbbbb9"),
+    ]
+
+
+def test_ad_occurrences_classified_programs(db_connection):
+    """Monitored programs around the ad tunnel of each occurrence."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT
+                occurrence_id, inside_program,
+                program_before, program_before_type, program_before_gap_sec,
+                program_after, program_after_type, program_after_gap_sec
+            FROM advertising.ad_occurrences_classified
+            WHERE occurrence_id LIKE 'program_pytest_%'
+            ORDER BY occurrence_id
+        """)
+        rows = cur.fetchall()
+    assert rows == [
+        ("program_pytest_after_news", False, "JT 13h", "Information - Journal", 300, None, None, None),
+        ("program_pytest_before_news", False, None, None, None, "JT 20h + météo", "Information - Journal", 270),
+        ("program_pytest_inside", True, "JT 13h", "Information - Journal", 0, None, None, None),
+        ("program_pytest_overlap_end", False, "JT 13h", "Information - Journal", 0, None, None, None),
+    ]
 
 
 def test_advertising_grants(db_connection):
@@ -601,15 +681,18 @@ def test_advertising_models_schema(db_connection):
             SELECT table_schema, table_name
             FROM information_schema.tables
             WHERE table_name IN (
-                'ad_tunnels', 'ad_occurrences_classified', 'ad_occurrence_tunnels', 'ref_ome_secteurs',
+                'ad_tunnels', 'ad_occurrences_classified', 'ad_occurrence_tunnels', 'ad_occurrence_mesinfo',
+                'ad_tunnel_programs', 'ref_ome_secteurs',
                 'core_query_environmental_shares', 'task_global_completion', 'keywords'
             )
             ORDER BY table_name
         """)
         rows = cur.fetchall()
     assert rows == [
+        ("advertising", "ad_occurrence_mesinfo"),
         ("advertising", "ad_occurrence_tunnels"),
         ("advertising", "ad_occurrences_classified"),
+        ("advertising", "ad_tunnel_programs"),
         ("advertising", "ad_tunnels"),
         ("public", "core_query_environmental_shares"),
         ("public", "keywords"),

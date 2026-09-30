@@ -42,13 +42,24 @@ SELECT
   a.prediction_confidence,
   s.sector_label_fr,
   c.product_category_fr,
-  COALESCE(c.product_category_fr, s.sector_label_fr) AS label_final
+  COALESCE(c.product_category_fr, s.sector_label_fr) AS label_final,
+  mi.mesinfo_distance_sec,
+  mi.nearest_mesinfo_task_aggregate_id,
+  tp.inside_program,
+  tp.program_before,
+  tp.program_before_type,
+  tp.program_before_gap_sec,
+  tp.program_after,
+  tp.program_after_type,
+  tp.program_after_gap_sec
 FROM {{ source('advertising', 'ad_occurrence') }} occ
 JOIN {{ source('advertising', 'ad') }} a ON occ.ad_id = a.id
 LEFT JOIN sector_ref  s  ON s.sector_code  = a.predicted_sector
 LEFT JOIN cat_ref     c  ON c.cat_code     = a.predicted_product_category
 LEFT JOIN channel_ref ch ON ch.channel_name = occ.channel_name
 LEFT JOIN {{ ref('ad_occurrence_tunnels') }} t ON t.occurrence_id = occ.id
+LEFT JOIN {{ ref('ad_occurrence_mesinfo') }} mi ON mi.occurrence_id = occ.id
+LEFT JOIN {{ ref('ad_tunnel_programs') }} tp ON tp.tunnel_id = t.tunnel_id
 WHERE a.prediction_status IN (
     'dict_miss','dict_tier1','dict_tier2','dict_tier2_no_kw',
     'dict_tier3','dict_tier3_no_kw','subcat_done'

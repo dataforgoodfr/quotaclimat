@@ -16,7 +16,9 @@ import requests
 from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import normalize, nospace
 
 API_URL = "https://api-gateway.inpi.fr/services/apidiffusion/api/marques"
-# login endpoint of the API gateway, to be checked against the INPI documentation (not in the swagger)
+# login of the API gateway (checked with curl): GET AUTHENTICATE_URL sets the XSRF-TOKEN cookie (with a
+# 401 answer), then POST LOGIN_URL with this token in the X-XSRF-TOKEN header sets the session cookies
+AUTHENTICATE_URL = "https://api-gateway.inpi.fr/services/uaa/api/authenticate"
 LOGIN_URL = os.environ.get("INPI_LOGIN_URL", "https://api-gateway.inpi.fr/auth/login")
 XSRF_COOKIE = "XSRF-TOKEN"
 XSRF_HEADER = "X-XSRF-TOKEN"
@@ -141,16 +143,24 @@ class InpiClient:
         self.session = session or requests.Session()
         self.logged_in = False
 
+    def _set_xsrf_header(self) -> None:
+        """The XSRF token of the cookie is sent back in the X-XSRF-TOKEN header (the cookie may change)."""
+        token = self.session.cookies.get(XSRF_COOKIE)
+        if not token:
+            raise RuntimeError("INPI: no XSRF-TOKEN cookie")
+        self.session.headers[XSRF_HEADER] = token
+
     def login(self) -> None:
-        """Session cookies, and the XSRF token sent back in the X-XSRF-TOKEN header of every request."""
+        """XSRF cookie first (the 401 answer is expected), then login: HttpOnly session cookies."""
+        self.session.get(AUTHENTICATE_URL, timeout=TIMEOUT_SEC)
+        self._set_xsrf_header()
         response = self.session.post(
-            LOGIN_URL, json={"username": self.username, "password": self.password}, timeout=TIMEOUT_SEC
+            LOGIN_URL,
+            json={"username": self.username, "password": self.password, "rememberMe": True},
+            timeout=TIMEOUT_SEC,
         )
         response.raise_for_status()
-        token = self.session.cookies.get(XSRF_COOKIE) or response.headers.get(XSRF_HEADER)
-        if not token:
-            raise RuntimeError("INPI login: no XSRF token in the response")
-        self.session.headers[XSRF_HEADER] = token
+        self._set_xsrf_header()
         self.logged_in = True
 
     def _request(self, method: str, url: str, **kwargs) -> requests.Response:
@@ -158,6 +168,7 @@ class InpiClient:
             self.login()
         for attempt in range(MAX_RETRIES):
             time.sleep(self.delay_sec)
+            self._set_xsrf_header()
             response = self.session.request(method, url, timeout=TIMEOUT_SEC, **kwargs)
             if response.status_code == 401 and attempt == 0:
                 self.login()  # session expired

@@ -17,7 +17,7 @@ For each brand of `advertising.ad_occurrences_classified` missing from the tab `
 |---|---|
 | `POSTGRES_*` | database with `advertising.ad_occurrences_classified` |
 | `INPI_USERNAME`, `INPI_PASSWORD` | INPI account (data.inpi.fr) |
-| `INPI_LOGIN_URL` | login endpoint of the INPI API gateway, default `https://api-gateway.inpi.fr/auth/login` |
+| `INPI_LOGIN_URL` | login endpoint of the INPI API gateway, default `https://api-gateway.inpi.fr/auth/login` (checked with curl, after `GET /services/uaa/api/authenticate` for the XSRF cookie) |
 | `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON` | JSON key of the Google service account that writes to Google Sheets (generic, shared with other jobs). Share with it, as **editor**, only the spreadsheets it must write to (here `Inventaires_des_marques`), never the whole folder |
 | `EXTERNAL_SOURCES_DRIVE_FOLDER` | Drive folder of the spreadsheet (same as the dbt import) |
 | `BRAND_GROUPS_MAX_BRANDS` | brands per run, default 50 |

@@ -76,15 +76,26 @@ class FakeResponse:
 
 
 class FakeInpiSession:
-    """Login sets the XSRF cookie, then search and notices from the assets."""
+    """As the API gateway: GET authenticate sets the XSRF cookie (401), the login requires it in the header
+    and rotates it, then search and notices from the assets."""
 
     def __init__(self):
         self.cookies = {}
         self.headers = {}
         self.requests = []
+        self.login_body = None
+
+    def get(self, url, timeout):
+        assert url.endswith("/services/uaa/api/authenticate")
+        self.cookies["XSRF-TOKEN"] = "token1"
+        return FakeResponse(status_code=401)
 
     def post(self, url, json, timeout):
-        self.cookies["XSRF-TOKEN"] = "token123"
+        assert url.endswith("/auth/login")
+        if self.headers.get("X-XSRF-TOKEN") != "token1":
+            return FakeResponse(status_code=403)
+        self.login_body = json
+        self.cookies["XSRF-TOKEN"] = "token2"
         return FakeResponse()
 
     def request(self, method, url, timeout, **kwargs):
@@ -106,7 +117,8 @@ def test_brand_notices_exact_name_in_force_only():
     assert (method, url.rsplit("/", 1)[-1]) == ("POST", "search")
     assert kwargs["json"]["collections"] == ["FR"]
     assert kwargs["json"]["query"] == "[Mark=Dior]"
-    assert headers["X-XSRF-TOKEN"] == "token123"
+    assert session.login_body == {"username": "user", "password": "password", "rememberMe": True}
+    assert headers["X-XSRF-TOKEN"] == "token2"
     assert [r[1].rsplit("/", 1)[-1] for r in session.requests[1:]] == ["FR5189659"]
 
 

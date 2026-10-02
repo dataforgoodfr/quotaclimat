@@ -12,6 +12,12 @@ sources:
         identifier: ref_ome_secteurs
       - name: ad_categories
         identifier: ref_ome_categories
+      # Brand / group inventory: dbt seeds downloaded from the Inventaires_des_marques Google Sheet
+      # (tabs Marques and Groupes), built in this schema
+      - name: brand_inventory
+        identifier: ref_inventaire_marques
+      - name: group_inventory
+        identifier: ref_inventaire_groupes
 
   - name: public
     schema: public

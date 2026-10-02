@@ -38,6 +38,9 @@ SELECT
   a.predicted_sector,
   a.predicted_product_category,
   a.predicted_brand,
+  -- group / ultimate parent company of the brand, see ad_brands
+  br.brand_group,
+  br.brand_ultimate_parent,
   a.prediction_status,
   a.prediction_confidence,
   s.sector_label_fr,
@@ -57,13 +60,8 @@ JOIN {{ source('advertising', 'ad') }} a ON occ.ad_id = a.id
 LEFT JOIN sector_ref  s  ON s.sector_code  = a.predicted_sector
 LEFT JOIN cat_ref     c  ON c.cat_code     = a.predicted_product_category
 LEFT JOIN channel_ref ch ON ch.channel_name = occ.channel_name
+LEFT JOIN {{ ref('ad_brands') }} br ON br.brand_key = {{ name_key('a.predicted_brand') }}
 LEFT JOIN {{ ref('ad_occurrence_tunnels') }} t ON t.occurrence_id = occ.id
 LEFT JOIN {{ ref('ad_occurrence_mesinfo') }} mi ON mi.occurrence_id = occ.id
 LEFT JOIN {{ ref('ad_tunnel_programs') }} tp ON tp.tunnel_id = t.tunnel_id
-WHERE a.prediction_status IN (
-    'dict_miss','dict_tier1','dict_tier2','dict_tier2_no_kw',
-    'dict_tier3','dict_tier3_no_kw','subcat_done'
-  )
-  AND occ.deleted_at IS NULL
-  -- first day of the ads analysed (occurrence_date is stored in UTC)
-  AND occ.occurrence_date >= '{{ var("ad_analysis_start_date", "2025-09-29") }}'::timestamp
+WHERE {{ ad_classified_filter('occ', 'a') }}

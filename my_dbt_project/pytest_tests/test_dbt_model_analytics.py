@@ -205,9 +205,9 @@ def load_test_external_sources():
     sheets = {
         # the API drops trailing empty cells
         "secteurs": [
-            ["sector_code", "sector_label_fr", "sector_label_en"],
-            ["PYTEST_AUTO", "Automobile", "Cars"],
-            [" PYTEST_FOOD ", "Alimentation", "Food"],
+            ["sector_code", "sector_label_fr", "sector_label_en", "classes_nice"],
+            ["PYTEST_AUTO", "Automobile", "Cars", "12; 37; 39"],
+            [" PYTEST_FOOD ", "Alimentation", "Food", "29"],
             ["001", "Code numérique", "Numeric code"],
             [],
         ],
@@ -546,6 +546,13 @@ def test_advertising_grants(db_connection):
         """)
         rows = cur.fetchall()
     assert rows == [("ad_brands",), ("ad_occurrence_tunnels",), ("ad_occurrences_classified",), ("ad_tunnels",)]
+
+
+def test_external_source_nice_classes_are_text(db_connection):
+    """classes_nice (brand groups job) stays text, even for a single class."""
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT sector_code, classes_nice FROM advertising.ref_ome_secteurs ORDER BY sector_code")
+        assert cur.fetchall() == [("001", None), ("PYTEST_AUTO", "12; 37; 39"), ("PYTEST_FOOD", "29")]
 
 
 def test_external_source_loaded(db_connection):

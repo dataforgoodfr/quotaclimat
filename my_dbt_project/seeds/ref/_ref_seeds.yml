@@ -10,6 +10,9 @@ seeds:
     config:
       column_types:
         sector_code: text
+        # Nice classes of the trademarks of the sector, e.g. "3; 32" (brand groups job), text even when a
+        # single class; ignored by dbt when the column does not exist
+        classes_nice: text
     columns:
       - name: sector_code
         tests:

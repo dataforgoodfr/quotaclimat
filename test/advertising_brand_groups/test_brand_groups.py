@@ -141,8 +141,8 @@ def test_choose_holder_by_sector_classes():
 
 
 def test_parse_nice_classes():
-    rows = [{"sector_code": "COSM", "classes": "3; 35"}, {"sector_code": "AUTO", "classes": "12,37"}, {"sector_code": "X"}]
-    assert parse_nice_classes(rows) == {"COSM": {3, 35}, "AUTO": {12, 37}}
+    rows = [("PCB", "3; 5; 8"), ("AUT", "12,37"), ("FSI", 36), ("PUB", None), (None, "3")]
+    assert parse_nice_classes(rows) == {"PCB": {3, 5, 8}, "AUT": {12, 37}, "FSI": {36}}
 
 
 def test_propose_row_known_group_wins():
@@ -232,7 +232,7 @@ def test_sheet_read_and_append_by_column_name():
     session = FakeSheetsSession({"Marques": [["marque", "groupe", "statut", "siren"], ["Dior", "LVMH"]]})
     sheet = BrandInventorySheet(session, "SHEET_ID")
     assert sheet.read("Marques") == [{"marque": "Dior", "groupe": "LVMH", "statut": "", "siren": ""}]
-    assert sheet.read("Classes_Nice") == []
+    assert sheet.read("Unknown tab") == []
     sheet.append("Marques", [{"marque": "Acme", "groupe": "ACME", "statut": "non vérifié", "lei": "dropped"}])
     url, params, body = session.appended[0]
     assert url.endswith("/values/'Marques'!A1:append")

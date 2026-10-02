@@ -19,8 +19,6 @@ FOLDER_ENV = "EXTERNAL_SOURCES_DRIVE_FOLDER"
 SPREADSHEET_NAME = "Inventaires_des_marques"
 BRANDS_TAB = "Marques"
 GROUPS_TAB = "Groupes"
-# sector_code -> Nice classes of the trademarks of this sector, e.g. "3; 35"
-NICE_CLASSES_TAB = "Classes_Nice"
 SCOPES = [
     "https://www.googleapis.com/auth/drive.metadata.readonly",  # find the spreadsheet in the folder
     "https://www.googleapis.com/auth/spreadsheets",  # read it and append rows

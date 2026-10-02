@@ -20,12 +20,13 @@ class Holder:
     other_holders: list[str]
 
 
-def parse_nice_classes(rows: list[dict[str, str]]) -> dict[str, set[int]]:
-    """Tab Classes_Nice: sector_code -> Nice classes ("3; 35")."""
+def parse_nice_classes(rows) -> dict[str, set[int]]:
+    """(sector_code, classes_nice) rows of advertising.ref_ome_secteurs -> {sector_code: Nice classes},
+    classes_nice like "3; 32" (or "3, 32")."""
     out = {}
-    for row in rows:
-        code = row.get("sector_code", "").strip()
-        classes = {int(c) for c in row.get("classes", "").replace(",", ";").split(";") if c.strip().isdigit()}
+    for code, classes_text in rows:
+        code = str(code or "").strip()
+        classes = {int(c) for c in str(classes_text or "").replace(",", ";").split(";") if c.strip().isdigit()}
         if code and classes:
             out[code] = classes
     return out

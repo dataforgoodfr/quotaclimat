@@ -3,7 +3,8 @@ Inventaires_des_marques Google Sheet, and append them to it with statut 'non vé
 
 For each brand, by decreasing broadcast duration:
 1. INPI: French trademarks in force named exactly like the brand, holder (company, SIREN) of the most
-   trademarks covering the Nice classes of the brand's sector (tab Classes_Nice);
+   trademarks covering the Nice classes of the brand's sector (column classes_nice of the tab secteurs of
+   the Dictionnaire_marques_secteurs Google Sheet, loaded by dbt in advertising.ref_ome_secteurs);
 2. parent company of the holder: Wikidata (P749 of the item with this SIREN), else GLEIF (direct parent of
    the LEI registered under this SIREN), else the holder itself;
 3. a row is appended to the tab Marques, also when nothing was found (empty group), so that the brand is
@@ -28,7 +29,7 @@ from quotaclimat.data_ingestion.advertising.s04_brand_groups.inpi import InpiCli
 from quotaclimat.data_ingestion.advertising.s04_brand_groups.propose import (
     choose_holder, parse_nice_classes, propose_row)
 from quotaclimat.data_ingestion.advertising.s04_brand_groups.sheet import (
-    BRANDS_TAB, GROUPS_TAB, NICE_CLASSES_TAB, BrandInventorySheet)
+    BRANDS_TAB, GROUPS_TAB, BrandInventorySheet)
 from quotaclimat.utils.sentry import sentry_init
 
 BRANDS_QUERY = text("""
@@ -37,6 +38,11 @@ BRANDS_QUERY = text("""
     WHERE predicted_brand IS NOT NULL
     GROUP BY predicted_brand, predicted_sector
 """)
+NICE_CLASSES_COLUMN_QUERY = text("""
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'advertising' AND table_name = 'ref_ome_secteurs' AND column_name = 'classes_nice'
+""")
+NICE_CLASSES_QUERY = text("SELECT sector_code, classes_nice FROM advertising.ref_ome_secteurs")
 CSV_COLUMNS = ["marque", "groupe", "source", "statut", "commentaire", "titulaire", "siren", "lei", "numero_marque"]
 
 
@@ -77,13 +83,18 @@ def run() -> int:
     sheet = BrandInventorySheet.open()
     inventory_keys = {name_key(r.get("marque")) for r in sheet.read(BRANDS_TAB)}
     known_groups = {name_key(r.get("groupe")): r["groupe"] for r in sheet.read(GROUPS_TAB) if r.get("groupe")}
-    nice_classes = parse_nice_classes(sheet.read(NICE_CLASSES_TAB))
-    if not nice_classes:
-        logging.warning("No tab %s: trademark holders are chosen without the sector's Nice classes", NICE_CLASSES_TAB)
 
     engine = connect_to_db()
     with engine.connect() as connection:
         brands = brands_to_process(connection.execute(BRANDS_QUERY).all(), inventory_keys, max_brands)
+        nice_classes = {}
+        if connection.execute(NICE_CLASSES_COLUMN_QUERY).first():
+            nice_classes = parse_nice_classes(connection.execute(NICE_CLASSES_QUERY).all())
+    if not nice_classes:
+        logging.warning(
+            "No Nice classes in advertising.ref_ome_secteurs.classes_nice: trademark holders are chosen "
+            "without the sector's Nice classes"
+        )
     engine.dispose()
     logging.info("%s brands to process", len(brands))
 

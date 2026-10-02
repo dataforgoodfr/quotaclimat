@@ -1,4 +1,4 @@
-# Stage 4: brand group proposals
+# Stage 4 (enriching), step 1: brand group proposals
 
 Scaleway job (`entrypoints/advertising_brand_groups.sh`). It proposes the group of the broadcast brands that are missing from the tab `Marques` of the `Inventaires_des_marques` Google Sheet, and appends them to this tab with `statut = non vérifié`. A human checks and corrects them afterwards in the sheet. The dbt model `ad_brands` reads them at the next dbt run.
 

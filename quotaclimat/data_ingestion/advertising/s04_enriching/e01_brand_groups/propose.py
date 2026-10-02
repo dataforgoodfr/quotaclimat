@@ -7,8 +7,8 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import date
 
-from quotaclimat.data_ingestion.advertising.s04_brand_groups.inpi import Notice, name_key
-from quotaclimat.data_ingestion.advertising.s04_brand_groups.registries import Company
+from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.inpi import Notice, name_key
+from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.registries import Company
 
 
 @dataclass

@@ -1,18 +1,18 @@
-"""Brand group proposals (quotaclimat/data_ingestion/advertising/s04_brand_groups), without any network:
+"""Brand group proposals (quotaclimat/data_ingestion/advertising/s04_enriching/e01_brand_groups), without any network:
 the INPI responses are real ones (assets/), shortened, plus two results added to the search to test the
 exact-name and status filters (FR5189659 "DIOR", 1000001 expired)."""
 
 from datetime import date
 from pathlib import Path
 
-from quotaclimat.data_ingestion.advertising.s04_brand_groups import registries
-from quotaclimat.data_ingestion.advertising.s04_brand_groups.inpi import (
+from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups import registries
+from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.inpi import (
     InpiClient, Notice, is_alive, parse_notice, parse_search)
-from quotaclimat.data_ingestion.advertising.s04_brand_groups.propose import (
+from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.propose import (
     choose_holder, parse_nice_classes, propose_row)
-from quotaclimat.data_ingestion.advertising.s04_brand_groups.registries import Company
-from quotaclimat.data_ingestion.advertising.s04_brand_groups.run import brands_to_process
-from quotaclimat.data_ingestion.advertising.s04_brand_groups.sheet import BrandInventorySheet
+from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.registries import Company
+from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.run import brands_to_process
+from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.sheet import BrandInventorySheet
 
 ASSETS = Path(__file__).parent / "assets"
 TODAY = date(2026, 10, 2)

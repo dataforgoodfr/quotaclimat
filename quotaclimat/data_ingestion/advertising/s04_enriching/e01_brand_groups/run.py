@@ -1,4 +1,4 @@
-"""Stage 4: propose the group of the broadcast brands missing from the tab Marques of the
+"""Stage 4 (enriching), step 1: propose the group of the broadcast brands missing from the tab Marques of the
 Inventaires_des_marques Google Sheet, and append them to it with statut 'non vérifié'.
 
 For each brand, by decreasing broadcast duration:
@@ -24,11 +24,11 @@ from datetime import date
 from sqlalchemy import text
 
 from postgres.database_connection import connect_to_db
-from quotaclimat.data_ingestion.advertising.s04_brand_groups import registries
-from quotaclimat.data_ingestion.advertising.s04_brand_groups.inpi import InpiClient, name_key
-from quotaclimat.data_ingestion.advertising.s04_brand_groups.propose import (
+from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups import registries
+from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.inpi import InpiClient, name_key
+from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.propose import (
     choose_holder, parse_nice_classes, propose_row)
-from quotaclimat.data_ingestion.advertising.s04_brand_groups.sheet import (
+from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.sheet import (
     BRANDS_TAB, GROUPS_TAB, BrandInventorySheet)
 from quotaclimat.utils.sentry import sentry_init
 

@@ -2,6 +2,7 @@
 
 Statut : proposition de méthode, non validée par l'équipe. Sources consultées le 2 octobre 2026.
 Aucun montant issu de cette méthode ne doit être diffusé sans relecture par une personne experte.
+France 2, France 3, France 24, Arte et M6 : voir [`estimation_cout_autres_chaines.md`](estimation_cout_autres_chaines.md).
 
 ## En bref
 

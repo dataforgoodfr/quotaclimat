@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TradeMark operationCode="Update" fr-TransactionDetails="Amended registration" PublicationIdentifier="202616" PublicationDate="2026-04-17">
+  <RegistrationOfficeCode>FR</RegistrationOfficeCode>
+  <ApplicationNumber>5189659</ApplicationNumber>
+  <ApplicationDate>2025-10-15</ApplicationDate>
+  <MarkCurrentStatusCode>Marque enregistrée</MarkCurrentStatusCode>
+  <MarkFeature>Word</MarkFeature>
+  <WordMarkSpecification>
+    <MarkVerbalElementText><![CDATA[DIOR]]></MarkVerbalElementText>
+    <MarkTranslation/>
+    <MarkTransliteration/>
+  </WordMarkSpecification>
+  <GoodsServicesDetails>
+    <GoodsServices>
+      <ClassificationKindCode>Nice</ClassificationKindCode>
+      <ClassificationVersion>12</ClassificationVersion>
+      <ClassDescriptionDetails>
+        <ClassDescription><ClassNumber>20</ClassNumber><GoodsServicesDescription><![CDATA[Meubles]]></GoodsServicesDescription></ClassDescription>
+        <ClassDescription><ClassNumber>24</ClassNumber><GoodsServicesDescription><![CDATA[Tissus]]></GoodsServicesDescription></ClassDescription>
+        <ClassDescription><ClassNumber>30</ClassNumber><GoodsServicesDescription><![CDATA[Chocolats]]></GoodsServicesDescription></ClassDescription>
+        <ClassDescription><ClassNumber>40</ClassNumber><GoodsServicesDescription><![CDATA[Broderie]]></GoodsServicesDescription></ClassDescription>
+        <ClassDescription><ClassNumber>41</ClassNumber><GoodsServicesDescription><![CDATA[Éducation]]></GoodsServicesDescription></ClassDescription>
+        <ClassDescription><ClassNumber>42</ClassNumber><GoodsServicesDescription><![CDATA[Conception de vêtements]]></GoodsServicesDescription></ClassDescription>
+      </ClassDescriptionDetails>
+    </GoodsServices>
+  </GoodsServicesDetails>
+  <ApplicantDetails>
+    <Applicant PersonType="PM">
+      <ApplicantIdentifier identifierKindCode="FR"><![CDATA[612035832]]></ApplicantIdentifier>
+      <ApplicantSequenceNumber>1</ApplicantSequenceNumber>
+      <ApplicantLegalEntity><![CDATA[Société par actions simplifiée]]></ApplicantLegalEntity>
+      <ApplicantAddressBook>
+        <FormattedNameAddress><Name><FormattedName>
+          <OrganizationName><![CDATA[CHRISTIAN DIOR COUTURE]]></OrganizationName>
+        </FormattedName></Name></FormattedNameAddress>
+      </ApplicantAddressBook>
+    </Applicant>
+  </ApplicantDetails>
+  <RepresentativeDetails>
+    <Representative PersonType="PP">
+      <RepresentativeAddressBook>
+        <FormattedNameAddress><Name><FormattedName>
+          <FirstName><![CDATA[Ericka]]></FirstName>
+          <LastName><![CDATA[Winogradsky]]></LastName>
+          <OrganizationName><![CDATA[NOVAGRAAF FRANCE]]></OrganizationName>
+        </FormattedName></Name></FormattedNameAddress>
+      </RepresentativeAddressBook>
+    </Representative>
+  </RepresentativeDetails>
+  <fr-CurrentHolderDetails>
+    <fr-CurrentHolder PersonType="PM">
+      <fr-CurrentHolderIdentifier identifierKindCode="FR"><![CDATA[612035832]]></fr-CurrentHolderIdentifier>
+      <fr-CurrentHolderSequenceNumber>1</fr-CurrentHolderSequenceNumber>
+      <fr-CurrentHolderAddressBook>
+        <FormattedNameAddress><Name><FormattedName>
+          <OrganizationName><![CDATA[CHRISTIAN DIOR COUTURE]]></OrganizationName>
+        </FormattedName></Name></FormattedNameAddress>
+      </fr-CurrentHolderAddressBook>
+    </fr-CurrentHolder>
+  </fr-CurrentHolderDetails>
+</TradeMark>

@@ -529,8 +529,6 @@ models:
         description: Source of the group (column source of the tab Marques, e.g. wikidata, inpi, gleif, off, llm, manuel).
       - name: brand_group_status
         description: vérifié or non vérifié (column statut of the tab Marques).
-      - name: has_group
-        description: True when the group of the brand is filled in the tab Marques.
       - name: group_in_inventory
         description: >
           True when the group written in the tab Marques is in the tab Groupes (name_key comparison).

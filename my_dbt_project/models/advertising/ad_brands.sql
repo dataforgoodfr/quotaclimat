@@ -61,7 +61,6 @@ SELECT
   b.inventory_group,
   b.brand_group_source,
   b.brand_group_status,
-  b.inventory_group IS NOT NULL AS has_group,
   g.group_key IS NOT NULL AS group_in_inventory,
   g.group_id,
   COALESCE(g.ultimate_parent_verified, FALSE) AS ultimate_parent_verified,

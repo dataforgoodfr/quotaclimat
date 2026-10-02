@@ -465,7 +465,7 @@ def test_ad_brands(db_connection):
     """One row per brand of the tab Marques, independently of the ad tables."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT brand_key, brand, inventory_group, brand_group_status, has_group,
+            SELECT brand_key, brand, inventory_group, brand_group_status,
                 group_in_inventory, group_id, ultimate_parent_verified, brand_group, brand_ultimate_parent
             FROM advertising.ad_brands
             WHERE brand_key LIKE 'pytest%' OR brand_key = '1664'
@@ -474,21 +474,21 @@ def test_ad_brands(db_connection):
         rows = cur.fetchall()
     assert rows == [
         # group not in the tab Groupes: kept as written
-        ("1664", "1664", "Pytest Carlsberg", "non vérifié", True, False, None, False, "Pytest Carlsberg", "Pytest Carlsberg"),
+        ("1664", "1664", "Pytest Carlsberg", "non vérifié", False, None, False, "Pytest Carlsberg", "Pytest Carlsberg"),
         # ultimate parent not verified: ignored, the group instead
         (
-            "pytestbiscuits", "Pytest Biscuits", "Pytest Biscuits Group", "non vérifié", True,
+            "pytestbiscuits", "Pytest Biscuits", "Pytest Biscuits Group", "non vérifié",
             True, None, False, "Pytest Biscuits Group", "Pytest Biscuits Group",
         ),
         # no group yet: the brand itself
         (
-            "pytestbrandwithoutgroup", "Pytest Brand Without Group", None, None, False,
+            "pytestbrandwithoutgroup", "Pytest Brand Without Group", None, None,
             False, None, False, "Pytest Brand Without Group", "Pytest Brand Without Group",
         ),
         # two spellings of the brand, the verified one wins; canonical name of the tab Groupes and
         # verified ultimate parent
         (
-            "pytestskoda", "PYTEST SKODA", "PYTEST VOLKSWAGEN", "vérifié", True,
+            "pytestskoda", "PYTEST SKODA", "PYTEST VOLKSWAGEN", "vérifié",
             True, "Q246", True, "Pytest Volkswagen", "Pytest Porsche SE",
         ),
     ]

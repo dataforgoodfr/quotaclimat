@@ -422,11 +422,13 @@ models:
       - name: label_final
         description: Product category label when available, sector label otherwise.
       - name: brand_group
-        description: Group of the predicted brand (see ad_brands.brand_group). NULL when no brand was predicted.
+        description: >
+          Group of the predicted brand (see ad_brands.brand_group), the predicted brand itself when it is
+          not in ad_brands. NULL when no brand was predicted.
       - name: brand_ultimate_parent
         description: >
-          Ultimate parent company of the group of the predicted brand (see ad_brands.brand_ultimate_parent).
-          NULL when no brand was predicted.
+          Ultimate parent company of the group of the predicted brand (see ad_brands.brand_ultimate_parent),
+          the predicted brand itself when it is not in ad_brands. NULL when no brand was predicted.
       - name: mesinfo_distance_sec
         description: >
           Distance in seconds (absolute value) to the nearest validated misinformation on the same
@@ -508,12 +510,9 @@ models:
 
   - name: ad_brands
     description: >
-      One row per predicted brand of the analysed occurrences (same perimeter as ad_occurrences_classified),
-      with its broadcast volume, its group (tab Marques of the Inventaires_des_marques Google Sheet, rows not
-      verified allowed) and the ultimate parent company of the group (tab Groupes, used only when verified).
-      Brands with in_inventory false must be added to the tab Marques, brands with has_group false
-      completed, and groups with group_in_inventory false added to the tab Groupes or corrected in the
-      tab Marques, by decreasing duration_sec_total.
+      Brand reference, built from the Inventaires_des_marques Google Sheet only (no ad table): one row per
+      brand of the tab Marques, with its group (rows not verified allowed) and the ultimate parent company of
+      the group (tab Groupes, used only when verified). Used by ad_occurrences_classified.
     columns:
       - name: brand_key
         description: >
@@ -522,10 +521,8 @@ models:
         tests:
           - unique
           - not_null
-      - name: predicted_brand
-        description: Most frequent spelling of the brand among the predicted ones sharing the key.
-      - name: in_inventory
-        description: True when the brand is in the tab Marques.
+      - name: brand
+        description: Brand as written in the tab Marques (column marque).
       - name: inventory_group
         description: Group of the brand as written in the tab Marques (column groupe), NULL when empty.
       - name: brand_group_source
@@ -552,16 +549,6 @@ models:
           the tab Marques, else the brand itself.
       - name: brand_ultimate_parent
         description: verified_ultimate_parent, else brand_group.
-      - name: ads_count
-        description: Number of distinct ads of the brand.
-      - name: occurrences_count
-        description: Number of broadcast occurrences of the brand.
-      - name: duration_sec_total
-        description: Total broadcast duration of the brand, in seconds.
-      - name: first_occurrence_date
-        description: First broadcast of the brand.
-      - name: last_occurrence_date
-        description: Last broadcast of the brand.
 
   - name: ad_occurrence_tunnels
     description: >

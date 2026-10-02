@@ -17,3 +17,9 @@ sources:
     schema: public
     tables:
       - name: program_metadata
+
+  # built by the `--target analytics` run, before the advertising models (see entrypoints/dbt.sh)
+  - name: analytics
+    schema: analytics
+    tables:
+      - name: task_global_completion

@@ -421,6 +421,84 @@ models:
         description: French label of the predicted product category.
       - name: label_final
         description: Product category label when available, sector label otherwise.
+      - name: mesinfo_distance_sec
+        description: >
+          Distance in seconds (absolute value) to the nearest validated misinformation on the same
+          channel (see ad_occurrence_mesinfo). NULL when there is none within ad_mesinfo_window_days.
+      - name: nearest_mesinfo_task_aggregate_id
+        description: Label Studio task (analytics.task_global_completion.task_aggregate_id) of that misinformation.
+      - name: inside_program
+        description: The ad tunnel of the occurrence is entirely inside a monitored program (see ad_tunnel_programs).
+      - name: program_before
+        description: Monitored program in progress or just before the ad tunnel (see ad_tunnel_programs).
+      - name: program_before_type
+        description: Type of program_before.
+      - name: program_before_gap_sec
+        description: Seconds between the end of program_before and the tunnel start, 0 when in progress.
+      - name: program_after
+        description: Monitored program just after the ad tunnel, empty when the tunnel is inside program_before.
+      - name: program_after_type
+        description: Type of program_after.
+      - name: program_after_gap_sec
+        description: Seconds between the tunnel end and the start of program_after, 0 when it starts during the tunnel.
+
+  - name: ad_tunnel_programs
+    description: >
+      One row per ad tunnel (see ad_tunnels) with the monitored programs around it, from the French
+      program grids of program_metadata (Paris local time, only the monitored programs, not the full
+      grid of the channel). program_before: last program started before the tunnel start, in progress
+      or ended at most ad_program_window_minutes (dbt var, default 60) before. program_after: first
+      program started after the tunnel start, at most ad_program_window_minutes after the tunnel end,
+      left empty when the tunnel is entirely inside program_before. Occurrence dates are read in the
+      ad_occurrence_timezone time zone (dbt var, default UTC).
+    columns:
+      - name: tunnel_id
+        description: Tunnel identifier (ad_tunnels.tunnel_id).
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('ad_tunnels')
+                field: tunnel_id
+      - name: inside_program
+        description: The tunnel is entirely inside program_before.
+        tests:
+          - not_null
+      - name: program_before
+        description: Name of the program before (program_metadata.channel_program).
+      - name: program_before_type
+        description: Type of the program before (program_metadata.channel_program_type).
+      - name: program_before_gap_sec
+        description: Seconds between the end of the program before and the tunnel start, 0 when in progress.
+      - name: program_after
+        description: Name of the program after.
+      - name: program_after_type
+        description: Type of the program after.
+      - name: program_after_gap_sec
+        description: Seconds between the tunnel end and the start of the program after, 0 when it starts during the tunnel.
+
+  - name: ad_occurrence_mesinfo
+    description: >
+      One row per non-deleted ad occurrence (from ad_analysis_start_date) with a validated
+      misinformation on the same channel at most ad_mesinfo_window_days (dbt var, default 7) days
+      before or after it: the nearest one. Validated misinformation: analytics.task_global_completion
+      rows with mesinfo_choice = 'Correct', first annotation ("Annotation Version" = 1), France.
+      Both occurrence_date and data_item_start are compared as is (timestamps without time zone, UTC).
+    columns:
+      - name: occurrence_id
+        description: Identifier of the occurrence (advertising.ad_occurrence.id).
+        tests:
+          - unique
+          - not_null
+      - name: nearest_mesinfo_task_aggregate_id
+        description: Label Studio task of the nearest validated misinformation.
+        tests:
+          - not_null
+      - name: mesinfo_distance_sec
+        description: Distance in seconds (absolute value) between the occurrence and the misinformation start.
+        tests:
+          - not_null
 
   - name: ad_occurrence_tunnels
     description: >

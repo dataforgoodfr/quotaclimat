@@ -48,6 +48,8 @@ CREDENTIALS_ENV = "GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON"
 DOWNLOAD_TIMEOUT_SEC = 60
 MAX_CELLS_PER_SHEET = 1_000_000
 DRIVE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{10,}$")
+# tabs whose name starts with this prefix are for humans (documentation, metadata): never downloaded
+HUMAN_TAB_PREFIX = "_"
 
 
 class ExternalSourceError(Exception):
@@ -58,6 +60,11 @@ def to_snake_case(name: str) -> str:
     """'Catégories Transversales' -> 'categories_transversales'"""
     ascii_name = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
     return re.sub(r"[^a-z0-9]+", "_", ascii_name.lower()).strip("_")
+
+
+def is_human_tab(sheet_name: str) -> bool:
+    """'_lisez-moi' -> True: tab for humans only, not downloaded."""
+    return sheet_name.startswith(HUMAN_TAB_PREFIX)
 
 
 def parse_folder_id(value: str) -> str:
@@ -151,7 +158,7 @@ def fetch_google_sheet(folder_id: str, spreadsheet_name: str) -> dict[str, list[
     titles = [
         s["properties"]["title"]
         for s in response.json().get("sheets", [])
-        if s["properties"].get("sheetType", "GRID") == "GRID"
+        if s["properties"].get("sheetType", "GRID") == "GRID" and not is_human_tab(s["properties"]["title"])
     ]
     if not titles:
         return {}
@@ -205,7 +212,7 @@ def target_tables(source: dict, sheets: dict) -> dict[str, str]:
     targets = {}
     for sheet_name in sheets:
         settings = sheets_settings.get(sheet_name) or {}
-        if settings.get("skip"):
+        if settings.get("skip") or is_human_tab(sheet_name):
             continue
         table = settings.get("table") or f"{source['table_prefix']}{to_snake_case(sheet_name)}"
         # only ever create or replace reference tables, whatever the tab names or the config say

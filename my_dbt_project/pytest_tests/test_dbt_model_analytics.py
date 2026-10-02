@@ -491,6 +491,8 @@ def test_external_source_only_writes_ref_tables(tmp_path, monkeypatch):
         "Tab'; DROP TABLE keywords; --": [["a"], ["b"]],
         # same table name as the previous tab
         "Tab DROP TABLE keywords": [["a"], ["b"]],
+        # for humans only
+        "_lisez-moi": [["a"], ["b"]],
     }
     assert download_source(source, tmp_path, fetch=fake_fetch(sheets)) == {"ref_ome_tab_drop_table_keywords": True}
     assert sorted(p.name for p in tmp_path.iterdir()) == ["ref_ome_tab_drop_table_keywords.csv"]
@@ -569,6 +571,8 @@ def test_fetch_google_sheet_api_calls(monkeypatch):
                 {"properties": {"title": "secteurs", "sheetType": "GRID"}},
                 {"properties": {"title": "Tab 'quoted'", "sheetType": "GRID"}},
                 {"properties": {"title": "Chart", "sheetType": "OBJECT"}},
+                # for humans only: its values are not even downloaded
+                {"properties": {"title": "_lisez-moi", "sheetType": "GRID"}},
             ]})
 
     monkeypatch.setattr(loader, "get_session", lambda: FakeSession())

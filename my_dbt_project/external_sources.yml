@@ -11,7 +11,7 @@
 #   name:          identifier, used in logs
 #   folder_env:    env variable holding the Drive folder id (last part of https://drive.google.com/drive/folders/<id>)
 #   spreadsheet:   exact name of the spreadsheet in that folder (exactly one match expected)
-#   table_prefix:  every tab becomes the seed / table <table_prefix><tab name in snake_case>, must start
+#   table_prefix:  every tab (except the ones whose name starts with "_", for humans only) becomes the seed / table <table_prefix><tab name in snake_case>, must start
 #                  with ref_ (e.g. "catégories" -> ref_ome_categories)
 #   sheets:        optional per-tab settings, keyed by the exact tab name:
 #                    table:   table name instead of the default one (must start with ref_)

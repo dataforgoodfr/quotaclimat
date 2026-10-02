@@ -421,6 +421,14 @@ models:
         description: French label of the predicted product category.
       - name: label_final
         description: Product category label when available, sector label otherwise.
+      - name: brand_group
+        description: >
+          Group of the predicted brand (see ad_brands.brand_group), the predicted brand itself when it is
+          not in ad_brands. NULL when no brand was predicted.
+      - name: brand_ultimate_parent
+        description: >
+          Ultimate parent company of the group of the predicted brand (see ad_brands.brand_ultimate_parent),
+          the predicted brand itself when it is not in ad_brands. NULL when no brand was predicted.
       - name: mesinfo_distance_sec
         description: >
           Distance in seconds (absolute value) to the nearest validated misinformation on the same
@@ -499,6 +507,46 @@ models:
         description: Distance in seconds (absolute value) between the occurrence and the misinformation start.
         tests:
           - not_null
+
+  - name: ad_brands
+    description: >
+      Brand reference, built from the Inventaires_des_marques Google Sheet only (no ad table): one row per
+      brand of the tab Marques, with its group (rows not verified allowed) and the ultimate parent company of
+      the group (tab Groupes, used only when verified). Used by ad_occurrences_classified.
+    columns:
+      - name: brand_key
+        description: >
+          Join key of the brand: accents stripped, lower case, punctuation and spaces removed (macro
+          name_key, same as the Python classification pipeline).
+        tests:
+          - unique
+          - not_null
+      - name: brand
+        description: Brand as written in the tab Marques (column marque).
+      - name: inventory_group
+        description: Group of the brand as written in the tab Marques (column groupe), NULL when empty.
+      - name: brand_group_source
+        description: Source of the group (column source of the tab Marques, e.g. wikidata, inpi, gleif, off, llm, manuel).
+      - name: brand_group_status
+        description: vérifié or non vérifié (column statut of the tab Marques).
+      - name: group_in_inventory
+        description: >
+          True when the group written in the tab Marques is in the tab Groupes (name_key comparison).
+          False when the group must be added to the tab Groupes or corrected in the tab Marques.
+      - name: group_id
+        description: Identifier of the group (column groupe_id of the tab Groupes, e.g. Wikidata QID or LEI).
+      - name: ultimate_parent_verified
+        description: True when the row of the group in the tab Groupes is verified (statut 'vérifié').
+      - name: verified_ultimate_parent
+        description: >
+          Ultimate parent company of the group (column societe_mere_ultime of the tab Groupes), only when
+          its row is verified.
+      - name: brand_group
+        description: >
+          Canonical name of the group (column groupe of the tab Groupes), else the group as written in
+          the tab Marques, else the brand itself.
+      - name: brand_ultimate_parent
+        description: verified_ultimate_parent, else brand_group.
 
   - name: ad_occurrence_tunnels
     description: >

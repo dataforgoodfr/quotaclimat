@@ -667,7 +667,7 @@ def test_fetch_google_sheet_api_calls(monkeypatch):
         def get(self, url, params, timeout):
             calls.append((url, params))
             if url == loader.DRIVE_FILES_API_URL:
-                return FakeResponse({"files": [{"id": "SHEET_ID_1234567890", "name": "OME_dictionnaire_marques_secteurs"}]})
+                return FakeResponse({"files": [{"id": "SHEET_ID_1234567890", "name": "Dictionnaire_marques_secteurs"}]})
             if url.endswith("/values:batchGet"):
                 return FakeResponse({"valueRanges": [{"values": [["a"], ["1"]]}, {}]})
             return FakeResponse({"sheets": [
@@ -681,12 +681,12 @@ def test_fetch_google_sheet_api_calls(monkeypatch):
     monkeypatch.setattr(loader, "get_session", lambda: FakeSession())
     checked = []
     monkeypatch.setattr(loader, "ensure_not_public", lambda spreadsheet: checked.append(spreadsheet["id"]))
-    sheets = loader.fetch_google_sheet("FOLDER_ID_123", "OME_dictionnaire_marques_secteurs")
+    sheets = loader.fetch_google_sheet("FOLDER_ID_123", "Dictionnaire_marques_secteurs")
 
     assert sheets == {"secteurs": [["a"], ["1"]], "Tab 'quoted'": []}
     assert checked == ["SHEET_ID_1234567890"]
     assert calls[0][1]["q"] == (
-        "'FOLDER_ID_123' in parents and name = 'OME_dictionnaire_marques_secteurs'"
+        "'FOLDER_ID_123' in parents and name = 'Dictionnaire_marques_secteurs'"
         " and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false"
     )
     assert calls[1][0] == f"{loader.SHEETS_API_URL}/SHEET_ID_1234567890"
@@ -703,7 +703,7 @@ def test_fetch_google_sheet_requires_exactly_one_file(monkeypatch):
 
     monkeypatch.setattr(loader, "get_session", lambda: FakeSession())
     with pytest.raises(loader.ExternalSourceError, match="2 spreadsheets"):
-        loader.fetch_google_sheet("FOLDER_ID_123", "OME_dictionnaire_marques_secteurs")
+        loader.fetch_google_sheet("FOLDER_ID_123", "Dictionnaire_marques_secteurs")
 
 
 def test_get_session_requires_credentials(monkeypatch):

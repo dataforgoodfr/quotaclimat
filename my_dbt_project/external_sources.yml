@@ -23,7 +23,7 @@ sources:
   # brand dictionary and sector / category taxonomy of the ad classification pipeline
   - name: ome_dictionnaire_marques_secteurs
     folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER
-    spreadsheet: OME_dictionnaire_marques_secteurs
+    spreadsheet: Dictionnaire_marques_secteurs
     table_prefix: ref_ome_
 
   # brand -> group inventory (tab Marques) and groups with their ultimate parent company (tab Groupes,

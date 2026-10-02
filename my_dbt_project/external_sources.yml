@@ -26,8 +26,8 @@ sources:
     spreadsheet: OME_dictionnaire_marques_secteurs
     table_prefix: ref_ome_
 
-  # brand -> group inventory (tab Marques) and group -> ultimate parent company (tab Groupes, only
-  # the rows checked by a human are used), see my_dbt_project/models/advertising/ad_brands.sql
+  # brand -> group inventory (tab Marques) and groups with their ultimate parent company (tab Groupes,
+  # only used when checked by a human), see my_dbt_project/models/advertising/ad_brands.sql
   - name: inventaire_des_marques
     folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER
     spreadsheet: Inventaires_des_marques

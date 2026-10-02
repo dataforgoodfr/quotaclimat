@@ -510,9 +510,10 @@ models:
     description: >
       One row per predicted brand of the analysed occurrences (same perimeter as ad_occurrences_classified),
       with its broadcast volume, its group (tab Marques of the Inventaires_des_marques Google Sheet, rows not
-      verified allowed) and the ultimate parent company of the group (tab Groupes, verified rows only).
+      verified allowed) and the ultimate parent company of the group (tab Groupes, used only when verified).
       Brands with in_inventory false must be added to the tab Marques, brands with has_group false
-      completed, by decreasing duration_sec_total.
+      completed, and groups with group_in_inventory false added to the tab Groupes or corrected in the
+      tab Marques, by decreasing duration_sec_total.
     columns:
       - name: brand_key
         description: >
@@ -533,18 +534,22 @@ models:
         description: vérifié or non vérifié (column statut of the tab Marques).
       - name: has_group
         description: True when the group of the brand is filled in the tab Marques.
-      - name: group_verified
+      - name: group_in_inventory
         description: >
-          True when the group is a verified row of the tab Groupes, found by its name or one of its
-          aliases (name_key comparison).
+          True when the group written in the tab Marques is in the tab Groupes (name_key comparison).
+          False when the group must be added to the tab Groupes or corrected in the tab Marques.
       - name: group_id
-        description: Identifier of the verified group (column groupe_id of the tab Groupes, e.g. Wikidata QID or LEI).
+        description: Identifier of the group (column groupe_id of the tab Groupes, e.g. Wikidata QID or LEI).
+      - name: ultimate_parent_verified
+        description: True when the row of the group in the tab Groupes is verified (statut 'vérifié').
       - name: verified_ultimate_parent
-        description: Ultimate parent company of the verified group (column societe_mere_ultime of the tab Groupes).
+        description: >
+          Ultimate parent company of the group (column societe_mere_ultime of the tab Groupes), only when
+          its row is verified.
       - name: brand_group
         description: >
-          Canonical name of the verified group (column groupe of the tab Groupes), else the group as
-          written in the tab Marques, else the brand itself.
+          Canonical name of the group (column groupe of the tab Groupes), else the group as written in
+          the tab Marques, else the brand itself.
       - name: brand_ultimate_parent
         description: verified_ultimate_parent, else brand_group.
       - name: ads_count

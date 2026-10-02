@@ -8,9 +8,12 @@
     volume, its group and the ultimate parent company of the group, from the Inventaires_des_marques
     Google Sheet:
     - tab Marques: brand -> group, rows not verified by a human allowed (statut 'non vérifié');
-    - tab Groupes: group -> ultimate parent company, only the rows verified by a human (statut 'vérifié').
-      A group is found by its name or one of its aliases (column alias, separated by ";"), and named
-      by its canonical name (column groupe).
+    - tab Groupes: one row per group, with its canonical name (column groupe) that the column groupe of
+      the tab Marques must use, and its ultimate parent company, only used when verified by a human
+      (statut 'vérifié').
+    Names are compared with name_key (case, accents, punctuation and spaces ignored). Nothing is merged
+    automatically: a group of the tab Marques that is not in the tab Groupes (group_in_inventory false)
+    is kept as written, for a human to correct in the sheet.
     The brands to add to the sheet (in_inventory false) or to complete (has_group false), by decreasing
     duration_sec_total, are the ones to fill in first. -#}
 WITH inventory_brands AS (
@@ -32,35 +35,25 @@ WITH inventory_brands AS (
   WHERE brand_key <> ''
   ORDER BY brand_key, (brand_group_status = 'vérifié') DESC NULLS LAST, (inventory_group IS NOT NULL) DESC, marque
 ),
-verified_groups AS (
-  SELECT
-    TRIM(groupe) AS group_name,
-    NULLIF(TRIM(groupe_id), '') AS group_id,
-    NULLIF(TRIM(societe_mere_ultime), '') AS verified_ultimate_parent,
-    COALESCE(alias, '') AS alias
-  FROM ({{ source_or_empty('advertising', 'group_inventory', ['groupe', 'alias', 'groupe_id', 'societe_mere_ultime', 'statut']) }}) inventory
-  WHERE TRIM(statut) = 'vérifié'
-    AND NULLIF(TRIM(groupe), '') IS NOT NULL
-),
-group_names AS (
-  -- the canonical name and the aliases of every group, one row per key: a canonical name wins over
-  -- an alias of another group
+inventory_groups AS (
+  -- one row per group key: when two spellings of a group give the same key, the verified one wins
   SELECT DISTINCT ON (group_key)
     group_key,
     group_name,
     group_id,
-    verified_ultimate_parent
+    ultimate_parent_verified,
+    CASE WHEN ultimate_parent_verified THEN ultimate_parent END AS verified_ultimate_parent
   FROM (
-    SELECT {{ name_key('names.name') }} AS group_key, g.*, names.is_alias
-    FROM verified_groups g
-    CROSS JOIN LATERAL (
-      SELECT g.group_name AS name, FALSE AS is_alias
-      UNION ALL
-      SELECT TRIM(a), TRUE FROM unnest(string_to_array(g.alias, ';')) a
-    ) names
+    SELECT
+      {{ name_key('groupe') }} AS group_key,
+      TRIM(groupe) AS group_name,
+      NULLIF(TRIM(groupe_id), '') AS group_id,
+      NULLIF(TRIM(societe_mere_ultime), '') AS ultimate_parent,
+      COALESCE(TRIM(statut) = 'vérifié', FALSE) AS ultimate_parent_verified
+    FROM ({{ source_or_empty('advertising', 'group_inventory', ['groupe', 'groupe_id', 'societe_mere_ultime', 'statut']) }}) inventory
   ) keyed
   WHERE group_key <> ''
-  ORDER BY group_key, is_alias, group_name
+  ORDER BY group_key, ultimate_parent_verified DESC, group_name
 ),
 brands AS (
   SELECT
@@ -86,10 +79,11 @@ SELECT
   ib.brand_group_source,
   ib.brand_group_status,
   ib.inventory_group IS NOT NULL AS has_group,
-  g.group_key IS NOT NULL AS group_verified,
+  g.group_key IS NOT NULL AS group_in_inventory,
   g.group_id,
+  COALESCE(g.ultimate_parent_verified, FALSE) AS ultimate_parent_verified,
   g.verified_ultimate_parent,
-  -- canonical name of the verified group, else the group as written in the tab Marques, else the brand
+  -- canonical name of the group in the tab Groupes, else the group as written in the tab Marques, else the brand
   COALESCE(g.group_name, ib.inventory_group, b.predicted_brand) AS brand_group,
   -- verified ultimate parent company, else the group
   COALESCE(g.verified_ultimate_parent, g.group_name, ib.inventory_group, b.predicted_brand) AS brand_ultimate_parent,
@@ -100,4 +94,4 @@ SELECT
   b.last_occurrence_date
 FROM brands b
 LEFT JOIN inventory_brands ib ON ib.brand_key = b.brand_key
-LEFT JOIN group_names g ON g.group_key = {{ name_key('ib.inventory_group') }}
+LEFT JOIN inventory_groups g ON g.group_key = {{ name_key('ib.inventory_group') }}

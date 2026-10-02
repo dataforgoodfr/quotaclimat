@@ -229,10 +229,10 @@ def load_test_external_sources():
         "Marques": [
             ["marque", "groupe", "source", "statut", "commentaire"],
             # same key as the predicted brand "Pytest Škoda": the verified row wins, its group is
-            # an alias of a verified group
-            ["PYTEST SKODA", "pytest vw ag", "wikidata", "vérifié"],
+            # written differently from the tab Groupes (same name_key)
+            ["PYTEST SKODA", "PYTEST VOLKSWAGEN", "wikidata", "vérifié"],
             ["pytest-škoda", "Pytest Wrong Group", "llm", "non vérifié"],
-            # group not verified in the tab Groupes: kept as written
+            # ultimate parent of the group not verified in the tab Groupes
             ["Pytest Biscuits", "Pytest Biscuits Group", "llm", "non vérifié"],
             # listed but group not filled in yet
             ["Pytest Brand Without Group"],
@@ -240,10 +240,10 @@ def load_test_external_sources():
             ["1664", "Pytest Carlsberg", "manuel", "non vérifié", "Kronenbourg"],
         ],
         "Groupes": [
-            ["groupe", "alias", "groupe_id", "societe_mere_ultime", "source", "statut", "commentaire"],
-            ["Pytest Volkswagen", "Pytest VW AG; Pytest Volkswagen Group", "Q246", "Pytest Porsche SE", "gleif", "vérifié"],
-            # not verified: ignored
-            ["Pytest Biscuits Group", "", "", "Pytest Holding", "llm", "non vérifié"],
+            ["groupe", "groupe_id", "societe_mere_ultime", "source", "statut", "commentaire"],
+            ["Pytest Volkswagen", "Q246", "Pytest Porsche SE", "gleif", "vérifié"],
+            # not verified: the group is known, its ultimate parent is ignored
+            ["Pytest Biscuits Group", "", "Pytest Holding", "llm", "non vérifié"],
         ],
         "_lisez-moi": [["note"], ["for humans only"]],
     }
@@ -465,7 +465,7 @@ def test_ad_brands(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT brand_key, predicted_brand, in_inventory, inventory_group, brand_group_status, has_group,
-                group_verified, group_id, brand_group, brand_ultimate_parent,
+                group_in_inventory, group_id, ultimate_parent_verified, brand_group, brand_ultimate_parent,
                 ads_count, occurrences_count, duration_sec_total
             FROM advertising.ad_brands
             WHERE brand_key LIKE 'pytest%'
@@ -474,15 +474,15 @@ def test_ad_brands(db_connection):
         rows = cur.fetchall()
     # pytest_ad_3 (pending) is not analysed
     assert rows == [
-        # group not verified: as written in the tab Marques, ultimate parent of the unverified group ignored
+        # ultimate parent not verified: ignored, the group instead
         (
             "pytestbiscuits", "Pytest Biscuits", True, "Pytest Biscuits Group", "non vérifié", True,
-            False, None, "Pytest Biscuits Group", "Pytest Biscuits Group", 1, 1, 20,
+            True, None, False, "Pytest Biscuits Group", "Pytest Biscuits Group", 1, 1, 20,
         ),
-        # verified group found by its alias: canonical name and verified ultimate parent
+        # canonical name of the tab Groupes and verified ultimate parent
         (
-            "pytestskoda", "Pytest Škoda", True, "pytest vw ag", "vérifié", True,
-            True, "Q246", "Pytest Volkswagen", "Pytest Porsche SE", 1, 12, 360,
+            "pytestskoda", "Pytest Škoda", True, "PYTEST VOLKSWAGEN", "vérifié", True,
+            True, "Q246", True, "Pytest Volkswagen", "Pytest Porsche SE", 1, 12, 360,
         ),
     ]
 

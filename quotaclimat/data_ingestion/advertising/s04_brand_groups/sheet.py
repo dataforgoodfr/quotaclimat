@@ -1,5 +1,6 @@
-"""Read and append rows to the Inventaires_des_marques Google Sheet, with a service account that is an
-editor of this spreadsheet only (not the read-only account of the dbt import).
+"""Read and append rows to the Inventaires_des_marques Google Sheet, with the Google Sheets editor service
+account (generic, shared with other jobs, not the read-only account of the dbt import), shared as editor
+on this spreadsheet only.
 
 Rows are only ever appended, never modified: a human correction is never overwritten.
 """
@@ -13,7 +14,7 @@ from google.oauth2 import service_account
 from quotaclimat.data_ingestion.external_sources.download_external_sources import (
     SHEETS_API_URL, ensure_not_public, find_spreadsheet, parse_folder_id)
 
-CREDENTIALS_ENV = "BRAND_INVENTORY_SERVICE_ACCOUNT_JSON"
+CREDENTIALS_ENV = "GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON"
 FOLDER_ENV = "EXTERNAL_SOURCES_DRIVE_FOLDER"
 SPREADSHEET_NAME = "Inventaires_des_marques"
 BRANDS_TAB = "Marques"

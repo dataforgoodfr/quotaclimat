@@ -9,7 +9,7 @@ For each brand, by decreasing broadcast duration:
 3. a row is appended to the tab Marques, also when nothing was found (empty group), so that the brand is
    not searched again and a human can fill it in.
 
-Env: POSTGRES_*, INPI_USERNAME, INPI_PASSWORD, BRAND_INVENTORY_SERVICE_ACCOUNT_JSON,
+Env: POSTGRES_*, INPI_USERNAME, INPI_PASSWORD, GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON,
 EXTERNAL_SOURCES_DRIVE_FOLDER, BRAND_GROUPS_MAX_BRANDS (default 50), BRAND_GROUPS_DRY_RUN (true: write
 the rows to BRAND_GROUPS_DRY_RUN_CSV instead of the sheet).
 """

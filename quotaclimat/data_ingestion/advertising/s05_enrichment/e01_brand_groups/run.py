@@ -155,7 +155,10 @@ def run() -> int:
             # an API error on one brand must not stop the others; the brand is retried on the next run
             logging.exception("Brand %s: proposal failed, skipped", brand)
             continue
-        logging.info("Brand %s: group %r (%s)", brand, row["groupe"], row["source"])
+        if row["groupe"]:
+            logging.info("Brand %s: group %r (%s)", brand, row["groupe"], row["source"])
+        else:
+            logging.info("Brand %s: no French trademark in force found, appended with an empty group", brand)
         rows.append(row)
 
     if dry_run:

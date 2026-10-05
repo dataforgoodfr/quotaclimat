@@ -7,6 +7,7 @@ international (WO) and European (EU) ones do not.
 
 import logging
 import os
+import re
 import time
 import xml.etree.ElementTree as ET  # responses of the INPI API only (expat refuses entity expansion attacks)
 from dataclasses import dataclass, field
@@ -36,6 +37,13 @@ ALIVE_STATUSES = {
 def name_key(name: str | None) -> str:
     """Same key as the name_key dbt macro: 'L’Oréal Paris' -> 'lorealparis'."""
     return nospace(normalize(name))
+
+
+def search_term(brand: str) -> str:
+    """Brand as a term of the INPI Solr query: punctuation replaced by spaces ("Comme J'aime" ->
+    "Comme J aime"), as apostrophes, brackets or quotes break the query (HTTP 500). The exact name is
+    checked afterwards with name_key, which ignores punctuation too."""
+    return " ".join(re.sub(r"[^\w\s]|_", " ", brand).split())
 
 
 def is_alive(status: str | None) -> bool:
@@ -135,6 +143,14 @@ def parse_notice(xml: str | bytes) -> Notice:
     )
 
 
+def _raise_for_status(response: requests.Response) -> None:
+    """HTTP error with the status and the beginning of the INPI answer, for the logs."""
+    if response.status_code >= 400:
+        endpoint = (getattr(response, "url", "") or "").rsplit("/", 1)[-1]
+        text = getattr(response, "text", "") or ""
+        raise requests.HTTPError(f"INPI {endpoint}: HTTP {response.status_code} {text[:300]!r}", response=response)
+
+
 class InpiClient:
     def __init__(self, username: str, password: str, delay_sec: float = 0.5, session: requests.Session | None = None):
         self.username = username
@@ -178,15 +194,16 @@ class InpiClient:
                 logging.warning("INPI quota exceeded, waiting %s s", wait)
                 time.sleep(wait)
                 continue
-            response.raise_for_status()
+            _raise_for_status(response)
             return response
-        response.raise_for_status()
+        _raise_for_status(response)
         return response
 
     def search(self, brand: str, size: int = 100) -> list[SearchResult]:
         """French trademarks whose name contains the brand (Solr search of the API)."""
-        # brackets and quotes would break the INPI query syntax
-        term = brand.replace("[", " ").replace("]", " ").replace('"', " ").strip()
+        term = search_term(brand)
+        if not term:
+            return []
         response = self._request("POST", f"{API_URL}/search", headers={"Accept": "application/xml"}, json={
             "collections": ["FR"],
             "query": f"[Mark={term}]",

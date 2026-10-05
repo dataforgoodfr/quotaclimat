@@ -5,6 +5,8 @@ exact-name and status filters (FR5189659 "DIOR", 1000001 expired)."""
 from datetime import date
 from pathlib import Path
 
+import requests
+
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import (
     registries,
 )
@@ -14,6 +16,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi
     is_alive,
     parse_notice,
     parse_search,
+    search_term,
 )
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import (
     choose_holder,
@@ -79,6 +82,34 @@ def test_parse_notice_applicant_when_no_current_holder():
         False,
         set(),
     )
+
+
+def test_search_term_without_punctuation():
+    # an apostrophe in the Solr query makes the INPI answer HTTP 500
+    assert search_term("Comme J'aime") == "Comme J aime"
+    assert search_term("L’Oréal [Paris]") == "L Oréal Paris"
+    assert search_term('Mc "Donald\'s"') == "Mc Donald s"
+    assert search_term("!!!") == ""
+
+
+def test_search_without_term_sends_nothing():
+    session = FakeInpiSession()
+    assert InpiClient("user", "password", delay_sec=0, session=session).search("?!") == []
+    assert session.requests == []
+
+
+def test_search_error_message(monkeypatch):
+    session = FakeInpiSession()
+    error = FakeResponse(status_code=500)
+    error.url = "https://api-gateway.inpi.fr/services/apidiffusion/api/marques/search"
+    error.text = "Erreur inattendue, requête SolR corrompue."
+    monkeypatch.setattr(session, "request", lambda method, url, timeout, **kwargs: error)
+    client = InpiClient("user", "password", delay_sec=0, session=session)
+    try:
+        client.search("Dior")
+        raise AssertionError("no error raised")
+    except requests.HTTPError as e:
+        assert str(e) == "INPI search: HTTP 500 'Erreur inattendue, requête SolR corrompue.'"
 
 
 def test_is_alive():

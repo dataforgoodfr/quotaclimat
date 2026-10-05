@@ -21,15 +21,26 @@ import os
 import sys
 from datetime import date
 
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import (
+    registries,
+)
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi import (
+    InpiClient,
+    name_key,
+)
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import (
+    choose_holder,
+    parse_nice_classes,
+    propose_row,
+)
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.sheet import (
+    BRANDS_TAB,
+    GROUPS_TAB,
+    BrandInventorySheet,
+)
 from sqlalchemy import text
 
 from postgres.database_connection import connect_to_db
-from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups import registries
-from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.inpi import InpiClient, name_key
-from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.propose import (
-    choose_holder, parse_nice_classes, propose_row)
-from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.sheet import (
-    BRANDS_TAB, GROUPS_TAB, BrandInventorySheet)
 from quotaclimat.utils.sentry import sentry_init
 
 BRANDS_QUERY = text("""
@@ -42,11 +53,25 @@ NICE_CLASSES_COLUMN_QUERY = text("""
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'advertising' AND table_name = 'ref_ome_secteurs' AND column_name = 'classes_nice'
 """)
-NICE_CLASSES_QUERY = text("SELECT sector_code, classes_nice FROM advertising.ref_ome_secteurs")
-CSV_COLUMNS = ["marque", "groupe", "source", "statut", "commentaire", "titulaire", "siren", "lei", "numero_marque"]
+NICE_CLASSES_QUERY = text(
+    "SELECT sector_code, classes_nice FROM advertising.ref_ome_secteurs"
+)
+CSV_COLUMNS = [
+    "marque",
+    "groupe",
+    "source",
+    "statut",
+    "commentaire",
+    "titulaire",
+    "siren",
+    "lei",
+    "numero_marque",
+]
 
 
-def brands_to_process(rows, inventory_keys: set[str], max_brands: int) -> list[tuple[str, str | None]]:
+def brands_to_process(
+    rows, inventory_keys: set[str], max_brands: int
+) -> list[tuple[str, str | None]]:
     """(brand, sector) of the broadcast brands missing from the inventory, by decreasing broadcast
     duration: the most frequent spelling and the main sector of the brand."""
     by_key: dict[str, dict] = {}
@@ -61,20 +86,34 @@ def brands_to_process(rows, inventory_keys: set[str], max_brands: int) -> list[t
             entry["sectors"][sector] = entry["sectors"].get(sector, 0) + (duration or 0)
     ranked = sorted(by_key.values(), key=lambda e: -e["total"])[:max_brands]
     return [
-        (max(e["spellings"], key=e["spellings"].get), max(e["sectors"], key=e["sectors"].get) if e["sectors"] else None)
+        (
+            max(e["spellings"], key=e["spellings"].get),
+            max(e["sectors"], key=e["sectors"].get) if e["sectors"] else None,
+        )
         for e in ranked
     ]
 
 
-def propose(brand: str, sector: str | None, inpi: InpiClient, nice_classes, known_groups, today: date) -> dict:
-    holder = choose_holder(inpi.brand_notices(brand), nice_classes.get(sector) if sector else None)
+def propose(
+    brand: str,
+    sector: str | None,
+    inpi: InpiClient,
+    nice_classes,
+    known_groups,
+    today: date,
+) -> dict:
+    holder = choose_holder(
+        inpi.brand_notices(brand), nice_classes.get(sector) if sector else None
+    )
     wikidata_parent = gleif_lei = gleif_parent = None
     if holder:
         wikidata_parent = registries.wikidata_parent(holder.siren)
         gleif_lei = registries.gleif_lei(holder.siren)
         if gleif_lei:
             gleif_parent = registries.gleif_direct_parent(gleif_lei.identifier)
-    return propose_row(brand, holder, wikidata_parent, gleif_lei, gleif_parent, known_groups, today)
+    return propose_row(
+        brand, holder, wikidata_parent, gleif_lei, gleif_parent, known_groups, today
+    )
 
 
 def run() -> int:
@@ -82,14 +121,22 @@ def run() -> int:
     dry_run = os.environ.get("BRAND_GROUPS_DRY_RUN", "false").lower() == "true"
     sheet = BrandInventorySheet.open()
     inventory_keys = {name_key(r.get("marque")) for r in sheet.read(BRANDS_TAB)}
-    known_groups = {name_key(r.get("groupe")): r["groupe"] for r in sheet.read(GROUPS_TAB) if r.get("groupe")}
+    known_groups = {
+        name_key(r.get("groupe")): r["groupe"]
+        for r in sheet.read(GROUPS_TAB)
+        if r.get("groupe")
+    }
 
     engine = connect_to_db()
     with engine.connect() as connection:
-        brands = brands_to_process(connection.execute(BRANDS_QUERY).all(), inventory_keys, max_brands)
+        brands = brands_to_process(
+            connection.execute(BRANDS_QUERY).all(), inventory_keys, max_brands
+        )
         nice_classes = {}
         if connection.execute(NICE_CLASSES_COLUMN_QUERY).first():
-            nice_classes = parse_nice_classes(connection.execute(NICE_CLASSES_QUERY).all())
+            nice_classes = parse_nice_classes(
+                connection.execute(NICE_CLASSES_QUERY).all()
+            )
     if not nice_classes:
         logging.warning(
             "No Nice classes in advertising.ref_ome_secteurs.classes_nice: trademark holders are chosen "

@@ -172,6 +172,9 @@ class FakeInpiSession:
     def request(self, method, url, timeout, **kwargs):
         self.requests.append((method, url, kwargs, dict(self.headers)))
         if url.endswith("/search"):
+            if kwargs["json"]["position"] > 0:
+                # the asset is the first page of 451 results: the next ones are empty here
+                return FakeResponse(search_page([], count=451))
             return FakeResponse((ASSETS / "inpi_search_dior.xml").read_bytes())
         if url.endswith("/notice/FR5189659"):
             return FakeResponse((ASSETS / "inpi_notice_FR5189659.xml").read_bytes())
@@ -194,7 +197,48 @@ def test_brand_notices_exact_name_in_force_only():
         "rememberMe": True,
     }
     assert headers["X-XSRF-TOKEN"] == "token2"
-    assert [r[1].rsplit("/", 1)[-1] for r in session.requests[1:]] == ["FR5189659"]
+    # first page, second (empty) page, then the notice
+    assert [(r[1].rsplit("/", 1)[-1], r[2].get("json", {}).get("position")) for r in session.requests] == [
+        ("search", 0), ("search", 100), ("FR5189659", None),
+    ]
+
+
+def search_page(marks: list[tuple[str, str]], count: int) -> bytes:
+    """Search answer with these (application number, mark) results, out of count in total."""
+    results = "".join(
+        f'<result><fields><field name="ApplicationNumber"><value>{number}</value></field>'
+        f'<field name="Mark"><value>{mark}</value></field>'
+        f'<field name="MarkCurrentStatusCode"><value>Marque renouvelée</value></field></fields></result>'
+        for number, mark in marks
+    )
+    return f"<trademarkSearch><metadata><count>{count}</count></metadata><results>{results}</results></trademarkSearch>".encode()
+
+
+def test_search_reads_all_pages(monkeypatch):
+    """ALAIN AFFLELOU: the trademarks named exactly like the brand are old ones, after 200 more recent
+    trademarks containing its words (most recent first)."""
+    pages = {
+        0: search_page([(str(i), f"ALAIN AFFLELOU {i}") for i in range(100)], count=215),
+        100: search_page([(str(i), f"AFFLELOU {i}") for i in range(100, 200)], count=215),
+        200: search_page([("4125732", "ALAIN AFFLELOU")] + [(str(i), f"X {i}") for i in range(14)], count=215),
+    }
+    session = FakeInpiSession()
+    positions = []
+
+    def request(method, url, timeout, **kwargs):
+        positions.append(kwargs["json"]["position"])
+        return FakeResponse(pages[kwargs["json"]["position"]])
+
+    monkeypatch.setattr(session, "request", request)
+    client = InpiClient("user", "password", delay_sec=0, session=session)
+    results = client.search("Alain Afflelou")
+    assert positions == [0, 100, 200]
+    assert len(results) == 215
+    assert [r.application_number for r in results if r.mark == "ALAIN AFFLELOU"] == ["4125732"]
+    # never more than max_results
+    positions.clear()
+    assert len(client.search("Alain Afflelou", max_results=100)) == 100
+    assert positions == [0]
 
 
 def notice(number, siren, name, classes):

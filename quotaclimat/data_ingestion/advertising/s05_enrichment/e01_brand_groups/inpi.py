@@ -25,6 +25,11 @@ XSRF_COOKIE = "XSRF-TOKEN"
 XSRF_HEADER = "X-XSRF-TOKEN"
 TIMEOUT_SEC = 60
 MAX_RETRIES = 3
+SEARCH_PAGE_SIZE = 100
+# results read at most per brand: the search returns every trademark containing the brand's words, most
+# recent first, and the trademark named exactly like the brand can be an old one (ALAIN AFFLELOU, 1986:
+# after more than 200 other ones)
+SEARCH_MAX_RESULTS = int(os.environ.get("INPI_SEARCH_MAX_RESULTS", "1000"))
 
 # current status of a trademark still in force (MarkCurrentStatusCode, as name_key: the API returns either
 # the label "Marque enregistrée" or the enum value "MARQUE_ENREGISTRÉE")
@@ -109,6 +114,12 @@ def parse_search(xml: str | bytes) -> list[SearchResult]:
                 applicant=values.get("DEPOSANT"),
             ))
     return results
+
+
+def parse_search_count(xml: str | bytes) -> int:
+    """Total number of results of POST /search (metadata/count), all pages."""
+    count = _text(_find(ET.fromstring(xml), "count"))
+    return int(count) if count and count.isdigit() else 0
 
 
 def parse_notice(xml: str | bytes) -> Notice:
@@ -203,19 +214,33 @@ class InpiClient:
         _raise_for_status(response)
         return response
 
-    def search(self, brand: str, size: int = 100) -> list[SearchResult]:
-        """French trademarks whose name contains the brand (Solr search of the API)."""
+    def search(
+        self, brand: str, size: int = SEARCH_PAGE_SIZE, max_results: int = SEARCH_MAX_RESULTS
+    ) -> list[SearchResult]:
+        """French trademarks whose name contains the brand (Solr search of the API), all pages up to
+        max_results."""
         term = search_term(brand)
         if not term:
             return []
-        response = self._request("POST", f"{API_URL}/search", headers={"Accept": "application/xml"}, json={
-            "collections": ["FR"],
-            "query": f"[Mark={term}]",
-            "fields": ["ApplicationNumber", "Mark", "MarkCurrentStatusCode", "DEPOSANT"],
-            "position": 0,
-            "size": size,
-        })
-        return parse_search(response.content)
+        results: list[SearchResult] = []
+        position = 0
+        while position < max_results:
+            response = self._request("POST", f"{API_URL}/search", headers={"Accept": "application/xml"}, json={
+                "collections": ["FR"],
+                "query": f"[Mark={term}]",
+                "fields": ["ApplicationNumber", "Mark", "MarkCurrentStatusCode", "DEPOSANT"],
+                "position": position,
+                "size": size,
+            })
+            page = parse_search(response.content)
+            results += page
+            position += size
+            count = parse_search_count(response.content)
+            if not page or position >= count:
+                break
+        else:
+            logging.warning("INPI search %r: more than %s results, the next ones are not read", term, max_results)
+        return results
 
     def notice(self, application_number: str) -> Notice:
         number = application_number if application_number.startswith("FR") else f"FR{application_number}"

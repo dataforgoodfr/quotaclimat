@@ -21,6 +21,7 @@ For each brand of `advertising.ad_occurrences_classified` missing from the tab `
 | `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON` | JSON key of the Google service account that writes to Google Sheets (generic, shared with other jobs). Share with it, as **editor**, only the spreadsheets it must write to (here `Inventaires_des_marques`), never the whole folder |
 | `EXTERNAL_SOURCES_DRIVE_FOLDER` | Drive folder of the spreadsheet (same as the dbt import) |
 | `BRAND_GROUPS_MAX_BRANDS` | brands per run, default 50 |
+| `INPI_SEARCH_MAX_RESULTS` | INPI search results read per brand, all pages, default 1000: the search returns every trademark containing the brand's words, most recent first, and the exact one can be old |
 | `BRAND_GROUPS_DRY_RUN` | `true`: the rows are written to `BRAND_GROUPS_DRY_RUN_CSV` instead of the sheet |
 
 The job only reads from the APIs. Wikidata and GLEIF need no key; requests are spaced (0.5 s for the INPI, 1 s for the others), and an INPI quota error (HTTP 429) waits before retrying.

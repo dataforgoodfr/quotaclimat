@@ -7,13 +7,19 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import date
 
-from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.inpi import Notice, name_key
-from quotaclimat.data_ingestion.advertising.s04_enriching.e01_brand_groups.registries import Company
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi import (
+    Notice,
+    name_key,
+)
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.registries import (
+    Company,
+)
 
 
 @dataclass
 class Holder:
     """Trademark holder chosen for a brand, among the notices of its trademarks."""
+
     name: str
     siren: str
     application_number: str
@@ -26,13 +32,19 @@ def parse_nice_classes(rows) -> dict[str, set[int]]:
     out = {}
     for code, classes_text in rows:
         code = str(code or "").strip()
-        classes = {int(c) for c in str(classes_text or "").replace(",", ";").split(";") if c.strip().isdigit()}
+        classes = {
+            int(c)
+            for c in str(classes_text or "").replace(",", ";").split(";")
+            if c.strip().isdigit()
+        }
         if code and classes:
             out[code] = classes
     return out
 
 
-def choose_holder(notices: list[Notice], sector_classes: set[int] | None) -> Holder | None:
+def choose_holder(
+    notices: list[Notice], sector_classes: set[int] | None
+) -> Holder | None:
     """The holder of the most trademarks covering the sector's Nice classes (all trademarks when the
     sector has no classes), most recent trademark first on a tie."""
     relevant = [n for n in notices if not sector_classes or n.classes & sector_classes]
@@ -42,8 +54,19 @@ def choose_holder(notices: list[Notice], sector_classes: set[int] | None) -> Hol
     # Counter keeps the first-seen order on ties, notices are the most recent first
     siren, _ = counts.most_common(1)[0]
     chosen = next(n for n in relevant if n.holder_siren == siren)
-    others = sorted({f"{n.holder_name} ({n.holder_siren})" for n in relevant if n.holder_siren != siren})
-    return Holder(name=chosen.holder_name or siren, siren=siren, application_number=chosen.application_number, other_holders=others)
+    others = sorted(
+        {
+            f"{n.holder_name} ({n.holder_siren})"
+            for n in relevant
+            if n.holder_siren != siren
+        }
+    )
+    return Holder(
+        name=chosen.holder_name or siren,
+        siren=siren,
+        application_number=chosen.application_number,
+        other_holders=others,
+    )
 
 
 def propose_row(
@@ -59,7 +82,10 @@ def propose_row(
     (its canonical name), the Wikidata parent, the GLEIF direct parent, the holder itself."""
     if holder is None:
         return {
-            "marque": brand, "groupe": "", "source": "inpi", "statut": "non vérifié",
+            "marque": brand,
+            "groupe": "",
+            "source": "inpi",
+            "statut": "non vérifié",
             "commentaire": f"job {today.isoformat()} : aucune marque française en vigueur à ce nom (INPI)",
         }
 
@@ -69,12 +95,23 @@ def propose_row(
         (holder.name, "inpi"),
     ]
     candidates = [c for c in candidates if c]
-    known = next(((known_groups[name_key(n)], s) for n, s in candidates if name_key(n) in known_groups), None)
+    known = next(
+        (
+            (known_groups[name_key(n)], s)
+            for n, s in candidates
+            if name_key(n) in known_groups
+        ),
+        None,
+    )
     group, source = known or candidates[0]
 
-    notes = [f"titulaire {holder.name} (SIREN {holder.siren}), marque FR{holder.application_number}"]
+    notes = [
+        f"titulaire {holder.name} (SIREN {holder.siren}), marque FR{holder.application_number}"
+    ]
     if wikidata_parent:
-        notes.append(f"Wikidata : {wikidata_parent.name} ({wikidata_parent.identifier})")
+        notes.append(
+            f"Wikidata : {wikidata_parent.name} ({wikidata_parent.identifier})"
+        )
     if gleif_parent:
         notes.append(f"GLEIF : {gleif_parent.name} (LEI {gleif_parent.identifier})")
     if source == "inpi":

@@ -21,9 +21,19 @@ class Holder:
     """Trademark holder chosen for a brand, among the notices of its trademarks."""
 
     name: str
-    siren: str
+    siren: str  # empty for a company registered abroad
     application_number: str
     other_holders: list[str]
+    country: str | None = None
+
+
+def _holder_id(notice: Notice) -> str:
+    """SIREN of the holder, else its name (companies registered abroad have no SIREN)."""
+    return notice.holder_siren or f"name:{name_key(notice.holder_name)}"
+
+
+def _holder_label(notice: Notice) -> str:
+    return f"{notice.holder_name} ({notice.holder_siren or notice.holder_country or 'sans SIREN'})"
 
 
 def parse_nice_classes(rows) -> dict[str, set[int]]:
@@ -50,22 +60,17 @@ def choose_holder(
     relevant = [n for n in notices if not sector_classes or n.classes & sector_classes]
     if not relevant:
         return None
-    counts = Counter(n.holder_siren for n in relevant)
+    counts = Counter(_holder_id(n) for n in relevant)
     # Counter keeps the first-seen order on ties, notices are the most recent first
-    siren, _ = counts.most_common(1)[0]
-    chosen = next(n for n in relevant if n.holder_siren == siren)
-    others = sorted(
-        {
-            f"{n.holder_name} ({n.holder_siren})"
-            for n in relevant
-            if n.holder_siren != siren
-        }
-    )
+    holder_id, _ = counts.most_common(1)[0]
+    chosen = next(n for n in relevant if _holder_id(n) == holder_id)
+    others = sorted({_holder_label(n) for n in relevant if _holder_id(n) != holder_id})
     return Holder(
-        name=chosen.holder_name or siren,
-        siren=siren,
+        name=chosen.holder_name or chosen.holder_siren,
+        siren=chosen.holder_siren or "",
         application_number=chosen.application_number,
         other_holders=others,
+        country=chosen.holder_country,
     )
 
 
@@ -105,9 +110,10 @@ def propose_row(
     )
     group, source = known or candidates[0]
 
-    notes = [
-        f"titulaire {holder.name} (SIREN {holder.siren}), marque FR{holder.application_number}"
-    ]
+    identity = f"SIREN {holder.siren}" if holder.siren else f"société étrangère, pays {holder.country or '?'}"
+    notes = [f"titulaire {holder.name} ({identity}), marque FR{holder.application_number}"]
+    if gleif_lei and not holder.siren:
+        notes.append(f"LEI du titulaire trouvé par son nom : {gleif_lei.identifier}")
     if wikidata_parent:
         notes.append(
             f"Wikidata : {wikidata_parent.name} ({wikidata_parent.identifier})"

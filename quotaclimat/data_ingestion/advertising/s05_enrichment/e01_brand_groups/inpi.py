@@ -68,6 +68,8 @@ class Notice:
     holder_siren: str | None
     holder_is_company: bool
     classes: set[int] = field(default_factory=set)
+    # country of the holder's address (FR, NL...): the holders registered abroad have no SIREN
+    holder_country: str | None = None
 
 
 def _local(tag: str) -> str:
@@ -116,11 +118,12 @@ def parse_notice(xml: str | bytes) -> Notice:
     holder = _find(root, "fr-CurrentHolder")
     if holder is None:
         holder = _find(root, "Applicant")
-    holder_name = holder_siren = None
+    holder_name = holder_siren = holder_country = None
     holder_is_company = False
     if holder is not None:
         holder_is_company = holder.get("PersonType") == "PM"
         holder_name = _text(_find(holder, "OrganizationName"))
+        holder_country = _text(_find(holder, "AddressCountryCode"))
         for e in holder.iter():
             if _local(e.tag) in ("fr-CurrentHolderIdentifier", "ApplicantIdentifier") and e.get("identifierKindCode") == "FR":
                 holder_siren = _text(e)
@@ -140,6 +143,7 @@ def parse_notice(xml: str | bytes) -> Notice:
         holder_siren=holder_siren,
         holder_is_company=holder_is_company,
         classes=classes,
+        holder_country=holder_country,
     )
 
 
@@ -219,8 +223,9 @@ class InpiClient:
 
     def brand_notices(self, brand: str, max_notices: int = 10) -> list[Notice]:
         """Notices of the French trademarks in force named exactly like the brand (name_key), most recent
-        first, whose holder is a company (natural persons are never kept)."""
+        first, whose holder is a company (natural persons are never kept). A company registered abroad
+        (e.g. Inter IKEA Systems B.V.) has no SIREN: it is kept, identified by its name."""
         key = name_key(brand)
         matches = [r for r in self.search(brand) if name_key(r.mark) == key and is_alive(r.status)]
         notices = [self.notice(r.application_number) for r in matches[:max_notices]]
-        return [n for n in notices if n.holder_is_company and n.holder_siren]
+        return [n for n in notices if n.holder_is_company and (n.holder_siren or n.holder_name)]

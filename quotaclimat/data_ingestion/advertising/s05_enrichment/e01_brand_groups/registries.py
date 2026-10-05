@@ -27,12 +27,9 @@ def _get(url: str, delay_sec: float, **kwargs) -> requests.Response:
     return requests.get(url, headers={"User-Agent": USER_AGENT, **kwargs.pop("headers", {})}, timeout=TIMEOUT_SEC, **kwargs)
 
 
-def gleif_lei(siren: str, delay_sec: float = 1.0) -> Company | None:
-    """LEI record of the French company registered under this SIREN (registry Sirene)."""
-    response = _get(
-        f"{GLEIF_URL}/lei-records", delay_sec,
-        params={"filter[entity.registeredAs]": siren, "filter[entity.jurisdiction]": "FR"},
-    )
+def _single_lei(params: dict, description: str, delay_sec: float) -> Company | None:
+    """The only non-fund LEI record matching the filters, None when none or several."""
+    response = _get(f"{GLEIF_URL}/lei-records", delay_sec, params=params)
     response.raise_for_status()
     records = [
         r for r in response.json().get("data", [])
@@ -40,9 +37,26 @@ def gleif_lei(siren: str, delay_sec: float = 1.0) -> Company | None:
     ]
     if len(records) != 1:
         if records:
-            logging.warning("GLEIF: %s LEI records for SIREN %s, none kept", len(records), siren)
+            logging.warning("GLEIF: %s LEI records for %s, none kept", len(records), description)
         return None
     return Company(name=records[0]["attributes"]["entity"]["legalName"]["name"], identifier=records[0]["id"])
+
+
+def gleif_lei(siren: str, delay_sec: float = 1.0) -> Company | None:
+    """LEI record of the French company registered under this SIREN (registry Sirene)."""
+    return _single_lei(
+        {"filter[entity.registeredAs]": siren, "filter[entity.jurisdiction]": "FR"}, f"SIREN {siren}", delay_sec
+    )
+
+
+def gleif_lei_by_name(name: str, country: str, delay_sec: float = 1.0) -> Company | None:
+    """LEI record of a company registered abroad, by its exact legal name and the country of its legal
+    address (companies without SIREN), when exactly one."""
+    return _single_lei(
+        {"filter[entity.legalName]": name, "filter[entity.legalAddress.country]": country},
+        f"{name} ({country})",
+        delay_sec,
+    )
 
 
 def gleif_direct_parent(lei: str, delay_sec: float = 1.0) -> Company | None:

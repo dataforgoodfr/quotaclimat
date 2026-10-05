@@ -106,11 +106,14 @@ def propose(
         inpi.brand_notices(brand), nice_classes.get(sector) if sector else None
     )
     wikidata_parent = gleif_lei = gleif_parent = None
-    if holder:
+    if holder and holder.siren:
         wikidata_parent = registries.wikidata_parent(holder.siren)
         gleif_lei = registries.gleif_lei(holder.siren)
-        if gleif_lei:
-            gleif_parent = registries.gleif_direct_parent(gleif_lei.identifier)
+    elif holder and holder.country:
+        # company registered abroad: no SIREN, its LEI by its exact legal name and country
+        gleif_lei = registries.gleif_lei_by_name(holder.name, holder.country)
+    if gleif_lei:
+        gleif_parent = registries.gleif_direct_parent(gleif_lei.identifier)
     return propose_row(
         brand, holder, wikidata_parent, gleif_lei, gleif_parent, known_groups, today
     )

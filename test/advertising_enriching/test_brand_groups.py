@@ -5,6 +5,8 @@ exact-name and status filters (FR5189659 "DIOR", 1000001 expired)."""
 from datetime import date
 from pathlib import Path
 
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import run as run_module
+
 import requests
 
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import (
@@ -68,6 +70,14 @@ def test_parse_notice_current_holder_not_representative():
         holder_siren="612035832",
         holder_is_company=True,
         classes={20, 24, 30, 40, 41, 42},
+        holder_country="FR",
+    )
+
+
+def test_parse_notice_holder_registered_abroad():
+    notice = parse_notice((ASSETS / "inpi_notice_foreign_holder.xml").read_bytes())
+    assert (notice.holder_name, notice.holder_siren, notice.holder_country, notice.holder_is_company) == (
+        "Inter IKEA Systems B.V.", None, "NL", True,
     )
 
 
@@ -191,6 +201,34 @@ def notice(number, siren, name, classes):
     return Notice(
         number, "X", "Word", "Marque enregistrée", name, siren, True, set(classes)
     )
+
+
+def test_holder_registered_abroad_without_siren(monkeypatch):
+    """IKEA: the trademark holders are companies registered abroad, without SIREN."""
+    foreign = parse_notice((ASSETS / "inpi_notice_foreign_holder.xml").read_bytes())
+    old = Notice("1084780", "IKEA", "Word", "Marque renouvelée", "INTER-IKEA AG", None, True, {20}, "CH")
+    holder = choose_holder([foreign, old], {20})
+    assert (holder.name, holder.siren, holder.country, holder.other_holders) == (
+        "Inter IKEA Systems B.V.", "", "NL", ["INTER-IKEA AG (CH)"],
+    )
+
+    lookups = []
+    monkeypatch.setattr(registries, "wikidata_parent", lambda siren: lookups.append("wikidata"))
+    monkeypatch.setattr(registries, "gleif_lei", lambda siren: lookups.append("gleif siren"))
+    monkeypatch.setattr(
+        registries, "gleif_lei_by_name", lambda name, country: Company(name, "LEI_IKEA") if country == "NL" else None
+    )
+    monkeypatch.setattr(registries, "gleif_direct_parent", lambda lei: Company("Inter IKEA Holding B.V.", "LEI_PARENT"))
+
+    class FakeInpi:
+        def brand_notices(self, brand):
+            return [foreign, old]
+
+    row = run_module.propose("IKEA", "FHI", FakeInpi(), {"FHI": {20, 21}}, {}, TODAY)
+    # no SIREN: neither Wikidata nor GLEIF by SIREN
+    assert lookups == []
+    assert (row["groupe"], row["source"], row["siren"], row["lei"]) == ("Inter IKEA Holding B.V.", "inpi+gleif", "", "LEI_IKEA")
+    assert row["commentaire"].startswith("job 2026-10-02 : titulaire Inter IKEA Systems B.V. (société étrangère, pays NL)")
 
 
 def test_choose_holder_by_sector_classes():
@@ -348,6 +386,11 @@ def test_gleif_and_wikidata(monkeypatch):
     )
     assert 'wdt:P1616 "612035832"' in calls[2][1]["query"]
     assert all("QuotaClimat" in c[2]["User-Agent"] for c in calls)
+    # company registered abroad: by exact legal name and country
+    assert registries.gleif_lei_by_name("CHRISTIAN DIOR COUTURE", "FR", delay_sec=0) == Company(
+        "CHRISTIAN DIOR COUTURE", "96950005T49LGF6G2042"
+    )
+    assert calls[-1][1] == {"filter[entity.legalName]": "CHRISTIAN DIOR COUTURE", "filter[entity.legalAddress.country]": "FR"}
     # never put anything else than a SIREN in the SPARQL query
     assert registries.wikidata_parent('1" } DROP', delay_sec=0) is None
 

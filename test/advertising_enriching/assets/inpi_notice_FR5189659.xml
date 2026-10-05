@@ -54,7 +54,15 @@
       <fr-CurrentHolderAddressBook>
         <FormattedNameAddress><Name><FormattedName>
           <OrganizationName><![CDATA[CHRISTIAN DIOR COUTURE]]></OrganizationName>
-        </FormattedName></Name></FormattedNameAddress>
+        </FormattedName></Name>
+        <Address>
+          <AddressCountryCode><![CDATA[FR]]></AddressCountryCode>
+          <FormattedAddress>
+            <AddressStreet><![CDATA[30 avenue Montaigne]]></AddressStreet>
+            <AddressCity><![CDATA[Paris]]></AddressCity>
+            <AddressPostcode><![CDATA[75008]]></AddressPostcode>
+          </FormattedAddress>
+        </Address></FormattedNameAddress>
       </fr-CurrentHolderAddressBook>
     </fr-CurrentHolder>
   </fr-CurrentHolderDetails>

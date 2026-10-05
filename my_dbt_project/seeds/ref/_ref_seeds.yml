@@ -10,6 +10,9 @@ seeds:
     config:
       column_types:
         sector_code: text
+        # Nice classes of the trademarks of the sector, e.g. "3; 32" (brand groups job), text even when a
+        # single class; ignored by dbt when the column does not exist
+        classes_nice: text
     columns:
       - name: sector_code
         tests:
@@ -35,3 +38,46 @@ seeds:
       - name: product_category_fr
         tests:
           - not_null
+
+  # Inventaires_des_marques spreadsheet, tab Marques: brand -> group, rows not verified allowed
+  - name: ref_inventaire_marques
+    config:
+      # all text, even when a column looks numeric (e.g. the brand "1664") or is still empty
+      column_types:
+        marque: text
+        groupe: text
+        source: text
+        statut: text
+        commentaire: text
+    columns:
+      - name: marque
+        tests:
+          - unique
+          - not_null
+      - name: statut
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['vérifié', 'non vérifié']
+
+  # Inventaires_des_marques spreadsheet, tab Groupes: one row per group (canonical name used by the
+  # tab Marques) -> ultimate parent company, only used when statut is 'vérifié'
+  - name: ref_inventaire_groupes
+    config:
+      column_types:
+        groupe: text
+        groupe_id: text
+        societe_mere_ultime: text
+        source: text
+        statut: text
+        commentaire: text
+    columns:
+      - name: groupe
+        tests:
+          - unique
+          - not_null
+      - name: statut
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['vérifié', 'non vérifié']

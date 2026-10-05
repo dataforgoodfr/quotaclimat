@@ -11,7 +11,7 @@
 #   name:          identifier, used in logs
 #   folder_env:    env variable holding the Drive folder id (last part of https://drive.google.com/drive/folders/<id>)
 #   spreadsheet:   exact name of the spreadsheet in that folder (exactly one match expected)
-#   table_prefix:  every tab becomes the seed / table <table_prefix><tab name in snake_case>, must start
+#   table_prefix:  every tab (except the ones whose name starts with "_", for humans only) becomes the seed / table <table_prefix><tab name in snake_case>, must start
 #                  with ref_ (e.g. "catégories" -> ref_ome_categories)
 #   sheets:        optional per-tab settings, keyed by the exact tab name:
 #                    table:   table name instead of the default one (must start with ref_)
@@ -23,5 +23,17 @@ sources:
   # brand dictionary and sector / category taxonomy of the ad classification pipeline
   - name: ome_dictionnaire_marques_secteurs
     folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER
-    spreadsheet: OME_dictionnaire_marques_secteurs
+    spreadsheet: Dictionnaire_marques_secteurs
     table_prefix: ref_ome_
+
+  # brand -> group inventory (tab Marques) and groups with their ultimate parent company (tab Groupes,
+  # only used when checked by a human), see my_dbt_project/models/advertising/ad_brands.sql
+  - name: inventaire_des_marques
+    folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER
+    spreadsheet: Inventaires_des_marques
+    table_prefix: ref_inventaire_
+    sheets:
+      Marques:
+        table: ref_inventaire_marques
+      Groupes:
+        table: ref_inventaire_groupes

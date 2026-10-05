@@ -53,7 +53,7 @@ poetry run python -m quotaclimat.data_ingestion.external_sources.download_extern
 poetry run dbt seed --full-refresh --select path:seeds/ref
 poetry run dbt test --select path:seeds/ref
 ```
-Sources are listed in `external_sources.yml` by spreadsheet name. Each spreadsheet is looked up by its exact name in a Google Drive folder, then every tab is read with the Google Sheets API (displayed values only, never formulas or files) and written to `seeds/ref/<table_prefix><tab name in snake_case>.csv` (not versioned), e.g. tab `catégories` of `OME_dictionnaire_marques_secteurs` -> seed and table `advertising.ref_ome_categories` (`+schema: advertising` for `seeds/ref`). A new tab is loaded automatically on the next run. Seed names must start with `ref_`, whatever the tab names or the config say.
+Sources are listed in `external_sources.yml` by spreadsheet name. Each spreadsheet is looked up by its exact name in a Google Drive folder, then every tab is read with the Google Sheets API (displayed values only, never formulas or files) and written to `seeds/ref/<table_prefix><tab name in snake_case>.csv` (not versioned), e.g. tab `catégories` of `Dictionnaire_marques_secteurs` -> seed and table `advertising.ref_ome_categories` (`+schema: advertising` for `seeds/ref`). A new tab is loaded automatically on the next run, except the tabs whose name starts with `_` (e.g. `_lisez-moi`), kept for humans and never downloaded. Seed names must start with `ref_`, whatever the tab names or the config say.
 
 Column types are inferred by `dbt seed`, except the identifiers pinned as `text` in `seeds/ref/_ref_seeds.yml` (a code `001` would otherwise become `1`), which also holds the seed tests (`unique`, `not_null`). A failing test is logged but does not block the run.
 

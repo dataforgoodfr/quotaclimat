@@ -1,6 +1,7 @@
 import datetime
 import logging
 import os
+import re
 import subprocess
 
 import psycopg2
@@ -8,6 +9,7 @@ import pytest
 import yaml
 
 from my_dbt_project.pytest_tests.test_dbt_model_homepage import run_dbt_command
+from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import normalize, nospace
 from quotaclimat.data_ingestion.external_sources.download_external_sources import SEEDS_DIR, download_source
 
 
@@ -78,17 +80,27 @@ PRODUCTION_EXTERNAL_SOURCES_CONFIG = "my_dbt_project/external_sources.yml"
 TEST_FOLDER_ID = "FAKE_folder_id_123"
 
 
+def production_source(name: str) -> dict:
+    """Production settings of an external source."""
+    config = yaml.safe_load(open(PRODUCTION_EXTERNAL_SOURCES_CONFIG))
+    return next(s for s in config["sources"] if s["name"] == name)
+
+
 def classification_test_source() -> dict:
     """Production classification source settings."""
-    config = yaml.safe_load(open(PRODUCTION_EXTERNAL_SOURCES_CONFIG))
-    return next(s for s in config["sources"] if s["name"] == "ome_dictionnaire_marques_secteurs")
+    return production_source("ome_dictionnaire_marques_secteurs")
 
 
-def fake_fetch(sheets: dict[str, list[list]]):
+def brand_inventory_test_source() -> dict:
+    """Production brand inventory source settings."""
+    return production_source("inventaire_des_marques")
+
+
+def fake_fetch(sheets: dict[str, list[list]], source: dict | None = None):
     """Stands for the Google Drive / Sheets API calls: returns the rows the API would return."""
     def fetch(folder_id, spreadsheet_name):
         assert folder_id == TEST_FOLDER_ID
-        assert spreadsheet_name == classification_test_source()["spreadsheet"]
+        assert spreadsheet_name == (source or classification_test_source())["spreadsheet"]
         return sheets
     return fetch
 
@@ -131,12 +143,12 @@ def create_advertising_tables(db_connection):
         cur.execute("""
             INSERT INTO advertising.ad (
                 id, first_detection_date, duration_sec, chunks, fragment_type,
-                prediction_status, predicted_sector, predicted_product_category
+                prediction_status, predicted_sector, predicted_product_category, predicted_brand
             ) VALUES
-                ('pytest_ad_1', '2000-01-01', 30, '[]', 'AD', 'subcat_done', 'PYTEST_AUTO', 'PYTEST_AUTO_EV'),
-                ('pytest_ad_2', '2000-01-01', 20, '[]', 'AD', 'dict_tier1', 'PYTEST_FOOD', NULL),
-                ('pytest_ad_3', '2000-01-01', 10, '[]', 'AD', 'pending', NULL, NULL),
-                ('pytest_other', '2000-01-01', 15, '[]', 'OTHER', 'pending', NULL, NULL)
+                ('pytest_ad_1', '2000-01-01', 30, '[]', 'AD', 'subcat_done', 'PYTEST_AUTO', 'PYTEST_AUTO_EV', 'Pytest Škoda'),
+                ('pytest_ad_2', '2000-01-01', 20, '[]', 'AD', 'dict_tier1', 'PYTEST_FOOD', NULL, 'Pytest Biscuits'),
+                ('pytest_ad_3', '2000-01-01', 10, '[]', 'AD', 'pending', NULL, NULL, 'Pytest Škoda'),
+                ('pytest_other', '2000-01-01', 15, '[]', 'OTHER', 'pending', NULL, NULL, NULL)
         """)
         cur.execute("""
             INSERT INTO advertising.ad_occurrence (id, deleted_at, occurrence_date, channel_name, ad_id) VALUES
@@ -193,9 +205,9 @@ def load_test_external_sources():
     sheets = {
         # the API drops trailing empty cells
         "secteurs": [
-            ["sector_code", "sector_label_fr", "sector_label_en"],
-            ["PYTEST_AUTO", "Automobile", "Cars"],
-            [" PYTEST_FOOD ", "Alimentation", "Food"],
+            ["sector_code", "sector_label_fr", "sector_label_en", "classes_nice"],
+            ["PYTEST_AUTO", "Automobile", "Cars", "12; 37; 39"],
+            [" PYTEST_FOOD ", "Alimentation", "Food", "29"],
             ["001", "Code numérique", "Numeric code"],
             [],
         ],
@@ -213,6 +225,32 @@ def load_test_external_sources():
         "ref_ome_categories": True,
         "ref_ome_notes_de_version": True,
     }
+    brand_sheets = {
+        "Marques": [
+            ["marque", "groupe", "source", "statut", "commentaire"],
+            # same key as the predicted brand "Pytest Škoda": the verified row wins, its group is
+            # written differently from the tab Groupes (same name_key)
+            ["PYTEST SKODA", "PYTEST VOLKSWAGEN", "wikidata", "vérifié"],
+            ["pytest-škoda", "Pytest Wrong Group", "llm", "non vérifié"],
+            # ultimate parent of the group not verified in the tab Groupes
+            ["Pytest Biscuits", "Pytest Biscuits Group", "llm", "non vérifié"],
+            # listed but group not filled in yet
+            ["Pytest Brand Without Group"],
+            # numeric looking brand stays text
+            ["1664", "Pytest Carlsberg", "manuel", "non vérifié", "Kronenbourg"],
+        ],
+        "Groupes": [
+            ["groupe", "groupe_id", "societe_mere_ultime", "source", "statut", "commentaire"],
+            ["Pytest Volkswagen", "Q246", "Pytest Porsche SE", "gleif", "vérifié"],
+            # not verified: the group is known, its ultimate parent is ignored
+            ["Pytest Biscuits Group", "", "Pytest Holding", "llm", "non vérifié"],
+        ],
+        "_lisez-moi": [["note"], ["for humans only"]],
+    }
+    results = download_source(
+        brand_inventory_test_source(), SEEDS_DIR, fetch=fake_fetch(brand_sheets, brand_inventory_test_source())
+    )
+    assert results == {"ref_inventaire_marques": True, "ref_inventaire_groupes": True}
     run_dbt_command(["seed", "--full-refresh", "--select", "path:seeds/ref"])
     run_dbt_command(["test", "--select", "path:seeds/ref"])
     yield
@@ -423,6 +461,78 @@ def test_ad_occurrences_classified_programs(db_connection):
     ]
 
 
+def test_ad_brands(db_connection):
+    """One row per brand of the tab Marques, independently of the ad tables."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT brand_key, brand, inventory_group, brand_group_status,
+                group_in_inventory, group_id, ultimate_parent_verified, brand_group, brand_ultimate_parent
+            FROM advertising.ad_brands
+            WHERE brand_key LIKE 'pytest%' OR brand_key = '1664'
+            ORDER BY brand_key
+        """)
+        rows = cur.fetchall()
+    assert rows == [
+        # group not in the tab Groupes: kept as written
+        ("1664", "1664", "Pytest Carlsberg", "non vérifié", False, None, False, "Pytest Carlsberg", "Pytest Carlsberg"),
+        # ultimate parent not verified: ignored, the group instead
+        (
+            "pytestbiscuits", "Pytest Biscuits", "Pytest Biscuits Group", "non vérifié",
+            True, None, False, "Pytest Biscuits Group", "Pytest Biscuits Group",
+        ),
+        # no group yet: the brand itself
+        (
+            "pytestbrandwithoutgroup", "Pytest Brand Without Group", None, None,
+            False, None, False, "Pytest Brand Without Group", "Pytest Brand Without Group",
+        ),
+        # two spellings of the brand, the verified one wins; canonical name of the tab Groupes and
+        # verified ultimate parent
+        (
+            "pytestskoda", "PYTEST SKODA", "PYTEST VOLKSWAGEN", "vérifié",
+            True, "Q246", True, "Pytest Volkswagen", "Pytest Porsche SE",
+        ),
+    ]
+
+
+def test_ad_occurrences_classified_brand_groups(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT occurrence_id, predicted_brand, brand_group, brand_ultimate_parent
+            FROM advertising.ad_occurrences_classified
+            WHERE occurrence_id IN ('pytest_occ_1', 'pytest_occ_2')
+            ORDER BY occurrence_id
+        """)
+        rows = cur.fetchall()
+    assert rows == [
+        ("pytest_occ_1", "Pytest Škoda", "Pytest Volkswagen", "Pytest Porsche SE"),
+        ("pytest_occ_2", "Pytest Biscuits", "Pytest Biscuits Group", "Pytest Biscuits Group"),
+    ]
+
+
+def test_brand_inventory_loaded_as_text(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT marque, groupe FROM advertising.ref_inventaire_marques WHERE marque = '1664'")
+        assert cur.fetchall() == [("1664", "Pytest Carlsberg")]
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "L’Oréal Paris", "L'OREAL  PARIS", "Cœur de Lion", "CŒUR DE LION", "Škoda", "Coca-Cola®",
+        "Leclerc — E.Leclerc", "Kronenbourg 1664", "Ça c'est Paris !", "Bière_Æther", "Größe",
+        "Øresund", "Mc Donald's™", "Intermarché\u00a0", "« Franprix »", "Łódź", "3M", "élan 50€", "",
+    ],
+)
+def test_name_key_matches_python(db_connection, name):
+    """The name_key dbt macro gives the same key as the Python classification pipeline."""
+    macro = open("my_dbt_project/macros/name_key.sql").read()
+    sql = re.search(r"\{% macro name_key\(column\) -%\}(.*)\{%- endmacro", macro, re.S).group(1)
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT " + sql.replace("{{ column }}", "%s"), (name,))
+        assert cur.fetchone()[0] == nospace(normalize(name))
+    db_connection.rollback()
+
+
 def test_advertising_grants(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
@@ -431,11 +541,18 @@ def test_advertising_grants(db_connection):
             WHERE grantee = 'rrs-read-dev'
               AND privilege_type = 'SELECT'
               AND table_schema = 'advertising'
-              AND table_name IN ('ad_tunnels', 'ad_occurrences_classified', 'ad_occurrence_tunnels')
+              AND table_name IN ('ad_tunnels', 'ad_occurrences_classified', 'ad_occurrence_tunnels', 'ad_brands')
             ORDER BY table_name
         """)
         rows = cur.fetchall()
-    assert rows == [("ad_occurrence_tunnels",), ("ad_occurrences_classified",), ("ad_tunnels",)]
+    assert rows == [("ad_brands",), ("ad_occurrence_tunnels",), ("ad_occurrences_classified",), ("ad_tunnels",)]
+
+
+def test_external_source_nice_classes_are_text(db_connection):
+    """classes_nice (brand groups job) stays text, even for a single class."""
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT sector_code, classes_nice FROM advertising.ref_ome_secteurs ORDER BY sector_code")
+        assert cur.fetchall() == [("001", None), ("PYTEST_AUTO", "12; 37; 39"), ("PYTEST_FOOD", "29")]
 
 
 def test_external_source_loaded(db_connection):
@@ -491,6 +608,8 @@ def test_external_source_only_writes_ref_tables(tmp_path, monkeypatch):
         "Tab'; DROP TABLE keywords; --": [["a"], ["b"]],
         # same table name as the previous tab
         "Tab DROP TABLE keywords": [["a"], ["b"]],
+        # for humans only
+        "_lisez-moi": [["a"], ["b"]],
     }
     assert download_source(source, tmp_path, fetch=fake_fetch(sheets)) == {"ref_ome_tab_drop_table_keywords": True}
     assert sorted(p.name for p in tmp_path.iterdir()) == ["ref_ome_tab_drop_table_keywords.csv"]
@@ -562,24 +681,26 @@ def test_fetch_google_sheet_api_calls(monkeypatch):
         def get(self, url, params, timeout):
             calls.append((url, params))
             if url == loader.DRIVE_FILES_API_URL:
-                return FakeResponse({"files": [{"id": "SHEET_ID_1234567890", "name": "OME_dictionnaire_marques_secteurs"}]})
+                return FakeResponse({"files": [{"id": "SHEET_ID_1234567890", "name": "Dictionnaire_marques_secteurs"}]})
             if url.endswith("/values:batchGet"):
                 return FakeResponse({"valueRanges": [{"values": [["a"], ["1"]]}, {}]})
             return FakeResponse({"sheets": [
                 {"properties": {"title": "secteurs", "sheetType": "GRID"}},
                 {"properties": {"title": "Tab 'quoted'", "sheetType": "GRID"}},
                 {"properties": {"title": "Chart", "sheetType": "OBJECT"}},
+                # for humans only: its values are not even downloaded
+                {"properties": {"title": "_lisez-moi", "sheetType": "GRID"}},
             ]})
 
     monkeypatch.setattr(loader, "get_session", lambda: FakeSession())
     checked = []
     monkeypatch.setattr(loader, "ensure_not_public", lambda spreadsheet: checked.append(spreadsheet["id"]))
-    sheets = loader.fetch_google_sheet("FOLDER_ID_123", "OME_dictionnaire_marques_secteurs")
+    sheets = loader.fetch_google_sheet("FOLDER_ID_123", "Dictionnaire_marques_secteurs")
 
     assert sheets == {"secteurs": [["a"], ["1"]], "Tab 'quoted'": []}
     assert checked == ["SHEET_ID_1234567890"]
     assert calls[0][1]["q"] == (
-        "'FOLDER_ID_123' in parents and name = 'OME_dictionnaire_marques_secteurs'"
+        "'FOLDER_ID_123' in parents and name = 'Dictionnaire_marques_secteurs'"
         " and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false"
     )
     assert calls[1][0] == f"{loader.SHEETS_API_URL}/SHEET_ID_1234567890"
@@ -596,7 +717,7 @@ def test_fetch_google_sheet_requires_exactly_one_file(monkeypatch):
 
     monkeypatch.setattr(loader, "get_session", lambda: FakeSession())
     with pytest.raises(loader.ExternalSourceError, match="2 spreadsheets"):
-        loader.fetch_google_sheet("FOLDER_ID_123", "OME_dictionnaire_marques_secteurs")
+        loader.fetch_google_sheet("FOLDER_ID_123", "Dictionnaire_marques_secteurs")
 
 
 def test_get_session_requires_credentials(monkeypatch):

@@ -1,6 +1,7 @@
 import os
 import re
 from logging.config import fileConfig
+from urllib.parse import quote_plus
 
 from sqlalchemy import create_engine
 
@@ -45,9 +46,9 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     url_tokens = {
-        "RRS_PG_USER": os.getenv("RRS_PG_USER", "user"),
+        "RRS_PG_USER": quote_plus(os.getenv("RRS_PG_USER", "user")),
         "RRS_PG_DATABASE": os.getenv("RRS_PG_DATABASE", "rrs_db"),
-        "RRS_PG_PASSWORD": os.getenv("RRS_PG_PASSWORD", "password"),
+        "RRS_PG_PASSWORD": quote_plus(os.getenv("RRS_PG_PASSWORD", "password")),
         "RRS_PG_HOST": os.getenv("RRS_PG_HOST", "localhost"),
         "RRS_PG_PORT": os.getenv("RRS_PG_PORT", "5432"),
     }

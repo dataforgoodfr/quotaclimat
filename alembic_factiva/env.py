@@ -1,6 +1,7 @@
 import os
 import re
 from logging.config import fileConfig
+from urllib.parse import quote_plus
 
 from sqlalchemy import create_engine
 
@@ -33,9 +34,9 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     url_tokens = {
-        "POSTGRES_USER": os.getenv("POSTGRES_USER", ""),
+        "POSTGRES_USER": quote_plus(os.getenv("POSTGRES_USER", "")),
         "POSTGRES_DB": os.getenv("POSTGRES_DB", ""),
-        "POSTGRES_PASSWORD": os.getenv("POSTGRES_PASSWORD", ""),
+        "POSTGRES_PASSWORD": quote_plus(os.getenv("POSTGRES_PASSWORD", "")),
         "POSTGRES_HOST": os.getenv("POSTGRES_HOST", ""),
         "POSTGRES_PORT": os.getenv("POSTGRES_PORT", ""),
     }

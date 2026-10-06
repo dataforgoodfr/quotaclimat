@@ -1,12 +1,12 @@
 id: extended-perimeter
-namespace: rrs
+namespace: rrs-dev
 
 description: |
-  Prod pipeline to ingest the extended perimeter in the Droit à l'Info scope.
+  Dev pipeline to ingest the extended perimeter in the Droit à l'Info scope.
 
 labels:
   pipeline: rrs
-  environment: prod
+  environment: dev
   scope: france
 
 inputs:
@@ -35,7 +35,7 @@ tasks:
     shmSize: 10gb
     env: 
       API_TO_S3_CONCURRENCY: 10
-      BUCKET_NAME: mediatree-extended-perimeter-prod
+      BUCKET_NAME: mediatree-extended-perimeter-dev
       COUNTRY: ext-fra
       ENV: prod
       KEYWORDS_URL: https://keywords.mediatree.fr/api/subtitle/
@@ -49,8 +49,8 @@ tasks:
       OMP_NUM_THREADS: 3
       PORT_HS: 5666
       START_DATE: "{{ (inputs.start_date ?? now()) | timestamp() }}"
-      BUCKET: "{{ secret('SCW_ACCESS') }}"
-      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      BUCKET: "{{ secret('RRS_SCW_ACCESS_DEV') }}"
+      BUCKET_SECRET: "{{ secret('RRS_SCW_SECRET_DEV') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
 
@@ -70,7 +70,7 @@ tasks:
       - cd /app && /app/entrypoints/detect_keywords.sh
     env:
       BATCH_SIZE: 5000
-      BUCKET_NAME: mediatree-extended-perimeter-prod
+      BUCKET_NAME: mediatree-extended-perimeter-dev
       COMPARE_DURATION: true
       COUNTRY: ext-fra
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
@@ -87,16 +87,16 @@ tasks:
       MODIN_MEMORY: 2000000000
       NUMBER_OF_PREVIOUS_DAYS: "{{ inputs.days_back }}"
       POSTGRES_DB: extended-perimeter
-      POSTGRES_PORT: 18492
+      POSTGRES_PORT: 18047
       RAY_COLOR_PREFIX: 1
       RAY_memory_monitor_refresh_ms: 0
       START_DATE: "{{ (inputs.start_date ?? now()) | timestamp() }}"
-      BUCKET: "{{ secret('SCW_ACCESS') }}"
-      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      BUCKET: "{{ secret('RRS_SCW_ACCESS_DEV') }}"
+      BUCKET_SECRET: "{{ secret('RRS_SCW_SECRET_DEV') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
-      POSTGRES_USER: "{{ secret('RRS_PG_USER') }}" # needs to be admin user to generate migrations
-      POSTGRES_HOST: "{{ secret('RRS_PG_HOST') }}"
-      POSTGRES_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
+      POSTGRES_USER: "{{ secret('RRS_PG_USER_DEV') }}" # needs to be admin user to generate migrations
+      POSTGRES_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
+      POSTGRES_PASSWORD: "{{ secret('RRS_PG_PASSWORD_DEV') }}"
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
       EXTENDED_PERIMETER: true
 
@@ -118,8 +118,8 @@ tasks:
     env: 
       APP_NAME: label-misinformation-extended-perimeter
       AWS_DEFAULT_REGION: fr-par
-      BUCKET_INPUT: misinformation-extended-perimeter-prod
-      BUCKET_OUTPUT: misinformation-extended-perimeter-prod
+      BUCKET_INPUT: misinformation-extended-perimeter-dev
+      BUCKET_OUTPUT: misinformation-extended-perimeter-dev
       BUCKET_OUTPUT_FOLDER: label-misinformation-input
       COUNTRY: ext-fra
       ENV: production
@@ -139,17 +139,17 @@ tasks:
       POSTGRES_PASSWORD_LS: "{{ secret('POSTGRES_PASSWORD_READ') }}"
       POSTGRES_PORT_LS: 22737
       POSTGRES_DB: extended-perimeter
-      POSTGRES_PORT: 18492
+      POSTGRES_PORT: 18047
       RAY_COLOR_PREFIX: 1
       DATE: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
-      API_LABEL_STUDIO_KEY: "{{ secret('API_LABEL_STUDIO_KEY') }}"
-      BUCKET_ACCESS: "{{ secret('SCW_ACCESS') }}"
-      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      API_LABEL_STUDIO_KEY: "{{ secret('API_LABEL_STUDIO_KEY_DEV') }}"
+      BUCKET_ACCESS: "{{ secret('RRS_SCW_ACCESS_DEV') }}"
+      BUCKET_SECRET: "{{ secret('RRS_SCW_SECRET_DEV') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
       OPENAI_API_KEY: "{{ secret('OPENAI_API_KEY') }}"
-      POSTGRES_USER: "{{ secret('RRS_PG_ADMIN_USER') }}"
-      POSTGRES_HOST: "{{ secret('RRS_PG_HOST') }}"
-      POSTGRES_PASSWORD: "{{ secret('RRS_PG_ADMIN_PASSWORD') }}"
+      POSTGRES_USER: "{{ secret('RRS_PG_ADMIN_USER_DEV') }}"
+      POSTGRES_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
+      POSTGRES_PASSWORD: "{{ secret('RRS_PG_ADMIN_PASSWORD_DEV') }}"
       SENTRY_DSN: "{{ secret('SENTRY_DSN') }}"
       FORCE_WHISPER_TRANSCRIPTION: ""
 
@@ -167,7 +167,7 @@ tasks:
       - -c
       - cd /app && /app/entrypoints/dbt.sh
     env:
-      DBT_ENV: prod
+      DBT_ENV: dev
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project
       EXTENDED_PERIMETER: true
@@ -176,14 +176,14 @@ tasks:
       MODIN_ENGINE: python
       MODIN_MEMORY: 3000000000
       POSTGRES_DB: extended-perimeter
-      POSTGRES_PORT: 18492
+      POSTGRES_PORT: 18047
       LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ secret('POSTGRES_USER_READ') }}"
       LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_READ') }}"
       LABELSTUDIO_POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
       LABELSTUDIO_POSTGRES_PORT: 22737
-      POSTGRES_USER: "{{ secret('RRS_PG_ADMIN_USER') }}"
-      POSTGRES_HOST: "{{ secret('RRS_PG_HOST') }}"
-      POSTGRES_PASSWORD: "{{ secret('RRS_PG_ADMIN_PASSWORD') }}"
+      POSTGRES_USER: "{{ secret('RRS_PG_ADMIN_USER_DEV') }}"
+      POSTGRES_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
+      POSTGRES_PASSWORD: "{{ secret('RRS_PG_ADMIN_PASSWORD_DEV') }}"
 
 # ingest -> detect_keywords -> detect_misinformation
 

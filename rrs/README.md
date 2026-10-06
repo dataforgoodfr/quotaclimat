@@ -162,6 +162,21 @@ Scans S3-hosted parquet files with DuckDB and flags transcripts containing Frenc
 
 ---
 
+## Extended perimeter (Droit à l'info)
+
+The `rrs-climate` and `rrs-insecurity` Kestra flows (`infrastructure/kestra/flows/main_rrs_climate.yaml`, `main_rrs_insecurity.yaml`) have a `source` input:
+
+| `source` | Source DB (`POSTGRES_*`) | `BUCKET_NAME` | `SOURCE_COUNTRY_CODE` |
+|---|---|---|---|
+| `barometre` (default) | `barometre` (OME host, port 22737, `RRS_BAROMETRE_READ_*`) | `mediatree` | `fra` |
+| `extended` | `extended-perimeter` (RRS host, port 18492, `RRS_PG_USER`/`RRS_PG_PASSWORD`) | `mediatree-extended-perimeter-prod` | `ext-fra` |
+
+The extended-perimeter DB has the same structure as `barometre`, so `import_segments.py` and `import_cases.py` work unchanged apart from `import_cases.py` selecting the channel list from `SOURCE_COUNTRY_CODE` (`EXTENDED_FRANCE.channels` for `ext-fra`, `FRANCE.channels` otherwise). Both sources write into the same `rrs` database.
+
+Extended runs are started by the `rrs-orchestrator` flow with `run_clustering=false`, so no clusters are created for them, before the usual `barometre` -> `rrs-climate` -> `rrs-insecurity` chain. See the root `README.md` ("Extended perimeter") for the full sequence.
+
+---
+
 ## Database
 
 ### Schema
@@ -220,6 +235,12 @@ poetry run alembic -c rrs/alembic.ini current
 ---
 
 ## Environment Variables
+
+### Source perimeter
+
+| Variable | Used by | Description |
+|---|---|---|
+| `SOURCE_COUNTRY_CODE` | `keyword_detection/import_cases.py` | `fra` (default) or `ext-fra`; selects the channel list to import |
 
 ### Database (RRS PostgreSQL)
 

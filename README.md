@@ -451,7 +451,26 @@ The `EXTENDED_PERIMETER` env variable (`"true"`/`"false"`, default `"false"`) to
 The extended perimeter data lives in its own infrastructure, isolated from the main `rrs`/`barometre` databases (`infrastructure/live/rrs/template/`):
 * An `extended-perimeter` Postgres database on the `rrs` RDB instance (`database.tf`), with admin (full) and job (readwrite) privileges only - no migrate or metabase user access, unlike the `rrs` database - plus a dedicated readonly `rrs-read-<env>` user (used for dbt's `select` grants above, and sharing its password with the `rrs-read-<env>` user on the `barometre` database in `infrastructure/live/barometre/template/database.tf`).
 * Two dedicated S3 buckets, `mediatree-extended-perimeter-<env>` and `misinformation-extended-perimeter-<env>` (`s3.tf`), with the existing `rrs-ci` IAM application/policy granted object storage read/write access.
-* A Kestra dev flow (`infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml`) that ingests Mediatree data to the `mediatree-extended-perimeter` bucket, then runs `entrypoints/detect_keywords.sh` with `EXTENDED_PERIMETER: true` (which always runs `alembic upgrade head` first, using the admin user since it needs DDL rights) against the `extended-perimeter` database, followed by misinformation detection writing to the `misinformation-extended-perimeter` bucket.
+
+#### Kestra flows
+Flows live in `infrastructure/kestra/flows/`. `main_rrs_extendedperimeter.yaml` (namespace `rrs`, flow id `extended-perimeter`) is the prod flow and `main_rrsdev_extendedperimeter.yaml` (namespace `rrs-dev`) is its dev twin: same tasks and inputs, only the secrets (`_DEV`), buckets (`-dev`), ports and `DBT_ENV` differ. Tasks, in order:
+1. `ingest_data_to_s3`: Mediatree to the `mediatree-extended-perimeter-<env>` bucket (`COUNTRY=ext-fra`).
+2. `detect_keywords`: runs `entrypoints/detect_keywords.sh` with `EXTENDED_PERIMETER: true` (which always runs `alembic upgrade head` first, using the admin user since it needs DDL rights) against the `extended-perimeter` database.
+3. `detect_misinformation`: reads/writes the `misinformation-extended-perimeter-<env>` bucket (`BUCKET_INPUT`, `BUCKET_OUTPUT`, folder `label-misinformation-input`).
+4. `dbt_run_transformations`: dbt over the `extended-perimeter` database.
+
+Optional inputs (also available on `barometre`, `barometre-catchup` and `barometre-i18n`): `days_back` (default 1, passed as `NUMBER_OF_PREVIOUS_DAYS`) and `start_date` (`YYYY-MM-DD`, defaults to now, converted to the epoch `START_DATE`).
+
+The `extended-perimeter` database has exactly the same structure as `barometre` (and its `keywords.country` is `france`), so the same downstream code can read either.
+
+#### Daily orchestration
+The `rrs-orchestrator` flow (`main_rrs_orchestrator.yaml`) runs every morning at 01:10 (Europe/Paris):
+1. `extended-perimeter`
+2. `rrs-climate` with `source=extended`, `run_clustering=false`
+3. `rrs-insecurity` with `source=extended`, `run_clustering=false`
+4. `barometre`, whose completion fires the usual flow triggers: `rrs-climate` then `rrs-insecurity` on the `barometre` source, with clustering.
+
+The `barometre` 12:30 afternoon schedule is unchanged and still triggers the RRS chain on its own. The orchestrator labels its extended `rrs-*` executions `source: extended`, and `rrs-insecurity`'s trigger ignores them. See `rrs/README.md` for how RRS reads the extended source.
 
 # Mediatre to S3
 For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway) with partition :

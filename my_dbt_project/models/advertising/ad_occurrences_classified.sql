@@ -41,6 +41,8 @@ SELECT
   -- group / ultimate parent company of the brand (see ad_brands), the predicted brand itself when not listed
   COALESCE(br.brand_group, a.predicted_brand) AS brand_group,
   COALESCE(br.brand_ultimate_parent, a.predicted_brand) AS brand_ultimate_parent,
+  COALESCE(br.brand_group_label, a.predicted_brand) AS brand_group_label,
+  COALESCE(br.brand_ultimate_parent_label, a.predicted_brand) AS brand_ultimate_parent_label,
   a.prediction_status,
   a.prediction_confidence,
   s.sector_label_fr,

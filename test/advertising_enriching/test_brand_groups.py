@@ -133,7 +133,7 @@ def test_quota_wait_from_retry_after_header_and_request_counts(monkeypatch):
     session = FakeInpiSession()
     answers = iter([
         FakeResponse(status_code=429, headers={"X-Rate-Limit-Retry-After-Seconds": "5"}),
-        FakeResponse(search_page([("1", "ACME")], count=1)),
+        FakeResponse(search_page([("1", "ACME")], count=1), headers={"X-Rate-Limit-Remaining": "86"}),
     ])
     monkeypatch.setattr(session, "request", lambda method, url, timeout, **kwargs: next(answers))
     client = InpiClient("user", "password", delay_sec=0, session=session)
@@ -141,7 +141,8 @@ def test_quota_wait_from_retry_after_header_and_request_counts(monkeypatch):
     # the wait of the header (plus one second), then the same request again
     assert 6 in waits
     assert dict(client.request_counts) == {"login": 2, "search": 2}
-    assert client.requests_summary == "4 INPI requests (login 2, search 2)"
+    # with the quota left given by the last answer
+    assert client.requests_summary == "4 INPI requests (login 2, search 2), 86 left in the quota"
 
 
 def test_quota_wait_too_long_stops(monkeypatch):
@@ -263,6 +264,25 @@ def test_brand_notices_exact_name_in_force_only():
     assert [(r[1].rsplit("/", 1)[-1], r[2].get("json", {}).get("position")) for r in session.requests] == [
         ("search", 0), ("search", 100), ("FR5189659", None),
     ]
+
+
+def test_brand_notices_reads_at_most_max_notices(monkeypatch):
+    session = FakeInpiSession()
+    urls = []
+
+    def request(method, url, timeout, **kwargs):
+        urls.append(url)
+        if url.endswith("/search"):
+            marks = [(str(n), "ACME") for n in range(5)] if kwargs["json"]["position"] == 0 else []
+            return FakeResponse(search_page(marks, count=5))
+        return FakeResponse((ASSETS / "inpi_notice_FR5189659.xml").read_bytes())
+
+    monkeypatch.setattr(session, "request", request)
+    notices = InpiClient("user", "password", delay_sec=0, session=session).brand_notices("Acme")
+    # 5 trademarks in force named like the brand, only the first 3 notices read (INPI_MAX_NOTICES): the
+    # notices make most of the requests of a run
+    assert len(notices) == 3
+    assert sum("/notice/" in url for url in urls) == 3
 
 
 def search_page(marks: list[tuple[str, str]], count: int) -> bytes:

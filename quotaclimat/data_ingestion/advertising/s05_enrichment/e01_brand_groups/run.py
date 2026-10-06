@@ -7,8 +7,8 @@ For each brand, by decreasing broadcast duration:
    the Dictionnaire_marques_secteurs Google Sheet, loaded by dbt in advertising.ref_ome_secteurs);
 2. parent company of the holder: Wikidata (P749 of the item with this SIREN), else GLEIF (direct parent of
    the LEI registered under this SIREN), else the holder itself;
-3. a row is appended to the tab Marques, also when nothing was found (empty group), so that the brand is
-   not searched again and a human can fill it in.
+3. a row is appended to the tab Marques when a group was found. A brand without any is not written, so that
+   it is searched again on the next runs (and can be filled in by a human meanwhile).
 
 Env: POSTGRES_*, INPI_USERNAME, INPI_PASSWORD, GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON,
 EXTERNAL_SOURCES_DRIVE_FOLDER, BRAND_GROUPS_MAX_BRANDS (default 50), BRAND_GROUPS_DRY_RUN (true: write
@@ -178,7 +178,7 @@ def run() -> int:
         if row["groupe"]:
             logging.info("Brand %s: group %r (%s)", brand, row["groupe"], row["source"])
         else:
-            logging.info("Brand %s: no trademark in force found (FR, EU, WO), appended with an empty group", brand)
+            logging.info("Brand %s: no trademark in force found (FR, EU, WO), not written, searched again next run", brand)
         rows.append(row)
         logging.info("%s rows proposed, %s so far", len(rows), inpi.requests_summary)
 
@@ -194,7 +194,8 @@ def run() -> int:
     else:
         # re-read just before appending: a brand added by a human during the run is not added twice
         inventory_keys = {name_key(r.get("marque")) for r in sheet.read(BRANDS_TAB)}
-        rows = [r for r in rows if name_key(r["marque"]) not in inventory_keys]
+        # only the brands with a group: the others are searched again on the next runs
+        rows = [r for r in rows if r["groupe"] and name_key(r["marque"]) not in inventory_keys]
         sheet.append(BRANDS_TAB, rows)
         logging.info("%s rows appended to the tab %s", len(rows), BRANDS_TAB)
     return len(rows)

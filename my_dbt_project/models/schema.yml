@@ -429,6 +429,10 @@ models:
         description: >
           Ultimate parent company of the group of the predicted brand (see ad_brands.brand_ultimate_parent),
           the predicted brand itself when it is not in ad_brands. NULL when no brand was predicted.
+      - name: brand_group_label
+        description: brand_group for reading (see ad_brands.brand_group_label), its alias when it has one.
+      - name: brand_ultimate_parent_label
+        description: brand_ultimate_parent for reading (see ad_brands.brand_ultimate_parent_label), its alias when it has one.
       - name: mesinfo_distance_sec
         description: >
           Distance in seconds (absolute value) to the nearest validated misinformation on the same
@@ -533,6 +537,10 @@ models:
         description: >
           True when the group written in the tab Marques is in the tab Groupes (name_key comparison).
           False when the group must be added to the tab Groupes or corrected in the tab Marques.
+      - name: group_alias
+        description: >
+          Short name of the group for reading the results (column alias of the tab Groupes, optional),
+          e.g. Belron for Belron International Limited. NULL when empty.
       - name: group_id
         description: Identifier of the group (column groupe_id of the tab Groupes, e.g. Wikidata QID or LEI).
       - name: ultimate_parent_verified
@@ -547,6 +555,12 @@ models:
           the tab Marques, else the brand itself.
       - name: brand_ultimate_parent
         description: verified_ultimate_parent, else brand_group.
+      - name: brand_group_label
+        description: group_alias, else brand_group. For reading the results; brand_group keeps the official name.
+      - name: brand_ultimate_parent_label
+        description: >
+          Alias of the ultimate parent when it is itself a group of the tab Groupes (name_key comparison),
+          else brand_ultimate_parent.
 
   - name: ad_occurrence_tunnels
     description: >

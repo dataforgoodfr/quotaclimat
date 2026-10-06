@@ -37,6 +37,10 @@ SEARCH_PAGE_SIZE = 100
 # recent first, and the trademark named exactly like the brand can be an old one (ALAIN AFFLELOU, 1986:
 # after more than 200 other ones)
 SEARCH_MAX_RESULTS = int(os.environ.get("INPI_SEARCH_MAX_RESULTS", "1000"))
+# notices read at most per brand and collection group: one request each, they make most of the requests
+# of a run and the quota is about 100 requests (x-rate-limit-remaining 87 at the start of a test run)
+MAX_NOTICES = int(os.environ.get("INPI_MAX_NOTICES", "3"))
+REMAINING_HEADER = "x-rate-limit-remaining"
 
 # current status of a trademark still in force (MarkCurrentStatusCode, as name_key: the API returns either
 # the label "Marque enregistrée" or the enum value "MARQUE_ENREGISTRÉE")
@@ -251,12 +255,17 @@ class InpiClient:
         # HTTP requests sent to the INPI by kind (login, search, notice), to know how many the quota allows
         self.request_counts: Counter = Counter()
         self._rate_limit_headers_logged = False
+        # requests left in the quota, from the last answer that gave it
+        self.rate_limit_remaining: str | None = None
 
     @property
     def requests_summary(self) -> str:
         total = sum(self.request_counts.values())
         details = ", ".join(f"{kind} {n}" for kind, n in sorted(self.request_counts.items()))
-        return f"{total} INPI requests ({details})" if total else "0 INPI requests"
+        summary = f"{total} INPI requests ({details})" if total else "0 INPI requests"
+        if self.rate_limit_remaining is not None:
+            summary += f", {self.rate_limit_remaining} left in the quota"
+        return summary
 
     def _count(self, url: str) -> None:
         kind = "search" if url.endswith("/search") else "notice" if "/notice/" in url else "login"
@@ -299,6 +308,9 @@ class InpiClient:
                 # once per run: the quota information the gateway sends, if any
                 logging.info("INPI rate limit headers: %s", _rate_limit_headers(response))
                 self._rate_limit_headers_logged = True
+            remaining = _rate_limit_headers(response).get(REMAINING_HEADER)
+            if remaining is not None:
+                self.rate_limit_remaining = remaining
             if response.status_code == 401 and attempt == 0:
                 self.login()  # session expired
                 continue
@@ -363,7 +375,7 @@ class InpiClient:
         number = number if number[:2].isalpha() else f"FR{number}"
         return parse_notice(self._request("GET", f"{API_URL}/notice/{number}").content)
 
-    def brand_notices(self, brand: str, max_notices: int = 10) -> list[Notice]:
+    def brand_notices(self, brand: str, max_notices: int = MAX_NOTICES) -> list[Notice]:
         """Notices of the French trademarks in force named exactly like the brand (name_key), most recent
         first, whose holder is a company (natural persons are never kept). A company registered abroad
         (e.g. Inter IKEA Systems B.V.) has no SIREN: it is kept, identified by its name."""

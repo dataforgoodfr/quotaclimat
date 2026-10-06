@@ -11,7 +11,9 @@
     - tab Marques: brand -> group, rows not verified by a human allowed (statut 'non vérifié');
     - tab Groupes: one row per group, with its canonical name (column groupe) that the column groupe of
       the tab Marques must use, and its ultimate parent company, only used when verified by a human
-      (statut 'vérifié').
+      (statut 'vérifié'), and its optional alias (column alias), a short name for reading the results
+      (e.g. Belron for Belron International Limited): the official names stay in brand_group and
+      brand_ultimate_parent, the labels use the alias when there is one.
     Names are compared with name_key (case, accents, punctuation and spaces ignored). Nothing is merged
     automatically: a group of the tab Marques that is not in the tab Groupes (group_in_inventory false)
     is kept as written, for a human to correct in the sheet. -#}
@@ -40,6 +42,7 @@ inventory_groups AS (
   SELECT DISTINCT ON (group_key)
     group_key,
     group_name,
+    group_alias,
     group_id,
     ultimate_parent_verified,
     CASE WHEN ultimate_parent_verified THEN ultimate_parent END AS verified_ultimate_parent
@@ -47,27 +50,39 @@ inventory_groups AS (
     SELECT
       {{ name_key('groupe') }} AS group_key,
       TRIM(groupe) AS group_name,
+      NULLIF(TRIM(alias), '') AS group_alias,
       NULLIF(TRIM(groupe_id), '') AS group_id,
       NULLIF(TRIM(societe_mere_ultime), '') AS ultimate_parent,
       COALESCE(TRIM(statut) = 'vérifié', FALSE) AS ultimate_parent_verified
-    FROM ({{ source_or_empty('advertising', 'group_inventory', ['groupe', 'groupe_id', 'societe_mere_ultime', 'statut']) }}) inventory
+    FROM ({{ source_or_empty('advertising', 'group_inventory', ['groupe', 'alias', 'groupe_id', 'societe_mere_ultime', 'statut']) }}) inventory
   ) keyed
   WHERE group_key <> ''
   ORDER BY group_key, ultimate_parent_verified DESC, group_name
+),
+brands AS (
+  SELECT
+    b.brand_key,
+    b.brand,
+    b.inventory_group,
+    b.brand_group_source,
+    b.brand_group_status,
+    g.group_key IS NOT NULL AS group_in_inventory,
+    g.group_alias,
+    g.group_id,
+    COALESCE(g.ultimate_parent_verified, FALSE) AS ultimate_parent_verified,
+    g.verified_ultimate_parent,
+    -- canonical name of the group in the tab Groupes, else the group as written in the tab Marques, else the brand
+    COALESCE(g.group_name, b.inventory_group, b.brand) AS brand_group,
+    -- verified ultimate parent company, else the group
+    COALESCE(g.verified_ultimate_parent, g.group_name, b.inventory_group, b.brand) AS brand_ultimate_parent
+  FROM inventory_brands b
+  LEFT JOIN inventory_groups g ON g.group_key = {{ name_key('b.inventory_group') }}
 )
 SELECT
-  b.brand_key,
-  b.brand,
-  b.inventory_group,
-  b.brand_group_source,
-  b.brand_group_status,
-  g.group_key IS NOT NULL AS group_in_inventory,
-  g.group_id,
-  COALESCE(g.ultimate_parent_verified, FALSE) AS ultimate_parent_verified,
-  g.verified_ultimate_parent,
-  -- canonical name of the group in the tab Groupes, else the group as written in the tab Marques, else the brand
-  COALESCE(g.group_name, b.inventory_group, b.brand) AS brand_group,
-  -- verified ultimate parent company, else the group
-  COALESCE(g.verified_ultimate_parent, g.group_name, b.inventory_group, b.brand) AS brand_ultimate_parent
-FROM inventory_brands b
-LEFT JOIN inventory_groups g ON g.group_key = {{ name_key('b.inventory_group') }}
+  b.*,
+  -- for reading the results: the alias of the group, else its official name
+  COALESCE(b.group_alias, b.brand_group) AS brand_group_label,
+  -- the alias of the ultimate parent when it is itself a row of the tab Groupes, else its official name
+  COALESCE(p.group_alias, b.brand_ultimate_parent) AS brand_ultimate_parent_label
+FROM brands b
+LEFT JOIN inventory_groups p ON p.group_key = {{ name_key('b.brand_ultimate_parent') }}

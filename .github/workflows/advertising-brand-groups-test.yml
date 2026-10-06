@@ -1,8 +1,9 @@
 name: Test brand groups job from a branch
 
 # Runs the brand groups enrichment job (s05_enrichment/e01_brand_groups) with the code of a branch, on the
-# production Scaleway job, in dry run: nothing is written to the sheet, the proposed rows are printed in
-# the job logs. The production image and startup command of the job are always restored at the end.
+# production Scaleway job. Dry run or not is set by the env variable BRAND_GROUPS_DRY_RUN of the job in
+# Scaleway (true: nothing written to the sheet, the proposed rows printed in the job logs). The production
+# image and startup command of the job are always restored at the end.
 
 on:
   push:
@@ -15,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       max_brands:
-        description: 'Brands processed by the test run (dry run)'
+        description: 'Brands processed by the test run'
         default: '20'
 
 # the GITHUB_TOKEN only reads the repository (checkout); Scaleway is reached with its own secrets
@@ -76,7 +77,7 @@ jobs:
         id: region
         run: echo "value=$(echo '${{ secrets.SCW_ZONE }}' | sed 's/-[0-9]*$//')" >> $GITHUB_OUTPUT
 
-      - name: Point the job to the temporary image, in dry run
+      - name: Point the job to the temporary image
         id: update
         run: |
           # the number of brands comes from the manual run form: a number only
@@ -85,9 +86,8 @@ jobs:
             region=${{ steps.region.outputs.value }} \
             image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/${{ env.TEMP_IMAGE_NAME }}:${{ steps.tag.outputs.value }} \
             startup-command.0=env \
-            startup-command.1=BRAND_GROUPS_DRY_RUN=true \
-            "startup-command.2=BRAND_GROUPS_MAX_BRANDS=$MAX_BRANDS" \
-            startup-command.3=${{ env.ENTRYPOINT }} > /dev/null
+            "startup-command.1=BRAND_GROUPS_MAX_BRANDS=$MAX_BRANDS" \
+            startup-command.2=${{ env.ENTRYPOINT }} > /dev/null
 
       - name: Run the job and wait for it
         id: run
@@ -123,9 +123,9 @@ jobs:
           {
             echo "### Brand groups job: ${{ steps.run.outputs.status || 'unknown' }}"
             echo ""
-            echo "Branch \`${GITHUB_REF_NAME}\`, image \`${{ env.TEMP_IMAGE_NAME }}:${{ steps.tag.outputs.value }}\`, dry run on ${MAX_BRANDS} brands: nothing written to the sheet."
+            echo "Branch \`${GITHUB_REF_NAME}\`, image \`${{ env.TEMP_IMAGE_NAME }}:${{ steps.tag.outputs.value }}\`, ${MAX_BRANDS} brands. Written to the tab Marques unless BRAND_GROUPS_DRY_RUN is true in the env of the Scaleway job."
             echo ""
-            echo "Proposed rows: in the logs of the job run \`${{ steps.run.outputs.run_id }}\`, between the lines \`----- BRAND GROUPS PROPOSALS\` and \`----- END OF BRAND GROUPS PROPOSALS\` (tab-separated, can be pasted in a sheet)."
+            echo "In dry run, proposed rows: in the logs of the job run \`${{ steps.run.outputs.run_id }}\`, between the lines \`----- BRAND GROUPS PROPOSALS\` and \`----- END OF BRAND GROUPS PROPOSALS\` (tab-separated, can be pasted in a sheet)."
             echo ""
             echo "[Scaleway console, Serverless Jobs](https://console.scaleway.com/serverless-jobs/jobs) > brand groups job > Job runs > \`${{ steps.run.outputs.run_id }}\` > logs."
           } >> $GITHUB_STEP_SUMMARY

@@ -27,6 +27,8 @@ class Holder:
     country: str | None = None
     # trademark number with its collection prefix (FR..., EU..., WO...)
     notice_number: str = ""
+    # False when none of the trademarks read covers the Nice classes of the brand's sector
+    in_sector_classes: bool = True
 
     @property
     def trademark(self) -> str:
@@ -61,11 +63,14 @@ def parse_nice_classes(rows) -> dict[str, set[int]]:
 def choose_holder(
     notices: list[Notice], sector_classes: set[int] | None
 ) -> Holder | None:
-    """The holder of the most trademarks covering the sector's Nice classes (all trademarks when the
-    sector has no classes), most recent trademark first on a tie."""
-    relevant = [n for n in notices if not sector_classes or n.classes & sector_classes]
-    if not relevant:
+    """The holder of the most trademarks covering the sector's Nice classes, most recent trademark first
+    on a tie. All trademarks when the sector has no classes or when none covers them (e.g. Amazon: the
+    few notices read can be in other classes), flagged for the human check."""
+    if not notices:
         return None
+    relevant = [n for n in notices if not sector_classes or n.classes & sector_classes]
+    in_sector_classes = bool(relevant)
+    relevant = relevant or notices
     counts = Counter(_holder_id(n) for n in relevant)
     # Counter keeps the first-seen order on ties, notices are the most recent first
     holder_id, _ = counts.most_common(1)[0]
@@ -78,6 +83,7 @@ def choose_holder(
         other_holders=others,
         country=chosen.holder_country,
         notice_number=chosen.notice_number,
+        in_sector_classes=in_sector_classes,
     )
 
 
@@ -119,6 +125,8 @@ def propose_row(
 
     identity = f"SIREN {holder.siren}" if holder.siren else f"société étrangère, pays {holder.country or '?'}"
     notes = [f"titulaire {holder.name} ({identity}), marque {holder.trademark}"]
+    if not holder.in_sector_classes:
+        notes.append("aucune marque lue dans les classes de Nice du secteur, titulaire à vérifier")
     if gleif_lei and not holder.siren:
         notes.append(f"LEI du titulaire trouvé par son nom : {gleif_lei.identifier}")
     if wikidata_parent:

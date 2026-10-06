@@ -480,7 +480,13 @@ def test_choose_holder_by_sector_classes():
     # without the sector's classes: the holder of the most trademarks, others listed
     holder = choose_holder(notices, None)
     assert (holder.siren, holder.other_holders) == ("222", ["COUTURE (111)"])
-    assert choose_holder(notices, {12}) is None
+    assert holder.in_sector_classes
+    # no trademark in the sector's classes (Amazon): all trademarks, flagged for the human check
+    holder = choose_holder(notices, {12})
+    assert (holder.siren, holder.in_sector_classes) == ("222", False)
+    row = propose_row("Acme", holder, None, None, None, {}, TODAY)
+    assert "aucune marque lue dans les classes de Nice du secteur" in row["commentaire"]
+    assert choose_holder([], {12}) is None
 
 
 def test_parse_nice_classes():

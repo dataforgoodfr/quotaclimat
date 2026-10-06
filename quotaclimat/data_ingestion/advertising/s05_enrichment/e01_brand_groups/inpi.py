@@ -58,8 +58,25 @@ def search_term(brand: str) -> str:
     return " ".join(re.sub(r"[^\w\s]|_", " ", brand).split())
 
 
+# words of the statuses of the trademarks no longer in force, for the European (EU, in English) and
+# international (WO) ones, whose statuses differ from the French ones
+DEAD_STATUS_WORDS = (
+    "withdrawn", "expired", "cancel", "refused", "rejected", "surrender", "lapsed", "removed", "invalid",
+    "revoked", "expiree", "retrait", "renonciation", "annulee", "dechue", "rejetee",
+)
+# search order: the French trademarks first, which give the SIREN of French holders; the European and
+# international ones (e.g. Volkswagen, Amazon) only when no French one is found
+COLLECTION_GROUPS = (("FR",), ("EU", "WO"))
+
+
 def is_alive(status: str | None) -> bool:
-    return name_key((status or "").replace("_", " ")) in ALIVE_STATUSES
+    """Trademark still in force. The international (WO) results have no status: kept."""
+    if status is None:
+        return True
+    key = name_key(status.replace("_", " "))
+    if key in ALIVE_STATUSES:
+        return True
+    return not any(word in key for word in DEAD_STATUS_WORDS)
 
 
 @dataclass
@@ -68,6 +85,8 @@ class SearchResult:
     mark: str
     status: str | None
     applicant: str | None
+    # number of the notice, with its collection prefix: FR5189659, EU19197838, WO1892865
+    notice_number: str = ""
 
 
 @dataclass
@@ -82,6 +101,8 @@ class Notice:
     classes: set[int] = field(default_factory=set)
     # country of the holder's address (FR, NL...): the holders registered abroad have no SIREN
     holder_country: str | None = None
+    # number with its collection prefix (FR5189659, EU19197838, WO1892865), set from the search result
+    notice_number: str = ""
 
 
 def _local(tag: str) -> str:
@@ -114,11 +135,13 @@ def parse_search(xml: str | bytes) -> list[SearchResult]:
             # fields are repeated in the response: keep the first value
             values.setdefault(f.get("name"), _text(_find(f, "value")))
         if values.get("ApplicationNumber"):
+            href = next((e.get("href") for e in result.iter() if _local(e.tag) == "xml"), None) or ""
             results.append(SearchResult(
                 application_number=values["ApplicationNumber"],
                 mark=values.get("Mark") or "",
                 status=values.get("MarkCurrentStatusCode"),
                 applicant=values.get("DEPOSANT"),
+                notice_number=href.rsplit("/", 1)[-1] if "/notice/" in href else f"FR{values['ApplicationNumber']}",
             ))
     return results
 
@@ -139,7 +162,13 @@ def parse_notice(xml: str | bytes) -> Notice:
     holder_name = holder_siren = holder_country = None
     holder_is_company = False
     if holder is not None:
-        holder_is_company = holder.get("PersonType") == "PM"
+        # PersonType PM (company) or PP (natural person) in the French notices; for the other ones,
+        # a holder with an organization name and not marked as a natural person
+        person_type = (holder.get("PersonType") or "").strip().lower()
+        holder_is_company = person_type == "pm" or (
+            person_type not in ("pp", "natural person", "naturalperson")
+            and _find(holder, "OrganizationName") is not None
+        )
         holder_name = _text(_find(holder, "OrganizationName"))
         holder_country = _text(_find(holder, "AddressCountryCode"))
         for e in holder.iter():
@@ -272,10 +301,15 @@ class InpiClient:
         return response
 
     def search(
-        self, brand: str, size: int = SEARCH_PAGE_SIZE, max_results: int = SEARCH_MAX_RESULTS
+        self,
+        brand: str,
+        collections: tuple[str, ...] = ("FR",),
+        size: int = SEARCH_PAGE_SIZE,
+        max_results: int = SEARCH_MAX_RESULTS,
     ) -> list[SearchResult]:
-        """French trademarks whose name contains the brand (Solr search of the API), all pages up to
-        max_results."""
+        """Trademarks whose name contains the brand as an exact phrase (Solr search of the API: without
+        the quotes every word is searched separately, more than 1000 results for "Comme J'aime"), all
+        pages up to max_results."""
         term = search_term(brand)
         if not term:
             return []
@@ -283,8 +317,8 @@ class InpiClient:
         position = 0
         while position < max_results:
             response = self._request("POST", f"{API_URL}/search", headers={"Accept": "application/xml"}, json={
-                "collections": ["FR"],
-                "query": f"[Mark={term}]",
+                "collections": list(collections),
+                "query": f'[Mark="{term}"]',
                 "fields": ["ApplicationNumber", "Mark", "MarkCurrentStatusCode", "DEPOSANT"],
                 "position": position,
                 "size": size,
@@ -299,8 +333,10 @@ class InpiClient:
             logging.warning("INPI search %r: more than %s results, the next ones are not read", term, max_results)
         return results
 
-    def notice(self, application_number: str) -> Notice:
-        number = application_number if application_number.startswith("FR") else f"FR{application_number}"
+    def notice(self, number: str) -> Notice:
+        """Notice by its number with its collection prefix (FR5189659, EU19197838, WO1892865); a number
+        without prefix is a French one."""
+        number = number if number[:2].isalpha() else f"FR{number}"
         return parse_notice(self._request("GET", f"{API_URL}/notice/{number}").content)
 
     def brand_notices(self, brand: str, max_notices: int = 10) -> list[Notice]:
@@ -308,6 +344,21 @@ class InpiClient:
         first, whose holder is a company (natural persons are never kept). A company registered abroad
         (e.g. Inter IKEA Systems B.V.) has no SIREN: it is kept, identified by its name."""
         key = name_key(brand)
-        matches = [r for r in self.search(brand) if name_key(r.mark) == key and is_alive(r.status)]
-        notices = [self.notice(r.application_number) for r in matches[:max_notices]]
-        return [n for n in notices if n.holder_is_company and (n.holder_siren or n.holder_name)]
+        for collections in COLLECTION_GROUPS:
+            results = self.search(brand, collections)
+            exact = [r for r in results if name_key(r.mark) == key]
+            alive = [r for r in exact if is_alive(r.status)]
+            notices = []
+            for r in alive[:max_notices]:
+                notice = self.notice(r.notice_number)
+                notice.notice_number = r.notice_number
+                notices.append(notice)
+            kept = [n for n in notices if n.holder_is_company and (n.holder_siren or n.holder_name)]
+            # how far each step goes, to understand the brands without result
+            logging.info(
+                "INPI %s %r: %s results, %s named exactly like it, %s in force, %s held by a company",
+                "+".join(collections), brand, len(results), len(exact), len(alive), len(kept),
+            )
+            if kept:
+                return kept
+        return []

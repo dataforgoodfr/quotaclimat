@@ -25,6 +25,12 @@ class Holder:
     application_number: str
     other_holders: list[str]
     country: str | None = None
+    # trademark number with its collection prefix (FR..., EU..., WO...)
+    notice_number: str = ""
+
+    @property
+    def trademark(self) -> str:
+        return self.notice_number or f"FR{self.application_number}"
 
 
 def _holder_id(notice: Notice) -> str:
@@ -71,6 +77,7 @@ def choose_holder(
         application_number=chosen.application_number,
         other_holders=others,
         country=chosen.holder_country,
+        notice_number=chosen.notice_number,
     )
 
 
@@ -91,7 +98,7 @@ def propose_row(
             "groupe": "",
             "source": "inpi",
             "statut": "non vérifié",
-            "commentaire": f"job {today.isoformat()} : aucune marque française en vigueur à ce nom (INPI)",
+            "commentaire": f"job {today.isoformat()} : aucune marque en vigueur à ce nom à l'INPI (bases FR, EU, WO)",
         }
 
     candidates = [
@@ -111,7 +118,7 @@ def propose_row(
     group, source = known or candidates[0]
 
     identity = f"SIREN {holder.siren}" if holder.siren else f"société étrangère, pays {holder.country or '?'}"
-    notes = [f"titulaire {holder.name} ({identity}), marque FR{holder.application_number}"]
+    notes = [f"titulaire {holder.name} ({identity}), marque {holder.trademark}"]
     if gleif_lei and not holder.siren:
         notes.append(f"LEI du titulaire trouvé par son nom : {gleif_lei.identifier}")
     if wikidata_parent:
@@ -135,5 +142,5 @@ def propose_row(
         "titulaire": holder.name,
         "siren": holder.siren,
         "lei": gleif_lei.identifier if gleif_lei else "",
-        "numero_marque": f"FR{holder.application_number}",
+        "numero_marque": holder.trademark,
     }

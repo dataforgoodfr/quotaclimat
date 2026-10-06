@@ -183,7 +183,13 @@ def test_is_alive():
     assert is_alive("Demande publiée")
     assert not is_alive("Marque expirée")
     assert not is_alive("MARQUE_DÉCHUE")
-    assert not is_alive(None)
+    # international (WO) results have no status; European (EU) statuses are in English
+    assert is_alive(None)
+    assert is_alive("Registered")
+    assert is_alive("Application published")
+    assert not is_alive("Application withdrawn")
+    assert not is_alive("Registration expired")
+    assert not is_alive("Registration cancelled")
 
 
 class FakeResponse:
@@ -245,7 +251,7 @@ def test_brand_notices_exact_name_in_force_only():
     method, url, kwargs, headers = session.requests[0]
     assert (method, url.rsplit("/", 1)[-1]) == ("POST", "search")
     assert kwargs["json"]["collections"] == ["FR"]
-    assert kwargs["json"]["query"] == "[Mark=Dior]"
+    assert kwargs["json"]["query"] == '[Mark="Dior"]'
     assert session.login_body == {
         "username": "user",
         "password": "password",
@@ -267,6 +273,50 @@ def search_page(marks: list[tuple[str, str]], count: int) -> bytes:
         for number, mark in marks
     )
     return f"<trademarkSearch><metadata><count>{count}</count></metadata><results>{results}</results></trademarkSearch>".encode()
+
+
+def test_brand_notices_european_and_international_when_no_french_one(monkeypatch):
+    """VOLKSWAGEN: no French trademark, international (WO, without status) and European (EU) ones,
+    the answer below is the real one, shortened."""
+    wo_search = b"""<trademarkSearch><metadata><count>3</count></metadata><results>
+      <result documentId="1892865"><xml href="https://api-gateway.inpi.fr/services/apidiffusion/api/marques/notice/WO1892865"/>
+        <fields><field name="ApplicationNumber"><value>1892865</value></field>
+        <field name="Mark"><value>VOLKSWAGEN</value></field>
+        <field name="DEPOSANT"><value>Volkswagen Aktiengesellschaft</value></field></fields></result>
+      <result documentId="19197838"><xml href="https://api-gateway.inpi.fr/services/apidiffusion/api/marques/notice/EU19197838"/>
+        <fields><field name="ApplicationNumber"><value>19197838</value></field>
+        <field name="Mark"><value>VOLKSWAGEN GROUP DIGITAL SOLUTIONS [ PORTUGAL ]</value></field>
+        <field name="MarkCurrentStatusCode"><value>Application withdrawn</value></field></fields></result>
+      <result documentId="1"><xml href="https://api-gateway.inpi.fr/services/apidiffusion/api/marques/notice/EU1"/>
+        <fields><field name="ApplicationNumber"><value>1</value></field>
+        <field name="Mark"><value>Volkswagen</value></field>
+        <field name="MarkCurrentStatusCode"><value>Application withdrawn</value></field></fields></result>
+    </results></trademarkSearch>"""
+    # structure of the WO notices not seen yet: no PersonType, holder in Applicant
+    wo_notice = b"""<TradeMark><ApplicationNumber>1892865</ApplicationNumber><MarkFeature>Word</MarkFeature>
+      <ApplicantDetails><Applicant><ApplicantAddressBook><FormattedNameAddress>
+        <Name><FormattedName><OrganizationName>Volkswagen Aktiengesellschaft</OrganizationName></FormattedName></Name>
+        <Address><AddressCountryCode>DE</AddressCountryCode></Address>
+      </FormattedNameAddress></ApplicantAddressBook></Applicant></ApplicantDetails></TradeMark>"""
+    session = FakeInpiSession()
+    requests_sent = []
+
+    def request(method, url, timeout, **kwargs):
+        collections = kwargs.get("json", {}).get("collections")
+        requests_sent.append((url.rsplit("/", 1)[-1], collections))
+        if url.endswith("/search"):
+            return FakeResponse(search_page([], count=0) if collections == ["FR"] else wo_search)
+        return FakeResponse(wo_notice)
+
+    monkeypatch.setattr(session, "request", request)
+    notices = InpiClient("user", "password", delay_sec=0, session=session).brand_notices("Volkswagen")
+    assert requests_sent == [("search", ["FR"]), ("search", ["EU", "WO"]), ("WO1892865", None)]
+    assert [(n.holder_name, n.holder_siren, n.holder_country, n.notice_number) for n in notices] == [
+        ("Volkswagen Aktiengesellschaft", None, "DE", "WO1892865"),
+    ]
+    holder = choose_holder(notices, None)
+    row = propose_row("Volkswagen", holder, None, None, None, {}, TODAY)
+    assert (row["groupe"], row["numero_marque"]) == ("Volkswagen Aktiengesellschaft", "WO1892865")
 
 
 def test_search_reads_all_pages(monkeypatch):

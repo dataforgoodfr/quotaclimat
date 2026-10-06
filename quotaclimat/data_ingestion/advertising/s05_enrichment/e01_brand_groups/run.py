@@ -178,7 +178,7 @@ def run() -> int:
         if row["groupe"]:
             logging.info("Brand %s: group %r (%s)", brand, row["groupe"], row["source"])
         else:
-            logging.info("Brand %s: no French trademark in force found, appended with an empty group", brand)
+            logging.info("Brand %s: no trademark in force found (FR, EU, WO), appended with an empty group", brand)
         rows.append(row)
         logging.info("%s rows proposed, %s so far", len(rows), inpi.requests_summary)
 

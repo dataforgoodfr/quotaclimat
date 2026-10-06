@@ -159,7 +159,7 @@ jobs:
       with:
         args: >-
           jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_BRAND_GROUPS_ENRICHMENT }}
-          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:${{ env.PROJECT_VERSION }}
+          image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
           startup-command.0=./entrypoints/advertising_brand_groups_enrichment.sh
 
   build-factiva:

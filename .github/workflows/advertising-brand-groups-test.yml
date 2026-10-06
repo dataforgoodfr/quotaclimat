@@ -49,7 +49,7 @@ jobs:
           SANITIZED=$(echo "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9.-]/-/g' | cut -c1-100)
           echo "value=${SANITIZED}-${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
 
-      # the base image is enough for this job (no media tools needed), and faster to build
+      # the base image, as in production (no media tools needed by this job)
       - name: Build and push the temporary image
         run: |
           IMAGE=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/${{ env.TEMP_IMAGE_NAME }}:${{ steps.tag.outputs.value }}
@@ -130,6 +130,6 @@ jobs:
         run: |
           scw jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_BRAND_GROUPS_ENRICHMENT }} \
             region=${{ steps.region.outputs.value }} \
-            image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_with_media_tools:latest \
+            image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:latest \
             startup-command.0=${{ env.ENTRYPOINT }} > /dev/null
-          echo "Production job restored: quotaclimat_with_media_tools:latest, ${{ env.ENTRYPOINT }}"
+          echo "Production job restored: quotaclimat_base:latest, ${{ env.ENTRYPOINT }}"

@@ -18,6 +18,10 @@ on:
         description: 'Brands processed by the test run (dry run)'
         default: '20'
 
+# the GITHUB_TOKEN only reads the repository (checkout); Scaleway is reached with its own secrets
+permissions:
+  contents: read
+
 # one test at a time on the production job: two branches must not swap each other's image
 concurrency:
   group: advertising-brand-groups-production-job
@@ -75,12 +79,14 @@ jobs:
       - name: Point the job to the temporary image, in dry run
         id: update
         run: |
+          # the number of brands comes from the manual run form: a number only
+          if ! [[ "$MAX_BRANDS" =~ ^[0-9]+$ ]]; then echo "Error: max_brands must be a number"; exit 1; fi
           scw jobs definition update ${{ secrets.SCALEWAY_JOB_ADVERTISING_BRAND_GROUPS_ENRICHMENT }} \
             region=${{ steps.region.outputs.value }} \
             image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/${{ env.TEMP_IMAGE_NAME }}:${{ steps.tag.outputs.value }} \
             startup-command.0=env \
             startup-command.1=BRAND_GROUPS_DRY_RUN=true \
-            startup-command.2=BRAND_GROUPS_MAX_BRANDS=${{ env.MAX_BRANDS }} \
+            "startup-command.2=BRAND_GROUPS_MAX_BRANDS=$MAX_BRANDS" \
             startup-command.3=${{ env.ENTRYPOINT }} > /dev/null
 
       - name: Run the job and wait for it
@@ -117,7 +123,7 @@ jobs:
           {
             echo "### Brand groups job: ${{ steps.run.outputs.status || 'unknown' }}"
             echo ""
-            echo "Branch \`${GITHUB_REF_NAME}\`, image \`${{ env.TEMP_IMAGE_NAME }}:${{ steps.tag.outputs.value }}\`, dry run on ${{ env.MAX_BRANDS }} brands: nothing written to the sheet."
+            echo "Branch \`${GITHUB_REF_NAME}\`, image \`${{ env.TEMP_IMAGE_NAME }}:${{ steps.tag.outputs.value }}\`, dry run on ${MAX_BRANDS} brands: nothing written to the sheet."
             echo ""
             echo "Proposed rows: in the logs of the job run \`${{ steps.run.outputs.run_id }}\`, between the lines \`----- BRAND GROUPS PROPOSALS\` and \`----- END OF BRAND GROUPS PROPOSALS\` (tab-separated, can be pasted in a sheet)."
             echo ""

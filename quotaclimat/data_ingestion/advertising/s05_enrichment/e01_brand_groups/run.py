@@ -167,9 +167,9 @@ def run() -> int:
     for brand, sector in brands:
         try:
             row = propose(brand, sector, inpi, nice_classes, known_groups, today)
-        except InpiQuotaExceeded:
+        except InpiQuotaExceeded as e:
             # every following brand would fail too: stop, keep the rows found so far
-            logging.exception("Brand %s: INPI quota exceeded, the remaining brands are left for the next run", brand)
+            logging.error("Brand %s: %s. The remaining brands are left for the next run", brand, e)
             break
         except Exception:
             # an API error on one brand must not stop the others; the brand is retried on the next run
@@ -180,7 +180,9 @@ def run() -> int:
         else:
             logging.info("Brand %s: no French trademark in force found, appended with an empty group", brand)
         rows.append(row)
+        logging.info("%s rows proposed, %s so far", len(rows), inpi.requests_summary)
 
+    logging.info("INPI: %s for %s brands", inpi.requests_summary, len(rows))
     if dry_run:
         path = os.environ.get("BRAND_GROUPS_DRY_RUN_CSV", "brand_groups_proposals.csv")
         with open(path, "w", newline="", encoding="utf-8") as f:

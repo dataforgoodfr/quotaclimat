@@ -124,31 +124,47 @@ def test_search_error_message(monkeypatch):
         assert str(e) == "INPI search: HTTP 500 'Erreur inattendue, requête SolR corrompue.'"
 
 
-def test_quota_exceeded_logs_in_again(monkeypatch):
-    """The quota error lasts for the whole session whatever the wait: a new login clears it."""
+def test_quota_wait_from_retry_after_header_and_request_counts(monkeypatch):
     from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import inpi
 
     waits = []
     monkeypatch.setattr(inpi.time, "sleep", waits.append)
     session = FakeInpiSession()
-    logins = []
-    original_post = session.post
-
-    def post(url, json, timeout):
-        logins.append(url)
-        return original_post(url, json, timeout)
-
-    answers = iter([FakeResponse(status_code=429), FakeResponse(search_page([("1", "ACME")], count=1))])
-    monkeypatch.setattr(session, "post", post)
+    answers = iter([
+        FakeResponse(status_code=429, headers={"X-Rate-Limit-Retry-After-Seconds": "5"}),
+        FakeResponse(search_page([("1", "ACME")], count=1)),
+    ])
     monkeypatch.setattr(session, "request", lambda method, url, timeout, **kwargs: next(answers))
-    results = InpiClient("user", "password", delay_sec=0, session=session).search("Acme")
-    assert [r.mark for r in results] == ["ACME"]
-    # first login, then a new one after the quota error
-    assert len(logins) == 2
-    assert 30 in waits
+    client = InpiClient("user", "password", delay_sec=0, session=session)
+    assert [r.mark for r in client.search("Acme")] == ["ACME"]
+    # the wait of the header (plus one second), then the same request again
+    assert 6 in waits
+    assert dict(client.request_counts) == {"login": 2, "search": 2}
+    assert client.requests_summary == "4 INPI requests (login 2, search 2)"
 
 
-def test_quota_still_exceeded_after_login(monkeypatch):
+def test_quota_wait_too_long_stops(monkeypatch):
+    from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import inpi
+
+    waits = []
+    monkeypatch.setattr(inpi.time, "sleep", waits.append)
+    session = FakeInpiSession()
+    monkeypatch.setattr(
+        session, "request",
+        lambda method, url, timeout, **kwargs: FakeResponse(
+            status_code=429, headers={"x-rate-limit-retry-after-seconds": "7200"}
+        ),
+    )
+    try:
+        InpiClient("user", "password", delay_sec=0, session=session).search("Acme")
+        raise AssertionError("no error raised")
+    except InpiQuotaExceeded as e:
+        assert str(e).startswith("INPI quota exceeded after 3 INPI requests (login 2, search 1): retry after 7200 s (2.0 h)")
+    # no useless wait
+    assert 7201 not in waits
+
+
+def test_quota_still_exceeded_after_waiting(monkeypatch):
     from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import inpi
 
     monkeypatch.setattr(inpi.time, "sleep", lambda seconds: None)
@@ -157,8 +173,8 @@ def test_quota_still_exceeded_after_login(monkeypatch):
     try:
         InpiClient("user", "password", delay_sec=0, session=session).search("Acme")
         raise AssertionError("no error raised")
-    except InpiQuotaExceeded:
-        pass
+    except InpiQuotaExceeded as e:
+        assert "still exceeded" in str(e)
 
 
 def test_is_alive():

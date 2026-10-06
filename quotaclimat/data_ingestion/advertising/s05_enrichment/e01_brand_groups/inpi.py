@@ -9,6 +9,7 @@ import logging
 import os
 import re
 import time
+from collections import Counter
 import xml.etree.ElementTree as ET  # responses of the INPI API only (expat refuses entity expansion attacks)
 from dataclasses import dataclass, field
 
@@ -25,6 +26,12 @@ XSRF_COOKIE = "XSRF-TOKEN"
 XSRF_HEADER = "X-XSRF-TOKEN"
 TIMEOUT_SEC = 60
 MAX_RETRIES = 3
+# header of the 429 answers: seconds to wait before the quota allows requests again
+RETRY_AFTER_HEADER = "x-rate-limit-retry-after-seconds"
+RATE_LIMIT_HEADERS_PREFIX = "x-rate-limit"
+# longest quota wait accepted during a run; longer, the run stops and the remaining brands are left for
+# the next run
+MAX_QUOTA_WAIT_SEC = int(os.environ.get("INPI_MAX_QUOTA_WAIT_SEC", "600"))
 SEARCH_PAGE_SIZE = 100
 # results read at most per brand: the search returns every trademark containing the brand's words, most
 # recent first, and the trademark named exactly like the brand can be an old one (ALAIN AFFLELOU, 1986:
@@ -159,7 +166,18 @@ def parse_notice(xml: str | bytes) -> Notice:
 
 
 class InpiQuotaExceeded(RuntimeError):
-    """HTTP 429 even after waiting and logging in again: the following requests would fail too."""
+    """HTTP 429 with a wait longer than MAX_QUOTA_WAIT_SEC, or still 429 after waiting: the following
+    requests would fail too."""
+
+
+def _rate_limit_headers(response) -> dict[str, str]:
+    """x-rate-limit-* headers of an answer (quota information of the API gateway)."""
+    return {k.lower(): v for k, v in (getattr(response, "headers", None) or {}).items() if k.lower().startswith(RATE_LIMIT_HEADERS_PREFIX)}
+
+
+def _retry_after(response) -> int | None:
+    value = str(_rate_limit_headers(response).get(RETRY_AFTER_HEADER, "")).strip()
+    return int(float(value)) if value.replace(".", "", 1).isdigit() else None
 
 
 def _raise_for_status(response: requests.Response) -> None:
@@ -177,6 +195,19 @@ class InpiClient:
         self.delay_sec = delay_sec
         self.session = session or requests.Session()
         self.logged_in = False
+        # HTTP requests sent to the INPI by kind (login, search, notice), to know how many the quota allows
+        self.request_counts: Counter = Counter()
+        self._rate_limit_headers_logged = False
+
+    @property
+    def requests_summary(self) -> str:
+        total = sum(self.request_counts.values())
+        details = ", ".join(f"{kind} {n}" for kind, n in sorted(self.request_counts.items()))
+        return f"{total} INPI requests ({details})" if total else "0 INPI requests"
+
+    def _count(self, url: str) -> None:
+        kind = "search" if url.endswith("/search") else "notice" if "/notice/" in url else "login"
+        self.request_counts[kind] += 1
 
     def _set_xsrf_header(self) -> None:
         """The XSRF token of the cookie is sent back in the X-XSRF-TOKEN header (the cookie may change)."""
@@ -190,8 +221,10 @@ class InpiClient:
         of a previous session are dropped first."""
         self.session.cookies.clear()
         self.session.headers.pop(XSRF_HEADER, None)
+        self._count(AUTHENTICATE_URL)
         self.session.get(AUTHENTICATE_URL, timeout=TIMEOUT_SEC)
         self._set_xsrf_header()
+        self._count(LOGIN_URL)
         response = self.session.post(
             LOGIN_URL,
             json={"username": self.username, "password": self.password, "rememberMe": True},
@@ -207,21 +240,34 @@ class InpiClient:
         for attempt in range(MAX_RETRIES):
             time.sleep(self.delay_sec)
             self._set_xsrf_header()
+            self._count(url)
             response = self.session.request(method, url, timeout=TIMEOUT_SEC, **kwargs)
+            if not self._rate_limit_headers_logged and _rate_limit_headers(response):
+                # once per run: the quota information the gateway sends, if any
+                logging.info("INPI rate limit headers: %s", _rate_limit_headers(response))
+                self._rate_limit_headers_logged = True
             if response.status_code == 401 and attempt == 0:
                 self.login()  # session expired
                 continue
             if response.status_code == 429:
-                # the quota error lasts for the whole session whatever the wait: new session
-                wait = 30 * 2 ** attempt
-                logging.warning("INPI quota exceeded, waiting %s s and logging in again", wait)
-                time.sleep(wait)
-                self.login()
+                wait = _retry_after(response)
+                logging.warning(
+                    "INPI quota exceeded after %s, retry after %s s, headers %s",
+                    self.requests_summary, wait, _rate_limit_headers(response),
+                )
+                if wait is None:
+                    wait = 30 * 2 ** attempt
+                if wait > MAX_QUOTA_WAIT_SEC:
+                    raise InpiQuotaExceeded(
+                        f"INPI quota exceeded after {self.requests_summary}: retry after {wait} s "
+                        f"({wait / 3600:.1f} h), more than INPI_MAX_QUOTA_WAIT_SEC={MAX_QUOTA_WAIT_SEC}"
+                    )
+                time.sleep(wait + 1)
                 continue
             _raise_for_status(response)
             return response
         if response.status_code == 429:
-            raise InpiQuotaExceeded(f"INPI quota exceeded, even after logging in again ({MAX_RETRIES} attempts)")
+            raise InpiQuotaExceeded(f"INPI quota still exceeded after waiting, after {self.requests_summary}")
         _raise_for_status(response)
         return response
 

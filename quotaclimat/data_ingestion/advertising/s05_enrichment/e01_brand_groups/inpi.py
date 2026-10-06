@@ -152,6 +152,21 @@ def parse_search_count(xml: str | bytes) -> int:
     return int(count) if count and count.isdigit() else 0
 
 
+# legal forms of companies, as words of a holder name: a holder without person type nor legal entity in
+# its notice (EU) is kept only when its name looks like a company's (natural persons are never kept)
+COMPANY_NAME_WORDS = {
+    "sa", "sas", "sasu", "sarl", "eurl", "sca", "snc", "scs", "se", "ag", "gmbh", "kg", "kgaa", "inc", "llc",
+    "ltd", "limited", "plc", "corp", "corporation", "company", "co", "bv", "nv", "spa", "srl", "ab", "as",
+    "oy", "oyj", "aps", "sl", "aktiengesellschaft", "group", "groupe", "holding", "societe",
+}
+NATURAL_PERSON_WORDS = ("natural", "physique", "individual person")
+
+
+def looks_like_company(name: str | None) -> bool:
+    words = set(normalize(name).split())
+    return bool(words & COMPANY_NAME_WORDS)
+
+
 def parse_notice(xml: str | bytes) -> Notice:
     """ST66 notice of GET /notice/{number}. The holder is the current holder (fr-CurrentHolder, which
     follows transfers), else the applicant."""
@@ -162,15 +177,24 @@ def parse_notice(xml: str | bytes) -> Notice:
     holder_name = holder_siren = holder_country = None
     holder_is_company = False
     if holder is not None:
-        # PersonType PM (company) or PP (natural person) in the French notices; for the other ones,
-        # a holder with an organization name and not marked as a natural person
+        # name: OrganizationName (FR), else the free format name lines (WO: "Volkswagen Aktiengesellschaft")
+        organization = _text(_find(holder, "OrganizationName"))
+        free_lines = [_text(e) for e in holder.iter() if _local(e.tag) == "FreeFormatNameLine" and _text(e)]
+        holder_name = organization or " ".join(free_lines) or None
+        # company: PersonType PM in the French notices (PP: natural person); else a legal entity that is not
+        # a natural person (WO: "Joint Stock Company"), an organization name, or a company-like name
         person_type = (holder.get("PersonType") or "").strip().lower()
-        holder_is_company = person_type == "pm" or (
-            person_type not in ("pp", "natural person", "naturalperson")
-            and _find(holder, "OrganizationName") is not None
+        legal_entity = next(
+            (_text(e) for e in holder.iter() if _local(e.tag).endswith("LegalEntity") and _text(e)), None
         )
-        holder_name = _text(_find(holder, "OrganizationName"))
-        holder_country = _text(_find(holder, "AddressCountryCode"))
+        is_natural = person_type == "pp" or any(w in (legal_entity or "").lower() for w in NATURAL_PERSON_WORDS)
+        holder_is_company = person_type == "pm" or (
+            not is_natural and (organization is not None or legal_entity is not None or looks_like_company(holder_name))
+        )
+        holder_country = _text(_find(holder, "AddressCountryCode")) or next(
+            (_text(e) for e in holder.iter() if _local(e.tag).endswith(("IncorporationState", "IncorporationCountryCode")) and _text(e)),
+            None,
+        )
         for e in holder.iter():
             if _local(e.tag) in ("fr-CurrentHolderIdentifier", "ApplicantIdentifier") and e.get("identifierKindCode") == "FR":
                 holder_siren = _text(e)
@@ -352,6 +376,11 @@ class InpiClient:
             for r in alive[:max_notices]:
                 notice = self.notice(r.notice_number)
                 notice.notice_number = r.notice_number
+                if not notice.holder_name and r.applicant:
+                    # some EU notices are update records with the holder identifier only: the holder of
+                    # the search result, kept only when its name looks like a company's
+                    notice.holder_name = r.applicant
+                    notice.holder_is_company = looks_like_company(r.applicant)
                 notices.append(notice)
             kept = [n for n in notices if n.holder_is_company and (n.holder_siren or n.holder_name)]
             # how far each step goes, to understand the brands without result

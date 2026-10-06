@@ -17,6 +17,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi
     InpiClient,
     InpiQuotaExceeded,
     Notice,
+    looks_like_company,
     is_alive,
     parse_notice,
     parse_search,
@@ -292,12 +293,23 @@ def test_brand_notices_european_and_international_when_no_french_one(monkeypatch
         <field name="Mark"><value>Volkswagen</value></field>
         <field name="MarkCurrentStatusCode"><value>Application withdrawn</value></field></fields></result>
     </results></trademarkSearch>"""
-    # structure of the WO notices not seen yet: no PersonType, holder in Applicant
-    wo_notice = b"""<TradeMark><ApplicationNumber>1892865</ApplicationNumber><MarkFeature>Word</MarkFeature>
-      <ApplicantDetails><Applicant><ApplicantAddressBook><FormattedNameAddress>
-        <Name><FormattedName><OrganizationName>Volkswagen Aktiengesellschaft</OrganizationName></FormattedName></Name>
-        <Address><AddressCountryCode>DE</AddressCountryCode></Address>
-      </FormattedNameAddress></ApplicantAddressBook></Applicant></ApplicantDetails></TradeMark>"""
+    # real WO notice, shortened: no PersonType, a legal entity, the name in free format lines
+    wo_notice = b"""<TradeMark><RegistrationOfficeCode>WO</RegistrationOfficeCode><ApplicationNumber>1892865</ApplicationNumber>
+      <MarkFeature>Word</MarkFeature>
+      <GoodsServicesDetails><GoodsServices><ClassDescriptionDetails>
+        <ClassDescription><ClassNumber>09</ClassNumber></ClassDescription>
+      </ClassDescriptionDetails></GoodsServices></GoodsServicesDetails>
+      <ApplicantDetails><Applicant>
+        <ApplicantIdentifier>1742848</ApplicantIdentifier>
+        <ApplicantLegalEntity>Joint Stock Company</ApplicantLegalEntity>
+        <ApplicantIncorporationState>DE</ApplicantIncorporationState>
+        <ApplicantAddressBook><FormattedNameAddress>
+          <Name><FreeFormatName><FreeFormatNameDetails>
+            <FreeFormatNameLine>Volkswagen Aktiengesellschaft</FreeFormatNameLine>
+          </FreeFormatNameDetails></FreeFormatName></Name>
+          <Address><AddressCountryCode>DE</AddressCountryCode></Address>
+        </FormattedNameAddress></ApplicantAddressBook>
+      </Applicant></ApplicantDetails></TradeMark>"""
     session = FakeInpiSession()
     requests_sent = []
 
@@ -311,12 +323,56 @@ def test_brand_notices_european_and_international_when_no_french_one(monkeypatch
     monkeypatch.setattr(session, "request", request)
     notices = InpiClient("user", "password", delay_sec=0, session=session).brand_notices("Volkswagen")
     assert requests_sent == [("search", ["FR"]), ("search", ["EU", "WO"]), ("WO1892865", None)]
-    assert [(n.holder_name, n.holder_siren, n.holder_country, n.notice_number) for n in notices] == [
-        ("Volkswagen Aktiengesellschaft", None, "DE", "WO1892865"),
+    assert [(n.holder_name, n.holder_siren, n.holder_country, n.notice_number, n.classes) for n in notices] == [
+        ("Volkswagen Aktiengesellschaft", None, "DE", "WO1892865", {9}),
     ]
     holder = choose_holder(notices, None)
     row = propose_row("Volkswagen", holder, None, None, None, {}, TODAY)
     assert (row["groupe"], row["numero_marque"]) == ("Volkswagen Aktiengesellschaft", "WO1892865")
+
+
+def test_eu_update_record_holder_from_search_result(monkeypatch):
+    """Real EU notice, shortened: an update record with the holder identifier only (no name)."""
+    eu_notice = b"""<TradeMark operationCode="Insert"><RegistrationOfficeCode>EM</RegistrationOfficeCode>
+      <ApplicationNumber>019197838</ApplicationNumber><MarkCurrentStatusCode>Registered</MarkCurrentStatusCode>
+      <ApplicantDetails><Applicant operationCode="Delete"><ApplicantIdentifier>2349167</ApplicantIdentifier></Applicant></ApplicantDetails>
+      <RepresentativeDetails><Representative><RepresentativeLegalEntity>Legal Person</RepresentativeLegalEntity>
+        <RepresentativeAddressBook><FormattedNameAddress><Name><FormattedName><LastName>GULDE &amp; PARTNER</LastName>
+        </FormattedName></Name></FormattedNameAddress></RepresentativeAddressBook></Representative></RepresentativeDetails>
+    </TradeMark>"""
+    notice = parse_notice(eu_notice)
+    # the representative is never taken for the holder
+    assert (notice.holder_name, notice.holder_is_company) == (None, False)
+
+    def eu_search(applicant):
+        return f"""<trademarkSearch><metadata><count>1</count></metadata><results>
+          <result><xml href="https://api-gateway.inpi.fr/services/apidiffusion/api/marques/notice/EU19197838"/>
+          <fields><field name="ApplicationNumber"><value>19197838</value></field>
+          <field name="Mark"><value>ACME</value></field>
+          <field name="MarkCurrentStatusCode"><value>Registered</value></field>
+          <field name="DEPOSANT"><value>{applicant}</value></field></fields></result></results></trademarkSearch>""".encode()
+
+    for applicant, kept in [("Acme Holding GmbH", True), ("Jean Dupont", False)]:
+        session = FakeInpiSession()
+        answers = {"search": [FakeResponse(search_page([], count=0)), FakeResponse(eu_search(applicant))]}
+
+        def request(method, url, timeout, answers=answers, **kwargs):
+            if url.endswith("/search"):
+                return answers["search"].pop(0)
+            return FakeResponse(eu_notice)
+
+        monkeypatch.setattr(session, "request", request)
+        notices = InpiClient("user", "password", delay_sec=0, session=session).brand_notices("Acme")
+        # a natural person is never kept
+        assert [n.holder_name for n in notices] == ([applicant] if kept else [])
+
+
+def test_looks_like_company():
+    assert looks_like_company("Volkswagen Aktiengesellschaft")
+    assert looks_like_company("Amazon Technologies, Inc.")
+    assert looks_like_company("CARREFOUR SA")
+    assert not looks_like_company("Jean Dupont")
+    assert not looks_like_company(None)
 
 
 def test_search_reads_all_pages(monkeypatch):

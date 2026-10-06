@@ -90,10 +90,11 @@ En 2027, les publicités comparatives n'ont plus accès aux EP [2027 p.18].
   - En 2025, terminaison 2 = écran VIP sur TF1 [2025 p.24].
 - Les day-parts sont définis par plages de codes : Day 0300 à 1799, Access 1800 à 1999, Peak 2000 à 2199,
   Night 2200 à 2899 (Extra-night 2400 à 2899) [2026 p.22 et p.25].
-- **Hypothèse à vérifier sur une vraie grille** : le code se lit HH + dizaine de minutes + terminaison
-  (écran « 750 » vers 7h50, « 2047 » vers 20h4x de type EVENT ; les codes 24xx à 28xx sont après minuit).
-  Indices : exemple de la matinale avec écrans 750, 820, 850 placés entre 7h30 et 9h [2025 p.35]. TF1 PUB
-  précise que « les libellés des écrans n'impliquent pas des horaires de diffusion » [2026 p.41].
+- **Lecture des codes, vérifiée sur une grille réelle (TF1, août à novembre 2025)** : les deux premiers chiffres
+  suivent l'heure (24 à 26 après minuit) et le dernier chiffre est la terminaison, mais le troisième n'est pas une
+  dizaine de minutes (des codes comme 1260 ou 1370 existent). Les codes sont ordonnés dans la journée : rattacher
+  les tunnels par l'ordre et l'heure, pas par une heure exacte. TF1 PUB précise que « les libellés des écrans
+  n'impliquent pas des horaires de diffusion » [2026 p.41].
 
 ### 1.5 Du brut au net (cascade)
 

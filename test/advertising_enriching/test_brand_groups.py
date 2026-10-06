@@ -2,6 +2,7 @@
 the INPI responses are real ones (assets/), shortened, plus two results added to the search to test the
 exact-name and status filters (FR5189659 "DIOR", 1000001 expired)."""
 
+import io
 from datetime import date
 from pathlib import Path
 
@@ -351,6 +352,16 @@ def test_propose_row_fallbacks():
         "",
         "non vérifié",
     )
+
+
+def test_print_rows_tab_separated():
+    out = io.StringIO()
+    run_module.print_rows([{"marque": "Acme", "groupe": "ACME\tSAS", "commentaire": "ligne 1\nligne 2", "x": "ignored"}], out)
+    lines = out.getvalue().splitlines()
+    assert lines[0] == "----- BRAND GROUPS PROPOSALS (tab-separated) -----"
+    assert lines[1].split("\t")[:5] == ["marque", "groupe", "source", "statut", "commentaire"]
+    assert lines[2].split("\t")[:5] == ["Acme", "ACME SAS", "", "", "ligne 1 ligne 2"]
+    assert lines[3] == "----- END OF BRAND GROUPS PROPOSALS -----"
 
 
 def test_brands_to_process():

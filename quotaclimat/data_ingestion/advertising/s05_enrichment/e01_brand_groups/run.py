@@ -12,7 +12,7 @@ For each brand, by decreasing broadcast duration:
 
 Env: POSTGRES_*, INPI_USERNAME, INPI_PASSWORD, GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON,
 EXTERNAL_SOURCES_DRIVE_FOLDER, BRAND_GROUPS_MAX_BRANDS (default 50), BRAND_GROUPS_DRY_RUN (true: write
-the rows to BRAND_GROUPS_DRY_RUN_CSV instead of the sheet).
+the rows to BRAND_GROUPS_DRY_RUN_CSV and print them in the logs, tab-separated, instead of the sheet).
 """
 
 import csv
@@ -67,6 +67,18 @@ CSV_COLUMNS = [
     "lei",
     "numero_marque",
 ]
+
+
+def print_rows(rows: list[dict], out=None) -> None:
+    """Rows in the logs, tab-separated between two markers: in a container the dry-run CSV is lost, the
+    lines can be pasted in a sheet."""
+    out = out or sys.stdout
+    print("----- BRAND GROUPS PROPOSALS (tab-separated) -----", file=out)
+    writer = csv.DictWriter(out, fieldnames=CSV_COLUMNS, delimiter="\t", lineterminator="\n", extrasaction="ignore")
+    writer.writeheader()
+    # one line per row: no tab nor line break inside a value
+    writer.writerows({k: " ".join(str(v).split()) for k, v in row.items()} for row in rows)
+    print("----- END OF BRAND GROUPS PROPOSALS -----", file=out, flush=True)
 
 
 def brands_to_process(
@@ -171,6 +183,7 @@ def run() -> int:
             writer.writeheader()
             writer.writerows(rows)
         logging.info("Dry run: %s rows written to %s", len(rows), path)
+        print_rows(rows)
     else:
         # re-read just before appending: a brand added by a human during the run is not added twice
         inventory_keys = {name_key(r.get("marque")) for r in sheet.read(BRANDS_TAB)}

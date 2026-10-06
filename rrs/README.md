@@ -1,6 +1,6 @@
 # RRS — Risk Response System
 
-RRS is a multi-module analysis system built to detect, cluster, and track disinformation narratives in French-language media (TV and radio transcripts). It ingests annotated transcripts from PostgreSQL or HuggingFace, applies NLP and LLM-based clustering pipelines to surface recurring false claims, and persists structured results in a dedicated PostgreSQL database.
+RRS is a multi-module analysis system built to detect, cluster, and track disinformation narratives in French-language media (TV and radio transcripts). It ingests annotated transcripts from PostgreSQL or S3, applies keyword-dictionary detection and LLM-based clustering pipelines to surface recurring false claims per topic ("subject"), and persists structured results in a dedicated PostgreSQL database.
 
 ---
 
@@ -8,37 +8,49 @@ RRS is a multi-module analysis system built to detect, cluster, and track disinf
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│ DATA SOURCES                                                    │
-│   PostgreSQL (RRS database — cases table)                       │
-│   S3 / Scaleway parquet files                                   │
+│ DICTIONARIES (rrs/dictionary/)                                  │
+│   subjects.py — one entry per topic (e.g. climate, insecurity,  │
+│   environmental_health), each with its own keyword list         │
+└────────────────────────────┬────────────────────────────────────┘
+                             │ upsert_subjects.py / upsert_dictionary.py
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ PostgreSQL (RRS database) — subjects, dictionary tables          │
 └────────────────────────────┬────────────────────────────────────┘
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ keyword_detection/analyse_keywords.py                           │
-│   DuckDB on S3 parquet — French insecurity keyword detection   │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│ PRE-PROCESSING (shared)                                         │
-│   spaCy sentence segmentation → sliding-window chunking        │
-│   Configurable window size and token overlap                    │
+│ keyword_detection/                                               │
+│   analyse_keywords.py — scans S3 parquet transcripts directly    │
+│     with a DuckDB regex built from each subject's dictionary     │
+│   import_segments.py — imports already-detected climate          │
+│     keyword rows from the quotaclimat DB                         │
+│   filter_keywords.py — re-filters those already-detected rows    │
+│     against another subject's dictionary (string or lemma match) │
+│   import_cases.py — imports annotated cases (Label Studio) for   │
+│     the climate subject                                          │
 └──────┬─────────────────────┬──────────────────────┬────────────┘
        │                     │                      │
        ▼                     ▼                      ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ cluster_llm_v2.py                                               │
-│   3-step LLM pipeline (Mistral / Claude Haiku)                  │
-│   DB-aware deduplication against active clusters                │
+│ misinformation_detection/main.py                                 │
+│   LLM classification of segments/cases into misinformation risk │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│ clustering/main.py                                                │
+│   spaCy sentence segmentation → sliding-window chunking          │
+│   3-step LLM pipeline (Mistral / Claude Haiku)                   │
+│   DB-aware deduplication against active clusters                 │
 └────────────────────────────┬────────────────────────────────────┘
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ PostgreSQL (RRS database)                                       │
-│   subjects · dictionary · segments · cases · clusters          │
-│   case_to_clusters                                              │
-│   Managed via SQLAlchemy ORM + Alembic migrations              │
+│   subjects · dictionary · segments · cases · clusters           │
+│   case_to_clusters                                               │
+│   Managed via SQLAlchemy ORM + Alembic migrations               │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -52,6 +64,7 @@ rrs/
 ├── README.md
 ├── database.md                      # Table schema reference
 ├── Dockerfile
+├── Dockerfile.pulsar
 ├── docker-compose.yml
 ├── alembic.ini                      # Standalone Alembic config
 │
@@ -60,17 +73,33 @@ rrs/
 │   ├── script.py.mako
 │   └── versions/                    # Migration files
 │
+├── dictionary/
+│   ├── subjects.py                  # Registry: {subject_name: {keywords, title}}
+│   ├── upsert_subjects.py           # Upsert subjects.py entries into the `subjects` table
+│   ├── upsert_dictionary.py         # Upsert each subject's keywords into the `dictionary` table
+│   └── subject/
+│       ├── insecurity.py            # French immigration/insecurity keyword list
+│       └── environmental_health.py  # French environmental-health keyword list
+│
 ├── clustering/
 │   ├── README.md                    # Clustering-specific docs
-│   ├── cluster_llm_v2.py            # Runnable entry point (LLM pipeline + DB dedup)
-│   ├── cluster.py                   # Library: text loading + sentence chunking
-│   ├── cluster_llm.py               # Library: 3-step LLM pipeline building blocks
-│   ├── cluster_llm_timeseries.py    # Library: embedding backends + novelty filter
+│   ├── main.py                      # Runnable entry point (LLM pipeline + DB dedup)
+│   ├── steps.py                     # Library: 3-step LLM pipeline building blocks
+│   ├── backends.py                  # Library: embedding backends
+│   ├── prompts.py                   # LLM prompts per subject
+│   ├── cost.py                      # Token cost estimation
 │   └── get_data.py                  # PostgreSQL data loader
 │
 ├── keyword_detection/
-│   ├── analyse_keywords.py          # S3 parquet keyword detection
-│   └── dictionary.py               # French insecurity keyword lists
+│   ├── analyse_keywords.py          # S3 parquet keyword detection (any subject, DB-backed dictionary)
+│   ├── import_segments.py           # Import already-detected climate segments from quotaclimat DB
+│   ├── filter_keywords.py           # Re-filter those segments against another subject's dictionary
+│   └── import_cases.py              # Import annotated cases from quotaclimat DB
+│
+├── misinformation_detection/
+│   ├── main.py                      # LLM misinformation classification entry point
+│   ├── classifier.py                # Classification logic
+│   └── definitions.py               # Per-subject prompts/definitions
 │
 └── schemas/
     ├── base.py                      # SQLAlchemy declarative base
@@ -81,11 +110,64 @@ rrs/
 
 ## Modules
 
-### `clustering/cluster_llm_v2.py` — Runnable Entry Point
+### Dictionaries — `dictionary/`
+
+Each topic RRS tracks ("subject") is registered in `dictionary/subjects.py` as `{"keywords": [...], "title": "..."}`. A subject's keyword list is a Python list of `{"keyword": str, "high_risk_false_positive": bool, "validated": bool}` dicts (see `dictionary/subject/insecurity.py` and `dictionary/subject/environmental_health.py`). `high_risk_false_positive` keywords are excluded from a match rather than counted; `validated: False` keywords are only counted once enough of them co-occur (see `analyse_keywords.py`'s `NON_VALIDATED_KEYWORD_THRESHOLD`).
+
+- **`upsert_subjects.py`** — upserts every `subjects.py` entry into the `subjects` table, deriving a stable `subject_id` from the subject name.
+- **`upsert_dictionary.py`** — upserts every subject's keywords into the `dictionary` table (tagged with that subject's `subject_id`), and deletes rows no longer present in `subjects.py`.
+
+Run `upsert_subjects` before `upsert_dictionary` (the latter's `subject_id` foreign key requires the row to exist).
+
+---
+
+### `keyword_detection/analyse_keywords.py` — Keyword Detection from Raw Transcripts
+
+Scans S3-hosted parquet transcripts with DuckDB, matching a regex built from each subject's dictionary (loaded from the `dictionary`/`subjects` tables, all subjects except `climate` by default). Segments with at least one validated match — and no high-risk-false-positive match — are upserted into the `segments` table, one row per `(segment_id, subject_id)`.
+
+**Required environment variables:** `BUCKET`, `BUCKET_SECRET`, `BUCKET_NAME` (Scaleway S3 credentials).
+
+**Key options:** `--subject` (restrict to one subject), `--channel`, `--start-date`/`--end-date`/`--days-prior`.
+
+---
+
+### `keyword_detection/import_segments.py` — Import Climate Segments
+
+Climate keyword detection already runs as part of the main quotaclimat pipeline (Aho-Corasick over `THEME_KEYWORDS`) and is stored per-transcript in the quotaclimat `keywords` table's `keywords_with_timestamp` column. This script reads those rows (via DuckDB `ATTACH` on the quotaclimat Postgres DB, `POSTGRES_*` env vars) and upserts them into the RRS `segments` table under the `climate` subject.
+
+**Key options:** `--start-date`/`--end-date` (defaults to everything since the most recent `climate` segment already in the RRS DB).
+
+---
+
+### `keyword_detection/filter_keywords.py` — Re-filter Existing Detections for Another Subject
+
+Rather than re-scanning raw transcripts, reuses the keywords already detected by the climate pipeline (loaded the same way as `import_segments.py`) and filters them down to the ones matching a *different* subject's dictionary (default: `environmental_health`) — useful when that subject's keywords already overlap with the climate/biodiversity/pollution theme keywords.
+
+A segment is kept if it has at least one keyword matching the target dictionary's validated, non-high-risk keywords, and none matching its high-risk-false-positive keywords. A match is either an exact (lowercased) string, or the two keywords sharing the same set of lemmas (e.g. "pesticides" vs "pesticide"), using the same spaCy lemmatizer as the main detection pipeline (`quotaclimat/data_processing/mediatree/detect_keywords.py`).
+
+**Key options:** `--subject` (env `SUBJECT`, default `environmental_health`), `--start-date`/`--end-date`.
+
+---
+
+### `keyword_detection/import_cases.py` — Import Annotated Cases
+
+Imports annotated rows from the quotaclimat `analytics.task_global_completion` table (Label Studio annotations) into the RRS `cases` table, for the `climate` subject.
+
+---
+
+### `misinformation_detection/main.py` — LLM Misinformation Classification
+
+Classifies segments/cases with an LLM (Mistral) against per-subject misinformation definitions (`definitions.py`), producing a score and reasoning persisted back to the `cases` table.
+
+**Key environment variables:** `MISTRAL_API_KEY`, `SUBJECT` (default `insecurity`), `MISTRAL_MODEL`.
+
+---
+
+### `clustering/main.py` — Runnable Entry Point
 
 The only runnable script in the clustering package. Runs a daily LLM clustering job that builds a fresh label set from the day's transcripts, deduplicates it against the clusters already in the database, and persists the assignments.
 
-The other files in `clustering/` (`cluster.py`, `cluster_llm.py`, `cluster_llm_timeseries.py`) are library modules consumed by `cluster_llm_v2.py` — they are no longer runnable on their own.
+The other files in `clustering/` (`steps.py`, `backends.py`, `prompts.py`, `cost.py`) are library modules consumed by `main.py` — they are no longer runnable on their own.
 
 **Pipeline (per day):**
 1. **Generate** — each transcript is sent to the LLM independently; it returns a list of narrative labels present in the text (async, configurable concurrency)
@@ -105,7 +187,7 @@ A token cost estimate is printed before each step.
 
 **Example:**
 ```bash
-python -m rrs.clustering.cluster_llm_v2 \
+python -m rrs.clustering.main \
   --start-date 2025-01-01 \
   --end-date 2025-01-07 \
   --provider anthropic \
@@ -140,25 +222,7 @@ All flags can also be supplied via the equivalent environment variables (see `--
 
 Fetches transcript cases from the RRS PostgreSQL database and returns them as a pandas DataFrame. Also exposes helpers for reading and upserting clusters and case→cluster mappings.
 
-Used by `cluster_llm_v2.py`. Requires the `RRS_PG_*` environment variables.
-
----
-
-### `keyword_detection/analyse_keywords.py` — Insecurity Keyword Detection
-
-Scans S3-hosted parquet files with DuckDB and flags transcripts containing French insecurity keywords (from `dictionary.py`) along with nearby correlate words (within ~150 characters).
-
-**Input:** Parquet files on Scaleway Object Storage.
-
-**Output:** Excel file with flagged segments, keyword matches, and a `has_nearby_correlate` boolean column.
-
-**Required environment variables:**
-
-| Variable | Description |
-|---|---|
-| `BUCKET` | S3 access key (Scaleway) |
-| `BUCKET_SECRET` | S3 secret key |
-| `BUCKET_NAME` | S3 bucket name |
+Used by `main.py`. Requires the `RRS_PG_*` environment variables.
 
 ---
 
@@ -170,19 +234,23 @@ All tables live in the `public` schema of the RRS PostgreSQL database.
 
 ```
 subjects
-  subject_id  (PK, text)
-  name        (text)
+  subject_id     (PK, text)
+  name           (text)
+  subject_title  (text)
   created_at / updated_at
 
        │ 1
        │
-       ├─────────────────────────────────────────────────┐
-       │ N                                               │ N
-  segments                                           clusters
-    segment_id  (PK)                                   cluster_id  (PK)
-    subject_id  (FK → subjects)                        subject_id  (FK → subjects)
-    s3_uri                                             cluster_text
-    n_keywords                                         created_at / updated_at
+       ├──────────────────────┬──────────────────────────────────┐
+       │ N                    │ N                                │ N
+  segments              dictionary                            clusters
+    segment_id  (PK)      keyword_id  (PK)                      cluster_id  (PK)
+    subject_id  (PK, FK)  subject_id  (FK → subjects)           subject_id  (FK → subjects)
+    s3_uri                keyword                                cluster_text
+    n_keywords             high_risk_false_positive              created_at / updated_at
+    keywords (array)       validated
+    channel_name/title/program
+    url_mediatree           created_at / updated_at
     created_at / updated_at
        │ 1
        │
@@ -194,12 +262,6 @@ subjects
       model_score
       model_reason
       created_at / updated_at
-
-dictionary
-  keyword_id              (PK)
-  keyword                 (string)
-  high_risk_false_positive (boolean)
-  created_at / updated_at
 ```
 
 ### Migrations
@@ -231,12 +293,24 @@ poetry run alembic -c rrs/alembic.ini current
 | `RRS_PG_USER` | `user` | Database user |
 | `RRS_PG_PASSWORD` | `password` | Database password |
 
+### Database (quotaclimat PostgreSQL — source data)
+
+Used by `import_segments.py`, `filter_keywords.py`, and `import_cases.py` to read already-detected transcripts/cases.
+
+| Variable | Default | Description |
+|---|---|---|
+| `POSTGRES_HOST` | `localhost` | quotaclimat PostgreSQL host |
+| `POSTGRES_PORT` | `5432` | quotaclimat PostgreSQL port |
+| `POSTGRES_DB` | `barometre` | Database name |
+| `POSTGRES_USER` | `user` | Database user |
+| `POSTGRES_PASSWORD` | `password` | Database password |
+
 ### LLM APIs
 
 | Variable | Used by | Description |
 |---|---|---|
-| `MISTRAL_API_KEY` | `cluster_llm_v2.py` | Mistral API key |
-| `ANTHROPIC_API_KEY` | `cluster_llm_v2.py` | Anthropic API key |
+| `MISTRAL_API_KEY` | `clustering/main.py`, `misinformation_detection/main.py` | Mistral API key |
+| `ANTHROPIC_API_KEY` | `clustering/main.py` | Anthropic API key |
 
 ### S3 / Object Storage
 
@@ -244,9 +318,15 @@ poetry run alembic -c rrs/alembic.ini current
 |---|---|---|
 | `BUCKET` | `keyword_detection/analyse_keywords.py` | S3 access key |
 | `BUCKET_SECRET` | `keyword_detection/analyse_keywords.py` | S3 secret key |
-| `BUCKET_NAME` | `keyword_detection/analyse_keywords.py` | S3 bucket name |
+| `BUCKET_NAME` | `keyword_detection/analyse_keywords.py`, `import_segments.py`, `filter_keywords.py` | S3 bucket name (used to build the stored `s3_uri`) |
 
-Place these in `rrs/clustering/.env` for local development (already in `.gitignore`).
+### Other
+
+| Variable | Used by | Description |
+|---|---|---|
+| `SUBJECT` | `analyse_keywords.py`, `filter_keywords.py`, `misinformation_detection/main.py`, `clustering/main.py`, `pulsar` | Restrict the job to a single subject |
+
+Place these in `rrs/.env` for local development (already in `.gitignore`).
 
 ---
 
@@ -265,6 +345,25 @@ docker compose up migrate
 ```
 
 This starts a local PostgreSQL instance on port `5434` and runs `alembic upgrade head` against it.
+
+### Services
+
+Run any of these with `docker compose up <service>` from `rrs/`. Most read from `rrs_db` and/or the source `barometre`/S3 data — see the env variable tables above for what to set.
+
+| Service | Runs | Notes |
+|---|---|---|
+| `rrs_db` | Local PostgreSQL for RRS | Port `5434` |
+| `migrate` | `alembic upgrade head` | Run first |
+| `upsert_subjects` | `dictionary/upsert_subjects.py` | Run before `upsert_dictionary`/`filter_keywords` |
+| `upsert_dictionary` | `dictionary/upsert_dictionary.py` | Depends on `upsert_subjects` |
+| `import_segments` | `keyword_detection/import_segments.py` | Climate segments from the quotaclimat DB |
+| `filter_keywords` | `keyword_detection/filter_keywords.py` | Re-filters those segments for `SUBJECT` (default `environmental_health`) |
+| `import_cases` | `keyword_detection/import_cases.py` | Annotated cases from the quotaclimat DB |
+| `analyse_keywords` | `keyword_detection/analyse_keywords.py` | Raw S3 transcript scan; depends on `upsert_dictionary` |
+| `detect_misinformation` | `misinformation_detection/main.py` | LLM misinformation classification |
+| `clustering` | `clustering/main.py` | LLM narrative clustering |
+| `pulsar` | Pulsar-based ingestion (see `Dockerfile.pulsar`) | |
+| `console` | `sleep 12000` | Interactive shell, see below |
 
 ### Open an interactive shell
 

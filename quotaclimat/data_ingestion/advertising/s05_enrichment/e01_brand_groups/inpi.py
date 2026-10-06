@@ -400,6 +400,12 @@ class InpiClient:
                 "INPI %s %r: %s results, %s named exactly like it, %s in force, %s held by a company",
                 "+".join(collections), brand, len(results), len(exact), len(alive), len(kept),
             )
+            if results and not exact:
+                # the marks found, to see why none is named like the brand (spelling, search syntax)
+                logging.info(
+                    "INPI %s %r: no exact name among %s", "+".join(collections), brand,
+                    sorted({r.mark for r in results})[:20],
+                )
             if kept:
                 return kept
         return []

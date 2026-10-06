@@ -15,6 +15,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups impo
 )
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi import (
     InpiClient,
+    InpiQuotaExceeded,
     Notice,
     is_alive,
     parse_notice,
@@ -121,6 +122,43 @@ def test_search_error_message(monkeypatch):
         raise AssertionError("no error raised")
     except requests.HTTPError as e:
         assert str(e) == "INPI search: HTTP 500 'Erreur inattendue, requête SolR corrompue.'"
+
+
+def test_quota_exceeded_logs_in_again(monkeypatch):
+    """The quota error lasts for the whole session whatever the wait: a new login clears it."""
+    from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import inpi
+
+    waits = []
+    monkeypatch.setattr(inpi.time, "sleep", waits.append)
+    session = FakeInpiSession()
+    logins = []
+    original_post = session.post
+
+    def post(url, json, timeout):
+        logins.append(url)
+        return original_post(url, json, timeout)
+
+    answers = iter([FakeResponse(status_code=429), FakeResponse(search_page([("1", "ACME")], count=1))])
+    monkeypatch.setattr(session, "post", post)
+    monkeypatch.setattr(session, "request", lambda method, url, timeout, **kwargs: next(answers))
+    results = InpiClient("user", "password", delay_sec=0, session=session).search("Acme")
+    assert [r.mark for r in results] == ["ACME"]
+    # first login, then a new one after the quota error
+    assert len(logins) == 2
+    assert 30 in waits
+
+
+def test_quota_still_exceeded_after_login(monkeypatch):
+    from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import inpi
+
+    monkeypatch.setattr(inpi.time, "sleep", lambda seconds: None)
+    session = FakeInpiSession()
+    monkeypatch.setattr(session, "request", lambda method, url, timeout, **kwargs: FakeResponse(status_code=429))
+    try:
+        InpiClient("user", "password", delay_sec=0, session=session).search("Acme")
+        raise AssertionError("no error raised")
+    except InpiQuotaExceeded:
+        pass
 
 
 def test_is_alive():

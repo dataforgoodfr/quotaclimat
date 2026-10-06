@@ -158,6 +158,10 @@ def parse_notice(xml: str | bytes) -> Notice:
     )
 
 
+class InpiQuotaExceeded(RuntimeError):
+    """HTTP 429 even after waiting and logging in again: the following requests would fail too."""
+
+
 def _raise_for_status(response: requests.Response) -> None:
     """HTTP error with the status and the beginning of the INPI answer, for the logs."""
     if response.status_code >= 400:
@@ -182,7 +186,10 @@ class InpiClient:
         self.session.headers[XSRF_HEADER] = token
 
     def login(self) -> None:
-        """XSRF cookie first (the 401 answer is expected), then login: HttpOnly session cookies."""
+        """XSRF cookie first (the 401 answer is expected), then login: HttpOnly session cookies. The cookies
+        of a previous session are dropped first."""
+        self.session.cookies.clear()
+        self.session.headers.pop(XSRF_HEADER, None)
         self.session.get(AUTHENTICATE_URL, timeout=TIMEOUT_SEC)
         self._set_xsrf_header()
         response = self.session.post(
@@ -205,12 +212,16 @@ class InpiClient:
                 self.login()  # session expired
                 continue
             if response.status_code == 429:
+                # the quota error lasts for the whole session whatever the wait: new session
                 wait = 30 * 2 ** attempt
-                logging.warning("INPI quota exceeded, waiting %s s", wait)
+                logging.warning("INPI quota exceeded, waiting %s s and logging in again", wait)
                 time.sleep(wait)
+                self.login()
                 continue
             _raise_for_status(response)
             return response
+        if response.status_code == 429:
+            raise InpiQuotaExceeded(f"INPI quota exceeded, even after logging in again ({MAX_RETRIES} attempts)")
         _raise_for_status(response)
         return response
 

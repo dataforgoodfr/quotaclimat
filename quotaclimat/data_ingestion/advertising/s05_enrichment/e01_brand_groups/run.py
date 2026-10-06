@@ -26,6 +26,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups impo
 )
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi import (
     InpiClient,
+    InpiQuotaExceeded,
     name_key,
 )
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import (
@@ -166,6 +167,10 @@ def run() -> int:
     for brand, sector in brands:
         try:
             row = propose(brand, sector, inpi, nice_classes, known_groups, today)
+        except InpiQuotaExceeded:
+            # every following brand would fail too: stop, keep the rows found so far
+            logging.exception("Brand %s: INPI quota exceeded, the remaining brands are left for the next run", brand)
+            break
         except Exception:
             # an API error on one brand must not stop the others; the brand is retried on the next run
             logging.exception("Brand %s: proposal failed, skipped", brand)

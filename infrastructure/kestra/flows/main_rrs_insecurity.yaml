@@ -11,6 +11,13 @@ labels:
   scope: france
 
 inputs:
+  - id: source
+    type: SELECT
+    values:
+      - barometre
+      - extended
+    defaults: barometre
+    description: "Source database/perimeter to read from: the OME `barometre` DB or the `extended-perimeter` DB."
   - id: days_back
     type: INT
     required: true
@@ -38,6 +45,12 @@ triggers:
       - type: io.kestra.plugin.core.condition.ExecutionFlowCondition
         namespace: rrs
         flowId: rrs-climate
+      # ignore the extended-perimeter runs started by the rrs-orchestrator
+      - type: io.kestra.plugin.core.condition.Not
+        conditions:
+          - type: io.kestra.plugin.core.condition.ExecutionLabelsCondition
+            labels:
+              source: extended
 
 tasks:
   - id: analyse_keywords
@@ -58,9 +71,10 @@ tasks:
       START_DATE: "{{ inputs.start_date ?? '' }}"
       END_DATE: "{{ inputs.end_date ?? '' }}"
       DAYS_PRIOR: "{{ inputs.days_back ?? '' }}"
-      BUCKET_NAME: mediatree
-      POSTGRES_DB: barometre
-      POSTGRES_PORT: 22737
+      BUCKET_NAME: "{{ inputs.source == 'extended' ? 'mediatree-extended-perimeter-prod' : 'mediatree' }}"
+      POSTGRES_DB: "{{ inputs.source == 'extended' ? 'extended-perimeter' : 'barometre' }}"
+      SOURCE_COUNTRY_CODE: "{{ inputs.source == 'extended' ? 'ext-fra' : 'fra' }}"
+      POSTGRES_PORT: "{{ inputs.source == 'extended' ? 18492 : 22737 }}"
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18492
       BUCKET: "{{ secret('SCW_ACCESS') }}"
@@ -88,11 +102,12 @@ tasks:
       START_DATE: "{{ inputs.start_date ?? '' }}"
       END_DATE: "{{ inputs.end_date ?? '' }}"
       DAYS_PRIOR: "{{ inputs.days_back ?? '' }}"
-      POSTGRES_DB: barometre
-      POSTGRES_PORT: 22737
+      POSTGRES_DB: "{{ inputs.source == 'extended' ? 'extended-perimeter' : 'barometre' }}"
+      SOURCE_COUNTRY_CODE: "{{ inputs.source == 'extended' ? 'ext-fra' : 'fra' }}"
+      POSTGRES_PORT: "{{ inputs.source == 'extended' ? 18492 : 22737 }}"
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18492
-      BUCKET_NAME: mediatree
+      BUCKET_NAME: "{{ inputs.source == 'extended' ? 'mediatree-extended-perimeter-prod' : 'mediatree' }}"
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"

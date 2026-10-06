@@ -11,6 +11,13 @@ labels:
   scope: france
 
 inputs:
+  - id: source
+    type: SELECT
+    values:
+      - barometre
+      - extended
+    defaults: barometre
+    description: "Source database/perimeter to read from: the OME `barometre` DB or the `extended-perimeter` DB."
   - id: days_back
     type: INT
     required: false
@@ -60,16 +67,17 @@ tasks:
       PYTHONPATH: /app
       START_DATE: "{{ inputs.start_date ?? '' }}"
       END_DATE: "{{ inputs.end_date ?? '' }}"
-      BUCKET_NAME: mediatree
-      POSTGRES_DB: barometre
-      POSTGRES_PORT: 22737
+      BUCKET_NAME: "{{ inputs.source == 'extended' ? 'mediatree-extended-perimeter-prod' : 'mediatree' }}"
+      POSTGRES_DB: "{{ inputs.source == 'extended' ? 'extended-perimeter' : 'barometre' }}"
+      SOURCE_COUNTRY_CODE: "{{ inputs.source == 'extended' ? 'ext-fra' : 'fra' }}"
+      POSTGRES_PORT: "{{ inputs.source == 'extended' ? 18492 : 22737 }}"
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18492
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
-      POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
-      POSTGRES_USER: "{{ secret('RRS_BAROMETRE_READ_USER') }}"
-      POSTGRES_PASSWORD: "{{ secret('RRS_BAROMETRE_READ_PASSWORD') }}"
+      POSTGRES_HOST: "{{ inputs.source == 'extended' ? secret('RRS_PG_HOST') : secret('POSTGRES_HOST') }}"
+      POSTGRES_USER: "{{ inputs.source == 'extended' ? secret('RRS_PG_USER') : secret('RRS_BAROMETRE_READ_USER') }}"
+      POSTGRES_PASSWORD: "{{ inputs.source == 'extended' ? secret('RRS_PG_PASSWORD') : secret('RRS_BAROMETRE_READ_PASSWORD') }}"
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
       RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
       RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
@@ -92,13 +100,14 @@ tasks:
       PYTHONPATH: /app
       START_DATE: "{{ inputs.start_date ?? '' }}"
       END_DATE: "{{ inputs.end_date ?? '' }}"
-      POSTGRES_DB: barometre
-      POSTGRES_PORT: 22737
+      POSTGRES_DB: "{{ inputs.source == 'extended' ? 'extended-perimeter' : 'barometre' }}"
+      SOURCE_COUNTRY_CODE: "{{ inputs.source == 'extended' ? 'ext-fra' : 'fra' }}"
+      POSTGRES_PORT: "{{ inputs.source == 'extended' ? 18492 : 22737 }}"
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18492
-      POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
-      POSTGRES_USER: "{{ secret('RRS_BAROMETRE_READ_USER') }}"
-      POSTGRES_PASSWORD: "{{ secret('RRS_BAROMETRE_READ_PASSWORD') }}"
+      POSTGRES_HOST: "{{ inputs.source == 'extended' ? secret('RRS_PG_HOST') : secret('POSTGRES_HOST') }}"
+      POSTGRES_USER: "{{ inputs.source == 'extended' ? secret('RRS_PG_USER') : secret('RRS_BAROMETRE_READ_USER') }}"
+      POSTGRES_PASSWORD: "{{ inputs.source == 'extended' ? secret('RRS_PG_PASSWORD') : secret('RRS_BAROMETRE_READ_PASSWORD') }}"
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
       RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
       RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"

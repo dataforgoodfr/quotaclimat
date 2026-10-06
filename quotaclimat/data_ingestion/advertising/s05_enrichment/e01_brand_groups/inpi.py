@@ -5,6 +5,7 @@ Only French trademarks (collection FR) are used: their notices give the SIREN of
 international (WO) and European (EU) ones do not.
 """
 
+import html
 import logging
 import os
 import re
@@ -124,9 +125,11 @@ def _find(element, *path: str):
 
 
 def _text(element) -> str | None:
+    """Text of an element. Some values are escaped twice by the API ("COMME J&amp;apos;AIME" in the XML,
+    "COMME J&apos;AIME" once parsed): unescaped, else name_key would give "commejaposaime"."""
     if element is None or element.text is None:
         return None
-    return element.text.strip() or None
+    return html.unescape(element.text).strip() or None
 
 
 def parse_search(xml: str | bytes) -> list[SearchResult]:

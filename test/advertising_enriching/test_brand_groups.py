@@ -20,6 +20,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi
     looks_like_company,
     is_alive,
     parse_notice,
+    name_key,
     parse_search,
     search_term,
 )
@@ -264,6 +265,14 @@ def test_brand_notices_exact_name_in_force_only():
     assert [(r[1].rsplit("/", 1)[-1], r[2].get("json", {}).get("position")) for r in session.requests] == [
         ("search", 0), ("search", 100), ("FR5189659", None),
     ]
+
+
+def test_parse_search_marks_escaped_twice():
+    # as returned by the API for "Comme J'aime": the apostrophe escaped twice
+    xml = search_page([("4365907", "COMME J&amp;apos;AIME"), ("5240557", "COMME J’AIME PAS CONFISERIE")], count=2)
+    results = parse_search(xml)
+    assert [r.mark for r in results] == ["COMME J'AIME", "COMME J’AIME PAS CONFISERIE"]
+    assert name_key(results[0].mark) == name_key("Comme J'aime")
 
 
 def test_brand_notices_reads_at_most_max_notices(monkeypatch):

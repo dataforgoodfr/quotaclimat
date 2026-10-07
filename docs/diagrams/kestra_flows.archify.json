@@ -23,7 +23,7 @@
   "lanes": [
     {
       "id": "morning",
-      "label": "rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow"
+      "label": "main-pipeline: cron 01:10 and 12:30, each step is a subflow"
     },
     {
       "id": "ome",
@@ -64,7 +64,7 @@
       "lane": "morning",
       "col": 0,
       "type": "messagebus",
-      "label": "rrs-orchestrator",
+      "label": "main-pipeline",
       "sublabel": "cron 01:10 + 12:30",
       "width": 140
     },
@@ -255,7 +255,7 @@
       "title": "Orchestration",
       "items": [
         "Every step is a Subflow with wait: true",
-        "A failed step stops the rest of the run"
+        "with_rrs=false skips extended perimeter and RRS jobs"
       ]
     }
   ]

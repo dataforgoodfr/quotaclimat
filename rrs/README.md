@@ -173,7 +173,7 @@ The `rrs-climate` and `rrs-insecurity` Kestra flows (`infrastructure/kestra/flow
 
 The extended-perimeter DB has the same structure as `barometre`, so `import_segments.py` and `import_cases.py` work unchanged apart from `import_cases.py` selecting the channel list from `SOURCE_COUNTRY_CODE` (`EXTENDED_FRANCE.channels` for `ext-fra`, `FRANCE.channels` otherwise). Both sources write into the same `rrs` database.
 
-Extended runs are started by the `rrs-orchestrator` flow with `run_clustering=false`, so no clusters are created for them, before the usual `barometre` -> `rrs-climate` -> `rrs-insecurity` chain. See the root `README.md` ("Extended perimeter") for the full sequence.
+Extended runs are started by the `main-pipeline` flow with `run_clustering=false`, so no clusters are created for them, before the usual `barometre` -> `rrs-climate` -> `rrs-insecurity` chain. See the root `README.md` ("Extended perimeter") for the full sequence.
 
 ---
 

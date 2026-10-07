@@ -1,18 +1,22 @@
-id: rrs-orchestrator
-namespace: rrs
+id: main-pipeline
+namespace: quotaclimat
 
 description: |
-  Twice-daily orchestration (01:10 and 12:30). Runs the extended perimeter
+  Main pipeline, twice daily (01:10 and 12:30). Runs the extended perimeter
   pipeline, processes it in RRS (without clustering), runs the standard OME
   `barometre` pipeline, then the RRS flows on the barometre source.
   Each step is a subflow that must succeed before the next one starts.
 
 labels:
-  pipeline: rrs
+  pipeline: ome
   environment: prod
   scope: france
 
 inputs:
+  - id: with_rrs
+    type: BOOLEAN
+    defaults: true
+    description: "When false, skips the extended perimeter and all RRS jobs and only runs barometre."
   - id: days_back
     type: INT
     defaults: 1
@@ -35,6 +39,7 @@ triggers:
 
 tasks:
   - id: extended_perimeter
+    runIf: "{{ inputs.with_rrs }}"
     type: io.kestra.plugin.core.flow.Subflow
     namespace: rrs
     flowId: extended-perimeter
@@ -45,6 +50,7 @@ tasks:
       start_date: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
 
   - id: rrs_climate_extended
+    runIf: "{{ inputs.with_rrs }}"
     type: io.kestra.plugin.core.flow.Subflow
     namespace: rrs
     flowId: rrs-climate
@@ -55,6 +61,7 @@ tasks:
       run_clustering: false
 
   - id: rrs_insecurity_extended
+    runIf: "{{ inputs.with_rrs }}"
     type: io.kestra.plugin.core.flow.Subflow
     namespace: rrs
     flowId: rrs-insecurity
@@ -75,6 +82,7 @@ tasks:
       start_date: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
 
   - id: rrs_climate
+    runIf: "{{ inputs.with_rrs }}"
     type: io.kestra.plugin.core.flow.Subflow
     namespace: rrs
     flowId: rrs-climate
@@ -82,6 +90,7 @@ tasks:
     transmitFailed: true
 
   - id: rrs_insecurity
+    runIf: "{{ inputs.with_rrs }}"
     type: io.kestra.plugin.core.flow.Subflow
     namespace: rrs
     flowId: rrs-insecurity

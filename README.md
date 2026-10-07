@@ -471,7 +471,7 @@ Interactive version (download and open in a browser): [`docs/diagrams/kestra_flo
 
 The diagram covers all prod flows in `infrastructure/kestra/flows/` (dev flows mirror them). It is generated with [Archify](https://github.com/tt-a1i/archify) from `docs/diagrams/kestra_flows.archify.json`; to update it, edit that file (or ask an agent with the Archify skill to regenerate it) and re-export the HTML to `docs/diagrams/kestra_flows.html` and the PNG to `docs/images/kestra_flows.png`.
 
-The `rrs-orchestrator` flow (`main_rrs_orchestrator.yaml`) runs twice a day, at 01:10 and 12:30 (Europe/Paris), and is the only trigger of this chain. Each step is a `Subflow` task with `wait: true` and `transmitFailed: true`, so a failed step stops the rest of the run:
+The `main-pipeline` flow (`main_quotaclimat_mainpipeline.yaml`) runs twice a day, at 01:10 and 12:30 (Europe/Paris), and is the only trigger of this chain. The `with_rrs` input (boolean, default `true`) skips steps 1-3 and 5-6 when set to `false`, so only `barometre` runs. Each step is a `Subflow` task with `wait: true` and `transmitFailed: true`, so a failed step stops the rest of the run:
 1. `extended-perimeter`
 2. `rrs-climate` with `source=extended`, `run_clustering=false`
 3. `rrs-insecurity` with `source=extended`, `run_clustering=false`
@@ -479,9 +479,9 @@ The `rrs-orchestrator` flow (`main_rrs_orchestrator.yaml`) runs twice a day, at 
 5. `rrs-climate` on the `barometre` source (with clustering)
 6. `rrs-insecurity` on the `barometre` source (with clustering)
 
-`barometre`, `rrs-climate` and `rrs-insecurity` have no schedule or flow trigger of their own anymore; run them manually or through the orchestrator. See `rrs/README.md` for how RRS reads the extended source.
+`barometre`, `rrs-climate` and `rrs-insecurity` have no schedule or flow trigger of their own anymore; run them manually or through `main-pipeline`. See `rrs/README.md` for how RRS reads the extended source.
 
-The dev environment has the same structure in the `rrs-dev` namespace (`main_rrsdev_orchestrator.yaml`, `main_rrsdev_climate.yaml`, `main_rrsdev_insecurity.yaml`, `main_rrsdev_extendedperimeter.yaml`) plus `main_quotaclimatdev_barometre.yaml` (`quotaclimat-dev`), using the `_DEV` secrets and `-dev` buckets. The dev orchestrator has no schedule: run it manually.
+The dev environment has the same structure (`main-pipeline` in `quotaclimat-dev`, with the other flows in `rrs-dev`: `main_quotaclimatdev_mainpipeline.yaml`, `main_rrsdev_climate.yaml`, `main_rrsdev_insecurity.yaml`, `main_rrsdev_extendedperimeter.yaml`) plus `main_quotaclimatdev_barometre.yaml` (`quotaclimat-dev`), using the `_DEV` secrets and `-dev` buckets. The dev `main-pipeline` has no schedule: run it manually.
 
 # Mediatre to S3
 For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway) with partition :

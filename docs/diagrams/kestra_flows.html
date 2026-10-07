@@ -5014,7 +5014,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
 
         <!-- Swimlanes -->
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-0" x="40" y="52" width="1060" height="106" rx="10" class="c-lane" stroke-width="1"/>
-        <text x="54" y="74" class="t-dim" font-size="10" font-weight="600">01 / rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow</text>
+        <text x="54" y="74" class="t-dim" font-size="10" font-weight="600">01 / main-pipeline: cron 01:10 and 12:30, each step is a subflow</text>
 
         <rect data-graph-role="structural-frame" data-composition-frame-kind="lane" data-composition-frame-id="lane-1" x="40" y="178" width="1060" height="106" rx="10" class="c-lane" stroke-width="1"/>
         <text x="54" y="200" class="t-dim" font-size="10" font-weight="600">02 / Standard perimeter (same run, after the extended one)</text>
@@ -5045,8 +5045,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <path data-edge-from="sched_pulsar" data-edge-to="pulsar" data-edge-key="8" data-edge-id="e-sp-pulsar" data-composition-routing="workflow-v2-auto" data-edge-role="" data-composition-points="178,372;239.60000000000002,372" d="M 178 372 L 239.60000000000002 372" class="a-dashed" stroke-width="1.4" marker-end="url(#arrowhead-dashed)"/>
 
         <!-- Nodes -->
-        <g id="node-orch" data-node-id="orch" data-node-label="rrs-orchestrator" tabindex="0" role="button" aria-label="Focus rrs-orchestrator, cron 01:10 + 12:30, rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow › Extended perimeter" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="cron 01:10 + 12:30" data-node-context="rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow › Extended perimeter">
-          <title>rrs-orchestrator · cron 01:10 + 12:30 · rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow › Extended perimeter</title>
+        <g id="node-orch" data-node-id="orch" data-node-label="main-pipeline" tabindex="0" role="button" aria-label="Focus main-pipeline, cron 01:10 + 12:30, main-pipeline: cron 01:10 and 12:30, each step is a subflow › Extended perimeter" aria-pressed="false" data-node-kind="messagebus" data-node-sublabel="cron 01:10 + 12:30" data-node-context="main-pipeline: cron 01:10 and 12:30, each step is a subflow › Extended perimeter">
+          <title>main-pipeline · cron 01:10 + 12:30 · main-pipeline: cron 01:10 and 12:30, each step is a subflow › Extended perimeter</title>
           <rect x="48" y="94" width="140" height="52" rx="6" class="c-mask"/>
           <rect x="48" y="94" width="140" height="52" rx="6" class="c-messagebus" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="messagebus" class="semantic-sigil s-messagebus" transform="translate(54 100) scale(0.6875)">
@@ -5055,12 +5055,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
             <circle cx="10.5" cy="8" r="1" class="sigil-fill"/>
             <circle cx="7" cy="11.5" r="1" class="sigil-fill"/>
           </g>
-          <text data-node-label="" data-detail-anchor="" x="119.8" y="115" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">rrs-orchestrator</text>
+          <text data-node-label="" data-detail-anchor="" x="118" y="115" class="t-primary" font-size="11" font-weight="600" text-anchor="middle">main-pipeline</text>
           <text data-detail="context" x="118" y="132" class="t-muted" font-size="8" text-anchor="middle">cron 01:10 + 12:30</text>
         </g>
 
-        <g id="node-extp" data-node-id="extp" data-node-label="extended-perimeter" tabindex="0" role="button" aria-label="Focus extended-perimeter, ingest, keywords, misinfo, dbt, rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow › Extended perimeter" aria-pressed="false" data-node-kind="backend" data-node-sublabel="ingest, keywords, misinfo, dbt" data-node-context="rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow › Extended perimeter">
-          <title>extended-perimeter · ingest, keywords, misinfo, dbt · rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow › Extended perimeter</title>
+        <g id="node-extp" data-node-id="extp" data-node-label="extended-perimeter" tabindex="0" role="button" aria-label="Focus extended-perimeter, ingest, keywords, misinfo, dbt, main-pipeline: cron 01:10 and 12:30, each step is a subflow › Extended perimeter" aria-pressed="false" data-node-kind="backend" data-node-sublabel="ingest, keywords, misinfo, dbt" data-node-context="main-pipeline: cron 01:10 and 12:30, each step is a subflow › Extended perimeter">
+          <title>extended-perimeter · ingest, keywords, misinfo, dbt · main-pipeline: cron 01:10 and 12:30, each step is a subflow › Extended perimeter</title>
           <rect x="239.60000000000002" y="94" width="150" height="52" rx="6" class="c-mask"/>
           <rect x="239.60000000000002" y="94" width="150" height="52" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(245.60000000000002 100) scale(0.6875)">
@@ -5070,8 +5070,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           <text data-detail="context" x="314.6" y="132" class="t-muted" font-size="7.8" text-anchor="middle">ingest, keywords, misinfo, dbt</text>
         </g>
 
-        <g id="node-rrsclimate_ext" data-node-id="rrsclimate_ext" data-node-label="rrs-climate" tabindex="0" role="button" aria-label="Focus rrs-climate, source=extended, rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow › Extended perimeter" aria-pressed="false" data-node-kind="backend" data-node-sublabel="source=extended" data-node-tag="no clustering" data-node-context="rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow › Extended perimeter">
-          <title>rrs-climate · source=extended · rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow › Extended perimeter · no clustering</title>
+        <g id="node-rrsclimate_ext" data-node-id="rrsclimate_ext" data-node-label="rrs-climate" tabindex="0" role="button" aria-label="Focus rrs-climate, source=extended, main-pipeline: cron 01:10 and 12:30, each step is a subflow › Extended perimeter" aria-pressed="false" data-node-kind="backend" data-node-sublabel="source=extended" data-node-tag="no clustering" data-node-context="main-pipeline: cron 01:10 and 12:30, each step is a subflow › Extended perimeter">
+          <title>rrs-climate · source=extended · main-pipeline: cron 01:10 and 12:30, each step is a subflow › Extended perimeter · no clustering</title>
           <rect x="417.6" y="86" width="140" height="68" rx="6" class="c-mask"/>
           <rect x="417.6" y="86" width="140" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(423.6 92) scale(0.6875)">
@@ -5082,8 +5082,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         <text data-detail="fine" x="487.6" y="142" class="t-backend" font-size="7" text-anchor="middle">no clustering</text>
         </g>
 
-        <g id="node-rrsinsec_ext" data-node-id="rrsinsec_ext" data-node-label="rrs-insecurity" tabindex="0" role="button" aria-label="Focus rrs-insecurity, source=extended, rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow › Standard perimeter" aria-pressed="false" data-node-kind="backend" data-node-sublabel="source=extended" data-node-tag="no clustering" data-node-context="rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow › Standard perimeter">
-          <title>rrs-insecurity · source=extended · rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow › Standard perimeter · no clustering</title>
+        <g id="node-rrsinsec_ext" data-node-id="rrsinsec_ext" data-node-label="rrs-insecurity" tabindex="0" role="button" aria-label="Focus rrs-insecurity, source=extended, main-pipeline: cron 01:10 and 12:30, each step is a subflow › Standard perimeter" aria-pressed="false" data-node-kind="backend" data-node-sublabel="source=extended" data-node-tag="no clustering" data-node-context="main-pipeline: cron 01:10 and 12:30, each step is a subflow › Standard perimeter">
+          <title>rrs-insecurity · source=extended · main-pipeline: cron 01:10 and 12:30, each step is a subflow › Standard perimeter · no clustering</title>
           <rect x="585.6" y="86" width="140" height="68" rx="6" class="c-mask"/>
           <rect x="585.6" y="86" width="140" height="68" rx="6" class="c-backend" stroke-width="1.5"/>
           <g aria-hidden="true" data-semantic-sigil="backend" class="semantic-sigil s-backend" transform="translate(591.6 92) scale(0.6875)">
@@ -5431,7 +5431,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         </div>
         <ul>
           <li>Every step is a Subflow with wait: true</li>
-          <li>A failed step stops the rest of the run</li>
+          <li>with_rrs=false skips extended perimeter and RRS jobs</li>
         </ul>
       </div>
     </div>

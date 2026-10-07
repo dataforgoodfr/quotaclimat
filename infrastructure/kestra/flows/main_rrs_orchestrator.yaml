@@ -2,11 +2,10 @@ id: rrs-orchestrator
 namespace: rrs
 
 description: |
-  Morning orchestration. Runs the extended perimeter pipeline, processes it in
-  RRS (without clustering), then runs the standard OME `barometre` pipeline.
-  The completion of `barometre` fires the usual RRS chain
-  (rrs-climate -> rrs-insecurity) through their flow triggers.
-  The 12:30 `barometre` run is not part of this flow and stays standalone.
+  Twice-daily orchestration (01:10 and 12:30). Runs the extended perimeter
+  pipeline, processes it in RRS (without clustering), runs the standard OME
+  `barometre` pipeline, then the RRS flows on the barometre source.
+  Each step is a subflow that must succeed before the next one starts.
 
 labels:
   pipeline: rrs
@@ -29,6 +28,11 @@ triggers:
     cron: "10 01 * * *"
     timezone: Europe/Paris
 
+  - id: afternoon_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "30 12 * * *"
+    timezone: Europe/Paris
+
 tasks:
   - id: extended_perimeter
     type: io.kestra.plugin.core.flow.Subflow
@@ -46,8 +50,6 @@ tasks:
     flowId: rrs-climate
     wait: true
     transmitFailed: true
-    labels:
-      source: extended
     inputs:
       source: extended
       run_clustering: false
@@ -58,13 +60,10 @@ tasks:
     flowId: rrs-insecurity
     wait: true
     transmitFailed: true
-    labels:
-      source: extended
     inputs:
       source: extended
       run_clustering: false
 
-  # Its completion triggers rrs-climate -> rrs-insecurity on the barometre source.
   - id: barometre
     type: io.kestra.plugin.core.flow.Subflow
     namespace: quotaclimat
@@ -74,3 +73,17 @@ tasks:
     inputs:
       days_back: "{{ inputs.days_back }}"
       start_date: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
+
+  - id: rrs_climate
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: rrs
+    flowId: rrs-climate
+    wait: true
+    transmitFailed: true
+
+  - id: rrs_insecurity
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: rrs
+    flowId: rrs-insecurity
+    wait: true
+    transmitFailed: true

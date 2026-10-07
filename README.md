@@ -471,13 +471,15 @@ Interactive version (download and open in a browser): [`docs/diagrams/kestra_flo
 
 The diagram covers all prod flows in `infrastructure/kestra/flows/` (dev flows mirror them). It is generated with [Archify](https://github.com/tt-a1i/archify) from `docs/diagrams/kestra_flows.archify.json`; to update it, edit that file (or ask an agent with the Archify skill to regenerate it) and re-export the HTML to `docs/diagrams/kestra_flows.html` and the PNG to `docs/images/kestra_flows.png`.
 
-The `rrs-orchestrator` flow (`main_rrs_orchestrator.yaml`) runs every morning at 01:10 (Europe/Paris):
+The `rrs-orchestrator` flow (`main_rrs_orchestrator.yaml`) runs twice a day, at 01:10 and 12:30 (Europe/Paris), and is the only trigger of this chain. Each step is a `Subflow` task with `wait: true` and `transmitFailed: true`, so a failed step stops the rest of the run:
 1. `extended-perimeter`
 2. `rrs-climate` with `source=extended`, `run_clustering=false`
 3. `rrs-insecurity` with `source=extended`, `run_clustering=false`
-4. `barometre`, whose completion fires the usual flow triggers: `rrs-climate` then `rrs-insecurity` on the `barometre` source, with clustering.
+4. `barometre`
+5. `rrs-climate` on the `barometre` source (with clustering)
+6. `rrs-insecurity` on the `barometre` source (with clustering)
 
-The `barometre` 12:30 afternoon schedule is unchanged and still triggers the RRS chain on its own. The orchestrator labels its extended `rrs-*` executions `source: extended`, and `rrs-insecurity`'s trigger ignores them. See `rrs/README.md` for how RRS reads the extended source.
+`barometre`, `rrs-climate` and `rrs-insecurity` have no schedule or flow trigger of their own anymore; run them manually or through the orchestrator. See `rrs/README.md` for how RRS reads the extended source.
 
 # Mediatre to S3
 For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway) with partition :

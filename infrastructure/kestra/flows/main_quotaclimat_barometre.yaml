@@ -12,12 +12,6 @@ labels:
   environment: prod
   scope: france
 
-triggers:
-  - id: afternoon_schedule
-    type: io.kestra.plugin.core.trigger.Schedule
-    cron: "30 12 * * *"
-    timezone: Europe/Paris
-
 inputs:
   - id: days_back
     type: INT

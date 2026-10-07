@@ -23,11 +23,11 @@
   "lanes": [
     {
       "id": "morning",
-      "label": "Morning: rrs-orchestrator (01:10)"
+      "label": "rrs-orchestrator: cron 01:10 and 12:30, each step is a subflow"
     },
     {
       "id": "ome",
-      "label": "Standard perimeter (barometre, 12:30 run + morning)"
+      "label": "Standard perimeter (same run, after the extended one)"
     },
     {
       "id": "other",
@@ -65,7 +65,7 @@
       "col": 0,
       "type": "messagebus",
       "label": "rrs-orchestrator",
-      "sublabel": "cron 01:10",
+      "sublabel": "cron 01:10 + 12:30",
       "width": 140
     },
     {
@@ -98,15 +98,6 @@
       "width": 140
     },
     {
-      "id": "sched_pm",
-      "lane": "ome",
-      "col": 2,
-      "type": "external",
-      "label": "Schedule",
-      "sublabel": "cron 12:30",
-      "width": 140
-    },
-    {
       "id": "barometre",
       "lane": "ome",
       "col": 3,
@@ -122,7 +113,8 @@
       "type": "backend",
       "label": "rrs-climate",
       "sublabel": "source=barometre",
-      "width": 140
+      "width": 140,
+      "tag": "clustering"
     },
     {
       "id": "rrsinsec",
@@ -131,7 +123,8 @@
       "type": "backend",
       "label": "rrs-insecurity",
       "sublabel": "source=barometre",
-      "width": 140
+      "width": 140,
+      "tag": "clustering"
     },
     {
       "id": "sched_pulsar",
@@ -216,24 +209,18 @@
       "variant": "emphasis"
     },
     {
-      "id": "e-pm-baro",
-      "from": "sched_pm",
-      "to": "barometre",
-      "variant": "dashed"
-    },
-    {
       "id": "e-baro-clim",
       "from": "barometre",
       "to": "rrsclimate",
-      "label": "on success",
-      "variant": "default"
+      "label": "then",
+      "variant": "emphasis"
     },
     {
       "id": "e-clim-insec2",
       "from": "rrsclimate",
       "to": "rrsinsec",
-      "label": "on finish",
-      "variant": "default"
+      "label": "then",
+      "variant": "emphasis"
     },
     {
       "id": "e-sp-pulsar",
@@ -265,10 +252,10 @@
     },
     {
       "dot": "rose",
-      "title": "Triggers",
+      "title": "Orchestration",
       "items": [
-        "rrs-climate fires after barometre, rrs-insecurity after rrs-climate",
-        "Executions labelled source=extended do not fire rrs-insecurity"
+        "Every step is a Subflow with wait: true",
+        "A failed step stops the rest of the run"
       ]
     }
   ]

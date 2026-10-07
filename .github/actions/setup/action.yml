@@ -27,3 +27,9 @@ runs:
       with:
         path: .venv
         key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+    - name: Install dependencies (if cache missed)
+      shell: bash
+      run: |
+        if [ ! -f ".venv/pyvenv.cfg" ]; then
+          poetry install --no-interaction
+        fi

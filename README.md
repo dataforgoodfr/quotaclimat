@@ -481,6 +481,8 @@ The `rrs-orchestrator` flow (`main_rrs_orchestrator.yaml`) runs twice a day, at 
 
 `barometre`, `rrs-climate` and `rrs-insecurity` have no schedule or flow trigger of their own anymore; run them manually or through the orchestrator. See `rrs/README.md` for how RRS reads the extended source.
 
+The dev environment has the same structure in the `rrs-dev` namespace (`main_rrsdev_orchestrator.yaml`, `main_rrsdev_climate.yaml`, `main_rrsdev_insecurity.yaml`, `main_rrsdev_extendedperimeter.yaml`) plus `main_quotaclimatdev_barometre.yaml` (`quotaclimat-dev`), using the `_DEV` secrets and `-dev` buckets. The dev orchestrator has no schedule: run it manually.
+
 # Mediatre to S3
 For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway) with partition :
 * country/year/month/day/channel

@@ -464,6 +464,11 @@ Optional inputs (also available on `barometre`, `barometre-catchup` and `baromet
 The `extended-perimeter` database has exactly the same structure as `barometre` (and its `keywords.country` is `france`), so the same downstream code can read either.
 
 #### Daily orchestration
+
+![Kestra flows](docs/images/kestra_flows.png)
+
+The diagram covers all prod flows in `infrastructure/kestra/flows/` (dev flows mirror them). It is generated with [Archify](https://github.com/tt-a1i/archify) from `docs/diagrams/kestra_flows.archify.json`; to update it, edit that file (or ask an agent with the Archify skill to regenerate it) and re-export the PNG to `docs/images/kestra_flows.png`.
+
 The `rrs-orchestrator` flow (`main_rrs_orchestrator.yaml`) runs every morning at 01:10 (Europe/Paris):
 1. `extended-perimeter`
 2. `rrs-climate` with `source=extended`, `run_clustering=false`

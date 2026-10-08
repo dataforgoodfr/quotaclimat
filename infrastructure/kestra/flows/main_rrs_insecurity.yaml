@@ -63,8 +63,8 @@ tasks:
       POSTGRES_PORT: "{{ inputs.source == 'extended' ? 18492 : 22737 }}"
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18492
-      BUCKET: "{{ secret('SCW_ACCESS') }}"
-      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      BUCKET: "{{ inputs.source == 'extended' ? secret('RRS_SCW_ACCESS') : secret('SCW_ACCESS') }}"
+      BUCKET_SECRET: "{{ inputs.source == 'extended' ? secret('RRS_SCW_SECRET') : secret('SCW_SECRET') }}"
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
       RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
       RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"

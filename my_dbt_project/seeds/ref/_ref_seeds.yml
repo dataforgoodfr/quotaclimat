@@ -39,13 +39,13 @@ seeds:
         tests:
           - not_null
 
-  # Inventaires_des_marques spreadsheet, tab Marques: brand -> group, rows not verified allowed
+  # Inventaires_des_marques spreadsheet, tab Marques: brand -> company, rows not verified allowed
   - name: ref_inventaire_marques
     config:
       # all text, even when a column looks numeric (e.g. the brand "1664") or is still empty
       column_types:
         marque: text
-        groupe: text
+        entreprise: text
         source: text
         statut: text
         commentaire: text
@@ -60,19 +60,21 @@ seeds:
               arguments:
                 values: ['vérifié', 'non vérifié']
 
-  # Inventaires_des_marques spreadsheet, tab Groupes: one row per group (canonical name used by the
-  # tab Marques) -> ultimate parent company, only used when statut is 'vérifié'
-  - name: ref_inventaire_groupes
+  # Inventaires_des_marques spreadsheet, tab Entreprises: one row per company (official name used by
+  # the tab Marques) -> ultimate parent company, only used when statut is 'vérifié'
+  - name: ref_inventaire_entreprises
     config:
       column_types:
-        groupe: text
-        groupe_id: text
+        entreprise: text
+        alias: text
+        entreprise_id: text
+        siren: text
         societe_mere_ultime: text
         source: text
         statut: text
         commentaire: text
     columns:
-      - name: groupe
+      - name: entreprise
         tests:
           - unique
           - not_null

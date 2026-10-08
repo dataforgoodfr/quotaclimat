@@ -72,14 +72,16 @@ def gleif_direct_parent(lei: str, delay_sec: float = 1.0) -> Company | None:
 
 
 def wikidata_parent(siren: str, delay_sec: float = 1.0) -> Company | None:
-    """Parent organization (P749) of the Wikidata item with this SIREN (P1616), when exactly one."""
+    """Parent organization (P749) of the Wikidata item with this SIREN (P1616), when exactly one. Its
+    label in French, English or the multilingual one (mul); name empty when it has none (the label
+    service then returns the QID, e.g. Q20967159 for the parent of SFR)."""
     if not siren.isdigit():
         return None
     query = f"""
         SELECT DISTINCT ?parent ?parentLabel WHERE {{
           ?item wdt:P1616 "{siren}" ;
                 wdt:P749 ?parent .
-          SERVICE wikibase:label {{ bd:serviceParam wikibase:language "fr,en". }}
+          SERVICE wikibase:label {{ bd:serviceParam wikibase:language "fr,en,mul". }}
         }}
     """
     response = _get(
@@ -90,7 +92,6 @@ def wikidata_parent(siren: str, delay_sec: float = 1.0) -> Company | None:
     bindings = response.json().get("results", {}).get("bindings", [])
     if len(bindings) != 1:
         return None
-    return Company(
-        name=bindings[0]["parentLabel"]["value"],
-        identifier=bindings[0]["parent"]["value"].rsplit("/", 1)[-1],
-    )
+    qid = bindings[0]["parent"]["value"].rsplit("/", 1)[-1]
+    label = bindings[0].get("parentLabel", {}).get("value", "")
+    return Company(name="" if label == qid else label, identifier=qid)

@@ -125,7 +125,7 @@ jobs:
             echo ""
             echo "Branch \`${GITHUB_REF_NAME}\`, image \`${{ env.TEMP_IMAGE_NAME }}:${{ steps.tag.outputs.value }}\`, ${MAX_BRANDS} brands. Written to the tab Marques unless BRAND_GROUPS_DRY_RUN is true in the env of the Scaleway job."
             echo ""
-            echo "In dry run, proposed rows: in the logs of the job run \`${{ steps.run.outputs.run_id }}\`, between the lines \`----- BRAND GROUPS PROPOSALS\` and \`----- END OF BRAND GROUPS PROPOSALS\` (tab-separated, can be pasted in a sheet)."
+            echo "In dry run, proposed rows: in the logs of the job run \`${{ steps.run.outputs.run_id }}\`, between the lines \`----- BRAND GROUPS PROPOSALS\` and \`----- END OF BRAND GROUPS PROPOSALS\` (tab Marques), then \`----- COMPANIES PROPOSALS\` and \`----- END OF COMPANIES PROPOSALS\` (tab Entreprises), tab-separated, can be pasted in a sheet."
             echo ""
             echo "[Scaleway console, Serverless Jobs](https://console.scaleway.com/serverless-jobs/jobs) > brand groups job > Job runs > \`${{ steps.run.outputs.run_id }}\` > logs."
           } >> $GITHUB_STEP_SUMMARY

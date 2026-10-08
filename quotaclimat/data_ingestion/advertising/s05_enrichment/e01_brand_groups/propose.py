@@ -1,10 +1,13 @@
-"""Group proposal for a brand: INPI trademark holder (SIREN), then its parent company (Wikidata, GLEIF).
+"""Company proposal for a brand: the INPI trademark holder (SIREN), the company that sells under the
+brand (Free -> FREE), never a parent company, which is only proposed as the ultimate parent company of a
+new row of the tab Entreprises (Wikidata, GLEIF).
 
-The proposal is a row of the tab Marques with statut 'non vérifié': a human checks it afterwards.
+The proposals have statut 'non vérifié': a human checks them afterwards, and corrects the company when
+the holder is a holding (Auchan -> ELO), e.g. with an alias in the tab Entreprises.
 """
 
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi import (
@@ -87,68 +90,109 @@ def choose_holder(
     )
 
 
+@dataclass
+class KnownCompanies:
+    """Companies of the tab Entreprises (and the ones proposed during the run): official name by name_key
+    and by SIREN (optional column siren)."""
+
+    by_key: dict[str, str] = field(default_factory=dict)
+    by_siren: dict[str, str] = field(default_factory=dict)
+
+    @classmethod
+    def from_rows(cls, rows: list[dict[str, str]]) -> "KnownCompanies":
+        known = cls()
+        for row in rows:
+            if row.get("entreprise"):
+                known.add(row["entreprise"], row.get("siren", ""))
+        return known
+
+    def add(self, name: str, siren: str = "") -> None:
+        self.by_key.setdefault(name_key(name), name)
+        if siren:
+            self.by_siren.setdefault(siren.replace(" ", ""), name)
+
+    def find(self, holder: Holder) -> str | None:
+        """Official name of the holder's company in the tab, by SIREN, else by name."""
+        return (holder.siren and self.by_siren.get(holder.siren)) or self.by_key.get(name_key(holder.name))
+
+
+def _parent(wikidata_parent: Company | None, gleif_parent: Company | None) -> tuple[Company | None, str]:
+    """Parent company found and its source: Wikidata (when it has a label), else GLEIF."""
+    if wikidata_parent and wikidata_parent.name:
+        return wikidata_parent, "wikidata"
+    if gleif_parent:
+        return gleif_parent, "gleif"
+    return None, ""
+
+
 def propose_row(
     brand: str,
     holder: Holder | None,
     wikidata_parent: Company | None,
     gleif_lei: Company | None,
     gleif_parent: Company | None,
-    known_groups: dict[str, str],
+    known: KnownCompanies,
     today: date,
-) -> dict[str, str]:
-    """Row of the tab Marques. The group is, in this order: a candidate already in the tab Groupes
-    (its canonical name), the Wikidata parent, the GLEIF direct parent, the holder itself."""
+) -> tuple[dict[str, str], dict[str, str] | None]:
+    """Row of the tab Marques, and row of the tab Entreprises when the company is not in it yet. The
+    company is the holder, under its official name in the tab Entreprises when it is there. The parent
+    company (Wikidata, else GLEIF) is only proposed as the ultimate parent company of the new company."""
+    job = f"job {today.isoformat()} : "
     if holder is None:
         return {
             "marque": brand,
-            "groupe": "",
+            "entreprise": "",
             "source": "inpi",
             "statut": "non vérifié",
-            "commentaire": f"job {today.isoformat()} : aucune marque en vigueur à ce nom à l'INPI (bases FR, EU, WO)",
-        }
+            "commentaire": job + "aucune marque en vigueur à ce nom à l'INPI (bases FR, EU, WO)",
+        }, None
 
-    candidates = [
-        (wikidata_parent.name, "wikidata") if wikidata_parent else None,
-        (gleif_parent.name, "gleif") if gleif_parent else None,
-        (holder.name, "inpi"),
-    ]
-    candidates = [c for c in candidates if c]
-    known = next(
-        (
-            (known_groups[name_key(n)], s)
-            for n, s in candidates
-            if name_key(n) in known_groups
-        ),
-        None,
-    )
-    group, source = known or candidates[0]
-
+    known_name = known.find(holder)
+    company = known_name or holder.name
     identity = f"SIREN {holder.siren}" if holder.siren else f"société étrangère, pays {holder.country or '?'}"
     notes = [f"titulaire {holder.name} ({identity}), marque {holder.trademark}"]
     if not holder.in_sector_classes:
         notes.append("aucune marque lue dans les classes de Nice du secteur, titulaire à vérifier")
-    if gleif_lei and not holder.siren:
-        notes.append(f"LEI du titulaire trouvé par son nom : {gleif_lei.identifier}")
-    if wikidata_parent:
-        notes.append(
-            f"Wikidata : {wikidata_parent.name} ({wikidata_parent.identifier})"
-        )
-    if gleif_parent:
-        notes.append(f"GLEIF : {gleif_parent.name} (LEI {gleif_parent.identifier})")
-    if source == "inpi":
-        notes.append("groupe = titulaire, aucune société mère trouvée")
+    if known_name:
+        notes.append("entreprise déjà dans l'onglet Entreprises")
     if holder.other_holders:
         notes.append("autres titulaires : " + ", ".join(holder.other_holders))
-    return {
+    brand_row = {
         "marque": brand,
-        "groupe": group,
-        # the holder always comes from the INPI
-        "source": source if source == "inpi" else f"inpi+{source}",
+        "entreprise": company,
+        "source": "inpi",
         "statut": "non vérifié",
-        "commentaire": f"job {today.isoformat()} : " + " ; ".join(notes),
+        "commentaire": job + " ; ".join(notes),
         # traceability, written only when the tab has these columns
         "titulaire": holder.name,
         "siren": holder.siren,
         "lei": gleif_lei.identifier if gleif_lei else "",
         "numero_marque": holder.trademark,
     }
+    if known_name:
+        return brand_row, None
+
+    parent, parent_source = _parent(wikidata_parent, gleif_parent)
+    notes = [f"titulaire de la marque {brand} ({holder.trademark}), {identity}"]
+    if gleif_lei and not holder.siren:
+        notes.append(f"LEI trouvé par son nom : {gleif_lei.identifier}")
+    if wikidata_parent:
+        label = wikidata_parent.name or "sans libellé"
+        notes.append(f"Wikidata : société mère {label} ({wikidata_parent.identifier})")
+    if gleif_parent:
+        notes.append(f"GLEIF : société mère directe {gleif_parent.name} (LEI {gleif_parent.identifier})")
+    notes.append(
+        "société mère proposée = société mère directe, à remonter jusqu'à l'ultime" if parent
+        else "aucune société mère trouvée"
+    )
+    company_row = {
+        "entreprise": company,
+        "alias": "",
+        "entreprise_id": gleif_lei.identifier if gleif_lei else "",
+        "siren": holder.siren,
+        "societe_mere_ultime": parent.name if parent else "",
+        "source": f"inpi+{parent_source}" if parent else "inpi",
+        "statut": "non vérifié",
+        "commentaire": job + " ; ".join(notes),
+    }
+    return brand_row, company_row

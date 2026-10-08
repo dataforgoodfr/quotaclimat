@@ -1,14 +1,16 @@
-"""Stage 4 (enriching), step 1: propose the group of the broadcast brands missing from the tab Marques of the
-Inventaires_des_marques Google Sheet, and append them to it with statut 'non vérifié'.
+"""Stage 4 (enriching), step 1: propose the company of the broadcast brands missing from the tab Marques of
+the Inventaires_des_marques Google Sheet, and append them to it with statut 'non vérifié'.
 
 For each brand, by decreasing broadcast duration:
-1. INPI: French trademarks in force named exactly like the brand, holder (company, SIREN) of the most
+1. INPI: trademarks in force named exactly like the brand, holder (company, SIREN) of the most
    trademarks covering the Nice classes of the brand's sector (column classes_nice of the tab secteurs of
    the Dictionnaire_marques_secteurs Google Sheet, loaded by dbt in advertising.ref_ome_secteurs);
-2. parent company of the holder: Wikidata (P749 of the item with this SIREN), else GLEIF (direct parent of
-   the LEI registered under this SIREN), else the holder itself;
-3. a row is appended to the tab Marques when a group was found. A brand without any is not written, so that
-   it is searched again on the next runs (and can be filled in by a human meanwhile).
+2. company of the brand: the holder, under its official name in the tab Entreprises when it is there
+   (same SIREN or name). No parent company: the company is the one that sells under the brand;
+3. a row is appended to the tab Marques when a company was found. A brand without any is not written, so
+   that it is searched again on the next runs (and can be filled in by a human meanwhile);
+4. a company not in the tab Entreprises yet is appended to it, with its parent company (Wikidata P749 of
+   the item with its SIREN, else GLEIF direct parent of its LEI) proposed as ultimate parent company.
 
 Env: POSTGRES_*, INPI_USERNAME, INPI_PASSWORD, GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON,
 EXTERNAL_SOURCES_DRIVE_FOLDER, BRAND_GROUPS_MAX_BRANDS (default 50), BRAND_GROUPS_DRY_RUN (true: write
@@ -30,13 +32,14 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi
     name_key,
 )
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import (
+    KnownCompanies,
     choose_holder,
     parse_nice_classes,
     propose_row,
 )
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.sheet import (
     BRANDS_TAB,
-    GROUPS_TAB,
+    COMPANIES_TAB,
     BrandInventorySheet,
 )
 from sqlalchemy import text
@@ -59,7 +62,7 @@ NICE_CLASSES_QUERY = text(
 )
 CSV_COLUMNS = [
     "marque",
-    "groupe",
+    "entreprise",
     "source",
     "statut",
     "commentaire",
@@ -68,18 +71,30 @@ CSV_COLUMNS = [
     "lei",
     "numero_marque",
 ]
+COMPANY_COLUMNS = [
+    "entreprise",
+    "alias",
+    "entreprise_id",
+    "siren",
+    "societe_mere_ultime",
+    "source",
+    "statut",
+    "commentaire",
+]
 
 
-def print_rows(rows: list[dict], out=None) -> None:
+def print_rows(rows: list[dict], out=None, columns=None, title: str = "BRAND GROUPS PROPOSALS") -> None:
     """Rows in the logs, tab-separated between two markers: in a container the dry-run CSV is lost, the
     lines can be pasted in a sheet."""
     out = out or sys.stdout
-    print("----- BRAND GROUPS PROPOSALS (tab-separated) -----", file=out)
-    writer = csv.DictWriter(out, fieldnames=CSV_COLUMNS, delimiter="\t", lineterminator="\n", extrasaction="ignore")
+    print(f"----- {title} (tab-separated) -----", file=out)
+    writer = csv.DictWriter(
+        out, fieldnames=columns or CSV_COLUMNS, delimiter="\t", lineterminator="\n", extrasaction="ignore"
+    )
     writer.writeheader()
     # one line per row: no tab nor line break inside a value
     writer.writerows({k: " ".join(str(v).split()) for k, v in row.items()} for row in rows)
-    print("----- END OF BRAND GROUPS PROPOSALS -----", file=out, flush=True)
+    print(f"----- END OF {title} -----", file=out, flush=True)
 
 
 def brands_to_process(
@@ -112,36 +127,46 @@ def propose(
     sector: str | None,
     inpi: InpiClient,
     nice_classes,
-    known_groups,
+    known: KnownCompanies,
     today: date,
-) -> dict:
+) -> tuple[dict, dict | None]:
+    """Row of the tab Marques, and row of the tab Entreprises for a company not in it yet."""
     holder = choose_holder(
         inpi.brand_notices(brand), nice_classes.get(sector) if sector else None
     )
     wikidata_parent = gleif_lei = gleif_parent = None
-    if holder and holder.siren:
+    if holder is None or known.find(holder):
+        # no company, or a company already in the tab: no registry lookup needed
+        pass
+    elif holder.siren:
         wikidata_parent = registries.wikidata_parent(holder.siren)
         gleif_lei = registries.gleif_lei(holder.siren)
-    elif holder and holder.country:
+    elif holder.country:
         # company registered abroad: no SIREN, its LEI by its exact legal name and country
         gleif_lei = registries.gleif_lei_by_name(holder.name, holder.country)
     if gleif_lei:
         gleif_parent = registries.gleif_direct_parent(gleif_lei.identifier)
     return propose_row(
-        brand, holder, wikidata_parent, gleif_lei, gleif_parent, known_groups, today
+        brand, holder, wikidata_parent, gleif_lei, gleif_parent, known, today
     )
+
+
+def check_columns(sheet: BrandInventorySheet, tab: str, column: str) -> None:
+    """The tab must have the column the rows are written under: values of missing columns are dropped,
+    the rows would be appended without it (e.g. column groupe not renamed entreprise yet)."""
+    if column not in sheet.header(tab):
+        raise RuntimeError(f"tab {tab} has no column {column}: rename or add it before running the job")
 
 
 def run() -> int:
     max_brands = int(os.environ.get("BRAND_GROUPS_MAX_BRANDS", "50"))
     dry_run = os.environ.get("BRAND_GROUPS_DRY_RUN", "false").lower() == "true"
     sheet = BrandInventorySheet.open()
+    if not dry_run:
+        check_columns(sheet, BRANDS_TAB, "entreprise")
+        check_columns(sheet, COMPANIES_TAB, "entreprise")
     inventory_keys = {name_key(r.get("marque")) for r in sheet.read(BRANDS_TAB)}
-    known_groups = {
-        name_key(r.get("groupe")): r["groupe"]
-        for r in sheet.read(GROUPS_TAB)
-        if r.get("groupe")
-    }
+    known = KnownCompanies.from_rows(sheet.read(COMPANIES_TAB))
 
     engine = connect_to_db()
     with engine.connect() as connection:
@@ -163,10 +188,10 @@ def run() -> int:
 
     inpi = InpiClient(os.environ["INPI_USERNAME"], os.environ["INPI_PASSWORD"])
     today = date.today()
-    rows = []
+    rows, company_rows = [], []
     for brand, sector in brands:
         try:
-            row = propose(brand, sector, inpi, nice_classes, known_groups, today)
+            row, company_row = propose(brand, sector, inpi, nice_classes, known, today)
         except InpiQuotaExceeded as e:
             # every following brand would fail too: stop, keep the rows found so far
             logging.error("Brand %s: %s. The remaining brands are left for the next run", brand, e)
@@ -175,29 +200,38 @@ def run() -> int:
             # an API error on one brand must not stop the others; the brand is retried on the next run
             logging.exception("Brand %s: proposal failed, skipped", brand)
             continue
-        if row["groupe"]:
-            logging.info("Brand %s: group %r (%s)", brand, row["groupe"], row["source"])
+        if row["entreprise"]:
+            logging.info("Brand %s: company %r%s", brand, row["entreprise"], "" if company_row else " (known)")
         else:
             logging.info("Brand %s: no trademark in force found (FR, EU, WO), not written, searched again next run", brand)
         rows.append(row)
+        if company_row:
+            # the next brands of the same holder use this company, without a second row
+            known.add(company_row["entreprise"], company_row["siren"])
+            company_rows.append(company_row)
         logging.info("%s rows proposed, %s so far", len(rows), inpi.requests_summary)
 
     logging.info("INPI: %s for %s brands", inpi.requests_summary, len(rows))
     if dry_run:
         path = os.environ.get("BRAND_GROUPS_DRY_RUN_CSV", "brand_groups_proposals.csv")
         with open(path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
+            writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS, extrasaction="ignore")
             writer.writeheader()
             writer.writerows(rows)
         logging.info("Dry run: %s rows written to %s", len(rows), path)
         print_rows(rows)
+        print_rows(company_rows, columns=COMPANY_COLUMNS, title="COMPANIES PROPOSALS")
     else:
-        # re-read just before appending: a brand added by a human during the run is not added twice
+        # re-read just before appending: a row added by a human during the run is not added twice
         inventory_keys = {name_key(r.get("marque")) for r in sheet.read(BRANDS_TAB)}
-        # only the brands with a group: the others are searched again on the next runs
-        rows = [r for r in rows if r["groupe"] and name_key(r["marque"]) not in inventory_keys]
+        # only the brands with a company: the others are searched again on the next runs
+        rows = [r for r in rows if r["entreprise"] and name_key(r["marque"]) not in inventory_keys]
         sheet.append(BRANDS_TAB, rows)
         logging.info("%s rows appended to the tab %s", len(rows), BRANDS_TAB)
+        company_keys = {name_key(r.get("entreprise")) for r in sheet.read(COMPANIES_TAB)}
+        company_rows = [r for r in company_rows if name_key(r["entreprise"]) not in company_keys]
+        sheet.append(COMPANIES_TAB, company_rows)
+        logging.info("%s rows appended to the tab %s", len(company_rows), COMPANIES_TAB)
     return len(rows)
 
 

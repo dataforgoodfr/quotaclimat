@@ -227,30 +227,30 @@ def load_test_external_sources():
     }
     brand_sheets = {
         "Marques": [
-            ["marque", "groupe", "source", "statut", "commentaire"],
-            # same key as the predicted brand "Pytest Škoda": the verified row wins, its group is
-            # written differently from the tab Groupes (same name_key)
+            ["marque", "entreprise", "source", "statut", "commentaire"],
+            # same key as the predicted brand "Pytest Škoda": the verified row wins, its company is
+            # written differently from the tab Entreprises (same name_key)
             ["PYTEST SKODA", "PYTEST VOLKSWAGEN", "wikidata", "vérifié"],
             ["pytest-škoda", "Pytest Wrong Group", "llm", "non vérifié"],
-            # ultimate parent of the group not verified in the tab Groupes
+            # ultimate parent of the company not verified in the tab Entreprises
             ["Pytest Biscuits", "Pytest Biscuits Group", "llm", "non vérifié"],
-            # listed but group not filled in yet
+            # listed but company not filled in yet
             ["Pytest Brand Without Group"],
             # numeric looking brand stays text
             ["1664", "Pytest Carlsberg", "manuel", "non vérifié", "Kronenbourg"],
         ],
-        "Groupes": [
-            ["groupe", "groupe_id", "societe_mere_ultime", "source", "statut", "commentaire"],
-            ["Pytest Volkswagen", "Q246", "Pytest Porsche SE", "gleif", "vérifié"],
-            # not verified: the group is known, its ultimate parent is ignored
-            ["Pytest Biscuits Group", "", "Pytest Holding", "llm", "non vérifié"],
+        "Entreprises": [
+            ["entreprise", "alias", "entreprise_id", "siren", "societe_mere_ultime", "source", "statut", "commentaire"],
+            ["Pytest Volkswagen", "", "Q246", "", "Pytest Porsche SE", "gleif", "vérifié"],
+            # not verified: the company is known, its ultimate parent is ignored; its alias is the label
+            ["Pytest Biscuits Group", "Pytest Biscuits", "", "", "Pytest Holding", "llm", "non vérifié"],
         ],
         "_lisez-moi": [["note"], ["for humans only"]],
     }
     results = download_source(
         brand_inventory_test_source(), SEEDS_DIR, fetch=fake_fetch(brand_sheets, brand_inventory_test_source())
     )
-    assert results == {"ref_inventaire_marques": True, "ref_inventaire_groupes": True}
+    assert results == {"ref_inventaire_marques": True, "ref_inventaire_entreprises": True}
     run_dbt_command(["seed", "--full-refresh", "--select", "path:seeds/ref"])
     run_dbt_command(["test", "--select", "path:seeds/ref"])
     yield
@@ -465,39 +465,43 @@ def test_ad_brands(db_connection):
     """One row per brand of the tab Marques, independently of the ad tables."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT brand_key, brand, inventory_group, brand_group_status,
-                group_in_inventory, group_id, ultimate_parent_verified, brand_group, brand_ultimate_parent
+            SELECT brand_key, brand, inventory_company, brand_company_status,
+                company_in_inventory, company_id, ultimate_parent_verified, brand_company, brand_ultimate_parent,
+                brand_company_label
             FROM advertising.ad_brands
             WHERE brand_key LIKE 'pytest%' OR brand_key = '1664'
             ORDER BY brand_key
         """)
         rows = cur.fetchall()
     assert rows == [
-        # group not in the tab Groupes: kept as written
-        ("1664", "1664", "Pytest Carlsberg", "non vérifié", False, None, False, "Pytest Carlsberg", "Pytest Carlsberg"),
-        # ultimate parent not verified: ignored, the group instead
+        # company not in the tab Entreprises: kept as written
+        (
+            "1664", "1664", "Pytest Carlsberg", "non vérifié",
+            False, None, False, "Pytest Carlsberg", "Pytest Carlsberg", "Pytest Carlsberg",
+        ),
+        # ultimate parent not verified: ignored, the company instead; its alias as label
         (
             "pytestbiscuits", "Pytest Biscuits", "Pytest Biscuits Group", "non vérifié",
-            True, None, False, "Pytest Biscuits Group", "Pytest Biscuits Group",
+            True, None, False, "Pytest Biscuits Group", "Pytest Biscuits Group", "Pytest Biscuits",
         ),
-        # no group yet: the brand itself
+        # no company yet: the brand itself
         (
             "pytestbrandwithoutgroup", "Pytest Brand Without Group", None, None,
-            False, None, False, "Pytest Brand Without Group", "Pytest Brand Without Group",
+            False, None, False, "Pytest Brand Without Group", "Pytest Brand Without Group", "Pytest Brand Without Group",
         ),
-        # two spellings of the brand, the verified one wins; canonical name of the tab Groupes and
+        # two spellings of the brand, the verified one wins; official name of the tab Entreprises and
         # verified ultimate parent
         (
             "pytestskoda", "PYTEST SKODA", "PYTEST VOLKSWAGEN", "vérifié",
-            True, "Q246", True, "Pytest Volkswagen", "Pytest Porsche SE",
+            True, "Q246", True, "Pytest Volkswagen", "Pytest Porsche SE", "Pytest Volkswagen",
         ),
     ]
 
 
-def test_ad_occurrences_classified_brand_groups(db_connection):
+def test_ad_occurrences_classified_brand_companies(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT occurrence_id, predicted_brand, brand_group, brand_ultimate_parent
+            SELECT occurrence_id, predicted_brand, brand_company, brand_ultimate_parent
             FROM advertising.ad_occurrences_classified
             WHERE occurrence_id IN ('pytest_occ_1', 'pytest_occ_2')
             ORDER BY occurrence_id
@@ -511,7 +515,7 @@ def test_ad_occurrences_classified_brand_groups(db_connection):
 
 def test_brand_inventory_loaded_as_text(db_connection):
     with db_connection.cursor() as cur:
-        cur.execute("SELECT marque, groupe FROM advertising.ref_inventaire_marques WHERE marque = '1664'")
+        cur.execute("SELECT marque, entreprise FROM advertising.ref_inventaire_marques WHERE marque = '1664'")
         assert cur.fetchall() == [("1664", "Pytest Carlsberg")]
 
 

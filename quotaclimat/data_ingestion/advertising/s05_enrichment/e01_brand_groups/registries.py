@@ -1,7 +1,8 @@
-"""Company -> parent company, from public registries without API key:
-- GLEIF (https://api.gleif.org/api/v1): LEI of a French company by its SIREN, and its direct parent when
-  published (many companies report NON_PUBLIC or NON_CONSOLIDATING instead);
-- Wikidata: parent organization (P749) of the item whose SIREN (P1616) is the company's.
+"""Company -> ultimate parent company, from public registries without API key:
+- GLEIF (https://api.gleif.org/api/v1): LEI of a French company by its SIREN, and its ultimate accounting
+  consolidating parent when published (many companies report NON_PUBLIC or NON_CONSOLIDATING instead);
+- Wikidata: top of the chain of parent organizations (P749) of the item whose SIREN (P1616) is the
+  company's.
 """
 
 import logging
@@ -59,9 +60,8 @@ def gleif_lei_by_name(name: str, country: str, delay_sec: float = 1.0) -> Compan
     )
 
 
-def gleif_direct_parent(lei: str, delay_sec: float = 1.0) -> Company | None:
-    """Direct accounting consolidating parent, None when not published (reporting exception)."""
-    response = _get(f"{GLEIF_URL}/lei-records/{lei}/direct-parent", delay_sec)
+def _gleif_parent(lei: str, relation: str, delay_sec: float) -> Company | None:
+    response = _get(f"{GLEIF_URL}/lei-records/{lei}/{relation}", delay_sec)
     if response.status_code == 404:
         return None
     response.raise_for_status()
@@ -71,16 +71,23 @@ def gleif_direct_parent(lei: str, delay_sec: float = 1.0) -> Company | None:
     return Company(name=data["attributes"]["entity"]["legalName"]["name"], identifier=data["id"])
 
 
-def wikidata_parent(siren: str, delay_sec: float = 1.0) -> Company | None:
-    """Parent organization (P749) of the Wikidata item with this SIREN (P1616), when exactly one. Its
-    label in French, English or the multilingual one (mul); name empty when it has none (the label
-    service then returns the QID, e.g. Q20967159 for the parent of SFR)."""
+def gleif_ultimate_parent(lei: str, delay_sec: float = 1.0) -> Company | None:
+    """Ultimate accounting consolidating parent (the highest one), None when not published or when the
+    company is its own ultimate parent."""
+    return _gleif_parent(lei, "ultimate-parent", delay_sec)
+
+
+def wikidata_ultimate_parent(siren: str, delay_sec: float = 1.0) -> Company | None:
+    """Top of the chain of parent organizations (P749, followed up to an item without parent) of the
+    Wikidata item with this SIREN (P1616), when exactly one. Its label in French, English or the
+    multilingual one (mul); name empty when it has none (the label service then returns the QID)."""
     if not siren.isdigit():
         return None
     query = f"""
         SELECT DISTINCT ?parent ?parentLabel WHERE {{
           ?item wdt:P1616 "{siren}" ;
-                wdt:P749 ?parent .
+                wdt:P749+ ?parent .
+          FILTER NOT EXISTS {{ ?parent wdt:P749 ?above }}
           SERVICE wikibase:label {{ bd:serviceParam wikibase:language "fr,en,mul". }}
         }}
     """
@@ -91,6 +98,8 @@ def wikidata_parent(siren: str, delay_sec: float = 1.0) -> Company | None:
     response.raise_for_status()
     bindings = response.json().get("results", {}).get("bindings", [])
     if len(bindings) != 1:
+        if bindings:
+            logging.warning("Wikidata: %s ultimate parents for SIREN %s, none kept", len(bindings), siren)
         return None
     qid = bindings[0]["parent"]["value"].rsplit("/", 1)[-1]
     label = bindings[0].get("parentLabel", {}).get("value", "")

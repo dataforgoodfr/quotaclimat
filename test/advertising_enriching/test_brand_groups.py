@@ -448,12 +448,12 @@ def test_holder_registered_abroad_without_siren(monkeypatch):
     )
 
     lookups = []
-    monkeypatch.setattr(registries, "wikidata_parent", lambda siren: lookups.append("wikidata"))
+    monkeypatch.setattr(registries, "wikidata_ultimate_parent", lambda siren: lookups.append("wikidata"))
     monkeypatch.setattr(registries, "gleif_lei", lambda siren: lookups.append("gleif siren"))
     monkeypatch.setattr(
         registries, "gleif_lei_by_name", lambda name, country: Company(name, "LEI_IKEA") if country == "NL" else None
     )
-    monkeypatch.setattr(registries, "gleif_direct_parent", lambda lei: Company("Inter IKEA Holding B.V.", "LEI_PARENT"))
+    monkeypatch.setattr(registries, "gleif_ultimate_parent", lambda lei: Company("Stichting INGKA Foundation", "LEI_PARENT"))
 
     class FakeInpi:
         def brand_notices(self, brand):
@@ -466,7 +466,7 @@ def test_holder_registered_abroad_without_siren(monkeypatch):
     assert (row["entreprise"], row["source"], row["siren"], row["lei"]) == ("Inter IKEA Systems B.V.", "inpi", "", "LEI_IKEA")
     assert row["commentaire"].startswith("job 2026-10-02 : titulaire Inter IKEA Systems B.V. (société étrangère, pays NL)")
     assert (company["entreprise"], company["entreprise_id"], company["societe_mere_ultime"], company["source"]) == (
-        "Inter IKEA Systems B.V.", "LEI_IKEA", "Inter IKEA Holding B.V.", "inpi+gleif",
+        "Inter IKEA Systems B.V.", "LEI_IKEA", "Stichting INGKA Foundation", "inpi+gleif",
     )
 
     # the company already in the tab Entreprises (another IKEA brand of the same run): no registry lookup
@@ -512,8 +512,8 @@ def test_parse_nice_classes():
 
 
 def test_propose_row_company_is_the_holder():
-    """Free: the holder FREE is the company, not its Wikidata parent Iliad, only proposed as the ultimate
-    parent company of the new row of the tab Entreprises."""
+    """Free: the holder FREE is the company, not its parent Iliad, only proposed as the ultimate parent
+    company of the new row of the tab Entreprises; GLEIF (consolidation) before Wikidata."""
     holder = choose_holder([notice("5205049", "421938861", "FREE", {38})], None)
     row, company = propose_row(
         "Free",
@@ -532,13 +532,12 @@ def test_propose_row_company_is_the_holder():
         "alias": "",
         "entreprise_id": "LEI_FREE",
         "siren": "421938861",
-        "societe_mere_ultime": "Iliad",
-        "source": "inpi+wikidata",
+        "societe_mere_ultime": "ILIAD",
+        "source": "inpi+gleif",
         "statut": "non vérifié",
         "commentaire": (
             "job 2026-10-02 : titulaire de la marque Free (FR5205049), SIREN 421938861 ; "
-            "Wikidata : société mère Iliad (Q1239347) ; GLEIF : société mère directe ILIAD (LEI LEI_ILIAD) ; "
-            "société mère proposée = société mère directe, à remonter jusqu'à l'ultime"
+            "GLEIF : société mère ultime ILIAD (LEI LEI_ILIAD) ; Wikidata : société mère ultime Iliad (Q1239347)"
         ),
     }
 
@@ -556,13 +555,13 @@ def test_propose_row_known_company_by_siren_or_name():
 
 def test_propose_row_parents():
     holder = choose_holder([notice("1", "123", "ACME SAS", {3})], None)
-    # Wikidata parent without label (SFR): not proposed, GLEIF instead, the QID kept in the commentaire
-    _, company = propose_row(
-        "Acme", holder, Company("", "Q20967159"), Company("ACME SAS", "LEI1"), Company("ACME HOLDING", "LEI2"),
-        KnownCompanies(), TODAY,
-    )
-    assert (company["societe_mere_ultime"], company["source"]) == ("ACME HOLDING", "inpi+gleif")
-    assert "Wikidata : société mère sans libellé (Q20967159)" in company["commentaire"]
+    # no GLEIF parent: Wikidata
+    _, company = propose_row("Acme", holder, Company("Acme Group", "Q1"), None, None, KnownCompanies(), TODAY)
+    assert (company["societe_mere_ultime"], company["source"]) == ("Acme Group", "inpi+wikidata")
+    # Wikidata parent without label (SFR): not proposed, the QID kept in the commentaire
+    _, company = propose_row("Acme", holder, Company("", "Q20967159"), None, None, KnownCompanies(), TODAY)
+    assert (company["societe_mere_ultime"], company["source"]) == ("", "inpi")
+    assert "Wikidata : société mère ultime sans libellé (Q20967159)" in company["commentaire"]
     _, alone = propose_row("Acme", holder, None, None, None, KnownCompanies(), TODAY)
     assert (alone["societe_mere_ultime"], alone["source"]) == ("", "inpi")
     assert "aucune société mère trouvée" in alone["commentaire"]
@@ -631,7 +630,7 @@ def test_gleif_and_wikidata(monkeypatch):
                     ]
                 }
             )
-        if url.endswith("/direct-parent"):
+        if url.endswith("/ultimate-parent"):
             return FakeResponse(status_code=404)
         return FakeResponse(
             json_data={
@@ -656,8 +655,8 @@ def test_gleif_and_wikidata(monkeypatch):
         "filter[entity.registeredAs]": "612035832",
         "filter[entity.jurisdiction]": "FR",
     }
-    assert registries.gleif_direct_parent("96950005T49LGF6G2042", delay_sec=0) is None
-    assert registries.wikidata_parent("612035832", delay_sec=0) == Company(
+    assert registries.gleif_ultimate_parent("96950005T49LGF6G2042", delay_sec=0) is None
+    assert registries.wikidata_ultimate_parent("612035832", delay_sec=0) == Company(
         "LVMH", "Q504998"
     )
     assert 'wdt:P1616 "612035832"' in calls[2][1]["query"]
@@ -668,10 +667,10 @@ def test_gleif_and_wikidata(monkeypatch):
     )
     assert calls[-1][1] == {"filter[entity.legalName]": "CHRISTIAN DIOR COUTURE", "filter[entity.legalAddress.country]": "FR"}
     # never put anything else than a SIREN in the SPARQL query
-    assert registries.wikidata_parent('1" } DROP', delay_sec=0) is None
+    assert registries.wikidata_ultimate_parent('1" } DROP', delay_sec=0) is None
 
 
-def test_wikidata_parent_without_label(monkeypatch):
+def test_wikidata_ultimate_parent_without_label(monkeypatch):
     """SFR: the parent has no label in fr, en nor mul, the label service returns its QID."""
     queries = []
 
@@ -683,8 +682,10 @@ def test_wikidata_parent_without_label(monkeypatch):
         }]}})
 
     monkeypatch.setattr(registries.requests, "get", fake_get)
-    assert registries.wikidata_parent("343059564", delay_sec=0) == Company("", "Q20967159")
+    assert registries.wikidata_ultimate_parent("343059564", delay_sec=0) == Company("", "Q20967159")
     assert 'wikibase:language "fr,en,mul"' in queries[0]
+    # the chain of parent organizations up to an item without parent
+    assert "wdt:P749+ ?parent" in queries[0] and "FILTER NOT EXISTS { ?parent wdt:P749 ?above }" in queries[0]
 
 
 class FakeSheetsSession:

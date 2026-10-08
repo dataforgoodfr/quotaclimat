@@ -1,6 +1,6 @@
 """Company proposal for a brand: the INPI trademark holder (SIREN), the company that sells under the
-brand (Free -> FREE), never a parent company, which is only proposed as the ultimate parent company of a
-new row of the tab Entreprises (Wikidata, GLEIF).
+brand (Free -> FREE), never a parent company. The ultimate parent company (GLEIF, Wikidata) is only
+proposed in the new row of the tab Entreprises.
 
 The proposals have statut 'non vérifié': a human checks them afterwards, and corrects the company when
 the holder is a holding (Auchan -> ELO), e.g. with an alias in the tab Entreprises.
@@ -117,11 +117,13 @@ class KnownCompanies:
 
 
 def _parent(wikidata_parent: Company | None, gleif_parent: Company | None) -> tuple[Company | None, str]:
-    """Parent company found and its source: Wikidata (when it has a label), else GLEIF."""
-    if wikidata_parent and wikidata_parent.name:
-        return wikidata_parent, "wikidata"
+    """Ultimate parent company found and its source: GLEIF, whose ultimate parent is the consolidating one
+    (the definition of the tab Entreprises), else Wikidata (top of the parent organizations, when it has a
+    label)."""
     if gleif_parent:
         return gleif_parent, "gleif"
+    if wikidata_parent and wikidata_parent.name:
+        return wikidata_parent, "wikidata"
     return None, ""
 
 
@@ -135,8 +137,8 @@ def propose_row(
     today: date,
 ) -> tuple[dict[str, str], dict[str, str] | None]:
     """Row of the tab Marques, and row of the tab Entreprises when the company is not in it yet. The
-    company is the holder, under its official name in the tab Entreprises when it is there. The parent
-    company (Wikidata, else GLEIF) is only proposed as the ultimate parent company of the new company."""
+    company is the holder, under its official name in the tab Entreprises when it is there. The ultimate
+    parent company (GLEIF, else Wikidata) is only proposed in the row of the new company."""
     job = f"job {today.isoformat()} : "
     if holder is None:
         return {
@@ -176,15 +178,13 @@ def propose_row(
     notes = [f"titulaire de la marque {brand} ({holder.trademark}), {identity}"]
     if gleif_lei and not holder.siren:
         notes.append(f"LEI trouvé par son nom : {gleif_lei.identifier}")
+    if gleif_parent:
+        notes.append(f"GLEIF : société mère ultime {gleif_parent.name} (LEI {gleif_parent.identifier})")
     if wikidata_parent:
         label = wikidata_parent.name or "sans libellé"
-        notes.append(f"Wikidata : société mère {label} ({wikidata_parent.identifier})")
-    if gleif_parent:
-        notes.append(f"GLEIF : société mère directe {gleif_parent.name} (LEI {gleif_parent.identifier})")
-    notes.append(
-        "société mère proposée = société mère directe, à remonter jusqu'à l'ultime" if parent
-        else "aucune société mère trouvée"
-    )
+        notes.append(f"Wikidata : société mère ultime {label} ({wikidata_parent.identifier})")
+    if not parent:
+        notes.append("aucune société mère trouvée")
     company_row = {
         "entreprise": company,
         "alias": "",

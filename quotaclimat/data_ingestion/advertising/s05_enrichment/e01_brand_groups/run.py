@@ -9,8 +9,9 @@ For each brand, by decreasing broadcast duration:
    (same SIREN or name). No parent company: the company is the one that sells under the brand;
 3. a row is appended to the tab Marques when a company was found. A brand without any is not written, so
    that it is searched again on the next runs (and can be filled in by a human meanwhile);
-4. a company not in the tab Entreprises yet is appended to it, with its parent company (Wikidata P749 of
-   the item with its SIREN, else GLEIF direct parent of its LEI) proposed as ultimate parent company.
+4. a company not in the tab Entreprises yet is appended to it, with its ultimate parent company proposed
+   (GLEIF ultimate consolidating parent of its LEI, else top of the Wikidata P749 chain of the item with
+   its SIREN).
 
 Env: POSTGRES_*, INPI_USERNAME, INPI_PASSWORD, GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON,
 EXTERNAL_SOURCES_DRIVE_FOLDER, BRAND_GROUPS_MAX_BRANDS (default 50), BRAND_GROUPS_DRY_RUN (true: write
@@ -139,13 +140,13 @@ def propose(
         # no company, or a company already in the tab: no registry lookup needed
         pass
     elif holder.siren:
-        wikidata_parent = registries.wikidata_parent(holder.siren)
+        wikidata_parent = registries.wikidata_ultimate_parent(holder.siren)
         gleif_lei = registries.gleif_lei(holder.siren)
     elif holder.country:
         # company registered abroad: no SIREN, its LEI by its exact legal name and country
         gleif_lei = registries.gleif_lei_by_name(holder.name, holder.country)
     if gleif_lei:
-        gleif_parent = registries.gleif_direct_parent(gleif_lei.identifier)
+        gleif_parent = registries.gleif_ultimate_parent(gleif_lei.identifier)
     return propose_row(
         brand, holder, wikidata_parent, gleif_lei, gleif_parent, known, today
     )

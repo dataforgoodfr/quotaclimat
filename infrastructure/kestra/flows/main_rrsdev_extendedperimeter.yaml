@@ -142,7 +142,7 @@ tasks:
       POSTGRES_PORT: 18047
       RAY_COLOR_PREFIX: 1
       DATE: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
-      API_LABEL_STUDIO_KEY: "{{ secret('API_LABEL_STUDIO_KEY_DEV') }}"
+      API_LABEL_STUDIO_KEY: "{{ secret('API_LABEL_STUDIO_KEY') }}"
       BUCKET_ACCESS: "{{ secret('RRS_SCW_ACCESS_DEV') }}"
       BUCKET_SECRET: "{{ secret('RRS_SCW_SECRET_DEV') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"

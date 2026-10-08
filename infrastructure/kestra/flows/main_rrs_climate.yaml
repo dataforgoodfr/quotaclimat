@@ -64,8 +64,8 @@ tasks:
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       POSTGRES_HOST: "{{ inputs.source == 'extended' ? secret('RRS_PG_HOST') : secret('POSTGRES_HOST') }}"
-      POSTGRES_USER: "{{ inputs.source == 'extended' ? secret('RRS_PG_USER') : secret('RRS_BAROMETRE_READ_USER') }}"
-      POSTGRES_PASSWORD: "{{ inputs.source == 'extended' ? secret('RRS_PG_PASSWORD') : secret('RRS_BAROMETRE_READ_PASSWORD') }}"
+      POSTGRES_USER: "{{ secret('RRS_BAROMETRE_READ_USER') }}"
+      POSTGRES_PASSWORD: "{{ secret('RRS_BAROMETRE_READ_PASSWORD') }}"
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
       RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
       RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
@@ -94,8 +94,8 @@ tasks:
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18492
       POSTGRES_HOST: "{{ inputs.source == 'extended' ? secret('RRS_PG_HOST') : secret('POSTGRES_HOST') }}"
-      POSTGRES_USER: "{{ inputs.source == 'extended' ? secret('RRS_PG_USER') : secret('RRS_BAROMETRE_READ_USER') }}"
-      POSTGRES_PASSWORD: "{{ inputs.source == 'extended' ? secret('RRS_PG_PASSWORD') : secret('RRS_BAROMETRE_READ_PASSWORD') }}"
+      POSTGRES_USER: "{{ secret('RRS_BAROMETRE_READ_USER') }}"
+      POSTGRES_PASSWORD: "{{ secret('RRS_BAROMETRE_READ_PASSWORD') }}"
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
       RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
       RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"

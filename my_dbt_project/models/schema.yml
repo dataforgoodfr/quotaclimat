@@ -606,3 +606,73 @@ models:
         description: Start of the first fragment of the tunnel.
       - name: end_date
         description: End of the last fragment of the tunnel.
+
+  - name: program_emissions
+    description: >
+      One row per emission and per day of the 24h news channels, from the Programmes Google Sheet (tab
+      emissions-infos-en-continue, seed ref_programmes_emissions_infos_en_continue): the weekday column
+      ('*', 'weekday', 'weekend' or days 1 to 7 separated by '|') is split into one row per day. With the
+      channel attributes and the monitored program (program_metadata) the emission is broadcast in: the
+      program of the same channel and day overlapping the emission the most, on the most recent grid.
+    columns:
+      - name: id
+        description: md5 of channel_name, weekday, start and grid_start.
+        tests:
+          - unique
+          - not_null
+      - name: channel_name
+        description: Technical channel identifier, as in program_metadata (e.g. bfmtv, itele).
+        tests:
+          - not_null
+      - name: channel_title
+        description: Channel name (program_metadata), NULL when the channel is not in program_metadata.
+        tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: country
+        description: Country of the channel (program_metadata).
+      - name: public
+        description: Public service channel (program_metadata).
+      - name: infocontinue
+        description: 24h news channel (program_metadata).
+      - name: radio
+        description: Radio channel (program_metadata).
+      - name: weekday
+        description: Day of the emission, 1 (Monday) to 7 (Sunday), like program_metadata.weekday.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7]
+                quote: false
+      - name: emission
+        description: Name of the emission.
+      - name: presentation
+        description: Presenters, as written in the sheet.
+      - name: rediffusion
+        description: True for a rerun (column rediffusion 'oui').
+      - name: start
+        description: Start time HH:MM (Paris time), as written in the sheet.
+      - name: end
+        description: End time HH:MM (Paris time), 24:00 for midnight, as written in the sheet.
+      - name: duration_minutes
+        description: Duration of the emission in minutes, NULL when a time is invalid.
+      - name: grid_start
+        description: First day the row is valid, NULL when not filled in (no lower bound).
+      - name: grid_end
+        description: Last day the row is valid, 2100-01-01 when not filled in.
+      - name: program_metadata_id
+        description: >
+          program_metadata.id of the program the emission is broadcast in, NULL when it overlaps no
+          monitored program (e.g. after 23:00 on the news channels).
+      - name: channel_program
+        description: Name of that program (program_metadata.channel_program).
+      - name: channel_program_type
+        description: Type of that program (program_metadata.channel_program_type).
+      - name: program_start
+        description: Start time of that program.
+      - name: program_end
+        description: End time of that program.
+      - name: program_overlap_minutes
+        description: Minutes of the emission inside that program (monitored minutes), 0 when none.

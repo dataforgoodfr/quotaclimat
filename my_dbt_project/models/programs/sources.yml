@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  # Emissions of the 24h news channels: dbt seed downloaded from the Programmes Google Sheet (tab
+  # emissions-infos-en-continue) before dbt runs (see my_dbt_project/external_sources.yml), built in
+  # the schema of the reference seeds
+  - name: programs
+    schema: advertising
+    tables:
+      - name: news_channel_emissions
+        identifier: ref_programmes_emissions_infos_en_continue

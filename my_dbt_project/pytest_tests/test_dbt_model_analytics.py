@@ -96,6 +96,11 @@ def brand_inventory_test_source() -> dict:
     return production_source("inventaire_des_marques")
 
 
+def programmes_test_source() -> dict:
+    """Production programs grids source settings."""
+    return production_source("programmes")
+
+
 def fake_fetch(sheets: dict[str, list[list]], source: dict | None = None):
     """Stands for the Google Drive / Sheets API calls: returns the rows the API would return."""
     def fetch(folder_id, spreadsheet_name):
@@ -251,6 +256,27 @@ def load_test_external_sources():
         brand_inventory_test_source(), SEEDS_DIR, fetch=fake_fetch(brand_sheets, brand_inventory_test_source())
     )
     assert results == {"ref_inventaire_marques": True, "ref_inventaire_entreprises": True}
+    emission_sheets = {
+        "emissions-infos-en-continue": [
+            ["channel_name", "emission", "presentation", "weekday", "start", "end", "rediffusion", "grid_start", "grid_end"],
+            ["bfmtv", "BFM Première", "Pascale de La Tour du Pin, Mathieu Coache", "weekday", "06:00", "08:30"],
+            # ends after the 6:00-23:00 program of the news channels, midnight written 24:00
+            ["bfmtv", "BFM Grand Soir", "Maxime Switek", "1|2|3|4", "21:00", "24:00"],
+            # starts before the program
+            ["franceinfotv", "Reprise France 24", "", "*", "00:00", "06:30"],
+            ["itele", "Face à Michel Onfray", "Laurence Ferrari", " 6 ", "21:00", "22:00", "oui"],
+            # Sunday night to Monday morning: inside the Monday program from 6:00
+            ["lci", "Nuit LCI", "", "7", "23:30", "06:30"],
+            # grid ended before the program_metadata grid (2023-04-01): no program
+            ["lci", "Ancienne grille", "", "weekend", "12:00", "14:30", "non", "01/01/2020", "2022-12-31"],
+            # channel not in program_metadata
+            ["pytest-unknown", "Inconnue", "", "1", "10:00", "11:00"],
+        ],
+    }
+    results = download_source(
+        programmes_test_source(), SEEDS_DIR, fetch=fake_fetch(emission_sheets, programmes_test_source())
+    )
+    assert results == {"ref_programmes_emissions_infos_en_continue": True}
     run_dbt_command(["seed", "--full-refresh", "--select", "path:seeds/ref"])
     run_dbt_command(["test", "--select", "path:seeds/ref"])
     yield
@@ -350,6 +376,68 @@ def test_environmental_shares_desinfo(db_connection):
         0,
     )
     assert row == expected
+
+
+def test_program_emissions(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT channel_name, emission, ARRAY_AGG(weekday ORDER BY weekday), MIN(channel_title),
+                BOOL_AND(infocontinue), BOOL_AND(rediffusion), MIN(duration_minutes), MIN(grid_start),
+                MIN(grid_end), MIN(channel_program), MIN(program_overlap_minutes), COUNT(DISTINCT id)
+            FROM program_emissions
+            GROUP BY channel_name, emission
+            ORDER BY channel_name, emission
+        """)
+        rows = cur.fetchall()
+    no_start, no_end = None, datetime.date(2100, 1, 1)
+    news = "Information en continu"
+    # one row per emission and per day, with the program of program_metadata it overlaps
+    assert rows == [
+        ("bfmtv", "BFM Grand Soir", [1, 2, 3, 4], "BFM TV", True, False, 180, no_start, no_end, news, 120, 4),
+        ("bfmtv", "BFM Première", [1, 2, 3, 4, 5], "BFM TV", True, False, 150, no_start, no_end, news, 150, 5),
+        ("franceinfotv", "Reprise France 24", [1, 2, 3, 4, 5, 6, 7], "France Info TV", True, False, 390, no_start, no_end, news, 30, 7),
+        ("itele", "Face à Michel Onfray", [6], "CNews", True, True, 60, no_start, no_end, news, 60, 1),
+        ("lci", "Ancienne grille", [6, 7], "LCI", True, False, 150,
+            datetime.date(2020, 1, 1), datetime.date(2022, 12, 31), None, 0, 2),
+        ("lci", "Nuit LCI", [7], "LCI", True, False, 420, no_start, no_end, news, 30, 1),
+        ("pytest-unknown", "Inconnue", [1], None, None, False, 60, no_start, no_end, None, 0, 1),
+    ]
+
+
+def test_program_emissions_seed_patterns(db_connection):
+    """The seed tests (matches_pattern) report the values of the sheet that program_emissions cannot parse."""
+    with open("my_dbt_project/seeds/ref/_ref_seeds.yml") as f:
+        seed = next(s for s in yaml.safe_load(f)["seeds"] if s["name"] == "ref_programmes_emissions_infos_en_continue")
+    patterns = {
+        column["name"]: test["matches_pattern"]["arguments"]["pattern"]
+        for column in seed["columns"]
+        for test in column.get("tests", [])
+        if isinstance(test, dict) and "matches_pattern" in test
+    }
+    valid = {
+        "weekday": ["*", "weekday", "weekend", "5", "1|2|3|4", "6 | 7"],
+        "start": ["06:00", "6:00", "23:59"],
+        "end": ["24:00", "08:30"],
+        "grid_start": ["2026-09-01", "01/09/2026"],
+        "grid_end": ["2100-01-01"],
+    }
+    invalid = {
+        # 0: numbering of the Python grids (0 for Monday), not of program_metadata
+        "weekday": ["0", "8", "lundi", "1,2", "1|"],
+        "start": ["b", "24:00", "6h00", "06:00:00"],
+        "end": ["24:30", "25:00"],
+        "grid_start": ["sept. 2026", "2026/09/01"],
+        "grid_end": ["31/12"],
+    }
+    assert sorted(patterns) == sorted(valid)
+    with db_connection.cursor() as cur:
+        for column, pattern in patterns.items():
+            for value in valid[column]:
+                cur.execute("SELECT %s ~ %s", (value, pattern))
+                assert cur.fetchone()[0], (column, value)
+            for value in invalid[column]:
+                cur.execute("SELECT %s ~ %s", (value, pattern))
+                assert not cur.fetchone()[0], (column, value)
 
 
 def test_ad_tunnels(db_connection):

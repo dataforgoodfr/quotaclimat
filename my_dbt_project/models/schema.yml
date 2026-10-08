@@ -383,12 +383,13 @@ models:
         description: >
           Control column. Minutes captured within declared program slots for the week and
           channel. Repeated on every row of the group.
-  - name: ad_occurrences_classified
+  - name: publicites
     description: >
+      In the analytics schema (formerly advertising.ad_occurrences_classified).
       One row per ad occurrence whose ad went through the classification pipeline
       (dictionary match or sub-category LLM step), enriched with channel metadata
-      from program_metadata and French sector / product category labels from the
-      classification reference table.
+      from program_metadata, French sector / product category labels from the
+      classification reference table and the emission on the air (program_emissions).
       Only occurrences from ad_analysis_start_date (dbt var, default 2025-09-29, UTC) onwards.
     columns:
       - name: occurrence_id
@@ -455,6 +456,20 @@ models:
         description: Type of program_after.
       - name: program_after_gap_sec
         description: Seconds between the tunnel end and the start of program_after, 0 when it starts during the tunnel.
+      - name: emission_id
+        description: >
+          program_emissions.id of the emission on the air at the occurrence (Paris time, Programmes Google
+          Sheet), NULL outside the emissions listed there.
+      - name: emission
+        description: Name of that emission.
+      - name: emission_presentation
+        description: Presenters of that emission.
+      - name: emission_rediffusion
+        description: True when that emission is a rerun.
+      - name: emission_start
+        description: Start time HH:MM of that emission.
+      - name: emission_end
+        description: End time HH:MM of that emission.
 
   - name: ad_tunnel_programs
     description: >
@@ -519,7 +534,7 @@ models:
       Brand reference, built from the Inventaires_des_marques Google Sheet only (no ad table): one row per
       brand of the tab Marques, with the company that sells under the brand (rows not verified allowed) and
       the ultimate parent company of the company (tab Entreprises, used only when verified). Used by
-      ad_occurrences_classified.
+      analytics.publicites.
     columns:
       - name: brand_key
         description: >
@@ -656,6 +671,10 @@ models:
         description: Start time HH:MM (Paris time), as written in the sheet.
       - name: end
         description: End time HH:MM (Paris time), 24:00 for midnight, as written in the sheet.
+      - name: start_minute
+        description: Start in minutes since the start of the day (Paris time), NULL when invalid.
+      - name: end_minute
+        description: End in minutes since the start of the day, beyond 1440 when ending after midnight, NULL when invalid.
       - name: duration_minutes
         description: Duration of the emission in minutes, NULL when a time is invalid.
       - name: grid_start
@@ -676,3 +695,44 @@ models:
         description: End time of that program.
       - name: program_overlap_minutes
         description: Minutes of the emission inside that program (monitored minutes), 0 when none.
+
+  - name: cas_de_desinformation
+    description: >
+      In the analytics schema. One row per misinformation case validated in Label Studio: the rows of
+      task_global_completion with the first annotation ("Annotation Version" = 1) answering 'Correct' alone
+      ('Correct,Incorrect' left out), same definition as ad_occurrence_mesinfo, all countries. All the
+      columns of task_global_completion, with the channel attributes of program_metadata and the emission
+      on the air (program_emissions).
+    columns:
+      - name: task_aggregate_id
+        description: Label Studio task (labelstudio_task_aggregate.task_aggregate_id).
+        tests:
+          - unique
+          - not_null
+      - name: mesinfo_choice
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Correct']
+      - name: channel_title
+        description: Channel name (program_metadata, same channel_name and country).
+      - name: public
+        description: Public service channel (program_metadata).
+      - name: infocontinue
+        description: 24h news channel (program_metadata).
+      - name: radio
+        description: Radio channel (program_metadata).
+      - name: emission_id
+        description: >
+          program_emissions.id of the emission on the air at the start of the segment (data_item_start) (Paris time, Programmes Google
+          Sheet), NULL outside the emissions listed there.
+      - name: emission
+        description: Name of that emission.
+      - name: emission_presentation
+        description: Presenters of that emission.
+      - name: emission_rediffusion
+        description: True when that emission is a rerun.
+      - name: emission_start
+        description: Start time HH:MM of that emission.
+      - name: emission_end
+        description: End time HH:MM of that emission.

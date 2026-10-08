@@ -146,6 +146,9 @@ program_overlaps AS (
      AND p.weekday = (e.weekday - 1 + o.day_offset + 7) % 7 + 1
      AND p.program_grid_start <= e.grid_end
      AND (e.grid_start IS NULL OR p.program_grid_end >= e.grid_start)
+    -- LEAST / GREATEST ignore NULLs: no program for an invalid time
+    WHERE e.start_minute IS NOT NULL
+      AND e.end_minute IS NOT NULL
 ),
 emission_programs AS (
     SELECT DISTINCT ON (id)
@@ -174,6 +177,9 @@ SELECT
     e.rediffusion,
     e.start,
     e."end",
+    -- minutes since the start of the day (Paris time), end beyond 1440 when ending after midnight
+    e.start_minute,
+    e.end_minute,
     e.end_minute - e.start_minute AS duration_minutes,
     e.grid_start,
     e.grid_end,

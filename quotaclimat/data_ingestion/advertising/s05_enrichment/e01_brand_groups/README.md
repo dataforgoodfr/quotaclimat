@@ -6,7 +6,7 @@ Three levels: **brand** (Activia) → **company**, the one that sells under the 
 
 ## Steps
 
-For each brand of `advertising.ad_occurrences_classified` missing from the tab `Marques`, by decreasing broadcast duration (at most `BRAND_GROUPS_MAX_BRANDS` per run):
+For each brand of `analytics.publicites` missing from the tab `Marques`, by decreasing broadcast duration (at most `BRAND_GROUPS_MAX_BRANDS` per run):
 
 1. **INPI** (`inpi.py`): trademarks named exactly like the brand (searched as an exact phrase), first in the French collection (FR, whose notices give the SIREN of French holders), then, when none is found, in the European (EU) and international (WO) ones (e.g. Volkswagen), (`name_key`, same as dbt) and still in force. The holder kept is the company holding the most trademarks in the Nice classes of the brand's sector (column `classes_nice` of the tab `secteurs` of `Dictionnaire_marques_secteurs`, like `3; 32`, loaded by dbt in `advertising.ref_ome_secteurs`), otherwise in all classes (flagged in `commentaire`). The current holder of the notice (`fr-CurrentHolder`, which follows transfers) is used, never the representative (`Representative`). Natural persons are never kept. A company registered abroad (e.g. Inter IKEA Systems B.V. for IKEA) has no SIREN: it is kept, identified by its name and the country of its address.
 2. **Company** (`propose.py`): the holder, under its official name in the tab `Entreprises` when it is there (same SIREN in the optional column `siren`, else same name). No parent company: the holder is the company in most cases (FREE for Free). When it is a holding (ELO for Auchan) or a trademark management company, a human corrects it, or gives it an alias in the tab `Entreprises`: companies with the same alias are one company in the results.
@@ -17,7 +17,7 @@ For each brand of `advertising.ad_occurrences_classified` missing from the tab `
 
 | Variable | |
 |---|---|
-| `POSTGRES_*` | database with `advertising.ad_occurrences_classified` |
+| `POSTGRES_*` | database with `analytics.publicites` |
 | `INPI_USERNAME`, `INPI_PASSWORD` | INPI account (data.inpi.fr) |
 | `INPI_LOGIN_URL` | login endpoint of the INPI API gateway, default `https://api-gateway.inpi.fr/auth/login` (checked with curl, after `GET /services/uaa/api/authenticate` for the XSRF cookie) |
 | `GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON` | JSON key of the Google service account that writes to Google Sheets (generic, shared with other jobs). Share with it, as **editor**, only the spreadsheets it must write to (here `Inventaires_des_marques`), never the whole folder |

@@ -18,7 +18,7 @@ CREDENTIALS_ENV = "GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON"
 FOLDER_ENV = "EXTERNAL_SOURCES_DRIVE_FOLDER"
 SPREADSHEET_NAME = "Inventaires_des_marques"
 BRANDS_TAB = "Marques"
-GROUPS_TAB = "Groupes"
+COMPANIES_TAB = "Entreprises"
 SCOPES = [
     "https://www.googleapis.com/auth/drive.metadata.readonly",  # find the spreadsheet in the folder
     "https://www.googleapis.com/auth/spreadsheets",  # read it and append rows
@@ -66,9 +66,12 @@ class BrandInventorySheet:
         ]
 
     def header(self, tab: str) -> list[str]:
+        """Column names of a tab, an empty list when the tab does not exist."""
         response = self.session.get(
             f"{SHEETS_API_URL}/{self.spreadsheet_id}/values/{_quote(tab)}!1:1", timeout=TIMEOUT_SEC
         )
+        if response.status_code == 400:  # unknown tab
+            return []
         response.raise_for_status()
         rows = response.json().get("values", [])
         return [str(h).strip() for h in rows[0]] if rows else []

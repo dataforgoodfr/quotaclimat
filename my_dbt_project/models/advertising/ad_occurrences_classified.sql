@@ -38,9 +38,11 @@ SELECT
   a.predicted_sector,
   a.predicted_product_category,
   a.predicted_brand,
-  -- group / ultimate parent company of the brand (see ad_brands), the predicted brand itself when not listed
-  COALESCE(br.brand_group, a.predicted_brand) AS brand_group,
+  -- company / ultimate parent company of the brand (see ad_brands), the predicted brand itself when not listed
+  COALESCE(br.brand_company, a.predicted_brand) AS brand_company,
   COALESCE(br.brand_ultimate_parent, a.predicted_brand) AS brand_ultimate_parent,
+  COALESCE(br.brand_company_label, a.predicted_brand) AS brand_company_label,
+  COALESCE(br.brand_ultimate_parent_label, a.predicted_brand) AS brand_ultimate_parent_label,
   a.prediction_status,
   a.prediction_confidence,
   s.sector_label_fr,

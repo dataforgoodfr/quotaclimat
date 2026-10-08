@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- built for the tests from the structure of a real notice (inpi_notice_FR5189659.xml): holder registered abroad, without SIREN -->
+<TradeMark operationCode="Update">
+  <RegistrationOfficeCode>FR</RegistrationOfficeCode>
+  <ApplicationNumber>1362748</ApplicationNumber>
+  <MarkCurrentStatusCode>Marque renouvelée</MarkCurrentStatusCode>
+  <MarkFeature>Word</MarkFeature>
+  <WordMarkSpecification><MarkVerbalElementText><![CDATA[IKEA]]></MarkVerbalElementText></WordMarkSpecification>
+  <GoodsServicesDetails><GoodsServices><ClassDescriptionDetails>
+    <ClassDescription><ClassNumber>20</ClassNumber></ClassDescription>
+    <ClassDescription><ClassNumber>35</ClassNumber></ClassDescription>
+  </ClassDescriptionDetails></GoodsServices></GoodsServicesDetails>
+  <fr-CurrentHolderDetails>
+    <fr-CurrentHolder PersonType="PM">
+      <fr-CurrentHolderSequenceNumber>1</fr-CurrentHolderSequenceNumber>
+      <fr-CurrentHolderAddressBook>
+        <FormattedNameAddress>
+          <Name><FormattedName><OrganizationName><![CDATA[Inter IKEA Systems B.V.]]></OrganizationName></FormattedName></Name>
+          <Address><AddressCountryCode><![CDATA[NL]]></AddressCountryCode></Address>
+        </FormattedNameAddress>
+      </fr-CurrentHolderAddressBook>
+    </fr-CurrentHolder>
+  </fr-CurrentHolderDetails>
+</TradeMark>

@@ -421,14 +421,20 @@ models:
         description: French label of the predicted product category.
       - name: label_final
         description: Product category label when available, sector label otherwise.
-      - name: brand_group
+      - name: brand_company
         description: >
-          Group of the predicted brand (see ad_brands.brand_group), the predicted brand itself when it is
-          not in ad_brands. NULL when no brand was predicted.
+          Company that sells under the predicted brand (see ad_brands.brand_company), the predicted brand
+          itself when it is not in ad_brands. NULL when no brand was predicted.
       - name: brand_ultimate_parent
         description: >
-          Ultimate parent company of the group of the predicted brand (see ad_brands.brand_ultimate_parent),
+          Ultimate parent company of the company of the predicted brand (see ad_brands.brand_ultimate_parent),
           the predicted brand itself when it is not in ad_brands. NULL when no brand was predicted.
+      - name: brand_company_label
+        description: >
+          brand_company for reading (see ad_brands.brand_company_label), its alias when it has one. The
+          column to group by: companies with the same alias are one company.
+      - name: brand_ultimate_parent_label
+        description: brand_ultimate_parent for reading (see ad_brands.brand_ultimate_parent_label), its alias when it has one.
       - name: mesinfo_distance_sec
         description: >
           Distance in seconds (absolute value) to the nearest validated misinformation on the same
@@ -511,8 +517,9 @@ models:
   - name: ad_brands
     description: >
       Brand reference, built from the Inventaires_des_marques Google Sheet only (no ad table): one row per
-      brand of the tab Marques, with its group (rows not verified allowed) and the ultimate parent company of
-      the group (tab Groupes, used only when verified). Used by ad_occurrences_classified.
+      brand of the tab Marques, with the company that sells under the brand (rows not verified allowed) and
+      the ultimate parent company of the company (tab Entreprises, used only when verified). Used by
+      ad_occurrences_classified.
     columns:
       - name: brand_key
         description: >
@@ -523,30 +530,42 @@ models:
           - not_null
       - name: brand
         description: Brand as written in the tab Marques (column marque).
-      - name: inventory_group
-        description: Group of the brand as written in the tab Marques (column groupe), NULL when empty.
-      - name: brand_group_source
-        description: Source of the group (column source of the tab Marques, e.g. wikidata, inpi, gleif, off, llm, manuel).
-      - name: brand_group_status
+      - name: inventory_company
+        description: Company of the brand as written in the tab Marques (column entreprise), NULL when empty.
+      - name: brand_company_source
+        description: Source of the company (column source of the tab Marques, e.g. inpi, wikidata, gleif, off, llm, manuel).
+      - name: brand_company_status
         description: vérifié or non vérifié (column statut of the tab Marques).
-      - name: group_in_inventory
+      - name: company_in_inventory
         description: >
-          True when the group written in the tab Marques is in the tab Groupes (name_key comparison).
-          False when the group must be added to the tab Groupes or corrected in the tab Marques.
-      - name: group_id
-        description: Identifier of the group (column groupe_id of the tab Groupes, e.g. Wikidata QID or LEI).
+          True when the company written in the tab Marques is in the tab Entreprises (name_key comparison).
+          False when the company must be added to the tab Entreprises or corrected in the tab Marques.
+      - name: company_alias
+        description: >
+          Short name of the company for reading the results (column alias of the tab Entreprises, optional),
+          e.g. Belron for Belron International Limited. NULL when empty.
+      - name: company_id
+        description: Identifier of the company (column entreprise_id of the tab Entreprises, e.g. LEI or Wikidata QID).
       - name: ultimate_parent_verified
-        description: True when the row of the group in the tab Groupes is verified (statut 'vérifié').
+        description: True when the row of the company in the tab Entreprises is verified (statut 'vérifié').
       - name: verified_ultimate_parent
         description: >
-          Ultimate parent company of the group (column societe_mere_ultime of the tab Groupes), only when
-          its row is verified.
-      - name: brand_group
+          Ultimate parent company of the company (column societe_mere_ultime of the tab Entreprises), only
+          when its row is verified.
+      - name: brand_company
         description: >
-          Canonical name of the group (column groupe of the tab Groupes), else the group as written in
-          the tab Marques, else the brand itself.
+          Official name of the company (column entreprise of the tab Entreprises), else the company as
+          written in the tab Marques, else the brand itself.
       - name: brand_ultimate_parent
-        description: verified_ultimate_parent, else brand_group.
+        description: verified_ultimate_parent, else brand_company.
+      - name: brand_company_label
+        description: >
+          company_alias, else brand_company. For reading and grouping the results: companies with the same
+          alias are one company; brand_company keeps the official name.
+      - name: brand_ultimate_parent_label
+        description: >
+          Alias of the ultimate parent when it is itself a company of the tab Entreprises (name_key
+          comparison), else brand_ultimate_parent.
 
   - name: ad_occurrence_tunnels
     description: >

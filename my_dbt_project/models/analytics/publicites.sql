@@ -9,7 +9,7 @@
     the analytics schema after the advertising models it reads (see entrypoints/dbt.sh). The classification reference tables are the ref_ome_* seeds, downloaded from the private Google Sheet
     before dbt runs (see my_dbt_project/external_sources.yml): where they are missing (e.g. extended perimeter),
     labels are left empty instead of failing the run.
-    Emission: the emission of program_emissions on the air at the occurrence (Programmes Google Sheet),
+    Emission: the emission of analytics.program on the air at the occurrence (Programmes Google Sheet),
     NULL outside the emissions listed there. -#}
 {#- time zone of advertising.ad_occurrence.occurrence_date (timestamp without time zone) -#}
 {% set occurrence_tz = var('ad_occurrence_timezone', 'UTC') %}

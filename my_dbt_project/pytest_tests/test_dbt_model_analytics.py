@@ -314,7 +314,7 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "--exclude",
             "path:models/advertising",
             "--exclude",
-            "cas_de_desinformation",
+            "cas_de_mesinformation",
             "--exclude",
             "publicites",
             "--full-refresh",
@@ -340,7 +340,7 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "--select",
             "path:models/advertising",
             "--select",
-            "cas_de_desinformation",
+            "cas_de_mesinformation",
             "--select",
             "publicites",
             # the advertising test rows are dated 2000-01-01, before the real analysis start date
@@ -400,13 +400,13 @@ def test_environmental_shares_desinfo(db_connection):
     assert row == expected
 
 
-def test_program_emissions(db_connection):
+def test_program(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT channel_name, emission, ARRAY_AGG(weekday ORDER BY weekday), MIN(channel_title),
                 BOOL_AND(infocontinue), BOOL_AND(rediffusion), MIN(duration_minutes), MIN(grid_start),
                 MIN(grid_end), MIN(channel_program), MIN(program_overlap_minutes), COUNT(DISTINCT id)
-            FROM program_emissions
+            FROM analytics.program
             GROUP BY channel_name, emission
             ORDER BY channel_name, emission
         """)
@@ -446,12 +446,12 @@ def test_publicites_emissions(db_connection):
     ]
 
 
-def test_cas_de_desinformation(db_connection):
+def test_cas_de_mesinformation(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT data_item_channel_name, data_item_start, mesinfo_choice, "Annotation Version", channel_title,
                 infocontinue, emission
-            FROM analytics.cas_de_desinformation
+            FROM analytics.cas_de_mesinformation
             ORDER BY data_item_start
         """)
         rows = cur.fetchall()
@@ -476,8 +476,8 @@ def test_cas_de_desinformation(db_connection):
     ]
 
 
-def test_program_emissions_seed_patterns(db_connection):
-    """The seed tests (matches_pattern) report the values of the sheet that program_emissions cannot parse."""
+def test_program_seed_patterns(db_connection):
+    """The seed tests (matches_pattern) report the values of the sheet that analytics.program cannot parse."""
     with open("my_dbt_project/seeds/ref/_ref_seeds.yml") as f:
         seed = next(s for s in yaml.safe_load(f)["seeds"] if s["name"] == "ref_programmes_emissions_infos_en_continue")
     patterns = {
@@ -706,12 +706,12 @@ def test_advertising_grants(db_connection):
               AND privilege_type = 'SELECT'
               AND table_schema || '.' || table_name IN (
                 'advertising.ad_tunnels', 'advertising.ad_occurrence_tunnels', 'advertising.ad_brands',
-                'analytics.publicites', 'analytics.cas_de_desinformation'
+                'analytics.publicites', 'analytics.cas_de_mesinformation'
               )
             ORDER BY table_name
         """)
         rows = cur.fetchall()
-    assert rows == [("ad_brands",), ("ad_occurrence_tunnels",), ("ad_tunnels",), ("cas_de_desinformation",), ("publicites",)]
+    assert rows == [("ad_brands",), ("ad_occurrence_tunnels",), ("ad_tunnels",), ("cas_de_mesinformation",), ("publicites",)]
 
 
 def test_external_source_nice_classes_are_text(db_connection):
@@ -962,7 +962,7 @@ def test_ensure_not_public_refuses_public_spreadsheet(permission_ids, status, he
 
 def test_advertising_models_schema(db_connection):
     """The advertising models and the reference seeds are built in the advertising schema (+schema,
-    generate_schema_name), publicites and cas_de_desinformation in the analytics schema (schema config),
+    generate_schema_name), program, publicites and cas_de_mesinformation in the analytics schema (schema config),
     the other models and seeds stay in the target schema."""
     with db_connection.cursor() as cur:
         cur.execute("""
@@ -971,22 +971,22 @@ def test_advertising_models_schema(db_connection):
             WHERE table_name IN (
                 'ad_tunnels', 'ad_occurrence_tunnels', 'ad_occurrence_mesinfo',
                 'ad_tunnel_programs', 'ref_ome_secteurs', 'ref_programmes_emissions_infos_en_continue',
-                'core_query_environmental_shares', 'task_global_completion', 'keywords', 'program_emissions',
-                'publicites', 'cas_de_desinformation'
+                'core_query_environmental_shares', 'task_global_completion', 'keywords', 'program',
+                'publicites', 'cas_de_mesinformation'
             )
             ORDER BY table_name
         """)
         rows = cur.fetchall()
-    # publicites and cas_de_desinformation: schema='analytics', built without --target analytics
+    # program, publicites and cas_de_mesinformation: schema='analytics', built without --target analytics
     assert rows == [
         ("advertising", "ad_occurrence_mesinfo"),
         ("advertising", "ad_occurrence_tunnels"),
         ("advertising", "ad_tunnel_programs"),
         ("advertising", "ad_tunnels"),
-        ("analytics", "cas_de_desinformation"),
+        ("analytics", "cas_de_mesinformation"),
         ("public", "core_query_environmental_shares"),
         ("public", "keywords"),
-        ("public", "program_emissions"),
+        ("analytics", "program"),
         ("analytics", "publicites"),
         ("advertising", "ref_ome_secteurs"),
         ("advertising", "ref_programmes_emissions_infos_en_continue"),

@@ -85,10 +85,10 @@ seeds:
                 values: ['vérifié', 'non vérifié']
 
   # Programmes spreadsheet, tab emissions-infos-en-continue: one row per emission of the 24h news
-  # channels and per set of days, turned into one row per emission and per day by program_emissions
+  # channels and per set of days, turned into one row per emission and per day by analytics.program
   - name: ref_programmes_emissions_infos_en_continue
     config:
-      # all text, parsed by program_emissions (e.g. weekday "5", time "06:00")
+      # all text, parsed by analytics.program (e.g. weekday "5", time "06:00")
       column_types:
         channel_name: text
         emission: text

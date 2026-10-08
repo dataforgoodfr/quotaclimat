@@ -8,7 +8,7 @@
 {#- One row per misinformation case validated in Label Studio: the rows of task_global_completion with
     the first annotation ("Annotation Version" = 1) answering 'Correct' alone ('Correct,Incorrect', when
     annotators disagree, is left out), same definition as ad_occurrence_mesinfo, all countries.
-    With the channel attributes of program_metadata and the emission of program_emissions on the air at
+    With the channel attributes of program_metadata and the emission of analytics.program on the air at
     the start of the segment (data_item_start, UTC; Programmes Google Sheet, NULL outside the emissions
     listed there). Built in the analytics schema after task_global_completion (see entrypoints/dbt.sh). -#}
 WITH mesinfo AS (

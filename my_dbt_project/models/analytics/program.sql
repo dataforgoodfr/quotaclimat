@@ -1,10 +1,11 @@
 {{
     config(
         materialized='table',
+        schema='analytics',
     )
 }}
 
-{#- One row per emission and per day, from the Programmes Google Sheet (tab emissions-infos-en-continue,
+{#- analytics.program: one row per emission and per day, from the Programmes Google Sheet (tab emissions-infos-en-continue,
     24h news channels), with its channel and the monitored program of program_metadata it is broadcast in.
     Columns of the tab:
     - weekday: '*' (every day), 'weekday' (Monday to Friday), 'weekend' (Saturday and Sunday) or days

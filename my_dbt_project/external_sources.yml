@@ -38,7 +38,7 @@ sources:
       Entreprises:
         table: ref_inventaire_entreprises
 
-  # programs grids by emission (my_dbt_project/models/programs/program_emissions.sql): tab
+  # programs grids by emission (my_dbt_project/models/analytics/program.sql): tab
   # emissions-infos-en-continue -> ref_programmes_emissions_infos_en_continue (24h news channels)
   - name: programmes
     folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER

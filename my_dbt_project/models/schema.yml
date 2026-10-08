@@ -389,7 +389,7 @@ models:
       One row per ad occurrence whose ad went through the classification pipeline
       (dictionary match or sub-category LLM step), enriched with channel metadata
       from program_metadata, French sector / product category labels from the
-      classification reference table and the emission on the air (program_emissions).
+      classification reference table and the emission on the air (analytics.program).
       Only occurrences from ad_analysis_start_date (dbt var, default 2025-09-29, UTC) onwards.
     columns:
       - name: occurrence_id
@@ -458,7 +458,7 @@ models:
         description: Seconds between the tunnel end and the start of program_after, 0 when it starts during the tunnel.
       - name: emission_id
         description: >
-          program_emissions.id of the emission on the air at the occurrence (Paris time, Programmes Google
+          analytics.program.id of the emission on the air at the occurrence (Paris time, Programmes Google
           Sheet), NULL outside the emissions listed there.
       - name: emission
         description: Name of that emission.
@@ -622,9 +622,9 @@ models:
       - name: end_date
         description: End of the last fragment of the tunnel.
 
-  - name: program_emissions
+  - name: program
     description: >
-      One row per emission and per day of the 24h news channels, from the Programmes Google Sheet (tab
+      In the analytics schema. One row per emission and per day of the 24h news channels, from the Programmes Google Sheet (tab
       emissions-infos-en-continue, seed ref_programmes_emissions_infos_en_continue): the weekday column
       ('*', 'weekday', 'weekend' or days 1 to 7 separated by '|') is split into one row per day. With the
       channel attributes and the monitored program (program_metadata) the emission is broadcast in: the
@@ -696,13 +696,13 @@ models:
       - name: program_overlap_minutes
         description: Minutes of the emission inside that program (monitored minutes), 0 when none.
 
-  - name: cas_de_desinformation
+  - name: cas_de_mesinformation
     description: >
       In the analytics schema. One row per misinformation case validated in Label Studio: the rows of
       task_global_completion with the first annotation ("Annotation Version" = 1) answering 'Correct' alone
       ('Correct,Incorrect' left out), same definition as ad_occurrence_mesinfo, all countries. All the
       columns of task_global_completion, with the channel attributes of program_metadata and the emission
-      on the air (program_emissions).
+      on the air (analytics.program).
     columns:
       - name: task_aggregate_id
         description: Label Studio task (labelstudio_task_aggregate.task_aggregate_id).
@@ -724,7 +724,7 @@ models:
         description: Radio channel (program_metadata).
       - name: emission_id
         description: >
-          program_emissions.id of the emission on the air at the start of the segment (data_item_start) (Paris time, Programmes Google
+          analytics.program.id of the emission on the air at the start of the segment (data_item_start) (Paris time, Programmes Google
           Sheet), NULL outside the emissions listed there.
       - name: emission
         description: Name of that emission.

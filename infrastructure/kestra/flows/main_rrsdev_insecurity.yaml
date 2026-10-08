@@ -55,7 +55,7 @@ tasks:
       PYTHONPATH: /app
       START_DATE: "{{ inputs.start_date ?? '' }}"
       END_DATE: "{{ inputs.end_date ?? '' }}"
-      DAYS_PRIOR: "{{ inputs.days_back ?? '' }}"
+      DAYS_PRIOR: "{{ inputs.days_back ?? 1 }}"
       BUCKET_NAME: "{{ inputs.source == 'extended' ? 'mediatree-extended-perimeter-dev' : 'mediatree' }}"
       POSTGRES_DB: "{{ inputs.source == 'extended' ? 'extended-perimeter' : 'barometre' }}"
       SOURCE_COUNTRY_CODE: "{{ inputs.source == 'extended' ? 'ext-fra' : 'fra' }}"
@@ -86,7 +86,7 @@ tasks:
       PYTHONPATH: /app
       START_DATE: "{{ inputs.start_date ?? '' }}"
       END_DATE: "{{ inputs.end_date ?? '' }}"
-      DAYS_PRIOR: "{{ inputs.days_back ?? '' }}"
+      DAYS_PRIOR: "{{ inputs.days_back ?? 1 }}"
       POSTGRES_DB: "{{ inputs.source == 'extended' ? 'extended-perimeter' : 'barometre' }}"
       SOURCE_COUNTRY_CODE: "{{ inputs.source == 'extended' ? 'ext-fra' : 'fra' }}"
       POSTGRES_PORT: "{{ inputs.source == 'extended' ? 18047 : 22737 }}"

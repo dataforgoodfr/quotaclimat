@@ -75,6 +75,8 @@
       POSTGRES_HOST_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_HOST_DEV') }}"
       POSTGRES_PASSWORD_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_PASSWORD_DEV') }}"
       POSTGRES_USER_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_USER_DEV') }}"
+      RRS_BAROMETRE_READ_USER_DEV: "{{ lookup('env', 'RRS_BAROMETRE_READ_USER_DEV') }}"
+      RRS_BAROMETRE_READ_PASSWORD_DEV: "{{ lookup('env', 'RRS_BAROMETRE_READ_PASSWORD_DEV') }}"
       RRS_PG_HOST_DEV: "{{ lookup('env', 'RRS_PG_HOST_DEV') }}"
       RRS_PG_PASSWORD_DEV: "{{ lookup('env', 'RRS_PG_PASSWORD_DEV') }}"
       RRS_PG_USER_DEV: "{{ lookup('env', 'RRS_PG_USER_DEV') }}"

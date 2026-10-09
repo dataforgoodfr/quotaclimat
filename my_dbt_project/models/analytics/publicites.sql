@@ -6,24 +6,13 @@
 }}
 
 {#- One row per occurrence of a classified ad (formerly advertising.ad_occurrences_classified), built in
-    the analytics schema after the advertising models it reads (see entrypoints/dbt.sh). The classification reference tables are the ref_ome_* seeds, downloaded from the private Google Sheet
+    the analytics schema after the advertising models it reads (see entrypoints/dbt.sh). The classification
+    reference tables are the ref_ome_* seeds, downloaded from the private Google Sheet
     before dbt runs (see my_dbt_project/external_sources.yml): where they are missing (e.g. extended perimeter),
     labels are left empty instead of failing the run.
-    Emission: the emission of analytics.program on the air at the occurrence (Programmes Google Sheet),
-    NULL outside the emissions listed there. -#}
-{#- time zone of advertising.ad_occurrence.occurrence_date (timestamp without time zone) -#}
-{% set occurrence_tz = var('ad_occurrence_timezone', 'UTC') %}
-WITH occurrences AS (
-  SELECT id, channel_name, occurrence_date
-  FROM {{ source('advertising', 'ad_occurrence') }}
-  WHERE deleted_at IS NULL
-    -- first day of the ads analysed (occurrence_date is stored in UTC)
-    AND occurrence_date >= '{{ var("ad_analysis_start_date", "2025-09-29") }}'::timestamp
-),
-occurrence_emissions AS (
-  {{ program_emission_at('occurrences', 'id', 'channel_name', 'occurrence_date', occurrence_tz) }}
-),
-sector_ref AS (
+    Programs and emissions (Programmes Google Sheet) before / after the tunnel of the occurrence: names
+    and gaps only, the other columns (types, emission ids) are in advertising.ad_tunnel_programs (tunnel_id). -#}
+WITH sector_ref AS (
   {{ source_or_empty('advertising', 'ad_sectors', ['sector_code', 'sector_label_fr']) }}
 ),
 cat_ref AS (
@@ -66,17 +55,14 @@ SELECT
   mi.nearest_mesinfo_task_aggregate_id,
   tp.inside_program,
   tp.program_before,
-  tp.program_before_type,
   tp.program_before_gap_sec,
   tp.program_after,
-  tp.program_after_type,
   tp.program_after_gap_sec,
-  em.emission_id,
-  em.emission,
-  em.presentation AS emission_presentation,
-  em.rediffusion AS emission_rediffusion,
-  em.emission_start,
-  em.emission_end
+  tp.inside_emission,
+  tp.emission_before,
+  tp.emission_before_gap_sec,
+  tp.emission_after,
+  tp.emission_after_gap_sec
 FROM {{ source('advertising', 'ad_occurrence') }} occ
 JOIN {{ source('advertising', 'ad') }} a ON occ.ad_id = a.id
 LEFT JOIN sector_ref  s  ON s.sector_code  = a.predicted_sector
@@ -86,7 +72,6 @@ LEFT JOIN {{ ref('ad_brands') }} br ON br.brand_key = {{ name_key('a.predicted_b
 LEFT JOIN {{ ref('ad_occurrence_tunnels') }} t ON t.occurrence_id = occ.id
 LEFT JOIN {{ ref('ad_occurrence_mesinfo') }} mi ON mi.occurrence_id = occ.id
 LEFT JOIN {{ ref('ad_tunnel_programs') }} tp ON tp.tunnel_id = t.tunnel_id
-LEFT JOIN occurrence_emissions em ON em.id = occ.id
 WHERE a.prediction_status IN (
     'dict_miss','dict_tier1','dict_tier2','dict_tier2_no_kw',
     'dict_tier3','dict_tier3_no_kw','subcat_done'

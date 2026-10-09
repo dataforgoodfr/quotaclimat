@@ -96,6 +96,11 @@ def brand_inventory_test_source() -> dict:
     return production_source("inventaire_des_marques")
 
 
+def programmes_test_source() -> dict:
+    """Production programs grids source settings."""
+    return production_source("programmes")
+
+
 def fake_fetch(sheets: dict[str, list[list]], source: dict | None = None):
     """Stands for the Google Drive / Sheets API calls: returns the rows the API would return."""
     def fetch(folder_id, spreadsheet_name):
@@ -138,7 +143,7 @@ def create_advertising_tables(db_connection):
                 ad_id text REFERENCES advertising.ad (id)
             )
         """)
-        cur.execute("DELETE FROM advertising.ad_occurrence WHERE id LIKE 'pytest_%' OR id LIKE 'mesinfo_pytest_%' OR id LIKE 'program_pytest_%'")
+        cur.execute("DELETE FROM advertising.ad_occurrence WHERE id LIKE 'pytest_%' OR id LIKE 'mesinfo_pytest_%' OR id LIKE 'program_pytest_%' OR id LIKE 'emission_pytest_%'")
         cur.execute("DELETE FROM advertising.ad WHERE id LIKE 'pytest_%'")
         cur.execute("""
             INSERT INTO advertising.ad (
@@ -192,6 +197,18 @@ def create_advertising_tables(db_connection):
                 ('program_pytest_before_news', NULL, '2025-04-07 17:50:00', 'france2', 'pytest_ad_1'),
                 -- 13:39:50 Paris: starts in the JT 13h, ends after it
                 ('program_pytest_overlap_end', NULL, '2025-04-07 11:39:50', 'france2', 'pytest_ad_1')
+        """)
+        # during the emissions of the Programmes test sheet (Paris time)
+        cur.execute("""
+            INSERT INTO advertising.ad_occurrence (id, deleted_at, occurrence_date, channel_name, ad_id) VALUES
+                -- Monday 07:00 Paris (UTC+2): BFM Première (weekday, 06:00 - 08:30)
+                ('emission_pytest_summer', NULL, '2025-04-07 05:00:00', 'bfmtv', 'pytest_ad_1'),
+                -- Monday 07:00 Paris (UTC+1)
+                ('emission_pytest_winter', NULL, '2025-01-06 06:00:00', 'bfmtv', 'pytest_ad_1'),
+                -- Monday 04:00 Paris: Nuit LCI of Sunday (23:30 - 06:30)
+                ('emission_pytest_after_midnight', NULL, '2025-04-07 02:00:00', 'lci', 'pytest_ad_1'),
+                -- Saturday 12:00 Paris: no bfmtv emission in the test sheet
+                ('emission_pytest_none', NULL, '2025-04-05 10:00:00', 'bfmtv', 'pytest_ad_1')
         """)
     db_connection.commit()
     yield
@@ -251,6 +268,29 @@ def load_test_external_sources():
         brand_inventory_test_source(), SEEDS_DIR, fetch=fake_fetch(brand_sheets, brand_inventory_test_source())
     )
     assert results == {"ref_inventaire_marques": True, "ref_inventaire_entreprises": True}
+    emission_sheets = {
+        "emissions-infos-en-continue": [
+            ["channel_name", "emission", "presentation", "weekday", "start", "end", "rediffusion", "grid_start", "grid_end"],
+            ["bfmtv", "BFM Première", "Pascale de La Tour du Pin, Mathieu Coache", "weekday", "06:00", "08:30"],
+            # ends after the 6:00-23:00 program of the news channels, midnight written 24:00
+            ["bfmtv", "BFM Grand Soir", "Maxime Switek", "1|2|3|4", "21:00", "24:00"],
+            # starts before the program
+            ["franceinfotv", "Reprise France 24", "", "*", "00:00", "06:30"],
+            ["franceinfotv", "Le fil info", "Florence O'Kelly", "weekend", "09:00", "18:00"],
+            ["lci", "La matinale LCI", "Jean-Baptiste Boursier", "weekday", "06:00", "08:25"],
+            ["itele", "Face à Michel Onfray", "Laurence Ferrari", " 6 ", "21:00", "22:00", "oui"],
+            # Sunday night to Monday morning: inside the Monday program from 6:00
+            ["lci", "Nuit LCI", "", "7", "23:30", "06:30"],
+            # grid ended before the program_metadata grid (2023-04-01): no program
+            ["lci", "Ancienne grille", "", "weekend", "12:00", "14:30", "non", "01/01/2020", "2022-12-31"],
+            # channel not in program_metadata
+            ["pytest-unknown", "Inconnue", "", "1", "10:00", "11:00"],
+        ],
+    }
+    results = download_source(
+        programmes_test_source(), SEEDS_DIR, fetch=fake_fetch(emission_sheets, programmes_test_source())
+    )
+    assert results == {"ref_programmes_emissions_infos_en_continue": True}
     run_dbt_command(["seed", "--full-refresh", "--select", "path:seeds/ref"])
     run_dbt_command(["test", "--select", "path:seeds/ref"])
     yield
@@ -273,6 +313,10 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "environmental_shares_with_desinfo_counts",
             "--exclude",
             "path:models/advertising",
+            "--exclude",
+            "cas_de_mesinformation",
+            "--exclude",
+            "publicites",
             "--full-refresh",
         ]
     )
@@ -295,6 +339,10 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "run",
             "--select",
             "path:models/advertising",
+            "--select",
+            "cas_de_mesinformation",
+            "--select",
+            "publicites",
             # the advertising test rows are dated 2000-01-01, before the real analysis start date
             "--vars",
             '{"ad_analysis_start_date": "2000-01-01"}',
@@ -352,6 +400,118 @@ def test_environmental_shares_desinfo(db_connection):
     assert row == expected
 
 
+def test_program(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT channel_name, emission, ARRAY_AGG(weekday ORDER BY weekday), MIN(channel_title),
+                BOOL_AND(infocontinue), BOOL_AND(rediffusion), MIN(duration_minutes), MIN(grid_start),
+                MIN(grid_end), MIN(channel_program), MIN(program_overlap_minutes), COUNT(DISTINCT id)
+            FROM analytics.program
+            GROUP BY channel_name, emission
+            ORDER BY channel_name, emission
+        """)
+        rows = cur.fetchall()
+    no_start, no_end = None, datetime.date(2100, 1, 1)
+    news = "Information en continu"
+    # one row per emission and per day, with the program of program_metadata it overlaps
+    assert rows == [
+        ("bfmtv", "BFM Grand Soir", [1, 2, 3, 4], "BFM TV", True, False, 180, no_start, no_end, news, 120, 4),
+        ("bfmtv", "BFM Première", [1, 2, 3, 4, 5], "BFM TV", True, False, 150, no_start, no_end, news, 150, 5),
+        ("franceinfotv", "Le fil info", [6, 7], "France Info TV", True, False, 540, no_start, no_end, news, 540, 2),
+        ("franceinfotv", "Reprise France 24", [1, 2, 3, 4, 5, 6, 7], "France Info TV", True, False, 390, no_start, no_end, news, 30, 7),
+        ("itele", "Face à Michel Onfray", [6], "CNews", True, True, 60, no_start, no_end, news, 60, 1),
+        ("lci", "Ancienne grille", [6, 7], "LCI", True, False, 150,
+            datetime.date(2020, 1, 1), datetime.date(2022, 12, 31), None, 0, 2),
+        ("lci", "La matinale LCI", [1, 2, 3, 4, 5], "LCI", True, False, 145, no_start, no_end, news, 145, 5),
+        ("lci", "Nuit LCI", [7], "LCI", True, False, 420, no_start, no_end, news, 30, 1),
+        ("pytest-unknown", "Inconnue", [1], None, None, False, 60, no_start, no_end, None, 0, 1),
+    ]
+
+
+def test_publicites_emissions(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT occurrence_id, emission, emission_presentation, emission_rediffusion, emission_start, emission_end
+            FROM analytics.publicites
+            WHERE occurrence_id LIKE 'emission_pytest_%'
+            ORDER BY occurrence_id
+        """)
+        rows = cur.fetchall()
+    # occurrence_date in UTC, emission grids in Paris time (summer and winter time)
+    assert rows == [
+        ("emission_pytest_after_midnight", "Nuit LCI", None, False, "23:30", "06:30"),
+        ("emission_pytest_none", None, None, None, None, None),
+        ("emission_pytest_summer", "BFM Première", "Pascale de La Tour du Pin, Mathieu Coache", False, "06:00", "08:30"),
+        ("emission_pytest_winter", "BFM Première", "Pascale de La Tour du Pin, Mathieu Coache", False, "06:00", "08:30"),
+    ]
+
+
+def test_cas_de_mesinformation(db_connection):
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT data_item_channel_name, data_item_start, mesinfo_choice, "Annotation Version", channel_title,
+                infocontinue, emission
+            FROM analytics.cas_de_mesinformation
+            ORDER BY data_item_start
+        """)
+        rows = cur.fetchall()
+        cur.execute("""
+            SELECT COUNT(*)
+            FROM analytics.task_global_completion
+            WHERE mesinfo_choice = 'Correct' AND "Annotation Version" = 1
+        """)
+        expected_count = cur.fetchone()[0]
+    # the first annotation of the validated misinformation only ('Correct,Incorrect' and 'Incorrect' left out)
+    assert len(rows) == expected_count == 5
+    assert all(r[2:4] == ("Correct", 1) for r in rows)
+    # data_item_start in UTC, emission grids in Paris time
+    assert [(r[0], r[1], r[4], r[5], r[6]) for r in rows] == [
+        ("sud-radio", datetime.datetime(2025, 4, 2, 9, 10), "Sud Radio", False, None),
+        # Saturday 15:08 Paris: Le fil info (weekend, 09:00 - 18:00)
+        ("franceinfotv", datetime.datetime(2025, 4, 5, 13, 8), "France Info TV", True, "Le fil info"),
+        ("sud-radio", datetime.datetime(2025, 4, 6, 7, 10), "Sud Radio", False, None),
+        # Thursday 06:54 Paris: La matinale LCI (weekday, 06:00 - 08:25)
+        ("lci", datetime.datetime(2025, 4, 10, 4, 54), "LCI", True, "La matinale LCI"),
+        ("europe1", datetime.datetime(2025, 6, 10, 5, 20), "Europe 1", False, None),
+    ]
+
+
+def test_program_seed_patterns(db_connection):
+    """The seed tests (matches_pattern) report the values of the sheet that analytics.program cannot parse."""
+    with open("my_dbt_project/seeds/ref/_ref_seeds.yml") as f:
+        seed = next(s for s in yaml.safe_load(f)["seeds"] if s["name"] == "ref_programmes_emissions_infos_en_continue")
+    patterns = {
+        column["name"]: test["matches_pattern"]["arguments"]["pattern"]
+        for column in seed["columns"]
+        for test in column.get("tests", [])
+        if isinstance(test, dict) and "matches_pattern" in test
+    }
+    valid = {
+        "weekday": ["*", "weekday", "weekend", "5", "1|2|3|4", "6 | 7"],
+        "start": ["06:00", "6:00", "23:59"],
+        "end": ["24:00", "08:30"],
+        "grid_start": ["2026-09-01", "01/09/2026"],
+        "grid_end": ["2100-01-01"],
+    }
+    invalid = {
+        # 0: numbering of the Python grids (0 for Monday), not of program_metadata
+        "weekday": ["0", "8", "lundi", "1,2", "1|"],
+        "start": ["b", "24:00", "6h00", "06:00:00"],
+        "end": ["24:30", "25:00"],
+        "grid_start": ["sept. 2026", "2026/09/01"],
+        "grid_end": ["31/12"],
+    }
+    assert sorted(patterns) == sorted(valid)
+    with db_connection.cursor() as cur:
+        for column, pattern in patterns.items():
+            for value in valid[column]:
+                cur.execute("SELECT %s ~ %s", (value, pattern))
+                assert cur.fetchone()[0], (column, value)
+            for value in invalid[column]:
+                cur.execute("SELECT %s ~ %s", (value, pattern))
+                assert not cur.fetchone()[0], (column, value)
+
+
 def test_ad_tunnels(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
@@ -401,11 +561,11 @@ def test_ad_occurrence_tunnels(db_connection):
     ]
 
 
-def test_ad_occurrences_classified(db_connection):
+def test_publicites(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT occurrence_id, channel_title, sector_label_fr, product_category_fr, label_final, tunnel_id
-            FROM advertising.ad_occurrences_classified
+            FROM analytics.publicites
             WHERE occurrence_id LIKE 'pytest_%'
             ORDER BY occurrence_id
         """)
@@ -421,12 +581,12 @@ def test_ad_occurrences_classified(db_connection):
     assert rows == expected
 
 
-def test_ad_occurrences_classified_mesinfo(db_connection):
+def test_publicites_mesinfo(db_connection):
     """Distance to the nearest validated misinformation on the same channel, within 7 days."""
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT occurrence_id, mesinfo_distance_sec, nearest_mesinfo_task_aggregate_id
-            FROM advertising.ad_occurrences_classified
+            FROM analytics.publicites
             WHERE occurrence_id LIKE 'mesinfo_pytest_%'
             ORDER BY occurrence_id
         """)
@@ -440,7 +600,7 @@ def test_ad_occurrences_classified_mesinfo(db_connection):
     ]
 
 
-def test_ad_occurrences_classified_programs(db_connection):
+def test_publicites_programs(db_connection):
     """Monitored programs around the ad tunnel of each occurrence."""
     with db_connection.cursor() as cur:
         cur.execute("""
@@ -448,7 +608,7 @@ def test_ad_occurrences_classified_programs(db_connection):
                 occurrence_id, inside_program,
                 program_before, program_before_type, program_before_gap_sec,
                 program_after, program_after_type, program_after_gap_sec
-            FROM advertising.ad_occurrences_classified
+            FROM analytics.publicites
             WHERE occurrence_id LIKE 'program_pytest_%'
             ORDER BY occurrence_id
         """)
@@ -498,11 +658,11 @@ def test_ad_brands(db_connection):
     ]
 
 
-def test_ad_occurrences_classified_brand_companies(db_connection):
+def test_publicites_brand_companies(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT occurrence_id, predicted_brand, brand_company, brand_ultimate_parent
-            FROM advertising.ad_occurrences_classified
+            FROM analytics.publicites
             WHERE occurrence_id IN ('pytest_occ_1', 'pytest_occ_2')
             ORDER BY occurrence_id
         """)
@@ -544,12 +704,14 @@ def test_advertising_grants(db_connection):
             FROM information_schema.role_table_grants
             WHERE grantee = 'rrs-read-dev'
               AND privilege_type = 'SELECT'
-              AND table_schema = 'advertising'
-              AND table_name IN ('ad_tunnels', 'ad_occurrences_classified', 'ad_occurrence_tunnels', 'ad_brands')
+              AND table_schema || '.' || table_name IN (
+                'advertising.ad_tunnels', 'advertising.ad_occurrence_tunnels', 'advertising.ad_brands',
+                'analytics.publicites', 'analytics.cas_de_mesinformation'
+              )
             ORDER BY table_name
         """)
         rows = cur.fetchall()
-    assert rows == [("ad_brands",), ("ad_occurrence_tunnels",), ("ad_occurrences_classified",), ("ad_tunnels",)]
+    assert rows == [("ad_brands",), ("ad_occurrence_tunnels",), ("ad_tunnels",), ("cas_de_mesinformation",), ("publicites",)]
 
 
 def test_external_source_nice_classes_are_text(db_connection):
@@ -800,44 +962,50 @@ def test_ensure_not_public_refuses_public_spreadsheet(permission_ids, status, he
 
 def test_advertising_models_schema(db_connection):
     """The advertising models and the reference seeds are built in the advertising schema (+schema,
-    generate_schema_name), the other models and seeds stay in the target schema."""
+    generate_schema_name), program, publicites and cas_de_mesinformation in the analytics schema (schema config),
+    the other models and seeds stay in the target schema."""
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT table_schema, table_name
             FROM information_schema.tables
             WHERE table_name IN (
-                'ad_tunnels', 'ad_occurrences_classified', 'ad_occurrence_tunnels', 'ad_occurrence_mesinfo',
-                'ad_tunnel_programs', 'ref_ome_secteurs',
-                'core_query_environmental_shares', 'task_global_completion', 'keywords'
+                'ad_tunnels', 'ad_occurrence_tunnels', 'ad_occurrence_mesinfo',
+                'ad_tunnel_programs', 'ref_ome_secteurs', 'ref_programmes_emissions_infos_en_continue',
+                'core_query_environmental_shares', 'task_global_completion', 'keywords', 'program',
+                'publicites', 'cas_de_mesinformation'
             )
             ORDER BY table_name
         """)
         rows = cur.fetchall()
+    # program, publicites and cas_de_mesinformation: schema='analytics', built without --target analytics
     assert rows == [
         ("advertising", "ad_occurrence_mesinfo"),
         ("advertising", "ad_occurrence_tunnels"),
-        ("advertising", "ad_occurrences_classified"),
         ("advertising", "ad_tunnel_programs"),
         ("advertising", "ad_tunnels"),
+        ("analytics", "cas_de_mesinformation"),
         ("public", "core_query_environmental_shares"),
         ("public", "keywords"),
+        ("analytics", "program"),
+        ("analytics", "publicites"),
         ("advertising", "ref_ome_secteurs"),
+        ("advertising", "ref_programmes_emissions_infos_en_continue"),
         ("analytics", "task_global_completion"),
     ]
 
 
-def test_ad_occurrences_classified_start_date(db_connection):
+def test_publicites_start_date(db_connection):
     """Occurrences before ad_analysis_start_date are excluded (run last: rebuilds the model)."""
     # end the transaction left open by the previous SELECTs: its lock on the table would block dbt
     db_connection.rollback()
     run_dbt_command([
-        "run", "--select", "ad_occurrences_classified",
+        "run", "--select", "publicites",
         "--vars", '{"ad_analysis_start_date": "2000-01-01 10:30:00"}',
     ])
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT occurrence_id
-            FROM advertising.ad_occurrences_classified
+            FROM analytics.publicites
             WHERE occurrence_id LIKE 'pytest_%'
             ORDER BY occurrence_id
         """)

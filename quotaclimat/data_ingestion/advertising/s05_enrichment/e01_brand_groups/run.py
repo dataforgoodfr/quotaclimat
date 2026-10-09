@@ -50,7 +50,7 @@ from quotaclimat.utils.sentry import sentry_init
 
 BRANDS_QUERY = text("""
     SELECT predicted_brand, predicted_sector, SUM(duration_sec) AS duration_sec
-    FROM advertising.ad_occurrences_classified
+    FROM analytics.publicites
     WHERE predicted_brand IS NOT NULL
     GROUP BY predicted_brand, predicted_sector
 """)

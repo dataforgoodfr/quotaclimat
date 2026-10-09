@@ -6,7 +6,7 @@
 
 {#- Brand reference, built from the Inventaires_des_marques Google Sheet only (no ad table): one row
     per brand of the tab Marques (name_key of the brand), with the company that sells under the brand and
-    its ultimate parent company. Used by ad_occurrences_classified, which falls back on the predicted
+    its ultimate parent company. Used by analytics.publicites, which falls back on the predicted
     brand for the brands not listed here.
     Three levels: brand (Activia) -> company, the one that sells under the brand and that a publication
     would name (Danone; Free -> Free, a brand can be its own company) -> ultimate parent company

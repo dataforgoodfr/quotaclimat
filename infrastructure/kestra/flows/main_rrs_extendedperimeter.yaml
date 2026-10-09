@@ -124,8 +124,8 @@ tasks:
       COUNTRY: ext-fra
       ENV: production
       KEYWORDS_URL: https://keywords.mediatree.fr/api/v2/subtitle/
-      LABEL_STUDIO_PROJECT: 23
-      LABEL_STUDIO_PROJECT_ID: 17
+      LABEL_STUDIO_PROJECT: 24
+      LABEL_STUDIO_PROJECT_ID: 18
       LABEL_STUDIO_URL: https://barometre7kfudatm-labelstudio.functions.fnc.fr-par.scw.cloud
       LOGLEVEL: INFO
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/

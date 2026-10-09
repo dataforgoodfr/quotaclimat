@@ -1,0 +1,87 @@
+id: main-pipeline
+namespace: quotaclimat-dev
+
+description: |
+  Dev main pipeline. Runs the extended perimeter pipeline, processes it in RRS
+  (without clustering), runs the dev OME `barometre` pipeline, then the RRS
+  flows on the barometre source. Each step is a subflow that must succeed
+  before the next one starts. No schedule in dev: run it manually.
+
+labels:
+  pipeline: ome
+  environment: dev
+  scope: france
+
+inputs:
+  - id: with_rrs
+    type: BOOLEAN
+    defaults: true
+    description: "When false, skips the extended perimeter and all RRS jobs and only runs barometre."
+  - id: days_back
+    type: INT
+    defaults: 1
+    description: Days prior to the start date to process. Defaults to 1.
+  - id: start_date
+    type: DATE
+    required: false
+    description: "Reference date (YYYY-MM-DD) from which to count days back. Defaults to now."
+
+tasks:
+  - id: extended_perimeter
+    runIf: "{{ inputs.with_rrs }}"
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: rrs-dev
+    flowId: extended-perimeter
+    wait: true
+    transmitFailed: true
+    inputs:
+      days_back: "{{ inputs.days_back }}"
+      start_date: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
+
+  - id: rrs_climate_extended
+    runIf: "{{ inputs.with_rrs }}"
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: rrs-dev
+    flowId: rrs-climate
+    wait: true
+    transmitFailed: true
+    inputs:
+      source: extended
+      run_clustering: false
+
+  - id: rrs_insecurity_extended
+    runIf: "{{ inputs.with_rrs }}"
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: rrs-dev
+    flowId: rrs-insecurity
+    wait: true
+    transmitFailed: true
+    inputs:
+      source: extended
+      run_clustering: false
+
+  - id: barometre
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: quotaclimat-dev
+    flowId: barometre
+    wait: true
+    transmitFailed: true
+    inputs:
+      days_back: "{{ inputs.days_back }}"
+      start_date: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
+
+  - id: rrs_climate
+    runIf: "{{ inputs.with_rrs }}"
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: rrs-dev
+    flowId: rrs-climate
+    wait: true
+    transmitFailed: true
+
+  - id: rrs_insecurity
+    runIf: "{{ inputs.with_rrs }}"
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: rrs-dev
+    flowId: rrs-insecurity
+    wait: true
+    transmitFailed: true

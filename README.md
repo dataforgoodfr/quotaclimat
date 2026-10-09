@@ -451,7 +451,37 @@ The `EXTENDED_PERIMETER` env variable (`"true"`/`"false"`, default `"false"`) to
 The extended perimeter data lives in its own infrastructure, isolated from the main `rrs`/`barometre` databases (`infrastructure/live/rrs/template/`):
 * An `extended-perimeter` Postgres database on the `rrs` RDB instance (`database.tf`), with admin (full) and job (readwrite) privileges only - no migrate or metabase user access, unlike the `rrs` database - plus a dedicated readonly `rrs-read-<env>` user (used for dbt's `select` grants above, and sharing its password with the `rrs-read-<env>` user on the `barometre` database in `infrastructure/live/barometre/template/database.tf`).
 * Two dedicated S3 buckets, `mediatree-extended-perimeter-<env>` and `misinformation-extended-perimeter-<env>` (`s3.tf`), with the existing `rrs-ci` IAM application/policy granted object storage read/write access.
-* A Kestra dev flow (`infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml`) that ingests Mediatree data to the `mediatree-extended-perimeter` bucket, then runs `entrypoints/detect_keywords.sh` with `EXTENDED_PERIMETER: true` (which always runs `alembic upgrade head` first, using the admin user since it needs DDL rights) against the `extended-perimeter` database, followed by misinformation detection writing to the `misinformation-extended-perimeter` bucket.
+
+#### Kestra flows
+Flows live in `infrastructure/kestra/flows/`. `main_rrs_extendedperimeter.yaml` (namespace `rrs`, flow id `extended-perimeter`) is the prod flow and `main_rrsdev_extendedperimeter.yaml` (namespace `rrs-dev`) is its dev twin: same tasks and inputs, only the secrets (`_DEV`), buckets (`-dev`), ports and `DBT_ENV` differ. Tasks, in order:
+1. `ingest_data_to_s3`: Mediatree to the `mediatree-extended-perimeter-<env>` bucket (`COUNTRY=ext-fra`).
+2. `detect_keywords`: runs `entrypoints/detect_keywords.sh` with `EXTENDED_PERIMETER: true` (which always runs `alembic upgrade head` first, using the admin user since it needs DDL rights) against the `extended-perimeter` database.
+3. `detect_misinformation`: reads/writes the `misinformation-extended-perimeter-<env>` bucket (`BUCKET_INPUT`, `BUCKET_OUTPUT`, folder `label-misinformation-input`).
+4. `dbt_run_transformations`: dbt over the `extended-perimeter` database.
+
+Optional inputs (also available on `barometre`, `barometre-catchup` and `barometre-i18n`): `days_back` (default 1, passed as `NUMBER_OF_PREVIOUS_DAYS`) and `start_date` (`YYYY-MM-DD`, defaults to now, converted to the epoch `START_DATE`).
+
+The `extended-perimeter` database has exactly the same structure as `barometre` (and its `keywords.country` is `france`), so the same downstream code can read either.
+
+#### Daily orchestration
+
+![Kestra flows](docs/images/kestra_flows.png)
+
+Interactive version (download and open in a browser): [`docs/diagrams/kestra_flows.html`](docs/diagrams/kestra_flows.html).
+
+The diagram covers all prod flows in `infrastructure/kestra/flows/` (dev flows mirror them). It is generated with [Archify](https://github.com/tt-a1i/archify) from `docs/diagrams/kestra_flows.archify.json`; to update it, edit that file (or ask an agent with the Archify skill to regenerate it) and re-export the HTML to `docs/diagrams/kestra_flows.html` and the PNG to `docs/images/kestra_flows.png`.
+
+The `main-pipeline` flow (`main_quotaclimat_mainpipeline.yaml`) runs twice a day, at 01:10 and 12:30 (Europe/Paris), and is the only trigger of this chain. The `with_rrs` input (boolean, default `true`) skips steps 1-3 and 5-6 when set to `false`, so only `barometre` runs. Each step is a `Subflow` task with `wait: true` and `transmitFailed: true`, so a failed step stops the rest of the run:
+1. `extended-perimeter`
+2. `rrs-climate` with `source=extended`, `run_clustering=false`
+3. `rrs-insecurity` with `source=extended`, `run_clustering=false`
+4. `barometre`
+5. `rrs-climate` on the `barometre` source (with clustering)
+6. `rrs-insecurity` on the `barometre` source (with clustering)
+
+`barometre`, `rrs-climate` and `rrs-insecurity` have no schedule or flow trigger of their own anymore; run them manually or through `main-pipeline`. See `rrs/README.md` for how RRS reads the extended source.
+
+The dev environment has the same structure (`main-pipeline` in `quotaclimat-dev`, with the other flows in `rrs-dev`: `main_quotaclimatdev_mainpipeline.yaml`, `main_rrsdev_climate.yaml`, `main_rrsdev_insecurity.yaml`, `main_rrsdev_extendedperimeter.yaml`) plus `main_quotaclimatdev_barometre.yaml` (`quotaclimat-dev`), using the `_DEV` secrets and `-dev` buckets. The dev `main-pipeline` has no schedule: run it manually.
 
 # Mediatre to S3
 For a security nets, we have configured at data pipeline from Mediatree API to S3 (Object Storage Scaleway) with partition :

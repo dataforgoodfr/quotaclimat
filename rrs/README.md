@@ -162,6 +162,28 @@ Scans S3-hosted parquet files with DuckDB and flags transcripts containing Frenc
 
 ---
 
+## Extended perimeter (Droit à l'info)
+
+The `rrs-climate` and `rrs-insecurity` Kestra flows (`infrastructure/kestra/flows/main_rrs_climate.yaml`, `main_rrs_insecurity.yaml`) have a `source` input:
+
+| `source` | Source DB (`POSTGRES_*`) | `BUCKET_NAME` | `SOURCE_COUNTRY_CODE` |
+|---|---|---|---|
+| `barometre` (default) | `barometre` (OME host, port 22737, `RRS_BAROMETRE_READ_*`) | `mediatree` | `fra` |
+| `extended` | `extended-perimeter` (RRS host `RRS_PG_HOST`, port 18492, read with the same `RRS_BAROMETRE_READ_*` user/password as `barometre`; in dev the `_DEV` variants) | `mediatree-extended-perimeter-prod` | `ext-fra` |
+
+The extended-perimeter DB has the same structure as `barometre`, so `import_segments.py` and `import_cases.py` work unchanged apart from `import_cases.py` selecting the channel list from `SOURCE_COUNTRY_CODE` (`EXTENDED_FRANCE.channels` for `ext-fra`, `FRANCE.channels` otherwise). Both sources write into the same `rrs` database.
+
+Credentials and buckets per source:
+
+- **Source DB**: `rrs-climate` (`import_segments`, `import_cases`) always connects with `RRS_BAROMETRE_READ_USER`/`RRS_BAROMETRE_READ_PASSWORD` (`_DEV` in dev); only the host (`RRS_PG_HOST` for `extended`), port, DB name and `SOURCE_COUNTRY_CODE` change. That role needs `SELECT` on `public.keywords` in the `extended-perimeter` DB, otherwise the `COPY` fails with `permission denied for table keywords`.
+- **RRS DB** (destination): `RRS_PG_HOST`/`RRS_PG_USER`/`RRS_PG_PASSWORD`, unchanged.
+- **Bucket**: `rrs-insecurity` uses `RRS_SCW_ACCESS`/`RRS_SCW_SECRET` (`_DEV` in dev) when `source=extended`, and `SCW_ACCESS`/`SCW_SECRET` otherwise.
+- **Label Studio**: the extended perimeter uses project 24 / tab 139 in prod (the `import_cases.py` defaults) and project 23 / tab 137 in dev (set by `main_rrsdev_climate.yaml`).
+
+Extended runs are started by the `main-pipeline` flow with `run_clustering=false`, so no clusters are created for them, before the usual `barometre` -> `rrs-climate` -> `rrs-insecurity` chain. See the root `README.md` ("Extended perimeter") for the full sequence.
+
+---
+
 ## Database
 
 ### Schema
@@ -220,6 +242,14 @@ poetry run alembic -c rrs/alembic.ini current
 ---
 
 ## Environment Variables
+
+### Source perimeter
+
+| Variable | Used by | Description |
+|---|---|---|
+| `SOURCE_COUNTRY_CODE` | `keyword_detection/import_cases.py` | `fra` (default) or `ext-fra`; selects the channel list to import |
+| `LABEL_STUDIO_PROJECT` | `keyword_detection/import_cases.py` | Label Studio project id used by `get_url_labelstudio`. Defaults: `6` (`fra`), `24` (`ext-fra`, prod). Set explicitly by the `rrs-climate` flows from `source` (24 prod / 23 dev for `extended`) |
+| `LABEL_STUDIO_TAB_ID` | `keyword_detection/import_cases.py` | Label Studio tab id. Defaults: `121` (`fra`), `139` (`ext-fra`, prod). Set explicitly by the `rrs-climate` flows from `source` (139 prod / 137 dev for `extended`) |
 
 ### Database (RRS PostgreSQL)
 

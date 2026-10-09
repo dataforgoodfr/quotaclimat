@@ -1,10 +1,12 @@
--- Taux de mésinformation par émission (chaînes d'info en continue, Google Sheet Programmes)
+-- Taux de mésinformation et part d'environnement par émission (chaînes d'info en continue, Google Sheet Programmes)
 -- Variables Metabase, type Texte, heure de Paris :
 --   {{debut}} inclus, ex. 2026-09-01 ou 2026-09-01 06:00
 --   {{fin}}   exclu,  ex. 2026-10-01
--- nb_cas : cas validés (analytics.cas_de_mesinformation, 1re annotation 'Correct') attribués à l'émission
 -- volume_heures : durée de diffusion théorique de l'émission sur la période, d'après la grille
 --   (analytics.program), coupée aux bornes de la période
+-- env_heures : temps consacré à l'environnement, même calcul que core_query_environmental_shares
+--   (public.keywords.number_of_keywords fenêtres de 20 s), segments rattachés à l'émission à l'antenne
+-- nb_cas : cas validés (analytics.cas_de_mesinformation, 1re annotation 'Correct') attribués à l'émission
 WITH bornes AS (
     SELECT
         CAST({{debut}} AS timestamp) AS debut,
@@ -16,8 +18,10 @@ diffusions AS (
     SELECT
         p.channel_name,
         p.channel_title,
+        p.country,
         p.emission,
         p.rediffusion,
+        p.grid_start,
         GREATEST(j.jour + p.start_minute * INTERVAL '1 minute', b.debut) AS diffusion_debut,
         LEAST(j.jour + p.end_minute * INTERVAL '1 minute', b.fin) AS diffusion_fin
     FROM bornes b
@@ -42,6 +46,35 @@ volume AS (
     WHERE diffusion_fin > diffusion_debut
     GROUP BY 1, 2, 3, 4
 ),
+-- segments de 2 min de public.keywords (start en UTC) rattachés à l'émission à l'antenne à leur début ;
+-- si deux émissions se chevauchent, la plus récente grille gagne, comme dans la macro program_emission_at
+env_segments AS (
+    SELECT DISTINCT ON (k.id, k.start)
+        d.channel_name,
+        d.emission,
+        d.rediffusion,
+        k.number_of_keywords
+    FROM bornes b
+    JOIN public.keywords k
+      -- pré-filtre large en UTC, le filtre exact en heure de Paris est dans la jointure avec diffusions
+      ON k.start >= b.debut - INTERVAL '1 day'
+     AND k.start < b.fin + INTERVAL '1 day'
+    JOIN diffusions d
+      ON d.channel_name = k.channel_name
+     AND d.country = k.country
+     AND (k.start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' >= d.diffusion_debut
+     AND (k.start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' < d.diffusion_fin
+    ORDER BY k.id, k.start, d.grid_start DESC NULLS LAST, d.diffusion_debut DESC
+),
+env AS (
+    SELECT
+        channel_name,
+        emission,
+        rediffusion,
+        SUM(number_of_keywords) * 20 / 3600.0 AS env_heures
+    FROM env_segments
+    GROUP BY 1, 2, 3
+),
 -- data_item_start est en UTC, converti en heure de Paris comme dans la macro program_emission_at
 cas AS (
     SELECT
@@ -62,10 +95,18 @@ SELECT
     v.rediffusion,
     v.nb_diffusions,
     ROUND(v.volume_heures::numeric, 1) AS volume_heures,
+    ROUND(COALESCE(e.env_heures, 0)::numeric, 2) AS env_heures,
+    ROUND((100 * COALESCE(e.env_heures, 0) / v.volume_heures)::numeric, 2) AS part_env_pct,
     COALESCE(c.nb_cas, 0) AS nb_cas,
     ROUND((COALESCE(c.nb_cas, 0) / v.volume_heures)::numeric, 3) AS cas_par_heure,
-    ROUND((10 * COALESCE(c.nb_cas, 0) / v.volume_heures)::numeric, 2) AS cas_pour_10h
+    ROUND((10 * COALESCE(c.nb_cas, 0) / v.volume_heures)::numeric, 2) AS cas_pour_10h,
+    -- NULL quand l'émission n'a pas parlé d'environnement sur la période
+    ROUND((COALESCE(c.nb_cas, 0) / NULLIF(e.env_heures, 0))::numeric, 2) AS cas_par_heure_env
 FROM volume v
+LEFT JOIN env e
+  ON e.channel_name = v.channel_name
+ AND e.emission = v.emission
+ AND e.rediffusion = v.rediffusion
 LEFT JOIN cas c
   ON c.channel_name = v.channel_name
  AND c.emission = v.emission

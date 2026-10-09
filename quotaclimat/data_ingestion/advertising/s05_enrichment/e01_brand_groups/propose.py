@@ -1,5 +1,6 @@
 """Company proposal for a brand: the INPI trademark holder (SIREN), the company that sells under the
-brand (Free -> FREE), never a parent company. The ultimate parent company (GLEIF, Wikidata) is only
+brand, never a parent company. Named like the brand when the holder's name contains it (FREE -> Free,
+SOCIETE FRANCAISE DU RADIOTELEPHONE - SFR -> SFR), else like the holder (Dacia -> Renault). The ultimate parent company (GLEIF, Wikidata) is only
 proposed in the new row of the tab Entreprises.
 
 The proposals have statut 'non vérifié': a human checks them afterwards, and corrects the company when
@@ -10,6 +11,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date
 
+from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import normalize
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi import (
     Notice,
     name_key,
@@ -90,6 +92,22 @@ def choose_holder(
     )
 
 
+def name_contains_brand(name: str, brand: str) -> bool:
+    """The brand is in the name as whole consecutive words, compared without spaces and punctuation:
+    "SOCIETE FRANCAISE DU RADIOTELEPHONE - SFR" contains SFR, "McDonald's International" contains
+    "Mc Donald's", "FREEDOM HOLDING" does not contain Free."""
+    words, key = normalize(name).split(), name_key(brand)
+    return bool(key) and any(
+        "".join(words[i:j]) == key for i in range(len(words)) for j in range(i + 1, len(words) + 1)
+    )
+
+
+def company_name(holder: Holder, brand: str) -> str:
+    """The brand when the holder's name contains it: the company is the brand itself, under its common
+    name rather than its legal one (FREE SAS -> Free). Else the holder (Dacia -> its holder Renault)."""
+    return brand if name_contains_brand(holder.name, brand) else holder.name
+
+
 @dataclass
 class KnownCompanies:
     """Companies of the tab Entreprises (and the ones proposed during the run): official name by name_key
@@ -111,9 +129,13 @@ class KnownCompanies:
         if siren:
             self.by_siren.setdefault(siren.replace(" ", ""), name)
 
-    def find(self, holder: Holder) -> str | None:
-        """Official name of the holder's company in the tab, by SIREN, else by name."""
-        return (holder.siren and self.by_siren.get(holder.siren)) or self.by_key.get(name_key(holder.name))
+    def find(self, holder: Holder, brand: str) -> str | None:
+        """Name of the holder's company in the tab, by SIREN, else by name (company_name, or the holder's)."""
+        return (
+            (holder.siren and self.by_siren.get(holder.siren))
+            or self.by_key.get(name_key(company_name(holder, brand)))
+            or self.by_key.get(name_key(holder.name))
+        )
 
 
 def _parent(wikidata_parent: Company | None, gleif_parent: Company | None) -> tuple[Company | None, str]:
@@ -137,7 +159,7 @@ def propose_row(
     today: date,
 ) -> tuple[dict[str, str], dict[str, str] | None]:
     """Row of the tab Marques, and row of the tab Entreprises when the company is not in it yet. The
-    company is the holder, under its official name in the tab Entreprises when it is there. The ultimate
+    company is the holder (company_name), under its name in the tab Entreprises when it is there. The ultimate
     parent company (GLEIF, else Wikidata) is only proposed in the row of the new company."""
     job = f"job {today.isoformat()} : "
     if holder is None:
@@ -149,8 +171,8 @@ def propose_row(
             "commentaire": job + "aucune marque en vigueur à ce nom à l'INPI (bases FR, EU, WO)",
         }, None
 
-    known_name = known.find(holder)
-    company = known_name or holder.name
+    known_name = known.find(holder, brand)
+    company = known_name or company_name(holder, brand)
     identity = f"SIREN {holder.siren}" if holder.siren else f"société étrangère, pays {holder.country or '?'}"
     notes = [f"titulaire {holder.name} ({identity}), marque {holder.trademark}"]
     if not holder.in_sector_classes:
@@ -175,7 +197,7 @@ def propose_row(
         return brand_row, None
 
     parent, parent_source = _parent(wikidata_parent, gleif_parent)
-    notes = [f"titulaire de la marque {brand} ({holder.trademark}), {identity}"]
+    notes = [f"titulaire de la marque {brand} ({holder.trademark}) : {holder.name}, {identity}"]
     if gleif_lei and not holder.siren:
         notes.append(f"LEI trouvé par son nom : {gleif_lei.identifier}")
     if gleif_parent:

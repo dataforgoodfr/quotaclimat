@@ -5,8 +5,9 @@ For each brand, by decreasing broadcast duration:
 1. INPI: trademarks in force named exactly like the brand, holder (company, SIREN) of the most
    trademarks covering the Nice classes of the brand's sector (column classes_nice of the tab secteurs of
    the Dictionnaire_marques_secteurs Google Sheet, loaded by dbt in advertising.ref_ome_secteurs);
-2. company of the brand: the holder, under its official name in the tab Entreprises when it is there
-   (same SIREN or name). No parent company: the company is the one that sells under the brand;
+2. company of the brand: the holder, named like the brand when its name contains it (FREE SAS -> Free),
+   under its name in the tab Entreprises when it is there (same SIREN or name). No parent company: the
+   company is the one that sells under the brand;
 3. a row is appended to the tab Marques when a company was found. A brand without any is not written, so
    that it is searched again on the next runs (and can be filled in by a human meanwhile);
 4. a company not in the tab Entreprises yet is appended to it, with its ultimate parent company proposed
@@ -136,7 +137,7 @@ def propose(
         inpi.brand_notices(brand), nice_classes.get(sector) if sector else None
     )
     wikidata_parent = gleif_lei = gleif_parent = None
-    if holder is None or known.find(holder):
+    if holder is None or known.find(holder, brand):
         # no company, or a company already in the tab: no registry lookup needed
         pass
     elif holder.siren:

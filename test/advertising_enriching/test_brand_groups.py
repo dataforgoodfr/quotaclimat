@@ -27,6 +27,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import (
     KnownCompanies,
     choose_holder,
+    name_contains_brand,
     parse_nice_classes,
     propose_row,
 )
@@ -358,7 +359,10 @@ def test_brand_notices_european_and_international_when_no_french_one(monkeypatch
     ]
     holder = choose_holder(notices, None)
     row, _ = propose_row("Volkswagen", holder, None, None, None, KnownCompanies(), TODAY)
-    assert (row["entreprise"], row["numero_marque"]) == ("Volkswagen Aktiengesellschaft", "WO1892865")
+    # the holder's name contains the brand: the brand is the company
+    assert (row["entreprise"], row["titulaire"], row["numero_marque"]) == (
+        "Volkswagen", "Volkswagen Aktiengesellschaft", "WO1892865",
+    )
 
 
 def test_eu_update_record_holder_from_search_result(monkeypatch):
@@ -463,10 +467,10 @@ def test_holder_registered_abroad_without_siren(monkeypatch):
     # no SIREN: neither Wikidata nor GLEIF by SIREN
     assert lookups == []
     # the company is the holder, its parent only proposed as ultimate parent of the new company
-    assert (row["entreprise"], row["source"], row["siren"], row["lei"]) == ("Inter IKEA Systems B.V.", "inpi", "", "LEI_IKEA")
+    assert (row["entreprise"], row["source"], row["siren"], row["lei"]) == ("IKEA", "inpi", "", "LEI_IKEA")
     assert row["commentaire"].startswith("job 2026-10-02 : titulaire Inter IKEA Systems B.V. (société étrangère, pays NL)")
     assert (company["entreprise"], company["entreprise_id"], company["societe_mere_ultime"], company["source"]) == (
-        "Inter IKEA Systems B.V.", "LEI_IKEA", "Stichting INGKA Foundation", "inpi+gleif",
+        "IKEA", "LEI_IKEA", "Stichting INGKA Foundation", "inpi+gleif",
     )
 
     # the company already in the tab Entreprises (another IKEA brand of the same run): no registry lookup
@@ -512,8 +516,9 @@ def test_parse_nice_classes():
 
 
 def test_propose_row_company_is_the_holder():
-    """Free: the holder FREE is the company, not its parent Iliad, only proposed as the ultimate parent
-    company of the new row of the tab Entreprises; GLEIF (consolidation) before Wikidata."""
+    """Free: the holder FREE is the company, named like the brand, not its parent Iliad, only proposed as
+    the ultimate parent company of the new row of the tab Entreprises; GLEIF (consolidation) before
+    Wikidata."""
     holder = choose_holder([notice("5205049", "421938861", "FREE", {38})], None)
     row, company = propose_row(
         "Free",
@@ -524,11 +529,11 @@ def test_propose_row_company_is_the_holder():
         known=KnownCompanies(),
         today=TODAY,
     )
-    assert (row["entreprise"], row["source"], row["statut"]) == ("FREE", "inpi", "non vérifié")
+    assert (row["entreprise"], row["source"], row["statut"]) == ("Free", "inpi", "non vérifié")
     assert (row["siren"], row["lei"], row["numero_marque"]) == ("421938861", "LEI_FREE", "FR5205049")
     assert row["commentaire"] == "job 2026-10-02 : titulaire FREE (SIREN 421938861), marque FR5205049"
     assert company == {
-        "entreprise": "FREE",
+        "entreprise": "Free",
         "alias": "",
         "entreprise_id": "LEI_FREE",
         "siren": "421938861",
@@ -536,10 +541,35 @@ def test_propose_row_company_is_the_holder():
         "source": "inpi+gleif",
         "statut": "non vérifié",
         "commentaire": (
-            "job 2026-10-02 : titulaire de la marque Free (FR5205049), SIREN 421938861 ; "
+            "job 2026-10-02 : titulaire de la marque Free (FR5205049) : FREE, SIREN 421938861 ; "
             "GLEIF : société mère ultime ILIAD (LEI LEI_ILIAD) ; Wikidata : société mère ultime Iliad (Q1239347)"
         ),
     }
+
+
+def test_name_contains_brand():
+    assert name_contains_brand("FREE", "Free")
+    assert name_contains_brand("SOCIETE FRANCAISE DU RADIOTELEPHONE - SFR", "SFR")
+    assert name_contains_brand("Association des Centres Distributeurs E. LECLERC (A.C.D. Lec)", "E.Leclerc")
+    assert name_contains_brand("McDonald's International Property Company", "Mc Donald's")
+    assert name_contains_brand("L'OREAL", "L’Oréal")
+    # whole words only
+    assert not name_contains_brand("FREEDOM HOLDING", "Free")
+    assert not name_contains_brand("RENAULT s.a.s.", "Dacia")
+    assert not name_contains_brand("ACME", "")
+
+
+def test_propose_row_company_is_the_holder_when_named_differently():
+    """Dacia: the holder Renault does not contain the brand, it is the company; another brand of the same
+    holder (same SIREN) then gets the same company."""
+    holder = choose_holder([notice("1", "780129987", "RENAULT s.a.s.", {12})], None)
+    known = KnownCompanies()
+    row, company = propose_row("Dacia", holder, None, None, None, known, TODAY)
+    assert (row["entreprise"], company["entreprise"], company["siren"]) == ("RENAULT s.a.s.", "RENAULT s.a.s.", "780129987")
+    known.add(company["entreprise"], company["siren"])
+    renault = choose_holder([notice("2", "780129987", "RENAULT s.a.s.", {12})], None)
+    row, company = propose_row("Renault", renault, None, None, None, known, TODAY)
+    assert (row["entreprise"], company) == ("RENAULT s.a.s.", None)
 
 
 def test_propose_row_known_company_by_siren_or_name():

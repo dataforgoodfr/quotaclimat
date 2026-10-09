@@ -248,8 +248,8 @@ poetry run alembic -c rrs/alembic.ini current
 | Variable | Used by | Description |
 |---|---|---|
 | `SOURCE_COUNTRY_CODE` | `keyword_detection/import_cases.py` | `fra` (default) or `ext-fra`; selects the channel list to import |
-| `LABEL_STUDIO_PROJECT` | `keyword_detection/import_cases.py` | Label Studio project id used by `get_url_labelstudio`. Defaults: `6` (`fra`), `24` (`ext-fra`, prod). The dev flow sets `23` for the extended perimeter |
-| `LABEL_STUDIO_TAB_ID` | `keyword_detection/import_cases.py` | Label Studio tab id. Defaults: `121` (`fra`), `139` (`ext-fra`, prod). The dev flow sets `137` for the extended perimeter |
+| `LABEL_STUDIO_PROJECT` | `keyword_detection/import_cases.py` | Label Studio project id used by `get_url_labelstudio`. Defaults: `6` (`fra`), `24` (`ext-fra`, prod). Set explicitly by the `rrs-climate` flows from `source` (24 prod / 23 dev for `extended`) |
+| `LABEL_STUDIO_TAB_ID` | `keyword_detection/import_cases.py` | Label Studio tab id. Defaults: `121` (`fra`), `139` (`ext-fra`, prod). Set explicitly by the `rrs-climate` flows from `source` (139 prod / 137 dev for `extended`) |
 
 ### Database (RRS PostgreSQL)
 

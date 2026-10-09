@@ -7,12 +7,14 @@ The proposals have statut 'non vérifié': a human checks them afterwards, and c
 the holder is a holding (Auchan -> ELO), e.g. with an alias in the tab Entreprises.
 """
 
+import re
 from collections import Counter
 from dataclasses import dataclass, field
 from datetime import date
 
 from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import normalize
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi import (
+    COMPANY_NAME_WORDS,
     Notice,
     name_key,
 )
@@ -108,12 +110,22 @@ def company_name(holder: Holder, brand: str) -> str:
     return brand if name_contains_brand(holder.name, brand) else holder.name
 
 
+def core_key(name: str) -> str:
+    """name_key without the legal form and generic company words: "RENAULT s.a.s.", "Renault SA" and
+    "Groupe Renault" -> "renault". The whole name_key when nothing else is left."""
+    # dotted acronyms in one word: s.a.s. -> sas
+    name = re.sub(r"\b(?:\w\.){2,}", lambda m: m.group().replace(".", ""), name or "")
+    words = [w for w in normalize(name).split() if w not in COMPANY_NAME_WORDS]
+    return "".join(words) or name_key(name)
+
+
 @dataclass
 class KnownCompanies:
-    """Companies of the tab Entreprises (and the ones proposed during the run): official name by name_key
-    and by SIREN (optional column siren)."""
+    """Companies of the tab Entreprises (and the ones proposed during the run): official name by name_key,
+    by name without legal form (core_key) and by SIREN (optional column siren)."""
 
     by_key: dict[str, str] = field(default_factory=dict)
+    by_core: dict[str, str] = field(default_factory=dict)
     by_siren: dict[str, str] = field(default_factory=dict)
 
     @classmethod
@@ -126,15 +138,19 @@ class KnownCompanies:
 
     def add(self, name: str, siren: str = "") -> None:
         self.by_key.setdefault(name_key(name), name)
+        self.by_core.setdefault(core_key(name), name)
         if siren:
             self.by_siren.setdefault(siren.replace(" ", ""), name)
 
     def find(self, holder: Holder, brand: str) -> str | None:
-        """Name of the holder's company in the tab, by SIREN, else by name (company_name, or the holder's)."""
+        """Name of the holder's company in the tab, by SIREN, else by name (company_name, or the holder's),
+        else by name without legal form: Dacia, held by "RENAULT s.a.s.", gets the company "Renault" of the
+        brand Renault (another SIREN, or no column siren)."""
         return (
             (holder.siren and self.by_siren.get(holder.siren))
             or self.by_key.get(name_key(company_name(holder, brand)))
             or self.by_key.get(name_key(holder.name))
+            or self.by_core.get(core_key(holder.name))
         )
 
 

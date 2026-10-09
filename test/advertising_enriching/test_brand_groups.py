@@ -27,6 +27,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import (
     KnownCompanies,
     choose_holder,
+    core_key,
     name_contains_brand,
     parse_nice_classes,
     propose_row,
@@ -570,6 +571,26 @@ def test_propose_row_company_is_the_holder_when_named_differently():
     renault = choose_holder([notice("2", "780129987", "RENAULT s.a.s.", {12})], None)
     row, company = propose_row("Renault", renault, None, None, None, known, TODAY)
     assert (row["entreprise"], company) == ("RENAULT s.a.s.", None)
+
+
+def test_core_key():
+    assert core_key("RENAULT s.a.s.") == core_key("Renault SA") == core_key("Groupe Renault") == "renault"
+    assert core_key("Inter IKEA Systems B.V.") == "interikeasystems"
+    # nothing left without the company words: the whole name
+    assert core_key("Groupe SA") == "groupesa"
+
+
+def test_same_company_without_legal_form():
+    """Renault first (company named like the brand), then Dacia held by "RENAULT s.a.s." under another
+    SIREN (or without the column siren): the same company Renault, not a second one."""
+    known = KnownCompanies()
+    renault = choose_holder([notice("1", "441639465", "RENAULT SA", {12})], None)
+    row, company = propose_row("Renault", renault, None, None, None, known, TODAY)
+    assert row["entreprise"] == company["entreprise"] == "Renault"
+    known.add(company["entreprise"], company["siren"])
+    dacia = choose_holder([notice("2", "780129987", "RENAULT s.a.s.", {12})], None)
+    row, company = propose_row("Dacia", dacia, None, None, None, known, TODAY)
+    assert (row["entreprise"], company) == ("Renault", None)
 
 
 def test_propose_row_known_company_by_siren_or_name():

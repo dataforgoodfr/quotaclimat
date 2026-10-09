@@ -90,6 +90,8 @@ tasks:
       END_DATE: "{{ inputs.end_date ?? '' }}"
       POSTGRES_DB: "{{ inputs.source == 'extended' ? 'extended-perimeter' : 'barometre' }}"
       SOURCE_COUNTRY_CODE: "{{ inputs.source == 'extended' ? 'ext-fra' : 'fra' }}"
+      LABEL_STUDIO_PROJECT: "{{ inputs.source == 'extended' ? 23 : 6 }}"
+      LABEL_STUDIO_TAB_ID: "{{ inputs.source == 'extended' ? 137 : 121 }}"
       POSTGRES_PORT: "{{ inputs.source == 'extended' ? 18047 : 22737 }}"
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18047

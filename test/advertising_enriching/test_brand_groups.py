@@ -27,6 +27,8 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import (
     KnownCompanies,
     choose_holder,
+    core_key,
+    name_contains_brand,
     parse_nice_classes,
     propose_row,
 )
@@ -357,8 +359,10 @@ def test_brand_notices_european_and_international_when_no_french_one(monkeypatch
         ("Volkswagen Aktiengesellschaft", None, "DE", "WO1892865", {9}),
     ]
     holder = choose_holder(notices, None)
-    row, _ = propose_row("Volkswagen", holder, None, None, None, KnownCompanies(), TODAY)
-    assert (row["entreprise"], row["numero_marque"]) == ("Volkswagen Aktiengesellschaft", "WO1892865")
+    row = propose_row("Volkswagen", holder, None, None, None, KnownCompanies(), TODAY)
+    # the holder's name contains the brand: the brand is the company
+    assert row["entreprise"] == "Volkswagen"
+    assert "titulaire INPI Volkswagen Aktiengesellschaft (société étrangère, pays DE), marque WO1892865" in row["commentaires"]
 
 
 def test_eu_update_record_holder_from_search_result(monkeypatch):
@@ -459,21 +463,25 @@ def test_holder_registered_abroad_without_siren(monkeypatch):
         def brand_notices(self, brand):
             return [foreign, old]
 
-    row, company = run_module.propose("IKEA", "FHI", FakeInpi(), {"FHI": {20, 21}}, KnownCompanies(), TODAY)
+    row = run_module.propose("IKEA", "FHI", FakeInpi(), {"FHI": {20, 21}}, KnownCompanies(), TODAY)
     # no SIREN: neither Wikidata nor GLEIF by SIREN
     assert lookups == []
-    # the company is the holder, its parent only proposed as ultimate parent of the new company
-    assert (row["entreprise"], row["source"], row["siren"], row["lei"]) == ("Inter IKEA Systems B.V.", "inpi", "", "LEI_IKEA")
-    assert row["commentaire"].startswith("job 2026-10-02 : titulaire Inter IKEA Systems B.V. (société étrangère, pays NL)")
-    assert (company["entreprise"], company["entreprise_id"], company["societe_mere_ultime"], company["source"]) == (
-        "Inter IKEA Systems B.V.", "LEI_IKEA", "Stichting INGKA Foundation", "inpi+gleif",
+    assert (row["entreprise"], row["societe_mere_ultime"], row["e_statut"], row["smu_statut"]) == (
+        "IKEA", "Stichting INGKA Foundation", "non vérifié", "à vérifier",
     )
+    assert row["commentaires"].startswith(
+        "job 2026-10-02 : entreprise : titulaire INPI Inter IKEA Systems B.V. (société étrangère, pays NL)"
+    )
+    assert "LEI du titulaire trouvé par son nom et son pays : LEI_IKEA" in row["commentaires"]
 
-    # the company already in the tab Entreprises (another IKEA brand of the same run): no registry lookup
+    # the company already in the tab with its ultimate parent (another IKEA brand): reused, no lookup
     monkeypatch.setattr(registries, "gleif_lei_by_name", lambda name, country: lookups.append("gleif name"))
-    known = KnownCompanies.from_rows([{"entreprise": "Inter IKEA Systems B.V."}])
-    row, company = run_module.propose("IKEA Food", "FHI", FakeInpi(), {"FHI": {20}}, known, TODAY)
-    assert (row["entreprise"], company, lookups) == ("Inter IKEA Systems B.V.", None, [])
+    known = KnownCompanies.from_rows([{
+        "marque": "IKEA", "entreprise": "IKEA", "societe_mere_ultime": "INGKA", "smu_statut": "vérifié",
+    }])
+    row = run_module.propose("IKEA Food", "FHI", FakeInpi(), {"FHI": {20}}, known, TODAY)
+    assert (row["entreprise"], row["societe_mere_ultime"], row["smu_statut"], lookups) == ("IKEA", "INGKA", "vérifié", [])
+    assert "entreprise et société mère ultime reprises de la marque IKEA" in row["commentaires"]
 
 
 def test_choose_holder_by_sector_classes():
@@ -495,8 +503,8 @@ def test_choose_holder_by_sector_classes():
     # no trademark in the sector's classes (Amazon): all trademarks, flagged for the human check
     holder = choose_holder(notices, {12})
     assert (holder.siren, holder.in_sector_classes) == ("222", False)
-    row, _ = propose_row("Acme", holder, None, None, None, KnownCompanies(), TODAY)
-    assert "aucune marque lue dans les classes de Nice du secteur" in row["commentaire"]
+    row = propose_row("Acme", holder, None, None, None, KnownCompanies(), TODAY)
+    assert "aucune marque lue dans les classes de Nice du secteur" in row["commentaires"]
     assert choose_holder([], {12}) is None
 
 
@@ -511,76 +519,97 @@ def test_parse_nice_classes():
     assert parse_nice_classes(rows) == {"PCB": {3, 5, 8}, "AUT": {12, 37}, "FSI": {36}}
 
 
-def test_propose_row_company_is_the_holder():
-    """Free: the holder FREE is the company, not its parent Iliad, only proposed as the ultimate parent
-    company of the new row of the tab Entreprises; GLEIF (consolidation) before Wikidata."""
+def test_propose_row_company_and_ultimate_parent():
+    """Free: the holder FREE is the company, named like the brand; its ultimate parent from GLEIF
+    (consolidation) before Wikidata, to check."""
     holder = choose_holder([notice("5205049", "421938861", "FREE", {38})], None)
-    row, company = propose_row(
+    row = propose_row(
         "Free",
         holder,
-        wikidata_parent=Company("Iliad", "Q1239347"),
+        wikidata_parent=Company("Iliad Holding", "Q1239347"),
         gleif_lei=Company("FREE", "LEI_FREE"),
         gleif_parent=Company("ILIAD", "LEI_ILIAD"),
         known=KnownCompanies(),
         today=TODAY,
     )
-    assert (row["entreprise"], row["source"], row["statut"]) == ("FREE", "inpi", "non vérifié")
-    assert (row["siren"], row["lei"], row["numero_marque"]) == ("421938861", "LEI_FREE", "FR5205049")
-    assert row["commentaire"] == "job 2026-10-02 : titulaire FREE (SIREN 421938861), marque FR5205049"
-    assert company == {
-        "entreprise": "FREE",
-        "alias": "",
-        "entreprise_id": "LEI_FREE",
-        "siren": "421938861",
+    assert row == {
+        "marque": "Free",
+        "entreprise": "Free",
         "societe_mere_ultime": "ILIAD",
-        "source": "inpi+gleif",
-        "statut": "non vérifié",
-        "commentaire": (
-            "job 2026-10-02 : titulaire de la marque Free (FR5205049), SIREN 421938861 ; "
-            "GLEIF : société mère ultime ILIAD (LEI LEI_ILIAD) ; Wikidata : société mère ultime Iliad (Q1239347)"
+        "e_statut": "non vérifié",
+        "smu_statut": "à vérifier",
+        "commentaires": (
+            "job 2026-10-02 : entreprise : titulaire INPI FREE (SIREN 421938861), marque FR5205049 ; "
+            "LEI du titulaire trouvé par son SIREN : LEI_FREE ; GLEIF : société mère ultime ILIAD (LEI LEI_ILIAD) ; "
+            "Wikidata : société mère ultime Iliad Holding (Q1239347) ; société mère ultime retenue : gleif"
         ),
     }
 
 
-def test_propose_row_known_company_by_siren_or_name():
-    """Auchan: the holder ELO is in the tab Entreprises (alias Auchan): its official name, no new row."""
-    holder = choose_holder([notice("4922338", "476180625", "ELO", {35})], None)
-    known = KnownCompanies.from_rows([{"entreprise": "ELO SA", "siren": "476 180 625", "alias": "Auchan"}])
-    row, company = propose_row("Auchan", holder, None, None, None, known, TODAY)
-    assert (row["entreprise"], company) == ("ELO SA", None)
-    assert "entreprise déjà dans l'onglet Entreprises" in row["commentaire"]
-    by_name = KnownCompanies.from_rows([{"entreprise": "Elo"}])
-    assert propose_row("Auchan", holder, None, None, None, by_name, TODAY)[0]["entreprise"] == "Elo"
+def test_name_contains_brand():
+    assert name_contains_brand("FREE", "Free")
+    assert name_contains_brand("SOCIETE FRANCAISE DU RADIOTELEPHONE - SFR", "SFR")
+    assert name_contains_brand("Association des Centres Distributeurs E. LECLERC (A.C.D. Lec)", "E.Leclerc")
+    assert name_contains_brand("McDonald's International Property Company", "Mc Donald's")
+    assert name_contains_brand("L'OREAL", "L’Oréal")
+    # whole words only
+    assert not name_contains_brand("FREEDOM HOLDING", "Free")
+    assert not name_contains_brand("RENAULT s.a.s.", "Dacia")
+    assert not name_contains_brand("ACME", "")
+
+
+def test_core_key():
+    assert core_key("RENAULT s.a.s.") == core_key("Renault SA") == core_key("Groupe Renault") == "renault"
+    assert core_key("Inter IKEA Systems B.V.") == "interikeasystems"
+    # nothing left without the company words: the whole name
+    assert core_key("Groupe SA") == "groupesa"
+
+
+def test_company_already_in_the_tab():
+    """Dacia, held by "RENAULT s.a.s.": the company Renault already in the tab (written for the brand
+    Renault, or renamed by a human), with its ultimate parent and its status."""
+    known = KnownCompanies.from_rows([
+        {"marque": "Renault", "entreprise": "Renault", "societe_mere_ultime": "Renault SA (draft)", "smu_statut": "à vérifier"},
+        {"marque": "Alpine", "entreprise": "Renault", "societe_mere_ultime": "Renault SA", "smu_statut": "vérifié"},
+    ])
+    dacia = choose_holder([notice("2", "780129987", "RENAULT s.a.s.", {12})], None)
+    row = propose_row("Dacia", dacia, None, None, None, known, TODAY)
+    # the verified ultimate parent wins
+    assert (row["entreprise"], row["societe_mere_ultime"], row["e_statut"], row["smu_statut"]) == (
+        "Renault", "Renault SA", "non vérifié", "vérifié",
+    )
+    # a company without a holder named like it: the holder (no company in the tab)
+    row = propose_row("Dacia", dacia, None, None, None, KnownCompanies(), TODAY)
+    assert row["entreprise"] == "RENAULT s.a.s."
+    # a company in the tab without ultimate parent: reused, the ultimate parent looked up
+    known = KnownCompanies.from_rows([{"marque": "Renault", "entreprise": "Renault"}])
+    row = propose_row("Dacia", dacia, None, None, Company("RENAULT", "LEI_R"), known, TODAY)
+    assert (row["entreprise"], row["societe_mere_ultime"], row["smu_statut"]) == ("Renault", "RENAULT", "à vérifier")
+    assert "entreprise reprise de la marque Renault" in row["commentaires"]
 
 
 def test_propose_row_parents():
     holder = choose_holder([notice("1", "123", "ACME SAS", {3})], None)
     # no GLEIF parent: Wikidata
-    _, company = propose_row("Acme", holder, Company("Acme Group", "Q1"), None, None, KnownCompanies(), TODAY)
-    assert (company["societe_mere_ultime"], company["source"]) == ("Acme Group", "inpi+wikidata")
-    # Wikidata parent without label (SFR): not proposed, the QID kept in the commentaire
-    _, company = propose_row("Acme", holder, Company("", "Q20967159"), None, None, KnownCompanies(), TODAY)
-    assert (company["societe_mere_ultime"], company["source"]) == ("", "inpi")
-    assert "Wikidata : société mère ultime sans libellé (Q20967159)" in company["commentaire"]
-    _, alone = propose_row("Acme", holder, None, None, None, KnownCompanies(), TODAY)
-    assert (alone["societe_mere_ultime"], alone["source"]) == ("", "inpi")
-    assert "aucune société mère trouvée" in alone["commentaire"]
-    nothing, company = propose_row("Acme", None, None, None, None, KnownCompanies(), TODAY)
-    assert (nothing["marque"], nothing["entreprise"], nothing["statut"], company) == (
-        "Acme",
-        "",
-        "non vérifié",
-        None,
-    )
+    row = propose_row("Acme", holder, Company("Acme Group", "Q1"), None, None, KnownCompanies(), TODAY)
+    assert row["societe_mere_ultime"] == "Acme Group"
+    # Wikidata parent without label (SFR): not proposed, the QID kept in the commentaires
+    row = propose_row("Acme", holder, Company("", "Q20967159"), None, None, KnownCompanies(), TODAY)
+    assert row["societe_mere_ultime"] == ""
+    assert "Wikidata : société mère ultime sans libellé (Q20967159)" in row["commentaires"]
+    row = propose_row("Acme", holder, None, None, None, KnownCompanies(), TODAY)
+    assert "aucune société mère trouvée" in row["commentaires"]
+    nothing = propose_row("Acme", None, None, None, None, KnownCompanies(), TODAY)
+    assert (nothing["marque"], nothing["entreprise"]) == ("Acme", "")
 
 
 def test_print_rows_tab_separated():
     out = io.StringIO()
-    run_module.print_rows([{"marque": "Acme", "entreprise": "ACME\tSAS", "commentaire": "ligne 1\nligne 2", "x": "ignored"}], out)
+    run_module.print_rows([{"marque": "Acme", "entreprise": "ACME\tSAS", "commentaires": "ligne 1\nligne 2", "x": "ignored"}], out)
     lines = out.getvalue().splitlines()
     assert lines[0] == "----- BRAND GROUPS PROPOSALS (tab-separated) -----"
-    assert lines[1].split("\t")[:5] == ["marque", "entreprise", "source", "statut", "commentaire"]
-    assert lines[2].split("\t")[:5] == ["Acme", "ACME SAS", "", "", "ligne 1 ligne 2"]
+    assert lines[1].split("\t") == ["marque", "entreprise", "societe_mere_ultime", "e_statut", "smu_statut", "commentaires"]
+    assert lines[2].split("\t") == ["Acme", "ACME SAS", "", "", "", "ligne 1 ligne 2"]
     assert lines[3] == "----- END OF BRAND GROUPS PROPOSALS -----"
 
 
@@ -686,6 +715,40 @@ def test_wikidata_ultimate_parent_without_label(monkeypatch):
     assert 'wikibase:language "fr,en,mul"' in queries[0]
     # the chain of parent organizations up to an item without parent
     assert "wdt:P749+ ?parent" in queries[0] and "FILTER NOT EXISTS { ?parent wdt:P749 ?above }" in queries[0]
+
+
+def test_registry_retried_on_overloaded_service(monkeypatch):
+    """Wikidata query service answering HTTP 502: tried again after a wait."""
+    answers = iter([
+        FakeResponse(status_code=502),
+        FakeResponse(json_data={"results": {"bindings": [{
+            "parent": {"value": "http://www.wikidata.org/entity/Q1"}, "parentLabel": {"value": "Acme Group"},
+        }]}}),
+    ])
+    waits = []
+    monkeypatch.setattr(registries.time, "sleep", waits.append)
+    monkeypatch.setattr(registries.requests, "get", lambda url, headers, timeout, params=None: next(answers))
+    assert registries.wikidata_ultimate_parent("123456789", delay_sec=0) == Company("Acme Group", "Q1")
+    assert waits == [0, registries.RETRY_WAIT_SEC]
+
+
+def test_brand_proposed_when_a_registry_fails(monkeypatch):
+    """Wikidata still failing after its retries: the INPI holder is kept, the failure noted."""
+    def failing(siren):
+        raise registries.requests.HTTPError("502 Server Error: Bad Gateway")
+
+    monkeypatch.setattr(registries, "wikidata_ultimate_parent", failing)
+    monkeypatch.setattr(registries, "gleif_lei", lambda siren: None)
+    holder_notice = notice("1", "781452511", "ACME SAS", {3})
+
+    class FakeInpi:
+        def brand_notices(self, brand):
+            return [holder_notice]
+
+    row = run_module.propose("Acme", None, FakeInpi(), {}, KnownCompanies(), TODAY)
+    assert (row["entreprise"], row["societe_mere_ultime"]) == ("Acme", "")
+    assert "Wikidata indisponible pendant le job, société mère à rechercher" in row["commentaires"]
+    assert "aucune société mère trouvée" not in row["commentaires"]
 
 
 class FakeSheetsSession:

@@ -26,8 +26,8 @@ sources:
     spreadsheet: Dictionnaire_marques_secteurs
     table_prefix: ref_ome_
 
-  # brand -> company inventory (tab Marques) and companies with their ultimate parent company (tab
-  # Entreprises, only used when checked by a human), see my_dbt_project/models/advertising/ad_brands.sql
+  # brand -> company and ultimate parent company (tab Marques, the ultimate parent only used when checked
+  # by a human), see my_dbt_project/models/advertising/ad_brands.sql
   - name: inventaire_des_marques
     folder_env: EXTERNAL_SOURCES_DRIVE_FOLDER
     spreadsheet: Inventaires_des_marques
@@ -35,8 +35,6 @@ sources:
     sheets:
       Marques:
         table: ref_inventaire_marques
-      Entreprises:
-        table: ref_inventaire_entreprises
 
   # programs grids by emission (my_dbt_project/models/analytics/program.sql): tab
   # emissions-infos-en-continue -> ref_programmes_emissions_infos_en_continue (24h news channels)

@@ -15,6 +15,10 @@ GLEIF_URL = "https://api.gleif.org/api/v1"
 WIKIDATA_SPARQL_URL = "https://query.wikidata.org/sparql"
 USER_AGENT = "QuotaClimat-brand-groups/1.0 (https://www.quotaclimat.org)"
 TIMEOUT_SEC = 60
+# answers of an overloaded service (e.g. HTTP 502 of the Wikidata query service), retried after a wait
+RETRY_STATUSES = {429, 500, 502, 503, 504}
+MAX_ATTEMPTS = 3
+RETRY_WAIT_SEC = 10
 
 
 @dataclass
@@ -24,8 +28,21 @@ class Company:
 
 
 def _get(url: str, delay_sec: float, **kwargs) -> requests.Response:
-    time.sleep(delay_sec)
-    return requests.get(url, headers={"User-Agent": USER_AGENT, **kwargs.pop("headers", {})}, timeout=TIMEOUT_SEC, **kwargs)
+    """GET, tried again on an overloaded service answer or a network error, up to MAX_ATTEMPTS times."""
+    headers = {"User-Agent": USER_AGENT, **kwargs.pop("headers", {})}
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        time.sleep(delay_sec if attempt == 1 else RETRY_WAIT_SEC * (attempt - 1))
+        try:
+            response = requests.get(url, headers=headers, timeout=TIMEOUT_SEC, **kwargs)
+        except (requests.ConnectionError, requests.Timeout):
+            if attempt == MAX_ATTEMPTS:
+                raise
+            logging.warning("%s: network error, attempt %s/%s", url.split("?")[0], attempt, MAX_ATTEMPTS)
+            continue
+        if response.status_code not in RETRY_STATUSES or attempt == MAX_ATTEMPTS:
+            return response
+        logging.warning("%s: HTTP %s, attempt %s/%s", url.split("?")[0], response.status_code, attempt, MAX_ATTEMPTS)
+    return response
 
 
 def _single_lei(params: dict, description: str, delay_sec: float) -> Company | None:

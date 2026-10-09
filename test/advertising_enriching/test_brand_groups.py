@@ -718,6 +718,40 @@ def test_wikidata_ultimate_parent_without_label(monkeypatch):
     assert "wdt:P749+ ?parent" in queries[0] and "FILTER NOT EXISTS { ?parent wdt:P749 ?above }" in queries[0]
 
 
+def test_registry_retried_on_overloaded_service(monkeypatch):
+    """Wikidata query service answering HTTP 502: tried again after a wait."""
+    answers = iter([
+        FakeResponse(status_code=502),
+        FakeResponse(json_data={"results": {"bindings": [{
+            "parent": {"value": "http://www.wikidata.org/entity/Q1"}, "parentLabel": {"value": "Acme Group"},
+        }]}}),
+    ])
+    waits = []
+    monkeypatch.setattr(registries.time, "sleep", waits.append)
+    monkeypatch.setattr(registries.requests, "get", lambda url, headers, timeout, params=None: next(answers))
+    assert registries.wikidata_ultimate_parent("123456789", delay_sec=0) == Company("Acme Group", "Q1")
+    assert waits == [0, registries.RETRY_WAIT_SEC]
+
+
+def test_brand_proposed_when_a_registry_fails(monkeypatch):
+    """Wikidata still failing after its retries: the INPI holder is kept, the failure noted."""
+    def failing(siren):
+        raise registries.requests.HTTPError("502 Server Error: Bad Gateway")
+
+    monkeypatch.setattr(registries, "wikidata_ultimate_parent", failing)
+    monkeypatch.setattr(registries, "gleif_lei", lambda siren: None)
+    holder_notice = notice("1", "781452511", "ACME SAS", {3})
+
+    class FakeInpi:
+        def brand_notices(self, brand):
+            return [holder_notice]
+
+    row, company = run_module.propose("Acme", None, FakeInpi(), {}, KnownCompanies(), TODAY)
+    assert (row["entreprise"], company["societe_mere_ultime"]) == ("Acme", "")
+    assert "Wikidata indisponible pendant le job, société mère à rechercher" in company["commentaire"]
+    assert "aucune société mère trouvée" not in company["commentaire"]
+
+
 class FakeSheetsSession:
     def __init__(self, tabs):
         self.tabs = tabs

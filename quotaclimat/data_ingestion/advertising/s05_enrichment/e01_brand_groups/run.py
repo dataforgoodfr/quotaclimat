@@ -44,6 +44,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.shee
     COMPANIES_TAB,
     BrandInventorySheet,
 )
+import requests
 from sqlalchemy import text
 
 from postgres.database_connection import connect_to_db
@@ -137,19 +138,31 @@ def propose(
         inpi.brand_notices(brand), nice_classes.get(sector) if sector else None
     )
     wikidata_parent = gleif_lei = gleif_parent = None
+    # a registry still failing after its retries does not lose the INPI holder (and its quota): the brand
+    # is proposed without the answers of this registry, noted in the commentaire
+    errors: list[str] = []
+
+    def lookup(source: str, function, *args):
+        try:
+            return function(*args)
+        except requests.RequestException as e:
+            logging.warning("Brand %s: %s lookup failed: %s", brand, source, e)
+            errors.append(source)
+            return None
+
     if holder is None or known.find(holder, brand):
         # no company, or a company already in the tab: no registry lookup needed
         pass
     elif holder.siren:
-        wikidata_parent = registries.wikidata_ultimate_parent(holder.siren)
-        gleif_lei = registries.gleif_lei(holder.siren)
+        wikidata_parent = lookup("Wikidata", registries.wikidata_ultimate_parent, holder.siren)
+        gleif_lei = lookup("GLEIF", registries.gleif_lei, holder.siren)
     elif holder.country:
         # company registered abroad: no SIREN, its LEI by its exact legal name and country
-        gleif_lei = registries.gleif_lei_by_name(holder.name, holder.country)
+        gleif_lei = lookup("GLEIF", registries.gleif_lei_by_name, holder.name, holder.country)
     if gleif_lei:
-        gleif_parent = registries.gleif_ultimate_parent(gleif_lei.identifier)
+        gleif_parent = lookup("GLEIF", registries.gleif_ultimate_parent, gleif_lei.identifier)
     return propose_row(
-        brand, holder, wikidata_parent, gleif_lei, gleif_parent, known, today
+        brand, holder, wikidata_parent, gleif_lei, gleif_parent, known, today, unavailable=errors
     )
 
 

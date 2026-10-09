@@ -157,6 +157,7 @@ def propose_row(
     gleif_parent: Company | None,
     known: KnownCompanies,
     today: date,
+    unavailable: list[str] | None = None,
 ) -> tuple[dict[str, str], dict[str, str] | None]:
     """Row of the tab Marques, and row of the tab Entreprises when the company is not in it yet. The
     company is the holder (company_name), under its name in the tab Entreprises when it is there. The ultimate
@@ -205,7 +206,9 @@ def propose_row(
     if wikidata_parent:
         label = wikidata_parent.name or "sans libellé"
         notes.append(f"Wikidata : société mère ultime {label} ({wikidata_parent.identifier})")
-    if not parent:
+    if unavailable:
+        notes.append(f"{', '.join(sorted(set(unavailable)))} indisponible pendant le job, société mère à rechercher")
+    elif not parent:
         notes.append("aucune société mère trouvée")
     company_row = {
         "entreprise": company,

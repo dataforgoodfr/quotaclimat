@@ -18,7 +18,6 @@ CREDENTIALS_ENV = "GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON"
 FOLDER_ENV = "EXTERNAL_SOURCES_DRIVE_FOLDER"
 SPREADSHEET_NAME = "Inventaires_des_marques"
 BRANDS_TAB = "Marques"
-COMPANIES_TAB = "Entreprises"
 SCOPES = [
     "https://www.googleapis.com/auth/drive.metadata.readonly",  # find the spreadsheet in the folder
     "https://www.googleapis.com/auth/spreadsheets",  # read it and append rows

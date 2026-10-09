@@ -440,30 +440,22 @@ models:
         description: The ad tunnel of the occurrence is entirely inside a monitored program (see ad_tunnel_programs).
       - name: program_before
         description: Monitored program in progress or just before the ad tunnel (see ad_tunnel_programs).
-      - name: program_before_type
-        description: Type of program_before.
       - name: program_before_gap_sec
         description: Seconds between the end of program_before and the tunnel start, 0 when in progress.
       - name: program_after
         description: Monitored program just after the ad tunnel, empty when the tunnel is inside program_before.
-      - name: program_after_type
-        description: Type of program_after.
       - name: program_after_gap_sec
         description: Seconds between the tunnel end and the start of program_after, 0 when it starts during the tunnel.
-      - name: emission_id
-        description: >
-          analytics.program.id of the emission on the air at the occurrence (Paris time, Programmes Google
-          Sheet), NULL outside the emissions listed there.
-      - name: emission
-        description: Name of that emission.
-      - name: emission_presentation
-        description: Presenters of that emission.
-      - name: emission_rediffusion
-        description: True when that emission is a rerun.
-      - name: emission_start
-        description: Start time HH:MM of that emission.
-      - name: emission_end
-        description: End time HH:MM of that emission.
+      - name: inside_emission
+        description: The ad tunnel of the occurrence is entirely inside an emission (see ad_tunnel_programs).
+      - name: emission_before
+        description: Emission in progress or just before the ad tunnel (analytics.program, see ad_tunnel_programs).
+      - name: emission_before_gap_sec
+        description: Seconds between the end of emission_before and the tunnel start, 0 when in progress.
+      - name: emission_after
+        description: Emission just after the ad tunnel, empty when the tunnel is inside emission_before.
+      - name: emission_after_gap_sec
+        description: Seconds between the tunnel end and the start of emission_after, 0 when it starts during the tunnel.
 
   - name: ad_tunnel_programs
     description: >
@@ -472,8 +464,10 @@ models:
       grid of the channel). program_before: last program started before the tunnel start, in progress
       or ended at most ad_program_window_minutes (dbt var, default 60) before. program_after: first
       program started after the tunnel start, at most ad_program_window_minutes after the tunnel end,
-      left empty when the tunnel is entirely inside program_before. Occurrence dates are read in the
-      ad_occurrence_timezone time zone (dbt var, default UTC).
+      left empty when the tunnel is entirely inside program_before. Same for the emissions of
+      analytics.program (Programmes Google Sheet, Paris local time): emission_before / emission_after,
+      a tunnel between two emissions has both. Occurrence dates are read in the ad_occurrence_timezone
+      time zone (dbt var, default UTC).
     columns:
       - name: tunnel_id
         description: Tunnel identifier (ad_tunnels.tunnel_id).
@@ -500,6 +494,22 @@ models:
         description: Type of the program after.
       - name: program_after_gap_sec
         description: Seconds between the tunnel end and the start of the program after, 0 when it starts during the tunnel.
+      - name: inside_emission
+        description: The tunnel is entirely inside emission_before.
+        tests:
+          - not_null
+      - name: emission_before_id
+        description: analytics.program.id of the emission before (presenters, rerun...).
+      - name: emission_before
+        description: Name of the emission before (analytics.program.emission).
+      - name: emission_before_gap_sec
+        description: Seconds between the end of the emission before and the tunnel start, 0 when in progress.
+      - name: emission_after_id
+        description: analytics.program.id of the emission after.
+      - name: emission_after
+        description: Name of the emission after.
+      - name: emission_after_gap_sec
+        description: Seconds between the tunnel end and the start of the emission after, 0 when it starts during the tunnel.
 
   - name: ad_occurrence_mesinfo
     description: >
@@ -701,7 +711,3 @@ models:
         description: Presenters of that emission.
       - name: emission_rediffusion
         description: True when that emission is a rerun.
-      - name: emission_start
-        description: Start time HH:MM of that emission.
-      - name: emission_end
-        description: End time HH:MM of that emission.

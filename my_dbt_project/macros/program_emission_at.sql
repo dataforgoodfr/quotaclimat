@@ -9,9 +9,7 @@ SELECT DISTINCT ON (r.row_id)
     pe.id AS emission_id,
     pe.emission,
     pe.presentation,
-    pe.rediffusion,
-    pe.start AS emission_start,
-    pe."end" AS emission_end
+    pe.rediffusion
 FROM (
     SELECT
         {{ id_column }} AS row_id,

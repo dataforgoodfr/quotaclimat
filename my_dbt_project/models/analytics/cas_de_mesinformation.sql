@@ -41,9 +41,7 @@ SELECT
     e.emission_id,
     e.emission,
     e.presentation AS emission_presentation,
-    e.rediffusion AS emission_rediffusion,
-    e.emission_start,
-    e.emission_end
+    e.rediffusion AS emission_rediffusion
 FROM mesinfo m
 LEFT JOIN channels c ON c.channel_name = m.data_item_channel_name AND c.country = m.country
 LEFT JOIN mesinfo_emissions e ON e.task_aggregate_id = m.task_aggregate_id

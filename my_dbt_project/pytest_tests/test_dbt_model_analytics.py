@@ -208,7 +208,11 @@ def create_advertising_tables(db_connection):
                 -- Monday 04:00 Paris: Nuit LCI of Sunday (23:30 - 06:30)
                 ('emission_pytest_after_midnight', NULL, '2025-04-07 02:00:00', 'lci', 'pytest_ad_1'),
                 -- Saturday 12:00 Paris: no bfmtv emission in the test sheet
-                ('emission_pytest_none', NULL, '2025-04-05 10:00:00', 'bfmtv', 'pytest_ad_1')
+                ('emission_pytest_none', NULL, '2025-04-05 10:00:00', 'bfmtv', 'pytest_ad_1'),
+                -- Monday 08:29:50 Paris, 30 s tunnel: from BFM Première to Face à face (08:30)
+                ('emission_pytest_transition', NULL, '2025-04-07 06:29:50', 'bfmtv', 'pytest_ad_1'),
+                -- Monday 09:10 Paris: 10 min after Face à face (08:30 - 09:00), no emission after
+                ('emission_pytest_after_end', NULL, '2025-04-07 07:10:00', 'bfmtv', 'pytest_ad_1')
         """)
     db_connection.commit()
     yield
@@ -265,6 +269,7 @@ def load_test_external_sources():
         "emissions-infos-en-continue": [
             ["channel_name", "emission", "presentation", "weekday", "start", "end", "rediffusion", "grid_start", "grid_end"],
             ["bfmtv", "BFM Première", "Pascale de La Tour du Pin, Mathieu Coache", "weekday", "06:00", "08:30"],
+            ["bfmtv", "Face à face", "Apolline de Malherbe", "weekday", "08:30", "09:00"],
             # ends after the 6:00-23:00 program of the news channels, midnight written 24:00
             ["bfmtv", "BFM Grand Soir", "Maxime Switek", "1|2|3|4", "21:00", "24:00"],
             # starts before the program
@@ -410,6 +415,7 @@ def test_program(db_connection):
     assert rows == [
         ("bfmtv", "BFM Grand Soir", [1, 2, 3, 4], "BFM TV", True, False, 180, no_start, no_end, news, 120, 4),
         ("bfmtv", "BFM Première", [1, 2, 3, 4, 5], "BFM TV", True, False, 150, no_start, no_end, news, 150, 5),
+        ("bfmtv", "Face à face", [1, 2, 3, 4, 5], "BFM TV", True, False, 30, no_start, no_end, news, 30, 5),
         ("franceinfotv", "Le fil info", [6, 7], "France Info TV", True, False, 540, no_start, no_end, news, 540, 2),
         ("franceinfotv", "Reprise France 24", [1, 2, 3, 4, 5, 6, 7], "France Info TV", True, False, 390, no_start, no_end, news, 30, 7),
         ("itele", "Face à Michel Onfray", [6], "CNews", True, True, 60, no_start, no_end, news, 60, 1),
@@ -422,9 +428,11 @@ def test_program(db_connection):
 
 
 def test_publicites_emissions(db_connection):
+    """Emissions before / after the ad tunnel of each occurrence, same logic as the programs."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT occurrence_id, emission, emission_presentation, emission_rediffusion, emission_start, emission_end
+            SELECT occurrence_id, inside_emission, emission_before, emission_before_gap_sec,
+                emission_after, emission_after_gap_sec
             FROM analytics.publicites
             WHERE occurrence_id LIKE 'emission_pytest_%'
             ORDER BY occurrence_id
@@ -432,11 +440,26 @@ def test_publicites_emissions(db_connection):
         rows = cur.fetchall()
     # occurrence_date in UTC, emission grids in Paris time (summer and winter time)
     assert rows == [
-        ("emission_pytest_after_midnight", "Nuit LCI", None, False, "23:30", "06:30"),
-        ("emission_pytest_none", None, None, None, None, None),
-        ("emission_pytest_summer", "BFM Première", "Pascale de La Tour du Pin, Mathieu Coache", False, "06:00", "08:30"),
-        ("emission_pytest_winter", "BFM Première", "Pascale de La Tour du Pin, Mathieu Coache", False, "06:00", "08:30"),
+        ("emission_pytest_after_end", False, "Face à face", 600, None, None),
+        # Nuit LCI of Sunday, ending Monday 06:30
+        ("emission_pytest_after_midnight", True, "Nuit LCI", 0, None, None),
+        ("emission_pytest_none", False, None, None, None, None),
+        ("emission_pytest_summer", True, "BFM Première", 0, None, None),
+        # in progress before, starting during the tunnel after
+        ("emission_pytest_transition", False, "BFM Première", 0, "Face à face", 0),
+        ("emission_pytest_winter", True, "BFM Première", 0, None, None),
     ]
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT b.emission, b.presentation, a.emission
+            FROM analytics.publicites p
+            JOIN advertising.ad_tunnel_programs tp ON tp.tunnel_id = p.tunnel_id
+            JOIN analytics.program b ON b.id = tp.emission_before_id
+            JOIN analytics.program a ON a.id = tp.emission_after_id
+            WHERE p.occurrence_id = 'emission_pytest_transition'
+        """)
+        # the other columns of the emissions through ad_tunnel_programs
+        assert cur.fetchall() == [("BFM Première", "Pascale de La Tour du Pin, Mathieu Coache", "Face à face")]
 
 
 def test_cas_de_mesinformation(db_connection):
@@ -598,12 +621,14 @@ def test_publicites_programs(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT
-                occurrence_id, inside_program,
-                program_before, program_before_type, program_before_gap_sec,
-                program_after, program_after_type, program_after_gap_sec
-            FROM analytics.publicites
-            WHERE occurrence_id LIKE 'program_pytest_%'
-            ORDER BY occurrence_id
+                p.occurrence_id, p.inside_program,
+                p.program_before, tp.program_before_type, p.program_before_gap_sec,
+                p.program_after, tp.program_after_type, p.program_after_gap_sec
+            FROM analytics.publicites p
+            -- the program types are in ad_tunnel_programs only
+            JOIN advertising.ad_tunnel_programs tp ON tp.tunnel_id = p.tunnel_id
+            WHERE p.occurrence_id LIKE 'program_pytest_%'
+            ORDER BY p.occurrence_id
         """)
         rows = cur.fetchall()
     assert rows == [

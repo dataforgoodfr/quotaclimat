@@ -437,37 +437,30 @@ models:
       - name: nearest_mesinfo_task_aggregate_id
         description: Label Studio task (analytics.task_global_completion.task_aggregate_id) of that misinformation.
       - name: inside_program
-        description: The ad tunnel of the occurrence is entirely inside a monitored program (see ad_tunnel_programs).
+        description: The ad tunnel of the occurrence is entirely inside program_before (see ad_tunnel_programs).
+      - name: program_before_id
+        description: analytics.program.id of the program in progress or just before the ad tunnel (see ad_tunnel_programs).
       - name: program_before
-        description: Monitored program in progress or just before the ad tunnel (see ad_tunnel_programs).
+        description: Label of program_before (analytics.program.label).
       - name: program_before_gap_sec
         description: Seconds between the end of program_before and the tunnel start, 0 when in progress.
+      - name: program_after_id
+        description: analytics.program.id of the program just after the ad tunnel, empty when the tunnel is inside program_before.
       - name: program_after
-        description: Monitored program just after the ad tunnel, empty when the tunnel is inside program_before.
+        description: Label of program_after.
       - name: program_after_gap_sec
         description: Seconds between the tunnel end and the start of program_after, 0 when it starts during the tunnel.
-      - name: inside_emission
-        description: The ad tunnel of the occurrence is entirely inside an emission (see ad_tunnel_programs).
-      - name: emission_before
-        description: Emission in progress or just before the ad tunnel (analytics.program, see ad_tunnel_programs).
-      - name: emission_before_gap_sec
-        description: Seconds between the end of emission_before and the tunnel start, 0 when in progress.
-      - name: emission_after
-        description: Emission just after the ad tunnel, empty when the tunnel is inside emission_before.
-      - name: emission_after_gap_sec
-        description: Seconds between the tunnel end and the start of emission_after, 0 when it starts during the tunnel.
 
   - name: ad_tunnel_programs
     description: >
-      One row per ad tunnel (see ad_tunnels) with the monitored programs around it, from the French
-      program grids of program_metadata (Paris local time, only the monitored programs, not the full
-      grid of the channel). program_before: last program started before the tunnel start, in progress
-      or ended at most ad_program_window_minutes (dbt var, default 60) before. program_after: first
-      program started after the tunnel start, at most ad_program_window_minutes after the tunnel end,
-      left empty when the tunnel is entirely inside program_before. Same for the emissions of
-      analytics.program (Programmes Google Sheet, Paris local time): emission_before / emission_after,
-      a tunnel between two emissions has both. Occurrence dates are read in the ad_occurrence_timezone
-      time zone (dbt var, default UTC).
+      One row per ad tunnel (see ad_tunnels) with the programs around it, from the French grids of
+      analytics.program (Paris local time): the emissions of the Programmes Google Sheet, else the
+      monitored programs of program_metadata (not the full grid of the channel). program_before: last
+      program started before the tunnel start, in progress or ended at most ad_program_window_minutes (dbt
+      var, default 60) before. program_after: first program started after the tunnel start, at most
+      ad_program_window_minutes after the tunnel end, left empty when the tunnel is entirely inside
+      program_before: a tunnel between two programs has both. Occurrence dates are read in the
+      ad_occurrence_timezone time zone (dbt var, default UTC).
     columns:
       - name: tunnel_id
         description: Tunnel identifier (ad_tunnels.tunnel_id).
@@ -482,34 +475,23 @@ models:
         description: The tunnel is entirely inside program_before.
         tests:
           - not_null
+      - name: program_before_id
+        description: analytics.program.id of the program before.
+        tests:
+          - relationships:
+              arguments:
+                to: ref('program')
+                field: id
       - name: program_before
-        description: Name of the program before (program_metadata.channel_program).
-      - name: program_before_type
-        description: Type of the program before (program_metadata.channel_program_type).
+        description: Label of the program before (analytics.program.label).
       - name: program_before_gap_sec
         description: Seconds between the end of the program before and the tunnel start, 0 when in progress.
+      - name: program_after_id
+        description: analytics.program.id of the program after.
       - name: program_after
-        description: Name of the program after.
-      - name: program_after_type
-        description: Type of the program after.
+        description: Label of the program after.
       - name: program_after_gap_sec
         description: Seconds between the tunnel end and the start of the program after, 0 when it starts during the tunnel.
-      - name: inside_emission
-        description: The tunnel is entirely inside emission_before.
-        tests:
-          - not_null
-      - name: emission_before_id
-        description: analytics.program.id of the emission before (presenters, rerun...).
-      - name: emission_before
-        description: Name of the emission before (analytics.program.emission).
-      - name: emission_before_gap_sec
-        description: Seconds between the end of the emission before and the tunnel start, 0 when in progress.
-      - name: emission_after_id
-        description: analytics.program.id of the emission after.
-      - name: emission_after
-        description: Name of the emission after.
-      - name: emission_after_gap_sec
-        description: Seconds between the tunnel end and the start of the emission after, 0 when it starts during the tunnel.
 
   - name: ad_occurrence_mesinfo
     description: >
@@ -603,17 +585,29 @@ models:
 
   - name: program
     description: >
-      In the analytics schema. One row per emission and per day of the 24h news channels, from the Programmes Google Sheet (tab
-      emissions-infos-en-continue, seed ref_programmes_emissions_infos_en_continue): the weekday column
-      ('*', 'weekday', 'weekend' or days 1 to 7 separated by '|') is split into one row per day. With the
-      channel attributes and the monitored program (program_metadata) the emission is broadcast in: the
-      program of the same channel and day overlapping the emission the most, on the most recent grid.
+      In the analytics schema. Grid of the monitored programs where each row is one emission, one row per
+      emission and per day. source 'emission': the emissions of the Programmes Google Sheet (tab
+      emissions-infos-en-continue, seed ref_programmes_emissions_infos_en_continue, 24h news channels), the
+      weekday column ('*', 'weekday', 'weekend' or days 1 to 7 separated by '|') split into one row per day,
+      each with the monitored program (program_metadata) it is broadcast in: the program of the same channel
+      and day overlapping the emission the most, on the most recent grid. source 'program': the other rows
+      of program_metadata, each program being its own emission; a program with emissions is replaced by
+      them from the first day of its emissions.
     columns:
       - name: id
-        description: md5 of channel_name, weekday, start and grid_start.
+        description: >
+          Emission: md5 of channel_name, weekday, start and grid_start. Program: program_metadata.id.
         tests:
           - unique
           - not_null
+      - name: source
+        description: emission (Programmes Google Sheet) or program (program_metadata).
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['emission', 'program']
+      - name: label
+        description: "Condensed description: program / emission (presenters) [rediffusion], the program left out when it is the emission."
       - name: channel_name
         description: Technical channel identifier, as in program_metadata (e.g. bfmtv, itele).
         tests:
@@ -701,13 +695,10 @@ models:
         description: 24h news channel (program_metadata).
       - name: radio
         description: Radio channel (program_metadata).
-      - name: emission_id
+      - name: program_id
         description: >
-          analytics.program.id of the emission on the air at the start of the segment (data_item_start) (Paris time, Programmes Google
-          Sheet), NULL outside the emissions listed there.
-      - name: emission
-        description: Name of that emission.
-      - name: emission_presentation
-        description: Presenters of that emission.
-      - name: emission_rediffusion
-        description: True when that emission is a rerun.
+          analytics.program.id of the program on the air at the start of the segment (data_item_start, Paris
+          time): an emission of the Programmes Google Sheet, else a program of program_metadata. French
+          channels only, NULL outside the programs of analytics.program.
+      - name: program
+        description: Label of that program (analytics.program.label).

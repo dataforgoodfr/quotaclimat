@@ -5,8 +5,13 @@
     )
 }}
 
-{#- analytics.program: one row per emission and per day, from the Programmes Google Sheet (tab emissions-infos-en-continue,
-    24h news channels), with its channel and the monitored program of program_metadata it is broadcast in.
+{#- analytics.program: the grid of the monitored programs where each row is one emission, one row per
+    emission and per day (source):
+    - 'emission': the emissions of the Programmes Google Sheet (tab emissions-infos-en-continue, 24h news
+      channels), each with the monitored program of program_metadata it is broadcast in;
+    - 'program': the other programs of program_metadata, each program being its own emission. A program
+      with emissions is replaced by them, from the first day of its emissions (grid_start).
+    label: program / emission (presenters) [rediffusion], the program left out when it is the emission.
     Columns of the tab:
     - weekday: '*' (every day), 'weekday' (Monday to Friday), 'weekend' (Saturday and Sunday) or days
       1 (Monday) to 7 (Sunday) separated by '|', e.g. '1|2|3|4'. Numbered like program_metadata.weekday,
@@ -100,6 +105,11 @@ programs AS (
     SELECT
         id,
         channel_name,
+        channel_title,
+        country,
+        public,
+        infocontinue,
+        radio,
         weekday,
         channel_program,
         channel_program_type,
@@ -163,33 +173,115 @@ emission_programs AS (
     FROM program_overlaps
     WHERE overlap_minutes > 0
     ORDER BY id, program_grid_end DESC, overlap_minutes DESC, program_grid_start DESC, program_metadata_id
+),
+emission_rows AS (
+    SELECT
+        e.id,
+        'emission' AS source,
+        e.channel_name,
+        c.channel_title,
+        c.country,
+        c.public,
+        c.infocontinue,
+        c.radio,
+        e.weekday,
+        e.emission,
+        e.presentation,
+        e.rediffusion,
+        e.start,
+        e."end",
+        e.start_minute,
+        e.end_minute,
+        e.grid_start,
+        e.grid_end,
+        ep.program_metadata_id,
+        ep.channel_program,
+        ep.channel_program_type,
+        ep.program_start,
+        ep.program_end,
+        COALESCE(ep.overlap_minutes, 0) AS program_overlap_minutes
+    FROM emission_days e
+    LEFT JOIN channels c ON c.channel_name = e.channel_name
+    LEFT JOIN emission_programs ep ON ep.id = e.id
+),
+-- programs with emissions: replaced from the first day of their emissions (all days when one has no grid_start)
+replaced_programs AS (
+    SELECT
+        program_metadata_id,
+        CASE WHEN BOOL_AND(grid_start IS NOT NULL) THEN MIN(grid_start) END AS first_emission_day
+    FROM emission_rows
+    WHERE program_metadata_id IS NOT NULL
+    GROUP BY program_metadata_id
+),
+program_rows AS (
+    SELECT
+        p.id,
+        'program' AS source,
+        p.channel_name,
+        p.channel_title,
+        p.country,
+        p.public,
+        p.infocontinue,
+        p.radio,
+        p.weekday,
+        p.channel_program AS emission,
+        NULL::text AS presentation,
+        FALSE AS rediffusion,
+        p.start,
+        p."end",
+        p.start_minute,
+        p.end_minute_of_day
+            + CASE WHEN p.end_minute_of_day <= p.start_minute THEN 1440 ELSE 0 END AS end_minute,
+        p.program_grid_start AS grid_start,
+        CASE WHEN r.program_metadata_id IS NULL THEN p.program_grid_end
+            ELSE LEAST(p.program_grid_end, r.first_emission_day - 1)
+        END AS grid_end,
+        p.id AS program_metadata_id,
+        p.channel_program,
+        p.channel_program_type,
+        p.start AS program_start,
+        p."end" AS program_end,
+        p.end_minute_of_day + CASE WHEN p.end_minute_of_day <= p.start_minute THEN 1440 ELSE 0 END
+            - p.start_minute AS program_overlap_minutes
+    FROM programs p
+    LEFT JOIN replaced_programs r ON r.program_metadata_id = p.id
+    WHERE r.program_metadata_id IS NULL
+       OR r.first_emission_day > p.program_grid_start
+),
+grid AS (
+    SELECT * FROM emission_rows
+    UNION ALL
+    SELECT * FROM program_rows
 )
 SELECT
-    e.id,
-    e.channel_name,
-    c.channel_title,
-    c.country,
-    c.public,
-    c.infocontinue,
-    c.radio,
-    e.weekday,
-    e.emission,
-    e.presentation,
-    e.rediffusion,
-    e.start,
-    e."end",
+    id,
+    source,
+    channel_name,
+    channel_title,
+    country,
+    public,
+    infocontinue,
+    radio,
+    weekday,
+    CONCAT_WS(' / ',
+        CASE WHEN channel_program IS DISTINCT FROM emission THEN channel_program END,
+        emission || COALESCE(' (' || presentation || ')', '')
+    ) || CASE WHEN rediffusion THEN ' [rediffusion]' ELSE '' END AS label,
+    emission,
+    presentation,
+    rediffusion,
+    start,
+    "end",
     -- minutes since the start of the day (Paris time), end beyond 1440 when ending after midnight
-    e.start_minute,
-    e.end_minute,
-    e.end_minute - e.start_minute AS duration_minutes,
-    e.grid_start,
-    e.grid_end,
-    ep.program_metadata_id,
-    ep.channel_program,
-    ep.channel_program_type,
-    ep.program_start,
-    ep.program_end,
-    COALESCE(ep.overlap_minutes, 0) AS program_overlap_minutes
-FROM emission_days e
-LEFT JOIN channels c ON c.channel_name = e.channel_name
-LEFT JOIN emission_programs ep ON ep.id = e.id
+    start_minute,
+    end_minute,
+    end_minute - start_minute AS duration_minutes,
+    grid_start,
+    grid_end,
+    program_metadata_id,
+    channel_program,
+    channel_program_type,
+    program_start,
+    program_end,
+    program_overlap_minutes
+FROM grid

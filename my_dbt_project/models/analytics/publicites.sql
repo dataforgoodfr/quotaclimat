@@ -10,8 +10,8 @@
     reference tables are the ref_ome_* seeds, downloaded from the private Google Sheet
     before dbt runs (see my_dbt_project/external_sources.yml): where they are missing (e.g. extended perimeter),
     labels are left empty instead of failing the run.
-    Programs and emissions (Programmes Google Sheet) before / after the tunnel of the occurrence: names
-    and gaps only, the other columns (types, emission ids) are in advertising.ad_tunnel_programs (tunnel_id). -#}
+    Programs before / after the tunnel of the occurrence (see ad_tunnel_programs): id in analytics.program
+    (emissions of the Programmes Google Sheet, else programs of program_metadata), label and gap. -#}
 WITH sector_ref AS (
   {{ source_or_empty('advertising', 'ad_sectors', ['sector_code', 'sector_label_fr']) }}
 ),
@@ -54,15 +54,12 @@ SELECT
   mi.mesinfo_distance_sec,
   mi.nearest_mesinfo_task_aggregate_id,
   tp.inside_program,
+  tp.program_before_id,
   tp.program_before,
   tp.program_before_gap_sec,
+  tp.program_after_id,
   tp.program_after,
-  tp.program_after_gap_sec,
-  tp.inside_emission,
-  tp.emission_before,
-  tp.emission_before_gap_sec,
-  tp.emission_after,
-  tp.emission_after_gap_sec
+  tp.program_after_gap_sec
 FROM {{ source('advertising', 'ad_occurrence') }} occ
 JOIN {{ source('advertising', 'ad') }} a ON occ.ad_id = a.id
 LEFT JOIN sector_ref  s  ON s.sector_code  = a.predicted_sector

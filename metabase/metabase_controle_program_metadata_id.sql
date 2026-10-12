@@ -1,0 +1,172 @@
+-- Contrôle du rattachement des segments aux programmes, chaînes françaises : segments de public.keywords
+-- dont le program_metadata_id stocké à l'ingestion diffère du programme recalculé à partir de l'heure.
+-- Le recalcul suit la logique de metabase_taux_mesinformation_par_emission.sql et de la macro dbt program_at
+-- (start en UTC converti en heure de Paris, jour de semaine, programmes qui finissent après minuit,
+-- validité de grille), mais directement sur public.program_metadata, sans le découpage en émissions.
+-- Variables Metabase, type Texte, heure de Paris :
+--   {{debut}} inclus, ex. 2026-09-01 ou 2026-09-01 06:00
+--   {{fin}}   exclu,  ex. 2026-09-08
+-- Colonnes de diagnostic sur le programme stocké :
+--   stocke_dans_creneau : le segment tombe dans son créneau, un jour de semaine où il est diffusé
+--   stocke_ecart_minutes : minutes avant le début (négatif) ou après la fin (positif) du créneau le plus proche
+--   stocke_dans_creneau_sans_conversion : idem en lisant start comme une heure de Paris, sans conversion UTC
+--   stocke_grille_valide : le jour du programme est dans program_grid_start / program_grid_end
+WITH bornes AS (
+    SELECT
+        CAST({{debut}} AS timestamp) AS debut,
+        CAST({{fin}} AS timestamp) AS fin
+),
+-- même lecture des horaires que analytics.program : 'H:MM', fin après minuit au-delà de 1440
+grille AS (
+    SELECT
+        pm.id,
+        pm.channel_name,
+        pm.weekday,
+        pm.channel_program,
+        pm.start AS programme_debut,
+        pm."end" AS programme_fin,
+        pm.program_grid_start::date AS grid_start,
+        COALESCE(pm.program_grid_end::date, '2100-01-01'::date) AS grid_end,
+        m.start_minute,
+        m.end_minute_of_day + CASE WHEN m.end_minute_of_day <= m.start_minute THEN 1440 ELSE 0 END AS end_minute
+    FROM public.program_metadata pm
+    CROSS JOIN LATERAL (
+        SELECT
+            SPLIT_PART(pm.start::text, ':', 1)::int * 60 + SPLIT_PART(pm.start::text, ':', 2)::int AS start_minute,
+            SPLIT_PART(pm."end"::text, ':', 1)::int * 60 + SPLIT_PART(pm."end"::text, ':', 2)::int AS end_minute_of_day
+    ) m
+    WHERE pm.country = 'france'
+),
+-- segments de la période ; la marge de 3 h du pré-filtre couvre le décalage UTC / Paris
+segments AS MATERIALIZED (
+    SELECT
+        k.id,
+        k.start,
+        k.channel_name,
+        k.program_metadata_id AS id_stocke,
+        (k.start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' AS paris_time
+    FROM bornes b
+    JOIN public.keywords k
+      ON k.start >= b.debut - INTERVAL '3 hours'
+     AND k.start < b.fin + INTERVAL '3 hours'
+    WHERE k.country = 'france'
+      AND (k.start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' >= b.debut
+      AND (k.start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' < b.fin
+),
+-- jour de grille et minute dans ce jour : le jour même, et la veille pour un segment assez tôt pour tomber
+-- dans un programme de la veille qui finit après minuit
+segments_jour AS MATERIALIZED (
+    SELECT
+        s.id,
+        s.start,
+        s.channel_name,
+        o.day_offset,
+        s.paris_time::date - o.day_offset AS jour,
+        EXTRACT(ISODOW FROM s.paris_time::date - o.day_offset)::int AS weekday,
+        EXTRACT(EPOCH FROM s.paris_time - (s.paris_time::date - o.day_offset)) / 60 AS minute
+    FROM segments s
+    CROSS JOIN (VALUES (0), (1)) AS o(day_offset)
+    WHERE o.day_offset = 0
+       OR EXTRACT(EPOCH FROM s.paris_time - s.paris_time::date) / 60 + 1440 < (SELECT MAX(end_minute) FROM grille)
+),
+-- programme recalculé ; en cas de chevauchement, mêmes priorités que la macro program_at (sans émission)
+calcul AS (
+    SELECT DISTINCT ON (s.id, s.start)
+        s.id,
+        s.start,
+        g.id AS id_calcule
+    FROM segments_jour s
+    JOIN grille g
+      ON g.channel_name = s.channel_name
+     AND g.weekday = s.weekday
+     AND s.jour BETWEEN COALESCE(g.grid_start, '-infinity'::date) AND g.grid_end
+     AND s.minute >= g.start_minute
+     AND s.minute < g.end_minute
+    ORDER BY s.id, s.start, g.grid_start DESC NULLS LAST, s.day_offset, g.start_minute DESC
+),
+differences AS (
+    SELECT
+        s.*,
+        c.id_calcule
+    FROM segments s
+    LEFT JOIN calcul c ON c.id = s.id AND c.start = s.start
+    WHERE s.id_stocke IS DISTINCT FROM c.id_calcule
+)
+SELECT
+    CASE
+        WHEN d.id_stocke IS NULL THEN 'pas d''id stocké'
+        WHEN gs.id IS NULL THEN 'id stocké absent de program_metadata (France)'
+        WHEN d.id_calcule IS NULL THEN 'aucun programme recalculé'
+        ELSE 'programme différent'
+    END AS categorie,
+    -- piste la plus probable, à confirmer ligne à ligne
+    CASE
+        WHEN d.id_stocke IS NOT NULL AND gs.id IS NULL THEN NULL
+        WHEN gs.id IS NOT NULL AND NOT COALESCE(st.dans_creneau, FALSE) AND sc.dans_creneau
+            THEN 'décalage UTC / Paris'
+        WHEN gs.id IS NOT NULL AND st.weekday_ok IS NULL THEN 'jour de semaine du programme stocké différent'
+        WHEN gs.id IS NOT NULL AND NOT st.dans_creneau AND ABS(st.ecart) <= 6 THEN 'marge de 6 min de l''ingestion'
+        WHEN gs.id IS NOT NULL AND NOT st.dans_creneau THEN 'hors créneau du programme stocké'
+        WHEN gs.id IS NOT NULL AND NOT (st.jour BETWEEN COALESCE(gs.grid_start, '-infinity'::date) AND gs.grid_end)
+            THEN 'grille du programme stocké non valide ce jour'
+        -- l'ingestion compare program_grid_end (minuit) à l'horodatage : elle exclut le dernier jour de grille
+        WHEN gc.grid_end = d.paris_time::date THEN 'dernier jour de la grille recalculée'
+        WHEN gs.id IS NOT NULL AND gc.id IS NOT NULL THEN 'programmes qui se chevauchent'
+    END AS piste,
+    d.channel_name,
+    d.start AS start_utc,
+    d.paris_time AS heure_paris,
+    EXTRACT(ISODOW FROM d.paris_time)::int AS jour_semaine_paris,
+    -- programme stocké
+    d.id_stocke,
+    gs.channel_program AS stocke_programme,
+    gs.weekday AS stocke_jour_semaine,
+    gs.programme_debut AS stocke_debut,
+    gs.programme_fin AS stocke_fin,
+    gs.grid_start AS stocke_grid_start,
+    gs.grid_end AS stocke_grid_end,
+    st.dans_creneau AS stocke_dans_creneau,
+    ROUND(st.ecart::numeric, 1) AS stocke_ecart_minutes,
+    sc.dans_creneau AS stocke_dans_creneau_sans_conversion,
+    st.jour BETWEEN COALESCE(gs.grid_start, '-infinity'::date) AND gs.grid_end AS stocke_grille_valide,
+    -- programme recalculé
+    d.id_calcule,
+    gc.channel_program AS calcule_programme,
+    gc.weekday AS calcule_jour_semaine,
+    gc.programme_debut AS calcule_debut,
+    gc.programme_fin AS calcule_fin,
+    gc.grid_start AS calcule_grid_start,
+    gc.grid_end AS calcule_grid_end
+FROM differences d
+LEFT JOIN grille gs ON gs.id = d.id_stocke
+LEFT JOIN grille gc ON gc.id = d.id_calcule
+-- créneau du programme stocké le plus proche du segment (veille, jour même ou lendemain), en heure de Paris
+LEFT JOIN LATERAL (
+    SELECT
+        TRUE AS weekday_ok,
+        d.paris_time::date - o.day_offset AS jour,
+        x.minute >= gs.start_minute AND x.minute < gs.end_minute AS dans_creneau,
+        CASE
+            WHEN x.minute < gs.start_minute THEN x.minute - gs.start_minute
+            WHEN x.minute >= gs.end_minute THEN x.minute - gs.end_minute
+            ELSE 0
+        END AS ecart
+    FROM (VALUES (-1), (0), (1)) AS o(day_offset)
+    CROSS JOIN LATERAL (
+        SELECT EXTRACT(EPOCH FROM d.paris_time - (d.paris_time::date - o.day_offset)) / 60 AS minute
+    ) x
+    WHERE EXTRACT(ISODOW FROM d.paris_time::date - o.day_offset) = gs.weekday
+    ORDER BY x.minute >= gs.start_minute AND x.minute < gs.end_minute DESC,
+        GREATEST(gs.start_minute - x.minute, x.minute - gs.end_minute)
+    LIMIT 1
+) st ON TRUE
+-- même chose en lisant start comme une heure de Paris
+LEFT JOIN LATERAL (
+    SELECT BOOL_OR(x.minute >= gs.start_minute AND x.minute < gs.end_minute) AS dans_creneau
+    FROM (VALUES (-1), (0), (1)) AS o(day_offset)
+    CROSS JOIN LATERAL (
+        SELECT EXTRACT(EPOCH FROM d.start - (d.start::date - o.day_offset)) / 60 AS minute
+    ) x
+    WHERE EXTRACT(ISODOW FROM d.start::date - o.day_offset) = gs.weekday
+) sc ON TRUE
+ORDER BY categorie, piste, d.channel_name, d.start

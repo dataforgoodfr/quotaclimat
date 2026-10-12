@@ -2,6 +2,24 @@
 
 This page explains, step by step, what each Kestra flow in `infrastructure/kestra/flows/` does, which code it runs and which technologies are involved. For the order in which the flows run, see the overview diagram in the root `README.md` ("Daily orchestration").
 
+**Baromètre (OME).** The baromètre measures how much TV and radio airtime covers environmental topics. The data comes from Mediatree's speech-to-text transcripts. Each day, for every channel, the ingest step calls the Mediatree API once per program slot of the schedule grid. It stores the transcripts as 2-minute chunks in gzip parquet on Scaleway S3.
+
+The keyword step then reads these chunks back and removes stop words such as ads and repeated phrases. It matches each chunk against the theme dictionaries (climate, biodiversity, resources and their sub-categories) and upserts the chunks that have at least one match into the `keywords` table, with their counts and their program. The chunks that mention the climate are screened for misinformation by a fine-tuned OpenAI classifier. Each suspicious chunk is re-transcribed with Whisper and sent to Label Studio, where annotators confirm or reject it.
+
+Finally, dbt combines the keywords, program metadata, Label Studio annotations and reference spreadsheets from Google Drive into the tables that Metabase shows. France runs every day ([`barometre`](#barometre)), and [`barometre-catchup`](#barometre-catchup) re-runs the last 7 days every night to fill gaps. The other countries go through the first two steps in [`barometre-i18n`](#barometre-i18n), and that flow then starts their misinformation jobs on Scaleway.
+
+**Droit à l'info (RRS).** Droit à l'info tracks misinformation on two subjects, climate and insecurity/immigration, and groups the cases into narratives. Its results go to the `rrs` database. It covers two TV perimeters:
+- **The baromètre's French channels:** it reuses the baromètre's data.
+- **The "extended perimeter":** 7 major channels (TF1, France 2, France 3 IDF, RTL, France 5, TMC, LCP). [`extended-perimeter`](#extended-perimeter) runs the same four baromètre steps on these channels, writing to a separate bucket, database and Label Studio project.
+
+For each perimeter, the pipeline then works as follows:
+- **Climate:** [`rrs-climate`](#rrs-climate) copies the climate chunks (`segments`) and the flagged, annotated chunks (`cases`) from the source database into `rrs`.
+- **Insecurity:** the baromètre has no keywords for this subject, so [`rrs-insecurity`](#rrs-insecurity) detects it directly. It runs regex queries in DuckDB over the raw transcripts on S3, using the dictionary in `rrs.dictionary`. It then asks Mistral whether each matching segment contains misinformation, and stores only the "oui" answers as cases.
+- **Clustering, for both subjects:** the cases of the day are grouped into narratives. Claude proposes and merges the labels, and `mistral-embed` deduplicates them against the narratives still active.
+- **Social media:** separately, [`pulsar-themes`](#pulsar-themes) fetches the themes and top posts from Pulsar every night. Mistral translates them and classifies the posts.
+
+[`main-pipeline`](#main-pipeline) chains the two projects every day. It runs the extended perimeter first, then the baromètre, and after each one it runs the two RRS subjects.
+
 Each flow has its own diagram. Read it top to bottom: every horizontal lane is one Kestra task, in execution order. Inside a lane, the left side shows what the task reads, the middle shows the code it runs, and the right side shows what it writes. When a store written by one step is read by the next, it appears in both lanes (for example `S3: mediatree` at the end of step 1 and at the start of step 2).
 
 | Flow | Namespace | File | Trigger |

@@ -88,7 +88,7 @@ def load_configuration() -> None:
     POSTGRES_HOST = os.environ["POSTGRES_HOST"]
     POSTGRES_PORT = os.environ["POSTGRES_PORT"]
     POSTGRES_DB = os.environ["POSTGRES_DB"]
-    SOURCE_TABLE = "public.keywords"
+    SOURCE_TABLE = os.environ["SOURCE_TABLE"] or "public.keywords"
     DESTINATION_TABLE = os.environ["DESTINATION_TABLE"]
 
     ### S3 CREDENTIALS

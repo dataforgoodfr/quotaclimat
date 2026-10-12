@@ -9,8 +9,8 @@
 -- env_heures : temps consacré à l'environnement, même calcul que core_query_environmental_shares
 --   (public.keywords.number_of_keywords fenêtres de 20 s)
 -- nb_cas : cas validés (analytics.cas_de_mesinformation, 1re annotation 'Correct')
--- segments et cas sont rattachés à la ligne de grille à l'antenne, créneaux élargis de 5 min comme à
--- l'ingestion (alignement sur les dashboards)
+-- segments et cas sont rattachés à la ligne de grille à l'antenne, créneaux élargis de 6 min avant et
+-- 6 min après comme à l'ingestion (alignement sur les dashboards)
 WITH bornes AS (
     SELECT
         CAST({{debut}} AS timestamp) AS debut,
@@ -108,13 +108,15 @@ horodatages_jour AS MATERIALIZED (
     WHERE o.day_offset = 0
        OR (o.day_offset = 1
            AND EXTRACT(EPOCH FROM h.paris_time - h.paris_time::date) / 60 + 1440
-               < (SELECT MAX(end_minute) FROM grille) + 5)
-       OR (o.day_offset = -1 AND EXTRACT(EPOCH FROM h.paris_time - h.paris_time::date) / 60 >= 1440 - 5)
+               < (SELECT MAX(end_minute) FROM grille) + 6)
+       OR (o.day_offset = -1 AND EXTRACT(EPOCH FROM h.paris_time - h.paris_time::date) / 60 >= 1440 - 6)
 ),
 -- rattachement aligné sur les dashboards, qui reprennent le programme posé à l'ingestion : l'API y est
--- interrogée de début - 5 min à fin + 5 min (api_to_s3.py, epoch_margin de la France), les créneaux sont donc
--- élargis de 5 min ; priorité à la ligne qui contient vraiment l'horodatage, puis à la plus proche, puis
--- mêmes priorités que la macro program_at
+-- interrogée de début - 5 min à fin + 5 min incluse (api_to_s3.py, epoch_margin de la France) et la
+-- réattribution accepte 6 min (channel_program.get_matching_program_hour) ; les créneaux sont donc élargis
+-- à [début - 6 min, fin + 6 min[ ; priorité à la ligne qui contient vraiment l'horodatage, puis à la plus
+-- proche, puis mêmes priorités que la macro program_at. Un segment dans les marges de deux programmes peut
+-- avoir reçu l'un ou l'autre à l'ingestion (ordre d'écriture) : il va ici au plus proche
 rattachements AS (
     SELECT DISTINCT ON (h.nature, h.cle)
         h.nature,
@@ -128,8 +130,8 @@ rattachements AS (
       ON g.channel_name = h.channel_name
      AND g.weekday = h.weekday
      AND h.jour BETWEEN COALESCE(g.grid_start, '-infinity'::date) AND g.grid_end
-     AND h.minute >= g.start_minute - 5
-     AND h.minute < g.end_minute + 5
+     AND h.minute >= g.start_minute - 6
+     AND h.minute < g.end_minute + 6
     ORDER BY h.nature, h.cle,
         h.minute >= g.start_minute AND h.minute < g.end_minute DESC,
         GREATEST(g.start_minute - h.minute, h.minute - g.end_minute),

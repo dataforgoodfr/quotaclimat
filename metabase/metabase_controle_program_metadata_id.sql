@@ -2,7 +2,7 @@
 -- dont le program_metadata_id stocké à l'ingestion diffère du programme recalculé à partir de l'heure.
 -- Le recalcul suit la logique de metabase_taux_mesinformation_par_emission.sql et de la macro dbt program_at
 -- (start, timestamp with time zone, converti en heure de Paris, jour de semaine, programmes après minuit,
--- validité de grille, créneaux élargis de 5 min comme à l'ingestion), mais directement sur
+-- validité de grille, créneaux élargis à [début - 6 min, fin + 6 min[ comme à l'ingestion), mais directement sur
 -- public.program_metadata, sans le découpage en émissions.
 -- Variables Metabase, type Texte, heure de Paris :
 --   {{debut}} inclus, ex. 2026-09-01 ou 2026-09-01 06:00
@@ -70,12 +70,13 @@ segments_jour AS MATERIALIZED (
     WHERE o.day_offset = 0
        OR (o.day_offset = 1
            AND EXTRACT(EPOCH FROM s.paris_time - s.paris_time::date) / 60 + 1440
-               < (SELECT MAX(end_minute) FROM grille) + 5)
-       OR (o.day_offset = -1 AND EXTRACT(EPOCH FROM s.paris_time - s.paris_time::date) / 60 >= 1440 - 5)
+               < (SELECT MAX(end_minute) FROM grille) + 6)
+       OR (o.day_offset = -1 AND EXTRACT(EPOCH FROM s.paris_time - s.paris_time::date) / 60 >= 1440 - 6)
 ),
--- programme recalculé, créneaux élargis de 5 min comme à l'ingestion (api_to_s3.py, epoch_margin de la
--- France) ; priorité au programme qui contient vraiment le segment, puis au plus proche, puis mêmes
--- priorités que la macro program_at (sans émission)
+-- programme recalculé, créneaux élargis comme à l'ingestion : API de début - 5 min à fin + 5 min incluse
+-- (api_to_s3.py, epoch_margin de la France), réattribution à 6 min (channel_program.get_matching_program_hour),
+-- soit [début - 6 min, fin + 6 min[ ; priorité au programme qui contient vraiment le segment, puis au plus
+-- proche, puis mêmes priorités que la macro program_at (sans émission)
 calcul AS (
     SELECT DISTINCT ON (s.id, s.start)
         s.id,
@@ -86,8 +87,8 @@ calcul AS (
       ON g.channel_name = s.channel_name
      AND g.weekday = s.weekday
      AND s.jour BETWEEN COALESCE(g.grid_start, '-infinity'::date) AND g.grid_end
-     AND s.minute >= g.start_minute - 5
-     AND s.minute < g.end_minute + 5
+     AND s.minute >= g.start_minute - 6
+     AND s.minute < g.end_minute + 6
     ORDER BY s.id, s.start,
         s.minute >= g.start_minute AND s.minute < g.end_minute DESC,
         GREATEST(g.start_minute - s.minute, s.minute - g.end_minute),
@@ -111,10 +112,11 @@ SELECT
     -- piste la plus probable, à confirmer ligne à ligne
     CASE
         WHEN d.id_stocke IS NOT NULL AND gs.id IS NULL THEN NULL
-        -- marges que le recalcul ne reproduit pas : 5 à 6 min (réattribution,
-        -- channel_program.get_matching_program_hour), ou segment de la marge d'un programme qui tombe dans le
-        -- créneau du programme voisin (le recalcul prend le voisin, l'ingestion l'un ou l'autre)
-        WHEN gs.id IS NOT NULL AND NOT st.dans_creneau AND ABS(st.ecart) <= 6 THEN 'marge d''ingestion (5 à 6 min)'
+        -- segment dans les marges de deux programmes, ou dans la marge de l'un et le créneau de l'autre :
+        -- l'ingestion a gardé l'un ou l'autre selon l'ordre d'écriture, le recalcul prend le plus proche
+        WHEN gs.id IS NOT NULL AND NOT st.dans_creneau AND ABS(st.ecart) <= 6 AND d.id_calcule IS NOT NULL
+            THEN 'marge commune à deux programmes'
+        WHEN gs.id IS NOT NULL AND NOT st.dans_creneau AND ABS(st.ecart) <= 6 THEN 'marge d''ingestion (6 min)'
         WHEN gs.id IS NOT NULL AND NOT COALESCE(st.dans_creneau, FALSE) AND su.dans_creneau
             THEN 'décalage UTC / Paris'
         WHEN gs.id IS NOT NULL AND st.weekday_ok IS NULL THEN 'jour de semaine du programme stocké différent'

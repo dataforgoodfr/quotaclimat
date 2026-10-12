@@ -1,11 +1,12 @@
 ### Creates a thematic table with
-### - chunks that contain given keywords and passing OME methodology (from barometre.keywords)
-### - neighbour chunks (+/- 2 minutes ) fetched in s3
+### - chunks that contain given keywords and passing OME methodology as themetic_core_chunk = True
+### - neighbour chunks (+/- 2 minutes ) fetched in s3 as adjacent_to_thematic_core = True
+### - chunks that contain given keyword as adjacent = False and core = False
 
 ### given folowing arguments
 ### - start_date
 ### - end_date
-### - keywords to look for
+### - keywords to look for (has to be in OME dictionnary)
 ### - country and language (default france et french)
 ### - clear_destination_table : to start destination table from scratch (--assume_yes to confirm clearing)
 
@@ -49,6 +50,7 @@ def _env_date(name: str):
         return date.fromisoformat(value)
     except ValueError:
         raise ValueError(f"{name} must be YYYY-MM-DD, got: {value!r}")
+    
 
 def load_configuration() -> None:
     """Read environment variables (credentials and parameters), expose them as globals.
@@ -95,6 +97,20 @@ def load_configuration() -> None:
     S3_ENDPOINT_URL = os.environ["S3_ENDPOINT_URL"]
     S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
     S3_REGION = os.environ["S3_REGION"]
+    
+    # If they look like file paths, read the file content
+    if S3_ACCESS_KEY and S3_ACCESS_KEY.startswith('/'):
+        try:
+            with open(S3_ACCESS_KEY, 'r') as f:
+                S3_ACCESS_KEY = f.read().strip()
+        except Exception as e:
+            raise ValueError(f"Could not read S3_ACCESS_KEY from file {S3_ACCESS_KEY}: {e}")
+    if S3_SECRET_KEY and S3_SECRET_KEY.startswith('/'):
+        try:
+            with open(S3_SECRET_KEY, 'r') as f:
+                S3_SECRET_KEY = f.read().strip()
+        except Exception as e:
+            raise ValueError(f"Could not read S3_SECRET_KEY from file {S3_SECRET_KEY}: {e}")
 
     ### LOGGING
     LOGGING_SOURCE_TABLE = ("SRC" + ":" + SOURCE_TABLE).upper()

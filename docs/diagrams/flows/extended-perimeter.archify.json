@@ -1,0 +1,162 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Kestra flow: extended-perimeter",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/flows/extended-perimeter.html",
+    "repository": {
+      "url": "git@github.com:dataforgoodfr/quotaclimat.git",
+      "revision": "c2defa51aafeac09df8121d063d0d352c0d1af69",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": { "label": "Kestra task (Docker container)" },
+        "database": { "label": "Data store (S3 / PostgreSQL)" },
+        "external": { "label": "External API or service" },
+        "cloud": { "label": "Scaleway-hosted service" }
+      }
+    }
+  },
+  "lanes": [
+    { "id": "ingest", "label": "1 / ingest_data_to_s3: Mediatree API to S3 (ext-fra)" },
+    { "id": "keywords", "label": "2 / detect_keywords: S3 to extended-perimeter DB" },
+    { "id": "misinfo", "label": "3 / detect_misinformation: LLM screening" },
+    { "id": "dbt", "label": "4 / dbt_run_transformations: models" }
+  ],
+  "phases": [
+    { "id": "reads", "label": "Reads", "fromCol": 0, "toCol": 1 },
+    { "id": "runs", "label": "Runs", "fromCol": 2, "toCol": 2, "variant": "emphasis" },
+    { "id": "writes", "label": "Writes", "fromCol": 3, "toCol": 4 }
+  ],
+  "mainPath": ["t_ingest", "t_keywords", "t_misinfo", "t_dbt"],
+  "nodes": [
+    {
+      "id": "mt_subtitle", "lane": "ingest", "col": 1, "type": "external",
+      "label": "Mediatree API", "sublabel": "7 channels (EXTENDED_FRANCE)", "width": 168,
+      "sources": [{ "path": "quotaclimat/data_processing/mediatree/i8n/country.py", "line": 135, "end_line": 150, "label": "EXTENDED_FRANCE" }]
+    },
+    {
+      "id": "t_ingest", "lane": "ingest", "col": 2, "type": "backend",
+      "label": "api_to_s3.py", "sublabel": "COUNTRY=ext-fra", "tag": "quotaclimat_base", "width": 168,
+      "sources": [
+        { "path": "infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml", "line": 23, "end_line": 55, "label": "Kestra task" },
+        { "path": "quotaclimat/data_processing/mediatree/s3/api_to_s3.py", "line": 340, "end_line": 433, "label": "day x channel loop" }
+      ]
+    },
+    {
+      "id": "s3_ext", "lane": "ingest", "col": 3, "type": "database",
+      "label": "S3: mediatree-ext", "sublabel": "mediatree-extended-perimeter", "width": 168,
+      "sources": [{ "path": "infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml", "line": 38, "end_line": 39, "label": "BUCKET_NAME" }]
+    },
+
+    {
+      "id": "s3_ext_in", "lane": "keywords", "col": 1, "type": "database",
+      "label": "S3: mediatree-ext", "sublabel": "parquet from step 1", "width": 168,
+      "sources": [{ "path": "quotaclimat/data_processing/mediatree/s3/s3_utils.py", "line": 92, "end_line": 113, "label": "read_folder_from_s3" }]
+    },
+    {
+      "id": "t_keywords", "lane": "keywords", "col": 2, "type": "backend",
+      "label": "api_import.py", "sublabel": "admin user (runs alembic)", "tag": "quotaclimat_base", "width": 168,
+      "sources": [
+        { "path": "infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml", "line": 57, "end_line": 101, "label": "Kestra task" },
+        { "path": "entrypoints/detect_keywords.sh", "line": 1, "end_line": 13, "label": "entrypoint" },
+        { "path": "quotaclimat/data_processing/mediatree/api_import.py", "line": 123, "end_line": 181, "label": "S3 to PG loop" }
+      ]
+    },
+    {
+      "id": "pg_keywords", "lane": "keywords", "col": 3, "type": "database",
+      "label": "extended-perimeter DB", "sublabel": "keywords (country=france)", "width": 176,
+      "sources": [{ "path": "infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml", "line": 89, "end_line": 90, "label": "POSTGRES_DB" }]
+    },
+
+    {
+      "id": "pg_keywords_in", "lane": "misinfo", "col": 1, "type": "database",
+      "label": "extended-perimeter DB", "sublabel": "keywords from step 2", "width": 176, "yOffset": -40,
+      "sources": [{ "path": "infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml", "line": 141, "end_line": 152, "label": "POSTGRES_*" }]
+    },
+    {
+      "id": "openai", "lane": "misinfo", "col": 1, "type": "external",
+      "label": "OpenAI API", "sublabel": "ft gpt-4o-mini + Whisper", "width": 176, "yOffset": 40,
+      "sources": [{ "path": "infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml", "line": 133, "end_line": 149, "label": "MODEL_NAME, OPENAI_API_KEY" }]
+    },
+    {
+      "id": "t_misinfo", "lane": "misinfo", "col": 2, "type": "backend",
+      "label": "label-misinformation", "sublabel": "climateguard repo, main.py", "tag": "external image", "width": 168,
+      "sources": [{ "path": "infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml", "line": 104, "end_line": 154, "label": "Kestra task" }]
+    },
+    {
+      "id": "s3_misinfo", "lane": "misinfo", "col": 3, "type": "database",
+      "label": "S3: misinfo-ext", "sublabel": "label-misinformation-input/", "width": 168,
+      "sources": [{ "path": "infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml", "line": 121, "end_line": 123, "label": "BUCKET_INPUT / OUTPUT" }]
+    },
+    {
+      "id": "labelstudio", "lane": "misinfo", "col": 4, "type": "cloud",
+      "label": "Label Studio", "sublabel": "project 24, storage 18", "width": 168,
+      "sources": [{ "path": "infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml", "line": 127, "end_line": 129, "label": "LABEL_STUDIO_*" }]
+    },
+
+    {
+      "id": "pg_labelstudio", "lane": "dbt", "col": 1, "type": "database",
+      "label": "labelstudio DB", "sublabel": "project 24 only", "width": 168,
+      "sources": [
+        { "path": "quotaclimat/data_ingestion/labelstudio/configs.py", "line": 13, "end_line": 18, "label": "extended config" },
+        { "path": "quotaclimat/data_ingestion/labelstudio/ingest_labelstudio.py", "line": 319, "end_line": 343, "label": "EXTENDED_PERIMETER switch" }
+      ]
+    },
+    {
+      "id": "t_dbt", "lane": "dbt", "col": 2, "type": "backend",
+      "label": "dbt.sh", "sublabel": "EXTENDED_PERIMETER=true", "tag": "quotaclimat_base", "width": 168,
+      "sources": [
+        { "path": "infrastructure/kestra/flows/main_rrs_extendedperimeter.yaml", "line": 156, "end_line": 186, "label": "Kestra task" },
+        { "path": "entrypoints/dbt.sh", "line": 1, "end_line": 28, "label": "entrypoint" }
+      ]
+    },
+    {
+      "id": "pg_models", "lane": "dbt", "col": 3, "type": "database",
+      "label": "extended-perimeter DB", "sublabel": "grants to rrs-read only", "width": 176,
+      "sources": [{ "path": "my_dbt_project/dbt_project.yml", "line": 37, "end_line": 52, "label": "grants" }]
+    }
+  ],
+  "edges": [
+    { "id": "e-subtitle", "from": "mt_subtitle", "to": "t_ingest", "label": "subtitles" },
+    { "id": "e-parquet", "from": "t_ingest", "to": "s3_ext", "label": "gzip parquet", "variant": "emphasis" },
+
+    { "id": "e-read-s3", "from": "s3_ext_in", "to": "t_keywords", "label": "chunks" },
+    { "id": "e-keywords", "from": "t_keywords", "to": "pg_keywords", "label": "upsert", "variant": "emphasis" },
+
+    { "id": "e-read-kw", "from": "pg_keywords_in", "to": "t_misinfo", "label": "chunks" },
+    { "id": "e-openai", "from": "openai", "to": "t_misinfo", "label": "scores", "variant": "dashed" },
+    { "id": "e-flagged", "from": "t_misinfo", "to": "s3_misinfo", "label": "flagged", "variant": "emphasis" },
+    { "id": "e-sync", "from": "s3_misinfo", "to": "labelstudio", "label": "sync", "variant": "dashed" },
+
+    { "id": "e-read-ls", "from": "pg_labelstudio", "to": "t_dbt", "label": "annotations" },
+    { "id": "e-models", "from": "t_dbt", "to": "pg_models", "label": "tables", "variant": "emphasis" },
+
+    { "id": "e-then-1", "from": "t_ingest", "to": "t_keywords", "label": "then", "variant": "emphasis", "role": "main", "fromSide": "bottom", "toSide": "top" },
+    { "id": "e-then-2", "from": "t_keywords", "to": "t_misinfo", "label": "then", "variant": "emphasis", "role": "main", "fromSide": "bottom", "toSide": "top" },
+    { "id": "e-then-3", "from": "t_misinfo", "to": "t_dbt", "label": "then", "variant": "emphasis", "role": "main", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Trigger and inputs",
+      "items": [
+        "Step 1 of main-pipeline (only when with_rrs=true), or run by hand",
+        "days_back (default 1) and start_date (default now)",
+        "Namespace rrs: same code as barometre, other DB, buckets and secrets"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Differences from barometre",
+      "items": [
+        "Postgres DB extended-perimeter on the RRS instance, written with the RRS admin user",
+        "No API_DATA_OVERWRITE: existing S3 objects are skipped",
+        "No EXTERNAL_SOURCES_DRIVE_FOLDER on dbt: the Google Sheets download is skipped"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,347 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Kestra flow: pulsar-themes",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/flows/pulsar-themes.html",
+    "repository": {
+      "url": "git@github.com:dataforgoodfr/quotaclimat.git",
+      "revision": "c2defa51aafeac09df8121d063d0d352c0d1af69",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "Stage inside the pulsar task"
+        },
+        "database": {
+          "label": "Data store (PostgreSQL)"
+        },
+        "external": {
+          "label": "External API"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "themes",
+      "label": "a / get_top_themes: topics grouped into themes"
+    },
+    {
+      "id": "summary",
+      "label": "b / build_theme: AI title, sentiment, body"
+    },
+    {
+      "id": "translate",
+      "label": "c / translate_to_french"
+    },
+    {
+      "id": "posts",
+      "label": "d / top posts, misinformation filter, store"
+    }
+  ],
+  "phases": [
+    {
+      "id": "reads",
+      "label": "Calls",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "runs",
+      "label": "Runs",
+      "fromCol": 2,
+      "toCol": 2,
+      "variant": "emphasis"
+    },
+    {
+      "id": "writes",
+      "label": "Writes",
+      "fromCol": 3,
+      "toCol": 4
+    }
+  ],
+  "mainPath": [
+    "s_themes",
+    "s_summary",
+    "s_translate",
+    "s_posts"
+  ],
+  "nodes": [
+    {
+      "id": "pulsar_topics",
+      "lane": "themes",
+      "col": 1,
+      "type": "external",
+      "label": "Pulsar TRAC",
+      "sublabel": "GraphQL topics query",
+      "width": 176,
+      "sources": [
+        {
+          "path": "rrs/pulsar/fetch_weekly_themes_client.py",
+          "line": 81,
+          "end_line": 82,
+          "label": "endpoints"
+        }
+      ]
+    },
+    {
+      "id": "s_themes",
+      "lane": "themes",
+      "col": 2,
+      "type": "backend",
+      "label": "get_top_themes",
+      "sublabel": "greedy co-occurrence grouping",
+      "tag": "rrs-pulsar",
+      "width": 184,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_rrs_pulsarthemes.yml",
+          "line": 54,
+          "end_line": 92,
+          "label": "Kestra task"
+        },
+        {
+          "path": "rrs/pulsar/fetch_weekly_themes_client.py",
+          "line": 335,
+          "end_line": 374,
+          "label": "get_top_themes"
+        }
+      ]
+    },
+    {
+      "id": "pulsar_summary",
+      "lane": "summary",
+      "col": 1,
+      "type": "external",
+      "label": "Pulsar TRAC",
+      "sublabel": "summary + narratives",
+      "width": 176,
+      "sources": [
+        {
+          "path": "rrs/pulsar/fetch_weekly_themes_client.py",
+          "line": 376,
+          "end_line": 396,
+          "label": "_narrative_summarize"
+        }
+      ]
+    },
+    {
+      "id": "s_summary",
+      "lane": "summary",
+      "col": 2,
+      "type": "backend",
+      "label": "build_theme",
+      "sublabel": "skips themes without posts",
+      "tag": "rrs-pulsar",
+      "width": 184,
+      "sources": [
+        {
+          "path": "rrs/pulsar/fetch_weekly_themes_client.py",
+          "line": 398,
+          "end_line": 443,
+          "label": "build_theme"
+        }
+      ]
+    },
+    {
+      "id": "mistral_tr",
+      "lane": "translate",
+      "col": 1,
+      "type": "external",
+      "label": "Mistral API",
+      "sublabel": "mistral-small-2603",
+      "width": 176,
+      "sources": [
+        {
+          "path": "rrs/pulsar/fetch_weekly_themes_client.py",
+          "line": 220,
+          "end_line": 256,
+          "label": "translation"
+        }
+      ]
+    },
+    {
+      "id": "s_translate",
+      "lane": "translate",
+      "col": 2,
+      "type": "backend",
+      "label": "translate_to_french",
+      "sublabel": "title + body, EN to FR",
+      "tag": "rrs-pulsar",
+      "width": 184,
+      "sources": [
+        {
+          "path": "rrs/pulsar/fetch_weekly_themes_client.py",
+          "line": 477,
+          "end_line": 484,
+          "label": "run: translate"
+        }
+      ]
+    },
+    {
+      "id": "pulsar_posts",
+      "lane": "posts",
+      "col": 1,
+      "type": "external",
+      "label": "Pulsar data API",
+      "sublabel": "top posts per theme",
+      "width": 176,
+      "yOffset": -40,
+      "sources": [
+        {
+          "path": "rrs/pulsar/posts_client.py",
+          "line": 1,
+          "end_line": 40,
+          "label": "PulsarPostsClient"
+        }
+      ]
+    },
+    {
+      "id": "mistral_cl",
+      "lane": "posts",
+      "col": 1,
+      "type": "external",
+      "label": "Mistral API",
+      "sublabel": "ministral-8b-2512",
+      "width": 176,
+      "yOffset": 40,
+      "sources": [
+        {
+          "path": "rrs/pulsar/fetch_weekly_themes_client.py",
+          "line": 155,
+          "end_line": 201,
+          "label": "classify_posts"
+        }
+      ]
+    },
+    {
+      "id": "s_posts",
+      "lane": "posts",
+      "col": 2,
+      "type": "backend",
+      "label": "fetch, classify, store",
+      "sublabel": "drops posts labelled non",
+      "tag": "rrs-pulsar",
+      "width": 184,
+      "sources": [
+        {
+          "path": "rrs/pulsar/fetch_weekly_themes_client.py",
+          "line": 490,
+          "end_line": 516,
+          "label": "run: store"
+        }
+      ]
+    },
+    {
+      "id": "rrs_pulsar",
+      "lane": "posts",
+      "col": 3,
+      "type": "database",
+      "label": "rrs DB: pulsar_*",
+      "sublabel": "searches, themes, topics, posts",
+      "width": 184,
+      "sources": [
+        {
+          "path": "rrs/pulsar/store.py",
+          "line": 27,
+          "end_line": 120,
+          "label": "upserts"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-topics",
+      "from": "pulsar_topics",
+      "to": "s_themes",
+      "label": "topics"
+    },
+    {
+      "id": "e-summary",
+      "from": "pulsar_summary",
+      "to": "s_summary",
+      "label": "summaries"
+    },
+    {
+      "id": "e-translate",
+      "from": "mistral_tr",
+      "to": "s_translate",
+      "label": "French",
+      "variant": "dashed"
+    },
+    {
+      "id": "e-posts",
+      "from": "pulsar_posts",
+      "to": "s_posts",
+      "label": "posts"
+    },
+    {
+      "id": "e-classify",
+      "from": "mistral_cl",
+      "to": "s_posts",
+      "label": "verdicts",
+      "variant": "dashed"
+    },
+    {
+      "id": "e-store",
+      "from": "s_posts",
+      "to": "rrs_pulsar",
+      "label": "upsert",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-then-1",
+      "from": "s_themes",
+      "to": "s_summary",
+      "label": "candidates",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-then-2",
+      "from": "s_summary",
+      "to": "s_translate",
+      "label": "themes",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-then-3",
+      "from": "s_translate",
+      "to": "s_posts",
+      "label": "then",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Trigger and inputs",
+      "items": [
+        "Own schedule: cron 00:30 Europe/Paris",
+        "ForEach over the searches input, one search at a time (concurrencyLimit 1)",
+        "Each search carries its folder_id, search_id and subject (climate or insecurity)"
+      ]
+    },
+    {
+      "dot": "slate",
+      "title": "One container",
+      "items": [
+        "Lanes a-d are stages of one Docker task (rrs.pulsar.fetch_weekly_themes_client)",
+        "days_back (default 1) or start_date/end_date set the window"
+      ]
+    }
+  ]
+}

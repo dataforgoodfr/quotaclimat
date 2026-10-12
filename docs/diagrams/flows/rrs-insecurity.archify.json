@@ -1,0 +1,414 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Kestra flow: rrs-insecurity",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/flows/rrs-insecurity.html",
+    "repository": {
+      "url": "git@github.com:dataforgoodfr/quotaclimat.git",
+      "revision": "c2defa51aafeac09df8121d063d0d352c0d1af69",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "Kestra task (Docker container)"
+        },
+        "database": {
+          "label": "Data store (S3 / PostgreSQL)"
+        },
+        "external": {
+          "label": "External API (LLM / embeddings)"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "keywords",
+      "label": "1 / analyse_keywords: S3 transcripts to rrs.segments"
+    },
+    {
+      "id": "misinfo",
+      "label": "2 / detect_misinformation: Mistral classification"
+    },
+    {
+      "id": "clustering",
+      "label": "3 / clustering: narratives (only if run_clustering)"
+    }
+  ],
+  "phases": [
+    {
+      "id": "reads",
+      "label": "Reads",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "runs",
+      "label": "Runs",
+      "fromCol": 2,
+      "toCol": 2,
+      "variant": "emphasis"
+    },
+    {
+      "id": "writes",
+      "label": "Writes",
+      "fromCol": 3,
+      "toCol": 4
+    }
+  ],
+  "mainPath": [
+    "t_keywords",
+    "t_misinfo",
+    "t_clustering"
+  ],
+  "nodes": [
+    {
+      "id": "s3_parquet",
+      "lane": "keywords",
+      "col": 1,
+      "type": "database",
+      "label": "S3: Mediatree parquet",
+      "sublabel": "mediatree or extended bucket",
+      "width": 184,
+      "yOffset": -40,
+      "sources": [
+        {
+          "path": "rrs/keyword_detection/analyse_keywords.py",
+          "line": 238,
+          "end_line": 297,
+          "label": "read_from_s3"
+        }
+      ]
+    },
+    {
+      "id": "rrs_dict",
+      "lane": "keywords",
+      "col": 1,
+      "type": "database",
+      "label": "rrs.dictionary",
+      "sublabel": "insecurity keywords",
+      "width": 184,
+      "yOffset": 40,
+      "sources": [
+        {
+          "path": "rrs/keyword_detection/analyse_keywords.py",
+          "line": 167,
+          "end_line": 225,
+          "label": "get_keywords_by_subject"
+        }
+      ]
+    },
+    {
+      "id": "t_keywords",
+      "lane": "keywords",
+      "col": 2,
+      "type": "backend",
+      "label": "analyse_keywords.py",
+      "sublabel": "DuckDB httpfs + regex",
+      "tag": "rrs-base",
+      "width": 176,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_rrs_insecurity.yaml",
+          "line": 42,
+          "end_line": 71,
+          "label": "Kestra task"
+        },
+        {
+          "path": "rrs/keyword_detection/analyse_keywords.py",
+          "line": 300,
+          "end_line": 361,
+          "label": "detection query"
+        }
+      ]
+    },
+    {
+      "id": "rrs_segments",
+      "lane": "keywords",
+      "col": 3,
+      "type": "database",
+      "label": "rrs.segments",
+      "sublabel": "subject = insecurity",
+      "width": 168,
+      "sources": [
+        {
+          "path": "rrs/keyword_detection/analyse_keywords.py",
+          "line": 98,
+          "end_line": 165,
+          "label": "save_segments_to_db"
+        }
+      ]
+    },
+    {
+      "id": "rrs_segments_in",
+      "lane": "misinfo",
+      "col": 1,
+      "type": "database",
+      "label": "rrs.segments + S3",
+      "sublabel": "segment rows + plaintext",
+      "width": 184,
+      "yOffset": -40,
+      "sources": [
+        {
+          "path": "rrs/misinformation_detection/main.py",
+          "line": 60,
+          "end_line": 155,
+          "label": "load + enrich"
+        }
+      ]
+    },
+    {
+      "id": "mistral",
+      "lane": "misinfo",
+      "col": 1,
+      "type": "external",
+      "label": "Mistral API",
+      "sublabel": "mistral-small-2603",
+      "width": 184,
+      "yOffset": 40,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_rrs_insecurity.yaml",
+          "line": 103,
+          "end_line": 105,
+          "label": "MISTRAL_*"
+        }
+      ]
+    },
+    {
+      "id": "t_misinfo",
+      "lane": "misinfo",
+      "col": 2,
+      "type": "backend",
+      "label": "misinformation_detection",
+      "sublabel": "oui / non / incertain + score",
+      "tag": "rrs-base",
+      "width": 184,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_rrs_insecurity.yaml",
+          "line": 73,
+          "end_line": 105,
+          "label": "Kestra task"
+        },
+        {
+          "path": "rrs/misinformation_detection/main.py",
+          "line": 157,
+          "end_line": 229,
+          "label": "classify_segments"
+        },
+        {
+          "path": "rrs/misinformation_detection/definitions.py",
+          "line": 1,
+          "end_line": 30,
+          "label": "definition prompt"
+        }
+      ]
+    },
+    {
+      "id": "rrs_cases",
+      "lane": "misinfo",
+      "col": 3,
+      "type": "database",
+      "label": "rrs.cases",
+      "sublabel": "only verdict = oui",
+      "width": 168,
+      "sources": [
+        {
+          "path": "rrs/misinformation_detection/main.py",
+          "line": 231,
+          "end_line": 299,
+          "label": "save_cases_to_db"
+        }
+      ]
+    },
+    {
+      "id": "rrs_cases_in",
+      "lane": "clustering",
+      "col": 1,
+      "type": "database",
+      "label": "rrs.cases",
+      "sublabel": "cases in the DAYS_PRIOR window",
+      "width": 184,
+      "yOffset": -40,
+      "sources": [
+        {
+          "path": "rrs/clustering/main.py",
+          "line": 343,
+          "end_line": 358,
+          "label": "date range"
+        }
+      ]
+    },
+    {
+      "id": "llm",
+      "lane": "clustering",
+      "col": 1,
+      "type": "external",
+      "label": "Anthropic + Mistral",
+      "sublabel": "Claude Haiku 4.5, mistral-embed",
+      "width": 184,
+      "yOffset": 40,
+      "sources": [
+        {
+          "path": "rrs/clustering/providers.py",
+          "line": 7,
+          "end_line": 8,
+          "label": "LLM models"
+        },
+        {
+          "path": "rrs/clustering/backends.py",
+          "line": 25,
+          "end_line": 26,
+          "label": "embedding models"
+        }
+      ]
+    },
+    {
+      "id": "t_clustering",
+      "lane": "clustering",
+      "col": 2,
+      "type": "backend",
+      "label": "rrs.clustering.main",
+      "sublabel": "SUBJECT=insecurity",
+      "tag": "rrs-base",
+      "width": 184,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_rrs_insecurity.yaml",
+          "line": 107,
+          "end_line": 150,
+          "label": "Kestra task"
+        },
+        {
+          "path": "rrs/clustering/main.py",
+          "line": 84,
+          "end_line": 300,
+          "label": "per-day pipeline"
+        }
+      ]
+    },
+    {
+      "id": "rrs_clusters",
+      "lane": "clustering",
+      "col": 3,
+      "type": "database",
+      "label": "rrs.clusters",
+      "sublabel": "+ case_to_clusters",
+      "width": 168,
+      "sources": [
+        {
+          "path": "rrs/clustering/get_data.py",
+          "line": 97,
+          "end_line": 150,
+          "label": "write_clusters_to_db"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-read-s3",
+      "from": "s3_parquet",
+      "to": "t_keywords",
+      "label": "plaintext"
+    },
+    {
+      "id": "e-read-dict",
+      "from": "rrs_dict",
+      "to": "t_keywords",
+      "label": "keywords"
+    },
+    {
+      "id": "e-segments",
+      "from": "t_keywords",
+      "to": "rrs_segments",
+      "label": "upsert",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-read-seg",
+      "from": "rrs_segments_in",
+      "to": "t_misinfo",
+      "label": "texts"
+    },
+    {
+      "id": "e-mistral",
+      "from": "mistral",
+      "to": "t_misinfo",
+      "label": "verdicts",
+      "variant": "dashed"
+    },
+    {
+      "id": "e-cases",
+      "from": "t_misinfo",
+      "to": "rrs_cases",
+      "label": "upsert",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-read-cases",
+      "from": "rrs_cases_in",
+      "to": "t_clustering",
+      "label": "texts"
+    },
+    {
+      "id": "e-llm",
+      "from": "llm",
+      "to": "t_clustering",
+      "label": "labels",
+      "variant": "dashed"
+    },
+    {
+      "id": "e-clusters",
+      "from": "t_clustering",
+      "to": "rrs_clusters",
+      "label": "assign",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-then-1",
+      "from": "t_keywords",
+      "to": "t_misinfo",
+      "label": "then",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-then-2",
+      "from": "t_misinfo",
+      "to": "t_clustering",
+      "label": "if run_clustering",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Trigger and inputs",
+      "items": [
+        "Run by main-pipeline twice: source=extended (run_clustering=false), then source=barometre",
+        "days_back defaults to 1 (DAYS_PRIOR) for all three steps; start_date/end_date override it",
+        "Reads raw transcripts from S3, not the keywords table"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Detection rules",
+      "items": [
+        "A segment needs a validated keyword and no high-risk false positive",
+        "Enough non-validated keywords together also count",
+        "Only segments Mistral labels oui become cases (no Label Studio)"
+      ]
+    }
+  ]
+}

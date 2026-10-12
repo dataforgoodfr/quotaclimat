@@ -28,15 +28,15 @@
   "lanes": [
     {
       "id": "segments",
-      "label": "1 / import_segments: climate chunks to rrs.segments"
+      "label": "import_segments: climate chunks to rrs.segments"
     },
     {
       "id": "cases",
-      "label": "2 / import_cases: LLM-flagged chunks to rrs.cases"
+      "label": "import_cases: LLM-flagged chunks to rrs.cases"
     },
     {
       "id": "clustering",
-      "label": "3 / clustering: narratives (only if run_clustering)"
+      "label": "clustering: narratives (only if run_clustering)"
     }
   ],
   "phases": [
@@ -297,14 +297,16 @@
       "id": "e-read-cases",
       "from": "rrs_cases_in",
       "to": "t_clustering",
-      "label": "texts"
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-llm",
       "from": "llm",
       "to": "t_clustering",
-      "label": "labels",
-      "variant": "dashed"
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-clusters",

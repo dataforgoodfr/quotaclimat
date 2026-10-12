@@ -31,19 +31,19 @@
   "lanes": [
     {
       "id": "ingest",
-      "label": "1 / ingest_data_to_s3: Mediatree API to S3"
+      "label": "ingest_data_to_s3: Mediatree API to S3"
     },
     {
       "id": "keywords",
-      "label": "2 / detect_keywords: S3 to keywords table"
+      "label": "detect_keywords: S3 to keywords table"
     },
     {
       "id": "misinfo",
-      "label": "3 / detect_misinformation: LLM screening"
+      "label": "detect_misinformation: LLM screening"
     },
     {
       "id": "dbt",
-      "label": "4 / dbt_run_transformations: models"
+      "label": "dbt_run_transformations: models"
     }
   ],
   "phases": [
@@ -140,7 +140,7 @@
       "label": "S3: mediatree",
       "sublabel": "parquet from step 1",
       "width": 168,
-      "yOffset": -40,
+      "yOffset": -31,
       "sources": [
         {
           "path": "quotaclimat/data_processing/mediatree/s3/s3_utils.py",
@@ -158,7 +158,7 @@
       "label": "barometre DB",
       "sublabel": "stop_word, program_metadata",
       "width": 168,
-      "yOffset": 40,
+      "yOffset": 31,
       "sources": [
         {
           "path": "quotaclimat/data_processing/mediatree/api_import.py",
@@ -223,7 +223,7 @@
       "label": "keywords table",
       "sublabel": "from step 2 (read user)",
       "width": 168,
-      "yOffset": -40,
+      "yOffset": -31,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_barometre.yaml",
@@ -241,7 +241,7 @@
       "label": "OpenAI API",
       "sublabel": "ft gpt-4o-mini + Whisper",
       "width": 168,
-      "yOffset": 40,
+      "yOffset": 31,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_barometre.yaml",
@@ -311,7 +311,7 @@
       "label": "labelstudio DB",
       "sublabel": "tasks + completions",
       "width": 168,
-      "yOffset": -40,
+      "yOffset": -31,
       "sources": [
         {
           "path": "quotaclimat/data_ingestion/labelstudio/ingest_labelstudio.py",
@@ -329,7 +329,7 @@
       "label": "Google Sheets",
       "sublabel": "reference data (Drive API)",
       "width": 168,
-      "yOffset": 40,
+      "yOffset": 31,
       "sources": [
         {
           "path": "quotaclimat/data_ingestion/external_sources/download_external_sources.py",
@@ -386,80 +386,98 @@
       "id": "e-subtitle",
       "from": "mt_subtitle",
       "to": "t_ingest",
-      "label": "subtitles"
+      "label": "subtitles",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-parquet",
       "from": "t_ingest",
       "to": "s3_mediatree",
       "label": "gzip parquet",
-      "variant": "emphasis"
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-read-s3",
       "from": "s3_mediatree_in",
       "to": "t_keywords",
-      "label": "chunks"
+      "toSide": "left",
+      "fromSide": "right"
     },
     {
       "id": "e-read-ref",
       "from": "pg_ref",
       "to": "t_keywords",
-      "label": "filters"
+      "toSide": "left",
+      "fromSide": "right"
     },
     {
       "id": "e-keywords",
       "from": "t_keywords",
       "to": "pg_keywords",
       "label": "upsert",
-      "variant": "emphasis"
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-read-kw",
       "from": "pg_keywords_in",
       "to": "t_misinfo",
-      "label": "chunks"
+      "toSide": "left",
+      "fromSide": "right"
     },
     {
       "id": "e-openai",
       "from": "openai",
       "to": "t_misinfo",
-      "label": "scores",
-      "variant": "dashed"
+      "variant": "dashed",
+      "toSide": "left",
+      "fromSide": "right"
     },
     {
       "id": "e-flagged",
       "from": "t_misinfo",
       "to": "s3_climateguard",
       "label": "flagged",
-      "variant": "emphasis"
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-sync",
       "from": "s3_climateguard",
       "to": "labelstudio",
       "label": "sync",
-      "variant": "dashed"
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-read-ls",
       "from": "pg_labelstudio",
       "to": "t_dbt",
-      "label": "annotations"
+      "toSide": "left",
+      "fromSide": "right"
     },
     {
       "id": "e-read-gs",
       "from": "gsheets",
       "to": "t_dbt",
-      "label": "seeds",
-      "variant": "dashed"
+      "variant": "dashed",
+      "toSide": "left",
+      "fromSide": "right"
     },
     {
       "id": "e-models",
       "from": "t_dbt",
       "to": "pg_models",
       "label": "tables",
-      "variant": "emphasis"
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-then-1",

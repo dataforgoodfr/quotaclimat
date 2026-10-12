@@ -28,15 +28,15 @@
   "lanes": [
     {
       "id": "keywords",
-      "label": "1 / analyse_keywords: S3 transcripts to rrs.segments"
+      "label": "analyse_keywords: S3 transcripts to rrs.segments"
     },
     {
       "id": "misinfo",
-      "label": "2 / detect_misinformation: Mistral classification"
+      "label": "detect_misinformation: Mistral classification"
     },
     {
       "id": "clustering",
-      "label": "3 / clustering: narratives (only if run_clustering)"
+      "label": "clustering: narratives (only if run_clustering)"
     }
   ],
   "phases": [
@@ -44,20 +44,20 @@
       "id": "reads",
       "label": "Reads",
       "fromCol": 0,
-      "toCol": 1
+      "toCol": 2
     },
     {
       "id": "runs",
       "label": "Runs",
-      "fromCol": 2,
-      "toCol": 2,
+      "fromCol": 3,
+      "toCol": 3,
       "variant": "emphasis"
     },
     {
       "id": "writes",
       "label": "Writes",
-      "fromCol": 3,
-      "toCol": 4
+      "fromCol": 4,
+      "toCol": 5
     }
   ],
   "mainPath": [
@@ -73,8 +73,8 @@
       "type": "database",
       "label": "S3: Mediatree parquet",
       "sublabel": "mediatree or extended bucket",
-      "width": 184,
-      "yOffset": -40,
+      "width": 168,
+      "yOffset": -31,
       "sources": [
         {
           "path": "rrs/keyword_detection/analyse_keywords.py",
@@ -91,8 +91,8 @@
       "type": "database",
       "label": "rrs.dictionary",
       "sublabel": "insecurity keywords",
-      "width": 184,
-      "yOffset": 40,
+      "width": 168,
+      "yOffset": 31,
       "sources": [
         {
           "path": "rrs/keyword_detection/analyse_keywords.py",
@@ -105,12 +105,12 @@
     {
       "id": "t_keywords",
       "lane": "keywords",
-      "col": 2,
+      "col": 3,
       "type": "backend",
       "label": "analyse_keywords.py",
       "sublabel": "DuckDB httpfs + regex",
       "tag": "rrs-base",
-      "width": 176,
+      "width": 168,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_rrs_insecurity.yaml",
@@ -129,7 +129,7 @@
     {
       "id": "rrs_segments",
       "lane": "keywords",
-      "col": 3,
+      "col": 4,
       "type": "database",
       "label": "rrs.segments",
       "sublabel": "subject = insecurity",
@@ -150,8 +150,8 @@
       "type": "database",
       "label": "rrs.segments + S3",
       "sublabel": "segment rows + plaintext",
-      "width": 184,
-      "yOffset": -40,
+      "width": 168,
+      "yOffset": -31,
       "sources": [
         {
           "path": "rrs/misinformation_detection/main.py",
@@ -168,8 +168,8 @@
       "type": "external",
       "label": "Mistral API",
       "sublabel": "mistral-small-2603",
-      "width": 184,
-      "yOffset": 40,
+      "width": 168,
+      "yOffset": 31,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_rrs_insecurity.yaml",
@@ -182,12 +182,12 @@
     {
       "id": "t_misinfo",
       "lane": "misinfo",
-      "col": 2,
+      "col": 3,
       "type": "backend",
-      "label": "misinformation_detection",
-      "sublabel": "oui / non / incertain + score",
+      "label": "main.py (Mistral)",
+      "sublabel": "rrs.misinformation_detection",
       "tag": "rrs-base",
-      "width": 184,
+      "width": 168,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_rrs_insecurity.yaml",
@@ -212,7 +212,7 @@
     {
       "id": "rrs_cases",
       "lane": "misinfo",
-      "col": 3,
+      "col": 4,
       "type": "database",
       "label": "rrs.cases",
       "sublabel": "only verdict = oui",
@@ -233,8 +233,8 @@
       "type": "database",
       "label": "rrs.cases",
       "sublabel": "cases in the DAYS_PRIOR window",
-      "width": 184,
-      "yOffset": -40,
+      "width": 168,
+      "yOffset": -31,
       "sources": [
         {
           "path": "rrs/clustering/main.py",
@@ -251,8 +251,8 @@
       "type": "external",
       "label": "Anthropic + Mistral",
       "sublabel": "Claude Haiku 4.5, mistral-embed",
-      "width": 184,
-      "yOffset": 40,
+      "width": 168,
+      "yOffset": 31,
       "sources": [
         {
           "path": "rrs/clustering/providers.py",
@@ -271,12 +271,12 @@
     {
       "id": "t_clustering",
       "lane": "clustering",
-      "col": 2,
+      "col": 3,
       "type": "backend",
       "label": "rrs.clustering.main",
       "sublabel": "SUBJECT=insecurity",
       "tag": "rrs-base",
-      "width": 184,
+      "width": 168,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_rrs_insecurity.yaml",
@@ -295,7 +295,7 @@
     {
       "id": "rrs_clusters",
       "lane": "clustering",
-      "col": 3,
+      "col": 4,
       "type": "database",
       "label": "rrs.clusters",
       "sublabel": "+ case_to_clusters",
@@ -315,53 +315,63 @@
       "id": "e-read-s3",
       "from": "s3_parquet",
       "to": "t_keywords",
-      "label": "plaintext"
+      "toSide": "left",
+      "fromSide": "right"
     },
     {
       "id": "e-read-dict",
       "from": "rrs_dict",
       "to": "t_keywords",
-      "label": "keywords"
+      "toSide": "left",
+      "fromSide": "right"
     },
     {
       "id": "e-segments",
       "from": "t_keywords",
       "to": "rrs_segments",
       "label": "upsert",
-      "variant": "emphasis"
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-read-seg",
       "from": "rrs_segments_in",
       "to": "t_misinfo",
-      "label": "texts"
+      "toSide": "left",
+      "fromSide": "right"
     },
     {
       "id": "e-mistral",
       "from": "mistral",
       "to": "t_misinfo",
-      "label": "verdicts",
-      "variant": "dashed"
+      "variant": "dashed",
+      "toSide": "left",
+      "fromSide": "right"
     },
     {
       "id": "e-cases",
       "from": "t_misinfo",
       "to": "rrs_cases",
       "label": "upsert",
-      "variant": "emphasis"
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-read-cases",
       "from": "rrs_cases_in",
       "to": "t_clustering",
-      "label": "texts"
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-llm",
       "from": "llm",
       "to": "t_clustering",
-      "label": "labels",
-      "variant": "dashed"
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-clusters",

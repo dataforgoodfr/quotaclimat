@@ -28,19 +28,19 @@
   "lanes": [
     {
       "id": "themes",
-      "label": "a / get_top_themes: topics grouped into themes"
+      "label": "get_top_themes: topics grouped into themes"
     },
     {
       "id": "summary",
-      "label": "b / build_theme: AI title, sentiment, body"
+      "label": "build_theme: AI title, sentiment, body"
     },
     {
       "id": "translate",
-      "label": "c / translate_to_french"
+      "label": "translate_to_french"
     },
     {
       "id": "posts",
-      "label": "d / top posts, misinformation filter, store"
+      "label": "top posts, misinformation filter, store"
     }
   ],
   "phases": [
@@ -278,14 +278,16 @@
       "id": "e-posts",
       "from": "pulsar_posts",
       "to": "s_posts",
-      "label": "posts"
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-classify",
       "from": "mistral_cl",
       "to": "s_posts",
-      "label": "verdicts",
-      "variant": "dashed"
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-store",
@@ -339,7 +341,7 @@
       "dot": "slate",
       "title": "One container",
       "items": [
-        "Lanes a-d are stages of one Docker task (rrs.pulsar.fetch_weekly_themes_client)",
+        "The four lanes are stages of one Docker task (rrs.pulsar.fetch_weekly_themes_client)",
         "days_back (default 1) or start_date/end_date set the window"
       ]
     }

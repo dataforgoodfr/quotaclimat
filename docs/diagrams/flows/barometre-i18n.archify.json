@@ -34,15 +34,15 @@
   "lanes": [
     {
       "id": "ingest",
-      "label": "1a / i18n_loop > ingest_data_to_s3 (per country, one at a time)"
+      "label": "i18n_loop > ingest_data_to_s3 (per country, one at a time)"
     },
     {
       "id": "keywords",
-      "label": "1b / i18n_loop > detect_keywords (same country)"
+      "label": "i18n_loop > detect_keywords (same country)"
     },
     {
       "id": "misinfo",
-      "label": "2 / detect_misinformation > trigger_job (5 in parallel)"
+      "label": "detect_misinformation > trigger_job (5 in parallel)"
     }
   ],
   "phases": [
@@ -138,7 +138,7 @@
       "label": "S3: mediatree",
       "sublabel": "parquet from step 1a",
       "width": 168,
-      "yOffset": -40,
+      "yOffset": -31,
       "sources": [
         {
           "path": "quotaclimat/data_processing/mediatree/s3/s3_utils.py",
@@ -156,7 +156,7 @@
       "label": "barometre DB",
       "sublabel": "stop_word, program_metadata",
       "width": 168,
-      "yOffset": 40,
+      "yOffset": 31,
       "sources": [
         {
           "path": "quotaclimat/data_processing/mediatree/api_import.py",
@@ -248,40 +248,50 @@
       "id": "e-subtitle",
       "from": "mt_subtitle",
       "to": "t_ingest",
-      "label": "subtitles"
+      "label": "subtitles",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-parquet",
       "from": "t_ingest",
       "to": "s3_mediatree",
       "label": "gzip parquet",
-      "variant": "emphasis"
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-read-s3",
       "from": "s3_mediatree_in",
       "to": "t_keywords",
-      "label": "chunks"
+      "toSide": "left",
+      "fromSide": "right"
     },
     {
       "id": "e-read-ref",
       "from": "pg_ref",
       "to": "t_keywords",
-      "label": "filters"
+      "toSide": "left",
+      "fromSide": "right"
     },
     {
       "id": "e-keywords",
       "from": "t_keywords",
       "to": "pg_keywords",
       "label": "upsert",
-      "variant": "emphasis"
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-start",
       "from": "t_trigger",
       "to": "scw_jobs",
       "label": "start",
-      "variant": "dashed"
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
     },
     {
       "id": "e-then-1",
@@ -311,7 +321,7 @@
       "items": [
         "Own schedule: cron 04:07 Europe/Paris",
         "days_back (default 1) and start_date (default now)",
-        "Steps 1a + 1b run for each country before the next one starts"
+        "Both i18n_loop tasks run for a country before the next one starts"
       ]
     },
     {

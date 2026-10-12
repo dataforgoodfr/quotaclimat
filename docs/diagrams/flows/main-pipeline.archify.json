@@ -35,27 +35,6 @@
       "label": "Standard perimeter"
     }
   ],
-  "phases": [
-    {
-      "id": "trigger",
-      "label": "Trigger",
-      "fromCol": 0,
-      "toCol": 0
-    },
-    {
-      "id": "extphase",
-      "label": "Steps 1-3",
-      "fromCol": 1,
-      "toCol": 3,
-      "variant": "emphasis"
-    },
-    {
-      "id": "stdphase",
-      "label": "Steps 4-6",
-      "fromCol": 3,
-      "toCol": 5
-    }
-  ],
   "mainPath": [
     "cron",
     "s_ext",
@@ -73,7 +52,7 @@
       "type": "external",
       "label": "Schedule",
       "sublabel": "01:10 + 12:30 Paris",
-      "width": 150,
+      "width": 130,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
@@ -91,7 +70,7 @@
       "label": "extended-perimeter",
       "sublabel": "days_back, start_date",
       "tag": "rrs",
-      "width": 170,
+      "width": 146,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
@@ -109,7 +88,7 @@
       "label": "rrs-climate",
       "sublabel": "source=extended",
       "tag": "no clustering",
-      "width": 160,
+      "width": 146,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
@@ -127,7 +106,7 @@
       "label": "rrs-insecurity",
       "sublabel": "source=extended",
       "tag": "no clustering",
-      "width": 160,
+      "width": 146,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
@@ -145,7 +124,7 @@
       "label": "barometre",
       "sublabel": "days_back, start_date",
       "tag": "always runs",
-      "width": 160,
+      "width": 146,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
@@ -163,7 +142,7 @@
       "label": "rrs-climate",
       "sublabel": "defaults (barometre)",
       "tag": "clustering",
-      "width": 160,
+      "width": 146,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
@@ -181,7 +160,7 @@
       "label": "rrs-insecurity",
       "sublabel": "defaults (barometre)",
       "tag": "clustering",
-      "width": 160,
+      "width": 146,
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",

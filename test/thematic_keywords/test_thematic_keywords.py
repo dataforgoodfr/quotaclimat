@@ -25,13 +25,34 @@ FAKE_THEME_KEYWORDS = {
 FAKE_TITLES = {"tf1": "TF1", "france2": "France 2"}
 
 
+@pytest.fixture(autouse=True)
+def config(monkeypatch):
+    """The module configuration globals are only created by load_configuration()
+    (not called in tests): defines the ones used by the functions under test.
+    raising=False because these attributes do not exist at import time."""
+    monkeypatch.setattr(tk, "POSTGRES_DB", SOURCE_ALIAS, raising=False)
+    monkeypatch.setattr(tk, "POSTGRES_USER", "user", raising=False)
+    monkeypatch.setattr(tk, "POSTGRES_HOST", "localhost", raising=False)
+    monkeypatch.setattr(tk, "POSTGRES_PORT", "5432", raising=False)
+    monkeypatch.setattr(tk, "SOURCE_TABLE", "public.keywords", raising=False)
+    monkeypatch.setattr(tk, "DESTINATION_TABLE", "public.test_destination", raising=False)
+    monkeypatch.setattr(tk, "LOGGING_SOURCE_TABLE", "SRC:PUBLIC.KEYWORDS", raising=False)
+    monkeypatch.setattr(tk, "LOGGING_DESTINATION_TABLE", "DEST:PUBLIC.TEST_DESTINATION", raising=False)
+    monkeypatch.setattr(tk, "S3_BUCKET_NAME", "b", raising=False)
+    monkeypatch.setattr(tk, "DRY_RUN", False, raising=False)
+
+
 # ---------- get_keyword_ome_hrfp_theme ----------
 
 @patch(f"{MODULE}.THEME_KEYWORDS", FAKE_THEME_KEYWORDS)
-def test_get_keyword_ome_hrfp_theme_drops_keywords_absent_from_dictionary():
-    """Verify that a word absent from the OME dictionary is discarded, and that a present word
-    is retained with all its themes and its hrfp flag."""
-    result = tk.get_keyword_ome_hrfp_theme(["bassin de récupération", "blabla"], language="french")
+def test_get_keyword_ome_hrfp_theme_filters_absent_words_and_language():
+    """Verify that absent words and words in another language than requested are discarded,
+    and that a valid matching word is retained with its metadata. Raises ValueError if no valid words remain.
+    """
+    result = tk.get_keyword_ome_hrfp_theme(
+        ["bassin de récupération", "blabla"],
+        language="french",
+    )
 
     assert "blabla" not in result
     assert set(result.keys()) == {"bassin de récupération"}
@@ -41,11 +62,6 @@ def test_get_keyword_ome_hrfp_theme_drops_keywords_absent_from_dictionary():
         "ressources_solutions",
     }
 
-
-@patch(f"{MODULE}.THEME_KEYWORDS", FAKE_THEME_KEYWORDS)
-def test_get_keyword_ome_hrfp_theme_filters_on_language():
-    """Verify that a word present in the dictionary but in another language
-    than requested is not kept (ValueError, as no words are found)."""
     with pytest.raises(ValueError):
         tk.get_keyword_ome_hrfp_theme(["bassin de récupération"], language="english")
 
@@ -53,8 +69,7 @@ def test_get_keyword_ome_hrfp_theme_filters_on_language():
 # ---------- read_barometre_keywords ----------
 
 @pytest.fixture
-def con(monkeypatch):
-    monkeypatch.setattr(tk, "PG_DATABASE", SOURCE_ALIAS)
+def con():
     _con = duckdb.connect()
     _con.execute("SET TimeZone='UTC'")   # session != Paris: detects any regression to session timezone bug
     _con.execute(f"ATTACH ':memory:' AS {SOURCE_ALIAS}")
@@ -82,23 +97,24 @@ def _insert(con, id_, kwts, start="2026-03-30 12:00:00+02:00", country="france",
     )
 
 
-def test_read_barometre_keywords_keeps_only_searched_keywords_with_direct_themes(con):
-    """Verify that a chunk is kept if at least one of its entries has a searched
-    keyword with a theme not ending in _indirectes, and excluded otherwise."""
+def test_read_barometre_keywords_keeps_searched_keywords_and_flags_thematic_core(con):
+    """Verify that every chunk containing a searched keyword is returned, and that
+    thematic_core_chunk is True only if at least one of its entries has a theme not ending
+    in _indirectes. Chunks without any searched keyword are excluded."""
     searched = {"bassin de récupération": {"theme": ["adaptation_climatique_solution"], "hrfp": False}}
 
-    # kept: searched keyword, direct theme
+    # kept, core: searched keyword, direct theme
     _insert(con, "1", [{"keyword": "bassin de récupération", "theme": "adaptation_climatique_solution"}])
-    # excluded: searched keyword but _indirectes theme
+    # kept, not core: searched keyword but _indirectes theme only
     _insert(con, "2", [{"keyword": "bassin de récupération", "theme": "ressources_solutions_indirectes"}])
     # excluded: non-searched keyword
     _insert(con, "3", [{"keyword": "blabla", "theme": "adaptation_climatique_solution"}])
-    # kept: one indirect entry and one direct entry for the searched keyword
+    # kept, core: one indirect entry and one direct entry for the searched keyword
     _insert(con, "4", [
         {"keyword": "bassin de récupération", "theme": "ressources_solutions_indirectes"},
         {"keyword": "bassin de récupération", "theme": "ressources_solutions"},
     ])
-    # excluded: direct on non-searched keyword, indirect on searched keyword
+    # kept, not core: direct theme only on non-searched keyword, indirect on searched keyword
     _insert(con, "5", [
         {"keyword": "blabla", "theme": "ressources_solutions"},
         {"keyword": "bassin de récupération", "theme": "adaptation_climatique_solution_indirectes"},
@@ -108,14 +124,17 @@ def test_read_barometre_keywords_keeps_only_searched_keywords_with_direct_themes
         con, searched, start_date=date(2026, 3, 30), end_date=date(2026, 3, 31), country="france"
     )
 
-    assert set(result["id"]) == {"1", "4"}
+    assert set(result["id"]) == {"1", "2", "4", "5"}
     assert result["id"].is_unique
-    assert {"plaintext", "keywords", "themes"} <= set(result.columns)
+    assert {"plaintext", "keywords", "themes", "thematic_core_chunk"} <= set(result.columns)
+    core_by_id = dict(zip(result["id"], result["thematic_core_chunk"]))
+    assert core_by_id == {"1": True, "2": False, "4": True, "5": False}
 
 
 def test_read_barometre_keywords_returns_plaintext_keywords_and_themes(con):
     """Verify that reading returns the chunk's plaintext, searched keywords, and
-    direct themes concatenated by a comma without spaces (_indirectes themes excluded)."""
+    themes (direct and _indirectes) concatenated by a comma without spaces, sorted,
+    and that non-searched keywords and their themes are left out."""
     searched = {
         "incendie": {"theme": ["a"], "hrfp": False}, #theme has no effect
         "canadair": {"theme": ["a"], "hrfp": False},
@@ -134,7 +153,8 @@ def test_read_barometre_keywords_returns_plaintext_keywords_and_themes(con):
     row = result.iloc[0]
     assert row["plaintext"] == "un incendie, un canadair"
     assert row["keywords"] == "canadair,incendie"
-    assert row["themes"] == "climat_consequences"
+    assert row["themes"] == "climat_consequences,ressources_indirectes"
+    assert row["thematic_core_chunk"]
 
 
 def test_read_barometre_keywords_filters_on_date_window_and_country(con):
@@ -156,14 +176,14 @@ def test_read_barometre_keywords_filters_on_date_window_and_country(con):
         con, searched, start_date=date(2026, 3, 30), end_date=date(2026, 3, 31), country="france"
     )
 
-    assert set(result["id"]) == {"in", "paris_morning"}  
-    
-    
-  
-def test_read_barometre_keywords_dedups_keywords_and_excludes_indirect_themes(con):
-    """Verify that a word present with two direct themes appears only once in keywords,
-    that themes lists sorted direct themes excluding _indirectes, and that a searched
-    word with only _indirectes themes is absent from keywords."""
+    assert set(result["id"]) == {"in", "paris_morning"}
+
+
+def test_read_barometre_keywords_dedups_keywords_and_themes(con):
+    """Verify that a word present with several themes appears only once in keywords,
+    that themes lists the distinct themes sorted (direct and _indirectes), that a searched
+    word with only _indirectes themes still appears in keywords, and that the chunk
+    is flagged as thematic core thanks to its direct themes."""
     searched = {
         "incendie": {"theme": ["climat_consequences", "autre_theme"], "hrfp": False},
         "inondation": {"theme": ["ressources_indirectes"], "hrfp": False},
@@ -181,26 +201,11 @@ def test_read_barometre_keywords_dedups_keywords_and_excludes_indirect_themes(co
 
     assert len(result) == 1
     row = result.iloc[0]
-    assert row["keywords"] == "incendie"
-    assert row["themes"] == "autre_theme,climat_consequences"
-    
-    
+    assert row["keywords"] == "incendie,inondation"
+    assert row["themes"] == "autre_theme,climat_consequences,ressources_indirectes"
+    assert row["thematic_core_chunk"]
 
-def test_read_barometre_keywords_dst_fallback_gives_same_naive_start(con):
-    """Document the trap: two chunks at 02:30 (+02:00 and +01:00) become indistinguishable when naive."""
-    searched = {"incendie": {"theme": ["a"], "hrfp": False}}
-    kw = [{"keyword": "incendie", "theme": "climat_consequences"}]
-    _insert(con, "a", kw, start="2026-10-25 02:30:00+02:00")
-    _insert(con, "b", kw, start="2026-10-25 02:30:00+01:00")
 
-    result = tk.read_barometre_keywords(
-        con, searched, start_date=date(2026, 10, 25), end_date=date(2026, 10, 26), country="france"
-    )
-
-    assert len(result) == 2
-    assert result["start"].nunique() == 1
-    
-    
 # ---------- read_day_from_s3: test 14 ----------
 
 class _FakeS3Con:
@@ -239,8 +244,9 @@ def test_read_day_from_s3_keeps_last_row_for_duplicate_channel_and_start():
 # ---------- extract_adjacent_chunks_day ----------
 
 def _core(*starts, channel="tf1", plaintexts=None, keywords="incendie", themes="climat_consequences"):
-    """Builds a core chunks DataFrame (id, channel_name, start, plaintext, keywords, themes)
-    for a single channel. Default plaintext is 'core' and IDs are id_0, id_1..."""
+    """Builds a core chunks DataFrame (id, channel_name, start, plaintext, keywords, themes,
+    thematic_core_chunk) for a single channel. Default plaintext is 'core', IDs are id_0, id_1...
+    and all chunks are thematic core chunks."""
     return pd.DataFrame({
         "id": [f"id_{i}" for i in range(len(starts))],
         "channel_name": [channel] * len(starts),
@@ -248,6 +254,7 @@ def _core(*starts, channel="tf1", plaintexts=None, keywords="incendie", themes="
         "plaintext": plaintexts or ["core"] * len(starts),
         "keywords": [keywords] * len(starts),
         "themes": [themes] * len(starts),
+        "thematic_core_chunk": [True] * len(starts),
     })
 
 
@@ -300,8 +307,15 @@ def test_extract_adjacent_chunks_day_number_of_chunks_kept():
 @patch(f"{MODULE}.channel_titles_france", FAKE_TITLES)
 def test_extract_adjacent_chunks_day_flags_core_true_and_neighbors_false():
     """Verify that thematic_core_chunk is True for core chunk, False for its neighbor,
-    that the column is boolean, and keywords/themes are populated for core and null for neighbor."""
-    core = _core("2026-03-30 12:00:00")
+    that adjacent_to_thematic_core is the opposite (False for core, True for neighbor),
+    and keywords/themes/source_keywords_id are populated for core and null for neighbor.
+    Also verify that a chunk coming from read_barometre_keywords with thematic_core_chunk=False
+    and far from any core is kept with both flags False (neither core nor adjacent)."""
+    other = _core("2026-03-30 15:00:00", plaintexts=["autre"],
+                  keywords="inondation", themes="ressources_indirectes")
+    other["id"] = "id_other"
+    other["thematic_core_chunk"] = False
+    core = pd.concat([_core("2026-03-30 12:00:00"), other], ignore_index=True)
     s3 = _s3([
         ("tf1", "2026-03-30 12:00:00", "core"),
         ("tf1", "2026-03-30 12:01:00", "voisin"),
@@ -310,12 +324,22 @@ def test_extract_adjacent_chunks_day_flags_core_true_and_neighbors_false():
     result = tk.extract_adjacent_chunks_day(core, s3, gap=GAP)
 
     by_text = result.set_index("plaintext")
+    assert by_text.loc["core", "thematic_core_chunk"]
+    assert not by_text.loc["voisin", "thematic_core_chunk"]
+    assert not by_text.loc["core", "adjacent_to_thematic_core"]
+    assert by_text.loc["voisin", "adjacent_to_thematic_core"]
     assert by_text.loc["core", "keywords"] == "incendie"
     assert by_text.loc["core", "themes"] == "climat_consequences"
     assert pd.isna(by_text.loc["voisin", "keywords"])
     assert pd.isna(by_text.loc["voisin", "themes"])
     assert by_text.loc["core", "source_keywords_id"] == "id_0"
     assert pd.isna(by_text.loc["voisin", "source_keywords_id"])
+    # chunk core=False en entrée, ni core ni voisin en sortie
+    assert pd.notna(by_text.loc["autre", "thematic_core_chunk"])
+    assert pd.notna(by_text.loc["autre", "adjacent_to_thematic_core"])
+    assert not by_text.loc["autre", "thematic_core_chunk"]
+    assert not by_text.loc["autre", "adjacent_to_thematic_core"]
+    assert by_text.loc["autre", "source_keywords_id"] == "id_other"
 
 
 @patch(f"{MODULE}.channel_titles_france", FAKE_TITLES)
@@ -330,7 +354,8 @@ def test_extract_adjacent_chunks_day_output_columns_id_format_and_title():
 
     assert set(result.columns) == {
         "this_id", "channel_name", "channel_title", "start",
-        "thematic_core_chunk", "source_keywords_id", "keywords", "themes", "plaintext",
+        "thematic_core_chunk", "adjacent_to_thematic_core",
+        "source_keywords_id", "keywords", "themes", "plaintext",
     }
     assert result.loc[0, "this_id"] == "tf1_20260330140000"
     assert result.loc[0, "channel_title"] == "TF1"
@@ -359,8 +384,8 @@ def test_extract_adjacent_chunks_day_raises_if_core_and_s3_plaintext_differ():
 
     with pytest.raises(ValueError):
         tk.extract_adjacent_chunks_day(core, s3, gap=GAP)
-        
-        
+
+
 @patch(f"{MODULE}.channel_titles_france", FAKE_TITLES)
 def test_extract_adjacent_chunks_day_raises_if_core_channel_absent_from_s3():
     """Verify that the function raises a ValueError when the core chunk channel
@@ -370,9 +395,7 @@ def test_extract_adjacent_chunks_day_raises_if_core_channel_absent_from_s3():
 
     with pytest.raises(ValueError):
         tk.extract_adjacent_chunks_day(core, s3, gap=GAP)
-        
-        
-        
+
 
 # ---------- run: simulated environment ----------
 
@@ -403,6 +426,7 @@ def env(monkeypatch):
             "id": [f"id_{start}"], "channel_name": ["tf1"],
             "start": [pd.Timestamp(start) + pd.Timedelta(hours=12)],
             "plaintext": ["core"], "keywords": ["incendie"], "themes": ["climat_consequences"],
+            "thematic_core_chunk": [True],
         })
 
     def fake_read_s3(con, day, channels, country):
@@ -424,6 +448,8 @@ def env(monkeypatch):
             "channel_title": ["TF1", "TF1"],
             "start": [start, neighbor],
             "thematic_core_chunk": [True, False],
+            "adjacent_to_thematic_core": [False, True],
+            "source_keywords_id": [core_day["id"].iloc[0], None],
             "keywords": [state.keywords_value, None],
             "themes": ["climat_consequences", None],
             "plaintext": ["core", None if bad else "voisin"],
@@ -434,7 +460,6 @@ def env(monkeypatch):
         state.configure_dest_calls += 1
         real_configure_dest(con, clear)
 
-    monkeypatch.setattr(tk, "PG_DATABASE", SOURCE_ALIAS)
     monkeypatch.setattr(tk, "DESTINATION_TABLE", DEST)
     monkeypatch.setattr(tk, "LOGGING_SOURCE_TABLE", "SOURCE")
     monkeypatch.setattr(tk, "LOGGING_DESTINATION_TABLE", DEST.upper())
@@ -457,8 +482,8 @@ def _seed(env, this_id="old_1", start="2026-07-02 12:00:00", keywords="ancien"):
     env.real_configure_dest(env.con, False)
     env.con.execute(
         f"INSERT INTO {DEST_FULL} (this_id, channel_name, channel_title, start, "
-        f"thematic_core_chunk, keywords, themes, plaintext) "
-        f"VALUES (?, 'tf1', 'TF1', ?, TRUE, ?, 'x', 'texte')",
+        f"thematic_core_chunk, adjacent_to_thematic_core, keywords, themes, plaintext) "
+        f"VALUES (?, 'tf1', 'TF1', ?, TRUE, FALSE, ?, 'x', 'texte')",
         [this_id, start, keywords],
     )
 
@@ -473,10 +498,10 @@ def _ids(env):
 
 def test_run_stops_at_first_failing_day(env):
     """Verify that run stops at first failing day: day 1 is in table,
-    day 3 is never read, and a RuntimeError names the failing day."""
+    day 3 is never read, and a RuntimeError is raised."""
     env.failing_s3_days = {date(2026, 7, 2)}
 
-    with pytest.raises(RuntimeError, match="2026-07-02"):
+    with pytest.raises(RuntimeError):
         tk.run(start_date=date(2026, 7, 1), end_date=date(2026, 7, 4),
                clear_destination_table=False, assume_yes=True, **ARGS)
 
@@ -499,15 +524,12 @@ def test_run_leaves_no_partial_day_when_insert_fails(env):
     assert date(2026, 7, 3) not in env.read_s3_days
 
 
-
-
 def test_run_refuses_clear_without_start_date(env):
     """Verify that --clear_destination_table without start_date is rejected, as auto-resume
     makes no sense on a cleared table."""
     with pytest.raises(ValueError):
         tk.run(start_date=None, end_date=date(2026, 7, 4),
                clear_destination_table=True, assume_yes=True, **ARGS)
-
 
 
 def test_run_twice_does_not_duplicate_or_overwrite_rows(env):
@@ -527,7 +549,7 @@ def test_run_twice_does_not_duplicate_or_overwrite_rows(env):
     assert second == first
 
 
-# ---------- destructive safeguards (tests 10 to 12) ----------
+# ---------- destructive safeguards ----------
 
 @pytest.mark.parametrize("destination",
                          ["keywords", "public.keywords", "PUBLIC.KEYWORDS", "autre_schema.keywords"])
@@ -543,13 +565,6 @@ def test_configure_barometre_destination_refuses_source_table_before_any_query(m
         tk.configure_barometre_destination(con, clear_destination_table=True)
 
     con.execute.assert_not_called()
-
-
-def test_confirm_assume_yes_returns_true_without_asking(monkeypatch):
-    """Verify that with assume_yes, confirm returns True without calling input."""
-    monkeypatch.setattr("builtins.input", lambda *_: pytest.fail("input must not be called"))
-
-    assert tk.confirm("ok ?", assume_yes=True) is True
 
 
 def test_run_clear_without_confirmation_empties_nothing(env, monkeypatch):

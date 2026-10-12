@@ -1,3 +1,15 @@
+### Creates a thematic table with
+### - chunks that contain given keywords and passing OME methodology (from barometre.keywords)
+### - neighbour chunks (+/- 2 minutes ) fetched in s3
+
+### given folowing arguments
+### - start_date
+### - end_date
+### - keywords to look for
+### - country and language (default france et french)
+### - clear_destination_table : to start destination table from scratch (--assume_yes to confirm clearing)
+
+
 import logging
 import os
 from pathlib import Path
@@ -15,34 +27,82 @@ from quotaclimat.data_processing.mediatree.i8n.france.channel_titles import (
     channel_titles_france,
 )
 
+GAP = "2 minutes 30 seconds"
+
 # only local env
 load_dotenv(Path(__file__).resolve().parents[4] / ".env", override=False)
 
+REQUIRED_ENV = [
+    "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB",
+    "S3_ACCESS_KEY", "S3_SECRET_KEY", "S3_ENDPOINT_URL", "S3_BUCKET_NAME", "S3_REGION",
+    "KEYWORDS","DESTINATION_TABLE",
+]
 
-### BAROMETRE CREDENTIALS (single database: source and destination)
-PG_USER = os.getenv("POSTGRES_USER")
-PG_PASSWORD = quote(os.getenv("POSTGRES_PASSWORD"), safe="")
-PG_HOST = os.getenv("POSTGRES_HOST")
-PG_PORT = os.getenv("POSTGRES_PORT")
-PG_DATABASE = os.getenv("POSTGRES_DB")
-SOURCE_TABLE="public.keywords"
-DESTINATION_TABLE=os.getenv("DESTINATION_TABLE")
+def _env_bool(name: str) -> bool:
+    return os.getenv(name, "").strip().lower() in ("1", "true", "yes", "y", "oui")
 
-### S3 CREDENTIALS
-S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY")
-S3_SECRET_KEY = os.getenv("S3_SECRET_KEY")
-S3_ENDPOINT_URL = os.getenv("S3_ENDPOINT_URL")
-S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-S3_REGION = os.getenv("S3_REGION")
+def _env_date(name: str):
+    value = os.getenv(name)
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        raise ValueError(f"{name} must be YYYY-MM-DD, got: {value!r}")
 
-### GLOBALS
-DRY_RUN = os.getenv("DRY_RUN", "").lower() in ("1", "true", "yes")
-GAP = "2 minutes 30 seconds"
-LOGGING_SOURCE_TABLE=(PG_DATABASE+"."+SOURCE_TABLE).upper()
-LOGGING_DESTINATION_TABLE=(PG_DATABASE+"."+DESTINATION_TABLE).upper()
+def load_configuration() -> None:
+    """Read environment variables (credentials and parameters), expose them as globals.
+    Raises if a required one is missing or invalid."""
+    global START_DATE, END_DATE, KEYWORDS, COUNTRY, LANGUAGE
+    global CLEAR_DESTINATION_TABLE, ASSUME_YES
+    global DRY_RUN
+    global POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB
+    global SOURCE_TABLE, DESTINATION_TABLE
+    global S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT_URL, S3_BUCKET_NAME, S3_REGION
+    global LOGGING_SOURCE_TABLE, LOGGING_DESTINATION_TABLE
+
+    ### CHECK REQUIRED VARIABLES BEFORE USING ANY
+    missing = [k for k in REQUIRED_ENV if not os.getenv(k)]
+    if missing:
+        raise RuntimeError(f"Missing environment variables: {', '.join(missing)}")
+
+    ### PARAMETERS (formerly command line arguments)
+    START_DATE = _env_date("START_DATE")
+    END_DATE = _env_date("END_DATE") or date.today()
+    KEYWORDS = [k.strip() for k in os.environ["KEYWORDS"].split(",") if k.strip()]
+    COUNTRY = os.getenv("COUNTRY") or "france"
+    LANGUAGE = os.getenv("LANGUAGE") or "french"
+    CLEAR_DESTINATION_TABLE = _env_bool("CLEAR_DESTINATION_TABLE")
+    ASSUME_YES = _env_bool("ASSUME_YES")
+    if not KEYWORDS:
+        raise ValueError("KEYWORDS is set but contains no keyword")
+    if START_DATE and END_DATE <= START_DATE:
+        raise ValueError("END_DATE must be after START_DATE")
+    DRY_RUN = os.getenv("DRY_RUN").lower() in ("true","yes")
+
+    ### BAROMETRE CREDENTIALS (single database: source and destination)
+    POSTGRES_USER = os.environ["POSTGRES_USER"]
+    POSTGRES_PASSWORD = quote(os.environ["POSTGRES_PASSWORD"], safe="")
+    POSTGRES_HOST = os.environ["POSTGRES_HOST"]
+    POSTGRES_PORT = os.environ["POSTGRES_PORT"]
+    POSTGRES_DB = os.environ["POSTGRES_DB"]
+    SOURCE_TABLE = "public.keywords"
+    DESTINATION_TABLE = os.environ["DESTINATION_TABLE"]
+
+    ### S3 CREDENTIALS
+    S3_ACCESS_KEY = os.environ["S3_ACCESS_KEY"]
+    S3_SECRET_KEY = os.environ["S3_SECRET_KEY"]
+    S3_ENDPOINT_URL = os.environ["S3_ENDPOINT_URL"]
+    S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
+    S3_REGION = os.environ["S3_REGION"]
+
+    ### LOGGING
+    LOGGING_SOURCE_TABLE = ("SRC" + ":" + SOURCE_TABLE).upper()
+    LOGGING_DESTINATION_TABLE = ("DEST" + ":" + DESTINATION_TABLE).upper()
 
 
 def get_keyword_ome_hrfp_theme(keywords_to_look_for: list, language: str) -> dict:
+    """Only keeps keywords in OME dictionnary"""
     keywords_lower = {m.lower() for m in keywords_to_look_for}
     try:
         keywords_hrfp_theme = {}
@@ -76,8 +136,33 @@ def get_keyword_ome_hrfp_theme(keywords_to_look_for: list, language: str) -> dic
     return keywords_hrfp_theme
 
 
+def get_max_start_date_from_destination(con: duckdb.DuckDBPyConnection) -> date:
+    """Get the maximum start date from the destination table, or None if empty."""
+    try:
+        result = con.sql(f"SELECT MAX(start) FROM {POSTGRES_DB}.{DESTINATION_TABLE}").fetchone()
+        if result and result[0]:
+            return result[0].date()
+        else:
+            return None
+    except Exception as e:
+        logging.error(f"[{LOGGING_DESTINATION_TABLE}] ERROR GETTING MAX START DATE: {e}")
+        raise e
+    
+    
+def confirm(message: str, assume_yes: bool = False) -> bool:
+    """Prompts for y/N confirmation in terminal. Returns True if accepted.
+    Without interactive terminal (job, CI), rejects unless assume_yes is True."""
+    if assume_yes:
+        return True
+    if not sys.stdin.isatty():
+        logging.error(f"[RUN] Confirmation required but no interactive terminal: {message} "
+                      f"Rerun with --yes to confirm.")
+        return False
+    return input(f"{message} [y/N] ").strip().lower() in ("y", "yes", "o", "oui")
+
+
 def _barometre_dsn() -> str:
-    return f"postgresql://{PG_USER}:{PG_PASSWORD}@{PG_HOST}:{PG_PORT}/{PG_DATABASE}"
+    return f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
 
 
 def configure_barometre_source(con: duckdb.DuckDBPyConnection):
@@ -85,7 +170,7 @@ def configure_barometre_source(con: duckdb.DuckDBPyConnection):
     try:
         # Install and load the Postgres extension for DuckDB
         con.execute("INSTALL postgres; LOAD postgres;")
-        con.execute(f"ATTACH '{_barometre_dsn()}' AS {PG_DATABASE} (TYPE POSTGRES);")
+        con.execute(f"ATTACH '{_barometre_dsn()}' AS {POSTGRES_DB} (TYPE POSTGRES);")
         logging.info(f"[{LOGGING_SOURCE_TABLE}] CONNECTION OK")
         
     except Exception as e:
@@ -97,7 +182,7 @@ def configure_barometre_source(con: duckdb.DuckDBPyConnection):
 def configure_barometre_destination(con: duckdb.DuckDBPyConnection, clear_destination_table: bool) -> None:
     """The database is already attached by configure_barometre_source: we only prepare the table."""
     try:
-        logging.info(f"[{LOGGING_DESTINATION_TABLE}] CONFIGURATION: Using {PG_HOST}:{PG_PORT}/{PG_DATABASE} as {PG_USER}")
+        logging.info(f"[{LOGGING_DESTINATION_TABLE}] CONFIGURATION: Using {POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB} as {POSTGRES_USER}")
         # <!> Asserting source_table won't be cleared
         if DESTINATION_TABLE == SOURCE_TABLE or\
                 DESTINATION_TABLE.split(".")[-1].lower() == SOURCE_TABLE.split(".")[-1].lower():
@@ -107,12 +192,13 @@ def configure_barometre_destination(con: duckdb.DuckDBPyConnection, clear_destin
             )            
         if not DRY_RUN:
             con.execute(f"""
-                CREATE TABLE IF NOT EXISTS {PG_DATABASE}.{DESTINATION_TABLE} (
+                CREATE TABLE IF NOT EXISTS {POSTGRES_DB}.{DESTINATION_TABLE} (
                     this_id VARCHAR NOT NULL,
                     channel_name VARCHAR NOT NULL,
                     channel_title VARCHAR NOT NULL,
                     start TIMESTAMP NOT NULL,
                     thematic_core_chunk BOOLEAN NOT NULL,
+                    adjacent_to_thematic_core BOOLEAN NOT NULL,
                     keywords VARCHAR,
                     themes VARCHAR,
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -124,7 +210,7 @@ def configure_barometre_destination(con: duckdb.DuckDBPyConnection, clear_destin
             logging.info(f"[{LOGGING_DESTINATION_TABLE}] TABLE CREATED OR ALREADY EXISTS")
             if clear_destination_table:
                 con.execute(
-                    f"DELETE FROM {PG_DATABASE}.{DESTINATION_TABLE} "
+                    f"DELETE FROM {POSTGRES_DB}.{DESTINATION_TABLE} "
                 )
                 logging.info(f"[{LOGGING_DESTINATION_TABLE}] TABLE {DESTINATION_TABLE} CLEARED")
     except Exception as e:
@@ -148,19 +234,20 @@ def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
             k.plaintext,
                 unnest(from_json(k.keywords_with_timestamp::JSON,
                         '[{{"keyword":"VARCHAR","theme":"VARCHAR"}}]')) AS kwt
-            FROM {PG_DATABASE}.{SOURCE_TABLE} k
+            FROM {POSTGRES_DB}.{SOURCE_TABLE} k
             WHERE k.start >= TIMESTAMP '{start_date}' AT TIME ZONE 'Europe/Paris'
                 AND k.start <  TIMESTAMP '{end_date}'   AT TIME ZONE 'Europe/Paris'
                 AND k.country = '{country}'
         )
         SELECT e.id, e.channel_name, e.start, e.plaintext,
                string_agg(DISTINCT e.kwt.keyword, ',' ORDER BY e.kwt.keyword) AS keywords,
-               string_agg(DISTINCT e.kwt.theme, ',' ORDER BY e.kwt.theme) AS themes
+               string_agg(DISTINCT e.kwt.theme, ',' ORDER BY e.kwt.theme) AS themes,
+               /* thematic core = at least one direct theme (no "_indirectes" suffix):
+                  either no hrfp, or granted hrfp with the suffix removed.
+                  A keyword can have several themes, the chunk is core if at least one is direct */
+               COALESCE(bool_or(NOT ends_with(e.kwt.theme, '_indirectes')), FALSE) AS thematic_core_chunk
         FROM exploded e
         WHERE e.kwt.keyword IN ({kewords_sql})
-            -- keeping only direct keywords -> either no hrfp (no "_indirectes" suffix), or granted hrfp with suffix deleted
-            -- a keyword can have several themes, we keep the chunk if at least one is direct
-            AND NOT ends_with(e.kwt.theme, '_indirectes')
         GROUP BY e.id, e.channel_name, e.start, e.plaintext
         ORDER BY e.start, e.channel_name
     """).df()
@@ -171,8 +258,6 @@ def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
         raise e
 
 
-
-# SOURCE: GET S3 CREDENTIALS
 def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
     endpoint = S3_ENDPOINT_URL.removeprefix("https://").removeprefix("http://")
     try:
@@ -192,7 +277,6 @@ def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
         raise e
     
     
-# SOURCE - READ FROM S3: ONE DAY AT A TIME
 def read_day_from_s3(con: duckdb.DuckDBPyConnection, day: date, channels: list[str], country:str) -> pd.DataFrame:
     """Read parquet files for a specific day and channels: channel_name, start, plaintext."""
     if country != "france":
@@ -241,61 +325,75 @@ def read_day_from_s3(con: duckdb.DuckDBPyConnection, day: date, channels: list[s
    
     return df
 
-def extract_adjacent_chunks_day(thematic_core_chunks: pd.DataFrame, s3_day_df: pd.DataFrame, gap: str) -> pd.DataFrame:
+
+def extract_adjacent_chunks_day(keywords_day: pd.DataFrame, s3_day_df, gap: str) -> pd.DataFrame:
     try:
         gap_ns = pd.Timedelta(gap).value  # integer, nanoseconds
         keys = ["start", "channel_name"]
-        core_keys = (
-            thematic_core_chunks[keys + ["id", "plaintext", "keywords", "themes"]]
+
+        # All chunks coming from the keywords table: thematic cores and indirect-only chunks
+        kw = (
+            keywords_day[keys + ["id", "plaintext", "keywords", "themes", "thematic_core_chunk"]]
             .drop_duplicates(subset=keys)
-            .rename(columns={"plaintext": "core_plaintext", "id": "source_keywords_id"})
-            .assign(thematic_core_chunk=True)
+            .rename(columns={"id": "source_keywords_id"})
         )
-        
-        parts = []
-        for channel, s3_chan in s3_day_df.groupby("channel_name"):
-            core_starts = (
-                pd.to_datetime(core_keys.loc[core_keys["channel_name"] == channel, "start"])
-                .dt.as_unit("ns").astype("int64").to_numpy()
-            )
-            if len(core_starts) == 0:
-                continue
-            s3_starts = (
-                pd.to_datetime(s3_chan["start"])
-                .dt.as_unit("ns").astype("int64").to_numpy()
-            )
+        cores = kw[kw["thematic_core_chunk"]]
 
-            # Difference between each S3 chunk and each core chunk of the channel: matrix (n_s3 x n_core), in ns
-            ecart = np.abs(s3_starts[:, None] - core_starts[None, :])
+        if cores.empty:
+            # No core: nothing to fetch on S3, non-core chunks are kept as they are
+            out = kw.assign(adjacent_to_thematic_core=False)
+        else:
+            # S3 chunks within gap of at least one core (core itself, 0 gap, is included)
+            parts = []
+            for channel, s3_chan in s3_day_df.groupby("channel_name"):
+                core_starts = (
+                    pd.to_datetime(cores.loc[cores["channel_name"] == channel, "start"])
+                    .dt.as_unit("ns").astype("int64").to_numpy()
+                )
+                if len(core_starts) == 0:
+                    continue
+                s3_starts = (
+                    pd.to_datetime(s3_chan["start"])
+                    .dt.as_unit("ns").astype("int64").to_numpy()
+                )
+                ecart = np.abs(s3_starts[:, None] - core_starts[None, :])
+                parts.append(s3_chan[(ecart <= gap_ns).any(axis=1)])
 
-            # Keep chunk if within gap distance of at least one core (core itself, 0 gap, is included)
-            parts.append(s3_chan[(ecart <= gap_ns).any(axis=1)])
+            if not parts:
+                raise ValueError(
+                    f"No chunk in S3 found on {len(cores)} core chunks: "
+                    f"missing channels in S3 or timezone shifting?"
+                )
+            near = pd.concat(parts, ignore_index=True)
 
-        if not parts:
-            raise ValueError(
-                f"No chunk in S3 found on {len(core_keys)} core chunks: "
-                f"missing channels in S3 or timezone shifting?"
-    )
+            # All core chunks must be in S3
+            n_core_found = len(cores.merge(near[keys], on=keys))
+            if n_core_found != len(cores):
+                raise ValueError(f"{len(cores) - n_core_found} core chunks missing from S3")
 
-        out = pd.concat(parts, ignore_index=True)
+            # For the same channel and start time, source plaintext must match S3 plaintext
+            check = cores.merge(near, on=keys, suffixes=("_kw", "_s3"))
+            mismatch = check[check["plaintext_kw"] != check["plaintext_s3"]]
+            if not mismatch.empty:
+                raise ValueError(
+                    f"{len(mismatch)} core chunks have mismatched plaintext between source table and S3 "
+                    f"at the same channel and start time: issue is likely caused by a timezone offset. "
+                    f"Example: {mismatch[['channel_name', 'start']].iloc[0].to_dict()}"
+                )
 
-        # thematic_core_chunk = True if key is in core_chunks, False if adjacent chunk
-        out = out.merge(core_keys, on=keys, how="left")
-        out["thematic_core_chunk"] = out["thematic_core_chunk"].eq(True)
-        
-        n_core_found = out["thematic_core_chunk"].sum()
-        if n_core_found != len(core_keys):
-            raise ValueError(f"{len(core_keys) - n_core_found} core chunks missing from S3")
+            # adjacent= true if within gap of a core, and not a core itself
+            # (also applies to non-core chunks from keywords that sit in a core window)
+            kw = kw.merge(near[keys].assign(in_window=True), on=keys, how="left")
+            kw["adjacent_to_thematic_core"] = kw["in_window"].eq(True) & ~kw["thematic_core_chunk"]
+            kw = kw.drop(columns="in_window")
 
-        # For the same channel and start time, source plaintext must match S3 plaintext
-        cores = out[out["thematic_core_chunk"]]
-        mismatch = cores[cores["plaintext"] != cores["core_plaintext"]]
-        if not mismatch.empty:
-            raise ValueError(
-                f"{len(mismatch)} core chunks have mismatched plaintext between source table and S3 "
-                f"at the same channel and start time: issue is likely caused by a timezone offset. "
-                f"Example: {mismatch[['channel_name', 'start']].iloc[0].to_dict()}"
-            )
+            # Pure neighbours: in S3 near a core, absent from the keywords table
+            pure = near.merge(kw[keys], on=keys, how="left", indicator=True)
+            pure = pure[pure["_merge"] == "left_only"].drop(columns="_merge")
+            pure = pure.assign(source_keywords_id=None, keywords=None, themes=None,
+                               thematic_core_chunk=False, adjacent_to_thematic_core=True)
+
+            out = pd.concat([kw, pure], ignore_index=True)
 
         # id = primary key: channel + start
         out["this_id"] = (out["channel_name"] + "_"
@@ -303,49 +401,29 @@ def extract_adjacent_chunks_day(thematic_core_chunks: pd.DataFrame, s3_day_df: p
         out["channel_title"] = out["channel_name"].map(channel_titles_france)
 
         cols = ["this_id", "channel_name", "channel_title", "start",
-                "thematic_core_chunk", "source_keywords_id", "keywords", "themes", "plaintext"]      
-        return out.sort_values(keys)[cols].reset_index(drop=True)
+                "thematic_core_chunk", "adjacent_to_thematic_core",
+                "source_keywords_id", "keywords", "themes", "plaintext"]
+        return out.sort_values(["start", "channel_name"])[cols].reset_index(drop=True)
 
     except Exception as e:
-        logging.error(f"[EXTRACT_ADJACENT_CHUNKS] ❌ ERROR EXTRACTING ADJACENT CHUNKS: {e}")
+        logging.error(f"[EXTRACT_ADJACENT_CHUNKS] ERROR EXTRACTING ADJACENT CHUNKS: {e}")
         raise e
-    
-def get_max_start_date_from_destination(con: duckdb.DuckDBPyConnection) -> date:
-    """Get the maximum start date from the destination table, or None if empty."""
-    try:
-        result = con.sql(f"SELECT MAX(start) FROM {PG_DATABASE}.{DESTINATION_TABLE}").fetchone()
-        if result and result[0]:
-            return result[0].date()
-        else:
-            return None
-    except Exception as e:
-        logging.error(f"[{LOGGING_DESTINATION_TABLE}] ❌ ERROR GETTING MAX START DATE: {e}")
-        raise e
-    
-def confirm(message: str, assume_yes: bool = False) -> bool:
-    """Prompts for y/N confirmation in terminal. Returns True if accepted.
-    Without interactive terminal (job, CI), rejects unless assume_yes is True."""
-    if assume_yes:
-        return True
-    if not sys.stdin.isatty():
-        logging.error(f"[RUN] Confirmation required but no interactive terminal: {message} "
-                      f"Rerun with --yes to confirm.")
-        return False
-    return input(f"{message} [y/N] ").strip().lower() in ("y", "yes", "o", "oui")
 
 
 def run(start_date: date, end_date: date,
         keywords_to_look_for: list,
         country: str, language: str,
         clear_destination_table: bool, assume_yes: bool) -> None:
-    logging.info("------------------------------")
+    
     logging.info(f"[RUN] {start_date} -> {end_date}, {keywords_to_look_for}, {country}, {language}")
     logging.warning(f"[RUN] DRY_RUN={DRY_RUN}")
     
     _con = duckdb.connect()
         
-
+    ### Checking keywords to process
     kw_dict = get_keyword_ome_hrfp_theme(keywords_to_look_for, language)
+    
+    ### Configuring source DB
     configure_barometre_source(_con)
             
     if not start_date and clear_destination_table:
@@ -369,55 +447,75 @@ def run(start_date: date, end_date: date,
                        f"Continue?", assume_yes):
             raise SystemExit("Cancelled by user")
 
+    ### Configuring s3 connection
     _configure_s3(_con)
+    ### Configuring destination table
     configure_barometre_destination(_con, clear_destination_table)
 
-    table = f"{PG_DATABASE}.{DESTINATION_TABLE}"
+    table = f"{POSTGRES_DB}.{DESTINATION_TABLE}"
     counter_to_ingest=0
     ingested = 0
     stopped_day = None
-
+    
+    ### For each day: 
+    ### 1. reading source table keywords
+    ### 2. fetching all needed days and channels on s3
+    ### 3. extracting only thematic chunks and neighbour chunks (+/- 2 minutes)
+    ### 4. ingesting the result in destination table
     day = start_date
     while day < end_date:
+        # 1. Reading keywords
         try:
             logging.info(f"[RUN] ------ Processing day {day} ------")
             logging.info(f"[{LOGGING_SOURCE_TABLE}] {day}: reading source table")
-            core_day = read_barometre_keywords(_con, kw_dict, day, day + timedelta(days=1), country)
+            keywords_day = read_barometre_keywords(_con, kw_dict, day, day + timedelta(days=1), country)
         except Exception:
             logging.exception(f"[{LOGGING_SOURCE_TABLE}] {day}: failed")
             stopped_day = day
             break
 
-        if core_day.empty:
-            logging.info(f"[{LOGGING_SOURCE_TABLE}] {day}: no core chunk found, nothing to do")
+        if keywords_day.empty:
+            logging.info(f"[{LOGGING_SOURCE_TABLE}] {day}: no chunk found")
             day += timedelta(days=1)
             continue
-        logging.info(f"[{LOGGING_SOURCE_TABLE}] {day}: {len(core_day)} core chunk found")
+        n_core = int(keywords_day["thematic_core_chunk"].sum())
+        logging.info(f"[{LOGGING_SOURCE_TABLE}] {day}: {len(keywords_day)} chunks found, {n_core} thematic core chunks")
 
-        logging.info(f"[S3] {day}: processing {len(core_day)} core chunks")
-        
-        # channels to read
-        day_channels = core_day["channel_name"].unique().tolist()
+        # 2. Fetching data in s3, only for channels with at least one core chunk
+        s3_day_df = None
+        if n_core:
+            logging.info(f"[S3] {day}: Fetching s3 data on days and channels from {n_core} core chunks")
+            day_channels = (keywords_day.loc[keywords_day["thematic_core_chunk"], "channel_name"]
+                            .unique().tolist())
+            try:
+                s3_day_df = read_day_from_s3(_con, day, day_channels, country)
+            except Exception:
+                logging.exception(f"[S3] {day}: failed to read S3")
+                stopped_day = day
+                break
 
         try:
-            s3_day_df = read_day_from_s3(_con, day, day_channels, country)
-        except Exception:
-            logging.exception(f"[S3] {day}: failed to read S3")
-            stopped_day = day
-            break
-
-        try:
-            day_to_ingest_df = extract_adjacent_chunks_day(core_day, s3_day_df, GAP)
-            logging.info(f"[{LOGGING_DESTINATION_TABLE}] {day}: {len(day_to_ingest_df)} chunks (core + adjacent) to ingest")
+            # 3. Extracting core chunks, neighbour chunks and non-core chunks
+            logging.info(f"[EXTRACT_ADJACENT_CHUNKS] Starting selection of chunks to keep (core + adjacent_to_core + others)")
+            day_to_ingest_df = extract_adjacent_chunks_day(keywords_day, s3_day_df, GAP)
+            n_core_day = int(day_to_ingest_df["thematic_core_chunk"].sum())
+            n_adjacent_day = int(day_to_ingest_df["adjacent_to_thematic_core"].sum())
+            n_other_day = len(day_to_ingest_df) - n_core_day - n_adjacent_day
+            logging.info(
+                f"[{LOGGING_DESTINATION_TABLE}] {day}: {len(day_to_ingest_df)} chunks selected for ingestion into destination "
+                f"({n_core_day} core, {n_adjacent_day} adjacent, {n_other_day} other)"
+            )
             counter_to_ingest+=len(day_to_ingest_df)
             n_expected_day = day_to_ingest_df["this_id"].nunique()
+
 
             if DRY_RUN:
                 day += timedelta(days=1)
                 continue
-
+            # 4. Ingesting into destination table
             _con.begin()
             try:
+                # checks if consistent table (if extra, probably previous runs with other kw)
                 _con.execute(f"""
                     INSERT INTO {table} BY NAME
                     SELECT *,now() AT TIME ZONE 'Europe/Paris' AS created_at
@@ -429,6 +527,18 @@ def run(start_date: date, end_date: date,
                     WHERE start >= ? AND start < ?
                       AND this_id NOT IN (SELECT this_id FROM day_to_ingest_df)
                 """, [day, day + timedelta(days=1)]).fetchone()[0]
+                
+                # checks if n_ingest = n_to_ingest
+                n_in_table = _con.execute(f"""
+                    SELECT count(*) FROM {table}
+                    WHERE start >= ? AND start < ?
+                      AND this_id IN (SELECT this_id FROM day_to_ingest_df)
+                """, [day, day + timedelta(days=1)]).fetchone()[0]
+                if n_in_table != n_expected_day:
+                    raise RuntimeError(
+                        f"{day}: {n_in_table} chunks found in the table after ingestion, "
+                        f"{n_expected_day} expected"
+                    )
                 _con.commit()
             except Exception:
                 _con.rollback()
@@ -448,7 +558,8 @@ def run(start_date: date, end_date: date,
             break
 
         day += timedelta(days=1)
-
+        
+    # If dry_run, no writing in destination table
     if DRY_RUN:
         logging.info(f"[END] DRY_RUN: {counter_to_ingest} chunks would have been ingested")
     else:
@@ -461,33 +572,7 @@ def run(start_date: date, end_date: date,
         )
         raise RuntimeError(f"Run stopped at {stopped_day}, end_date {end_date} not reached")
     
-        
-        
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="1. Extract keywords from the source table, "
-                    "2. Retrieve adjacent chunks from S3, "
-                    "3. Insert into destination table."
-    )
-    parser.add_argument("--start_date", type=date.fromisoformat,
-                        help="Start date (included), YYYY-MM-DD")
-    parser.add_argument("--end_date", type=date.fromisoformat, default=date.today(),
-                        help="End date (excluded), YYYY-MM-DD (default: today)")
-    parser.add_argument("--keywords", type=str, nargs="+", required=True,
-                        help="Keywords to look for")
-    parser.add_argument("--country", type=str, default="france", help="Country name")
-    parser.add_argument("--language", type=str, default="french", help="Language name")
-    parser.add_argument("--clear_destination_table",action="store_true",
-                        help="Clear the destination table before inserting")
-    parser.add_argument("--assume_yes", action="store_true",
-                        help="Automatically confirm prompts (non-interactive usage)")
-    args = parser.parse_args()
-
-    if args.start_date and args.end_date <= args.start_date:
-        parser.error("--end_date must be after --start_date")
-    return args
-
-
+         
 if __name__ == "__main__":
     logging.basicConfig(
         level=logging.INFO,
@@ -495,11 +580,11 @@ if __name__ == "__main__":
         handlers=[logging.StreamHandler()],
         force=True
     )
-    args = parse_args()
+    load_configuration()
     try:
-        run(start_date=args.start_date, end_date=args.end_date, keywords_to_look_for=args.keywords,
-            country=args.country, language=args.language, 
-            clear_destination_table=args.clear_destination_table, assume_yes=args.assume_yes)
+        run(start_date=START_DATE, end_date=END_DATE, keywords_to_look_for=KEYWORDS,
+            country=COUNTRY, language=LANGUAGE, 
+            clear_destination_table=CLEAR_DESTINATION_TABLE, assume_yes=ASSUME_YES)
     except Exception as e:
         logging.error(f"[RUN] ERROR: {e}")
         raise

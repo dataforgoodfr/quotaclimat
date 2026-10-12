@@ -1,6 +1,6 @@
 -- Contrôle du rattachement des segments aux programmes, chaînes françaises : segments de public.keywords
 -- dont le program_metadata_id stocké à l'ingestion diffère du programme recalculé à partir de l'heure.
--- Le recalcul suit la logique de metabase_taux_mesinformation_par_emission.sql et de la macro dbt program_at
+-- Le recalcul suit la règle horaire appliquée aux cas dans metabase_taux_mesinformation_par_emission.sql
 -- (start, timestamp with time zone, converti en heure de Paris, jour de semaine, programmes après minuit,
 -- validité de grille, créneaux élargis à [début - 6 min, fin + 6 min[ comme à l'ingestion), mais directement sur
 -- public.program_metadata, sans le découpage en émissions.

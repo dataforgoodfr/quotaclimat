@@ -102,10 +102,13 @@ SELECT
     -- piste la plus probable, à confirmer ligne à ligne
     CASE
         WHEN d.id_stocke IS NOT NULL AND gs.id IS NULL THEN NULL
+        -- l'API est interrogée de début - 5 min à fin + 5 min (api_to_s3.py, epoch_margin de la France) :
+        -- les segments de ces marges reçoivent l'id du programme ; 6 min pour la réattribution
+        -- (channel_program.get_matching_program_hour)
+        WHEN gs.id IS NOT NULL AND NOT st.dans_creneau AND ABS(st.ecart) <= 6 THEN 'marge d''ingestion (5 à 6 min)'
         WHEN gs.id IS NOT NULL AND NOT COALESCE(st.dans_creneau, FALSE) AND su.dans_creneau
             THEN 'décalage UTC / Paris'
         WHEN gs.id IS NOT NULL AND st.weekday_ok IS NULL THEN 'jour de semaine du programme stocké différent'
-        WHEN gs.id IS NOT NULL AND NOT st.dans_creneau AND ABS(st.ecart) <= 6 THEN 'marge de 6 min de l''ingestion'
         WHEN gs.id IS NOT NULL AND NOT st.dans_creneau THEN 'hors créneau du programme stocké'
         WHEN gs.id IS NOT NULL AND NOT (st.jour BETWEEN COALESCE(gs.grid_start, '-infinity'::date) AND gs.grid_end)
             THEN 'grille du programme stocké non valide ce jour'

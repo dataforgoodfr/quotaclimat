@@ -11,7 +11,7 @@
     before dbt runs (see my_dbt_project/external_sources.yml): where they are missing (e.g. extended perimeter),
     labels are left empty instead of failing the run.
     Programs before / after the tunnel of the occurrence (see ad_tunnel_programs): id in analytics.program
-    (emissions of the Programmes Google Sheet, else programs of program_metadata), label and gap. -#}
+    (monitored programs, split into their emissions when known), label and gap. -#}
 WITH sector_ref AS (
   {{ source_or_empty('advertising', 'ad_sectors', ['sector_code', 'sector_label_fr']) }}
 ),

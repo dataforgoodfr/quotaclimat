@@ -585,39 +585,25 @@ models:
 
   - name: program
     description: >
-      In the analytics schema. Grid of the monitored programs where each row is one emission, one row per
-      emission and per day. source 'emission': the emissions of the Programmes Google Sheet (tab
-      emissions-infos-en-continue, seed ref_programmes_emissions_infos_en_continue, 24h news channels), the
-      weekday column ('*', 'weekday', 'weekend' or days 1 to 7 separated by '|') split into one row per day,
-      each with the monitored program (program_metadata) it is broadcast in: the program of the same channel
-      and day overlapping the emission the most, on the most recent grid. source 'program': the other rows
-      of program_metadata, each program being its own emission; a program with emissions is replaced by
-      them from the first day of its emissions.
+      In the analytics schema. The monitored programs of program_metadata (one row per program and per day),
+      split into the emissions broadcast in them when they are known (Programmes Google Sheet, tab
+      emissions-infos-en-continue, seed ref_programmes_emissions_infos_en_continue, 24h news channels): the
+      weekday column of the tab ('*', 'weekday', 'weekend' or days 1 to 7 separated by '|') gives one emission
+      per day, cut to the programs it overlaps. Every row has the program, a split row also has the emission.
+      What is outside the monitored programs is left out. Before / after the validity of its emissions, a
+      program is not split.
     columns:
       - name: id
-        description: >
-          Emission: md5 of channel_name, weekday, start and grid_start. Program: program_metadata.id.
+        description: md5 of program_metadata_id, emission_id and grid_start.
         tests:
           - unique
           - not_null
-      - name: source
-        description: emission (Programmes Google Sheet) or program (program_metadata).
-        tests:
-          - accepted_values:
-              arguments:
-                values: ['emission', 'program']
-      - name: label
-        description: "Condensed description: program / emission (presenters) [rediffusion], the program left out when it is the emission."
       - name: channel_name
-        description: Technical channel identifier, as in program_metadata (e.g. bfmtv, itele).
+        description: Technical channel identifier (program_metadata).
         tests:
           - not_null
       - name: channel_title
-        description: Channel name (program_metadata), NULL when the channel is not in program_metadata.
-        tests:
-          - not_null:
-              config:
-                severity: warn
+        description: Channel name (program_metadata).
       - name: country
         description: Country of the channel (program_metadata).
       - name: public
@@ -627,47 +613,55 @@ models:
       - name: radio
         description: Radio channel (program_metadata).
       - name: weekday
-        description: Day of the emission, 1 (Monday) to 7 (Sunday), like program_metadata.weekday.
+        description: Day of the program, 1 (Monday) to 7 (Sunday), like program_metadata.weekday.
         tests:
           - not_null
           - accepted_values:
               arguments:
                 values: [1, 2, 3, 4, 5, 6, 7]
                 quote: false
+      - name: label
+        description: "Condensed description: program / emission (presenters) [rediffusion], the program alone when not split."
+        tests:
+          - not_null
+      - name: start
+        description: Start of the time slot of the row HH:MM (Paris time), the emission cut to the program.
+      - name: end
+        description: End of the time slot of the row HH:MM (Paris time), 24:00 for midnight.
+      - name: start_minute
+        description: start in minutes since the start of the program day.
+      - name: end_minute
+        description: end in minutes since the start of the program day, beyond 1440 when ending after midnight.
+      - name: duration_minutes
+        description: Duration of the time slot in minutes.
+      - name: grid_start
+        description: First day the row is valid.
+      - name: grid_end
+        description: Last day the row is valid (2100-01-01 when not limited).
+      - name: program_metadata_id
+        description: program_metadata.id of the program.
+        tests:
+          - not_null
+      - name: channel_program
+        description: Name of the program (program_metadata.channel_program).
+      - name: channel_program_type
+        description: Type of the program (program_metadata.channel_program_type).
+      - name: program_start
+        description: Start time of the program (program_metadata.start).
+      - name: program_end
+        description: End time of the program (program_metadata.end).
+      - name: emission_id
+        description: md5 of channel_name, weekday, start and grid_start of the emission, NULL when the program is not split.
       - name: emission
         description: Name of the emission.
       - name: presentation
-        description: Presenters, as written in the sheet.
+        description: Presenters of the emission, as written in the sheet.
       - name: rediffusion
         description: True for a rerun (column rediffusion 'oui').
-      - name: start
-        description: Start time HH:MM (Paris time), as written in the sheet.
-      - name: end
-        description: End time HH:MM (Paris time), 24:00 for midnight, as written in the sheet.
-      - name: start_minute
-        description: Start in minutes since the start of the day (Paris time), NULL when invalid.
-      - name: end_minute
-        description: End in minutes since the start of the day, beyond 1440 when ending after midnight, NULL when invalid.
-      - name: duration_minutes
-        description: Duration of the emission in minutes, NULL when a time is invalid.
-      - name: grid_start
-        description: First day the row is valid, NULL when not filled in (no lower bound).
-      - name: grid_end
-        description: Last day the row is valid, 2100-01-01 when not filled in.
-      - name: program_metadata_id
-        description: >
-          program_metadata.id of the program the emission is broadcast in, NULL when it overlaps no
-          monitored program (e.g. after 23:00 on the news channels).
-      - name: channel_program
-        description: Name of that program (program_metadata.channel_program).
-      - name: channel_program_type
-        description: Type of that program (program_metadata.channel_program_type).
-      - name: program_start
-        description: Start time of that program.
-      - name: program_end
-        description: End time of that program.
-      - name: program_overlap_minutes
-        description: Minutes of the emission inside that program (monitored minutes), 0 when none.
+      - name: emission_start
+        description: Start time HH:MM of the emission, as written in the sheet (before the cut to the program).
+      - name: emission_end
+        description: End time HH:MM of the emission, as written in the sheet.
 
   - name: cas_de_mesinformation
     description: >
@@ -697,8 +691,8 @@ models:
         description: Radio channel (program_metadata).
       - name: program_id
         description: >
-          analytics.program.id of the program on the air at the start of the segment (data_item_start, Paris
-          time): an emission of the Programmes Google Sheet, else a program of program_metadata. French
-          channels only, NULL outside the programs of analytics.program.
+          analytics.program.id of the row on the air at the start of the segment (data_item_start, Paris
+          time): the monitored program, split into its emission when known. French channels only, NULL
+          outside the monitored programs.
       - name: program
         description: Label of that program (analytics.program.label).

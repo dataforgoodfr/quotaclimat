@@ -8,10 +8,10 @@
 {#- time zone of advertising.ad_occurrence.occurrence_date (timestamp without time zone) -#}
 {% set occurrence_tz = var('ad_occurrence_timezone', 'UTC') %}
 
--- One row per ad tunnel with, at most {{ window_minutes }} minutes away, the program of analytics.program
--- (French channels: the emissions of the Programmes Google Sheet, else the monitored programs of
--- program_metadata) just before it, and the one just after it when the tunnel is not inside the one before:
--- a tunnel between two programs has both, with the gaps in seconds. Grids are in Paris local time.
+-- One row per ad tunnel with, at most {{ window_minutes }} minutes away, the row of analytics.program (a
+-- monitored program of the French channels, split into its emissions when they are known) just before it,
+-- and the one just after it when the tunnel is not inside the one before: a tunnel between two programs or
+-- emissions has both, with the gaps in seconds. Grids are in Paris local time.
 WITH tunnels AS (
     SELECT
         tunnel_id,
@@ -53,9 +53,6 @@ programs AS (
      AND p.weekday = EXTRACT(ISODOW FROM days.day)
      AND days.day BETWEEN COALESCE(p.grid_start, '-infinity'::date) AND p.grid_end
     WHERE p.country = 'france'
-      -- emissions with an invalid time in the sheet are left out
-      AND p.start_minute IS NOT NULL
-      AND p.end_minute IS NOT NULL
 ),
 candidates AS (
     SELECT

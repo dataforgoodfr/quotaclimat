@@ -7,9 +7,10 @@
 -- volume_heures : durée de diffusion théorique sur la période d'après la grille (analytics.program),
 --   coupée aux bornes de la période
 -- env_heures : temps consacré à l'environnement, même calcul que core_query_environmental_shares
---   (public.keywords.number_of_keywords fenêtres de 20 s), segments rattachés à la ligne de grille à l'antenne,
---   keywords.start (timestamp with time zone) converti en heure de Paris
--- nb_cas : cas validés (analytics.cas_de_mesinformation, 1re annotation 'Correct'), via leur program_id
+--   (public.keywords.number_of_keywords fenêtres de 20 s)
+-- nb_cas : cas validés (analytics.cas_de_mesinformation, 1re annotation 'Correct')
+-- segments et cas sont rattachés à la ligne de grille à l'antenne, créneaux élargis de 5 min comme à
+-- l'ingestion (alignement sur les dashboards)
 WITH bornes AS (
     SELECT
         CAST({{debut}} AS timestamp) AS debut,
@@ -59,12 +60,15 @@ volume AS (
     WHERE diffusion_fin > diffusion_debut
     GROUP BY 1, 2, 3, 4, 5
 ),
--- segments de 2 min de public.keywords de la période ; start est un timestamp with time zone en production,
--- converti en heure de Paris (bornes de la période converties en instants pour le filtre)
-keywords_periode AS MATERIALIZED (
+-- horodatages à rattacher à la grille, en heure de Paris :
+-- - segments de 2 min de public.keywords : start est un timestamp with time zone en production (bornes de
+--   la période converties en instants pour le filtre) ;
+-- - cas validés (analytics.cas_de_mesinformation, 1re annotation 'Correct') : data_item_start lu en UTC,
+--   comme dans la macro dbt program_at, à contrôler avec metabase_controle_cas_program.sql
+horodatages AS MATERIALIZED (
     SELECT
-        k.id,
-        k.start,
+        'segment' AS nature,
+        k.id || '|' || k.start::text AS cle,
         k.channel_name,
         k.number_of_keywords,
         k.start AT TIME ZONE 'Europe/Paris' AS paris_time
@@ -74,42 +78,62 @@ keywords_periode AS MATERIALIZED (
      AND k.start < b.fin AT TIME ZONE 'Europe/Paris'
     WHERE k.country = 'france'
       AND k.number_of_keywords > 0
-),
--- jour de grille et minute dans ce jour de chaque segment : le jour même, et aussi la veille quand le
--- segment est assez tôt pour tomber dans un programme de la veille qui finit après minuit
-keywords_jour AS MATERIALIZED (
+    UNION ALL
     SELECT
-        k.id,
-        k.start,
-        k.channel_name,
-        k.number_of_keywords,
-        o.day_offset,
-        k.paris_time::date - o.day_offset AS jour,
-        EXTRACT(ISODOW FROM k.paris_time::date - o.day_offset)::int AS weekday,
-        EXTRACT(EPOCH FROM k.paris_time - (k.paris_time::date - o.day_offset)) / 60 AS minute
-    FROM keywords_periode k
-    CROSS JOIN (VALUES (0), (1)) AS o(day_offset)
-    WHERE o.day_offset = 0
-       OR EXTRACT(EPOCH FROM k.paris_time - k.paris_time::date) / 60 + 1440
-          < (SELECT MAX(end_minute) FROM grille)
+        'cas',
+        c.task_aggregate_id::text,
+        c.data_item_channel_name,
+        0,
+        (c.data_item_start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris'
+    FROM analytics.cas_de_mesinformation c
+    CROSS JOIN bornes b
+    WHERE c.country = 'france'
+      AND (c.data_item_start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' >= b.debut
+      AND (c.data_item_start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' < b.fin
 ),
--- chaque segment rattaché à la ligne de grille à l'antenne à son début ; en cas de chevauchement, mêmes
--- priorités que la macro program_at
-env_segments AS (
-    SELECT DISTINCT ON (k.id, k.start)
+-- jour de grille et minute dans ce jour : le jour même, la veille pour un programme de la veille qui finit
+-- après minuit, le lendemain pour la marge avant un programme qui commence à minuit
+horodatages_jour AS MATERIALIZED (
+    SELECT
+        h.nature,
+        h.cle,
+        h.channel_name,
+        h.number_of_keywords,
+        o.day_offset,
+        h.paris_time::date - o.day_offset AS jour,
+        EXTRACT(ISODOW FROM h.paris_time::date - o.day_offset)::int AS weekday,
+        EXTRACT(EPOCH FROM h.paris_time - (h.paris_time::date - o.day_offset)) / 60 AS minute
+    FROM horodatages h
+    CROSS JOIN (VALUES (-1), (0), (1)) AS o(day_offset)
+    WHERE o.day_offset = 0
+       OR (o.day_offset = 1
+           AND EXTRACT(EPOCH FROM h.paris_time - h.paris_time::date) / 60 + 1440
+               < (SELECT MAX(end_minute) FROM grille) + 5)
+       OR (o.day_offset = -1 AND EXTRACT(EPOCH FROM h.paris_time - h.paris_time::date) / 60 >= 1440 - 5)
+),
+-- rattachement aligné sur les dashboards, qui reprennent le programme posé à l'ingestion : l'API y est
+-- interrogée de début - 5 min à fin + 5 min (api_to_s3.py, epoch_margin de la France), les créneaux sont donc
+-- élargis de 5 min ; priorité à la ligne qui contient vraiment l'horodatage, puis à la plus proche, puis
+-- mêmes priorités que la macro program_at
+rattachements AS (
+    SELECT DISTINCT ON (h.nature, h.cle)
+        h.nature,
         g.channel_name,
         g.type,
         g.nom,
         g.rediffusion,
-        k.number_of_keywords
-    FROM keywords_jour k
+        h.number_of_keywords
+    FROM horodatages_jour h
     JOIN grille g
-      ON g.channel_name = k.channel_name
-     AND g.weekday = k.weekday
-     AND k.jour BETWEEN COALESCE(g.grid_start, '-infinity'::date) AND g.grid_end
-     AND k.minute >= g.start_minute
-     AND k.minute < g.end_minute
-    ORDER BY k.id, k.start, g.type = 'émission' DESC, g.grid_start DESC NULLS LAST, k.day_offset, g.start_minute DESC
+      ON g.channel_name = h.channel_name
+     AND g.weekday = h.weekday
+     AND h.jour BETWEEN COALESCE(g.grid_start, '-infinity'::date) AND g.grid_end
+     AND h.minute >= g.start_minute - 5
+     AND h.minute < g.end_minute + 5
+    ORDER BY h.nature, h.cle,
+        h.minute >= g.start_minute AND h.minute < g.end_minute DESC,
+        GREATEST(g.start_minute - h.minute, h.minute - g.end_minute),
+        g.type = 'émission' DESC, g.grid_start DESC NULLS LAST, h.day_offset, g.start_minute DESC
 ),
 env AS (
     SELECT
@@ -118,23 +142,19 @@ env AS (
         nom,
         rediffusion,
         SUM(number_of_keywords) * 20 / 3600.0 AS env_heures
-    FROM env_segments
+    FROM rattachements
+    WHERE nature = 'segment'
     GROUP BY 1, 2, 3, 4
 ),
--- data_item_start (Label Studio) lu en UTC et converti en heure de Paris, comme dans la macro dbt program_at
--- qui a calculé program_id : à contrôler comme keywords.start
 cas AS (
     SELECT
-        g.channel_name,
-        g.type,
-        g.nom,
-        g.rediffusion,
+        channel_name,
+        type,
+        nom,
+        rediffusion,
         COUNT(*) AS nb_cas
-    FROM analytics.cas_de_mesinformation c
-    CROSS JOIN bornes b
-    JOIN grille g ON g.id = c.program_id
-    WHERE (c.data_item_start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' >= b.debut
-      AND (c.data_item_start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' < b.fin
+    FROM rattachements
+    WHERE nature = 'cas'
     GROUP BY 1, 2, 3, 4
 )
 SELECT

@@ -2,7 +2,8 @@
 -- dont le program_metadata_id stocké à l'ingestion diffère du programme recalculé à partir de l'heure.
 -- Le recalcul suit la logique de metabase_taux_mesinformation_par_emission.sql et de la macro dbt program_at
 -- (start, timestamp with time zone, converti en heure de Paris, jour de semaine, programmes après minuit,
--- validité de grille), mais directement sur public.program_metadata, sans le découpage en émissions.
+-- validité de grille, créneaux élargis de 5 min comme à l'ingestion), mais directement sur
+-- public.program_metadata, sans le découpage en émissions.
 -- Variables Metabase, type Texte, heure de Paris :
 --   {{debut}} inclus, ex. 2026-09-01 ou 2026-09-01 06:00
 --   {{fin}}   exclu,  ex. 2026-09-08
@@ -53,8 +54,8 @@ segments AS MATERIALIZED (
      AND k.start < b.fin AT TIME ZONE 'Europe/Paris'
     WHERE k.country = 'france'
 ),
--- jour de grille et minute dans ce jour : le jour même, et la veille pour un segment assez tôt pour tomber
--- dans un programme de la veille qui finit après minuit
+-- jour de grille et minute dans ce jour : le jour même, la veille pour un programme de la veille qui finit
+-- après minuit, le lendemain pour la marge avant un programme qui commence à minuit
 segments_jour AS MATERIALIZED (
     SELECT
         s.id,
@@ -65,11 +66,16 @@ segments_jour AS MATERIALIZED (
         EXTRACT(ISODOW FROM s.paris_time::date - o.day_offset)::int AS weekday,
         EXTRACT(EPOCH FROM s.paris_time - (s.paris_time::date - o.day_offset)) / 60 AS minute
     FROM segments s
-    CROSS JOIN (VALUES (0), (1)) AS o(day_offset)
+    CROSS JOIN (VALUES (-1), (0), (1)) AS o(day_offset)
     WHERE o.day_offset = 0
-       OR EXTRACT(EPOCH FROM s.paris_time - s.paris_time::date) / 60 + 1440 < (SELECT MAX(end_minute) FROM grille)
+       OR (o.day_offset = 1
+           AND EXTRACT(EPOCH FROM s.paris_time - s.paris_time::date) / 60 + 1440
+               < (SELECT MAX(end_minute) FROM grille) + 5)
+       OR (o.day_offset = -1 AND EXTRACT(EPOCH FROM s.paris_time - s.paris_time::date) / 60 >= 1440 - 5)
 ),
--- programme recalculé ; en cas de chevauchement, mêmes priorités que la macro program_at (sans émission)
+-- programme recalculé, créneaux élargis de 5 min comme à l'ingestion (api_to_s3.py, epoch_margin de la
+-- France) ; priorité au programme qui contient vraiment le segment, puis au plus proche, puis mêmes
+-- priorités que la macro program_at (sans émission)
 calcul AS (
     SELECT DISTINCT ON (s.id, s.start)
         s.id,
@@ -80,9 +86,12 @@ calcul AS (
       ON g.channel_name = s.channel_name
      AND g.weekday = s.weekday
      AND s.jour BETWEEN COALESCE(g.grid_start, '-infinity'::date) AND g.grid_end
-     AND s.minute >= g.start_minute
-     AND s.minute < g.end_minute
-    ORDER BY s.id, s.start, g.grid_start DESC NULLS LAST, s.day_offset, g.start_minute DESC
+     AND s.minute >= g.start_minute - 5
+     AND s.minute < g.end_minute + 5
+    ORDER BY s.id, s.start,
+        s.minute >= g.start_minute AND s.minute < g.end_minute DESC,
+        GREATEST(g.start_minute - s.minute, s.minute - g.end_minute),
+        g.grid_start DESC NULLS LAST, s.day_offset, g.start_minute DESC
 ),
 differences AS (
     SELECT
@@ -102,9 +111,9 @@ SELECT
     -- piste la plus probable, à confirmer ligne à ligne
     CASE
         WHEN d.id_stocke IS NOT NULL AND gs.id IS NULL THEN NULL
-        -- l'API est interrogée de début - 5 min à fin + 5 min (api_to_s3.py, epoch_margin de la France) :
-        -- les segments de ces marges reçoivent l'id du programme ; 6 min pour la réattribution
-        -- (channel_program.get_matching_program_hour)
+        -- marges que le recalcul ne reproduit pas : 5 à 6 min (réattribution,
+        -- channel_program.get_matching_program_hour), ou segment de la marge d'un programme qui tombe dans le
+        -- créneau du programme voisin (le recalcul prend le voisin, l'ingestion l'un ou l'autre)
         WHEN gs.id IS NOT NULL AND NOT st.dans_creneau AND ABS(st.ecart) <= 6 THEN 'marge d''ingestion (5 à 6 min)'
         WHEN gs.id IS NOT NULL AND NOT COALESCE(st.dans_creneau, FALSE) AND su.dans_creneau
             THEN 'décalage UTC / Paris'

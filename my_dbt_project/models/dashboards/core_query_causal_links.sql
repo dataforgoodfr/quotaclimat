@@ -38,4 +38,6 @@ SELECT
 FROM public.keywords
 CROSS JOIN LATERAL json_array_elements(public.keywords.keywords_with_timestamp::json) kw_consequence
 WHERE LOWER(kw_consequence ->> 'theme') LIKE '%consequence%'
-  and date_trunc('month', public.keywords.start) = cast('{{ var("process_month") }}' as date)
+  -- range on the raw column (not date_trunc(start)) so that only the partitions of process_month are read
+  and public.keywords.start >= cast('{{ var("process_month") }}' as date)
+  and public.keywords.start < cast('{{ var("process_month") }}' as date) + interval '1 month'

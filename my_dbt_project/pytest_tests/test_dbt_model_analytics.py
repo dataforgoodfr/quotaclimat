@@ -205,10 +205,14 @@ def create_advertising_tables(db_connection):
                 ('emission_pytest_summer', NULL, '2025-04-07 05:00:00', 'bfmtv', 'pytest_ad_1'),
                 -- Monday 07:00 Paris (UTC+1)
                 ('emission_pytest_winter', NULL, '2025-01-06 06:00:00', 'bfmtv', 'pytest_ad_1'),
-                -- Monday 04:00 Paris: Nuit LCI of Sunday (23:30 - 06:30)
-                ('emission_pytest_after_midnight', NULL, '2025-04-07 02:00:00', 'lci', 'pytest_ad_1'),
+                -- Sunday 06:10 Paris: Nuit LCI of Saturday (23:30 - 06:30), in the Sunday program from 06:00
+                ('emission_pytest_after_midnight', NULL, '2025-04-06 04:10:00', 'lci', 'pytest_ad_1'),
                 -- Saturday 12:00 Paris: no bfmtv emission in the test sheet
-                ('emission_pytest_none', NULL, '2025-04-05 10:00:00', 'bfmtv', 'pytest_ad_1')
+                ('emission_pytest_none', NULL, '2025-04-05 10:00:00', 'bfmtv', 'pytest_ad_1'),
+                -- Monday 08:29:50 Paris, 30 s tunnel: from BFM Première to Face à face (08:30)
+                ('emission_pytest_transition', NULL, '2025-04-07 06:29:50', 'bfmtv', 'pytest_ad_1'),
+                -- Monday 09:10 Paris: 10 min after Face à face (08:30 - 09:00), no emission after
+                ('emission_pytest_after_end', NULL, '2025-04-07 07:10:00', 'bfmtv', 'pytest_ad_1')
         """)
     db_connection.commit()
     yield
@@ -265,15 +269,17 @@ def load_test_external_sources():
         "emissions-infos-en-continue": [
             ["channel_name", "emission", "presentation", "weekday", "start", "end", "rediffusion", "grid_start", "grid_end"],
             ["bfmtv", "BFM Première", "Pascale de La Tour du Pin, Mathieu Coache", "weekday", "06:00", "08:30"],
+            ["bfmtv", "Face à face", "Apolline de Malherbe", "weekday", "08:30", "09:00"],
             # ends after the 6:00-23:00 program of the news channels, midnight written 24:00
             ["bfmtv", "BFM Grand Soir", "Maxime Switek", "1|2|3|4", "21:00", "24:00"],
             # starts before the program
             ["franceinfotv", "Reprise France 24", "", "*", "00:00", "06:30"],
             ["franceinfotv", "Le fil info", "Florence O'Kelly", "weekend", "09:00", "18:00"],
             ["lci", "La matinale LCI", "Jean-Baptiste Boursier", "weekday", "06:00", "08:25"],
-            ["itele", "Face à Michel Onfray", "Laurence Ferrari", " 6 ", "21:00", "22:00", "oui"],
-            # Sunday night to Monday morning: inside the Monday program from 6:00
-            ["lci", "Nuit LCI", "", "7", "23:30", "06:30"],
+            # from 2025-09-01: the itele program stays before
+            ["itele", "Face à Michel Onfray", "Laurence Ferrari", " 6 ", "21:00", "22:00", "oui", "2025-09-01"],
+            # Saturday night to Sunday morning: inside the Sunday program from 6:00
+            ["lci", "Nuit LCI", "", "6", "23:30", "06:30"],
             # grid ended before the program_metadata grid (2023-04-01): no program
             ["lci", "Ancienne grille", "", "weekend", "12:00", "14:30", "non", "01/01/2020", "2022-12-31"],
             # channel not in program_metadata
@@ -394,56 +400,130 @@ def test_environmental_shares_desinfo(db_connection):
 
 
 def test_program(db_connection):
+    """The emissions of the test sheet, cut to the monitored programs they overlap (6:00 - 23:00)."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT channel_name, emission, ARRAY_AGG(weekday ORDER BY weekday), MIN(channel_title),
-                BOOL_AND(infocontinue), BOOL_AND(rediffusion), MIN(duration_minutes), MIN(grid_start),
-                MIN(grid_end), MIN(channel_program), MIN(program_overlap_minutes), COUNT(DISTINCT id)
+            SELECT channel_name, emission, ARRAY_AGG(weekday ORDER BY weekday), MIN(start), MIN("end"),
+                MIN(emission_start), MIN(emission_end), MIN(duration_minutes), MIN(grid_start), MAX(grid_end),
+                MIN(channel_program), BOOL_AND(rediffusion), COUNT(DISTINCT id)
             FROM analytics.program
+            WHERE emission_id IS NOT NULL
             GROUP BY channel_name, emission
             ORDER BY channel_name, emission
         """)
         rows = cur.fetchall()
-    no_start, no_end = None, datetime.date(2100, 1, 1)
+    program_start, no_end = datetime.date(2023, 4, 1), datetime.date(2100, 1, 1)
     news = "Information en continu"
-    # one row per emission and per day, with the program of program_metadata it overlaps
+    # one row per emission, day and program; Ancienne grille (before the program grid) and the channel
+    # not in program_metadata left out
     assert rows == [
-        ("bfmtv", "BFM Grand Soir", [1, 2, 3, 4], "BFM TV", True, False, 180, no_start, no_end, news, 120, 4),
-        ("bfmtv", "BFM Première", [1, 2, 3, 4, 5], "BFM TV", True, False, 150, no_start, no_end, news, 150, 5),
-        ("franceinfotv", "Le fil info", [6, 7], "France Info TV", True, False, 540, no_start, no_end, news, 540, 2),
-        ("franceinfotv", "Reprise France 24", [1, 2, 3, 4, 5, 6, 7], "France Info TV", True, False, 390, no_start, no_end, news, 30, 7),
-        ("itele", "Face à Michel Onfray", [6], "CNews", True, True, 60, no_start, no_end, news, 60, 1),
-        ("lci", "Ancienne grille", [6, 7], "LCI", True, False, 150,
-            datetime.date(2020, 1, 1), datetime.date(2022, 12, 31), None, 0, 2),
-        ("lci", "La matinale LCI", [1, 2, 3, 4, 5], "LCI", True, False, 145, no_start, no_end, news, 145, 5),
-        ("lci", "Nuit LCI", [7], "LCI", True, False, 420, no_start, no_end, news, 30, 1),
-        ("pytest-unknown", "Inconnue", [1], None, None, False, 60, no_start, no_end, None, 0, 1),
+        # 21:00 - 24:00 cut at the end of the program
+        ("bfmtv", "BFM Grand Soir", [1, 2, 3, 4], "21:00", "23:00", "21:00", "24:00", 120, program_start, no_end, news, False, 4),
+        ("bfmtv", "BFM Première", [1, 2, 3, 4, 5], "06:00", "08:30", "06:00", "08:30", 150, program_start, no_end, news, False, 5),
+        ("bfmtv", "Face à face", [1, 2, 3, 4, 5], "08:30", "09:00", "08:30", "09:00", 30, program_start, no_end, news, False, 5),
+        ("franceinfotv", "Le fil info", [6, 7], "09:00", "18:00", "09:00", "18:00", 540, program_start, no_end, news, False, 2),
+        # 00:00 - 06:30 cut at the start of the program
+        ("franceinfotv", "Reprise France 24", [1, 2, 3, 4, 5, 6, 7], "06:00", "06:30", "00:00", "06:30", 30, program_start, no_end, news, False, 7),
+        ("itele", "Face à Michel Onfray", [6], "21:00", "22:00", "21:00", "22:00", 60, datetime.date(2025, 9, 1), no_end, news, True, 1),
+        ("lci", "La matinale LCI", [1, 2, 3, 4, 5], "06:00", "08:25", "06:00", "08:25", 145, program_start, no_end, news, False, 5),
+        # Saturday 23:30 - Sunday 06:30: in the Sunday program only
+        ("lci", "Nuit LCI", [7], "06:00", "06:30", "23:30", "06:30", 30, program_start, no_end, news, False, 1),
+    ]
+
+
+def test_program_grid(db_connection):
+    """Every row has its program of program_metadata, split into emissions when they are known."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT channel_name, emission_id IS NOT NULL, weekday, MIN(grid_start), MAX(grid_end)
+            FROM analytics.program
+            WHERE channel_name IN ('bfmtv', 'itele')
+            GROUP BY channel_name, emission_id IS NOT NULL, weekday
+            ORDER BY channel_name, emission_id IS NOT NULL, weekday
+        """)
+        rows = cur.fetchall()
+        cur.execute("""
+            SELECT
+                (SELECT COUNT(*) FROM analytics.program WHERE channel_name = 'france2' AND emission_id IS NULL),
+                (SELECT COUNT(*) FROM analytics.program WHERE channel_name = 'france2'),
+                (SELECT COUNT(*) FROM program_metadata WHERE channel_name = 'france2')
+        """)
+        france2_counts = cur.fetchone()
+        cur.execute("""
+            SELECT label FROM analytics.program
+            WHERE channel_name = 'bfmtv' AND emission = 'BFM Première' AND weekday = 1
+            UNION ALL
+            SELECT label FROM analytics.program
+            WHERE channel_name = 'itele' AND emission = 'Face à Michel Onfray'
+            UNION ALL
+            SELECT DISTINCT label FROM analytics.program
+            WHERE channel_name = 'france2' AND channel_program = 'JT 13h'
+        """)
+        labels = cur.fetchall()
+    program_start, no_end = datetime.date(2023, 4, 1), datetime.date(2100, 1, 1)
+    # one program_metadata row per day (2023-04-01 -> 2100-01-01)
+    assert rows == (
+        # bfmtv: no emission on the weekend in the test sheet, the program is not split
+        [("bfmtv", False, day, program_start, no_end) for day in [6, 7]]
+        + [("bfmtv", True, day, program_start, no_end) for day in [1, 2, 3, 4, 5]]
+        # itele on Saturday: split from the first day of its emissions only (2025-09-01)
+        + [
+            ("itele", False, day, program_start, datetime.date(2025, 8, 31) if day == 6 else no_end)
+            for day in [1, 2, 3, 4, 5, 6, 7]
+        ]
+        + [("itele", True, 6, datetime.date(2025, 9, 1), no_end)]
+    )
+    # no emission: the programs as they are
+    assert france2_counts[0] == france2_counts[1] == france2_counts[2] > 0
+    assert labels == [
+        ("Information en continu / BFM Première (Pascale de La Tour du Pin, Mathieu Coache)",),
+        ("Information en continu / Face à Michel Onfray (Laurence Ferrari) [rediffusion]",),
+        ("JT 13h",),
     ]
 
 
 def test_publicites_emissions(db_connection):
+    """Programs of analytics.program (here the emissions) before / after the ad tunnel of each occurrence."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT occurrence_id, emission, emission_presentation, emission_rediffusion, emission_start, emission_end
+            SELECT occurrence_id, inside_program, program_before, program_before_gap_sec,
+                program_after, program_after_gap_sec
             FROM analytics.publicites
             WHERE occurrence_id LIKE 'emission_pytest_%'
             ORDER BY occurrence_id
         """)
         rows = cur.fetchall()
-    # occurrence_date in UTC, emission grids in Paris time (summer and winter time)
+    bfm_premiere = "Information en continu / BFM Première (Pascale de La Tour du Pin, Mathieu Coache)"
+    face_a_face = "Information en continu / Face à face (Apolline de Malherbe)"
+    # occurrence_date in UTC, grids in Paris time (summer and winter time)
     assert rows == [
-        ("emission_pytest_after_midnight", "Nuit LCI", None, False, "23:30", "06:30"),
-        ("emission_pytest_none", None, None, None, None, None),
-        ("emission_pytest_summer", "BFM Première", "Pascale de La Tour du Pin, Mathieu Coache", False, "06:00", "08:30"),
-        ("emission_pytest_winter", "BFM Première", "Pascale de La Tour du Pin, Mathieu Coache", False, "06:00", "08:30"),
+        ("emission_pytest_after_end", False, face_a_face, 600, None, None),
+        # Nuit LCI of Saturday, ending Sunday 06:30
+        ("emission_pytest_after_midnight", True, "Information en continu / Nuit LCI", 0, None, None),
+        # no bfmtv emission on Saturday in the test sheet: the program, not split
+        ("emission_pytest_none", True, "Information en continu", 0, None, None),
+        ("emission_pytest_summer", True, bfm_premiere, 0, None, None),
+        # in progress before, starting during the tunnel after
+        ("emission_pytest_transition", False, bfm_premiere, 0, face_a_face, 0),
+        ("emission_pytest_winter", True, bfm_premiere, 0, None, None),
     ]
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT b.emission, b.presentation, a.emission
+            FROM analytics.publicites p
+            JOIN analytics.program b ON b.id = p.program_before_id
+            JOIN analytics.program a ON a.id = p.program_after_id
+            WHERE p.occurrence_id = 'emission_pytest_transition'
+        """)
+        # the other columns of the programs through their id
+        assert cur.fetchall() == [("BFM Première", "Pascale de La Tour du Pin, Mathieu Coache", "Face à face")]
 
 
 def test_cas_de_mesinformation(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT data_item_channel_name, data_item_start, mesinfo_choice, "Annotation Version", channel_title,
-                infocontinue, emission
+                infocontinue, program
             FROM analytics.cas_de_mesinformation
             ORDER BY data_item_start
         """)
@@ -457,15 +537,20 @@ def test_cas_de_mesinformation(db_connection):
     # the first annotation of the validated misinformation only ('Correct,Incorrect' and 'Incorrect' left out)
     assert len(rows) == expected_count == 5
     assert all(r[2:4] == ("Correct", 1) for r in rows)
-    # data_item_start in UTC, emission grids in Paris time
+    # data_item_start in UTC, grids in Paris time: an emission of the test sheet, else a program of program_metadata
     assert [(r[0], r[1], r[4], r[5], r[6]) for r in rows] == [
-        ("sud-radio", datetime.datetime(2025, 4, 2, 9, 10), "Sud Radio", False, None),
+        # Wednesday 11:10 Paris: Mettez-vous d'accord (10:40 - 12:00)
+        ("sud-radio", datetime.datetime(2025, 4, 2, 9, 10), "Sud Radio", False, "Mettez-vous d'accord"),
         # Saturday 15:08 Paris: Le fil info (weekend, 09:00 - 18:00)
-        ("franceinfotv", datetime.datetime(2025, 4, 5, 13, 8), "France Info TV", True, "Le fil info"),
-        ("sud-radio", datetime.datetime(2025, 4, 6, 7, 10), "Sud Radio", False, None),
+        ("franceinfotv", datetime.datetime(2025, 4, 5, 13, 8), "France Info TV", True,
+            "Information en continu / Le fil info (Florence O'Kelly)"),
+        # Sunday 09:10 Paris: Le Grand Matin Week-end (07:00 - 09:20)
+        ("sud-radio", datetime.datetime(2025, 4, 6, 7, 10), "Sud Radio", False, "Le Grand Matin Week-end"),
         # Thursday 06:54 Paris: La matinale LCI (weekday, 06:00 - 08:25)
-        ("lci", datetime.datetime(2025, 4, 10, 4, 54), "LCI", True, "La matinale LCI"),
-        ("europe1", datetime.datetime(2025, 6, 10, 5, 20), "Europe 1", False, None),
+        ("lci", datetime.datetime(2025, 4, 10, 4, 54), "LCI", True,
+            "Information en continu / La matinale LCI (Jean-Baptiste Boursier)"),
+        # Tuesday 07:20 Paris: Europe 1 Matin (07:00 - 09:00)
+        ("europe1", datetime.datetime(2025, 6, 10, 5, 20), "Europe 1", False, "Europe 1 Matin"),
     ]
 
 
@@ -598,12 +683,15 @@ def test_publicites_programs(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT
-                occurrence_id, inside_program,
-                program_before, program_before_type, program_before_gap_sec,
-                program_after, program_after_type, program_after_gap_sec
-            FROM analytics.publicites
-            WHERE occurrence_id LIKE 'program_pytest_%'
-            ORDER BY occurrence_id
+                p.occurrence_id, p.inside_program,
+                p.program_before, b.channel_program_type, p.program_before_gap_sec,
+                p.program_after, a.channel_program_type, p.program_after_gap_sec
+            FROM analytics.publicites p
+            -- the program types through the ids
+            LEFT JOIN analytics.program b ON b.id = p.program_before_id
+            LEFT JOIN analytics.program a ON a.id = p.program_after_id
+            WHERE p.occurrence_id LIKE 'program_pytest_%'
+            ORDER BY p.occurrence_id
         """)
         rows = cur.fetchall()
     assert rows == [

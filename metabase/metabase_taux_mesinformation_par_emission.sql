@@ -30,12 +30,11 @@ grille AS (
     FROM analytics.program p
     WHERE p.country = 'france'
 ),
--- une ligne par diffusion (ligne de grille x jour), en heure de Paris ; on part de la veille de {{debut}}
+-- volume : une ligne par diffusion (ligne de grille x jour), en heure de Paris ; on part de la veille de {{debut}}
 -- pour les programmes qui finissent après minuit
 diffusions AS (
     SELECT
         g.*,
-        j.jour::date AS jour,
         GREATEST(j.jour + g.start_minute * INTERVAL '1 minute', b.debut) AS diffusion_debut,
         LEAST(j.jour + g.end_minute * INTERVAL '1 minute', b.fin) AS diffusion_fin
     FROM bornes b
@@ -59,8 +58,9 @@ volume AS (
     WHERE diffusion_fin > diffusion_debut
     GROUP BY 1, 2, 3, 4, 5
 ),
--- segments de 2 min de public.keywords (start en UTC) ; la marge de 3 h couvre le décalage UTC / Paris
-keywords_periode AS (
+-- segments de 2 min de public.keywords (start en UTC) de la période, en heure de Paris ; la marge de 3 h
+-- du pré-filtre couvre le décalage UTC / Paris
+keywords_periode AS MATERIALIZED (
     SELECT
         k.id,
         k.start,
@@ -74,23 +74,44 @@ keywords_periode AS (
     WHERE k.country = 'france'
       AND k.number_of_keywords > 0
 ),
--- chaque segment rattaché à la ligne de grille à l'antenne à son début (jour même, ou veille pour un
--- programme qui finit après minuit) ; en cas de chevauchement, mêmes priorités que la macro program_at
+-- jour de grille et minute dans ce jour de chaque segment : le jour même, et aussi la veille quand le
+-- segment est assez tôt pour tomber dans un programme de la veille qui finit après minuit
+keywords_jour AS MATERIALIZED (
+    SELECT
+        k.id,
+        k.start,
+        k.channel_name,
+        k.number_of_keywords,
+        o.day_offset,
+        k.paris_time::date - o.day_offset AS jour,
+        EXTRACT(ISODOW FROM k.paris_time::date - o.day_offset)::int AS weekday,
+        EXTRACT(EPOCH FROM k.paris_time - (k.paris_time::date - o.day_offset)) / 60 AS minute
+    FROM keywords_periode k
+    CROSS JOIN bornes b
+    CROSS JOIN (VALUES (0), (1)) AS o(day_offset)
+    WHERE k.paris_time >= b.debut
+      AND k.paris_time < b.fin
+      AND (o.day_offset = 0
+           OR EXTRACT(EPOCH FROM k.paris_time - k.paris_time::date) / 60 + 1440
+              < (SELECT MAX(end_minute) FROM grille))
+),
+-- chaque segment rattaché à la ligne de grille à l'antenne à son début ; en cas de chevauchement, mêmes
+-- priorités que la macro program_at
 env_segments AS (
     SELECT DISTINCT ON (k.id, k.start)
-        d.channel_name,
-        d.type,
-        d.nom,
-        d.rediffusion,
+        g.channel_name,
+        g.type,
+        g.nom,
+        g.rediffusion,
         k.number_of_keywords
-    FROM keywords_periode k
-    CROSS JOIN (VALUES (0), (1)) AS o(day_offset)
-    JOIN diffusions d
-      ON d.channel_name = k.channel_name
-     AND d.jour = k.paris_time::date - o.day_offset
-     AND k.paris_time >= d.diffusion_debut
-     AND k.paris_time < d.diffusion_fin
-    ORDER BY k.id, k.start, d.type = 'émission' DESC, d.grid_start DESC NULLS LAST, o.day_offset, d.start_minute DESC
+    FROM keywords_jour k
+    JOIN grille g
+      ON g.channel_name = k.channel_name
+     AND g.weekday = k.weekday
+     AND k.jour BETWEEN COALESCE(g.grid_start, '-infinity'::date) AND g.grid_end
+     AND k.minute >= g.start_minute
+     AND k.minute < g.end_minute
+    ORDER BY k.id, k.start, g.type = 'émission' DESC, g.grid_start DESC NULLS LAST, k.day_offset, g.start_minute DESC
 ),
 env AS (
     SELECT

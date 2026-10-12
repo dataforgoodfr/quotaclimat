@@ -7,7 +7,8 @@
 -- volume_heures : durée de diffusion théorique sur la période d'après la grille (analytics.program),
 --   coupée aux bornes de la période
 -- env_heures : temps consacré à l'environnement, même calcul que core_query_environmental_shares
---   (public.keywords.number_of_keywords fenêtres de 20 s), segments rattachés à la ligne de grille à l'antenne
+--   (public.keywords.number_of_keywords fenêtres de 20 s), segments rattachés à la ligne de grille à l'antenne,
+--   keywords.start (timestamp with time zone) converti en heure de Paris
 -- nb_cas : cas validés (analytics.cas_de_mesinformation, 1re annotation 'Correct'), via leur program_id
 WITH bornes AS (
     SELECT
@@ -58,19 +59,19 @@ volume AS (
     WHERE diffusion_fin > diffusion_debut
     GROUP BY 1, 2, 3, 4, 5
 ),
--- segments de 2 min de public.keywords (start en UTC) de la période, en heure de Paris ; la marge de 3 h
--- du pré-filtre couvre le décalage UTC / Paris
+-- segments de 2 min de public.keywords de la période ; start est un timestamp with time zone en production,
+-- converti en heure de Paris (bornes de la période converties en instants pour le filtre)
 keywords_periode AS MATERIALIZED (
     SELECT
         k.id,
         k.start,
         k.channel_name,
         k.number_of_keywords,
-        (k.start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' AS paris_time
+        k.start AT TIME ZONE 'Europe/Paris' AS paris_time
     FROM bornes b
     JOIN public.keywords k
-      ON k.start >= b.debut - INTERVAL '3 hours'
-     AND k.start < b.fin + INTERVAL '3 hours'
+      ON k.start >= b.debut AT TIME ZONE 'Europe/Paris'
+     AND k.start < b.fin AT TIME ZONE 'Europe/Paris'
     WHERE k.country = 'france'
       AND k.number_of_keywords > 0
 ),
@@ -87,13 +88,10 @@ keywords_jour AS MATERIALIZED (
         EXTRACT(ISODOW FROM k.paris_time::date - o.day_offset)::int AS weekday,
         EXTRACT(EPOCH FROM k.paris_time - (k.paris_time::date - o.day_offset)) / 60 AS minute
     FROM keywords_periode k
-    CROSS JOIN bornes b
     CROSS JOIN (VALUES (0), (1)) AS o(day_offset)
-    WHERE k.paris_time >= b.debut
-      AND k.paris_time < b.fin
-      AND (o.day_offset = 0
-           OR EXTRACT(EPOCH FROM k.paris_time - k.paris_time::date) / 60 + 1440
-              < (SELECT MAX(end_minute) FROM grille))
+    WHERE o.day_offset = 0
+       OR EXTRACT(EPOCH FROM k.paris_time - k.paris_time::date) / 60 + 1440
+          < (SELECT MAX(end_minute) FROM grille)
 ),
 -- chaque segment rattaché à la ligne de grille à l'antenne à son début ; en cas de chevauchement, mêmes
 -- priorités que la macro program_at
@@ -123,7 +121,8 @@ env AS (
     FROM env_segments
     GROUP BY 1, 2, 3, 4
 ),
--- data_item_start est en UTC, converti en heure de Paris comme dans la macro program_at
+-- data_item_start (Label Studio) lu en UTC et converti en heure de Paris, comme dans la macro dbt program_at
+-- qui a calculé program_id : à contrôler comme keywords.start
 cas AS (
     SELECT
         g.channel_name,

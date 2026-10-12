@@ -1,7 +1,7 @@
 -- Contrôle du rattachement des segments aux programmes, chaînes françaises : segments de public.keywords
 -- dont le program_metadata_id stocké à l'ingestion diffère du programme recalculé à partir de l'heure.
 -- Le recalcul suit la logique de metabase_taux_mesinformation_par_emission.sql et de la macro dbt program_at
--- (start en UTC converti en heure de Paris, jour de semaine, programmes qui finissent après minuit,
+-- (start, timestamp with time zone, converti en heure de Paris, jour de semaine, programmes après minuit,
 -- validité de grille), mais directement sur public.program_metadata, sans le découpage en émissions.
 -- Variables Metabase, type Texte, heure de Paris :
 --   {{debut}} inclus, ex. 2026-09-01 ou 2026-09-01 06:00
@@ -9,7 +9,7 @@
 -- Colonnes de diagnostic sur le programme stocké :
 --   stocke_dans_creneau : le segment tombe dans son créneau, un jour de semaine où il est diffusé
 --   stocke_ecart_minutes : minutes avant le début (négatif) ou après la fin (positif) du créneau le plus proche
---   stocke_dans_creneau_sans_conversion : idem en lisant start comme une heure de Paris, sans conversion UTC
+--   stocke_dans_creneau_heure_utc : idem avec l'heure UTC lue comme une heure de Paris (id calculé sur l'UTC)
 --   stocke_grille_valide : le jour du programme est dans program_grid_start / program_grid_end
 WITH bornes AS (
     SELECT
@@ -37,21 +37,21 @@ grille AS (
     ) m
     WHERE pm.country = 'france'
 ),
--- segments de la période ; la marge de 3 h du pré-filtre couvre le décalage UTC / Paris
+-- segments de la période ; bornes de la période converties en instants pour le filtre
 segments AS MATERIALIZED (
     SELECT
         k.id,
         k.start,
         k.channel_name,
         k.program_metadata_id AS id_stocke,
-        (k.start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' AS paris_time
+        k.start AT TIME ZONE 'Europe/Paris' AS paris_time,
+        -- pour le diagnostic : l'heure UTC, comme si elle était une heure de Paris
+        k.start AT TIME ZONE 'UTC' AS heure_utc
     FROM bornes b
     JOIN public.keywords k
-      ON k.start >= b.debut - INTERVAL '3 hours'
-     AND k.start < b.fin + INTERVAL '3 hours'
+      ON k.start >= b.debut AT TIME ZONE 'Europe/Paris'
+     AND k.start < b.fin AT TIME ZONE 'Europe/Paris'
     WHERE k.country = 'france'
-      AND (k.start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' >= b.debut
-      AND (k.start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' < b.fin
 ),
 -- jour de grille et minute dans ce jour : le jour même, et la veille pour un segment assez tôt pour tomber
 -- dans un programme de la veille qui finit après minuit
@@ -102,7 +102,7 @@ SELECT
     -- piste la plus probable, à confirmer ligne à ligne
     CASE
         WHEN d.id_stocke IS NOT NULL AND gs.id IS NULL THEN NULL
-        WHEN gs.id IS NOT NULL AND NOT COALESCE(st.dans_creneau, FALSE) AND sc.dans_creneau
+        WHEN gs.id IS NOT NULL AND NOT COALESCE(st.dans_creneau, FALSE) AND su.dans_creneau
             THEN 'décalage UTC / Paris'
         WHEN gs.id IS NOT NULL AND st.weekday_ok IS NULL THEN 'jour de semaine du programme stocké différent'
         WHEN gs.id IS NOT NULL AND NOT st.dans_creneau AND ABS(st.ecart) <= 6 THEN 'marge de 6 min de l''ingestion'
@@ -114,8 +114,8 @@ SELECT
         WHEN gs.id IS NOT NULL AND gc.id IS NOT NULL THEN 'programmes qui se chevauchent'
     END AS piste,
     d.channel_name,
-    d.start AS start_utc,
     d.paris_time AS heure_paris,
+    d.heure_utc,
     EXTRACT(ISODOW FROM d.paris_time)::int AS jour_semaine_paris,
     -- programme stocké
     d.id_stocke,
@@ -127,7 +127,7 @@ SELECT
     gs.grid_end AS stocke_grid_end,
     st.dans_creneau AS stocke_dans_creneau,
     ROUND(st.ecart::numeric, 1) AS stocke_ecart_minutes,
-    sc.dans_creneau AS stocke_dans_creneau_sans_conversion,
+    su.dans_creneau AS stocke_dans_creneau_heure_utc,
     st.jour BETWEEN COALESCE(gs.grid_start, '-infinity'::date) AND gs.grid_end AS stocke_grille_valide,
     -- programme recalculé
     d.id_calcule,
@@ -160,13 +160,13 @@ LEFT JOIN LATERAL (
         GREATEST(gs.start_minute - x.minute, x.minute - gs.end_minute)
     LIMIT 1
 ) st ON TRUE
--- même chose en lisant start comme une heure de Paris
+-- même chose avec l'heure UTC lue comme une heure de Paris
 LEFT JOIN LATERAL (
     SELECT BOOL_OR(x.minute >= gs.start_minute AND x.minute < gs.end_minute) AS dans_creneau
     FROM (VALUES (-1), (0), (1)) AS o(day_offset)
     CROSS JOIN LATERAL (
-        SELECT EXTRACT(EPOCH FROM d.start - (d.start::date - o.day_offset)) / 60 AS minute
+        SELECT EXTRACT(EPOCH FROM d.heure_utc - (d.heure_utc::date - o.day_offset)) / 60 AS minute
     ) x
-    WHERE EXTRACT(ISODOW FROM d.start::date - o.day_offset) = gs.weekday
-) sc ON TRUE
+    WHERE EXTRACT(ISODOW FROM d.heure_utc::date - o.day_offset) = gs.weekday
+) su ON TRUE
 ORDER BY categorie, piste, d.channel_name, d.start

@@ -254,8 +254,9 @@ parametres AS (
         5 AS nb_annonceurs_par_emission, -- par émission, annonceurs gardés par part de leur pub décroissante
         600 AS annonceur_secondes_min, -- annonceurs classés : au moins ce volume de pub rattachée sur la période
         1.0 AS env_heures_min,       -- émissions gardées : au moins ce temps consacré à l'environnement
-        0 AS cas_par_heure_env_min   -- émissions gardées : au moins ce nombre de cas par heure d'environnement
+        0 AS cas_par_heure_env_min,  -- émissions gardées : au moins ce nombre de cas par heure d'environnement
                                      -- (sur toute la période ; 0 garde tout, y compris les émissions sans cas)
+        2 AS pas_ecart_arrondi       -- pas de ecart_cas_par_heure_env_arrondi : multiple de ce pas le plus proche
 ),
 -- pubs de la période, avec les émissions avant / après l'écran retenues ; NOT MATERIALIZED : recopiée dans
 -- les deux lectures ci-dessous plutôt qu'écrite sur disque ; occurrence_date est en UTC (timestamp sans fuseau)
@@ -401,7 +402,11 @@ SELECT
     ROUND((COALESCE(pe.c_nb_cas, 0) / NULLIF(pe.c_volume_heures, 0)
         - pe.p_nb_cas / NULLIF(pe.p_volume_heures, 0))::numeric, 3) AS ecart_cas_par_heure,
     ROUND((COALESCE(pe.c_nb_cas, 0) / NULLIF(pe.c_env_heures, 0)
-        - pe.p_nb_cas / NULLIF(pe.p_env_heures, 0))::numeric, 2) AS ecart_cas_par_heure_env
+        - pe.p_nb_cas / NULLIF(pe.p_env_heures, 0))::numeric, 2) AS ecart_cas_par_heure_env,
+    -- même écart arrondi au multiple de pas_ecart_arrondi le plus proche (pas de 2 : 0 de -1 à 1, 2 de 1 à 3…),
+    -- une valeur à mi-chemin va au multiple le plus éloigné de 0 (1 donne 2, -1 donne -2)
+    pa.pas_ecart_arrondi * ROUND(((COALESCE(pe.c_nb_cas, 0) / NULLIF(pe.c_env_heures, 0)
+        - pe.p_nb_cas / NULLIF(pe.p_env_heures, 0)) / pa.pas_ecart_arrondi)::numeric) AS ecart_cas_par_heure_env_arrondi
 FROM campagne pe
 JOIN emissions e
   ON e.channel_name = pe.channel_name

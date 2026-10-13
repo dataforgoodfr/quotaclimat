@@ -1,9 +1,9 @@
 -- Taux de mésinformation et part d'environnement par émission, chaînes françaises
 -- Unité d'analyse : l'émission quand analytics.program la connaît (Google Sheet Programmes, chaînes d'info
 -- en continue), sinon le programme suivi de program_metadata (colonne type)
--- Variables Metabase, type Texte, heure de Paris :
---   {{debut}} inclus, ex. 2026-09-01 ou 2026-09-01 06:00
---   {{fin}}   exclu,  ex. 2026-10-01
+-- Variables Metabase, type Date (jours en heure de Paris) :
+--   debut premier jour inclus, ex. 2026-09-01
+--   fin   dernier jour inclus, ex. 2026-09-30
 -- volume_heures : durée de diffusion théorique sur la période d'après la grille (analytics.program),
 --   coupée aux bornes de la période
 -- env_heures : temps consacré à l'environnement, même calcul que core_query_environmental_shares
@@ -12,31 +12,16 @@
 --   programme à l'antenne (la plus proche pour les segments des marges d'ingestion)
 -- nb_cas : cas validés (analytics.cas_de_mesinformation, 1re annotation 'Correct'), sans id de programme :
 --   rattachés par leur heure, créneaux élargis comme à l'ingestion
--- bornes de la période, en heure de Paris, au format YYYY-MM-DD ou YYYY-MM-DD HH:MM. Lues avec
--- split_part / make_timestamp plutôt qu'avec CAST(... AS timestamp) : Metabase envoie les variables en texte,
--- et la conversion texte -> timestamp dépend de la session, Postgres la refait alors pour chaque ligne lue ;
--- avec ces fonctions, il calcule les bornes une seule fois dès la planification. NOT MATERIALIZED : la CTE
--- est recopiée à chaque usage, les bornes y sont donc des constantes, ce qui permet aussi d'écarter les
--- partitions de keywords hors période dès la planification (sinon : estimation sur toutes les partitions et
--- compilation JIT de plusieurs dizaines de secondes)
+-- bornes de la période en heure de Paris : de debut 00:00 à fin + 1 jour 00:00 (fin incluse).
+-- Variables de type Date : la conversion date -> timestamp ne dépend pas de la session, Postgres calcule les
+-- bornes une seule fois dès la planification (une variable Texte convertie avec CAST serait recalculée pour
+-- chaque ligne lue). NOT MATERIALIZED : la CTE est recopiée à chaque usage, les bornes y sont des constantes,
+-- ce qui permet aussi d'écarter les partitions de keywords hors période dès la planification (sinon :
+-- estimation sur toutes les partitions et compilation JIT de plusieurs dizaines de secondes)
 WITH bornes AS NOT MATERIALIZED (
     SELECT
-        make_timestamp(
-            split_part({{debut}}, '-', 1)::int,
-            split_part({{debut}}, '-', 2)::int,
-            split_part(split_part({{debut}}, '-', 3), ' ', 1)::int,
-            COALESCE(NULLIF(split_part(split_part({{debut}}, ' ', 2), ':', 1), ''), '0')::int,
-            COALESCE(NULLIF(split_part(split_part({{debut}}, ' ', 2), ':', 2), ''), '0')::int,
-            0
-        ) AS debut,
-        make_timestamp(
-            split_part({{fin}}, '-', 1)::int,
-            split_part({{fin}}, '-', 2)::int,
-            split_part(split_part({{fin}}, '-', 3), ' ', 1)::int,
-            COALESCE(NULLIF(split_part(split_part({{fin}}, ' ', 2), ':', 1), ''), '0')::int,
-            COALESCE(NULLIF(split_part(split_part({{fin}}, ' ', 2), ':', 2), ''), '0')::int,
-            0
-        ) AS fin
+        CAST({{debut}} AS timestamp) AS debut,
+        CAST({{fin}} AS timestamp) + INTERVAL '1 day' AS fin
 ),
 grille AS (
     SELECT
@@ -55,7 +40,7 @@ grille AS (
     FROM analytics.program p
     WHERE p.country = 'france'
 ),
--- volume : une ligne par diffusion (ligne de grille x jour), en heure de Paris ; on part de la veille de {{debut}}
+-- volume : une ligne par diffusion (ligne de grille x jour), en heure de Paris ; on part de la veille du début
 -- pour les programmes qui finissent après minuit
 diffusions AS (
     SELECT

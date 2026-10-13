@@ -4,41 +4,25 @@
 -- (start, timestamp with time zone, converti en heure de Paris, jour de semaine, programmes après minuit,
 -- validité de grille, créneaux élargis à [début - 6 min, fin + 6 min[ comme à l'ingestion), mais directement sur
 -- public.program_metadata, sans le découpage en émissions.
--- Variables Metabase, type Texte, heure de Paris :
---   {{debut}} inclus, ex. 2026-09-01 ou 2026-09-01 06:00
---   {{fin}}   exclu,  ex. 2026-09-08
+-- Variables Metabase, type Date (jours en heure de Paris) :
+--   debut premier jour inclus, ex. 2026-09-01
+--   fin   dernier jour inclus, ex. 2026-09-30
 -- Colonnes de diagnostic sur le programme stocké :
 --   stocke_dans_creneau : le segment tombe dans son créneau, un jour de semaine où il est diffusé
 --   stocke_ecart_minutes : minutes avant le début (négatif) ou après la fin (positif) du créneau le plus proche
 --   stocke_dans_creneau_heure_utc : idem avec l'heure UTC lue comme une heure de Paris (id calculé sur l'UTC)
 --   stocke_grille_valide : le jour du programme est dans program_grid_start / program_grid_end
--- bornes de la période, en heure de Paris, au format YYYY-MM-DD ou YYYY-MM-DD HH:MM. Lues avec
--- split_part / make_timestamp plutôt qu'avec CAST(... AS timestamp) : Metabase envoie les variables en texte,
--- et la conversion texte -> timestamp dépend de la session, Postgres la refait alors pour chaque ligne lue ;
--- avec ces fonctions, il calcule les bornes une seule fois dès la planification. NOT MATERIALIZED : la CTE
--- est recopiée à chaque usage, les bornes y sont donc des constantes, ce qui permet aussi d'écarter les
--- partitions de keywords hors période dès la planification (sinon : estimation sur toutes les partitions et
--- compilation JIT de plusieurs dizaines de secondes)
+-- bornes de la période en heure de Paris : de debut 00:00 à fin + 1 jour 00:00 (fin incluse).
+-- Variables de type Date : la conversion date -> timestamp ne dépend pas de la session, Postgres calcule les
+-- bornes une seule fois dès la planification (une variable Texte convertie avec CAST serait recalculée pour
+-- chaque ligne lue). NOT MATERIALIZED : la CTE est recopiée à chaque usage, les bornes y sont des constantes,
+-- ce qui permet aussi d'écarter les partitions de keywords hors période dès la planification (sinon :
+-- estimation sur toutes les partitions et compilation JIT de plusieurs dizaines de secondes)
 WITH bornes AS NOT MATERIALIZED (
     SELECT
-        make_timestamp(
-            split_part({{debut}}, '-', 1)::int,
-            split_part({{debut}}, '-', 2)::int,
-            split_part(split_part({{debut}}, '-', 3), ' ', 1)::int,
-            COALESCE(NULLIF(split_part(split_part({{debut}}, ' ', 2), ':', 1), ''), '0')::int,
-            COALESCE(NULLIF(split_part(split_part({{debut}}, ' ', 2), ':', 2), ''), '0')::int,
-            0
-        ) AS debut,
-        make_timestamp(
-            split_part({{fin}}, '-', 1)::int,
-            split_part({{fin}}, '-', 2)::int,
-            split_part(split_part({{fin}}, '-', 3), ' ', 1)::int,
-            COALESCE(NULLIF(split_part(split_part({{fin}}, ' ', 2), ':', 1), ''), '0')::int,
-            COALESCE(NULLIF(split_part(split_part({{fin}}, ' ', 2), ':', 2), ''), '0')::int,
-            0
-        ) AS fin
+        CAST({{debut}} AS timestamp) AS debut,
+        CAST({{fin}} AS timestamp) + INTERVAL '1 day' AS fin
 ),
--- même lecture des horaires que analytics.program : 'H:MM', fin après minuit au-delà de 1440
 grille AS (
     SELECT
         pm.id,

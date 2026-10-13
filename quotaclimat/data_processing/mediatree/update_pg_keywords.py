@@ -10,7 +10,7 @@ from quotaclimat.data_processing.mediatree.detect_keywords import get_themes_key
 from typing import List
 from quotaclimat.data_processing.mediatree.stop_word.main import get_stop_words
 from quotaclimat.data_processing.mediatree.channel_program import get_programs, get_a_program_with_start_timestamp
-from sqlalchemy import func, select, and_, or_, tuple_
+from sqlalchemy import Date, cast, func, select, and_, or_, tuple_
 from quotaclimat.data_processing.mediatree.i8n.country import FRANCE, get_channel_title_for_name
 
 def get_keyword_else_context(stop_word_object: Stop_Word):
@@ -218,6 +218,15 @@ def update_keywords(session: Session, batch_size: int = 50000, start_date : str 
     logging.info("updated all keywords")
 
 
+def keywords_start_between(start_date, end_date):
+    # Same days as DATE(start) BETWEEN start_date AND end_date, but on the raw column:
+    # keywords is partitioned by RANGE (start), so Postgres can skip the partitions outside
+    # the period and use ix_keywords_country_channel_name_start, which DATE(start) prevents.
+    return and_(
+        Keywords.start >= cast(start_date, Date),
+        Keywords.start < cast(end_date, Date) + 1,
+    )
+
 def get_keywords_columns(session: Session, cursor: tuple = None, batch_size: int = 50000, start_date: str = "2023-04-01", end_date: str = "2023-04-30",\
                          channel: str = "", empty_program_only: bool = False, keywords_to_includes: list[str] = [], \
                          biodiversity_only = False, country = FRANCE) -> list:
@@ -239,8 +248,7 @@ def get_keywords_columns(session: Session, cursor: tuple = None, batch_size: int
             Keywords.channel_title,
         ).filter(
         and_(
-            func.date(Keywords.start) >= start_date,
-            func.date(Keywords.start) <= end_date,
+            keywords_start_between(start_date, end_date),
             Keywords.country == country.name,
             Keywords.channel_name.in_(country.channels),
         )
@@ -283,7 +291,7 @@ def get_keywords_columns(session: Session, cursor: tuple = None, batch_size: int
 def get_total_count_saved_keywords(session: Session, start_date : str, end_date : str, channel: str, empty_program_only: bool,\
                                     keywords_to_includes= [], biodiversity_only = False, country= FRANCE) -> int:
         statement = select(func.count()).filter(
-            and_(func.date(Keywords.start) >= start_date, func.date(Keywords.start) <= end_date)
+            keywords_start_between(start_date, end_date)
         ).select_from(Keywords)
         
         if channel != "":

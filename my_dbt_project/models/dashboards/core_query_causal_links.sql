@@ -23,6 +23,10 @@ SELECT
     SELECT COUNT(*)
     FROM public.keywords k2
     WHERE k2.channel_title = public.keywords.channel_title
+      -- same channel of the same country (several countries share the "RTL" title),
+      -- which also lets Postgres use ix_keywords_country_channel_name_start
+      AND k2.country = public.keywords.country
+      AND k2.channel_name = public.keywords.channel_name
       AND k2.number_of_changement_climatique_constat_no_hrfp > 0
       AND k2.start BETWEEN public.keywords.start - interval '4 minutes' AND public.keywords.start + interval '4 minutes'
        and date_trunc('month', public.keywords.start) = cast('{{ var("process_month") }}' as date)
@@ -31,6 +35,10 @@ SELECT
     SELECT COUNT(*)
     FROM public.keywords k3
     WHERE k3.channel_title = public.keywords.channel_title
+      -- same channel of the same country (several countries share the "RTL" title),
+      -- which also lets Postgres use ix_keywords_country_channel_name_start
+      AND k3.country = public.keywords.country
+      AND k3.channel_name = public.keywords.channel_name
       AND k3.number_of_biodiversite_concepts_generaux_no_hrfp > 0
       AND k3.start BETWEEN public.keywords.start - interval '4 minutes' AND public.keywords.start + interval '4 minutes'
        and date_trunc('month', public.keywords.start) = cast('{{ var("process_month") }}' as date)
@@ -38,4 +46,6 @@ SELECT
 FROM public.keywords
 CROSS JOIN LATERAL json_array_elements(public.keywords.keywords_with_timestamp::json) kw_consequence
 WHERE LOWER(kw_consequence ->> 'theme') LIKE '%consequence%'
-  and date_trunc('month', public.keywords.start) = cast('{{ var("process_month") }}' as date)
+  -- range on the raw column (not date_trunc(start)) so that only the partitions of process_month are read
+  and public.keywords.start >= cast('{{ var("process_month") }}' as date)
+  and public.keywords.start < cast('{{ var("process_month") }}' as date) + interval '1 month'

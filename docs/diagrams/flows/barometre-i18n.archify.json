@@ -1,0 +1,336 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Kestra flow: barometre-i18n",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/flows/barometre-i18n.html",
+    "repository": {
+      "url": "git@github.com:dataforgoodfr/quotaclimat.git",
+      "revision": "c2defa51aafeac09df8121d063d0d352c0d1af69",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "Kestra task (Docker container)"
+        },
+        "messagebus": {
+          "label": "Kestra HTTP request"
+        },
+        "database": {
+          "label": "Data store (S3 / PostgreSQL)"
+        },
+        "external": {
+          "label": "External API or service"
+        },
+        "cloud": {
+          "label": "Scaleway-hosted service"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "ingest",
+      "label": "i18n_loop > ingest_data_to_s3 (per country, one at a time)"
+    },
+    {
+      "id": "keywords",
+      "label": "i18n_loop > detect_keywords (same country)"
+    },
+    {
+      "id": "misinfo",
+      "label": "detect_misinformation > trigger_job (5 in parallel)"
+    }
+  ],
+  "phases": [
+    {
+      "id": "reads",
+      "label": "Reads",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "runs",
+      "label": "Runs",
+      "fromCol": 2,
+      "toCol": 2,
+      "variant": "emphasis"
+    },
+    {
+      "id": "writes",
+      "label": "Writes / starts",
+      "fromCol": 3,
+      "toCol": 4
+    }
+  ],
+  "mainPath": [
+    "t_ingest",
+    "t_keywords",
+    "t_trigger"
+  ],
+  "nodes": [
+    {
+      "id": "mt_subtitle",
+      "lane": "ingest",
+      "col": 1,
+      "type": "external",
+      "label": "Mediatree API",
+      "sublabel": "bel, bel-fla, deu, esp, pol",
+      "width": 168,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_barometrei18n.yaml",
+          "line": 30,
+          "end_line": 34,
+          "label": "ForEach countries"
+        }
+      ]
+    },
+    {
+      "id": "t_ingest",
+      "lane": "ingest",
+      "col": 2,
+      "type": "backend",
+      "label": "api_to_s3.py",
+      "sublabel": "COUNTRY = loop value",
+      "tag": "quotaclimat_base",
+      "width": 176,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_barometrei18n.yaml",
+          "line": 35,
+          "end_line": 67,
+          "label": "Kestra task"
+        },
+        {
+          "path": "quotaclimat/data_processing/mediatree/s3/api_to_s3.py",
+          "line": 340,
+          "end_line": 433,
+          "label": "day x channel loop"
+        }
+      ]
+    },
+    {
+      "id": "s3_mediatree",
+      "lane": "ingest",
+      "col": 3,
+      "type": "database",
+      "label": "S3: mediatree",
+      "sublabel": "country=<name>/year/...",
+      "width": 168,
+      "sources": [
+        {
+          "path": "quotaclimat/data_processing/mediatree/s3/s3_utils.py",
+          "line": 48,
+          "end_line": 62,
+          "label": "country partition"
+        }
+      ]
+    },
+    {
+      "id": "s3_mediatree_in",
+      "lane": "keywords",
+      "col": 1,
+      "type": "database",
+      "label": "S3: mediatree",
+      "sublabel": "parquet from step 1a",
+      "width": 168,
+      "yOffset": -31,
+      "sources": [
+        {
+          "path": "quotaclimat/data_processing/mediatree/s3/s3_utils.py",
+          "line": 92,
+          "end_line": 113,
+          "label": "read_folder_from_s3"
+        }
+      ]
+    },
+    {
+      "id": "pg_ref",
+      "lane": "keywords",
+      "col": 1,
+      "type": "database",
+      "label": "barometre DB",
+      "sublabel": "stop_word, program_metadata",
+      "width": 168,
+      "yOffset": 31,
+      "sources": [
+        {
+          "path": "quotaclimat/data_processing/mediatree/api_import.py",
+          "line": 139,
+          "end_line": 149,
+          "label": "programs + stop words"
+        }
+      ]
+    },
+    {
+      "id": "t_keywords",
+      "lane": "keywords",
+      "col": 2,
+      "type": "backend",
+      "label": "api_import.py",
+      "sublabel": "language-specific keywords",
+      "tag": "quotaclimat_base",
+      "width": 176,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_barometrei18n.yaml",
+          "line": 69,
+          "end_line": 112,
+          "label": "Kestra task"
+        },
+        {
+          "path": "quotaclimat/data_processing/mediatree/detect_keywords.py",
+          "line": 418,
+          "end_line": 450,
+          "label": "per-language matching"
+        }
+      ]
+    },
+    {
+      "id": "pg_keywords",
+      "lane": "keywords",
+      "col": 3,
+      "type": "database",
+      "label": "keywords table",
+      "sublabel": "barometre DB, per country",
+      "width": 168,
+      "sources": [
+        {
+          "path": "quotaclimat/data_processing/mediatree/api_import.py",
+          "line": 164,
+          "end_line": 169,
+          "label": "save_to_pg"
+        }
+      ]
+    },
+    {
+      "id": "t_trigger",
+      "lane": "misinfo",
+      "col": 2,
+      "type": "messagebus",
+      "label": "trigger_job",
+      "sublabel": "HTTP POST .../start",
+      "tag": "not awaited",
+      "width": 176,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_barometrei18n.yaml",
+          "line": 114,
+          "end_line": 132,
+          "label": "Kestra task"
+        }
+      ]
+    },
+    {
+      "id": "scw_jobs",
+      "lane": "misinfo",
+      "col": 3,
+      "type": "cloud",
+      "label": "Scaleway jobs",
+      "sublabel": "label-misinformation-<country>",
+      "width": 176,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_barometrei18n.yaml",
+          "line": 116,
+          "end_line": 121,
+          "label": "job definition ids"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-subtitle",
+      "from": "mt_subtitle",
+      "to": "t_ingest",
+      "label": "subtitles",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "e-parquet",
+      "from": "t_ingest",
+      "to": "s3_mediatree",
+      "label": "gzip parquet",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "e-read-s3",
+      "from": "s3_mediatree_in",
+      "to": "t_keywords",
+      "toSide": "left",
+      "fromSide": "right"
+    },
+    {
+      "id": "e-read-ref",
+      "from": "pg_ref",
+      "to": "t_keywords",
+      "toSide": "left",
+      "fromSide": "right"
+    },
+    {
+      "id": "e-keywords",
+      "from": "t_keywords",
+      "to": "pg_keywords",
+      "label": "upsert",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "e-start",
+      "from": "t_trigger",
+      "to": "scw_jobs",
+      "label": "start",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "e-then-1",
+      "from": "t_ingest",
+      "to": "t_keywords",
+      "label": "then",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-then-2",
+      "from": "t_keywords",
+      "to": "t_trigger",
+      "label": "all countries done",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Trigger and inputs",
+      "items": [
+        "Own schedule: cron 04:07 Europe/Paris",
+        "days_back (default 1) and start_date (default now)",
+        "Both i18n_loop tasks run for a country before the next one starts"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Not in this flow",
+      "items": [
+        "Misinformation runs as Scaleway jobs from the climateguard repo; Kestra does not wait for them",
+        "The polling loop and the dbt task are commented out in the YAML"
+      ]
+    }
+  ]
+}

@@ -469,6 +469,8 @@ The `extended-perimeter` database has exactly the same structure as `barometre` 
 
 Interactive version (download and open in a browser): [`docs/diagrams/kestra_flows.html`](docs/diagrams/kestra_flows.html).
 
+For what each flow does step by step (code run, data read and written, technologies), with one diagram per flow, see [`docs/kestra_flows.md`](docs/kestra_flows.md).
+
 The diagram covers all prod flows in `infrastructure/kestra/flows/` (dev flows mirror them). It is generated with [Archify](https://github.com/tt-a1i/archify) from `docs/diagrams/kestra_flows.archify.json`; to update it, edit that file (or ask an agent with the Archify skill to regenerate it) and re-export the HTML to `docs/diagrams/kestra_flows.html` and the PNG to `docs/images/kestra_flows.png`.
 
 The `main-pipeline` flow (`main_quotaclimat_mainpipeline.yaml`) runs twice a day, at 01:10 and 12:30 (Europe/Paris), and is the only trigger of this chain. The `with_rrs` input (boolean, default `true`) skips steps 1-3 and 5-6 when set to `false`, so only `barometre` runs. Each step is a `Subflow` task with `wait: true` and `transmitFailed: true`, so a failed step stops the rest of the run:

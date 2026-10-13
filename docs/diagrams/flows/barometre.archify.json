@@ -1,0 +1,533 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Kestra flow: barometre",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/flows/barometre.html",
+    "repository": {
+      "url": "git@github.com:dataforgoodfr/quotaclimat.git",
+      "revision": "c2defa51aafeac09df8121d063d0d352c0d1af69",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "Kestra task (Docker container)"
+        },
+        "database": {
+          "label": "Data store (S3 / PostgreSQL)"
+        },
+        "external": {
+          "label": "External API or service"
+        },
+        "cloud": {
+          "label": "Scaleway-hosted service"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "ingest",
+      "label": "ingest_data_to_s3: Mediatree API to S3"
+    },
+    {
+      "id": "keywords",
+      "label": "detect_keywords: S3 to keywords table"
+    },
+    {
+      "id": "misinfo",
+      "label": "detect_misinformation: LLM screening"
+    },
+    {
+      "id": "dbt",
+      "label": "dbt_run_transformations: models"
+    }
+  ],
+  "phases": [
+    {
+      "id": "reads",
+      "label": "Reads",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "runs",
+      "label": "Runs",
+      "fromCol": 2,
+      "toCol": 2,
+      "variant": "emphasis"
+    },
+    {
+      "id": "writes",
+      "label": "Writes",
+      "fromCol": 3,
+      "toCol": 4
+    }
+  ],
+  "mainPath": [
+    "t_ingest",
+    "t_keywords",
+    "t_misinfo",
+    "t_dbt"
+  ],
+  "nodes": [
+    {
+      "id": "mt_subtitle",
+      "lane": "ingest",
+      "col": 1,
+      "type": "external",
+      "label": "Mediatree API",
+      "sublabel": "/api/subtitle (s2t)",
+      "width": 168,
+      "sources": [
+        {
+          "path": "quotaclimat/data_processing/mediatree/s3/api_to_s3.py",
+          "line": 89,
+          "end_line": 200,
+          "label": "API calls"
+        }
+      ]
+    },
+    {
+      "id": "t_ingest",
+      "lane": "ingest",
+      "col": 2,
+      "type": "backend",
+      "label": "api_to_s3.py",
+      "sublabel": "aiohttp, Ray + Modin",
+      "tag": "quotaclimat_base",
+      "width": 168,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_barometre.yaml",
+          "line": 26,
+          "end_line": 59,
+          "label": "Kestra task"
+        },
+        {
+          "path": "quotaclimat/data_processing/mediatree/s3/api_to_s3.py",
+          "line": 340,
+          "end_line": 433,
+          "label": "day x channel loop"
+        }
+      ]
+    },
+    {
+      "id": "s3_mediatree",
+      "lane": "ingest",
+      "col": 3,
+      "type": "database",
+      "label": "S3: mediatree",
+      "sublabel": "year/month/day/channel",
+      "width": 168,
+      "sources": [
+        {
+          "path": "quotaclimat/data_processing/mediatree/s3/api_to_s3.py",
+          "line": 217,
+          "end_line": 267,
+          "label": "save_to_s3"
+        }
+      ]
+    },
+    {
+      "id": "s3_mediatree_in",
+      "lane": "keywords",
+      "col": 1,
+      "type": "database",
+      "label": "S3: mediatree",
+      "sublabel": "parquet from step 1",
+      "width": 168,
+      "yOffset": -31,
+      "sources": [
+        {
+          "path": "quotaclimat/data_processing/mediatree/s3/s3_utils.py",
+          "line": 92,
+          "end_line": 113,
+          "label": "read_folder_from_s3"
+        }
+      ]
+    },
+    {
+      "id": "pg_ref",
+      "lane": "keywords",
+      "col": 1,
+      "type": "database",
+      "label": "barometre DB",
+      "sublabel": "stop_word, program_metadata",
+      "width": 168,
+      "yOffset": 31,
+      "sources": [
+        {
+          "path": "quotaclimat/data_processing/mediatree/api_import.py",
+          "line": 139,
+          "end_line": 149,
+          "label": "programs + stop words"
+        }
+      ]
+    },
+    {
+      "id": "t_keywords",
+      "lane": "keywords",
+      "col": 2,
+      "type": "backend",
+      "label": "api_import.py",
+      "sublabel": "alembic, then keyword match",
+      "tag": "quotaclimat_base",
+      "width": 168,
+      "sources": [
+        {
+          "path": "entrypoints/detect_keywords.sh",
+          "line": 1,
+          "end_line": 13,
+          "label": "entrypoint"
+        },
+        {
+          "path": "quotaclimat/data_processing/mediatree/api_import.py",
+          "line": 123,
+          "end_line": 181,
+          "label": "S3 to PG loop"
+        },
+        {
+          "path": "quotaclimat/data_processing/mediatree/detect_keywords.py",
+          "line": 591,
+          "end_line": 643,
+          "label": "theme tagging"
+        }
+      ]
+    },
+    {
+      "id": "pg_keywords",
+      "lane": "keywords",
+      "col": 3,
+      "type": "database",
+      "label": "keywords table",
+      "sublabel": "themes, counts, timestamps",
+      "width": 168,
+      "sources": [
+        {
+          "path": "quotaclimat/data_processing/mediatree/api_import.py",
+          "line": 164,
+          "end_line": 169,
+          "label": "save_to_pg"
+        }
+      ]
+    },
+    {
+      "id": "pg_keywords_in",
+      "lane": "misinfo",
+      "col": 1,
+      "type": "database",
+      "label": "keywords table",
+      "sublabel": "from step 2 (read user)",
+      "width": 168,
+      "yOffset": -31,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_barometre.yaml",
+          "line": 149,
+          "end_line": 150,
+          "label": "POSTGRES_* read user"
+        }
+      ]
+    },
+    {
+      "id": "openai",
+      "lane": "misinfo",
+      "col": 1,
+      "type": "external",
+      "label": "OpenAI API",
+      "sublabel": "ft gpt-4o-mini + Whisper",
+      "width": 168,
+      "yOffset": 31,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_barometre.yaml",
+          "line": 136,
+          "end_line": 147,
+          "label": "MODEL_NAME, OPENAI_API_KEY"
+        }
+      ]
+    },
+    {
+      "id": "t_misinfo",
+      "lane": "misinfo",
+      "col": 2,
+      "type": "backend",
+      "label": "label-misinformation",
+      "sublabel": "climateguard repo, main.py",
+      "tag": "external image",
+      "width": 168,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_barometre.yaml",
+          "line": 106,
+          "end_line": 151,
+          "label": "Kestra task"
+        }
+      ]
+    },
+    {
+      "id": "s3_climateguard",
+      "lane": "misinfo",
+      "col": 3,
+      "type": "database",
+      "label": "S3: climateguard",
+      "sublabel": "label-misinformation-input/",
+      "width": 168,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_barometre.yaml",
+          "line": 123,
+          "end_line": 125,
+          "label": "BUCKET_INPUT / OUTPUT"
+        }
+      ]
+    },
+    {
+      "id": "labelstudio",
+      "lane": "misinfo",
+      "col": 4,
+      "type": "cloud",
+      "label": "Label Studio",
+      "sublabel": "project 6, storage sync",
+      "width": 168,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_barometre.yaml",
+          "line": 130,
+          "end_line": 132,
+          "label": "LABEL_STUDIO_*"
+        }
+      ]
+    },
+    {
+      "id": "pg_labelstudio",
+      "lane": "dbt",
+      "col": 1,
+      "type": "database",
+      "label": "labelstudio DB",
+      "sublabel": "tasks + completions",
+      "width": 168,
+      "yOffset": -31,
+      "sources": [
+        {
+          "path": "quotaclimat/data_ingestion/labelstudio/ingest_labelstudio.py",
+          "line": 303,
+          "end_line": 343,
+          "label": "ingest_labelstudio"
+        }
+      ]
+    },
+    {
+      "id": "gsheets",
+      "lane": "dbt",
+      "col": 1,
+      "type": "external",
+      "label": "Google Sheets",
+      "sublabel": "reference data (Drive API)",
+      "width": 168,
+      "yOffset": 31,
+      "sources": [
+        {
+          "path": "quotaclimat/data_ingestion/external_sources/download_external_sources.py",
+          "line": 229,
+          "end_line": 256,
+          "label": "download_source"
+        }
+      ]
+    },
+    {
+      "id": "t_dbt",
+      "lane": "dbt",
+      "col": 2,
+      "type": "backend",
+      "label": "dbt.sh",
+      "sublabel": "LS ingest, seed, dbt run",
+      "tag": "quotaclimat_base",
+      "width": 168,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_barometre.yaml",
+          "line": 153,
+          "end_line": 186,
+          "label": "Kestra task"
+        },
+        {
+          "path": "entrypoints/dbt.sh",
+          "line": 1,
+          "end_line": 28,
+          "label": "entrypoint"
+        }
+      ]
+    },
+    {
+      "id": "pg_models",
+      "lane": "dbt",
+      "col": 3,
+      "type": "database",
+      "label": "barometre DB",
+      "sublabel": "public, analytics, advertising",
+      "width": 168,
+      "sources": [
+        {
+          "path": "entrypoints/dbt.sh",
+          "line": 11,
+          "end_line": 28,
+          "label": "dbt run targets"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-subtitle",
+      "from": "mt_subtitle",
+      "to": "t_ingest",
+      "label": "subtitles",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "e-parquet",
+      "from": "t_ingest",
+      "to": "s3_mediatree",
+      "label": "gzip parquet",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "e-read-s3",
+      "from": "s3_mediatree_in",
+      "to": "t_keywords",
+      "toSide": "left",
+      "fromSide": "right"
+    },
+    {
+      "id": "e-read-ref",
+      "from": "pg_ref",
+      "to": "t_keywords",
+      "toSide": "left",
+      "fromSide": "right"
+    },
+    {
+      "id": "e-keywords",
+      "from": "t_keywords",
+      "to": "pg_keywords",
+      "label": "upsert",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "e-read-kw",
+      "from": "pg_keywords_in",
+      "to": "t_misinfo",
+      "toSide": "left",
+      "fromSide": "right"
+    },
+    {
+      "id": "e-openai",
+      "from": "openai",
+      "to": "t_misinfo",
+      "variant": "dashed",
+      "toSide": "left",
+      "fromSide": "right"
+    },
+    {
+      "id": "e-flagged",
+      "from": "t_misinfo",
+      "to": "s3_climateguard",
+      "label": "flagged",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "e-sync",
+      "from": "s3_climateguard",
+      "to": "labelstudio",
+      "label": "sync",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "e-read-ls",
+      "from": "pg_labelstudio",
+      "to": "t_dbt",
+      "toSide": "left",
+      "fromSide": "right"
+    },
+    {
+      "id": "e-read-gs",
+      "from": "gsheets",
+      "to": "t_dbt",
+      "variant": "dashed",
+      "toSide": "left",
+      "fromSide": "right"
+    },
+    {
+      "id": "e-models",
+      "from": "t_dbt",
+      "to": "pg_models",
+      "label": "tables",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "e-then-1",
+      "from": "t_ingest",
+      "to": "t_keywords",
+      "label": "then",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-then-2",
+      "from": "t_keywords",
+      "to": "t_misinfo",
+      "label": "then",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-then-3",
+      "from": "t_misinfo",
+      "to": "t_dbt",
+      "label": "then",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Trigger and inputs",
+      "items": [
+        "No schedule of its own: started by main-pipeline (01:10, 12:30) or by hand",
+        "days_back (default 1) and start_date (default now) set the day window",
+        "Namespace quotaclimat, scope france (COUNTRY=fra)"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Idempotence",
+      "items": [
+        "API_DATA_OVERWRITE=1: step 1 rewrites existing S3 objects for the window",
+        "Step 2 builds a hash id per row and upserts it",
+        "Step 3 looks back days_back + 1 days"
+      ]
+    }
+  ]
+}

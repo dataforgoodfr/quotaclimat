@@ -1,0 +1,358 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Kestra flow: rrs-climate",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/flows/rrs-climate.html",
+    "repository": {
+      "url": "git@github.com:dataforgoodfr/quotaclimat.git",
+      "revision": "c2defa51aafeac09df8121d063d0d352c0d1af69",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "Kestra task (Docker container)"
+        },
+        "database": {
+          "label": "Data store (PostgreSQL)"
+        },
+        "external": {
+          "label": "External API (LLM / embeddings)"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "segments",
+      "label": "import_segments: climate chunks to rrs.segments"
+    },
+    {
+      "id": "cases",
+      "label": "import_cases: LLM-flagged chunks to rrs.cases"
+    },
+    {
+      "id": "clustering",
+      "label": "clustering: narratives (only if run_clustering)"
+    }
+  ],
+  "phases": [
+    {
+      "id": "reads",
+      "label": "Reads",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "runs",
+      "label": "Runs",
+      "fromCol": 2,
+      "toCol": 2,
+      "variant": "emphasis"
+    },
+    {
+      "id": "writes",
+      "label": "Writes",
+      "fromCol": 3,
+      "toCol": 4
+    }
+  ],
+  "mainPath": [
+    "t_segments",
+    "t_cases",
+    "t_clustering"
+  ],
+  "nodes": [
+    {
+      "id": "src_keywords",
+      "lane": "segments",
+      "col": 1,
+      "type": "database",
+      "label": "source DB: keywords",
+      "sublabel": "barometre or extended-perimeter",
+      "width": 184,
+      "sources": [
+        {
+          "path": "rrs/keyword_detection/import_segments.py",
+          "line": 146,
+          "end_line": 160,
+          "label": "SELECT keywords"
+        }
+      ]
+    },
+    {
+      "id": "t_segments",
+      "lane": "segments",
+      "col": 2,
+      "type": "backend",
+      "label": "import_segments.py",
+      "sublabel": "DuckDB postgres ATTACH",
+      "tag": "rrs-base",
+      "width": 176,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_rrs_climate.yaml",
+          "line": 41,
+          "end_line": 72,
+          "label": "Kestra task"
+        },
+        {
+          "path": "rrs/keyword_detection/import_segments.py",
+          "line": 115,
+          "end_line": 210,
+          "label": "import_segments"
+        }
+      ]
+    },
+    {
+      "id": "rrs_segments",
+      "lane": "segments",
+      "col": 3,
+      "type": "database",
+      "label": "rrs.segments",
+      "sublabel": "subject = climate",
+      "width": 168,
+      "sources": [
+        {
+          "path": "rrs/keyword_detection/import_segments.py",
+          "line": 199,
+          "end_line": 214,
+          "label": "upsert"
+        }
+      ]
+    },
+    {
+      "id": "src_tgc",
+      "lane": "cases",
+      "col": 1,
+      "type": "database",
+      "label": "source DB: analytics",
+      "sublabel": "task_global_completion (dbt)",
+      "width": 184,
+      "sources": [
+        {
+          "path": "rrs/keyword_detection/import_cases.py",
+          "line": 145,
+          "end_line": 165,
+          "label": "SELECT cases"
+        }
+      ]
+    },
+    {
+      "id": "t_cases",
+      "lane": "cases",
+      "col": 2,
+      "type": "backend",
+      "label": "import_cases.py",
+      "sublabel": "channels from SOURCE_COUNTRY_CODE",
+      "tag": "rrs-base",
+      "width": 176,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_rrs_climate.yaml",
+          "line": 74,
+          "end_line": 104,
+          "label": "Kestra task"
+        },
+        {
+          "path": "rrs/keyword_detection/import_cases.py",
+          "line": 109,
+          "end_line": 145,
+          "label": "import_cases"
+        }
+      ]
+    },
+    {
+      "id": "rrs_cases",
+      "lane": "cases",
+      "col": 3,
+      "type": "database",
+      "label": "rrs.cases",
+      "sublabel": "model score, reason, LS link",
+      "width": 168,
+      "sources": [
+        {
+          "path": "rrs/keyword_detection/import_cases.py",
+          "line": 196,
+          "end_line": 215,
+          "label": "upsert"
+        }
+      ]
+    },
+    {
+      "id": "rrs_cases_in",
+      "lane": "clustering",
+      "col": 1,
+      "type": "database",
+      "label": "rrs.cases",
+      "sublabel": "days with unclustered cases",
+      "width": 184,
+      "yOffset": -40,
+      "sources": [
+        {
+          "path": "rrs/clustering/get_data.py",
+          "line": 169,
+          "end_line": 190,
+          "label": "get_unprocessed_dates"
+        }
+      ]
+    },
+    {
+      "id": "llm",
+      "lane": "clustering",
+      "col": 1,
+      "type": "external",
+      "label": "Anthropic + Mistral",
+      "sublabel": "Claude Haiku 4.5, mistral-embed",
+      "width": 184,
+      "yOffset": 40,
+      "sources": [
+        {
+          "path": "rrs/clustering/providers.py",
+          "line": 7,
+          "end_line": 8,
+          "label": "LLM models"
+        },
+        {
+          "path": "rrs/clustering/backends.py",
+          "line": 25,
+          "end_line": 26,
+          "label": "embedding models"
+        }
+      ]
+    },
+    {
+      "id": "t_clustering",
+      "lane": "clustering",
+      "col": 2,
+      "type": "backend",
+      "label": "rrs.clustering.main",
+      "sublabel": "spaCy + LLM labels + dedup",
+      "tag": "rrs-base",
+      "width": 176,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_rrs_climate.yaml",
+          "line": 106,
+          "end_line": 149,
+          "label": "Kestra task"
+        },
+        {
+          "path": "rrs/clustering/main.py",
+          "line": 84,
+          "end_line": 300,
+          "label": "per-day pipeline"
+        }
+      ]
+    },
+    {
+      "id": "rrs_clusters",
+      "lane": "clustering",
+      "col": 3,
+      "type": "database",
+      "label": "rrs.clusters",
+      "sublabel": "+ case_to_clusters",
+      "width": 168,
+      "sources": [
+        {
+          "path": "rrs/clustering/get_data.py",
+          "line": 97,
+          "end_line": 150,
+          "label": "write_clusters_to_db"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-read-kw",
+      "from": "src_keywords",
+      "to": "t_segments",
+      "label": "climate > 0"
+    },
+    {
+      "id": "e-segments",
+      "from": "t_segments",
+      "to": "rrs_segments",
+      "label": "upsert",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-read-tgc",
+      "from": "src_tgc",
+      "to": "t_cases",
+      "label": "LS tasks"
+    },
+    {
+      "id": "e-cases",
+      "from": "t_cases",
+      "to": "rrs_cases",
+      "label": "upsert",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-read-cases",
+      "from": "rrs_cases_in",
+      "to": "t_clustering",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "e-llm",
+      "from": "llm",
+      "to": "t_clustering",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "e-clusters",
+      "from": "t_clustering",
+      "to": "rrs_clusters",
+      "label": "assign",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-then-1",
+      "from": "t_segments",
+      "to": "t_cases",
+      "label": "then",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-then-2",
+      "from": "t_cases",
+      "to": "t_clustering",
+      "label": "if run_clustering",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Trigger and inputs",
+      "items": [
+        "Run by main-pipeline twice: source=extended (run_clustering=false), then source=barometre",
+        "source picks the DB, host, port and channel list; output always goes to the rrs DB",
+        "No dates given: steps 1-2 resume from the latest segment/case date in rrs"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Clustering scope",
+      "items": [
+        "Clustering reads rrs.cases for the subject, whatever the source",
+        "So cases imported by the extended run are clustered by the next barometre run"
+      ]
+    }
+  ]
+}

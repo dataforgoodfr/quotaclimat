@@ -1,0 +1,243 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Kestra flow: main-pipeline",
+    "quality_profile": "showcase",
+    "output": "docs/diagrams/flows/main-pipeline.html",
+    "repository": {
+      "url": "git@github.com:dataforgoodfr/quotaclimat.git",
+      "revision": "c2defa51aafeac09df8121d063d0d352c0d1af69",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "external": {
+          "label": "Cron trigger"
+        },
+        "messagebus": {
+          "label": "Orchestrator flow"
+        },
+        "backend": {
+          "label": "Subflow task (wait + transmitFailed)"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "ext",
+      "label": "Extended perimeter: runIf with_rrs"
+    },
+    {
+      "id": "std",
+      "label": "Standard perimeter"
+    }
+  ],
+  "mainPath": [
+    "cron",
+    "s_ext",
+    "s_clim_ext",
+    "s_insec_ext",
+    "s_baro",
+    "s_clim",
+    "s_insec"
+  ],
+  "nodes": [
+    {
+      "id": "cron",
+      "lane": "ext",
+      "col": 0,
+      "type": "external",
+      "label": "Schedule",
+      "sublabel": "01:10 + 12:30 Paris",
+      "width": 130,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
+          "line": 29,
+          "end_line": 38,
+          "label": "triggers"
+        }
+      ]
+    },
+    {
+      "id": "s_ext",
+      "lane": "ext",
+      "col": 1,
+      "type": "backend",
+      "label": "extended-perimeter",
+      "sublabel": "days_back, start_date",
+      "tag": "rrs",
+      "width": 146,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
+          "line": 41,
+          "end_line": 50,
+          "label": "subflow 1"
+        }
+      ]
+    },
+    {
+      "id": "s_clim_ext",
+      "lane": "ext",
+      "col": 2,
+      "type": "backend",
+      "label": "rrs-climate",
+      "sublabel": "source=extended",
+      "tag": "no clustering",
+      "width": 146,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
+          "line": 52,
+          "end_line": 61,
+          "label": "subflow 2"
+        }
+      ]
+    },
+    {
+      "id": "s_insec_ext",
+      "lane": "ext",
+      "col": 3,
+      "type": "backend",
+      "label": "rrs-insecurity",
+      "sublabel": "source=extended",
+      "tag": "no clustering",
+      "width": 146,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
+          "line": 63,
+          "end_line": 72,
+          "label": "subflow 3"
+        }
+      ]
+    },
+    {
+      "id": "s_baro",
+      "lane": "std",
+      "col": 3,
+      "type": "backend",
+      "label": "barometre",
+      "sublabel": "days_back, start_date",
+      "tag": "always runs",
+      "width": 146,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
+          "line": 74,
+          "end_line": 82,
+          "label": "subflow 4"
+        }
+      ]
+    },
+    {
+      "id": "s_clim",
+      "lane": "std",
+      "col": 4,
+      "type": "backend",
+      "label": "rrs-climate",
+      "sublabel": "defaults (barometre)",
+      "tag": "clustering",
+      "width": 146,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
+          "line": 84,
+          "end_line": 90,
+          "label": "subflow 5"
+        }
+      ]
+    },
+    {
+      "id": "s_insec",
+      "lane": "std",
+      "col": 5,
+      "type": "backend",
+      "label": "rrs-insecurity",
+      "sublabel": "defaults (barometre)",
+      "tag": "clustering",
+      "width": 146,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
+          "line": 92,
+          "end_line": 98,
+          "label": "subflow 6"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-cron",
+      "from": "cron",
+      "to": "s_ext",
+      "label": "start",
+      "variant": "dashed"
+    },
+    {
+      "id": "e-1",
+      "from": "s_ext",
+      "to": "s_clim_ext",
+      "label": "success",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-2",
+      "from": "s_clim_ext",
+      "to": "s_insec_ext",
+      "label": "success",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-3",
+      "from": "s_insec_ext",
+      "to": "s_baro",
+      "label": "success",
+      "variant": "emphasis",
+      "role": "main",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "e-4",
+      "from": "s_baro",
+      "to": "s_clim",
+      "label": "success",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-5",
+      "from": "s_clim",
+      "to": "s_insec",
+      "label": "success",
+      "variant": "emphasis",
+      "role": "main"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "rose",
+      "title": "Gates",
+      "items": [
+        "with_rrs=false skips every step except barometre",
+        "A failed subflow fails main-pipeline and stops the remaining steps"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Inputs passed down",
+      "items": [
+        "days_back and start_date (default today) go to extended-perimeter and barometre only",
+        "rrs-climate gets no dates and resumes from the rrs DB; rrs-insecurity uses its default days_back=1"
+      ]
+    }
+  ]
+}

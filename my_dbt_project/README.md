@@ -29,10 +29,9 @@ Both read `POSTGRES_HOST`/`POSTGRES_PORT`/`POSTGRES_USER`/`POSTGRES_PASSWORD`/`P
 `homepage_environment_by_media_by_month`: materialized as a `view` (set in `dbt_project.yml`), aggregated monthly environmental coverage percentage by channel.
 
 ### `dashboards/`
-The core queries feeding Metabase dashboards. All are `materialized='incremental'` (most with `on_schema_change='append_new_columns'`), each keyed to avoid duplicate rows on re-run (`unique_key`, or `incremental_strategy='append'` for `core_query_causal_links`):
+The core queries feeding Metabase dashboards. All are `materialized='incremental'` (most with `on_schema_change='append_new_columns'`), each keyed to avoid duplicate rows on re-run (`unique_key`):
 * `core_query_environmental_shares` / `core_query_environmental_shares_i8n` / `core_query_environmental_shares_be`: % of airtime dedicated to environmental topics (climate/biodiversity/resources), by week and channel, for France / other countries / Belgium respectively. The `_be` (and `_i8n`) variants compute the denominator (`sum_duration_minutes`) differently depending on whether a channel has an editorial grid in `program_metadata` (`has_grid`): in-perimeter captured minutes if it does, full `time_monitored` otherwise - see `models/schema.yml` for the full column documentation, including the `sum_time_monitored`/`sum_monitored_in_perimeter_min` control columns.
 * `core_query_thematics_keywords` / `core_query_thematics_keywords_i8n` / `core_query_thematics_keywords_be`: keyword-level occurrence counts by week, channel, theme and category, sharing the same denominator logic as the environmental shares queries above.
-* `core_query_causal_links`: causal-link query, appended incrementally (see the root README's "Causal query - too slow" note on why this is not a full-refresh).
 * `thematic_query_ocean`: ocean-specific thematic keyword query.
 
 ### `analytics/`

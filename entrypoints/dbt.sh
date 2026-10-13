@@ -8,9 +8,8 @@ poetry run python -m quotaclimat.data_ingestion.external_sources.download_extern
 poetry run dbt seed --full-refresh --select path:seeds/ref
 poetry run dbt test --select path:seeds/ref
 
-echo "apply dbt models - except causal links and analytics tables"
+echo "apply dbt models - except analytics tables"
 poetry run dbt run --full-refresh \
---exclude core_query_causal_links \
 --exclude task_global_completion \
 --exclude environmental_shares_with_desinfo_counts \
 --exclude path:models/advertising \

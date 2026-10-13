@@ -16,6 +16,8 @@
 -- pour regrouper par groupe. Pubs sans marque prédite laissées de côté.
 -- part_annonceur_pct : secondes de pub de l'annonceur autour de l'émission / toutes ses secondes rattachées
 -- à une émission sur la période.
+-- Annonceurs gardés : pour chaque émission, les nb_annonceurs_par_emission avec la plus forte
+-- part_annonceur_pct (rang_dans_emission), parmi ceux qui ont au moins annonceur_secondes_min de pub rattachée.
 -- Métriques des émissions : voir metabase_taux_mesinformation_par_emission.sql (même calcul).
 -- bornes de la période en heure de Paris : de debut 00:00 à fin + 1 jour 00:00 (fin incluse).
 -- Variables de type Date : la conversion date -> timestamp ne dépend pas de la session, Postgres calcule les
@@ -229,7 +231,8 @@ emissions AS MATERIALIZED (
 parametres AS (
     SELECT
         10 AS fenetre_minutes,       -- distance maximale entre l'écran publicitaire et l'émission
-        15 AS nb_annonceurs,         -- annonceurs gardés, par secondes de pub rattachées décroissantes
+        5 AS nb_annonceurs_par_emission, -- par émission, annonceurs gardés par part de leur pub décroissante
+        600 AS annonceur_secondes_min, -- annonceurs classés : au moins ce volume de pub rattachée sur la période
         1.0 AS env_heures_min        -- émissions gardées : au moins ce temps consacré à l'environnement
 ),
 -- pubs de la période, avec les émissions avant / après l'écran retenues ; NOT MATERIALIZED : recopiée dans
@@ -283,25 +286,33 @@ pub_par_emission AS (
     JOIN grille g ON g.id = pl.program_id
     GROUP BY 1, 2, 3, 4, 5
 ),
--- classement des annonceurs, puis seulement les annonceurs retenus : calculés une seule fois (MATERIALIZED)
--- et réduits avant la jointure avec les émissions
+-- volume total de chaque annonceur sur la période, calculé une seule fois (MATERIALIZED)
 annonceurs AS MATERIALIZED (
     SELECT
         annonceur,
-        SUM(pub_secondes) AS pub_secondes_total,
-        RANK() OVER (ORDER BY SUM(pub_secondes) DESC) AS rang
+        SUM(pub_secondes) AS pub_secondes_total
     FROM pub_par_emission
     GROUP BY annonceur
 ),
+-- pour chaque émission, les annonceurs pour qui elle pèse le plus dans leur pub totale ; le volume minimum
+-- écarte les annonceurs presque absents, pour qui une seule pub peut faire 100 %
 pub_retenue AS MATERIALIZED (
-    SELECT
-        pe.*,
-        a.pub_secondes_total,
-        a.rang
-    FROM pub_par_emission pe
-    JOIN annonceurs a ON a.annonceur = pe.annonceur
+    SELECT *
+    FROM (
+        SELECT
+            pe.*,
+            a.pub_secondes_total,
+            RANK() OVER (
+                PARTITION BY pe.channel_name, pe.type, pe.nom, pe.rediffusion
+                ORDER BY pe.pub_secondes / a.pub_secondes_total DESC
+            ) AS rang_dans_emission
+        FROM pub_par_emission pe
+        JOIN annonceurs a ON a.annonceur = pe.annonceur
+        CROSS JOIN parametres pa
+        WHERE a.pub_secondes_total >= pa.annonceur_secondes_min
+    ) classes
     CROSS JOIN parametres pa
-    WHERE a.rang <= pa.nb_annonceurs
+    WHERE classes.rang_dans_emission <= pa.nb_annonceurs_par_emission
 )
 SELECT
     pe.annonceur,
@@ -313,6 +324,7 @@ SELECT
     ROUND(pe.pub_secondes::numeric, 0) AS pub_secondes,
     ROUND(pe.pub_secondes_total::numeric, 0) AS annonceur_pub_secondes_total,
     ROUND((100 * pe.pub_secondes / pe.pub_secondes_total)::numeric, 2) AS part_annonceur_pct,
+    pe.rang_dans_emission,
     e.volume_heures,
     e.env_heures,
     e.part_env_pct,
@@ -328,4 +340,4 @@ JOIN emissions e
  AND e.rediffusion = pe.rediffusion
 CROSS JOIN parametres pa
 WHERE e.env_heures >= pa.env_heures_min
-ORDER BY pe.rang, pe.pub_secondes DESC
+ORDER BY e.chaine, e.nom, pe.rang_dans_emission

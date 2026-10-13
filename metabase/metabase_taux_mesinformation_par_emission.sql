@@ -101,6 +101,10 @@ env_segments AS (
     ) j
     CROSS JOIN LATERAL (SELECT EXTRACT(EPOCH FROM s.paris_time - j.jour) / 60 AS minute) m
     WHERE j.jour BETWEEN COALESCE(g.grid_start, '-infinity'::date) AND g.grid_end
+      -- seulement les lignes à moins de 6 min (marges d'ingestion) : moins de lignes à trier ; les émissions
+      -- d'un programme découpé le couvrent sans trou, chaque segment en garde au moins une
+      AND m.minute >= g.start_minute - 6
+      AND m.minute < g.end_minute + 6
     ORDER BY s.id, s.start,
         m.minute >= g.start_minute AND m.minute < g.end_minute DESC,
         GREATEST(g.start_minute - m.minute, m.minute - g.end_minute),

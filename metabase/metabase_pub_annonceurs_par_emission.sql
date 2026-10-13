@@ -106,6 +106,10 @@ env_segments AS (
     ) j
     CROSS JOIN LATERAL (SELECT EXTRACT(EPOCH FROM s.paris_time - j.jour) / 60 AS minute) m
     WHERE j.jour BETWEEN COALESCE(g.grid_start, '-infinity'::date) AND g.grid_end
+      -- seulement les lignes à moins de 6 min (marges d'ingestion) : moins de lignes à trier ; les émissions
+      -- d'un programme découpé le couvrent sans trou, chaque segment en garde au moins une
+      AND m.minute >= g.start_minute - 6
+      AND m.minute < g.end_minute + 6
     ORDER BY s.id, s.start,
         m.minute >= g.start_minute AND m.minute < g.end_minute DESC,
         GREATEST(g.start_minute - m.minute, m.minute - g.end_minute),
@@ -179,8 +183,10 @@ cas AS (
     FROM cas_lignes
     GROUP BY 1, 2, 3, 4
 ),
--- métriques de chaque émission, comme dans metabase_taux_mesinformation_par_emission.sql
-emissions AS (
+-- métriques de chaque émission, comme dans metabase_taux_mesinformation_par_emission.sql ; MATERIALIZED :
+-- calculées une seule fois, sans quoi Postgres, qui sous-estime les jointures sur les CTE, peut les
+-- recalculer pour chaque ligne de publicité
+emissions AS MATERIALIZED (
     SELECT
         v.channel_name,
         v.chaine,
@@ -259,24 +265,36 @@ pub_par_emission AS (
     JOIN grille g ON g.id = pe.program_id
     GROUP BY 1, 2, 3, 4, 5
 ),
-annonceurs AS (
+-- classement des annonceurs, puis seulement les annonceurs retenus : calculés une seule fois (MATERIALIZED)
+-- et réduits avant la jointure avec les émissions
+annonceurs AS MATERIALIZED (
     SELECT
         annonceur,
         SUM(pub_secondes) AS pub_secondes_total,
         RANK() OVER (ORDER BY SUM(pub_secondes) DESC) AS rang
     FROM pub_par_emission
     GROUP BY annonceur
+),
+pub_retenue AS MATERIALIZED (
+    SELECT
+        pe.*,
+        a.pub_secondes_total,
+        a.rang
+    FROM pub_par_emission pe
+    JOIN annonceurs a ON a.annonceur = pe.annonceur
+    CROSS JOIN parametres pa
+    WHERE a.rang <= pa.nb_annonceurs
 )
 SELECT
-    a.annonceur,
+    pe.annonceur,
     e.chaine,
     e.type,
     e.nom AS emission,
     e.rediffusion,
-    a.annonceur || ' / ' || e.chaine || ' / ' || e.nom AS point,
+    pe.annonceur || ' / ' || e.chaine || ' / ' || e.nom AS point,
     ROUND(pe.pub_secondes::numeric, 0) AS pub_secondes,
-    ROUND(a.pub_secondes_total::numeric, 0) AS annonceur_pub_secondes_total,
-    ROUND((100 * pe.pub_secondes / a.pub_secondes_total)::numeric, 2) AS part_annonceur_pct,
+    ROUND(pe.pub_secondes_total::numeric, 0) AS annonceur_pub_secondes_total,
+    ROUND((100 * pe.pub_secondes / pe.pub_secondes_total)::numeric, 2) AS part_annonceur_pct,
     e.volume_heures,
     e.env_heures,
     e.part_env_pct,
@@ -284,14 +302,12 @@ SELECT
     e.cas_par_heure,
     e.cas_pour_10h,
     e.cas_par_heure_env
-FROM pub_par_emission pe
-JOIN annonceurs a ON a.annonceur = pe.annonceur
+FROM pub_retenue pe
 JOIN emissions e
   ON e.channel_name = pe.channel_name
  AND e.type = pe.type
  AND e.nom = pe.nom
  AND e.rediffusion = pe.rediffusion
 CROSS JOIN parametres pa
-WHERE a.rang <= pa.nb_annonceurs
-  AND e.env_heures >= pa.env_heures_min
-ORDER BY a.rang, pe.pub_secondes DESC
+WHERE e.env_heures >= pa.env_heures_min
+ORDER BY pe.rang, pe.pub_secondes DESC

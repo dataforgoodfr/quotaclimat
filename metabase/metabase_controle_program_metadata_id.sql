@@ -48,11 +48,13 @@ segments AS MATERIALIZED (
         k.start AT TIME ZONE 'Europe/Paris' AS paris_time,
         -- pour le diagnostic : l'heure UTC, comme si elle était une heure de Paris
         k.start AT TIME ZONE 'UTC' AS heure_utc
-    FROM bornes b
-    JOIN public.keywords k
-      ON k.start >= b.debut AT TIME ZONE 'Europe/Paris'
-     AND k.start < b.fin AT TIME ZONE 'Europe/Paris'
-    WHERE k.country = 'france'
+    FROM public.keywords k
+    -- bornes écrites ici plutôt que lues dans bornes : keywords est partitionnée par mois, Postgres n'écarte
+    -- les partitions hors période à la planification que si elles sont connues à ce moment ; sinon il estime
+    -- la lecture de toutes les partitions et déclenche une compilation JIT de plusieurs dizaines de secondes
+    WHERE k.start >= CAST({{debut}} AS timestamp) AT TIME ZONE 'Europe/Paris'
+      AND k.start < CAST({{fin}} AS timestamp) AT TIME ZONE 'Europe/Paris'
+      AND k.country = 'france'
 ),
 -- jour de grille et minute dans ce jour : le jour même, la veille pour un programme de la veille qui finit
 -- après minuit, le lendemain pour la marge avant un programme qui commence à minuit

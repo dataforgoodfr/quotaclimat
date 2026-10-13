@@ -72,11 +72,13 @@ segments AS MATERIALIZED (
         k.program_metadata_id,
         k.number_of_keywords,
         k.start AT TIME ZONE 'Europe/Paris' AS paris_time
-    FROM bornes b
-    JOIN public.keywords k
-      ON k.start >= b.debut AT TIME ZONE 'Europe/Paris'
-     AND k.start < b.fin AT TIME ZONE 'Europe/Paris'
-    WHERE k.country = 'france'
+    FROM public.keywords k
+    -- bornes écrites ici plutôt que lues dans bornes : keywords est partitionnée par mois, Postgres n'écarte
+    -- les partitions hors période à la planification que si elles sont connues à ce moment ; sinon il estime
+    -- la lecture de toutes les partitions et déclenche une compilation JIT de plusieurs dizaines de secondes
+    WHERE k.start >= CAST({{debut}} AS timestamp) AT TIME ZONE 'Europe/Paris'
+      AND k.start < CAST({{fin}} AS timestamp) AT TIME ZONE 'Europe/Paris'
+      AND k.country = 'france'
       AND k.number_of_keywords > 0
       AND k.program_metadata_id IS NOT NULL
 ),

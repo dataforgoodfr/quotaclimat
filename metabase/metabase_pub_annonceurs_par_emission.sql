@@ -97,11 +97,15 @@ segments AS MATERIALIZED (
         k.start,
         k.program_metadata_id,
         k.number_of_keywords,
-        k.start AT TIME ZONE 'Europe/Paris' AS paris_time
+        -- jour, jour de semaine et minute dans la journée (heure de Paris) calculés une fois par segment
+        p.paris_time::date AS jour_paris,
+        EXTRACT(ISODOW FROM p.paris_time)::int AS jour_semaine,
+        EXTRACT(EPOCH FROM p.paris_time::time)::float8 / 60 AS minute_jour
     FROM bornes b
     JOIN public.keywords k
       ON k.start >= b.debut AT TIME ZONE 'Europe/Paris'
      AND k.start < b.fin AT TIME ZONE 'Europe/Paris'
+    CROSS JOIN LATERAL (SELECT k.start AT TIME ZONE 'Europe/Paris' AS paris_time) p
     WHERE k.country = 'france'
       AND k.number_of_keywords > 0
       AND k.program_metadata_id IS NOT NULL
@@ -118,13 +122,15 @@ env_segments AS (
         s.number_of_keywords
     FROM segments s
     JOIN grille g ON g.program_metadata_id = s.program_metadata_id
+    -- décalage entre le jour du segment et le jour du programme : 0, 1 (programme de la veille qui finit après
+    -- minuit) ou -1 (marge avant un programme du lendemain qui commence à minuit)
     CROSS JOIN LATERAL (
-        SELECT s.paris_time::date - CASE (EXTRACT(ISODOW FROM s.paris_time)::int - g.weekday + 7) % 7
-            WHEN 0 THEN 0 WHEN 1 THEN 1 WHEN 6 THEN -1
-        END AS jour
-    ) j
-    CROSS JOIN LATERAL (SELECT EXTRACT(EPOCH FROM s.paris_time - j.jour) / 60 AS minute) m
-    WHERE j.jour BETWEEN COALESCE(g.grid_start, '-infinity'::date) AND g.grid_end
+        SELECT CASE (s.jour_semaine - g.weekday + 7) % 7 WHEN 0 THEN 0 WHEN 1 THEN 1 WHEN 6 THEN -1 END AS decalage
+    ) d
+    CROSS JOIN LATERAL (
+        SELECT s.jour_paris - d.decalage AS jour, s.minute_jour + 1440 * d.decalage AS minute
+    ) m
+    WHERE m.jour BETWEEN COALESCE(g.grid_start, '-infinity'::date) AND g.grid_end
       -- seulement les lignes à moins de 6 min (marges d'ingestion) : moins de lignes à trier ; les émissions
       -- d'un programme découpé le couvrent sans trou, chaque segment en garde au moins une
       AND m.minute >= g.start_minute - 6
@@ -241,8 +247,9 @@ parametres AS (
         15 AS nb_annonceurs,         -- annonceurs gardés, par secondes de pub rattachées décroissantes
         1.0 AS env_heures_min        -- émissions gardées : au moins ce temps consacré à l'environnement
 ),
--- occurrence_date est en UTC (timestamp sans fuseau)
-pubs AS (
+-- pubs de la période, avec les émissions avant / après l'écran retenues ; NOT MATERIALIZED : recopiée dans
+-- les deux lectures ci-dessous plutôt qu'écrite sur disque ; occurrence_date est en UTC (timestamp sans fuseau)
+pubs AS NOT MATERIALIZED (
     SELECT
         p.brand_company AS annonceur,
         p.duration_sec,
@@ -262,28 +269,33 @@ pubs AS (
       AND p.occurrence_date >= (b.debut AT TIME ZONE 'Europe/Paris') AT TIME ZONE 'UTC'
       AND p.occurrence_date < (b.fin AT TIME ZONE 'Europe/Paris') AT TIME ZONE 'UTC'
 ),
-pubs_emissions AS (
-    SELECT annonceur, program_before_id AS program_id,
-        duration_sec * CASE WHEN apres_proche THEN 0.5 ELSE 1 END AS secondes
-    FROM pubs
-    WHERE avant_proche
-    UNION ALL
-    SELECT annonceur, program_after_id,
-        duration_sec * CASE WHEN avant_proche THEN 0.5 ELSE 1 END
-    FROM pubs
-    WHERE apres_proche
+-- secondes par annonceur et par ligne de grille, agrégées avant de rejoindre la grille (clé étroite)
+pub_par_ligne AS (
+    SELECT annonceur, program_id, SUM(secondes) AS secondes
+    FROM (
+        SELECT annonceur, program_before_id AS program_id,
+            duration_sec * CASE WHEN apres_proche THEN 0.5 ELSE 1 END AS secondes
+        FROM pubs
+        WHERE avant_proche
+        UNION ALL
+        SELECT annonceur, program_after_id,
+            duration_sec * CASE WHEN avant_proche THEN 0.5 ELSE 1 END
+        FROM pubs
+        WHERE apres_proche
+    ) pe
+    GROUP BY 1, 2
 ),
 -- même regroupement que les métriques : émission, ou programme quand l'émission n'est pas connue
 pub_par_emission AS (
     SELECT
-        pe.annonceur,
+        pl.annonceur,
         g.channel_name,
         g.type,
         g.nom,
         g.rediffusion,
-        SUM(pe.secondes) AS pub_secondes
-    FROM pubs_emissions pe
-    JOIN grille g ON g.id = pe.program_id
+        SUM(pl.secondes) AS pub_secondes
+    FROM pub_par_ligne pl
+    JOIN grille g ON g.id = pl.program_id
     GROUP BY 1, 2, 3, 4, 5
 ),
 -- classement des annonceurs, puis seulement les annonceurs retenus : calculés une seule fois (MATERIALIZED)

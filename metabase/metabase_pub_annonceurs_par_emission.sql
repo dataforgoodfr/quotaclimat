@@ -17,10 +17,31 @@
 -- part_annonceur_pct : secondes de pub de l'annonceur autour de l'émission / toutes ses secondes rattachées
 -- à une émission sur la période.
 -- Métriques des émissions : voir metabase_taux_mesinformation_par_emission.sql (même calcul).
-WITH bornes AS (
+-- bornes de la période, en heure de Paris, au format YYYY-MM-DD ou YYYY-MM-DD HH:MM. Lues avec
+-- split_part / make_timestamp plutôt qu'avec CAST(... AS timestamp) : Metabase envoie les variables en texte,
+-- et la conversion texte -> timestamp dépend de la session, Postgres la refait alors pour chaque ligne lue ;
+-- avec ces fonctions, il calcule les bornes une seule fois dès la planification. NOT MATERIALIZED : la CTE
+-- est recopiée à chaque usage, les bornes y sont donc des constantes, ce qui permet aussi d'écarter les
+-- partitions de keywords hors période dès la planification (sinon : estimation sur toutes les partitions et
+-- compilation JIT de plusieurs dizaines de secondes)
+WITH bornes AS NOT MATERIALIZED (
     SELECT
-        CAST({{debut}} AS timestamp) AS debut,
-        CAST({{fin}} AS timestamp) AS fin
+        make_timestamp(
+            split_part({{debut}}, '-', 1)::int,
+            split_part({{debut}}, '-', 2)::int,
+            split_part(split_part({{debut}}, '-', 3), ' ', 1)::int,
+            COALESCE(NULLIF(split_part(split_part({{debut}}, ' ', 2), ':', 1), ''), '0')::int,
+            COALESCE(NULLIF(split_part(split_part({{debut}}, ' ', 2), ':', 2), ''), '0')::int,
+            0
+        ) AS debut,
+        make_timestamp(
+            split_part({{fin}}, '-', 1)::int,
+            split_part({{fin}}, '-', 2)::int,
+            split_part(split_part({{fin}}, '-', 3), ' ', 1)::int,
+            COALESCE(NULLIF(split_part(split_part({{fin}}, ' ', 2), ':', 1), ''), '0')::int,
+            COALESCE(NULLIF(split_part(split_part({{fin}}, ' ', 2), ':', 2), ''), '0')::int,
+            0
+        ) AS fin
 ),
 grille AS (
     SELECT
@@ -77,13 +98,11 @@ segments AS MATERIALIZED (
         k.program_metadata_id,
         k.number_of_keywords,
         k.start AT TIME ZONE 'Europe/Paris' AS paris_time
-    FROM public.keywords k
-    -- bornes écrites ici plutôt que lues dans bornes : keywords est partitionnée par mois, Postgres n'écarte
-    -- les partitions hors période à la planification que si elles sont connues à ce moment ; sinon il estime
-    -- la lecture de toutes les partitions et déclenche une compilation JIT de plusieurs dizaines de secondes
-    WHERE k.start >= CAST({{debut}} AS timestamp) AT TIME ZONE 'Europe/Paris'
-      AND k.start < CAST({{fin}} AS timestamp) AT TIME ZONE 'Europe/Paris'
-      AND k.country = 'france'
+    FROM bornes b
+    JOIN public.keywords k
+      ON k.start >= b.debut AT TIME ZONE 'Europe/Paris'
+     AND k.start < b.fin AT TIME ZONE 'Europe/Paris'
+    WHERE k.country = 'france'
       AND k.number_of_keywords > 0
       AND k.program_metadata_id IS NOT NULL
 ),
@@ -132,11 +151,12 @@ cas_periode AS (
         c.data_item_channel_name AS channel_name,
         (c.data_item_start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' AS paris_time
     FROM analytics.cas_de_mesinformation c
+    CROSS JOIN bornes b
     -- bornes converties en UTC et comparées à la colonne telle quelle : un index sur data_item_start reste
-    -- utilisable, et les bornes sont connues dès la planification
+    -- utilisable
     WHERE c.country = 'france'
-      AND c.data_item_start >= (CAST({{debut}} AS timestamp) AT TIME ZONE 'Europe/Paris') AT TIME ZONE 'UTC'
-      AND c.data_item_start < (CAST({{fin}} AS timestamp) AT TIME ZONE 'Europe/Paris') AT TIME ZONE 'UTC'
+      AND c.data_item_start >= (b.debut AT TIME ZONE 'Europe/Paris') AT TIME ZONE 'UTC'
+      AND c.data_item_start < (b.fin AT TIME ZONE 'Europe/Paris') AT TIME ZONE 'UTC'
 ),
 -- jour de grille et minute dans ce jour : le jour même, la veille pour un programme de la veille qui finit
 -- après minuit, le lendemain pour la marge avant un programme qui commence à minuit
@@ -234,12 +254,13 @@ pubs AS (
             AND p.program_after_id IS NOT NULL
             AND p.program_after_gap_sec <= pa.fenetre_minutes * 60 AS apres_proche
     FROM analytics.publicites p
+    CROSS JOIN bornes b
     CROSS JOIN parametres pa
     -- bornes converties en UTC et comparées à la colonne telle quelle : un index sur occurrence_date reste
-    -- utilisable, et les bornes sont connues dès la planification
+    -- utilisable
     WHERE p.brand_company IS NOT NULL
-      AND p.occurrence_date >= (CAST({{debut}} AS timestamp) AT TIME ZONE 'Europe/Paris') AT TIME ZONE 'UTC'
-      AND p.occurrence_date < (CAST({{fin}} AS timestamp) AT TIME ZONE 'Europe/Paris') AT TIME ZONE 'UTC'
+      AND p.occurrence_date >= (b.debut AT TIME ZONE 'Europe/Paris') AT TIME ZONE 'UTC'
+      AND p.occurrence_date < (b.fin AT TIME ZONE 'Europe/Paris') AT TIME ZONE 'UTC'
 ),
 pubs_emissions AS (
     SELECT annonceur, program_before_id AS program_id,

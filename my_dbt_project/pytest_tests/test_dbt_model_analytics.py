@@ -305,8 +305,6 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
         [
             "run",
             "--exclude",
-            "core_query_causal_links",
-            "--exclude",
             "task_global_completion",
             "--exclude",
             "environmental_shares_with_desinfo_counts",

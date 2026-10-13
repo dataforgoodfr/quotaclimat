@@ -137,7 +137,7 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
 - **What happens**, in order:
   1. `quotaclimat.data_ingestion.labelstudio.ingest_labelstudio` copies Label Studio tasks and annotations from the `labelstudio` DB into `barometre` (`labelstudio_task_aggregate`, `labelstudio_task_completion_aggregate`).
   2. `quotaclimat.data_ingestion.external_sources.download_external_sources` downloads the reference spreadsheets listed in `my_dbt_project/external_sources.yml` from the Drive folder in `EXTERNAL_SOURCES_DRIVE_FOLDER`, using the service account in `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON`. Spreadsheets readable without credentials are refused. Then `dbt seed` and `dbt test` load and check them.
-  3. `dbt run --full-refresh` builds the core models. Causal links, the analytics tables and the advertising models are excluded here.
+  3. `dbt run --full-refresh` builds the core models. The analytics tables and the advertising models are excluded here.
   4. `dbt run --target analytics` builds `task_global_completion` and `environmental_shares_with_desinfo_counts`.
   5. A last `dbt run` builds the advertising models, `cas_de_mesinformation` and `publicites`, which read the analytics tables.
 - **Technologies:** dbt (Postgres adapter), Google Drive and Sheets APIs, SQLAlchemy.

@@ -123,10 +123,11 @@ cas_periode AS (
         c.data_item_channel_name AS channel_name,
         (c.data_item_start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' AS paris_time
     FROM analytics.cas_de_mesinformation c
-    CROSS JOIN bornes b
+    -- bornes converties en UTC et comparées à la colonne telle quelle : un index sur data_item_start reste
+    -- utilisable, et les bornes sont connues dès la planification
     WHERE c.country = 'france'
-      AND (c.data_item_start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' >= b.debut
-      AND (c.data_item_start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' < b.fin
+      AND c.data_item_start >= (CAST({{debut}} AS timestamp) AT TIME ZONE 'Europe/Paris') AT TIME ZONE 'UTC'
+      AND c.data_item_start < (CAST({{fin}} AS timestamp) AT TIME ZONE 'Europe/Paris') AT TIME ZONE 'UTC'
 ),
 -- jour de grille et minute dans ce jour : le jour même, la veille pour un programme de la veille qui finit
 -- après minuit, le lendemain pour la marge avant un programme qui commence à minuit

@@ -2,6 +2,9 @@
     config(
         materialized='table',
         schema='analytics',
+        indexes=[
+            {'columns': ['occurrence_date']},
+        ],
     )
 }}
 
@@ -11,7 +14,8 @@
     before dbt runs (see my_dbt_project/external_sources.yml): where they are missing (e.g. extended perimeter),
     labels are left empty instead of failing the run.
     Programs before / after the tunnel of the occurrence (see ad_tunnel_programs): id in analytics.program
-    (monitored programs, split into their emissions when known), label and gap. -#}
+    (monitored programs, split into their emissions when known), label and gap.
+    Index on occurrence_date for the queries on a period (Metabase). -#}
 WITH sector_ref AS (
   {{ source_or_empty('advertising', 'ad_sectors', ['sector_code', 'sector_label_fr']) }}
 ),

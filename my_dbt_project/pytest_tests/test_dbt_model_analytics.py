@@ -314,6 +314,10 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "cas_de_mesinformation",
             "--exclude",
             "publicites",
+            "--exclude",
+            "emission_jour",
+            "--exclude",
+            "pub_annonceur_emission_jour",
             "--full-refresh",
         ]
     )
@@ -340,6 +344,10 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "cas_de_mesinformation",
             "--select",
             "publicites",
+            "--select",
+            "emission_jour",
+            "--select",
+            "pub_annonceur_emission_jour",
             # the advertising test rows are dated 2000-01-01, before the real analysis start date
             "--vars",
             '{"ad_analysis_start_date": "2000-01-01"}',
@@ -551,6 +559,113 @@ def test_cas_de_mesinformation(db_connection):
         ("europe1", datetime.datetime(2025, 6, 10, 5, 20), "Europe 1", False, "Europe 1 Matin"),
     ]
 
+
+
+def test_emission_jour(db_connection):
+    """Airtime of the grid and validated misinformation cases per emission and program day."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT emission_cle, jour, nb_diffusions, volume_heures
+            FROM analytics.emission_jour
+            WHERE channel_name = 'bfmtv' AND jour = '2025-04-07'
+        """)
+        volumes = {(r[0], r[1]): (r[2], float(r[3])) for r in cur.fetchall()}
+        cur.execute("""
+            SELECT emission_cle, jour, nb_cas
+            FROM analytics.emission_jour
+            WHERE nb_cas > 0
+        """)
+        cas = sorted(cur.fetchall())
+    monday = datetime.date(2025, 4, 7)
+    # Monday: the emissions of the test sheet, 21:00 - 24:00 cut at the end of the program (23:00)
+    assert volumes[("bfmtv|émission|BFM Première|false", monday)] == (1, 2.5)
+    assert volumes[("bfmtv|émission|Face à face|false", monday)] == (1, 0.5)
+    assert volumes[("bfmtv|émission|BFM Grand Soir|false", monday)] == (1, 2.0)
+    # the 5 validated misinformation cases of the labelstudio seeds, matched on time (see test_cas_de_mesinformation)
+    assert cas == [
+        ("europe1|programme|Europe 1 Matin|false", datetime.date(2025, 6, 10), 1),
+        ("franceinfotv|émission|Le fil info|false", datetime.date(2025, 4, 5), 1),
+        ("lci|émission|La matinale LCI|false", datetime.date(2025, 4, 10), 1),
+        ("sud-radio|programme|Le Grand Matin Week-end|false", datetime.date(2025, 4, 6), 1),
+        ("sud-radio|programme|Mettez-vous d'accord|false", datetime.date(2025, 4, 2), 1),
+    ]
+
+
+def test_emission_jour_environment(db_connection):
+    """Keyword segments to the emission of their ingestion program on the air, within the ingestion margins."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT id FROM public.program_metadata
+            WHERE channel_name = 'bfmtv' AND weekday = 1 AND channel_program = 'Information en continu'
+        """)
+        programs = cur.fetchall()
+        assert len(programs) == 1
+        # Monday 2025-04-07, Paris times (the keywords seed loads start without time zone, in Paris time)
+        cur.execute("""
+            INSERT INTO public.keywords (id, channel_name, program_metadata_id, country, start, number_of_keywords)
+            VALUES
+                -- BFM Première (06:00 - 08:30): 9 windows of 20 s
+                ('pytest_env_premiere', 'bfmtv', %(program)s, 'france', '2025-04-07 07:00', 9),
+                -- Face à face (08:30 - 09:00)
+                ('pytest_env_face', 'bfmtv', %(program)s, 'france', '2025-04-07 08:33', 3),
+                -- 3 min after BFM Grand Soir (21:00 - 23:00): ingestion margin
+                ('pytest_env_margin', 'bfmtv', %(program)s, 'france', '2025-04-07 23:03', 6),
+                -- 12:00: no emission of the program within 6 min in the test sheet, left out
+                ('pytest_env_gap', 'bfmtv', %(program)s, 'france', '2025-04-07 12:00', 30),
+                -- without program: left out, like in the dashboards
+                ('pytest_env_no_program', 'bfmtv', NULL, 'france', '2025-04-07 07:10', 30)
+        """, {"program": programs[0][0]})
+    db_connection.commit()
+    try:
+        run_dbt_command(["run", "--select", "emission_jour"])
+        with db_connection.cursor() as cur:
+            cur.execute("""
+                SELECT emission_cle, env_heures
+                FROM analytics.emission_jour
+                WHERE channel_name = 'bfmtv' AND jour = '2025-04-07' AND env_heures > 0
+            """)
+            env = {r[0]: round(float(r[1]) * 3600) for r in cur.fetchall()}
+    finally:
+        with db_connection.cursor() as cur:
+            cur.execute("DELETE FROM public.keywords WHERE id LIKE 'pytest_env_%'")
+        db_connection.commit()
+        run_dbt_command(["run", "--select", "emission_jour"])
+    # in seconds
+    assert env == {
+        "bfmtv|émission|BFM Première|false": 180,
+        "bfmtv|émission|Face à face|false": 60,
+        "bfmtv|émission|BFM Grand Soir|false": 120,
+    }
+
+
+def test_pub_annonceur_emission_jour(db_connection):
+    """Seconds of ads around each emission: whole tunnel inside, else half before / half after within 15 min."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT emission_cle, jour, annonceur, groupe, pub_secondes, nb_occurrences
+            FROM analytics.pub_annonceur_emission_jour
+            WHERE channel_name IN ('bfmtv', 'france2') OR (channel_name = 'lci' AND jour = '2025-04-06')
+        """)
+        rows = sorted((r[0], r[1], r[2], r[3], float(r[4]), r[5]) for r in cur.fetchall())
+    company, parent = "Pytest Volkswagen", "Pytest Porsche SE"
+    monday = datetime.date(2025, 4, 7)
+    # the emission_pytest_* and program_pytest_* occurrences of 30 s (see test_publicites_emissions /
+    # test_publicites_programs)
+    assert rows == [
+        # winter time
+        ("bfmtv|programme|Information en continu|false", datetime.date(2025, 4, 5), company, parent, 30.0, 1),
+        ("bfmtv|émission|BFM Première|false", datetime.date(2025, 1, 6), company, parent, 30.0, 1),
+        # inside + half of the transition to Face à face
+        ("bfmtv|émission|BFM Première|false", monday, company, parent, 45.0, 2),
+        # half of the transition + 10 min after the end, within the 15 min window
+        ("bfmtv|émission|Face à face|false", monday, company, parent, 45.0, 2),
+        # inside, 5 min after the end, overlapping the end
+        ("france2|programme|JT 13h|false", monday, company, parent, 90.0, 3),
+        # 4 min 30 s before
+        ("france2|programme|JT 20h + météo|false", monday, company, parent, 30.0, 1),
+        # Sunday 06:10: Nuit LCI of Saturday, Paris date of the occurrence
+        ("lci|émission|Nuit LCI|false", datetime.date(2025, 4, 6), company, parent, 30.0, 1),
+    ]
 
 def test_program_seed_patterns(db_connection):
     """The seed tests (matches_pattern) report the values of the sheet that analytics.program cannot parse."""

@@ -696,3 +696,88 @@ models:
           outside the monitored programs.
       - name: program
         description: Label of that program (analytics.program.label).
+
+  - name: emission_jour
+    description: >
+      In the analytics schema. One row per emission and per program day (French channels): airtime in the
+      grid, time spent on environmental subjects and validated misinformation cases, to sum over a period
+      (Metabase). Emission: a row group of analytics.program keyed by emission_cle, the emission when known
+      (Programmes Google Sheet), else the monitored program. Program day: the day the emission starts.
+      Keyword segments go to their ingestion program (keywords.program_metadata_id, like the dashboards), then
+      to its row on the air, the closest one within the ingestion margins [start - 6 min, end + 6 min[;
+      misinformation cases are matched on time with the same margins. Days from emission_jour_start_date (dbt
+      var, default 2023-01-01) to today.
+    columns:
+      - name: emission_cle
+        description: "channel_name|type|nom|rediffusion, the key of the emission (also in pub_annonceur_emission_jour)."
+        tests:
+          - not_null
+      - name: jour
+        description: Program day (Paris).
+        tests:
+          - not_null
+      - name: channel_name
+        description: Technical channel identifier (program_metadata).
+      - name: channel_title
+        description: Channel name (program_metadata).
+      - name: public
+        description: Public service channel (program_metadata).
+      - name: infocontinue
+        description: 24h news channel (program_metadata).
+      - name: radio
+        description: Radio channel (program_metadata).
+      - name: type
+        description: "'émission' when the emission is known in the Programmes Google Sheet, else 'programme'."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['émission', 'programme']
+      - name: nom
+        description: Name of the emission, else of the monitored program.
+      - name: rediffusion
+        description: True for a rerun.
+      - name: nb_diffusions
+        description: Rows of analytics.program broadcast that day for this emission.
+      - name: volume_heures
+        description: Airtime in the grid that day, in hours.
+      - name: env_heures
+        description: >
+          Time spent on environmental subjects, in hours: number_of_keywords windows of 20 s of the keyword
+          segments of the emission (like core_query_environmental_shares).
+      - name: nb_cas
+        description: Validated misinformation cases (analytics.cas_de_mesinformation) during the emission.
+
+  - name: pub_annonceur_emission_jour
+    description: >
+      In the analytics schema. Seconds of ads of each advertiser around each emission, per day (Paris date of
+      the occurrence), French channels, from analytics.publicites. An occurrence counts for the emission
+      containing its whole tunnel, else half for the emission before and half for the emission after the tunnel
+      when they are at most ad_emission_window_minutes away (dbt var, default 15), all of it for the only one
+      close enough. Occurrences without a predicted brand, far from any emission or outside tunnels are left out.
+    columns:
+      - name: annonceur
+        description: Company of the predicted brand (publicites.brand_company).
+        tests:
+          - not_null
+      - name: groupe
+        description: Ultimate parent company of the brand (publicites.brand_ultimate_parent).
+      - name: emission_cle
+        description: Key of the emission, as in emission_jour.
+        tests:
+          - not_null
+      - name: jour
+        description: Paris date of the occurrences.
+        tests:
+          - not_null
+      - name: channel_name
+        description: Technical channel identifier.
+      - name: type
+        description: "'émission' or 'programme', as in emission_jour."
+      - name: nom
+        description: Name of the emission, else of the monitored program.
+      - name: rediffusion
+        description: True for a rerun.
+      - name: pub_secondes
+        description: Seconds of ads attributed to the emission (whole or half durations).
+      - name: nb_occurrences
+        description: Occurrences attributed to the emission, wholly or by half.

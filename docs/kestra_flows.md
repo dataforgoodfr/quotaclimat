@@ -4,7 +4,7 @@ This page explains, step by step, what each Kestra flow in `infrastructure/kestr
 
 **Baromètre (OME).** The baromètre measures how much TV and radio airtime covers environmental topics. The data comes from Mediatree's speech-to-text transcripts. Each day, for every channel, the ingest step calls the Mediatree API once per program slot of the schedule grid. It stores the transcripts as 2-minute chunks in gzip parquet on Scaleway S3.
 
-The keyword step then reads these chunks back and removes stop words such as ads and repeated phrases. It matches each chunk against the theme dictionaries (climate, biodiversity, resources and their sub-categories) and upserts the chunks that have at least one match into the `keywords` table, with their counts and their program. The chunks that mention the climate are screened for misinformation by a fine-tuned OpenAI classifier. Each suspicious chunk is re-transcribed with Whisper and sent to Label Studio, where annotators confirm or reject it.
+The keyword step then reads these chunks back and removes stop words such as ads and repeated phrases. It matches each chunk against the theme dictionaries (climate, biodiversity, resources and their sub-categories) and upserts the chunks that have at least one match into the `keywords` table, with their counts and their program. The chunks that mention the climate are screened for misinformation by a Mistral classifier. Each suspicious chunk is re-transcribed with Whisper and sent to Label Studio, where annotators confirm or reject it.
 
 Finally, dbt combines the keywords, program metadata, Label Studio annotations and reference spreadsheets from Google Drive into the tables that Metabase shows. France runs every day ([`barometre`](#barometre)), and [`barometre-catchup`](#barometre-catchup) re-runs the last 7 days every night to fill gaps. The other countries go through the first two steps in [`barometre-i18n`](#barometre-i18n), and that flow then starts their misinformation jobs on Scaleway.
 
@@ -67,7 +67,7 @@ The RRS flows (`rrs-climate`, `rrs-insecurity`, `pulsar-themes`) take `start_dat
 | Ray + Modin | Parallel pandas for the ingest and keyword steps (`MODIN_ENGINE`, `MODIN_CPUS`, `MODIN_MEMORY`) |
 | Regex, spaCy | Keyword matching on transcripts (regex for French, spaCy lemmas plus exact forms for other languages) |
 | SQLAlchemy + Alembic | ORM, upserts and schema migrations of the `barometre`/`extended-perimeter` DBs |
-| OpenAI API | Fine-tuned `gpt-4o-mini` misinformation classifier and Whisper re-transcription (in `label-misinformation`) |
+| OpenAI API | Whisper re-transcription (in `label-misinformation`), and the fine-tuned `gpt-4o-mini` misinformation classifier in `extended-perimeter` |
 | Label Studio | Human annotation of flagged transcripts; its Postgres DB is read back into `barometre` |
 | Google Drive + Sheets API | Reference spreadsheets downloaded as dbt seeds |
 | dbt | SQL models for Metabase (`public`, `analytics`, `dashboards`, `advertising` schemas) |
@@ -127,8 +127,8 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
 ### 3. `detect_misinformation`: LLM screening
 
 - **Runs:** `python /app/main.py` in the `label-misinformation` image, built from the [climateguard](https://github.com/dataforgoodfr/climateguard) repo (code not in this repo).
-- **What happens:** the job reads the chunks with climate keywords from `barometre.keywords` (with the read-only user) over `days_back + 1` days, and asks a fine-tuned OpenAI model (`MODEL_NAME=ft:gpt-4o-mini-...`) to score them. The job now defaults to Mistral, so the flows pin `LLM_PROVIDER=openai` to keep this behaviour. Chunks classified as misinformation get their audio fetched from Mediatree (`/api/export/single`) and re-transcribed with Whisper, then are saved to the `climateguard` bucket (`label-misinformation-input/`). The job then calls Label Studio's storage sync, so they appear as tasks in project 6 (S3 storage id 4) for annotators. `LABEL_MISINFORMATION_OVERWRITE=1` reprocesses the window.
-- **Technologies:** OpenAI API (fine-tuned `gpt-4o-mini`, Whisper), Scaleway S3, Label Studio API.
+- **What happens:** the job reads the chunks with climate keywords from `barometre.keywords` (with the read-only user) over `days_back + 1` days, and asks Mistral (`LLM_PROVIDER=mistral`, `MODEL_NAME=mistral-small-2603`) for a binary misinformation verdict with a short reasoning. `MIN_MISINFORMATION_SCORE` does not apply to this prompt. Chunks classified as misinformation get their audio fetched from Mediatree (`/api/export/single`) and re-transcribed with Whisper, then are saved to the `climateguard` bucket (`label-misinformation-input/`). The job then calls Label Studio's storage sync, so they appear as tasks in project 6 (S3 storage id 4) for annotators. `LABEL_MISINFORMATION_OVERWRITE=1` reprocesses the window.
+- **Technologies:** Mistral API (`mistral-small-2603`), OpenAI API (Whisper), Scaleway S3, Label Studio API.
 - **Reads:** `barometre.keywords`, Mediatree export API. **Writes:** S3 `climateguard`, Label Studio project 6.
 
 ### 4. `dbt_run_transformations`: models

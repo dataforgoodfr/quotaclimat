@@ -21,6 +21,8 @@ sources:
     schema: public
     tables:
       - name: program_metadata
+      # keyword segments (start: timestamp with time zone in production, see macros/keywords_paris_time.sql)
+      - name: keywords
 
   # built by the `--target analytics` run, before the advertising models (see entrypoints/dbt.sh)
   - name: analytics

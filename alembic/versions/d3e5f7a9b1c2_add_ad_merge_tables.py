@@ -47,6 +47,16 @@ def upgrade() -> None:
             "created_at", sa.DateTime(), server_default=sa.func.now(), nullable=False
         ),
         sa.Column("reverted_at", sa.DateTime(), nullable=True),
+        sa.ForeignKeyConstraint(
+            ["merged_occurrence_id"],
+            ["advertising.ad_occurrence.id"],
+            ondelete="CASCADE",
+        ),
+        sa.ForeignKeyConstraint(
+            ["source_occurrence_id"],
+            ["advertising.ad_occurrence.id"],
+            ondelete="CASCADE",
+        ),
         sa.PrimaryKeyConstraint("merged_occurrence_id", "source_occurrence_id"),
         schema="advertising",
     )

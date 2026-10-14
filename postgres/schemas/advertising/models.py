@@ -94,8 +94,8 @@ class Ad_Occurrence(AdvertisingBase):
 class Ad_Merge(AdvertisingBase):
     """Journal of the ads built by merging several ads (pieces of one ad split by the detection).
 
-    One row per merged ad. Never deleted, so that the history survives the reprocessing of the
-    detection (which deletes the occurrences of the reprocessed window). See tools/ad_merge.py.
+    One row per merged ad: the merge rule, kept when the detection reprocesses a window (it deletes
+    the occurrences of the window). See tools/ad_merge.py.
     """
 
     __tablename__ = "ad_merge"
@@ -115,8 +115,8 @@ class Ad_Merge(AdvertisingBase):
 class Ad_Merge_Occurrence(AdvertisingBase):
     """Journal of the occurrences replaced by an occurrence of a merged ad.
 
-    One row per (merged occurrence, source occurrence). No foreign key on the occurrences: they can be
-    deleted by a reprocessing of the detection, the history must stay.
+    One row per (merged occurrence, source occurrence). Deleted with these occurrences (a reprocessing
+    of the detection deletes the occurrences of its window): the merge is redone on the new ones.
     """
 
     __tablename__ = "ad_merge_occurrence"
@@ -124,8 +124,16 @@ class Ad_Merge_Occurrence(AdvertisingBase):
         Index("ix_ad_merge_occurrence_merged_ad_id", "merged_ad_id"),
         Index("ix_ad_merge_occurrence_source_occurrence_id", "source_occurrence_id"),
     )
-    merged_occurrence_id = Column(Text, primary_key=True)
-    source_occurrence_id = Column(Text, primary_key=True)
+    merged_occurrence_id = Column(
+        Text,
+        ForeignKey("ad_occurrence.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    source_occurrence_id = Column(
+        Text,
+        ForeignKey("ad_occurrence.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
     merged_ad_id = Column(Text, nullable=False)
     source_ad_id = Column(Text, nullable=True)
     # "piece": a part of the merged ad, "absorbed": a short segment between two pieces

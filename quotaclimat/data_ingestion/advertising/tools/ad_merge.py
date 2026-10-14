@@ -11,8 +11,9 @@ A merge is done in two steps:
 2. merge_occurrences: for each broadcast, one occurrence of the merged ad replaces the occurrences of
    the pieces (and of the short segments between them), which are soft deleted (deleted_at).
 
-Both steps are logged in advertising.ad_merge and advertising.ad_merge_occurrence, kept even when the
-detection reprocesses a window (it deletes the occurrences of the window, merged or not).
+Both steps are logged: advertising.ad_merge (the merge rule) is kept when the detection reprocesses a
+window, advertising.ad_merge_occurrence is deleted with the occurrences of the window (foreign keys on
+delete cascade), and the merge is redone on the new occurrences.
 revert_merge undoes the occurrence merges of a merged ad.
 """
 

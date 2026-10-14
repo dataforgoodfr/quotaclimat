@@ -25,8 +25,11 @@ ads (automatic or manual). They only add to the session, the caller commits:
 
 History: `advertising.ad_merge` (one row per merged ad: source ads, method, status, details of the
 creation) and `advertising.ad_merge_occurrence` (one row per replaced occurrence, with its role `piece`
-or `absorbed`). These tables have no foreign key on the occurrences: a reprocessing of the detection
-deletes the occurrences of its window, the history stays.
+or `absorbed`). A reprocessing of the detection deletes the occurrences of its window: the rows of
+`ad_merge_occurrence` go with them (foreign keys on delete cascade), `ad_merge` stays, and the next run
+merges the new occurrences again. Limit: the detection reprocesses whole weeks; for a merged ad
+broadcast across the bound of the window, a piece outside the window stays soft deleted without its
+journal row.
 
 Example, manual merge of two pieces:
 

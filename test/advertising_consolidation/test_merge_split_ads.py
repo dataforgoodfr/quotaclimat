@@ -20,6 +20,9 @@ from quotaclimat.data_ingestion.advertising.s01_detection.e03_already_identified
     AdChunkMatch,
     _sort_chunk_matches_by_importance,
 )
+from quotaclimat.data_ingestion.advertising.s01_detection.e06_export_classification import (
+    clean_pre_existing_detections,
+)
 from quotaclimat.data_ingestion.advertising.s04_consolidation.e01_merge_split_ads import (
     run as merge_run,
 )
@@ -228,6 +231,35 @@ def test_revert_merge_restores_the_occurrences(engine):
         assert session.get(Ad_Merge, ad_id).status == MERGE_STATUS_ACTIVE
         assert session.get(Ad, ad_id).chunks != []
     assert active_occurrences(engine) == {new_id: ad_id}
+
+
+def test_reprocessing_deletes_the_journal_and_the_merge_is_redone(engine, monkeypatch):
+    insert(
+        engine,
+        make_ad("a1", 8, "Renault"),
+        make_ad("a2", 12, "Renault"),
+        make_occ("o1", "a1", 0),
+        make_occ("o3", "a2", 9),
+    )
+    with Session(engine) as session:
+        ad_id = create_merged_ad(session, ["a1", "a2"], method="test")
+        merged_occ_id = merge_occurrences(session, ad_id, ["o1", "o3"])
+        session.commit()
+
+    # the detection reprocesses the window: it deletes all its occurrences, then inserts the new ones
+    clean_pre_existing_detections(T0, T0 + timedelta(days=1), "tf1")
+    with Session(engine) as session:
+        assert session.scalars(select(Ad_Merge_Occurrence)).all() == []
+        assert session.get(Ad_Merge, ad_id).status == MERGE_STATUS_ACTIVE
+    insert(engine, make_occ("o1", "a1", 0), make_occ("o3", "a2", 9))
+
+    monkeypatch.setenv("AD_MERGE_START_DATE", T0.date().isoformat())
+    monkeypatch.setenv("AD_MERGE_END_DATE", (T0 + timedelta(days=1)).date().isoformat())
+    monkeypatch.setenv("AD_MERGE_DRY_RUN", "false")
+    assert merge_run.run() == 1
+    assert active_occurrences(engine) == {merged_occ_id: ad_id}
+    with Session(engine) as session:
+        assert len(session.scalars(select(Ad_Merge_Occurrence)).all()) == 2
 
 
 # ---------- s04_consolidation/e01_merge_split_ads ----------

@@ -1,4 +1,4 @@
-# Stage 4: enriching
+# Stage 5: enriching
 
 Data enrichment of the classified ads, one sub-folder per step, each with its own entry point:
 

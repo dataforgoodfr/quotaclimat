@@ -8,7 +8,7 @@
 -- Publicités : analytics.publicites (à partir de ad_analysis_start_date, 2025-09-29 par défaut), avec les
 -- lignes de analytics.program avant / après l'écran publicitaire (ad_tunnel_programs). Une pub compte pour :
 --   - l'émission qui contient tout son écran (inside_program) : 100 % de sa durée ;
---   - sinon l'émission avant et l'émission après l'écran, si elles sont à moins de fenetre_minutes :
+--   - sinon l'émission avant et l'émission après l'écran, si elles sont à moins de fenetre_minutes (15 par défaut) :
 --     50 % chacune, 100 % à la seule des deux qui est assez proche.
 --   Les parts d'un annonceur font ainsi 100 % ; les pubs loin de toute émission (et les fragments hors
 --   écran, sans tunnel) sont laissées de côté.
@@ -250,8 +250,8 @@ emissions AS MATERIALIZED (
 -- réglages
 parametres AS (
     SELECT
-        10 AS fenetre_minutes,       -- distance maximale entre l'écran publicitaire et l'émission
-        5 AS nb_annonceurs_par_emission, -- par émission, annonceurs gardés par part de leur pub décroissante
+        15 AS fenetre_minutes,       -- distance maximale entre l'écran publicitaire et l'émission
+        15 AS nb_annonceurs_par_emission, -- par émission, annonceurs gardés par part de leur pub décroissante
         600 AS annonceur_secondes_min, -- annonceurs classés : au moins ce volume de pub rattachée sur la période
         1.0 AS env_heures_min,       -- émissions gardées : au moins ce temps consacré à l'environnement
         0 AS cas_par_heure_env_min,  -- émissions gardées : au moins ce nombre de cas par heure d'environnement

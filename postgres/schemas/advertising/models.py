@@ -1,12 +1,15 @@
 from sqlalchemy import (
+    ARRAY,
     JSON,
     Column,
     DateTime,
     Double,
     ForeignKey,
     Index,
+    Integer,
     String,
     Text,
+    func,
 )
 from sqlalchemy.orm import relationship
 
@@ -86,3 +89,48 @@ class Ad_Occurrence(AdvertisingBase):
             "ad_id": self.ad_id,
             "deleted_at": self.deleted_at,
         }
+
+
+class Ad_Merge(AdvertisingBase):
+    """Journal of the ads built by merging several ads (pieces of one ad split by the detection).
+
+    One row per merged ad. Never deleted, so that the history survives the reprocessing of the
+    detection (which deletes the occurrences of the reprocessed window). See tools/ad_merge.py.
+    """
+
+    __tablename__ = "ad_merge"
+    merged_ad_id = Column(Text, primary_key=True)
+    # ids of the merged ads, in broadcast order
+    source_ad_ids = Column(ARRAY(Text), nullable=False)
+    # what created the merge, e.g. "auto_split_pieces" or "manual"
+    method = Column(String, nullable=False)
+    # "active" or "reverted"
+    status = Column(String, nullable=False)
+    # free context: thresholds, number of occurrences, comment...
+    details = Column(JSON, nullable=True)
+    created_at = Column(DateTime(), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(), nullable=False, server_default=func.now())
+
+
+class Ad_Merge_Occurrence(AdvertisingBase):
+    """Journal of the occurrences replaced by an occurrence of a merged ad.
+
+    One row per (merged occurrence, source occurrence). No foreign key on the occurrences: they can be
+    deleted by a reprocessing of the detection, the history must stay.
+    """
+
+    __tablename__ = "ad_merge_occurrence"
+    __table_args__ = (
+        Index("ix_ad_merge_occurrence_merged_ad_id", "merged_ad_id"),
+        Index("ix_ad_merge_occurrence_source_occurrence_id", "source_occurrence_id"),
+    )
+    merged_occurrence_id = Column(Text, primary_key=True)
+    source_occurrence_id = Column(Text, primary_key=True)
+    merged_ad_id = Column(Text, nullable=False)
+    source_ad_id = Column(Text, nullable=True)
+    # "piece": a part of the merged ad, "absorbed": a short segment between two pieces
+    role = Column(String, nullable=False)
+    # position of the source occurrence in the merged occurrence, in broadcast order
+    position = Column(Integer, nullable=False)
+    created_at = Column(DateTime(), nullable=False, server_default=func.now())
+    reverted_at = Column(DateTime(), nullable=True)

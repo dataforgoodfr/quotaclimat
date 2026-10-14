@@ -1,4 +1,4 @@
-"""Stage 4 (enriching), step 1: propose the company and the ultimate parent company of the broadcast
+"""Stage 5 (enriching), step 1: propose the company and the ultimate parent company of the broadcast
 brands missing from the tab Marques of the Inventaires_des_marques Google Sheet, and append them to it
 with e_statut and smu_statut 'non vérifié'.
 

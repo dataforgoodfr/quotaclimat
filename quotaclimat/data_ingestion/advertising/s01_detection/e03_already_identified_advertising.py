@@ -16,6 +16,10 @@ logger = logging.getLogger(__name__)
 
 CURSOR_BATCH_SIZE = 1000
 
+# fragment_type of the ads: "advertising" from the detection, then the content type of the
+# classification (s03_classification/pipeline/e02_classify_ad.py), "AD" for an advertising
+ADVERTISING_FRAGMENT_TYPES = {"advertising", "AD"}
+
 
 @dataclass
 class AdChunkMatch:
@@ -196,9 +200,9 @@ def _sort_chunk_matches_by_importance(
     # The importance is first given from the type, then to the duration of the ad (longer is more interesting than shorter),
     # then by chunk_index ascending so chunk_index=0 is tried first (ensures full fragment match before partial)
     return sorted(
-        (m for m in matches if m.ad.fragment_type == "advertising"),
+        (m for m in matches if m.ad.fragment_type in ADVERTISING_FRAGMENT_TYPES),
         key=lambda m: (m.chunk_index, -m.ad.duration_sec),
     ) + sorted(
-        (m for m in matches if m.ad.fragment_type != "advertising"),
+        (m for m in matches if m.ad.fragment_type not in ADVERTISING_FRAGMENT_TYPES),
         key=lambda m: (m.chunk_index, -m.ad.duration_sec),
     )

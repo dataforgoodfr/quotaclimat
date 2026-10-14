@@ -1,4 +1,4 @@
-# Stage 4 (enriching), step 1: brand company and ultimate parent company proposals
+# Stage 5 (enriching), step 1: brand company and ultimate parent company proposals
 
 Scaleway job (`entrypoints/advertising_brand_groups_enrichment.sh`; the technical names keep "brand groups"). For each broadcast brand missing from the tab `Marques` of the `Inventaires_des_marques` Google Sheet, it proposes the company that sells under the brand and its ultimate parent company, and appends the row to the tab. A human checks and corrects it afterwards, directly in the sheet. The dbt model `ad_brands` reads it at the next dbt run.
 

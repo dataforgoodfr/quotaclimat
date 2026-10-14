@@ -122,6 +122,8 @@ def test_thematic_query_ocean(db_connection):
                 "public"."thematic_query_ocean"."channel_title",
                 "public"."thematic_query_ocean"."country"
             FROM public.thematic_query_ocean
+            -- deterministic: without ORDER BY, LIMIT 1 returns any row (the order depends on the plan)
+            ORDER BY "public"."thematic_query_ocean"."start" DESC, "public"."thematic_query_ocean"."id"
             LIMIT 1
         """)
         row = cur.fetchone()

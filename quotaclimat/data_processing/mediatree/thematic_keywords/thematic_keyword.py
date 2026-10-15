@@ -35,13 +35,25 @@ LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch
 REQUIRED_ENV = [
     "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB",
     "S3_ACCESS_KEY", "S3_SECRET_KEY", "S3_ENDPOINT_URL", "S3_BUCKET_NAME", "S3_REGION",
-    "KEYWORDS", "DESTINATION_TABLE", "END_DATE"
+    "KEYWORDS", "END_DATE"
 ]
 
+# Globals set by load_env():
+# START_DATE, END_DATE, KEYWORDS, COUNTRY, LANGUAGE,
+# CLEAR_DESTINATION_TABLE, ASSUME_YES, DRY_RUN,
+# SOURCE_TABLE, DESTINATION_TABLE,
+# POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB,
+# S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT_URL, S3_BUCKET_NAME, S3_REGION
 
-def load_configuration() -> dict:
-    """Read environment variables (credentials and parameters) and return them in a dict.
+
+def load_env() -> None:
+    """Read environment variables (credentials and parameters) and expose them as module globals.
     Raises if a required one is missing or invalid."""
+    global START_DATE, END_DATE, KEYWORDS, COUNTRY, LANGUAGE
+    global CLEAR_DESTINATION_TABLE, ASSUME_YES, DRY_RUN
+    global SOURCE_TABLE, DESTINATION_TABLE
+    global POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB
+    global S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT_URL, S3_BUCKET_NAME, S3_REGION
 
     ### CHECK REQUIRED VARIABLES BEFORE USING ANY
     missing = [k for k in REQUIRED_ENV if not os.getenv(k)]
@@ -49,114 +61,103 @@ def load_configuration() -> dict:
         raise RuntimeError(f"Missing environment variables: {', '.join(missing)}")
 
     ### DATES
-    start_date, end_date = None, date.today()
+    START_DATE, END_DATE = None, date.today()
     try:
         if os.getenv("START_DATE"):
-            start_date = date.fromisoformat(os.environ["START_DATE"])
+            START_DATE = date.fromisoformat(os.environ["START_DATE"])
         if os.getenv("END_DATE"):
-            end_date = date.fromisoformat(os.environ["END_DATE"])
+            END_DATE = date.fromisoformat(os.environ["END_DATE"])
     except ValueError as e:
         raise ValueError(f"START_DATE and END_DATE must be YYYY-MM-DD: {e}")
-    if start_date and end_date <= start_date:
+    if START_DATE and END_DATE <= START_DATE:
         raise ValueError("END_DATE must be after START_DATE")
 
     ### KEYWORDS
-    keywords = [k.strip() for k in os.environ["KEYWORDS"].split(",") if k.strip()]
-    if not keywords:
+    KEYWORDS = [k.strip() for k in os.environ["KEYWORDS"].split(",") if k.strip()]
+    if not KEYWORDS:
         raise ValueError("KEYWORDS is set but contains no keyword")
 
     ### COUNTRY
-    country = (os.getenv("COUNTRY") or "france").lower()
-    if country not in LANGUAGES:
-        raise ValueError(f"COUNTRY must be one of {list(LANGUAGES)}, got: {country!r}")
+    COUNTRY = (os.getenv("COUNTRY") or "france").lower()
+    if COUNTRY not in LANGUAGES:
+        raise ValueError(f"COUNTRY must be one of {list(LANGUAGES)}, got: {COUNTRY!r}")
+    LANGUAGE = LANGUAGES[COUNTRY]
+
+    ### FLAGS
+    true_values = ("1", "true", "yes", "y", "oui")
+    CLEAR_DESTINATION_TABLE = os.getenv("CLEAR_DESTINATION_TABLE", "").strip().lower() in true_values
+    ASSUME_YES = os.getenv("ASSUME_YES", "").strip().lower() in true_values
+    DRY_RUN = os.getenv("DRY_RUN", "").strip().lower() in true_values
+
+    ### TABLES
+    SOURCE_TABLE = os.getenv("SOURCE_TABLE") or "public.keywords"  # env var just for local
+    DESTINATION_TABLE = os.environ["DESTINATION_TABLE"]
+
+    ### BAROMETRE CREDENTIALS (single database: source and destination)
+    POSTGRES_USER = os.environ["POSTGRES_USER"]
+    POSTGRES_PASSWORD = quote(os.environ["POSTGRES_PASSWORD"], safe="")
+    POSTGRES_HOST = os.environ["POSTGRES_HOST"]
+    POSTGRES_PORT = os.environ["POSTGRES_PORT"]
+    POSTGRES_DB = os.environ["POSTGRES_DB"]
 
     ### S3 CREDENTIALS (if they look like file paths, read the file content)
-    s3_access_key = os.environ["S3_ACCESS_KEY"]
-    s3_secret_key = os.environ["S3_SECRET_KEY"]
-    if s3_access_key.startswith("/"):
-        with open(s3_access_key, "r") as f:
-            s3_access_key = f.read().strip()
-    if s3_secret_key.startswith("/"):
-        with open(s3_secret_key, "r") as f:
-            s3_secret_key = f.read().strip()
+    S3_ACCESS_KEY = os.environ["S3_ACCESS_KEY"]
+    S3_SECRET_KEY = os.environ["S3_SECRET_KEY"]
+    if S3_ACCESS_KEY.startswith("/"):
+        with open(S3_ACCESS_KEY, "r") as f:
+            S3_ACCESS_KEY = f.read().strip()
+    if S3_SECRET_KEY.startswith("/"):
+        with open(S3_SECRET_KEY, "r") as f:
+            S3_SECRET_KEY = f.read().strip()
+    S3_ENDPOINT_URL = os.environ["S3_ENDPOINT_URL"]
+    S3_BUCKET_NAME = os.environ["S3_BUCKET_NAME"]
+    S3_REGION = os.environ["S3_REGION"]
 
-    true_values = ("1", "true", "yes", "y", "oui")
 
-    return {
-        ### PARAMETERS
-        "START_DATE": start_date,
-        "END_DATE": end_date,
-        "KEYWORDS": keywords,
-        "COUNTRY": country,
-        "LANGUAGE": LANGUAGES[country],
-        "CLEAR_DESTINATION_TABLE": os.getenv("CLEAR_DESTINATION_TABLE", "").strip().lower() in true_values,
-        "ASSUME_YES": os.getenv("ASSUME_YES", "").strip().lower() in true_values,
-        "DRY_RUN": os.getenv("DRY_RUN", "").strip().lower() in true_values,
+def run() -> None:
 
-        ### TABLES
-        "SOURCE_TABLE": os.getenv("SOURCE_TABLE") or "public.keywords",  # env var just for local
-        "DESTINATION_TABLE": os.environ["DESTINATION_TABLE"],
-
-        ### BAROMETRE CREDENTIALS (single database: source and destination)
-        "POSTGRES_USER": os.environ["POSTGRES_USER"],
-        "POSTGRES_PASSWORD": quote(os.environ["POSTGRES_PASSWORD"], safe=""),
-        "POSTGRES_HOST": os.environ["POSTGRES_HOST"],
-        "POSTGRES_PORT": os.environ["POSTGRES_PORT"],
-        "POSTGRES_DB": os.environ["POSTGRES_DB"],
-
-        ### S3 CREDENTIALS
-        "S3_ACCESS_KEY": s3_access_key,
-        "S3_SECRET_KEY": s3_secret_key,
-        "S3_ENDPOINT_URL": os.environ["S3_ENDPOINT_URL"],
-        "S3_BUCKET_NAME": os.environ["S3_BUCKET_NAME"],
-        "S3_REGION": os.environ["S3_REGION"],
-    }  
-
-def run(cfg: dict) -> None:
-
-    logging.info(f"[RUN] {cfg['START_DATE']} -> {cfg['END_DATE']}, {cfg['KEYWORDS']}, {cfg['COUNTRY']}, {cfg['LANGUAGE']}")
-    logging.warning(f"[RUN] DRY_RUN={cfg['DRY_RUN']}")
+    logging.info(f"[RUN] {START_DATE} -> {END_DATE}, {KEYWORDS}, {COUNTRY}, {LANGUAGE}")
+    logging.warning(f"[RUN] DRY_RUN={DRY_RUN}")
 
     _con = duckdb.connect()
 
     ### Checking keywords to process
-    kw_dict = utils.get_keyword_ome_hrfp_theme(cfg["KEYWORDS"], cfg["LANGUAGE"])
+    kw_dict = utils.get_keyword_ome_hrfp_theme(KEYWORDS, LANGUAGE)
 
     ### Configuring source DB
-    utils.configure_barometre_source(_con, cfg["SOURCE_TABLE"],
-                                     cfg["POSTGRES_USER"], cfg["POSTGRES_PASSWORD"],
-                                     cfg["POSTGRES_HOST"], cfg["POSTGRES_PORT"], cfg["POSTGRES_DB"])
+    utils.configure_barometre_source(_con, SOURCE_TABLE,
+                                     POSTGRES_USER, POSTGRES_PASSWORD,
+                                     POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB)
 
-    ### start_date: from config, or deduced from destination table (never modify cfg)
-    start_date = cfg["START_DATE"]
-    if not start_date and cfg["CLEAR_DESTINATION_TABLE"]:
+    ### start_date: from env, or deduced from destination table (START_DATE global never modified)
+    start_date = START_DATE
+    if not start_date and CLEAR_DESTINATION_TABLE:
         raise ValueError("Destination table will be cleared. START_DATE required.")
     if not start_date:
-        max_start = utils.get_max_start_date_from_destination(_con, cfg["POSTGRES_DB"], cfg["DESTINATION_TABLE"])
+        max_start = utils.get_max_start_date_from_destination(_con, POSTGRES_DB, DESTINATION_TABLE)
         if max_start is None:
             raise ValueError("Empty destination: provide START_DATE")
         start_date = max_start
-        logging.info(f"Deducted start date from {cfg['DESTINATION_TABLE']}: {start_date}")
+        logging.info(f"Deducted start date from {DESTINATION_TABLE}: {start_date}")
         if not utils.confirm(f"No START_DATE: resuming at {start_date} (last day in table). "
-                             f"Continue?", cfg["ASSUME_YES"]):
+                             f"Continue?", ASSUME_YES):
             raise SystemExit("Cancelled by user")
 
-    if start_date >= cfg["END_DATE"]:
+    if start_date >= END_DATE:
         logging.warning("[END] Deducted start_date >= end_date.")
         return
 
-    if cfg["CLEAR_DESTINATION_TABLE"] and not cfg["DRY_RUN"]:
-        if not utils.confirm(f"WARNING: {cfg['DESTINATION_TABLE']} will be cleared. "
-                             f"Continue?", cfg["ASSUME_YES"]):
+    if CLEAR_DESTINATION_TABLE and not DRY_RUN:
+        if not utils.confirm(f"WARNING: {DESTINATION_TABLE} will be cleared. "
+                             f"Continue?", ASSUME_YES):
             raise SystemExit("Cancelled by user")
 
     ### Configuring s3 connection
-    utils._configure_s3(_con, cfg["S3_ENDPOINT_URL"], cfg["S3_REGION"],
-                        cfg["S3_ACCESS_KEY"], cfg["S3_SECRET_KEY"])
+    utils._configure_s3(_con, S3_ENDPOINT_URL, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY)
     ### Configuring destination table
-    utils.configure_barometre_destination(_con, cfg["CLEAR_DESTINATION_TABLE"], cfg["DRY_RUN"],
-                                          cfg["SOURCE_TABLE"], cfg["DESTINATION_TABLE"], 
-                                          cfg["POSTGRES_DB"])
+    utils.configure_barometre_destination(_con, CLEAR_DESTINATION_TABLE, DRY_RUN,
+                                          SOURCE_TABLE, DESTINATION_TABLE,
+                                          POSTGRES_DB)
 
     counter_to_ingest = 0
     ingested = 0
@@ -168,55 +169,51 @@ def run(cfg: dict) -> None:
     ### 3. extracting only thematic chunks and neighbour chunks (+/- 2 minutes)
     ### 4. ingesting the result in destination table
     day = start_date
-    while day < cfg["END_DATE"]:
+    while day < END_DATE:
         # 1. Reading keywords
         try:
             logging.info(f"[RUN] ------ Processing day {day} ------")
-            logging.info(f"[{cfg['SOURCE_TABLE']}] {day}: reading source table")
+            logging.info(f"[{SOURCE_TABLE}] {day}: reading source table")
             keywords_day = utils.read_barometre_keywords(_con, kw_dict,
                                                          day, day + timedelta(days=1),
-                                                         cfg["COUNTRY"], cfg["SOURCE_TABLE"], cfg["POSTGRES_DB"])
+                                                         COUNTRY, SOURCE_TABLE, POSTGRES_DB)
         except Exception:
-            logging.exception(f"[{cfg['SOURCE_TABLE']}] {day}: failed")
+            logging.exception(f"[{SOURCE_TABLE}] {day}: failed")
             stopped_day = day
             break
 
         if keywords_day.empty:
-            logging.info(f"[{cfg['SOURCE_TABLE']}] {day}: no chunk found")
+            logging.info(f"[{SOURCE_TABLE}] {day}: no chunk found")
             day += timedelta(days=1)
             continue
-        n_core = int(keywords_day["thematic_core_chunk"].sum())
-        logging.info(f"[{cfg['SOURCE_TABLE']}] {day}: {len(keywords_day)} chunks found, {n_core} thematic core chunks")
+        
+        logging.info(f"[{SOURCE_TABLE}] {day}: {len(keywords_day)} chunks found")
 
-        # 2. Fetching data in s3, only for channels with at least one core chunk
-        s3_day_df = None
-        if n_core:
-            logging.info(f"[S3] {day}: Fetching s3 data on days and channels from {n_core} core chunks")
-            day_channels = (keywords_day.loc[keywords_day["thematic_core_chunk"], "channel_name"]
-                            .unique().tolist())
-            try:
-                s3_day_df = utils.read_day_from_s3(_con, day, day_channels, cfg["COUNTRY"], cfg["S3_BUCKET_NAME"])
-            except Exception:
-                logging.exception(f"[S3] {day}: failed to read S3")
-                stopped_day = day
-                break
+        # 2. Fetching data in s3, for channels with at least one chunk
+        day_channels = keywords_day["channel_name"].unique().tolist()
+        logging.info(f"[S3] {day}: Fetching s3 data on {len(day_channels)} channels from {len(keywords_day)} chunks")
+        try:
+            s3_day_df = utils.read_day_from_s3(_con, day, day_channels, COUNTRY, S3_BUCKET_NAME)
+        except Exception:
+            logging.exception(f"[S3] {day}: failed to read S3")
+            stopped_day = day
+            break
 
         try:
-            # 3. Extracting core chunks, neighbour chunks and non-core chunks
-            logging.info("[EXTRACT_ADJACENT_CHUNKS] Starting selection of chunks to keep (core + adjacent_to_core + others)")
-            day_to_ingest_df = utils.extract_adjacent_chunks_day(keywords_day, s3_day_df, GAP, 
-                                                                 cfg["COUNTRY"], CHANNEL_TITLES)
-            n_core_day = int(day_to_ingest_df["thematic_core_chunk"].sum())
-            n_adjacent_day = int(day_to_ingest_df["adjacent_to_thematic_core"].sum())
-            n_other_day = len(day_to_ingest_df) - n_core_day - n_adjacent_day
+            # 3. Extracting thematic chunks and neighbour chunks
+            logging.info("[EXTRACT_ADJACENT_CHUNKS] Starting selection of chunks to keep (thematic + adjacent)")
+            day_to_ingest_df = utils.extract_adjacent_chunks_day(keywords_day, s3_day_df, GAP,
+                                                                 COUNTRY, CHANNEL_TITLES)
+            n_thematic_day = int(day_to_ingest_df["thematic_chunk"].sum())
+            n_adjacent_day = len(day_to_ingest_df) - n_thematic_day
             logging.info(
-                f"[{cfg['DESTINATION_TABLE']}] {day}: {len(day_to_ingest_df)} chunks selected for ingestion into destination "
-                f"({n_core_day} core, {n_adjacent_day} adjacent, {n_other_day} other)"
+                f"[{DESTINATION_TABLE}] {day}: {len(day_to_ingest_df)} chunks selected for ingestion into destination "
+                f"({n_thematic_day} thematic, {n_adjacent_day} adjacent)"
             )
             counter_to_ingest += len(day_to_ingest_df)
             n_expected_day = day_to_ingest_df["this_id"].nunique()
 
-            if cfg["DRY_RUN"]:
+            if DRY_RUN:
                 day += timedelta(days=1)
                 continue
 
@@ -224,7 +221,7 @@ def run(cfg: dict) -> None:
             _con.begin()
             try:
                 _con.execute(f"""
-                    INSERT INTO {cfg['POSTGRES_DB']}.{cfg['DESTINATION_TABLE']} BY NAME
+                    INSERT INTO {POSTGRES_DB}.{DESTINATION_TABLE} BY NAME
                     SELECT *, now() AT TIME ZONE 'Europe/Paris' AS created_at
                     FROM day_to_ingest_df
                     ON CONFLICT (this_id) DO NOTHING
@@ -232,21 +229,21 @@ def run(cfg: dict) -> None:
 
                 # checks if consistent table (if extra, probably previous runs with other kw)
                 n_extra = _con.execute(f"""
-                    SELECT count(*) FROM {cfg['POSTGRES_DB']}.{cfg['DESTINATION_TABLE']}
+                    SELECT count(*) FROM {POSTGRES_DB}.{DESTINATION_TABLE}
                     WHERE start >= ? AND start < ?
                       AND this_id NOT IN (SELECT this_id FROM day_to_ingest_df)
                 """, [day, day + timedelta(days=1)]).fetchone()[0]
                 if n_extra:
                     logging.warning(
-                        f"[{cfg['DESTINATION_TABLE']}] {day}: {n_extra} chunks already in table "
+                        f"[{DESTINATION_TABLE}] {day}: {n_extra} chunks already in table "
                         f"and missing from this run ({n_expected_day} expected), likely ingested with other keywords"
                     )
                 else:
-                    logging.info(f"[{cfg['DESTINATION_TABLE']}] {day}: {n_expected_day} chunks ingested. Table consistent.")
+                    logging.info(f"[{DESTINATION_TABLE}] {day}: {n_expected_day} chunks ingested. Table consistent.")
 
                 # checks if n_ingest == n_to_ingest
                 n_in_table = _con.execute(f"""
-                    SELECT count(*) FROM {cfg['POSTGRES_DB']}.{cfg['DESTINATION_TABLE']}
+                    SELECT count(*) FROM {POSTGRES_DB}.{DESTINATION_TABLE}
                     WHERE start >= ? AND start < ?
                       AND this_id IN (SELECT this_id FROM day_to_ingest_df)
                 """, [day, day + timedelta(days=1)]).fetchone()[0]
@@ -262,23 +259,24 @@ def run(cfg: dict) -> None:
                 raise
 
         except Exception:
-            logging.exception(f"[{cfg['DESTINATION_TABLE']}] {day}: failed")
+            logging.exception(f"[{DESTINATION_TABLE}] {day}: failed")
             stopped_day = day
             break
 
         day += timedelta(days=1)
 
-    if cfg["DRY_RUN"]:
+    if DRY_RUN:
         logging.info(f"[END] DRY_RUN: {counter_to_ingest} chunks would have been ingested")
     else:
         logging.info(f"[END] {ingested} chunks inserted or ignored (already present rows are ignored)")
     if stopped_day:
         logging.error(
-            f"[END] RUN STOPPED at day {stopped_day} (end_date requested: {cfg['END_DATE']}, "
+            f"[END] RUN STOPPED at day {stopped_day} (end_date requested: {END_DATE}, "
             f"so the run did NOT reach end_date). Fix the cause, then rerun without START_DATE "
             f"to resume from the last ingested day."
         )
-        raise RuntimeError(f"Run stopped at {stopped_day}, end_date {cfg['END_DATE']} not reached")
+        raise RuntimeError(f"Run stopped at {stopped_day}, end_date {END_DATE} not reached")
+
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -288,7 +286,8 @@ if __name__ == "__main__":
         force=True
     )
     try:
-        run(load_configuration())
+        load_env()
+        run()
     except Exception as e:
         logging.error(f"[RUN] ERROR: {e}")
         raise

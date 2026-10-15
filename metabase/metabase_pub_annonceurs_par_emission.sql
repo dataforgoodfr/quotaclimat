@@ -15,6 +15,8 @@
 --                         nombre de cas par heure d'environnement pendant la campagne de l'annonceur (une ligne
 --                         sans environnement pendant la campagne est alors écartée) ; avec cas_par_heure_env_min
 --                         à 0, seul ce seuil sur la campagne s'applique
+--   env_heures_campagne_min type Nombre, facultatif (pas de filtre si vide) : lignes gardées, au moins ce temps
+--                         consacré à l'environnement par l'émission pendant la campagne de l'annonceur (heures)
 -- Lit les tables précalculées par dbt (voir leur documentation dans my_dbt_project/models/schema.yml) :
 --   analytics.pub_annonceur_emission_jour : secondes de pub de chaque annonceur autour de chaque émission, par
 --     jour (date de la pub en heure de Paris). Une pub compte pour l'émission qui contient tout son écran (100 %
@@ -55,6 +57,7 @@ parametres AS (
         COALESCE([[CAST({{env_heures_min}} AS numeric),]] 0.5) AS env_heures_min,
         COALESCE([[CAST({{cas_par_heure_env_min}} AS numeric),]] 0.5) AS cas_par_heure_env_min,
         COALESCE([[CAST({{cas_par_heure_env_campagne_min}} AS numeric),]] NULL::numeric) AS cas_par_heure_env_campagne_min,
+        COALESCE([[CAST({{env_heures_campagne_min}} AS numeric),]] NULL::numeric) AS env_heures_campagne_min,
         0.5 AS seuil_biais           -- biais_de_saisonnalite : neutre quand |ecart_cas_par_heure_env| <= ce seuil
 ),
 -- métriques de chaque émission sur la période ; MATERIALIZED : calculées une seule fois
@@ -227,4 +230,7 @@ WHERE e.env_heures >= pa.env_heures_min
   -- seuil sur la campagne, comparé à la valeur affichée (cas_par_heure_env_campagne)
   AND (pa.cas_par_heure_env_campagne_min IS NULL
        OR ROUND((pe.c_nb_cas / NULLIF(pe.c_env_heures, 0))::numeric, 2) >= pa.cas_par_heure_env_campagne_min)
+  -- temps d'environnement sur la campagne, comparé à la valeur affichée (env_heures_campagne)
+  AND (pa.env_heures_campagne_min IS NULL
+       OR ROUND(pe.c_env_heures::numeric, 2) >= pa.env_heures_campagne_min)
 ORDER BY e.chaine, e.nom, pe.rang_dans_emission

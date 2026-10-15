@@ -2,16 +2,20 @@
 -- émissions (chaînes françaises) : une ligne par couple annonceur / émission.
 -- Pour un nuage de points : abscisse une métrique de l'émission (ex. cas_par_heure_env), ordonnée
 -- part_annonceur_pct, taille pub_secondes, couleur annonceur.
--- Variables Metabase, type Date (jours en heure de Paris) :
---   debut premier jour inclus, ex. 2026-09-01
---   fin   dernier jour inclus, ex. 2026-09-30
+-- Variables Metabase :
+--   debut  type Date, premier jour inclus (heure de Paris), ex. 2026-09-01
+--   fin    type Date, dernier jour inclus, ex. 2026-09-30
+--   niveau type Texte, échelle de l'annonceur : marque, entreprise ou groupe (société mère ultime) ; à régler en
+--          liste déroulante de ces trois valeurs, valeur par défaut entreprise (une autre valeur ne renvoie rien)
 -- Lit les tables précalculées par dbt (voir leur documentation dans my_dbt_project/models/schema.yml) :
 --   analytics.pub_annonceur_emission_jour : secondes de pub de chaque annonceur autour de chaque émission, par
 --     jour (date de la pub en heure de Paris). Une pub compte pour l'émission qui contient tout son écran (100 %
 --     de sa durée), sinon pour l'émission avant et l'émission après l'écran à moins de 15 min (50 % chacune,
 --     100 % à la seule des deux assez proche) ; les parts d'un annonceur font ainsi 100 %. La fenêtre de 15 min
 --     est la variable dbt ad_emission_window_minutes : la changer demande de reconstruire la table.
---     Annonceur : brand_company (société de la marque, la marque elle-même hors ad_brands). Pubs à partir de
+--     Une ligne par marque (orthographe de ad_brands), avec son entreprise et sa société mère ultime (la
+--     marque elle-même quand elle n'est pas dans ad_brands ou que la valeur est 'à vérifier') : l'annonceur
+--     est l'un des trois selon niveau, ses secondes la somme de celles de ses marques. Pubs à partir de
 --     ad_analysis_start_date (2025-09-29 par défaut).
 --   analytics.emission_jour : par émission et par jour de programme, volume de grille, temps consacré à
 --     l'environnement et cas de mésinformation, mêmes calculs que metabase_taux_mesinformation_par_emission.sql
@@ -86,11 +90,15 @@ emissions AS MATERIALIZED (
     -- comme dans la requête par émission : seulement les émissions diffusées pendant la période
     WHERE nb_diffusions > 0
 ),
--- secondes de pub par annonceur et par émission sur la période, avec les jours de la première et de la
--- dernière pub
+-- secondes de pub par annonceur (au niveau choisi) et par émission sur la période, avec les jours de la
+-- première et de la dernière pub
 pub_par_emission AS (
     SELECT
-        p.annonceur,
+        CASE CAST({{niveau}} AS text)
+            WHEN 'marque' THEN p.marque
+            WHEN 'entreprise' THEN p.entreprise
+            WHEN 'groupe' THEN p.groupe
+        END AS annonceur,
         p.emission_cle,
         SUM(p.pub_secondes) AS pub_secondes,
         MIN(p.jour) AS premier_jour,
@@ -98,7 +106,8 @@ pub_par_emission AS (
     FROM analytics.pub_annonceur_emission_jour p
     CROSS JOIN bornes b
     WHERE p.jour BETWEEN b.debut AND b.fin
-    GROUP BY p.annonceur, p.emission_cle
+      AND CAST({{niveau}} AS text) IN ('marque', 'entreprise', 'groupe')
+    GROUP BY 1, p.emission_cle
 ),
 -- volume total de chaque annonceur sur la période et sa campagne : du premier au dernier jour de ses pubs
 -- rattachées à une émission
@@ -153,6 +162,7 @@ campagne AS MATERIALIZED (
     ) c
 )
 SELECT
+    CAST({{niveau}} AS text) AS niveau,
     pe.annonceur,
     e.chaine,
     e.type,

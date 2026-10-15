@@ -90,4 +90,8 @@ channels_programs_belgium_flanders = [
     {"channel_name": "play", "start": "20:00", "end": "21:15", "weekday": "1", "program_name": "De Tafel van Gert", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "play", "start": "20:00", "end": "21:15", "weekday": "2", "program_name": "De Tafel van Gert", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
     {"channel_name": "play", "start": "20:00", "end": "21:15", "weekday": "3", "program_name": "De Tafel van Gert", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+
+    {"channel_name": "atv", "start": "18:25", "end": "19:00", "weekday": "*", "program_name": "ATV Avondnieuws", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
+
+    {"channel_name": "tvl", "start": "18:25", "end": "19:05", "weekday": "*", "program_name": "Nieuws", "program_type": "","program_grid_start": "2023-04-01", "program_grid_end": "",},
 ]

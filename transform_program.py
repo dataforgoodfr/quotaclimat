@@ -484,7 +484,7 @@ channel_mapping = {
         "title": "Canvas",
         "public": False,
         "infocontinue": False,
-        "radio": True,
+        "radio": False,
         "country": BELGIUM.name,
     },
     "radio-2": {
@@ -498,7 +498,7 @@ channel_mapping = {
         "title": "VTM",
         "public": False,
         "infocontinue": False,
-        "radio": True,
+        "radio": False,
         "country": BELGIUM.name,
     },
     "radio-1": {
@@ -526,14 +526,28 @@ channel_mapping = {
         "title": "Play",
         "public": False,
         "infocontinue": False,
-        "radio": True,
+        "radio": False,
         "country": BELGIUM.name,
     },
     "vrt1": {
         "title": "VRT 1",
         "public": False,
         "infocontinue": False,
-        "radio": True,
+        "radio": False,
+        "country": BELGIUM.name,
+    },
+    "atv": {
+        "title": "ATV",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
+        "country": BELGIUM.name,
+    },
+    "tvl": {
+        "title": "TVL",
+        "public": False,
+        "infocontinue": False,
+        "radio": False,
         "country": BELGIUM.name,
     },
 }

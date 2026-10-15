@@ -4,11 +4,11 @@
 ### - chunks that contain given keyword (as adjacent = False and core = False)
 
 ### given folowing arguments
-### - start_date
+### - start_date [Optional]: if not start_date, give destination table to get date to resume from
 ### - end_date
-### - keywords to look for (has to be in OME dictionnary)
+### - keywords to look for [Optional]: given destination table, keywords will be reused
 ### - country (default france)
-### - clear_destination_table : to start destination table from scratch (--assume_yes to confirm clearing)
+### - destination_table [Optional]: give destiantion table name to resume from
 
 import logging
 from datetime import date, timedelta
@@ -31,11 +31,12 @@ from quotaclimat.data_processing.mediatree.i8n.belgium_flanders.channel_titles i
 GAP = Timedelta(minutes=2, seconds=30)
 CHANNEL_TITLES = {'france': channel_titles_france, 'belgium': channel_titles_belgium, 'belgium_flanders': channel_titles_belgium_flanders}
 LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch"}
+REGISTRY_TABLE = "public.thematic_tables_registry"
 
 REQUIRED_ENV = [
     "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB",
     "S3_ACCESS_KEY", "S3_SECRET_KEY", "S3_ENDPOINT_URL", "S3_BUCKET_NAME", "S3_REGION",
-    "KEYWORDS", "END_DATE"
+    "END_DATE"
 ]
 
 # Globals set by load_env():
@@ -50,7 +51,7 @@ def load_env() -> None:
     """Read environment variables (credentials and parameters) and expose them as module globals.
     Raises if a required one is missing or invalid."""
     global START_DATE, END_DATE, KEYWORDS, COUNTRY, LANGUAGE
-    global CLEAR_DESTINATION_TABLE, ASSUME_YES, DRY_RUN
+    global DRY_RUN
     global SOURCE_TABLE, DESTINATION_TABLE
     global POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB
     global S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT_URL, S3_BUCKET_NAME, S3_REGION
@@ -72,11 +73,15 @@ def load_env() -> None:
     if START_DATE and END_DATE <= START_DATE:
         raise ValueError("END_DATE must be after START_DATE")
 
-    ### KEYWORDS
-    KEYWORDS = [k.strip() for k in os.environ["KEYWORDS"].split(",") if k.strip()]
-    if not KEYWORDS:
-        raise ValueError("KEYWORDS is set but contains no keyword")
-
+    ### KEYWORDS (only needed for a new run, a resumed run reads them from the registry)
+    raw_keywords = os.getenv("KEYWORDS")
+    if raw_keywords is None:
+        KEYWORDS = None
+    else:
+        KEYWORDS = [k.strip() for k in raw_keywords.split(",") if k.strip()]
+        if not KEYWORDS:
+            logging.info("KEYWORDS is set but contains no keyword")
+    
     ### COUNTRY
     COUNTRY = (os.getenv("COUNTRY") or "france").lower()
     if COUNTRY not in LANGUAGES:
@@ -84,14 +89,11 @@ def load_env() -> None:
     LANGUAGE = LANGUAGES[COUNTRY]
 
     ### FLAGS
-    true_values = ("1", "true", "yes", "y", "oui")
-    CLEAR_DESTINATION_TABLE = os.getenv("CLEAR_DESTINATION_TABLE", "").strip().lower() in true_values
-    ASSUME_YES = os.getenv("ASSUME_YES", "").strip().lower() in true_values
-    DRY_RUN = os.getenv("DRY_RUN", "").strip().lower() in true_values
+    DRY_RUN = os.getenv("DRY_RUN", "").strip().lower() in ("1", "true", "yes", "y", "oui")
 
     ### TABLES
     SOURCE_TABLE = os.getenv("SOURCE_TABLE") or "public.keywords"  # env var just for local
-    DESTINATION_TABLE = os.environ["DESTINATION_TABLE"]
+    DESTINATION_TABLE = os.getenv("DESTINATION_TABLE")
 
     ### BAROMETRE CREDENTIALS (single database: source and destination)
     POSTGRES_USER = os.environ["POSTGRES_USER"]
@@ -120,44 +122,61 @@ def run() -> None:
     logging.warning(f"[RUN] DRY_RUN={DRY_RUN}")
 
     _con = duckdb.connect()
+    ### Attching and configuring source DB
 
-    ### Checking keywords to process
-    kw_dict = utils.get_keyword_ome_hrfp_theme(KEYWORDS, LANGUAGE)
-
-    ### Configuring source DB
     utils.configure_barometre_source(_con, SOURCE_TABLE,
-                                     POSTGRES_USER, POSTGRES_PASSWORD,
-                                     POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB)
+                                            POSTGRES_USER, POSTGRES_PASSWORD,
+                                            POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB)
+    ### configuring registry
+    utils.configure_barometre_registry(_con, DRY_RUN, POSTGRES_DB, REGISTRY_TABLE)
+    
 
     ### start_date: from env, or deduced from destination table (START_DATE global never modified)
     start_date = START_DATE
-    if not start_date and CLEAR_DESTINATION_TABLE:
-        raise ValueError("Destination table will be cleared. START_DATE required.")
-    if not start_date:
-        max_start = utils.get_max_start_date_from_destination(_con, POSTGRES_DB, DESTINATION_TABLE)
+    destination_table=DESTINATION_TABLE
+    
+    if start_date and destination_table:
+        raise ValueError(
+            "DESTINATION_TABLE must be given without START_DATE, "
+            "so that the start date is deduced from the existing table."
+        )
+    
+    if not start_date and not destination_table:
+        raise ValueError("Provide START_DATE (new run) or DESTINATION_TABLE (resume)")
+
+    resuming = not start_date
+
+    ### RESUMING RUN
+    if not start_date and destination_table:
+        max_start = utils.get_max_start_date_from_destination(_con, POSTGRES_DB, destination_table)
         if max_start is None:
-            raise ValueError("Empty destination: provide START_DATE")
+            raise ValueError("Empty destination: rerun as a new run with START_DATE and without DESTINATION_TABLE")
+        kw_list = utils.get_registered_keywords(_con, POSTGRES_DB, destination_table, REGISTRY_TABLE)
         start_date = max_start
-        logging.info(f"Deducted start date from {DESTINATION_TABLE}: {start_date}")
-        if not utils.confirm(f"No START_DATE: resuming at {start_date} (last day in table). "
-                             f"Continue?", ASSUME_YES):
-            raise SystemExit("Cancelled by user")
+        logging.info(f"Deducted start date from {destination_table}: {start_date}")
+        if start_date >= END_DATE:
+            logging.warning("[END] Deducted start_date >= end_date.")
+            return
+    ### NEW RUN
+    else:
+        if not KEYWORDS:
+            raise ValueError("KEYWORDS is required for a new run")
+        ### Checking keywords to process
+        kw_list = utils.get_keywords_in_ome(KEYWORDS, LANGUAGE)
+        #Making detination table name
+        destination_table=utils.make_destination_table_name(start_date, END_DATE, kw_list)
 
-    if start_date >= END_DATE:
-        logging.warning("[END] Deducted start_date >= end_date.")
-        return
-
-    if CLEAR_DESTINATION_TABLE and not DRY_RUN:
-        if not utils.confirm(f"WARNING: {DESTINATION_TABLE} will be cleared. "
-                             f"Continue?", ASSUME_YES):
-            raise SystemExit("Cancelled by user")
-
+     
     ### Configuring s3 connection
     utils._configure_s3(_con, S3_ENDPOINT_URL, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY)
     ### Configuring destination table
-    utils.configure_barometre_destination(_con, CLEAR_DESTINATION_TABLE, DRY_RUN,
-                                          SOURCE_TABLE, DESTINATION_TABLE,
+    utils.configure_barometre_destination(_con, DRY_RUN,
+                                          SOURCE_TABLE, destination_table,
                                           POSTGRES_DB)
+    ### updating registry
+    if not resuming:
+        utils.register_run(_con, DRY_RUN, POSTGRES_DB, destination_table,
+                           start_date, END_DATE, kw_list, REGISTRY_TABLE)
 
     counter_to_ingest = 0
     ingested = 0
@@ -174,7 +193,7 @@ def run() -> None:
         try:
             logging.info(f"[RUN] ------ Processing day {day} ------")
             logging.info(f"[{SOURCE_TABLE}] {day}: reading source table")
-            keywords_day = utils.read_barometre_keywords(_con, kw_dict,
+            keywords_day = utils.read_barometre_keywords(_con, kw_list,
                                                          day, day + timedelta(days=1),
                                                          COUNTRY, SOURCE_TABLE, POSTGRES_DB)
         except Exception:
@@ -207,7 +226,7 @@ def run() -> None:
             n_thematic_day = int(day_to_ingest_df["thematic_chunk"].sum())
             n_adjacent_day = len(day_to_ingest_df) - n_thematic_day
             logging.info(
-                f"[{DESTINATION_TABLE}] {day}: {len(day_to_ingest_df)} chunks selected for ingestion into destination "
+                f"[{destination_table}] {day}: {len(day_to_ingest_df)} chunks selected for ingestion into destination "
                 f"({n_thematic_day} thematic, {n_adjacent_day} adjacent)"
             )
             counter_to_ingest += len(day_to_ingest_df)
@@ -221,29 +240,15 @@ def run() -> None:
             _con.begin()
             try:
                 _con.execute(f"""
-                    INSERT INTO {POSTGRES_DB}.{DESTINATION_TABLE} BY NAME
+                    INSERT INTO {POSTGRES_DB}.{destination_table} BY NAME
                     SELECT *, now() AT TIME ZONE 'Europe/Paris' AS created_at
                     FROM day_to_ingest_df
                     ON CONFLICT (this_id) DO NOTHING
                 """)
 
-                # checks if consistent table (if extra, probably previous runs with other kw)
-                n_extra = _con.execute(f"""
-                    SELECT count(*) FROM {POSTGRES_DB}.{DESTINATION_TABLE}
-                    WHERE start >= ? AND start < ?
-                      AND this_id NOT IN (SELECT this_id FROM day_to_ingest_df)
-                """, [day, day + timedelta(days=1)]).fetchone()[0]
-                if n_extra:
-                    logging.warning(
-                        f"[{DESTINATION_TABLE}] {day}: {n_extra} chunks already in table "
-                        f"and missing from this run ({n_expected_day} expected), likely ingested with other keywords"
-                    )
-                else:
-                    logging.info(f"[{DESTINATION_TABLE}] {day}: {n_expected_day} chunks ingested. Table consistent.")
-
                 # checks if n_ingest == n_to_ingest
                 n_in_table = _con.execute(f"""
-                    SELECT count(*) FROM {POSTGRES_DB}.{DESTINATION_TABLE}
+                    SELECT count(*) FROM {POSTGRES_DB}.{destination_table}
                     WHERE start >= ? AND start < ?
                       AND this_id IN (SELECT this_id FROM day_to_ingest_df)
                 """, [day, day + timedelta(days=1)]).fetchone()[0]
@@ -253,13 +258,15 @@ def run() -> None:
                         f"{n_expected_day} expected"
                     )
                 _con.commit()
+                logging.info(f"[{destination_table}] {day}: {n_in_table} chunks ingested.")
+
                 ingested += len(day_to_ingest_df)
             except Exception:
                 _con.rollback()
                 raise
 
         except Exception:
-            logging.exception(f"[{DESTINATION_TABLE}] {day}: failed")
+            logging.exception(f"[{destination_table}] {day}: failed")
             stopped_day = day
             break
 
@@ -272,7 +279,7 @@ def run() -> None:
     if stopped_day:
         logging.error(
             f"[END] RUN STOPPED at day {stopped_day} (end_date requested: {END_DATE}, "
-            f"so the run did NOT reach end_date). Fix the cause, then rerun without START_DATE "
+            f"so the run did NOT reach end_date). Fix the cause, then rerun with DESTINATION_TABLE and without START_DATE "
             f"to resume from the last ingested day."
         )
         raise RuntimeError(f"Run stopped at {stopped_day}, end_date {END_DATE} not reached")

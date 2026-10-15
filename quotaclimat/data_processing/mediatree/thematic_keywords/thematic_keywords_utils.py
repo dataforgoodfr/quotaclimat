@@ -1,10 +1,3 @@
-### Fonctions utilitaires du script de création de la table thématique
-### (configuration, dictionnaire OME, connexions Postgres/S3, lecture et extraction des chunks).
-### Le point d'entrée (run + main) est dans main.py.
-###
-### <!> Les variables de configuration (START_DATE, DRY_RUN, POSTGRES_DB, etc.) sont définies
-### dans ce module par load_configuration(). Depuis main.py, il faut y accéder via `utils.NOM`
-### (et non `from utils import NOM`, qui figerait la valeur avant l'appel à load_configuration).
 
 import logging
 from pathlib import Path
@@ -14,59 +7,105 @@ from datetime import date
 import pandas as pd
 import numpy as np
 import sys
-from urllib.parse import quote
+import hashlib
+import json
+import re
+import unicodedata
+from datetime import date
 
 # only local env
 load_dotenv(Path(__file__).resolve().parents[4] / ".env", override=False)
 
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 
+PG_MAX_IDENTIFIER = 63
 
-def get_keyword_ome_hrfp_theme(keywords_to_look_for: list[str], language: str) -> dict[str, dict]:
-    """Only keeps keywords in OME dictionnary"""
+def make_destination_table_name(start_date: date, end_date: date, kw_list: list[str]) -> str:
+    kws = sorted({k.strip().lower() for k in kw_list if k.strip()})
+    if not kws:
+        raise ValueError("kw_list is empty")
+
+    # first word as identifier-safe ascii slug (accents removed, max 30 chars)
+    first = unicodedata.normalize("NFKD", kws[0]).encode("ascii", "ignore").decode("ascii")
+    first = re.sub(r"[^a-z0-9]+", "_", first.lower()).strip("_")[:30] or "kw"
+
+    payload = json.dumps({"start": start_date.isoformat(), "end": end_date.isoformat(), "kw": kws},
+                         ensure_ascii=False, separators=(",", ":"), sort_keys=True)
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
+
+    table_name = f"thematic_{first}_{digest}"
+    assert len(table_name) <= PG_MAX_IDENTIFIER  # 9 + 30 + 1 + 12 = 52 max
+    return table_name
+
+def register_run(con: duckdb.DuckDBPyConnection, dry_run: bool, postgres_db: str,
+                 destination_table: str, start_date: date, end_date: date,
+                 kw_list: list[str], registry_table: str) -> None:
+    """Writes destination_table -> dates and keywords in the registry.
+    Raises if destination_table is already registered with other dates or keywords."""
+    try:
+        if dry_run:
+            return
+        keywords = json.dumps(sorted({k.strip().lower() for k in kw_list if k.strip()}),
+                              ensure_ascii=False)
+        row = con.execute(
+            f"SELECT start_date, end_date, keywords FROM {postgres_db}.{registry_table} "
+            f"WHERE table_name = ?", [destination_table]).fetchone()
+        if row is None:
+            con.execute(
+                f"INSERT INTO {postgres_db}.{registry_table} "
+                f"(table_name, start_date, end_date, keywords) VALUES (?, ?, ?, ?)",
+                [destination_table, start_date, end_date, keywords])
+            logging.info(f"[{registry_table}] {destination_table} REGISTERED")
+        elif (row[0], row[1], row[2]) != (start_date, end_date, keywords):
+            raise ValueError(f"{destination_table} already registered with other parameters: {row}")
+        else:
+            logging.info(f"[{registry_table}] {destination_table} ALREADY REGISTERED (same parameters)")
+    except Exception as e:
+        logging.error(f"[{registry_table}] ERROR REGISTERING RUN:")
+        logging.error(e)
+        raise e
+
+def get_registered_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str,
+                            destination_table: str, registry_table: str) -> list[str]:
+    """Returns the keyword list registered for destination_table.
+    Raises LookupError if the table is not in the registry."""
+    try:
+        row = con.execute(
+            f"SELECT keywords FROM {postgres_db}.{registry_table} WHERE table_name = ?",
+            [destination_table.split(".")[-1]]).fetchone()
+        if row is None:
+            raise LookupError(f"{destination_table} not found in {registry_table}")
+        return json.loads(row[0])
+    except Exception as e:
+        logging.error(f"[{registry_table}] ERROR READING KEYWORDS OF {destination_table}:")
+        logging.error(e)
+        raise e
+
+
+def get_keywords_in_ome(keywords_to_look_for: list[str], language: str) -> list[str]:
+    """Returns keywords as found in OME dictionary (for the given language).
+    Raises if at least one keyword is missing, to avoid a long run on a partial list."""
     keywords_lower = {m.lower() for m in keywords_to_look_for}
     try:
-        keywords_hrfp_theme = {}
-        for theme, entrees in THEME_KEYWORDS.items():
-            for entree in entrees:
-                k = entree["keyword"].lower()
-                if k not in keywords_lower or entree["language"] != language:
-                    continue
-                hrfp = entree["high_risk_of_false_positive"]
-                if k not in keywords_hrfp_theme:
-                    keywords_hrfp_theme[k] = {"theme": [theme], "hrfp": hrfp}
-                else:
-                    if theme not in keywords_hrfp_theme[k]["theme"]:
-                        keywords_hrfp_theme[k]["theme"].append(theme)
-
-        not_found = list(keywords_lower - keywords_hrfp_theme.keys())
-        if not_found:
-            logging.info("[OME DICTIONARY] Keywords not found in OME dictionary: %s", not_found)
-        else:
-            logging.info("[OME DICTIONARY] All keywords found in OME dictionary")
-        if keywords_hrfp_theme:
-            logging.info("[OME DICTIONARY] Starting research on keywords on: %s", list(keywords_hrfp_theme.keys()))
-
+        found = {
+            entree["keyword"].lower()
+            for entrees in THEME_KEYWORDS.values()
+            for entree in entrees
+            if entree["language"] == language and entree["keyword"].lower() in keywords_lower
+        }
     except Exception as e:
         logging.error("[OME DICTIONARY] ERROR READING OME DICTIONARY:")
         logging.error(e)
         raise e
-    if not keywords_hrfp_theme:
-        raise ValueError("No keywords found in OME dictionary")
 
-    return keywords_hrfp_theme
+    not_found = sorted(keywords_lower - found)
+    if not_found:
+        raise ValueError(
+            f"[OME DICTIONARY] Keywords not found in OME dictionary (language={language}): {not_found}"
+        )
 
-
-def confirm(message: str, assume_yes: bool = False) -> bool:
-    """Prompts for y/N confirmation in terminal. Returns True if accepted.
-    Without interactive terminal (job, CI), rejects unless assume_yes is True."""
-    if assume_yes:
-        return True
-    if not sys.stdin.isatty():
-        logging.error(f"[RUN] Confirmation required but no interactive terminal: {message} "
-                      f"Rerun with --yes to confirm.")
-        return False
-    return input(f"{message} [y/N] ").strip().lower() in ("y", "yes", "o", "oui")
+    logging.info("[OME DICTIONARY] All keywords found in OME dictionary: %s", sorted(found))
+    return sorted(found)
 
 
 def configure_barometre_source(con: duckdb.DuckDBPyConnection, source_table: str,
@@ -100,8 +139,31 @@ def get_max_start_date_from_destination(con: duckdb.DuckDBPyConnection, postgres
         raise e
 
 
+def configure_barometre_registry(con: duckdb.DuckDBPyConnection, dry_run: bool,
+                                 postgres_db: str, registry_table) -> None:
+    """Creates the registry table if it does not exist yet."""
+    try:
+        if dry_run:
+            return
+        con.execute(f"""
+            CREATE TABLE IF NOT EXISTS {postgres_db}.{registry_table} (
+                table_name VARCHAR NOT NULL,
+                start_date DATE NOT NULL,
+                end_date DATE NOT NULL,
+                keywords VARCHAR NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (table_name)
+            )
+        """)
+        logging.info(f"[{registry_table}] TABLE CREATED OR ALREADY EXISTS")
+    except Exception as e:
+        logging.error(f"[{registry_table}] ERROR CONFIGURING REGISTRY:")
+        logging.error(e)
+        raise e
+
+
 def configure_barometre_destination(con: duckdb.DuckDBPyConnection, 
-                                    clear_destination_table: bool, dry_run: bool,
+                                    dry_run: bool,
                                     source_table: str, destination_table: str, 
                                     postgres_db: str) -> None:
     """The database is already attached by configure_barometre_source: we only prepare the table."""
@@ -131,11 +193,7 @@ def configure_barometre_destination(con: duckdb.DuckDBPyConnection,
                 )
             """)
             logging.info(f"[{destination_table}] TABLE CREATED OR ALREADY EXISTS")
-            if clear_destination_table:
-                con.execute(
-                    f"DELETE FROM {postgres_db}.{destination_table} "
-                )
-                logging.info(f"[{destination_table}] TABLE CLEARED")
+
     except Exception as e:
         logging.error(f"[{destination_table}] ERROR CONNECTING:")
         logging.error(e)
@@ -143,12 +201,12 @@ def configure_barometre_destination(con: duckdb.DuckDBPyConnection,
 
 
 def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
-                            keywords_to_look_for: dict[str, dict],
+                            keywords_to_look_for: list[str],
                             start_date: date, end_date: date,
                             country: str,
                             source_table: str, postgres_db: str) -> pd.DataFrame:
     """Reads barometre.keywords to retrieve (start, channel) of every thematic chunk to keep"""
-    keywords_list = list(keywords_to_look_for.keys())
+    keywords_list = keywords_to_look_for
     kewords_sql = ", ".join("'" + m.replace("'", "''") + "'" for m in keywords_list)
     try:
         out = con.sql(f"""

@@ -126,10 +126,12 @@ services:
       RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
       RRS_PG_PORT: ${RRS_PG_PORT:-5432}
       SUBJECT: ${SUBJECT:-environmental_health}
-      N_KEYWORDS: ${N_KEYWORDS:-}
+      N_KEYWORDS: ${N_KEYWORDS:-4}
+      START_DATE: ${START_DATE:-}
+      END_DATE: ${END_DATE:-}
       OUTPUT_PATH: ${OUTPUT_PATH:-/app/output/segments_export.csv}
     volumes:
-      - ./output:/app/output
+      - ./rrs/output:/app/output
     depends_on:
       rrs_db:
         condition: service_healthy

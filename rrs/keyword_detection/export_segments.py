@@ -1,16 +1,19 @@
 """
 Export segments for a dictionary subject from the RRS DB, optionally
-filtered down to an exact keyword count.
+filtered down to an exact keyword count and/or a date range.
 
 Equivalent to:
     SELECT * FROM segments s
     INNER JOIN subjects sb ON s.subject_id = sb.subject_id
     WHERE sb.name = :subject
     AND s.n_keywords = :n_keywords
+    AND s.start >= :start_date
+    AND s.start < :end_date
 
 Usage:
     poetry run python -m rrs.keyword_detection.export_segments
     poetry run python -m rrs.keyword_detection.export_segments --subject environmental_health --n-keywords 4
+    poetry run python -m rrs.keyword_detection.export_segments --subject environmental_health --start-date 2024-01-01 --end-date 2024-03-31
     poetry run python -m rrs.keyword_detection.export_segments --subject environmental_health --output ./export.csv
 """
 
@@ -19,6 +22,7 @@ import contextlib
 import logging
 import os
 import re
+from datetime import date
 from typing import Optional
 from urllib.parse import quote
 
@@ -64,6 +68,8 @@ def rrs_dsn() -> str:
 def export_segments(
     subject_name: str = DEFAULT_SUBJECT_NAME,
     n_keywords: Optional[int] = None,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
     output_path: Optional[str] = None,
 ):
     con = duckdb.connect()
@@ -71,15 +77,23 @@ def export_segments(
     with _masked_db_errors():
         con.execute(f"ATTACH '{rrs_dsn()}' AS rrs (TYPE POSTGRES, READ_ONLY);")
 
-    n_keywords_filter = ""
+    extra_filters = ""
     params = {"subject_name": subject_name}
     if n_keywords is not None:
-        n_keywords_filter = " AND s.n_keywords = $n_keywords"
+        extra_filters += " AND s.n_keywords = $n_keywords"
         params["n_keywords"] = n_keywords
+    if start_date is not None:
+        extra_filters += " AND s.start >= $start_date"
+        params["start_date"] = start_date
+    if end_date is not None:
+        extra_filters += " AND s.start < $end_date"
+        params["end_date"] = end_date
 
     logging.info(
         f"Fetching segments for subject={subject_name!r}"
         + (f", n_keywords={n_keywords}" if n_keywords is not None else "")
+        + (f", start_date={start_date}" if start_date is not None else "")
+        + (f", end_date={end_date}" if end_date is not None else "")
         + "..."
     )
     df = con.execute(
@@ -88,7 +102,7 @@ def export_segments(
         FROM rrs.segments s
         INNER JOIN rrs.subjects sb ON s.subject_id = sb.subject_id
         WHERE sb.name = $subject_name
-        {n_keywords_filter}
+        {extra_filters}
         """,
         params,
     ).df()
@@ -118,6 +132,18 @@ if __name__ == "__main__":
         help="Filter segments with exactly this number of keywords (env: N_KEYWORDS)",
     )
     parser.add_argument(
+        "--start-date",
+        metavar="YYYY-MM-DD",
+        default=os.getenv("START_DATE"),
+        help="Filter segments with start >= this date (env: START_DATE)",
+    )
+    parser.add_argument(
+        "--end-date",
+        metavar="YYYY-MM-DD",
+        default=os.getenv("END_DATE"),
+        help="Filter segments with start < this date (env: END_DATE)",
+    )
+    parser.add_argument(
         "--output",
         default=os.getenv("OUTPUT_PATH", "./output/segments_export.csv"),
         help="Path to save results as CSV (env: OUTPUT_PATH)",
@@ -127,5 +153,7 @@ if __name__ == "__main__":
     export_segments(
         subject_name=args.subject,
         n_keywords=int(args.n_keywords) if args.n_keywords is not None else None,
+        start_date=date.fromisoformat(args.start_date) if args.start_date else None,
+        end_date=date.fromisoformat(args.end_date) if args.end_date else None,
         output_path=args.output,
     )

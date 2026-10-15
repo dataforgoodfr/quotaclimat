@@ -233,4 +233,5 @@ WHERE e.env_heures >= pa.env_heures_min
   -- temps d'environnement sur la campagne, comparé à la valeur affichée (env_heures_campagne)
   AND (pa.env_heures_campagne_min IS NULL
        OR ROUND(pe.c_env_heures::numeric, 2) >= pa.env_heures_campagne_min)
-ORDER BY e.chaine, e.nom, pe.rang_dans_emission
+-- sans environnement pendant la campagne (taux vide) en dernier
+ORDER BY cas_par_heure_env_campagne DESC NULLS LAST

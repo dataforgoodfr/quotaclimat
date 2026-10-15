@@ -7,6 +7,10 @@
 --   fin    type Date, dernier jour inclus, ex. 2026-09-30
 --   niveau type Texte, échelle de l'annonceur : marque, entreprise ou groupe (société mère ultime) ; à régler en
 --          liste déroulante de ces trois valeurs, valeur par défaut entreprise (une autre valeur ne renvoie rien)
+--   env_heures_min        type Nombre, facultatif (0.5 si vide) : émissions gardées, au moins ce temps
+--                         consacré à l'environnement sur la période (heures)
+--   cas_par_heure_env_min type Nombre, facultatif (0.5 si vide) : émissions gardées, au moins ce nombre de cas
+--                         par heure d'environnement sur la période (0 garde aussi les émissions sans cas)
 -- Lit les tables précalculées par dbt (voir leur documentation dans my_dbt_project/models/schema.yml) :
 --   analytics.pub_annonceur_emission_jour : secondes de pub de chaque annonceur autour de chaque émission, par
 --     jour (date de la pub en heure de Paris). Une pub compte pour l'émission qui contient tout son écran (100 %
@@ -43,10 +47,10 @@ parametres AS (
     SELECT
         15 AS nb_annonceurs_par_emission, -- par émission, annonceurs gardés par part de leur pub décroissante
         600 AS annonceur_secondes_min, -- annonceurs classés : au moins ce volume de pub rattachée sur la période
-        1.0 AS env_heures_min,       -- émissions gardées : au moins ce temps consacré à l'environnement
-        0 AS cas_par_heure_env_min,  -- émissions gardées : au moins ce nombre de cas par heure d'environnement
-                                     -- (sur toute la période ; 0 garde tout, y compris les émissions sans cas)
-        1 AS pas_ecart_arrondi       -- pas de ecart_cas_par_heure_env_arrondi : multiple de ce pas le plus proche
+        -- émissions gardées : variables Metabase, valeur par défaut quand elles sont vides
+        COALESCE([[{{env_heures_min}},]] 0.5) AS env_heures_min,
+        COALESCE([[{{cas_par_heure_env_min}},]] 0.5) AS cas_par_heure_env_min,
+        0.5 AS seuil_biais           -- biais_de_saisonnalite : neutre quand |ecart_cas_par_heure_env| <= ce seuil
 ),
 -- métriques de chaque émission sur la période ; MATERIALIZED : calculées une seule fois
 emissions AS MATERIALIZED (
@@ -196,15 +200,23 @@ SELECT
         - 100 * e.p_env_heures / NULLIF(e.p_volume_heures, 0))::numeric, 2) AS ecart_part_env_pct,
     ROUND((pe.c_nb_cas / NULLIF(pe.c_volume_heures, 0)
         - e.p_nb_cas / NULLIF(e.p_volume_heures, 0))::numeric, 3) AS ecart_cas_par_heure,
-    ROUND((pe.c_nb_cas / NULLIF(pe.c_env_heures, 0)
-        - e.p_nb_cas / NULLIF(e.p_env_heures, 0))::numeric, 2) AS ecart_cas_par_heure_env,
-    -- même écart arrondi au multiple de pas_ecart_arrondi le plus proche (pas de 1 : 0 de -0,5 à 0,5, 1 de 0,5 à
-    -- 1,5…), une valeur à mi-chemin va au multiple le plus éloigné de 0 (0,5 donne 1, -0,5 donne -1)
-    pa.pas_ecart_arrondi * ROUND(((pe.c_nb_cas / NULLIF(pe.c_env_heures, 0)
-        - e.p_nb_cas / NULLIF(e.p_env_heures, 0)) / pa.pas_ecart_arrondi)::numeric) AS ecart_cas_par_heure_env_arrondi
+    ecart.cas_par_heure_env AS ecart_cas_par_heure_env,
+    -- le même écart en trois classes : la campagne tombe-t-elle sur une période où l'émission fait mieux ou pire
+    -- que d'habitude ? Classée sur l'écart affiché (arrondi à 0,01), bornes incluses dans neutre ; NULL sans
+    -- environnement pendant la campagne
+    CASE
+        WHEN ecart.cas_par_heure_env IS NULL THEN NULL
+        WHEN ecart.cas_par_heure_env > pa.seuil_biais THEN 'négatif'
+        WHEN ecart.cas_par_heure_env < -pa.seuil_biais THEN 'positif'
+        ELSE 'neutre'
+    END AS biais_de_saisonnalite
 FROM campagne pe
 JOIN emissions e ON e.emission_cle = pe.emission_cle
 CROSS JOIN parametres pa
+CROSS JOIN LATERAL (
+    SELECT ROUND((pe.c_nb_cas / NULLIF(pe.c_env_heures, 0)
+        - e.p_nb_cas / NULLIF(e.p_env_heures, 0))::numeric, 2) AS cas_par_heure_env
+) ecart
 WHERE e.env_heures >= pa.env_heures_min
   AND COALESCE(e.cas_par_heure_env, 0) >= pa.cas_par_heure_env_min
 ORDER BY e.chaine, e.nom, pe.rang_dans_emission

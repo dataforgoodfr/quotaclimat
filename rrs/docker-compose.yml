@@ -125,13 +125,16 @@ services:
       RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
       RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
       RRS_PG_PORT: ${RRS_PG_PORT:-5432}
+      BUCKET: ${BUCKET}
+      BUCKET_SECRET: ${BUCKET_SECRET}
+      BUCKET_NAME: ${BUCKET_NAME}
       SUBJECT: ${SUBJECT:-environmental_health}
       N_KEYWORDS: ${N_KEYWORDS:-4}
       START_DATE: ${START_DATE:-}
       END_DATE: ${END_DATE:-}
       OUTPUT_PATH: ${OUTPUT_PATH:-/app/output/segments_export.csv}
     volumes:
-      - ./rrs/output:/app/output
+      - ./output:/app/output
     depends_on:
       rrs_db:
         condition: service_healthy

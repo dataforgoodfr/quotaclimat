@@ -1,6 +1,8 @@
 """
 Export segments for a dictionary subject from the RRS DB, optionally
-filtered down to an exact keyword count and/or a date range.
+filtered down to an exact keyword count and/or a date range. The segment
+text is recovered from the "plaintext" column of the parquet file at its
+s3_uri on S3, matched by start timestamp.
 
 Equivalent to:
     SELECT * FROM segments s
@@ -9,6 +11,9 @@ Equivalent to:
     AND s.n_keywords = :n_keywords
     AND s.start >= :start_date
     AND s.start < :end_date
+
+Output columns: id, channel_name, datetime, plaintext, url
+(segment_id, channel_name, start, recovered text, url_mediatree).
 
 Usage:
     poetry run python -m rrs.keyword_detection.export_segments
@@ -27,6 +32,7 @@ from typing import Optional
 from urllib.parse import quote
 
 import duckdb
+import pandas as pd
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -34,6 +40,19 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 logging.basicConfig(level=logging.INFO)
 
 DEFAULT_SUBJECT_NAME = "environmental_health"
+REGION = "fr-par"
+
+
+def get_secret_docker(secret_name: str) -> str:
+    value = os.environ.get(secret_name, "")
+    if value and os.path.exists(value):
+        with open(value, "r") as f:
+            return f.read().strip()
+    return value
+
+
+ACCESS_KEY = get_secret_docker("BUCKET")
+SECRET_KEY = get_secret_docker("BUCKET_SECRET")
 
 
 _DSN_PASSWORD_RE = re.compile(r"(postgresql://[^:]+:)[^@]+(@)")
@@ -63,6 +82,40 @@ def rrs_dsn() -> str:
         user=os.getenv("RRS_PG_USER", "user"),
         password=os.getenv("RRS_PG_PASSWORD", "password"),
     )
+
+
+def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
+    con.execute("INSTALL httpfs; LOAD httpfs;")
+    con.execute(f"""
+        SET s3_region='{REGION}';
+        SET s3_endpoint='s3.{REGION}.scw.cloud';
+        SET s3_access_key_id='{ACCESS_KEY}';
+        SET s3_secret_access_key='{SECRET_KEY}';
+        SET s3_url_style='path';
+    """)
+
+
+def _fetch_plaintexts(con: duckdb.DuckDBPyConnection, df: pd.DataFrame) -> pd.Series:
+    """Recover the "plaintext" column of each segment from its s3_uri parquet file,
+    matched by start timestamp (as UTC, to sidestep tz representation mismatches)."""
+    plaintext = pd.Series([None] * len(df), index=df.index, dtype=object)
+    match_key = pd.to_datetime(df["start"], utc=True)
+
+    for s3_uri, group in df.groupby("s3_uri"):
+        glob = f"{s3_uri}*.parquet"
+        try:
+            text_df = con.sql(
+                f"SELECT start, plaintext FROM read_parquet('{glob}', hive_partitioning=true, union_by_name=true)"
+            ).df()
+        except duckdb.Error as exc:
+            logging.warning(f"Could not read parquet at {s3_uri}: {exc}")
+            continue
+
+        text_df["start"] = pd.to_datetime(text_df["start"], utc=True)
+        lookup = text_df.drop_duplicates(subset="start").set_index("start")["plaintext"]
+        plaintext.loc[group.index] = match_key.loc[group.index].map(lookup)
+
+    return plaintext
 
 
 def export_segments(
@@ -108,12 +161,30 @@ def export_segments(
     ).df()
 
     logging.info(f"  {len(df)} segment(s) fetched.")
+    if df.empty:
+        if output_path:
+            df.to_csv(output_path, index=False)
+            logging.info(f"  Saved to {output_path}")
+        return df
+
+    logging.info("Recovering plaintext from S3...")
+    _configure_s3(con)
+    df["plaintext"] = _fetch_plaintexts(con, df)
+    logging.info(f"  {df['plaintext'].notna().sum()}/{len(df)} segment(s) matched a plaintext.")
+
+    out = df.rename(
+        columns={
+            "segment_id": "id",
+            "start": "datetime",
+            "url_mediatree": "url",
+        }
+    )[["id", "channel_name", "datetime", "plaintext", "url"]]
 
     if output_path:
-        df.to_csv(output_path, index=False)
+        out.to_csv(output_path, index=False)
         logging.info(f"  Saved to {output_path}")
 
-    return df
+    return out
 
 
 if __name__ == "__main__":

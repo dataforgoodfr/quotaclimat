@@ -128,7 +128,8 @@ tasks:
       LOGLEVEL: INFO
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
       MEDIATREE_USER: quotaclimat
-      MODEL_NAME: ft:gpt-4o-mini-2024-07-18:personal::B1xWiJRm
+      LLM_PROVIDER: mistral
+      MODEL_NAME: mistral-small-2603
       MODIN_MEMORY: 2000000000
       NUMBER_OF_PREVIOUS_DAYS: "{{ inputs.days_back + 1 }}"
       POSTGRES_DB: barometre
@@ -139,6 +140,7 @@ tasks:
       BUCKET_ACCESS: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
+      MISTRAL_API_KEY: "{{ secret('MISTRAL_API_KEY') }}"
       OPENAI_API_KEY: "{{ secret('OPENAI_API_KEY') }}"
       POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
       POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_READ') }}"

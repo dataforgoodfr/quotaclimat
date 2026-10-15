@@ -48,8 +48,8 @@ parametres AS (
         15 AS nb_annonceurs_par_emission, -- par émission, annonceurs gardés par part de leur pub décroissante
         600 AS annonceur_secondes_min, -- annonceurs classés : au moins ce volume de pub rattachée sur la période
         -- émissions gardées : variables Metabase, valeur par défaut quand elles sont vides
-        COALESCE([[{{env_heures_min}},]] 0.5) AS env_heures_min,
-        COALESCE([[{{cas_par_heure_env_min}},]] 0.5) AS cas_par_heure_env_min,
+        COALESCE([[CAST({{env_heures_min}} AS numeric),]] 0.5) AS env_heures_min,
+        COALESCE([[CAST({{cas_par_heure_env_min}} AS numeric),]] 0.5) AS cas_par_heure_env_min,
         0.5 AS seuil_biais           -- biais_de_saisonnalite : neutre quand |ecart_cas_par_heure_env| <= ce seuil
 ),
 -- métriques de chaque émission sur la période ; MATERIALIZED : calculées une seule fois

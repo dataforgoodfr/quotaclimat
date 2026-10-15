@@ -7,4 +7,6 @@ channel_titles_belgium_flanders = {
     "qmusic": "QMUSIC",
     "play": "Play",
     "vrt1": "VRT 1",
+    "atv": "ATV",
+    "tvl": "TVL",
 }

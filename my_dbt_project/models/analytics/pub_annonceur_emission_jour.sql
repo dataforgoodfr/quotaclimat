@@ -9,7 +9,7 @@
     )
 }}
 
-{#- analytics.pub_annonceur_emission_jour: seconds of ads of each advertiser around each emission, per day
+{#- analytics.pub_annonceur_emission_jour: seconds of ads of each brand around each emission, per day
     (Paris date of the occurrence), French channels. Emission: a row group of analytics.program keyed by
     emission_cle, as in analytics.emission_jour. From analytics.publicites and the rows of analytics.program before
     / after the ad tunnel of each occurrence (ad_tunnel_programs). An occurrence counts for:
@@ -18,8 +18,11 @@
       var) away: half its duration each, all of it for the only one close enough.
     The shares of an advertiser over its emissions thus add up to 100 %. Occurrences far from any emission (and
     the fragments outside tunnels) are left out, so are the occurrences without a predicted brand.
-    annonceur: brand_company (the company of the brand, the predicted brand itself when not in ad_brands);
-    groupe: brand_ultimate_parent. -#}
+    Three advertiser levels, each a function of the brand (see ad_brands): sums over brands give the seconds of
+    a company or of a group, the level is chosen when reading (Metabase):
+    - marque: brand_name, the predicted brand as spelled in ad_brands (the predicted brand itself when not listed);
+    - entreprise: brand_company, the company of the brand (the brand itself when not in ad_brands);
+    - groupe: brand_ultimate_parent, its ultimate parent company (the company, else the brand, when unknown). -#}
 
 {% set window_minutes = var('ad_emission_window_minutes', 15) %}
 
@@ -39,7 +42,8 @@ WITH grille AS (
 ),
 pubs AS (
     SELECT
-        p.brand_company AS annonceur,
+        p.brand_name AS marque,
+        p.brand_company AS entreprise,
         p.brand_ultimate_parent AS groupe,
         -- occurrence_date is in UTC (timestamp without time zone)
         ((p.occurrence_date AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris')::date AS jour,
@@ -55,18 +59,19 @@ pubs AS (
     WHERE p.brand_company IS NOT NULL
 ),
 pubs_lignes AS (
-    SELECT annonceur, groupe, jour, program_before_id AS program_id,
+    SELECT marque, entreprise, groupe, jour, program_before_id AS program_id,
         duration_sec * CASE WHEN apres_proche THEN 0.5 ELSE 1 END AS secondes
     FROM pubs
     WHERE avant_proche
     UNION ALL
-    SELECT annonceur, groupe, jour, program_after_id,
+    SELECT marque, entreprise, groupe, jour, program_after_id,
         duration_sec * CASE WHEN avant_proche THEN 0.5 ELSE 1 END
     FROM pubs
     WHERE apres_proche
 )
 SELECT
-    pl.annonceur,
+    pl.marque,
+    pl.entreprise,
     pl.groupe,
     g.emission_cle,
     pl.jour,
@@ -78,4 +83,4 @@ SELECT
     COUNT(*) AS nb_occurrences
 FROM pubs_lignes pl
 JOIN grille g ON g.id = pl.program_id
-GROUP BY pl.annonceur, pl.groupe, g.emission_cle, pl.jour, g.channel_name, g.type, g.nom, g.rediffusion
+GROUP BY pl.marque, pl.entreprise, pl.groupe, g.emission_cle, pl.jour, g.channel_name, g.type, g.nom, g.rediffusion

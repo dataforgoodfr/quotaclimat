@@ -422,6 +422,10 @@ models:
         description: French label of the predicted product category.
       - name: label_final
         description: Product category label when available, sector label otherwise.
+      - name: brand_name
+        description: >
+          Predicted brand as spelled in ad_brands (ad_brands.brand, one spelling per name_key), the predicted
+          brand itself when it is not in ad_brands. NULL when no brand was predicted.
       - name: brand_company
         description: >
           Company that sells under the predicted brand (see ad_brands.brand_company), the predicted brand
@@ -749,18 +753,25 @@ models:
 
   - name: pub_annonceur_emission_jour
     description: >
-      In the analytics schema. Seconds of ads of each advertiser around each emission, per day (Paris date of
-      the occurrence), French channels, from analytics.publicites. An occurrence counts for the emission
+      In the analytics schema. Seconds of ads of each brand around each emission, per day (Paris date of the
+      occurrence), French channels, from analytics.publicites, with the company and the ultimate parent company
+      of the brand: sums over brands give the seconds of a company or of a group. An occurrence counts for the emission
       containing its whole tunnel, else half for the emission before and half for the emission after the tunnel
       when they are at most ad_emission_window_minutes away (dbt var, default 15), all of it for the only one
       close enough. Occurrences without a predicted brand, far from any emission or outside tunnels are left out.
     columns:
-      - name: annonceur
-        description: Company of the predicted brand (publicites.brand_company).
+      - name: marque
+        description: Predicted brand as spelled in ad_brands (publicites.brand_name).
+        tests:
+          - not_null
+      - name: entreprise
+        description: Company of the brand (publicites.brand_company).
         tests:
           - not_null
       - name: groupe
         description: Ultimate parent company of the brand (publicites.brand_ultimate_parent).
+        tests:
+          - not_null
       - name: emission_cle
         description: Key of the emission, as in emission_jour.
         tests:

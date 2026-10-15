@@ -11,6 +11,13 @@ labels:
   scope: france
 
 inputs:
+  - id: source
+    type: SELECT
+    values:
+      - barometre
+      - extended
+    defaults: barometre
+    description: "Source database/perimeter to read from: the OME `barometre` DB or the `extended-perimeter` DB."
   - id: days_back
     type: INT
     required: false
@@ -48,14 +55,15 @@ tasks:
       PYTHONPATH: /app
       START_DATE: "{{ inputs.start_date ?? '' }}"
       END_DATE: "{{ inputs.end_date ?? '' }}"
-      DAYS_PRIOR: "{{ inputs.days_back ?? '' }}"
-      BUCKET_NAME: mediatree
-      POSTGRES_DB: barometre
-      POSTGRES_PORT: 22737
+      DAYS_PRIOR: "{{ inputs.days_back ?? 1 }}"
+      BUCKET_NAME: "{{ inputs.source == 'extended' ? 'mediatree-extended-perimeter-dev' : 'mediatree' }}"
+      POSTGRES_DB: "{{ inputs.source == 'extended' ? 'extended-perimeter' : 'barometre' }}"
+      SOURCE_COUNTRY_CODE: "{{ inputs.source == 'extended' ? 'ext-fra' : 'fra' }}"
+      POSTGRES_PORT: "{{ inputs.source == 'extended' ? 18047 : 22737 }}"
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18047
-      BUCKET: "{{ secret('SCW_ACCESS') }}"
-      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      BUCKET: "{{ inputs.source == 'extended' ? secret('RRS_SCW_ACCESS_DEV') : secret('SCW_ACCESS') }}"
+      BUCKET_SECRET: "{{ inputs.source == 'extended' ? secret('RRS_SCW_SECRET_DEV') : secret('SCW_SECRET') }}"
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
       RRS_PG_USER: "{{ secret('RRS_PG_USER_DEV') }}"
       RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD_DEV') }}"
@@ -78,12 +86,13 @@ tasks:
       PYTHONPATH: /app
       START_DATE: "{{ inputs.start_date ?? '' }}"
       END_DATE: "{{ inputs.end_date ?? '' }}"
-      DAYS_PRIOR: "{{ inputs.days_back ?? '' }}"
-      POSTGRES_DB: barometre
-      POSTGRES_PORT: 22737
+      DAYS_PRIOR: "{{ inputs.days_back ?? 1 }}"
+      POSTGRES_DB: "{{ inputs.source == 'extended' ? 'extended-perimeter' : 'barometre' }}"
+      SOURCE_COUNTRY_CODE: "{{ inputs.source == 'extended' ? 'ext-fra' : 'fra' }}"
+      POSTGRES_PORT: "{{ inputs.source == 'extended' ? 18047 : 22737 }}"
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18047
-      BUCKET_NAME: mediatree
+      BUCKET_NAME: "{{ inputs.source == 'extended' ? 'mediatree-extended-perimeter-dev' : 'mediatree' }}"
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"

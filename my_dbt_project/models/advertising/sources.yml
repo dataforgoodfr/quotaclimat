@@ -1,0 +1,31 @@
+version: 2
+
+sources:
+  - name: advertising
+    schema: advertising
+    tables:
+      - name: ad
+      - name: ad_occurrence
+      # Sector / product category reference: dbt seeds downloaded from the classification Google Sheet
+      # before dbt runs (see my_dbt_project/external_sources.yml), built in this schema
+      - name: ad_sectors
+        identifier: ref_ome_secteurs
+      - name: ad_categories
+        identifier: ref_ome_categories
+      # Brand inventory: dbt seed downloaded from the Inventaires_des_marques Google Sheet (tab Marques),
+      # built in this schema
+      - name: brand_inventory
+        identifier: ref_inventaire_marques
+
+  - name: public
+    schema: public
+    tables:
+      - name: program_metadata
+      # keyword segments (start: timestamp with time zone in production, see macros/keywords_paris_time.sql)
+      - name: keywords
+
+  # built by the `--target analytics` run, before the advertising models (see entrypoints/dbt.sh)
+  - name: analytics
+    schema: analytics
+    tables:
+      - name: task_global_completion

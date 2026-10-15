@@ -72,6 +72,8 @@ jobs:
       - name: Setup Scaleway CLI
         uses: scaleway/action-scw@v0
         with:
+          # Pinned: the action defaults to the latest CLI, which crashed at startup ("panic: can't find the module root") on 2026-10-07
+          version: v2.63.0
           save-config: true
           export-config: true
           access-key: ${{ secrets.RRS_SCW_ACCESS_KEY }}

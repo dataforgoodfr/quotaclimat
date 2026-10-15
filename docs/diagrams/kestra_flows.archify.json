@@ -1,0 +1,262 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Kestra Flows",
+    "quality_profile": "showcase",
+    "output": "kestra-flows.html",
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "Kestra flow"
+        },
+        "messagebus": {
+          "label": "Orchestrator flow"
+        },
+        "external": {
+          "label": "Cron schedule"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "morning",
+      "label": "main-pipeline: cron 01:10 and 12:30, each step is a subflow"
+    },
+    {
+      "id": "ome",
+      "label": "Standard perimeter (same run, after the extended one)"
+    },
+    {
+      "id": "other",
+      "label": "Other scheduled flows"
+    }
+  ],
+  "phases": [
+    {
+      "id": "ext",
+      "label": "Extended perimeter",
+      "fromCol": 0,
+      "toCol": 2,
+      "variant": "emphasis"
+    },
+    {
+      "id": "std",
+      "label": "Standard perimeter",
+      "fromCol": 3,
+      "toCol": 5
+    }
+  ],
+  "mainPath": [
+    "orch",
+    "extp",
+    "rrsclimate_ext",
+    "rrsinsec_ext",
+    "barometre",
+    "rrsclimate",
+    "rrsinsec"
+  ],
+  "nodes": [
+    {
+      "id": "orch",
+      "lane": "morning",
+      "col": 0,
+      "type": "messagebus",
+      "label": "main-pipeline",
+      "sublabel": "cron 01:10 + 12:30",
+      "width": 140
+    },
+    {
+      "id": "extp",
+      "lane": "morning",
+      "col": 1,
+      "type": "backend",
+      "label": "extended-perimeter",
+      "sublabel": "ingest, keywords, misinfo, dbt",
+      "width": 150
+    },
+    {
+      "id": "rrsclimate_ext",
+      "lane": "morning",
+      "col": 2,
+      "type": "backend",
+      "label": "rrs-climate",
+      "sublabel": "source=extended",
+      "tag": "no clustering",
+      "width": 140
+    },
+    {
+      "id": "rrsinsec_ext",
+      "lane": "morning",
+      "col": 3,
+      "type": "backend",
+      "label": "rrs-insecurity",
+      "sublabel": "source=extended",
+      "tag": "no clustering",
+      "width": 140
+    },
+    {
+      "id": "barometre",
+      "lane": "ome",
+      "col": 3,
+      "type": "backend",
+      "label": "barometre",
+      "sublabel": "ingest, keywords, misinfo, dbt",
+      "width": 150
+    },
+    {
+      "id": "rrsclimate",
+      "lane": "ome",
+      "col": 4,
+      "type": "backend",
+      "label": "rrs-climate",
+      "sublabel": "source=barometre",
+      "width": 140,
+      "tag": "clustering"
+    },
+    {
+      "id": "rrsinsec",
+      "lane": "ome",
+      "col": 5,
+      "type": "backend",
+      "label": "rrs-insecurity",
+      "sublabel": "source=barometre",
+      "width": 140,
+      "tag": "clustering"
+    },
+    {
+      "id": "sched_pulsar",
+      "lane": "other",
+      "col": 0,
+      "type": "external",
+      "label": "Schedule",
+      "sublabel": "cron 00:30",
+      "width": 120
+    },
+    {
+      "id": "pulsar",
+      "lane": "other",
+      "col": 1,
+      "type": "backend",
+      "label": "pulsar-themes",
+      "sublabel": "Pulsar themes to RRS DB",
+      "width": 150
+    },
+    {
+      "id": "sched_catchup",
+      "lane": "other",
+      "col": 2,
+      "type": "external",
+      "label": "Schedule",
+      "sublabel": "cron 03:00",
+      "width": 120
+    },
+    {
+      "id": "catchup",
+      "lane": "other",
+      "col": 3,
+      "type": "backend",
+      "label": "barometre-catchup",
+      "sublabel": "last 7 days",
+      "width": 150
+    },
+    {
+      "id": "sched_i18n",
+      "lane": "other",
+      "col": 4,
+      "type": "external",
+      "label": "Schedule",
+      "sublabel": "cron 04:07",
+      "width": 120
+    },
+    {
+      "id": "i18n",
+      "lane": "other",
+      "col": 5,
+      "type": "backend",
+      "label": "barometre-i18n",
+      "sublabel": "bel, deu, esp, pol",
+      "width": 150
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-orch-ext",
+      "from": "orch",
+      "to": "extp",
+      "label": "subflow",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-ext-clim",
+      "from": "extp",
+      "to": "rrsclimate_ext",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-clim-insec",
+      "from": "rrsclimate_ext",
+      "to": "rrsinsec_ext",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-insec-baro",
+      "from": "rrsinsec_ext",
+      "to": "barometre",
+      "label": "then barometre",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-baro-clim",
+      "from": "barometre",
+      "to": "rrsclimate",
+      "label": "then",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-clim-insec2",
+      "from": "rrsclimate",
+      "to": "rrsinsec",
+      "label": "then",
+      "variant": "emphasis"
+    },
+    {
+      "id": "e-sp-pulsar",
+      "from": "sched_pulsar",
+      "to": "pulsar",
+      "variant": "dashed"
+    },
+    {
+      "id": "e-sc-catchup",
+      "from": "sched_catchup",
+      "to": "catchup",
+      "variant": "dashed"
+    },
+    {
+      "id": "e-si-i18n",
+      "from": "sched_i18n",
+      "to": "i18n",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Extended perimeter",
+      "items": [
+        "Own DB and buckets, same structure as barometre",
+        "RRS reads it with run_clustering=false, writes to the same rrs DB"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Orchestration",
+      "items": [
+        "Every step is a Subflow with wait: true",
+        "with_rrs=false skips extended perimeter and RRS jobs"
+      ]
+    }
+  ]
+}

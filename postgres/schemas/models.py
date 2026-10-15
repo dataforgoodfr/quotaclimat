@@ -11,6 +11,7 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     PrimaryKeyConstraint,
     String,
@@ -210,6 +211,15 @@ class Keywords(Base):
     )
 
     country = Column(Text, nullable=True, default=FRANCE.name)
+
+    __table_args__ = (
+        Index(
+            "ix_keywords_country_channel_name_start",
+            "country",
+            "channel_name",
+            "start",
+        ),
+    )
 
 
 class Channel_Metadata(Base):

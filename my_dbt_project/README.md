@@ -29,10 +29,9 @@ Both read `POSTGRES_HOST`/`POSTGRES_PORT`/`POSTGRES_USER`/`POSTGRES_PASSWORD`/`P
 `homepage_environment_by_media_by_month`: materialized as a `view` (set in `dbt_project.yml`), aggregated monthly environmental coverage percentage by channel.
 
 ### `dashboards/`
-The core queries feeding Metabase dashboards. All are `materialized='incremental'` (most with `on_schema_change='append_new_columns'`), each keyed to avoid duplicate rows on re-run (`unique_key`, or `incremental_strategy='append'` for `core_query_causal_links`):
+The core queries feeding Metabase dashboards. All are `materialized='incremental'` (most with `on_schema_change='append_new_columns'`), each keyed to avoid duplicate rows on re-run (`unique_key`):
 * `core_query_environmental_shares` / `core_query_environmental_shares_i8n` / `core_query_environmental_shares_be`: % of airtime dedicated to environmental topics (climate/biodiversity/resources), by week and channel, for France / other countries / Belgium respectively. The `_be` (and `_i8n`) variants compute the denominator (`sum_duration_minutes`) differently depending on whether a channel has an editorial grid in `program_metadata` (`has_grid`): in-perimeter captured minutes if it does, full `time_monitored` otherwise - see `models/schema.yml` for the full column documentation, including the `sum_time_monitored`/`sum_monitored_in_perimeter_min` control columns.
 * `core_query_thematics_keywords` / `core_query_thematics_keywords_i8n` / `core_query_thematics_keywords_be`: keyword-level occurrence counts by week, channel, theme and category, sharing the same denominator logic as the environmental shares queries above.
-* `core_query_causal_links`: causal-link query, appended incrementally (see the root README's "Causal query - too slow" note on why this is not a full-refresh).
 * `thematic_query_ocean`: ocean-specific thematic keyword query.
 
 ### `analytics/`
@@ -40,8 +39,49 @@ Intermediate/pre-aggregated tables (used by dashboards, or directly as a faster 
 * `task_global_completion` (`materialized='table'`): joins `labelstudio_task_aggregate`/`labelstudio_task_completion_aggregate` with `keywords` to produce one row per fact-checked segment, with model classification, speaker type one-hot columns, and misinformation percentage by week/program.
 * `environmental_shares_with_desinfo_counts` (`materialized='incremental'`, keyed on `start`/`channel_name`/`country`): weekly environmental airtime share alongside misinformation counts (from `task_global_completion`) per channel.
 
+Five tables are also built in the `analytics` schema (`schema='analytics'` in their config) by the default target runs of `entrypoints/dbt.sh`:
+* `program` (`materialized='table'`, built by the first `dbt run`): the monitored programs of `program_metadata` (one row per program and per day), split into the emissions broadcast in them when they are known, from the `Programmes` Google Sheet (tab `emissions-infos-en-continue`, seed `ref_programmes_emissions_infos_en_continue`, see External sources below). The `weekday` column of the tab (`*`, `weekday`, `weekend` or days `1` (Monday) to `7` (Sunday) separated by `|`, numbered like `program_metadata.weekday`) gives one emission per day, cut to the programs it overlaps: every row has the program, a split row also has the emission, and what is outside the monitored programs is left out. `label` condenses program / emission (presenters) [rediffusion]. Format errors in the sheet (time, day, date) are reported by the seed tests (`matches_pattern`).
+* `cas_de_mesinformation` (`materialized='table'`, built by the last `dbt run`, after `task_global_completion`): one row per validated misinformation case, the rows of `task_global_completion` with the first annotation answering `Correct` alone (same definition as `ad_occurrence_mesinfo`), with the channel attributes of `program_metadata` and the program of `analytics.program` on the air at the start of the segment (French channels).
+* `publicites` (`materialized='table'`, built by the last `dbt run`, after the advertising models; formerly `advertising.ad_occurrences_classified`): one row per occurrence of a classified ad, with its `tunnel_id`, channel metadata from `program_metadata`, French sector / product category labels from the `ref_ome_secteurs` / `ref_ome_categories` seeds (see External sources below), the programs of `analytics.program` before / after its tunnel (id, label and gap, from `ad_tunnel_programs`). When the reference tables do not exist (extended perimeter database), the model still builds, with empty labels.
+* `emission_jour` (`materialized='table'`, built by the last `dbt run`, after `cas_de_mesinformation`): one row per emission (an emission of `analytics.program`, else its monitored program, keyed by `emission_cle`) and per program day, French channels, from `emission_jour_start_date` (default 2023-01-01): airtime of the grid, time spent on environmental subjects (keyword segments of 20 s windows, attached to their ingestion program `keywords.program_metadata_id` like the dashboards, then to its row on the air within the ingestion margins [start - 6 min, end + 6 min[) and validated misinformation cases (matched on time with the same margins). For the Metabase questions on a period: sums of days.
+* `pub_annonceur_emission_jour` (`materialized='table'`, built by the last `dbt run`, after `publicites`): seconds of ads of each advertiser (`brand_company`, with its `brand_ultimate_parent`) around each emission (`emission_cle`, as in `emission_jour`), per Paris day: the emission containing the whole tunnel, else half for the emission before and half for the emission after, when at most `ad_emission_window_minutes` (default 15) away.
+
+For `cas_de_mesinformation`, the program on the air at a given time comes from the macro `program_at` (grids in Paris time, French channels only, a program ending after midnight covers the first hours of the next day).
+
+### `advertising/`
+Tables built from the `advertising` schema (ad detection and classification pipelines, tables created by alembic), **in the `advertising` schema** next to them (`+schema: advertising` in `dbt_project.yml`; `macros/generate_schema_name.sql` makes dbt use a custom schema as is instead of `public_advertising`), as part of the regular `dbt run`. Sources are declared in `models/advertising/sources.yml`. Occurrences with a `deleted_at` are ignored.
+* `ad_occurrence_tunnels` (`materialized='table'`): one row per non-`OTHER`, non-deleted occurrence with its `tunnel_id`. An ad tunnel is a sequence of consecutive fragments on a channel where each one starts at most `ad_tunnel_tolerance_sec` seconds (default 5) after the end of the previous ones; overlapping fragments stay in the same tunnel. `tunnel_id` is `channel_name@<epoch of the tunnel start_date>`.
+* `ad_tunnel_programs` (`materialized='table'`): one row per tunnel with the row of `analytics.program` (a monitored program, split into its emissions when they are known) just before it and just after it, at most `ad_program_window_minutes` (default 60) away, with ids, labels and gaps in seconds; the one after is left empty when the tunnel is inside the one before.
+* `ad_tunnels` (`materialized='table'`): one row per tunnel (start, end), aggregated from `ad_occurrence_tunnels`. `analytics.publicites` also carries the `tunnel_id` of each occurrence.
+
+## External sources (private Google Sheets)
+Reference data maintained in private Google Sheets is downloaded as dbt seeds, then loaded and tested, before `dbt run` (`entrypoints/dbt.sh` and `mediatree_import.sh`):
+```
+poetry run python -m quotaclimat.data_ingestion.external_sources.download_external_sources
+poetry run dbt seed --full-refresh --select path:seeds/ref
+poetry run dbt test --select path:seeds/ref
+```
+Sources are listed in `external_sources.yml` by spreadsheet name. Each spreadsheet is looked up by its exact name in a Google Drive folder, then every tab is read with the Google Sheets API (displayed values only, never formulas or files) and written to `seeds/ref/<table_prefix><tab name in snake_case>.csv` (not versioned), e.g. tab `catégories` of `Dictionnaire_marques_secteurs` -> seed and table `advertising.ref_ome_categories` (`+schema: advertising` for `seeds/ref`). A new tab is loaded automatically on the next run, except the tabs whose name starts with `_` (e.g. `_lisez-moi`), kept for humans and never downloaded. Seed names must start with `ref_`, whatever the tab names or the config say.
+
+Column types are inferred by `dbt seed`, except the identifiers pinned as `text` in `seeds/ref/_ref_seeds.yml` (a code `001` would otherwise become `1`), which also holds the seed tests (`unique`, `not_null`). A failing test is logged but does not block the run.
+
+When a spreadsheet cannot be downloaded (not configured, API error, public spreadsheet), no CSV is written for it and its tables keep their previous version. A tab without header, with duplicated column names, values without header or no rows is not written either. A tab that is written replaces its table, even if its tests fail afterwards.
+
+**Always select `path:seeds/ref` when seeding in production**: the other seeds (`keywords`, `program_metadata`...) are test data whose pre-hook empties the table, and their `target.name != 'prod'` guard does not apply to the Kestra runs (target `docker`).
+
+### Access
+The script authenticates as a Google service account, with read-only scopes (`drive.metadata.readonly` to find the spreadsheet in the folder, `spreadsheets.readonly` to read it). Two Kestra secrets (values in Vaultwarden, collection `Quotaclimat - Orchestrator`, as `export NAME=value` lines in a secure note; listed in `infrastructure/.env.secrets.dist`, provisioned by `make tags=kestra ansible`) are passed to the `dbt_run_transformations` tasks:
+* `EXTERNAL_SOURCES_DRIVE_FOLDER`: id of the Drive folder holding the spreadsheets (last part of `https://drive.google.com/drive/folders/<id>`).
+* `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON`: JSON key of the service account (one line, single-quoted).
+
+The folder must be shared as **Viewer** with the service account email.
+
+A spreadsheet readable by anyone is refused, checked in two ways before reading it: its Drive permissions must not include `anyone` / `anyoneWithLink`, and an anonymous request (no credentials) to its export URL must be sent to the Google login page. When the anonymous check cannot conclude, the spreadsheet is refused too. Sharing with a whole Google Workspace domain is not detected.
+
+To use a reference table in a model, declare it as a dbt source; `source_or_empty` (`macros/`) lets a model build with an empty table where the reference data is not loaded.
+
 ### Access grants (`+grants` in `dbt_project.yml`)
-`analytics`/`dashboards` models grant `select` conditionally:
+`analytics`/`dashboards`/`advertising` models grant `select` conditionally (`advertising` uses the same list as `analytics`):
 * **Regular perimeter** (`EXTENDED_PERIMETER` unset/`false`): nothing granted when `DBT_ENV` is unset/`dev`; `rrs-read-dev`, `rrs-read-prod` and `climateguard-reader-user` (only `climateguard-reader-user` for `dashboards`) granted when `DBT_ENV=prod`.
 * **Extended perimeter** (`EXTENDED_PERIMETER=true`, see the root README's "Extended perimeter (Droit à l'info)" section): the `extended-perimeter` database only has `rrs-read-{dev,prod}` users (no `climateguard-reader-user`), so only the `rrs-read` user matching `DBT_ENV` is granted `select`.
 

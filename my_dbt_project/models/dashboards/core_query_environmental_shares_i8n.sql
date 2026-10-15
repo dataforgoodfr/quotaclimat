@@ -1,6 +1,9 @@
+{# country is part of the key because several countries share a channel title (e.g. "RTL").
+   Not needed while the whole result is rebuilt on every run, but it keeps one country's rows
+   from being deleted if a run ever rebuilds only part of the data (e.g. with is_incremental()). #}
 {{ config(
     materialized='incremental'
-    ,unique_key=['start','channel_title']
+    ,unique_key=['start','channel_title','country']
   )
 }}
 

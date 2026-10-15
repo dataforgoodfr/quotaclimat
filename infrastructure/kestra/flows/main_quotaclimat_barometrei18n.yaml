@@ -16,6 +16,16 @@ triggers:
     cron: "7 04 * * *"
     timezone: Europe/Paris
 
+inputs:
+  - id: days_back
+    type: INT
+    defaults: 1
+    description: Days prior to the start date to process. Defaults to 1.
+  - id: start_date
+    type: DATE
+    required: false
+    description: "Reference date (YYYY-MM-DD) from which to count days back. Defaults to now."
+
 tasks:
   - id: i18n_loop
     type: io.kestra.plugin.core.flow.ForEach
@@ -47,9 +57,10 @@ tasks:
           MODIN_CPUS: 2
           MODIN_ENGINE: python
           MODIN_MEMORY: 3000000000
-          NUMBER_OF_PREVIOUS_DAYS: 1
+          NUMBER_OF_PREVIOUS_DAYS: "{{ inputs.days_back }}"
           OMP_NUM_THREADS: 3
           PORT_HS: 5666
+          START_DATE: "{{ (inputs.start_date ?? now()) | timestamp() }}"
           BUCKET: "{{ secret('SCW_ACCESS') }}"
           BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
           MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
@@ -86,10 +97,12 @@ tasks:
           MODIN_CPUS: 2
           MODIN_ENGINE: ray
           MODIN_MEMORY: 3000000000
+          NUMBER_OF_PREVIOUS_DAYS: "{{ inputs.days_back }}"
           POSTGRES_DB: barometre
           POSTGRES_PORT: 22737
           RAY_COLOR_PREFIX: 1
           RAY_memory_monitor_refresh_ms: 0
+          START_DATE: "{{ (inputs.start_date ?? now()) | timestamp() }}"
           BUCKET: "{{ secret('SCW_ACCESS') }}"
           BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
           MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"

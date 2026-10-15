@@ -6,13 +6,13 @@ echo "🔧 Starting setup..."
 
 if ! command -v node &> /dev/null
 then
-    error "Please install node >=18 before running this script."
+    echo "❌ Please install node >=18 before running this script."
     exit 1
 fi
 # Make sure node version is >18
 NODE_VERSION=$(node -v)
 if [ "$(echo $NODE_VERSION | cut -c 2-3)" -lt 18 ]; then
-    error "Please install node version 18 or higher before running this script."
+    echo "❌ Please install node version 18 or higher before running this script."
     exit 1
 fi
 
@@ -20,7 +20,7 @@ fi
 # but it still depends on node, so we will install it using npm.
 if ! command -v bw &> /dev/null
 then
-    info "Installing bw cli"
+    echo "📦 Installing bw cli..."
     npm install -g @bitwarden/cli
 fi
 

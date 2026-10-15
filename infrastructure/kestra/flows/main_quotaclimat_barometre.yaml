@@ -12,16 +12,15 @@ labels:
   environment: prod
   scope: france
 
-triggers:
-  - id: morning_schedule
-    type: io.kestra.plugin.core.trigger.Schedule
-    cron: "10 01 * * *"
-    timezone: Europe/Paris
-
-  - id: afternoon_schedule
-    type: io.kestra.plugin.core.trigger.Schedule
-    cron: "30 12 * * *"
-    timezone: Europe/Paris
+inputs:
+  - id: days_back
+    type: INT
+    defaults: 1
+    description: Days prior to the start date to process. Defaults to 1.
+  - id: start_date
+    type: DATE
+    required: false
+    description: "Reference date (YYYY-MM-DD) from which to count days back. Defaults to now."
 
 tasks:
   - id: ingest_data_to_s3
@@ -50,10 +49,10 @@ tasks:
       MODIN_CPUS: 2
       MODIN_ENGINE: python
       MODIN_MEMORY: 3000000000
-      NUMBER_OF_PREVIOUS_DAYS: 1
+      NUMBER_OF_PREVIOUS_DAYS: "{{ inputs.days_back }}"
       OMP_NUM_THREADS: 3
       PORT_HS: 5666
-      START_DATE: "{{ now() | timestamp() }}"
+      START_DATE: "{{ (inputs.start_date ?? now()) | timestamp() }}"
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
@@ -90,12 +89,12 @@ tasks:
       MODIN_CPUS: 2
       MODIN_ENGINE: ray
       MODIN_MEMORY: 3000000000
-      NUMBER_OF_PREVIOUS_DAYS: 1
+      NUMBER_OF_PREVIOUS_DAYS: "{{ inputs.days_back }}"
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RAY_COLOR_PREFIX: 1
       RAY_memory_monitor_refresh_ms: 0
-      START_DATE: "{{ now() | timestamp() }}"
+      START_DATE: "{{ (inputs.start_date ?? now()) | timestamp() }}"
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
@@ -134,17 +133,19 @@ tasks:
       LOGLEVEL: INFO
       MEDIATREE_AUTH_URL: https://keywords.mediatree.fr/api/auth/token/
       MEDIATREE_USER: quotaclimat
-      MODEL_NAME: ft:gpt-4o-mini-2024-07-18:personal::B1xWiJRm
+      LLM_PROVIDER: mistral
+      MODEL_NAME: mistral-small-2603
       MODIN_MEMORY: 3000000000
-      NUMBER_OF_PREVIOUS_DAYS: 2
+      NUMBER_OF_PREVIOUS_DAYS: "{{ inputs.days_back + 1 }}"
       POSTGRES_DB: barometre
       POSTGRES_PORT: 22737
       RAY_COLOR_PREFIX: 1
-      DATE: "{{ now() | date('yyyy-MM-dd') }}"
+      DATE: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
       API_LABEL_STUDIO_KEY: "{{ secret('API_LABEL_STUDIO_KEY') }}"
       BUCKET_ACCESS: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
+      MISTRAL_API_KEY: "{{ secret('MISTRAL_API_KEY') }}"
       OPENAI_API_KEY: "{{ secret('OPENAI_API_KEY') }}"
       POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
       POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD_READ') }}"
@@ -165,6 +166,8 @@ tasks:
       - -c
       - cd /app && /app/entrypoints/dbt.sh
     env:
+      EXTERNAL_SOURCES_DRIVE_FOLDER: "{{ secret('EXTERNAL_SOURCES_DRIVE_FOLDER') }}"
+      GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON: "{{ secret('GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON') }}"
       DBT_ENV: prod
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project

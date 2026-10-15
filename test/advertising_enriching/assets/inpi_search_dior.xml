@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<trademarkSearch>
+  <metadata>
+    <query>q=[Mark%3DDIOR]&amp;start=0&amp;rows=5</query>
+    <count>451</count>
+    <groupCount>0</groupCount>
+    <position>0</position>
+    <size>5</size>
+  </metadata>
+  <results>
+    <result documentId="5284729">
+      <xml href="https://api-gateway.inpi.fr/services/apidiffusion/api/marques/notice/FR5284729"/>
+      <fields>
+        <field name="ApplicationNumber"><value>5284729</value></field>
+        <field name="Mark"><value>NOTHING BUT DIOR, J’ADORE</value></field>
+        <field name="MarkCurrentStatusCode"><value>Demande publiée</value></field>
+        <field name="DEPOSANT"><value>PARFUMS CHRISTIAN DIOR</value></field>
+        <field name="ApplicationNumber"><value>5284729</value></field>
+        <field name="Mark"><value>NOTHING BUT DIOR, J’ADORE</value></field>
+        <field name="ukey"><value>FMARK|5284729</value></field>
+      </fields>
+    </result>
+    <result documentId="5237808">
+      <xml href="https://api-gateway.inpi.fr/services/apidiffusion/api/marques/notice/FR5237808"/>
+      <fields>
+        <field name="ApplicationNumber"><value>5237808</value></field>
+        <field name="Mark"><value>DIOR ADDICT TOFFEE GLOW</value></field>
+        <field name="MarkCurrentStatusCode"><value>Marque enregistrée</value></field>
+        <field name="DEPOSANT"><value>PARFUMS CHRISTIAN DIOR</value></field>
+        <field name="ukey"><value>FMARK|5237808</value></field>
+      </fields>
+    </result>
+    <result documentId="5189659">
+      <xml href="https://api-gateway.inpi.fr/services/apidiffusion/api/marques/notice/FR5189659"/>
+      <fields>
+        <field name="ApplicationNumber"><value>5189659</value></field>
+        <field name="Mark"><value>DIOR</value></field>
+        <field name="MarkCurrentStatusCode"><value>Marque enregistrée</value></field>
+        <field name="DEPOSANT"><value>CHRISTIAN DIOR COUTURE</value></field>
+        <field name="ukey"><value>FMARK|5189659</value></field>
+      </fields>
+    </result>
+    <result documentId="1000001">
+      <fields>
+        <field name="ApplicationNumber"><value>1000001</value></field>
+        <field name="Mark"><value>Dior</value></field>
+        <field name="MarkCurrentStatusCode"><value>Marque expirée</value></field>
+        <field name="DEPOSANT"><value>OLD HOLDER</value></field>
+      </fields>
+    </result>
+  </results>
+  <facets/>
+</trademarkSearch>

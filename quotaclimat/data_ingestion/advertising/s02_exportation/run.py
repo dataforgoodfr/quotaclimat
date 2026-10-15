@@ -95,7 +95,11 @@ def _base_ads_query(start_date: datetime | None, end_date: datetime | None):
     if end_date:
         base_query = base_query.where(Ad.first_detection_date < end_date)
 
-    return base_query.distinct(Ad.id)
+    # DISTINCT ON keeps the first row of each Ad.id in ORDER BY order, so this makes it
+    # deterministically keep the ad's most recent occurrence rather than an arbitrary one.
+    return base_query.distinct(Ad.id).order_by(
+        Ad.id, Ad_Occurrence.occurrence_date.desc()
+    )
 
 
 def count_ads_since(

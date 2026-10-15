@@ -383,3 +383,401 @@ models:
         description: >
           Control column. Minutes captured within declared program slots for the week and
           channel. Repeated on every row of the group.
+  - name: publicites
+    description: >
+      In the analytics schema (formerly advertising.ad_occurrences_classified).
+      One row per ad occurrence whose ad went through the classification pipeline
+      (dictionary match or sub-category LLM step), enriched with channel metadata
+      from program_metadata, French sector / product category labels from the
+      classification reference table and the emission on the air (analytics.program).
+      Only occurrences from ad_analysis_start_date (dbt var, default 2025-09-29, UTC) onwards.
+    columns:
+      - name: occurrence_id
+        description: Identifier of the occurrence (advertising.ad_occurrence.id).
+        tests:
+          - unique
+          - not_null
+      - name: occurrence_date
+        description: Broadcast timestamp of the occurrence.
+      - name: channel_name
+        description: Technical channel identifier, join key with program_metadata.
+      - name: ad_id
+        description: Identifier of the ad (advertising.ad.id).
+      - name: tunnel_id
+        description: >
+          Ad tunnel the occurrence belongs to (see ad_tunnels). NULL for OTHER fragments,
+          which are not part of tunnels.
+        tests:
+          - relationships:
+              arguments:
+                to: ref('ad_tunnels')
+                field: tunnel_id
+      - name: duration_sec
+        description: Duration of the ad in seconds.
+      - name: prediction_status
+        description: Step of the classification pipeline that produced the prediction.
+      - name: sector_label_fr
+        description: French label of the predicted sector.
+      - name: product_category_fr
+        description: French label of the predicted product category.
+      - name: label_final
+        description: Product category label when available, sector label otherwise.
+      - name: brand_company
+        description: >
+          Company that sells under the predicted brand (see ad_brands.brand_company), the predicted brand
+          itself when it is not in ad_brands. NULL when no brand was predicted.
+      - name: brand_ultimate_parent
+        description: >
+          Ultimate parent company of the company of the predicted brand (see ad_brands.brand_ultimate_parent),
+          the predicted brand itself when it is not in ad_brands. NULL when no brand was predicted.
+      - name: mesinfo_distance_sec
+        description: >
+          Distance in seconds (absolute value) to the nearest validated misinformation on the same
+          channel (see ad_occurrence_mesinfo). NULL when there is none within ad_mesinfo_window_days.
+      - name: nearest_mesinfo_task_aggregate_id
+        description: Label Studio task (analytics.task_global_completion.task_aggregate_id) of that misinformation.
+      - name: inside_program
+        description: The ad tunnel of the occurrence is entirely inside program_before (see ad_tunnel_programs).
+      - name: program_before_id
+        description: analytics.program.id of the program in progress or just before the ad tunnel (see ad_tunnel_programs).
+      - name: program_before
+        description: Label of program_before (analytics.program.label).
+      - name: program_before_gap_sec
+        description: Seconds between the end of program_before and the tunnel start, 0 when in progress.
+      - name: program_after_id
+        description: analytics.program.id of the program just after the ad tunnel, empty when the tunnel is inside program_before.
+      - name: program_after
+        description: Label of program_after.
+      - name: program_after_gap_sec
+        description: Seconds between the tunnel end and the start of program_after, 0 when it starts during the tunnel.
+
+  - name: ad_tunnel_programs
+    description: >
+      One row per ad tunnel (see ad_tunnels) with the programs around it, from the French grids of
+      analytics.program (Paris local time): the emissions of the Programmes Google Sheet, else the
+      monitored programs of program_metadata (not the full grid of the channel). program_before: last
+      program started before the tunnel start, in progress or ended at most ad_program_window_minutes (dbt
+      var, default 60) before. program_after: first program started after the tunnel start, at most
+      ad_program_window_minutes after the tunnel end, left empty when the tunnel is entirely inside
+      program_before: a tunnel between two programs has both. Occurrence dates are read in the
+      ad_occurrence_timezone time zone (dbt var, default UTC).
+    columns:
+      - name: tunnel_id
+        description: Tunnel identifier (ad_tunnels.tunnel_id).
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('ad_tunnels')
+                field: tunnel_id
+      - name: inside_program
+        description: The tunnel is entirely inside program_before.
+        tests:
+          - not_null
+      - name: program_before_id
+        description: analytics.program.id of the program before.
+        tests:
+          - relationships:
+              arguments:
+                to: ref('program')
+                field: id
+      - name: program_before
+        description: Label of the program before (analytics.program.label).
+      - name: program_before_gap_sec
+        description: Seconds between the end of the program before and the tunnel start, 0 when in progress.
+      - name: program_after_id
+        description: analytics.program.id of the program after.
+      - name: program_after
+        description: Label of the program after.
+      - name: program_after_gap_sec
+        description: Seconds between the tunnel end and the start of the program after, 0 when it starts during the tunnel.
+
+  - name: ad_occurrence_mesinfo
+    description: >
+      One row per non-deleted ad occurrence (from ad_analysis_start_date) with a validated
+      misinformation on the same channel at most ad_mesinfo_window_days (dbt var, default 7) days
+      before or after it: the nearest one. Validated misinformation: analytics.task_global_completion
+      rows with mesinfo_choice = 'Correct', first annotation ("Annotation Version" = 1), France.
+      Both occurrence_date and data_item_start are compared as is (timestamps without time zone, UTC).
+    columns:
+      - name: occurrence_id
+        description: Identifier of the occurrence (advertising.ad_occurrence.id).
+        tests:
+          - unique
+          - not_null
+      - name: nearest_mesinfo_task_aggregate_id
+        description: Label Studio task of the nearest validated misinformation.
+        tests:
+          - not_null
+      - name: mesinfo_distance_sec
+        description: Distance in seconds (absolute value) between the occurrence and the misinformation start.
+        tests:
+          - not_null
+
+  - name: ad_brands
+    description: >
+      Brand reference, built from the tab Marques of the Inventaires_des_marques Google Sheet only (no ad
+      table): one row per brand, with the company that sells under the brand and its ultimate parent
+      company, each used unless its status is 'à vérifier'. Used by analytics.publicites.
+    columns:
+      - name: brand_key
+        description: >
+          Join key of the brand: accents stripped, lower case, punctuation and spaces removed (macro
+          name_key, same as the Python classification pipeline).
+        tests:
+          - unique
+          - not_null
+      - name: brand
+        description: Brand as written in the tab Marques (column marque).
+      - name: company
+        description: Company of the brand as written in the tab (column entreprise), NULL when empty.
+      - name: company_status
+        description: vérifié, non vérifié or à vérifier (column e_statut).
+      - name: ultimate_parent
+        description: Ultimate parent company as written in the tab (column societe_mere_ultime), NULL when empty.
+      - name: ultimate_parent_status
+        description: vérifié, non vérifié or à vérifier (column smu_statut).
+      - name: brand_company
+        description: company unless its status is 'à vérifier', else the brand itself.
+      - name: brand_ultimate_parent
+        description: ultimate_parent unless its status is 'à vérifier', else brand_company.
+
+  - name: ad_occurrence_tunnels
+    description: >
+      One row per non-OTHER, non-deleted ad occurrence with the ad tunnel it belongs to.
+      An ad tunnel is a sequence of consecutive fragments on a channel, where each one starts
+      at most ad_tunnel_tolerance_sec (default 5) seconds after the end of the previous ones;
+      overlapping fragments stay in the same tunnel.
+    columns:
+      - name: occurrence_id
+        description: Identifier of the occurrence (advertising.ad_occurrence.id).
+        tests:
+          - unique
+          - not_null
+      - name: tunnel_id
+        description: Tunnel identifier, built as channel_name@epoch_of_tunnel_start_date (seconds).
+        tests:
+          - not_null
+      - name: channel_name
+        description: Technical channel identifier.
+      - name: start_date
+        description: Start of the occurrence.
+      - name: end_date
+        description: End of the occurrence (start + ad duration).
+
+  - name: ad_tunnels
+    description: >
+      Ad tunnels, one row per tunnel, aggregated from ad_occurrence_tunnels (see its
+      description for the tunnel definition).
+    columns:
+      - name: tunnel_id
+        description: Tunnel identifier, built as channel_name@epoch_of_start_date (seconds).
+        tests:
+          - unique
+          - not_null
+      - name: channel_name
+        description: Technical channel identifier.
+      - name: start_date
+        description: Start of the first fragment of the tunnel.
+      - name: end_date
+        description: End of the last fragment of the tunnel.
+
+  - name: program
+    description: >
+      In the analytics schema. The monitored programs of program_metadata (one row per program and per day),
+      split into the emissions broadcast in them when they are known (Programmes Google Sheet, tab
+      emissions-infos-en-continue, seed ref_programmes_emissions_infos_en_continue, 24h news channels): the
+      weekday column of the tab ('*', 'weekday', 'weekend' or days 1 to 7 separated by '|') gives one emission
+      per day, cut to the programs it overlaps. Every row has the program, a split row also has the emission.
+      What is outside the monitored programs is left out. Before / after the validity of its emissions, a
+      program is not split.
+    columns:
+      - name: id
+        description: md5 of program_metadata_id, emission_id and grid_start.
+        tests:
+          - unique
+          - not_null
+      - name: channel_name
+        description: Technical channel identifier (program_metadata).
+        tests:
+          - not_null
+      - name: channel_title
+        description: Channel name (program_metadata).
+      - name: country
+        description: Country of the channel (program_metadata).
+      - name: public
+        description: Public service channel (program_metadata).
+      - name: infocontinue
+        description: 24h news channel (program_metadata).
+      - name: radio
+        description: Radio channel (program_metadata).
+      - name: weekday
+        description: Day of the program, 1 (Monday) to 7 (Sunday), like program_metadata.weekday.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4, 5, 6, 7]
+                quote: false
+      - name: label
+        description: "Condensed description: program / emission (presenters) [rediffusion], the program alone when not split."
+        tests:
+          - not_null
+      - name: start
+        description: Start of the time slot of the row HH:MM (Paris time), the emission cut to the program.
+      - name: end
+        description: End of the time slot of the row HH:MM (Paris time), 24:00 for midnight.
+      - name: start_minute
+        description: start in minutes since the start of the program day.
+      - name: end_minute
+        description: end in minutes since the start of the program day, beyond 1440 when ending after midnight.
+      - name: duration_minutes
+        description: Duration of the time slot in minutes.
+      - name: grid_start
+        description: First day the row is valid.
+      - name: grid_end
+        description: Last day the row is valid (2100-01-01 when not limited).
+      - name: program_metadata_id
+        description: program_metadata.id of the program.
+        tests:
+          - not_null
+      - name: channel_program
+        description: Name of the program (program_metadata.channel_program).
+      - name: channel_program_type
+        description: Type of the program (program_metadata.channel_program_type).
+      - name: program_start
+        description: Start time of the program (program_metadata.start).
+      - name: program_end
+        description: End time of the program (program_metadata.end).
+      - name: emission_id
+        description: md5 of channel_name, weekday, start and grid_start of the emission, NULL when the program is not split.
+      - name: emission
+        description: Name of the emission.
+      - name: presentation
+        description: Presenters of the emission, as written in the sheet.
+      - name: rediffusion
+        description: True for a rerun (column rediffusion 'oui').
+      - name: emission_start
+        description: Start time HH:MM of the emission, as written in the sheet (before the cut to the program).
+      - name: emission_end
+        description: End time HH:MM of the emission, as written in the sheet.
+
+  - name: cas_de_mesinformation
+    description: >
+      In the analytics schema. One row per misinformation case validated in Label Studio: the rows of
+      task_global_completion with the first annotation ("Annotation Version" = 1) answering 'Correct' alone
+      ('Correct,Incorrect' left out), same definition as ad_occurrence_mesinfo, all countries. All the
+      columns of task_global_completion, with the channel attributes of program_metadata and the emission
+      on the air (analytics.program).
+    columns:
+      - name: task_aggregate_id
+        description: Label Studio task (labelstudio_task_aggregate.task_aggregate_id).
+        tests:
+          - unique
+          - not_null
+      - name: mesinfo_choice
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Correct']
+      - name: channel_title
+        description: Channel name (program_metadata, same channel_name and country).
+      - name: public
+        description: Public service channel (program_metadata).
+      - name: infocontinue
+        description: 24h news channel (program_metadata).
+      - name: radio
+        description: Radio channel (program_metadata).
+      - name: program_id
+        description: >
+          analytics.program.id of the row on the air at the start of the segment (data_item_start, Paris
+          time): the monitored program, split into its emission when known. French channels only, NULL
+          outside the monitored programs.
+      - name: program
+        description: Label of that program (analytics.program.label).
+
+  - name: emission_jour
+    description: >
+      In the analytics schema. One row per emission and per program day (French channels): airtime in the
+      grid, time spent on environmental subjects and validated misinformation cases, to sum over a period
+      (Metabase). Emission: a row group of analytics.program keyed by emission_cle, the emission when known
+      (Programmes Google Sheet), else the monitored program. Program day: the day the emission starts.
+      Keyword segments go to their ingestion program (keywords.program_metadata_id, like the dashboards), then
+      to its row on the air, the closest one within the ingestion margins [start - 6 min, end + 6 min[;
+      misinformation cases are matched on time with the same margins. Days from emission_jour_start_date (dbt
+      var, default 2023-01-01) to today.
+    columns:
+      - name: emission_cle
+        description: "channel_name|type|nom|rediffusion, the key of the emission (also in pub_annonceur_emission_jour)."
+        tests:
+          - not_null
+      - name: jour
+        description: Program day (Paris).
+        tests:
+          - not_null
+      - name: channel_name
+        description: Technical channel identifier (program_metadata).
+      - name: channel_title
+        description: Channel name (program_metadata).
+      - name: public
+        description: Public service channel (program_metadata).
+      - name: infocontinue
+        description: 24h news channel (program_metadata).
+      - name: radio
+        description: Radio channel (program_metadata).
+      - name: type
+        description: "'émission' when the emission is known in the Programmes Google Sheet, else 'programme'."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['émission', 'programme']
+      - name: nom
+        description: Name of the emission, else of the monitored program.
+      - name: rediffusion
+        description: True for a rerun.
+      - name: nb_diffusions
+        description: Rows of analytics.program broadcast that day for this emission.
+      - name: volume_heures
+        description: Airtime in the grid that day, in hours.
+      - name: env_heures
+        description: >
+          Time spent on environmental subjects, in hours: number_of_keywords windows of 20 s of the keyword
+          segments of the emission (like core_query_environmental_shares).
+      - name: nb_cas
+        description: Validated misinformation cases (analytics.cas_de_mesinformation) during the emission.
+
+  - name: pub_annonceur_emission_jour
+    description: >
+      In the analytics schema. Seconds of ads of each advertiser around each emission, per day (Paris date of
+      the occurrence), French channels, from analytics.publicites. An occurrence counts for the emission
+      containing its whole tunnel, else half for the emission before and half for the emission after the tunnel
+      when they are at most ad_emission_window_minutes away (dbt var, default 15), all of it for the only one
+      close enough. Occurrences without a predicted brand, far from any emission or outside tunnels are left out.
+    columns:
+      - name: annonceur
+        description: Company of the predicted brand (publicites.brand_company).
+        tests:
+          - not_null
+      - name: groupe
+        description: Ultimate parent company of the brand (publicites.brand_ultimate_parent).
+      - name: emission_cle
+        description: Key of the emission, as in emission_jour.
+        tests:
+          - not_null
+      - name: jour
+        description: Paris date of the occurrences.
+        tests:
+          - not_null
+      - name: channel_name
+        description: Technical channel identifier.
+      - name: type
+        description: "'émission' or 'programme', as in emission_jour."
+      - name: nom
+        description: Name of the emission, else of the monitored program.
+      - name: rediffusion
+        description: True for a rerun.
+      - name: pub_secondes
+        description: Seconds of ads attributed to the emission (whole or half durations).
+      - name: nb_occurrences
+        description: Occurrences attributed to the emission, wholly or by half.

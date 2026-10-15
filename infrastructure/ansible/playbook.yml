@@ -33,6 +33,8 @@
 
     # Kestra secrets (for flow execution)
     kestra_secrets:
+      EXTERNAL_SOURCES_DRIVE_FOLDER: "{{ lookup('env', 'EXTERNAL_SOURCES_DRIVE_FOLDER') }}"
+      GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON: "{{ lookup('env', 'GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON') }}"
       API_LABEL_STUDIO_KEY: "{{ lookup('env', 'API_LABEL_STUDIO_KEY') }}"
       ANTHROPIC_API_KEY: "{{ lookup('env', 'ANTHROPIC_API_KEY') }}"
       CLIMATESAFEGUARDS_SCW_ACCESS: "{{ lookup('env', 'CLIMATESAFEGUARDS_SCW_ACCESS') }}"
@@ -73,6 +75,8 @@
       POSTGRES_HOST_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_HOST_DEV') }}"
       POSTGRES_PASSWORD_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_PASSWORD_DEV') }}"
       POSTGRES_USER_DEV: "{{ lookup('env', 'BAROMETRE_POSTGRES_USER_DEV') }}"
+      RRS_BAROMETRE_READ_USER_DEV: "{{ lookup('env', 'RRS_BAROMETRE_READ_USER_DEV') }}"
+      RRS_BAROMETRE_READ_PASSWORD_DEV: "{{ lookup('env', 'RRS_BAROMETRE_READ_PASSWORD_DEV') }}"
       RRS_PG_HOST_DEV: "{{ lookup('env', 'RRS_PG_HOST_DEV') }}"
       RRS_PG_PASSWORD_DEV: "{{ lookup('env', 'RRS_PG_PASSWORD_DEV') }}"
       RRS_PG_USER_DEV: "{{ lookup('env', 'RRS_PG_USER_DEV') }}"

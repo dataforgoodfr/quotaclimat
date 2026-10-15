@@ -169,3 +169,5 @@ quotaclimat/data_ingestion/lemonde_ftp/ftp_data
 quotaclimat/data_ingestion/lemonde_ftp/examples
 germany_s3_bucket
 .aws/
+# reference seeds downloaded from Google Sheets before dbt seed
+my_dbt_project/seeds/ref/*.csv

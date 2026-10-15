@@ -21,7 +21,7 @@ from urllib.parse import quote
 import duckdb
 import psycopg
 from dotenv import load_dotenv
-from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
+from quotaclimat.data_processing.mediatree.i8n.country import EXTENDED_FRANCE, FRANCE
 from rrs.utils.generate_id import get_consistent_hash
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -90,11 +90,28 @@ def _get_auto_date_range() -> tuple[Optional[date], Optional[date]]:
     return max_cases, max_segments
 
 
-def get_url_labelstudio(task_id, tab_id=121):
+# (project id, tab id) of the Label Studio project per source perimeter
+LABEL_STUDIO_DEFAULTS = {"fra": (6, 121), "ext-fra": (24, 139)}
+
+
+def get_url_labelstudio(task_id, project_id=None, tab_id=None):
+    default_project, default_tab = LABEL_STUDIO_DEFAULTS.get(
+        os.getenv("SOURCE_COUNTRY_CODE", FRANCE.code), LABEL_STUDIO_DEFAULTS["fra"]
+    )
+    project_id = project_id or os.getenv("LABEL_STUDIO_PROJECT", default_project)
+    tab_id = tab_id or os.getenv("LABEL_STUDIO_TAB_ID", default_tab)
     return (
         "https://barometre7kfudatm-labelstudio.functions.fnc.fr-par.scw.cloud/"
-        f"projects/6/data?tab={tab_id}&task={task_id}"
+        f"projects/{project_id}/data?tab={tab_id}&task={task_id}"
     )
+
+
+def _source_channels() -> list[str]:
+    """Channels of the source perimeter (SOURCE_COUNTRY_CODE: fra | ext-fra)."""
+    code = os.getenv("SOURCE_COUNTRY_CODE", FRANCE.code)
+    if code == EXTENDED_FRANCE.code:
+        return EXTENDED_FRANCE.channels
+    return FRANCE.channels
 
 
 def import_cases(start_date: date = None, end_date: date = None) -> None:
@@ -140,7 +157,7 @@ def import_cases(start_date: date = None, end_date: date = None) -> None:
             mesinfo_choice
         FROM barometre.analytics.task_global_completion
         WHERE country = 'france'
-        AND data_item_channel in ({", ".join([f"'{c}'" for c in FRANCE.channels])})
+        AND data_item_channel in ({", ".join([f"'{c}'" for c in _source_channels()])})
         {date_filter}
         """,
         params if params else {},

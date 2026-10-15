@@ -47,6 +47,8 @@ SELECT
   a.predicted_sector,
   a.predicted_product_category,
   a.predicted_brand,
+  -- brand as spelled in ad_brands (one spelling per name_key), the predicted brand itself when not listed
+  COALESCE(br.brand, a.predicted_brand) AS brand_name,
   -- company / ultimate parent company of the brand (see ad_brands), the predicted brand itself when not listed
   COALESCE(br.brand_company, a.predicted_brand) AS brand_company,
   COALESCE(br.brand_ultimate_parent, a.predicted_brand) AS brand_ultimate_parent,

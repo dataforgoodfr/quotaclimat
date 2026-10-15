@@ -642,29 +642,30 @@ def test_pub_annonceur_emission_jour(db_connection):
     """Seconds of ads around each emission: whole tunnel inside, else half before / half after within 15 min."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT emission_cle, jour, annonceur, groupe, pub_secondes, nb_occurrences
+            SELECT emission_cle, jour, marque, entreprise, groupe, pub_secondes, nb_occurrences
             FROM analytics.pub_annonceur_emission_jour
             WHERE channel_name IN ('bfmtv', 'france2') OR (channel_name = 'lci' AND jour = '2025-04-06')
         """)
-        rows = sorted((r[0], r[1], r[2], r[3], float(r[4]), r[5]) for r in cur.fetchall())
-    company, parent = "Pytest Volkswagen", "Pytest Porsche SE"
+        rows = sorted((r[0], r[1], r[2], r[3], r[4], float(r[5]), r[6]) for r in cur.fetchall())
+    # predicted brand "Pytest Škoda", spelled as in ad_brands
+    brand, company, parent = "PYTEST SKODA", "Pytest Volkswagen", "Pytest Porsche SE"
     monday = datetime.date(2025, 4, 7)
     # the emission_pytest_* and program_pytest_* occurrences of 30 s (see test_publicites_emissions /
     # test_publicites_programs)
     assert rows == [
         # winter time
-        ("bfmtv|programme|Information en continu|false", datetime.date(2025, 4, 5), company, parent, 30.0, 1),
-        ("bfmtv|émission|BFM Première|false", datetime.date(2025, 1, 6), company, parent, 30.0, 1),
+        ("bfmtv|programme|Information en continu|false", datetime.date(2025, 4, 5), brand, company, parent, 30.0, 1),
+        ("bfmtv|émission|BFM Première|false", datetime.date(2025, 1, 6), brand, company, parent, 30.0, 1),
         # inside + half of the transition to Face à face
-        ("bfmtv|émission|BFM Première|false", monday, company, parent, 45.0, 2),
+        ("bfmtv|émission|BFM Première|false", monday, brand, company, parent, 45.0, 2),
         # half of the transition + 10 min after the end, within the 15 min window
-        ("bfmtv|émission|Face à face|false", monday, company, parent, 45.0, 2),
+        ("bfmtv|émission|Face à face|false", monday, brand, company, parent, 45.0, 2),
         # inside, 5 min after the end, overlapping the end
-        ("france2|programme|JT 13h|false", monday, company, parent, 90.0, 3),
+        ("france2|programme|JT 13h|false", monday, brand, company, parent, 90.0, 3),
         # 4 min 30 s before
-        ("france2|programme|JT 20h + météo|false", monday, company, parent, 30.0, 1),
+        ("france2|programme|JT 20h + météo|false", monday, brand, company, parent, 30.0, 1),
         # Sunday 06:10: Nuit LCI of Saturday, Paris date of the occurrence
-        ("lci|émission|Nuit LCI|false", datetime.date(2025, 4, 6), company, parent, 30.0, 1),
+        ("lci|émission|Nuit LCI|false", datetime.date(2025, 4, 6), brand, company, parent, 30.0, 1),
     ]
 
 def test_program_seed_patterns(db_connection):
@@ -849,15 +850,16 @@ def test_ad_brands(db_connection):
 def test_publicites_brand_companies(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT occurrence_id, predicted_brand, brand_company, brand_ultimate_parent
+            SELECT occurrence_id, predicted_brand, brand_name, brand_company, brand_ultimate_parent
             FROM analytics.publicites
             WHERE occurrence_id IN ('pytest_occ_1', 'pytest_occ_2')
             ORDER BY occurrence_id
         """)
         rows = cur.fetchall()
     assert rows == [
-        ("pytest_occ_1", "Pytest Škoda", "Pytest Volkswagen", "Pytest Porsche SE"),
-        ("pytest_occ_2", "Pytest Biscuits", "Pytest Biscuits Company", "Pytest Biscuits Company"),
+        # brand_name: the spelling of ad_brands
+        ("pytest_occ_1", "Pytest Škoda", "PYTEST SKODA", "Pytest Volkswagen", "Pytest Porsche SE"),
+        ("pytest_occ_2", "Pytest Biscuits", "Pytest Biscuits", "Pytest Biscuits Company", "Pytest Biscuits Company"),
     ]
 
 

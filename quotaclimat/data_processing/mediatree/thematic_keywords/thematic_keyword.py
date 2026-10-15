@@ -17,6 +17,7 @@ from pandas import Timedelta
 import os
 from dotenv import load_dotenv
 from pathlib import Path
+from urllib.parse import quote
 
 # only local env
 load_dotenv(Path(__file__).resolve().parents[4] / ".env", override=False)
@@ -31,16 +32,10 @@ GAP = Timedelta(minutes=2, seconds=30)
 CHANNEL_TITLES = {'france': channel_titles_france, 'belgium': channel_titles_belgium, 'belgium_flanders': channel_titles_belgium_flanders}
 LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch"}
 
-import os
-from datetime import date
-from urllib.parse import quote
-
-LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch"}
-
 REQUIRED_ENV = [
     "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB",
     "S3_ACCESS_KEY", "S3_SECRET_KEY", "S3_ENDPOINT_URL", "S3_BUCKET_NAME", "S3_REGION",
-    "KEYWORDS", "DESTINATION_TABLE",
+    "KEYWORDS", "DESTINATION_TABLE", "END_DATE"
 ]
 
 

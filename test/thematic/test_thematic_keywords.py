@@ -1,637 +1,432 @@
 import json
-from datetime import date
-from unittest.mock import MagicMock, patch
+import logging
+from datetime import date, datetime, timedelta
+
 import duckdb
 import pandas as pd
 import pytest
-import logging
-from types import SimpleNamespace
+import yaml
 
-from quotaclimat.data_processing.mediatree.thematic_keywords import thematic_keyword as tk
-from quotaclimat.data_processing.mediatree.thematic_keywords import thematic_keywords_utils as utils
+import quotaclimat.data_processing.thematic.thematic_keywords as tk
+import quotaclimat.data_processing.thematic.thematic_keywords_utils as kw_utils
 
-UTILS_MODULE = "quotaclimat.data_processing.mediatree.thematic_keywords.thematic_keywords_utils"
-SOURCE_ALIAS = "barometre_test"
-SOURCE_TABLE = "public.keywords"
-GAP = "2 minutes 30 seconds"
+DB = "barometre"
+SCHEMA = "public"
+T0 = datetime(2025, 3, 10, 10, 0)
+MIN = timedelta(minutes=1)
+D1, D2, D3, D4, D5 = (date(2025, 3, d) for d in (10, 11, 12, 13, 14))
+TITLES = {"france": {"tf1": "TF1 (test)", "m6": "M6 (test)"}}
 
-FAKE_THEME_KEYWORDS = {
-    "adaptation_climatique_solution": [
-        {"keyword": "bassin de récupération", "language": "french", "high_risk_of_false_positive": False},
-    ],
-    "ressources_solutions": [
-        {"keyword": "bassin de récupération", "language": "french", "high_risk_of_false_positive": False},
-    ],
-}
-FAKE_TITLES = {"tf1": "TF1", "france2": "France 2"}
-FAKE_CHANNEL_TITLES = {"france": FAKE_TITLES}   # same shape as CHANNEL_TITLES: {country: {channel: title}}
-
-# Arguments of read_barometre_keywords that never change in these tests
-READ_ARGS = dict(country="france", source_table=SOURCE_TABLE, postgres_db=SOURCE_ALIAS)
-
-
-def make_cfg(**overrides) -> dict:
-    """Builds the values normally set as module globals by load_env() (which is not called in tests).
-    Every global read by run() is defined; tests override only what they need."""
-    cfg = {
-        "START_DATE": date(2026, 7, 1),
-        "END_DATE": date(2026, 7, 4),
-        "KEYWORDS": ["incendie"],
-        "COUNTRY": "france",
-        "LANGUAGE": "french",
-        "DRY_RUN": False,
-        "SOURCE_TABLE": SOURCE_TABLE,
-        "DESTINATION_TABLE": None,
-        "POSTGRES_USER": "user",
-        "POSTGRES_PASSWORD": "pw",
-        "POSTGRES_HOST": "localhost",
-        "POSTGRES_PORT": "5432",
-        "POSTGRES_DB": SOURCE_ALIAS,
-        "S3_ACCESS_KEY": "k",
-        "S3_SECRET_KEY": "s",
-        "S3_ENDPOINT_URL": "http://s3",
-        "S3_BUCKET_NAME": "b",
-        "S3_REGION": "r",
-    }
-    cfg.update(overrides)
-    return cfg
-
-
-# ---------- get_keywords_in_ome ----------
-
-@patch(f"{UTILS_MODULE}.THEME_KEYWORDS", FAKE_THEME_KEYWORDS)
-def test_get_keywords_in_ome_filters_absent_words_and_language():
-    """Verify that a valid matching word is returned, that an absent word makes the function raise
-    (instead of being silently discarded), and that a word in another language than requested raises too."""
-    result = utils.get_keywords_in_ome(["bassin de récupération"], language="french")
-    assert result == ["bassin de récupération"]
-
-    with pytest.raises(ValueError):
-        utils.get_keywords_in_ome(["bassin de récupération", "blabla"], language="french")
-
-    with pytest.raises(ValueError):
-        utils.get_keywords_in_ome(["bassin de récupération"], language="english")
-
-
-# ---------- read_barometre_keywords ----------
-
+# ───────────────────────── helpers & fixtures ─────────────────────────
 @pytest.fixture
 def con():
-    _con = duckdb.connect()
-    _con.execute("SET TimeZone='UTC'")   # session != Paris: detects any regression to session timezone bug
-    _con.execute(f"ATTACH ':memory:' AS {SOURCE_ALIAS}")
-    _con.execute(f"CREATE SCHEMA {SOURCE_ALIAS}.public")
-    _con.execute(f"""
-        CREATE TABLE {SOURCE_ALIAS}.public.keywords (
-            id VARCHAR,
-            channel_name VARCHAR,
-            start TIMESTAMPTZ,          -- was TIMESTAMP
-            country VARCHAR,
-            keywords_with_timestamp VARCHAR,
-            plaintext VARCHAR
+    c = duckdb.connect()
+    c.execute("SET TimeZone='Europe/Paris'")
+    c.execute(f"ATTACH ':memory:' AS {DB}")
+    c.execute(f"CREATE SCHEMA {DB}.{SCHEMA}")
+    c.execute(f"""
+        CREATE TABLE {DB}.{SCHEMA}.keywords (
+            id VARCHAR, channel_name VARCHAR, start TIMESTAMPTZ, plaintext VARCHAR,
+            keywords_with_timestamp VARCHAR, country VARCHAR
         )
     """)
-    yield _con
-    _con.close()
+    yield c
+    c.close()
 
-
-def _insert(con, id_, kwts, start="2026-03-30 12:00:00+02:00", country="france", plaintext="bonjour"):
-    """Inserts a test chunk (channel tf1) into the fake keywords table, with the list
-    of keywords and themes `kwts` JSON-serialized, at the given date, country, and plaintext."""
+def _add_kw(con, id_, channel, start, plaintext, pairs, country="france"):
+    """pairs = [(keyword, theme), ...]"""
     con.execute(
-        f"INSERT INTO {SOURCE_ALIAS}.public.keywords VALUES (?, ?, ?, ?, ?, ?)",
-        [id_, "tf1", start, country, json.dumps(kwts, ensure_ascii=False), plaintext],
+        f"INSERT INTO {DB}.{SCHEMA}.keywords VALUES (?, ?, CAST(? AS TIMESTAMPTZ), ?, ?, ?)",
+        [id_, channel, start, plaintext,
+         json.dumps([{"keyword": k, "theme": t} for k, t in pairs]), country],
     )
 
+def _read(con, keywords):
+    return kw_utils.read_barometre_keywords(
+        con, keywords, D1, D2, "france", f"{SCHEMA}.keywords", DB
+    )
 
-def test_read_barometre_keywords_keeps_only_chunks_with_searched_keywords(con):
-    """Verify that every chunk containing a searched keyword is returned (whatever its theme),
-    and that chunks without any searched keyword are excluded."""
-    searched = ["bassin de récupération"]
-
-    # kept: searched keyword
-    _insert(con, "1", [{"keyword": "bassin de récupération", "theme": "adaptation_climatique_solution"}])
-    # excluded: non-searched keyword only
-    _insert(con, "2", [{"keyword": "blabla", "theme": "adaptation_climatique_solution"}])
-    # kept: searched keyword with several themes
-    _insert(con, "3", [
-        {"keyword": "bassin de récupération", "theme": "adaptation_climatique_solution"},
-        {"keyword": "bassin de récupération", "theme": "ressources_solutions"},
-    ])
-    # kept: searched keyword next to a non-searched one
-    _insert(con, "4", [
-        {"keyword": "blabla", "theme": "ressources_solutions"},
-        {"keyword": "bassin de récupération", "theme": "adaptation_climatique_solution"},
+def _kw_df(rows):
+    """rows = [(id, channel, start, plaintext)]"""
+    return pd.DataFrame([
+        {"id": i, "channel_name": c, "start": s, "plaintext": p,
+         "keywords": "inondation", "themes": "changement_climatique_constat"}
+        for i, c, s, p in rows
     ])
 
-    result = utils.read_barometre_keywords(
-        con, searched, start_date=date(2026, 3, 30), end_date=date(2026, 3, 31), **READ_ARGS
-    )
+def _s3_df(rows):
+    """rows = [(channel, start, plaintext)]"""
+    return pd.DataFrame([{"channel_name": c, "start": s, "plaintext": p} for c, s, p in rows])
 
-    assert set(result["id"]) == {"1", "3", "4"}
-    assert result["id"].is_unique
-    assert {"plaintext", "keywords", "themes"} <= set(result.columns)
+def _extract(kw, s3, titles=TITLES):
+    return kw_utils.extract_adjacent_chunks_day(kw, s3, tk.GAP, "france", titles)
+
+class _FakeRel:
+    def __init__(self, rows=None, df=None):
+        self._rows, self._df = rows, df
+
+    def fetchall(self):
+        return self._rows
+
+    def df(self):
+        return self._df
+
+class _FakeS3Con:
+    """Stands for the duckdb connection: answers the glob query then the read_parquet query."""
+    def __init__(self, df, channels=("tf1",)):
+        self.df_to_return = df
+        self.files = [f"s3://bucket/year=2025/month=3/day=10/channel={ch}/x.parquet" for ch in channels]
+
+    def sql(self, query):
+        if "glob(" in query:
+            return _FakeRel(rows=[(f,) for f in self.files])
+        return _FakeRel(df=self.df_to_return.copy())
+
+class RunEnv:
+    """Everything run() needs, with no Postgres and no S3."""
+    destination_table = "inondations_thematic_kw_fr"
+
+    def __init__(self, con, monkeypatch, tmp_path):
+        self.con, self.mp = con, monkeypatch
+        self.s3_rows, self.read_days, self.failing_days, self._n = [], [], set(), 0
+        self.table = f"{DB}.{SCHEMA}.{self.destination_table}"
+
+        yml = tmp_path / "thematic.yml"
+        yml.write_text(yaml.safe_dump({"inondations": ["inondation", "crue"]}))
+        monkeypatch.setattr(tk, "THEMATIC_YML", yml)
+        monkeypatch.setattr(tk.duckdb, "connect", lambda *a, **k: con)
+        monkeypatch.setattr(tk.utils, "configure_barometre_source", lambda *a, **k: None)
+        monkeypatch.setattr(tk.kw_utils, "_configure_s3", lambda *a, **k: None)
+        monkeypatch.setattr(tk.kw_utils, "read_day_from_s3", self._fake_read_day_from_s3)
+        self.configure(start=D1, end=D2)
+
+    def configure(self, start=None, end=D2, dry_run=False, source_table=f"{SCHEMA}.keywords",
+                  thematic="inondations"):
+        values = dict(
+            START_DATE=start, END_DATE=end, THEMATIC=thematic, COUNTRY="france", LANGUAGE="french",
+            DRY_RUN=dry_run, SOURCE_TABLE=source_table, POSTGRES_USER="u", POSTGRES_PASSWORD="p",
+            POSTGRES_HOST="h", POSTGRES_PORT="5432", POSTGRES_DB=DB, S3_ENDPOINT_URL="http://s3",
+            S3_REGION="r", S3_ACCESS_KEY="a", S3_SECRET_KEY="s", S3_BUCKET_NAME="bucket",
+        )
+        for k, v in values.items():
+            self.mp.setattr(tk, k, v, raising=False)
+
+    def add_s3(self, start, plaintext, channel="tf1"):
+        self.s3_rows.append({"channel_name": channel, "start": start, "plaintext": plaintext})
+
+    def add_day(self, day, channel="tf1"):
+        """One thematic chunk at 10:00 + one neighbour at 10:02 → 2 rows ingested for that day."""
+        self._n += 1
+        start = datetime(day.year, day.month, day.day, 10, 0)
+        _add_kw(self.con, f"kw_{self._n}", channel, start, f"core {self._n}",
+                [("inondation", "changement_climatique_constat")])
+        self.add_s3(start, f"core {self._n}", channel)
+        self.add_s3(start + 2 * MIN, f"neighbour {self._n}", channel)
+
+    def _fake_read_day_from_s3(self, _con, day, channels, country, bucket):
+        self.read_days.append(day)
+        if day in self.failing_days:
+            raise FileNotFoundError(f"No parquet found on S3 for {day}")
+        rows = [r for r in self.s3_rows
+                if r["start"].date() == day and r["channel_name"] in channels]
+        return pd.DataFrame(rows, columns=["channel_name", "start", "plaintext"])
+
+    def create_destination(self):
+        kw_utils.configure_barometre_thematic_keywords(
+            self.con, False, f"{SCHEMA}.keywords", self.destination_table, DB, SCHEMA)
+
+    def count(self):
+        return self.con.execute(f"SELECT count(*) FROM {self.table}").fetchone()[0]
+
+    def days_in_table(self):
+        return [r[0] for r in self.con.execute(
+            f"SELECT DISTINCT CAST(start AS DATE) FROM {self.table} ORDER BY 1").fetchall()]
+
+    def tables(self):
+        return {r[0] for r in self.con.execute(
+            "SELECT table_name FROM information_schema.tables "
+            "WHERE table_catalog = ? AND table_schema = ?", [DB, SCHEMA]).fetchall()}
 
 
-def test_read_barometre_keywords_returns_plaintext_keywords_and_themes(con):
-    """Verify that reading returns the chunk's plaintext, searched keywords, and
-    themes (direct and _indirectes) concatenated by a comma without spaces, sorted,
-    and that non-searched keywords and their themes are left out."""
-    searched = ["incendie", "canadair"]
-    _insert(con, "1", [
-        {"keyword": "incendie", "theme": "climat_consequences"},
-        {"keyword": "canadair", "theme": "climat_consequences"},
-        {"keyword": "incendie", "theme": "ressources_indirectes"},
-        {"keyword": "blabla", "theme": "autre"},
-    ], plaintext="un incendie, un canadair")
-
-    result = utils.read_barometre_keywords(
-        con, searched, start_date=date(2026, 3, 30), end_date=date(2026, 3, 31), **READ_ARGS
-    )
-
-    row = result.iloc[0]
-    assert row["plaintext"] == "un incendie, un canadair"
-    assert row["keywords"] == "canadair,incendie"
-    assert row["themes"] == "climat_consequences,ressources_indirectes"
+@pytest.fixture
+def env(con, monkeypatch, tmp_path):
+    return RunEnv(con, monkeypatch, tmp_path)
 
 
-def test_read_barometre_keywords_filters_on_date_window_and_country(con):
-    """Verify that reading respects the [start_date, end_date) window and country:
-    a chunk the day before, at end date (excluded), or in another country is discarded."""
-    searched = ["bassin de récupération"]
-    kw = [{"keyword": "bassin de récupération", "theme": "adaptation_climatique_solution"}]
-
-    _insert(con, "in", kw, start="2026-03-30 23:59:00+02:00")
-    _insert(con, "before", kw, start="2026-03-29 23:59:00+02:00")
-    _insert(con, "end_excluded", kw, start="2026-03-31 00:00:00+02:00")   # end_date excluded
-    _insert(con, "other_country", kw, country="belgium")
-    # 00:30 Paris on 30th = 22:30 UTC on 29th: inside in Paris, outside in UTC
-    _insert(con, "paris_morning", kw, start="2026-03-30 00:30:00+02:00")
-    # 00:30 Paris on 31st = 22:30 UTC on 30th: outside in Paris, inside in UTC
-    _insert(con, "paris_next_day", kw, start="2026-03-31 00:30:00+02:00")
-
-    result = utils.read_barometre_keywords(
-        con, searched, start_date=date(2026, 3, 30), end_date=date(2026, 3, 31), **READ_ARGS
-    )
-
-    assert set(result["id"]) == {"in", "paris_morning"}
-
-
+# ───────────────────────── read_barometre_keywords ─────────────────────────
 def test_read_barometre_keywords_dedups_keywords_and_themes(con):
     """Verify that a word present with several themes appears only once in keywords,
     that themes lists the distinct themes sorted (direct and _indirectes), and that a searched
     word with only _indirectes themes still appears in keywords."""
-    searched = ["incendie", "inondation"]
-    _insert(con, "1", [
-        {"keyword": "incendie", "theme": "climat_consequences"},
-        {"keyword": "incendie", "theme": "autre_theme"},
-        {"keyword": "incendie", "theme": "ressources_indirectes"},
-        {"keyword": "inondation", "theme": "ressources_indirectes"},
+    _add_kw(con, "a", "tf1", "2025-03-10 10:00:00", "pa", [
+        ("inondation", "changement_climatique_constat_indirectes"),
+        ("inondation", "changement_climatique_constat"),
+        ("inondation", "changement_climatique_constat"),
+    ])
+    _add_kw(con, "b", "tf1", "2025-03-10 11:00:00", "pb",
+            [("crue", "adaptation_climatique_solutions_indirectes")])
+    _add_kw(con, "c", "tf1", "2025-03-10 12:00:00", "pc", [
+        ("inondation", "changement_climatique_constat"),
+        ("crue", "adaptation_climatique_solutions_indirectes"),
     ])
 
-    result = utils.read_barometre_keywords(
-        con, searched, start_date=date(2026, 3, 30), end_date=date(2026, 3, 31), **READ_ARGS
-    )
+    out = _read(con, ["inondation", "crue"]).set_index("id")
 
-    assert len(result) == 1
-    row = result.iloc[0]
-    assert row["keywords"] == "incendie,inondation"
-    assert row["themes"] == "autre_theme,climat_consequences,ressources_indirectes"
-
-
-# ---------- read_day_from_s3: test 14 ----------
-
-class _FakeS3Con:
-    """Fake DuckDB connection: glob returns fixed files, read_parquet returns a fixed DataFrame."""
-
-    def __init__(self, files, df):
-        """Stores the files and DataFrame to return."""
-        self.files, self.df = files, df
-
-    def sql(self, query):
-        """Responds according to whether the query is a glob or a parquet read."""
-        if "glob(" in query:
-            return SimpleNamespace(fetchall=lambda: [(f,) for f in self.files])
-        return SimpleNamespace(df=lambda: self.df.copy())
+    assert out.loc["a", "keywords"] == "inondation"
+    assert out.loc["a", "themes"] == "changement_climatique_constat,changement_climatique_constat_indirectes"
+    assert out.loc["b", "keywords"] == "crue"
+    assert out.loc["b", "themes"] == "adaptation_climatique_solutions_indirectes"
+    assert out.loc["c", "keywords"] == "crue,inondation"
+    assert out.loc["c", "themes"] == "adaptation_climatique_solutions_indirectes,changement_climatique_constat"
 
 
+# ───────────────────────── read_day_from_s3 ─────────────────────────
 def test_read_day_from_s3_keeps_last_row_for_duplicate_channel_and_start():
     """Verify that two S3 rows with the same (channel_name, start) are deduplicated
     by keeping the last one."""
-    df = pd.DataFrame({
-        "channel_name": ["tf1", "tf1", "tf1"],
-        "start": pd.to_datetime(["2026-03-30 12:00:00"] * 2 + ["2026-03-30 12:01:00"])
-                   .tz_localize("Europe/Paris"),
-        "plaintext": ["ancien", "recent", "autre"],
-    })
-    con = _FakeS3Con(["s3://b/year=2026/month=3/day=30/channel=tf1/a.parquet"], df)
-
-    result = utils.read_day_from_s3(con, date(2026, 3, 30), ["tf1"], "france", "b")
-
-    assert len(result) == 2
-    assert set(result["plaintext"]) == {"recent", "autre"}
-    assert result["start"].dt.tz is None
-    assert list(result["start"]) == [pd.Timestamp("2026-03-30 12:00:00"), pd.Timestamp("2026-03-30 12:01:00")]
-
-
-# ---------- extract_adjacent_chunks_day ----------
-
-def _core(*starts, channel="tf1", plaintexts=None, keywords="incendie", themes="climat_consequences"):
-    """Builds a thematic chunks DataFrame (id, channel_name, start, plaintext, keywords, themes)
-    for a single channel. Default plaintext is 'core', IDs are id_0, id_1..."""
-    return pd.DataFrame({
-        "id": [f"id_{i}" for i in range(len(starts))],
-        "channel_name": [channel] * len(starts),
-        "start": pd.to_datetime(list(starts)),
-        "plaintext": plaintexts or ["core"] * len(starts),
-        "keywords": [keywords] * len(starts),
-        "themes": [themes] * len(starts),
-    })
-
-
-def _s3(rows):
-    """Builds a DataFrame mimicking S3 read (channel_name, start, plaintext)
-    from a list of tuples (channel, date, text)."""
-    return pd.DataFrame({
-        "channel_name": [r[0] for r in rows],
-        "start": pd.to_datetime([r[1] for r in rows]),
-        "plaintext": [r[2] for r in rows],
-    })
-
-
-def test_extract_adjacent_chunks_day_no_duplicate_this_id():
-    """Verify that there are no duplicates in the this_id column (primary key)."""
-    core = _core("2026-03-30 14:00:00")
-    s3 = _s3([
-        ("tf1", "2026-03-30 14:00:00", "core"),
-        ("tf1", "2026-03-30 14:02:00", "t2"),
-        ("tf1", "2026-03-30 13:58:00", "t3"),
-        ("tf1", "2026-03-30 14:03:00", "t4"),
-        ("france2", "2026-03-30 14:02:00", "t5"),
+    raw = _s3_df([
+        ("tf1", T0, "first version"),
+        ("tf1", T0, "last version"),
+        ("tf1", T0 + 2 * MIN, "other chunk"),
     ])
 
-    result = utils.extract_adjacent_chunks_day(core, s3, gap=GAP,
-                                           country="france", channel_titles=FAKE_CHANNEL_TITLES)
-    assert not result["this_id"].duplicated().any()
+    out = kw_utils.read_day_from_s3(_FakeS3Con(raw), D1, ["tf1"], "france", "bucket")
+
+    assert len(out) == 2
+    assert out.loc[out["start"] == T0, "plaintext"].tolist() == ["last version"]
+
+
+# ───────────────────────── extract_adjacent_chunks_day ─────────────────────────
+def test_extract_adjacent_chunks_day_no_duplicate_this_id():
+    """Verify that there are no duplicates in the this_id column (primary key)."""
+    kw = _kw_df([
+        ("kw1", "tf1", T0, "core"),
+        ("kw1bis", "tf1", T0, "core"),            # same (channel, start) twice in the source
+        ("kw2", "tf1", T0 + 2 * MIN, "core 2"),   # overlapping neighbourhood
+    ])
+    s3 = _s3_df([
+        ("tf1", T0 - 2 * MIN, "n1"), ("tf1", T0, "core"),
+        ("tf1", T0 + 2 * MIN, "core 2"), ("tf1", T0 + 4 * MIN, "n2"),
+    ])
+
+    out = _extract(kw, s3)
+
+    assert out["this_id"].is_unique
+    assert len(out) == 4
+
+
+def _scenario():
+    kw = _kw_df([("kw1", "tf1", T0, "core")])
+    s3 = _s3_df([
+        ("tf1", T0, "core"),
+        ("tf1", T0 + 2 * MIN, "t2"),
+        ("tf1", T0 - 2 * MIN, "t3"),
+        ("tf1", T0 + 3 * MIN, "t4"),   # too far
+        ("m6", T0, "t5"),              # other channel
+    ])
+    return kw, s3
 
 
 def test_extract_adjacent_chunks_day_number_of_chunks_kept():
     """Verify that only chunks within 2 min 30 s of a thematic chunk, on the same channel,
     are kept: core, t2 and t3. t4 is 3 min away from core, t5 is on another channel."""
-    core = _core("2026-03-30 12:00:00")
-    s3 = _s3([
-        ("tf1", "2026-03-30 12:00:00", "core"),
-        ("tf1", "2026-03-30 12:01:00", "t2"),
-        ("tf1", "2026-03-30 11:58:00", "t3"),
-        ("tf1", "2026-03-30 12:03:00", "t4"),
-        ("france2", "2026-03-30 12:02:00", "t5"),
-    ])
+    out = _extract(*_scenario())
 
-    result = utils.extract_adjacent_chunks_day(core, s3, gap=GAP,
-                                           country="france", channel_titles=FAKE_CHANNEL_TITLES)
-    assert result.shape[0] == 3
-    assert set(result["plaintext"]) == {"core", "t2", "t3"}
+    assert len(out) == 3
+    assert set(out["plaintext"]) == {"core", "t2", "t3"}
+    assert set(out["channel_name"]) == {"tf1"}
 
 
 def test_extract_adjacent_chunks_day_flags_thematic_true_and_neighbors_false():
     """Verify that thematic_chunk is True for chunks coming from the keywords table
     and False for their neighbors fetched in S3."""
-    core = _core("2026-03-30 12:00:00")
-    s3 = _s3([
-        ("tf1", "2026-03-30 12:00:00", "core"),
-        ("tf1", "2026-03-30 12:01:00", "voisin"),
-    ])
+    out = _extract(*_scenario()).set_index("plaintext")
 
-    result = utils.extract_adjacent_chunks_day(core, s3, gap=GAP,
-                                           country="france", channel_titles=FAKE_CHANNEL_TITLES)
-    by_text = result.set_index("plaintext")
-    assert by_text.loc["core", "thematic_chunk"]
-    assert not by_text.loc["voisin", "thematic_chunk"]
+    assert bool(out.loc["core", "thematic_chunk"]) is True
+    assert out.loc["core", "source_keywords_id"] == "kw1"
+    for neighbour in ("t2", "t3"):
+        assert bool(out.loc[neighbour, "thematic_chunk"]) is False
+        assert pd.isna(out.loc[neighbour, "source_keywords_id"])
+        assert pd.isna(out.loc[neighbour, "keywords"])
+        assert pd.isna(out.loc[neighbour, "themes"])
 
 
 def test_extract_adjacent_chunks_day_output_columns_id_format_and_title():
     """Verify all output columns (neither more nor less, regardless of order since insertion
     is done BY NAME), the this_id format (channel + Paris time), and channel title from
     the channel_titles dictionary passed as argument."""
-    core = _core("2026-03-30 14:00:00")
-    s3 = _s3([("tf1", "2026-03-30 14:00:00", "core")])
+    out = _extract(*_scenario())
 
-    result = utils.extract_adjacent_chunks_day(core, s3, gap=GAP,
-                                           country="france", channel_titles=FAKE_CHANNEL_TITLES)
-    assert set(result.columns) == {
-        "this_id", "channel_name", "channel_title", "start",
-        "thematic_chunk",
+    assert set(out.columns) == {
+        "this_id", "channel_name", "channel_title", "start", "thematic_chunk",
         "source_keywords_id", "keywords", "themes", "plaintext",
     }
-    assert result.loc[0, "this_id"] == "tf1_20260330140000"
-    assert result.loc[0, "channel_title"] == "TF1"
+    assert len(out.columns) == 9
+    assert set(out["this_id"]) == {
+        "tf1_20250310100000", "tf1_20250310100200", "tf1_20250310095800",
+    }
+    assert set(out["channel_title"]) == {"TF1 (test)"}
 
 
 def test_extract_adjacent_chunks_day_raises_if_core_missing_from_s3():
     """Verify that the function raises a ValueError if a thematic chunk (here 14h)
     does not exist on the S3 side, instead of ingesting an incomplete day."""
-    core = _core("2026-03-30 12:00:00", "2026-03-30 14:00:00")
-    s3 = _s3([("tf1", "2026-03-30 12:00:00", "core")])
+    kw = _kw_df([
+        ("kw1", "tf1", T0, "core 10h"),
+        ("kw2", "tf1", datetime(2025, 3, 10, 14, 0), "core 14h"),
+    ])
+    s3 = _s3_df([("tf1", T0, "core 10h"), ("tf1", T0 + 2 * MIN, "n")])
 
     with pytest.raises(ValueError):
-        utils.extract_adjacent_chunks_day(core, s3, gap=GAP,
-                                      country="france", channel_titles=FAKE_CHANNEL_TITLES)
+        _extract(kw, s3)
+
 
 def test_extract_adjacent_chunks_day_raises_if_core_and_s3_plaintext_differ():
     """Verify that the function raises a ValueError when, for the same channel and start time,
     the thematic chunk plaintext differs from the S3 chunk (likely timezone shift issue)."""
-    core = _core("2026-03-30 12:00:00", plaintexts=["texte du core"])
-    s3 = _s3([
-        ("tf1", "2026-03-30 12:00:00", "texte différent côté S3"),
-        ("tf1", "2026-03-30 12:01:00", "voisin"),
-    ])
+    kw = _kw_df([("kw1", "tf1", T0, "plaintext from source")])
+    s3 = _s3_df([("tf1", T0, "plaintext from s3")])
 
     with pytest.raises(ValueError):
-        utils.extract_adjacent_chunks_day(core, s3, gap=GAP,
-                                      country="france", channel_titles=FAKE_CHANNEL_TITLES)
+        _extract(kw, s3)
+
 
 def test_extract_adjacent_chunks_day_raises_if_core_channel_absent_from_s3():
     """Verify that the function raises a ValueError when the thematic chunk channel
     does not exist at all on S3 side."""
-    core = _core("2026-03-30 12:00:00", channel="france2")
-    s3 = _s3([("tf1", "2026-03-30 12:00:00", "core")])
+    kw = _kw_df([("kw1", "tf1", T0, "core tf1"), ("kw2", "m6", T0, "core m6")])
+    s3 = _s3_df([("tf1", T0, "core tf1")])
 
     with pytest.raises(ValueError):
-        utils.extract_adjacent_chunks_day(core, s3, gap=GAP,
-                                      country="france", channel_titles=FAKE_CHANNEL_TITLES)
-
-# ---------- run: simulated environment ----------
-
-def _table(start=date(2026, 7, 1), kw=("incendie",), country="france"):
-    """Name of the destination table computed by a new run with the default test config."""
-    return utils.make_destination_table_name(start, list(kw), country)
+        _extract(kw, s3)
 
 
-@pytest.fixture
-def env(monkeypatch):
-    """Isolates run() from Postgres and S3. Destination is an in-memory DuckDB database,
-    and source reads, S3 reads, and extraction are replaced with controllable functions via
-    the returned object (failing days, keywords, logged calls).
-    run() reads module globals set by load_env(): env.run(**overrides) sets them then calls run().
-    run() calls the other functions through the utils module, so they are patched on utils."""
-    _con = duckdb.connect()
-    _con.execute(f"ATTACH ':memory:' AS {SOURCE_ALIAS}")
-    _con.execute(f"CREATE SCHEMA {SOURCE_ALIAS}.public")
-    real_configure_dest = utils.configure_barometre_destination
-    state = SimpleNamespace(
-        con=_con, real_configure_dest=real_configure_dest,
-        read_source_days=[], read_source_keywords=[], read_source_countries=[],   # <- ajouté
-        read_s3_days=[], configure_dest_calls=0,
-        failing_s3_days=set(), bad_insert_days=set(), keywords_value="incendie",
-    )
-
-    def fake_read_source(con, kw, start, end, country, source_table, postgres_db):
-        """Returns a single thematic chunk at 12h for the requested day."""
-        state.read_source_days.append(start)
-        state.read_source_keywords.append(list(kw))
-        state.read_source_countries.append(country)
-
-        return pd.DataFrame({
-            "id": [f"id_{start}"], "channel_name": ["tf1"],
-            "start": [pd.Timestamp(start) + pd.Timedelta(hours=12)],
-            "plaintext": ["core"], "keywords": ["incendie"], "themes": ["climat_consequences"],
-        })
-
-    def fake_read_s3(con, day, channels, country, s3_bucket_name):
-        """Simulates S3 read, failing for days in failing_s3_days."""
-        state.read_s3_days.append(day)
-        if day in state.failing_s3_days:
-            raise FileNotFoundError(f"No parquet found on S3 for {day}")
-        return pd.DataFrame()
-
-    def fake_extract(core_day, s3_day_df, gap, country, channel_titles):
-        """Returns thematic chunk and neighbor at +1 min. For bad_insert_days,
-        neighbor has NULL plaintext, violating NOT NULL constraint upon insertion."""
-        start = core_day["start"].iloc[0]
-        neighbor = start + pd.Timedelta(minutes=1)
-        bad = start.date() in state.bad_insert_days
-        return pd.DataFrame({
-            "this_id": [f"tf1_{start:%Y%m%d%H%M%S}", f"tf1_{neighbor:%Y%m%d%H%M%S}"],
-            "channel_name": ["tf1", "tf1"],
-            "channel_title": ["TF1", "TF1"],
-            "start": [start, neighbor],
-            "thematic_chunk": [True, False],
-            "source_keywords_id": [core_day["id"].iloc[0], None],
-            "keywords": [state.keywords_value, None],
-            "themes": ["climat_consequences", None],
-            "plaintext": ["core", None if bad else "voisin"],
-        })
-
-    def counting_configure_dest(con, dry_run, source_table, destination_table, postgres_db):
-        """Counts calls then delegates to the real function."""
-        state.configure_dest_calls += 1
-        real_configure_dest(con, dry_run, source_table, destination_table, postgres_db)
-
-    def run(**overrides):
-        """Sets the module globals as load_env() would, then calls run()."""
-        for k, v in make_cfg(**overrides).items():
-            monkeypatch.setattr(tk, k, v, raising=False)
-        tk.run()
-
-    state.run = run
-    
-    monkeypatch.delenv("COUNTRY", raising=False)
-    monkeypatch.setattr(tk.duckdb, "connect", lambda *a, **k: _con)
-    monkeypatch.setattr(utils, "configure_barometre_source", lambda *a, **k: None)
-    monkeypatch.setattr(utils, "_configure_s3", lambda *a, **k: None)
-    monkeypatch.setattr(utils, "get_keywords_in_ome", lambda kws, lang: ["incendie"])
-    monkeypatch.setattr(utils, "read_barometre_keywords", fake_read_source)
-    monkeypatch.setattr(utils, "read_day_from_s3", fake_read_s3)
-    monkeypatch.setattr(utils, "extract_adjacent_chunks_day", fake_extract)
-    monkeypatch.setattr(utils, "configure_barometre_destination", counting_configure_dest)
-    yield state
-    _con.close()
-
-
-def _seed(env, table, this_id="old_1", start="2026-07-02 12:00:00", keywords="ancien",
-          country="france", register=True, insert=True):    
-    """Creates destination table and registry (real functions), registers the run,
-    and inserts an existing row into the table."""
-    env.real_configure_dest(env.con, False, SOURCE_TABLE, table, SOURCE_ALIAS)
-    utils.configure_thematic_registry(env.con, False, SOURCE_ALIAS, tk.REGISTRY_TABLE)
-    if register:
-        utils.register_run(env.con, False, SOURCE_ALIAS, table, date(2026, 7, 1), country,
-                           ["incendie"], tk.REGISTRY_TABLE)
-    if insert:
-        env.con.execute(
-            f"INSERT INTO {SOURCE_ALIAS}.{table} (this_id, channel_name, channel_title, start, "
-            f"thematic_chunk, keywords, themes, plaintext) "
-            f"VALUES (?, 'tf1', 'TF1', ?, TRUE, ?, 'x', 'texte')",
-            [this_id, start, keywords],
-        )
-
-
-def _ids(env, table):
-    """Returns the sorted list of this_id present in the destination table."""
-    rows = env.con.execute(f"SELECT this_id FROM {SOURCE_ALIAS}.{table} ORDER BY this_id").fetchall()
-    return [r[0] for r in rows]
-
-
-# ---------- run: stop, atomicity, resume ----------
-
+# ───────────────────────── run() ─────────────────────────
 def test_run_stops_at_first_failing_day(env):
     """Verify that run stops at first failing day: day 1 is in table,
     day 3 is never read, and a RuntimeError is raised."""
-    env.failing_s3_days = {date(2026, 7, 2)}
+    for d in (D1, D2, D3):
+        env.add_day(d)
+    env.failing_days = {D2}
+    env.configure(start=D1, end=D4)
 
     with pytest.raises(RuntimeError):
-        env.run(START_DATE=date(2026, 7, 1), END_DATE=date(2026, 7, 4))
+        tk.run()
 
-    assert env.read_s3_days == [date(2026, 7, 1), date(2026, 7, 2)]
-    ids = _ids(env, _table())
-    assert ids and all(i.startswith("tf1_20260701") for i in ids)
+    assert env.read_days == [D1, D2]
+    assert env.days_in_table() == [D1]
+    assert env.count() == 2
 
 
 def test_run_leaves_no_partial_day_when_insert_fails(env):
     """Verify that a failure during insertion leaves no rows for that day
     (even valid ones), previous day remains in table, and next day is not processed."""
-    env.bad_insert_days = {date(2026, 7, 2)}
+    env.add_day(D1)
+    env.add_day(D2)
+    # NULL plaintext on an adjacent chunk of day 2 → NOT NULL violation at INSERT time,
+    # while the thematic chunk of that day is valid
+    env.add_s3(datetime(2025, 3, 11, 9, 59), None)
+    env.add_day(D3)
+    env.configure(start=D1, end=D4)
 
     with pytest.raises(RuntimeError):
-        env.run(START_DATE=date(2026, 7, 1), END_DATE=date(2026, 7, 4))
+        tk.run()
 
-    ids = _ids(env, _table())
-    assert ids and all(i.startswith("tf1_20260701") for i in ids)
-    assert date(2026, 7, 3) not in env.read_s3_days
+    assert env.read_days == [D1, D2]
+    assert env.days_in_table() == [D1]
+    assert env.count() == 2
 
 
 def test_run_twice_does_not_duplicate_or_overwrite_rows(env):
     """Verify idempotency: replaying the same range creates no duplicates and, with
     ON CONFLICT DO NOTHING, does not modify existing rows."""
-    kwargs = dict(START_DATE=date(2026, 7, 1), END_DATE=date(2026, 7, 3))
-    table = _table()
-    query = f"SELECT this_id, keywords FROM {SOURCE_ALIAS}.{table} ORDER BY this_id"
+    for d in (D1, D2, D3):
+        env.add_day(d)
+    env.configure(start=D1, end=D4)
+    tk.run()
+    assert env.count() == 6
 
-    env.run(**kwargs)
-    first = env.con.execute(query).fetchall()
-    env.keywords_value = "canadair"
-    env.run(**kwargs)
-    second = env.con.execute(query).fetchall()
+    env.con.execute(
+        f"UPDATE {env.table} SET plaintext = 'SENTINEL' "
+        f"WHERE thematic_chunk AND CAST(start AS DATE) = DATE '{D3}'"
+    )
+    # replay through a resume (a new run with START_DATE would clear the table first)
+    env.configure(start=None, end=D4)
+    tk.run()
 
-    assert len(first) == 4  # 2 days x (thematic + neighbor)
-    assert second == first
-    
-    
-def _thematic_tables(env):
-    """Names of all thematic_* tables in the attached database (excluding the registry)."""
-    rows = env.con.execute(
-        "SELECT table_name FROM duckdb_tables() "
-        f"WHERE database_name = '{SOURCE_ALIAS}' AND table_name LIKE 'thematic\\_%' ESCAPE '\\' "
-        "AND table_name <> 'thematic_tables_registry'"
-    ).fetchall()
-    return sorted(r[0] for r in rows)
+    assert env.count() == 6
+    assert env.con.execute(f"SELECT count(DISTINCT this_id) FROM {env.table}").fetchone()[0] == 6
+    assert env.con.execute(
+        f"SELECT count(*) FROM {env.table} WHERE plaintext = 'SENTINEL'").fetchone()[0] == 1
 
 
 def test_run_resume_restarts_from_last_ingested_day(env):
-    """Verify that without START_DATE, a table already in the registry is resumed from the day
-    of its last chunk (retreated, harmless thanks to ON CONFLICT) up to END_DATE excluded,
-    and that earlier days are not read again."""
-    table = _table()
-    _seed(env, table, start="2026-07-02 12:00:00")
+    """Verify that a resume (no START_DATE) restarts from the day of the last ingested chunk
+    (not from the first day, not from the next one) and processes up to END_DATE."""
+    for d in (D1, D2, D3, D4):
+        env.add_day(d)
+    env.configure(start=D1, end=D3)
+    tk.run()
+    assert env.days_in_table() == [D1, D2]
 
-    env.run(START_DATE=None, DESTINATION_TABLE=table, END_DATE=date(2026, 7, 4))
+    env.read_days.clear()
+    env.configure(start=None, end=D5)
+    tk.run()
 
-    assert env.read_source_days == [date(2026, 7, 2), date(2026, 7, 3)]
+    assert env.read_days == [D2, D3, D4]
+    assert env.days_in_table() == [D1, D2, D3, D4]
+    assert env.count() == 8
 
 
 def test_run_resume_does_not_create_a_new_table(env):
     """Verify that resuming writes into the existing table: no other thematic table is created
-    and the registry still holds a single entry."""
-    table = _table()
-    _seed(env, table, start="2026-07-02 12:00:00")
+    and the destination table keeps being the only one next to the source table."""
+    for d in (D1, D2, D3):
+        env.add_day(d)
+    env.configure(start=D1, end=D2)
+    tk.run()
+    tables_before = env.tables()
+    assert tables_before == {"keywords", env.destination_table}
 
-    env.run(START_DATE=None, DESTINATION_TABLE=table, END_DATE=date(2026, 7, 4))
+    env.configure(start=None, end=D4)
+    tk.run()
 
-    assert _thematic_tables(env) == [table]
-    n_registered = env.con.execute(
-        f"SELECT count(*) FROM {SOURCE_ALIAS}.{tk.REGISTRY_TABLE}").fetchone()[0]
-    assert n_registered == 1
-    assert "old_1" in _ids(env, table)
-    assert len(_ids(env, table)) > 1   # new chunks were added to the same table
+    assert env.tables() == tables_before
+    assert env.days_in_table() == [D1, D2, D3]
 
 
-def test_run_resume_uses_keywords_from_registry_and_ignores_env_keywords(env):
-    """Verify that a resumed run searches the keywords stored in the registry,
-    whatever KEYWORDS contains."""
-    table = _table()
-    _seed(env, table, start="2026-07-02 12:00:00")
-
-    env.run(START_DATE=None, DESTINATION_TABLE=table, KEYWORDS=["autre_mot"],
-            END_DATE=date(2026, 7, 4))
-
-    assert env.read_source_keywords
-    assert all(kw == ["incendie"] for kw in env.read_source_keywords)
-    
-
-# ---------- run: country ----------
-
-def test_run_same_params_other_country_uses_another_table(env):
-    """Verify that same start date and keywords in another country give another table and
-    another registry entry, and that each run reads its own country."""
-    env.run(COUNTRY="france", LANGUAGE="french", END_DATE=date(2026, 7, 2))
-    env.run(COUNTRY="belgium", LANGUAGE="french", END_DATE=date(2026, 7, 2))
-
-    assert _thematic_tables(env) == sorted([_table(country="france"), _table(country="belgium")])
-    n_registered = env.con.execute(
-        f"SELECT count(*) FROM {SOURCE_ALIAS}.{tk.REGISTRY_TABLE}").fetchone()[0]
-    assert n_registered == 2
-    assert env.read_source_countries == ["france", "belgium"]
-
-def test_run_resume_uses_country_from_registry(env):
-    """Verify that a resumed run reads the country stored in the registry, even though
-    COUNTRY holds the load_env default (france) and was not set explicitly."""
-    table = _table(country="belgium")
-    _seed(env, table, country="belgium", start="2026-07-02 12:00:00")
-
-    env.run(START_DATE=None, DESTINATION_TABLE=table, COUNTRY="france")
-
-    assert env.read_source_countries
-    assert set(env.read_source_countries) == {"belgium"}
-    
-def test_run_resume_refuses_explicit_country_different_from_registry(env, monkeypatch):
-    """Verify that a resumed run raises, before reading anything, when COUNTRY is explicitly
-    set to another country than the one registered for the table."""
-    monkeypatch.setenv("COUNTRY", "france")
-    table = _table(country="belgium")
-    _seed(env, table, country="belgium", start="2026-07-02 12:00:00")
-
-    with pytest.raises(ValueError):
-        env.run(START_DATE=None, DESTINATION_TABLE=table, COUNTRY="france")
-
-    assert env.read_source_days == []
-
-# ---------- destructive safeguards ----------
-
-@pytest.mark.parametrize("destination",
-                         ["keywords", "public.keywords", "PUBLIC.KEYWORDS", "autre_schema.keywords"])
-def test_configure_barometre_destination_refuses_source_table_before_any_query(destination):
+@pytest.mark.parametrize("source_table", [
+    "inondations_thematic_kw_fr",
+    "public.inondations_thematic_kw_fr",
+    "PUBLIC.Inondations_Thematic_KW_FR",
+])
+def test_run_refuses_destination_equal_to_source_table_before_any_query(env, monkeypatch, source_table):
     """Verify that safeguard rejects destination with source table name,
     with or without schema, before any query (thus before CREATE)."""
-    con = MagicMock()
+    def no_connection(*args, **kwargs):
+        raise AssertionError("a DuckDB connection was opened before the safeguard")
+
+    monkeypatch.setattr(tk.duckdb, "connect", no_connection)
+    env.configure(start=D1, end=D2, source_table=source_table)
 
     with pytest.raises(ValueError):
-        utils.configure_barometre_destination(
-            con, dry_run=False,
-            source_table=SOURCE_TABLE, destination_table=destination,
-            postgres_db=SOURCE_ALIAS,
-        )
-
-    con.execute.assert_not_called()
+        tk.run()
 
 
 def test_run_dry_run_writes_nothing_and_counts_chunks(env, caplog):
     """Verify that in DRY_RUN mode nothing is written (existing table untouched)
     and the number of chunks that would be ingested is logged."""
-    table = _table()
-    _seed(env, table)
-    caplog.set_level(logging.INFO)
+    env.add_day(D1)
+    env.add_day(D2)
+    env.create_destination()
+    env.con.execute(
+        f"INSERT INTO {env.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext) "
+        "VALUES ('sentinel', 'tf1', 'TF1', TIMESTAMP '2025-01-01 10:00:00', true, 'old')"
+    )
+    env.configure(start=D1, end=D3, dry_run=True)
 
-    env.run(START_DATE=date(2026, 7, 1), END_DATE=date(2026, 7, 3), DRY_RUN=True)
+    with caplog.at_level(logging.INFO):
+        tk.run()
 
-    assert _ids(env, table) == ["old_1"]
-    assert "4 chunks would have been ingested" in caplog.text
+    assert env.con.execute(f"SELECT this_id FROM {env.table}").fetchall() == [("sentinel",)]
+    assert "DRY_RUN: 4 chunks would have been ingested" in caplog.text

@@ -362,9 +362,9 @@ def test_extract_adjacent_chunks_day_raises_if_core_channel_absent_from_s3():
 
 # ---------- run: simulated environment ----------
 
-def _table(start=date(2026, 7, 1), end=date(2026, 7, 4), kw=("incendie",)):
+def _table(start=date(2026, 7, 1), kw=("incendie",), country="france"):
     """Name of the destination table computed by a new run with the default test config."""
-    return utils.make_destination_table_name(start, end, list(kw))
+    return utils.make_destination_table_name(start, list(kw), country)
 
 
 @pytest.fixture
@@ -380,7 +380,8 @@ def env(monkeypatch):
     real_configure_dest = utils.configure_barometre_destination
     state = SimpleNamespace(
         con=_con, real_configure_dest=real_configure_dest,
-        read_source_days=[], read_source_keywords=[], read_s3_days=[], configure_dest_calls=0,
+        read_source_days=[], read_source_keywords=[], read_source_countries=[],   # <- ajouté
+        read_s3_days=[], configure_dest_calls=0,
         failing_s3_days=set(), bad_insert_days=set(), keywords_value="incendie",
     )
 
@@ -388,6 +389,7 @@ def env(monkeypatch):
         """Returns a single thematic chunk at 12h for the requested day."""
         state.read_source_days.append(start)
         state.read_source_keywords.append(list(kw))
+        state.read_source_countries.append(country)
 
         return pd.DataFrame({
             "id": [f"id_{start}"], "channel_name": ["tf1"],
@@ -432,7 +434,8 @@ def env(monkeypatch):
         tk.run()
 
     state.run = run
-
+    
+    monkeypatch.delenv("COUNTRY", raising=False)
     monkeypatch.setattr(tk.duckdb, "connect", lambda *a, **k: _con)
     monkeypatch.setattr(utils, "configure_barometre_source", lambda *a, **k: None)
     monkeypatch.setattr(utils, "_configure_s3", lambda *a, **k: None)
@@ -445,19 +448,22 @@ def env(monkeypatch):
     _con.close()
 
 
-def _seed(env, table, this_id="old_1", start="2026-07-02 12:00:00", keywords="ancien"):
+def _seed(env, table, this_id="old_1", start="2026-07-02 12:00:00", keywords="ancien",
+          country="france", register=True, insert=True):    
     """Creates destination table and registry (real functions), registers the run,
     and inserts an existing row into the table."""
     env.real_configure_dest(env.con, False, SOURCE_TABLE, table, SOURCE_ALIAS)
-    utils.configure_barometre_registry(env.con, False, SOURCE_ALIAS, tk.REGISTRY_TABLE)
-    utils.register_run(env.con, False, SOURCE_ALIAS, table, date(2026, 7, 1), date(2026, 7, 4),
-                       ["incendie"], tk.REGISTRY_TABLE)
-    env.con.execute(
-        f"INSERT INTO {SOURCE_ALIAS}.{table} (this_id, channel_name, channel_title, start, "
-        f"thematic_chunk, keywords, themes, plaintext) "
-        f"VALUES (?, 'tf1', 'TF1', ?, TRUE, ?, 'x', 'texte')",
-        [this_id, start, keywords],
-    )
+    utils.configure_thematic_registry(env.con, False, SOURCE_ALIAS, tk.REGISTRY_TABLE)
+    if register:
+        utils.register_run(env.con, False, SOURCE_ALIAS, table, date(2026, 7, 1), country,
+                           ["incendie"], tk.REGISTRY_TABLE)
+    if insert:
+        env.con.execute(
+            f"INSERT INTO {SOURCE_ALIAS}.{table} (this_id, channel_name, channel_title, start, "
+            f"thematic_chunk, keywords, themes, plaintext) "
+            f"VALUES (?, 'tf1', 'TF1', ?, TRUE, ?, 'x', 'texte')",
+            [this_id, start, keywords],
+        )
 
 
 def _ids(env, table):
@@ -498,7 +504,7 @@ def test_run_twice_does_not_duplicate_or_overwrite_rows(env):
     """Verify idempotency: replaying the same range creates no duplicates and, with
     ON CONFLICT DO NOTHING, does not modify existing rows."""
     kwargs = dict(START_DATE=date(2026, 7, 1), END_DATE=date(2026, 7, 3))
-    table = _table(end=date(2026, 7, 3))
+    table = _table()
     query = f"SELECT this_id, keywords FROM {SOURCE_ALIAS}.{table} ORDER BY this_id"
 
     env.run(**kwargs)
@@ -560,7 +566,44 @@ def test_run_resume_uses_keywords_from_registry_and_ignores_env_keywords(env):
 
     assert env.read_source_keywords
     assert all(kw == ["incendie"] for kw in env.read_source_keywords)
+    
 
+# ---------- run: country ----------
+
+def test_run_same_params_other_country_uses_another_table(env):
+    """Verify that same start date and keywords in another country give another table and
+    another registry entry, and that each run reads its own country."""
+    env.run(COUNTRY="france", LANGUAGE="french", END_DATE=date(2026, 7, 2))
+    env.run(COUNTRY="belgium", LANGUAGE="french", END_DATE=date(2026, 7, 2))
+
+    assert _thematic_tables(env) == sorted([_table(country="france"), _table(country="belgium")])
+    n_registered = env.con.execute(
+        f"SELECT count(*) FROM {SOURCE_ALIAS}.{tk.REGISTRY_TABLE}").fetchone()[0]
+    assert n_registered == 2
+    assert env.read_source_countries == ["france", "belgium"]
+
+def test_run_resume_uses_country_from_registry(env):
+    """Verify that a resumed run reads the country stored in the registry, even though
+    COUNTRY holds the load_env default (france) and was not set explicitly."""
+    table = _table(country="belgium")
+    _seed(env, table, country="belgium", start="2026-07-02 12:00:00")
+
+    env.run(START_DATE=None, DESTINATION_TABLE=table, COUNTRY="france")
+
+    assert env.read_source_countries
+    assert set(env.read_source_countries) == {"belgium"}
+    
+def test_run_resume_refuses_explicit_country_different_from_registry(env, monkeypatch):
+    """Verify that a resumed run raises, before reading anything, when COUNTRY is explicitly
+    set to another country than the one registered for the table."""
+    monkeypatch.setenv("COUNTRY", "france")
+    table = _table(country="belgium")
+    _seed(env, table, country="belgium", start="2026-07-02 12:00:00")
+
+    with pytest.raises(ValueError):
+        env.run(START_DATE=None, DESTINATION_TABLE=table, COUNTRY="france")
+
+    assert env.read_source_days == []
 
 # ---------- destructive safeguards ----------
 
@@ -584,7 +627,7 @@ def test_configure_barometre_destination_refuses_source_table_before_any_query(d
 def test_run_dry_run_writes_nothing_and_counts_chunks(env, caplog):
     """Verify that in DRY_RUN mode nothing is written (existing table untouched)
     and the number of chunks that would be ingested is logged."""
-    table = _table(end=date(2026, 7, 3))
+    table = _table()
     _seed(env, table)
     caplog.set_level(logging.INFO)
 

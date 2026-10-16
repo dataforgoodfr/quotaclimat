@@ -18,96 +18,140 @@ load_dotenv(Path(__file__).resolve().parents[4] / ".env", override=False)
 
 from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 
+
+### RUNS REGISTER ###
 PG_MAX_IDENTIFIER = 63
 
-def make_destination_table_name(start_date: date, end_date: date, kw_list: list[str]) -> str:
-    kws = sorted({k.strip().lower() for k in kw_list if k.strip()})
-    if not kws:
+def make_destination_table_name(start_date: date, kw_list: list[str], country: str) -> str:
+    cleaned = list(dict.fromkeys(k.strip().lower() for k in kw_list if k.strip()))
+    if not cleaned:
         raise ValueError("kw_list is empty")
+    country = country.strip().lower()
+    if not country:
+        raise ValueError("country is empty")
 
-    # first word as identifier-safe ascii slug (accents removed, max 30 chars)
-    first = unicodedata.normalize("NFKD", kws[0]).encode("ascii", "ignore").decode("ascii")
-    first = re.sub(r"[^a-z0-9]+", "_", first.lower()).strip("_")[:30] or "kw"
+    # first keyword as given (input order), identifier-safe ascii slug (accents removed, max 30 chars)
+    first = unicodedata.normalize("NFKD", cleaned[0]).encode("ascii", "ignore").decode("ascii")
+    first = re.sub(r"[^a-z0-9]+", "_", first).strip("_")[:30] or "kw"
 
-    payload = json.dumps({"start": start_date.isoformat(), "end": end_date.isoformat(), "kw": kws},
+    # sorted: the hash does not depend on the keywords order
+    payload = json.dumps({"start": start_date.isoformat(), "country": country, "kw": sorted(cleaned)},
                          ensure_ascii=False, separators=(",", ":"), sort_keys=True)
     digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
 
-    table_name = f"thematic_{first}_{digest}"
-    assert len(table_name) <= PG_MAX_IDENTIFIER  # 9 + 30 + 1 + 12 = 52 max
+    table_name = f"thematic_keywords_{first}_{digest}"
+    if len(table_name) > PG_MAX_IDENTIFIER:  # 18 + 30 + 1 + 12 = 61 max
+        raise ValueError(f"table name too long: {table_name}")
     return table_name
 
-def register_run(con: duckdb.DuckDBPyConnection, dry_run: bool, postgres_db: str,
-                 destination_table: str, start_date: date, end_date: date,
-                 kw_list: list[str], registry_table: str) -> None:
-    """Writes destination_table -> dates and keywords in the registry.
-    Raises if destination_table is already registered with other dates or keywords."""
+
+def configure_thematic_registry(con: duckdb.DuckDBPyConnection, dry_run: bool,
+                                postgres_db: str, registry_table: str) -> None:
+    """Creates the registry table if it does not exist yet."""
     try:
         if dry_run:
             return
+        con.execute(f"""
+            CREATE TABLE IF NOT EXISTS {postgres_db}.{registry_table} (
+                table_name VARCHAR NOT NULL,
+                start_date DATE NOT NULL,
+                country VARCHAR NOT NULL,
+                keywords VARCHAR NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (table_name)
+            )
+        """)
+        logging.info(f"[{registry_table}] TABLE CREATED OR ALREADY EXISTS")
+    except Exception as e:
+        logging.error(f"[{registry_table}] ERROR CONFIGURING REGISTRY:")
+        logging.error(e)
+        raise
+    
+def _table_exists(con: duckdb.DuckDBPyConnection, postgres_db: str, table: str) -> bool:
+    return con.execute(
+        "SELECT count(*) FROM information_schema.tables "
+        "WHERE table_catalog = ? AND table_name = ?",
+        [postgres_db, table.split(".")[-1]],
+    ).fetchone()[0] > 0
+
+def register_run(con: duckdb.DuckDBPyConnection, dry_run: bool, postgres_db: str,
+                 destination_table: str, start_date: date, country: str,
+                 kw_list: list[str], registry_table: str) -> None:
+    """Writes destination_table -> start date, country and keywords in the registry.
+    Raises if destination_table is already registered with another start date, country or keywords."""
+    try:
+        if dry_run:
+            return
+        country = country.strip().lower()
         keywords = json.dumps(sorted({k.strip().lower() for k in kw_list if k.strip()}),
                               ensure_ascii=False)
         row = con.execute(
-            f"SELECT start_date, end_date, keywords FROM {postgres_db}.{registry_table} "
+            f"SELECT start_date, country, keywords FROM {postgres_db}.{registry_table} "
             f"WHERE table_name = ?", [destination_table]).fetchone()
         if row is None:
             con.execute(
                 f"INSERT INTO {postgres_db}.{registry_table} "
-                f"(table_name, start_date, end_date, keywords) VALUES (?, ?, ?, ?)",
-                [destination_table, start_date, end_date, keywords])
+                f"(table_name, start_date, country, keywords) VALUES (?, ?, ?, ?)",
+                [destination_table, start_date, country, keywords])
             logging.info(f"[{registry_table}] {destination_table} REGISTERED")
-        elif (row[0], row[1], row[2]) != (start_date, end_date, keywords):
+        elif tuple(row) != (start_date, country, keywords):
             raise ValueError(f"{destination_table} already registered with other parameters: {row}")
         else:
             logging.info(f"[{registry_table}] {destination_table} ALREADY REGISTERED (same parameters)")
     except Exception as e:
         logging.error(f"[{registry_table}] ERROR REGISTERING RUN:")
         logging.error(e)
-        raise e
+        raise
 
-def get_registered_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str,
-                            destination_table: str, registry_table: str) -> list[str]:
-    """Returns the keyword list registered for destination_table.
-    Raises LookupError if the table is not in the registry."""
+def get_registered_run(con: duckdb.DuckDBPyConnection, postgres_db: str,
+                       destination_table: str, registry_table: str) -> dict:
+    """Returns {"start_date", "country", "keywords"} registered for destination_table.
+    Raises LookupError if the table is not in the registry, ValueError if its country is missing."""
     try:
         row = con.execute(
-            f"SELECT keywords FROM {postgres_db}.{registry_table} WHERE table_name = ?",
-            [destination_table.split(".")[-1]]).fetchone()
+            f"SELECT start_date, country, keywords FROM {postgres_db}.{registry_table} "
+            f"WHERE table_name = ?", [destination_table.split(".")[-1]]).fetchone()
         if row is None:
             raise LookupError(f"{destination_table} not found in {registry_table}")
-        return json.loads(row[0])
+        if row[1] is None:
+            raise ValueError(f"{destination_table} registered without country (legacy row): fill it in the registry")
+        return {"start_date": row[0], "country": row[1], "keywords": json.loads(row[2])}
     except Exception as e:
-        logging.error(f"[{registry_table}] ERROR READING KEYWORDS OF {destination_table}:")
+        logging.error(f"[{registry_table}] ERROR READING REGISTRY FOR {destination_table}:")
         logging.error(e)
-        raise e
+        raise
+    
 
-
+### OME DICTIONNARY ###
 def get_keywords_in_ome(keywords_to_look_for: list[str], language: str) -> list[str]:
-    """Returns keywords as found in OME dictionary (for the given language).
+    """Returns keywords as found in OME dictionary (for the given language), in input order.
     Raises if at least one keyword is missing, to avoid a long run on a partial list."""
-    keywords_lower = {m.lower() for m in keywords_to_look_for}
+    # dict.fromkeys: dedupe while keeping the input order
+    keywords_lower = list(dict.fromkeys(m.strip().lower() for m in keywords_to_look_for if m.strip()))
+    wanted = set(keywords_lower)
     try:
         found = {
             entree["keyword"].lower()
             for entrees in THEME_KEYWORDS.values()
             for entree in entrees
-            if entree["language"] == language and entree["keyword"].lower() in keywords_lower
+            if entree["language"] == language and entree["keyword"].lower() in wanted
         }
     except Exception as e:
         logging.error("[OME DICTIONARY] ERROR READING OME DICTIONARY:")
         logging.error(e)
-        raise e
+        raise
 
-    not_found = sorted(keywords_lower - found)
+    not_found = [k for k in keywords_lower if k not in found]
     if not_found:
         raise ValueError(
             f"[OME DICTIONARY] Keywords not found in OME dictionary (language={language}): {not_found}"
         )
 
-    logging.info("[OME DICTIONARY] All keywords found in OME dictionary: %s", sorted(found))
-    return sorted(found)
+    result = [k for k in keywords_lower if k in found]  # input order
+    logging.info("[OME DICTIONARY] All keywords found in OME dictionary: %s", result)
+    return result
 
-
+### SOURCE ###
 def configure_barometre_source(con: duckdb.DuckDBPyConnection, source_table: str,
                                postgres_user: str, postgres_password: str, 
                                postgres_host: str, postgres_port: str, 
@@ -125,81 +169,6 @@ def configure_barometre_source(con: duckdb.DuckDBPyConnection, source_table: str
         logging.error(e)
         raise e
     
-
-def get_max_start_date_from_destination(con: duckdb.DuckDBPyConnection, postgres_db: str, destination_table: str) -> date:
-    """Get the maximum start date from the destination table, or None if empty."""
-    try:
-        result = con.sql(f"SELECT MAX(start) FROM {postgres_db}.{destination_table}").fetchone()
-        if result and result[0]:
-            return result[0].date()
-        else:
-            return None
-    except Exception as e:
-        logging.error(f"[{destination_table}] ERROR GETTING MAX START DATE: {e}")
-        raise e
-
-
-def configure_barometre_registry(con: duckdb.DuckDBPyConnection, dry_run: bool,
-                                 postgres_db: str, registry_table) -> None:
-    """Creates the registry table if it does not exist yet."""
-    try:
-        if dry_run:
-            return
-        con.execute(f"""
-            CREATE TABLE IF NOT EXISTS {postgres_db}.{registry_table} (
-                table_name VARCHAR NOT NULL,
-                start_date DATE NOT NULL,
-                end_date DATE NOT NULL,
-                keywords VARCHAR NOT NULL,
-                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (table_name)
-            )
-        """)
-        logging.info(f"[{registry_table}] TABLE CREATED OR ALREADY EXISTS")
-    except Exception as e:
-        logging.error(f"[{registry_table}] ERROR CONFIGURING REGISTRY:")
-        logging.error(e)
-        raise e
-
-
-def configure_barometre_destination(con: duckdb.DuckDBPyConnection, 
-                                    dry_run: bool,
-                                    source_table: str, destination_table: str, 
-                                    postgres_db: str) -> None:
-    """The database is already attached by configure_barometre_source: we only prepare the table."""
-    try:
-        logging.info(f"[{destination_table}] CONFIGURATION: Using {postgres_db}")
-        # <!> Asserting source_table won't be cleared
-        if destination_table == source_table or\
-                destination_table.split(".")[-1].lower() == source_table.split(".")[-1].lower():
-            raise ValueError(
-                f"DESTINATION_TABLE == SOURCE_TABLE ({destination_table}): "
-                "the source table would be cleared by DELETE"
-            )
-        if not dry_run:
-            con.execute(f"""
-                CREATE TABLE IF NOT EXISTS {postgres_db}.{destination_table} (
-                    this_id VARCHAR NOT NULL,
-                    channel_name VARCHAR NOT NULL,
-                    channel_title VARCHAR NOT NULL,
-                    start TIMESTAMP NOT NULL,
-                    thematic_chunk BOOLEAN NOT NULL,
-                    keywords VARCHAR,
-                    themes VARCHAR,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    plaintext VARCHAR NOT NULL,
-                    source_keywords_id VARCHAR,
-                    PRIMARY KEY (this_id)
-                )
-            """)
-            logging.info(f"[{destination_table}] TABLE CREATED OR ALREADY EXISTS")
-
-    except Exception as e:
-        logging.error(f"[{destination_table}] ERROR CONNECTING:")
-        logging.error(e)
-        raise e
-
-
 def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
                             keywords_to_look_for: list[str],
                             start_date: date, end_date: date,
@@ -234,8 +203,64 @@ def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
         logging.error(f"[{source_table}] ERROR READING KEYWORDS:")
         logging.error(e)
         raise e
+    
+    
+### DESTINATION ### 
+def get_max_start_date_from_destination(con: duckdb.DuckDBPyConnection, postgres_db: str, destination_table: str) -> date:
+    """Get the maximum start date from the destination table, or None if empty."""
+    try:
+        result = con.sql(f"SELECT MAX(start) FROM {postgres_db}.{destination_table}").fetchone()
+        if result and result[0]:
+            return result[0].date()
+        else:
+            return None
+    except Exception as e:
+        logging.error(f"[{destination_table}] ERROR GETTING MAX START DATE: {e}")
+        raise e
 
 
+def configure_barometre_destination(con: duckdb.DuckDBPyConnection, 
+                                    dry_run: bool,
+                                    source_table: str, destination_table: str, 
+                                    postgres_db: str) -> None:
+    """The database is already attached by configure_barometre_source: we only prepare the table."""
+    try:
+        logging.info(f"[{destination_table}] CONFIGURATION: Using {postgres_db}")
+        # <!> Asserting source_table won't be cleared
+        if destination_table == source_table or\
+                destination_table.split(".")[-1].lower() == source_table.split(".")[-1].lower():
+            raise ValueError(
+                f"DESTINATION_TABLE == SOURCE_TABLE ({destination_table}): "
+                "the source table would be cleared by DELETE"
+            )
+        if not dry_run:
+            existed = _table_exists(con, postgres_db, destination_table)
+            con.execute(f"""
+                CREATE TABLE IF NOT EXISTS {postgres_db}.{destination_table} (
+                    this_id VARCHAR NOT NULL,
+                    channel_name VARCHAR NOT NULL,
+                    channel_title VARCHAR NOT NULL,
+                    start TIMESTAMP NOT NULL,
+                    thematic_chunk BOOLEAN NOT NULL,
+                    keywords VARCHAR,
+                    themes VARCHAR,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    plaintext VARCHAR NOT NULL,
+                    source_keywords_id VARCHAR,
+                    PRIMARY KEY (this_id)
+                )
+            """)
+            if existed:
+                logging.info(f"[{destination_table}] TABLE ALREADY EXISTS: resuming, rows will be appended")
+            else:
+                logging.info(f"[{destination_table}] TABLE CREATED")
+
+    except Exception as e:
+        logging.error(f"[{destination_table}] ERROR CONNECTING:")
+        logging.error(e)
+        raise e
+
+### S3 ###
 def _configure_s3(con: duckdb.DuckDBPyConnection, 
                   s3_endpoint_url: str, s3_region: str, 
                   s3_access_key: str, s3_secret_key: str) -> None:
@@ -306,7 +331,7 @@ def read_day_from_s3(con: duckdb.DuckDBPyConnection, day: date, channels: list[s
 
     return df
 
-
+### GETTING ADJACENT CHUNKS ###
 def extract_adjacent_chunks_day(keywords_day: pd.DataFrame, s3_day_df: pd.DataFrame,
                                 gap: pd.Timedelta, country: str, channel_titles: dict[str, str]) -> pd.DataFrame:
     """Keeps thematic chunks (from the keywords table) and their adjacents (within gap) fetched from s3"""

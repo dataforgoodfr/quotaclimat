@@ -28,7 +28,7 @@ from quotaclimat.data_processing.mediatree.i8n.belgium.channel_titles import cha
 from quotaclimat.data_processing.mediatree.i8n.belgium_flanders.channel_titles import channel_titles_belgium_flanders
 
 # timedelta that defines the range in which a chunk is considered adjacent to core chunk
-GAP = Timedelta(minutes=2, seconds=30)
+GAP = timedelta(minutes=2, seconds=30)
 CHANNEL_TITLES = {'france': channel_titles_france, 'belgium': channel_titles_belgium, 'belgium_flanders': channel_titles_belgium_flanders}
 LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch"}
 REGISTRY_TABLE = "public.thematic_tables_registry"
@@ -118,7 +118,15 @@ def load_env() -> None:
 
 def run() -> None:
 
-    logging.info(f"[RUN] {START_DATE} -> {END_DATE}, {KEYWORDS}, {COUNTRY}, {LANGUAGE}")
+    logging.info(
+        "[RUN]\n"
+        f"start_date = {START_DATE}\n"
+        f"end_date = {END_DATE}\n"
+        f"destination_table = {DESTINATION_TABLE}\n"
+        f"keywords = {KEYWORDS}\n"
+        f"country = {COUNTRY}\n"
+        f"language = {LANGUAGE}"
+    )    
     logging.warning(f"[RUN] DRY_RUN={DRY_RUN}")
 
     _con = duckdb.connect()
@@ -128,7 +136,7 @@ def run() -> None:
                                             POSTGRES_USER, POSTGRES_PASSWORD,
                                             POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB)
     ### configuring registry
-    utils.configure_barometre_registry(_con, DRY_RUN, POSTGRES_DB, REGISTRY_TABLE)
+    utils.configure_thematic_registry(_con, DRY_RUN, POSTGRES_DB, REGISTRY_TABLE)
     
 
     ### start_date: from env, or deduced from destination table (START_DATE global never modified)
@@ -145,13 +153,21 @@ def run() -> None:
         raise ValueError("Provide START_DATE (new run) or DESTINATION_TABLE (resume)")
 
     resuming = not start_date
-
-    ### RESUMING RUN
-    if not start_date and destination_table:
+    logging.info("[RUN] No strtat date given, attempting to resume.")
+     ### RESUMING RUN
+    if resuming:
+        if not utils._table_exists(_con, POSTGRES_DB, destination_table):
+            raise ValueError(...)
+        registered = utils.get_registered_run(_con, POSTGRES_DB, destination_table, REGISTRY_TABLE)
+        kw_list, country = registered["keywords"], registered["country"]
+        if os.getenv("COUNTRY") and COUNTRY != country:
+            raise ValueError(
+                f"COUNTRY={COUNTRY} but {destination_table} was created for {country}: "
+                "unset COUNTRY to resume"
+            )
         max_start = utils.get_max_start_date_from_destination(_con, POSTGRES_DB, destination_table)
         if max_start is None:
             raise ValueError("Empty destination: rerun as a new run with START_DATE and without DESTINATION_TABLE")
-        kw_list = utils.get_registered_keywords(_con, POSTGRES_DB, destination_table, REGISTRY_TABLE)
         start_date = max_start
         logging.info(f"Deducted start date from {destination_table}: {start_date}")
         if start_date >= END_DATE:
@@ -161,10 +177,17 @@ def run() -> None:
     else:
         if not KEYWORDS:
             raise ValueError("KEYWORDS is required for a new run")
+        country = COUNTRY
         ### Checking keywords to process
         kw_list = utils.get_keywords_in_ome(KEYWORDS, LANGUAGE)
         #Making detination table name
-        destination_table=utils.make_destination_table_name(start_date, END_DATE, kw_list)
+        destination_table=utils.make_destination_table_name(start_date, kw_list, country)
+        if utils._table_exists(_con, POSTGRES_DB, destination_table):
+            logging.warning(
+                f"[RUN] {destination_table} already exists with the same start date and keywords: "
+                f"reprocessing every day from {start_date} (rows already present are ignored). "
+                "To continue from the last ingested day, rerun with DESTINATION_TABLE and without START_DATE."
+            )           
 
      
     ### Configuring s3 connection
@@ -176,7 +199,7 @@ def run() -> None:
     ### updating registry
     if not resuming:
         utils.register_run(_con, DRY_RUN, POSTGRES_DB, destination_table,
-                           start_date, END_DATE, kw_list, REGISTRY_TABLE)
+                           start_date, country, kw_list, REGISTRY_TABLE)
 
     counter_to_ingest = 0
     ingested = 0
@@ -195,7 +218,7 @@ def run() -> None:
             logging.info(f"[{SOURCE_TABLE}] {day}: reading source table")
             keywords_day = utils.read_barometre_keywords(_con, kw_list,
                                                          day, day + timedelta(days=1),
-                                                         COUNTRY, SOURCE_TABLE, POSTGRES_DB)
+                                                         country, SOURCE_TABLE, POSTGRES_DB)
         except Exception:
             logging.exception(f"[{SOURCE_TABLE}] {day}: failed")
             stopped_day = day
@@ -212,7 +235,7 @@ def run() -> None:
         day_channels = keywords_day["channel_name"].unique().tolist()
         logging.info(f"[S3] {day}: Fetching s3 data on {len(day_channels)} channels from {len(keywords_day)} chunks")
         try:
-            s3_day_df = utils.read_day_from_s3(_con, day, day_channels, COUNTRY, S3_BUCKET_NAME)
+            s3_day_df = utils.read_day_from_s3(_con, day, day_channels, country, S3_BUCKET_NAME)
         except Exception:
             logging.exception(f"[S3] {day}: failed to read S3")
             stopped_day = day
@@ -222,7 +245,7 @@ def run() -> None:
             # 3. Extracting thematic chunks and neighbour chunks
             logging.info("[EXTRACT_ADJACENT_CHUNKS] Starting selection of chunks to keep (thematic + adjacent)")
             day_to_ingest_df = utils.extract_adjacent_chunks_day(keywords_day, s3_day_df, GAP,
-                                                                 COUNTRY, CHANNEL_TITLES)
+                                                                 country, CHANNEL_TITLES)
             n_thematic_day = int(day_to_ingest_df["thematic_chunk"].sum())
             n_adjacent_day = len(day_to_ingest_df) - n_thematic_day
             logging.info(

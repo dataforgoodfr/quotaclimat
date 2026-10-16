@@ -6,7 +6,8 @@
 --   fin     type Date, dernier jour inclus, ex. 2026-09-30
 --   niveau  type Texte, échelle de l'annonceur : marque, entreprise ou groupe (société mère ultime) ; à régler en
 --           liste déroulante de ces trois valeurs, valeur par défaut entreprise (une autre valeur ne renvoie rien)
---   nb_annonceurs type Nombre, facultatif (15 si vide) : annonceurs affichés, les autres regroupés dans « Autres »
+-- Une ligne par annonceur : le regroupement des petites parts en « Autres » est laissé au camembert de Metabase
+-- (réglage « Pourcentage minimum de part »).
 -- Calcul : les cas de chaque émission sur la période sont répartis entre les annonceurs au prorata de leurs
 -- secondes de pub autour de l'émission (cas_attribues), puis additionnés par annonceur. Un annonceur qui a 10 % de
 -- la pub d'une émission à 20 cas se voit attribuer 2 cas. La somme des cas attribués est le nombre de cas des
@@ -25,9 +26,6 @@ WITH bornes AS NOT MATERIALIZED (
     SELECT
         CAST({{debut}} AS date) AS debut,
         CAST({{fin}} AS date) AS fin
-),
-parametres AS (
-    SELECT COALESCE([[CAST({{nb_annonceurs}} AS integer),]] 15) AS nb_annonceurs
 ),
 -- secondes de pub par annonceur (au niveau choisi) et par émission
 pub AS MATERIALIZED (
@@ -75,41 +73,15 @@ par_annonceur AS (
     JOIN pub_emission pe ON pe.emission_cle = pu.emission_cle
     LEFT JOIN metriques m ON m.emission_cle = pu.emission_cle
     GROUP BY pu.annonceur
-),
-classes AS (
-    SELECT
-        pa.*,
-        ROW_NUMBER() OVER (ORDER BY pa.cas_attribues DESC, pa.pub_secondes DESC, pa.annonceur) AS rang,
-        SUM(pa.cas_attribues) OVER () AS cas_total,
-        SUM(pa.pub_secondes) OVER () AS pub_secondes_total
-    FROM par_annonceur pa
-),
--- les nb_annonceurs premiers, les autres regroupés en une part (rang vide)
-parts AS (
-    SELECT
-        CASE WHEN c.rang <= p.nb_annonceurs THEN c.rang END AS rang_affiche,
-        MAX(c.annonceur) AS annonceur,
-        MIN(c.rang) AS rang,
-        COUNT(*) AS nb_annonceurs,
-        SUM(c.cas_attribues) AS cas_attribues,
-        SUM(c.pub_secondes) AS pub_secondes,
-        SUM(c.pub_x_cas_par_heure) AS pub_x_cas_par_heure,
-        SUM(c.pub_secondes_avec_taux) AS pub_secondes_avec_taux,
-        MAX(c.cas_total) AS cas_total,
-        MAX(c.pub_secondes_total) AS pub_secondes_total
-    FROM classes c
-    CROSS JOIN parametres p
-    GROUP BY 1
 )
 SELECT
-    CASE WHEN rang_affiche IS NOT NULL THEN annonceur ELSE 'Autres (' || nb_annonceurs || ' annonceurs)' END AS annonceur,
+    annonceur,
     ROUND(cas_attribues::numeric, 2) AS cas_attribues,
-    ROUND((100 * cas_attribues / NULLIF(cas_total, 0))::numeric, 2) AS part_cas_pct,
+    ROUND((100 * cas_attribues / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2) AS part_cas_pct,
     ROUND(pub_secondes::numeric, 0) AS pub_secondes,
-    ROUND((100 * pub_secondes / pub_secondes_total)::numeric, 2) AS part_pub_pct,
-    ROUND(((cas_attribues / NULLIF(cas_total, 0)) / (pub_secondes / pub_secondes_total))::numeric, 2)
+    ROUND((100 * pub_secondes / SUM(pub_secondes) OVER ())::numeric, 2) AS part_pub_pct,
+    ROUND(((cas_attribues / NULLIF(SUM(cas_attribues) OVER (), 0)) / (pub_secondes / SUM(pub_secondes) OVER ()))::numeric, 2)
         AS indice_surexposition,
     ROUND((pub_x_cas_par_heure / NULLIF(pub_secondes_avec_taux, 0))::numeric, 3) AS cas_par_heure_moyen
-FROM parts
--- par cas attribués décroissants, « Autres » (rang nb_annonceurs + 1) en dernier
-ORDER BY rang
+FROM par_annonceur
+ORDER BY cas_attribues DESC, pub_secondes DESC, annonceur

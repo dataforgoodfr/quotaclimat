@@ -29,6 +29,11 @@
 --     à part_cas_cumulee_pct (ex. les 10 premiers par cas font 30 % des cas pour 12 % de la pub) ;
 --   part_cas_cumulee_rang_pub_pct : l'inverse, part des cas cumulée dans le classement par pub : à comparer à
 --     part_pub_cumulee_pct (ex. les 10 premiers annonceurs par pub font 25 % de la pub et 20 % des cas) ;
+--   ecart_cumule_rang_cas_pct, ecart_cumule_rang_pub_pct : écart entre les deux courbes cumulées de chaque
+--     classement, part des cas cumulée - part de pub cumulée. Il grandit tant que les annonceurs ajoutés ont plus
+--     de part de cas que de part de pub (indice_surexposition > 1), diminue ensuite ; son maximum (son minimum
+--     s'il est négatif) marque le rang où la deuxième courbe commence à rattraper la première. Il revient à 0
+--     quand tous les annonceurs sont comptés ;
 --   cas_par_heure_moyen : cas par heure de programme des émissions de l'annonceur, moyenne pondérée par ses
 --     secondes de pub ; indépendant de la durée des émissions, alors que cas_attribues favorise les émissions
 --     longues (plus d'heures, plus de cas).
@@ -111,6 +116,12 @@ resultat AS (
             AS part_pub_cumulee_rang_cas_pct,
         ROUND((100 * SUM(cas_attribues) OVER (ORDER BY pub_secondes DESC) / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2)
             AS part_cas_cumulee_rang_pub_pct,
+        ROUND((100 * SUM(cas_attribues) OVER (ORDER BY cas_attribues DESC) / NULLIF(SUM(cas_attribues) OVER (), 0)
+            - 100 * SUM(pub_secondes) OVER (ORDER BY cas_attribues DESC) / SUM(pub_secondes) OVER ())::numeric, 2)
+            AS ecart_cumule_rang_cas_pct,
+        ROUND((100 * SUM(cas_attribues) OVER (ORDER BY pub_secondes DESC) / NULLIF(SUM(cas_attribues) OVER (), 0)
+            - 100 * SUM(pub_secondes) OVER (ORDER BY pub_secondes DESC) / SUM(pub_secondes) OVER ())::numeric, 2)
+            AS ecart_cumule_rang_pub_pct,
         ROUND((pub_x_cas_par_heure / NULLIF(pub_secondes_avec_taux, 0))::numeric, 3) AS cas_par_heure_moyen
     FROM par_annonceur
 )

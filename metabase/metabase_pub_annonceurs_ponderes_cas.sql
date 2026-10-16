@@ -6,6 +6,9 @@
 --   fin     type Date, dernier jour inclus, ex. 2026-09-30
 --   niveau  type Texte, échelle de l'annonceur : marque, entreprise ou groupe (société mère ultime) ; à régler en
 --           liste déroulante de ces trois valeurs, valeur par défaut entreprise (une autre valeur ne renvoie rien)
+--   nb_points type Nombre, facultatif (2000 si vide) : annonceurs gardés, ceux classés dans les nb_points premiers
+--           des deux classements (rang_pub et rang_cas) ; les parts et les cumuls restent calculés sur tous les
+--           annonceurs (le dernier point n'atteint donc pas 100 %)
 -- Une ligne par annonceur : le regroupement des petites parts en « Autres » est laissé au camembert de Metabase
 -- (réglage « Pourcentage minimum de part »).
 -- Calcul : les cas de chaque émission sur la période sont répartis entre les annonceurs au prorata de leurs
@@ -36,6 +39,9 @@ WITH bornes AS NOT MATERIALIZED (
     SELECT
         CAST({{debut}} AS date) AS debut,
         CAST({{fin}} AS date) AS fin
+),
+parametres AS (
+    SELECT COALESCE([[CAST({{nb_points}} AS integer),]] 2000) AS nb_points
 ),
 -- secondes de pub par annonceur (au niveau choisi) et par émission
 pub AS MATERIALIZED (
@@ -83,26 +89,34 @@ par_annonceur AS (
     JOIN pub_emission pe ON pe.emission_cle = pu.emission_cle
     LEFT JOIN metriques m ON m.emission_cle = pu.emission_cle
     GROUP BY pu.annonceur
+),
+-- parts, rangs et cumuls sur tous les annonceurs, avant la limite
+resultat AS (
+    SELECT
+        annonceur,
+        ROUND(cas_attribues::numeric, 2) AS cas_attribues,
+        ROUND((100 * cas_attribues / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2) AS part_cas_pct,
+        ROUND(pub_secondes::numeric, 0) AS pub_secondes,
+        ROUND((100 * pub_secondes / SUM(pub_secondes) OVER ())::numeric, 2) AS part_pub_pct,
+        ROUND(((cas_attribues / NULLIF(SUM(cas_attribues) OVER (), 0)) / (pub_secondes / SUM(pub_secondes) OVER ()))::numeric, 2)
+            AS indice_surexposition,
+        RANK() OVER (ORDER BY pub_secondes DESC) AS rang_pub,
+        RANK() OVER (ORDER BY cas_attribues DESC) AS rang_cas,
+        RANK() OVER (ORDER BY pub_secondes DESC) - RANK() OVER (ORDER BY cas_attribues DESC) AS ecart_rang,
+        ROUND((100 * SUM(pub_secondes) OVER (ORDER BY pub_secondes DESC) / SUM(pub_secondes) OVER ())::numeric, 2)
+            AS part_pub_cumulee_pct,
+        ROUND((100 * SUM(cas_attribues) OVER (ORDER BY cas_attribues DESC) / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2)
+            AS part_cas_cumulee_pct,
+        ROUND((100 * SUM(pub_secondes) OVER (ORDER BY cas_attribues DESC) / SUM(pub_secondes) OVER ())::numeric, 2)
+            AS part_pub_cumulee_rang_cas_pct,
+        ROUND((100 * SUM(cas_attribues) OVER (ORDER BY pub_secondes DESC) / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2)
+            AS part_cas_cumulee_rang_pub_pct,
+        ROUND((pub_x_cas_par_heure / NULLIF(pub_secondes_avec_taux, 0))::numeric, 3) AS cas_par_heure_moyen
+    FROM par_annonceur
 )
-SELECT
-    annonceur,
-    ROUND(cas_attribues::numeric, 2) AS cas_attribues,
-    ROUND((100 * cas_attribues / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2) AS part_cas_pct,
-    ROUND(pub_secondes::numeric, 0) AS pub_secondes,
-    ROUND((100 * pub_secondes / SUM(pub_secondes) OVER ())::numeric, 2) AS part_pub_pct,
-    ROUND(((cas_attribues / NULLIF(SUM(cas_attribues) OVER (), 0)) / (pub_secondes / SUM(pub_secondes) OVER ()))::numeric, 2)
-        AS indice_surexposition,
-    RANK() OVER (ORDER BY pub_secondes DESC) AS rang_pub,
-    RANK() OVER (ORDER BY cas_attribues DESC) AS rang_cas,
-    RANK() OVER (ORDER BY pub_secondes DESC) - RANK() OVER (ORDER BY cas_attribues DESC) AS ecart_rang,
-    ROUND((100 * SUM(pub_secondes) OVER (ORDER BY pub_secondes DESC) / SUM(pub_secondes) OVER ())::numeric, 2)
-        AS part_pub_cumulee_pct,
-    ROUND((100 * SUM(cas_attribues) OVER (ORDER BY cas_attribues DESC) / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2)
-        AS part_cas_cumulee_pct,
-    ROUND((100 * SUM(pub_secondes) OVER (ORDER BY cas_attribues DESC) / SUM(pub_secondes) OVER ())::numeric, 2)
-        AS part_pub_cumulee_rang_cas_pct,
-    ROUND((100 * SUM(cas_attribues) OVER (ORDER BY pub_secondes DESC) / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2)
-        AS part_cas_cumulee_rang_pub_pct,
-    ROUND((pub_x_cas_par_heure / NULLIF(pub_secondes_avec_taux, 0))::numeric, 3) AS cas_par_heure_moyen
-FROM par_annonceur
-ORDER BY cas_attribues DESC, pub_secondes DESC, annonceur
+SELECT r.*
+FROM resultat r
+CROSS JOIN parametres p
+WHERE r.rang_pub <= p.nb_points
+  AND r.rang_cas <= p.nb_points
+ORDER BY r.rang_cas, r.rang_pub, r.annonceur

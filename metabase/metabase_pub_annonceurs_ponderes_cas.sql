@@ -20,11 +20,12 @@
 --   indice_surexposition : part_cas_pct / part_pub_pct ; 1 : l'annonceur est autour des cas autant que sa pub le
 --     laisse attendre, 2 : deux fois plus (sa pub va vers les émissions qui ont le plus de cas) ;
 --   rang_pub, rang_cas : rang de l'annonceur dans le classement par part de pub et dans le classement par cas
---     attribués (1 : le premier ; ex aequo au même rang) ; ecart_rang : rang_pub - rang_cas, positif quand
+--     attribués (1 : le premier ; un rang par annonceur, ex aequo départagés par ordre alphabétique, pour que
+--     chaque point des courbes ait sa propre abscisse : Metabase additionne les lignes de même abscisse) ;
+--     ecart_rang : rang_pub - rang_cas, positif quand
 --     l'annonceur remonte une fois la pub pondérée par les cas ;
 --   part_pub_cumulee_pct, part_cas_cumulee_pct : part cumulée des annonceurs classés jusqu'à ce rang (au rang 1
---     sa propre part, au rang 2 la somme des deux premiers…), dans chacun des deux classements ; les ex aequo
---     ont la même valeur, qui les inclut tous ;
+--     sa propre part, au rang 2 la somme des deux premiers…), dans chacun des deux classements ;
 --   part_pub_cumulee_rang_cas_pct : part de pub cumulée, mais dans le classement par cas attribués : à comparer
 --     à part_cas_cumulee_pct (ex. les 10 premiers par cas font 30 % des cas pour 12 % de la pub) ;
 --   part_cas_cumulee_rang_pub_pct : l'inverse, part des cas cumulée dans le classement par pub : à comparer à
@@ -105,25 +106,29 @@ resultat AS (
         ROUND((100 * pub_secondes / SUM(pub_secondes) OVER ())::numeric, 2) AS part_pub_pct,
         ROUND(((cas_attribues / NULLIF(SUM(cas_attribues) OVER (), 0)) / (pub_secondes / SUM(pub_secondes) OVER ()))::numeric, 2)
             AS indice_surexposition,
-        RANK() OVER (ORDER BY pub_secondes DESC) AS rang_pub,
-        RANK() OVER (ORDER BY cas_attribues DESC) AS rang_cas,
-        RANK() OVER (ORDER BY pub_secondes DESC) - RANK() OVER (ORDER BY cas_attribues DESC) AS ecart_rang,
-        ROUND((100 * SUM(pub_secondes) OVER (ORDER BY pub_secondes DESC) / SUM(pub_secondes) OVER ())::numeric, 2)
+        ROW_NUMBER() OVER classement_pub AS rang_pub,
+        ROW_NUMBER() OVER classement_cas AS rang_cas,
+        ROW_NUMBER() OVER classement_pub - ROW_NUMBER() OVER classement_cas AS ecart_rang,
+        ROUND((100 * SUM(pub_secondes) OVER classement_pub / SUM(pub_secondes) OVER ())::numeric, 2)
             AS part_pub_cumulee_pct,
-        ROUND((100 * SUM(cas_attribues) OVER (ORDER BY cas_attribues DESC) / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2)
+        ROUND((100 * SUM(cas_attribues) OVER classement_cas / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2)
             AS part_cas_cumulee_pct,
-        ROUND((100 * SUM(pub_secondes) OVER (ORDER BY cas_attribues DESC) / SUM(pub_secondes) OVER ())::numeric, 2)
+        ROUND((100 * SUM(pub_secondes) OVER classement_cas / SUM(pub_secondes) OVER ())::numeric, 2)
             AS part_pub_cumulee_rang_cas_pct,
-        ROUND((100 * SUM(cas_attribues) OVER (ORDER BY pub_secondes DESC) / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2)
+        ROUND((100 * SUM(cas_attribues) OVER classement_pub / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2)
             AS part_cas_cumulee_rang_pub_pct,
-        ROUND((100 * SUM(cas_attribues) OVER (ORDER BY cas_attribues DESC) / NULLIF(SUM(cas_attribues) OVER (), 0)
-            - 100 * SUM(pub_secondes) OVER (ORDER BY cas_attribues DESC) / SUM(pub_secondes) OVER ())::numeric, 2)
+        ROUND((100 * SUM(cas_attribues) OVER classement_cas / NULLIF(SUM(cas_attribues) OVER (), 0)
+            - 100 * SUM(pub_secondes) OVER classement_cas / SUM(pub_secondes) OVER ())::numeric, 2)
             AS ecart_cumule_rang_cas_pct,
-        ROUND((100 * SUM(cas_attribues) OVER (ORDER BY pub_secondes DESC) / NULLIF(SUM(cas_attribues) OVER (), 0)
-            - 100 * SUM(pub_secondes) OVER (ORDER BY pub_secondes DESC) / SUM(pub_secondes) OVER ())::numeric, 2)
+        ROUND((100 * SUM(cas_attribues) OVER classement_pub / NULLIF(SUM(cas_attribues) OVER (), 0)
+            - 100 * SUM(pub_secondes) OVER classement_pub / SUM(pub_secondes) OVER ())::numeric, 2)
             AS ecart_cumule_rang_pub_pct,
         ROUND((pub_x_cas_par_heure / NULLIF(pub_secondes_avec_taux, 0))::numeric, 3) AS cas_par_heure_moyen
     FROM par_annonceur
+    -- un rang par annonceur et des cumuls ligne à ligne (ROWS) : ex aequo départagés par le nom
+    WINDOW
+        classement_pub AS (ORDER BY pub_secondes DESC, annonceur ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW),
+        classement_cas AS (ORDER BY cas_attribues DESC, annonceur ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)
 )
 SELECT r.*
 FROM resultat r

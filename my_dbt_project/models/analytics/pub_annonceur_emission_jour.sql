@@ -22,7 +22,10 @@
     a company or of a group, the level is chosen when reading (Metabase):
     - marque: brand_name, the predicted brand as spelled in ad_brands (the predicted brand itself when not listed);
     - entreprise: brand_company, the company of the brand (the brand itself when not in ad_brands);
-    - groupe: brand_ultimate_parent, its ultimate parent company (the company, else the brand, when unknown). -#}
+    - groupe: brand_ultimate_parent, its ultimate parent company (the company, else the brand, when unknown).
+    secteur, categorie: the predicted sector and product category of the ads (French label, else code; NULL when
+    not predicted), also in the grain, a brand having ads in several sectors and categories; a category belongs
+    to a sector. -#}
 
 {% set window_minutes = var('ad_emission_window_minutes', 15) %}
 
@@ -45,6 +48,8 @@ pubs AS (
         p.brand_name AS marque,
         p.brand_company AS entreprise,
         p.brand_ultimate_parent AS groupe,
+        COALESCE(p.sector_label_fr, p.predicted_sector) AS secteur,
+        COALESCE(p.product_category_fr, p.predicted_product_category) AS categorie,
         -- occurrence_date is in UTC (timestamp without time zone)
         ((p.occurrence_date AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris')::date AS jour,
         p.duration_sec,
@@ -59,12 +64,12 @@ pubs AS (
     WHERE p.brand_company IS NOT NULL
 ),
 pubs_lignes AS (
-    SELECT marque, entreprise, groupe, jour, program_before_id AS program_id,
+    SELECT marque, entreprise, groupe, secteur, categorie, jour, program_before_id AS program_id,
         duration_sec * CASE WHEN apres_proche THEN 0.5 ELSE 1 END AS secondes
     FROM pubs
     WHERE avant_proche
     UNION ALL
-    SELECT marque, entreprise, groupe, jour, program_after_id,
+    SELECT marque, entreprise, groupe, secteur, categorie, jour, program_after_id,
         duration_sec * CASE WHEN avant_proche THEN 0.5 ELSE 1 END
     FROM pubs
     WHERE apres_proche
@@ -73,6 +78,8 @@ SELECT
     pl.marque,
     pl.entreprise,
     pl.groupe,
+    pl.secteur,
+    pl.categorie,
     g.emission_cle,
     pl.jour,
     g.channel_name,
@@ -83,4 +90,4 @@ SELECT
     COUNT(*) AS nb_occurrences
 FROM pubs_lignes pl
 JOIN grille g ON g.id = pl.program_id
-GROUP BY pl.marque, pl.entreprise, pl.groupe, g.emission_cle, pl.jour, g.channel_name, g.type, g.nom, g.rediffusion
+GROUP BY pl.marque, pl.entreprise, pl.groupe, pl.secteur, pl.categorie, g.emission_cle, pl.jour, g.channel_name, g.type, g.nom, g.rediffusion

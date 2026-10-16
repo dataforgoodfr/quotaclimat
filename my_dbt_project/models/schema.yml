@@ -772,6 +772,13 @@ models:
         description: Ultimate parent company of the brand (publicites.brand_ultimate_parent).
         tests:
           - not_null
+      - name: secteur
+        description: >
+          Predicted sector of the ads (publicites.sector_label_fr, else predicted_sector), NULL when not predicted.
+      - name: categorie
+        description: >
+          Predicted product category of the ads (publicites.product_category_fr, else predicted_product_category),
+          NULL when not predicted. A category belongs to a sector.
       - name: emission_cle
         description: Key of the emission, as in emission_jour.
         tests:

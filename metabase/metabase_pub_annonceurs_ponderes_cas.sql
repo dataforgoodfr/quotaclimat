@@ -4,8 +4,12 @@
 -- Variables Metabase :
 --   debut   type Date, premier jour inclus (heure de Paris), ex. 2026-09-01
 --   fin     type Date, dernier jour inclus, ex. 2026-09-30
---   niveau  type Texte, échelle de l'annonceur : marque, entreprise ou groupe (société mère ultime) ; à régler en
---           liste déroulante de ces trois valeurs, valeur par défaut entreprise (une autre valeur ne renvoie rien)
+--   niveau  type Texte, échelle de l'annonceur : marque, entreprise, groupe (société mère ultime) ou secteur (secteur
+--           prédit des pubs, « Secteur inconnu » sans prédiction) ; à régler en liste déroulante de ces quatre
+--           valeurs, valeur par défaut entreprise (une autre valeur ne renvoie rien). Avec secteur, chaque ligne est
+--           un secteur et la colonne annonceur porte son nom
+--   inclure_info_continue type Texte, facultatif (true si vide), true ou false (liste déroulante) : false écarte
+--           les chaînes d'information en continu (analytics.program.infocontinue), leur pub comme leurs cas
 --   ponderation_par_temps_denv type Texte, facultatif (false si vide), true ou false (liste déroulante) : poids
 --           d'une seconde de pub autour d'une émission
 --     - false : les cas de chaque émission sur la période sont répartis entre les annonceurs au prorata de leurs
@@ -29,6 +33,8 @@
 -- Colonnes :
 --   cas_attribues, part_cas_pct : poids de l'annonceur (voir ponderation_par_temps_denv) et sa part dans le
 --     total ;
+--   nb_entreprises : entreprises distinctes qui ont de la pub dans la ligne (1 au niveau marque ou entreprise,
+--     les entreprises du groupe ou du secteur sinon) ;
 --   pub_secondes, part_pub_pct : sa pub rattachée à une émission (gardée) et sa part, pour comparer ;
 --   indice_surexposition : part_cas_pct / part_pub_pct ; 1 : l'annonceur est autour de la mésinformation autant
 --     que sa pub le laisse attendre, 2 : deux fois plus (avec ponderation_par_temps_denv : le score moyen de ses
@@ -64,24 +70,37 @@ WITH bornes AS NOT MATERIALIZED (
 parametres AS (
     SELECT
         COALESCE([[CAST({{ponderation_par_temps_denv}} AS boolean),]] FALSE) AS par_temps_env,
+        COALESCE([[CAST({{inclure_info_continue}} AS boolean),]] TRUE) AS info_continue,
         COALESCE([[CAST({{env_heures_min}} AS numeric),]] 0.5) AS env_heures_min,
         COALESCE([[CAST({{nb_points}} AS integer),]] 2000) AS nb_points
 ),
--- secondes de pub par annonceur (au niveau choisi) et par émission
+-- chaînes d'information en continu
+chaines AS (
+    SELECT channel_name, BOOL_OR(infocontinue) AS infocontinue
+    FROM analytics.program
+    WHERE country = 'france'
+    GROUP BY channel_name
+),
+-- secondes de pub par annonceur (au niveau choisi), entreprise et émission
 pub AS MATERIALIZED (
     SELECT
         CASE CAST({{niveau}} AS text)
             WHEN 'marque' THEN p.marque
             WHEN 'entreprise' THEN p.entreprise
             WHEN 'groupe' THEN p.groupe
+            WHEN 'secteur' THEN COALESCE(p.secteur, 'Secteur inconnu')
         END AS annonceur,
+        p.entreprise,
         p.emission_cle,
         SUM(p.pub_secondes) AS pub_secondes
     FROM analytics.pub_annonceur_emission_jour p
     CROSS JOIN bornes b
+    CROSS JOIN parametres pa
+    LEFT JOIN chaines c ON c.channel_name = p.channel_name
     WHERE p.jour BETWEEN b.debut AND b.fin
-      AND CAST({{niveau}} AS text) IN ('marque', 'entreprise', 'groupe')
-    GROUP BY 1, 2
+      AND CAST({{niveau}} AS text) IN ('marque', 'entreprise', 'groupe', 'secteur')
+      AND (pa.info_continue OR NOT COALESCE(c.infocontinue, FALSE))
+    GROUP BY 1, 2, 3
 ),
 -- cas, heures de programme et d'environnement de chaque émission sur la période
 metriques AS (
@@ -119,6 +138,7 @@ emissions AS MATERIALIZED (
 par_annonceur AS (
     SELECT
         pu.annonceur,
+        COUNT(DISTINCT pu.entreprise) AS nb_entreprises,
         SUM(pu.pub_secondes) AS pub_secondes,
         SUM(pu.pub_secondes * e.poids_par_seconde) AS cas_attribues,
         -- pour les moyennes pondérées des cas par heure (émissions sans heures sur la période écartées)
@@ -136,6 +156,7 @@ resultat AS (
         annonceur,
         ROUND(cas_attribues::numeric, 2) AS cas_attribues,
         ROUND((100 * cas_attribues / NULLIF(SUM(cas_attribues) OVER (), 0))::numeric, 2) AS part_cas_pct,
+        nb_entreprises,
         ROUND(pub_secondes::numeric, 0) AS pub_secondes,
         ROUND((100 * pub_secondes / SUM(pub_secondes) OVER ())::numeric, 2) AS part_pub_pct,
         ROUND(((cas_attribues / NULLIF(SUM(cas_attribues) OVER (), 0)) / (pub_secondes / SUM(pub_secondes) OVER ()))::numeric, 2)

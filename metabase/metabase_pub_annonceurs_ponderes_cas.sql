@@ -16,6 +16,9 @@
 --   part_pub_pct : part de l'annonceur dans la pub rattachée à une émission, pour comparer ;
 --   indice_surexposition : part_cas_pct / part_pub_pct ; 1 : l'annonceur est autour des cas autant que sa pub le
 --     laisse attendre, 2 : deux fois plus (sa pub va vers les émissions qui ont le plus de cas) ;
+--   rang_pub, rang_cas : rang de l'annonceur dans le classement par part de pub et dans le classement par cas
+--     attribués (1 : le premier ; ex aequo au même rang) ; ecart_rang : rang_pub - rang_cas, positif quand
+--     l'annonceur remonte une fois la pub pondérée par les cas ;
 --   cas_par_heure_moyen : cas par heure de programme des émissions de l'annonceur, moyenne pondérée par ses
 --     secondes de pub ; indépendant de la durée des émissions, alors que cas_attribues favorise les émissions
 --     longues (plus d'heures, plus de cas).
@@ -82,6 +85,9 @@ SELECT
     ROUND((100 * pub_secondes / SUM(pub_secondes) OVER ())::numeric, 2) AS part_pub_pct,
     ROUND(((cas_attribues / NULLIF(SUM(cas_attribues) OVER (), 0)) / (pub_secondes / SUM(pub_secondes) OVER ()))::numeric, 2)
         AS indice_surexposition,
+    RANK() OVER (ORDER BY pub_secondes DESC) AS rang_pub,
+    RANK() OVER (ORDER BY cas_attribues DESC) AS rang_cas,
+    RANK() OVER (ORDER BY pub_secondes DESC) - RANK() OVER (ORDER BY cas_attribues DESC) AS ecart_rang,
     ROUND((pub_x_cas_par_heure / NULLIF(pub_secondes_avec_taux, 0))::numeric, 3) AS cas_par_heure_moyen
 FROM par_annonceur
 ORDER BY cas_attribues DESC, pub_secondes DESC, annonceur

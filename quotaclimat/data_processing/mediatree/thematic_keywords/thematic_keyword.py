@@ -131,13 +131,11 @@ def run() -> None:
 
     _con = duckdb.connect()
     ### Attching and configuring source DB
-
     utils.configure_barometre_source(_con, SOURCE_TABLE,
                                             POSTGRES_USER, POSTGRES_PASSWORD,
                                             POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB)
     ### configuring registry
     utils.configure_thematic_registry(_con, DRY_RUN, POSTGRES_DB, REGISTRY_TABLE)
-    
 
     ### start_date: from env, or deduced from destination table (START_DATE global never modified)
     start_date = START_DATE
@@ -153,11 +151,11 @@ def run() -> None:
         raise ValueError("Provide START_DATE (new run) or DESTINATION_TABLE (resume)")
 
     resuming = not start_date
-    logging.info("[RUN] No strtat date given, attempting to resume.")
+    logging.info("[RUN] No start date given, attempting to resume.")
      ### RESUMING RUN
     if resuming:
         if not utils._table_exists(_con, POSTGRES_DB, destination_table):
-            raise ValueError(...)
+            raise ValueError(f"Table name not found : {destination_table}")
         registered = utils.get_registered_run(_con, POSTGRES_DB, destination_table, REGISTRY_TABLE)
         kw_list, country = registered["keywords"], registered["country"]
         if os.getenv("COUNTRY") and COUNTRY != country:
@@ -173,6 +171,8 @@ def run() -> None:
         if start_date >= END_DATE:
             logging.warning("[END] Deducted start_date >= end_date.")
             return
+        logging.info(f"Resuming with {kw_list}, {start_date} and {country} ")
+
     ### NEW RUN
     else:
         if not KEYWORDS:
@@ -184,7 +184,7 @@ def run() -> None:
         destination_table=utils.make_destination_table_name(start_date, kw_list, country)
         if utils._table_exists(_con, POSTGRES_DB, destination_table):
             logging.warning(
-                f"[RUN] {destination_table} already exists with the same start date and keywords: "
+                f"[RUN] {destination_table} already exists with the same start date, keywords and country: "
                 f"reprocessing every day from {start_date} (rows already present are ignored). "
                 "To continue from the last ingested day, rerun with DESTINATION_TABLE and without START_DATE."
             )           

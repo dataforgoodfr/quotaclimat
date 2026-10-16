@@ -39,8 +39,8 @@ def make_destination_table_name(start_date: date, kw_list: list[str], country: s
                          ensure_ascii=False, separators=(",", ":"), sort_keys=True)
     digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
 
-    table_name = f"thematic_keywords_{first}_{digest}"
-    if len(table_name) > PG_MAX_IDENTIFIER:  # 18 + 30 + 1 + 12 = 61 max
+    table_name = f"thematic_kw_{first}_{digest}"
+    if len(table_name) > PG_MAX_IDENTIFIER:  # 12 + 30 + 1 + 12 = 55 max
         raise ValueError(f"table name too long: {table_name}")
     return table_name
 

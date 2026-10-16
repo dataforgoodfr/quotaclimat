@@ -21,6 +21,7 @@ import yaml
 # only local env
 ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(ROOT / ".env", override=False)
+THEMATIC_YML = ROOT / "quotaclimat" / "data_processing" / "thematic" / "thematic_dict.yml"
 
 import quotaclimat.data_processing.thematic.thematic_keywords_utils as kw_utils
 import quotaclimat.data_processing.thematic.thematic_utils as utils
@@ -33,8 +34,8 @@ GAP = timedelta(minutes=2, seconds=30)
 CHANNEL_TITLES = {'france': channel_titles_france, 'belgium': channel_titles_belgium, 'belgium_flanders': channel_titles_belgium_flanders}
 LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch"}
 COUNTRIES = {"france": "fr","belgium": "be", "belgium_flanders": "befl" }
-THEMATIC_YML = ROOT / "quotaclimat" / "data_processing" / "thematic" / "thematic.yml"
 SCHEMA = "public"
+MEDIA_TYPE="audiovisuel"
 
 REQUIRED_ENV = [
     "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB",
@@ -69,6 +70,7 @@ def load_env() -> None:
     if START_DATE and END_DATE <= START_DATE:
         raise ValueError("END_DATE must be after START_DATE")
 
+    ### Keywords to look for from thematic
     THEMATIC = os.getenv("THEMATIC")
     
     ### COUNTRY
@@ -116,7 +118,6 @@ def run() -> None:
     )    
     logging.warning(f"[RUN] DRY_RUN={DRY_RUN}")
 
-    ### 1. Pure computation and validation, no DB access yet
     destination_table = f"{THEMATIC}_thematic_kw_{COUNTRIES[COUNTRY]}"
     is_new_run = START_DATE is not None
     start_date = START_DATE
@@ -128,26 +129,28 @@ def run() -> None:
             "the source table would be cleared"
         )
 
-    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC)
+    ## Getting kw
+    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE)
     if not kw_list:
         raise ValueError(f"No keywords found for '{THEMATIC}' in {THEMATIC_YML}.")
 
-    ### 2. Connection and source
+    ### Connection and source
     _con = duckdb.connect()
     utils.configure_barometre_source(_con, SOURCE_TABLE,
                                     POSTGRES_USER, POSTGRES_PASSWORD,
                                     POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB)
 
-    ### 3. Check existence BEFORE creating the table
-    table_exists = kw_utils.destination_table_exists(_con, destination_table, POSTGRES_DB, SCHEMA)
+    ### Check existence BEFORE creating the table
+    table_exists = utils.destination_table_exists(_con, destination_table, POSTGRES_DB, SCHEMA)
 
-    ### 4. Create the table if needed (new run only: a resume needs an existing one)
+    ### Create the table if needed (new run only: a resume needs an existing one)
     if is_new_run:
         kw_utils.configure_barometre_thematic_keywords(_con, DRY_RUN,
-                                            SOURCE_TABLE, destination_table,
-                                            POSTGRES_DB, SCHEMA)
+                                                destination_table,
+                                                POSTGRES_DB, SCHEMA)
 
-    ### 5. New run vs resume
+    ### New run vs resume
+    ### NEW RUN
     if is_new_run:
         logging.info(f"[RUN] NEW RUN with {start_date} and {THEMATIC}")
         if table_exists:
@@ -156,6 +159,7 @@ def run() -> None:
             except Exception as e:
                 raise ValueError(f"[RUN] Failed to clear {destination_table}") from e
             logging.warning(f"[RUN] Table {destination_table} cleared")
+    ### RESUMING    
     else:
         logging.info("[RUN] No start date given, attempting to resume.")
         if not table_exists:
@@ -163,7 +167,8 @@ def run() -> None:
                 f"[RUN] {destination_table} does not exist in {POSTGRES_DB}: "
                 "rerun as a new run with START_DATE"
             )
-        max_start = kw_utils.get_max_start_from_thematic_keywords(_con, POSTGRES_DB, destination_table)
+        ### Getting new start_date
+        max_start = kw_utils.get_max_start_from_thematic_keywords(_con, POSTGRES_DB, destination_table, SCHEMA)
         if max_start is None:
             raise ValueError("[END] Empty destination: rerun as a new run with START_DATE")
         start_date = max_start

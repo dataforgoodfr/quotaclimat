@@ -15,10 +15,15 @@ import yaml
 
 
 ### KEYWORDS ###
-def get_keywords(yml_file: str, thematic: str) -> list[str]:
+def get_keywords(yml_file: str, thematic: str, media_type: str | None = None) -> list[str]:
+    """Returns the keywords of a thematic as a flat, deduplicated list.
+
+    media_type: None -> all categories merged; otherwise only that category
+    (e.g. "audiovisuel" or "presse").
+    """
     with open(yml_file, "r", encoding="utf-8") as f:
         kw = yaml.safe_load(f)
-
+        
     if kw is None:
         raise ValueError(f"Empty file : {yml_file}")
     if thematic not in kw:
@@ -26,11 +31,12 @@ def get_keywords(yml_file: str, thematic: str) -> list[str]:
             f"Missing theme '{thematic}' {yml_file}. "
             f"Available keys : {list(kw.keys())}"
         )
-        
-    value = kw[thematic]
-    if isinstance(value, dict):  # catégories → liste plate
-        value = [m for mots in value.values() for m in mots]
-    return value
+    if media_type not in kw[thematic]:
+        raise KeyError(
+            f"Missing theme '{thematic}' {yml_file}. "
+            f"Available keys : {list(kw[thematic].keys())}"
+        )
+    return kw[thematic][media_type]
    
     
 ### SOURCE ###
@@ -73,3 +79,18 @@ def clear_destination_table(con: duckdb.DuckDBPyConnection,
         logging.error(f"[{destination_table}] ERROR CLEARING:")
         logging.error(e)
         raise
+    
+    
+def destination_table_exists(con: duckdb.DuckDBPyConnection,
+                             destination_table: str,
+                             postgres_db: str, schema: str) -> bool:
+    """Returns True if the destination table exists in the attached database."""
+    n = con.execute("""
+        SELECT count(*)
+        FROM information_schema.tables
+        WHERE table_catalog = ?
+          AND table_schema = ?
+          AND table_name = ?
+    """, [postgres_db, schema, destination_table]).fetchone()[0]
+
+    return n > 0

@@ -72,7 +72,7 @@ def get_max_start_from_thematic_keywords(con: duckdb.DuckDBPyConnection,
 
 def configure_barometre_thematic_keywords(con: duckdb.DuckDBPyConnection, 
                                     dry_run: bool,
-                                    source_table: str, destination_table: str, 
+                                    destination_table: str, 
                                     postgres_db: str, schema: str) -> None:
     """The database is already attached by configure_barometre_source: we only prepare the table."""
     try:
@@ -101,19 +101,6 @@ def configure_barometre_thematic_keywords(con: duckdb.DuckDBPyConnection,
         raise e
 
     
-def destination_table_exists(con: duckdb.DuckDBPyConnection,
-                             destination_table: str,
-                             postgres_db: str, schema: str) -> bool:
-    """Returns True if the destination table exists in the attached database."""
-    n = con.execute("""
-        SELECT count(*)
-        FROM information_schema.tables
-        WHERE table_catalog = ?
-          AND table_schema = ?
-          AND table_name = ?
-    """, [postgres_db, schema, destination_table]).fetchone()[0]
-
-    return n > 0
 
 ### S3 ###
 def _configure_s3(con: duckdb.DuckDBPyConnection, 
@@ -182,7 +169,7 @@ def read_day_from_s3(con: duckdb.DuckDBPyConnection, day: date, channels: list[s
     if df["start"].dt.tz is not None:
         df["start"] = df["start"].dt.tz_convert("Europe/Paris").dt.tz_localize(None)
     if df.duplicated(subset=["channel_name", "start"]).any():
-        raise ValueError(f"[S3] {day}: duplicate start after local time conversion (daylight saving time switch?)")
+        raise ValueError(f"[S3] {day}: duplicate start after local time conversion")
 
     return df
 

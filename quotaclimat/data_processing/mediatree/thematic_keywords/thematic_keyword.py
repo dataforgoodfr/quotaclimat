@@ -168,6 +168,7 @@ def run() -> None:
             raise ValueError("Empty destination: rerun as a new run with START_DATE and without DESTINATION_TABLE")
         start_date = max_start
         logging.info(f"Deducted start date from {destination_table}: {start_date}")
+        logging.info(f"Deducted keywords from registry: {kw_list}")
         if start_date >= END_DATE:
             logging.warning("[END] Deducted start_date >= end_date.")
             return

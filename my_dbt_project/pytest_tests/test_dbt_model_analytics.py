@@ -642,11 +642,18 @@ def test_pub_annonceur_emission_jour(db_connection):
     """Seconds of ads around each emission: whole tunnel inside, else half before / half after within 15 min."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT emission_cle, jour, marque, entreprise, groupe, pub_secondes, nb_occurrences
+            SELECT emission_cle, jour, marque, entreprise, groupe, pub_secondes, nb_occurrences, secteur
             FROM analytics.pub_annonceur_emission_jour
             WHERE channel_name IN ('bfmtv', 'france2') OR (channel_name = 'lci' AND jour = '2025-04-06')
         """)
         rows = sorted((r[0], r[1], r[2], r[3], r[4], float(r[5]), r[6]) for r in cur.fetchall())
+        cur.execute("""
+            SELECT DISTINCT secteur
+            FROM analytics.pub_annonceur_emission_jour
+            WHERE channel_name IN ('bfmtv', 'france2') OR (channel_name = 'lci' AND jour = '2025-04-06')
+        """)
+        # sector of the predicted brand's ad (PYTEST_AUTO, labelled in ref_ome_secteurs)
+        assert cur.fetchall() == [("Automobile",)]
     # predicted brand "Pytest Škoda", spelled as in ad_brands
     brand, company, parent = "PYTEST SKODA", "Pytest Volkswagen", "Pytest Porsche SE"
     monday = datetime.date(2025, 4, 7)

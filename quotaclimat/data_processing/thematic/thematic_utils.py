@@ -15,7 +15,7 @@ import yaml
 
 
 ### KEYWORDS ###
-def get_keywords(yml_file: str, thematic: str, media_type: str | None = None) -> list[str]:
+def get_keywords(yml_file: str, thematic: str, media_type: str, language: str) -> list[str]:
     """Returns the keywords of a thematic as a flat, deduplicated list.
 
     media_type: None -> all categories merged; otherwise only that category
@@ -31,12 +31,17 @@ def get_keywords(yml_file: str, thematic: str, media_type: str | None = None) ->
             f"Missing theme '{thematic}' {yml_file}. "
             f"Available keys : {list(kw.keys())}"
         )
-    if media_type not in kw[thematic]:
+    if language not in kw[thematic]:
         raise KeyError(
             f"Missing theme '{thematic}' {yml_file}. "
             f"Available keys : {list(kw[thematic].keys())}"
         )
-    return kw[thematic][media_type]
+    if media_type not in kw[thematic][language]:
+        raise KeyError(
+            f"Missing theme '{thematic}' {yml_file}. "
+            f"Available keys : {list(kw[thematic][language].keys())}"
+        )
+    return kw[thematic][language][media_type]
    
     
 ### SOURCE ###
@@ -58,11 +63,13 @@ def configure_barometre_source(con: duckdb.DuckDBPyConnection, source_table: str
         raise e
     
     
-def clear_destination_table(con: duckdb.DuckDBPyConnection,
-                            dry_run: bool,
-                            destination_table: str,
-                            postgres_db: str, schema: str) -> None:
-    """Empties the destination table (new run only). The table must already exist."""
+def clear_destination_table(con, dry_run, destination_table, postgres_db, schema,
+                            required_infix: str = "_thematic_"):
+    """Empties the destination table (new run only). The table must already exist and contain thematic."""
+    if required_infix not in destination_table.lower():
+        raise ValueError(
+            f"Refusing to clear '{destination_table}': name does not contain '{required_infix}'"
+        )
     try:
         if dry_run:
             logging.warning(f"[{destination_table}] DRY_RUN: table would be cleared")

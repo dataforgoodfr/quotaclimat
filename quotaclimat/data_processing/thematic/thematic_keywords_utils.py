@@ -30,7 +30,7 @@ def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
         out = con.sql(f"""
             WITH exploded AS (
                 SELECT k.id, k.channel_name,
-                    k.start AT TIME ZONE 'Europe/Paris' AS start,
+                    k.start as start,
                     k.plaintext,
                     unnest(from_json(k.keywords_with_timestamp::JSON,
                                         '[{{"keyword":"VARCHAR","theme":"VARCHAR"}}]')) AS kwt
@@ -49,7 +49,7 @@ def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
     """).df()
         return out
     except Exception as e:
-        logging.error(f"[{source_table}] ERROR READING KEYWORDS:")
+        logging.error(f"[{source_table}] ERROR READING KEYWORDS TABLE:")
         logging.error(e)
         raise e
     
@@ -61,14 +61,15 @@ def get_max_start_from_thematic_keywords(con: duckdb.DuckDBPyConnection,
                                         schema: str) -> date:
     """Get the maximum start date from the destination table, or None if empty."""
     try:
-        result = con.sql(f"SELECT MAX(start) FROM {postgres_db}.{schema}.{destination_table}").fetchone()
-        if result and result[0]:
-            return result[0].date()
-        else:
-            return None
+        result = con.sql(
+            f"SELECT CAST(MAX(start) AT TIME ZONE 'Europe/Paris' AS DATE) "
+            f"FROM {postgres_db}.{schema}.{destination_table}"
+        ).fetchone()
+        return result[0] if result and result[0] else None
     except Exception as e:
         logging.error(f"[{destination_table}] ERROR GETTING MAX START DATE: {e}")
         raise e
+    
 
 def configure_barometre_thematic_keywords(con: duckdb.DuckDBPyConnection, 
                                     dry_run: bool,
@@ -82,12 +83,12 @@ def configure_barometre_thematic_keywords(con: duckdb.DuckDBPyConnection,
                 CREATE TABLE IF NOT EXISTS {postgres_db}.{schema}.{destination_table} (
                     this_id VARCHAR NOT NULL,
                     channel_name VARCHAR NOT NULL,
-                    channel_title VARCHAR NOT NULL,
-                    start TIMESTAMP NOT NULL,
+                    channel_title VARCHAR,
+                    start TIMESTAMPTZ NOT NULL,
                     thematic_chunk BOOLEAN NOT NULL,
                     keywords VARCHAR,
                     themes VARCHAR,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                     plaintext VARCHAR NOT NULL,
                     source_keywords_id VARCHAR,
                     PRIMARY KEY (this_id)
@@ -101,7 +102,6 @@ def configure_barometre_thematic_keywords(con: duckdb.DuckDBPyConnection,
         raise e
 
     
-
 ### S3 ###
 def _configure_s3(con: duckdb.DuckDBPyConnection, 
                   s3_endpoint_url: str, s3_region: str, 
@@ -155,6 +155,7 @@ def read_day_from_s3(con: duckdb.DuckDBPyConnection, day: date, channels: list[s
 
         # Mediatree API uses sud-radio or sudradio: standardize before deduplicating
         df["channel_name"] = df["channel_name"].replace("sudradio", "sud-radio")
+        
         if df.empty:
             logging.warning(f"[S3] No S3 chunks for {day}")
             raise FileNotFoundError(f"No S3 chunks for {day}")
@@ -166,24 +167,24 @@ def read_day_from_s3(con: duckdb.DuckDBPyConnection, day: date, channels: list[s
         raise e
     df = df.drop_duplicates(subset=["channel_name", "start"], keep="last").reset_index(drop=True)
 
-    if df["start"].dt.tz is not None:
-        df["start"] = df["start"].dt.tz_convert("Europe/Paris").dt.tz_localize(None)
-    if df.duplicated(subset=["channel_name", "start"]).any():
-        raise ValueError(f"[S3] {day}: duplicate start after local time conversion")
+    df["start"] = df["start"].dt.tz_convert("Europe/Paris")
 
     return df
 
 ### GETTING ADJACENT CHUNKS ###
-def extract_adjacent_chunks_day(keywords_day: pd.DataFrame, s3_day_df: pd.DataFrame,
+def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.DataFrame,
                                 gap: pd.Timedelta, country: str, channel_titles: dict[str, str]) -> pd.DataFrame:
     """Keeps thematic chunks (from the keywords table) and their adjacents (within gap) fetched from s3"""
     try:
         gap_ns = pd.Timedelta(gap).value  # integer, nanoseconds
         keys = ["start", "channel_name"]
+        #normalising in Paris time
+        keywords_day_df = keywords_day_df.assign(start=pd.to_datetime(keywords_day_df["start"]).dt.tz_convert("Europe/Paris"))
+        s3_day_df = s3_day_df.assign(start=pd.to_datetime(s3_day_df["start"]).dt.tz_convert("Europe/Paris"))
 
         # All chunks coming from the keywords table are thematic chunks
         kw = (
-            keywords_day[keys + ["id", "plaintext", "keywords", "themes"]]
+            keywords_day_df[keys + ["id", "plaintext", "keywords", "themes"]]
             .drop_duplicates(subset=keys)
             .rename(columns={"id": "source_keywords_id"})
             .assign(thematic_chunk=True)
@@ -237,12 +238,13 @@ def extract_adjacent_chunks_day(keywords_day: pd.DataFrame, s3_day_df: pd.DataFr
 
         # id = primary key: channel + start
         out["this_id"] = (out["channel_name"] + "_"
-                          + out["start"].dt.strftime("%Y%m%d%H%M%S"))
+                  + out["start"].dt.strftime("%Y%m%d%H%M%S_%z").str.replace("+", "", regex=False))
         out["channel_title"] = out["channel_name"].map(channel_titles[country])
         cols = ["this_id", "channel_name", "channel_title", "start",
                 "thematic_chunk",
                 "source_keywords_id", "keywords", "themes", "plaintext"]
-        return out.sort_values(["start", "channel_name"])[cols].reset_index(drop=True)
+        out.to_csv("out.csv")
+        return out.sort_values(["channel_name", "start"])[cols].reset_index(drop=True)
 
     except Exception as e:
         logging.error(f"[EXTRACT_ADJACENT_CHUNKS] ERROR EXTRACTING ADJACENT CHUNKS: {e}")

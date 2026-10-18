@@ -18,22 +18,23 @@ from pathlib import Path
 from urllib.parse import quote
 import yaml
 
-# only local env
-ROOT = Path(__file__).resolve().parents[3]
-load_dotenv(ROOT / ".env", override=False)
-THEMATIC_YML = ROOT / "quotaclimat" / "data_processing" / "thematic" / "thematic_dict.yml"
-
 import quotaclimat.data_processing.thematic.thematic_keywords_utils as kw_utils
 import quotaclimat.data_processing.thematic.thematic_utils as utils
 from quotaclimat.data_processing.mediatree.i8n.france.channel_titles import channel_titles_france
 from quotaclimat.data_processing.mediatree.i8n.belgium.channel_titles import channel_titles_belgium
 from quotaclimat.data_processing.mediatree.i8n.belgium_flanders.channel_titles import channel_titles_belgium_flanders
- 
+
+# only local env
+ROOT = Path(__file__).resolve().parents[3]
+load_dotenv(ROOT / ".env", override=False)
+THEMATIC_YML = ROOT / "quotaclimat" / "data_processing" / "thematic" / "thematic_dict.yml"
+
 # timedelta that defines the range in which a chunk is considered adjacent to core chunk
 GAP = timedelta(minutes=2, seconds=30)
 CHANNEL_TITLES = {'france': channel_titles_france, 'belgium': channel_titles_belgium, 'belgium_flanders': channel_titles_belgium_flanders}
 LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch"}
 COUNTRIES = {"france": "fr","belgium": "be", "belgium_flanders": "befl" }
+SOURCE_TABLE = "public.keywords"
 SCHEMA = "public"
 MEDIA_TYPE="audiovisuel"
 
@@ -47,9 +48,8 @@ REQUIRED_ENV = [
 def load_env() -> None:
     """Read environment variables (credentials and parameters) and expose them as module globals.
     Raises if a required one is missing or invalid."""
-    global START_DATE, END_DATE, THEMATIC, COUNTRY, LANGUAGE
-    global DRY_RUN
-    global SOURCE_TABLE, DESTINATION_TABLE
+    global START_DATE, END_DATE, THEMATIC, COUNTRY, LANGUAGE, DRY_RUN
+    global SOURCE_TABLE
     global POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB
     global S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT_URL, S3_BUCKET_NAME, S3_REGION
 
@@ -59,11 +59,11 @@ def load_env() -> None:
         raise RuntimeError(f"Missing environment variables: {', '.join(missing)}")
 
     ### DATES
-    START_DATE, END_DATE = None, date.today()
+    START_DATE, END_DATE = None, None
     try:
-        if os.getenv("START_DATE"):
+        if os.environ["START_DATE"]:
             START_DATE = date.fromisoformat(os.environ["START_DATE"])
-        if os.getenv("END_DATE"):
+        if os.environ["END_DATE"]:
             END_DATE = date.fromisoformat(os.environ["END_DATE"])
     except ValueError as e:
         raise ValueError(f"START_DATE and END_DATE must be YYYY-MM-DD: {e}")
@@ -71,19 +71,19 @@ def load_env() -> None:
         raise ValueError("END_DATE must be after START_DATE")
 
     ### Keywords to look for from thematic
-    THEMATIC = os.getenv("THEMATIC")
+    THEMATIC = os.environ["THEMATIC"]
     
-    ### COUNTRY
-    COUNTRY = (os.getenv("COUNTRY") or "france").lower()
-    if COUNTRY not in LANGUAGES:
-        raise ValueError(f"COUNTRY must be one of {list(LANGUAGES)}, got: {COUNTRY!r}")
+    ### COUNTRY AND LANGUAGE
+    COUNTRY = (os.environ["COUNTRY"] or "france").lower()
+    if COUNTRY not in COUNTRIES:
+        raise ValueError(f"COUNTRY must be one of {list(COUNTRIES)}, got: {COUNTRY!r}")
     LANGUAGE = LANGUAGES[COUNTRY]
 
     ### FLAGS
-    DRY_RUN = os.getenv("DRY_RUN", "").strip().lower() in ("1", "true", "yes", "y", "oui")
+    DRY_RUN = os.environ["DRY_RUN"].strip().lower() in ("1", "true", "yes", "y", "oui")
 
     ### TABLES
-    SOURCE_TABLE = os.getenv("SOURCE_TABLE") or "public.keywords"  # env var just for local
+    SOURCE_TABLE = os.environ["SOURCE_TABLE"] or SOURCE_TABLE  # env var just for local
 
     ### BAROMETRE CREDENTIALS (single database: source and destination)
     POSTGRES_USER = os.environ["POSTGRES_USER"]
@@ -122,20 +122,14 @@ def run() -> None:
     is_new_run = START_DATE is not None
     start_date = START_DATE
 
-    # <!> Asserting source_table won't be cleared
-    if destination_table.lower() == SOURCE_TABLE.split(".")[-1].lower():
-        raise ValueError(
-            f"destination_table == SOURCE_TABLE ({destination_table}): "
-            "the source table would be cleared"
-        )
-
     ## Getting kw
-    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE)
+    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE, LANGUAGE)
     if not kw_list:
         raise ValueError(f"No keywords found for '{THEMATIC}' in {THEMATIC_YML}.")
 
     ### Connection and source
     _con = duckdb.connect()
+    _con.execute("SET TimeZone='Europe/Paris'")
     utils.configure_barometre_source(_con, SOURCE_TABLE,
                                     POSTGRES_USER, POSTGRES_PASSWORD,
                                     POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB)
@@ -152,27 +146,29 @@ def run() -> None:
     ### New run vs resume
     ### NEW RUN
     if is_new_run:
-        logging.info(f"[RUN] NEW RUN with {start_date} and {THEMATIC}")
+        logging.info(f"[RUN] NEW RUN from {start_date} to {END_DATE} on {THEMATIC}")
         if table_exists:
             try:
                 utils.clear_destination_table(_con, DRY_RUN, destination_table, POSTGRES_DB, SCHEMA)
             except Exception as e:
                 raise ValueError(f"[RUN] Failed to clear {destination_table}") from e
-            logging.warning(f"[RUN] Table {destination_table} cleared")
     ### RESUMING    
     else:
         logging.info("[RUN] No start date given, attempting to resume.")
+        logging.info(f"[RUN] Checking if {destination_table} exists.")
+        
         if not table_exists:
-            raise ValueError(
-                f"[RUN] {destination_table} does not exist in {POSTGRES_DB}: "
+            logging.warning(
+                f"[END] {destination_table} does not exist in {POSTGRES_DB}: "
                 "rerun as a new run with START_DATE"
             )
+            return
         ### Getting new start_date
         max_start = kw_utils.get_max_start_from_thematic_keywords(_con, POSTGRES_DB, destination_table, SCHEMA)
         if max_start is None:
             raise ValueError("[END] Empty destination: rerun as a new run with START_DATE")
         start_date = max_start
-        logging.info(f"Deducted start date from {destination_table}: {start_date}")
+        logging.info(f"[RUN] Deducted start date from {destination_table}: {start_date}")
 
     logging.info(f"[RUN] Processing from {start_date} to {END_DATE}")
     if start_date >= END_DATE:
@@ -191,13 +187,14 @@ def run() -> None:
     ### 2. fetching all needed days and channels on s3
     ### 3. extracting only thematic chunks and neighbour chunks (+/- 2 minutes)
     ### 4. ingesting the result in destination table
-    day = start_date
-    while day < END_DATE:
+    days = [start_date + timedelta(days=i) for i in range((END_DATE - start_date).days)]
+    for day in days:
         # 1. Reading keywords
         try:
             logging.info(f"[RUN] ------ Processing day {day} ------")
             logging.info(f"[{SOURCE_TABLE}] {day}: reading source table")
-            keywords_day = kw_utils.read_barometre_keywords(_con, kw_list,
+
+            keywords_day_df = kw_utils.read_barometre_keywords(_con, kw_list,
                                                          day, day + timedelta(days=1),
                                                          COUNTRY, SOURCE_TABLE, POSTGRES_DB)
         except Exception:
@@ -205,16 +202,15 @@ def run() -> None:
             stopped_day = day
             break
 
-        if keywords_day.empty:
+        if keywords_day_df.empty:
             logging.info(f"[{SOURCE_TABLE}] {day}: no chunk found")
-            day += timedelta(days=1)
             continue
         
-        logging.info(f"[{SOURCE_TABLE}] {day}: {len(keywords_day)} chunks found")
+        logging.info(f"[{SOURCE_TABLE}] {day}: {len(keywords_day_df)} chunks found")
 
         # 2. Fetching data in s3, for channels with at least one chunk
-        day_channels = keywords_day["channel_name"].unique().tolist()
-        logging.info(f"[S3] {day}: Fetching s3 data on {len(day_channels)} channels from {len(keywords_day)} chunks")
+        day_channels = keywords_day_df["channel_name"].unique().tolist()
+        logging.info(f"[S3] {day}: Fetching s3 data on {len(day_channels)} channels from {len(keywords_day_df)} chunks")
         try:
             s3_day_df = kw_utils.read_day_from_s3(_con, day, day_channels, COUNTRY, S3_BUCKET_NAME)
         except Exception:
@@ -225,7 +221,7 @@ def run() -> None:
         try:
             # 3. Extracting thematic chunks and neighbour chunks
             logging.info("[EXTRACT_ADJACENT_CHUNKS] Starting selection of chunks to keep (thematic + adjacent)")
-            day_to_ingest_df = kw_utils.extract_adjacent_chunks_day(keywords_day, s3_day_df, GAP,
+            day_to_ingest_df = kw_utils.extract_adjacent_chunks_day(keywords_day_df, s3_day_df, GAP,
                                                                  COUNTRY, CHANNEL_TITLES)
             n_thematic_day = int(day_to_ingest_df["thematic_chunk"].sum())
             n_adjacent_day = len(day_to_ingest_df) - n_thematic_day
@@ -237,7 +233,6 @@ def run() -> None:
             n_expected_day = day_to_ingest_df["this_id"].nunique()
 
             if DRY_RUN:
-                day += timedelta(days=1)
                 continue
 
             # 4. Ingesting into destination table
@@ -245,7 +240,7 @@ def run() -> None:
             try:
                 _con.execute(f"""
                     INSERT INTO {POSTGRES_DB}.{SCHEMA}.{destination_table} BY NAME
-                    SELECT *, now() AT TIME ZONE 'Europe/Paris' AS created_at
+                    SELECT *, now() AS created_at
                     FROM day_to_ingest_df
                     ON CONFLICT (this_id) DO NOTHING
                 """)
@@ -253,9 +248,10 @@ def run() -> None:
                 # checks if n_ingest == n_to_ingest
                 n_in_table = _con.execute(f"""
                     SELECT count(*) FROM {POSTGRES_DB}.{SCHEMA}.{destination_table}
-                    WHERE start >= ? AND start < ?
-                      AND this_id IN (SELECT this_id FROM day_to_ingest_df)
-                """, [day, day + timedelta(days=1)]).fetchone()[0]
+                    WHERE start >= TIMESTAMP '{day}' AT TIME ZONE 'Europe/Paris'
+                        AND start <  TIMESTAMP '{day + timedelta(days=1)}' AT TIME ZONE 'Europe/Paris'
+                        AND this_id IN (SELECT this_id FROM day_to_ingest_df)
+                """).fetchone()[0]
                 if n_in_table != n_expected_day:
                     raise RuntimeError(
                         f"{day}: {n_in_table} chunks found in the table after ingestion, "
@@ -274,8 +270,6 @@ def run() -> None:
             stopped_day = day
             break
 
-        day += timedelta(days=1)
-
     if DRY_RUN:
         logging.info(f"[END] DRY_RUN: {counter_to_ingest} chunks would have been ingested")
     else:
@@ -283,7 +277,7 @@ def run() -> None:
     if stopped_day:
         logging.error(
             f"[END] RUN STOPPED at day {stopped_day} (end_date requested: {END_DATE}, "
-            f"so the run did NOT reach end_date). Fix the cause, then rerun with DESTINATION_TABLE and without START_DATE "
+            f"so the run did NOT reach end_date). Fix the cause, then rerun with without START_DATE "
             f"to resume from the last ingested day."
         )
         raise RuntimeError(f"Run stopped at {stopped_day}, end_date {END_DATE} not reached")

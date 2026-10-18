@@ -9,13 +9,21 @@ import yaml
 
 import quotaclimat.data_processing.thematic.thematic_keywords as tk
 import quotaclimat.data_processing.thematic.thematic_keywords_utils as kw_utils
+import quotaclimat.data_processing.thematic.thematic_utils as utils
+
 
 DB = "barometre"
 SCHEMA = "public"
-T0 = datetime(2025, 3, 10, 10, 0)
+PARIS = "Europe/Paris"
+T0 = pd.Timestamp("2025-03-10 10:00", tz=PARIS)
 MIN = timedelta(minutes=1)
+PARIS_DAY = f"CAST(start AT TIME ZONE '{PARIS}' AS DATE)"
 D1, D2, D3, D4, D5 = (date(2025, 3, d) for d in (10, 11, 12, 13, 14))
 TITLES = {"france": {"tf1": "TF1 (test)", "m6": "M6 (test)"}}
+
+def _wall(ts):
+    """Paris wall-clock time as text, for SQL inserts."""
+    return ts.tz_convert(PARIS).strftime("%Y-%m-%d %H:%M:%S")
 
 # ───────────────────────── helpers & fixtures ─────────────────────────
 @pytest.fixture
@@ -36,7 +44,7 @@ def con():
 def _add_kw(con, id_, channel, start, plaintext, pairs, country="france"):
     """pairs = [(keyword, theme), ...]"""
     con.execute(
-        f"INSERT INTO {DB}.{SCHEMA}.keywords VALUES (?, ?, CAST(? AS TIMESTAMPTZ), ?, ?, ?)",
+        f"INSERT INTO {DB}.{SCHEMA}.keywords VALUES (?, ?, CAST(? AS TIMESTAMP) AT TIME ZONE 'Europe/Paris', ?, ?, ?)",
         [id_, channel, start, plaintext,
          json.dumps([{"keyword": k, "theme": t} for k, t in pairs]), country],
     )
@@ -92,7 +100,7 @@ class RunEnv:
         self.table = f"{DB}.{SCHEMA}.{self.destination_table}"
 
         yml = tmp_path / "thematic.yml"
-        yml.write_text(yaml.safe_dump({"inondations": ["inondation", "crue"]}))
+        yml.write_text(yaml.safe_dump({"inondations":{"french": {"audiovisuel": ["inondation", "crue"]}}}))
         monkeypatch.setattr(tk, "THEMATIC_YML", yml)
         monkeypatch.setattr(tk.duckdb, "connect", lambda *a, **k: con)
         monkeypatch.setattr(tk.utils, "configure_barometre_source", lambda *a, **k: None)
@@ -117,8 +125,9 @@ class RunEnv:
     def add_day(self, day, channel="tf1"):
         """One thematic chunk at 10:00 + one neighbour at 10:02 → 2 rows ingested for that day."""
         self._n += 1
-        start = datetime(day.year, day.month, day.day, 10, 0)
-        _add_kw(self.con, f"kw_{self._n}", channel, start, f"core {self._n}",
+        start = pd.Timestamp(day.year, day.month, day.day, 10, tz=PARIS)
+
+        _add_kw(self.con, f"kw_{self._n}", channel, _wall(start), f"core {self._n}",
                 [("inondation", "changement_climatique_constat")])
         self.add_s3(start, f"core {self._n}", channel)
         self.add_s3(start + 2 * MIN, f"neighbour {self._n}", channel)
@@ -133,14 +142,15 @@ class RunEnv:
 
     def create_destination(self):
         kw_utils.configure_barometre_thematic_keywords(
-            self.con, False, f"{SCHEMA}.keywords", self.destination_table, DB, SCHEMA)
+            self.con, False, self.destination_table, DB, SCHEMA)
+    
 
     def count(self):
         return self.con.execute(f"SELECT count(*) FROM {self.table}").fetchone()[0]
 
     def days_in_table(self):
         return [r[0] for r in self.con.execute(
-            f"SELECT DISTINCT CAST(start AS DATE) FROM {self.table} ORDER BY 1").fetchall()]
+            f"SELECT DISTINCT {PARIS_DAY} FROM {self.table} ORDER BY 1").fetchall()]
 
     def tables(self):
         return {r[0] for r in self.con.execute(
@@ -263,7 +273,7 @@ def test_extract_adjacent_chunks_day_output_columns_id_format_and_title():
     }
     assert len(out.columns) == 9
     assert set(out["this_id"]) == {
-        "tf1_20250310100000", "tf1_20250310100200", "tf1_20250310095800",
+        "tf1_20250310100000_0100", "tf1_20250310100200_0100", "tf1_20250310095800_0100"
     }
     assert set(out["channel_title"]) == {"TF1 (test)"}
 
@@ -273,7 +283,7 @@ def test_extract_adjacent_chunks_day_raises_if_core_missing_from_s3():
     does not exist on the S3 side, instead of ingesting an incomplete day."""
     kw = _kw_df([
         ("kw1", "tf1", T0, "core 10h"),
-        ("kw2", "tf1", datetime(2025, 3, 10, 14, 0), "core 14h"),
+        ("kw2", "tf1", T0 + timedelta(hours=4), "core 14h"),
     ])
     s3 = _s3_df([("tf1", T0, "core 10h"), ("tf1", T0 + 2 * MIN, "n")])
 
@@ -325,7 +335,7 @@ def test_run_leaves_no_partial_day_when_insert_fails(env):
     env.add_day(D2)
     # NULL plaintext on an adjacent chunk of day 2 → NOT NULL violation at INSERT time,
     # while the thematic chunk of that day is valid
-    env.add_s3(datetime(2025, 3, 11, 9, 59), None)
+    env.add_s3(pd.Timestamp(2025, 3, 11, 9, 59, tz=PARIS), None)
     env.add_day(D3)
     env.configure(start=D1, end=D4)
 
@@ -348,7 +358,7 @@ def test_run_twice_does_not_duplicate_or_overwrite_rows(env):
 
     env.con.execute(
         f"UPDATE {env.table} SET plaintext = 'SENTINEL' "
-        f"WHERE thematic_chunk AND CAST(start AS DATE) = DATE '{D3}'"
+        f"WHERE thematic_chunk AND {PARIS_DAY} = DATE '{D3}'"
     )
     # replay through a resume (a new run with START_DATE would clear the table first)
     env.configure(start=None, end=D4)
@@ -395,22 +405,17 @@ def test_run_resume_does_not_create_a_new_table(env):
     assert env.days_in_table() == [D1, D2, D3]
 
 
-@pytest.mark.parametrize("source_table", [
-    "inondations_thematic_kw_fr",
-    "public.inondations_thematic_kw_fr",
-    "PUBLIC.Inondations_Thematic_KW_FR",
-])
-def test_run_refuses_destination_equal_to_source_table_before_any_query(env, monkeypatch, source_table):
-    """Verify that safeguard rejects destination with source table name,
-    with or without schema, before any query (thus before CREATE)."""
-    def no_connection(*args, **kwargs):
-        raise AssertionError("a DuckDB connection was opened before the safeguard")
+@pytest.mark.parametrize("name", ["factiva_articles", "inondations_kw_fr", "autre_table"])
+def test_clear_refuses_non_thematic_table_and_keeps_rows(env, name):
+    env.con.execute(f"CREATE TABLE IF NOT EXISTS {DB}.{SCHEMA}.{name} (id INTEGER)")
+    env.con.execute(f"INSERT INTO {DB}.{SCHEMA}.{name} VALUES (1), (2)")
+    before = env.con.execute(f"SELECT count(*) FROM {DB}.{SCHEMA}.{name}").fetchone()[0]
 
-    monkeypatch.setattr(tk.duckdb, "connect", no_connection)
-    env.configure(start=D1, end=D2, source_table=source_table)
+    with pytest.raises(ValueError, match="Refusing to clear"):
+        utils.clear_destination_table(env.con, False, name, DB, SCHEMA)
 
-    with pytest.raises(ValueError):
-        tk.run()
+    after = env.con.execute(f"SELECT count(*) FROM {DB}.{SCHEMA}.{name}").fetchone()[0]
+    assert after == before
 
 
 def test_run_dry_run_writes_nothing_and_counts_chunks(env, caplog):
@@ -421,7 +426,7 @@ def test_run_dry_run_writes_nothing_and_counts_chunks(env, caplog):
     env.create_destination()
     env.con.execute(
         f"INSERT INTO {env.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext) "
-        "VALUES ('sentinel', 'tf1', 'TF1', TIMESTAMP '2025-01-01 10:00:00', true, 'old')"
+        "VALUES ('sentinel', 'tf1', 'TF1', TIMESTAMPTZ '2025-01-01 10:00:00+01', true, 'old')"
     )
     env.configure(start=D1, end=D3, dry_run=True)
 

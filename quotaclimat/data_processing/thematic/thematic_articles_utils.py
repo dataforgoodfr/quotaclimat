@@ -30,9 +30,9 @@ def configure_barometre_thematic_articles(con: duckdb.DuckDBPyConnection,
             con.execute(f"""
                 CREATE TABLE IF NOT EXISTS {postgres_db}.{schema}.{destination_table} (
                     an VARCHAR NOT NULL,
-                    source_code VARCHAR,
-                    source_name VARCHAR,
-                    publication_datetime DATE,
+                    source_code VARCHAR NOT NULL,
+                    source_name VARCHAR NOT NULL,
+                    publication_date TIMESTAMPTZ NOT NULL,
                     title VARCHAR,
                     snippet VARCHAR,
                     body VARCHAR,
@@ -75,21 +75,20 @@ def read_barometre_factiva_articles(con: duckdb.DuckDBPyConnection,
         out = con.sql(f"""
             WITH txt AS (
                 SELECT a."An" AS an,
-                    a."Source Code" AS source_code,
-                    a."Source Name" AS source_name,
-                    CAST(a."Publication Datetime" AT TIME ZONE 'Europe/Paris' AS DATE) AS publication_datetime,
-                    a."Title" AS title,
-                    a."Snippet" AS snippet,
-                    a."Body" AS body,
-                    replace(replace(lower(strip_accents(concat_ws(' ', a."Snippet", a."Title", a."Body"))), '''', ''), '’', '') AS txt,
-                    a."Word Count"  as word_count               
+                    a.source_code AS source_code,
+                    a.source_name AS source_name,
+                    a.publication_date AS publication_date,
+                    a.title AS title,
+                    a.snippet AS snippet,
+                    a.body AS body,
+                    replace(replace(lower(strip_accents(concat_ws(' ', a.snippet, a.title, a.body))), '''', ''), '’', '') AS txt,
+                    a.word_count as word_count               
                 FROM {postgres_db}.{source_table} a
-                WHERE a."Publication Datetime" >= TIMESTAMP '{start_date}' AT TIME ZONE 'Europe/Paris'
-                    AND a."Publication Datetime" <  TIMESTAMP '{end_date}'   AT TIME ZONE 'Europe/Paris'
-                    AND "Duplicate Status" <> 'DUP'
-                    AND "Word Count" >= 100
+                WHERE a.publication_date >= TIMESTAMP '{start_date}' AT TIME ZONE 'Europe/Paris'
+                    AND a.publication_date <  TIMESTAMP '{end_date}'   AT TIME ZONE 'Europe/Paris'
+                    AND duplicate_status <> 'DUP'
             )
-            SELECT an, source_code, source_name, publication_date, title, snippet, body
+            SELECT an, source_code, source_name, publication_date, title, snippet, body, word_count
             FROM txt
             WHERE regexp_matches(txt, '{pattern_sql}')
         """).df()
@@ -109,7 +108,8 @@ def get_max_start_date_from_thematic_articles(con: duckdb.DuckDBPyConnection, po
     """Get the maximum publication date from the destination table, or None if empty."""
     try:
         result = con.sql(
-            f"SELECT MAX(publication_date) FROM {postgres_db}.{destination_schema}.{destination_table}"
+            f"SELECT CAST(MAX(publication_date) AT TIME ZONE 'Europe/Paris' AS DATE) "
+            f"FROM {postgres_db}.{destination_schema}.{destination_table}"
         ).fetchone()
         if result and result[0]:
             return result[0]

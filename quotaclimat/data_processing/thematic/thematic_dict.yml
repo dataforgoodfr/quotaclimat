@@ -1,31 +1,70 @@
 incendies:
-  audiovisuel:
-    - incendie
-  presse:
-    - incendie
-    - incendies
-    - mégafeu
-    - mégafeux
-    - brasier
-    - feu de forêt
-    - feux de forêt
-    - feu de vegetation
-    - feux de vegetation
-    - feu de tourbe
-    - feu de lande
-    - feu de broussailles
-    - depart de feu
-    - departs de feu
-    - reprise de feu
-    - reprises de feu
-    - front de flammes
-    - front du feu
-    - hectares brules
-    - parti en fumée
-    - partis en fumée
-    - ravagé par le feu
-    - ravagée par les flammes
-    - soldats du feu
-    - bombardier d'eau
-    - bombardiers d'eau
-    - canadair
+  french:
+    audiovisuel:
+      - incendie
+      - incendie de forêt
+      - feux
+      - forêt brule
+      - forêts brulent
+      - forêt ravagée
+      - forêt ravagé
+      - forêt ont été détrutuites
+    presse:
+      - incendie
+      - incendies
+      - incendie de forêt
+      - incendies de forêt
+      - feux
+      - forêt brule
+      - forêts brulent
+      - forêt ravagée
+      - forêts ravagées
+      - forêt ravagé
+      - forêts ravagés
+      - forêt ont été détrutuites
+      - forêts ont été détrutuites
+
+inondations:
+  french:
+    audiovisuel:
+      - inondation
+      - augmentation du risque inondation
+      - inondations à répétition
+      - gestion des inondations
+      - anticiper les risques d'inondation
+      - anticiper les inondations
+      - prévention des inondations
+      - crue
+      - crue centennale
+      - coulée de boue
+      - pluie extreme
+      - pluie torrentielle
+      - submergé par les eaux
+      - englouti par les eaux
+    presse:
+      - inondation
+      - inondations
+      - augmentation du risque inondation
+      - augmentation du risque inondations
+      - inondations à répétition
+      - gestion des inondations
+      - anticiper les risques d'inondation
+      - anticiper les risques d'inondations
+      - anticiper les inondations
+      - prévention des inondations
+      - crue
+      - crues
+      - crue centennale
+      - crues centennales
+      - coulée de boue
+      - coulées de boue
+      - pluie extrême
+      - pluies extrêmes
+      - pluie torrentielle
+      - pluies torrentielles
+      - submergé par les eaux
+      - submergée par les eaux
+      - submergées par les eaux
+      - englouti par les eaux
+      - engloutis par les eaux
+      - englouties par les eaux

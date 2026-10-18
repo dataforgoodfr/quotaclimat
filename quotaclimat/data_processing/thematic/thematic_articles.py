@@ -25,13 +25,14 @@ REQUIRED_ENV = [
 SCHEMA = "public"
 SOURCE_TABLE="public.factiva_articles"
 MEDIA_TYPE="presse"
+LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch"}
+COUNTRIES = {"france": "fr","belgium": "be", "belgium_flanders": "befl" }
 
 def load_env() -> None:
     """Read environment variables (credentials and parameters) and expose them as module globals.
     Raises if a required one is missing or invalid."""
-    global START_DATE, END_DATE, THEMATIC, COUNTRY
-    global DRY_RUN
-    global SOURCE_TABLE, DESTINATION_TABLE
+    global START_DATE, END_DATE, THEMATIC, COUNTRY, LANGUAGE, DRY_RUN
+    global SOURCE_TABLE
     global POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB
 
     ### CHECK REQUIRED VARIABLES BEFORE USING ANY
@@ -40,11 +41,11 @@ def load_env() -> None:
         raise RuntimeError(f"Missing environment variables: {', '.join(missing)}")
 
     ### DATES
-    START_DATE, END_DATE = None, date.today()
+    START_DATE, END_DATE = None, None
     try:
-        if os.getenv("START_DATE"):
+        if os.environ["START_DATE"]:
             START_DATE = date.fromisoformat(os.environ["START_DATE"])
-        if os.getenv("END_DATE"):
+        if os.environ["END_DATE"]:
             END_DATE = date.fromisoformat(os.environ["END_DATE"])
     except ValueError as e:
         raise ValueError(f"START_DATE and END_DATE must be YYYY-MM-DD: {e}")
@@ -52,14 +53,19 @@ def load_env() -> None:
         raise ValueError("END_DATE must be after START_DATE")
 
     ### Keywords to look for from thematic
-    THEMATIC = os.getenv("THEMATIC")
-
+    THEMATIC = os.environ["THEMATIC"]
+    
+    ### COUNTRY AND LANGUAGE
+    COUNTRY = (os.environ["COUNTRY"] or "france").lower()
+    if COUNTRY not in COUNTRIES:
+        raise ValueError(f"COUNTRY must be one of {list(COUNTRIES)}, got: {COUNTRY!r}")
+    LANGUAGE = LANGUAGES[COUNTRY]
+    
     ### FLAGS
-    DRY_RUN = os.getenv("DRY_RUN", "").strip().lower() in ("1", "true", "yes", "y", "oui")
+    DRY_RUN = os.environ["DRY_RUN"].strip().lower() in ("1", "true", "yes", "y", "oui")
 
     ### TABLES
-    SOURCE_TABLE = os.getenv("SOURCE_TABLE") or SOURCE_TABLE  # env var just for local
-    DESTINATION_TABLE = os.getenv("DESTINATION_TABLE")
+    SOURCE_TABLE = os.environ["SOURCE_TABLE"] or SOURCE_TABLE  # env var just for local
 
     ### BAROMETRE CREDENTIALS (single database: source and destination)
     POSTGRES_USER = os.environ["POSTGRES_USER"]
@@ -82,19 +88,13 @@ def run() -> None:
     is_new_run = START_DATE is not None
     start_date = START_DATE
 
-    # <!> Asserting source_table won't be cleared
-    if destination_table.lower() == SOURCE_TABLE.split(".")[-1].lower():
-        raise ValueError(
-            f"destination_table == SOURCE_TABLE ({destination_table}): "
-            "the source table would be cleared"
-        )
-
-    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE)
+    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE, LANGUAGE)
     if not kw_list:
         raise ValueError(f"No keywords found for '{THEMATIC}' in {THEMATIC_YML}.")
     
     ### Connection and source
     _con = duckdb.connect()
+    _con.execute("SET TimeZone='Europe/Paris'")
     utils.configure_barometre_source(_con, SOURCE_TABLE,
                                     POSTGRES_USER, POSTGRES_PASSWORD,
                                     POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB)
@@ -110,7 +110,7 @@ def run() -> None:
     ### New run vs resume
     ### NEW RUN
     if is_new_run:
-        logging.info(f"[RUN] NEW RUN with {start_date} and {THEMATIC}")
+        logging.info(f"[RUN] NEW RUN with {start_date} to {END_DATE} on {THEMATIC}")
         if table_exists:
             try:
                 utils.clear_destination_table(_con, DRY_RUN, destination_table, POSTGRES_DB, SCHEMA)
@@ -121,21 +121,22 @@ def run() -> None:
     else:
         logging.info("[RUN] No start date given, attempting to resume.")
         if not table_exists:
-            raise ValueError(
-                f"[RUN] {destination_table} does not exist in {POSTGRES_DB}: "
+            logging.warning(
+                f"[END] {destination_table} does not exist in {POSTGRES_DB}: "
                 "rerun as a new run with START_DATE"
             )
+            return
         ### Getting new start_date
-        max_start = kw_utils.get_max_start_date_from_thematic_articles(_con, POSTGRES_DB, destination_table)
+        max_start = art_utils.get_max_start_date_from_thematic_articles(_con, POSTGRES_DB, destination_table)
         if max_start is None:
             raise ValueError("[END] Empty destination: rerun as a new run with START_DATE")
         start_date = max_start
-        logging.info(f"Deducted start date from {destination_table}: {start_date}")
+        logging.info(f"[RUN]Deducted start date from {destination_table}: {start_date}")
 
     logging.info(f"[RUN] Processing from {start_date} to {END_DATE}")
     if start_date >= END_DATE:
         logging.warning("[END] start_date >= end_date.")
-        retur
+        return
         
     counter_to_ingest = 0
     ingested = 0
@@ -144,8 +145,8 @@ def run() -> None:
     ### For each day:
     ### 1. reading source table factiva articles
     ### 2. ingesting the result in destination table
-    day = start_date
-    while day < END_DATE:
+    days = [start_date + timedelta(days=i) for i in range((END_DATE - start_date).days)]
+    for day in days:
         # 1. Reading keywords
         try:
             logging.info(f"[RUN] ------ Processing day {day} ------")
@@ -161,9 +162,9 @@ def run() -> None:
             break
 
         if articles_day.empty:
-            logging.info(f"[{SOURCE_TABLE}] {day}: no chunk found")
-            day += timedelta(days=1)
+            logging.info(f"[{SOURCE_TABLE}] {day}: no article found")
             continue
+        
         n_expected_day = len(articles_day)
         if articles_day["an"].nunique() < n_expected_day:
             n_dup = n_expected_day - articles_day["an"].nunique()
@@ -174,7 +175,6 @@ def run() -> None:
         counter_to_ingest += n_expected_day
 
         if DRY_RUN:
-            day += timedelta(days=1)
             continue
 
         # 2. Ingesting into destination table
@@ -206,10 +206,7 @@ def run() -> None:
             _con.rollback()
             logging.exception(f"[{destination_table}] {day}: failed")
             stopped_day = day
-            break
-
-        day += timedelta(days=1)
-        
+            break        
 
     if DRY_RUN:
         logging.info(f"[END] DRY_RUN: {counter_to_ingest} articles would have been ingested")
@@ -218,7 +215,7 @@ def run() -> None:
     if stopped_day:
         logging.error(
             f"[END] RUN STOPPED at day {stopped_day} (end_date requested: {END_DATE}, "
-            f"so the run did NOT reach end_date). Fix the cause, then rerun with DESTINATION_TABLE and without START_DATE "
+            f"so the run did NOT reach end_date). Fix the cause, then rerun without START_DATE "
             f"to resume from the last ingested day."
         )
         raise RuntimeError(f"Run stopped at {stopped_day}, end_date {END_DATE} not reached")

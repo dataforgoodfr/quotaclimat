@@ -183,7 +183,7 @@ def run() -> None:
         try:
             _con.execute(f"""
                 INSERT INTO {POSTGRES_DB}.{SCHEMA}.{destination_table} BY NAME
-                SELECT *, now() AT TIME ZONE 'Europe/Paris' AS created_at
+                SELECT *, now() AS created_at
                 FROM articles_day
                 ON CONFLICT (an) DO NOTHING
             """)

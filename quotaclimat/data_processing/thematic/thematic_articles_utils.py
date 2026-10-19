@@ -37,7 +37,7 @@ def configure_barometre_thematic_articles(con: duckdb.DuckDBPyConnection,
                     snippet VARCHAR,
                     body VARCHAR,
                     word_count INT,
-                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                     PRIMARY KEY (an)
                 )
             """)

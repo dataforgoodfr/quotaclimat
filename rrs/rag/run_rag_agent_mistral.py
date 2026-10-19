@@ -1,18 +1,16 @@
 """RAG fact-checking agent served by the Mistral API.
 
 Ported from https://github.com/dataforgoodfr/climateguard
-(expert_models/scripts/run_rag_agent_mistral.py). Same workflow, prompts
-(French) and I/O as upstream (see rrs.rag.agent_common); the differences
+(expert_models/scripts/run_rag_agent_mistral.py). Same agent workflow and
+prompts (French) as upstream (see rrs.rag.agent_common); the differences
 here are purely about running as an rrs docker service:
   - the RAG index is downloaded from S3 on startup (built by
     rrs.rag.build_embeddings) instead of being read from a local path only;
-  - input/output/index paths and the subject are read from env vars,
-    matching the other rrs keyword_detection/clustering services.
-
-Input is a CSV with columns id, channel_name, datetime, plaintext, url (the
-shape produced by rrs.keyword_detection.export_segments) and output is an
-XLSX with the added columns verdict, debunk, queries, evaluations, evidence,
-sources.
+  - rather than a local input CSV / output XLSX, segments are loaded from
+    the RRS DB and enriched with plaintext from S3 (same approach as
+    rrs.misinformation_detection.main), and FLAGGED verdicts are upserted
+    into the RRS `cases` table (model_score=verdict, model_reason=debunk,
+    analysis=queries/evidence/sources trail) instead of written to a file.
 
 Differences from the upstream local-model runner (run_rag_agent.py), due to
 the API backend:
@@ -39,20 +37,24 @@ import logging
 import os
 import tempfile
 import threading
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
+import duckdb
 import pandas as pd
+import psycopg
 from dotenv import load_dotenv
 from tqdm import tqdm
 
+from rrs.dictionary.upsert_subjects import subject_id as make_subject_id
 from rrs.rag.agent_common import (
     CONTINUE_AFTER_RELEVANT,
     EVAL_PROMPT,
     FINAL_AFTER_IRRELEVANT,
     NUDGE_FINAL,
     RELEVANCE_EVAL_RE,
-    REQUIRED_COLUMNS,
     RETRY_AFTER_IRRELEVANT,
     TOOL_NAME,
     TOOLS,
@@ -65,11 +67,13 @@ from rrs.rag.agent_common import (
     strip_tag,
 )
 from rrs.rag.s3_sync import BUCKET_NAME, download_prefix, get_s3_client
+from rrs.utils.generate_id import get_consistent_hash
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 logging.basicConfig(level=logging.INFO)
 
+REGION = "fr-par"
 DEFAULT_SUBJECT_NAME = "environmental_health"
 DEFAULT_S3_PREFIX = "expert_models"
 DEFAULT_MODEL = "mistral-small-2603"
@@ -79,6 +83,199 @@ REFLECTION_HINT = (
     "quelles affirmations touchent à la thématique, une vérification est-elle nécessaire, "
     "et pourquoi cette requête précise."
 )
+
+
+# ── DB / S3 helpers (same approach as rrs.misinformation_detection.main) ───────
+
+
+def _get_secret(name: str) -> str:
+    value = os.environ.get(name, "")
+    if value and os.path.exists(value):
+        with open(value) as f:
+            return f.read().strip()
+    return value
+
+
+def _rrs_conninfo() -> str:
+    return (
+        f"host={os.getenv('RRS_PG_HOST', 'localhost')} "
+        f"port={os.getenv('RRS_PG_PORT', 5432)} "
+        f"dbname={os.getenv('RRS_PG_DATABASE', 'rrs_db')} "
+        f"user={os.getenv('RRS_PG_USER', 'user')} "
+        f"password={os.getenv('RRS_PG_PASSWORD', 'password')}"
+    )
+
+
+def _rrs_dsn() -> str:
+    user = quote(os.getenv("RRS_PG_USER", "user"), safe="")
+    password = quote(os.getenv("RRS_PG_PASSWORD", "password"), safe="")
+    host = os.getenv("RRS_PG_HOST", "localhost")
+    port = os.getenv("RRS_PG_PORT", "5432")
+    database = os.getenv("RRS_PG_DATABASE", "rrs_db")
+    return f"postgresql://{user}:{password}@{host}:{port}/{database}"
+
+
+def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
+    access_key = _get_secret("BUCKET")
+    secret_key = _get_secret("BUCKET_SECRET")
+    bucket_name = os.environ.get("BUCKET_NAME")
+    con.execute("INSTALL httpfs; LOAD httpfs;")
+    con.execute(f"""
+        SET s3_region='{REGION}';
+        SET s3_endpoint='s3.{REGION}.scw.cloud';
+        SET s3_access_key_id='{access_key}';
+        SET s3_secret_access_key='{secret_key}';
+        SET s3_url_style='path';
+    """)
+
+
+def _enrich_with_plaintext(segments: pd.DataFrame) -> pd.DataFrame:
+    """Join segments with S3 parquet files to retrieve plaintext for each segment."""
+    uris = segments["s3_uri"].dropna().unique().tolist()
+    if not uris:
+        segments["plaintext"] = None
+        return segments
+
+    con = duckdb.connect()
+    _configure_s3(con)
+
+    globs = [uri.rstrip("/") + "/*.parquet" for uri in uris]
+    existing = con.sql(
+        f"SELECT file FROM glob([{', '.join(repr(g) for g in globs)}])"
+    ).fetchall()
+    existing_files = [row[0] for row in existing]
+
+    if not existing_files:
+        logging.warning("No parquet files found on S3 for the loaded segments.")
+        segments["plaintext"] = None
+        return segments
+
+    file_list = ", ".join(repr(f) for f in existing_files)
+    con.sql(
+        f"CREATE OR REPLACE VIEW parquet_source AS "
+        f"SELECT * FROM read_parquet([{file_list}], union_by_name=true)"
+    )
+
+    con.register("segments_lookup", segments[["segment_id", "channel_name", "start"]])
+    texts = con.sql("""
+        SELECT s.segment_id, p.plaintext
+        FROM segments_lookup s
+        JOIN parquet_source p
+          ON p.channel_name = s.channel_name
+         AND p.start = s.start
+    """).df()
+    con.close()
+
+    enriched = segments.merge(texts, on="segment_id", how="left")
+    missing = enriched["plaintext"].isna().sum()
+    if missing:
+        logging.warning(f"{missing} segment(s) had no matching plaintext in S3.")
+    return enriched
+
+
+def load_segments(subject: str, start_date: date, end_date: date) -> pd.DataFrame:
+    """Load segments from the RRS DB and enrich them with plaintext from S3."""
+    sid = make_subject_id(subject)
+
+    with psycopg.connect(_rrs_conninfo()) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT segment_id, channel_name, channel_title, channel_program,
+                       start, s3_uri, n_keywords, keywords, url_mediatree
+                FROM segments
+                WHERE subject_id = %s
+                  AND start >= %s
+                  AND start < %s
+                ORDER BY start
+                """,
+                (sid, start_date, end_date + timedelta(days=1)),
+            )
+            rows = cur.fetchall()
+            cols = [desc[0] for desc in cur.description]
+
+    if not rows:
+        logging.warning(f"No segments found for subject '{subject}' in {start_date} – {end_date}.")
+        return pd.DataFrame()
+
+    segments = pd.DataFrame(rows, columns=cols)
+    logging.info(f"Loaded {len(segments)} segment(s) from DB.")
+
+    segments = _enrich_with_plaintext(segments)
+    return segments
+
+
+def save_cases_to_db(result: pd.DataFrame, subject: str) -> None:
+    """Upsert FLAGGED rows into the RRS cases table."""
+    if result.empty:
+        return
+
+    cases = result.copy()
+    cases["subject_id"] = get_consistent_hash(subject)
+    cases["case_id"] = cases.apply(
+        lambda r: get_consistent_hash(f"{r['segment_id']}_{r['subject_id']}"), axis=1
+    )
+    cases["model_score"] = cases["verdict"]
+    cases["model_reason"] = cases["debunk"]
+    cases["text"] = cases["plaintext"]
+    cases["analysis"] = cases.apply(
+        lambda r: (
+            f"evidence={r['evidence']}\n"
+            f"queries={r['queries']}\n"
+            f"evaluations={r['evaluations']}\n"
+            f"sources={r['sources']}"
+        ),
+        axis=1,
+    )
+    cases["url_labelstudio"] = None
+    cases["is_labeled"] = False
+    cases["mesinfo_choice"] = None
+
+    batch = cases[
+        [
+            "case_id",
+            "segment_id",
+            "subject_id",
+            "start",
+            "model_score",
+            "model_reason",
+            "text",
+            "url_labelstudio",
+            "is_labeled",
+            "mesinfo_choice",
+            "analysis",
+        ]
+    ]
+
+    con = duckdb.connect()
+    con.execute("INSTALL postgres; LOAD postgres;")
+    con.execute(f"ATTACH '{_rrs_dsn()}' AS rrs (TYPE POSTGRES);")
+    con.register("cases_batch", batch)
+    con.execute("""
+        INSERT INTO rrs.cases (
+            case_id, segment_id, subject_id, start,
+            model_score, model_reason, text,
+            url_labelstudio, is_labeled, mesinfo_choice, analysis,
+            created_at, updated_at
+        )
+        SELECT
+            case_id, segment_id, subject_id, start,
+            model_score, model_reason, text,
+            url_labelstudio, is_labeled, mesinfo_choice, analysis,
+            now() AT TIME ZONE 'utc',
+            now() AT TIME ZONE 'utc'
+        FROM cases_batch
+        ON CONFLICT (case_id, segment_id, subject_id) DO UPDATE SET
+            model_score     = EXCLUDED.model_score,
+            model_reason    = EXCLUDED.model_reason,
+            text            = EXCLUDED.text,
+            is_labeled      = EXCLUDED.is_labeled,
+            mesinfo_choice  = EXCLUDED.mesinfo_choice,
+            analysis        = EXCLUDED.analysis,
+            updated_at      = now() AT TIME ZONE 'utc'
+    """)
+    con.close()
+    logging.info(f"  {len(batch)} case(s) upserted into DB.")
 
 
 def flatten_content(content: Any) -> tuple[str, str]:
@@ -239,15 +436,15 @@ def download_index(subject: str, s3_prefix: str, index_dir: Path) -> None:
 async def main(args: argparse.Namespace) -> None:
     from mistralai.client import Mistral
 
-    if not args.input.exists():
-        raise SystemExit(f"Input CSV not found: {args.input}")
-    df = pd.read_csv(args.input, dtype=str, keep_default_na=False)
-    missing = [c for c in REQUIRED_COLUMNS if c not in df.columns]
-    if missing:
-        raise SystemExit(f"Input CSV is missing required columns: {missing}")
+    df = load_segments(subject=args.subject, start_date=args.start_date, end_date=args.end_date)
+    if df.empty:
+        logging.warning("Nothing to process.")
+        return
+    df = df[df["plaintext"].notna() & (df["plaintext"].str.strip() != "")]
     if args.limit:
         df = df.head(args.limit)
-    logging.info(f"Loaded {len(df)} rows from {args.input}")
+    df = df.reset_index(drop=True)
+    logging.info(f"Processing {len(df)} segment(s).")
 
     system_prompt = args.system_prompt or build_system_prompt(args.subject)
     logging.info(f"System prompt:\n{system_prompt}")
@@ -276,7 +473,7 @@ async def main(args: argparse.Namespace) -> None:
         progress.update(1)
 
     try:
-        await asyncio.gather(*(process(i, rid, txt) for i, (rid, txt) in enumerate(zip(df["id"], df["plaintext"]))))
+        await asyncio.gather(*(process(i, rid, txt) for i, (rid, txt) in enumerate(zip(df["segment_id"], df["plaintext"]))))
     finally:
         progress.close()
         if trace_file:
@@ -299,13 +496,18 @@ async def main(args: argparse.Namespace) -> None:
     logging.info(f"Evidence: {df['evidence'].value_counts().to_dict()}")
     logging.info(f"Rows with at least one search: {(df['queries'] != '').sum()}/{len(df)}")
 
-    if args.only_flagged:
-        df = df[df["verdict"] == "FLAGGED"]
-        logging.info(f"Keeping only FLAGGED rows: {len(df)}")
+    if args.output:
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(args.output, index=False)
+        logging.info(f"Results also saved to {args.output}")
 
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    df.to_excel(args.output, index=False, engine="openpyxl")
-    logging.info(f"Wrote {len(df)} rows to {args.output}")
+    if args.only_flagged:
+        flagged = df[df["verdict"] == "FLAGGED"].copy()
+        logging.info(f"{len(flagged)}/{len(df)} segment(s) FLAGGED — saving to DB.")
+    else:
+        flagged = df
+        logging.info(f"Saving all {len(flagged)} segment(s) to DB.")
+    save_cases_to_db(flagged, args.subject)
 
 
 if __name__ == "__main__":
@@ -333,20 +535,42 @@ if __name__ == "__main__":
     parser.add_argument("--reasoning-effort", choices=["none", "minimal", "low", "medium", "high", "xhigh"], default=os.getenv("REASONING_EFFORT") or None, help="Native reasoning effort, if the model supports it (unset = API default)")
     parser.add_argument("--seed", type=int, default=int(os.getenv("SEED", 0)))
     parser.add_argument("--system-prompt", type=str, default=None, help="Override the French system prompt")
-    parser.add_argument("--input", type=Path, default=Path(os.getenv("INPUT_PATH", "/app/input/segments.csv")), help="Input CSV (columns: id, channel_name, datetime, plaintext, url)")
-    parser.add_argument("--output", type=Path, default=Path(os.getenv("OUTPUT_PATH", "/app/output/rag_output.xlsx")), help="Output XLSX path")
+    parser.add_argument(
+        "--days-prior",
+        type=int,
+        default=int(os.getenv("DAYS_PRIOR", "1")),
+        help="Number of days before end-date to use as start-date (default: 1, env: DAYS_PRIOR)",
+    )
+    parser.add_argument(
+        "--start-date",
+        default=os.getenv("START_DATE"),
+        metavar="YYYY-MM-DD",
+        help="Start date inclusive — overrides --days-prior if set (env: START_DATE)",
+    )
+    parser.add_argument(
+        "--end-date",
+        default=os.getenv("END_DATE") or None,
+        metavar="YYYY-MM-DD",
+        help="End date inclusive (default: today, env: END_DATE)",
+    )
+    parser.add_argument("--output", type=Path, default=(Path(os.environ["OUTPUT_PATH"]) if os.getenv("OUTPUT_PATH") else None), help="Optional path to also save results as CSV (env: OUTPUT_PATH)")
     parser.add_argument("--trace", type=Path, default=(Path(os.environ["TRACE_PATH"]) if os.getenv("TRACE_PATH") else None), help="Write the full agent turns to this JSONL")
     parser.add_argument(
         "--only-flagged",
         action=argparse.BooleanOptionalAction,
         default=os.getenv("ONLY_FLAGGED", "true").lower() not in ("0", "false", "no"),
-        help="Write only FLAGGED rows to the output (--no-only-flagged keeps every row; the --trace file always has all rows)",
+        help="Upsert only FLAGGED rows into the cases table (--no-only-flagged upserts every row; the --trace file always has all rows)",
     )
     parser.add_argument("--limit", type=int, default=(int(os.environ["LIMIT"]) if os.getenv("LIMIT") else None), help="Process at most N rows")
     args = parser.parse_args()
 
     if not os.getenv("MISTRAL_API_KEY"):
         raise SystemExit("Error: MISTRAL_API_KEY not set.")
+
+    args.end_date = date.fromisoformat(args.end_date) if args.end_date else date.today()
+    args.start_date = (
+        date.fromisoformat(args.start_date) if args.start_date else args.end_date - timedelta(days=args.days_prior)
+    )
 
     if args.index_dir is None:
         args.index_dir = Path(tempfile.mkdtemp(prefix="rag_index_"))

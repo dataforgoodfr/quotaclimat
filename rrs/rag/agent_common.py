@@ -21,8 +21,6 @@ from pathlib import Path
 
 from rrs.rag.rag_utils import Embedder, load_index, search
 
-REQUIRED_COLUMNS = ["id", "channel_name", "datetime", "plaintext", "url"]
-
 VERDICT_RE = re.compile(r"\[?\s*(NOT_FLAGGED|FLAGGED)\s*\]?", re.IGNORECASE)
 
 TOOL_NAME = "search_reference"

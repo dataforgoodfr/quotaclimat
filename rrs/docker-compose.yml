@@ -165,6 +165,11 @@ services:
     entrypoint: ["python", "-m", "rrs.rag.run_rag_agent_mistral"]
     environment:
       PYTHONPATH: /app
+      RRS_PG_USER: ${RRS_PG_USER:-user}
+      RRS_PG_DATABASE: ${RRS_PG_DATABASE:-rrs_db}
+      RRS_PG_PASSWORD: ${RRS_PG_PASSWORD:-password}
+      RRS_PG_HOST: ${RRS_PG_HOST:-rrs_db}
+      RRS_PG_PORT: ${RRS_PG_PORT:-5432}
       BUCKET: ${BUCKET}
       BUCKET_SECRET: ${BUCKET_SECRET}
       BUCKET_NAME: ${BUCKET_NAME}
@@ -176,14 +181,18 @@ services:
       MAX_TOOL_CHARS: ${MAX_TOOL_CHARS:-2400}
       MAX_TOOL_ROUNDS: ${MAX_TOOL_ROUNDS:-3}
       CONCURRENCY: ${CONCURRENCY:-10}
-      INPUT_PATH: ${INPUT_PATH:-/app/input/segments.csv}
-      OUTPUT_PATH: ${OUTPUT_PATH:-/app/output/rag_output.xlsx}
+      START_DATE: ${START_DATE:-}
+      END_DATE: ${END_DATE:-}
+      DAYS_PRIOR: ${DAYS_PRIOR:-1}
+      OUTPUT_PATH: ${OUTPUT_PATH:-}
       TRACE_PATH: ${TRACE_PATH:-}
       ONLY_FLAGGED: ${ONLY_FLAGGED:-true}
       LIMIT: ${LIMIT:-}
     volumes:
-      - ./input:/app/input
       - ./output:/app/output
+    depends_on:
+      rrs_db:
+        condition: service_healthy
 
   import_cases:
     build:

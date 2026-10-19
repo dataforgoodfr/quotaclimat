@@ -108,6 +108,7 @@ openpyxl = ">=3.1"
 mistralai = "^2.5.0"
 mcp = "^1.28.1"
 griffe = "^2.1.0"
+pymupdf = "^1.26.4"
 
 # Pulsar themes pipeline — API-key-based, no browser automation.
 # Kept as a separate optional group so it doesn't bloat rrs-base.

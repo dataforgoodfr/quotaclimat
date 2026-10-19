@@ -129,7 +129,7 @@ services:
       BUCKET_SECRET: ${BUCKET_SECRET}
       BUCKET_NAME: ${BUCKET_NAME}
       SUBJECT: ${SUBJECT:-environmental_health}
-      N_KEYWORDS: ${N_KEYWORDS:-4}
+      N_KEYWORDS: ${N_KEYWORDS:-1}
       START_DATE: ${START_DATE:-}
       END_DATE: ${END_DATE:-}
       OUTPUT_PATH: ${OUTPUT_PATH:-/app/output/segments_export.csv}
@@ -138,6 +138,52 @@ services:
     depends_on:
       rrs_db:
         condition: service_healthy
+
+  build_embeddings:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.rag.build_embeddings"]
+    environment:
+      PYTHONPATH: /app
+      BUCKET: ${BUCKET}
+      BUCKET_SECRET: ${BUCKET_SECRET}
+      BUCKET_NAME: ${BUCKET_NAME}
+      SUBJECT: ${SUBJECT:-environmental_health}
+      S3_PREFIX: ${S3_PREFIX:-expert_models}
+      EMBEDDER: ${EMBEDDER:-e5}
+      CHUNK_CHARS: ${CHUNK_CHARS:-600}
+      MIN_CHUNK_CHARS: ${MIN_CHUNK_CHARS:-150}
+      OVERLAP_CHARS: ${OVERLAP_CHARS:-100}
+      BATCH_SIZE: ${BATCH_SIZE:-32}
+      STOP_AFTER_KEYWORD: ${STOP_AFTER_KEYWORD:-}
+
+  rag:
+    build:
+      context: ../
+      dockerfile: rrs/Dockerfile
+    entrypoint: ["python", "-m", "rrs.rag.run_rag_agent_mistral"]
+    environment:
+      PYTHONPATH: /app
+      BUCKET: ${BUCKET}
+      BUCKET_SECRET: ${BUCKET_SECRET}
+      BUCKET_NAME: ${BUCKET_NAME}
+      MISTRAL_API_KEY: ${MISTRAL_API_KEY}
+      MISTRAL_MODEL: ${MISTRAL_MODEL:-mistral-small-2603}
+      SUBJECT: ${SUBJECT:-environmental_health}
+      S3_PREFIX: ${S3_PREFIX:-expert_models}
+      TOP_K: ${TOP_K:-3}
+      MAX_TOOL_CHARS: ${MAX_TOOL_CHARS:-2400}
+      MAX_TOOL_ROUNDS: ${MAX_TOOL_ROUNDS:-3}
+      CONCURRENCY: ${CONCURRENCY:-10}
+      INPUT_PATH: ${INPUT_PATH:-/app/input/segments.csv}
+      OUTPUT_PATH: ${OUTPUT_PATH:-/app/output/rag_output.xlsx}
+      TRACE_PATH: ${TRACE_PATH:-}
+      ONLY_FLAGGED: ${ONLY_FLAGGED:-true}
+      LIMIT: ${LIMIT:-}
+    volumes:
+      - ./input:/app/input
+      - ./output:/app/output
 
   import_cases:
     build:

@@ -1,0 +1,24 @@
+theme,mot_cle,motif,force,casse
+automobile,voiture électrique,\m(voiture|v[ée]hicule|auto|automobile|bagnole)s?\s+(100\s*%\s*)?[ée]lectriques?\M,fort,false
+automobile,mobilité électrique,mobilit[ée]\s+[ée]lectrique|[ée]lectromobilit[ée]|[ée]lectrification\s+(des\s+v[ée]hicules|du\s+parc|des\s+voitures|de\s+l.automobile)|\mroul\w*\s+(qu.)?en\s+[ée]lectrique|\mmotorisations?\M,fort,false
+automobile,borne de recharge,\mbornes?\s+(de\s+)?recharge,fort,false
+automobile,voiture thermique,\m(voiture|v[ée]hicule|moteur|auto)s?\s+thermiques?\M,fort,false
+automobile,fin du thermique,\mfin\s+(du|des)\s+(moteurs?\s+)?thermiques?\M|\minterdiction\s+(du|des)\s+(moteurs?\s+|voitures?\s+)?thermiques?\M,fort,false
+automobile,ZFE,\mZFE\M|\mzones?\s+([àa]\s+)?faibles?\s+[ée]missions?,fort,false
+automobile,leasing social,\mleasing\s+social\M,fort,false
+automobile,constructeur,\m(Tesla|Stellantis)\M|\mindustrie\s+automobile|\mconstructeurs?\s+automobiles?,fort,false
+automobile,voiture essence / diesel,\mvoitures?\s+(essence|diesel)\M,fort,false
+automobile,hybride rechargeable,\mhybrides?\s+rechargeables?\M,fort,false
+automobile,carburant alternatif,\mbio-?carburants?\M|\mcarburants?\s+(de\s+synth[èe]se|alternatifs?)\M|(super-?)?[ée]thanol\M|\mE85\M|\mGPL\M,fort,false
+automobile,camion / bus électrique,"\m(camion|poids[\s-]lourd|bus)s?\s+(\S+\s+){0,3}[ée]lectriques?\M",fort,false
+automobile,batterie de voiture,\mrecycl\w*\s+(des\s+)?batteries|\mbatteries?\s+([ée]lectriques?|de\s+voitures?|lithium)\M,fort,false
+automobile,VE,\mVE\M,faible,true
+automobile,batterie,\mbatteries?\M,faible,false
+automobile,recharge,\mrecharger?\M|\mrecharges\M,faible,false
+automobile,autonomie,\mautonomie\M,faible,false
+automobile,lithium / cobalt / terres rares,\m(lithium|cobalt)\M|\mterres?\s+rares?\M,faible,false
+automobile,hybride,\mhybrides?\M,faible,false
+automobile,diesel,\mdiesels?\M,faible,false
+automobile,électrification,[ée]lectrification,faible,false
+automobile,2035,\m2035\M,faible,false
+automobile,bonus écologique,\mbonus\s+[ée]cologique\M,faible,false

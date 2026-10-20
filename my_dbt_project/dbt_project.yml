@@ -33,7 +33,7 @@ models:
   my_dbt_project:
     # Config indicated by + and applies to all files under models/example/
     analytics:
-      +grants:
+      +grants: &analytics_grants
         # grant nothing in dev; set DBT_ENV=prod to enable grants in prod
         # the extended-perimeter DB only has a rrs-read-{dev,prod} user (no climateguard-reader-user),
         # so when EXTENDED_PERIMETER is true, grant only to the rrs-read user matching DBT_ENV
@@ -64,10 +64,16 @@ seeds:
       +schema: advertising
       +grants: *advertising_grants
 
+    # methodology seeds versioned in the repository, read by the analytics models,
+    # always loaded with `dbt seed --full-refresh --select path:seeds/themes`
+    themes:
+      +schema: analytics
+      +grants: *analytics_grants
+
     # snapshots of the source tables for local/test data only. They have the names of the production tables
     # (public.keywords, public.program_metadata...), so seeding them replaces those tables (drop ... cascade with
     # --full-refresh). Disabled unless DBT_ENABLE_FIXTURE_SEEDS=true (docker compose test/testconsole, CI): a
-    # `dbt seed` or `dbt build` without --select against the production database only loads seeds/ref.
+    # `dbt seed` or `dbt build` without --select against the production database only loads seeds/ref and seeds/themes.
     # Fail closed: the target name does not tell production apart (production runs with the `docker` target).
     fixtures:
       +enabled: "{{ env_var('DBT_ENABLE_FIXTURE_SEEDS', 'false') == 'true' }}"

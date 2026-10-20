@@ -1,12 +1,18 @@
-### Creates a thematic table with
+### Creates a thematic table {thematic}_kw_{country}_{start YYYYMMDD}_{end YYYYMMDD} with
 ### - chunks that contain given keywords
-### - neighbour chunks (+/- 2 minutes ) fetched in s3
+### - neighbour chunks (+/- GAP) fetched in s3
 
-### given folowing arguments
-### - start_date [Optional]: if not start_date, resumes drom max date
-### - end_date
-### - thematic: keywords fetched in yaml
-### - country (default france)
+### given following environment variables
+### - START_DATE (mandatory, included): YYYY-MM-DD
+### - END_DATE (mandatory, excluded): YYYY-MM-DD
+### - THEMATIC (mandatory): keywords fetched in yaml
+### - COUNTRY (default france): one of COUNTRIES
+### - DRY_RUN (default false): reads and counts, writes nothing
+### - SOURCE_TABLE (default public.keywords): local only, e.g. public.test_keywords
+### - MODE (default new): one of MODES
+###     - new: creates the table, raises if it already exists
+###     - resume: restarts from the last ingested day, raises if the table does not exist
+###     - reset: clears the table (or creates it) and restarts from START_DATE
 
 import logging
 from datetime import date, timedelta
@@ -37,11 +43,12 @@ COUNTRIES = {"france": "fr","belgium": "be", "belgium_flanders": "befl" }
 SOURCE_TABLE = "public.keywords"
 SCHEMA = "public"
 MEDIA_TYPE="audiovisuel"
+MODES = ("new", "resume", "reset")
 
 REQUIRED_ENV = [
     "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB",
     "S3_ACCESS_KEY", "S3_SECRET_KEY", "S3_ENDPOINT_URL", "S3_BUCKET_NAME", "S3_REGION",
-    "END_DATE", "THEMATIC"
+    "START_DATE", "END_DATE", "THEMATIC"
 ]
 
 
@@ -52,38 +59,38 @@ def load_env() -> None:
     global SOURCE_TABLE
     global POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB
     global S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT_URL, S3_BUCKET_NAME, S3_REGION
-
+    global MODE
     ### CHECK REQUIRED VARIABLES BEFORE USING ANY
     missing = [k for k in REQUIRED_ENV if not os.getenv(k)]
     if missing:
         raise RuntimeError(f"Missing environment variables: {', '.join(missing)}")
 
-    ### DATES
-    START_DATE, END_DATE = None, None
+    ### DATES (mandatory: checked in REQUIRED_ENV)
     try:
-        if os.environ["START_DATE"]:
-            START_DATE = date.fromisoformat(os.environ["START_DATE"])
-        if os.environ["END_DATE"]:
-            END_DATE = date.fromisoformat(os.environ["END_DATE"])
+        START_DATE = date.fromisoformat(os.environ["START_DATE"])
+        END_DATE = date.fromisoformat(os.environ["END_DATE"])
     except ValueError as e:
         raise ValueError(f"START_DATE and END_DATE must be YYYY-MM-DD: {e}")
-    if START_DATE and END_DATE <= START_DATE:
+    if END_DATE <= START_DATE:
         raise ValueError("END_DATE must be after START_DATE")
 
     ### Keywords to look for from thematic
     THEMATIC = os.environ["THEMATIC"]
     
     ### COUNTRY AND LANGUAGE
-    COUNTRY = (os.environ["COUNTRY"] or "france").lower()
+    COUNTRY = (os.getenv("COUNTRY") or "france").strip().lower()
     if COUNTRY not in COUNTRIES:
         raise ValueError(f"COUNTRY must be one of {list(COUNTRIES)}, got: {COUNTRY!r}")
     LANGUAGE = LANGUAGES[COUNTRY]
 
     ### FLAGS
-    DRY_RUN = os.environ["DRY_RUN"].strip().lower() in ("1", "true", "yes", "y", "oui")
+    DRY_RUN = (os.getenv("DRY_RUN") or "").strip().lower() in ("1", "true", "yes", "y", "oui")
+    MODE = (os.getenv("MODE") or "new").strip().lower()
+    if MODE not in MODES:
+        raise ValueError(f"MODE must be one of {list(MODES)}, got: {MODE!r}")
 
     ### TABLES
-    SOURCE_TABLE = os.environ["SOURCE_TABLE"] or SOURCE_TABLE  # env var just for local
+    SOURCE_TABLE = os.getenv("SOURCE_TABLE") or SOURCE_TABLE  # env var just for local
 
     ### BAROMETRE CREDENTIALS (single database: source and destination)
     POSTGRES_USER = os.environ["POSTGRES_USER"]
@@ -109,18 +116,19 @@ def load_env() -> None:
 def run() -> None:
 
     logging.info(
-        "[RUN]\n"
-        f"start_date = {START_DATE}\n"
-        f"end_date = {END_DATE}\n"
-        f"thematic = {THEMATIC}\n"
-        f"country = {COUNTRY}\n"
-        f"language = {LANGUAGE}"
+        "[PARAMS]\n"
+        f"START_DATE (included) = {START_DATE}\n"
+        f"END_DATE (excluded) = {END_DATE}\n"
+        f"THEMATIC = {THEMATIC}\n"
+        f"COUNTRY = {COUNTRY} (deducted LANGUAGE = {LANGUAGE})\n"
+        f"MODE={MODE}\n"
     )    
-    logging.warning(f"[RUN] DRY_RUN={DRY_RUN}")
+    logging.warning(f"[PARAMS] DRY_RUN={DRY_RUN}\n")
 
-    destination_table = f"{THEMATIC}_thematic_kw_{COUNTRIES[COUNTRY]}"
-    is_new_run = START_DATE is not None
+    destination_table=utils.make_destination_table_name(THEMATIC, MEDIA_TYPE, 
+                                      COUNTRIES[COUNTRY], START_DATE, END_DATE)
     start_date = START_DATE
+    logging.info(f"[RUN] MODE={MODE} on {destination_table}")
 
     ## Getting kw
     kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE, LANGUAGE)
@@ -137,42 +145,47 @@ def run() -> None:
     ### Check existence BEFORE creating the table
     table_exists = utils.destination_table_exists(_con, destination_table, POSTGRES_DB, SCHEMA)
 
-    ### Create the table if needed (new run only: a resume needs an existing one)
-    if is_new_run:
-        kw_utils.configure_barometre_thematic_keywords(_con, DRY_RUN,
-                                                destination_table,
-                                                POSTGRES_DB, SCHEMA)
-
-    ### New run vs resume
-    ### NEW RUN
-    if is_new_run:
-        logging.info(f"[RUN] NEW RUN from {start_date} to {END_DATE} on {THEMATIC}")
+    ### NEW: the table must not exist yet
+    if MODE == "new":
         if table_exists:
+            raise ValueError(
+                f"[RUN] {destination_table} already exists: rerun with MODE=resume or MODE=reset"
+            )
+        kw_utils.create_thematic_keywords_table(_con, DRY_RUN, destination_table, POSTGRES_DB, SCHEMA)
+
+    ### RESUME: the table must exist, restart from its last ingested day
+    elif MODE == "resume":
+        if not table_exists:
+            raise ValueError(
+                f"[RUN] {destination_table} does not exist: nothing to resume "
+                "(check START_DATE / END_DATE, or rerun with MODE=new)"
+            )
+        logging.info(f"[CONFIG] Fetching max date from {destination_table}")
+        max_start = kw_utils.get_max_start_from_thematic_keywords(_con, POSTGRES_DB, destination_table, SCHEMA)
+        if max_start is None:
+            logging.info(f"[RUN] {destination_table} is empty: resuming from START_DATE")
+        else:
+            # last day is reprocessed: ON CONFLICT DO NOTHING makes it safe
+            start_date = max(START_DATE, max_start)
+            logging.info(f"[CONFIG] New start_date : {start_date}")
+
+            
+
+    ### RESET: empty the table (or create it) and restart from START_DATE
+    elif MODE == "reset":
+        if table_exists:
+            logging.warning(f"[RUN] Reset mode. Destination table {destination_table} will be cleared.")
             try:
                 utils.clear_destination_table(_con, DRY_RUN, destination_table, POSTGRES_DB, SCHEMA)
             except Exception as e:
                 raise ValueError(f"[RUN] Failed to clear {destination_table}") from e
-    ### RESUMING    
-    else:
-        logging.info("[RUN] No start date given, attempting to resume.")
-        logging.info(f"[RUN] Checking if {destination_table} exists.")
-        
-        if not table_exists:
-            logging.warning(
-                f"[END] {destination_table} does not exist in {POSTGRES_DB}: "
-                "rerun as a new run with START_DATE"
-            )
-            return
-        ### Getting new start_date
-        max_start = kw_utils.get_max_start_from_thematic_keywords(_con, POSTGRES_DB, destination_table, SCHEMA)
-        if max_start is None:
-            raise ValueError("[END] Empty destination: rerun as a new run with START_DATE")
-        start_date = max_start
-        logging.info(f"[RUN] Deducted start date from {destination_table}: {start_date}")
+        else:
+            logging.warning(f"[RUN] MODE=reset but {destination_table} does not exist: creating it")
+            kw_utils.create_thematic_keywords_table(_con, DRY_RUN, destination_table, POSTGRES_DB, SCHEMA)
 
     logging.info(f"[RUN] Processing from {start_date} to {END_DATE}")
     if start_date >= END_DATE:
-        logging.warning("[END] start_date >= end_date.")
+        logging.warning("[END] start_date >= end_date: table already complete.")
         return
         
     ### Configuring s3 connection
@@ -220,7 +233,7 @@ def run() -> None:
 
         try:
             # 3. Extracting thematic chunks and neighbour chunks
-            logging.info("[EXTRACT_ADJACENT_CHUNKS] Starting selection of chunks to keep (thematic + adjacent)")
+            logging.info("[ADJ] Starting selection of chunks to keep (thematic + adjacent)")
             day_to_ingest_df = kw_utils.extract_adjacent_chunks_day(keywords_day_df, s3_day_df, GAP,
                                                                  COUNTRY, CHANNEL_TITLES)
             n_thematic_day = int(day_to_ingest_df["thematic_chunk"].sum())
@@ -277,11 +290,15 @@ def run() -> None:
     if stopped_day:
         logging.error(
             f"[END] RUN STOPPED at day {stopped_day} (end_date requested: {END_DATE}, "
-            f"so the run did NOT reach end_date). Fix the cause, then rerun with without START_DATE "
+            f"so the run did NOT reach end_date). Fix the cause, then rerun with MODE=resume "
             f"to resume from the last ingested day."
         )
         raise RuntimeError(f"Run stopped at {stopped_day}, end_date {END_DATE} not reached")
-
+    
+    ### Checking results
+    if not DRY_RUN:
+        kw_utils.check_keywords(_con, POSTGRES_DB, destination_table, SCHEMA, GAP)
+    
 
 if __name__ == "__main__":
     logging.basicConfig(

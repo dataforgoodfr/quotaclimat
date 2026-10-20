@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from dotenv import load_dotenv
 import duckdb
-from datetime import date
+from datetime import date, timedelta
 import pandas as pd
 import numpy as np
 import sys
@@ -71,7 +71,7 @@ def get_max_start_from_thematic_keywords(con: duckdb.DuckDBPyConnection,
         raise e
     
 
-def configure_barometre_thematic_keywords(con: duckdb.DuckDBPyConnection, 
+def create_thematic_keywords_table(con: duckdb.DuckDBPyConnection, 
                                     dry_run: bool,
                                     destination_table: str, 
                                     postgres_db: str, schema: str) -> None:
@@ -101,7 +101,6 @@ def configure_barometre_thematic_keywords(con: duckdb.DuckDBPyConnection,
         logging.error(e)
         raise e
 
-    
 ### S3 ###
 def _configure_s3(con: duckdb.DuckDBPyConnection, 
                   s3_endpoint_url: str, s3_region: str, 
@@ -236,9 +235,9 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
 
         out = pd.concat([kw, pure], ignore_index=True)
 
-        # id = primary key: channel + start
+        # id = primary key: channel + start UTC TZ so no doubles on winter/summer swithcing
         out["this_id"] = (out["channel_name"] + "_"
-                  + out["start"].dt.strftime("%Y%m%d%H%M%S_%z").str.replace("+", "", regex=False))
+                  + out["start"].dt.tz_convert("UTC").dt.strftime("%Y%m%d%H%M%S").str.replace("+", "", regex=False))
         out["channel_title"] = out["channel_name"].map(channel_titles[country])
         cols = ["this_id", "channel_name", "channel_title", "start",
                 "thematic_chunk",
@@ -249,3 +248,104 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
     except Exception as e:
         logging.error(f"[EXTRACT_ADJACENT_CHUNKS] ERROR EXTRACTING ADJACENT CHUNKS: {e}")
         raise e
+    
+    
+### CHECKING RESULTS
+def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination_table: str,
+                   schema: str, gap: pd.Timedelta,
+                   step: timedelta = timedelta(minutes=2)) -> pd.DataFrame:
+    """Report on the whole destination table, per channel:
+    - missing_prev / missing_next: thematic chunks with no chunk of the same channel within gap
+      before / after (neighbour absent from S3, or lost)
+    - n_expected_adj: distinct slots start +/- step of thematic chunks, not themselves thematic
+      (a slot shared by two thematic chunks counts once)
+    - n_missing_adj / pct_missing_adj: expected slots absent from the table. Upper bound of
+      legitimate ones: ~105 program edges per day in France (program_metadata grid, July 2026:
+      2 for news channels, ~6 for generalist ones, 34 for rfi), reached only if every edge had a
+      thematic chunk. Beyond program edges, chunks can also be missing in S3.
+    - orphans: adjacent chunks with no thematic chunk of the same channel within gap
+    All thematic chunks are in the table (a day missing one in S3 is not ingested), so expected
+    adjacents can be rebuilt from it. A missing slot can still be a slot with no broadcast."""
+    gap_sql = f"INTERVAL '{int(pd.Timedelta(gap).total_seconds())} seconds'"
+    step_sql = f"INTERVAL '{int(pd.Timedelta(step).total_seconds())} seconds'"
+    try:
+        report = con.sql(f"""
+            WITH base AS MATERIALIZED (
+                SELECT channel_name, start, thematic_chunk
+                FROM {postgres_db}.{schema}.{destination_table}
+            ),
+            slots AS (
+                SELECT DISTINCT channel_name, start - {step_sql} AS slot FROM base WHERE thematic_chunk
+                UNION
+                SELECT DISTINCT channel_name, start + {step_sql} AS slot FROM base WHERE thematic_chunk
+            ),
+            adj AS (
+                SELECT s.channel_name,
+                    count(*) AS n_expected_adj,
+                    count(*) FILTER (WHERE b.start IS NULL) AS n_missing_adj
+                FROM slots s
+                LEFT JOIN base b ON b.channel_name = s.channel_name AND b.start = s.slot
+                WHERE b.thematic_chunk IS DISTINCT FROM true
+                GROUP BY s.channel_name
+            ),
+            t AS (
+                SELECT channel_name, start, thematic_chunk,
+                    lag(start)  OVER (PARTITION BY channel_name ORDER BY start) AS prev_start,
+                    lead(start) OVER (PARTITION BY channel_name ORDER BY start) AS next_start,
+                    max(CASE WHEN thematic_chunk THEN start END) OVER (
+                        PARTITION BY channel_name ORDER BY start
+                        ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING) AS prev_thematic,
+                    min(CASE WHEN thematic_chunk THEN start END) OVER (
+                        PARTITION BY channel_name ORDER BY start
+                        ROWS BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING) AS next_thematic
+                FROM base
+            ),
+            flags AS (
+                SELECT *,
+                    thematic_chunk AND coalesce(prev_start < start - {gap_sql}, true) AS missing_prev,
+                    thematic_chunk AND coalesce(next_start > start + {gap_sql}, true) AS missing_next,
+                    NOT thematic_chunk
+                        AND coalesce(start - prev_thematic > {gap_sql}, true)
+                        AND coalesce(next_thematic - start > {gap_sql}, true) AS orphan
+                FROM t
+            ),
+            per_channel AS (
+                SELECT channel_name,
+                    count(*) AS n_chunks,
+                    count(*) FILTER (WHERE thematic_chunk) AS n_thematic,
+                    count(*) FILTER (WHERE NOT thematic_chunk) AS n_adjacent,
+                    count(*) FILTER (WHERE missing_prev) AS missing_prev,
+                    count(*) FILTER (WHERE missing_next) AS missing_next,
+                    count(*) FILTER (WHERE orphan) AS orphans
+                FROM flags
+                GROUP BY channel_name
+            )
+            SELECT p.channel_name, p.n_chunks, p.n_thematic, p.n_adjacent,
+                p.missing_prev, p.missing_next,
+                coalesce(a.n_expected_adj, 0) AS n_expected_adj,
+                coalesce(a.n_missing_adj, 0) AS n_missing_adj,
+                round(100.0 * a.n_missing_adj / nullif(a.n_expected_adj, 0), 2) AS pct_missing_adj,
+                p.orphans
+            FROM per_channel p
+            LEFT JOIN adj a USING (channel_name)
+            ORDER BY n_missing_adj DESC, p.channel_name
+        """).df()
+    except Exception as e:
+        logging.error(f"[{destination_table}] ERROR CHECKING TABLE: {e}")
+        raise e
+
+    total = report.drop(columns=["channel_name", "pct_missing_adj"]).sum()
+    pct_total = (round(100 * total["n_missing_adj"] / total["n_expected_adj"], 2)
+                 if total["n_expected_adj"] else None)
+    logging.info(
+        f"[CHECK] {destination_table}: {total['n_chunks']} chunks "
+        f"({total['n_thematic']} thematic, {total['n_adjacent']} adjacent) on {len(report)} channels\n"
+        f"thematic chunks without neighbour: {total['missing_prev']} before, {total['missing_next']} after\n"
+        f"missing adjacents: {total['n_missing_adj']} / {total['n_expected_adj']} expected ({pct_total} %). Up to ~105 per day (France) can be program edges, "
+        f"and chunks can be missing in S3.\n"
+        f"orphan adjacents: {total['orphans']}"
+    )
+    with_missing = report[report["n_missing_adj"] > 0]
+    if not with_missing.empty:
+        logging.info(f"[CHECK] channels with missing adjacents:\n{with_missing.to_string(index=False)}")
+    return report

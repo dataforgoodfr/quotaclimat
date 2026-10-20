@@ -18,7 +18,7 @@ import hashlib
 load_dotenv(Path(__file__).resolve().parents[4] / ".env", override=False)
 
    
-def configure_barometre_thematic_articles(con: duckdb.DuckDBPyConnection, 
+def create_thematic_articles_table(con: duckdb.DuckDBPyConnection, 
                                     dry_run: bool,
                                     destination_table: str, 
                                     postgres_db: str, schema:str = "public") -> None:
@@ -32,7 +32,7 @@ def configure_barometre_thematic_articles(con: duckdb.DuckDBPyConnection,
                     an VARCHAR NOT NULL,
                     source_code VARCHAR NOT NULL,
                     source_name VARCHAR NOT NULL,
-                    publication_date TIMESTAMPTZ NOT NULL,
+                    publication_datetime TIMESTAMPTZ NOT NULL,
                     title VARCHAR,
                     snippet VARCHAR,
                     body VARCHAR,
@@ -77,23 +77,21 @@ def read_barometre_factiva_articles(con: duckdb.DuckDBPyConnection,
                 SELECT a."An" AS an,
                     a.source_code AS source_code,
                     a.source_name AS source_name,
-                    a.publication_date AS publication_date,
+                    a.publication_datetime AS publication_datetime,
                     a.title AS title,
                     a.snippet AS snippet,
                     a.body AS body,
                     replace(replace(lower(strip_accents(concat_ws(' ', a.snippet, a.title, a.body))), '''', ''), '’', '') AS txt,
                     a.word_count as word_count               
                 FROM {postgres_db}.{source_table} a
-                WHERE a.publication_date >= TIMESTAMP '{start_date}' AT TIME ZONE 'Europe/Paris'
-                    AND a.publication_date <  TIMESTAMP '{end_date}'   AT TIME ZONE 'Europe/Paris'
+                WHERE a.publication_datetime >= TIMESTAMP '{start_date}' AT TIME ZONE 'Europe/Paris'
+                    AND a.publication_datetime <  TIMESTAMP '{end_date}'   AT TIME ZONE 'Europe/Paris'
                     AND duplicate_status <> 'DUP'
             )
-            SELECT an, source_code, source_name, publication_date, title, snippet, body, word_count
+            SELECT an, source_code, source_name, publication_datetime, title, snippet, body, word_count
             FROM txt
             WHERE regexp_matches(txt, '{pattern_sql}')
         """).df()
-        print(len(out))
-        out.to_csv("csv.csv")
         return out
     except Exception as e:
         logging.error(f"[{source_table}] ERROR READING FACTIVA ARTICLES:")
@@ -108,7 +106,7 @@ def get_max_start_date_from_thematic_articles(con: duckdb.DuckDBPyConnection, po
     """Get the maximum publication date from the destination table, or None if empty."""
     try:
         result = con.sql(
-            f"SELECT CAST(MAX(publication_date) AT TIME ZONE 'Europe/Paris' AS DATE) "
+            f"SELECT CAST(MAX(publication_datetime) AT TIME ZONE 'Europe/Paris' AS DATE) "
             f"FROM {postgres_db}.{destination_schema}.{destination_table}"
         ).fetchone()
         if result and result[0]:
@@ -117,3 +115,24 @@ def get_max_start_date_from_thematic_articles(con: duckdb.DuckDBPyConnection, po
     except Exception as e:
         logging.error(f"[{destination_table}] ERROR GETTING MAX PUBLICATION DATE: {e}")
         raise e
+
+
+def check_articles(con: duckdb.DuckDBPyConnection, postgres_db: str, destination_table: str,
+                   schema: str = "public") -> pd.DataFrame:
+    """Report on the whole destination table: number of articles per media (source_code, source_name)."""
+    try:
+        report = con.sql(f"""
+            SELECT source_code, source_name, count(*) AS n_articles
+            FROM {postgres_db}.{schema}.{destination_table}
+            GROUP BY source_code, source_name
+            ORDER BY n_articles DESC, source_code
+        """).df()
+    except Exception as e:
+        logging.error(f"[{destination_table}] ERROR CHECKING TABLE: {e}")
+        raise e
+
+    logging.info(
+        f"[CHECK] {destination_table}: {int(report['n_articles'].sum())} articles on {len(report)} media\n"
+        f"{report.to_string(index=False)}"
+    )
+    return report

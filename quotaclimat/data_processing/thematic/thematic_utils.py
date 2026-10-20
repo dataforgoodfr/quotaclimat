@@ -13,6 +13,13 @@ import unicodedata
 from datetime import date
 import yaml
 
+POSTGRES_MAX_IDENTIFIER_BYTES = 63
+MEDIA_TYPE_SHORT = {"audiovisuel": "kw", "presse": "art"}
+# format produced by make_destination_table_name: only these tables can be cleared
+DESTINATION_TABLE_PATTERN = (
+    r"[a-z0-9_]+_(?:" + "|".join(MEDIA_TYPE_SHORT.values()) + r")_[a-z]+_\d{8}_\d{8}"
+)
+
 
 ### KEYWORDS ###
 def get_keywords(yml_file: str, thematic: str, media_type: str, language: str) -> list[str]:
@@ -63,12 +70,12 @@ def configure_barometre_source(con: duckdb.DuckDBPyConnection, source_table: str
         raise e
     
     
-def clear_destination_table(con, dry_run, destination_table, postgres_db, schema,
-                            required_infix: str = "_thematic_"):
-    """Empties the destination table (new run only). The table must already exist and contain thematic."""
-    if required_infix not in destination_table.lower():
+def clear_destination_table(con, dry_run, destination_table, postgres_db, schema):
+    """Empties the destination table (MODE=reset only). The table must already exist and its name
+    must match the make_destination_table_name format, so that no other table can be cleared."""
+    if not re.fullmatch(DESTINATION_TABLE_PATTERN, destination_table):
         raise ValueError(
-            f"Refusing to clear '{destination_table}': name does not contain '{required_infix}'"
+            f"Refusing to clear '{destination_table}': name does not match {DESTINATION_TABLE_PATTERN}"
         )
     try:
         if dry_run:
@@ -101,3 +108,22 @@ def destination_table_exists(con: duckdb.DuckDBPyConnection,
     """, [postgres_db, schema, destination_table]).fetchone()[0]
 
     return n > 0
+
+
+def make_destination_table_name(thematic: str, media_type: str,  country_short: str, start_date: date, end_date: date) -> str:
+    """{thematic}_{media_type_code}_{country}_{start YYYYMMDD}_{end YYYYMMDD},
+    e.g. inondations_kw_fr_20250301_20250601.
+    Raises instead of letting Postgres silently truncate a name over 63 bytes."""
+
+    if media_type not in MEDIA_TYPE_SHORT:
+        raise ValueError(f"Media type not in {MEDIA_TYPE_SHORT.keys()}")
+
+    table_name = f"{thematic}_{MEDIA_TYPE_SHORT[media_type]}_{country_short}_{start_date:%Y%m%d}_{end_date:%Y%m%d}"
+    if not re.fullmatch(r"[a-z0-9_]+", table_name):
+        raise ValueError(f"Invalid table name '{table_name}': only [a-z0-9_] allowed")
+    n_bytes = len(table_name.encode("utf-8"))
+    if n_bytes > POSTGRES_MAX_IDENTIFIER_BYTES:
+        raise ValueError(
+            f"Table name '{table_name}' is {n_bytes} bytes, Postgres max is {POSTGRES_MAX_IDENTIFIER_BYTES}"
+        )
+    return table_name

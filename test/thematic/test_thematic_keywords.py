@@ -92,12 +92,10 @@ class _FakeS3Con:
 
 class RunEnv:
     """Everything run() needs, with no Postgres and no S3."""
-    destination_table = "inondations_thematic_kw_fr"
 
     def __init__(self, con, monkeypatch, tmp_path):
         self.con, self.mp = con, monkeypatch
         self.s3_rows, self.read_days, self.failing_days, self._n = [], [], set(), 0
-        self.table = f"{DB}.{SCHEMA}.{self.destination_table}"
 
         yml = tmp_path / "thematic.yml"
         yml.write_text(yaml.safe_dump({"inondations":{"french": {"audiovisuel": ["inondation", "crue"]}}}))
@@ -109,15 +107,20 @@ class RunEnv:
         self.configure(start=D1, end=D2)
 
     def configure(self, start=None, end=D2, dry_run=False, source_table=f"{SCHEMA}.keywords",
-                  thematic="inondations"):
+                  thematic="inondations", mode="new"):
         values = dict(
             START_DATE=start, END_DATE=end, THEMATIC=thematic, COUNTRY="france", LANGUAGE="french",
-            DRY_RUN=dry_run, SOURCE_TABLE=source_table, POSTGRES_USER="u", POSTGRES_PASSWORD="p",
+            DRY_RUN=dry_run, MODE=mode, SOURCE_TABLE=source_table, POSTGRES_USER="u", POSTGRES_PASSWORD="p",
             POSTGRES_HOST="h", POSTGRES_PORT="5432", POSTGRES_DB=DB, S3_ENDPOINT_URL="http://s3",
             S3_REGION="r", S3_ACCESS_KEY="a", S3_SECRET_KEY="s", S3_BUCKET_NAME="bucket",
         )
         for k, v in values.items():
             self.mp.setattr(tk, k, v, raising=False)
+        # the table name depends on the dates: same computation as run()
+        if start is not None:
+            self.destination_table = utils.make_destination_table_name(
+                thematic, tk.MEDIA_TYPE, tk.COUNTRIES["france"], start, end)
+            self.table = f"{DB}.{SCHEMA}.{self.destination_table}"
 
     def add_s3(self, start, plaintext, channel="tf1"):
         self.s3_rows.append({"channel_name": channel, "start": start, "plaintext": plaintext})
@@ -141,8 +144,13 @@ class RunEnv:
         return pd.DataFrame(rows, columns=["channel_name", "start", "plaintext"])
 
     def create_destination(self):
-        kw_utils.configure_barometre_thematic_keywords(
+        kw_utils.create_thematic_keywords_table(
             self.con, False, self.destination_table, DB, SCHEMA)
+
+    def insert_sentinel(self, this_id="sentinel"):
+        self.con.execute(
+            f"INSERT INTO {self.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext) "
+            f"VALUES ('{this_id}', 'tf1', 'TF1', TIMESTAMPTZ '2025-01-01 10:00:00+01', true, 'old')")
     
 
     def count(self):
@@ -263,9 +271,11 @@ def test_extract_adjacent_chunks_day_flags_thematic_true_and_neighbors_false():
 
 def test_extract_adjacent_chunks_day_output_columns_id_format_and_title():
     """Verify all output columns (neither more nor less, regardless of order since insertion
-    is done BY NAME), the this_id format (channel + Paris time), and channel title from
+    is done BY NAME), the this_id format (channel + UTC time, 10:00 Paris = 09:00 UTC in March),
+    that this_id does not depend on the input timezone, and channel title from
     the channel_titles dictionary passed as argument."""
-    out = _extract(*_scenario())
+    kw, s3 = _scenario()
+    out = _extract(kw, s3)
 
     assert set(out.columns) == {
         "this_id", "channel_name", "channel_title", "start", "thematic_chunk",
@@ -273,9 +283,14 @@ def test_extract_adjacent_chunks_day_output_columns_id_format_and_title():
     }
     assert len(out.columns) == 9
     assert set(out["this_id"]) == {
-        "tf1_20250310100000_0100", "tf1_20250310100200_0100", "tf1_20250310095800_0100"
+        "tf1_20250310090000", "tf1_20250310090200", "tf1_20250310085800"
     }
     assert set(out["channel_title"]) == {"TF1 (test)"}
+
+    # same instants given in UTC: same ids
+    to_utc = lambda df: df.assign(start=df["start"].dt.tz_convert("UTC"))
+    out_utc = _extract(to_utc(kw), to_utc(s3))
+    assert set(out_utc["this_id"]) == set(out["this_id"])
 
 
 def test_extract_adjacent_chunks_day_raises_if_core_missing_from_s3():
@@ -309,6 +324,55 @@ def test_extract_adjacent_chunks_day_raises_if_core_channel_absent_from_s3():
 
     with pytest.raises(ValueError):
         _extract(kw, s3)
+
+
+# ───────────────────────── check_keywords ─────────────────────────
+def test_check_keywords_counts_missing_neighbours_and_orphans(env):
+    """Verify, per channel, thematic chunks without neighbour (including across midnight),
+    missing adjacents among distinct expected slots (a slot taken by a thematic chunk is not
+    expected, a slot shared by two thematic chunks counts once) and orphan adjacents."""
+    env.create_destination()
+    n = iter(range(100))
+
+    def add(channel, ts, thematic):
+        start = pd.Timestamp(ts, tz=PARIS)
+        env.con.execute(
+            f"INSERT INTO {env.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext) "
+            "VALUES (?, ?, 'T', ?, ?, 'p')", [f"id{next(n)}", channel, start, thematic])
+
+    # tf1: 10:00 complete, 12:00 without previous, 00:00 without previous (across midnight), orphan at 15:00
+    for ts, th in [("2025-03-10 09:58", False), ("2025-03-10 10:00", True), ("2025-03-10 10:02", False),
+                   ("2025-03-10 12:00", True), ("2025-03-10 12:02", False),
+                   ("2025-03-11 00:00", True), ("2025-03-11 00:02", False),
+                   ("2025-03-10 15:00", False)]:
+        add("tf1", ts, th)
+    # m6: 23:58 without next (across midnight)
+    add("m6", "2025-03-10 23:56", False)
+    add("m6", "2025-03-10 23:58", True)
+    # c8: complete
+    for ts, th in [("2025-03-10 09:58", False), ("2025-03-10 10:00", True), ("2025-03-10 10:02", False)]:
+        add("c8", ts, th)
+    # fr2: thematic 10:00 and 10:02 side by side, 10:04 shared by 10:02 and 10:06, 10:04 and 10:08 missing
+    # expected slots: 09:58, 10:04, 10:08 (10:00 and 10:02 are thematic) -> 2 missing out of 3
+    # (counting 2 per thematic chunk would give 3 / 6)
+    for ts, th in [("2025-03-10 09:58", False), ("2025-03-10 10:00", True),
+                   ("2025-03-10 10:02", True), ("2025-03-10 10:06", True)]:
+        add("fr2", ts, th)
+
+    report = kw_utils.check_keywords(env.con, DB, env.destination_table, SCHEMA, tk.GAP).set_index("channel_name")
+
+    assert report.loc["tf1", ["n_thematic", "n_adjacent"]].tolist() == [3, 5]
+    assert report.loc["tf1", ["missing_prev", "missing_next", "orphans"]].tolist() == [2, 0, 1]
+    assert report.loc["m6", ["missing_prev", "missing_next", "orphans"]].tolist() == [0, 1, 0]
+    assert report.loc["c8", ["missing_prev", "missing_next", "orphans"]].tolist() == [0, 0, 0]
+    assert report.loc["fr2", ["missing_prev", "missing_next"]].tolist() == [1, 2]
+    assert report[["n_expected_adj", "n_missing_adj"]].to_dict("index") == {
+        "tf1": {"n_expected_adj": 6, "n_missing_adj": 2},
+        "m6": {"n_expected_adj": 2, "n_missing_adj": 1},
+        "c8": {"n_expected_adj": 2, "n_missing_adj": 0},
+        "fr2": {"n_expected_adj": 3, "n_missing_adj": 2},
+    }
+    assert report["pct_missing_adj"].to_dict() == {"tf1": 33.33, "m6": 50.0, "c8": 0.0, "fr2": 66.67}
 
 
 # ───────────────────────── run() ─────────────────────────
@@ -347,6 +411,50 @@ def test_run_leaves_no_partial_day_when_insert_fails(env):
     assert env.count() == 2
 
 
+def test_run_new_raises_if_table_exists(env):
+    """Verify that MODE=new refuses an existing destination table: nothing is read
+    and the existing rows are untouched."""
+    env.add_day(D1)
+    env.configure(start=D1, end=D2)
+    env.create_destination()
+    env.insert_sentinel()
+
+    with pytest.raises(ValueError, match="already exists"):
+        tk.run()
+
+    assert env.read_days == []
+    assert env.con.execute(f"SELECT this_id FROM {env.table}").fetchall() == [("sentinel",)]
+
+
+def test_run_reset_clears_existing_destination(env):
+    """Verify that MODE=reset empties an existing destination table before ingesting."""
+    env.add_day(D1)
+    env.configure(start=D1, end=D2, mode="reset")
+    env.create_destination()
+    env.insert_sentinel("old_1")
+    env.insert_sentinel("old_2")
+
+    tk.run()
+
+    assert env.count() == 2
+    assert env.con.execute(
+        f"SELECT count(*) FROM {env.table} WHERE this_id LIKE 'old_%'").fetchone()[0] == 0
+
+
+def test_run_resume_on_empty_table_starts_from_start_date(env):
+    """Verify that MODE=resume on an existing but empty destination table processes
+    the whole range from START_DATE."""
+    env.add_day(D1)
+    env.add_day(D2)
+    env.configure(start=D1, end=D3, mode="resume")
+    env.create_destination()
+
+    tk.run()
+
+    assert env.read_days == [D1, D2]
+    assert env.days_in_table() == [D1, D2]
+
+
 def test_run_twice_does_not_duplicate_or_overwrite_rows(env):
     """Verify idempotency: replaying the same range creates no duplicates and, with
     ON CONFLICT DO NOTHING, does not modify existing rows."""
@@ -360,8 +468,9 @@ def test_run_twice_does_not_duplicate_or_overwrite_rows(env):
         f"UPDATE {env.table} SET plaintext = 'SENTINEL' "
         f"WHERE thematic_chunk AND {PARIS_DAY} = DATE '{D3}'"
     )
-    # replay through a resume (a new run with START_DATE would clear the table first)
-    env.configure(start=None, end=D4)
+    # replay through a resume on the same range (MODE=new would refuse the existing table,
+    # MODE=reset would clear it first)
+    env.configure(start=D1, end=D4, mode="resume")
     tk.run()
 
     assert env.count() == 6
@@ -371,16 +480,20 @@ def test_run_twice_does_not_duplicate_or_overwrite_rows(env):
 
 
 def test_run_resume_restarts_from_last_ingested_day(env):
-    """Verify that a resume (no START_DATE) restarts from the day of the last ingested chunk
-    (not from the first day, not from the next one) and processes up to END_DATE."""
+    """Verify that, after a run stopped on a failing day, MODE=resume on the same range restarts
+    from the day of the last ingested chunk (not from START_DATE, not from the next day)
+    and processes up to END_DATE."""
     for d in (D1, D2, D3, D4):
         env.add_day(d)
-    env.configure(start=D1, end=D3)
-    tk.run()
+    env.failing_days = {D3}
+    env.configure(start=D1, end=D5)
+    with pytest.raises(RuntimeError):
+        tk.run()
     assert env.days_in_table() == [D1, D2]
 
+    env.failing_days.clear()
     env.read_days.clear()
-    env.configure(start=None, end=D5)
+    env.configure(start=D1, end=D5, mode="resume")
     tk.run()
 
     assert env.read_days == [D2, D3, D4]
@@ -389,24 +502,37 @@ def test_run_resume_restarts_from_last_ingested_day(env):
 
 
 def test_run_resume_does_not_create_a_new_table(env):
-    """Verify that resuming writes into the existing table: no other thematic table is created
-    and the destination table keeps being the only one next to the source table."""
+    """Verify that resuming writes into the existing table: no other thematic table is created,
+    and that MODE=resume on a range without table raises instead of creating one
+    (most likely a typo in START_DATE / END_DATE)."""
     for d in (D1, D2, D3):
         env.add_day(d)
-    env.configure(start=D1, end=D2)
-    tk.run()
+    env.failing_days = {D2}
+    env.configure(start=D1, end=D4)
+    with pytest.raises(RuntimeError):
+        tk.run()
     tables_before = env.tables()
     assert tables_before == {"keywords", env.destination_table}
 
-    env.configure(start=None, end=D4)
+    env.failing_days.clear()
+    env.configure(start=D1, end=D4, mode="resume")
     tk.run()
 
     assert env.tables() == tables_before
     assert env.days_in_table() == [D1, D2, D3]
 
+    # other range: no table to resume
+    env.configure(start=D1, end=D5, mode="resume")
+    with pytest.raises(ValueError, match="nothing to resume"):
+        tk.run()
+    assert env.tables() == tables_before
 
-@pytest.mark.parametrize("name", ["factiva_articles", "inondations_kw_fr", "autre_table"])
+
+@pytest.mark.parametrize("name", ["factiva_articles", "inondations_kw_fr", "autre_table",
+                                  "inondations_kw_20250301_20250601_fr"])  # previous format
 def test_clear_refuses_non_thematic_table_and_keeps_rows(env, name):
+    """Verify that clear_destination_table refuses a table whose name does not match the
+    make_destination_table_name format and leaves its rows untouched."""
     env.con.execute(f"CREATE TABLE IF NOT EXISTS {DB}.{SCHEMA}.{name} (id INTEGER)")
     env.con.execute(f"INSERT INTO {DB}.{SCHEMA}.{name} VALUES (1), (2)")
     before = env.con.execute(f"SELECT count(*) FROM {DB}.{SCHEMA}.{name}").fetchone()[0]
@@ -419,16 +545,16 @@ def test_clear_refuses_non_thematic_table_and_keeps_rows(env, name):
 
 
 def test_run_dry_run_writes_nothing_and_counts_chunks(env, caplog):
-    """Verify that in DRY_RUN mode nothing is written (existing table untouched)
-    and the number of chunks that would be ingested is logged."""
+    """Verify that in DRY_RUN mode nothing is written, even with MODE=reset (existing table
+    neither cleared nor filled), and the number of chunks that would be ingested is logged."""
     env.add_day(D1)
     env.add_day(D2)
+    env.configure(start=D1, end=D3, dry_run=True, mode="reset")
     env.create_destination()
     env.con.execute(
         f"INSERT INTO {env.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext) "
         "VALUES ('sentinel', 'tf1', 'TF1', TIMESTAMPTZ '2025-01-01 10:00:00+01', true, 'old')"
     )
-    env.configure(start=D1, end=D3, dry_run=True)
 
     with caplog.at_level(logging.INFO):
         tk.run()

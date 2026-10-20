@@ -31,8 +31,12 @@
 --          theme_cas, pertinence minimale des cas du thème (faible : tous, moyenne : moyenne et forte, forte :
 --          forte seulement ; une autre valeur ne renvoie rien)
 --   secteur, categorie type Filtre de champ sur Analytics > Pub Annonceur Emission Jour > Secteur / Categorie,
---          sélection multiple, facultatifs : ne garder que la pub de ces secteurs / catégories (ex. Automobile,
---          Voiture électrique)
+--          sélection multiple, facultatifs (vides : pas de filtre) : n'afficher que les annonceurs qui ont de la pub
+--          dans ces secteurs / catégories (ex. Automobile, Voiture électrique). Le filtre ne choisit que les lignes
+--          affichées : parts, rangs, cumuls et cas_attribues restent ceux du calcul sur toute la pub (ex. avec le
+--          seul secteur Automobile, si ses annonceurs ont 10 % de la pub, leurs part_pub_pct totalisent 10 %, pas
+--          100 %) ; un annonceur gardé l'est avec toute sa pub, y compris dans d'autres secteurs. Les courbes
+--          cumulées sautent donc les rangs des annonceurs écartés
 --   nb_points type Nombre, facultatif (2000 si vide) : annonceurs gardés, ceux classés dans les nb_points premiers
 --           des deux classements (rang_pub et rang_cas) ; les parts et les cumuls restent calculés sur tous les
 --           annonceurs (le dernier point n'atteint donc pas 100 %)
@@ -91,8 +95,9 @@ chaines AS (
     WHERE country = 'france'
     GROUP BY channel_name
 ),
--- secondes de pub par annonceur (au niveau choisi), entreprise et émission ; table sans alias : les filtres de
--- champ de Metabase (secteur, categorie) la nomment en entier
+-- secondes de pub par annonceur (au niveau choisi), entreprise et émission, et si cette pub est dans les secteurs
+-- et catégories choisis ; table sans alias : les filtres de champ de Metabase (secteur, categorie) la nomment en
+-- entier (sans valeur, Metabase les remplace par 1 = 1)
 pub AS MATERIALIZED (
     SELECT
         CASE CAST({{niveau}} AS text)
@@ -103,7 +108,8 @@ pub AS MATERIALIZED (
         END AS annonceur,
         analytics.pub_annonceur_emission_jour.entreprise,
         analytics.pub_annonceur_emission_jour.emission_cle,
-        SUM(analytics.pub_annonceur_emission_jour.pub_secondes) AS pub_secondes
+        SUM(analytics.pub_annonceur_emission_jour.pub_secondes) AS pub_secondes,
+        COALESCE(BOOL_OR({{secteur}} AND {{categorie}}), FALSE) AS dans_filtre
     FROM analytics.pub_annonceur_emission_jour
     CROSS JOIN bornes b
     CROSS JOIN parametres pa
@@ -112,8 +118,6 @@ pub AS MATERIALIZED (
       AND CAST({{niveau}} AS text) IN ('marque', 'entreprise', 'groupe', 'secteur')
       AND pa.pertinence_min IN ('faible', 'moyenne', 'forte')
       AND (pa.info_continue OR NOT COALESCE(c.infocontinue, FALSE))
-      AND {{secteur}}
-      AND {{categorie}}
     GROUP BY 1, 2, 3
 ),
 -- avec theme_cas : cas du thème par émission sur la période (jour de programme, comme emission_jour), à partir de
@@ -178,6 +182,8 @@ par_annonceur AS (
     SELECT
         pu.annonceur,
         COUNT(DISTINCT pu.entreprise) AS nb_entreprises,
+        -- affiché avec les filtres secteur et categorie
+        BOOL_OR(pu.dans_filtre) AS dans_filtre,
         SUM(pu.pub_secondes) AS pub_secondes,
         SUM(pu.pub_secondes * e.poids_par_seconde) AS cas_attribues,
         -- pour les moyennes pondérées des cas par heure (émissions sans heures sur la période écartées)
@@ -233,4 +239,6 @@ FROM resultat r
 CROSS JOIN parametres p
 WHERE r.rang_pub <= p.nb_points
   AND r.rang_cas <= p.nb_points
+  -- filtres secteur et categorie : lignes affichées seulement, valeurs calculées sur tous les annonceurs
+  AND r.annonceur IN (SELECT annonceur FROM par_annonceur WHERE dans_filtre)
 ORDER BY r.rang_cas, r.rang_pub, r.annonceur

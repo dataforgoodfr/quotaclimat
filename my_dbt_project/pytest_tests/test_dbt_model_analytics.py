@@ -762,14 +762,48 @@ METABASE_QUERIES = load_queries()
 def test_metabase_query(db_connection, file, case):
     """The versioned Metabase queries (metabase/*/questions.yml) run on the dbt tables, variables substituted the
     way Metabase does it."""
-    sql, values = render(read_query(file), METABASE_QUERIES[file]["variables"], case["params"])
     try:
-        with db_connection.cursor() as cur:
-            cur.execute(sql, values)
-            rows = cur.fetchall()
+        rows = run_metabase_query(db_connection, file, case["params"])
     finally:
         db_connection.rollback()
     assert len(rows) >= case.get("min_rows", 0)
+
+
+def run_metabase_query(db_connection, file: str, params: dict) -> list[dict]:
+    sql, values = render(read_query(file), METABASE_QUERIES[file]["variables"], params)
+    with db_connection.cursor() as cur:
+        cur.execute(sql, values)
+        columns = [c.name for c in cur.description]
+        return [dict(zip(columns, row)) for row in cur.fetchall()]
+
+
+def test_metabase_ponderes_cas_sector_filter_keeps_values(db_connection):
+    """The sector and category filters choose the advertisers displayed, without changing their shares, ranks
+    and cumulative shares, computed on all the ads."""
+    file = "advertising/metabase_pub_annonceurs_ponderes_cas.sql"
+    params = {"debut": "2025-01-01", "fin": "2025-12-31", "niveau": "marque"}
+    try:
+        with db_connection.cursor() as cur:
+            # a second advertiser, in another sector, with the same ads as the test brand (half of all the ads)
+            cur.execute("""
+                INSERT INTO analytics.pub_annonceur_emission_jour
+                SELECT (jsonb_populate_record(
+                    NULL::analytics.pub_annonceur_emission_jour,
+                    to_jsonb(p) || '{"marque": "PYTEST BANQUE", "entreprise": "Pytest Banque",
+                                     "groupe": "Pytest Banque", "secteur": "Banque", "categorie": "Crédit"}'
+                )).*
+                FROM analytics.pub_annonceur_emission_jour p
+            """)
+        all_rows = run_metabase_query(db_connection, file, params)
+        automobile = run_metabase_query(db_connection, file, {**params, "secteur": ["Automobile"]})
+        electric = run_metabase_query(db_connection, file, {**params, "categorie": ["Voiture électrique"]})
+        nothing = run_metabase_query(db_connection, file, {**params, "secteur": ["Aucun"]})
+    finally:
+        db_connection.rollback()
+    assert {r["annonceur"] for r in all_rows} == {"PYTEST SKODA", "PYTEST BANQUE"}
+    assert automobile == electric == [r for r in all_rows if r["annonceur"] == "PYTEST SKODA"]
+    assert float(automobile[0]["part_pub_pct"]) == 50.0
+    assert nothing == []
 
 
 def test_program_seed_patterns(db_connection):

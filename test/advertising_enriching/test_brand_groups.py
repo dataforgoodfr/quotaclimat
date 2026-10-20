@@ -183,6 +183,46 @@ def test_quota_still_exceeded_after_waiting(monkeypatch):
         assert "still exceeded" in str(e)
 
 
+def test_network_error_tried_again(monkeypatch):
+    from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import inpi
+
+    waits = []
+    monkeypatch.setattr(inpi.time, "sleep", waits.append)
+    session = FakeInpiSession()
+    answers = iter([
+        requests.exceptions.ChunkedEncodingError("Connection broken: IncompleteRead(0 bytes read, 2 more expected)"),
+        FakeResponse(search_page([("1", "ACME")], count=1)),
+    ])
+
+    def request(method, url, timeout, **kwargs):
+        answer = next(answers)
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
+
+    monkeypatch.setattr(session, "request", request)
+    client = InpiClient("user", "password", delay_sec=0, session=session)
+    assert [r.mark for r in client.search("Acme")] == ["ACME"]
+    assert inpi.NETWORK_RETRY_WAIT_SEC in waits
+
+
+def test_network_error_raised_after_retries(monkeypatch):
+    from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups import inpi
+
+    monkeypatch.setattr(inpi.time, "sleep", lambda seconds: None)
+    session = FakeInpiSession()
+
+    def request(method, url, timeout, **kwargs):
+        raise requests.ConnectionError("reset")
+
+    monkeypatch.setattr(session, "request", request)
+    try:
+        InpiClient("user", "password", delay_sec=0, session=session).search("Acme")
+        raise AssertionError("no error raised")
+    except requests.ConnectionError:
+        pass
+
+
 def test_is_alive():
     assert is_alive("Marque enregistrée")
     assert is_alive("MARQUE_RENOUVELÉE")

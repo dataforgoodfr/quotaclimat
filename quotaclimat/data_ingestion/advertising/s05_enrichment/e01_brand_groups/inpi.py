@@ -27,6 +27,10 @@ XSRF_COOKIE = "XSRF-TOKEN"
 XSRF_HEADER = "X-XSRF-TOKEN"
 TIMEOUT_SEC = 60
 MAX_RETRIES = 3
+# network errors tried again (connection reset, answer cut off: ChunkedEncodingError, a RequestException
+# but not a ConnectionError), after NETWORK_RETRY_WAIT_SEC times the attempt number
+NETWORK_ERRORS = (requests.ConnectionError, requests.Timeout, requests.exceptions.ChunkedEncodingError)
+NETWORK_RETRY_WAIT_SEC = 10
 # header of the 429 answers: seconds to wait before the quota allows requests again
 RETRY_AFTER_HEADER = "x-rate-limit-retry-after-seconds"
 RATE_LIMIT_HEADERS_PREFIX = "x-rate-limit"
@@ -306,7 +310,17 @@ class InpiClient:
             time.sleep(self.delay_sec)
             self._set_xsrf_header()
             self._count(url)
-            response = self.session.request(method, url, timeout=TIMEOUT_SEC, **kwargs)
+            try:
+                response = self.session.request(method, url, timeout=TIMEOUT_SEC, **kwargs)
+            except NETWORK_ERRORS as e:
+                if attempt == MAX_RETRIES - 1:
+                    raise
+                logging.warning(
+                    "INPI %s: network error, attempt %s/%s: %s",
+                    url.rsplit("/", 1)[-1], attempt + 1, MAX_RETRIES, e,
+                )
+                time.sleep(NETWORK_RETRY_WAIT_SEC * (attempt + 1))
+                continue
             if not self._rate_limit_headers_logged and _rate_limit_headers(response):
                 # once per run: the quota information the gateway sends, if any
                 logging.info("INPI rate limit headers: %s", _rate_limit_headers(response))

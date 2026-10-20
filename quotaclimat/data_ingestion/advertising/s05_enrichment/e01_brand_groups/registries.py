@@ -34,7 +34,7 @@ def _get(url: str, delay_sec: float, **kwargs) -> requests.Response:
         time.sleep(delay_sec if attempt == 1 else RETRY_WAIT_SEC * (attempt - 1))
         try:
             response = requests.get(url, headers=headers, timeout=TIMEOUT_SEC, **kwargs)
-        except (requests.ConnectionError, requests.Timeout):
+        except (requests.ConnectionError, requests.Timeout, requests.exceptions.ChunkedEncodingError):
             if attempt == MAX_ATTEMPTS:
                 raise
             logging.warning("%s: network error, attempt %s/%s", url.split("?")[0], attempt, MAX_ATTEMPTS)

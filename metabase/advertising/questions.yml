@@ -30,8 +30,8 @@ queries:
       nb_points: {type: number}
       theme_cas: {type: text}
       pertinence_min: {type: text, values: [faible, moyenne, forte]}
-      secteur: {type: dimension, field: analytics.pub_annonceur_emission_jour.secteur, widget: string/=}
-      categorie: {type: dimension, field: analytics.pub_annonceur_emission_jour.categorie, widget: string/=}
+      secteur: {type: dimension, field: advertising.pub_annonceur_emission_jour.secteur, widget: string/=}
+      categorie: {type: dimension, field: advertising.pub_annonceur_emission_jour.categorie, widget: string/=}
     tests:
       - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: entreprise}
         min_rows: 1
@@ -68,8 +68,8 @@ queries:
       debut: {type: date}
       fin: {type: date}
       niveau: {type: text, values: [marque, entreprise, groupe], default: entreprise}
-      emission: {type: dimension, field: analytics.pub_annonceur_emission_jour.nom, widget: string/contains}
-      chaine: {type: dimension, field: analytics.pub_annonceur_emission_jour.channel_name, widget: string/=}
+      emission: {type: dimension, field: advertising.pub_annonceur_emission_jour.nom, widget: string/contains}
+      chaine: {type: dimension, field: advertising.pub_annonceur_emission_jour.channel_name, widget: string/=}
       nb_annonceurs: {type: number}
     tests:
       - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: marque}
@@ -84,9 +84,9 @@ queries:
     variables:
       debut: {type: date}
       fin: {type: date}
-      marque: {type: dimension, field: analytics.pub_annonceur_emission_jour.marque, widget: string/contains}
-      entreprise: {type: dimension, field: analytics.pub_annonceur_emission_jour.entreprise, widget: string/contains}
-      groupe: {type: dimension, field: analytics.pub_annonceur_emission_jour.groupe, widget: string/contains}
+      marque: {type: dimension, field: advertising.pub_annonceur_emission_jour.marque, widget: string/contains}
+      entreprise: {type: dimension, field: advertising.pub_annonceur_emission_jour.entreprise, widget: string/contains}
+      groupe: {type: dimension, field: advertising.pub_annonceur_emission_jour.groupe, widget: string/contains}
       nb_emissions: {type: number}
     tests:
       - params: {debut: 2025-01-01, fin: 2025-12-31}

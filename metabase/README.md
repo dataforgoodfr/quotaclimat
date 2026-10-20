@@ -1,6 +1,6 @@
 # Requêtes Metabase versionnées
 
-Ce dossier contient le SQL des questions natives de Metabase qui lisent les tables dbt (`analytics.*`), rangé par sujet :
+Ce dossier contient le SQL des questions natives de Metabase qui lisent les tables dbt (schémas `analytics`, `public` et `advertising`), rangé par sujet :
 - `advertising/` : la publicité autour des émissions ;
 - `mesinformation/` : la mésinformation par émission.
 
@@ -24,7 +24,7 @@ Les tests vérifient que chaque requête figure dans le manifeste de son dossier
 Les variables sont remplacées comme le fait Metabase :
 - une clause `[[ ... ]]` n'est gardée que si toutes ses variables ont une valeur ;
 - une variable texte est envoyée en `varchar` (d'où les `CAST` dans les requêtes) ;
-- un filtre de champ devient `"analytics"."table"."colonne" IN (...)`, ou `1 = 1` sans valeur. La requête doit donc lire la table sous son nom complet, sans alias.
+- un filtre de champ devient `"schéma"."table"."colonne" IN (...)`, ou `1 = 1` sans valeur. La requête doit donc lire la table sous son nom complet, sans alias.
 
 Une requête qui ne tourne plus après une modification du modèle dbt fait échouer la CI de la PR.
 

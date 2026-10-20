@@ -14,8 +14,8 @@
     in Label Studio (not in the transcript: a 2 min segment mixes subjects). One row per case and theme with at
     least one keyword; with cas_de_mesinformation.emission_cle, a theme's cases can be counted per emission
     (Metabase).
-    Keywords: the seed mesinfo_theme_mots_cles (seeds/themes, versioned in the repository; tuned on the production
-    cases, see metabase/metabase_cas_theme_vehicule_electrique.sql): a Postgres regular expression,
+    Keywords: the seed public.mesinfo_theme_mots_cles (seeds/themes, versioned in the repository; tuned on the
+    production cases): a Postgres regular expression,
     case-insensitive unless casse; force: fort, the keyword is enough to tie the case to the theme; faible,
     ambiguous out of context (batterie, autonomie, 2035...).
     pertinence: forte (strong keyword in the claim), moyenne (strong keyword in the explanation only, or weak

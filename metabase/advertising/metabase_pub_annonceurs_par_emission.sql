@@ -18,7 +18,7 @@
 --   env_heures_campagne_min type Nombre, facultatif (pas de filtre si vide) : lignes gardées, au moins ce temps
 --                         consacré à l'environnement par l'émission pendant la campagne de l'annonceur (heures)
 -- Lit les tables précalculées par dbt (voir leur documentation dans my_dbt_project/models/schema.yml) :
---   analytics.pub_annonceur_emission_jour : secondes de pub de chaque annonceur autour de chaque émission, par
+--   advertising.pub_annonceur_emission_jour : secondes de pub de chaque annonceur autour de chaque émission, par
 --     jour (date de la pub en heure de Paris). Une pub compte pour l'émission qui contient tout son écran (100 %
 --     de sa durée), sinon pour l'émission avant et l'émission après l'écran à moins de 15 min (50 % chacune,
 --     100 % à la seule des deux assez proche) ; les parts d'un annonceur font ainsi 100 %. La fenêtre de 15 min
@@ -27,7 +27,7 @@
 --     marque elle-même quand elle n'est pas dans ad_brands ou que la valeur est 'à vérifier') : l'annonceur
 --     est l'un des trois selon niveau, ses secondes la somme de celles de ses marques. Pubs à partir de
 --     ad_analysis_start_date (2025-09-29 par défaut).
---   analytics.emission_jour : par émission et par jour de programme, volume de grille, temps consacré à
+--   public.emission_jour : par émission et par jour de programme, volume de grille, temps consacré à
 --     l'environnement et cas de mésinformation, mêmes calculs que
 --     mesinformation/metabase_taux_mesinformation_par_emission.sql
 --     (programme d'ingestion des segments, marges d'ingestion de 6 min). Jour de programme : le jour où
@@ -95,7 +95,7 @@ emissions AS MATERIALIZED (
             SUM(ej.volume_heures) AS volume_heures,
             SUM(ej.env_heures) AS env_heures,
             SUM(ej.nb_cas) AS nb_cas
-        FROM analytics.emission_jour ej
+        FROM public.emission_jour ej
         CROSS JOIN bornes b
         WHERE ej.jour BETWEEN b.debut AND b.fin
         GROUP BY ej.emission_cle
@@ -116,7 +116,7 @@ pub_par_emission AS (
         SUM(p.pub_secondes) AS pub_secondes,
         MIN(p.jour) AS premier_jour,
         MAX(p.jour) AS dernier_jour
-    FROM analytics.pub_annonceur_emission_jour p
+    FROM advertising.pub_annonceur_emission_jour p
     CROSS JOIN bornes b
     WHERE p.jour BETWEEN b.debut AND b.fin
       AND CAST({{niveau}} AS text) IN ('marque', 'entreprise', 'groupe')
@@ -155,7 +155,7 @@ pub_retenue AS MATERIALIZED (
     CROSS JOIN parametres pa
     WHERE classes.rang_dans_emission <= pa.nb_annonceurs_par_emission
 ),
--- métriques de l'émission sur la campagne de l'annonceur, lues dans analytics.emission_jour (index sur
+-- métriques de l'émission sur la campagne de l'annonceur, lues dans public.emission_jour (index sur
 -- emission_cle, jour) ; MATERIALIZED : calculées une seule fois, avant la jointure finale
 campagne AS MATERIALIZED (
     SELECT
@@ -169,7 +169,7 @@ campagne AS MATERIALIZED (
             COALESCE(SUM(ej.volume_heures), 0) AS c_volume_heures,
             COALESCE(SUM(ej.env_heures), 0) AS c_env_heures,
             COALESCE(SUM(ej.nb_cas), 0) AS c_nb_cas
-        FROM analytics.emission_jour ej
+        FROM public.emission_jour ej
         WHERE ej.emission_cle = pr.emission_cle
           AND ej.jour BETWEEN pr.campagne_debut AND pr.campagne_fin
     ) c

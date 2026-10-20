@@ -4,7 +4,7 @@
 -- Variables Metabase, type Date (jours de programme, heure de Paris) :
 --   debut premier jour inclus, ex. 2026-09-01
 --   fin   dernier jour inclus, ex. 2026-09-30
--- Lit analytics.emission_jour, précalculée par dbt (voir my_dbt_project/models/schema.yml) : par émission et
+-- Lit public.emission_jour, précalculée par dbt (voir my_dbt_project/models/schema.yml) : par émission et
 -- par jour de programme (le jour où l'émission commence, une émission qui finit après minuit compte pour la
 -- veille) :
 --   volume_heures : durée de diffusion théorique d'après la grille (analytics.program) ;
@@ -33,7 +33,7 @@ emissions AS (
         SUM(ej.volume_heures) AS volume_heures,
         SUM(ej.env_heures) AS env_heures,
         SUM(ej.nb_cas) AS nb_cas
-    FROM analytics.emission_jour ej
+    FROM public.emission_jour ej
     CROSS JOIN bornes b
     WHERE ej.jour BETWEEN b.debut AND b.fin
     GROUP BY ej.emission_cle

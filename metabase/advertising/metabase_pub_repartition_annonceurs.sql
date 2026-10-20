@@ -5,12 +5,12 @@
 --   fin     type Date, dernier jour inclus, ex. 2026-09-30
 --   niveau  type Texte, échelle de l'annonceur : marque, entreprise ou groupe (société mère ultime) ; à régler en
 --           liste déroulante de ces trois valeurs, valeur par défaut entreprise (une autre valeur ne renvoie rien)
---   emission type Filtre de champ sur Analytics > Pub Annonceur Emission Jour > Nom, sélection multiple ;
+--   emission type Filtre de champ sur Advertising > Pub Annonceur Emission Jour > Nom, sélection multiple ;
 --           facultatif (vide : toutes les émissions)
---   chaine  type Filtre de champ sur Analytics > Pub Annonceur Emission Jour > Channel Name, sélection multiple ;
+--   chaine  type Filtre de champ sur Advertising > Pub Annonceur Emission Jour > Channel Name, sélection multiple ;
 --           facultatif, pour distinguer deux émissions de même nom sur deux chaînes
 --   nb_annonceurs type Nombre, facultatif (15 si vide) : annonceurs affichés, les autres regroupés dans « Autres »
--- Lit analytics.pub_annonceur_emission_jour, précalculée par dbt : secondes de pub de chaque marque autour de
+-- Lit advertising.pub_annonceur_emission_jour, précalculée par dbt : secondes de pub de chaque marque autour de
 -- chaque émission, par jour (date de la pub en heure de Paris). Une pub compte pour l'émission qui contient tout
 -- son écran (100 % de sa durée), sinon pour l'émission avant et l'émission après l'écran à moins de 15 min
 -- (50 % chacune, 100 % à la seule des deux assez proche).
@@ -30,14 +30,14 @@ parametres AS (
 par_annonceur AS (
     SELECT
         CASE CAST({{niveau}} AS text)
-            WHEN 'marque' THEN analytics.pub_annonceur_emission_jour.marque
-            WHEN 'entreprise' THEN analytics.pub_annonceur_emission_jour.entreprise
-            WHEN 'groupe' THEN analytics.pub_annonceur_emission_jour.groupe
+            WHEN 'marque' THEN advertising.pub_annonceur_emission_jour.marque
+            WHEN 'entreprise' THEN advertising.pub_annonceur_emission_jour.entreprise
+            WHEN 'groupe' THEN advertising.pub_annonceur_emission_jour.groupe
         END AS annonceur,
-        SUM(analytics.pub_annonceur_emission_jour.pub_secondes) AS pub_secondes
-    FROM analytics.pub_annonceur_emission_jour
+        SUM(advertising.pub_annonceur_emission_jour.pub_secondes) AS pub_secondes
+    FROM advertising.pub_annonceur_emission_jour
     CROSS JOIN bornes b
-    WHERE analytics.pub_annonceur_emission_jour.jour BETWEEN b.debut AND b.fin
+    WHERE advertising.pub_annonceur_emission_jour.jour BETWEEN b.debut AND b.fin
       AND CAST({{niveau}} AS text) IN ('marque', 'entreprise', 'groupe')
       AND {{emission}}
       AND {{chaine}}

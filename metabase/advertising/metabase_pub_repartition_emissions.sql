@@ -3,13 +3,13 @@
 -- Variables Metabase :
 --   debut      type Date, premier jour inclus (heure de Paris), ex. 2026-09-01
 --   fin        type Date, dernier jour inclus, ex. 2026-09-30
---   marque     type Filtre de champ sur Analytics > Pub Annonceur Emission Jour > Marque, sélection multiple
---   entreprise type Filtre de champ sur Analytics > Pub Annonceur Emission Jour > Entreprise, sélection multiple
---   groupe     type Filtre de champ sur Analytics > Pub Annonceur Emission Jour > Groupe, sélection multiple
+--   marque     type Filtre de champ sur Advertising > Pub Annonceur Emission Jour > Marque, sélection multiple
+--   entreprise type Filtre de champ sur Advertising > Pub Annonceur Emission Jour > Entreprise, sélection multiple
+--   groupe     type Filtre de champ sur Advertising > Pub Annonceur Emission Jour > Groupe, sélection multiple
 --              les trois facultatifs et cumulés (ex. groupe seul : toutes ses marques ; groupe et marque : les
 --              marques choisies de ce groupe) ; tous vides : toute la pub, tous annonceurs confondus
 --   nb_emissions type Nombre, facultatif (15 si vide) : émissions affichées, les autres regroupées dans « Autres »
--- Lit analytics.pub_annonceur_emission_jour, précalculée par dbt : secondes de pub de chaque marque autour de
+-- Lit advertising.pub_annonceur_emission_jour, précalculée par dbt : secondes de pub de chaque marque autour de
 -- chaque émission, par jour (date de la pub en heure de Paris). Une pub compte pour l'émission qui contient tout
 -- son écran (100 % de sa durée), sinon pour l'émission avant et l'émission après l'écran à moins de 15 min
 -- (50 % chacune, 100 % à la seule des deux assez proche) ; les pubs loin de toute émission suivie sont laissées
@@ -20,7 +20,7 @@
 -- Pour situer l'investissement, sur la même période :
 --   pub_secondes_emission : toute la pub rattachée à l'émission, tous annonceurs confondus ;
 --   part_dans_emission_pct : part de l'annonceur dans cette pub ;
---   volume_heures, nb_cas, cas_par_heure, cas_par_heure_env : métriques de l'émission (analytics.emission_jour,
+--   volume_heures, nb_cas, cas_par_heure, cas_par_heure_env : métriques de l'émission (public.emission_jour,
 --     comme mesinformation/metabase_taux_mesinformation_par_emission.sql), par jour de programme (une émission
 --     qui finit après minuit compte pour la veille, alors que la pub est datée de son propre jour : écart
 --     possible aux bords de la période).
@@ -37,19 +37,19 @@ parametres AS (
 -- en entier
 par_emission AS MATERIALIZED (
     SELECT
-        analytics.pub_annonceur_emission_jour.emission_cle,
-        MAX(analytics.pub_annonceur_emission_jour.channel_name) AS channel_name,
-        MAX(analytics.pub_annonceur_emission_jour.nom) AS nom,
-        BOOL_OR(analytics.pub_annonceur_emission_jour.rediffusion) AS rediffusion,
-        SUM(analytics.pub_annonceur_emission_jour.pub_secondes) AS pub_secondes,
-        COUNT(DISTINCT analytics.pub_annonceur_emission_jour.jour) AS nb_jours
-    FROM analytics.pub_annonceur_emission_jour
+        advertising.pub_annonceur_emission_jour.emission_cle,
+        MAX(advertising.pub_annonceur_emission_jour.channel_name) AS channel_name,
+        MAX(advertising.pub_annonceur_emission_jour.nom) AS nom,
+        BOOL_OR(advertising.pub_annonceur_emission_jour.rediffusion) AS rediffusion,
+        SUM(advertising.pub_annonceur_emission_jour.pub_secondes) AS pub_secondes,
+        COUNT(DISTINCT advertising.pub_annonceur_emission_jour.jour) AS nb_jours
+    FROM advertising.pub_annonceur_emission_jour
     CROSS JOIN bornes b
-    WHERE analytics.pub_annonceur_emission_jour.jour BETWEEN b.debut AND b.fin
+    WHERE advertising.pub_annonceur_emission_jour.jour BETWEEN b.debut AND b.fin
       AND {{marque}}
       AND {{entreprise}}
       AND {{groupe}}
-    GROUP BY analytics.pub_annonceur_emission_jour.emission_cle
+    GROUP BY advertising.pub_annonceur_emission_jour.emission_cle
 ),
 -- toute la pub rattachée à chaque émission retenue, tous annonceurs (index sur emission_cle, jour)
 pub_emission AS (
@@ -57,7 +57,7 @@ pub_emission AS (
         p.emission_cle,
         SUM(p.pub_secondes) AS pub_secondes_emission
     FROM par_emission pe
-    JOIN analytics.pub_annonceur_emission_jour p ON p.emission_cle = pe.emission_cle
+    JOIN advertising.pub_annonceur_emission_jour p ON p.emission_cle = pe.emission_cle
     CROSS JOIN bornes b
     WHERE p.jour BETWEEN b.debut AND b.fin
     GROUP BY p.emission_cle
@@ -70,7 +70,7 @@ metriques AS (
         SUM(ej.env_heures) AS env_heures,
         SUM(ej.nb_cas) AS nb_cas
     FROM par_emission pe
-    JOIN analytics.emission_jour ej ON ej.emission_cle = pe.emission_cle
+    JOIN public.emission_jour ej ON ej.emission_cle = pe.emission_cle
     CROSS JOIN bornes b
     WHERE ej.jour BETWEEN b.debut AND b.fin
     GROUP BY ej.emission_cle
@@ -84,7 +84,7 @@ classes AS (
         m.nb_cas,
         -- nom de la chaîne, dans la table des émissions (index sur emission_cle, jour), sinon son identifiant
         COALESCE(
-            (SELECT ej.channel_title FROM analytics.emission_jour ej
+            (SELECT ej.channel_title FROM public.emission_jour ej
              WHERE ej.emission_cle = pe.emission_cle ORDER BY ej.jour DESC LIMIT 1),
             pe.channel_name
         ) AS chaine,

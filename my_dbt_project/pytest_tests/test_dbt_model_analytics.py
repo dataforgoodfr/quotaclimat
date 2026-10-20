@@ -393,13 +393,13 @@ def test_environmental_shares_desinfo(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT
-                "analytics"."environmental_shares_with_desinfo_counts"."start",
-                "analytics"."environmental_shares_with_desinfo_counts"."channel_name",
-                "analytics"."environmental_shares_with_desinfo_counts"."sum_duration_minutes",
-                "analytics"."environmental_shares_with_desinfo_counts"."weekly_perc_climat",
-                "analytics"."environmental_shares_with_desinfo_counts"."total_mesinfo"
-            FROM analytics.environmental_shares_with_desinfo_counts
-            ORDER BY analytics.environmental_shares_with_desinfo_counts.start
+                "public"."environmental_shares_with_desinfo_counts"."start",
+                "public"."environmental_shares_with_desinfo_counts"."channel_name",
+                "public"."environmental_shares_with_desinfo_counts"."sum_duration_minutes",
+                "public"."environmental_shares_with_desinfo_counts"."weekly_perc_climat",
+                "public"."environmental_shares_with_desinfo_counts"."total_mesinfo"
+            FROM public.environmental_shares_with_desinfo_counts
+            ORDER BY public.environmental_shares_with_desinfo_counts.start
             LIMIT 1
         """)
         row = cur.fetchone()
@@ -574,13 +574,13 @@ def test_emission_jour(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT emission_cle, jour, nb_diffusions, volume_heures
-            FROM analytics.emission_jour
+            FROM public.emission_jour
             WHERE channel_name = 'bfmtv' AND jour = '2025-04-07'
         """)
         volumes = {(r[0], r[1]): (r[2], float(r[3])) for r in cur.fetchall()}
         cur.execute("""
             SELECT emission_cle, jour, nb_cas
-            FROM analytics.emission_jour
+            FROM public.emission_jour
             WHERE nb_cas > 0
         """)
         cas = sorted(cur.fetchall())
@@ -613,7 +613,7 @@ def test_cas_de_mesinformation_emission(db_connection):
         par_emission = cur.fetchall()
         cur.execute("""
             SELECT emission_cle, jour, nb_cas
-            FROM analytics.emission_jour
+            FROM public.emission_jour
             WHERE nb_cas > 0
             ORDER BY emission_cle, jour
         """)
@@ -696,7 +696,7 @@ def test_emission_jour_environment(db_connection):
         with db_connection.cursor() as cur:
             cur.execute("""
                 SELECT emission_cle, env_heures
-                FROM analytics.emission_jour
+                FROM public.emission_jour
                 WHERE channel_name = 'bfmtv' AND jour = '2025-04-07' AND env_heures > 0
             """)
             env = {r[0]: round(float(r[1]) * 3600) for r in cur.fetchall()}
@@ -718,13 +718,13 @@ def test_pub_annonceur_emission_jour(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT emission_cle, jour, marque, entreprise, groupe, pub_secondes, nb_occurrences, secteur
-            FROM analytics.pub_annonceur_emission_jour
+            FROM advertising.pub_annonceur_emission_jour
             WHERE channel_name IN ('bfmtv', 'france2') OR (channel_name = 'lci' AND jour = '2025-04-06')
         """)
         rows = sorted((r[0], r[1], r[2], r[3], r[4], float(r[5]), r[6]) for r in cur.fetchall())
         cur.execute("""
             SELECT DISTINCT secteur, categorie
-            FROM analytics.pub_annonceur_emission_jour
+            FROM advertising.pub_annonceur_emission_jour
             WHERE channel_name IN ('bfmtv', 'france2') OR (channel_name = 'lci' AND jour = '2025-04-06')
         """)
         # sector and category of the predicted brand's ad (PYTEST_AUTO / PYTEST_AUTO_EV, labelled in the ref_ome
@@ -787,11 +787,11 @@ def test_metabase_ponderes_cas_sector_filter_keeps_values(db_connection):
             # copies of the test brand's ads (all automobile) in another sector: one for a second advertiser, one for
             # the test brand itself, which then has half of its ads in automobile
             cur.execute("""
-                INSERT INTO analytics.pub_annonceur_emission_jour
+                INSERT INTO advertising.pub_annonceur_emission_jour
                 SELECT (jsonb_populate_record(
-                    NULL::analytics.pub_annonceur_emission_jour, to_jsonb(p) || copie.valeurs
+                    NULL::advertising.pub_annonceur_emission_jour, to_jsonb(p) || copie.valeurs
                 )).*
-                FROM analytics.pub_annonceur_emission_jour p
+                FROM advertising.pub_annonceur_emission_jour p
                 CROSS JOIN (VALUES
                     ('{"marque": "PYTEST BANQUE", "entreprise": "Pytest Banque", "groupe": "Pytest Banque",
                        "secteur": "Banque", "categorie": "Crédit"}'::jsonb),
@@ -1311,7 +1311,9 @@ def test_ensure_not_public_refuses_public_spreadsheet(permission_ids, status, he
 def test_advertising_models_schema(db_connection):
     """The advertising models and the reference seeds are built in the advertising schema (+schema,
     generate_schema_name), program, publicites and cas_de_mesinformation in the analytics schema (schema config),
-    the other models and seeds stay in the target schema."""
+    emission_jour, environmental_shares_with_desinfo_counts and the seed mesinfo_theme_mots_cles in the public
+    schema, pub_annonceur_emission_jour in the advertising schema, the other models and seeds stay in the target
+    schema."""
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT table_schema, table_name
@@ -1320,7 +1322,8 @@ def test_advertising_models_schema(db_connection):
                 'ad_tunnels', 'ad_occurrence_tunnels', 'ad_occurrence_mesinfo',
                 'ad_tunnel_programs', 'ref_ome_secteurs', 'ref_programmes_emissions_infos_en_continue',
                 'core_query_environmental_shares', 'task_global_completion', 'keywords', 'program',
-                'publicites', 'cas_de_mesinformation'
+                'publicites', 'cas_de_mesinformation', 'emission_jour', 'environmental_shares_with_desinfo_counts',
+                'mesinfo_theme_mots_cles', 'pub_annonceur_emission_jour'
             )
             ORDER BY table_name
         """)
@@ -1333,8 +1336,13 @@ def test_advertising_models_schema(db_connection):
         ("advertising", "ad_tunnels"),
         ("analytics", "cas_de_mesinformation"),
         ("public", "core_query_environmental_shares"),
+        ("public", "emission_jour"),
+        # built by the --target analytics run, schema='public'
+        ("public", "environmental_shares_with_desinfo_counts"),
         ("public", "keywords"),
+        ("public", "mesinfo_theme_mots_cles"),
         ("analytics", "program"),
+        ("advertising", "pub_annonceur_emission_jour"),
         ("analytics", "publicites"),
         ("advertising", "ref_ome_secteurs"),
         ("advertising", "ref_programmes_emissions_infos_en_continue"),

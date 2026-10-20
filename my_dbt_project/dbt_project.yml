@@ -67,7 +67,7 @@ seeds:
     # methodology seeds versioned in the repository, read by the analytics models,
     # always loaded with `dbt seed --full-refresh --select path:seeds/themes`
     themes:
-      +schema: analytics
+      +schema: public
       +grants: *analytics_grants
 
     keywords:

@@ -231,6 +231,7 @@ models:
         description: "% Time the of sum_duration_minutes being dedicated to climate change"
 
   - name: environmental_shares_with_desinfo_counts
+    description: In the public schema, built by the `--target analytics` run after task_global_completion.
     columns:
       - name: "start"
         description: "Start of week timestamp."
@@ -709,7 +710,7 @@ models:
 
   - name: emission_jour
     description: >
-      In the analytics schema. One row per emission and per program day (French channels): airtime in the
+      In the public schema. One row per emission and per program day (French channels): airtime in the
       grid, time spent on environmental subjects and validated misinformation cases, to sum over a period
       (Metabase). Emission: a row group of analytics.program keyed by emission_cle, the emission when known
       (Programmes Google Sheet), else the monitored program. Program day: the day the emission starts.
@@ -759,7 +760,7 @@ models:
 
   - name: pub_annonceur_emission_jour
     description: >
-      In the analytics schema. Seconds of ads of each brand around each emission, per day (Paris date of the
+      In the advertising schema. Seconds of ads of each brand around each emission, per day (Paris date of the
       occurrence), French channels, from analytics.publicites, with the company and the ultimate parent company
       of the brand: sums over brands give the seconds of a company or of a group. An occurrence counts for the emission
       containing its whole tunnel, else half for the emission before and half for the emission after the tunnel

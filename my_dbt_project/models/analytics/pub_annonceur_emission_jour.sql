@@ -1,7 +1,7 @@
 {{
     config(
         materialized='table',
-        schema='analytics',
+        schema='advertising',
         indexes=[
             {'columns': ['jour']},
             {'columns': ['emission_cle', 'jour']},
@@ -9,9 +9,9 @@
     )
 }}
 
-{#- analytics.pub_annonceur_emission_jour: seconds of ads of each brand around each emission, per day
+{#- advertising.pub_annonceur_emission_jour: seconds of ads of each brand around each emission, per day
     (Paris date of the occurrence), French channels. Emission: a row group of analytics.program keyed by
-    emission_cle, as in analytics.emission_jour. From analytics.publicites and the rows of analytics.program before
+    emission_cle, as in public.emission_jour. From analytics.publicites and the rows of analytics.program before
     / after the ad tunnel of each occurrence (ad_tunnel_programs). An occurrence counts for:
     - the emission containing its whole tunnel (inside_program): all its duration;
     - else the emissions before and after the tunnel, when they are at most ad_emission_window_minutes (dbt

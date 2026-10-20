@@ -30,7 +30,7 @@
 --   pertinence_min type Texte, facultatif (faible si vide), faible, moyenne ou forte (liste déroulante) : avec
 --          theme_cas, pertinence minimale des cas du thème (faible : tous, moyenne : moyenne et forte, forte :
 --          forte seulement ; une autre valeur ne renvoie rien)
---   secteur, categorie type Filtre de champ sur Analytics > Pub Annonceur Emission Jour > Secteur / Categorie,
+--   secteur, categorie type Filtre de champ sur Advertising > Pub Annonceur Emission Jour > Secteur / Categorie,
 --          sélection multiple, facultatifs (vides : pas de filtre) : n'afficher que les annonceurs qui ont de la pub
 --          dans ces secteurs / catégories (ex. Automobile, Voiture électrique). Le filtre ne choisit que les lignes
 --          affichées : parts, rangs, cumuls et cas_attribues restent ceux du calcul sur toute la pub (ex. avec le
@@ -75,8 +75,8 @@
 --   cas_par_heure_moyen, cas_par_heure_env_moyen : cas par heure de programme et cas par heure d'environnement des
 --     émissions de l'annonceur, moyennes pondérées par ses secondes de pub (la seconde sur les seules émissions
 --     d'au moins env_heures_min heures d'environnement), quelle que soit la pondération.
--- Sources (dbt) : analytics.pub_annonceur_emission_jour (secondes de pub de chaque marque autour de chaque
--- émission, par jour de la pub) et analytics.emission_jour (cas, heures de programme et d'environnement par
+-- Sources (dbt) : advertising.pub_annonceur_emission_jour (secondes de pub de chaque marque autour de chaque
+-- émission, par jour de la pub) et public.emission_jour (cas, heures de programme et d'environnement par
 -- émission, par jour de programme : écart possible d'une journée aux bords de la période pour les émissions qui
 -- passent minuit).
 WITH bornes AS NOT MATERIALIZED (
@@ -106,22 +106,22 @@ chaines AS (
 pub AS MATERIALIZED (
     SELECT
         CASE CAST({{niveau}} AS text)
-            WHEN 'marque' THEN analytics.pub_annonceur_emission_jour.marque
-            WHEN 'entreprise' THEN analytics.pub_annonceur_emission_jour.entreprise
-            WHEN 'groupe' THEN analytics.pub_annonceur_emission_jour.groupe
-            WHEN 'secteur' THEN COALESCE(analytics.pub_annonceur_emission_jour.secteur, 'Secteur inconnu')
+            WHEN 'marque' THEN advertising.pub_annonceur_emission_jour.marque
+            WHEN 'entreprise' THEN advertising.pub_annonceur_emission_jour.entreprise
+            WHEN 'groupe' THEN advertising.pub_annonceur_emission_jour.groupe
+            WHEN 'secteur' THEN COALESCE(advertising.pub_annonceur_emission_jour.secteur, 'Secteur inconnu')
         END AS annonceur,
-        analytics.pub_annonceur_emission_jour.entreprise,
-        analytics.pub_annonceur_emission_jour.emission_cle,
-        SUM(analytics.pub_annonceur_emission_jour.pub_secondes) AS pub_secondes,
+        advertising.pub_annonceur_emission_jour.entreprise,
+        advertising.pub_annonceur_emission_jour.emission_cle,
+        SUM(advertising.pub_annonceur_emission_jour.pub_secondes) AS pub_secondes,
         -- NULL sans pub dans les secteurs et catégories choisis
-        SUM(analytics.pub_annonceur_emission_jour.pub_secondes) FILTER (WHERE {{secteur}} AND {{categorie}})
+        SUM(advertising.pub_annonceur_emission_jour.pub_secondes) FILTER (WHERE {{secteur}} AND {{categorie}})
             AS pub_secondes_selection
-    FROM analytics.pub_annonceur_emission_jour
+    FROM advertising.pub_annonceur_emission_jour
     CROSS JOIN bornes b
     CROSS JOIN parametres pa
-    LEFT JOIN chaines c ON c.channel_name = analytics.pub_annonceur_emission_jour.channel_name
-    WHERE analytics.pub_annonceur_emission_jour.jour BETWEEN b.debut AND b.fin
+    LEFT JOIN chaines c ON c.channel_name = advertising.pub_annonceur_emission_jour.channel_name
+    WHERE advertising.pub_annonceur_emission_jour.jour BETWEEN b.debut AND b.fin
       AND CAST({{niveau}} AS text) IN ('marque', 'entreprise', 'groupe', 'secteur')
       AND pa.pertinence_min IN ('faible', 'moyenne', 'forte')
       AND (pa.info_continue OR NOT COALESCE(c.infocontinue, FALSE))
@@ -156,7 +156,7 @@ metriques AS (
             SUM(ej.nb_cas) AS nb_cas,
             SUM(ej.volume_heures) AS volume_heures,
             SUM(ej.env_heures) AS env_heures
-        FROM analytics.emission_jour ej
+        FROM public.emission_jour ej
         CROSS JOIN bornes b
         WHERE ej.jour BETWEEN b.debut AND b.fin
         GROUP BY ej.emission_cle

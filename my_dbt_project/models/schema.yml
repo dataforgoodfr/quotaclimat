@@ -799,3 +799,26 @@ models:
         description: Seconds of ads attributed to the emission (whole or half durations).
       - name: nb_occurrences
         description: Occurrences attributed to the emission, wholly or by half.
+
+  - name: dbt_objects
+    description: >
+      One row per table or view built by this dbt project (models and seeds), read from the dbt graph and
+      rebuilt by every run. A table of the database missing here is not, or no longer, built by dbt: e.g. the
+      leftover of a removed or renamed model, listed by the Metabase dashboard "Tables orphelines dbt".
+      The analytics models without a schema config are listed in the analytics schema, where the
+      `--target analytics` run of entrypoints/dbt.sh builds them.
+    columns:
+      - name: schema_name
+        description: Schema of the relation.
+        tests:
+          - not_null
+      - name: table_name
+        description: Name of the relation (alias of the model, or name of the model or seed).
+        tests:
+          - not_null
+      - name: resource_type
+        description: "'model', 'seed' or 'snapshot'."
+      - name: materialized
+        description: Materialization (table, incremental, view, seed...).
+      - name: file_path
+        description: File of the model or seed, relative to my_dbt_project.

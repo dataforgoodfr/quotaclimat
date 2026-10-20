@@ -696,10 +696,16 @@ models:
       - name: program_id
         description: >
           analytics.program.id of the row on the air at the start of the segment (data_item_start, Paris
-          time): the monitored program, split into its emission when known. French channels only, NULL
-          outside the monitored programs.
+          time), within the ingestion margins [start - 6 min, end + 6 min[: the monitored program, split into its
+          emission when known. French channels only, NULL further than 6 min from the monitored programs.
       - name: program
         description: Label of that program (analytics.program.label).
+      - name: emission_cle
+        description: Key of the emission of that row, as in emission_jour (which counts the cases from here).
+      - name: jour_programme
+        description: >
+          Program day of the case (Paris), as in emission_jour: the day the emission starts, an emission ending
+          after midnight counting for the day before.
 
   - name: emission_jour
     description: >
@@ -799,6 +805,36 @@ models:
         description: Seconds of ads attributed to the emission (whole or half durations).
       - name: nb_occurrences
         description: Occurrences attributed to the emission, wholly or by half.
+  - name: cas_theme
+    description: >
+      In the analytics schema. Themes of the validated misinformation cases of the French channels, found by
+      keywords (versioned in the model) in the claim and the explanation of the annotator. One row per case and
+      theme with at least one keyword. A shortlist to review by hand before any external use.
+    columns:
+      - name: task_aggregate_id
+        description: Label Studio task of the case (cas_de_mesinformation.task_aggregate_id).
+        tests:
+          - not_null
+      - name: theme
+        description: Theme of the keywords.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['automobile']
+      - name: pertinence
+        description: >
+          forte (strong keyword in the claim), moyenne (strong keyword in the explanation only, or weak keyword in
+          the claim), faible (weak keyword in the explanation only).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['forte', 'moyenne', 'faible']
+      - name: mots_cles_affirmation
+        description: Keywords found in the claim.
+      - name: mots_cles_explication
+        description: Keywords found in the explanation.
 
   - name: dbt_objects
     description: >

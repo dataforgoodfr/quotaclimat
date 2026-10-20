@@ -24,8 +24,8 @@
       (channel_program.get_matching_program_hour), hence [start - 6 min, end + 6 min[. A segment further than
       6 min from every row of its program (inside a program split into emissions that do not cover it) is left
       out.
-    - nb_cas: analytics.cas_de_mesinformation (data_item_start in UTC), matched on time to the row on the air
-      with the same margins (no program id for the cases).
+    - nb_cas: analytics.cas_de_mesinformation, matched on time to the row on the air with the same margins (no
+      program id for the cases), see analytics.cas_de_mesinformation.
     Days from emission_jour_start_date (dbt var) to today (Paris). -#}
 
 {% set start_date = var('emission_jour_start_date', '2023-01-01') %}
@@ -115,35 +115,11 @@ segments_lignes AS (
         GREATEST(g.start_minute - m.minute, m.minute - g.end_minute),
         g.grid_start DESC NULLS LAST, g.start_minute DESC
 ),
--- validated misinformation cases, Paris time; candidate program days: the same day, the day before, the day after
-cas_jour AS (
-    SELECT
-        c.task_aggregate_id,
-        c.data_item_channel_name AS channel_name,
-        o.day_offset,
-        t.paris_time::date - o.day_offset AS jour,
-        EXTRACT(ISODOW FROM t.paris_time::date - o.day_offset)::int AS weekday,
-        EXTRACT(EPOCH FROM t.paris_time - (t.paris_time::date - o.day_offset)) / 60 AS minute
-    FROM {{ ref('cas_de_mesinformation') }} c
-    CROSS JOIN LATERAL (SELECT (c.data_item_start AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris' AS paris_time) t
-    CROSS JOIN (VALUES (-1), (0), (1)) AS o(day_offset)
-    WHERE c.country = 'france'
-),
+-- validated misinformation cases, attributed to their emission and program day in analytics.cas_de_mesinformation
 cas_lignes AS (
-    SELECT DISTINCT ON (c.task_aggregate_id)
-        g.emission_cle,
-        c.jour
-    FROM cas_jour c
-    JOIN grille_cle g
-      ON g.channel_name = c.channel_name
-     AND g.weekday = c.weekday
-     AND c.jour BETWEEN COALESCE(g.grid_start, '-infinity'::date) AND g.grid_end
-     AND c.minute >= g.start_minute - 6
-     AND c.minute < g.end_minute + 6
-    ORDER BY c.task_aggregate_id,
-        c.minute >= g.start_minute AND c.minute < g.end_minute DESC,
-        GREATEST(g.start_minute - c.minute, c.minute - g.end_minute),
-        g.type = 'émission' DESC, g.grid_start DESC NULLS LAST, c.day_offset, g.start_minute DESC
+    SELECT emission_cle, jour_programme AS jour
+    FROM {{ ref('cas_de_mesinformation') }}
+    WHERE emission_cle IS NOT NULL
 ),
 metriques AS (
     SELECT

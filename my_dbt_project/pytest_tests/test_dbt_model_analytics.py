@@ -11,6 +11,7 @@ import yaml
 from my_dbt_project.pytest_tests.test_dbt_model_homepage import run_dbt_command
 from quotaclimat.data_ingestion.advertising.s03_classification.dictionary.normalize import normalize, nospace
 from quotaclimat.data_ingestion.external_sources.download_external_sources import SEEDS_DIR, download_source
+from quotaclimat.metabase.questions import load_queries, read_query, render
 
 
 @pytest.fixture(scope="module")
@@ -749,6 +750,27 @@ def test_pub_annonceur_emission_jour(db_connection):
         # Sunday 06:10: Nuit LCI of Saturday, Paris date of the occurrence
         ("lci|émission|Nuit LCI|false", datetime.date(2025, 4, 6), brand, company, parent, 30.0, 1),
     ]
+
+METABASE_QUERIES = load_queries()
+
+
+@pytest.mark.parametrize(
+    "file,case",
+    [(file, case) for file, query in METABASE_QUERIES.items() for case in query["tests"]],
+    ids=lambda x: x if isinstance(x, str) else "",
+)
+def test_metabase_query(db_connection, file, case):
+    """The versioned Metabase queries (metabase/*/questions.yml) run on the dbt tables, variables substituted the
+    way Metabase does it."""
+    sql, values = render(read_query(file), METABASE_QUERIES[file]["variables"], case["params"])
+    try:
+        with db_connection.cursor() as cur:
+            cur.execute(sql, values)
+            rows = cur.fetchall()
+    finally:
+        db_connection.rollback()
+    assert len(rows) >= case.get("min_rows", 0)
+
 
 def test_program_seed_patterns(db_connection):
     """The seed tests (matches_pattern) report the values of the sheet that analytics.program cannot parse."""

@@ -1,0 +1,44 @@
+id: metabase-sync
+namespace: quotaclimat
+
+description: |
+  Updates the Metabase questions listed in metabase/*/questions.yml with the SQL
+  queries versioned in metabase/ (see metabase/README.md), from the
+  quotaclimat_base image built on main. A question whose SQL was edited in
+  Metabase since its last synchronization is left as it is and fails the run,
+  unless force. Meant to run after dbt (the queries read the dbt tables), to
+  be added to the main pipeline once checked by hand.
+
+labels:
+  pipeline: ome
+  environment: prod
+  scope: france
+
+inputs:
+  - id: apply
+    type: BOOLEAN
+    defaults: true
+    description: "When false, only logs what would change in each question."
+  - id: force
+    type: BOOLEAN
+    defaults: false
+    description: "Also overwrite the questions whose SQL was edited in Metabase (their differences are in the logs of a run without force)."
+
+tasks:
+  - id: sync_metabase_questions
+    type: io.kestra.plugin.docker.Run
+    containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
+    pullPolicy: ALWAYS
+    credentials:
+      registry: rg.fr-par.scw.cloud/namespace-barometre
+      username: nologin
+      password: "{{ secret('SCW_SECRET') }}"
+    entryPoint:
+      - /bin/sh
+      - -c
+      - >-
+        cd /app && python -m quotaclimat.metabase.sync_questions
+        {{ inputs.apply ? '--apply' : '' }} {{ inputs.force ? '--force' : '' }}
+    env:
+      METABASE_URL: "{{ secret('METABASE_URL') }}"
+      METABASE_API_KEY: "{{ secret('METABASE_API_KEY') }}"

@@ -1192,6 +1192,29 @@ def test_advertising_models_schema(db_connection):
     ]
 
 
+def list_enabled_seeds(**env):
+    """Paths of the seeds dbt would load, with the given environment variables (None removes one)."""
+    run_env = {**os.environ, **env}
+    run_env = {k: v for k, v in run_env.items() if v is not None}
+    result = subprocess.run(
+        ["poetry", "run", "dbt", "--quiet", "ls", "--resource-type", "seed", "--output", "path"],
+        capture_output=True, text=True, env=run_env,
+    )
+    assert result.returncode == 0, f"dbt ls failed: {result.stdout} {result.stderr}"
+    return sorted(line.strip() for line in result.stdout.splitlines() if line.strip().endswith(".csv"))
+
+
+def test_fixture_seeds_disabled_in_production():
+    """The fixture seeds have the names of the production tables (public.keywords...): with the production
+    environment of entrypoints/dbt.sh (DBT_ENV=prod, `docker` target, no DBT_ENABLE_FIXTURE_SEEDS), a `dbt seed` or
+    `dbt build` without --select only loads the reference seeds."""
+    prod_seeds = list_enabled_seeds(DBT_ENV="prod", DBT_ENABLE_FIXTURE_SEEDS=None)
+    assert all(path.startswith("seeds/ref/") for path in prod_seeds), prod_seeds
+
+    test_seeds = list_enabled_seeds(DBT_ENABLE_FIXTURE_SEEDS="true")
+    assert "seeds/fixtures/keywords.csv" in test_seeds
+
+
 def test_publicites_start_date(db_connection):
     """Occurrences before ad_analysis_start_date are excluded (run last: rebuilds the model)."""
     # end the transaction left open by the previous SELECTs: its lock on the table would block dbt

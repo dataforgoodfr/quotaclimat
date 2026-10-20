@@ -43,6 +43,7 @@ services:
     environment:
       DBT_PROFILES_DIR: /app/my_dbt_project/dbt
       DBT_PROJECT_DIR: /app/my_dbt_project
+      DBT_ENABLE_FIXTURE_SEEDS: "true" # local db only: loads my_dbt_project/seeds/fixtures (see dbt_project.yml)
       ENV: docker
       # CHANNEL: "fr3-idf"
       LOGLEVEL: DEBUG

@@ -48,6 +48,11 @@
 --   nb_entreprises : entreprises distinctes qui ont de la pub dans la ligne (1 au niveau marque ou entreprise,
 --     les entreprises du groupe ou du secteur sinon) ;
 --   pub_secondes, part_pub_pct : sa pub rattachée à une émission (gardée) et sa part, pour comparer ;
+--   pub_secondes_selection : sa pub dans les secteurs et catégories choisis (toute sa pub sans filtre) ;
+--   pub_dans_selection_pct : part de sa pub qui est dans ces secteurs / catégories (ex. 60 % de la pub d'un
+--     groupe est dans l'automobile) ; 100 % sans filtre ;
+--   part_selection_pct : sa part dans la pub de ces secteurs / catégories, tous annonceurs confondus (ex. le
+--     groupe fait 15 % de la pub automobile) ; égale à part_pub_pct sans filtre ;
 --   indice_surexposition : part_cas_pct / part_pub_pct ; 1 : l'annonceur est autour de la mésinformation autant
 --     que sa pub le laisse attendre, 2 : deux fois plus (avec ponderation_par_temps_denv : le score moyen de ses
 --     émissions est le double de celui de toute la pub) ;
@@ -109,7 +114,9 @@ pub AS MATERIALIZED (
         analytics.pub_annonceur_emission_jour.entreprise,
         analytics.pub_annonceur_emission_jour.emission_cle,
         SUM(analytics.pub_annonceur_emission_jour.pub_secondes) AS pub_secondes,
-        COALESCE(BOOL_OR({{secteur}} AND {{categorie}}), FALSE) AS dans_filtre
+        -- NULL sans pub dans les secteurs et catégories choisis
+        SUM(analytics.pub_annonceur_emission_jour.pub_secondes) FILTER (WHERE {{secteur}} AND {{categorie}})
+            AS pub_secondes_selection
     FROM analytics.pub_annonceur_emission_jour
     CROSS JOIN bornes b
     CROSS JOIN parametres pa
@@ -182,8 +189,8 @@ par_annonceur AS (
     SELECT
         pu.annonceur,
         COUNT(DISTINCT pu.entreprise) AS nb_entreprises,
-        -- affiché avec les filtres secteur et categorie
-        BOOL_OR(pu.dans_filtre) AS dans_filtre,
+        -- annonceur affiché avec les filtres secteur et categorie quand non NULL
+        SUM(pu.pub_secondes_selection) AS pub_secondes_selection,
         SUM(pu.pub_secondes) AS pub_secondes,
         SUM(pu.pub_secondes * e.poids_par_seconde) AS cas_attribues,
         -- pour les moyennes pondérées des cas par heure (émissions sans heures sur la période écartées)
@@ -204,6 +211,10 @@ resultat AS (
         nb_entreprises,
         ROUND(pub_secondes::numeric, 0) AS pub_secondes,
         ROUND((100 * pub_secondes / SUM(pub_secondes) OVER ())::numeric, 2) AS part_pub_pct,
+        ROUND(pub_secondes_selection::numeric, 0) AS pub_secondes_selection,
+        ROUND((100 * pub_secondes_selection / pub_secondes)::numeric, 2) AS pub_dans_selection_pct,
+        ROUND((100 * pub_secondes_selection / SUM(pub_secondes_selection) OVER ())::numeric, 2)
+            AS part_selection_pct,
         ROUND(((cas_attribues / NULLIF(SUM(cas_attribues) OVER (), 0)) / (pub_secondes / SUM(pub_secondes) OVER ()))::numeric, 2)
             AS indice_surexposition,
         ROW_NUMBER() OVER classement_pub AS rang_pub,
@@ -240,5 +251,5 @@ CROSS JOIN parametres p
 WHERE r.rang_pub <= p.nb_points
   AND r.rang_cas <= p.nb_points
   -- filtres secteur et categorie : lignes affichées seulement, valeurs calculées sur tous les annonceurs
-  AND r.annonceur IN (SELECT annonceur FROM par_annonceur WHERE dans_filtre)
+  AND r.pub_secondes_selection IS NOT NULL
 ORDER BY r.rang_cas, r.rang_pub, r.annonceur

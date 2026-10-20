@@ -784,15 +784,19 @@ def test_metabase_ponderes_cas_sector_filter_keeps_values(db_connection):
     params = {"debut": "2025-01-01", "fin": "2025-12-31", "niveau": "marque"}
     try:
         with db_connection.cursor() as cur:
-            # a second advertiser, in another sector, with the same ads as the test brand (half of all the ads)
+            # copies of the test brand's ads (all automobile) in another sector: one for a second advertiser, one for
+            # the test brand itself, which then has half of its ads in automobile
             cur.execute("""
                 INSERT INTO analytics.pub_annonceur_emission_jour
                 SELECT (jsonb_populate_record(
-                    NULL::analytics.pub_annonceur_emission_jour,
-                    to_jsonb(p) || '{"marque": "PYTEST BANQUE", "entreprise": "Pytest Banque",
-                                     "groupe": "Pytest Banque", "secteur": "Banque", "categorie": "Crédit"}'
+                    NULL::analytics.pub_annonceur_emission_jour, to_jsonb(p) || copie.valeurs
                 )).*
                 FROM analytics.pub_annonceur_emission_jour p
+                CROSS JOIN (VALUES
+                    ('{"marque": "PYTEST BANQUE", "entreprise": "Pytest Banque", "groupe": "Pytest Banque",
+                       "secteur": "Banque", "categorie": "Crédit"}'::jsonb),
+                    ('{"secteur": "Banque", "categorie": "Crédit"}'::jsonb)
+                ) AS copie(valeurs)
             """)
         all_rows = run_metabase_query(db_connection, file, params)
         automobile = run_metabase_query(db_connection, file, {**params, "secteur": ["Automobile"]})
@@ -800,10 +804,26 @@ def test_metabase_ponderes_cas_sector_filter_keeps_values(db_connection):
         nothing = run_metabase_query(db_connection, file, {**params, "secteur": ["Aucun"]})
     finally:
         db_connection.rollback()
+    selection_columns = ["pub_secondes_selection", "pub_dans_selection_pct", "part_selection_pct"]
+
+    def values(row):
+        return {k: v for k, v in row.items() if k not in selection_columns}
+
     assert {r["annonceur"] for r in all_rows} == {"PYTEST SKODA", "PYTEST BANQUE"}
-    assert automobile == electric == [r for r in all_rows if r["annonceur"] == "PYTEST SKODA"]
-    assert float(automobile[0]["part_pub_pct"]) == 50.0
+    skoda = [values(r) for r in all_rows if r["annonceur"] == "PYTEST SKODA"]
+    assert [values(r) for r in automobile] == [values(r) for r in electric] == skoda
+    # 2 thirds of all the ads, not 100 %
+    assert float(automobile[0]["part_pub_pct"]) == 66.67
     assert nothing == []
+    # without filter, all the ads are in the selection
+    for row in all_rows:
+        assert row["pub_secondes_selection"] == row["pub_secondes"]
+        assert float(row["pub_dans_selection_pct"]) == 100.0
+        assert row["part_selection_pct"] == row["part_pub_pct"]
+    # automobile: half of the test brand's ads, all the automobile ads
+    assert automobile[0]["pub_secondes_selection"] * 2 == automobile[0]["pub_secondes"]
+    assert float(automobile[0]["pub_dans_selection_pct"]) == 50.0
+    assert float(automobile[0]["part_selection_pct"]) == 100.0
 
 
 def test_program_seed_patterns(db_connection):

@@ -300,6 +300,9 @@ def load_test_external_sources():
 
 @pytest.fixture(scope="module", autouse=True)
 def run_analytics(create_test_roles, create_advertising_tables, load_test_external_sources):
+    logging.info("Load the methodology seeds versioned in the repository, read by cas_theme.")
+    run_dbt_command(["seed", "--full-refresh", "--select", "path:seeds/themes"])
+    run_dbt_command(["test", "--select", "path:seeds/themes"])
     logging.info("Run dbt for the thematics model once before related tests.")
     run_dbt_command(
         [

@@ -1,0 +1,46 @@
+version: 2
+
+# Methodology seeds versioned in the repository (unlike seeds/ref, downloaded from Google Sheets), loaded with
+# `dbt seed --full-refresh --select path:seeds/themes` before the models that read them (see entrypoints/dbt.sh).
+
+seeds:
+  - name: mesinfo_theme_mots_cles
+    description: >
+      Keywords of the themes of the misinformation cases, read by analytics.cas_theme: one row per theme and
+      keyword. Tuned on the production cases (metabase/metabase_cas_theme_vehicule_electrique.sql); a change of
+      this list changes the themes of the cases, to review like code.
+    config:
+      column_types:
+        theme: text
+        mot_cle: text
+        motif: text
+        force: text
+        casse: boolean
+    columns:
+      - name: theme
+        description: Theme of the keyword (e.g. automobile).
+        tests:
+          - not_null
+      - name: mot_cle
+        description: Label of the keyword, shown in cas_theme.mots_cles_affirmation / mots_cles_explication.
+        tests:
+          - not_null
+      - name: motif
+        description: >
+          Postgres regular expression matched in the claim and the explanation of the case, case-insensitive
+          unless casse; \m and \M: start and end of word. Quote the value in the CSV when it contains a comma.
+        tests:
+          - not_null
+      - name: force
+        description: >
+          fort: the keyword is enough to tie the case to the theme; faible: ambiguous out of context (batterie,
+          autonomie, 2035...).
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['fort', 'faible']
+      - name: casse
+        description: True for a case-sensitive match (e.g. the acronym VE).
+        tests:
+          - not_null

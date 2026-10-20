@@ -9,7 +9,8 @@ models/
   dashboards/  -- core queries feeding Metabase dashboards (incremental tables)
   analytics/   -- intermediate/aggregated tables used by dashboards models
   schema.yml   -- column-level documentation and tests for the models above
-seeds/         -- CSV snapshots of the source tables, loaded with `dbt seed` for local/test data
+seeds/         -- CSV snapshots of the source tables, loaded with `dbt seed` for local/test data;
+                  ref/: reference Google Sheets (downloaded); themes/: keywords of the misinformation themes
 pytest_tests/  -- Python tests that run dbt commands and assert on the resulting tables
 ```
 `macros/`, `snapshots/`, `analyses/` and `tests/` (generic/singular dbt tests) exist but are currently empty.
@@ -45,7 +46,7 @@ Six tables are also built in the `analytics` schema (`schema='analytics'` in the
 * `publicites` (`materialized='table'`, built by the last `dbt run`, after the advertising models; formerly `advertising.ad_occurrences_classified`): one row per occurrence of a classified ad, with its `tunnel_id`, channel metadata from `program_metadata`, French sector / product category labels from the `ref_ome_secteurs` / `ref_ome_categories` seeds (see External sources below), the programs of `analytics.program` before / after its tunnel (id, label and gap, from `ad_tunnel_programs`). When the reference tables do not exist (extended perimeter database), the model still builds, with empty labels.
 * `emission_jour` (`materialized='table'`, built by the last `dbt run`, after `cas_de_mesinformation`): one row per emission (an emission of `analytics.program`, else its monitored program, keyed by `emission_cle`) and per program day, French channels, from `emission_jour_start_date` (default 2023-01-01): airtime of the grid, time spent on environmental subjects (keyword segments of 20 s windows, attached to their ingestion program `keywords.program_metadata_id` like the dashboards, then to its row on the air within the ingestion margins [start - 6 min, end + 6 min[) and validated misinformation cases (matched on time with the same margins). For the Metabase questions on a period: sums of days.
 * `pub_annonceur_emission_jour` (`materialized='table'`, built by the last `dbt run`, after `publicites`): seconds of ads of each brand (`marque`, with its company `entreprise` and ultimate parent `groupe`, so that Metabase can sum at any level), sector (`secteur`) and product category (`categorie`) around each emission (`emission_cle`, as in `emission_jour`), per Paris day: the emission containing the whole tunnel, else half for the emission before and half for the emission after, when at most `ad_emission_window_minutes` (default 15) away.
-* `cas_theme` (`materialized='table'`, built by the last `dbt run`, after `cas_de_mesinformation`): themes of the cases (for now `automobile`), found by keywords versioned in the model in the claim and the explanation of the annotator, with a relevance (`forte`, `moyenne`, `faible`). A shortlist to review by hand.
+* `cas_theme` (`materialized='table'`, built by the last `dbt run`, after `cas_de_mesinformation`): themes of the cases (for now `automobile`), found by the keywords of the seed `seeds/themes/mesinfo_theme_mots_cles.csv` (versioned in the repository, loaded by `entrypoints/dbt.sh`) in the claim and the explanation of the annotator, with a relevance (`forte`, `moyenne`, `faible`). A shortlist to review by hand.
 
 For `cas_de_mesinformation`, the program on the air at the start of each case is matched on time with the ingestion margins [start - 6 min, end + 6 min[, like the keyword segments of `emission_jour` (grids in Paris time, French channels only, a program ending after midnight covers the first hours of the next day).
 

@@ -8,6 +8,10 @@ poetry run python -m quotaclimat.data_ingestion.external_sources.download_extern
 poetry run dbt seed --full-refresh --select path:seeds/ref
 poetry run dbt test --select path:seeds/ref
 
+echo "load the methodology seeds versioned in the repository (keywords of the misinformation themes), then test them"
+poetry run dbt seed --full-refresh --select path:seeds/themes
+poetry run dbt test --select path:seeds/themes
+
 echo "apply dbt models - except analytics tables"
 poetry run dbt run --full-refresh \
 --exclude task_global_completion \

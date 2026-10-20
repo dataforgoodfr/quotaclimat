@@ -33,7 +33,7 @@ models:
   my_dbt_project:
     # Config indicated by + and applies to all files under models/example/
     analytics:
-      +grants:
+      +grants: &analytics_grants
         # grant nothing in dev; set DBT_ENV=prod to enable grants in prod
         # the extended-perimeter DB only has a rrs-read-{dev,prod} user (no climateguard-reader-user),
         # so when EXTENDED_PERIMETER is true, grant only to the rrs-read user matching DBT_ENV
@@ -63,6 +63,12 @@ seeds:
       # next to the advertising models, see macros/generate_schema_name.sql
       +schema: advertising
       +grants: *advertising_grants
+
+    # methodology seeds versioned in the repository, read by the analytics models,
+    # always loaded with `dbt seed --full-refresh --select path:seeds/themes`
+    themes:
+      +schema: analytics
+      +grants: *analytics_grants
 
     keywords:
       table: keywords

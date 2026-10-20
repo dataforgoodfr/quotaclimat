@@ -37,7 +37,7 @@ REQUIRED_ENV = [
     "START_DATE", "END_DATE", "THEMATIC"
 ]
 
-SCHEMA = "public"
+DESTINATION_SCHEMA = "thematic_extracts"
 SOURCE_TABLE="public.factiva_articles"
 MEDIA_TYPE="presse"
 LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch"}
@@ -119,7 +119,7 @@ def run() -> None:
                                     POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB)
     
     ### Check existence BEFORE creating the table
-    table_exists = utils.destination_table_exists(_con, destination_table, POSTGRES_DB, SCHEMA)
+    table_exists = utils.destination_table_exists(_con, destination_table, POSTGRES_DB, DESTINATION_SCHEMA)
 
     ### NEW: the table must not exist yet
     if MODE == "new":
@@ -127,7 +127,7 @@ def run() -> None:
             raise ValueError(
                 f"[RUN] {destination_table} already exists: rerun with MODE=resume or MODE=reset"
             )
-        art_utils.create_thematic_articles_table(_con, DRY_RUN, destination_table, POSTGRES_DB, SCHEMA)
+        art_utils.create_thematic_articles_table(_con, DRY_RUN, destination_table, POSTGRES_DB, DESTINATION_SCHEMA)
 
     ### RESUME: the table must exist, restart from its last ingested day
     elif MODE == "resume":
@@ -136,7 +136,7 @@ def run() -> None:
                 f"[RUN] {destination_table} does not exist: nothing to resume "
                 "(check START_DATE / END_DATE, or rerun with MODE=new)"
             )
-        max_start = art_utils.get_max_start_date_from_thematic_articles(_con, POSTGRES_DB, destination_table, SCHEMA)
+        max_start = art_utils.get_max_start_date_from_thematic_articles(_con, POSTGRES_DB, destination_table, DESTINATION_SCHEMA)
         if max_start is None:
             logging.info(f"[RUN] {destination_table} is empty: resuming from START_DATE")
         else:
@@ -148,12 +148,12 @@ def run() -> None:
         if table_exists:
             logging.warning(f"[RUN] Reset mode. Destination table {destination_table} will be cleared.")
             try:
-                utils.clear_destination_table(_con, DRY_RUN, destination_table, POSTGRES_DB, SCHEMA)
+                utils.clear_destination_table(_con, DRY_RUN, destination_table, POSTGRES_DB, DESTINATION_SCHEMA)
             except Exception as e:
                 raise ValueError(f"[RUN] Failed to clear {destination_table}") from e
         else:
             logging.warning(f"[RUN] MODE=reset but {destination_table} does not exist: creating it")
-            art_utils.create_thematic_articles_table(_con, DRY_RUN, destination_table, POSTGRES_DB, SCHEMA)
+            art_utils.create_thematic_articles_table(_con, DRY_RUN, destination_table, POSTGRES_DB, DESTINATION_SCHEMA)
 
     logging.info(f"[RUN] Processing from {start_date} to {END_DATE}")
     if start_date >= END_DATE:
@@ -204,7 +204,7 @@ def run() -> None:
         _con.begin()
         try:
             _con.execute(f"""
-                INSERT INTO {POSTGRES_DB}.{SCHEMA}.{destination_table} BY NAME
+                INSERT INTO {POSTGRES_DB}.{DESTINATION_SCHEMA}.{destination_table} BY NAME
                 SELECT *, now() AS created_at
                 FROM articles_day
                 ON CONFLICT (an) DO NOTHING
@@ -212,7 +212,7 @@ def run() -> None:
 
             # checks that every article of the day is now in the table
             n_in_table = _con.execute(f"""
-                SELECT count(DISTINCT an) FROM {POSTGRES_DB}.{SCHEMA}.{destination_table}
+                SELECT count(DISTINCT an) FROM {POSTGRES_DB}.{DESTINATION_SCHEMA}.{destination_table}
                 WHERE an IN (SELECT an FROM articles_day)
             """).fetchone()[0]
             if n_in_table != n_expected_day:
@@ -244,7 +244,7 @@ def run() -> None:
 
     ### Checking results (in dry run the table may not exist)
     if not DRY_RUN:
-        art_utils.check_articles(_con, POSTGRES_DB, destination_table, SCHEMA)
+        art_utils.check_articles(_con, POSTGRES_DB, destination_table, DESTINATION_SCHEMA)
 
 
 

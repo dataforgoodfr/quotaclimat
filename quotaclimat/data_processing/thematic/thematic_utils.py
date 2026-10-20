@@ -14,7 +14,7 @@ from datetime import date
 import yaml
 
 POSTGRES_MAX_IDENTIFIER_BYTES = 63
-MEDIA_TYPE_SHORT = {"audiovisuel": "kw", "presse": "art"}
+MEDIA_TYPE_SHORT = {"audiovisuel": "keywords", "presse": "articles"}
 # format produced by make_destination_table_name: only these tables can be cleared
 DESTINATION_TABLE_PATTERN = (
     r"[a-z0-9_]+_(?:" + "|".join(MEDIA_TYPE_SHORT.values()) + r")_[a-z]+_\d{8}_\d{8}"

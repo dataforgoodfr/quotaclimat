@@ -1266,6 +1266,31 @@ def test_advertising_models_schema(db_connection):
     ]
 
 
+def test_dbt_objects(db_connection):
+    """dbt_objects lists the relations built by dbt in the schema where they are built, the analytics
+    models of the `--target analytics` run included."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT schema_name, table_name, resource_type
+            FROM analytics.dbt_objects
+            WHERE table_name IN (
+                'ad_tunnels', 'core_query_environmental_shares', 'dbt_objects', 'publicites',
+                'ref_ome_secteurs', 'task_global_completion', 'core_query_causal_links'
+            )
+            ORDER BY table_name
+        """)
+        rows = cur.fetchall()
+    # core_query_causal_links: removed model, not listed
+    assert rows == [
+        ("advertising", "ad_tunnels", "model"),
+        ("public", "core_query_environmental_shares", "model"),
+        ("analytics", "dbt_objects", "model"),
+        ("analytics", "publicites", "model"),
+        ("advertising", "ref_ome_secteurs", "seed"),
+        ("analytics", "task_global_completion", "model"),
+    ]
+
+
 def list_enabled_seeds(**env):
     """Paths of the seeds dbt would load, with the given environment variables (None removes one)."""
     run_env = {**os.environ, **env}

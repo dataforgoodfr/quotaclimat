@@ -12,6 +12,7 @@ import quotaclimat.data_processing.thematic.thematic_utils as utils
 
 DB = "barometre"
 SCHEMA = "public"
+DESTINATION_SCHEMA = ta.DESTINATION_SCHEMA
 D1, D2, D3, D4, D5 = (date(2025, 3, d) for d in (10, 11, 12, 13, 14))
 SOURCE = f"{SCHEMA}.factiva_articles"
 OUT_COLS = ["an", "source_code", "source_name", "publication_datetime",
@@ -26,6 +27,7 @@ def con():
     c.execute("SET TimeZone='UTC'") ## script does not depend on session TZ
     c.execute(f"ATTACH ':memory:' AS {DB}")
     c.execute(f"CREATE SCHEMA {DB}.{SCHEMA}")
+    c.execute(f"CREATE SCHEMA {DB}.{DESTINATION_SCHEMA}")
     c.execute(f"""
         CREATE TABLE {DB}.{SCHEMA}.factiva_articles (
             an VARCHAR, source_code VARCHAR, source_name VARCHAR,
@@ -86,7 +88,7 @@ class RunEnv:
         if start is not None:
             self.destination_table = utils.make_destination_table_name(
                 thematic, ta.MEDIA_TYPE, ta.COUNTRIES["france"], start, end)
-            self.table = f"{DB}.{SCHEMA}.{self.destination_table}"
+            self.table = f"{DB}.{DESTINATION_SCHEMA}.{self.destination_table}"
 
     def add_article(self, day, an=None, **overrides):
         self._n += 1
@@ -112,7 +114,7 @@ class RunEnv:
 
     def create_destination(self):
         art_utils.create_thematic_articles_table(
-            self.con, False, self.destination_table, DB, SCHEMA)
+            self.con, False, self.destination_table, DB, DESTINATION_SCHEMA)
 
     def count(self):
         return self.con.execute(f"SELECT count(*) FROM {self.table}").fetchone()[0]
@@ -129,7 +131,7 @@ class RunEnv:
     def tables(self):
         return {r[0] for r in self.con.execute(
             "SELECT table_name FROM information_schema.tables "
-            "WHERE table_catalog = ? AND table_schema = ?", [DB, SCHEMA]).fetchall()}
+            "WHERE table_catalog = ? AND table_schema = ?", [DB, DESTINATION_SCHEMA]).fetchall()}
 
 
 @pytest.fixture
@@ -235,31 +237,31 @@ def test_destination_table_exists_and_clear(env):
     """Verify destination_table_exists before/after creation, that clear_destination_table
     in dry run deletes nothing, and that a real clear empties the table but keeps it."""
     assert not utils.destination_table_exists(
-        env.con, env.destination_table, DB, SCHEMA)
+        env.con, env.destination_table, DB, DESTINATION_SCHEMA)
 
     env.create_destination()
     env.insert_sentinel("a")
     env.insert_sentinel("b")
-    assert utils.destination_table_exists(env.con, env.destination_table, DB, SCHEMA)
+    assert utils.destination_table_exists(env.con, env.destination_table, DB, DESTINATION_SCHEMA)
 
-    utils.clear_destination_table(env.con, True, env.destination_table, DB, SCHEMA)
+    utils.clear_destination_table(env.con, True, env.destination_table, DB, DESTINATION_SCHEMA)
     assert env.count() == 2
 
-    utils.clear_destination_table(env.con, False, env.destination_table, DB, SCHEMA)
+    utils.clear_destination_table(env.con, False, env.destination_table, DB, DESTINATION_SCHEMA)
     assert env.count() == 0
-    assert utils.destination_table_exists(env.con, env.destination_table, DB, SCHEMA)
+    assert utils.destination_table_exists(env.con, env.destination_table, DB, DESTINATION_SCHEMA)
 
 
 def test_get_max_start_date_from_thematic_articles(env):
     """Verify that the max date is None on an empty table and the latest day otherwise."""
     env.create_destination()
     assert art_utils.get_max_start_date_from_thematic_articles(
-        env.con, DB, env.destination_table) is None
+        env.con, DB, env.destination_table, DESTINATION_SCHEMA) is None
 
     env.insert_sentinel("a", D1)
     env.insert_sentinel("b", D3)
     assert art_utils.get_max_start_date_from_thematic_articles(
-        env.con, DB, env.destination_table) == D3
+        env.con, DB, env.destination_table, DESTINATION_SCHEMA) == D3
 
 
 # ───────────────────────── check_articles ─────────────────────────
@@ -271,7 +273,7 @@ def test_check_articles_counts_articles_per_media(env):
     env.configure(start=D1, end=D2)
     ta.run()
 
-    report = art_utils.check_articles(env.con, DB, env.destination_table, SCHEMA)
+    report = art_utils.check_articles(env.con, DB, env.destination_table, DESTINATION_SCHEMA)
 
     assert report.to_dict("records") == [
         {"source_code": "LEFIG", "source_name": "Le Figaro", "n_articles": 2},
@@ -430,7 +432,7 @@ def test_run_resume_does_not_create_a_new_table(env):
     with pytest.raises(RuntimeError):
         ta.run()
     tables_before = env.tables()
-    assert tables_before == {"factiva_articles", env.destination_table}
+    assert tables_before == {env.destination_table}
 
     env.failing_days.clear()
     env.configure(start=D1, end=D4, mode="resume")

@@ -11,11 +11,11 @@ START, END = date(2025, 3, 1), date(2025, 6, 1)
 
 # ───────────────────────── make_destination_table_name ─────────────────────────
 @pytest.mark.parametrize("media_type, expected", [
-    ("audiovisuel", "inondations_kw_fr_20250301_20250601"),
-    ("presse", "inondations_art_fr_20250301_20250601"),
+    ("audiovisuel", "inondations_keywords_fr_20250301_20250601"),
+    ("presse", "inondations_articles_fr_20250301_20250601"),
 ])
 def test_make_destination_table_name_format(media_type, expected):
-    """Verify the {thematic}_{kw|art}_{country}_{YYYYMMDD}_{YYYYMMDD} format."""
+    """Verify the {thematic}_{keywords|articles}_{country}_{YYYYMMDD}_{YYYYMMDD} format."""
     assert utils.make_destination_table_name("inondations", media_type, "fr", START, END) == expected
 
 
@@ -36,7 +36,7 @@ def test_make_destination_table_name_raises_on_unknown_media_type():
 def test_make_destination_table_name_raises_over_63_bytes():
     """Verify that a name of exactly 63 bytes is accepted and 64 bytes raises, since
     Postgres would silently truncate it."""
-    suffix = "_art_befl_20250301_20250601"
+    suffix = "_articles_befl_20250301_20250601"
     ok = "a" * (63 - len(suffix))
     assert len(utils.make_destination_table_name(ok, "presse", "befl", START, END)) == 63
     with pytest.raises(ValueError):

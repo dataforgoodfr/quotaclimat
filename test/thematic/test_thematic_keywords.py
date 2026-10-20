@@ -14,6 +14,7 @@ import quotaclimat.data_processing.thematic.thematic_utils as utils
 
 DB = "barometre"
 SCHEMA = "public"
+DESTINATION_SCHEMA = tk.DESTINATION_SCHEMA
 PARIS = "Europe/Paris"
 T0 = pd.Timestamp("2025-03-10 10:00", tz=PARIS)
 MIN = timedelta(minutes=1)
@@ -32,6 +33,7 @@ def con():
     c.execute("SET TimeZone='Europe/Paris'")
     c.execute(f"ATTACH ':memory:' AS {DB}")
     c.execute(f"CREATE SCHEMA {DB}.{SCHEMA}")
+    c.execute(f"CREATE SCHEMA {DB}.{DESTINATION_SCHEMA}")
     c.execute(f"""
         CREATE TABLE {DB}.{SCHEMA}.keywords (
             id VARCHAR, channel_name VARCHAR, start TIMESTAMPTZ, plaintext VARCHAR,
@@ -120,7 +122,7 @@ class RunEnv:
         if start is not None:
             self.destination_table = utils.make_destination_table_name(
                 thematic, tk.MEDIA_TYPE, tk.COUNTRIES["france"], start, end)
-            self.table = f"{DB}.{SCHEMA}.{self.destination_table}"
+            self.table = f"{DB}.{DESTINATION_SCHEMA}.{self.destination_table}"
 
     def add_s3(self, start, plaintext, channel="tf1"):
         self.s3_rows.append({"channel_name": channel, "start": start, "plaintext": plaintext})
@@ -145,7 +147,7 @@ class RunEnv:
 
     def create_destination(self):
         kw_utils.create_thematic_keywords_table(
-            self.con, False, self.destination_table, DB, SCHEMA)
+            self.con, False, self.destination_table, DB, DESTINATION_SCHEMA)
 
     def insert_sentinel(self, this_id="sentinel"):
         self.con.execute(
@@ -163,7 +165,7 @@ class RunEnv:
     def tables(self):
         return {r[0] for r in self.con.execute(
             "SELECT table_name FROM information_schema.tables "
-            "WHERE table_catalog = ? AND table_schema = ?", [DB, SCHEMA]).fetchall()}
+            "WHERE table_catalog = ? AND table_schema = ?", [DB, DESTINATION_SCHEMA]).fetchall()}
 
 
 @pytest.fixture
@@ -359,7 +361,7 @@ def test_check_keywords_counts_missing_neighbours_and_orphans(env):
                    ("2025-03-10 10:02", True), ("2025-03-10 10:06", True)]:
         add("fr2", ts, th)
 
-    report = kw_utils.check_keywords(env.con, DB, env.destination_table, SCHEMA, tk.GAP).set_index("channel_name")
+    report = kw_utils.check_keywords(env.con, DB, env.destination_table, DESTINATION_SCHEMA, tk.GAP).set_index("channel_name")
 
     assert report.loc["tf1", ["n_thematic", "n_adjacent"]].tolist() == [3, 5]
     assert report.loc["tf1", ["missing_prev", "missing_next", "orphans"]].tolist() == [2, 0, 1]
@@ -512,7 +514,7 @@ def test_run_resume_does_not_create_a_new_table(env):
     with pytest.raises(RuntimeError):
         tk.run()
     tables_before = env.tables()
-    assert tables_before == {"keywords", env.destination_table}
+    assert tables_before == {env.destination_table}
 
     env.failing_days.clear()
     env.configure(start=D1, end=D4, mode="resume")

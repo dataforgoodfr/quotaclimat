@@ -1,7 +1,7 @@
 {{
     config(
         materialized='table',
-        schema='analytics',
+        schema='metadata',
     )
 }}
 

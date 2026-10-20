@@ -8,6 +8,7 @@ models/
   homepage/    -- views for the homepage
   dashboards/  -- core queries feeding Metabase dashboards (incremental tables)
   analytics/   -- intermediate/aggregated tables used by dashboards models
+  metadata/    -- dbt_objects, the list of the relations built by dbt (schema metadata)
   schema.yml   -- column-level documentation and tests for the models above
 seeds/         -- CSV snapshots of the source tables, loaded with `dbt seed` for local/test data;
                   ref/: reference Google Sheets (downloaded); themes/: keywords of the misinformation themes
@@ -48,9 +49,10 @@ Six tables are also built in the `analytics` schema (`schema='analytics'` in the
 * `pub_annonceur_emission_jour` (`materialized='table'`, built by the last `dbt run`, after `publicites`): seconds of ads of each brand (`marque`, with its company `entreprise` and ultimate parent `groupe`, so that Metabase can sum at any level), sector (`secteur`) and product category (`categorie`) around each emission (`emission_cle`, as in `emission_jour`), per Paris day: the emission containing the whole tunnel, else half for the emission before and half for the emission after, when at most `ad_emission_window_minutes` (default 15) away.
 * `cas_theme` (`materialized='table'`, built by the last `dbt run`, after `cas_de_mesinformation`): themes of the cases (for now `automobile`), found by the keywords of the seed `seeds/themes/mesinfo_theme_mots_cles.csv` (versioned in the repository, loaded by `entrypoints/dbt.sh`) in the claim and the explanation of the annotator, with a relevance (`forte`, `moyenne`, `faible`). A shortlist to review by hand.
 
-`dbt_objects` (`materialized='table'`, `schema='analytics'`, built by the first `dbt run`) lists every table or view built by this project (models and seeds, from the dbt graph, whatever `--select`), in the schema where it is built. A table of the database missing from it is not, or no longer, built by dbt: the Metabase dashboard "Tables orphelines dbt" (collection 90. Back-office / Data Ingestion - Monitoring) lists them, to drop the leftovers of removed or renamed models.
-
 For `cas_de_mesinformation`, the program on the air at the start of each case is matched on time with the ingestion margins [start - 6 min, end + 6 min[, like the keyword segments of `emission_jour` (grids in Paris time, French channels only, a program ending after midnight covers the first hours of the next day).
+
+### `metadata/`
+`dbt_objects` (`materialized='table'`, `schema='metadata'`, schema created by alembic, built by the first `dbt run`) lists every table or view built by this project (models and seeds, from the dbt graph, whatever `--select`), in the schema where it is built. A table of the database missing from it is not, or no longer, built by dbt: the Metabase dashboard "Tables orphelines dbt" (collection 90. Back-office / Data Ingestion - Monitoring) lists them, to drop the leftovers of removed or renamed models.
 
 ### `advertising/`
 Tables built from the `advertising` schema (ad detection and classification pipelines, tables created by alembic), **in the `advertising` schema** next to them (`+schema: advertising` in `dbt_project.yml`; `macros/generate_schema_name.sql` makes dbt use a custom schema as is instead of `public_advertising`), as part of the regular `dbt run`. Sources are declared in `models/advertising/sources.yml`. Occurrences with a `deleted_at` are ignored.

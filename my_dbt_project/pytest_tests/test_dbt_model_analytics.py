@@ -1272,7 +1272,7 @@ def test_dbt_objects(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
             SELECT schema_name, table_name, resource_type
-            FROM analytics.dbt_objects
+            FROM metadata.dbt_objects
             WHERE table_name IN (
                 'ad_tunnels', 'core_query_environmental_shares', 'dbt_objects', 'publicites',
                 'ref_ome_secteurs', 'task_global_completion', 'core_query_causal_links'
@@ -1284,7 +1284,7 @@ def test_dbt_objects(db_connection):
     assert rows == [
         ("advertising", "ad_tunnels", "model"),
         ("public", "core_query_environmental_shares", "model"),
-        ("analytics", "dbt_objects", "model"),
+        ("metadata", "dbt_objects", "model"),
         ("analytics", "publicites", "model"),
         ("advertising", "ref_ome_secteurs", "seed"),
         ("analytics", "task_global_completion", "model"),

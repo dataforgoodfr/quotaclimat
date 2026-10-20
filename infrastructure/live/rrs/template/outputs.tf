@@ -51,6 +51,11 @@ output "misinformation_extended_perimeter_bucket_name" {
   description = "Name of the misinformation-extended-perimeter bucket."
 }
 
+output "expert_model_source_documents_bucket_name" {
+  value       = scaleway_object_bucket.expert_model_source_documents.name
+  description = "Name of the expert-model-source-documents bucket."
+}
+
 output "extended_perimeter_read_user" {
   value = scaleway_rdb_user.extended_perimeter_read.name
 }

@@ -318,6 +318,8 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "emission_jour",
             "--exclude",
             "pub_annonceur_emission_jour",
+            "--exclude",
+            "cas_theme",
             "--full-refresh",
         ]
     )
@@ -348,6 +350,8 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "emission_jour",
             "--select",
             "pub_annonceur_emission_jour",
+            "--select",
+            "cas_theme",
             # the advertising test rows are dated 2000-01-01, before the real analysis start date
             "--vars",
             '{"ad_analysis_start_date": "2000-01-01"}',
@@ -590,6 +594,73 @@ def test_emission_jour(db_connection):
         ("sud-radio|programme|Mettez-vous d'accord|false", datetime.date(2025, 4, 2), 1),
     ]
 
+
+
+def test_cas_de_mesinformation_emission(db_connection):
+    """Emission and program day of each case, the ones counted in emission_jour.nb_cas."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT emission_cle, jour_programme, COUNT(*)
+            FROM analytics.cas_de_mesinformation
+            WHERE emission_cle IS NOT NULL
+            GROUP BY emission_cle, jour_programme
+            ORDER BY emission_cle, jour_programme
+        """)
+        par_emission = cur.fetchall()
+        cur.execute("""
+            SELECT emission_cle, jour, nb_cas
+            FROM analytics.emission_jour
+            WHERE nb_cas > 0
+            ORDER BY emission_cle, jour
+        """)
+        assert cur.fetchall() == par_emission
+        # the 5 cases are all in an emission or a program of the test grids
+        assert sum(r[2] for r in par_emission) == 5
+
+
+def test_cas_theme(db_connection):
+    """Themes of the cases by keywords in the claim and the explanation: forte, moyenne or faible."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            INSERT INTO analytics.cas_de_mesinformation (task_aggregate_id, country, claims, explanations)
+            VALUES
+                -- strong keyword in the claim, accents and plural
+                ('pytest_theme_fort', 'france', 'Les voitures électriques polluent plus que les thermiques', NULL),
+                -- strong keyword in the explanation only: the context of the debate
+                ('pytest_theme_contexte', 'france', 'Les ENR coûtent cher', 'Comme pour les véhicules électriques'),
+                -- weak keyword in the claim
+                ('pytest_theme_faible_affirmation', 'france', 'On ne sait pas recycler les batteries', NULL),
+                -- weak keyword in the explanation only
+                ('pytest_theme_faible_explication', 'france', 'Les ENR coûtent cher', 'stockage par batteries'),
+                -- VE: upper case only; "ve" inside a word does not count
+                ('pytest_theme_ve', 'france', 'Le VE est cher', NULL),
+                ('pytest_theme_rien', 'france', 'Le reve est nave', 'trouvé dans la cave'),
+                -- other countries left out
+                ('pytest_theme_belgique', 'belgium', 'Les voitures électriques polluent', NULL)
+        """)
+    db_connection.commit()
+    try:
+        run_dbt_command(["run", "--select", "cas_theme"])
+        with db_connection.cursor() as cur:
+            cur.execute("""
+                SELECT task_aggregate_id, theme, pertinence, mots_cles_affirmation, mots_cles_explication
+                FROM analytics.cas_theme
+                WHERE task_aggregate_id LIKE 'pytest_theme_%'
+                ORDER BY task_aggregate_id
+            """)
+            rows = cur.fetchall()
+    finally:
+        with db_connection.cursor() as cur:
+            cur.execute("DELETE FROM analytics.cas_de_mesinformation WHERE task_aggregate_id LIKE 'pytest_theme_%'")
+        db_connection.commit()
+        run_dbt_command(["run", "--select", "cas_theme"])
+    assert rows == [
+        ("pytest_theme_contexte", "automobile", "moyenne", None, "voiture électrique"),
+        ("pytest_theme_faible_affirmation", "automobile", "moyenne", "batterie", None),
+        ("pytest_theme_faible_explication", "automobile", "faible", None, "batterie"),
+        ("pytest_theme_fort", "automobile", "forte", "voiture électrique", None),
+        ("pytest_theme_ve", "automobile", "moyenne", "VE", None),
+    ]
 
 def test_emission_jour_environment(db_connection):
     """Keyword segments to the emission of their ingestion program on the air, within the ingestion margins."""

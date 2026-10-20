@@ -1,0 +1,69 @@
+incendies:
+  french:
+    audiovisuel:
+      - incendie
+      - incendie de forêt
+      - feux
+      - forêt brule
+      - forêts brulent
+      - forêt ravagée
+      - forêt ravagé
+      - forêt ont été détrutuites
+    presse:
+      - incendie
+      - incendies
+      #- incendie de forêt
+      #- incendies de forêt
+      - feux
+      - forêt brule
+      - forêts brulent
+      - forêt ravagée
+      - forêts ravagées
+      - forêt ravagé
+      - forêts ravagés
+      - forêt ont été détruites
+      - forêts ont été détruites
+
+inondations:
+  french:
+    audiovisuel:
+      - inondation
+      - augmentation du risque d'inondation
+      - inondations à répétition
+      - gestion des inondations
+      - anticiper les risques d'inondation
+      - anticiper les inondations
+      - prévention des inondations
+      - crue
+      - crue centennale
+      - coulée de boue
+      - pluie extreme
+      - pluie torrentielle
+      - submergé par les eaux
+      - englouti par les eaux
+    presse:
+      - inondation
+      - inondations
+      #- augmentation du risque d'inondation
+      #- inondations à répétition
+      #- gestion des inondations
+      #- anticiper les risques d'inondation
+      #- anticiper les inondations
+      #- prévention des inondations
+      - crue
+      - crues
+      #- crue centennale
+      - coulée de boue
+      - coulées de boue
+      - pluie extrême
+      - pluies extrêmes
+      - pluie torrentielle
+      - pluies torrentielles
+      - submergé par les eaux
+      - submergés par les eaux
+      - submergée par les eaux
+      - submergées par les eaux
+      - englouti par les eaux
+      - engloutis par les eaux
+      - englouties par les eaux
+      - engloutiees par les eaux

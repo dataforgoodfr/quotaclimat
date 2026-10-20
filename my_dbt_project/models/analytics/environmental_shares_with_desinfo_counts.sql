@@ -1,5 +1,6 @@
 {{ config(
     materialized='incremental',
+    schema='analytics',
     unique_key=['start','channel_name','country']
   )
 }}

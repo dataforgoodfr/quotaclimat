@@ -841,8 +841,6 @@ models:
       One row per table or view built by this dbt project (models and seeds), read from the dbt graph and
       rebuilt by every run. A table of the database missing here is not, or no longer, built by dbt: e.g. the
       leftover of a removed or renamed model, listed by the Metabase dashboard "Tables orphelines dbt".
-      The analytics models without a schema config are listed in the analytics schema, where the
-      `--target analytics` run of entrypoints/dbt.sh builds them.
     columns:
       - name: schema_name
         description: Schema of the relation.

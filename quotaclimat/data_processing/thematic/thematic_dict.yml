@@ -44,15 +44,18 @@ inondations:
     presse:
       - inondation
       - inondations
-      #- augmentation du risque d'inondation
-      #- inondations à répétition
-      #- gestion des inondations
-      #- anticiper les risques d'inondation
-      #- anticiper les inondations
-      #- prévention des inondations
+      - augmentation du risque d'inondation
+      - augmentation du risque d'inondations
+      - inondations à répétition
+      - gestion des inondations
+      - anticiper les risques d'inondation
+      - anticiper les risques d'inondations
+      - anticiper les inondations
+      - prévention des inondations
       - crue
       - crues
-      #- crue centennale
+      - crue centennale
+      - crue centenales
       - coulée de boue
       - coulées de boue
       - pluie extrême

@@ -20,3 +20,6 @@ models:
   dbt_print_media:
     dashboards:
       +materialized: incremental
+      +grants:
+        # grant nothing in dev; set DBT_ENV=prod to enable grants in prod
+        select: "{{ (['\"climateguard-reader-user\"', '\"metabase-analytics-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"', '\"metabase-analytics-dev\"']) }}"

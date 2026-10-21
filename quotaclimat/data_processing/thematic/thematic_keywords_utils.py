@@ -242,7 +242,6 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
         cols = ["this_id", "channel_name", "channel_title", "start",
                 "thematic_chunk",
                 "source_keywords_id", "keywords", "themes", "plaintext"]
-        out.to_csv("out.csv")
         return out.sort_values(["channel_name", "start"])[cols].reset_index(drop=True)
 
     except Exception as e:

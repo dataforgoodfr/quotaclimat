@@ -40,7 +40,7 @@ def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
                     AND k.country = '{country}'
             )
             SELECT e.id, e.channel_name, e.start, e.plaintext,
-                string_agg(DISTINCT e.kwt.keyword, ',' ORDER BY e.kwt.keyword) AS keywords,
+                string_agg(DISTINCT e.kwt.keyword, ',' ORDER BY e.kwt.keyword) AS keywords_found,
                 string_agg(DISTINCT e.kwt.theme, ',' ORDER BY e.kwt.theme) AS themes
             FROM exploded e
             WHERE e.kwt.keyword IN ({kewords_sql})
@@ -86,7 +86,7 @@ def create_thematic_keywords_table(con: duckdb.DuckDBPyConnection,
                     channel_title VARCHAR,
                     start TIMESTAMPTZ NOT NULL,
                     thematic_chunk BOOLEAN NOT NULL,
-                    keywords VARCHAR,
+                    keywords_found VARCHAR,
                     themes VARCHAR,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                     plaintext VARCHAR NOT NULL,
@@ -183,7 +183,7 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
 
         # All chunks coming from the keywords table are thematic chunks
         kw = (
-            keywords_day_df[keys + ["id", "plaintext", "keywords", "themes"]]
+            keywords_day_df[keys + ["id", "plaintext", "keywords_found", "themes"]]
             .drop_duplicates(subset=keys)
             .rename(columns={"id": "source_keywords_id"})
             .assign(thematic_chunk=True)
@@ -230,7 +230,7 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
         # Pure adjacents: in S3 near a thematic chunk, absent from the keywords table
         pure = near.merge(kw[keys], on=keys, how="left", indicator=True)
         pure = pure[pure["_merge"] == "left_only"].drop(columns="_merge")
-        pure = pure.assign(source_keywords_id=None, keywords=None, themes=None,
+        pure = pure.assign(source_keywords_id=None, keywords_found=None, themes=None,
                            thematic_chunk=False)
 
         out = pd.concat([kw, pure], ignore_index=True)
@@ -241,7 +241,7 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
         out["channel_title"] = out["channel_name"].map(channel_titles[country])
         cols = ["this_id", "channel_name", "channel_title", "start",
                 "thematic_chunk",
-                "source_keywords_id", "keywords", "themes", "plaintext"]
+                "source_keywords_id", "keywords_found", "themes", "plaintext"]
         return out.sort_values(["channel_name", "start"])[cols].reset_index(drop=True)
 
     except Exception as e:

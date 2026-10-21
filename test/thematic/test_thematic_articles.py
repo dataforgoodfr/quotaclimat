@@ -16,7 +16,7 @@ DESTINATION_SCHEMA = ta.DESTINATION_SCHEMA
 D1, D2, D3, D4, D5 = (date(2025, 3, d) for d in (10, 11, 12, 13, 14))
 SOURCE = f"{SCHEMA}.factiva_articles"
 OUT_COLS = ["an", "source_code", "source_name", "publication_datetime",
-            "title", "snippet", "body", "word_count"]
+            "title", "snippet", "body", "word_count", "keywords_found"]
 PARIS_DAY = "CAST(publication_datetime AT TIME ZONE 'Europe/Paris' AS DATE)"
 
 
@@ -50,7 +50,7 @@ def _add_article(con, an, ts, title="t", snippet="", body="", word_count=150,
 
 
 def _read(con, keywords, start=D1, end=D2):
-    return art_utils.read_barometre_factiva_articles(con, keywords, start, end, SOURCE, DB)
+    return art_utils.read_factiva_articles(con, keywords, start, end, SOURCE, DB)
 
 
 def _ans(df):
@@ -71,7 +71,7 @@ class RunEnv:
         monkeypatch.setattr(ta, "THEMATIC_YML", yml)
         monkeypatch.setattr(ta.duckdb, "connect", lambda *a, **k: con)
         monkeypatch.setattr(ta.utils, "configure_barometre_source", lambda *a, **k: None)
-        monkeypatch.setattr(ta.art_utils, "read_barometre_factiva_articles", self._fake_read)
+        monkeypatch.setattr(ta.art_utils, "read_factiva_articles", self._fake_read)
         self.configure(start=D1, end=D2)
 
     def configure(self, start=None, end=D2, dry_run=False, source_table=SOURCE,
@@ -95,7 +95,7 @@ class RunEnv:
         row = dict(an=an or f"an_{self._n}", source_code="LEFIG", source_name="Le Figaro",
                    publication_datetime=pd.Timestamp(f"{day} 10:00", tz="Europe/Paris"),
                    title=f"title {self._n}", snippet="s",
-                   body="b", word_count=150)
+                   body="b", word_count=150, keywords_found="inondation")
         row.update(overrides)
         self.articles.append(row)
 
@@ -121,8 +121,8 @@ class RunEnv:
     
     def insert_sentinel(self, an="sentinel", day=date(2025, 1, 1)):
         self.con.execute(
-            f"INSERT INTO {self.table} (an, source_code, source_name, publication_datetime, title) "
-            f"VALUES ('{an}', 'SENT', 'Sentinel', TIMESTAMPTZ '{day} 10:00:00+01', 'old')")
+            f"INSERT INTO {self.table} (an, source_code, source_name, publication_datetime, title, keywords_found) "
+            f"VALUES ('{an}', 'SENT', 'Sentinel', TIMESTAMPTZ '{day} 10:00:00+01', 'old', 'inondation')")
 
     def days_in_table(self):
         return [r[0] for r in self.con.execute(
@@ -162,7 +162,7 @@ def test_get_keywords_raises_keyerror_on_unknown_thematic_or_media_type(tmp_path
         utils.get_keywords(p, "inondations", "audiovisuel", "french",)
 
 
-# ───────────────────────── read_barometre_factiva_articles ─────────────────────────
+# ───────────────────────── read_factiva_articles ─────────────────────────
 def test_read_raises_on_empty_keywords(con):
     """Verify that an empty keyword list raises instead of matching everything."""
     with pytest.raises(ValueError):
@@ -191,8 +191,9 @@ def test_read_matches_in_title_snippet_or_body(con):
 
 
 def test_read_normalizes_accents_case_and_apostrophes(con):
-    """Verify that accents, case and both apostrophes (' and ’) are normalized on the
-    text side and the keyword side, so that all spellings match each other."""
+    """Verify that accents, case and apostrophes (' ’ ‘ ʼ) are normalized on the
+    text side and the keyword side, so that all spellings match each other, and that an
+    apostrophe becomes a space: "l'incendie" matches "incendie"."""
     _add_article(con, "acc", "2025-03-10 10:00:00", snippet="Un simple départ de feu.")
     _add_article(con, "up", "2025-03-10 10:00:00", body="INCENDIE géant")
     _add_article(con, "ap1", "2025-03-10 10:00:00", body="le bombardier d'eau")
@@ -201,7 +202,15 @@ def test_read_normalizes_accents_case_and_apostrophes(con):
     out = _read(con, ["départ de feu", "incendie", "bombardier d'eau"])
     assert _ans(out) == {"acc", "up", "ap1", "ap2"}
 
-    out = _read(con, ["bombardier deau"])
+    _add_article(con, "el1", "2025-03-10 10:00:00", body="l'incendie s'étend")
+    _add_article(con, "el2", "2025-03-10 10:00:00", body="l’incendie s’étend")
+    _add_article(con, "el3", "2025-03-10 10:00:00", body="l‘incendie s‘étend")
+    _add_article(con, "el4", "2025-03-10 10:00:00", body="lʼincendie sʼétend")
+
+    out = _read(con, ["incendie"])
+    assert _ans(out) == {"up", "el1", "el2", "el3", "el4"}
+
+    out = _read(con, ["bombardier d eau"])
     assert _ans(out) == {"ap1", "ap2"}
 
 
@@ -220,6 +229,19 @@ def test_read_escapes_regex_special_characters(con):
     _add_article(con, "wild", "2025-03-10 10:00:00", body="voir axb ici")
 
     assert _ans(_read(con, ["a.b"])) == {"lit"}
+
+
+def test_read_keywords_found_distinct_sorted_comma_separated(con):
+    """Verify that keywords_found lists each matched expression once, normalized, sorted and
+    separated by ',', and that a longer expression is not hidden by a shorter one it contains."""
+    _add_article(con, "a", "2025-03-10 10:00:00", title="Inondation",
+                 body="une crue, puis une crue centennale et une autre inondation")
+    _add_article(con, "b", "2025-03-10 10:00:00", body="un départ de feu")
+
+    out = _read(con, ["crue", "inondation", "crue centennale", "départ de feu"]).set_index("an")
+
+    assert out.loc["a", "keywords_found"] == "crue,crue centennale,inondation"
+    assert out.loc["b", "keywords_found"] == "depart de feu"
 
 
 def test_read_date_window_is_paris_midnight_start_inclusive_end_exclusive(con):

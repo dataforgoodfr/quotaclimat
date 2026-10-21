@@ -37,6 +37,7 @@ def create_thematic_articles_table(con: duckdb.DuckDBPyConnection,
                     snippet VARCHAR,
                     body VARCHAR,
                     word_count INT,
+                    keywords_found VARCHAR NOT NULL,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                     PRIMARY KEY (an)
                 )
@@ -54,20 +55,23 @@ def strip_accents_py(s: str) -> str:
                    if not unicodedata.combining(c))
 
 
-def read_barometre_factiva_articles(con: duckdb.DuckDBPyConnection,
+def read_factiva_articles(con: duckdb.DuckDBPyConnection,
                                     keywords_to_look_for: list[str],
                                     start_date: date, end_date: date,
                                     source_table: str, postgres_db: str,) -> pd.DataFrame:
     """Reads factiva_articles and keeps articles whose snippet + title + body,
-    normalized (lower, accents removed), match at least one expression.
-    mots_trouves lists every match in normalized form, repeated if it occurs several times."""
+    normalized (lower, accents removed, apostrophes replaced by a space so that
+    "l'incendie" matches "incendie"), match at least one expression.
+    keywords_found lists the distinct matches in normalized form, sorted and separated by ','."""
     if not keywords_to_look_for:
         raise ValueError("keywords_to_look_for est vide")
 
-    expressions = [re.compile(r"['’]").sub("", strip_accents_py(e)) for e in keywords_to_look_for]
+    expressions = [re.compile(r"['’‘ʼ]").sub(" ", strip_accents_py(e)) for e in keywords_to_look_for]
     expressions = [re.sub(r"([.^$*+?()\[\]{}|\\])", r"\\\1", e) for e in expressions]
-    # whole expressions only: word boundaries on both sides, tolerant to
-    # multiple spaces / line breaks between the words of an expression
+    # longest first: with alternation, the regex keeps the first alternative that matches,
+    # so "crue" listed before "crue centennale" would hide the longer expression in keywords_found
+    expressions = sorted(expressions, key=len, reverse=True)
+    # whole expressions only: word boundaries on both sides
     pattern = r"(?i)\b(?:" + "|".join(expressions) + r")\b"
     pattern_sql = pattern.replace("'", "''")
 
@@ -81,14 +85,15 @@ def read_barometre_factiva_articles(con: duckdb.DuckDBPyConnection,
                     a.title AS title,
                     a.snippet AS snippet,
                     a.body AS body,
-                    replace(replace(lower(strip_accents(concat_ws(' ', a.snippet, a.title, a.body))), '''', ''), '’', '') AS txt,
+                    regexp_replace(lower(strip_accents(concat_ws(' ', a.snippet, a.title, a.body))), '[''’‘ʼ]', ' ', 'g') AS txt,
                     a.word_count as word_count               
                 FROM {postgres_db}.{source_table} a
                 WHERE a.publication_datetime >= TIMESTAMP '{start_date}' AT TIME ZONE 'Europe/Paris'
                     AND a.publication_datetime <  TIMESTAMP '{end_date}'   AT TIME ZONE 'Europe/Paris'
                     AND duplicate_status <> 'DUP'
             )
-            SELECT an, source_code, source_name, publication_datetime, title, snippet, body, word_count
+            SELECT an, source_code, source_name, publication_datetime, title, snippet, body, word_count,
+                array_to_string(list_sort(list_distinct(regexp_extract_all(txt, '{pattern_sql}'))), ',') AS keywords_found
             FROM txt
             WHERE regexp_matches(txt, '{pattern_sql}')
         """).df()

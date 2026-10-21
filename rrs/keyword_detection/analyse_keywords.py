@@ -27,7 +27,7 @@ ALL_CHANNELS = list(channel_titles_france.keys())
 # Module-level connection so relations stay valid across calls in interactive sessions.
 _con = duckdb.connect()
 
-CLIMATE_SUBJECT_NAME = "climate"
+DEFAULT_SUBJECT_NAME = "insecurity"
 
 
 def get_secret_docker(secret_name: str) -> str:
@@ -165,31 +165,19 @@ NON_VALIDATED_KEYWORD_THRESHOLD = int(os.environ.get("NON_VALIDATED_KEYWORD_THRE
 
 
 def get_keywords_by_subject(
-    exclude_subject_name: str = CLIMATE_SUBJECT_NAME,
-    only_subject_name: Optional[str] = None,
+    subject_name: str = DEFAULT_SUBJECT_NAME,
 ) -> dict[str, tuple[list[str], list[str], list[str]]]:
-    """Return {subject_id: (validated_keywords, high_risk_keywords, non_validated_keywords)}.
-
-    If only_subject_name is given, restrict to that single subject. Otherwise return
-    all subjects except the excluded one.
-    """
+    """Return {subject_id: (validated_keywords, high_risk_keywords, non_validated_keywords)}
+    for the given subject only."""
     Session = sessionmaker(bind=_get_engine())
 
     with Session() as session:
-        if only_subject_name:
-            only_id = make_subject_id(only_subject_name)
-            entries = (
-                session.query(DictionaryEntry)
-                .filter(DictionaryEntry.subject_id == only_id)
-                .all()
-            )
-        else:
-            climate_id = make_subject_id(exclude_subject_name)
-            entries = (
-                session.query(DictionaryEntry)
-                .filter(DictionaryEntry.subject_id != climate_id)
-                .all()
-            )
+        subject_id_value = make_subject_id(subject_name)
+        entries = (
+            session.query(DictionaryEntry)
+            .filter(DictionaryEntry.subject_id == subject_id_value)
+            .all()
+        )
 
     validated_kws: dict[str, list[str]] = {}
     high_risk_kws: dict[str, list[str]] = {}
@@ -214,13 +202,7 @@ def get_keywords_by_subject(
         )
         for sid in subject_ids
     }
-    if only_subject_name:
-        logging.info(f"Loaded keywords for subject '{only_subject_name}' only.")
-    else:
-        logging.info(
-            f"Loaded keywords for {len(keywords_by_subject)} subject(s) "
-            f"(excluding '{exclude_subject_name}')."
-        )
+    logging.info(f"Loaded keywords for subject '{subject_name}'.")
     return keywords_by_subject
 
 
@@ -366,9 +348,10 @@ def detect_keywords(
     end_date: Optional[date] = None,
     channels: Optional[list[str]] = None,
     con: Optional[duckdb.DuckDBPyConnection] = None,
-    subject: Optional[str] = None,
+    subject: str = DEFAULT_SUBJECT_NAME,
 ) -> Iterator[tuple[date, pd.DataFrame]]:
-    """Yield (day, DataFrame) for each day in the date range.
+    """Yield (day, DataFrame) for each day in the date range, searching for a
+    single subject's keywords (default: 'insecurity').
 
     Fetches keywords once from the DB, then processes one day at a time from S3
     so peak memory stays bounded to a single day's data. Each DataFrame contains:
@@ -380,17 +363,13 @@ def detect_keywords(
       - n_non_validated_found: count of matched non-validated keywords
     Rows are included if they have at least one validated keyword match, or at
     least NON_VALIDATED_KEYWORD_THRESHOLD non-validated keyword matches.
-
-    If subject is given, only that subject's keywords are searched for.
     """
     if con is None:
         con = _con
 
-    keywords_by_subject = get_keywords_by_subject(only_subject_name=subject)
+    keywords_by_subject = get_keywords_by_subject(subject_name=subject)
     if not keywords_by_subject:
-        if subject:
-            raise ValueError(f"No keywords found for subject '{subject}'.")
-        raise ValueError("No keyword subjects found (excluding climate).")
+        raise ValueError(f"No keywords found for subject '{subject}'.")
 
     query = _build_day_query(keywords_by_subject)
 
@@ -423,7 +402,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(
-        description="Detect dictionary keywords (all subjects except climate) in mediatree parquet data."
+        description="Detect a single subject's dictionary keywords in mediatree parquet data."
     )
     parser.add_argument(
         "--channel",
@@ -432,8 +411,8 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--subject",
-        default=os.environ.get("SUBJECT"),
-        help="Only analyse this subject (default: all subjects except climate, env: SUBJECT)",
+        default=os.environ.get("SUBJECT", DEFAULT_SUBJECT_NAME),
+        help=f"Subject to analyse (default: {DEFAULT_SUBJECT_NAME}, env: SUBJECT)",
     )
     parser.add_argument(
         "--days-prior",

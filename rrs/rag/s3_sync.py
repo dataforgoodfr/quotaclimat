@@ -3,6 +3,13 @@ upload/download a built index directory.
 
 Scaleway Object Storage (same account/region as the rest of the pipeline),
 not duckdb/s3fs — a plain boto3 client is enough for whole-file transfers.
+
+Uses its own EMBEDDINGS_BUCKET* credentials/bucket, deliberately separate
+from the BUCKET*/BUCKET_NAME ones run_rag_agent_mistral.py passes to duckdb
+to read segment plaintext from the main mediatree bucket — the expert-model
+source documents/index live in a different bucket (and may use different
+credentials), so the two must not collide when both are set in the same
+container (the rag service does both).
 """
 
 import logging
@@ -10,6 +17,7 @@ import os
 from pathlib import Path
 
 import boto3
+from botocore.exceptions import ClientError
 
 REGION = "fr-par"
 
@@ -22,9 +30,9 @@ def get_secret_docker(secret_name: str) -> str:
     return value
 
 
-ACCESS_KEY = get_secret_docker("BUCKET")
-SECRET_KEY = get_secret_docker("BUCKET_SECRET")
-BUCKET_NAME = os.environ.get("BUCKET_NAME")
+ACCESS_KEY = get_secret_docker("EMBEDDINGS_BUCKET")
+SECRET_KEY = get_secret_docker("EMBEDDINGS_BUCKET_SECRET")
+BUCKET_NAME = os.environ.get("EMBEDDINGS_BUCKET_NAME")
 ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
 
 
@@ -53,6 +61,30 @@ def download_prefix(s3_client, bucket: str, prefix: str, local_dir: Path) -> lis
             s3_client.download_file(bucket, key, str(dest))
             downloaded.append(dest)
     return downloaded
+
+
+def get_object_etags(s3_client, bucket: str, prefix: str) -> dict[str, str]:
+    """Return {key: etag} for every object under prefix, without downloading
+    anything — cheap enough to call on every run to detect source changes."""
+    etags = {}
+    paginator = s3_client.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+        for obj in page.get("Contents", []):
+            key = obj["Key"]
+            if key.endswith("/"):
+                continue
+            etags[key] = obj["ETag"].strip('"')
+    return etags
+
+
+def read_text(s3_client, bucket: str, key: str) -> str | None:
+    """Fetch a single small text object, or None if it doesn't exist."""
+    try:
+        return s3_client.get_object(Bucket=bucket, Key=key)["Body"].read().decode("utf-8")
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") in ("NoSuchKey", "404"):
+            return None
+        raise
 
 
 def upload_folder(s3_client, local_dir: Path, bucket: str, prefix: str) -> list[str]:

@@ -13,6 +13,7 @@ from pathlib import Path
 
 import numpy as np
 import torch
+from tqdm import tqdm
 
 # name -> (model id, pooling, query prefix, passage prefix)
 EMBEDDERS = {
@@ -20,7 +21,7 @@ EMBEDDERS = {
     "bge-m3": ("BAAI/bge-m3", "cls", "", ""),
     "mistral": ("mistral-embed", None, "", ""),
 }
-DEFAULT_EMBEDDER = "e5"
+DEFAULT_EMBEDDER = "mistral"
 
 CHUNKS_FILE = "chunks.jsonl"
 EMBEDDINGS_FILE = "embeddings.npy"
@@ -72,7 +73,7 @@ class Embedder:
         self._load()
         texts = [prefix + t for t in texts]
         out: list[np.ndarray] = []
-        for start in range(0, len(texts), batch_size):
+        for start in tqdm(range(0, len(texts), batch_size), desc=f"embed ({self.name})", unit="batch"):
             batch = texts[start : start + batch_size]
             if self.name == "mistral":
                 resp = self._client.embeddings.create(model=self.model_id, inputs=batch)

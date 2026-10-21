@@ -14,12 +14,18 @@ Source PDFs are downloaded from s3://{BUCKET_NAME}/{S3_PREFIX}/{subject}/raw/,
 and the built index (chunks.jsonl, embeddings.npy, meta.json — see
 rag_utils.save_index) is uploaded to s3://{BUCKET_NAME}/{S3_PREFIX}/{subject}/rag/.
 
+Before rebuilding, the raw PDFs' ETags are hashed into a fingerprint and
+compared against the "source_fingerprint" stored in the previous build's
+meta.json (fetched directly from S3, no download needed) — if nothing
+changed, the rebuild is skipped unless --force is passed.
+
 Usage:
     poetry run python -m rrs.rag.build_embeddings environmental_health
     poetry run python -m rrs.rag.build_embeddings environmental_health --embedder mistral --chunk-chars 600
 """
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -31,8 +37,8 @@ from pathlib import Path
 import pymupdf as fitz
 from dotenv import load_dotenv
 
-from rrs.rag.rag_utils import DEFAULT_EMBEDDER, EMBEDDERS, Embedder, save_index
-from rrs.rag.s3_sync import BUCKET_NAME, download_prefix, get_s3_client, upload_folder
+from rrs.rag.rag_utils import DEFAULT_EMBEDDER, EMBEDDERS, Embedder, META_FILE, save_index
+from rrs.rag.s3_sync import BUCKET_NAME, download_prefix, get_object_etags, get_s3_client, read_text, upload_folder
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
@@ -310,6 +316,13 @@ def chunk_section(text: str, cap: int, min_chars: int, overlap: int) -> list[str
 # --- orchestration -----------------------------------------------------
 
 
+def _fingerprint(etags: dict[str, str]) -> str:
+    """Stable hash of a {key: etag} mapping, used to detect whether the raw
+    source documents have changed since the last build."""
+    canonical = json.dumps(dict(sorted(etags.items())), sort_keys=True)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
 def build_embeddings(
     subject_name: str,
     s3_prefix: str = DEFAULT_S3_PREFIX,
@@ -320,10 +333,28 @@ def build_embeddings(
     batch_size: int = 32,
     stop_after_keyword: str | None = None,
     limit: int | None = None,
+    force: bool = False,
 ) -> Path:
     s3 = get_s3_client()
     raw_prefix = f"{s3_prefix}/{subject_name}/raw/"
     rag_prefix = f"{s3_prefix}/{subject_name}/rag"
+
+    raw_etags = get_object_etags(s3, BUCKET_NAME, raw_prefix)
+    pdf_etags = {k: v for k, v in raw_etags.items() if k.lower().endswith(".pdf")}
+    if not pdf_etags:
+        raise SystemExit(f"No PDF files found at s3://{BUCKET_NAME}/{raw_prefix}")
+    source_fingerprint = _fingerprint(pdf_etags)
+
+    if not force:
+        previous_meta_raw = read_text(s3, BUCKET_NAME, f"{rag_prefix}/{META_FILE}")
+        if previous_meta_raw is not None:
+            previous_fingerprint = json.loads(previous_meta_raw).get("source_fingerprint")
+            if previous_fingerprint == source_fingerprint:
+                logging.info(
+                    f"Source documents at s3://{BUCKET_NAME}/{raw_prefix} unchanged since the last "
+                    f"build — skipping. Pass --force to rebuild anyway."
+                )
+                return rag_prefix
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
@@ -387,6 +418,7 @@ def build_embeddings(
             "min_chunk_chars": min_chunk_chars,
             "overlap_chars": overlap_chars,
             "sources": [p.name for p in pdf_paths],
+            "source_fingerprint": source_fingerprint,
         }
         save_index(out_dir, chunks, embeddings, meta)
 
@@ -417,6 +449,12 @@ if __name__ == "__main__":
     parser.add_argument("--batch-size", type=int, default=int(os.getenv("BATCH_SIZE", 32)))
     parser.add_argument("--stop-after-keyword", default=os.getenv("STOP_AFTER_KEYWORD") or None, help="Drop all section boundaries after the first one whose title/kicker contains this text")
     parser.add_argument("--limit", type=int, default=None, help="Only process the first N sections per PDF")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        default=os.getenv("FORCE_REBUILD", "").lower() in ("1", "true", "yes"),
+        help="Rebuild even if the source PDFs haven't changed since the last build (env: FORCE_REBUILD)",
+    )
     args = parser.parse_args()
 
     build_embeddings(
@@ -426,6 +464,7 @@ if __name__ == "__main__":
         chunk_chars=args.chunk_chars,
         min_chunk_chars=args.min_chunk_chars,
         overlap_chars=args.overlap_chars,
+        force=args.force,
         batch_size=args.batch_size,
         stop_after_keyword=args.stop_after_keyword,
         limit=args.limit,

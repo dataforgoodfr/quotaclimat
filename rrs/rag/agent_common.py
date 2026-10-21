@@ -55,18 +55,24 @@ TOOLS = [
 # every new rrs/rag subject that gets its own expert-model index.
 TOPIC_DEFINITIONS = {
     "environmental_health": (
-        "La santé environnementale est définie ici comme l'ensemble des atteintes à la santé humaine "
-        "liées à l'exposition à des facteurs environnementaux physiques, chimiques et biologiques, "
-        "ainsi que des politiques, controverses et pratiques de prévention qui leur sont associées.\n"
-        "Sont notamment incluses les expositions aux substances chimiques persistantes (PFAS, métaux "
-        "lourds tels que le cadmium ou le plomb, pesticides et biocides), la contamination de l'eau, "
-        "de l'air, des sols et des chaînes alimentaires, ainsi que les nuisances et polluants tels que "
-        "le bruit, les particules fines et les perturbateurs endocriniens.\n"
-        "Sont couverts aussi bien les faits d'exposition et leurs impacts sanitaires (cancers, atteintes "
-        "neurologiques, troubles de la reproduction) que les seuils réglementaires, les responsabilités "
-        "industrielles et les enjeux de reconnaissance et d'indemnisation. Cette thématique est "
-        "fréquemment articulée à celles portant sur l'agriculture, l'industrie, l'alimentation et la "
-        "régulation sanitaire."
+        "La santé environnementale est ici définie comme l'ensemble des atteintes à la santé "
+        "humaine, animale et des écosystèmes liées à l'exposition à des substances chimiques "
+        "polluantes, en particulier les polluants persistants dans l'environnement (PFAS, "
+        "pesticides, métaux lourds tels que le cadmium ou le plomb, biocides), ainsi que les "
+        "controverses, politiques et pratiques de prévention qui leur sont associées.\n"
+        "Sont notamment incluses les voies d'exposition par l'alimentation (résidus dans les "
+        "aliments), l'eau, l'air, les poussières et les sols, qu'elles résultent d'une proximité "
+        "directe (riverains de zones traitées, expositions professionnelles) ou d'une "
+        "contamination diffuse et persistante de l'environnement (sols agricoles, nappes "
+        "phréatiques, chaînes alimentaires). Les effets sur la vie du sol, la faune aquatique et "
+        "les insectes pollinisateurs sont également couverts, dans la mesure où ils affectent "
+        "indirectement la santé humaine (fertilité des sols, qualité de l'eau, pollinisation).\n"
+        "Sont couverts aussi bien les effets sanitaires établis (cancers, troubles de la "
+        "reproduction, atteintes neurologiques ou immunitaires) que les incertitudes "
+        "scientifiques qui subsistent, notamment sur les expositions cumulées à plusieurs "
+        "substances (« effet cocktail ») et les difficultés méthodologiques à démontrer un lien "
+        "de causalité. Cette thématique est fréquemment articulée à celles portant sur "
+        "l'agriculture, l'industrie, l'alimentation et la régulation sanitaire."
     ),
 }
 

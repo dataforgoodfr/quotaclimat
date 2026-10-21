@@ -43,6 +43,11 @@ variable "barometre_rrs_read_password" {
   sensitive = true
 }
 
+variable "metabase_analytics_password" {
+  type      = string
+  sensitive = true
+}
+
 variable "postgres_admin_password_version" {
   type    = number
   default = 1

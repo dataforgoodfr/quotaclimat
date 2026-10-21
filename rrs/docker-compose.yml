@@ -248,8 +248,10 @@ services:
       PULSAR_PAGE_LIMIT: ${PULSAR_PAGE_LIMIT:-100}
       PULSAR_PARENT_LOOKBACK_DAYS: ${PULSAR_PARENT_LOOKBACK_DAYS:-30}
       PULSAR_EXPORT_DIR: rrs/exports/pulsar
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:
       - ./exports/pulsar:/app/rrs/exports/pulsar
+    tty: true
     depends_on:
       rrs_db:
         condition: service_healthy

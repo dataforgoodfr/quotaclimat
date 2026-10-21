@@ -1,9 +1,12 @@
 """Export every Pulsar post behind the themes/topics saved for a subject, as CSV + JSON.
 
 1. Read the themes saved in `pulsar_themes` for a subject between two dates, with their topics.
-2. For each (theme, topic), pull ALL matching posts from Pulsar's TopContent endpoint
-   (following the API's nextCursor, see PulsarPostsClient.fetch_all_posts).
-3. Write one row per (theme, topic, post): the pulsar_posts columns + theme + topic +
+2. Pull ALL the posts of the search over the window from Pulsar's TopContent endpoint in one pass
+   (time-window bisection, see PulsarPostsClient.fetch_all_posts), then keep the posts whose own
+   `topics` contain one of the saved topics and link them to every matching (theme, topic).
+3. Write one row per (theme, topic, post) — a post matching several topics appears once per
+   topic — plus a `_unique` pair of files with one row per distinct post and the lists of
+   themes / topics it matched. Row columns: the pulsar_posts columns + theme + topic +
    `original_poster` (account that first posted, when the post is a repost) and the engagements
    (likes / shares-retweets / comments / views).
 
@@ -13,7 +16,8 @@ Config (environment):
   PULSAR_START_DATE / PULSAR_END_DATE
                             YYYY-MM-DD, themes saved within the window (required). Also the
                             window posts are fetched over.
-  PULSAR_EXPORT_DIR         Output directory (default: .). Files: pulsar_posts_<subject>_<start>_<end>.{csv,json}
+  PULSAR_EXPORT_DIR         Output directory (default: .). Files: pulsar_posts_<subject>_<start>_<end>[_unique].{csv,json}
+  LOG_LEVEL                 INFO (default) or DEBUG to log every API call.
   PULSAR_PAGE_LIMIT         Posts per API page (default: 100, Pulsar's API max).
   PULSAR_PARENT_LOOKBACK_DAYS
                             How far before the window to look for a repost's original post (default: 365).
@@ -23,16 +27,22 @@ Run with: python -m rrs.pulsar.export_posts
 
 import csv
 import json
+import logging
 import os
 import re
+import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from dotenv import load_dotenv
+from tqdm import tqdm
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 from rrs.pulsar import store
 from rrs.pulsar.posts_client import PulsarPostsClient
 from rrs.utils.generate_id import get_consistent_hash
+
+logger = logging.getLogger(__name__)
 
 _DATE_FMT = "%Y-%m-%d"
 _RT_RE = re.compile(r"^\s*RT\s+@(\w+)", re.IGNORECASE)
@@ -47,6 +57,9 @@ EXTRA_COLUMNS = ["identifier", "subtype", "parent_identifier", "likes_count", "s
                  "comments_count", "views_count", "engagement"]
 COLUMNS = ["theme_id", "theme_title", "theme_date_from", "theme_date_to", "topic", *POST_COLUMNS,
            *EXTRA_COLUMNS, "original_poster"]
+# One row per distinct post: the post columns, then every theme / topic it matched.
+UNIQUE_LIST_COLUMNS = ["theme_ids", "theme_titles", "topics"]
+UNIQUE_COLUMNS = [*POST_COLUMNS, *EXTRA_COLUMNS, "original_poster", *UNIQUE_LIST_COLUMNS]
 
 # pulsar_posts column -> TopContent result key
 _API_KEYS = {
@@ -124,21 +137,42 @@ def build_row(theme: dict, topic: str, post: dict, search_id: str, parent_author
     return row
 
 
-def write_outputs(rows: list[dict], base: Path) -> tuple[Path, Path]:
+def build_unique_rows(rows: list[dict]) -> list[dict]:
+    """One row per distinct post, listing every theme (id + title) and topic it matched."""
+    unique: dict[str, dict] = {}
+    for r in rows:
+        u = unique.setdefault(r["pulsar_id"], {
+            **{c: r.get(c) for c in UNIQUE_COLUMNS if c not in UNIQUE_LIST_COLUMNS},
+            **{c: [] for c in UNIQUE_LIST_COLUMNS},
+        })
+        u["original_poster"] = u["original_poster"] or r.get("original_poster")
+        for col, key in (("theme_ids", "theme_id"), ("theme_titles", "theme_title"), ("topics", "topic")):
+            if r[key] not in u[col]:
+                u[col].append(r[key])
+    return list(unique.values())
+
+
+def write_outputs(rows: list[dict], base: Path, columns: list[str]) -> tuple[Path, Path]:
     csv_path, json_path = base.with_suffix(".csv"), base.with_suffix(".json")
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=COLUMNS)
+        w = csv.DictWriter(f, fieldnames=columns)
         w.writeheader()
         for r in rows:
             w.writerow({k: json.dumps(v, ensure_ascii=False) if isinstance(v, (list, dict)) else v
-                        for k, v in ((c, r.get(c)) for c in COLUMNS)})
+                        for k, v in ((c, r.get(c)) for c in columns)})
     with open(json_path, "w", encoding="utf-8") as f:
-        json.dump([{c: r.get(c) for c in COLUMNS} for r in rows], f, ensure_ascii=False, indent=2)
+        json.dump([{c: r.get(c) for c in columns} for r in rows], f, ensure_ascii=False, indent=2)
     return csv_path, json_path
+
+
+def _norm(label: str) -> str:
+    return " ".join(label.casefold().split())
 
 
 def run() -> None:
     load_dotenv()
+    logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO").upper(),
+                        format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     api_key = os.getenv("PULSAR_API_KEY")
     subject = os.getenv("SUBJECT")
     raw_start, raw_end = os.getenv("PULSAR_START_DATE"), os.getenv("PULSAR_END_DATE")
@@ -154,20 +188,50 @@ def run() -> None:
 
     with store.connect() as conn:
         themes = load_themes(conn, get_consistent_hash(subject), start, end)
-    print(f"{len(themes)} theme(s) for subject '{subject}' between {raw_start} and {raw_end}")
+    # label -> every (theme, topic) of the db that uses it, per search
+    by_search: dict[str, dict[str, list[tuple[dict, str]]]] = {}
+    for theme in themes:
+        index = by_search.setdefault(theme["search_id"], {})
+        for topic in theme["topics"]:
+            index.setdefault(_norm(topic), []).append((theme, topic))
+    logger.info("%d theme(s), %d distinct topic(s) for subject '%s' between %s and %s",
+                len(themes), sum(len(i) for i in by_search.values()), subject, raw_start, raw_end)
 
     client = PulsarPostsClient.from_api_key(api_key)
     rows: list[dict] = []
-    for theme in themes:
-        for topic in theme["topics"]:
-            posts = client.fetch_all_posts(theme["search_id"], [topic], start, end, page_size=page_limit)
-            authors = resolve_original_posters(client, theme["search_id"], posts, start - lookback, end)
-            print(f"  [{theme['title']}] {topic}: {len(posts)} post(s)")
-            rows.extend(build_row(theme, topic, p, theme["search_id"], authors) for p in posts)
+    span = (end - start).total_seconds()
+    with logging_redirect_tqdm():
+        for search_id, index in by_search.items():
+            with tqdm(total=span, desc=f"search {search_id}", unit="s", mininterval=1,
+                      dynamic_ncols=True, file=sys.stderr) as bar:
+                step = {"logged": 0.0}
+
+                def on_done(d: timedelta) -> None:
+                    bar.update(d.total_seconds())
+                    # no TTY (docker compose up/logs, CI): the bar can't redraw, so log every 5%
+                    if not sys.stderr.isatty() and bar.n / span - step["logged"] >= 0.05:
+                        step["logged"] = bar.n / span
+                        logger.info("search %s: %.0f%% of the window fetched", search_id, 100 * bar.n / span)
+
+                posts = client.fetch_all_posts(search_id, None, start, end, page_size=page_limit,
+                                               on_window_done=on_done)
+            matches = [(p, [m for t in p.get("topics") or [] for m in index.get(_norm(t), [])])
+                       for p in posts]
+            matches = [(p, m) for p, m in matches if m]
+            logger.info("search %s: %d post(s) fetched, %d match a saved topic",
+                        search_id, len(posts), len(matches))
+            authors = resolve_original_posters(client, search_id, [p for p, _ in matches],
+                                               start - lookback, end)
+            for post, pairs in matches:
+                unique_pairs = {(t["theme_id"], tp): (t, tp) for t, tp in pairs}
+                rows.extend(build_row(t, tp, post, search_id, authors) for t, tp in unique_pairs.values())
 
     base = out_dir / f"pulsar_posts_{subject}_{raw_start}_{raw_end}"
-    csv_path, json_path = write_outputs(rows, base)
-    print(f"Wrote {len(rows)} row(s) to {csv_path} and {json_path}")
+    csv_path, json_path = write_outputs(rows, base, COLUMNS)
+    logger.info("Wrote %d row(s) to %s and %s", len(rows), csv_path, json_path)
+    unique = build_unique_rows(rows)
+    u_csv, u_json = write_outputs(unique, base.with_name(base.name + "_unique"), UNIQUE_COLUMNS)
+    logger.info("Wrote %d distinct post(s) to %s and %s", len(unique), u_csv, u_json)
 
 
 if __name__ == "__main__":

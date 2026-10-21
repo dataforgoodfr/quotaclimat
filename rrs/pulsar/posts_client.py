@@ -18,11 +18,15 @@ _TIMEOUT = 60
 _TOP_CONTENT_QUERY = """
 query TopContent($options: ResultsOptionsInput, $filter: FilterInput!) {
   topContent(filter: $filter, options: $options) {
+    nextCursor
+    total
     results {
       content credibilityLabel credibilityScore domainName identifier images
       newsArticleLink publishedAt pulsarId source thumbnail title url userBio
       userCountryCode userFollowersCount userFriendsCount userGender userInfo
       userName userScreenName videos visibility
+      identifier userIdentifier subtype parentIdentifier pulsarParentId quotedPostId
+      likesCount sharesCount commentsCount viewsCount engagement
     }
   }
 }
@@ -103,15 +107,62 @@ class PulsarPostsClient:
             raise RuntimeError(f"Pulsar GraphQL errors: {payload['errors']}")
         return payload["data"]
 
+    def _filter(self, search_id: str, date_from: datetime, date_to: datetime, **overrides) -> dict:
+        return {**_BASE_FILTER, "searchIds": [search_id], "dateFrom": _iso(date_from),
+                "dateTo": _iso(date_to), **overrides}
+
+    def _page(self, filter_: dict, limit: int, cursor: str = "*", sort_by: str = "VISIBILITY") -> dict:
+        options = {"limit": limit, "sort": "DESC", "sortBy": sort_by, "cursor": cursor,
+                   "forceCacheRefresh": True}
+        return self._post({"filter": filter_, "options": options}).get("topContent") or {}
+
     def fetch_theme_posts(
         self, search_id: str, topics: list[str], date_from: datetime, date_to: datetime, limit: int = 30
     ) -> list[dict]:
         """Return the top `limit` posts for a theme (its topics), newest/most-visible first."""
         if not topics:
             return []
-        filter_ = {**_BASE_FILTER, "searchIds": [search_id], "topics": topics,
-                   "dateFrom": _iso(date_from), "dateTo": _iso(date_to)}
-        options = {"limit": limit, "sort": "DESC", "sortBy": "VISIBILITY", "cursor": "*",
-                   "forceCacheRefresh": True}
-        data = self._post({"filter": filter_, "options": options})
-        return (data.get("topContent") or {}).get("results") or []
+        filter_ = self._filter(search_id, date_from, date_to, topics=topics)
+        return self._page(filter_, limit).get("results") or []
+
+    def fetch_all_posts(
+        self, search_id: str, topics: list[str], date_from: datetime, date_to: datetime,
+        page_size: int = 100,
+    ) -> list[dict]:
+        """Return every post matching `topics` in [date_from, date_to], following `nextCursor`.
+
+        Sorted by TIME (a stable order, so the cursor is safe to follow); deduped by pulsarId.
+        `page_size` is capped at 100 — Pulsar's API rejects any higher `limit`.
+        """
+        page_size = min(page_size, 100)
+        if not topics:
+            return []
+        filter_ = self._filter(search_id, date_from, date_to, topics=topics)
+        found: dict[str, dict] = {}
+        cursor = "*"
+        while True:
+            page = self._page(filter_, page_size, cursor, sort_by="TIME")
+            results = page.get("results") or []
+            for p in results:
+                if p.get("pulsarId"):
+                    found[p["pulsarId"]] = p
+            next_cursor = page.get("nextCursor")
+            if not results or not next_cursor or next_cursor == cursor:
+                return list(found.values())
+            cursor = next_cursor
+
+    def fetch_by_identifiers(
+        self, search_id: str, identifiers: list[str], date_from: datetime, date_to: datetime,
+        batch_size: int = 50,
+    ) -> list[dict]:
+        """Look up posts by their id on the original platform (used to resolve a repost's parent).
+
+        `batch_size` is capped at 50 — Pulsar's API rejects a filter with more identifiers.
+        """
+        batch_size = min(batch_size, 50)
+        out: list[dict] = []
+        for i in range(0, len(identifiers), batch_size):
+            batch = identifiers[i:i + batch_size]
+            filter_ = self._filter(search_id, date_from, date_to, identifiers=batch)
+            out.extend(self._page(filter_, len(batch)).get("results") or [])
+        return out

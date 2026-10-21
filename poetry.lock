@@ -9380,7 +9380,7 @@ version = "4.68.3"
 description = "Fast, Extensible Progress Meter"
 optional = false
 python-versions = ">=3.8"
-groups = ["main", "rrs"]
+groups = ["main", "pulsar", "rrs"]
 files = [
     {file = "tqdm-4.68.3-py3-none-any.whl", hash = "sha256:39832cc2def2789a6f29df83f172db7416cea70052c0907a57801c5f2fdccb03"},
     {file = "tqdm-4.68.3.tar.gz", hash = "sha256:00dfa48452b6b6cfae3dd9885636c23d3422d1ec97c66d96818cbd5e0821d482"},
@@ -10086,4 +10086,4 @@ testing = ["coverage[toml]", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<=3.13"
-content-hash = "cc7fa83d4d2c022d52dd2b6fc4cc7495ca94293f07d8135c851f6251cfd1f3fe"
+content-hash = "d4c3b6677cd9c8ea38ecf76109e25bf9453d11d18e2d53b0161c26b506611d0f"

@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import subprocess
+import sys
 from datetime import datetime
 from time import time as get_time
 
@@ -59,9 +60,7 @@ def get_pipeline(lang):
         if not spacy.util.is_package(model_name):
             subprocess.run(
                 [
-                    "poetry",
-                    "run",
-                    "python",
+                    sys.executable,
                     "-m",
                     "spacy",
                     "download",

@@ -60,6 +60,18 @@ tasks:
       source: extended
       run_clustering: false
 
+  - id: rrs_pollution_extended
+    runIf: "{{ inputs.with_rrs }}"
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: rrs-dev
+    flowId: rrs-pollution
+    wait: true
+    transmitFailed: true
+    inputs:
+      source: extended
+      run_detect_misinformation_rag: false
+      run_clustering: false
+
   - id: barometre
     type: io.kestra.plugin.core.flow.Subflow
     namespace: quotaclimat-dev
@@ -83,5 +95,13 @@ tasks:
     type: io.kestra.plugin.core.flow.Subflow
     namespace: rrs-dev
     flowId: rrs-insecurity
+    wait: true
+    transmitFailed: true
+
+  - id: rrs_pollution
+    runIf: "{{ inputs.with_rrs }}"
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: rrs-dev
+    flowId: rrs-pollution
     wait: true
     transmitFailed: true

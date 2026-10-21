@@ -8,11 +8,34 @@ _SYSTEM_PROMPTS: dict[str, str] = {
         "Claims about crime, justice, or public safety that do NOT involve immigration or foreign "
         "nationals are out of scope."
     ),
+    "environmental_health": (
+        "You are an assistant helping editors to aggregate claims about environmental health in "
+        "French media, defined as follows:\n"
+        "La santé environnementale est ici définie comme l'ensemble des atteintes à la santé "
+        "humaine, animale et des écosystèmes liées à l'exposition à des substances chimiques "
+        "polluantes, en particulier les polluants persistants dans l'environnement (PFAS, "
+        "pesticides, métaux lourds tels que le cadmium ou le plomb, biocides), ainsi que les "
+        "controverses, politiques et pratiques de prévention qui leur sont associées.\n"
+        "Sont notamment incluses les voies d'exposition par l'alimentation (résidus dans les "
+        "aliments), l'eau, l'air, les poussières et les sols, qu'elles résultent d'une proximité "
+        "directe (riverains de zones traitées, expositions professionnelles) ou d'une "
+        "contamination diffuse et persistante de l'environnement (sols agricoles, nappes "
+        "phréatiques, chaînes alimentaires). Les effets sur la vie du sol, la faune aquatique et "
+        "les insectes pollinisateurs sont également couverts, dans la mesure où ils affectent "
+        "indirectement la santé humaine (fertilité des sols, qualité de l'eau, pollinisation).\n"
+        "Sont couverts aussi bien les effets sanitaires établis (cancers, troubles de la "
+        "reproduction, atteintes neurologiques ou immunitaires) que les incertitudes "
+        "scientifiques qui subsistent, notamment sur les expositions cumulées à plusieurs "
+        "substances (« effet cocktail ») et les difficultés méthodologiques à démontrer un lien "
+        "de causalité. Cette thématique est fréquemment articulée à celles portant sur "
+        "l'agriculture, l'industrie, l'alimentation et la régulation sanitaire."
+    ),
 }
 
 _DOMAIN_LABELS: dict[str, str] = {
     "climate": "climate change",
     "insecurity": "immigration et insécurité liée à l'immigration",
+    "environmental_health": "santé environnementale",
 }
 
 _DOMAIN_EXAMPLES: dict[str, str] = {
@@ -35,8 +58,22 @@ _DOMAIN_EXAMPLES: dict[str, str] = {
         "étrangers en situation irrégulière' (policy-failure claim)\n"
         "  - 'Les personnes régularisées en Espagne peuvent ensuite s\\'installer librement en France' "
         "(geographic/routing claim)\n"
-        "  - 'La France connaît un niveau d\\'immigration record, submergeant le pays' "
+        "  - 'La France connaît un niveau d\'immigration record, submergeant le pays' "
         "(quantitative/volume claim, distinct from the causal-crime claim above)."
+    ),
+    "environmental_health": (
+        "'Les pesticides sont sans danger aux doses autorisées', 'Il n\'existe aucune preuve que les "
+        "produits phytosanitaires nuisent à la santé' and 'Les seuils réglementaires garantissent une "
+        "exposition totalement sûre aux pesticides' are paraphrases of the same claim minimising a "
+        "proven risk → should all merge into a single label like "
+        "'Les risques des pesticides pour la santé sont minimisés ou niés malgré les preuves "
+        "scientifiques'.\n"
+        "  Similarly, 'Le problème des PFAS est réglé depuis l\'interdiction du PFOA et du PFOS', "
+        "'On n\'a pas montré d\'effet pour la plupart des PFAS, donc ils sont sûrs' and 'Les PFAS, "
+        "c\'est juste une histoire de poêles antiadhésives' are paraphrases of the same claim "
+        "minimising a proven risk → should all merge into a single label like 'Les risques "
+        "sanitaires des PFAS sont minimisés malgré une exposition large et des effets avérés pour "
+        "plusieurs molécules'."
     ),
 }
 
@@ -61,6 +98,14 @@ _RELEVANCE_CRITERIA: dict[str, str] = {
         "politiques/accords climatiques, ou solutions d'atténuation et d'adaptation (énergies "
         "renouvelables, nucléaire, efficacité énergétique, etc.) — et pas seulement une mention "
         "incidente (météo, environnement ou énergie sans lien avec le climat, etc.)"
+    ),
+    "environmental_health": (
+        "une atteinte à la santé humaine, animale ou des écosystèmes liée à l'exposition à des "
+        "substances chimiques polluantes persistantes (pesticides, PFAS, métaux lourds, biocides) "
+        "— contamination de l'eau, de l'air, des sols ou des chaînes alimentaires — en constitue "
+        "l'élément moteur, ou les politiques, controverses et pratiques de prévention associées — "
+        "et pas seulement une mention incidente de l'environnement, de la pollution ou de la "
+        "santé sans lien explicite avec une exposition à une substance chimique polluante"
     ),
 }
 
@@ -88,6 +133,7 @@ _DEFAULT_STEP1_LABEL_CAP = "1 to 3"
 
 _STEP1_EXTRA_RULES: dict[str, str] = {
     "climate": "",
+    "environmental_health": "",
     "insecurity": (
         "- Do NOT return labels that merely comment on how the topic is discussed or "
         "politicized (media-coverage criticism, political positioning/strategy, electoral "
@@ -112,6 +158,10 @@ def _step1_prompt(sentences: list[str], subject: str = "climate") -> str:
         "Rules:\n"
         '- Return ONLY a JSON list of label strings with double quotes, e.g. ["label 1", "label 2"]. No code fences.\n'
         "- Labels must describe specific claims, not generic categories.\n"
+        "- Each label must state the misinformation narrative itself — the false, exaggerated, "
+        "minimised, or misleadingly framed claim actually being made — not a neutral factual "
+        "statement and not a generic mention of the topic. If the underlying claim is accurate and "
+        "not misleading, it does not belong in a label (see the exclusion rule below).\n"
         "- Do NOT return meaningless names such as 'new_label_1' or 'unknown_topic'.\n"
         + extra_rules
         + f"- If no {domain} misinformation is present, return only []. Nothing else.\n"
@@ -122,6 +172,10 @@ def _step1_prompt(sentences: list[str], subject: str = "climate") -> str:
 
 _STEP2_MERGE_INSTRUCTIONS: dict[str, str] = {
     "climate": (
+        "Group labels that share the same core subject and overall message, even if the wording differs.\n"
+        "Be AGGRESSIVE: if several labels all make a similar point about the same topic, collapse them into one.\n"
+    ),
+    "environmental_health": (
         "Group labels that share the same core subject and overall message, even if the wording differs.\n"
         "Be AGGRESSIVE: if several labels all make a similar point about the same topic, collapse them into one.\n"
     ),
@@ -151,6 +205,12 @@ _STEP2_MERGE_RULES: dict[str, str] = {
         "- Prefer fewer, broader labels over many narrow ones.\n"
         "- Do NOT keep two labels if they could reasonably be covered by one.\n"
     ),
+    "environmental_health": (
+        "- Merge any labels that share the same subject AND a closely related claim AND are on the same side of a debate.\n"
+        "- Write the merged label as a short, conversational French sentence starting with its subject.\n"
+        "- Prefer fewer, broader labels over many narrow ones.\n"
+        "- Do NOT keep two labels if they could reasonably be covered by one.\n"
+    ),
     "insecurity": (
         "- Merge two labels only if a French reader would consider them the same statement, not just "
         "the same subject area.\n"
@@ -170,6 +230,10 @@ def _step2_prompt(label_list: list[str], subject: str = "climate") -> str:
     rules = _STEP2_MERGE_RULES.get(subject, _DEFAULT_STEP2_MERGE_RULES)
     return (
         f"You are merging a list of French {domain}-discussion labels into a shorter, cleaner list.\n"
+        "Each label states a misinformation narrative — the false, exaggerated, minimised, or "
+        "misleadingly framed claim itself. Keep that framing intact when merging: a merged label "
+        "must still name the disinformation narrative it covers, never a neutral factual statement "
+        "or a generic topic mention.\n"
         + instructions
         + (f"Example: {example}\n" if example else "")
         + "Rules:\n"

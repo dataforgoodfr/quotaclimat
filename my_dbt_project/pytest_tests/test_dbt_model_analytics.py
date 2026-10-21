@@ -57,7 +57,7 @@ def seed_dbt_labelstudio():
 
 seed_dbt_labelstudio()
 
-GRANT_ROLES = ["rrs-read-dev", "rrs-read-prod", "climateguard-reader-user"]
+GRANT_ROLES = ["rrs-read-dev", "rrs-read-prod", "climateguard-reader-user", "metabase-analytics-dev", "metabase-analytics-prod"]
 
 
 @pytest.fixture(scope="module")

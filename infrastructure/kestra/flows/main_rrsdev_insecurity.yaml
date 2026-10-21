@@ -57,9 +57,6 @@ tasks:
       END_DATE: "{{ inputs.end_date ?? '' }}"
       DAYS_PRIOR: "{{ inputs.days_back ?? 1 }}"
       BUCKET_NAME: "{{ inputs.source == 'extended' ? 'mediatree-extended-perimeter-dev' : 'mediatree' }}"
-      POSTGRES_DB: "{{ inputs.source == 'extended' ? 'extended-perimeter' : 'barometre' }}"
-      SOURCE_COUNTRY_CODE: "{{ inputs.source == 'extended' ? 'ext-fra' : 'fra' }}"
-      POSTGRES_PORT: "{{ inputs.source == 'extended' ? 18047 : 22737 }}"
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18047
       BUCKET: "{{ inputs.source == 'extended' ? secret('RRS_SCW_ACCESS_DEV') : secret('SCW_ACCESS') }}"
@@ -87,9 +84,6 @@ tasks:
       START_DATE: "{{ inputs.start_date ?? '' }}"
       END_DATE: "{{ inputs.end_date ?? '' }}"
       DAYS_PRIOR: "{{ inputs.days_back ?? 1 }}"
-      POSTGRES_DB: "{{ inputs.source == 'extended' ? 'extended-perimeter' : 'barometre' }}"
-      SOURCE_COUNTRY_CODE: "{{ inputs.source == 'extended' ? 'ext-fra' : 'fra' }}"
-      POSTGRES_PORT: "{{ inputs.source == 'extended' ? 18047 : 22737 }}"
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18047
       BUCKET_NAME: "{{ inputs.source == 'extended' ? 'mediatree-extended-perimeter-dev' : 'mediatree' }}"

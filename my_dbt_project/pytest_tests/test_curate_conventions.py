@@ -30,8 +30,10 @@ def manifest() -> dict:
 
 
 def curate_models(manifest: dict) -> dict:
+    """The curate models by table name (alias: a model named like a model of another schema is named
+    curate_<table>, with alias <table>)."""
     return {
-        node["name"]: node
+        node["alias"] or node["name"]: node
         for node in manifest["nodes"].values()
         if node["resource_type"] == "model" and node["original_file_path"].startswith(f"models/{CURATE_PATH}")
     }
@@ -47,7 +49,7 @@ def column_tests(manifest: dict, model: dict) -> dict:
 
 
 def test_curate_has_models(manifest):
-    assert {"chaine", "publicite"} <= set(curate_models(manifest))
+    assert {"chaine", "publicite", "cas_mesinformation", "emission_jour"} <= set(curate_models(manifest))
 
 
 def test_curate_model_config(manifest):
@@ -131,7 +133,7 @@ def test_curate_foreign_keys(manifest):
             relationship = tests.get(column_name, {}).get("relationships")
             assert relationship is not None, f"{label}: relationships test missing"
             assert relationship["test_metadata"]["kwargs"]["field"] == target, label
-            assert f"ref('{table}')" in relationship["test_metadata"]["kwargs"]["to"], label
+            assert f"ref('{models[table]['name']}')" in relationship["test_metadata"]["kwargs"]["to"], label
 
 
 def test_curate_is_the_last_layer(manifest):

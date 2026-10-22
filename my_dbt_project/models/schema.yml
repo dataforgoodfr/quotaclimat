@@ -787,8 +787,8 @@ models:
         description: Time spent on resources, solutions (number_of_ressources_solutions), in hours, 20 s windows like env_heures.
       - name: chaine_captee
         description: >
-          The channel was captured that day: minutes in public.time_monitored, or a keyword segment (before
-          time_monitored, end of 2024). False for an outage or a channel still in the grid but no longer broadcast
+          The channel was captured that day: minutes in public.time_monitored, a keyword segment (before
+          time_monitored, end of 2024) or a validated misinformation case. False for an outage or a channel still in the grid but no longer broadcast
           (C8): its airtime is not monitored and would count as 0 % environment.
         tests:
           - not_null

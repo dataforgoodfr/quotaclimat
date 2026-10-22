@@ -30,8 +30,8 @@
       out.
     - nb_cas: analytics.cas_de_mesinformation, matched on time to the row on the air with the same margins (no
       program id for the cases), see analytics.cas_de_mesinformation.
-    - chaine_captee: the channel was captured that day (public.time_monitored minutes, or a keyword segment
-      before time_monitored exists): false for an outage or a channel no longer broadcast but still in the grid,
+    - chaine_captee: the channel was captured that day (public.time_monitored minutes, a keyword segment
+      before time_monitored exists, or a validated case): false for an outage or a channel no longer broadcast but still in the grid,
       whose airtime would count as 0 % environment.
     Days from emission_jour_start_date (dbt var) to today (Paris). -#}
 
@@ -212,8 +212,8 @@ metriques AS (
     WHERE jour >= '{{ start_date }}'::date
     GROUP BY 1, 2
 ),
--- channels captured each day: minutes in public.time_monitored, or a keyword segment (time_monitored starts at
--- the end of 2024)
+-- channels captured each day: minutes in public.time_monitored, a keyword segment (time_monitored starts at the
+-- end of 2024) or a validated case
 captation AS (
     SELECT DISTINCT channel_name, start::date AS jour
     FROM {{ source('public', 'time_monitored') }}
@@ -221,6 +221,11 @@ captation AS (
     UNION
     SELECT DISTINCT channel_name, jour_paris
     FROM segments
+    UNION
+    -- a validated case was captured
+    SELECT DISTINCT data_item_channel_name, jour_programme
+    FROM {{ ref('cas_de_mesinformation') }}
+    WHERE jour_programme IS NOT NULL
 ),
 -- descriptive columns of each emission
 emissions AS (

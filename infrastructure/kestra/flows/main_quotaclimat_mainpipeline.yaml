@@ -4,8 +4,12 @@ namespace: quotaclimat
 description: |
   Main pipeline, twice daily (01:10 and 12:30). Runs the extended perimeter
   pipeline, processes it in RRS (without clustering), runs the standard OME
-  `barometre` pipeline, then the RRS flows on the barometre source.
-  Each step is a subflow that must succeed before the next one starts.
+  `barometre` pipeline, updates the Metabase questions versioned in metabase/
+  (`metabase-sync`, after the dbt tables they read), then the RRS flows on the
+  barometre source.
+  Each step is a subflow that must succeed before the next one starts, except
+  `metabase-sync`: its failure (a question edited in Metabase, Metabase down)
+  marks the run as WARNING without stopping the RRS steps.
 
 labels:
   pipeline: ome
@@ -92,6 +96,17 @@ tasks:
     inputs:
       days_back: "{{ inputs.days_back }}"
       start_date: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
+
+  - id: metabase_sync
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: quotaclimat
+    flowId: metabase-sync
+    wait: true
+    transmitFailed: true
+    allowFailure: true
+    inputs:
+      apply: true
+      force: false
 
   - id: rrs_climate
     runIf: "{{ inputs.with_rrs }}"

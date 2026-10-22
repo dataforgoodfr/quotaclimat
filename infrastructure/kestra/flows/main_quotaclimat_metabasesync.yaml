@@ -6,8 +6,8 @@ description: |
   queries versioned in metabase/ (see metabase/README.md), from the
   quotaclimat_base image built on main. A question whose SQL was edited in
   Metabase since its last synchronization is left as it is and fails the run,
-  unless force. Meant to run after dbt (the queries read the dbt tables), to
-  be added to the main pipeline once checked by hand.
+  unless force. Runs in main-pipeline after barometre (the queries read the dbt
+  tables), or by hand.
 
 labels:
   pipeline: ome

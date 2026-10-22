@@ -39,8 +39,8 @@ seeds:
         tests:
           - not_null
 
-  # Inventaires_des_marques spreadsheet, tab Marques: brand -> company -> ultimate parent company, each
-  # value used unless its status is 'à vérifier'
+  # Inventaires_des_marques spreadsheet, tab Marques: brand -> company -> ultimate parent company, and the
+  # ultimate majority shareholder, each value used unless its status is 'à vérifier'
   - name: ref_inventaire_marques
     config:
       # all text, even when a column looks numeric (e.g. the brand "1664") or is still empty
@@ -50,6 +50,8 @@ seeds:
         societe_mere_ultime: text
         e_statut: text
         smu_statut: text
+        actionnaire_maj_ultime: text
+        amu_statut: text
         commentaires: text
     columns:
       - name: marque
@@ -62,6 +64,11 @@ seeds:
               arguments:
                 values: ['vérifié', 'non vérifié', 'à vérifier']
       - name: smu_statut
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['vérifié', 'non vérifié', 'à vérifier']
+      - name: amu_statut
         tests:
           - accepted_values:
               arguments:

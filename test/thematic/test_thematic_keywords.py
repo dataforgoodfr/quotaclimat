@@ -7,9 +7,9 @@ import pandas as pd
 import pytest
 import yaml
 
-import quotaclimat.data_processing.thematic.thematic_keywords as tk
-import quotaclimat.data_processing.thematic.thematic_keywords_utils as kw_utils
-import quotaclimat.data_processing.thematic.thematic_utils as utils
+import quotaclimat.data_processing.thematic_extracts.thematic_keywords as tk
+import quotaclimat.data_processing.thematic_extracts.thematic_keywords_utils as kw_utils
+import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
 
 
 DB = "barometre"

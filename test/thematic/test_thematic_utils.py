@@ -1,9 +1,10 @@
 import re
 from datetime import date
+from pathlib import Path
 
 import pytest
 
-import quotaclimat.data_processing.thematic.thematic_utils as utils
+import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
 
 
 START, END = date(2025, 3, 1), date(2025, 6, 1)
@@ -58,3 +59,27 @@ def test_make_destination_table_name_matches_clear_pattern(media_type, country):
     so that a MODE=reset never refuses a table created by the scripts."""
     name = utils.make_destination_table_name("inondations", media_type, country, START, END)
     assert re.fullmatch(utils.DESTINATION_TABLE_PATTERN, name)
+
+
+# ───────────────────────── get_periods ─────────────────────────
+def test_get_periods_returns_dates(tmp_path):
+    """Verify that the periods of the country are returned with start and end as dates."""
+    p = tmp_path / "t.yml"
+    p.write_text(
+        "incendies:\n"
+        "  periodes:\n"
+        "    france:\n"
+        "      - id: ete_2026\n"
+        "        start: 2026-07-01\n"
+        "        end: 2026-07-10\n"
+    )
+    assert utils.get_periods(p, "incendies", "france") == [
+        {"id": "ete_2026", "start": date(2026, 7, 1), "end": date(2026, 7, 10)},
+    ]
+
+
+def test_get_periods_on_project_dict():
+    """Verify that the periods of the project thematic_dict.yml are valid."""
+    yml = Path(utils.__file__).parent / "thematic_dict.yml"
+    assert utils.get_periods(yml, "incendies", "france")
+    assert utils.get_periods(yml, "incendies", "belgium")

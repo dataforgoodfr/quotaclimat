@@ -49,7 +49,46 @@ def get_keywords(yml_file: str, thematic: str, media_type: str, language: str) -
             f"Available keys : {list(kw[thematic][language].keys())}"
         )
     return kw[thematic][language][media_type]
-   
+
+
+### PERIODS ###
+PERIOD_KEYS = {"id", "start", "end"}
+
+def get_periods(yml_file: str, thematic: str, country: str) -> list[dict]:
+    """Returns the periods of a thematic for a country, as declared under
+    [thematic]["periodes"][country]: a list of {"id": str, "start": date, "end": date}.
+
+    Raises if a period has missing or extra keys, an id outside [a-z0-9_] or start > end.
+    """
+    with open(yml_file, "r", encoding="utf-8") as f:
+        kw = yaml.safe_load(f)
+
+    if kw is None:
+        raise ValueError(f"Empty file : {yml_file}")
+    if thematic not in kw:
+        raise KeyError(
+            f"Missing theme '{thematic}' {yml_file}. "
+            f"Available keys : {list(kw.keys())}"
+        )
+    periods_by_country = kw[thematic].get("periodes") or {}
+    if country not in periods_by_country:
+        raise KeyError(
+            f"No periods for '{thematic}' / '{country}' in {yml_file}. "
+            f"Available countries : {list(periods_by_country.keys())}"
+        )
+    periods = periods_by_country[country]
+    if not periods:
+        raise ValueError(f"Empty period list for '{thematic}' / '{country}' in {yml_file}")
+
+    for p in periods:
+        if not isinstance(p, dict) or set(p) != PERIOD_KEYS:
+            raise ValueError(f"Period {p} of '{thematic}' / '{country}' must have exactly the keys {sorted(PERIOD_KEYS)}")
+        if not re.fullmatch(r"[a-z0-9_]+", str(p["id"])):
+            raise ValueError(f"Invalid period id '{p['id']}': only [a-z0-9_] allowed")
+        if p["start"] > p["end"]:
+            raise ValueError(f"Period '{p['id']}': start {p['start']} is after end {p['end']}")
+    return periods
+
     
 ### SOURCE ###
 def configure_barometre_source(con: duckdb.DuckDBPyConnection, source_table: str,

@@ -135,7 +135,7 @@ jobs:
           jobs definition update ${{ secrets.SCALEWAY_THEMATIC_KEYWORDS_JOB_ID }}
           image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
           startup-command.0=python
-          startup-command.1=quotaclimat/data_processing/thematic/thematic_keywords.py
+          startup-command.1=quotaclimat/data_processing/thematic_extracts/thematic_keywords.py
 
     - name: Update job_thematic_articles scaleway job #job name
       uses: jawher/action-scw@v2.54.0
@@ -149,7 +149,7 @@ jobs:
           jobs definition update ${{ secrets.SCALEWAY_THEMATIC_ARTICLES_JOB_ID }}
           image-uri=${{ secrets.CONTAINER_REGISTRY_ENDPOINT }}/quotaclimat_base:${{ env.PROJECT_VERSION }}
           startup-command.0=python
-          startup-command.1=quotaclimat/data_processing/thematic/thematic_articles.py
+          startup-command.1=quotaclimat/data_processing/thematic_extracts/thematic_articles.py
     
 
     - name: Update advertising_detection scaleway job

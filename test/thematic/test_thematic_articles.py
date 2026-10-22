@@ -6,9 +6,9 @@ import pandas as pd
 import pytest
 import yaml
 
-import quotaclimat.data_processing.thematic.thematic_articles as ta
-import quotaclimat.data_processing.thematic.thematic_articles_utils as art_utils
-import quotaclimat.data_processing.thematic.thematic_utils as utils
+import quotaclimat.data_processing.thematic_extracts.thematic_articles as ta
+import quotaclimat.data_processing.thematic_extracts.thematic_articles_utils as art_utils
+import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
 
 DB = "barometre"
 SCHEMA = "public"

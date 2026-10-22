@@ -24,8 +24,8 @@ from pathlib import Path
 from urllib.parse import quote
 import yaml
 
-import quotaclimat.data_processing.thematic.thematic_keywords_utils as kw_utils
-import quotaclimat.data_processing.thematic.thematic_utils as utils
+import quotaclimat.data_processing.thematic_extracts.thematic_keywords_utils as kw_utils
+import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
 from quotaclimat.data_processing.mediatree.i8n.france.channel_titles import channel_titles_france
 from quotaclimat.data_processing.mediatree.i8n.belgium.channel_titles import channel_titles_belgium
 from quotaclimat.data_processing.mediatree.i8n.belgium_flanders.channel_titles import channel_titles_belgium_flanders
@@ -33,7 +33,7 @@ from quotaclimat.data_processing.mediatree.i8n.belgium_flanders.channel_titles i
 # only local env
 ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(ROOT / ".env", override=False)
-THEMATIC_YML = ROOT / "quotaclimat" / "data_processing" / "thematic" / "thematic_dict.yml"
+THEMATIC_YML = ROOT / "quotaclimat" / "data_processing" / "thematic_extracts" / "thematic_dict.yml"
 
 # timedelta that defines the range in which a chunk is considered adjacent to core chunk
 GAP = timedelta(minutes=2, seconds=30)

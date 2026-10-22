@@ -27,10 +27,10 @@ from urllib.parse import quote
 # only local env
 ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(ROOT / ".env", override=False)
-THEMATIC_YML = ROOT / "quotaclimat" / "data_processing" / "thematic" / "thematic_dict.yml"
+THEMATIC_YML = ROOT / "quotaclimat" / "data_processing" / "thematic_extracts" / "thematic_dict.yml"
 
-import quotaclimat.data_processing.thematic.thematic_utils as utils
-import quotaclimat.data_processing.thematic.thematic_articles_utils as art_utils
+import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
+import quotaclimat.data_processing.thematic_extracts.thematic_articles_utils as art_utils
 
 REQUIRED_ENV = [
     "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_DB",

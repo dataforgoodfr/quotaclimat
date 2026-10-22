@@ -121,9 +121,11 @@ tasks:
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
       RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
       RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
-      BUCKET_NAME: "{{ inputs.source == 'extended' ? 'mediatree-extended-perimeter-prod' : 'mediatree' }}"
-      BUCKET: "{{ inputs.source == 'extended' ? secret('RRS_SCW_ACCESS') : secret('SCW_ACCESS') }}"
-      BUCKET_SECRET: "{{ inputs.source == 'extended' ? secret('RRS_SCW_SECRET') : secret('SCW_SECRET') }}"
+      BUCKET_NAME: mediatree
+      BUCKET: "{{ secret('SCW_ACCESS') }}"
+      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      RRS_BUCKET: "{{ secret('RRS_SCW_ACCESS') }}"
+      RRS_BUCKET_SECRET: "{{ secret('RRS_SCW_SECRET') }}"
       EMBEDDINGS_BUCKET: "{{ secret('RRS_SCW_ACCESS') }}"
       EMBEDDINGS_BUCKET_SECRET: "{{ secret('RRS_SCW_SECRET') }}"
       EMBEDDINGS_BUCKET_NAME: expert-model-source-documents-prod

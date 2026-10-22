@@ -1368,6 +1368,8 @@ def test_advertising_models_schema(db_connection):
                 'publicites', 'cas_de_mesinformation', 'emission_jour', 'environmental_shares_with_desinfo_counts',
                 'mesinfo_theme_mots_cles', 'pub_annonceur_emission_jour'
             )
+              -- curate.emission_jour: see test_curate_documented_in_postgres
+              AND table_schema <> 'curate'
             ORDER BY table_name
         """)
         rows = cur.fetchall()
@@ -1427,12 +1429,17 @@ def test_curate_documented_in_postgres(db_connection):
             FROM pg_class c
             JOIN pg_namespace n ON n.oid = c.relnamespace
             JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
-            WHERE n.nspname = 'curate' AND c.relname IN ('chaine', 'publicite')
+            WHERE n.nspname = 'curate' AND c.relkind = 'r'
             GROUP BY c.relname, c.relkind, c.oid
             ORDER BY c.relname
         """)
         rows = cur.fetchall()
-    assert rows == [("chaine", "r", True, True), ("publicite", "r", True, True)]
+    assert rows == [
+        ("cas_mesinformation", "r", True, True),
+        ("chaine", "r", True, True),
+        ("emission_jour", "r", True, True),
+        ("publicite", "r", True, True),
+    ]
 
 
 def test_curate_chaine(db_connection):
@@ -1479,6 +1486,50 @@ def test_curate_publicite(db_connection):
         ("emission_pytest_winter", datetime.datetime(2025, 1, 6, 7, 0), datetime.date(2025, 1, 6),
          "bfmtv", "BFM TV", True, "modèle de langage"),
     ]
+
+
+def test_curate_cas_mesinformation(db_connection):
+    """Every validated case, in Paris time, with its speakers, themes (every pertinence) and emission."""
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM analytics.cas_de_mesinformation")
+        cases = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM curate.cas_mesinformation")
+        assert cur.fetchone()[0] == cases > 0
+        cur.execute("""
+            SELECT debut_paris, chaine_nom, pays, emission_jour_id, locuteurs, est_dit_par_invite,
+                est_dit_par_journaliste, correction, themes, est_theme_automobile
+            FROM curate.cas_mesinformation
+            WHERE chaine_id = 'sud-radio' AND jour = '2025-04-02'
+        """)
+        rows = cur.fetchall()
+    # 2025-04-02 09:10 UTC
+    assert rows == [(
+        datetime.datetime(2025, 4, 2, 11, 10), "Sud Radio", "France",
+        "sud-radio|programme|Mettez-vous d'accord|false|2025-04-02", "invité", True, False, "non renseignée",
+        "automobile", True,
+    )]
+
+
+def test_curate_emission_jour(db_connection):
+    """The captured days of public.emission_jour, in minutes, with the cases."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT COUNT(*), SUM(volume_heures) * 60, SUM(nb_cas)
+            FROM public.emission_jour WHERE chaine_captee
+        """)
+        captured = cur.fetchone()
+        cur.execute("SELECT COUNT(*), SUM(duree_suivie_min), SUM(nb_cas_mesinformation) FROM curate.emission_jour")
+        curated = cur.fetchone()
+        cur.execute("""
+            SELECT emission_nom, est_emission_identifiee, chaine_nom, duree_suivie_min, nb_cas_mesinformation
+            FROM curate.emission_jour
+            WHERE emission_jour_id = 'europe1|programme|Europe 1 Matin|false|2025-06-10'
+        """)
+        row = cur.fetchone()
+    assert 0 < curated[0] == captured[0]
+    assert float(curated[1]) == float(captured[1])
+    assert curated[2] == captured[2] > 0
+    assert row == ("Europe 1 Matin", False, "Europe 1", 120.0, 1)
 
 
 def test_publicites_start_date(db_connection):

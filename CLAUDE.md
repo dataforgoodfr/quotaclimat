@@ -37,7 +37,7 @@ La synchronisation (flow Kestra `quotaclimat/metabase-sync`) ne met à jour que 
 - `analytics` : `program`, `cas_de_mesinformation`, `cas_theme`, `publicites`, `task_global_completion`, `dbt_objects`.
 - `public` : `emission_jour`, `environmental_shares_with_desinfo_counts`, `mesinfo_theme_mots_cles` (seed).
 - `advertising` : `pub_annonceur_emission_jour`, `ad_*`, seeds `ref_*`.
-- `curate` : `chaine`, `publicite` (voir « Schéma curate »).
+- `curate` : `chaine`, `publicite`, `cas_mesinformation`, `emission_jour` (voir « Schéma curate »).
 
 Un nouveau modèle (hors `curate`) demande trois choses :
 - sa documentation dans `my_dbt_project/models/schema.yml` ;
@@ -62,10 +62,11 @@ Le schéma `curate` (`my_dbt_project/models/curate/`) ne contient que des tables
 
 ### Nommage
 
-- Tables et colonnes en français, en snake_case sans accent.
+- Tables et colonnes en français, en snake_case sans accent. Un modèle dont le nom existe déjà dans dbt (ex. `public.emission_jour`) s'appelle `curate_<table>` avec `alias='<table>'`.
 - Une table porte le nom de son grain, au singulier : une ligne de `publicite` est une publicité diffusée. Un agrégat : `<mesure>_<dimension>_<période>` (ex. `part_environnement_chaine_jour`).
 - L'unité en suffixe : `_sec`, `_min`, `_pct` (toujours de 0 à 100) ; un nombre commence par `nb_`.
 - Booléens en `est_` ; heures en heure de Paris, nommées `..._paris` ; `jour` pour la date de Paris.
+- Un identifiant de ligne composé (ex. émission et jour) devient une seule colonne `<table>_id`, clé des jointures entre tables (`emission_jour_id`).
 - Une colonne présente dans plusieurs tables y a le même nom et la même description (`chaine_id`, `chaine_nom`, blocs `{% docs %}` de `_curate_docs.md`). Les tables reprennent `chaine_nom` et les caractéristiques de la chaîne, pour éviter une jointure.
 - Un identifiant se termine par `_id` ; une colonne lisible (nom, libellé) l'accompagne.
 
@@ -76,6 +77,7 @@ Le schéma `curate` (`my_dbt_project/models/curate/`) ne contient que des tables
 - **`config.meta`** : `libelle` (nom affiché dans Metabase) pour le modèle et chaque colonne ; pour une colonne numérique, `unite` et `agregation` (`somme`, `moyenne` ou `aucune`) ; `type_metabase` (type sémantique : `type/PK`, `type/FK`, `type/Category`...) ; `cle_etrangere: table.colonne` pour une jointure vers une autre table de `curate`.
 - **`data_type`** de chaque colonne : le contrat dbt (`contract: enforced`) fait échouer le build si une colonne change de nom ou de type. Caster dans le SQL (`::text`, `::double precision`).
 - **Tests** : une clé `type/PK` avec `unique` et `not_null` ; `relationships` pour chaque `cle_etrangere` ; `not_null` et `accepted_values` dès que possible.
+- Une liste (thèmes, locuteurs) s'accompagne d'un booléen par valeur (`est_theme_automobile`, `est_dit_par_invite`) pour compter sans découper de texte.
 - Pas de chiffre qui change avec les données (« 9 % des diffusions ») dans une description.
 - `my_dbt_project/pytest_tests/test_curate_conventions.py` vérifie ces règles sur le manifeste dbt.
 - Une description rédigée par Claude porte des choix de méthode : la faire relire par un expert du sujet, et le dire dans la PR.

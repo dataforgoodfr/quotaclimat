@@ -7,11 +7,11 @@
     )
 }}
 
-{#- curate.publicite: one row per broadcast of a classified ad, from analytics.publicites (French channels,
+{#- curated.publicite: one row per broadcast of a classified ad, from analytics.publicites (French channels,
     from ad_analysis_start_date), with French column names, times in Paris time and the channel attributes of
-    curate.chaine. Left out: the classification internals (prediction_status details, predicted codes, LLM
-    confidence) and the ids of analytics.program, which is not in the curate schema. Documented in
-    _curate.yml. -#}
+    curated.chaine. Left out: the classification internals (prediction_status details, predicted codes, LLM
+    confidence) and the ids of analytics.program, which is not in the curated schema. Documented in
+    _curated.yml. -#}
 SELECT
     p.occurrence_id::text AS publicite_id,
     ((p.occurrence_date AT TIME ZONE 'UTC') AT TIME ZONE 'Europe/Paris')::timestamp AS debut_paris,

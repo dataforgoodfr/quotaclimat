@@ -1,8 +1,8 @@
-"""Pushes the documentation of the dbt models of the curate schema (my_dbt_project/models/curate/_curate.yml) to
+"""Pushes the documentation of the dbt models of the curated schema (my_dbt_project/models/curated/_curated.yml) to
 the metadata of their Metabase tables, read by the teams and by their Claude through the Metabase MCP.
 
-    python -m quotaclimat.metabase.sync_curate --database 2            # shows what would change, changes nothing
-    python -m quotaclimat.metabase.sync_curate --database 2 --apply    # updates the tables and their fields
+    python -m quotaclimat.metabase.sync_curated --database 2            # shows what would change, changes nothing
+    python -m quotaclimat.metabase.sync_curated --database 2 --apply    # updates the tables and their fields
 
 Environment: METABASE_URL and METABASE_API_KEY, as for sync_questions; the group of the API key must be allowed to
 edit the table metadata of the database (Admin > Table Metadata). Reads the dbt manifest (target/manifest.json of
@@ -27,7 +27,7 @@ import requests
 from quotaclimat.metabase.sync_questions import Metabase
 
 DEFAULT_MANIFEST = Path(__file__).resolve().parents[2] / "my_dbt_project" / "target" / "manifest.json"
-CURATE_PATH = "models/curate/"
+CURATED_PATH = "models/curated/"
 AGGREGATIONS = {
     "somme": "somme (additive : se somme sur les lignes et les groupes)",
     "moyenne": "moyenne (ne pas sommer)",
@@ -37,7 +37,7 @@ AGGREGATIONS = {
 
 def table_footer(model: dict) -> str:
     return (
-        f"Table du schéma curate, construite par dbt (my_dbt_project/{model['original_file_path']} du dépôt "
+        f"Table du schéma curated, construite par dbt (my_dbt_project/{model['original_file_path']} du dépôt "
         "dataforgoodfr/quotaclimat). Sa documentation se modifie dans le dépôt : une modification faite ici est "
         "écrasée à la prochaine synchronisation."
     )
@@ -53,13 +53,13 @@ def field_description(column: dict) -> str:
     return "\n\n".join(part for part in [column["description"].strip(), " ".join(details)] if part)
 
 
-def curate_tables(manifest: dict) -> dict:
-    """Metadata of the curate tables as dbt documents them, by table name: {"schema", "display_name",
+def curated_tables(manifest: dict) -> dict:
+    """Metadata of the curated tables as dbt documents them, by table name: {"schema", "display_name",
     "description", "fields": {column: {"display_name", "description", "semantic_type", "fk_target"}}}, fk_target
     being "table.column" in the same schema; semantic_type is absent when dbt leaves it to Metabase."""
     tables = {}
     for node in manifest["nodes"].values():
-        if node["resource_type"] != "model" or not node["original_file_path"].startswith(CURATE_PATH):
+        if node["resource_type"] != "model" or not node["original_file_path"].startswith(CURATED_PATH):
             continue
         fields = {}
         for name, column in node["columns"].items():
@@ -105,7 +105,7 @@ def plan(tables: dict, known: dict) -> list[tuple[str, int, dict, str]]:
 
 
 def known_tables(metabase: Metabase, database: int, tables: dict) -> dict:
-    """The curate tables known to Metabase in this database, by name, with their fields; a table missing one of
+    """The curated tables known to Metabase in this database, by name, with their fields; a table missing one of
     the columns documented in dbt is left out (not synced yet)."""
     schemas = {table["schema"] for table in tables.values()}
     known = {}
@@ -136,11 +136,11 @@ def wait_for_tables(metabase: Metabase, database: int, tables: dict, wait: int, 
 
 
 def sync(metabase: Metabase, manifest: dict, databases: list[int], apply: bool, wait: int) -> bool:
-    """Synchronizes the documentation of the curate tables in each database; False if a table is still unknown
+    """Synchronizes the documentation of the curated tables in each database; False if a table is still unknown
     to Metabase or an update failed."""
-    tables = curate_tables(manifest)
+    tables = curated_tables(manifest)
     if not tables:
-        logging.error("aucun modèle curate dans le manifeste dbt")
+        logging.error("aucun modèle curated dans le manifeste dbt")
         return False
     ok = True
     for database in databases:

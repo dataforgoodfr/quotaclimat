@@ -7,12 +7,12 @@
     )
 }}
 
-{#- curate.cas_mesinformation: one row per validated misinformation case (analytics.cas_de_mesinformation, all
+{#- curated.cas_mesinformation: one row per validated misinformation case (analytics.cas_de_mesinformation, all
     countries), with French column names, the time in Paris time, the speakers and the correction translated,
-    the channel attributes of curate.chaine, the emission of curate.emission_jour (French channels) and the
+    the channel attributes of curated.chaine, the emission of curated.emission_jour (French channels) and the
     themes of analytics.cas_theme (French channels, every pertinence). Left out: the detection internals (LLM
     model, reason and score), the Label Studio project and annotation fields, the annotators' comments.
-    Documented in _curate.yml. -#}
+    Documented in _curated.yml. -#}
 {%- set locuteurs = [
     ('Journalist', 'journaliste'),
     ('Commentator', 'chroniqueur'),

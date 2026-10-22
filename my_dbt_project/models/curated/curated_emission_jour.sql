@@ -8,10 +8,10 @@
     )
 }}
 
-{#- curate.emission_jour (model curate_emission_jour: public.emission_jour has the same name): public.emission_jour (one row per emission and program day, French channels) with
-    French column names in minutes, the channel attributes of curate.chaine and the shares, without the days the
+{#- curated.emission_jour (model curated_emission_jour: public.emission_jour has the same name): public.emission_jour (one row per emission and program day, French channels) with
+    French column names in minutes, the channel attributes of curated.chaine and the shares, without the days the
     channel was not captured (outage, channel still in the grid but no longer broadcast): their airtime would
-    count as 0 % environment. Documented in _curate.yml. -#}
+    count as 0 % environment. Documented in _curated.yml. -#}
 {%- set sujets = [
     ('environnement', 'env_heures'),
     ('climat', 'climat_heures'),

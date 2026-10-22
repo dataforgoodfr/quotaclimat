@@ -1,5 +1,5 @@
-{#- French name of a country of program_metadata (country column: france, belgium...), for the curate schema.
-    A new country is left NULL, which fails the accepted_values test of curate.chaine.pays: add it here. -#}
+{#- French name of a country of program_metadata (country column: france, belgium...), for the curated schema.
+    A new country is left NULL, which fails the accepted_values test of curated.chaine.pays: add it here. -#}
 {% macro pays_fr(country) -%}
     (CASE {{ country }}
         WHEN 'france' THEN 'France'

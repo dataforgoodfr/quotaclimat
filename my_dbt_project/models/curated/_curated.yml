@@ -1,11 +1,11 @@
-# Schéma curate : tables propres, documentées pour les équipes et leur Claude (MCP Metabase).
-# Conventions (vérifiées par my_dbt_project/pytest_tests/test_curate_conventions.py) : voir le CLAUDE.md,
-# section « Schéma curate ». Ces descriptions sont écrites dans Postgres (persist_docs) et poussées dans
-# Metabase par quotaclimat/metabase/sync_curate.py : elles se modifient ici, pas dans Metabase.
+# Schéma curated : tables propres, documentées pour les équipes et leur Claude (MCP Metabase).
+# Conventions (vérifiées par my_dbt_project/pytest_tests/test_curated_conventions.py) : voir le CLAUDE.md,
+# section « Schéma curated ». Ces descriptions sont écrites dans Postgres (persist_docs) et poussées dans
+# Metabase par quotaclimat/metabase/sync_curated.py : elles se modifient ici, pas dans Metabase.
 #
 # meta d'un modèle : libelle (nom affiché dans Metabase).
 # meta d'une colonne : libelle ; unite et agregation (somme, moyenne ou aucune) pour une colonne numérique ;
-# type_metabase (type sémantique Metabase, ex. type/PK, type/Category) ; cle_etrangere (table.colonne de curate).
+# type_metabase (type sémantique Metabase, ex. type/PK, type/Category) ; cle_etrangere (table.colonne de curated).
 version: 2
 
 models:
@@ -13,7 +13,7 @@ models:
     description: |
       Une ligne = une chaîne de télévision ou de radio suivie par l'Observatoire des médias sur l'écologie, en France et dans les pays partenaires.
       Contenu : le nom affiché de la chaîne, son pays et ses caractéristiques (service public, information en continu, radio).
-      Usage : table de référence à joindre par `chaine_id` pour filtrer ou regrouper les autres tables du schéma curate par type de chaîne. Les autres tables reprennent déjà `chaine_nom` et les trois caractéristiques.
+      Usage : table de référence à joindre par `chaine_id` pour filtrer ou regrouper les autres tables du schéma curated par type de chaîne. Les autres tables reprennent déjà `chaine_nom` et les trois caractéristiques.
       Pièges : une chaîne présente ici n'est pas forcément suivie sur toute la période étudiée, ni pour tous les sujets (la publicité ne concerne que des chaînes françaises).
       Source : grilles de programmes suivies (program_metadata), caractéristiques de la grille la plus récente.
     config:
@@ -22,7 +22,7 @@ models:
     columns:
       - name: chaine_id
         data_type: text
-        description: "{{ doc('curate_chaine_id') }}"
+        description: "{{ doc('curated_chaine_id') }}"
         config:
           meta:
             libelle: Identifiant de la chaîne
@@ -32,7 +32,7 @@ models:
           - not_null
       - name: chaine_nom
         data_type: text
-        description: "{{ doc('curate_chaine_nom') }}"
+        description: "{{ doc('curated_chaine_nom') }}"
         config:
           meta:
             libelle: Chaîne
@@ -54,7 +54,7 @@ models:
                 values: ['France', 'Belgique', 'Brésil', 'Allemagne', 'Pologne', 'Espagne']
       - name: est_service_public
         data_type: boolean
-        description: "{{ doc('curate_est_service_public') }}"
+        description: "{{ doc('curated_est_service_public') }}"
         config:
           meta:
             libelle: Service public
@@ -62,7 +62,7 @@ models:
           - not_null
       - name: est_info_continue
         data_type: boolean
-        description: "{{ doc('curate_est_info_continue') }}"
+        description: "{{ doc('curated_est_info_continue') }}"
         config:
           meta:
             libelle: Information en continu
@@ -70,7 +70,7 @@ models:
           - not_null
       - name: est_radio
         data_type: boolean
-        description: "{{ doc('curate_est_radio') }}"
+        description: "{{ doc('curated_est_radio') }}"
         config:
           meta:
             libelle: Radio
@@ -110,7 +110,7 @@ models:
           - not_null
       - name: jour
         data_type: date
-        description: "{{ doc('curate_jour') }}"
+        description: "{{ doc('curated_jour') }}"
         config:
           meta:
             libelle: Jour
@@ -118,7 +118,7 @@ models:
           - not_null
       - name: chaine_id
         data_type: text
-        description: "{{ doc('curate_chaine_id') }}"
+        description: "{{ doc('curated_chaine_id') }}"
         config:
           meta:
             libelle: Identifiant de la chaîne
@@ -132,7 +132,7 @@ models:
                 field: chaine_id
       - name: chaine_nom
         data_type: text
-        description: "{{ doc('curate_chaine_nom') }}"
+        description: "{{ doc('curated_chaine_nom') }}"
         config:
           meta:
             libelle: Chaîne
@@ -141,7 +141,7 @@ models:
           - not_null
       - name: est_service_public
         data_type: boolean
-        description: "{{ doc('curate_est_service_public') }}"
+        description: "{{ doc('curated_est_service_public') }}"
         config:
           meta:
             libelle: Service public
@@ -149,7 +149,7 @@ models:
           - not_null
       - name: est_info_continue
         data_type: boolean
-        description: "{{ doc('curate_est_info_continue') }}"
+        description: "{{ doc('curated_est_info_continue') }}"
         config:
           meta:
             libelle: Information en continu
@@ -157,7 +157,7 @@ models:
           - not_null
       - name: est_radio
         data_type: boolean
-        description: "{{ doc('curate_est_radio') }}"
+        description: "{{ doc('curated_est_radio') }}"
         config:
           meta:
             libelle: Radio
@@ -327,7 +327,7 @@ models:
     description: |
       Une ligne = un cas de mésinformation sur le climat ou l'environnement, détecté automatiquement dans une transcription puis validé par un annotateur de l'Observatoire.
       Période : depuis mai 2023. Pays : France et pays partenaires (`pays`) ; l'émission et les thèmes ne sont connus que pour les chaînes françaises.
-      Usage : compter les cas (une ligne = un cas) par chaîne, émission, mois, locuteur ou thème ; lire les affirmations et leurs explications. Pour un taux de mésinformation, rapporter le nombre de cas au temps suivi ou au temps environnement de `curate.emission_jour`.
+      Usage : compter les cas (une ligne = un cas) par chaîne, émission, mois, locuteur ou thème ; lire les affirmations et leurs explications. Pour un taux de mésinformation, rapporter le nombre de cas au temps suivi ou au temps environnement de `curated.emission_jour`.
       Pièges : un cas est un extrait de 2 minutes, pas une émission entière. Le nombre de cas dépend aussi de l'effort d'annotation : seuls les extraits signalés par le modèle de détection puis relus sont comptés, ce n'est pas un recensement exhaustif. Les thèmes sont trouvés par mots-clés dans l'affirmation et l'explication : un cas peut avoir un thème sans en parler vraiment (pertinence faible), à vérifier avant de citer un exemple. La transcription automatique peut contenir des erreurs : citer l'extrait audio ou vidéo, pas la transcription.
       Source : annotations Label Studio (cas dont la première annotation conclut à une mésinformation, sans désaccord), table analytics.cas_de_mesinformation ; thèmes : analytics.cas_theme.
     config:
@@ -356,7 +356,7 @@ models:
           - not_null
       - name: jour
         data_type: date
-        description: "{{ doc('curate_jour') }}"
+        description: "{{ doc('curated_jour') }}"
         config:
           meta:
             libelle: Jour
@@ -364,7 +364,7 @@ models:
           - not_null
       - name: chaine_id
         data_type: text
-        description: "{{ doc('curate_chaine_id') }}"
+        description: "{{ doc('curated_chaine_id') }}"
         config:
           meta:
             libelle: Identifiant de la chaîne
@@ -378,7 +378,7 @@ models:
                 field: chaine_id
       - name: chaine_nom
         data_type: text
-        description: "{{ doc('curate_chaine_nom') }}"
+        description: "{{ doc('curated_chaine_nom') }}"
         config:
           meta:
             libelle: Chaîne
@@ -387,7 +387,7 @@ models:
           - not_null
       - name: est_service_public
         data_type: boolean
-        description: "{{ doc('curate_est_service_public') }}"
+        description: "{{ doc('curated_est_service_public') }}"
         config:
           meta:
             libelle: Service public
@@ -395,7 +395,7 @@ models:
           - not_null
       - name: est_info_continue
         data_type: boolean
-        description: "{{ doc('curate_est_info_continue') }}"
+        description: "{{ doc('curated_est_info_continue') }}"
         config:
           meta:
             libelle: Information en continu
@@ -403,7 +403,7 @@ models:
           - not_null
       - name: est_radio
         data_type: boolean
-        description: "{{ doc('curate_est_radio') }}"
+        description: "{{ doc('curated_est_radio') }}"
         config:
           meta:
             libelle: Radio
@@ -432,7 +432,7 @@ models:
             type_metabase: type/Category
       - name: emission_jour_id
         data_type: text
-        description: "{{ doc('curate_emission_jour_id') }} Chaînes françaises seulement ; vide quand le programme est inconnu."
+        description: "{{ doc('curated_emission_jour_id') }} Chaînes françaises seulement ; vide quand le programme est inconnu."
         config:
           meta:
             libelle: Émission et jour
@@ -441,7 +441,7 @@ models:
         data_tests:
           - relationships:
               arguments:
-                to: ref('curate_emission_jour')
+                to: ref('curated_emission_jour')
                 field: emission_jour_id
       - name: affirmation
         data_type: text
@@ -565,7 +565,7 @@ models:
         data_tests:
           - not_null
 
-  - name: curate_emission_jour
+  - name: curated_emission_jour
     description: |
       Une ligne = une émission (ou un programme suivi) d'une chaîne française un jour donné, avec son temps d'antenne suivi, le temps consacré à l'environnement (au total et par sujet : climat, biodiversité, ressources, et par thème : constat, causes, conséquences, solutions) et le nombre de cas de mésinformation validés.
       Période : depuis le début du suivi (2023), chaque jour où la chaîne a été captée. Chaînes : chaînes de télévision et de radio françaises suivies.
@@ -578,7 +578,7 @@ models:
     columns:
       - name: emission_jour_id
         data_type: text
-        description: "{{ doc('curate_emission_jour_id') }}"
+        description: "{{ doc('curated_emission_jour_id') }}"
         config:
           meta:
             libelle: Identifiant émission et jour
@@ -634,7 +634,7 @@ models:
           - not_null
       - name: chaine_id
         data_type: text
-        description: "{{ doc('curate_chaine_id') }}"
+        description: "{{ doc('curated_chaine_id') }}"
         config:
           meta:
             libelle: Identifiant de la chaîne
@@ -648,7 +648,7 @@ models:
                 field: chaine_id
       - name: chaine_nom
         data_type: text
-        description: "{{ doc('curate_chaine_nom') }}"
+        description: "{{ doc('curated_chaine_nom') }}"
         config:
           meta:
             libelle: Chaîne
@@ -657,7 +657,7 @@ models:
           - not_null
       - name: est_service_public
         data_type: boolean
-        description: "{{ doc('curate_est_service_public') }}"
+        description: "{{ doc('curated_est_service_public') }}"
         config:
           meta:
             libelle: Service public
@@ -665,7 +665,7 @@ models:
           - not_null
       - name: est_info_continue
         data_type: boolean
-        description: "{{ doc('curate_est_info_continue') }}"
+        description: "{{ doc('curated_est_info_continue') }}"
         config:
           meta:
             libelle: Information en continu
@@ -673,7 +673,7 @@ models:
           - not_null
       - name: est_radio
         data_type: boolean
-        description: "{{ doc('curate_est_radio') }}"
+        description: "{{ doc('curated_est_radio') }}"
         config:
           meta:
             libelle: Radio
@@ -716,7 +716,7 @@ models:
           - not_null
       - name: duree_climat_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: Durée climat (min)
@@ -727,7 +727,7 @@ models:
           - not_null
       - name: duree_biodiversite_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: Durée biodiversité (min)
@@ -738,7 +738,7 @@ models:
           - not_null
       - name: duree_ressources_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: Durée ressources (min)
@@ -749,7 +749,7 @@ models:
           - not_null
       - name: duree_climat_constat_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: "Climat : constat (min)"
@@ -760,7 +760,7 @@ models:
           - not_null
       - name: duree_climat_causes_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: "Climat : causes (min)"
@@ -771,7 +771,7 @@ models:
           - not_null
       - name: duree_climat_consequences_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: "Climat : conséquences (min)"
@@ -782,7 +782,7 @@ models:
           - not_null
       - name: duree_climat_attenuation_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: "Climat : solutions d'atténuation (min)"
@@ -793,7 +793,7 @@ models:
           - not_null
       - name: duree_climat_adaptation_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: "Climat : solutions d'adaptation (min)"
@@ -804,7 +804,7 @@ models:
           - not_null
       - name: duree_biodiversite_constat_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: "Biodiversité : constat (min)"
@@ -815,7 +815,7 @@ models:
           - not_null
       - name: duree_biodiversite_causes_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: "Biodiversité : causes (min)"
@@ -826,7 +826,7 @@ models:
           - not_null
       - name: duree_biodiversite_consequences_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: "Biodiversité : conséquences (min)"
@@ -837,7 +837,7 @@ models:
           - not_null
       - name: duree_biodiversite_solutions_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: "Biodiversité : solutions (min)"
@@ -848,7 +848,7 @@ models:
           - not_null
       - name: duree_ressources_constat_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: "Ressources : constat (min)"
@@ -859,7 +859,7 @@ models:
           - not_null
       - name: duree_ressources_solutions_min
         data_type: double precision
-        description: "{{ doc('curate_duree_theme') }}"
+        description: "{{ doc('curated_duree_theme') }}"
         config:
           meta:
             libelle: "Ressources : solutions (min)"
@@ -870,7 +870,7 @@ models:
           - not_null
       - name: part_environnement_pct
         data_type: double precision
-        description: "{{ doc('curate_part') }}"
+        description: "{{ doc('curated_part') }}"
         config:
           meta:
             libelle: Part environnement (%)
@@ -879,7 +879,7 @@ models:
             type_metabase: type/Percentage
       - name: part_climat_pct
         data_type: double precision
-        description: "{{ doc('curate_part') }}"
+        description: "{{ doc('curated_part') }}"
         config:
           meta:
             libelle: Part climat (%)
@@ -888,7 +888,7 @@ models:
             type_metabase: type/Percentage
       - name: part_biodiversite_pct
         data_type: double precision
-        description: "{{ doc('curate_part') }}"
+        description: "{{ doc('curated_part') }}"
         config:
           meta:
             libelle: Part biodiversité (%)
@@ -897,7 +897,7 @@ models:
             type_metabase: type/Percentage
       - name: part_ressources_pct
         data_type: double precision
-        description: "{{ doc('curate_part') }}"
+        description: "{{ doc('curated_part') }}"
         config:
           meta:
             libelle: Part ressources (%)
@@ -907,7 +907,7 @@ models:
       - name: nb_cas_mesinformation
         data_type: integer
         description: >-
-          Nombre de cas de mésinformation validés pendant l'émission ce jour-là (détail dans `curate.cas_mesinformation`, jointure par `emission_jour_id`). Se somme.
+          Nombre de cas de mésinformation validés pendant l'émission ce jour-là (détail dans `curated.cas_mesinformation`, jointure par `emission_jour_id`). Se somme.
         config:
           meta:
             libelle: Cas de mésinformation

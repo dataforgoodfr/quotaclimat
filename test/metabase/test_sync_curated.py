@@ -1,7 +1,7 @@
 import copy
 
-from quotaclimat.metabase import sync_curate
-from quotaclimat.metabase.sync_curate import curate_tables, field_description, plan, sync, table_footer
+from quotaclimat.metabase import sync_curated
+from quotaclimat.metabase.sync_curated import curated_tables, field_description, plan, sync, table_footer
 
 
 def model(name: str, columns: dict, libelle: str) -> dict:
@@ -9,8 +9,8 @@ def model(name: str, columns: dict, libelle: str) -> dict:
         "resource_type": "model",
         "name": name,
         "alias": name,
-        "schema": "curate",
-        "original_file_path": f"models/curate/{name}.sql",
+        "schema": "curated",
+        "original_file_path": f"models/curated/{name}.sql",
         "description": f"Une ligne = un objet {name}.",
         "meta": {"libelle": libelle},
         "columns": {
@@ -33,14 +33,14 @@ MANIFEST = {
         ),
         "model.p.publicites": {**model("publicites", {"x": {}}, "x"), "schema": "analytics",
                                "original_file_path": "models/analytics/publicites.sql"},
-        "test.p.unique": {"resource_type": "test", "original_file_path": "models/curate/_curate.yml"},
+        "test.p.unique": {"resource_type": "test", "original_file_path": "models/curated/_curated.yml"},
     }
 }
 
 
 def metabase_table(table_id: int, name: str, fields: dict) -> dict:
     return {
-        "id": table_id, "db_id": 2, "schema": "curate", "name": name, "display_name": name.title(),
+        "id": table_id, "db_id": 2, "schema": "curated", "name": name, "display_name": name.title(),
         "description": None,
         "fields": [
             {"id": field_id, "name": field, "display_name": field, "description": None, "semantic_type": None,
@@ -76,8 +76,8 @@ class FakeMetabase:
         self.synced.append(path)
 
 
-def test_curate_tables_reads_the_curate_models_only():
-    tables = curate_tables(MANIFEST)
+def test_curated_tables_reads_the_curated_models_only():
+    tables = curated_tables(MANIFEST)
     assert set(tables) == {"chaine", "publicite"}
     publicite = tables["publicite"]
     assert publicite["display_name"] == "Publicités"
@@ -104,8 +104,8 @@ def test_plan_resolves_foreign_keys_and_skips_what_is_up_to_date():
         metabase_table(10, "chaine", {"chaine_id": 101}),
         metabase_table(11, "publicite", {"chaine_id": 111, "duree_sec": 112}),
     ])
-    tables = curate_tables(MANIFEST)
-    known = sync_curate.known_tables(metabase, 2, tables)
+    tables = curated_tables(MANIFEST)
+    known = sync_curated.known_tables(metabase, 2, tables)
     updates = plan(tables, known)
     bodies = {(kind, metabase_id): body for kind, metabase_id, body, _ in updates}
     assert bodies[("field", 111)]["fk_target_field_id"] == 101
@@ -114,7 +114,7 @@ def test_plan_resolves_foreign_keys_and_skips_what_is_up_to_date():
     assert set(bodies[("field", 112)]) == {"display_name", "description"}
     # once applied, nothing left to do
     assert sync(metabase, MANIFEST, [2], apply=True, wait=0) is True
-    assert plan(tables, sync_curate.known_tables(metabase, 2, tables)) == []
+    assert plan(tables, sync_curated.known_tables(metabase, 2, tables)) == []
 
 
 def test_sync_preview_changes_nothing():
@@ -127,7 +127,7 @@ def test_sync_preview_changes_nothing():
 
 
 def test_sync_waits_for_new_tables_and_columns(monkeypatch):
-    monkeypatch.setattr(sync_curate.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(sync_curated.time, "sleep", lambda seconds: None)
     # publicite exists, but without its new column duree_sec; chaine is not known yet
     metabase = FakeMetabase([metabase_table(11, "publicite", {"chaine_id": 111})])
     assert sync(metabase, MANIFEST, [2], apply=True, wait=0) is False

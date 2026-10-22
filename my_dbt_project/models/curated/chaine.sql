@@ -1,6 +1,6 @@
-{#- curate.chaine: one row per monitored channel (program_metadata), with the attributes of its most recent
+{#- curated.chaine: one row per monitored channel (program_metadata), with the attributes of its most recent
     grid, as cas_de_mesinformation does: the attributes of a channel do not change between its grids in
-    production. Documented in _curate.yml. -#}
+    production. Documented in _curated.yml. -#}
 WITH chaines AS (
     SELECT DISTINCT ON (channel_name)
         channel_name,

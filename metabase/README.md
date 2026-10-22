@@ -70,14 +70,14 @@ La clé d'API se crée dans Metabase : Admin > Authentification > Clés d'API. E
 
 Une nouvelle question se crée à la main dans Metabase, en collant le SQL. On ajoute ensuite son numéro au manifeste. La synchronisation reprend alors son SQL, sa description et ses variables.
 
-## Documentation des tables du schéma `curate`
+## Documentation des tables du schéma `curated`
 
-Les tables du schéma `curate` (tables propres pour les équipes, voir le `CLAUDE.md`) sont documentées dans dbt, dans `my_dbt_project/models/curate/_curate.yml`. Le script `quotaclimat.metabase.sync_curate` recopie cette documentation dans les métadonnées des tables Metabase : nom affiché, description, unité et agrégation des colonnes, type sémantique, clés étrangères. Il tourne dans la tâche Kestra `curate_and_metabase_docs` du flow `barometre`, après dbt.
+Les tables du schéma `curated` (tables propres pour les équipes, voir le `CLAUDE.md`) sont documentées dans dbt, dans `my_dbt_project/models/curated/_curated.yml`. Le script `quotaclimat.metabase.sync_curated` recopie cette documentation dans les métadonnées des tables Metabase : nom affiché, description, unité et agrégation des colonnes, type sémantique, clés étrangères. Il tourne dans la tâche Kestra `curated_and_metabase_docs` du flow `barometre`, après dbt.
 
 La documentation se modifie donc dans le dépôt : une modification faite dans Metabase (Admin > Métadonnées des tables) est écrasée au passage suivant. La clé d'API doit appartenir à un groupe qui peut modifier les métadonnées de la base.
 
 ```bash
 poetry run dbt parse --project-dir my_dbt_project --profiles-dir my_dbt_project/dbt
-poetry run python -m quotaclimat.metabase.sync_curate --database 2            # aperçu, ne modifie rien
-poetry run python -m quotaclimat.metabase.sync_curate --database 2 --apply    # met à jour
+poetry run python -m quotaclimat.metabase.sync_curated --database 2            # aperçu, ne modifie rien
+poetry run python -m quotaclimat.metabase.sync_curated --database 2 --apply    # met à jour
 ```

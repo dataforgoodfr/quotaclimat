@@ -35,7 +35,7 @@ poetry run dbt run --full-refresh \
   --exclude path:models/advertising \
   --exclude cas_de_mesinformation \
   --exclude publicites \
-  --exclude path:models/curate
+  --exclude path:models/curated
 
 echo "apply dbt models to build the analytics tables (task_global_completion in 'analytics', environmental_shares_with_desinfo_counts in 'public')."
 poetry run dbt run --full-refresh --target analytics \
@@ -48,5 +48,5 @@ poetry run dbt run --full-refresh \
   --select cas_de_mesinformation \
   --select publicites
 
-echo "build and test the curate tables, last: they read the tables above"
-./entrypoints/curate.sh
+echo "build and test the curated tables, last: they read the tables above"
+./entrypoints/curated.sh

@@ -1,5 +1,5 @@
-"""Conventions of the curate schema (clean tables for the teams and their Claude, see the CLAUDE.md), checked on
-the dbt manifest: no database needed, only the dbt project (dbt parse). A model added to models/curate/ without
+"""Conventions of the curated schema (clean tables for the teams and their Claude, see the CLAUDE.md), checked on
+the dbt manifest: no database needed, only the dbt project (dbt parse). A model added to models/curated/ without
 its full documentation fails here."""
 import json
 import os
@@ -10,7 +10,7 @@ from pathlib import Path
 import pytest
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
-CURATE_PATH = "curate/"
+CURATED_PATH = "curated/"
 MODEL_META = {"libelle"}
 COLUMN_META = {"libelle", "unite", "agregation", "type_metabase", "cle_etrangere"}
 AGGREGATIONS = {"somme", "moyenne", "aucune"}
@@ -29,13 +29,13 @@ def manifest() -> dict:
     return json.loads((PROJECT_DIR / "target" / "manifest.json").read_text())
 
 
-def curate_models(manifest: dict) -> dict:
-    """The curate models by table name (alias: a model named like a model of another schema is named
-    curate_<table>, with alias <table>)."""
+def curated_models(manifest: dict) -> dict:
+    """The curated models by table name (alias: a model named like a model of another schema is named
+    curated_<table>, with alias <table>)."""
     return {
         node["alias"] or node["name"]: node
         for node in manifest["nodes"].values()
-        if node["resource_type"] == "model" and node["original_file_path"].startswith(f"models/{CURATE_PATH}")
+        if node["resource_type"] == "model" and node["original_file_path"].startswith(f"models/{CURATED_PATH}")
     }
 
 
@@ -48,21 +48,21 @@ def column_tests(manifest: dict, model: dict) -> dict:
     return tests
 
 
-def test_curate_has_models(manifest):
-    assert {"chaine", "publicite", "cas_mesinformation", "emission_jour"} <= set(curate_models(manifest))
+def test_curated_has_models(manifest):
+    assert {"chaine", "publicite", "cas_mesinformation", "emission_jour"} <= set(curated_models(manifest))
 
 
-def test_curate_model_config(manifest):
-    for name, model in curate_models(manifest).items():
+def test_curated_model_config(manifest):
+    for name, model in curated_models(manifest).items():
         config = model["config"]
-        assert model["schema"] == "curate", name
+        assert model["schema"] == "curated", name
         assert config["materialized"] == "table", f"{name}: a view would be dropped by the rebuild of its sources"
         assert config["contract"]["enforced"], f"{name}: the contract freezes the column names and types"
         assert config["persist_docs"] == {"relation": True, "columns": True}, name
 
 
-def test_curate_model_description(manifest):
-    for name, model in curate_models(manifest).items():
+def test_curated_model_description(manifest):
+    for name, model in curated_models(manifest).items():
         description = model["description"]
         assert description.startswith("Une ligne = "), f"{name}: the description starts with the grain"
         for section in DESCRIPTION_SECTIONS:
@@ -71,8 +71,8 @@ def test_curate_model_description(manifest):
         assert model["meta"].get("libelle"), f"{name}: meta.libelle (name shown in Metabase) missing"
 
 
-def test_curate_column_documentation(manifest):
-    for name, model in curate_models(manifest).items():
+def test_curated_column_documentation(manifest):
+    for name, model in curated_models(manifest).items():
         assert model["columns"], f"{name}: no documented column"
         for column_name, column in model["columns"].items():
             label = f"{name}.{column_name}"
@@ -86,8 +86,8 @@ def test_curate_column_documentation(manifest):
                 assert meta["type_metabase"].startswith("type/"), label
 
 
-def test_curate_column_naming(manifest):
-    for name, model in curate_models(manifest).items():
+def test_curated_column_naming(manifest):
+    for name, model in curated_models(manifest).items():
         for column_name, column in model["columns"].items():
             label = f"{name}.{column_name}"
             data_type = column["data_type"].lower()
@@ -97,8 +97,8 @@ def test_curate_column_naming(manifest):
                 assert column_name.endswith("_paris"), f"{label}: a time is in Paris time, named ..._paris"
 
 
-def test_curate_numeric_columns_have_unit_and_aggregation(manifest):
-    for name, model in curate_models(manifest).items():
+def test_curated_numeric_columns_have_unit_and_aggregation(manifest):
+    for name, model in curated_models(manifest).items():
         for column_name, column in model["columns"].items():
             meta = column["meta"]
             if not NUMERIC_TYPES.match(column["data_type"].lower()) or meta.get("type_metabase") in ("type/PK", "type/FK"):
@@ -108,16 +108,16 @@ def test_curate_numeric_columns_have_unit_and_aggregation(manifest):
             assert meta.get("agregation") in AGGREGATIONS, f"{label}: meta.agregation among {AGGREGATIONS}"
 
 
-def test_curate_primary_key(manifest):
-    for name, model in curate_models(manifest).items():
+def test_curated_primary_key(manifest):
+    for name, model in curated_models(manifest).items():
         keys = [c for c, column in model["columns"].items() if column["meta"].get("type_metabase") == "type/PK"]
         assert len(keys) == 1, f"{name}: exactly one column with type_metabase: type/PK"
         tests = column_tests(manifest, model).get(keys[0], {})
         assert {"unique", "not_null"} <= set(tests), f"{name}.{keys[0]}: unique and not_null tests"
 
 
-def test_curate_foreign_keys(manifest):
-    models = curate_models(manifest)
+def test_curated_foreign_keys(manifest):
+    models = curated_models(manifest)
     for name, model in models.items():
         tests = column_tests(manifest, model)
         for column_name, column in model["columns"].items():
@@ -128,7 +128,7 @@ def test_curate_foreign_keys(manifest):
                 continue
             assert meta.get("type_metabase") == "type/FK", f"{label}: cle_etrangere with type_metabase: type/FK"
             table, target = meta["cle_etrangere"].split(".")
-            assert table in models and target in models[table]["columns"], f"{label}: {meta['cle_etrangere']} not in curate"
+            assert table in models and target in models[table]["columns"], f"{label}: {meta['cle_etrangere']} not in curated"
             assert models[table]["columns"][target]["meta"].get("type_metabase") == "type/PK", label
             relationship = tests.get(column_name, {}).get("relationships")
             assert relationship is not None, f"{label}: relationships test missing"
@@ -136,10 +136,10 @@ def test_curate_foreign_keys(manifest):
             assert f"ref('{models[table]['name']}')" in relationship["test_metadata"]["kwargs"]["to"], label
 
 
-def test_curate_is_the_last_layer(manifest):
-    """Nothing in dbt reads a curate table: it can change without breaking a model, and is never dropped by
+def test_curated_is_the_last_layer(manifest):
+    """Nothing in dbt reads a curated table: it can change without breaking a model, and is never dropped by
     the cascade of a rebuild."""
-    curate_ids = {model["unique_id"] for model in curate_models(manifest).values()}
+    curated_ids = {model["unique_id"] for model in curated_models(manifest).values()}
     for node in manifest["nodes"].values():
-        if node["resource_type"] in ("model", "snapshot") and node["unique_id"] not in curate_ids:
-            assert not curate_ids & set(node["depends_on"]["nodes"]), f"{node['name']} reads the curate schema"
+        if node["resource_type"] in ("model", "snapshot") and node["unique_id"] not in curated_ids:
+            assert not curated_ids & set(node["depends_on"]["nodes"]), f"{node['name']} reads the curated schema"

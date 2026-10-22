@@ -331,7 +331,7 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "--exclude",
             "cas_theme",
             "--exclude",
-            "path:models/curate",
+            "path:models/curated",
             "--full-refresh",
         ]
     )
@@ -370,9 +370,9 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "--full-refresh",
         ]
     )
-    logging.info("pytest running the curate models, last as in entrypoints/dbt.sh, then their dbt tests")
-    run_dbt_command(["run", "--select", "path:models/curate", "--full-refresh"])
-    run_dbt_command(["test", "--select", "path:models/curate"])
+    logging.info("pytest running the curated models, last as in entrypoints/dbt.sh, then their dbt tests")
+    run_dbt_command(["run", "--select", "path:models/curated", "--full-refresh"])
+    run_dbt_command(["test", "--select", "path:models/curated"])
 
 
 def test_task_global_completion(db_connection):
@@ -1389,8 +1389,8 @@ def test_advertising_models_schema(db_connection):
                 'publicites', 'cas_de_mesinformation', 'emission_jour', 'environmental_shares_with_desinfo_counts',
                 'mesinfo_theme_mots_cles', 'pub_annonceur_emission_jour'
             )
-              -- curate.emission_jour: see test_curate_documented_in_postgres
-              AND table_schema <> 'curate'
+              -- curated.emission_jour: see test_curated_documented_in_postgres
+              AND table_schema <> 'curated'
             ORDER BY table_name
         """)
         rows = cur.fetchall()
@@ -1440,8 +1440,8 @@ def test_dbt_objects(db_connection):
         ("analytics", "task_global_completion", "model"),
     ]
 
-def test_curate_documented_in_postgres(db_connection):
-    """The curate models are tables of the curate schema, with their description and the one of every column
+def test_curated_documented_in_postgres(db_connection):
+    """The curated models are tables of the curated schema, with their description and the one of every column
     written as Postgres comments (persist_docs), read by Metabase and by any SQL client."""
     with db_connection.cursor() as cur:
         cur.execute("""
@@ -1450,7 +1450,7 @@ def test_curate_documented_in_postgres(db_connection):
             FROM pg_class c
             JOIN pg_namespace n ON n.oid = c.relnamespace
             JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
-            WHERE n.nspname = 'curate' AND c.relkind = 'r'
+            WHERE n.nspname = 'curated' AND c.relkind = 'r'
             GROUP BY c.relname, c.relkind, c.oid
             ORDER BY c.relname
         """)
@@ -1463,19 +1463,19 @@ def test_curate_documented_in_postgres(db_connection):
     ]
 
 
-def test_curate_chaine(db_connection):
+def test_curated_chaine(db_connection):
     """One row per channel of program_metadata, country in French."""
     with db_connection.cursor() as cur:
         cur.execute("SELECT COUNT(DISTINCT channel_name) FROM public.program_metadata")
         channels = cur.fetchone()[0]
         cur.execute("""
             SELECT chaine_id, chaine_nom, pays, est_service_public, est_info_continue, est_radio
-            FROM curate.chaine
+            FROM curated.chaine
             WHERE chaine_id IN ('bfmtv', 'france-inter', 'daserste')
             ORDER BY chaine_id
         """)
         rows = cur.fetchall()
-        cur.execute("SELECT COUNT(*) FROM curate.chaine")
+        cur.execute("SELECT COUNT(*) FROM curated.chaine")
         assert cur.fetchone()[0] == channels
     assert rows == [
         ("bfmtv", "BFM TV", "France", False, True, False),
@@ -1484,17 +1484,17 @@ def test_curate_chaine(db_connection):
     ]
 
 
-def test_curate_publicite(db_connection):
+def test_curated_publicite(db_connection):
     """Every row of analytics.publicites, with the time in Paris time (UTC+1 in winter, UTC+2 in summer) and the
-    channel of curate.chaine."""
+    channel of curated.chaine."""
     with db_connection.cursor() as cur:
         cur.execute("SELECT COUNT(*) FROM analytics.publicites")
         ads = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM curate.publicite")
+        cur.execute("SELECT COUNT(*) FROM curated.publicite")
         assert cur.fetchone()[0] == ads > 0
         cur.execute("""
             SELECT publicite_id, debut_paris, jour, chaine_id, chaine_nom, est_info_continue, classement_par
-            FROM curate.publicite
+            FROM curated.publicite
             WHERE publicite_id IN ('emission_pytest_winter', 'emission_pytest_after_midnight')
             ORDER BY publicite_id
         """)
@@ -1509,17 +1509,17 @@ def test_curate_publicite(db_connection):
     ]
 
 
-def test_curate_cas_mesinformation(db_connection):
+def test_curated_cas_mesinformation(db_connection):
     """Every validated case, in Paris time, with its speakers, themes (every pertinence) and emission."""
     with db_connection.cursor() as cur:
         cur.execute("SELECT COUNT(*) FROM analytics.cas_de_mesinformation")
         cases = cur.fetchone()[0]
-        cur.execute("SELECT COUNT(*) FROM curate.cas_mesinformation")
+        cur.execute("SELECT COUNT(*) FROM curated.cas_mesinformation")
         assert cur.fetchone()[0] == cases > 0
         cur.execute("""
             SELECT debut_paris, chaine_nom, pays, emission_jour_id, locuteurs, est_dit_par_invite,
                 est_dit_par_journaliste, correction, themes, est_theme_automobile
-            FROM curate.cas_mesinformation
+            FROM curated.cas_mesinformation
             WHERE chaine_id = 'sud-radio' AND jour = '2025-04-02'
         """)
         rows = cur.fetchall()
@@ -1531,7 +1531,7 @@ def test_curate_cas_mesinformation(db_connection):
     )]
 
 
-def test_curate_emission_jour(db_connection):
+def test_curated_emission_jour(db_connection):
     """The captured days of public.emission_jour, in minutes, with the cases."""
     with db_connection.cursor() as cur:
         cur.execute("""
@@ -1539,11 +1539,11 @@ def test_curate_emission_jour(db_connection):
             FROM public.emission_jour WHERE chaine_captee
         """)
         captured = cur.fetchone()
-        cur.execute("SELECT COUNT(*), SUM(duree_suivie_min), SUM(nb_cas_mesinformation) FROM curate.emission_jour")
+        cur.execute("SELECT COUNT(*), SUM(duree_suivie_min), SUM(nb_cas_mesinformation) FROM curated.emission_jour")
         curated = cur.fetchone()
         cur.execute("""
             SELECT emission_nom, est_emission_identifiee, chaine_nom, duree_suivie_min, nb_cas_mesinformation
-            FROM curate.emission_jour
+            FROM curated.emission_jour
             WHERE emission_jour_id = 'europe1|programme|Europe 1 Matin|false|2025-06-10'
         """)
         row = cur.fetchone()

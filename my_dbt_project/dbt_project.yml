@@ -59,12 +59,12 @@ models:
     metadata:
       # same grants as analytics models
       +grants: *analytics_grants
-    # clean tables for the teams and their Claude (Metabase MCP), see models/curate/_curate.yml:
-    # built after entrypoints/dbt.sh by entrypoints/curate.sh, as tables so that rebuilding the models they read does not drop them,
+    # clean tables for the teams and their Claude (Metabase MCP), see models/curated/_curated.yml:
+    # built after entrypoints/dbt.sh by entrypoints/curated.sh, as tables so that rebuilding the models they read does not drop them,
     # columns frozen by the contract, docs written as Postgres comments and pushed to Metabase
-    # (quotaclimat/metabase/sync_curate.py)
-    curate:
-      +schema: curate
+    # (quotaclimat/metabase/sync_curated.py)
+    curated:
+      +schema: curated
       +materialized: table
       +contract:
         enforced: true

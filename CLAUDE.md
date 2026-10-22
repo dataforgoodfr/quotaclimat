@@ -218,9 +218,9 @@ La synchronisation (flow Kestra `quotaclimat/metabase-sync`) ne met à jour que 
 - `analytics` : `program`, `cas_de_mesinformation`, `cas_theme`, `publicites`, `task_global_completion`, `dbt_objects`.
 - `public` : `emission_jour`, `environmental_shares_with_desinfo_counts`, `mesinfo_theme_mots_cles` (seed).
 - `advertising` : `pub_annonceur_emission_jour`, `ad_*`, seeds `ref_*`.
-- `curate` : `chaine`, `publicite`, `cas_mesinformation`, `emission_jour` (voir « Schéma curate »).
+- `curated` : `chaine`, `publicite`, `cas_mesinformation`, `emission_jour` (voir « Schéma curated »).
 
-Un nouveau modèle (hors `curate`) demande trois choses :
+Un nouveau modèle (hors `curated`) demande trois choses :
 - sa documentation dans `my_dbt_project/models/schema.yml` ;
 - un test dans `my_dbt_project/pytest_tests/test_dbt_model_analytics.py` ;
 - sa place dans les `dbt run` de `entrypoints/dbt.sh` et `entrypoints/mediatree_import.sh`, quand il dépend des modèles advertising.
@@ -229,50 +229,50 @@ Un modèle qui change de schéma laisse l'ancienne table en place : le signaler,
 
 Les mots-clés des thèmes de cas (`my_dbt_project/seeds/themes/mesinfo_theme_mots_cles.csv`, des expressions régulières) sont versionnés et modifiés dans le code, pas dans un Google Sheet.
 
-## Schéma curate
+## Schéma curated
 
-Le schéma `curate` (`my_dbt_project/models/curate/`) ne contient que des tables propres, pour les équipes non techniques et leur Claude, qui les lit par le MCP Metabase sans accès au dépôt. Tout ce qu'il faut pour les utiliser sans erreur doit donc être dans les tables et leur documentation.
+Le schéma `curated` (`my_dbt_project/models/curated/`) ne contient que des tables propres, pour les équipes non techniques et leur Claude, qui les lit par le MCP Metabase sans accès au dépôt. Tout ce qu'il faut pour les utiliser sans erreur doit donc être dans les tables et leur documentation.
 
-### Ce qui entre dans curate
+### Ce qui entre dans curated
 
 - Des objets réels (une publicité diffusée, un cas de mésinformation, une chaîne) ou des agrégats de haut niveau avec leurs mesures additives (durées, nombres) à côté des parts. Pas de table intermédiaire, ni de table qui se recalcule simplement à partir des autres.
 - Des données déjà filtrées : pas de colonne qu'il faut filtrer pour obtenir le bon chiffre (ex. `mesinfo_choice = 'Correct'`).
 - Pas de code interne du pipeline (statuts, codes de prédiction, scores non calibrés) : on le traduit (`classement_par`) ou on le laisse dans `analytics`.
-- Pas d'identifiant qui pointe hors de `curate`.
-- Rien dans dbt ne lit une table `curate` (test `test_curate_is_the_last_layer`).
+- Pas d'identifiant qui pointe hors de `curated`.
+- Rien dans dbt ne lit une table `curated` (test `test_curated_is_the_last_layer`).
 
 ### Nommage
 
-- Tables et colonnes en français, en snake_case sans accent. Un modèle dont le nom existe déjà dans dbt (ex. `public.emission_jour`) s'appelle `curate_<table>` avec `alias='<table>'`.
+- Tables et colonnes en français, en snake_case sans accent. Un modèle dont le nom existe déjà dans dbt (ex. `public.emission_jour`) s'appelle `curated_<table>` avec `alias='<table>'`.
 - Une table porte le nom de son grain, au singulier : une ligne de `publicite` est une publicité diffusée. Un agrégat : `<mesure>_<dimension>_<période>` (ex. `part_environnement_chaine_jour`).
 - L'unité en suffixe : `_sec`, `_min`, `_pct` (toujours de 0 à 100) ; un nombre commence par `nb_`.
 - Booléens en `est_` ; heures en heure de Paris, nommées `..._paris` ; `jour` pour la date de Paris.
 - Un identifiant de ligne composé (ex. émission et jour) devient une seule colonne `<table>_id`, clé des jointures entre tables (`emission_jour_id`).
-- Une colonne présente dans plusieurs tables y a le même nom et la même description (`chaine_id`, `chaine_nom`, blocs `{% docs %}` de `_curate_docs.md`). Les tables reprennent `chaine_nom` et les caractéristiques de la chaîne, pour éviter une jointure.
+- Une colonne présente dans plusieurs tables y a le même nom et la même description (`chaine_id`, `chaine_nom`, blocs `{% docs %}` de `_curated_docs.md`). Les tables reprennent `chaine_nom` et les caractéristiques de la chaîne, pour éviter une jointure.
 - Un identifiant se termine par `_id` ; une colonne lisible (nom, libellé) l'accompagne.
 
-### Documentation (`models/curate/_curate.yml`)
+### Documentation (`models/curated/_curated.yml`)
 
 - **Description du modèle** : commence par `Une ligne = ...`, puis les sections `Usage :`, `Pièges :`, `Source :` (et `Période :` quand elle est limitée). Les pièges disent comment compter juste (ex. lignes ou valeurs distinctes, ne pas moyenner des parts).
 - **Description de chaque colonne** : ce qu'elle contient, quand elle est vide, un exemple de valeur ou de filtre utile.
-- **`config.meta`** : `libelle` (nom affiché dans Metabase) pour le modèle et chaque colonne ; pour une colonne numérique, `unite` et `agregation` (`somme`, `moyenne` ou `aucune`) ; `type_metabase` (type sémantique : `type/PK`, `type/FK`, `type/Category`...) ; `cle_etrangere: table.colonne` pour une jointure vers une autre table de `curate`.
+- **`config.meta`** : `libelle` (nom affiché dans Metabase) pour le modèle et chaque colonne ; pour une colonne numérique, `unite` et `agregation` (`somme`, `moyenne` ou `aucune`) ; `type_metabase` (type sémantique : `type/PK`, `type/FK`, `type/Category`...) ; `cle_etrangere: table.colonne` pour une jointure vers une autre table de `curated`.
 - **`data_type`** de chaque colonne : le contrat dbt (`contract: enforced`) fait échouer le build si une colonne change de nom ou de type. Caster dans le SQL (`::text`, `::double precision`).
 - **Tests** : une clé `type/PK` avec `unique` et `not_null` ; `relationships` pour chaque `cle_etrangere` ; `not_null` et `accepted_values` dès que possible.
 - Une liste (thèmes, locuteurs) s'accompagne d'un booléen par valeur (`est_theme_automobile`, `est_dit_par_invite`) pour compter sans découper de texte.
 - Pas de chiffre qui change avec les données (« 9 % des diffusions ») dans une description.
-- `my_dbt_project/pytest_tests/test_curate_conventions.py` vérifie ces règles sur le manifeste dbt.
+- `my_dbt_project/pytest_tests/test_curated_conventions.py` vérifie ces règles sur le manifeste dbt.
 - Une description rédigée par Claude porte des choix de méthode : la faire relire par un expert du sujet, et le dire dans la PR.
 
 ### Ne pas casser les usages
 
-Les questions Metabase, les tableaux de bord et les analyses des équipes lisent ces tables. Ne jamais renommer ni retirer une colonne ou une table de `curate` sans l'accord de l'utilisateur : on ajoute une colonne, on ne modifie pas l'existante. Une table retirée ou renommée laisse l'ancienne en place : le signaler, avec le `DROP` à faire à la main.
+Les questions Metabase, les tableaux de bord et les analyses des équipes lisent ces tables. Ne jamais renommer ni retirer une colonne ou une table de `curated` sans l'accord de l'utilisateur : on ajoute une colonne, on ne modifie pas l'existante. Une table retirée ou renommée laisse l'ancienne en place : le signaler, avec le `DROP` à faire à la main.
 
 ### Construction et Metabase
 
-- `entrypoints/curate.sh` construit `curate` (tout le dossier, après `entrypoints/dbt.sh` qui l'exclut), le teste, puis pousse sa documentation dans Metabase. Il tourne dans la tâche Kestra `curate_and_metabase_docs` du flow `barometre`, qui peut échouer sans arrêter le pipeline. Un nouveau modèle de `curate` n'a rien à ajouter aux entrypoints.
-- `quotaclimat/metabase/sync_curate.py` écrit dans Metabase, pour chaque table et colonne : le libellé, la description (avec l'unité et l'agrégation), le type sémantique et la clé étrangère. dbt fait référence : une modification faite dans Metabase est écrasée. Les mêmes descriptions sont écrites dans Postgres (`persist_docs`).
-- Les bases Metabase mises à jour sont dans `METABASE_CURATE_DATABASES` (tâche Kestra). En local : `poetry run python -m quotaclimat.metabase.sync_curate --database 2` (aperçu, après `dbt parse`), `--apply` pour écrire.
-- Un nouveau modèle demande sa documentation dans `_curate.yml` et un test de ses données dans `my_dbt_project/pytest_tests/test_dbt_model_analytics.py`.
+- `entrypoints/curated.sh` construit `curated` (tout le dossier, après `entrypoints/dbt.sh` qui l'exclut), le teste, puis pousse sa documentation dans Metabase. Il tourne dans la tâche Kestra `curated_and_metabase_docs` du flow `barometre`, qui peut échouer sans arrêter le pipeline. Un nouveau modèle de `curated` n'a rien à ajouter aux entrypoints.
+- `quotaclimat/metabase/sync_curated.py` écrit dans Metabase, pour chaque table et colonne : le libellé, la description (avec l'unité et l'agrégation), le type sémantique et la clé étrangère. dbt fait référence : une modification faite dans Metabase est écrasée. Les mêmes descriptions sont écrites dans Postgres (`persist_docs`).
+- Les bases Metabase mises à jour sont dans `METABASE_CURATED_DATABASES` (tâche Kestra). En local : `poetry run python -m quotaclimat.metabase.sync_curated --database 2` (aperçu, après `dbt parse`), `--apply` pour écrire.
+- Un nouveau modèle demande sa documentation dans `_curated.yml` et un test de ses données dans `my_dbt_project/pytest_tests/test_dbt_model_analytics.py`.
 
 ## Tests
 
@@ -281,7 +281,7 @@ poetry run pytest test/metabase                                    # synchronisa
 POSTGRES_USER=user POSTGRES_DB=dbt_test POSTGRES_PASSWORD=postgres POSTGRES_HOST=localhost POSTGRES_PORT=5432 \
 DBT_PROJECT_DIR=my_dbt_project DBT_PROFILES_DIR=my_dbt_project/dbt \
 poetry run pytest my_dbt_project/pytest_tests -k metabase           # requêtes Metabase sur les tables dbt de test
-poetry run pytest my_dbt_project/pytest_tests/test_curate_conventions.py  # conventions du schéma curate (dbt parse, sans base)
+poetry run pytest my_dbt_project/pytest_tests/test_curated_conventions.py  # conventions du schéma curated (dbt parse, sans base)
 ```
 
 Les tests dbt demandent un Postgres (job `dbt` de la CI). Une requête ajoutée ou modifiée doit passer `test_metabase_query` avant la PR. Les tests vérifient que la requête s'exécute, pas ses chiffres : un résultat se vérifie dans Metabase sur les vraies données.
@@ -290,7 +290,7 @@ Les tests dbt demandent un Postgres (job `dbt` de la CI). Une requête ajoutée 
 
 - **Commits** : en anglais.
 - **SQL Metabase, manifestes et `metabase/README.md`** : commentaires en français.
-- **Schéma `curate`** : noms de tables et de colonnes, descriptions et `meta` en français ; commentaires du SQL dbt en anglais, comme les autres modèles.
+- **Schéma `curated`** : noms de tables et de colonnes, descriptions et `meta` en français ; commentaires du SQL dbt en anglais, comme les autres modèles.
 - **PR** : description en français.
 </content>
 </invoke>

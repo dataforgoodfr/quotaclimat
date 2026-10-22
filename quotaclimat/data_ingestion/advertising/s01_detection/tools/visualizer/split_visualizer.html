@@ -31,7 +31,8 @@
       font-family: var(--font);
       background: var(--bg);
       color: var(--text);
-      overflow-y: auto;
+      overflow-y: scroll;
+      scrollbar-gutter: stable;
     }
 
     /* ─── Header ─────────────────────────────────────── */
@@ -187,6 +188,20 @@
       transform: translateX(-50%);
       z-index: 2;
     }
+
+    /* ─── Zoom controls ───────────────────────────────── */
+    .zoom-panel {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 10px;
+    }
+    .zoom-info { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+    .zoom-reset-btn {
+      background: var(--surface3); border: 1px solid var(--border);
+      border-radius: 4px; color: var(--text); cursor: pointer;
+      font-size: 11px; padding: 3px 8px;
+    }
+    .zoom-reset-btn:hover { background: var(--surface2); }
+    .zoom-reset-btn:disabled { opacity: 0.4; cursor: default; }
   </style>
 </head>
 
@@ -200,6 +215,8 @@
     <div class="legend-item"><div class="legend-zone" style="background:rgba(0,210,160,0.10)"></div> Zone d'un chunk retenu</div>
     <div class="legend-item"><div class="legend-dot" style="background:#60d080"></div> Pic accepté (frontière de chunk)</div>
     <div class="legend-item"><div class="legend-dot" style="background:#e06060"></div> Pic candidat rejeté (espacement minimum)</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#00d2a0;opacity:0.35"></div> Énergie brute (RMS)</div>
+    <div class="legend-item"><div class="legend-swatch" style="background:#5ec8ff"></div> Énergie lissée (comparée au seuil)</div>
     <div class="legend-item"><div class="legend-swatch" style="background:#f0c040"></div> Seuil de silence local</div>
     <div class="legend-item"><div class="legend-zone" style="background:rgba(255,255,255,0.08)"></div> Marge réservée (segment précédent/suivant)</div>
     <div class="legend-item"><div class="legend-swatch" style="background:#ffffff;height:1px;border-top:1px dashed #ffffff"></div> Timestamp investigué</div>
@@ -230,7 +247,8 @@
 
     // ── Header info ────────────────────────────────────
     document.getElementById("header-info").textContent =
-      `SR: ${PARAMS.sr} Hz | min_chunk_sec: ${PARAMS.min_chunk_sec}s | silence_percentile: ${PARAMS.silence_percentile}`;
+      `SR: ${PARAMS.sr} Hz | min_chunk_sec: ${PARAMS.min_chunk_sec}s | silence_percentile: ${PARAMS.silence_percentile}` +
+      ` — molette pour zoomer (double-clic pour réinitialiser)`;
 
     // ── Metadata cards ─────────────────────────────────
     function buildMetaCard(win, side) {
@@ -271,27 +289,35 @@
       return { canvas: c, ctx, w, h };
     }
 
-    function timeToX(t, tMax, w) { return (t / tMax) * w; }
+    // A "domain" is the horizontal time range currently shown, {t0, t1} in
+    // the same "seconds relative to crop start" coordinate space as every
+    // other time value in the payload. Zooming just narrows this range; the
+    // underlying data never changes.
+    function timeToX(t, domain, w) { return ((t - domain.t0) / (domain.t1 - domain.t0)) * w; }
 
-    function drawMarginZones(ctx, win, tMax, w, h) {
+    function getFullT(win) {
+      return win.waveformDuration || win.frameTimes[win.frameTimes.length - 1] || 1;
+    }
+
+    function drawMarginZones(ctx, win, domain, w, h) {
       // Reserved margin at the start (covered by the previous job)
       if (win.hasPreviousSegment) {
-        const x = timeToX(win.reservedSec, tMax, w);
+        const x = timeToX(win.reservedSec, domain, w);
         ctx.fillStyle = "rgba(255,255,255,0.06)";
         ctx.fillRect(0, 0, x, h);
       }
       // Beyond the cutoff, chunk starts belong to the next job
-      const xCut = timeToX(win.chunkStartCutoffSec, tMax, w);
+      const xCut = timeToX(win.chunkStartCutoffSec, domain, w);
       if (xCut < w) {
         ctx.fillStyle = "rgba(255,255,255,0.06)";
         ctx.fillRect(xCut, 0, w - xCut, h);
       }
     }
 
-    function drawChunkZones(ctx, win, tMax, w, h) {
+    function drawChunkZones(ctx, win, domain, w, h) {
       win.chunks.forEach((c, i) => {
-        const x0 = timeToX(c.startSec, tMax, w);
-        const x1 = timeToX(c.endSec, tMax, w);
+        const x0 = timeToX(c.startSec, domain, w);
+        const x1 = timeToX(c.endSec, domain, w);
         ctx.fillStyle = i % 2 === 0 ? "rgba(0,210,160,0.08)" : "rgba(0,210,160,0.04)";
         ctx.fillRect(x0, 0, x1 - x0, h);
       });
@@ -299,26 +325,26 @@
       ctx.strokeStyle = "rgba(96,208,128,0.7)";
       ctx.lineWidth = 1.2;
       for (const p of win.keptPeaksSec) {
-        const x = timeToX(p, tMax, w);
+        const x = timeToX(p, domain, w);
         ctx.beginPath();
         ctx.moveTo(x, 0); ctx.lineTo(x, h);
         ctx.stroke();
       }
     }
 
-    function drawDroppedMarkers(ctx, win, tMax, w, h) {
+    function drawDroppedMarkers(ctx, win, domain, w, h) {
       ctx.fillStyle = "#e06060";
       for (const d of win.droppedCandidates) {
-        const x = timeToX(d.timeSec, tMax, w);
+        const x = timeToX(d.timeSec, domain, w);
         ctx.beginPath();
         ctx.arc(x, h - 6, 2.5, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
-    function drawFocusMarker(ctx, win, tMax, w, h) {
+    function drawFocusMarker(ctx, win, domain, w, h) {
       if (win.focusSec === null || win.focusSec === undefined) return;
-      const x = timeToX(win.focusSec, tMax, w);
+      const x = timeToX(win.focusSec, domain, w);
       if (x < 0 || x > w) return;
       ctx.strokeStyle = "#ffffff";
       ctx.lineWidth = 1.5;
@@ -329,106 +355,121 @@
       ctx.setLineDash([]);
     }
 
-    function drawWaveform(ctx, win, w, h) {
+    function drawWaveform(ctx, win, domain, w, h) {
       ctx.fillStyle = BG;
       ctx.fillRect(0, 0, w, h);
-      const tMax = win.waveformDuration || 1;
-      drawMarginZones(ctx, win, tMax, w, h);
-      drawChunkZones(ctx, win, tMax, w, h);
+      drawMarginZones(ctx, win, domain, w, h);
+      drawChunkZones(ctx, win, domain, w, h);
 
       const data = win.waveform;
+      const dur = win.waveformDuration || 1;
       const absMax = Math.max(...data.map(Math.abs)) || 1;
       ctx.strokeStyle = "#c8d0e0";
       ctx.lineWidth = 1;
       ctx.globalAlpha = 0.85;
       ctx.beginPath();
       for (let i = 0; i < data.length; i++) {
-        const x = (i / data.length) * w;
+        const t = (i / data.length) * dur;
+        const x = timeToX(t, domain, w);
         const y = h / 2 - (data[i] / absMax) * (h / 2 - 2);
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.stroke();
       ctx.globalAlpha = 1;
-      drawDroppedMarkers(ctx, win, tMax, w, h);
-      drawFocusMarker(ctx, win, tMax, w, h);
+      drawDroppedMarkers(ctx, win, domain, w, h);
+      drawFocusMarker(ctx, win, domain, w, h);
     }
 
-    function drawEnergy(ctx, win, w, h) {
+    function drawEnergy(ctx, win, domain, w, h) {
       ctx.fillStyle = BG;
       ctx.fillRect(0, 0, w, h);
-      const tMax = win.frameTimes[win.frameTimes.length - 1] || 1;
-      drawMarginZones(ctx, win, tMax, w, h);
-      drawChunkZones(ctx, win, tMax, w, h);
+      drawMarginZones(ctx, win, domain, w, h);
+      drawChunkZones(ctx, win, domain, w, h);
 
       const energy = win.energy;
+      const smoothed = win.smoothedEnergy;
       const thr = win.localThreshold;
       const yMax = Math.max(...energy) || 1;
 
-      function plot(data, color, lw) {
+      function plot(data, color, lw, alpha) {
         ctx.strokeStyle = color;
         ctx.lineWidth = lw;
+        ctx.globalAlpha = alpha === undefined ? 1 : alpha;
         ctx.beginPath();
         for (let i = 0; i < data.length; i++) {
-          const x = timeToX(win.frameTimes[i], tMax, w);
+          const x = timeToX(win.frameTimes[i], domain, w);
           const y = h - (data[i] / yMax) * (h - 6) - 3;
           if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
         ctx.stroke();
+        ctx.globalAlpha = 1;
       }
-      plot(thr, "#f0c040", 1);
-      plot(energy, "#00d2a0", 1.2);
-      drawDroppedMarkers(ctx, win, tMax, w, h);
-      drawFocusMarker(ctx, win, tMax, w, h);
+      // Raw RMS energy: dim, in the background — only used to pick the exact
+      // peak frame inside a silence region, not to decide the mask itself.
+      plot(energy, "#00d2a0", 1, 0.35);
+      // Smoothed energy: what's actually compared to the threshold below to
+      // decide silence (see _compute_silence_mask). Drawn bold on top so you
+      // can read the real mask decision directly off the two curves crossing.
+      plot(smoothed, "#5ec8ff", 1.6);
+      // Local threshold (already includes silence_margin): a frame is silent
+      // when the blue curve is at/below this yellow curve.
+      plot(thr, "#f0c040", 1.2);
+      drawDroppedMarkers(ctx, win, domain, w, h);
+      drawFocusMarker(ctx, win, domain, w, h);
 
       ctx.fillStyle = "rgba(255,255,255,0.3)";
       ctx.font = "9px monospace";
       ctx.fillText(`max=${fmt(yMax, 4)}`, 2, 10);
     }
 
-    function drawSilenceMask(ctx, win, w, h) {
+    function drawSilenceMask(ctx, win, domain, w, h) {
       ctx.fillStyle = BG;
       ctx.fillRect(0, 0, w, h);
-      const tMax = win.frameTimes[win.frameTimes.length - 1] || 1;
-      drawMarginZones(ctx, win, tMax, w, h);
-      drawChunkZones(ctx, win, tMax, w, h);
+      drawMarginZones(ctx, win, domain, w, h);
+      drawChunkZones(ctx, win, domain, w, h);
 
       const data = win.silenceMask;
+      const frameSpan = win.frameTimes.length > 1
+        ? win.frameTimes[1] - win.frameTimes[0]
+        : (getFullT(win) / Math.max(1, data.length));
       ctx.fillStyle = "rgba(240,192,64,0.35)";
       for (let i = 0; i < data.length; i++) {
         if (data[i] > 0.5) {
-          const x = timeToX(win.frameTimes[i], tMax, w);
-          const xw = Math.max(1, w / data.length);
-          ctx.fillRect(x, 0, xw, h);
+          const x0 = timeToX(win.frameTimes[i], domain, w);
+          const x1 = timeToX(win.frameTimes[i] + frameSpan, domain, w);
+          ctx.fillRect(x0, 0, Math.max(1, x1 - x0), h);
         }
       }
-      drawDroppedMarkers(ctx, win, tMax, w, h);
-      drawFocusMarker(ctx, win, tMax, w, h);
+      drawDroppedMarkers(ctx, win, domain, w, h);
+      drawFocusMarker(ctx, win, domain, w, h);
 
       ctx.fillStyle = "rgba(255,255,255,0.3)";
       ctx.font = "9px monospace";
       ctx.fillText("silent", 2, 10);
     }
 
-    function drawSpectrogram(ctx, win, w, h) {
+    function drawSpectrogram(ctx, win, domain, w, h) {
       ctx.fillStyle = BG;
       ctx.fillRect(0, 0, w, h);
       const { data, nFreq, nTime } = win.spectrogram;
-      const cellW = w / nTime;
+      const dur = win.waveformDuration || 1;
       const cellH = h / nFreq;
 
-      for (let f = 0; f < nFreq; f++) {
-        for (let t = 0; t < nTime; t++) {
+      for (let t = 0; t < nTime; t++) {
+        const x0 = timeToX((t / nTime) * dur, domain, w);
+        const x1 = timeToX(((t + 1) / nTime) * dur, domain, w);
+        if (x1 < 0 || x0 > w) continue;
+        for (let f = 0; f < nFreq; f++) {
           const v = data[f * nTime + t];
           if (v < 0.05) continue;
           const intensity = Math.pow(v, 0.6);
           ctx.fillStyle = `rgba(${Math.round(180 * intensity)},${Math.round(200 * intensity)},${Math.round(255 * intensity)},${0.3 + intensity * 0.7})`;
-          ctx.fillRect(t * cellW, (nFreq - 1 - f) * cellH, Math.ceil(cellW), Math.ceil(cellH));
+          ctx.fillRect(x0, (nFreq - 1 - f) * cellH, Math.max(1, x1 - x0), Math.ceil(cellH));
         }
       }
 
-      const tMax = win.waveformDuration || 1;
-      drawChunkZones(ctx, win, tMax, w, h);
-      drawFocusMarker(ctx, win, tMax, w, h);
+      drawChunkZones(ctx, win, domain, w, h);
+      drawFocusMarker(ctx, win, domain, w, h);
     }
 
     // ── Audio players ──────────────────────────────────
@@ -507,8 +548,84 @@
     audioSection.appendChild(buildAudioPlayer(A, "a"));
     audioSection.appendChild(buildAudioPlayer(B, "b"));
 
+    // ── Zoom state (shared across every chart in a column) ─────────────
+    // null domain = full range. Scrolling on any chart in column A or B
+    // zooms every chart in that same column, since they all share the same
+    // time base (seconds relative to the crop start).
+    const zoomDomain = { a: null, b: null };
+    const chartInstances = { a: [], b: [] };
+
+    function getDomain(side) {
+      const win = side === "a" ? A : B;
+      return zoomDomain[side] || { t0: 0, t1: getFullT(win) };
+    }
+
+    function updateZoomLabel(side) {
+      const win = side === "a" ? A : B;
+      const fullT = getFullT(win);
+      const domain = getDomain(side);
+      const zoomed = zoomDomain[side] !== null;
+      const label = document.getElementById(`zoom-label-${side}`);
+      const btn = document.getElementById(`zoom-reset-${side}`);
+      if (label) {
+        label.textContent = zoomed
+          ? `zoom: ${fmt(domain.t0, 2)}s → ${fmt(domain.t1, 2)}s (${fmt(domain.t1 - domain.t0, 2)}s)`
+          : `vue complète (${fmt(fullT, 2)}s)`;
+      }
+      if (btn) btn.disabled = !zoomed;
+    }
+
+    function redrawSide(side) {
+      const win = side === "a" ? A : B;
+      const domain = getDomain(side);
+      for (const inst of chartInstances[side]) {
+        inst.ctx.clearRect(0, 0, inst.w, inst.h);
+        inst.drawFn(inst.ctx, win, domain, inst.w, inst.h);
+      }
+      updateZoomLabel(side);
+    }
+
+    function zoomAt(side, cursorRatio, factor) {
+      const win = side === "a" ? A : B;
+      const fullT = getFullT(win);
+      const domain = getDomain(side);
+      const cursorT = domain.t0 + cursorRatio * (domain.t1 - domain.t0);
+      const minSpan = Math.min(0.5, fullT);
+      let span = Math.max(minSpan, Math.min(fullT, (domain.t1 - domain.t0) * factor));
+      let t0 = cursorT - cursorRatio * span;
+      let t1 = t0 + span;
+      if (t0 < 0) { t0 = 0; t1 = span; }
+      if (t1 > fullT) { t1 = fullT; t0 = fullT - span; }
+      zoomDomain[side] = span >= fullT - 1e-6 ? null : { t0, t1 };
+      redrawSide(side);
+    }
+
+    function resetZoom(side) {
+      zoomDomain[side] = null;
+      redrawSide(side);
+    }
+
     // ── Build all chart rows ───────────────────────────
     const chartsEl = document.getElementById("charts-section");
+
+    function addZoomControls() {
+      const row = document.createElement("div");
+      row.className = "chart-row";
+      chartsEl.appendChild(row);
+      for (const side of ["a", "b"]) {
+        const panel = document.createElement("div");
+        panel.className = `chart-container zoom-panel side-${side}`;
+        panel.innerHTML = `
+          <span class="zoom-info" id="zoom-label-${side}"></span>
+          <button class="zoom-reset-btn" id="zoom-reset-${side}" disabled>↺ Réinitialiser le zoom</button>
+        `;
+        row.appendChild(panel);
+        panel.querySelector(`#zoom-reset-${side}`).addEventListener("click", () => resetZoom(side));
+      }
+      updateZoomLabel("a");
+      updateZoomLabel("b");
+    }
+    addZoomControls();
 
     function addChartRow(title, drawFn, clickToSeek = false) {
       const row = document.createElement("div");
@@ -534,7 +651,8 @@
         const cw = Math.max(200, Math.round(container.clientWidth - paddingX));
         const ch = title.includes("Spectrogramme") ? SPEC_H : CHART_H;
         const { canvas, ctx, w, h } = createCanvas(cw, ch);
-        drawFn(ctx, win, w, h);
+        drawFn(ctx, win, getDomain(side), w, h);
+        chartInstances[side].push({ ctx, w, h, drawFn });
 
         const wrapper = document.createElement("div");
         wrapper.className = "canvas-wrapper";
@@ -553,7 +671,8 @@
             if (!audio.duration) return;
             const rect = wrapper.getBoundingClientRect();
             const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-            audio.currentTime = ratio * audio.duration;
+            const domain = getDomain(side);
+            audio.currentTime = Math.max(0, Math.min(audio.duration, domain.t0 + ratio * (domain.t1 - domain.t0)));
           }
           let dragging = false;
           wrapper.addEventListener("mousedown", (e) => { dragging = true; seek(e); });
@@ -561,13 +680,25 @@
           window.addEventListener("mouseup", () => { dragging = false; });
         }
 
+        // Scroll to zoom (in/out, centered on the cursor), applied to every
+        // chart in this column since they share the same time base.
+        wrapper.addEventListener("wheel", (e) => {
+          e.preventDefault();
+          const rect = wrapper.getBoundingClientRect();
+          const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+          const factor = e.deltaY < 0 ? 0.8 : 1.25;
+          zoomAt(side, ratio, factor);
+        }, { passive: false });
+        // Double-click to reset zoom for this column.
+        wrapper.addEventListener("dblclick", () => resetZoom(side));
+
         container.appendChild(wrapper);
       }
     }
 
     addChartRow("Forme d'onde + chunks", drawWaveform, true);
     addChartRow("Spectrogramme + frontières", drawSpectrogram);
-    addChartRow("Énergie (RMS) + seuil de silence local", drawEnergy);
+    addChartRow("Énergie brute vs lissée + seuil de silence local", drawEnergy);
     addChartRow("Masque de silence", drawSilenceMask);
 
     // ── Tables: candidates + chunks ─────────────────────

@@ -37,7 +37,7 @@ poetry run pytest my_dbt_project/pytest_tests -k metabase_query      # requêtes
 
 ## Synchronisation avec Metabase
 
-Le flow Kestra `quotaclimat/metabase-sync` (`infrastructure/kestra/flows/main_quotaclimat_metabasesync.yaml`) met à jour les questions du manifeste. Il tourne dans `main-pipeline` juste après `barometre`, donc après dbt ; on peut aussi le lancer à la main. Dans `main-pipeline`, son échec ne bloque pas la suite : l'exécution passe en avertissement (WARNING). Il utilise l'image `quotaclimat_base` construite sur `main`, donc le SQL de `main`.
+Le flow Kestra `quotaclimat/metabase-sync` (`infrastructure/kestra/flows/main_quotaclimat_metabasesync.yaml`) met à jour les questions du manifeste. Il tourne à la fin de `main-pipeline`, une fois toutes les tables construites ; on peut aussi le lancer à la main. Dans `main-pipeline`, son échec fait seulement passer l'exécution en avertissement (WARNING). Il utilise l'image `quotaclimat_base` construite sur `main`, donc le SQL de `main`.
 
 Pour chaque question, il fait quatre choses :
 - il remplace son SQL par celui du fichier ;

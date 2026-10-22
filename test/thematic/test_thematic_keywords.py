@@ -60,7 +60,7 @@ def _kw_df(rows):
     """rows = [(id, channel, start, plaintext)]"""
     return pd.DataFrame([
         {"id": i, "channel_name": c, "start": s, "plaintext": p,
-         "keywords": "inondation", "themes": "changement_climatique_constat"}
+         "keywords_found": "inondation", "themes": "changement_climatique_constat"}
         for i, c, s, p in rows
     ])
 
@@ -175,9 +175,9 @@ def env(con, monkeypatch, tmp_path):
 
 # ───────────────────────── read_barometre_keywords ─────────────────────────
 def test_read_barometre_keywords_dedups_keywords_and_themes(con):
-    """Verify that a word present with several themes appears only once in keywords,
+    """Verify that a word present with several themes appears only once in keywords_found,
     that themes lists the distinct themes sorted (direct and _indirectes), and that a searched
-    word with only _indirectes themes still appears in keywords."""
+    word with only _indirectes themes still appears in keywords_found."""
     _add_kw(con, "a", "tf1", "2025-03-10 10:00:00", "pa", [
         ("inondation", "changement_climatique_constat_indirectes"),
         ("inondation", "changement_climatique_constat"),
@@ -192,11 +192,11 @@ def test_read_barometre_keywords_dedups_keywords_and_themes(con):
 
     out = _read(con, ["inondation", "crue"]).set_index("id")
 
-    assert out.loc["a", "keywords"] == "inondation"
+    assert out.loc["a", "keywords_found"] == "inondation"
     assert out.loc["a", "themes"] == "changement_climatique_constat,changement_climatique_constat_indirectes"
-    assert out.loc["b", "keywords"] == "crue"
+    assert out.loc["b", "keywords_found"] == "crue"
     assert out.loc["b", "themes"] == "adaptation_climatique_solutions_indirectes"
-    assert out.loc["c", "keywords"] == "crue,inondation"
+    assert out.loc["c", "keywords_found"] == "crue,inondation"
     assert out.loc["c", "themes"] == "adaptation_climatique_solutions_indirectes,changement_climatique_constat"
 
 
@@ -267,7 +267,7 @@ def test_extract_adjacent_chunks_day_flags_thematic_true_and_neighbors_false():
     for neighbour in ("t2", "t3"):
         assert bool(out.loc[neighbour, "thematic_chunk"]) is False
         assert pd.isna(out.loc[neighbour, "source_keywords_id"])
-        assert pd.isna(out.loc[neighbour, "keywords"])
+        assert pd.isna(out.loc[neighbour, "keywords_found"])
         assert pd.isna(out.loc[neighbour, "themes"])
 
 
@@ -281,7 +281,7 @@ def test_extract_adjacent_chunks_day_output_columns_id_format_and_title():
 
     assert set(out.columns) == {
         "this_id", "channel_name", "channel_title", "start", "thematic_chunk",
-        "source_keywords_id", "keywords", "themes", "plaintext",
+        "source_keywords_id", "keywords_found", "themes", "plaintext",
     }
     assert len(out.columns) == 9
     assert set(out["this_id"]) == {

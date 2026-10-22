@@ -89,9 +89,9 @@ A spreadsheet readable by anyone is refused, checked in two ways before reading 
 To use a reference table in a model, declare it as a dbt source; `source_or_empty` (`macros/`) lets a model build with an empty table where the reference data is not loaded.
 
 ### Access grants (`+grants` in `dbt_project.yml`)
-`analytics`/`dashboards`/`advertising` models grant `select` conditionally (`advertising` uses the same list as `analytics`):
-* **Regular perimeter** (`EXTENDED_PERIMETER` unset/`false`): nothing granted when `DBT_ENV` is unset/`dev`; `rrs-read-dev`, `rrs-read-prod` and `climateguard-reader-user` (only `climateguard-reader-user` for `dashboards`) granted when `DBT_ENV=prod`.
-* **Extended perimeter** (`EXTENDED_PERIMETER=true`, see the root README's "Extended perimeter (Droit à l'info)" section): the `extended-perimeter` database only has `rrs-read-{dev,prod}` users (no `climateguard-reader-user`), so only the `rrs-read` user matching `DBT_ENV` is granted `select`.
+`analytics`/`dashboards`/`advertising`/`homepage`/`metadata` models and the `seeds/ref` and `seeds/themes` seeds grant `select` conditionally (`advertising`, `homepage`, `metadata` and the seeds use the same list as `analytics`):
+* **Regular perimeter** (`EXTENDED_PERIMETER` unset/`false`): `rrs-read-dev` and `metabase-analytics-dev` are granted when `DBT_ENV` is unset/`dev`; `rrs-read-dev`, `rrs-read-prod`, `climateguard-reader-user` and `metabase-analytics-prod` are granted when `DBT_ENV=prod` (only `climateguard-reader-user` and `metabase-analytics-prod` for `dashboards`).
+* **Extended perimeter** (`EXTENDED_PERIMETER=true`, see the root README's "Extended perimeter (Droit à l'info)" section): the `extended-perimeter` database only has `rrs-read-{dev,prod}` users (no `climateguard-reader-user`, no `metabase-analytics-*`), so only the `rrs-read` user matching `DBT_ENV` is granted `select`.
 
 ## Seeds
 `seeds/fixtures/*.csv` are snapshots of the source tables used to have deterministic local/test data. They are loaded with `dbt seed --select <name>` (see the root README for the exact commands used in the `testconsole`/analytics workflows).

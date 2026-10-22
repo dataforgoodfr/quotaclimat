@@ -1,0 +1,411 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Orchestrator Infrastructure Topology",
+    "output": "docs/diagrams/infra-topology.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "git@github.com:dataforgoodfr/quotaclimat.git",
+      "revision": "3f76ffc8d3bdee81893c71c3cb7e127258eb08b6",
+      "link_mode": "local-only"
+    }
+  },
+  "components": [
+    {
+      "id": "ops",
+      "type": "external",
+      "label": "Operators",
+      "sublabel": "browser + SSH",
+      "pos": [
+        40,
+        340
+      ],
+      "size": [
+        112,
+        60
+      ],
+      "sources": [
+        {
+          "path": "infrastructure/live/orchestrator/template/instance.tf",
+          "line": 14,
+          "end_line": 22,
+          "label": "SSH keys"
+        }
+      ]
+    },
+    {
+      "id": "traefik",
+      "type": "security",
+      "label": "Traefik",
+      "sublabel": "reverse proxy, Let's Encrypt TLS",
+      "pos": [
+        228,
+        340
+      ],
+      "size": [
+        140,
+        60
+      ],
+      "tag": "orchestrator host",
+      "sources": [
+        {
+          "path": "infrastructure/compose/traefik/docker-compose.yml",
+          "line": 1,
+          "end_line": 49,
+          "label": "traefik service"
+        }
+      ]
+    },
+    {
+      "id": "kestra",
+      "type": "backend",
+      "label": "Kestra",
+      "sublabel": "workflow orchestrator v1.3",
+      "pos": [
+        428,
+        200
+      ],
+      "size": [
+        150,
+        62
+      ],
+      "tag": "orchestrator host",
+      "sources": [
+        {
+          "path": "infrastructure/compose/kestra/docker-compose.yml.j2",
+          "line": 1,
+          "end_line": 50,
+          "label": "kestra service"
+        }
+      ]
+    },
+    {
+      "id": "glitchtip",
+      "type": "backend",
+      "label": "GlitchTip",
+      "sublabel": "error tracking",
+      "pos": [
+        428,
+        480
+      ],
+      "size": [
+        150,
+        62
+      ],
+      "tag": "orchestrator host",
+      "sources": [
+        {
+          "path": "infrastructure/compose/glitchtip/docker-compose.yml",
+          "line": 1,
+          "end_line": 61,
+          "label": "glitchtip services"
+        }
+      ]
+    },
+    {
+      "id": "job_containers",
+      "type": "backend",
+      "label": "Flow task containers",
+      "sublabel": "docker.plugin.Run via docker.sock",
+      "pos": [
+        628,
+        340
+      ],
+      "size": [
+        176,
+        64
+      ],
+      "tag": "orchestrator host",
+      "sources": [
+        {
+          "path": "infrastructure/compose/kestra/docker-compose.yml.j2",
+          "line": 61,
+          "label": "docker.sock mount"
+        },
+        {
+          "path": "docs/kestra_flows.md",
+          "line": 46,
+          "end_line": 53,
+          "label": "how a task runs"
+        }
+      ]
+    },
+    {
+      "id": "registry",
+      "type": "cloud",
+      "label": "Container Registry",
+      "sublabel": "quotaclimat_base, rrs-base, rrs-pulsar",
+      "pos": [
+        628,
+        120
+      ],
+      "size": [
+        186,
+        60
+      ],
+      "sources": [
+        {
+          "path": "docs/kestra_flows.md",
+          "line": 44,
+          "end_line": 53,
+          "label": "image table"
+        },
+        {
+          "path": "infrastructure/Readme.md",
+          "line": 310,
+          "label": "registry namespace"
+        }
+      ]
+    },
+    {
+      "id": "serverless_jobs",
+      "type": "cloud",
+      "label": "Serverless Jobs",
+      "sublabel": "rrs jobs, i18n misinfo",
+      "pos": [
+        628,
+        580
+      ],
+      "size": [
+        160,
+        62
+      ],
+      "sources": [
+        {
+          "path": "infrastructure/Readme.md",
+          "line": 306,
+          "end_line": 309,
+          "label": "rrs job definitions"
+        },
+        {
+          "path": "docs/kestra_flows.md",
+          "line": 257,
+          "label": "i18n trigger_job"
+        }
+      ]
+    },
+    {
+      "id": "shared_pg",
+      "type": "database",
+      "label": "Managed Postgres `rdb-poc`",
+      "sublabel": "kestra \u00b7 glitchtip \u00b7 barometre DBs",
+      "pos": [
+        878,
+        200
+      ],
+      "size": [
+        180,
+        64
+      ],
+      "sources": [
+        {
+          "path": "infrastructure/live/orchestrator/template/database.tf",
+          "line": 7,
+          "end_line": 31,
+          "label": "kestra db"
+        },
+        {
+          "path": "infrastructure/live/orchestrator/prod/terragrunt.hcl",
+          "line": 12,
+          "end_line": 14,
+          "label": "reuse barometre instance"
+        }
+      ]
+    },
+    {
+      "id": "rrs_pg",
+      "type": "database",
+      "label": "RRS Postgres instance",
+      "sublabel": "rrs \u00b7 extended-perimeter DBs",
+      "pos": [
+        878,
+        460
+      ],
+      "size": [
+        180,
+        64
+      ],
+      "sources": [
+        {
+          "path": "infrastructure/Readme.md",
+          "line": 288,
+          "end_line": 298,
+          "label": "rrs database + metabase user"
+        }
+      ]
+    },
+    {
+      "id": "downstream",
+      "type": "external",
+      "label": "Pipeline data & APIs",
+      "sublabel": "S3, Mediatree, LLM APIs, Label Studio",
+      "pos": [
+        1100,
+        340
+      ],
+      "size": [
+        190,
+        64
+      ],
+      "sources": [
+        {
+          "path": "docs/kestra_flows.md",
+          "line": 63,
+          "end_line": 82,
+          "label": "technologies table"
+        }
+      ]
+    },
+    {
+      "id": "metabase",
+      "type": "frontend",
+      "label": "Metabase",
+      "sublabel": "BI dashboards, readonly users",
+      "pos": [
+        878,
+        50
+      ],
+      "size": [
+        160,
+        58
+      ],
+      "sources": [
+        {
+          "path": "infrastructure/Readme.md",
+          "line": 273,
+          "end_line": 274,
+          "label": "metabase_analytics user"
+        },
+        {
+          "path": "metabase/README.md",
+          "line": 1,
+          "end_line": 9,
+          "label": "versioned Metabase questions"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Scaleway Elastic Metal EM-A610R-NVMe \u00b7 orchestrator project (fr-par-2)",
+      "wraps": [
+        "traefik",
+        "kestra",
+        "glitchtip",
+        "job_containers"
+      ],
+      "pad": 22
+    }
+  ],
+  "connections": [
+    {
+      "from": "ops",
+      "to": "traefik",
+      "label": "HTTPS (dashboard/UI)",
+      "variant": "emphasis"
+    },
+    {
+      "from": "traefik",
+      "to": "kestra",
+      "label": "reverse proxy :8080"
+    },
+    {
+      "from": "traefik",
+      "to": "glitchtip",
+      "label": "reverse proxy :8000"
+    },
+    {
+      "from": "kestra",
+      "to": "shared_pg",
+      "label": "JDBC, kestra db"
+    },
+    {
+      "from": "glitchtip",
+      "to": "shared_pg",
+      "label": "Django ORM, glitchtip db"
+    },
+    {
+      "from": "kestra",
+      "to": "job_containers",
+      "label": "spawns via docker.sock",
+      "variant": "dashed"
+    },
+    {
+      "from": "job_containers",
+      "to": "registry",
+      "label": "docker pull (ALWAYS)",
+      "variant": "dashed"
+    },
+    {
+      "from": "job_containers",
+      "to": "serverless_jobs",
+      "label": "HTTP trigger (i18n only)",
+      "variant": "dashed"
+    },
+    {
+      "from": "job_containers",
+      "to": "shared_pg",
+      "label": "reads/writes barometre"
+    },
+    {
+      "from": "job_containers",
+      "to": "rrs_pg",
+      "label": "reads/writes rrs / ext-perimeter"
+    },
+    {
+      "from": "job_containers",
+      "to": "downstream",
+      "label": "parquet, transcripts, LLM calls"
+    },
+    {
+      "from": "serverless_jobs",
+      "to": "shared_pg",
+      "label": "barometre read (rrs_read)",
+      "variant": "dashed"
+    },
+    {
+      "from": "serverless_jobs",
+      "to": "rrs_pg",
+      "label": "migrate/clustering/import",
+      "variant": "dashed"
+    },
+    {
+      "from": "metabase",
+      "to": "shared_pg",
+      "label": "readonly SQL"
+    },
+    {
+      "from": "metabase",
+      "to": "rrs_pg",
+      "label": "readonly SQL"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "amber",
+      "title": "Single-host bottleneck",
+      "items": [
+        "Traefik, Kestra, GlitchTip and every daily flow's task containers all run on one shared Elastic Metal server",
+        "No dev/prod split for the orchestrator itself: Kestra uses namespaces, GlitchTip uses projects, on the same host"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Two compute paths",
+      "items": [
+        "Most daily flow tasks run as sibling containers via the host's docker.sock (io.kestra.plugin.docker.Run)",
+        "RRS migrate/clustering/import and i18n misinformation jobs run as separate Scaleway Serverless Jobs instead"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Shared Postgres instance",
+      "items": [
+        "`rdb-poc` hosts the kestra and glitchtip databases alongside barometre's own database",
+        "RRS and extended-perimeter live on a separate RDB instance"
+      ]
+    }
+  ]
+}

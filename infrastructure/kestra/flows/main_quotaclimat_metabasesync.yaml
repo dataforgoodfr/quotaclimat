@@ -7,8 +7,8 @@ description: |
   quotaclimat_base image built on main. By default (force), a question whose
   SQL was edited in Metabase since its last synchronization is overwritten too,
   with the difference in the logs; without force it is left as it is and fails
-  the run. Runs in main-pipeline after barometre (the queries read the dbt
-  tables), or by hand.
+  the run. Runs at the end of main-pipeline (the queries read the dbt tables),
+  or by hand.
 
 labels:
   pipeline: ome

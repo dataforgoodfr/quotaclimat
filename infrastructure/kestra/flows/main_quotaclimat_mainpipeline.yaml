@@ -4,14 +4,13 @@ namespace: quotaclimat
 description: |
   Main pipeline, twice daily (01:10 and 12:30). Runs the extended perimeter
   pipeline, processes it in RRS (without clustering), runs the standard OME
-  `barometre` pipeline, updates the Metabase questions versioned in metabase/
-  (`metabase-sync`, after the dbt tables they read), then the RRS flows on the
-  barometre source.
-  Each step is a subflow that must succeed before the next one starts, except
-  `metabase-sync`: its failure (Metabase down, a table unknown to Metabase)
-  marks the run as WARNING without stopping the RRS steps. It runs with force:
-  SQL edited in Metabase is overwritten by the versioned one (differences in
-  its logs).
+  `barometre` pipeline, then the RRS flows on the barometre source, and last
+  updates the Metabase questions versioned in metabase/ (`metabase-sync`,
+  once all the tables they read are built).
+  Each step is a subflow that must succeed before the next one starts.
+  `metabase-sync` failing (Metabase down, a table unknown to Metabase) only
+  marks the run as WARNING. It runs with force: SQL edited in Metabase is
+  overwritten by the versioned one (differences in its logs).
 
 labels:
   pipeline: ome
@@ -99,17 +98,6 @@ tasks:
       days_back: "{{ inputs.days_back }}"
       start_date: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
 
-  - id: metabase_sync
-    type: io.kestra.plugin.core.flow.Subflow
-    namespace: quotaclimat
-    flowId: metabase-sync
-    wait: true
-    transmitFailed: true
-    allowFailure: true
-    inputs:
-      apply: true
-      force: true
-
   - id: rrs_climate
     runIf: "{{ inputs.with_rrs }}"
     type: io.kestra.plugin.core.flow.Subflow
@@ -133,3 +121,15 @@ tasks:
     flowId: rrs-pollution
     wait: true
     transmitFailed: true
+
+  # last: the Metabase queries read tables of all the previous steps
+  - id: metabase_sync
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: quotaclimat
+    flowId: metabase-sync
+    wait: true
+    transmitFailed: true
+    allowFailure: true
+    inputs:
+      apply: true
+      force: true

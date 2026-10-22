@@ -151,6 +151,7 @@ jobs:
           POSTGRES_PORT: 5432
           DBT_PROJECT_DIR: my_dbt_project
           DBT_PROFILES_DIR: my_dbt_project/dbt
+          DBT_ENABLE_FIXTURE_SEEDS: "true"
 
   test_everything_else:
     needs: build

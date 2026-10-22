@@ -66,7 +66,7 @@ from rrs.rag.agent_common import (
     extract_verdict,
     strip_tag,
 )
-from rrs.rag.s3_sync import BUCKET_NAME, download_prefix, get_s3_client
+from rrs.rag.s3_sync import EMBEDDINGS_BUCKET_NAME, download_prefix, get_s3_client
 from rrs.utils.generate_id import get_consistent_hash
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -77,6 +77,15 @@ REGION = "fr-par"
 DEFAULT_SUBJECT_NAME = "environmental_health"
 DEFAULT_S3_PREFIX = "expert_models"
 DEFAULT_MODEL = "mistral-small-2603"
+
+# Media/transcript bucket (deliberately distinct from EMBEDDINGS_BUCKET_NAME
+# above): segments loaded for a given subject/date range can come from either
+# the barometre DB (bucket BUCKET_NAME, "mediatree") or the extended-perimeter
+# DB (any other bucket) — both credential pairs are configured as duckdb
+# secrets, BUCKET/BUCKET_SECRET scoped to BUCKET_NAME and RRS_BUCKET/
+# RRS_BUCKET_SECRET as the unscoped fallback for everything else, so the
+# actual bucket name doesn't need to be known in advance (see _configure_s3).
+BUCKET_NAME = os.environ.get("BUCKET_NAME")
 
 REFLECTION_HINT = (
     "\n\nAvant chaque appel d'outil, écris dans ta réponse une courte réflexion (2-3 phrases) : "
@@ -116,17 +125,41 @@ def _rrs_dsn() -> str:
 
 
 def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
-    access_key = _get_secret("BUCKET")
-    secret_key = _get_secret("BUCKET_SECRET")
-    bucket_name = os.environ.get("BUCKET_NAME")
+    """Register the extended-perimeter credentials as the default S3 secret,
+    and the barometre (mediatree) credentials as a secret scoped to that one
+    bucket. DuckDB picks whichever secret's scope matches a given path (the
+    more specific scope wins), so segments from either source DB get read
+    with the right credentials without needing to know the extended bucket's
+    actual name in advance."""
     con.execute("INSTALL httpfs; LOAD httpfs;")
+
+    rrs_access_key = _get_secret("RRS_BUCKET")
+    rrs_secret_key = _get_secret("RRS_BUCKET_SECRET")
     con.execute(f"""
-        SET s3_region='{REGION}';
-        SET s3_endpoint='s3.{REGION}.scw.cloud';
-        SET s3_access_key_id='{access_key}';
-        SET s3_secret_access_key='{secret_key}';
-        SET s3_url_style='path';
+        CREATE OR REPLACE SECRET rrs_bucket (
+            TYPE S3,
+            KEY_ID '{rrs_access_key}',
+            SECRET '{rrs_secret_key}',
+            REGION '{REGION}',
+            ENDPOINT 's3.{REGION}.scw.cloud',
+            URL_STYLE 'path'
+        );
     """)
+
+    if BUCKET_NAME:
+        access_key = _get_secret("BUCKET")
+        secret_key = _get_secret("BUCKET_SECRET")
+        con.execute(f"""
+            CREATE OR REPLACE SECRET mediatree_bucket (
+                TYPE S3,
+                KEY_ID '{access_key}',
+                SECRET '{secret_key}',
+                REGION '{REGION}',
+                ENDPOINT 's3.{REGION}.scw.cloud',
+                URL_STYLE 'path',
+                SCOPE 's3://{BUCKET_NAME}'
+            );
+        """)
 
 
 def _enrich_with_plaintext(segments: pd.DataFrame) -> pd.DataFrame:
@@ -423,12 +456,12 @@ async def run_agent(
 
 def download_index(subject: str, s3_prefix: str, index_dir: Path) -> None:
     rag_prefix = f"{s3_prefix}/{subject}/rag/"
-    logging.info(f"Downloading RAG index from s3://{BUCKET_NAME}/{rag_prefix} -> {index_dir}...")
+    logging.info(f"Downloading RAG index from s3://{EMBEDDINGS_BUCKET_NAME}/{rag_prefix} -> {index_dir}...")
     s3 = get_s3_client()
-    downloaded = download_prefix(s3, BUCKET_NAME, rag_prefix, index_dir)
+    downloaded = download_prefix(s3, EMBEDDINGS_BUCKET_NAME, rag_prefix, index_dir)
     if not downloaded:
         raise SystemExit(
-            f"No index found at s3://{BUCKET_NAME}/{rag_prefix}. Run rrs.rag.build_embeddings first."
+            f"No index found at s3://{EMBEDDINGS_BUCKET_NAME}/{rag_prefix}. Run rrs.rag.build_embeddings first."
         )
     logging.info(f"  {len(downloaded)} file(s) downloaded.")
 

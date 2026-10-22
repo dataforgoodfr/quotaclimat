@@ -46,6 +46,10 @@ SEARCH_MAX_RESULTS = int(os.environ.get("INPI_SEARCH_MAX_RESULTS", "1000"))
 # of a run and the quota is about 100 requests (x-rate-limit-remaining 87 at the start of a test run)
 MAX_NOTICES = int(os.environ.get("INPI_MAX_NOTICES", "3"))
 REMAINING_HEADER = "x-rate-limit-remaining"
+# answers of a notice the search lists but the gateway does not give (EU19429104: HTTP 403 with the HTML
+# page of the gateway, the search of the same brand having just worked): the notice is skipped, the other
+# ones of the brand are still read
+UNREADABLE_NOTICE_STATUSES = {403, 404}
 
 # current status of a trademark still in force (MarkCurrentStatusCode, as name_key: the API returns either
 # the label "Marque enregistrée" or the enum value "MARQUE_ENREGISTRÉE")
@@ -403,7 +407,13 @@ class InpiClient:
             alive = [r for r in exact if is_alive(r.status)]
             notices = []
             for r in alive[:max_notices]:
-                notice = self.notice(r.notice_number)
+                try:
+                    notice = self.notice(r.notice_number)
+                except requests.HTTPError as e:
+                    if getattr(e.response, "status_code", None) not in UNREADABLE_NOTICE_STATUSES:
+                        raise
+                    logging.warning("INPI %r: notice %s not readable, skipped: %s", brand, r.notice_number, e)
+                    continue
                 notice.notice_number = r.notice_number
                 if not notice.holder_name and r.applicant:
                     # some EU notices are update records with the holder identifier only: the holder of

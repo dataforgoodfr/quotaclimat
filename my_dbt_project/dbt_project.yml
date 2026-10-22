@@ -55,7 +55,7 @@ models:
     homepage:
       +materialized: view
 
-# delete tables when seed are executed to have a clean start
+
 seeds:
   my_dbt_project:
     # reference data downloaded from Google Sheets (quotaclimat/data_ingestion/external_sources),
@@ -72,153 +72,14 @@ seeds:
       +schema: public
       +grants: *analytics_grants
 
-    keywords:
-      table: keywords
-      enabled: "{{ target.name != 'prod' }}" # safe guard
-      pre-hook:
-        - >
-          {% if target.name != 'prod' %}
-          DO $$
-          BEGIN
-            IF EXISTS (
-              SELECT FROM information_schema.tables 
-              WHERE table_schema = 'public' 
-              AND table_name = 'keywords'
-            ) THEN
-              EXECUTE 'DELETE FROM public.keywords';
-            END IF;
-          END
-          $$;
-          {% else %}
-          -- safeguard: skip DELETE in prod
-          {% endif %}
-      post-hook:
-       - "ALTER TABLE keywords ADD PRIMARY KEY (id,start)"
-       - "ALTER TABLE keywords ALTER COLUMN program_metadata_id TYPE text"
-
-    program_metadata:
-        table: program_metadata
-        enabled: "{{ target.name != 'prod' }}" # safe guard
-        pre-hook:
-          - >
-            {% if target.name != 'prod' %}
-            DO $$
-            BEGIN
-              IF EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                AND table_name = 'program_metadata'
-              ) THEN
-                EXECUTE 'DELETE FROM public.program_metadata';
-              END IF;
-            END
-            $$;
-            {% else %}
-            -- safeguard: skip DELETE in prod
-            {% endif %}
-
-    dictionary:
-        table: dictionary
-        enabled: "{{ target.name != 'prod' }}" # safe guard
-        pre-hook:
-          - >
-            {% if target.name != 'prod' %}
-            DO $$
-            BEGIN
-              IF EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                AND table_name = 'dictionary'
-              ) THEN
-                EXECUTE 'DELETE FROM public.dictionary';
-              END IF;
-            END
-            $$;
-            {% else %}
-            -- safeguard: skip DELETE in prod
-            {% endif %}
-
-    keyword_macro_category:
-        table: keyword_macro_category
-        enabled: "{{ target.name != 'prod' }}" # safe guard
-        pre-hook:
-          - >
-            {% if target.name != 'prod' %}
-            DO $$
-            BEGIN
-              IF EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                AND table_name = 'keyword_macro_category'
-              ) THEN
-                EXECUTE 'DELETE FROM public.keyword_macro_category';
-              END IF;
-            END
-            $$;
-            {% else %}
-            -- safeguard: skip DELETE in prod
-            {% endif %}
-
-    time_monitored:
-        table: time_monitored
-        enabled: "{{ target.name != 'prod' }}" # safe guard
-        pre-hook:
-          - >
-            {% if target.name != 'prod' %}
-            DO $$
-            BEGIN
-              IF EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                AND table_name = 'time_monitored'
-              ) THEN
-                EXECUTE 'DELETE FROM public.time_monitored';
-              END IF;
-            END
-            $$;
-            {% else %}
-            -- safeguard: skip DELETE in prod
-            {% endif %}
-
-    labelstudio_task_aggregate:
-        table: labelstudio_task_aggregate
-        enabled: "{{ target.name != 'prod' }}" # safe guard
-        pre-hook:
-          - >
-            {% if target.name != 'prod' %}
-            DO $$
-            BEGIN
-              IF EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                AND table_name = 'labelstudio_task_aggregate'
-              ) THEN
-                EXECUTE 'DELETE FROM public.labelstudio_task_aggregate';
-              END IF;
-            END
-            $$;
-            {% else %}
-            -- safeguard: skip DELETE in prod
-            {% endif %}
-    
-    
-    labelstudio_task_completion_aggregate:
-        table: labelstudio_task_completion_aggregate
-        enabled: "{{ target.name != 'prod' }}" # safe guard
-        pre-hook:
-          - >
-            {% if target.name != 'prod' %}
-            DO $$
-            BEGIN
-              IF EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_schema = 'public' 
-                AND table_name = 'labelstudio_task_completion_aggregate'
-              ) THEN
-                EXECUTE 'DELETE FROM public.labelstudio_task_completion_aggregate';
-              END IF;
-            END
-            $$;
-            {% else %}
-            -- safeguard: skip DELETE in prod
-            {% endif %}
+    # snapshots of the source tables for local/test data only. They have the names of the production tables
+    # (public.keywords, public.program_metadata...), so seeding them replaces those tables (drop ... cascade with
+    # --full-refresh). Disabled unless DBT_ENABLE_FIXTURE_SEEDS=true (docker compose test/testconsole, CI): a
+    # `dbt seed` or `dbt build` without --select against the production database only loads seeds/ref and seeds/themes.
+    # Fail closed: the target name does not tell production apart (production runs with the `docker` target).
+    fixtures:
+      +enabled: "{{ env_var('DBT_ENABLE_FIXTURE_SEEDS', 'false') == 'true' }}"
+      keywords:
+        post-hook:
+          - "ALTER TABLE keywords ADD PRIMARY KEY (id,start)"
+          - "ALTER TABLE keywords ALTER COLUMN program_metadata_id TYPE text"

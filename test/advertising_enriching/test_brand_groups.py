@@ -348,6 +348,39 @@ def search_page(marks: list[tuple[str, str]], count: int) -> bytes:
     return f"<trademarkSearch><metadata><count>{count}</count></metadata><results>{results}</results></trademarkSearch>".encode()
 
 
+def test_brand_notices_skip_unreadable_notice(monkeypatch):
+    """A notice the gateway refuses (HTTP 403, seen on EU19429104) is skipped, the other ones are read."""
+    session = FakeInpiSession()
+
+    def request(method, url, timeout, **kwargs):
+        if url.endswith("/search"):
+            return FakeResponse(search_page([("1", "ACME"), ("5189659", "ACME")], count=2))
+        if url.endswith("/notice/FR1"):
+            return FakeResponse(b"<!DOCTYPE html><html><head><title>gateway</title>", status_code=403)
+        return FakeResponse((ASSETS / "inpi_notice_FR5189659.xml").read_bytes())
+
+    monkeypatch.setattr(session, "request", request)
+    client = InpiClient("user", "password", delay_sec=0, session=session)
+    assert [n.notice_number for n in client.brand_notices("Acme")] == ["FR5189659"]
+
+
+def test_brand_notices_other_notice_errors_raised(monkeypatch):
+    session = FakeInpiSession()
+
+    def request(method, url, timeout, **kwargs):
+        if url.endswith("/search"):
+            return FakeResponse(search_page([("1", "ACME")], count=1))
+        return FakeResponse(status_code=500)
+
+    monkeypatch.setattr(session, "request", request)
+    client = InpiClient("user", "password", delay_sec=0, session=session)
+    try:
+        client.brand_notices("Acme")
+        raise AssertionError("no error raised")
+    except requests.HTTPError as e:
+        assert e.response.status_code == 500
+
+
 def test_brand_notices_european_and_international_when_no_french_one(monkeypatch):
     """VOLKSWAGEN: no French trademark, international (WO, without status) and European (EU) ones,
     the answer below is the real one, shortened."""
@@ -648,8 +681,11 @@ def test_print_rows_tab_separated():
     run_module.print_rows([{"marque": "Acme", "entreprise": "ACME\tSAS", "commentaires": "ligne 1\nligne 2", "x": "ignored"}], out)
     lines = out.getvalue().splitlines()
     assert lines[0] == "----- BRAND GROUPS PROPOSALS (tab-separated) -----"
-    assert lines[1].split("\t") == ["marque", "entreprise", "societe_mere_ultime", "e_statut", "smu_statut", "commentaires"]
-    assert lines[2].split("\t") == ["Acme", "ACME SAS", "", "", "", "ligne 1 ligne 2"]
+    assert lines[1].split("\t") == [
+        "marque", "entreprise", "e_statut", "societe_mere_ultime", "smu_statut", "actionnaire_maj_ultime", "amu_statut",
+        "commentaires",
+    ]
+    assert lines[2].split("\t") == ["Acme", "ACME SAS", "", "", "", "", "", "ligne 1 ligne 2"]
     assert lines[3] == "----- END OF BRAND GROUPS PROPOSALS -----"
 
 

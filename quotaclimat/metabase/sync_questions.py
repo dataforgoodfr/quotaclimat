@@ -12,6 +12,9 @@ For each question: the SQL text becomes the file's, the variables still in the q
 query are removed; the description gets a line naming the file and the version (hash) of the synchronized SQL.
 A question whose SQL was changed in Metabase since its last synchronization (its SQL no longer matches the
 version in its description, or no version yet) is left as it is and reported, unless --force.
+A table or column of a field filter that Metabase does not know yet (a table just built or moved by dbt) makes the
+script ask Metabase to synchronize the schema of the database, then wait for it (at most SCHEMA_SYNC_TIMEOUT
+seconds); the questions of a query whose field filters cannot be resolved are left out, the others synchronized.
 """
 import argparse
 import difflib
@@ -19,6 +22,7 @@ import logging
 import os
 import re
 import sys
+import time
 import uuid
 
 import requests
@@ -27,6 +31,9 @@ from quotaclimat.metabase.questions import load_queries, read_query, sql_version
 
 MARKER = re.compile(r"^Requête versionnée : metabase/\S+ \(version (\w+)\).*$", re.M)
 PARAMETER_TYPES = {"text": "string/=", "number": "number/=", "date": "date/single", "boolean": "boolean/="}
+# seconds to wait for Metabase to see a table or column after asking it to synchronize the schema
+SCHEMA_SYNC_TIMEOUT = 300
+SCHEMA_SYNC_POLL = 10
 
 
 def marker(file: str, sql: str) -> str:
@@ -190,19 +197,44 @@ class Metabase:
         response.raise_for_status()
         return response.json()
 
+    def post(self, path: str):
+        response = self.session.post(f"{self.url}/api/{path}", timeout=60)
+        response.raise_for_status()
+
+    def _find_field(self, database: int, schema: str, table: str, column: str) -> int | None:
+        tables = [
+            t for t in self.get("table")
+            if t["db_id"] == database and t["schema"] == schema and t["name"] == table
+        ]
+        if len(tables) != 1:
+            return None
+        metadata = self.get(f"table/{tables[0]['id']}/query_metadata")
+        self._fields[(database, schema, table)] = {f["name"]: f["id"] for f in metadata["fields"]}
+        return self._fields[(database, schema, table)].get(column)
+
     def field_id(self, database: int, field: str) -> int:
-        """Id of a column schema.table.column, as synced by Metabase."""
+        """Id of a column schema.table.column, as synced by Metabase. When Metabase does not know it yet, asks it
+        to synchronize the schema of the database (in the background) and waits for the column."""
         schema, table, column = field.split(".")
-        if (database, schema, table) not in self._fields:
-            tables = [
-                t for t in self.get("table")
-                if t["db_id"] == database and t["schema"] == schema and t["name"] == table
-            ]
-            if len(tables) != 1:
-                raise ValueError(f"table {schema}.{table} not found in Metabase database {database}")
-            metadata = self.get(f"table/{tables[0]['id']}/query_metadata")
-            self._fields[(database, schema, table)] = {f["name"]: f["id"] for f in metadata["fields"]}
-        return self._fields[(database, schema, table)][column]
+        known = self._fields.get((database, schema, table), {}).get(column)
+        if known is not None:
+            return known
+        field_id = self._find_field(database, schema, table, column)
+        if field_id is not None:
+            return field_id
+        logging.info(f"{field} inconnue de Metabase : synchronisation du schéma de la base {database}")
+        self.post(f"database/{database}/sync_schema")
+        deadline = time.monotonic() + SCHEMA_SYNC_TIMEOUT
+        while time.monotonic() < deadline:
+            time.sleep(SCHEMA_SYNC_POLL)
+            field_id = self._find_field(database, schema, table, column)
+            if field_id is not None:
+                return field_id
+        raise ValueError(
+            f"{field} toujours inconnue de Metabase (base {database}) {SCHEMA_SYNC_TIMEOUT} s après la demande de "
+            "synchronisation du schéma : vérifier que dbt a construit la table, et la synchronisation dans Metabase "
+            "(Admin > Bases de données)"
+        )
 
 
 def sync(metabase: Metabase, queries: dict, apply: bool, force: bool) -> bool:
@@ -211,11 +243,16 @@ def sync(metabase: Metabase, queries: dict, apply: bool, force: bool) -> bool:
     for file, query in queries.items():
         sql = read_query(file)
         variables = query["variables"]
-        field_ids = {
-            name: metabase.field_id(query["database"], v["field"])
-            for name, v in variables.items()
-            if v["type"] == "dimension" and query["questions"]
-        }
+        try:
+            field_ids = {
+                name: metabase.field_id(query["database"], v["field"])
+                for name, v in variables.items()
+                if v["type"] == "dimension" and query["questions"]
+            }
+        except (requests.RequestException, ValueError) as error:
+            logging.error(f"{file} : questions {query['questions']} laissées telles quelles : {error}")
+            ok = False
+            continue
         for card_id in query["questions"]:
             try:
                 card = metabase.get(f"card/{card_id}")

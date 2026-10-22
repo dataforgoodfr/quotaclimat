@@ -13,11 +13,8 @@ DESTINATION_TABLE_PATTERN = (
 
 ### KEYWORDS ###
 def get_keywords(yml_file: str, thematic: str, media_type: str, language: str) -> list[str]:
-    """Returns the keywords of a thematic as a flat, deduplicated list.
-
-    media_type: None -> all categories merged; otherwise only that category
-    (e.g. "audiovisuel" or "presse").
-    """
+    """Returns the keywords of a thematic, as declared under
+    [thematic]["keywords"][language][media_type] (media_type: "audiovisuel" or "presse")."""
     with open(yml_file, "r", encoding="utf-8") as f:
         kw = yaml.safe_load(f)
         
@@ -28,17 +25,18 @@ def get_keywords(yml_file: str, thematic: str, media_type: str, language: str) -
             f"Missing theme '{thematic}' {yml_file}. "
             f"Available keys : {list(kw.keys())}"
         )
-    if language not in kw[thematic]:
+    keywords_by_language = kw[thematic].get("keywords") or {}
+    if language not in keywords_by_language:
         raise KeyError(
-            f"Missing theme '{thematic}' {yml_file}. "
-            f"Available keys : {list(kw[thematic].keys())}"
+            f"Missing language '{language}' in '{thematic}' / keywords {yml_file}. "
+            f"Available keys : {list(keywords_by_language.keys())}"
         )
-    if media_type not in kw[thematic][language]:
+    if media_type not in keywords_by_language[language]:
         raise KeyError(
-            f"Missing theme '{thematic}' {yml_file}. "
-            f"Available keys : {list(kw[thematic][language].keys())}"
+            f"Missing media type '{media_type}' in '{thematic}' / keywords / '{language}' {yml_file}. "
+            f"Available keys : {list(keywords_by_language[language].keys())}"
         )
-    return kw[thematic][language][media_type]
+    return keywords_by_language[language][media_type]
 
 
 ### PERIODS ###

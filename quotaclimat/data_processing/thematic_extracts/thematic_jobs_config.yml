@@ -1,80 +1,109 @@
+### Configuration of the thematic extract jobs (thematic_keywords.py and thematic_articles.py)
+### One entry per thematic (the THEMATIC env variable), with:
+### - periodes: [country][list of periods] to extract, one id per period.
+###     - country: one of the COUNTRIES keys of the jobs (france, belgium, belgium_flanders)
+###     - id: [a-z0-9_], written in the period column of the destination table
+###     - start (included) / end (excluded): YYYY-MM-DD, unquoted
+###     - periods of a country must not overlap
+###     - every period goes into one table per media and country: {thematic}_keywords_{country}, {thematic}_articles_{country}
+###     - adding a period: MODE=resume. Changing the dates or id of an ingested period: MODE=reset
+### - keywords: [language][audiovisuel|presse] keywords to look for
+###     - audiovisuel: exact match on public.keywords.keywords_with_timestamp (spelling and accents as in that column)
+###     - presse: whole expressions searched in factiva title, snippet and body, after normalization on both sides
+###       (lower, French accents and œ/æ removed, apostrophes and hyphen replaced by a space)
+
 incendies:
   periodes:
     france:
-      - id: ete_2026
-        start: 2026-07-01
-        end: 2026-07-10
       - id: ete_2025
         start: 2025-07-01
-        end: 2025-07-10
+        end: 2025-09-01
+      - id: ete_2026
+        start: 2026-07-01
+        end: 2026-09-01
     belgium:
       - id: ete_2026
         start: 2026-07-01
         end: 2026-07-10
-  french:
-    audiovisuel:
-      - incendie
-      - incendie de forêt
-      - feux
-      - forêt brule
-      - forêts brulent
-      - forêt ravagée
-      - forêt ravagé
-      - forêt ont été détruites
-    presse:
-      - incendie
-      - incendies
-      - incendie de forêt
-      - incendies de forêt
-      - feux
-      - forêt brule
-      - forêts brulent
-      - forêt ravagée
-      - forêts ravagées
-      - forêt ravagé
-      - forêts ravagés
-      - forêt ont été détruites
-      - forêts ont été détruites
+  keywords:
+    french:
+      audiovisuel:
+        - incendie
+        - incendie de forêt
+        - feux
+        - forêt brule
+        - forêts brulent
+        - forêt ravagée
+        - forêt ravagé
+        - forêt ont été détruites
+      presse:
+        - incendie
+        - incendies
+        - incendie de forêt
+        - incendies de forêt
+        - feux
+        - forêt brule
+        - forêts brulent
+        - forêt ravagé
+        - forêt ravagés
+        - forêt ravagée
+        - forêts ravagés
+        - forêts ravagées
+        - forêt ont été détruites
+        - forêts ont été détruites
 
 inondations:
-  french:
-    audiovisuel:
-      - inondation
-      - augmentation du risque d'inondation
-      - inondations à répétition
-      - gestion des inondations
-      - anticiper les risques d'inondation
-      - anticiper les inondations
-      - prévention des inondations
-      - crue
-      - crue centennale
-      - coulée de boue
-      - pluie extreme
-      - pluie torrentielle
-      - submergé par les eaux
-      - englouti par les eaux
-    presse:
-      - inondation
-      - inondations
-      - augmentation du risque d'inondation
-      - inondations à répétition
-      - gestion des inondations
-      - anticiper les risques d'inondation
-      - anticiper les inondations
-      - prévention des inondations
-      - crue
-      - crues
-      - crue centennale
-      - coulée de boue
-      - coulées de boue
-      - pluie extrême
-      - pluies extrêmes
-      - pluie torrentielle
-      - pluies torrentielles
-      - submergé par les eaux
-      - submergés par les eaux
-      - submergée par les eaux
-      - submergées par les eaux
-      - englouti par les eaux
-      - engloutis par les eaux
-      - englouties par les eaux
+  periodes:
+    france:
+      - id: hiver_2025_2026
+        start: 2025-12-01
+        end: 2026-03-15
+      - id: automne_2026
+        start: 2026-09-01
+        end: 2026-10-20
+  keywords:
+    french:
+      audiovisuel:
+        - inondation
+        - augmentation du risque d'inondation
+        - inondations à répétition
+        - gestion des inondations
+        - anticiper les risques d'inondation
+        - anticiper les inondations
+        - prévention des inondations
+        - crue
+        - crue centennale
+        - coulée de boue
+        - pluie extreme
+        - pluie torrentielle
+        - submergé par les eaux
+        - englouti par les eaux
+      presse:
+        - inondation
+        - inondations
+        - augmentation du risque d'inondation
+        - augmentation du risque d'inondations
+        - inondations à répétition
+        - gestion des inondations
+        - anticiper les risques d'inondation
+        - anticiper les risques d'inondations
+        - anticiper les inondations
+        - prévention des inondations
+        - crue
+        - crues
+        - crue centennale
+        - crues centennale
+        - coulée de boue
+        - coulées de boue
+        - pluie extrême
+        - pluies extrêmes
+        - pluie torrentielle
+        - pluies torrentielles
+        - submergé par les eaux
+        - submergés par les eaux
+        - submergée par les eaux
+        - submergées par les eaux
+        - englouti par les eaux
+        - engloutie par les eaux
+        - engloutis par les eaux
+        - englouties par les eaux

@@ -80,7 +80,7 @@ class RunEnv:
         self.s3_rows, self.read_days, self.failing_days, self._n = [], [], set(), 0
 
         self.yml = tmp_path / "thematic.yml"
-        self.keywords = {"french": {"audiovisuel": ["inondation", "crue"]}}
+        self.keywords = {"keywords": {"french": {"audiovisuel": ["inondation", "crue"]}}}
         monkeypatch.setattr(tk, "THEMATIC_YML", self.yml)
         monkeypatch.setattr(tk.duckdb, "connect", lambda *a, **k: con)
         monkeypatch.setattr(tk.utils, "configure_barometre_source", lambda *a, **k: None)

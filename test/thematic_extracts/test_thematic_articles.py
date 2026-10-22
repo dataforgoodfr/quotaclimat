@@ -67,7 +67,7 @@ class RunEnv:
         self.failing_days, self._n = set(), 0
 
         self.yml = tmp_path / "thematic.yml"
-        self.keywords = {"french": {"presse": ["inondation", "crue"], "audiovisuel": ["autre"]}}
+        self.keywords = {"keywords": {"french": {"presse": ["inondation", "crue"], "audiovisuel": ["autre"]}}}
         monkeypatch.setattr(ta, "THEMATIC_YML", self.yml)
         monkeypatch.setattr(ta.duckdb, "connect", lambda *a, **k: con)
         monkeypatch.setattr(ta.utils, "configure_barometre_source", lambda *a, **k: None)

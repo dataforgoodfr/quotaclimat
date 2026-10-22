@@ -1,0 +1,30 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": "Développé avec l'aide de Claude Code."
+  },
+  "permissions": {
+    "allow": [
+      "Read(./.env.secrets.dist)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./.env.secrets)",
+      "Read(./secrets/**)",
+      "Read(./.aws/**)",
+      "Read(./config/credentials.json)",
+      "Read(./credentials.txt)",
+      "Read(./pgdata/**)",
+      
+      "Read(./wandb/**)",
+      "Read(./credentials.txt)",
+      "Read(credentials)",
+      "Read(./docker-compose-values.yml)",
+      "Read(./.venv)",
+      "Read(./.ruff_cache)",
+      "Read(./.germany_s3_bucket)",
+      "Read(./build)"
+    ]
+  }
+}

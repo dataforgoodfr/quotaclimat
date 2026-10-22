@@ -47,9 +47,9 @@ Pour chaque question, il fait quatre choses :
 
 Une table ou une colonne de filtre de champ que Metabase ne connaît pas encore (table que dbt vient de construire ou de déplacer) déclenche une synchronisation du schéma de la base dans Metabase. Le flow attend alors jusqu'à 5 minutes que la table apparaisse. Si elle n'apparaît pas, seules les questions de cette requête sont laissées de côté.
 
-Si le SQL d'une question a été modifié dans Metabase depuis sa dernière synchronisation, le flow ne la touche pas. C'est aussi le cas d'une question jamais synchronisée. Le flow échoue alors et affiche l'écart dans ses logs. Deux façons d'en sortir :
-- reporter la modification dans le fichier, par une PR ;
-- relancer avec `force` pour écraser la version de Metabase.
+Par défaut (`force = true`, aussi dans `main-pipeline`), le SQL d'une question modifié dans Metabase depuis sa dernière synchronisation est écrasé par celui du fichier, deux fois par jour. L'écart reste dans les logs du flow (avertissement « SQL modifié dans Metabase »), pour reporter la modification dans le fichier par une PR si elle était voulue. Une modification à garder se fait donc dans le fichier, pas dans Metabase.
+
+Avec `force = false`, une question modifiée dans Metabase (ou jamais synchronisée) n'est pas touchée et le flow échoue en affichant l'écart.
 
 En local :
 

@@ -4,9 +4,10 @@ namespace: quotaclimat
 description: |
   Updates the Metabase questions listed in metabase/*/questions.yml with the SQL
   queries versioned in metabase/ (see metabase/README.md), from the
-  quotaclimat_base image built on main. A question whose SQL was edited in
-  Metabase since its last synchronization is left as it is and fails the run,
-  unless force. Runs in main-pipeline after barometre (the queries read the dbt
+  quotaclimat_base image built on main. By default (force), a question whose
+  SQL was edited in Metabase since its last synchronization is overwritten too,
+  with the difference in the logs; without force it is left as it is and fails
+  the run. Runs in main-pipeline after barometre (the queries read the dbt
   tables), or by hand.
 
 labels:
@@ -21,8 +22,8 @@ inputs:
     description: "When false, only logs what would change in each question."
   - id: force
     type: BOOLEAN
-    defaults: false
-    description: "Also overwrite the questions whose SQL was edited in Metabase (their differences are in the logs of a run without force)."
+    defaults: true
+    description: "Also overwrite the questions whose SQL was edited in Metabase (their differences are in the logs). When false, they are left as they are and the run fails."
 
 tasks:
   - id: sync_metabase_questions

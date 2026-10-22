@@ -8,8 +8,10 @@ description: |
   (`metabase-sync`, after the dbt tables they read), then the RRS flows on the
   barometre source.
   Each step is a subflow that must succeed before the next one starts, except
-  `metabase-sync`: its failure (a question edited in Metabase, Metabase down)
-  marks the run as WARNING without stopping the RRS steps.
+  `metabase-sync`: its failure (Metabase down, a table unknown to Metabase)
+  marks the run as WARNING without stopping the RRS steps. It runs with force:
+  SQL edited in Metabase is overwritten by the versioned one (differences in
+  its logs).
 
 labels:
   pipeline: ome
@@ -106,7 +108,7 @@ tasks:
     allowFailure: true
     inputs:
       apply: true
-      force: false
+      force: true
 
   - id: rrs_climate
     runIf: "{{ inputs.with_rrs }}"

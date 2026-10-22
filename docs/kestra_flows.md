@@ -98,7 +98,7 @@ Steps:
 2. `rrs_climate_extended`: [`rrs-climate`](#rrs-climate) with `source=extended`, `run_clustering=false`.
 3. `rrs_insecurity_extended`: [`rrs-insecurity`](#rrs-insecurity) with `source=extended`, `run_clustering=false`.
 4. `barometre`: [`barometre`](#barometre) with `days_back`, `start_date`.
-5. `metabase_sync`: [`metabase-sync`](#metabase-sync) with `apply=true`, `force=false`, after the dbt tables its queries read.
+5. `metabase_sync`: [`metabase-sync`](#metabase-sync) with `apply=true`, `force=true`, after the dbt tables its queries read.
 6. `rrs_climate`: [`rrs-climate`](#rrs-climate) with its defaults (`source=barometre`, clustering on).
 7. `rrs_insecurity`: [`rrs-insecurity`](#rrs-insecurity) with its defaults (`source=barometre`, clustering on).
 
@@ -152,9 +152,9 @@ Updates the Metabase questions listed in the manifests `metabase/*/questions.yml
 | Input | Default | Effect |
 |---|---|---|
 | `apply` | `true` | `false` only logs what would change in each question |
-| `force` | `false` | `true` also overwrites the questions whose SQL was edited in Metabase |
+| `force` | `true` | Also overwrites the questions whose SQL was edited in Metabase; `false` leaves them as they are and fails the run |
 
-A question whose SQL was edited in Metabase since its last synchronization is left as it is, with the difference in the logs, and the run fails: report the change in the query file, or run again with `force=true`. A table of a field filter that Metabase does not know yet (just built or moved by dbt) makes it ask Metabase to synchronize the database schema, and wait up to 5 minutes.
+A question whose SQL was edited in Metabase since its last synchronization is overwritten by the versioned SQL (with `force=false`, it is left as it is and the run fails); the difference is in the logs, to report the change in the query file if it was wanted. A table of a field filter that Metabase does not know yet (just built or moved by dbt) makes it ask Metabase to synchronize the database schema, and wait up to 5 minutes.
 
 ## extended-perimeter
 

@@ -37,7 +37,7 @@ poetry run pytest my_dbt_project/pytest_tests -k metabase_query      # requêtes
 
 ## Synchronisation avec Metabase
 
-Le flow Kestra `quotaclimat/metabase-sync` (`infrastructure/kestra/flows/main_quotaclimat_metabasesync.yaml`) met à jour les questions du manifeste. Il utilise l'image `quotaclimat_base` construite sur `main`, donc le SQL de `main`.
+Le flow Kestra `quotaclimat/metabase-sync` (`infrastructure/kestra/flows/main_quotaclimat_metabasesync.yaml`) met à jour les questions du manifeste. Il tourne à la fin de `main-pipeline`, une fois toutes les tables construites ; on peut aussi le lancer à la main. Dans `main-pipeline`, son échec fait seulement passer l'exécution en avertissement (WARNING). Il utilise l'image `quotaclimat_base` construite sur `main`, donc le SQL de `main`.
 
 Pour chaque question, il fait quatre choses :
 - il remplace son SQL par celui du fichier ;
@@ -47,9 +47,9 @@ Pour chaque question, il fait quatre choses :
 
 Une table ou une colonne de filtre de champ que Metabase ne connaît pas encore (table que dbt vient de construire ou de déplacer) déclenche une synchronisation du schéma de la base dans Metabase. Le flow attend alors jusqu'à 5 minutes que la table apparaisse. Si elle n'apparaît pas, seules les questions de cette requête sont laissées de côté.
 
-Si le SQL d'une question a été modifié dans Metabase depuis sa dernière synchronisation, le flow ne la touche pas. C'est aussi le cas d'une question jamais synchronisée. Le flow échoue alors et affiche l'écart dans ses logs. Deux façons d'en sortir :
-- reporter la modification dans le fichier, par une PR ;
-- relancer avec `force` pour écraser la version de Metabase.
+Par défaut (`force = true`, aussi dans `main-pipeline`), le SQL d'une question modifié dans Metabase depuis sa dernière synchronisation est écrasé par celui du fichier, deux fois par jour. L'écart reste dans les logs du flow (avertissement « SQL modifié dans Metabase »), pour reporter la modification dans le fichier par une PR si elle était voulue. Une modification à garder se fait donc dans le fichier, pas dans Metabase.
+
+Avec `force = false`, une question modifiée dans Metabase (ou jamais synchronisée) n'est pas touchée et le flow échoue en affichant l'écart.
 
 En local :
 
@@ -66,6 +66,6 @@ La clé d'API se crée dans Metabase : Admin > Authentification > Clés d'API. E
 1. Modifier ou ajouter le fichier `.sql`, avec sa documentation en tête.
 2. Le déclarer dans le `questions.yml` de son dossier : variables, valeurs de test, puis les questions une fois créées dans Metabase. Un nouveau sujet a son propre sous-dossier et son manifeste.
 3. Lancer les tests, ouvrir une PR.
-4. Après la fusion et la construction de l'image, lancer le flow `metabase-sync`.
+4. Après la fusion et la construction de l'image, la synchronisation se fait au prochain passage de `main-pipeline` (01:10 ou 12:30). Pour l'appliquer tout de suite, lancer le flow `metabase-sync` à la main.
 
 Une nouvelle question se crée à la main dans Metabase, en collant le SQL. On ajoute ensuite son numéro au manifeste. La synchronisation reprend alors son SQL, sa description et ses variables.

@@ -7,7 +7,7 @@
     "output": "docs/diagrams/flows/main-pipeline.html",
     "repository": {
       "url": "git@github.com:dataforgoodfr/quotaclimat.git",
-      "revision": "c2defa51aafeac09df8121d063d0d352c0d1af69",
+      "revision": "fb3faa8817d2df9f107b7281d69ce9f6ca0b9d7e",
       "link_mode": "local-only"
     },
     "legend": {
@@ -36,13 +36,11 @@
     }
   ],
   "mainPath": [
-    "cron",
-    "s_ext",
-    "s_clim_ext",
-    "s_insec_ext",
     "s_baro",
     "s_clim",
-    "s_insec"
+    "s_insec",
+    "s_poll",
+    "s_metabase"
   ],
   "nodes": [
     {
@@ -56,8 +54,8 @@
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
-          "line": 29,
-          "end_line": 38,
+          "line": 34,
+          "end_line": 43,
           "label": "triggers"
         }
       ]
@@ -74,8 +72,8 @@
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
-          "line": 41,
-          "end_line": 50,
+          "line": 46,
+          "end_line": 55,
           "label": "subflow 1"
         }
       ]
@@ -92,8 +90,8 @@
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
-          "line": 52,
-          "end_line": 61,
+          "line": 57,
+          "end_line": 66,
           "label": "subflow 2"
         }
       ]
@@ -110,16 +108,34 @@
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
-          "line": 63,
-          "end_line": 72,
+          "line": 68,
+          "end_line": 77,
           "label": "subflow 3"
+        }
+      ]
+    },
+    {
+      "id": "s_poll_ext",
+      "lane": "ext",
+      "col": 4,
+      "type": "backend",
+      "label": "rrs-pollution",
+      "sublabel": "source=extended",
+      "tag": "no RAG, no clustering",
+      "width": 146,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
+          "line": 79,
+          "end_line": 89,
+          "label": "subflow 4"
         }
       ]
     },
     {
       "id": "s_baro",
       "lane": "std",
-      "col": 3,
+      "col": 1,
       "type": "backend",
       "label": "barometre",
       "sublabel": "days_back, start_date",
@@ -128,16 +144,16 @@
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
-          "line": 74,
-          "end_line": 82,
-          "label": "subflow 4"
+          "line": 91,
+          "end_line": 99,
+          "label": "subflow 5"
         }
       ]
     },
     {
       "id": "s_clim",
       "lane": "std",
-      "col": 4,
+      "col": 2,
       "type": "backend",
       "label": "rrs-climate",
       "sublabel": "defaults (barometre)",
@@ -146,16 +162,16 @@
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
-          "line": 84,
-          "end_line": 90,
-          "label": "subflow 5"
+          "line": 101,
+          "end_line": 107,
+          "label": "subflow 6"
         }
       ]
     },
     {
       "id": "s_insec",
       "lane": "std",
-      "col": 5,
+      "col": 3,
       "type": "backend",
       "label": "rrs-insecurity",
       "sublabel": "defaults (barometre)",
@@ -164,9 +180,45 @@
       "sources": [
         {
           "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
-          "line": 92,
-          "end_line": 98,
-          "label": "subflow 6"
+          "line": 109,
+          "end_line": 115,
+          "label": "subflow 7"
+        }
+      ]
+    },
+    {
+      "id": "s_poll",
+      "lane": "std",
+      "col": 4,
+      "type": "backend",
+      "label": "rrs-pollution",
+      "sublabel": "defaults (barometre)",
+      "tag": "RAG + clustering",
+      "width": 146,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
+          "line": 117,
+          "end_line": 123,
+          "label": "subflow 8"
+        }
+      ]
+    },
+    {
+      "id": "s_metabase",
+      "lane": "std",
+      "col": 5,
+      "type": "backend",
+      "label": "metabase-sync",
+      "sublabel": "apply, force",
+      "tag": "allowFailure",
+      "width": 146,
+      "sources": [
+        {
+          "path": "infrastructure/kestra/flows/main_quotaclimat_mainpipeline.yaml",
+          "line": 125,
+          "end_line": 135,
+          "label": "subflow 9"
         }
       ]
     }
@@ -185,7 +237,7 @@
       "to": "s_clim_ext",
       "label": "success",
       "variant": "emphasis",
-      "role": "main"
+      "role": "branch"
     },
     {
       "id": "e-2",
@@ -193,20 +245,28 @@
       "to": "s_insec_ext",
       "label": "success",
       "variant": "emphasis",
-      "role": "main"
+      "role": "branch"
     },
     {
       "id": "e-3",
       "from": "s_insec_ext",
+      "to": "s_poll_ext",
+      "label": "success",
+      "variant": "emphasis",
+      "role": "branch"
+    },
+    {
+      "id": "e-4",
+      "from": "s_poll_ext",
       "to": "s_baro",
       "label": "success",
       "variant": "emphasis",
-      "role": "main",
+      "role": "return",
       "fromSide": "bottom",
       "toSide": "top"
     },
     {
-      "id": "e-4",
+      "id": "e-5",
       "from": "s_baro",
       "to": "s_clim",
       "label": "success",
@@ -214,9 +274,25 @@
       "role": "main"
     },
     {
-      "id": "e-5",
+      "id": "e-6",
       "from": "s_clim",
       "to": "s_insec",
+      "label": "success",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-7",
+      "from": "s_insec",
+      "to": "s_poll",
+      "label": "success",
+      "variant": "emphasis",
+      "role": "main"
+    },
+    {
+      "id": "e-8",
+      "from": "s_poll",
+      "to": "s_metabase",
       "label": "success",
       "variant": "emphasis",
       "role": "main"
@@ -227,8 +303,8 @@
       "dot": "rose",
       "title": "Gates",
       "items": [
-        "with_rrs=false skips every step except barometre",
-        "A failed subflow fails main-pipeline and stops the remaining steps"
+        "with_rrs=false skips every step except barometre and metabase-sync",
+        "A failed subflow fails main-pipeline and stops the remaining steps; metabase-sync (allowFailure) only marks the run WARNING"
       ]
     },
     {
@@ -236,7 +312,8 @@
       "title": "Inputs passed down",
       "items": [
         "days_back and start_date (default today) go to extended-perimeter and barometre only",
-        "rrs-climate gets no dates and resumes from the rrs DB; rrs-insecurity uses its default days_back=1"
+        "rrs-climate gets no dates and resumes from the rrs DB; rrs-insecurity and rrs-pollution use their default days_back=1",
+        "metabase-sync runs last, once every table its Metabase queries read is built"
       ]
     }
   ]

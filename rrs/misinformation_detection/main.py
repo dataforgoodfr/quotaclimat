@@ -24,6 +24,7 @@ logging.basicConfig(level=logging.INFO)
 # ── S3 config ────────────────────────────────────────────────────────────────
 
 REGION = "fr-par"
+BUCKET_NAME = os.environ.get("BUCKET_NAME")
 
 
 def _get_secret(name: str) -> str:
@@ -63,6 +64,9 @@ def load_segments(
     end_date: date,
 ) -> pd.DataFrame:
     """Load segments from the RRS DB and enrich them with plaintext from S3."""
+    if not BUCKET_NAME:
+        raise SystemExit("BUCKET_NAME env var must be set")
+
     sid = make_subject_id(subject)
 
     with psycopg.connect(_rrs_conninfo()) as conn:
@@ -75,9 +79,10 @@ def load_segments(
                 WHERE subject_id = %s
                   AND start >= %s
                   AND start < %s
+                  AND split_part(s3_uri, '/', 3) = %s
                 ORDER BY start
                 """,
-                (sid, start_date, end_date + timedelta(days=1)),
+                (sid, start_date, end_date + timedelta(days=1), BUCKET_NAME),
             )
             rows = cur.fetchall()
             cols = [desc[0] for desc in cur.description]
@@ -96,7 +101,6 @@ def load_segments(
 def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
     access_key = _get_secret("BUCKET")
     secret_key = _get_secret("BUCKET_SECRET")
-    bucket_name = os.environ.get("BUCKET_NAME")
     con.execute("INSTALL httpfs; LOAD httpfs;")
     con.execute(f"""
         SET s3_region='{REGION}';

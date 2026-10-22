@@ -66,7 +66,7 @@ from rrs.rag.agent_common import (
     extract_verdict,
     strip_tag,
 )
-from rrs.rag.s3_sync import BUCKET_NAME, download_prefix, get_s3_client
+from rrs.rag.s3_sync import EMBEDDINGS_BUCKET_NAME, download_prefix, get_s3_client
 from rrs.utils.generate_id import get_consistent_hash
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
@@ -77,6 +77,10 @@ REGION = "fr-par"
 DEFAULT_SUBJECT_NAME = "environmental_health"
 DEFAULT_S3_PREFIX = "expert_models"
 DEFAULT_MODEL = "mistral-small-2603"
+
+# Media/transcript bucket (mediatree vs mediatree-extended-perimeter-prod),
+# deliberately distinct from EMBEDDINGS_BUCKET_NAME above.
+BUCKET_NAME = os.environ.get("BUCKET_NAME")
 
 REFLECTION_HINT = (
     "\n\nAvant chaque appel d'outil, écris dans ta réponse une courte réflexion (2-3 phrases) : "
@@ -118,7 +122,6 @@ def _rrs_dsn() -> str:
 def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
     access_key = _get_secret("BUCKET")
     secret_key = _get_secret("BUCKET_SECRET")
-    bucket_name = os.environ.get("BUCKET_NAME")
     con.execute("INSTALL httpfs; LOAD httpfs;")
     con.execute(f"""
         SET s3_region='{REGION}';
@@ -175,6 +178,9 @@ def _enrich_with_plaintext(segments: pd.DataFrame) -> pd.DataFrame:
 
 def load_segments(subject: str, start_date: date, end_date: date) -> pd.DataFrame:
     """Load segments from the RRS DB and enrich them with plaintext from S3."""
+    if not BUCKET_NAME:
+        raise SystemExit("BUCKET_NAME env var must be set")
+
     sid = make_subject_id(subject)
 
     with psycopg.connect(_rrs_conninfo()) as conn:
@@ -187,9 +193,10 @@ def load_segments(subject: str, start_date: date, end_date: date) -> pd.DataFram
                 WHERE subject_id = %s
                   AND start >= %s
                   AND start < %s
+                  AND split_part(s3_uri, '/', 3) = %s
                 ORDER BY start
                 """,
-                (sid, start_date, end_date + timedelta(days=1)),
+                (sid, start_date, end_date + timedelta(days=1), BUCKET_NAME),
             )
             rows = cur.fetchall()
             cols = [desc[0] for desc in cur.description]
@@ -423,12 +430,12 @@ async def run_agent(
 
 def download_index(subject: str, s3_prefix: str, index_dir: Path) -> None:
     rag_prefix = f"{s3_prefix}/{subject}/rag/"
-    logging.info(f"Downloading RAG index from s3://{BUCKET_NAME}/{rag_prefix} -> {index_dir}...")
+    logging.info(f"Downloading RAG index from s3://{EMBEDDINGS_BUCKET_NAME}/{rag_prefix} -> {index_dir}...")
     s3 = get_s3_client()
-    downloaded = download_prefix(s3, BUCKET_NAME, rag_prefix, index_dir)
+    downloaded = download_prefix(s3, EMBEDDINGS_BUCKET_NAME, rag_prefix, index_dir)
     if not downloaded:
         raise SystemExit(
-            f"No index found at s3://{BUCKET_NAME}/{rag_prefix}. Run rrs.rag.build_embeddings first."
+            f"No index found at s3://{EMBEDDINGS_BUCKET_NAME}/{rag_prefix}. Run rrs.rag.build_embeddings first."
         )
     logging.info(f"  {len(downloaded)} file(s) downloaded.")
 

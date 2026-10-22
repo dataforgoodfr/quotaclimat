@@ -32,7 +32,7 @@ def get_secret_docker(secret_name: str) -> str:
 
 ACCESS_KEY = get_secret_docker("EMBEDDINGS_BUCKET")
 SECRET_KEY = get_secret_docker("EMBEDDINGS_BUCKET_SECRET")
-BUCKET_NAME = os.environ.get("EMBEDDINGS_BUCKET_NAME")
+EMBEDDINGS_BUCKET_NAME = os.environ.get("EMBEDDINGS_BUCKET_NAME")
 ENDPOINT_URL = f"https://s3.{REGION}.scw.cloud"
 
 

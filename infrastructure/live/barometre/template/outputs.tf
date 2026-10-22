@@ -21,6 +21,9 @@ output "database_name" {
 output "rrs_read_user" {
   value = scaleway_rdb_user.rrs_read.name
 }
+output "metabase_analytics_user" {
+  value = scaleway_rdb_user.metabase_analytics.name
+}
 output "mediatree_videos_api_key_access_key" {
   value = scaleway_iam_api_key.mediatree_videos_api_key.access_key
 }

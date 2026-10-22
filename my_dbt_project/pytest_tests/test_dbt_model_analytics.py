@@ -58,7 +58,7 @@ def seed_dbt_labelstudio():
 
 seed_dbt_labelstudio()
 
-GRANT_ROLES = ["rrs-read-dev", "rrs-read-prod", "climateguard-reader-user"]
+GRANT_ROLES = ["rrs-read-dev", "rrs-read-prod", "climateguard-reader-user", "metabase-analytics-dev", "metabase-analytics-prod"]
 
 
 @pytest.fixture(scope="module")
@@ -249,16 +249,22 @@ def load_test_external_sources():
     }
     brand_sheets = {
         "Marques": [
-            ["marque", "entreprise", "societe_mere_ultime", "e_statut", "smu_statut", "commentaires"],
+            [
+                "marque", "entreprise", "e_statut", "societe_mere_ultime", "smu_statut",
+                "actionnaire_maj_ultime", "amu_statut", "commentaires",
+            ],
             # same key as the predicted brand "Pytest Škoda": the verified row wins
-            ["PYTEST SKODA", "Pytest Volkswagen", "Pytest Porsche SE", "non vérifié", "vérifié"],
-            ["pytest-škoda", "Pytest Wrong Company", "Pytest Wrong Parent", "non vérifié", "à vérifier"],
+            [
+                "PYTEST SKODA", "Pytest Volkswagen", "non vérifié", "Pytest Porsche SE", "vérifié",
+                "Pytest Porsche Piëch", "non vérifié",
+            ],
+            ["pytest-škoda", "Pytest Wrong Company", "non vérifié", "Pytest Wrong Parent", "à vérifier"],
             # ultimate parent to check: not used, the company instead
-            ["Pytest Biscuits", "Pytest Biscuits Company", "Pytest Holding", "non vérifié", "à vérifier"],
+            ["Pytest Biscuits", "Pytest Biscuits Company", "non vérifié", "Pytest Holding", "à vérifier"],
             # listed but company not filled in yet
             ["Pytest Brand Without Group"],
             # company to check: not used; numeric looking brand stays text
-            ["1664", "Pytest Carlsberg", "", "à vérifier", "", "Kronenbourg"],
+            ["1664", "Pytest Carlsberg", "à vérifier", "", "", "", "", "Kronenbourg"],
         ],
         "_lisez-moi": [["note"], ["for humans only"]],
     }
@@ -1048,6 +1054,21 @@ def test_ad_brands(db_connection):
     ]
 
 
+def test_ad_brands_ultimate_majority_shareholder(db_connection):
+    """The ultimate majority shareholder is passed through with its status, NULL when empty."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT brand_key, ultimate_majority_shareholder, ultimate_majority_shareholder_status
+            FROM advertising.ad_brands
+            WHERE brand_key IN ('pytestskoda', '1664')
+            ORDER BY brand_key
+        """)
+        assert cur.fetchall() == [
+            ("1664", None, None),
+            ("pytestskoda", "Pytest Porsche Piëch", "non vérifié"),
+        ]
+
+
 def test_publicites_brand_companies(db_connection):
     with db_connection.cursor() as cur:
         cur.execute("""
@@ -1530,6 +1551,30 @@ def test_curate_emission_jour(db_connection):
     assert float(curated[1]) == float(captured[1])
     assert curated[2] == captured[2] > 0
     assert row == ("Europe 1 Matin", False, "Europe 1", 120.0, 1)
+
+
+def list_enabled_seeds(**env):
+    """Paths of the seeds dbt would load, with the given environment variables (None removes one)."""
+    run_env = {**os.environ, **env}
+    run_env = {k: v for k, v in run_env.items() if v is not None}
+    result = subprocess.run(
+        ["poetry", "run", "dbt", "--quiet", "ls", "--resource-type", "seed", "--output", "path"],
+        capture_output=True, text=True, env=run_env,
+    )
+    assert result.returncode == 0, f"dbt ls failed: {result.stdout} {result.stderr}"
+    return sorted(line.strip() for line in result.stdout.splitlines() if line.strip().endswith(".csv"))
+
+
+def test_fixture_seeds_disabled_in_production():
+    """The fixture seeds have the names of the production tables (public.keywords...): with the production
+    environment of entrypoints/dbt.sh (DBT_ENV=prod, `docker` target, no DBT_ENABLE_FIXTURE_SEEDS), a `dbt seed` or
+    `dbt build` without --select only loads the seeds meant for production (seeds/ref, seeds/themes)."""
+    prod_seeds = list_enabled_seeds(DBT_ENV="prod", DBT_ENABLE_FIXTURE_SEEDS=None)
+    assert all(path.startswith(("seeds/ref/", "seeds/themes/")) for path in prod_seeds), prod_seeds
+    assert "seeds/themes/mesinfo_theme_mots_cles.csv" in prod_seeds
+
+    test_seeds = list_enabled_seeds(DBT_ENABLE_FIXTURE_SEEDS="true")
+    assert "seeds/fixtures/keywords.csv" in test_seeds
 
 
 def test_publicites_start_date(db_connection):

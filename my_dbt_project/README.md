@@ -10,8 +10,10 @@ models/
   analytics/   -- intermediate/aggregated tables used by dashboards models
   metadata/    -- dbt_objects, the list of the relations built by dbt (schema metadata)
   schema.yml   -- column-level documentation and tests for the models above
-seeds/         -- CSV snapshots of the source tables, loaded with `dbt seed` for local/test data;
-                  ref/: reference Google Sheets (downloaded); themes/: keywords of the misinformation themes
+seeds/
+  ref/         -- reference data downloaded from Google Sheets (CSV not versioned), loaded in production
+  themes/      -- keywords of the misinformation themes (versioned), loaded in production
+  fixtures/    -- CSV snapshots of the source tables for local/test data, disabled unless DBT_ENABLE_FIXTURE_SEEDS=true
 pytest_tests/  -- Python tests that run dbt commands and assert on the resulting tables
 ```
 `macros/`, `snapshots/`, `analyses/` and `tests/` (generic/singular dbt tests) exist but are currently empty.
@@ -87,14 +89,16 @@ A spreadsheet readable by anyone is refused, checked in two ways before reading 
 To use a reference table in a model, declare it as a dbt source; `source_or_empty` (`macros/`) lets a model build with an empty table where the reference data is not loaded.
 
 ### Access grants (`+grants` in `dbt_project.yml`)
-`analytics`/`dashboards`/`advertising` models grant `select` conditionally (`advertising` uses the same list as `analytics`):
-* **Regular perimeter** (`EXTENDED_PERIMETER` unset/`false`): nothing granted when `DBT_ENV` is unset/`dev`; `rrs-read-dev`, `rrs-read-prod` and `climateguard-reader-user` (only `climateguard-reader-user` for `dashboards`) granted when `DBT_ENV=prod`.
-* **Extended perimeter** (`EXTENDED_PERIMETER=true`, see the root README's "Extended perimeter (Droit à l'info)" section): the `extended-perimeter` database only has `rrs-read-{dev,prod}` users (no `climateguard-reader-user`), so only the `rrs-read` user matching `DBT_ENV` is granted `select`.
+`analytics`/`dashboards`/`advertising`/`homepage`/`metadata` models and the `seeds/ref` and `seeds/themes` seeds grant `select` conditionally (`advertising`, `homepage`, `metadata` and the seeds use the same list as `analytics`):
+* **Regular perimeter** (`EXTENDED_PERIMETER` unset/`false`): `rrs-read-dev` and `metabase-analytics-dev` are granted when `DBT_ENV` is unset/`dev`; `rrs-read-dev`, `rrs-read-prod`, `climateguard-reader-user` and `metabase-analytics-prod` are granted when `DBT_ENV=prod` (only `climateguard-reader-user` and `metabase-analytics-prod` for `dashboards`).
+* **Extended perimeter** (`EXTENDED_PERIMETER=true`, see the root README's "Extended perimeter (Droit à l'info)" section): the `extended-perimeter` database only has `rrs-read-{dev,prod}` users (no `climateguard-reader-user`, no `metabase-analytics-*`), so only the `rrs-read` user matching `DBT_ENV` is granted `select`.
 
 ## Seeds
-`seeds/*.csv` are snapshots of the source tables used to have deterministic local/test data. They are loaded with `dbt seed --select <name>` (see the root README for the exact commands used in the `testconsole`/analytics workflows).
+`seeds/fixtures/*.csv` are snapshots of the source tables used to have deterministic local/test data. They are loaded with `dbt seed --select <name>` (see the root README for the exact commands used in the `testconsole`/analytics workflows).
 
-Each seed except `labelstudio_task_aggregate`/`labelstudio_task_completion_aggregate` is `enabled: "{{ target.name != 'prod' }}"` and has a pre-hook that deletes any existing rows in the matching table before loading, guarded the same way - so seeding is a no-op against a `prod` target. `keywords` additionally has a post-hook adding its primary key and adjusting `program_metadata_id`'s type, since `dbt seed` infers types/constraints from the CSV and doesn't recreate them.
+They have the names of the production tables (`public.keywords`, `public.program_metadata`...): seeding one replaces that table (`drop ... cascade` with `--full-refresh`, `truncate` otherwise). They are therefore disabled unless `DBT_ENABLE_FIXTURE_SEEDS=true`, set only in the `testconsole` docker compose service and the CI `dbt` job: in production (`DBT_ENV=prod`, `docker` target), `dbt seed` or `dbt build` without `--select` only loads `seeds/ref` and `seeds/themes`. The flag fails closed on purpose: the target name cannot tell production apart, since production also runs with the `docker` target. `test_fixture_seeds_disabled_in_production` checks it.
+
+`keywords` has a post-hook adding its primary key and adjusting `program_metadata_id`'s type, since `dbt seed` infers types/constraints from the CSV and doesn't recreate them.
 
 ## Tests
 `pytest_tests/` contains Python tests (`test_dbt_model_homepage.py`, `test_dbt_model_analytics.py`) that shell out to dbt commands (seed/run) against a real Postgres connection and assert on the resulting rows - see the root README's "Test" section for how to run the full suite (`pytest -vv -k dbt`, or via `docker compose up test`). They're distinct from dbt's own generic/singular tests (`tests/`, currently unused) and the column-level `tests:` (e.g. `not_null`) declared in `models/schema.yml`.

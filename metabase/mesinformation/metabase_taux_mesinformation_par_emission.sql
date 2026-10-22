@@ -1,4 +1,4 @@
--- Taux de mésinformation et part d'environnement par émission, chaînes françaises
+-- Taux de mésinformation et part d'environnement par émission, chaînes de télévision françaises (radios écartées)
 -- Unité d'analyse : l'émission quand analytics.program la connaît (Google Sheet Programmes, chaînes d'info
 -- en continue), sinon le programme suivi de program_metadata (colonne type)
 -- Variables Metabase, type Date (jours de programme, heure de Paris) :
@@ -36,6 +36,7 @@ emissions AS (
     FROM public.emission_jour ej
     CROSS JOIN bornes b
     WHERE ej.jour BETWEEN b.debut AND b.fin
+      AND ej.radio = FALSE
     GROUP BY ej.emission_cle
 )
 SELECT

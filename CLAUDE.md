@@ -1,3 +1,184 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+**QuotaClimat / L'Observatoire des médias sur l'écologie (OME)** is a data pipeline that measures what proportion of media news (TV, radio, press) covers environmental/climate topics across multiple countries (France, Belgium, Germany, Poland, Spain, Brazil). It ingests from Mediatree API (TV transcripts), Factiva (press), Le Monde FTP (web), and Label Studio (annotations), then processes keywords and stores aggregated data for Metabase dashboards.
+
+## Commands
+
+### Setup
+```bash
+poetry install          # Install dependencies
+```
+
+### Testing
+```bash
+docker compose up test                                          # Full test suite (requires Docker)
+docker compose up testconsole -d && docker compose exec testconsole bash  # Interactive dev shell
+pytest -vv -k "test_name"                                       # Run specific test locally
+```
+
+### Linting / Formatting
+```bash
+poetry run black .
+poetry run isort .
+poetry run ruff check .
+```
+
+### Database Migrations (Alembic)
+```bash
+poetry run alembic revision --autogenerate -m "description"    # Generate migration after model change
+poetry run alembic upgrade head                                 # Apply migrations
+```
+
+### DBT (run inside testconsole container)
+```bash
+poetry run dbt debug
+poetry run dbt seed
+poetry run dbt run --models <model_name>
+```
+
+### Keyword Dictionary Update
+```bash
+# After downloading updated Excel from shared drive:
+poetry run python3 transform_excel_to_json.py
+```
+
+### Program/Channel Metadata Update
+```bash
+poetry run python3 transform_program.py
+```
+
+## Architecture
+
+The system is a **batch data pipeline** with these stages:
+
+### 1. Data Ingestion (`quotaclimat/data_ingestion/`)
+Multiple source-specific ingestion modules:
+- **Mediatree**: TV/radio transcripts and metadata via API
+- **Factiva**: Press articles
+- **Le Monde FTP**: Web press
+- **Label Studio**: Climate fact-checking annotations
+- **Sitemap scraping**: News website articles
+
+### 2. Keyword Detection (`quotaclimat/data_processing/mediatree/`)
+Core NLP pipeline using **Aho-Corasick automaton** (`pyahocorasick`) + **spaCy** for lemmatization. Keywords are compiled from Excel dictionaries into JSON, organized by:
+- Theme (climate, biodiversity, energy, transport, circular_economy, etc.)
+- Language (fr, de, es, nl, pt, pl, it, da, el)
+- Country (`i8n/` subdirectory per country)
+
+After detection, keywords are classified into macro categories and stored with counts per TV program.
+
+### 3. Database Layer (`postgres/`)
+PostgreSQL via SQLAlchemy ORM. Key tables:
+- `keywords`: Detected keyword occurrences with counts and theme classification
+- `program_metadata`: TV/radio program schedule grid (~1.2MB JSON source)
+- `channel_metadata`: Channel configuration and broadcast hours
+- `sitemap_table`: Scraped web articles
+- `stop_word`: Advertising/repetitive phrases to filter out
+
+Schema evolution is managed with **Alembic** migrations (`alembic/versions/`). The entrypoint runs `alembic upgrade head` automatically.
+
+### 4. DBT Transforms (`my_dbt_project/`)
+SQL transformations over the PostgreSQL data to produce materialized analytics views. Used for Metabase dashboards. Seeds are in `my_dbt_project/seeds/`.
+
+### 5. S3 / Cloud Storage
+Intermediate and raw data is partitioned and stored in **Scaleway Object Storage** (S3-compatible) via `s3fs`/`boto3`, organized by `country/year/month/day/channel`.
+
+### 6. Advertising Detection & Classification (`quotaclimat/data_ingestion/advertising/`)
+Ads detected around TV/radio programs go through a separate 5-stage LLM pipeline (`s03_classification/`: transcribe → classify ad type/brand/sector → dictionary match → sub-category classify → canonicalise brand), then consolidation (`s04_consolidation/`: merges ads split into several detected pieces) and enrichment (`s05_enrichment/`: proposes brand → company → ultimate parent company via INPI/GLEIF/Wikidata, written to a Google Sheet for human review). dbt then builds `advertising.publicites`/`pub_annonceur_emission_jour` from the classified occurrences (see `my_dbt_project/README.md`). See the per-stage READMEs for env vars and status-flow details.
+
+### 7. RRS — Risk Response System (`rrs/`)
+A separate module/database that detects, clusters and tracks **disinformation narratives** (not just environmental keyword coverage) per topic ("subject": climate, insecurity, environmental_health). Reuses climate keyword segments already detected by the main pipeline (imported via DuckDB `ATTACH`), re-scans S3 transcripts for other subjects, classifies misinformation risk with an LLM (Mistral), and clusters recurring narrative claims with a 3-step LLM pipeline (Mistral/Claude Haiku). Own PostgreSQL database and Alembic project (`rrs/alembic.ini`, run from repo root). See `rrs/README.md`.
+
+### Extended perimeter ("Droit à l'info")
+On top of the regular France TV perimeter, a wider set of French channels (`tf1`, `france2`, `fr3-idf`, `rtl`, `france5`, `tmc`, `lcp`) is tracked under country code `ext-fra` in its own isolated `extended-perimeter` database, S3 buckets and Label Studio project — toggled by the `EXTENDED_PERIMETER` env var and threading through `transform_program.py`, dbt grants, and the RRS `source=extended` flows. It shares all the regular French-language detection/subtitle logic. See the root README's "Extended perimeter" section, `infrastructure/Readme.md`'s RRS section, and `rrs/README.md`'s "Extended perimeter" section for the full picture across app/infra/RRS.
+
+### Orchestration — Kestra
+Production runs are scheduled by Kestra flows in `infrastructure/kestra/flows/`. The `main-pipeline` flow runs twice daily (01:10 and 12:30 Europe/Paris) and chains, in order: `extended-perimeter` → `rrs-climate` (extended, no clustering) → `rrs-insecurity` (extended, no clustering) → `barometre` → `rrs-climate` (barometre, with clustering) → `rrs-insecurity` (barometre, with clustering). Each step fails the whole chain if it fails (`transmitFailed: true`). `metabase-sync` (separate flow) pushes versioned `metabase/*.sql` queries to Metabase. Dev mirrors prod in the `*-dev` namespaces/flows, with no schedule (run manually).
+
+### Main Entry Points
+- `quotaclimat/data_processing/mediatree/api_import.py` — main daily import job
+- `quotaclimat/data_ingestion/ingest_db/ingest_sitemap_in_db.py` — web scraping
+- `quotaclimat/data_processing/mediatree/stop_word/main.py` — stop word detection
+- `docker-entrypoint.sh` — full pipeline: migrate → transform program metadata → import → ingest labelstudio → dbt
+
+## Docker Services
+
+Key services in `docker-compose.yml`:
+- `test` — runs full pytest suite
+- `testconsole` — interactive shell for development/debugging (sleeps 12000s)
+- `postgres_db` — local PostgreSQL (db: `barometre`, user: `user`, password: `password`)
+- `metabase` — BI dashboard at localhost:3000
+- `nginxtest` — local nginx used by sitemap scraping tests
+
+Secrets (API credentials) are mounted from `secrets/` directory as Docker secrets.
+
+## Key Environment Variables
+
+| Variable | Purpose |
+|---|---|
+| `ENV` | `docker` or `dev` — controls parsing scope |
+| `POSTGRES_*` | Database connection |
+| `MEDIATREE_USER/PASSWORD` | Mediatree API credentials (from secrets) |
+| `BUCKET`, `BUCKET_SECRET`, `BUCKET_NAME` | Scaleway S3 config |
+| `START_DATE`, `NUMBER_OF_PREVIOUS_DAYS` | Batch job date range |
+| `CHANNEL` | Limit processing to a specific channel |
+| `UPDATE` | Reprocess existing data |
+| `MODIN_ENGINE` | Set to `ray` for distributed pandas |
+| `EXTENDED_PERIMETER` | `true`/`false` — toggles the extended France perimeter ("Droit à l'info") across `transform_program.py`, Label Studio ingestion and dbt grants |
+| `RRS_PG_*` | RRS PostgreSQL connection (separate database from `barometre`) |
+| `ANTHROPIC_API_KEY`, `MISTRAL_API_KEY` | LLM providers used by RRS clustering/misinformation classification and the advertising classification VLM/ASR pipeline |
+
+## CI/CD (GitHub Actions)
+
+- **Every push**: runs pytest against a PostgreSQL service container
+- **Main branch push**: bumps version (`poetry version patch`), builds Docker images, pushes to Scaleway Container Registry, updates Scaleway serverless job definitions
+- Scaleway jobs run as serverless batch jobs (not always-on services)
+
+## Multi-Country / i18n
+
+Country-specific keyword dictionaries live under `quotaclimat/data_processing/mediatree/i8n/<country>/`. Each country has its own keyword JSON and language-specific spaCy NLP pipeline. The `i8n/srt-to-mediatree-format.py` script handles subtitle format conversion.
+
+## Documentation map (where to look)
+
+Each README below is the authoritative source for its area — read it instead of guessing from code when working in that area:
+
+| File | Covers |
+|---|---|
+| `README.md` (root) | Full dev setup (pyenv/poetry/docker), Mediatree import/replay/update workflows, stop words, Alembic migrations, channel/program metadata, extended perimeter ("Droit à l'info"), SRT-to-Mediatree conversion, dbt materialized views, Label Studio ingestion, analytics layer |
+| `infrastructure/Readme.md` | Infra stack (OpenTofu/Terragrunt/Ansible/mise), project layout, Vaultwarden secrets, `make` targets, orchestrator (Kestra/GlitchTip) deployment, RRS extended-perimeter infra, full per-target resource inventory (advertising/barometre/rrs/orchestrator) |
+| `metabase/README.md` | Versioned Metabase SQL questions: folder layout, `questions.yml` manifests, variable substitution rules, Kestra sync flow (`metabase-sync`), how to add/modify a query |
+| `my_dbt_project/README.md` | dbt project layout, model-by-model docs (`homepage/`, `dashboards/`, `analytics/`, `advertising/`, `metadata/`), profiles/targets, external Google Sheets sources, access grants, seeds, tests |
+| `mockwebsite/README.md` | One-liner: folder served via nginx docker image for local sitemap-scraping tests |
+| `quotaclimat/data_ingestion/advertising/s03_classification/README.md` | 5-stage ad classification pipeline (transcribe → classify → dict match → subcat → canonicalise brand): env vars, LLM/ASR endpoint requirements, threaded runner architecture, `prediction_status` reference |
+| `quotaclimat/data_ingestion/advertising/s04_consolidation/README.md` | Ad merge-split-ads consolidation stage: `ad_merge.py` DB operations, merge/revert semantics, env vars |
+| `quotaclimat/data_ingestion/advertising/s05_enrichment/README.md` | One-liner pointer to `e01_brand_groups/` |
+| `quotaclimat/data_ingestion/advertising/s05_enrichment/e01_brand_groups/README.md` | Brand company/ultimate-parent enrichment job: `Inventaires_des_marques` Google Sheet tab format, INPI/GLEIF/Wikidata lookup steps, env vars |
+| `rrs/README.md` | RRS (Risk Response System) disinformation clustering: architecture, directory structure, dictionaries/subjects, keyword detection, misinformation classification, clustering pipeline, DB schema, extended perimeter, env vars, local Docker dev, CI/CD |
+| `rrs/clustering/README.md` | LLM clustering internals (`cluster_llm.py`, `cluster_llm_timeseries.py`): label generation/merge/classification steps, timeseries incremental mode, usage/flags, env vars |
+| `docs/kestra_flows.md` | Every production Kestra flow step by step: what code runs, what it reads/writes, which technologies are involved, plus where Kestra itself is hosted (shared Elastic Metal orchestrator, see `infrastructure/Readme.md`) |
+
+## Keeping docs in sync when opening a PR
+
+Before opening a PR (or when asked to update docs for one already opened), check whether the change needs a doc update, and make it part of the same PR:
+
+1. **Find what changed.** `git diff main...HEAD --stat` (or the PR's file list) to see which files moved.
+2. **Map changed files to docs** using the table above — not just by folder name, but by what actually changed:
+   - A new/changed Kestra flow (`infrastructure/kestra/flows/*.yaml`) → update `docs/kestra_flows.md`: the flow's own section (steps, inputs, env vars, reads/writes), the flow table near the top, and `main-pipeline`'s step list if the flow is chained from it. If it's a genuinely new flow with no section yet, add one — don't leave it undocumented just because the diagram doesn't exist yet (diagrams are a separate, optional Archify pass; note "(No diagram yet)" instead of skipping the writeup).
+   - A change under `rrs/` → `rrs/README.md` (and `rrs/clustering/README.md` for clustering internals).
+   - A change under `quotaclimat/data_ingestion/advertising/` → that stage's `README.md`.
+   - A change under `my_dbt_project/` → `my_dbt_project/README.md`.
+   - A change under `metabase/` or to Metabase questions → `metabase/README.md` and the relevant `questions.yml` (see the Metabase rules below).
+   - A change under `infrastructure/` → `infrastructure/Readme.md`, and `docs/kestra_flows.md`'s "Where Kestra itself runs" section if it touches the orchestrator host itself.
+   - A change to root-level setup/commands/architecture → root `README.md`, and mirror anything load-bearing into this file's own `## Architecture`/`## Commands` sections if it changes how Claude should work in the repo.
+3. **Write from the diff, not from memory.** Read the actual changed code (`gh pr diff <n>` or `git diff`) rather than guessing from the PR title/description — descriptions can be stale or incomplete. Confirm env var defaults, file paths and function names against the code before writing them into a doc.
+4. **Match the existing doc's voice and structure.** Follow the surrounding sections' format (tables, step numbering, "Runs/What happens/Technologies/Reads/Writes" bullets in `docs/kestra_flows.md`, etc.) rather than inventing a new structure.
+5. **Don't duplicate.** If another doc already covers the same fact, link to it instead of repeating it in full (see the `#documentation-map-where-to-look` table's own cross-references for the pattern).
+6. If genuinely unsure whether a change is doc-worthy, err toward updating — a stale doc is worse than a slightly over-documented one, but don't expand scope into unrelated pre-existing gaps unless fixing them is necessary to keep the new content coherent.
+
 # Consignes pour Claude
 
 ## Analyses Metabase : où mettre les requêtes SQL
@@ -111,3 +292,5 @@ Les tests dbt demandent un Postgres (job `dbt` de la CI). Une requête ajoutée 
 - **SQL Metabase, manifestes et `metabase/README.md`** : commentaires en français.
 - **Schéma `curate`** : noms de tables et de colonnes, descriptions et `meta` en français ; commentaires du SQL dbt en anglais, comme les autres modèles.
 - **PR** : description en français.
+</content>
+</invoke>

@@ -45,6 +45,8 @@ Pour chaque question, il fait quatre choses :
 - il crée les nouvelles variables à partir du manifeste et retire celles que la requête n'utilise plus ;
 - il ajoute ou met à jour, dans la description, une ligne « Requête versionnée : metabase/… (version …) ». Cette version est le hash du SQL synchronisé.
 
+Une table ou une colonne de filtre de champ que Metabase ne connaît pas encore (table que dbt vient de construire ou de déplacer) déclenche une synchronisation du schéma de la base dans Metabase. Le flow attend alors jusqu'à 5 minutes que la table apparaisse. Si elle n'apparaît pas, seules les questions de cette requête sont laissées de côté.
+
 Si le SQL d'une question a été modifié dans Metabase depuis sa dernière synchronisation, le flow ne la touche pas. C'est aussi le cas d'une question jamais synchronisée. Le flow échoue alors et affiche l'écart dans ses logs. Deux façons d'en sortir :
 - reporter la modification dans le fichier, par une PR ;
 - relancer avec `force` pour écraser la version de Metabase.

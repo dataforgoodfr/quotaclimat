@@ -36,6 +36,7 @@ inputs = {
   database_admin_password = get_env("TF_VAR_database_admin_password")
 
   barometre_rrs_read_password = get_env("TF_VAR_barometre_rrs_read_password")
+  metabase_analytics_password = get_env("TF_VAR_metabase_analytics_password")
 
   # Hand-curated personal/CI IPs currently allowed on rdb-poc, on top of the
   # Scaleway job CIDRs already baked into the template. Pruning this list of

@@ -3,7 +3,8 @@ import copy
 import pytest
 
 from quotaclimat.metabase.questions import METABASE_DIR, load_queries, read_query, render, sql_version, tag_names
-from quotaclimat.metabase.sync_questions import marker, native_query, plan, sync
+from quotaclimat.metabase import sync_questions
+from quotaclimat.metabase.sync_questions import Metabase, marker, native_query, plan, sync
 
 SQL = "SELECT {{debut}}, {{niveau}} [[, {{nb}}]] FROM analytics.t WHERE {{secteur}}"
 VARIABLES = {
@@ -132,6 +133,63 @@ def test_sync_leaves_questions_edited_in_metabase_unless_forced(monkeypatch):
     metabase = FakeMetabase({1: synchronized, 2: edited})
     assert sync(metabase, queries, apply=True, force=True) is True
     assert list(metabase.updated) == [1, 2]
+
+
+class SchemaSyncMetabase(Metabase):
+    """Metabase API where the table appears once the schema synchronization was asked and polled `delay` times."""
+
+    def __init__(self, delay):
+        super().__init__("https://metabase.test", "key")
+        self.delay = delay
+        self.sync_asked = []
+
+    def get(self, path):
+        if path == "table":
+            visible = self.sync_asked and self.delay <= 0
+            self.delay -= 1 if self.sync_asked else 0
+            return [{"id": 7, "db_id": 2, "schema": "analytics", "name": "t"}] if visible else []
+        if path == "table/7/query_metadata":
+            return {"fields": [{"name": "secteur", "id": 12}]}
+        raise KeyError(path)
+
+    def post(self, path):
+        self.sync_asked.append(path)
+
+
+def test_field_id_asks_metabase_to_synchronize_the_schema(monkeypatch):
+    monkeypatch.setattr(sync_questions.time, "sleep", lambda seconds: None)
+    metabase = SchemaSyncMetabase(delay=2)
+    assert metabase.field_id(2, "analytics.t.secteur") == 12
+    assert metabase.sync_asked == ["database/2/sync_schema"]
+    # known: no new request
+    assert metabase.field_id(2, "analytics.t.secteur") == 12
+    assert metabase.sync_asked == ["database/2/sync_schema"]
+
+
+def test_field_id_gives_up_after_the_timeout(monkeypatch):
+    clock = iter(range(0, 10_000, 60))
+    monkeypatch.setattr(sync_questions.time, "sleep", lambda seconds: None)
+    monkeypatch.setattr(sync_questions.time, "monotonic", lambda: next(clock))
+    with pytest.raises(ValueError, match="toujours inconnue"):
+        SchemaSyncMetabase(delay=1_000).field_id(2, "analytics.t.secteur")
+
+
+def test_sync_goes_on_when_a_field_filter_cannot_be_resolved(monkeypatch):
+    monkeypatch.setattr("quotaclimat.metabase.sync_questions.read_query", lambda file: "SELECT 1")
+    synchronized = mbql5_card("SELECT 1", [], [], marker("q.sql", "SELECT 1"))
+
+    class MissingTable(FakeMetabase):
+        def field_id(self, database, field):
+            raise ValueError("toujours inconnue")
+
+    metabase = MissingTable({1: synchronized, 2: synchronized})
+    queries = {
+        "a.sql": {"questions": [1], "variables": {"s": VARIABLES["secteur"]}, "database": 2},
+        "q.sql": {"questions": [2], "variables": {}, "database": 2},
+    }
+    # a.sql left out, q.sql still checked (up to date)
+    assert sync(metabase, queries, apply=True, force=False) is False
+    assert metabase.updated == {}
 
 
 def test_render():

@@ -8,17 +8,20 @@ The keyword step then reads these chunks back and removes stop words such as ads
 
 Finally, dbt combines the keywords, program metadata, Label Studio annotations and reference spreadsheets from Google Drive into the tables that Metabase shows. France runs every day ([`barometre`](#barometre)), and [`barometre-catchup`](#barometre-catchup) re-runs the last 7 days every night to fill gaps. The other countries go through the first two steps in [`barometre-i18n`](#barometre-i18n), and that flow then starts their misinformation jobs on Scaleway.
 
-**Droit à l'info (RRS).** Droit à l'info tracks misinformation on two subjects, climate and insecurity/immigration, and groups the cases into narratives. Its results go to the `rrs` database. It covers two TV perimeters:
+**Droit à l'info (RRS).** Droit à l'info tracks misinformation on three subjects — climate, insecurity/immigration and chemical pollution (`environmental_health`) — and groups the resulting cases into narratives. Its results go to the `rrs` database. It covers two TV perimeters:
 - **The baromètre's French channels:** it reuses the baromètre's data.
 - **The "extended perimeter":** 7 major channels (TF1, France 2, France 3 IDF, RTL, France 5, TMC, LCP). [`extended-perimeter`](#extended-perimeter) runs the same four baromètre steps on these channels, writing to a separate bucket, database and Label Studio project.
 
 For each perimeter, the pipeline then works as follows:
 - **Climate:** [`rrs-climate`](#rrs-climate) copies the climate chunks (`segments`) and the flagged, annotated chunks (`cases`) from the source database into `rrs`.
 - **Insecurity:** the baromètre has no keywords for this subject, so [`rrs-insecurity`](#rrs-insecurity) detects it directly. It runs regex queries in DuckDB over the raw transcripts on S3, using the dictionary in `rrs.dictionary`. It then asks Mistral whether each matching segment contains misinformation, and stores only the "oui" answers as cases.
-- **Clustering, for both subjects:** the cases of the day are grouped into narratives. Claude proposes and merges the labels, and `mistral-embed` deduplicates them against the narratives still active.
+- **Chemical pollution:** [`rrs-pollution`](#rrs-pollution) re-filters the baromètre's already-detected climate/biodiversity keyword chunks down to the `environmental_health` dictionary, then fact-checks the matches with a RAG agent (Mistral) against a small corpus of expert-model source documents, instead of relying on the LLM's own knowledge of the subject.
+- **Clustering, for every subject:** the cases of the day are grouped into narratives. Claude or Mistral proposes and merges the labels, and `mistral-embed` deduplicates them against the narratives still active.
 - **Social media:** separately, [`pulsar-themes`](#pulsar-themes) fetches the themes and top posts from Pulsar every night. Mistral translates them and classifies the posts.
 
-[`main-pipeline`](#main-pipeline) chains the two projects every day. It runs the extended perimeter first, then the baromètre, and after each one it runs the two RRS subjects.
+Both `rrs-insecurity` and `rrs-pollution` read the full `segments`/`cases` table for a subject/date window regardless of which perimeter (baromètre or extended) wrote each row, since nothing in those tables says which one did, so their misinformation-detection step always configures S3 credentials for **both** buckets (see their sections below).
+
+[`main-pipeline`](#main-pipeline) chains the two projects every day. It runs the extended perimeter first, then the baromètre, and after each one it runs the three RRS subjects.
 
 Each flow has its own diagram. Read it top to bottom: every horizontal lane is one Kestra task, in execution order. Inside a lane, the left side shows what the task reads, the middle shows the code it runs, and the right side shows what it writes. When a store written by one step is read by the next, it appears in both lanes (for example `S3: mediatree` at the end of step 1 and at the start of step 2).
 
@@ -26,14 +29,21 @@ Each flow has its own diagram. Read it top to bottom: every horizontal lane is o
 |---|---|---|---|
 | [`main-pipeline`](#main-pipeline) | `quotaclimat` | `main_quotaclimat_mainpipeline.yaml` | cron 01:10 and 12:30 |
 | [`extended-perimeter`](#extended-perimeter) | `rrs` | `main_rrs_extendedperimeter.yaml` | `main-pipeline` step 1 |
-| [`barometre`](#barometre) | `quotaclimat` | `main_quotaclimat_barometre.yaml` | `main-pipeline` step 4 |
-| [`rrs-climate`](#rrs-climate) | `rrs` | `main_rrs_climate.yaml` | `main-pipeline` steps 2 and 5 |
-| [`rrs-insecurity`](#rrs-insecurity) | `rrs` | `main_rrs_insecurity.yaml` | `main-pipeline` steps 3 and 6 |
+| [`barometre`](#barometre) | `quotaclimat` | `main_quotaclimat_barometre.yaml` | `main-pipeline` step 5 |
+| [`rrs-climate`](#rrs-climate) | `rrs` | `main_rrs_climate.yaml` | `main-pipeline` steps 2 and 6 |
+| [`rrs-insecurity`](#rrs-insecurity) | `rrs` | `main_rrs_insecurity.yaml` | `main-pipeline` steps 3 and 7 |
+| [`rrs-pollution`](#rrs-pollution) | `rrs` | `main_rrs_pollution.yaml` | `main-pipeline` steps 4 and 8 |
 | [`barometre-catchup`](#barometre-catchup) | `quotaclimat` | `main_quotaclimat_barometrecatchup.yaml` | cron 03:00 |
 | [`barometre-i18n`](#barometre-i18n) | `quotaclimat` | `main_quotaclimat_barometrei18n.yaml` | cron 04:07 |
 | [`pulsar-themes`](#pulsar-themes) | `rrs` | `main_rrs_pulsarthemes.yml` | cron 00:30 |
 
 All times are Europe/Paris. Dev flows are covered [at the end](#dev-flows).
+
+## Where Kestra itself runs
+
+Kestra is not a Scaleway managed service: it is deployed, along with [GlitchTip](https://glitchtip.com) (error tracking) and [Traefik](https://traefik.io) (reverse proxy, automatic TLS), on a single shared Scaleway **Elastic Metal** bare-metal server (`EM-A610R-NVMe`) provisioned by OpenTofu/Terragrunt and configured by Ansible. Unlike the flow targets above, the orchestrator has **no dev/prod split** at the infrastructure level — Kestra separates environments with namespaces (`quotaclimat` vs `quotaclimat-dev`, `rrs` vs `rrs-dev`) and GlitchTip with projects, both on the same host. Flow YAML files in `infrastructure/kestra/flows/` are uploaded to Kestra by the Ansible `kestra` role, which also provisions the Kestra secrets (`{{ secret('...') }}`) and KV entries the flows reference. See `infrastructure/Readme.md` ("Orchestrator deployment") for the deploy/update commands (`make tags=kestra ansible`) and the full resource inventory.
+
+Interactive diagram: [`diagrams/infra-topology.html`](diagrams/infra-topology.html). It shows the Elastic Metal host (Traefik/Kestra/GlitchTip and the flow task containers Kestra spawns via `docker.sock`), the managed Postgres instance shared with `barometre` (`rdb-poc`), the separate RRS Postgres instance, the Container Registry, the Scaleway Serverless Jobs used outside the `docker.sock` path (RRS migrate/clustering/import, the i18n misinformation trigger), and the downstream data stores/APIs the flow containers reach.
 
 ## Shared building blocks
 
@@ -45,14 +55,14 @@ Except for `main-pipeline` (subflow calls) and the i18n Scaleway trigger (an HTT
 |---|---|---|
 | `namespace-barometre/quotaclimat_base:latest` | this repo (`Dockerfile`) | ingest, keyword detection, dbt in `barometre*` and `extended-perimeter` |
 | `misinformation/label-misinformation:latest` | [`dataforgoodfr/climateguard`](https://github.com/dataforgoodfr/climateguard) (`jobs/label_misinformation`) | `detect_misinformation` in `barometre`, `barometre-catchup`, `extended-perimeter` |
-| `rrs-prod/rrs-base:prod` | this repo (`rrs/Dockerfile`) | every task of `rrs-climate` and `rrs-insecurity` |
+| `rrs-prod/rrs-base:prod` | this repo (`rrs/Dockerfile`) | every task of `rrs-climate`, `rrs-insecurity` and `rrs-pollution` |
 | `rrs-prod/rrs-pulsar:prod` | this repo (`rrs/Dockerfile.pulsar`) | `pulsar-themes` |
 
 ### Date window
 
 `barometre`, `barometre-catchup`, `barometre-i18n` and `extended-perimeter` take `days_back` and an optional `start_date`. Kestra converts `start_date` (or `now()` when it is empty) to an epoch in `START_DATE`, and passes `days_back` as `NUMBER_OF_PREVIOUS_DAYS`. The Python jobs process the `days_back` days before `START_DATE`. Because Kestra always sets `START_DATE`, the fallback in `api_import.py` that looks for gaps in the `keywords` table is never used by these flows.
 
-The RRS flows (`rrs-climate`, `rrs-insecurity`, `pulsar-themes`) take `start_date`/`end_date` as `YYYY-MM-DD` strings and `days_back`. When nothing is set, each script picks its own window (described per step below).
+The RRS flows (`rrs-climate`, `rrs-insecurity`, `rrs-pollution`, `pulsar-themes`) take `start_date`/`end_date` as `YYYY-MM-DD` strings and `days_back`. When nothing is set, each script picks its own window (described per step below).
 
 ### Technologies
 
@@ -73,8 +83,9 @@ The RRS flows (`rrs-climate`, `rrs-insecurity`, `pulsar-themes`) take `start_dat
 | dbt | SQL models for Metabase (`public`, `analytics`, `dashboards`, `advertising` schemas) |
 | DuckDB | RRS: attaches Postgres sources and reads S3 parquet (`httpfs`) |
 | `psycopg` | RRS: Postgres reads and writes |
-| Mistral API | RRS: insecurity misinformation classification, embeddings, Pulsar translation and post classification |
+| Mistral API | RRS: insecurity misinformation classification, pollution RAG fact-checking agent, embeddings, Pulsar translation and post classification |
 | Anthropic API | RRS: Claude Haiku 4.5 for narrative clustering |
+| RAG (expert-model index) | RRS pollution: PDF source documents chunked and embedded (Mistral/e5/bge-m3) into a cosine-search index on S3, queried by the fact-checking agent as a tool call |
 | Pulsar TRAC API | Social media themes, topics and posts (GraphQL) |
 | Sentry | Error and cron monitoring of the Python jobs |
 
@@ -88,7 +99,7 @@ The orchestrator of the daily chain. It runs no code of its own: each task is an
 
 | Input | Default | Effect |
 |---|---|---|
-| `with_rrs` | `true` | `false` skips steps 1-3 and 5-6 (`runIf`), so only `barometre` runs |
+| `with_rrs` | `true` | `false` skips steps 1-4 and 6-8 (`runIf`), so only `barometre` runs |
 | `days_back` | `1` | Passed to `extended-perimeter` and `barometre` |
 | `start_date` | today | Passed to `extended-perimeter` and `barometre` as `YYYY-MM-DD` |
 
@@ -96,11 +107,13 @@ Steps:
 1. `extended_perimeter`: [`extended-perimeter`](#extended-perimeter) with `days_back`, `start_date`.
 2. `rrs_climate_extended`: [`rrs-climate`](#rrs-climate) with `source=extended`, `run_clustering=false`.
 3. `rrs_insecurity_extended`: [`rrs-insecurity`](#rrs-insecurity) with `source=extended`, `run_clustering=false`.
-4. `barometre`: [`barometre`](#barometre) with `days_back`, `start_date`.
-5. `rrs_climate`: [`rrs-climate`](#rrs-climate) with its defaults (`source=barometre`, clustering on).
-6. `rrs_insecurity`: [`rrs-insecurity`](#rrs-insecurity) with its defaults (`source=barometre`, clustering on).
+4. `rrs_pollution_extended`: [`rrs-pollution`](#rrs-pollution) with `source=extended`, `run_detect_misinformation_rag=false`, `run_clustering=false`.
+5. `barometre`: [`barometre`](#barometre) with `days_back`, `start_date`.
+6. `rrs_climate`: [`rrs-climate`](#rrs-climate) with its defaults (`source=barometre`, clustering on).
+7. `rrs_insecurity`: [`rrs-insecurity`](#rrs-insecurity) with its defaults (`source=barometre`, clustering on).
+8. `rrs_pollution`: [`rrs-pollution`](#rrs-pollution) with its defaults (`source=barometre`, RAG fact-checking and clustering on).
 
-The RRS subflows receive no dates: `rrs-climate` resumes from what is already in the `rrs` DB, and `rrs-insecurity` uses its own `days_back` default of 1.
+The RRS subflows receive no dates: `rrs-climate` resumes from what is already in the `rrs` DB, `rrs-insecurity` uses its own `days_back` default of 1, and `rrs-pollution`'s `filter_keywords` step likewise resumes from the latest `environmental_health` segment already in `rrs.segments` through now.
 
 ## barometre
 
@@ -214,7 +227,7 @@ Clustering selects cases by subject, not by source. With `run_clustering=false`,
 
 Interactive version: [`diagrams/flows/rrs-insecurity.html`](diagrams/flows/rrs-insecurity.html).
 
-Insecurity/immigration has no keyword pipeline in the OME, so this flow detects it directly from the raw transcripts on S3. It has the same inputs as `rrs-climate`, but `days_back` defaults to 1 and is used by every step (`DAYS_PRIOR`). When `source=extended`, the bucket is read with `RRS_SCW_ACCESS`/`RRS_SCW_SECRET`. All tasks run in `rrs-base` with `SUBJECT=insecurity`.
+Insecurity/immigration has no keyword pipeline in the OME, so this flow detects it directly from the raw transcripts on S3. It has the same inputs as `rrs-climate`, but `days_back` defaults to 1 and is used by every step (`DAYS_PRIOR`). Step 1 (`analyse_keywords`, write side) reads the search's transcripts with `RRS_SCW_ACCESS`/`RRS_SCW_SECRET` when `source=extended` and `SCW_ACCESS`/`SCW_SECRET` otherwise. All tasks run in `rrs-base` with `SUBJECT=insecurity`.
 
 ### 1. `analyse_keywords`: S3 transcripts to `rrs.segments`
 
@@ -225,12 +238,44 @@ Insecurity/immigration has no keyword pipeline in the OME, so this flow detects 
 ### 2. `detect_misinformation`: Mistral classification
 
 - **Runs:** `python -m rrs.misinformation_detection.main`.
-- **What happens:** loads the insecurity segments of the window from `rrs.segments` and fetches their plaintext from the parquet files on S3 (DuckDB). Each text is sent to Mistral (`mistral-small-2603`, 10 concurrent requests). The system prompt is built from the subject definition in `definitions.py`. The answer is structured: `oui`/`non`/`incertain`, a confidence score and a justification. Only `oui` segments are upserted into `cases`, with the label as score and the justification as reason.
+- **What happens:** loads the insecurity segments of the window from `rrs.segments` — which can carry a mix of baromètre-source and extended-source rows for the same window, since nothing in `segments` says which perimeter wrote a given row — and fetches their plaintext from the parquet files on S3 (DuckDB). To read either bucket without knowing in advance which one a given segment's `s3_uri` points at, `_configure_s3` registers **two** DuckDB S3 secrets: `RRS_BUCKET`/`RRS_BUCKET_SECRET` as the unscoped default (any bucket other than `BUCKET_NAME`), and `BUCKET`/`BUCKET_SECRET` scoped to `BUCKET_NAME` (`"mediatree"`) — DuckDB picks whichever secret's scope matches the actual path, the more specific one winning. Each text is then sent to Mistral (`mistral-small-2603`, 10 concurrent requests). The system prompt is built from the subject definition in `definitions.py`. The answer is structured: `oui`/`non`/`incertain`, a confidence score and a justification. Only `oui` segments are upserted into `cases`, with the label as score and the justification as reason.
 - **Technologies:** Mistral API, DuckDB `httpfs`, `psycopg`, `asyncio`.
+- **Reads:** `rrs.segments`, S3 `mediatree` + `mediatree-extended-perimeter-prod` (credentials: `BUCKET`/`BUCKET_SECRET` always `SCW_ACCESS`/`SCW_SECRET`; `RRS_BUCKET`/`RRS_BUCKET_SECRET` always `RRS_SCW_ACCESS`/`RRS_SCW_SECRET`, regardless of `source`). **Writes:** `rrs.cases`.
 
 ### 3. `clustering`
 
 Same code as [`rrs-climate` step 3](#3-clustering-narratives-only-when-run_clustering) with `SUBJECT=insecurity`. Since `days_back` is always set here, it clusters the cases of the `DAYS_PRIOR` window instead of looking for unprocessed days.
+
+## rrs-pollution
+
+*(No diagram yet — see "Updating the diagrams" below to add one.)*
+
+Chemical-pollution (`environmental_health`) misinformation, fact-checked against a small expert-document corpus instead of the LLM's own knowledge of the subject. Unlike insecurity, the baromètre already has a keyword pipeline for this theme (it's one of the climate/biodiversity/resources dictionaries), so this flow re-filters the baromètre's own detections rather than re-scanning S3. Same `source`/`days_back`/`start_date`/`end_date` inputs as `rrs-climate`/`rrs-insecurity`, plus `run_detect_misinformation_rag` (default `true`, skips steps 2-3) and `run_clustering` (default `true`, skips step 4). All tasks run in `rrs-base` with `SUBJECT=environmental_health`.
+
+### 1. `filter_keywords`: re-filter climate segments to `rrs.segments`
+
+- **Runs:** `python -m rrs.keyword_detection.filter_keywords`.
+- **What happens:** reuses the keywords the baromètre's climate pipeline already detected (read the same way as `rrs-climate`'s `import_segments`, via DuckDB `ATTACH` on the source Postgres DB — `barometre` or `extended-perimeter` depending on `source`), and keeps the segments that also match the `environmental_health` dictionary: a keyword string match, or the two keywords sharing the same spaCy lemma, against the `environmental_health` dictionary's validated, non-high-risk keywords, excluding any high-risk-false-positive match. Matches are upserted into `segments` with subject `environmental_health`. Without an explicit window, resumes from the latest `environmental_health` segment already in `rrs.segments`.
+- **Technologies:** DuckDB `postgres` extension, spaCy lemma matching (same as `quotaclimat/data_processing/mediatree/detect_keywords.py`), `psycopg`.
+- **Reads:** source DB `keywords` (`barometre` or `extended-perimeter`). **Writes:** `rrs.segments`.
+
+### 2. `build_embeddings`: refresh the RAG index (only when `run_detect_misinformation_rag`)
+
+- **Runs:** `python -m rrs.rag.build_embeddings`.
+- **What happens:** downloads the `environmental_health` source PDFs from `s3://{EMBEDDINGS_BUCKET_NAME}/{S3_PREFIX}/environmental_health/raw/`, parses them into chapter/subsection records (font-size heuristics), splits them into overlapping chunks, embeds them (Mistral embeddings), and uploads the resulting index (`chunks.jsonl`, `embeddings.npy`, `meta.json`) to `.../rag/`. Skips rebuilding when the raw PDFs' S3 ETags still match the fingerprint stored in the previous build's `meta.json`.
+- **Technologies:** Mistral embeddings API, `boto3` (Scaleway S3), PDF parsing.
+- **Reads/writes:** S3 `expert-model-source-documents-prod` (bucket name is the same across `source=barometre`/`extended`: the expert-document corpus isn't perimeter-specific).
+
+### 3. `detect_misinformation_rag`: RAG fact-checking agent (only when `run_detect_misinformation_rag`)
+
+- **Runs:** `python -m rrs.rag.run_rag_agent_mistral`.
+- **What happens:** downloads the RAG index built above, then loads `environmental_health` segments for the window from `rrs.segments` and fetches their plaintext from S3 — exactly like `rrs-insecurity`'s `detect_misinformation`, this step configures **both** DuckDB S3 secrets (`RRS_BUCKET`/`RRS_BUCKET_SECRET` unscoped default, `BUCKET`/`BUCKET_SECRET` scoped to `BUCKET_NAME`="mediatree"), since segments for the window can come from either perimeter. For each segment, the Mistral agent reasons about which claims touch the theme, calls a `search_reference` tool against the RAG index, reflects on the evidence, and reaches a `[FLAGGED]`/`[NOT_FLAGGED]` verdict with a debunk of each problematic phrase. `FLAGGED` segments are upserted into `cases` (score = verdict, reason = debunk, plus the full queries/evaluations/evidence/sources trail in `analysis`).
+- **Technologies:** Mistral API (agent + embeddings), DuckDB `httpfs`, `psycopg`, `asyncio`.
+- **Reads:** `rrs.segments`, S3 `mediatree` + `mediatree-extended-perimeter-prod`, S3 `expert-model-source-documents-prod` (RAG index). **Writes:** `rrs.cases`.
+
+### 4. `clustering` (only when `run_clustering`)
+
+Same code as [`rrs-climate` step 3](#3-clustering-narratives-only-when-run_clustering) with `SUBJECT=environmental_health`.
 
 ## barometre-catchup
 

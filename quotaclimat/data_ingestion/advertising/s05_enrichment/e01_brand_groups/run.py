@@ -65,12 +65,16 @@ NICE_CLASSES_COLUMN_QUERY = text("""
 NICE_CLASSES_QUERY = text(
     "SELECT sector_code, classes_nice FROM advertising.ref_ome_secteurs"
 )
+# columns of the tab Marques, in its order (dry-run lines pasted in the sheet); the job leaves
+# actionnaire_maj_ultime and amu_statut empty, for a human to fill in
 CSV_COLUMNS = [
     "marque",
     "entreprise",
-    "societe_mere_ultime",
     "e_statut",
+    "societe_mere_ultime",
     "smu_statut",
+    "actionnaire_maj_ultime",
+    "amu_statut",
     "commentaires",
 ]
 

@@ -10,9 +10,9 @@ expert_models/scripts/):
   - build_rag_index.py: splits those sections into <= --chunk-chars
     snippets (sentence-level, with overlap) and embeds them.
 
-Source PDFs are downloaded from s3://{BUCKET_NAME}/{S3_PREFIX}/{subject}/raw/,
+Source PDFs are downloaded from s3://{EMBEDDINGS_BUCKET_NAME}/{S3_PREFIX}/{subject}/raw/,
 and the built index (chunks.jsonl, embeddings.npy, meta.json — see
-rag_utils.save_index) is uploaded to s3://{BUCKET_NAME}/{S3_PREFIX}/{subject}/rag/.
+rag_utils.save_index) is uploaded to s3://{EMBEDDINGS_BUCKET_NAME}/{S3_PREFIX}/{subject}/rag/.
 
 Before rebuilding, the raw PDFs' ETags are hashed into a fingerprint and
 compared against the "source_fingerprint" stored in the previous build's
@@ -38,7 +38,7 @@ import pymupdf as fitz
 from dotenv import load_dotenv
 
 from rrs.rag.rag_utils import DEFAULT_EMBEDDER, EMBEDDERS, Embedder, META_FILE, save_index
-from rrs.rag.s3_sync import BUCKET_NAME, download_prefix, get_object_etags, get_s3_client, read_text, upload_folder
+from rrs.rag.s3_sync import EMBEDDINGS_BUCKET_NAME, download_prefix, get_object_etags, get_s3_client, read_text, upload_folder
 
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
@@ -339,19 +339,19 @@ def build_embeddings(
     raw_prefix = f"{s3_prefix}/{subject_name}/raw/"
     rag_prefix = f"{s3_prefix}/{subject_name}/rag"
 
-    raw_etags = get_object_etags(s3, BUCKET_NAME, raw_prefix)
+    raw_etags = get_object_etags(s3, EMBEDDINGS_BUCKET_NAME, raw_prefix)
     pdf_etags = {k: v for k, v in raw_etags.items() if k.lower().endswith(".pdf")}
     if not pdf_etags:
-        raise SystemExit(f"No PDF files found at s3://{BUCKET_NAME}/{raw_prefix}")
+        raise SystemExit(f"No PDF files found at s3://{EMBEDDINGS_BUCKET_NAME}/{raw_prefix}")
     source_fingerprint = _fingerprint(pdf_etags)
 
     if not force:
-        previous_meta_raw = read_text(s3, BUCKET_NAME, f"{rag_prefix}/{META_FILE}")
+        previous_meta_raw = read_text(s3, EMBEDDINGS_BUCKET_NAME, f"{rag_prefix}/{META_FILE}")
         if previous_meta_raw is not None:
             previous_fingerprint = json.loads(previous_meta_raw).get("source_fingerprint")
             if previous_fingerprint == source_fingerprint:
                 logging.info(
-                    f"Source documents at s3://{BUCKET_NAME}/{raw_prefix} unchanged since the last "
+                    f"Source documents at s3://{EMBEDDINGS_BUCKET_NAME}/{raw_prefix} unchanged since the last "
                     f"build — skipping. Pass --force to rebuild anyway."
                 )
                 return rag_prefix
@@ -361,12 +361,12 @@ def build_embeddings(
         raw_dir = tmp_path / "raw"
         out_dir = tmp_path / "rag"
 
-        logging.info(f"Downloading source PDFs from s3://{BUCKET_NAME}/{raw_prefix}...")
+        logging.info(f"Downloading source PDFs from s3://{EMBEDDINGS_BUCKET_NAME}/{raw_prefix}...")
         pdf_paths = [
-            p for p in download_prefix(s3, BUCKET_NAME, raw_prefix, raw_dir) if p.suffix.lower() == ".pdf"
+            p for p in download_prefix(s3, EMBEDDINGS_BUCKET_NAME, raw_prefix, raw_dir) if p.suffix.lower() == ".pdf"
         ]
         if not pdf_paths:
-            raise SystemExit(f"No PDF files found at s3://{BUCKET_NAME}/{raw_prefix}")
+            raise SystemExit(f"No PDF files found at s3://{EMBEDDINGS_BUCKET_NAME}/{raw_prefix}")
         logging.info(f"  {len(pdf_paths)} PDF(s) downloaded.")
 
         chunks: list[dict] = []
@@ -422,8 +422,8 @@ def build_embeddings(
         }
         save_index(out_dir, chunks, embeddings, meta)
 
-        logging.info(f"Uploading index to s3://{BUCKET_NAME}/{rag_prefix}/...")
-        upload_folder(s3, out_dir, BUCKET_NAME, rag_prefix)
+        logging.info(f"Uploading index to s3://{EMBEDDINGS_BUCKET_NAME}/{rag_prefix}/...")
+        upload_folder(s3, out_dir, EMBEDDINGS_BUCKET_NAME, rag_prefix)
         logging.info("  Done.")
 
     return rag_prefix

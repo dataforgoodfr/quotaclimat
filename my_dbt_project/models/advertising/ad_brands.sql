@@ -9,8 +9,9 @@
     ultimate parent company. Used by analytics.publicites, which falls back on the predicted brand
     for the brands not listed here.
     - entreprise: company of the brand (Activia -> Danone, Free -> Free: a brand can be its own company);
-    - societe_mere_ultime: ultimate parent company of the company (consolidation level).
-    Each value has its status (e_statut, smu_statut): 'vérifié', 'non vérifié' or 'à vérifier'. A value is
+    - societe_mere_ultime: ultimate parent company of the company (consolidation level);
+    - actionnaire_maj_ultime: ultimate majority shareholder (e.g. a family holding), passed through only.
+    Each value has its status (e_statut, smu_statut, amu_statut): 'vérifié', 'non vérifié' or 'à vérifier'. A value is
     used unless its status is 'à vérifier' (the job writes the ultimate parent company 'à vérifier').
     Brands are compared with name_key (case, accents, punctuation and spaces ignored). -#}
 WITH inventory AS (
@@ -20,8 +21,10 @@ WITH inventory AS (
     NULLIF(TRIM(entreprise), '') AS company,
     NULLIF(TRIM(societe_mere_ultime), '') AS ultimate_parent,
     NULLIF(TRIM(e_statut), '') AS company_status,
-    NULLIF(TRIM(smu_statut), '') AS ultimate_parent_status
-  FROM ({{ source_or_empty('advertising', 'brand_inventory', ['marque', 'entreprise', 'societe_mere_ultime', 'e_statut', 'smu_statut']) }}) inventory
+    NULLIF(TRIM(smu_statut), '') AS ultimate_parent_status,
+    NULLIF(TRIM(actionnaire_maj_ultime), '') AS ultimate_majority_shareholder,
+    NULLIF(TRIM(amu_statut), '') AS ultimate_majority_shareholder_status
+  FROM ({{ source_or_empty('advertising', 'brand_inventory', ['marque', 'entreprise', 'societe_mere_ultime', 'e_statut', 'smu_statut', 'actionnaire_maj_ultime', 'amu_statut']) }}) inventory
 ),
 usable AS (
   SELECT
@@ -50,6 +53,8 @@ SELECT
   company_status,
   ultimate_parent,
   ultimate_parent_status,
+  ultimate_majority_shareholder,
+  ultimate_majority_shareholder_status,
   -- the company unless 'à vérifier', else the brand itself
   COALESCE(usable_company, brand) AS brand_company,
   -- the ultimate parent company unless 'à vérifier', else the company

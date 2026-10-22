@@ -692,7 +692,7 @@ def test_emission_jour_environment(db_connection):
                 ('pytest_env_margin', 'bfmtv', %(program)s, 'france', '2025-04-07 23:03', 6),
                 -- 12:00: no emission of the program within 6 min in the test sheet, left out
                 ('pytest_env_gap', 'bfmtv', %(program)s, 'france', '2025-04-07 12:00', 30),
-                -- without program: left out, like in the dashboards
+                -- without program id nor channel_program: left out, like in the dashboards
                 ('pytest_env_no_program', 'bfmtv', NULL, 'france', '2025-04-07 07:10', 30)
         """, {"program": programs[0][0]})
     db_connection.commit()
@@ -716,6 +716,44 @@ def test_emission_jour_environment(db_connection):
         "bfmtv|émission|Face à face|false": 60,
         "bfmtv|émission|BFM Grand Soir|false": 120,
     }
+
+
+def test_emission_jour_themes_legacy_segments_and_capture(db_connection):
+    """A segment without program_metadata_id (before 2025) goes to the program of its channel_program, like the
+    dashboards; the time of each subject; chaine_captee: a channel without capture nor segment that day."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            INSERT INTO public.keywords (id, channel_name, program_metadata_id, channel_program, country, start,
+                number_of_keywords, number_of_keywords_climat, number_of_keywords_biodiversite,
+                number_of_changement_climatique_constat)
+            VALUES ('pytest_env_legacy', 'bfmtv', NULL, 'Information en continu', 'france', '2025-04-07 07:20',
+                4, 3, 2, 1)
+        """)
+    db_connection.commit()
+    try:
+        run_dbt_command(["run", "--select", "emission_jour"])
+        with db_connection.cursor() as cur:
+            cur.execute("""
+                SELECT env_heures, climat_heures, biodiversite_heures, climat_constat_heures, ressources_heures,
+                    chaine_captee
+                FROM public.emission_jour
+                WHERE emission_cle = 'bfmtv|émission|BFM Première|false' AND jour = '2025-04-07'
+            """)
+            row = cur.fetchone()
+            cur.execute("""
+                SELECT DISTINCT chaine_captee FROM public.emission_jour
+                WHERE channel_name = 'tf1' AND jour = '2025-04-07'
+            """)
+            tf1 = cur.fetchall()
+    finally:
+        with db_connection.cursor() as cur:
+            cur.execute("DELETE FROM public.keywords WHERE id = 'pytest_env_legacy'")
+        db_connection.commit()
+        run_dbt_command(["run", "--select", "emission_jour"])
+    # in seconds; the subjects of a 20 s window do not add up to the environment
+    assert [round(float(v) * 3600) for v in row[:5]] == [80, 60, 40, 20, 0]
+    assert row[5] is True
+    assert tf1 == [(False,)]
 
 
 def test_pub_annonceur_emission_jour(db_connection):

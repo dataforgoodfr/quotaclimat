@@ -757,6 +757,41 @@ models:
           segments of the emission (like core_query_environmental_shares).
       - name: nb_cas
         description: Validated misinformation cases (analytics.cas_de_mesinformation) during the emission.
+      - name: climat_heures
+        description: Time spent on climate (number_of_keywords_climat), in hours, 20 s windows like env_heures.
+      - name: biodiversite_heures
+        description: Time spent on biodiversity (number_of_keywords_biodiversite), in hours, 20 s windows like env_heures.
+      - name: ressources_heures
+        description: Time spent on resources (number_of_keywords_ressources), in hours, 20 s windows like env_heures.
+      - name: climat_constat_heures
+        description: Time spent on climate, observation (number_of_changement_climatique_constat), in hours, 20 s windows like env_heures.
+      - name: climat_causes_heures
+        description: Time spent on climate, causes (number_of_changement_climatique_causes_directes), in hours, 20 s windows like env_heures.
+      - name: climat_consequences_heures
+        description: Time spent on climate, consequences (number_of_changement_climatique_consequences), in hours, 20 s windows like env_heures.
+      - name: climat_attenuation_heures
+        description: Time spent on climate, mitigation solutions (number_of_attenuation_climatique_solutions_directes), in hours, 20 s windows like env_heures.
+      - name: climat_adaptation_heures
+        description: Time spent on climate, adaptation solutions (number_of_adaptation_climatique_solutions_directes), in hours, 20 s windows like env_heures.
+      - name: biodiversite_constat_heures
+        description: Time spent on biodiversity, general concepts (number_of_biodiversite_concepts_generaux), in hours, 20 s windows like env_heures.
+      - name: biodiversite_causes_heures
+        description: Time spent on biodiversity, causes (number_of_biodiversite_causes_directes), in hours, 20 s windows like env_heures.
+      - name: biodiversite_consequences_heures
+        description: Time spent on biodiversity, consequences (number_of_biodiversite_consequences), in hours, 20 s windows like env_heures.
+      - name: biodiversite_solutions_heures
+        description: Time spent on biodiversity, solutions (number_of_biodiversite_solutions_directes), in hours, 20 s windows like env_heures.
+      - name: ressources_constat_heures
+        description: Time spent on resources (number_of_ressources), in hours, 20 s windows like env_heures.
+      - name: ressources_solutions_heures
+        description: Time spent on resources, solutions (number_of_ressources_solutions), in hours, 20 s windows like env_heures.
+      - name: chaine_captee
+        description: >
+          The channel was captured that day: minutes in public.time_monitored, or a keyword segment (before
+          time_monitored, end of 2024). False for an outage or a channel still in the grid but no longer broadcast
+          (C8): its airtime is not monitored and would count as 0 % environment.
+        tests:
+          - not_null
 
   - name: pub_annonceur_emission_jour
     description: >

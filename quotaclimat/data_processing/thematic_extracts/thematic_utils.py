@@ -11,6 +11,33 @@ DESTINATION_TABLE_PATTERN = (
 )
 
 
+### TEXT NORMALIZATION ###
+# lower, œ/æ -> oe/ae, French accents -> plain letter, apostrophes and hyphen -> space.
+# normalize_text (python, for keywords) and normalize_sql (duckdb, for texts) must stay identical.
+ACCENTS_FROM, ACCENTS_TO = "àâäéèêëîïôöùûüÿç", "aaaeeeeiioouuuyc"
+SEPARATORS = "'’‘‛ʼʹ´`′＇-"
+
+def normalize_text(s: str) -> str:
+    """Normalizes a python string (keywords, keywords plaintext). None stays None, as in normalize_sql."""
+    if s is None:
+        return None
+    s = s.lower().replace("œ", "oe").replace("æ", "ae").translate(str.maketrans(ACCENTS_FROM, ACCENTS_TO))
+    return re.sub(f"[{SEPARATORS}]", " ", s)
+
+
+def normalize_sql(col: str) -> str:
+    """Returns the duckdb expression that normalizes a text column (NULL stays NULL)."""
+    separators_sql = SEPARATORS.replace("'", "''")
+    return f"""regexp_replace(
+                        translate(
+                            replace(replace(lower({col}), 'œ', 'oe'), 'æ', 'ae'),
+                            '{ACCENTS_FROM}',
+                            '{ACCENTS_TO}'
+                        ),
+                        '[{separators_sql}]', ' ', 'g'
+                    )"""
+
+
 ### KEYWORDS ###
 def get_keywords(yml_file: str, thematic: str, media_type: str, language: str) -> list[str]:
     """Returns the keywords of a thematic, as declared under

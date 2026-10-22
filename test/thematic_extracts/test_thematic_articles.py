@@ -17,7 +17,7 @@ D1, D2, D3, D4, D5 = (date(2025, 3, d) for d in (10, 11, 12, 13, 14))
 PERIOD = "p_test"
 SOURCE = f"{SCHEMA}.factiva_articles"
 OUT_COLS = ["an", "source_code", "source_name", "publication_datetime",
-            "title", "snippet", "body", "word_count", "keywords_found"]
+            "title_normalized", "snippet_normalized", "body_normalized", "word_count", "keywords_found"]
 PARIS_DAY = "CAST(publication_datetime AT TIME ZONE 'Europe/Paris' AS DATE)"
 
 
@@ -98,8 +98,8 @@ class RunEnv:
         self._n += 1
         row = dict(an=an or f"an_{self._n}", source_code="LEFIG", source_name="Le Figaro",
                    publication_datetime=pd.Timestamp(f"{day} 10:00", tz="Europe/Paris"),
-                   title=f"title {self._n}", snippet="s",
-                   body="b", word_count=150, keywords_found="inondation")
+                   title_normalized=f"title {self._n}", snippet_normalized="s",
+                   body_normalized="b", word_count=150, keywords_found="inondation")
         row.update(overrides)
         self.articles.append(row)
 
@@ -125,7 +125,7 @@ class RunEnv:
     
     def insert_sentinel(self, an="sentinel", day=date(2025, 1, 1)):
         self.con.execute(
-            f"INSERT INTO {self.table} (an, source_code, source_name, publication_datetime, title, keywords_found, period) "
+            f"INSERT INTO {self.table} (an, source_code, source_name, publication_datetime, title_normalized, keywords_found, period) "
             f"VALUES ('{an}', 'SENT', 'Sentinel', TIMESTAMPTZ '{day} 10:00:00+01', 'old', 'inondation', '{PERIOD}')")
 
     def days_in_table(self):

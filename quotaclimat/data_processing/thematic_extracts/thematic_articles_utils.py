@@ -7,6 +7,8 @@ from datetime import date
 import pandas as pd
 import re
 
+import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
+
 
 # only local env
 load_dotenv(Path(__file__).resolve().parents[4] / ".env", override=False)
@@ -27,9 +29,9 @@ def create_thematic_articles_table(con: duckdb.DuckDBPyConnection,
                     source_code VARCHAR NOT NULL,
                     source_name VARCHAR NOT NULL,
                     publication_datetime TIMESTAMPTZ NOT NULL,
-                    title VARCHAR,
-                    snippet VARCHAR,
-                    body VARCHAR,
+                    title_normalized VARCHAR,
+                    snippet_normalized VARCHAR,
+                    body_normalized VARCHAR,
                     word_count INT,
                     keywords_found VARCHAR NOT NULL,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -53,15 +55,12 @@ def read_factiva_articles(con: duckdb.DuckDBPyConnection,
     normalized (lower, accents removed, apostrophes and hyphens replaced by a space so that
     "l'incendie" matches "incendie" and "Kunming-Montréal" matches "kunming montreal"),
     match at least one expression.
-    keywords_found lists the distinct matches in normalized form, sorted and separated by ','."""
+    keywords_found lists the distinct matches in normalized form, sorted and separated by ','.
+    Only the normalized title, snippet and body are returned (join on an to get the originals)."""
     if not keywords_to_look_for:
         raise ValueError("keywords_to_look_for est vide")
 
-    # lower, œ/æ -> oe/ae, French accents -> plain letter, apostrophes and hyphen -> space:
-    # same normalization as the SQL txt below
-    accents = str.maketrans("àâäéèêëîïôöùûüÿç", "aaaeeeeiioouuuyc")
-    expressions = [e.lower().replace("œ", "oe").replace("æ", "ae").translate(accents) for e in keywords_to_look_for]
-    expressions = [re.sub(r"['’‘‛ʼʹ´`′＇-]", " ", e) for e in expressions]
+    expressions = [utils.normalize_text(e) for e in keywords_to_look_for]
     # escape regex special characters so that a keyword is searched literally ("c.o.p" must not match "cxoxp")
     expressions = [re.sub(r"([.^$*+?()\[\]{}|\\])", r"\\\1", e) for e in expressions]
     # longest first: with alternation, the regex keeps the first alternative that matches,
@@ -72,29 +71,27 @@ def read_factiva_articles(con: duckdb.DuckDBPyConnection,
 
     try:
         out = con.sql(f"""
-            WITH txt AS (
+            WITH normalized AS (
                 SELECT a."An" AS an,
                     a.source_code AS source_code,
                     a.source_name AS source_name,
                     a.publication_datetime AS publication_datetime,
-                    a.title AS title,
-                    a.snippet AS snippet,
-                    a.body AS body,
-                    regexp_replace(
-                        translate(
-                            replace(replace(lower(concat_ws(' ', a.snippet, a.title, a.body)), 'œ', 'oe'), 'æ', 'ae'),
-                            'àâäéèêëîïôöùûüÿç',
-                            'aaaeeeeiioouuuyc'
-                        ),
-                        '[''’‘‛ʼʹ´`′＇-]', ' ', 'g'
-                    ) AS txt,
-                    a.word_count as word_count               
+                    {utils.normalize_sql("a.title")} AS title_normalized,
+                    {utils.normalize_sql("a.snippet")} AS snippet_normalized,
+                    {utils.normalize_sql("a.body")} AS body_normalized,
+                    a.word_count as word_count
                 FROM {postgres_db}.{source_table} a
                 WHERE a.publication_datetime >= TIMESTAMP '{start_date}' AT TIME ZONE 'Europe/Paris'
                     AND a.publication_datetime <  TIMESTAMP '{end_date}'   AT TIME ZONE 'Europe/Paris'
                     AND duplicate_status <> 'DUP'
+            ),
+            txt AS (
+                -- searched text: normalizing then concatenating gives the same text as the other way round
+                SELECT *, concat_ws(' ', snippet_normalized, title_normalized, body_normalized) AS txt
+                FROM normalized
             )
-            SELECT an, source_code, source_name, publication_datetime, title, snippet, body, word_count,
+            SELECT an, source_code, source_name, publication_datetime,
+                title_normalized, snippet_normalized, body_normalized, word_count,
                 array_to_string(list_sort(list_distinct(regexp_extract_all(txt, '{pattern}'))), ',') AS keywords_found
             FROM txt
             WHERE regexp_matches(txt, '{pattern}')

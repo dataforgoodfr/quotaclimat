@@ -2,6 +2,7 @@ import re
 from datetime import date
 from pathlib import Path
 
+import duckdb
 import pytest
 
 import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
@@ -72,3 +73,18 @@ def test_get_periods_on_project_dict():
     yml = Path(utils.__file__).parent / "thematic_jobs_config.yml"
     assert utils.get_periods(yml, "incendies", "france")
     assert utils.get_periods(yml, "incendies", "belgium")
+
+
+# ───────────────────────── normalization ─────────────────────────
+@pytest.mark.parametrize("text", [
+    "L'Incendie de Forêt",
+    "Kunming-Montréal",
+    "Œuvre l´eau Ça",
+    "l’été",
+    "x`y′z＇ʼ‛ʹ‘",
+])
+def test_normalize_text_and_sql_give_the_same_result(text):
+    """Verify that the python normalization (keywords) and the duckdb one (texts) give the
+    same string: if they differ, a press keyword no longer matches the text, silently."""
+    sql = duckdb.connect().execute(f"SELECT {utils.normalize_sql('?')}", [text]).fetchone()[0]
+    assert sql == utils.normalize_text(text)

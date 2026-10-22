@@ -135,7 +135,7 @@ class RunEnv:
 
     def insert_sentinel(self, this_id="sentinel"):
         self.con.execute(
-            f"INSERT INTO {self.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext, country, period) "
+            f"INSERT INTO {self.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext_normalized, country, period) "
             f"VALUES ('{this_id}', 'tf1', 'TF1', TIMESTAMPTZ '2025-01-01 10:00:00+01', true, 'old', 'france', '{PERIOD}')")
     
 
@@ -206,10 +206,10 @@ def test_extract_adjacent_chunks_day_number_of_chunks_kept():
     out = _extract(*_scenario())
 
     assert len(out) == 3
-    assert set(out["plaintext"]) == {"core", "t2", "t3"}
+    assert set(out["plaintext_normalized"]) == {"core", "t2", "t3"}
     assert set(out["channel_name"]) == {"tf1"}
 
-    out = out.set_index("plaintext")
+    out = out.set_index("plaintext_normalized")
     assert bool(out.loc["core", "thematic_chunk"]) is True
     assert out.loc["core", "source_keywords_id"] == "kw1"
     for neighbour in ("t2", "t3"):
@@ -229,7 +229,7 @@ def test_extract_adjacent_chunks_day_output_columns_id_format_and_title():
 
     assert set(out.columns) == {
         "this_id", "channel_name", "channel_title", "start", "thematic_chunk",
-        "source_keywords_id", "keywords_found", "themes", "plaintext",
+        "source_keywords_id", "keywords_found", "themes", "plaintext_normalized",
     }
     assert len(out.columns) == 9
     assert set(out["this_id"]) == {
@@ -269,9 +269,12 @@ def test_extract_adjacent_chunks_day_raises_if_core_and_s3_plaintext_differ():
 # ───────────────────────── run() ─────────────────────────
 def test_run_ingests_every_period_into_one_table(env):
     """Verify that two non-contiguous periods go into the same table, each row tagged with
-    its period id and the country, and that days outside the periods (D2, D4) are not read."""
+    its period id and the country, that days outside the periods (D2, D4) are not read,
+    and that plaintext_normalized is filled with the normalized plaintext."""
     for d in (D1, D2, D3, D4):
         env.add_day(d)
+    # one more neighbour on D1, at 09:58, with accents, apostrophe and uppercase
+    env.add_s3(pd.Timestamp(D1.year, D1.month, D1.day, 9, 58, tz=PARIS), "L'Été")
     env.configure(start=D1, end=D2)
     env.yml.write_text(yaml.safe_dump({"inondations": {**env.keywords, "periodes": {"france": [
         {"id": "p1", "start": D1, "end": D2},
@@ -284,7 +287,10 @@ def test_run_ingests_every_period_into_one_table(env):
     assert env.tables() == {env.destination_table}
     assert env.con.execute(
         f"SELECT period, {PARIS_DAY}, country, count(*) FROM {env.table} GROUP BY ALL ORDER BY 2"
-    ).fetchall() == [("p1", D1, "france", 2), ("p2", D3, "france", 2)]
+    ).fetchall() == [("p1", D1, "france", 3), ("p2", D3, "france", 2)]
+    assert env.con.execute(
+        f"SELECT count(*) FROM {env.table} WHERE plaintext_normalized = 'l ete'"
+    ).fetchone()[0] == 1
 
 
 def test_run_stops_at_first_failing_day(env):
@@ -308,7 +314,7 @@ def test_run_leaves_no_partial_day_when_insert_fails(env):
     (even valid ones), previous day remains in table, and next day is not processed."""
     env.add_day(D1)
     env.add_day(D2)
-    # NULL plaintext on an adjacent chunk of day 2 → NOT NULL violation at INSERT time,
+    # NULL plaintext on an adjacent chunk of day 2 → NOT NULL violation (plaintext_normalized) at INSERT time,
     # while the thematic chunk of that day is valid
     env.add_s3(pd.Timestamp(2025, 3, 11, 9, 59, tz=PARIS), None)
     env.add_day(D3)
@@ -398,7 +404,7 @@ def test_run_dry_run_writes_nothing_and_counts_chunks(env, caplog):
     env.configure(start=D1, end=D3, dry_run=True, mode="reset")
     env.create_destination()
     env.con.execute(
-        f"INSERT INTO {env.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext, country, period) "
+        f"INSERT INTO {env.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext_normalized, country, period) "
         f"VALUES ('sentinel', 'tf1', 'TF1', TIMESTAMPTZ '2025-01-01 10:00:00+01', true, 'old', 'france', '{PERIOD}')"
     )
 

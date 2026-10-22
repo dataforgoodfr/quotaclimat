@@ -81,11 +81,12 @@ DEFAULT_MODEL = "mistral-small-2603"
 # Media/transcript bucket (deliberately distinct from EMBEDDINGS_BUCKET_NAME
 # above): segments loaded for a given subject/date range can come from either
 # the barometre DB (bucket BUCKET_NAME, "mediatree") or the extended-perimeter
-# DB (any other bucket) — both credential pairs are configured as duckdb
-# secrets, BUCKET/BUCKET_SECRET scoped to BUCKET_NAME and RRS_BUCKET/
-# RRS_BUCKET_SECRET as the unscoped fallback for everything else, so the
-# actual bucket name doesn't need to be known in advance (see _configure_s3).
+# DB (any other bucket). Segments are split by bucket in
+# _enrich_with_plaintext: BUCKET/BUCKET_SECRET are used for BUCKET_NAME,
+# RRS_BUCKET/RRS_BUCKET_SECRET for everything else, so the extended bucket's
+# actual name doesn't need to be known in advance.
 BUCKET_NAME = os.environ.get("BUCKET_NAME")
+EXTENDED_BUCKET_NAME = os.environ.get("EXTENDED_BUCKET_NAME")
 
 REFLECTION_HINT = (
     "\n\nAvant chaque appel d'outil, écris dans ta réponse une courte réflexion (2-3 phrases) : "
@@ -124,81 +125,99 @@ def _rrs_dsn() -> str:
     return f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
 
-def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
-    """Register the extended-perimeter credentials as the default S3 secret,
-    and the barometre (mediatree) credentials as a secret scoped to that one
-    bucket. DuckDB picks whichever secret's scope matches a given path (the
-    more specific scope wins), so segments from either source DB get read
-    with the right credentials without needing to know the extended bucket's
-    actual name in advance."""
+def _bucket_of(uri: str) -> str:
+    return uri.removeprefix("s3://").split("/", 1)[0]
+
+
+def _configure_s3(con: duckdb.DuckDBPyConnection, bucket: str) -> None:
+    """Register a single (unscoped) S3 secret for `bucket`: the barometre
+    credentials (BUCKET/BUCKET_SECRET) for BUCKET_NAME, the RRS credentials
+    (RRS_BUCKET/RRS_BUCKET_SECRET) for EXTENDED_BUCKET_NAME. One connection per bucket avoids relying on
+    DuckDB's prefix-based secret scope matching, which let "s3://mediatree"
+    also match "s3://mediatree-extended-perimeter-prod"."""
     con.execute("INSTALL httpfs; LOAD httpfs;")
 
-    rrs_access_key = _get_secret("RRS_BUCKET")
-    rrs_secret_key = _get_secret("RRS_BUCKET_SECRET")
+    if bucket == BUCKET_NAME:
+        prefix = "BUCKET"
+    elif bucket == EXTENDED_BUCKET_NAME:
+        prefix = "RRS_BUCKET"
+    else:
+        logging.warning(
+            f"Bucket '{bucket}' matches neither BUCKET_NAME nor EXTENDED_BUCKET_NAME; "
+            "using the RRS credentials."
+        )
+        prefix = "RRS_BUCKET"
+    access_key = _get_secret(prefix)
+    secret_key = _get_secret(f"{prefix}_SECRET")
     con.execute(f"""
-        CREATE OR REPLACE SECRET rrs_bucket (
+        CREATE OR REPLACE SECRET s3_bucket (
             TYPE S3,
-            KEY_ID '{rrs_access_key}',
-            SECRET '{rrs_secret_key}',
+            KEY_ID '{access_key}',
+            SECRET '{secret_key}',
             REGION '{REGION}',
             ENDPOINT 's3.{REGION}.scw.cloud',
             URL_STYLE 'path'
         );
     """)
 
-    if BUCKET_NAME:
-        access_key = _get_secret("BUCKET")
-        secret_key = _get_secret("BUCKET_SECRET")
-        con.execute(f"""
-            CREATE OR REPLACE SECRET mediatree_bucket (
-                TYPE S3,
-                KEY_ID '{access_key}',
-                SECRET '{secret_key}',
-                REGION '{REGION}',
-                ENDPOINT 's3.{REGION}.scw.cloud',
-                URL_STYLE 'path',
-                SCOPE 's3://{BUCKET_NAME}'
-            );
-        """)
+
+def _fetch_plaintext(bucket: str, uris: list, segments: pd.DataFrame) -> pd.DataFrame:
+    """Read plaintext for the segments stored in one bucket."""
+    con = duckdb.connect()
+    try:
+        _configure_s3(con, bucket)
+
+        globs = [uri.rstrip("/") + "/*.parquet" for uri in uris]
+        existing = con.sql(
+            f"SELECT file FROM glob([{', '.join(repr(g) for g in globs)}])"
+        ).fetchall()
+        existing_files = [row[0] for row in existing]
+
+        if not existing_files:
+            logging.warning(f"No parquet files found in bucket '{bucket}' for the loaded segments.")
+            return pd.DataFrame(columns=["segment_id", "plaintext"])
+
+        file_list = ", ".join(repr(f) for f in existing_files)
+        con.sql(
+            f"CREATE OR REPLACE VIEW parquet_source AS "
+            f"SELECT * FROM read_parquet([{file_list}], union_by_name=true)"
+        )
+
+        con.register("segments_lookup", segments[["segment_id", "channel_name", "start"]])
+        return con.sql("""
+            SELECT s.segment_id, p.plaintext
+            FROM segments_lookup s
+            JOIN parquet_source p
+              ON p.channel_name = s.channel_name
+             AND p.start = s.start
+        """).df()
+    finally:
+        con.close()
 
 
 def _enrich_with_plaintext(segments: pd.DataFrame) -> pd.DataFrame:
-    """Join segments with S3 parquet files to retrieve plaintext for each segment."""
-    uris = segments["s3_uri"].dropna().unique().tolist()
-    if not uris:
+    """Join segments with S3 parquet files to retrieve plaintext for each segment.
+
+    Segments can live in different buckets (barometre and extended perimeter):
+    they are split by bucket, the text is read from each with its own
+    credentials, then the results are re-unioned."""
+    buckets = segments["s3_uri"].dropna().map(_bucket_of)
+    if buckets.empty:
         segments["plaintext"] = None
         return segments
 
-    con = duckdb.connect()
-    _configure_s3(con)
+    texts = []
+    for bucket in buckets.unique():
+        in_bucket = segments["s3_uri"].map(
+            lambda u: isinstance(u, str) and _bucket_of(u) == bucket
+        )
+        part = segments[in_bucket]
+        logging.info(f"Reading plaintext for {len(part)} segment(s) from bucket '{bucket}'.")
+        texts.append(
+            _fetch_plaintext(bucket, part["s3_uri"].unique().tolist(), part)
+        )
 
-    globs = [uri.rstrip("/") + "/*.parquet" for uri in uris]
-    existing = con.sql(
-        f"SELECT file FROM glob([{', '.join(repr(g) for g in globs)}])"
-    ).fetchall()
-    existing_files = [row[0] for row in existing]
-
-    if not existing_files:
-        logging.warning("No parquet files found on S3 for the loaded segments.")
-        segments["plaintext"] = None
-        return segments
-
-    file_list = ", ".join(repr(f) for f in existing_files)
-    con.sql(
-        f"CREATE OR REPLACE VIEW parquet_source AS "
-        f"SELECT * FROM read_parquet([{file_list}], union_by_name=true)"
-    )
-
-    con.register("segments_lookup", segments[["segment_id", "channel_name", "start"]])
-    texts = con.sql("""
-        SELECT s.segment_id, p.plaintext
-        FROM segments_lookup s
-        JOIN parquet_source p
-          ON p.channel_name = s.channel_name
-         AND p.start = s.start
-    """).df()
-    con.close()
-
+    texts = pd.concat(texts, ignore_index=True)
     enriched = segments.merge(texts, on="segment_id", how="left")
     missing = enriched["plaintext"].isna().sum()
     if missing:

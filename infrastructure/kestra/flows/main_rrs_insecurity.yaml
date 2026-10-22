@@ -88,6 +88,7 @@ tasks:
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18492
       BUCKET_NAME: mediatree
+      EXTENDED_BUCKET_NAME: mediatree-extended-perimeter-prod
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       RRS_BUCKET: "{{ secret('RRS_SCW_ACCESS') }}"

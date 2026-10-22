@@ -176,9 +176,9 @@ Imports annotated rows from the quotaclimat `analytics.task_global_completion` t
 
 Classifies segments/cases with an LLM (Mistral) against per-subject misinformation definitions (`definitions.py`), producing a score and reasoning persisted back to the `cases` table.
 
-Segments for a subject/date window can come from either the barometre or the extended-perimeter source DB (see "Extended perimeter" below), so this script configures two DuckDB S3 secrets for the media bucket: `BUCKET`/`BUCKET_SECRET` scoped to `BUCKET_NAME` ("mediatree"), and `RRS_BUCKET`/`RRS_BUCKET_SECRET` as the unscoped default for any other bucket — DuckDB picks whichever matches a given segment's actual `s3_uri`.
+Segments for a subject/date window can come from either the barometre or the extended-perimeter source DB (see "Extended perimeter" below), so `_enrich_with_plaintext` splits the segments by the bucket in their `s3_uri`, reads the plaintext of each bucket on its own DuckDB connection, then re-unions the results. Credentials are picked by bucket name: `BUCKET`/`BUCKET_SECRET` for `BUCKET_NAME` ("mediatree"), `RRS_BUCKET`/`RRS_BUCKET_SECRET` for `EXTENDED_BUCKET_NAME` (e.g. "mediatree-extended-perimeter-prod"); any other bucket falls back to the RRS credentials with a warning.
 
-**Key environment variables:** `BUCKET`/`BUCKET_SECRET`/`BUCKET_NAME`, `RRS_BUCKET`/`RRS_BUCKET_SECRET`, `MISTRAL_API_KEY`, `SUBJECT` (default `insecurity`), `MISTRAL_MODEL`.
+**Key environment variables:** `BUCKET`/`BUCKET_SECRET`/`BUCKET_NAME`, `EXTENDED_BUCKET_NAME`, `RRS_BUCKET`/`RRS_BUCKET_SECRET`, `MISTRAL_API_KEY`, `SUBJECT` (default `insecurity`), `MISTRAL_MODEL`.
 
 ---
 
@@ -194,9 +194,9 @@ Ported from [`dataforgoodfr/climateguard`](https://github.com/dataforgoodfr/clim
 
 **`rag/run_rag_agent_mistral.py`** — runs the Mistral-API fact-checking agent: downloads the RAG index built above from S3, loads segments for a subject/date range from the RRS DB (like `misinformation_detection/main.py`, enriched with plaintext from S3), and loops per segment — reason about which claims touch the theme → call the `search_reference` tool against the index → reflect on the evidence → final `[FLAGGED]`/`[NOT_FLAGGED]` verdict with a debunk of each problematic phrase. `FLAGGED` rows are upserted into the `cases` table (`model_score`=verdict, `model_reason`=debunk, `analysis`=queries/evaluations/evidence/sources trail).
 
-Segments for a subject/date window can come from either the barometre or the extended-perimeter source DB (see "Extended perimeter" below), so this script configures **two** DuckDB S3 secrets for the media bucket, same as `misinformation_detection/main.py`: `BUCKET`/`BUCKET_SECRET` scoped to `BUCKET_NAME` ("mediatree"), and `RRS_BUCKET`/`RRS_BUCKET_SECRET` as the unscoped default for any other bucket — DuckDB picks whichever matches a given segment's actual `s3_uri`.
+Segments for a subject/date window can come from either the barometre or the extended-perimeter source DB (see "Extended perimeter" below), so this script splits segments by bucket and reads each with its own credentials, same as `misinformation_detection/main.py` (`BUCKET`/`BUCKET_SECRET` for `BUCKET_NAME`, `RRS_BUCKET`/`RRS_BUCKET_SECRET` for `EXTENDED_BUCKET_NAME`).
 
-**Required environment variables:** `RRS_PG_*`, `BUCKET`/`BUCKET_SECRET`/`BUCKET_NAME`, `RRS_BUCKET`/`RRS_BUCKET_SECRET`, `EMBEDDINGS_BUCKET`/`EMBEDDINGS_BUCKET_SECRET`/`EMBEDDINGS_BUCKET_NAME`, `MISTRAL_API_KEY`.
+**Required environment variables:** `RRS_PG_*`, `BUCKET`/`BUCKET_SECRET`/`BUCKET_NAME`, `EXTENDED_BUCKET_NAME`, `RRS_BUCKET`/`RRS_BUCKET_SECRET`, `EMBEDDINGS_BUCKET`/`EMBEDDINGS_BUCKET_SECRET`/`EMBEDDINGS_BUCKET_NAME`, `MISTRAL_API_KEY`.
 
 **Key options:** `--subject` (default `environmental_health`), `--start-date`/`--end-date`/`--days-prior`, `--concurrency`, `--top-k`, `--max-tool-rounds`, `--limit` (debug).
 

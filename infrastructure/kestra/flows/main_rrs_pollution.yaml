@@ -122,6 +122,7 @@ tasks:
       RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
       RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"
       BUCKET_NAME: mediatree
+      EXTENDED_BUCKET_NAME: mediatree-extended-perimeter-prod
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
       RRS_BUCKET: "{{ secret('RRS_SCW_ACCESS') }}"

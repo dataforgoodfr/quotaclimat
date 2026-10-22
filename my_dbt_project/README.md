@@ -78,7 +78,7 @@ When a spreadsheet cannot be downloaded (not configured, API error, public sprea
 **Always select `path:seeds/ref` when seeding in production**: the other seeds (`keywords`, `program_metadata`...) are test data whose pre-hook empties the table, and their `target.name != 'prod'` guard does not apply to the Kestra runs (target `docker`).
 
 ### Access
-The script authenticates as a Google service account, with read-only scopes (`drive.metadata.readonly` to find the spreadsheet in the folder, `spreadsheets.readonly` to read it). Two Kestra secrets (values in Vaultwarden, collection `Quotaclimat - Orchestrator`, as `export NAME=value` lines in a secure note; listed in `infrastructure/.env.secrets.dist`, provisioned by `make tags=kestra ansible`) are passed to the `dbt_run_transformations` tasks:
+The script authenticates as a Google service account, with read-only scopes (`drive.metadata.readonly` to find the spreadsheet in the folder, `spreadsheets.readonly` to read it). Two Kestra secrets (values in Vaultwarden, collection `Quotaclimat - Orchestrator`, as `export NAME=value` lines in a secure note; listed in `infrastructure/.env.secrets.dist`, provisioned by `make tags=kestra ansible`) are passed to the `dbt_run_transformations` task of the Kestra flow `dbt` (called by `barometre`, `barometre-catchup` and `dbt-analytics`):
 * `EXTERNAL_SOURCES_DRIVE_FOLDER`: id of the Drive folder holding the spreadsheets (last part of `https://drive.google.com/drive/folders/<id>`).
 * `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON`: JSON key of the service account (one line, single-quoted).
 

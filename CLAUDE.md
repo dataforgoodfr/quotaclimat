@@ -269,7 +269,7 @@ Les questions Metabase, les tableaux de bord et les analyses des équipes lisent
 
 ### Construction et Metabase
 
-- `entrypoints/curated.sh` construit `curated` (tout le dossier, après `entrypoints/dbt.sh` qui l'exclut), le teste, puis pousse sa documentation dans Metabase. Il tourne dans la tâche Kestra `curated_and_metabase_docs` du flow `barometre`, qui peut échouer sans arrêter le pipeline. Un nouveau modèle de `curated` n'a rien à ajouter aux entrypoints.
+- `entrypoints/curated.sh` construit `curated` (tout le dossier, après `entrypoints/dbt.sh` qui l'exclut), le teste, puis pousse sa documentation dans Metabase. Il tourne dans la tâche Kestra `curated_and_metabase_docs` du flow `dbt` (subflow de `barometre`, `barometre-catchup` et `dbt-analytics`), qui peut échouer sans arrêter le pipeline. Un nouveau modèle de `curated` n'a rien à ajouter aux entrypoints.
 - `quotaclimat/metabase/sync_curated.py` écrit dans Metabase, pour chaque table et colonne : le libellé, la description (avec l'unité et l'agrégation), le type sémantique et la clé étrangère. dbt fait référence : une modification faite dans Metabase est écrasée. Les mêmes descriptions sont écrites dans Postgres (`persist_docs`).
 - Les bases Metabase mises à jour sont dans `METABASE_CURATED_DATABASES` (tâche Kestra). En local : `poetry run python -m quotaclimat.metabase.sync_curated --database 2` (aperçu, après `dbt parse`), `--apply` pour écrire.
 - Un nouveau modèle demande sa documentation dans `_curated.yml` et un test de ses données dans `my_dbt_project/pytest_tests/test_dbt_model_analytics.py`.

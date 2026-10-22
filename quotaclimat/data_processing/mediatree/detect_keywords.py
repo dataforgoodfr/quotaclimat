@@ -99,7 +99,7 @@ def find_matching_subtitle_from_indices(subtitles, pos_in_text):
 
 def find_matching_subtitle_fr(subtitles, keyword):
     for item in subtitles:
-        logging.debug(f"Testing {item} with {keyword} full subtitle is {subtitles}")
+        logging.debug("Testing %s with %s full subtitle is %s", item, keyword, subtitles)
         try:
             if is_word_in_sentence_fr(keyword, item.get("text", "")):
                 logging.debug(f"match found {item} with {keyword}")
@@ -132,7 +132,7 @@ def find_matching_subtitle_i18n(subtitles, keyword, country: CountryMediaTree=FR
 def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], word_positions: List[int], theme: str, country: CountryMediaTree=FRANCE) -> List[dict]:
     result = []
 
-    logging.debug(f"Looking for timecode for {keywords} inside subtitle_duration {subtitle_duration}")
+    logging.debug("Looking for timecode for %s inside subtitle_duration %s", keywords, subtitle_duration)
     for multiple_keyword, pos_in_text in zip(keywords, word_positions):
         category = multiple_keyword["category"]
         all_keywords = multiple_keyword["keyword"].split() # case with multiple words such as 'economie circulaire'
@@ -299,7 +299,7 @@ def filter_already_contained_keyword(keywords_with_timestamp: List[dict]) -> Lis
     if number_of_keywords > 1:
         keywords_to_remove = [] # get keyword that are in another keyword
         for item in keywords_with_timestamp:
-            logging.debug(f"filtered_list testing item {item} inside keywords_with_timestamp:\n{keywords_with_timestamp}")
+            logging.debug("filtered_list testing item %s inside keywords_with_timestamp:\n%s", item, keywords_with_timestamp)
             keywords_with_timestamp_without_current_item = list(filter(lambda x: x != item, keywords_with_timestamp))
             for x in keywords_with_timestamp_without_current_item:
                 keyword_match = (x.get('keyword') in item.get('keyword')) and x.get('keyword') != item.get('keyword')
@@ -327,7 +327,7 @@ def filter_keyword_with_same_timestamp(keywords_with_timestamp: List[dict])-> Li
     final_result = len(keywords_with_timestamp)
 
     if final_result < number_of_keywords:
-        logging.debug(f"Filtering keywords {final_result} out of {number_of_keywords} | {keywords_with_timestamp} with final result")
+        logging.debug("Filtering keywords %s out of %s | %s with final result", final_result, number_of_keywords, keywords_with_timestamp)
 
     return keywords_with_timestamp
 
@@ -444,7 +444,7 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
                     # look for cts_in_ms inside matching_words (['keyword':'economie circulaire', 'category':'air'}] from subtitle_duration 
                     keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, word_positions, theme, country)
                     if(len(keywords_to_add) == 0):
-                        logging.debug(f"Check regex - Empty keywords but themes is there {theme} - matching_words {matching_words} - {subtitle_duration}")
+                        logging.debug("Check regex - Empty keywords but themes is there %s - matching_words %s - %s", theme, matching_words, subtitle_duration)
                     keywords_with_timestamp.extend(keywords_to_add)
                 except Exception as e: 
                     logging.error(f"Error in get_cts_in_ms_for_keywords for theme {theme} - matching_words {matching_words} - subtitle_duration {subtitle_duration} - {e}")

@@ -72,7 +72,7 @@ Une nouvelle question se crée à la main dans Metabase, en collant le SQL. On a
 
 ## Documentation des tables du schéma `curated`
 
-Les tables du schéma `curated` (tables propres pour les équipes, voir le `CLAUDE.md`) sont documentées dans dbt, dans `my_dbt_project/models/curated/_curated.yml`. Le script `quotaclimat.metabase.sync_curated` recopie cette documentation dans les métadonnées des tables Metabase : nom affiché, description, unité et agrégation des colonnes, type sémantique, clés étrangères. Il tourne dans la tâche Kestra `curated_and_metabase_docs` du flow `barometre`, après dbt.
+Les tables du schéma `curated` (tables propres pour les équipes, voir le `CLAUDE.md`) sont documentées dans dbt, dans `my_dbt_project/models/curated/_curated.yml`. Le script `quotaclimat.metabase.sync_curated` recopie cette documentation dans les métadonnées des tables Metabase : nom affiché, description, unité et agrégation des colonnes, type sémantique, clés étrangères. Il tourne dans la tâche Kestra `curated_and_metabase_docs` du flow `dbt`, après dbt (subflow de `barometre`, `barometre-catchup` et `dbt-analytics`).
 
 La documentation se modifie donc dans le dépôt : une modification faite dans Metabase (Admin > Métadonnées des tables) est écrasée au passage suivant. La clé d'API doit appartenir à un groupe qui peut modifier les métadonnées de la base.
 

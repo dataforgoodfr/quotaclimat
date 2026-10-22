@@ -1,0 +1,37 @@
+id: dbt-analytics
+namespace: quotaclimat
+
+description: |
+  Quick rebuild of the tables read by the Metabase questions, by hand: dbt
+  without the models of models/dashboards and models/homepage (the long part,
+  computed from the whole keywords table, which keeps its last build), then
+  metabase-sync. Same quotaclimat_base:latest image as barometre: the code must
+  be deployed (merged on main). The dbt step waits if another dbt run
+  (barometre, barometre-catchup) is in progress.
+
+labels:
+  pipeline: ome
+  environment: prod
+  scope: france
+
+tasks:
+  - id: dbt_analytics
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: quotaclimat
+    flowId: dbt
+    wait: true
+    transmitFailed: true
+    inputs:
+      only_analytics: true
+
+  # the Metabase queries read the tables rebuilt above
+  - id: metabase_sync
+    type: io.kestra.plugin.core.flow.Subflow
+    namespace: quotaclimat
+    flowId: metabase-sync
+    wait: true
+    transmitFailed: true
+    allowFailure: true
+    inputs:
+      apply: true
+      force: true

@@ -30,6 +30,7 @@ logging.basicConfig(level=logging.INFO)
 
 REGION = "fr-par"
 BUCKET_NAME = os.environ.get("BUCKET_NAME")
+EXTENDED_BUCKET_NAME = os.environ.get("EXTENDED_BUCKET_NAME")
 
 
 def _get_secret(name: str) -> str:
@@ -106,13 +107,21 @@ def _bucket_of(uri: str) -> str:
 def _configure_s3(con: duckdb.DuckDBPyConnection, bucket: str) -> None:
     """Register a single (unscoped) S3 secret for `bucket`: the barometre
     credentials (BUCKET/BUCKET_SECRET) for BUCKET_NAME, the RRS credentials
-    (RRS_BUCKET/RRS_BUCKET_SECRET) for any other bucket, i.e. the
-    extended-perimeter one. One connection per bucket avoids relying on
+    (RRS_BUCKET/RRS_BUCKET_SECRET) for EXTENDED_BUCKET_NAME. One connection per bucket avoids relying on
     DuckDB's prefix-based secret scope matching, which let "s3://mediatree"
     also match "s3://mediatree-extended-perimeter-prod"."""
     con.execute("INSTALL httpfs; LOAD httpfs;")
 
-    prefix = "BUCKET" if BUCKET_NAME and bucket == BUCKET_NAME else "RRS_BUCKET"
+    if bucket == BUCKET_NAME:
+        prefix = "BUCKET"
+    elif bucket == EXTENDED_BUCKET_NAME:
+        prefix = "RRS_BUCKET"
+    else:
+        logging.warning(
+            f"Bucket '{bucket}' matches neither BUCKET_NAME nor EXTENDED_BUCKET_NAME; "
+            "using the RRS credentials."
+        )
+        prefix = "RRS_BUCKET"
     access_key = _get_secret(prefix)
     secret_key = _get_secret(f"{prefix}_SECRET")
     con.execute(f"""

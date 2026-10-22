@@ -186,3 +186,34 @@ tasks:
       POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
       POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
       POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
+
+  # Clean tables for the teams and their Claude (schema curated, see my_dbt_project/models/curated/): built from
+  # the tables above, tested, then their dbt documentation is pushed to Metabase. A failure leaves the
+  # execution in WARNING without stopping the main pipeline.
+  - id: curated_and_metabase_docs
+    allowFailure: true
+    type: io.kestra.plugin.docker.Run
+    containerImage: "rg.fr-par.scw.cloud/namespace-barometre/quotaclimat_base:latest"
+    pullPolicy: ALWAYS
+    credentials:
+      registry: rg.fr-par.scw.cloud/namespace-barometre
+      username: nologin
+      password: "{{ secret('SCW_SECRET') }}"
+    entryPoint:
+      - /bin/sh
+      - -c
+      - cd /app && /app/entrypoints/curated.sh
+    env:
+      DBT_ENV: prod
+      DBT_PROFILES_DIR: /app/my_dbt_project/dbt
+      DBT_PROJECT_DIR: /app/my_dbt_project
+      LOGLEVEL: INFO
+      POSTGRES_DB: barometre
+      POSTGRES_PORT: 22737
+      POSTGRES_USER: "{{ secret('POSTGRES_USER') }}"
+      POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
+      POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
+      # Metabase databases reading the barometre database (Scaleway Postgres), ids separated by spaces
+      METABASE_CURATED_DATABASES: "2"
+      METABASE_URL: "{{ secret('METABASE_URL') }}"
+      METABASE_API_KEY: "{{ secret('METABASE_API_KEY') }}"

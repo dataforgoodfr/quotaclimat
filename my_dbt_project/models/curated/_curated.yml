@@ -1,0 +1,917 @@
+# Schéma curated : tables propres, documentées pour les équipes et leur Claude (MCP Metabase).
+# Conventions (vérifiées par my_dbt_project/pytest_tests/test_curated_conventions.py) : voir le CLAUDE.md,
+# section « Schéma curated ». Ces descriptions sont écrites dans Postgres (persist_docs) et poussées dans
+# Metabase par quotaclimat/metabase/sync_curated.py : elles se modifient ici, pas dans Metabase.
+#
+# meta d'un modèle : libelle (nom affiché dans Metabase).
+# meta d'une colonne : libelle ; unite et agregation (somme, moyenne ou aucune) pour une colonne numérique ;
+# type_metabase (type sémantique Metabase, ex. type/PK, type/Category) ; cle_etrangere (table.colonne de curated).
+version: 2
+
+models:
+  - name: chaine
+    description: |
+      Une ligne = une chaîne de télévision ou de radio suivie par l'Observatoire des médias sur l'écologie, en France et dans les pays partenaires.
+      Contenu : le nom affiché de la chaîne, son pays et ses caractéristiques (service public, information en continu, radio).
+      Usage : table de référence à joindre par `chaine_id` pour filtrer ou regrouper les autres tables du schéma curated par type de chaîne. Les autres tables reprennent déjà `chaine_nom` et les trois caractéristiques.
+      Pièges : une chaîne présente ici n'est pas forcément suivie sur toute la période étudiée, ni pour tous les sujets (la publicité ne concerne que des chaînes françaises).
+      Source : grilles de programmes suivies (program_metadata), caractéristiques de la grille la plus récente.
+    config:
+      meta:
+        libelle: Chaînes
+    columns:
+      - name: chaine_id
+        data_type: text
+        description: "{{ doc('curated_chaine_id') }}"
+        config:
+          meta:
+            libelle: Identifiant de la chaîne
+            type_metabase: type/PK
+        data_tests:
+          - unique
+          - not_null
+      - name: chaine_nom
+        data_type: text
+        description: "{{ doc('curated_chaine_nom') }}"
+        config:
+          meta:
+            libelle: Chaîne
+            type_metabase: type/Name
+        data_tests:
+          - not_null
+      - name: pays
+        data_type: text
+        description: >-
+          Pays de la chaîne, en français (France, Belgique, Brésil, Allemagne, Pologne, Espagne).
+        config:
+          meta:
+            libelle: Pays
+            type_metabase: type/Country
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['France', 'Belgique', 'Brésil', 'Allemagne', 'Pologne', 'Espagne']
+      - name: est_service_public
+        data_type: boolean
+        description: "{{ doc('curated_est_service_public') }}"
+        config:
+          meta:
+            libelle: Service public
+        data_tests:
+          - not_null
+      - name: est_info_continue
+        data_type: boolean
+        description: "{{ doc('curated_est_info_continue') }}"
+        config:
+          meta:
+            libelle: Information en continu
+        data_tests:
+          - not_null
+      - name: est_radio
+        data_type: boolean
+        description: "{{ doc('curated_est_radio') }}"
+        config:
+          meta:
+            libelle: Radio
+        data_tests:
+          - not_null
+
+  - name: publicite
+    description: |
+      Une ligne = une diffusion d'un spot publicitaire sur une chaîne française, détectée automatiquement et classée par secteur, catégorie de produit et marque.
+      Période : depuis le 29 septembre 2025, début de l'analyse des publicités. Chaînes : chaînes de télévision françaises dont la publicité est analysée.
+      Usage : compter les diffusions (une ligne = une diffusion) ou sommer leur durée (`duree_sec`) par secteur, marque, chaîne, jour ou programme ; voir quelles publicités passent autour des programmes et près des cas de mésinformation.
+      Pièges : un même spot diffusé plusieurs fois a plusieurs lignes, avec le même `spot_id` : compter les lignes pour le nombre de diffusions, les `spot_id` distincts pour le nombre de spots différents. Le classement (secteur, catégorie, marque) est automatique et peut se tromper : un chiffre publié se vérifie sur des exemples. Une marque absente de l'inventaire des marques garde l'orthographe détectée.
+      Source : détection et classement des publicités (pipeline advertising), table analytics.publicites.
+    config:
+      meta:
+        libelle: Publicités diffusées
+    columns:
+      - name: publicite_id
+        data_type: text
+        description: >-
+          Identifiant de la diffusion. Unique, sert à compter les diffusions.
+        config:
+          meta:
+            libelle: Identifiant de la diffusion
+            type_metabase: type/PK
+        data_tests:
+          - unique
+          - not_null
+      - name: debut_paris
+        data_type: timestamp
+        description: >-
+          Date et heure de début de la diffusion, en heure de Paris.
+        config:
+          meta:
+            libelle: Début de la diffusion
+        data_tests:
+          - not_null
+      - name: jour
+        data_type: date
+        description: "{{ doc('curated_jour') }}"
+        config:
+          meta:
+            libelle: Jour
+        data_tests:
+          - not_null
+      - name: chaine_id
+        data_type: text
+        description: "{{ doc('curated_chaine_id') }}"
+        config:
+          meta:
+            libelle: Identifiant de la chaîne
+            type_metabase: type/FK
+            cle_etrangere: chaine.chaine_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('chaine')
+                field: chaine_id
+      - name: chaine_nom
+        data_type: text
+        description: "{{ doc('curated_chaine_nom') }}"
+        config:
+          meta:
+            libelle: Chaîne
+            type_metabase: type/Category
+        data_tests:
+          - not_null
+      - name: est_service_public
+        data_type: boolean
+        description: "{{ doc('curated_est_service_public') }}"
+        config:
+          meta:
+            libelle: Service public
+        data_tests:
+          - not_null
+      - name: est_info_continue
+        data_type: boolean
+        description: "{{ doc('curated_est_info_continue') }}"
+        config:
+          meta:
+            libelle: Information en continu
+        data_tests:
+          - not_null
+      - name: est_radio
+        data_type: boolean
+        description: "{{ doc('curated_est_radio') }}"
+        config:
+          meta:
+            libelle: Radio
+        data_tests:
+          - not_null
+      - name: spot_id
+        data_type: text
+        description: >-
+          Identifiant du spot publicitaire. Un même spot diffusé plusieurs fois (sur la même chaîne ou sur plusieurs) a le même identifiant sur chacune de ses lignes. Compter les valeurs distinctes pour le nombre de spots différents.
+        config:
+          meta:
+            libelle: Identifiant du spot
+        data_tests:
+          - not_null
+      - name: ecran_id
+        data_type: text
+        description: >-
+          Identifiant de l'écran publicitaire (la coupure) où passe le spot. Un écran est une suite de spots qui s'enchaînent sur une chaîne, à moins de 5 secondes d'écart. Compter les valeurs distinctes pour le nombre d'écrans.
+        config:
+          meta:
+            libelle: Identifiant de l'écran publicitaire
+        data_tests:
+          - not_null
+      - name: duree_sec
+        data_type: double precision
+        description: >-
+          Durée du spot, en secondes. La somme sur des diffusions donne leur temps d'antenne publicitaire.
+        config:
+          meta:
+            libelle: Durée (s)
+            unite: seconde
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: secteur
+        data_type: text
+        description: >-
+          Secteur du produit ou du service annoncé (ex. automobile, alimentation, énergie), selon la nomenclature de l'Observatoire. Vide, rarement, quand le secteur n'a pas pu être déterminé.
+        config:
+          meta:
+            libelle: Secteur
+            type_metabase: type/Category
+      - name: categorie_produit
+        data_type: text
+        description: >-
+          Catégorie de produit, plus fine que le secteur, dans la même nomenclature. Vide quand elle n'a pas été déterminée ; `categorie_ou_secteur` donne alors le secteur.
+        config:
+          meta:
+            libelle: Catégorie de produit
+            type_metabase: type/Category
+      - name: categorie_ou_secteur
+        data_type: text
+        description: >-
+          Catégorie de produit quand elle est connue, sinon secteur. À utiliser pour un graphique par catégorie sans valeur vide.
+        config:
+          meta:
+            libelle: Catégorie ou secteur
+            type_metabase: type/Category
+      - name: marque
+        data_type: text
+        description: >-
+          Marque annoncée, orthographiée comme dans l'inventaire des marques de l'Observatoire, ou telle que détectée quand elle n'y figure pas. Vide quand aucune marque n'a été détectée.
+        config:
+          meta:
+            libelle: Marque
+            type_metabase: type/Category
+      - name: entreprise
+        data_type: text
+        description: >-
+          Entreprise qui vend sous la marque, d'après l'inventaire des marques. Reprend la marque quand l'entreprise n'est pas connue ou reste à vérifier. Vide quand aucune marque n'a été détectée.
+        config:
+          meta:
+            libelle: Entreprise
+            type_metabase: type/Company
+      - name: societe_mere
+        data_type: text
+        description: >-
+          Société mère ultime de l'entreprise, d'après l'inventaire des marques : le niveau le plus haut pour regrouper les annonceurs (ex. un groupe automobile et toutes ses marques). Reprend l'entreprise quand la société mère n'est pas connue ou reste à vérifier.
+        config:
+          meta:
+            libelle: Société mère
+            type_metabase: type/Company
+      - name: classement_par
+        data_type: text
+        description: "Méthode qui a classé la publicité : « dictionnaire » quand la marque figure dans le dictionnaire de l'Observatoire (classement le plus fiable), « modèle de langage » quand un modèle de langage a déterminé la catégorie, « en cours » quand le classement n'est pas terminé."
+        config:
+          meta:
+            libelle: Classée par
+            type_metabase: type/Category
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['dictionnaire', 'modèle de langage', 'en cours']
+      - name: est_dans_programme
+        data_type: boolean
+        description: >-
+          Vrai quand l'écran publicitaire est entièrement à l'intérieur d'un programme suivi (coupure au milieu d'une émission), faux quand il est entre deux programmes ou hors des programmes suivis.
+        config:
+          meta:
+            libelle: Pendant un programme
+        data_tests:
+          - not_null
+      - name: programme_avant
+        data_type: text
+        description: >-
+          Programme en cours, ou terminé au plus 60 minutes avant le début de l'écran publicitaire, sous la forme « programme / émission (présentateurs) [rediffusion] ». Vide quand aucun programme suivi n'est assez proche. Seuls les programmes suivis par l'Observatoire sont connus, pas toute la grille de la chaîne.
+        config:
+          meta:
+            libelle: Programme avant
+            type_metabase: type/Category
+      - name: ecart_programme_avant_sec
+        data_type: double precision
+        description: >-
+          Secondes entre la fin de `programme_avant` et le début de l'écran publicitaire ; 0 quand le programme est en cours. Vide quand `programme_avant` est vide.
+        config:
+          meta:
+            libelle: Écart avec le programme avant (s)
+            unite: seconde
+            agregation: aucune
+            type_metabase: type/Duration
+      - name: programme_apres
+        data_type: text
+        description: >-
+          Premier programme suivi qui commence après le début de l'écran publicitaire, au plus 60 minutes après sa fin, même forme que `programme_avant`. Vide quand l'écran est à l'intérieur de `programme_avant` ou qu'aucun programme n'est assez proche.
+        config:
+          meta:
+            libelle: Programme après
+            type_metabase: type/Category
+      - name: ecart_programme_apres_sec
+        data_type: double precision
+        description: >-
+          Secondes entre la fin de l'écran publicitaire et le début de `programme_apres` ; 0 quand il commence pendant l'écran. Vide quand `programme_apres` est vide.
+        config:
+          meta:
+            libelle: Écart avec le programme après (s)
+            unite: seconde
+            agregation: aucune
+            type_metabase: type/Duration
+      - name: cas_mesinformation_proche_id
+        data_type: text
+        description: >-
+          Identifiant du cas de mésinformation validé le plus proche dans le temps sur la même chaîne, à 7 jours au plus avant ou après la diffusion. Vide quand il n'y en a pas.
+        config:
+          meta:
+            libelle: Cas de mésinformation le plus proche
+            type_metabase: type/FK
+            cle_etrangere: cas_mesinformation.cas_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('cas_mesinformation')
+                field: cas_id
+      - name: distance_cas_mesinformation_sec
+        data_type: double precision
+        description: >-
+          Écart en secondes (toujours positif, avant ou après) entre la diffusion et le début de ce cas de mésinformation. Vide quand il n'y en a pas à moins de 7 jours. Par exemple, `distance_cas_mesinformation_sec <= 3600` garde les publicités diffusées à moins d'une heure d'un cas.
+        config:
+          meta:
+            libelle: Écart avec le cas de mésinformation (s)
+            unite: seconde
+            agregation: aucune
+            type_metabase: type/Duration
+
+  - name: cas_mesinformation
+    description: |
+      Une ligne = un cas de mésinformation sur le climat ou l'environnement, détecté automatiquement dans une transcription puis validé par un annotateur de l'Observatoire.
+      Période : depuis mai 2023. Pays : France et pays partenaires (`pays`) ; l'émission et les thèmes ne sont connus que pour les chaînes françaises.
+      Usage : compter les cas (une ligne = un cas) par chaîne, émission, mois, locuteur ou thème ; lire les affirmations et leurs explications. Pour un taux de mésinformation, rapporter le nombre de cas au temps suivi ou au temps environnement de `curated.emission_jour`.
+      Pièges : un cas est un extrait de 2 minutes, pas une émission entière. Le nombre de cas dépend aussi de l'effort d'annotation : seuls les extraits signalés par le modèle de détection puis relus sont comptés, ce n'est pas un recensement exhaustif. Les thèmes sont trouvés par mots-clés dans l'affirmation et l'explication : un cas peut avoir un thème sans en parler vraiment (pertinence faible), à vérifier avant de citer un exemple. La transcription automatique peut contenir des erreurs : citer l'extrait audio ou vidéo, pas la transcription.
+      Source : annotations Label Studio (cas dont la première annotation conclut à une mésinformation, sans désaccord), table analytics.cas_de_mesinformation ; thèmes : analytics.cas_theme.
+    config:
+      meta:
+        libelle: Cas de mésinformation
+    columns:
+      - name: cas_id
+        data_type: text
+        description: >-
+          Identifiant du cas (tâche Label Studio). Unique, sert à compter les cas.
+        config:
+          meta:
+            libelle: Identifiant du cas
+            type_metabase: type/PK
+        data_tests:
+          - unique
+          - not_null
+      - name: debut_paris
+        data_type: timestamp
+        description: >-
+          Date et heure de début de l'extrait de 2 minutes, en heure de Paris (y compris pour les chaînes étrangères).
+        config:
+          meta:
+            libelle: Début de l'extrait
+        data_tests:
+          - not_null
+      - name: jour
+        data_type: date
+        description: "{{ doc('curated_jour') }}"
+        config:
+          meta:
+            libelle: Jour
+        data_tests:
+          - not_null
+      - name: chaine_id
+        data_type: text
+        description: "{{ doc('curated_chaine_id') }}"
+        config:
+          meta:
+            libelle: Identifiant de la chaîne
+            type_metabase: type/FK
+            cle_etrangere: chaine.chaine_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('chaine')
+                field: chaine_id
+      - name: chaine_nom
+        data_type: text
+        description: "{{ doc('curated_chaine_nom') }}"
+        config:
+          meta:
+            libelle: Chaîne
+            type_metabase: type/Category
+        data_tests:
+          - not_null
+      - name: est_service_public
+        data_type: boolean
+        description: "{{ doc('curated_est_service_public') }}"
+        config:
+          meta:
+            libelle: Service public
+        data_tests:
+          - not_null
+      - name: est_info_continue
+        data_type: boolean
+        description: "{{ doc('curated_est_info_continue') }}"
+        config:
+          meta:
+            libelle: Information en continu
+        data_tests:
+          - not_null
+      - name: est_radio
+        data_type: boolean
+        description: "{{ doc('curated_est_radio') }}"
+        config:
+          meta:
+            libelle: Radio
+        data_tests:
+          - not_null
+      - name: pays
+        data_type: text
+        description: >-
+          Pays de la chaîne, en français (France, Belgique, Brésil, Allemagne, Pologne, Espagne).
+        config:
+          meta:
+            libelle: Pays
+            type_metabase: type/Country
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['France', 'Belgique', 'Brésil', 'Allemagne', 'Pologne', 'Espagne']
+      - name: programme
+        data_type: text
+        description: >-
+          Programme ou émission à l'antenne au début de l'extrait, sous la forme « programme / émission (présentateurs) [rediffusion] ». Chaînes françaises seulement ; vide quand l'extrait est à plus de 6 minutes des programmes suivis.
+        config:
+          meta:
+            libelle: Programme
+            type_metabase: type/Category
+      - name: emission_jour_id
+        data_type: text
+        description: "{{ doc('curated_emission_jour_id') }} Chaînes françaises seulement ; vide quand le programme est inconnu."
+        config:
+          meta:
+            libelle: Émission et jour
+            type_metabase: type/FK
+            cle_etrangere: emission_jour.emission_jour_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('curated_emission_jour')
+                field: emission_jour_id
+      - name: affirmation
+        data_type: text
+        description: >-
+          Affirmation fausse ou trompeuse relevée par l'annotateur, reformulée. Vide quand l'annotateur ne l'a pas écrite.
+        config:
+          meta:
+            libelle: Affirmation
+      - name: explication
+        data_type: text
+        description: >-
+          Explication de l'annotateur : pourquoi l'affirmation est fausse ou trompeuse. Vide quand elle n'a pas été écrite.
+        config:
+          meta:
+            libelle: Explication
+      - name: sources_verification
+        data_type: text
+        description: >-
+          Sources citées par l'annotateur pour vérifier l'affirmation (liens, rapports). Vide quand aucune n'est citée.
+        config:
+          meta:
+            libelle: Sources de vérification
+      - name: locuteurs
+        data_type: text
+        description: >-
+          Qui tient l'affirmation, selon l'annotateur : journaliste, chroniqueur, invité, personnalité politique, public, inconnu ; plusieurs valeurs séparées par des virgules ; « non renseigné » quand l'annotateur n'a pas répondu. Pour compter par type de locuteur, utiliser les colonnes `est_dit_par_...`.
+        config:
+          meta:
+            libelle: Locuteurs
+            type_metabase: type/Category
+        data_tests:
+          - not_null
+      - name: est_dit_par_journaliste
+        data_type: boolean
+        description: >-
+          Vrai quand l'annotateur indique que l'affirmation est tenue par un journaliste de la chaîne. Un cas peut avoir plusieurs locuteurs.
+        config:
+          meta:
+            libelle: Dit par un journaliste
+        data_tests:
+          - not_null
+      - name: est_dit_par_chroniqueur
+        data_type: boolean
+        description: >-
+          Vrai quand l'annotateur indique que l'affirmation est tenue par un chroniqueur ou éditorialiste. Un cas peut avoir plusieurs locuteurs.
+        config:
+          meta:
+            libelle: Dit par un chroniqueur
+        data_tests:
+          - not_null
+      - name: est_dit_par_invite
+        data_type: boolean
+        description: >-
+          Vrai quand l'annotateur indique que l'affirmation est tenue par un invité. Un cas peut avoir plusieurs locuteurs.
+        config:
+          meta:
+            libelle: Dit par un invité
+        data_tests:
+          - not_null
+      - name: est_dit_par_politique
+        data_type: boolean
+        description: >-
+          Vrai quand l'annotateur indique que l'affirmation est tenue par une personnalité politique. Un cas peut avoir plusieurs locuteurs.
+        config:
+          meta:
+            libelle: Dit par une personnalité politique
+        data_tests:
+          - not_null
+      - name: est_dit_par_public
+        data_type: boolean
+        description: >-
+          Vrai quand l'annotateur indique que l'affirmation est tenue par le public (auditeur, téléspectateur). Un cas peut avoir plusieurs locuteurs.
+        config:
+          meta:
+            libelle: Dit par le public
+        data_tests:
+          - not_null
+      - name: correction
+        data_type: text
+        description: >-
+          Correction de l'affirmation à l'antenne, selon l'annotateur : « corrigée », « non corrigée » ou « non renseignée ».
+        config:
+          meta:
+            libelle: Correction à l'antenne
+            type_metabase: type/Category
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['corrigée', 'non corrigée', 'non renseignée']
+      - name: transcription
+        data_type: text
+        description: >-
+          Transcription automatique de l'extrait de 2 minutes (Whisper quand elle existe). Peut contenir des erreurs : vérifier sur l'extrait avant de citer.
+        config:
+          meta:
+            libelle: Transcription
+      - name: lien_extrait
+        data_type: text
+        description: >-
+          Lien vers l'extrait audio ou vidéo (lecteur Mediatree, accès réservé avec un compte, ou fichier Google Drive). Vide quand il manque.
+        config:
+          meta:
+            libelle: Lien vers l'extrait
+            type_metabase: type/URL
+      - name: themes
+        data_type: text
+        description: >-
+          Thèmes du cas trouvés par mots-clés dans l'affirmation et l'explication, séparés par des virgules (aujourd'hui : automobile). Chaînes françaises seulement ; vide sans thème. Pour compter par thème, utiliser les colonnes `est_theme_...`.
+        config:
+          meta:
+            libelle: Thèmes
+            type_metabase: type/Category
+      - name: est_theme_automobile
+        data_type: boolean
+        description: >-
+          Vrai quand un mot-clé du thème automobile (voiture électrique, moteur thermique, interdiction 2035...) figure dans l'affirmation ou l'explication, quelle que soit sa force.
+        config:
+          meta:
+            libelle: Thème automobile
+        data_tests:
+          - not_null
+
+  - name: curated_emission_jour
+    description: |
+      Une ligne = une émission (ou un programme suivi) d'une chaîne française un jour donné, avec son temps d'antenne suivi, le temps consacré à l'environnement (au total et par sujet : climat, biodiversité, ressources, et par thème : constat, causes, conséquences, solutions) et le nombre de cas de mésinformation validés.
+      Période : depuis le début du suivi (2023), chaque jour où la chaîne a été captée. Chaînes : chaînes de télévision et de radio françaises suivies.
+      Usage : temps passé par une chaîne ou une émission à parler d'environnement entre deux dates : filtrer sur `jour`, sommer `duree_environnement_min` (ou un sujet) et `duree_suivie_min`, puis diviser pour la part. Regrouper par `chaine_nom`, `emission_nom`, mois...
+      Pièges : ne jamais faire la moyenne des colonnes `part_..._pct` sur plusieurs lignes : sommer les durées puis diviser. Les sujets ne s'additionnent pas (une même fenêtre de 20 secondes peut parler de climat et de biodiversité). Seuls les programmes suivis par l'Observatoire comptent (souvent les tranches d'information), pas toute la grille de la chaîne. Une émission est identifiée par son nom dans les chaînes d'information en continu ; ailleurs, la ligne porte le programme suivi entier (`est_emission_identifiee` faux). Les jours sans captation de la chaîne (panne, chaîne arrêtée) sont exclus, ils ne comptent pas comme 0 %. Le temps environnement est une mesure par mots-clés : un mot ambigu (à haut risque de faux positif) ne compte que s'il est à moins de 20 secondes d'un mot-clé sans ambiguïté du même sujet.
+      Source : segments de 2 minutes des transcriptions (public.keywords), grilles des programmes suivis, cas validés dans Label Studio ; table public.emission_jour.
+    config:
+      meta:
+        libelle: Émissions par jour
+    columns:
+      - name: emission_jour_id
+        data_type: text
+        description: "{{ doc('curated_emission_jour_id') }}"
+        config:
+          meta:
+            libelle: Identifiant émission et jour
+            type_metabase: type/PK
+        data_tests:
+          - unique
+          - not_null
+      - name: emission_id
+        data_type: text
+        description: >-
+          Identifiant de l'émission, le même tous les jours (forme : chaîne|type|nom|rediffusion). Pour suivre une émission dans le temps, filtrer ou regrouper par cette colonne ou par `emission_nom` et `chaine_nom`.
+        config:
+          meta:
+            libelle: Identifiant de l'émission
+        data_tests:
+          - not_null
+      - name: emission_nom
+        data_type: text
+        description: >-
+          Nom de l'émission (ex. « BFM Première »), ou du programme suivi quand l'émission n'est pas identifiée (ex. « JT 20h »).
+        config:
+          meta:
+            libelle: Émission
+            type_metabase: type/Category
+        data_tests:
+          - not_null
+      - name: est_emission_identifiee
+        data_type: boolean
+        description: >-
+          Vrai quand la ligne est une émission précise (grilles des chaînes d'information en continu), faux quand c'est le programme suivi entier.
+        config:
+          meta:
+            libelle: Émission identifiée
+        data_tests:
+          - not_null
+      - name: est_rediffusion
+        data_type: boolean
+        description: >-
+          Vrai pour une rediffusion.
+        config:
+          meta:
+            libelle: Rediffusion
+        data_tests:
+          - not_null
+      - name: jour
+        data_type: date
+        description: >-
+          Jour de diffusion de l'émission, en heure de Paris ; une émission qui finit après minuit compte pour le jour où elle commence. À utiliser pour filtrer une période ou regrouper par semaine ou mois.
+        config:
+          meta:
+            libelle: Jour
+        data_tests:
+          - not_null
+      - name: chaine_id
+        data_type: text
+        description: "{{ doc('curated_chaine_id') }}"
+        config:
+          meta:
+            libelle: Identifiant de la chaîne
+            type_metabase: type/FK
+            cle_etrangere: chaine.chaine_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('chaine')
+                field: chaine_id
+      - name: chaine_nom
+        data_type: text
+        description: "{{ doc('curated_chaine_nom') }}"
+        config:
+          meta:
+            libelle: Chaîne
+            type_metabase: type/Category
+        data_tests:
+          - not_null
+      - name: est_service_public
+        data_type: boolean
+        description: "{{ doc('curated_est_service_public') }}"
+        config:
+          meta:
+            libelle: Service public
+        data_tests:
+          - not_null
+      - name: est_info_continue
+        data_type: boolean
+        description: "{{ doc('curated_est_info_continue') }}"
+        config:
+          meta:
+            libelle: Information en continu
+        data_tests:
+          - not_null
+      - name: est_radio
+        data_type: boolean
+        description: "{{ doc('curated_est_radio') }}"
+        config:
+          meta:
+            libelle: Radio
+        data_tests:
+          - not_null
+      - name: nb_creneaux
+        data_type: integer
+        description: >-
+          Nombre de créneaux de diffusion de l'émission ce jour-là dans la grille (souvent 1).
+        config:
+          meta:
+            libelle: Créneaux
+            unite: créneau
+            agregation: somme
+        data_tests:
+          - not_null
+      - name: duree_suivie_min
+        data_type: double precision
+        description: >-
+          Durée de l'émission ce jour-là dans la grille des programmes suivis, en minutes : le dénominateur des parts. Se somme sur les jours et les émissions.
+        config:
+          meta:
+            libelle: Durée suivie (min)
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_environnement_min
+        data_type: double precision
+        description: >-
+          Durée en minutes où l'environnement (climat, biodiversité ou ressources) est évoqué : nombre de fenêtres de 20 secondes contenant au moins un mot-clé, multiplié par 20 secondes. Se somme sur les jours et les émissions.
+        config:
+          meta:
+            libelle: Durée environnement (min)
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_climat_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: Durée climat (min)
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_biodiversite_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: Durée biodiversité (min)
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_ressources_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: Durée ressources (min)
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_climat_constat_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: "Climat : constat (min)"
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_climat_causes_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: "Climat : causes (min)"
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_climat_consequences_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: "Climat : conséquences (min)"
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_climat_attenuation_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: "Climat : solutions d'atténuation (min)"
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_climat_adaptation_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: "Climat : solutions d'adaptation (min)"
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_biodiversite_constat_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: "Biodiversité : constat (min)"
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_biodiversite_causes_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: "Biodiversité : causes (min)"
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_biodiversite_consequences_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: "Biodiversité : conséquences (min)"
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_biodiversite_solutions_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: "Biodiversité : solutions (min)"
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_ressources_constat_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: "Ressources : constat (min)"
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: duree_ressources_solutions_min
+        data_type: double precision
+        description: "{{ doc('curated_duree_theme') }}"
+        config:
+          meta:
+            libelle: "Ressources : solutions (min)"
+            unite: minute
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: part_environnement_pct
+        data_type: double precision
+        description: "{{ doc('curated_part') }}"
+        config:
+          meta:
+            libelle: Part environnement (%)
+            unite: pourcentage (0 à 100)
+            agregation: aucune
+            type_metabase: type/Percentage
+      - name: part_climat_pct
+        data_type: double precision
+        description: "{{ doc('curated_part') }}"
+        config:
+          meta:
+            libelle: Part climat (%)
+            unite: pourcentage (0 à 100)
+            agregation: aucune
+            type_metabase: type/Percentage
+      - name: part_biodiversite_pct
+        data_type: double precision
+        description: "{{ doc('curated_part') }}"
+        config:
+          meta:
+            libelle: Part biodiversité (%)
+            unite: pourcentage (0 à 100)
+            agregation: aucune
+            type_metabase: type/Percentage
+      - name: part_ressources_pct
+        data_type: double precision
+        description: "{{ doc('curated_part') }}"
+        config:
+          meta:
+            libelle: Part ressources (%)
+            unite: pourcentage (0 à 100)
+            agregation: aucune
+            type_metabase: type/Percentage
+      - name: nb_cas_mesinformation
+        data_type: integer
+        description: >-
+          Nombre de cas de mésinformation validés pendant l'émission ce jour-là (détail dans `curated.cas_mesinformation`, jointure par `emission_jour_id`). Se somme.
+        config:
+          meta:
+            libelle: Cas de mésinformation
+            unite: cas
+            agregation: somme
+        data_tests:
+          - not_null

@@ -23,6 +23,8 @@ sources:
       - name: program_metadata
       # keyword segments (start: timestamp with time zone in production, see macros/keywords_paris_time.sql)
       - name: keywords
+      # minutes captured per channel and day (2-minute chunks read by the import), since the end of 2024
+      - name: time_monitored
 
   # built by the `--target analytics` run, before the advertising models (see entrypoints/dbt.sh)
   - name: analytics

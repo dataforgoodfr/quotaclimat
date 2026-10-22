@@ -145,8 +145,8 @@ tasks:
       RAY_COLOR_PREFIX: 1
       DATE: "{{ (inputs.start_date ?? now()) | date('yyyy-MM-dd') }}"
       API_LABEL_STUDIO_KEY: "{{ secret('API_LABEL_STUDIO_KEY') }}"
-      BUCKET_ACCESS: "{{ secret('SCW_ACCESS') }}"
-      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      BUCKET_ACCESS: "{{ secret('RRS_SCW_ACCESS') }}"
+      BUCKET_SECRET: "{{ secret('RRS_SCW_SECRET') }}"
       MEDIATREE_PASSWORD: "{{ secret('MEDIATREE_PASSWORD') }}"
       OPENAI_API_KEY: "{{ secret('OPENAI_API_KEY') }}"
       POSTGRES_USER: "{{ secret('RRS_PG_ADMIN_USER') }}"

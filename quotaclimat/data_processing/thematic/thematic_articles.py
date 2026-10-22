@@ -38,10 +38,10 @@ REQUIRED_ENV = [
 ]
 
 DESTINATION_SCHEMA = "thematic_extracts"
-SOURCE_TABLE="public.factiva_articles"
-MEDIA_TYPE="presse"
+SOURCE_TABLE = "public.factiva_articles"
+MEDIA_TYPE = "presse"
 LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch"}
-COUNTRIES = {"france": "fr","belgium": "be", "belgium_flanders": "befl" }
+COUNTRIES = {"france": "fr", "belgium": "be", "belgium_flanders": "befl" }
 MODES = ("new", "resume", "reset")
 
 def load_env() -> None:
@@ -173,7 +173,7 @@ def run() -> None:
         try:
             logging.info(f"[RUN] ------ Processing day {day} ------")
             logging.info(f"[{SOURCE_TABLE}] {day}: reading source table")
-            articles_day = art_utils.read_barometre_factiva_articles(
+            articles_day = art_utils.read_factiva_articles(
                                                             _con, kw_list,
                                                             day, day + timedelta(days=1),
                                                             SOURCE_TABLE, POSTGRES_DB)

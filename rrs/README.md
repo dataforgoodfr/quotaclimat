@@ -101,6 +101,17 @@ rrs/
 │   ├── classifier.py                # Classification logic
 │   └── definitions.py               # Per-subject prompts/definitions
 │
+├── pulsar/
+│   ├── settings.py                  # Env-driven config (pydantic-settings)
+│   ├── store.py                     # RRS Postgres connection + pulsar_* table access
+│   ├── fetch_weekly_themes_client.py # Entry point for the pulsar-themes flow (themes/topics/posts ingestion)
+│   ├── download_themes.py           # Playwright session capture (not used by the Kestra flow)
+│   ├── parse_themes.py              # Theme/topic parsing helpers
+│   ├── prompts.py                   # LLM prompts (translation, misinformation classification)
+│   ├── posts_client.py              # PulsarPostsClient: TopContent GraphQL queries, time-window bisection
+│   ├── export_posts.py              # Entry point: export saved themes/topics' posts to CSV + JSON
+│   └── run.py                       # DEPRECATED: original single-search download→parse→store→fetch pipeline
+│
 └── schemas/
     ├── base.py                      # SQLAlchemy declarative base
     └── models.py                    # ORM models for all 6 tables
@@ -226,6 +237,30 @@ Used by `main.py`. Requires the `RRS_PG_*` environment variables.
 
 ---
 
+### `pulsar/export_posts.py` — Pulsar Posts Export (CSV + JSON)
+
+Exports every Pulsar post behind the themes/topics already saved by the `pulsar-themes` flow (`fetch_weekly_themes_client.py`), for one subject and date window. Read-only on the RRS database (a single `SELECT`).
+
+1. Reads the themes saved in `pulsar_themes` for the subject between `PULSAR_START_DATE`/`PULSAR_END_DATE`, with their topics.
+2. Pulls every post of the theme's search over that window from Pulsar's `TopContent` GraphQL endpoint via `PulsarPostsClient.fetch_all_posts` (`posts_client.py`), then locally keeps the posts whose own `topics` contain one of the saved topics and links each to every matching (theme, topic) pair.
+3. Writes one row per (theme, topic, post) — a post matching several topics appears once per topic — plus a `_unique` pair of files with one row per distinct post and the lists of themes/topics it matched. Columns include the post's engagement counts (likes, shares, comments, views) and `original_poster` (the account that first posted, when the post is itself a repost — resolved by looking up the parent by identifier, falling back to the `RT @user` prefix).
+
+Output files, under `PULSAR_EXPORT_DIR`: `pulsar_posts_<subject>_<start>_<end>[_unique].{csv,json}`.
+
+**`PulsarPostsClient.fetch_all_posts` (`posts_client.py`):** Pulsar's `TopContent` caps a query at 100 results (`total` capped too) and `nextCursor` never advances, so paging can't be used. Instead, the date window is recursively bisected whenever a sub-window returns a full page, until every window returns fewer than `page_size` posts; results are deduped by `pulsarId`. `topics=None` fetches every post of the search (unfiltered), since each result already carries its own `topics` list for local filtering.
+
+| Variable | Default | Description |
+|---|---|---|
+| `PULSAR_API_KEY` | — | Pulsar API key (required) |
+| `SUBJECT` | — | Subject name, e.g. `climate` (required) |
+| `PULSAR_START_DATE` / `PULSAR_END_DATE` | — | `YYYY-MM-DD` (required): window for both the saved themes and the posts fetched |
+| `PULSAR_EXPORT_DIR` | `.` | Output directory |
+| `PULSAR_PAGE_LIMIT` | `100` | Posts per API page (Pulsar's max) |
+| `PULSAR_PARENT_LOOKBACK_DAYS` | `365` | How far before the window to look up a repost's original post |
+| `LOG_LEVEL` | `INFO` | `DEBUG` logs every API call |
+
+Run with `python -m rrs.pulsar.export_posts`, or `docker compose up pulsar_export_posts` (env vars above, plus the `RRS_PG_*` connection) from `rrs/`. No TTY (e.g. `docker compose logs`): progress is logged every 5% of the window instead of drawn as a `tqdm` bar.
+
 ## Extended perimeter (Droit à l'info)
 
 The `rrs-climate` and `rrs-insecurity` Kestra flows (`infrastructure/kestra/flows/main_rrs_climate.yaml`, `main_rrs_insecurity.yaml`) have a `source` input:
@@ -350,6 +385,10 @@ Used by `import_segments.py`, `filter_keywords.py`, and `import_cases.py` to rea
 | `BUCKET_SECRET` | `keyword_detection/analyse_keywords.py` | S3 secret key |
 | `BUCKET_NAME` | `keyword_detection/analyse_keywords.py`, `import_segments.py`, `filter_keywords.py` | S3 bucket name (used to build the stored `s3_uri`) |
 
+### Pulsar
+
+`PULSAR_API_KEY`, `PULSAR_START_DATE`/`PULSAR_END_DATE`, `PULSAR_EXPORT_DIR`, `PULSAR_PAGE_LIMIT` and `PULSAR_PARENT_LOOKBACK_DAYS` configure `pulsar/export_posts.py` — see its [table above](#pulsarexport_postspy--pulsar-posts-export-csv--json).
+
 ### Other
 
 | Variable | Used by | Description |
@@ -393,6 +432,7 @@ Run any of these with `docker compose up <service>` from `rrs/`. Most read from 
 | `detect_misinformation` | `misinformation_detection/main.py` | LLM misinformation classification |
 | `clustering` | `clustering/main.py` | LLM narrative clustering |
 | `pulsar` | Pulsar-based ingestion (see `Dockerfile.pulsar`) | |
+| `pulsar_export_posts` | `pulsar/export_posts.py` | Exports posts behind saved themes/topics to `exports/pulsar/` (volume-mounted) |
 | `console` | `sleep 12000` | Interactive shell, see below |
 
 ### Open an interactive shell

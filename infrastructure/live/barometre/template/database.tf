@@ -63,6 +63,20 @@ resource "scaleway_rdb_privilege" "rrs_read" {
   permission    = "readonly"
 }
 
+resource "scaleway_rdb_user" "metabase_analytics" {
+  instance_id = scaleway_rdb_instance.barometre_rdb.id
+  name        = "metabase-analytics-${var.environment}"
+  password    = var.metabase_analytics_password
+  is_admin    = false
+}
+
+resource "scaleway_rdb_privilege" "metabase_analytics" {
+  instance_id   = scaleway_rdb_instance.barometre_rdb.id
+  user_name     = scaleway_rdb_user.metabase_analytics.name
+  database_name = scaleway_rdb_database.barometre.name
+  permission    = "readonly"
+}
+
 locals {
   # IP ranges used by Scaleway serverless job workers.
   # Serverless jobs cannot attach to a VPC, so the DB must accept traffic from these CIDRs.

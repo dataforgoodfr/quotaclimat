@@ -270,6 +270,8 @@ Every target below is deployed once per environment (`dev`/`prod`) from its `tem
 | RDB privilege | `scaleway_rdb_privilege.barometre_admin` | Full privileges for `database_admin` on `barometre` |
 | RDB user | `scaleway_rdb_user.rrs_read` | Readonly user consumed cross-target by `rrs` (`import_segments`/`import_cases` jobs) |
 | RDB privilege | `scaleway_rdb_privilege.rrs_read` | Readonly grant for `rrs_read` on `barometre` |
+| RDB user | `scaleway_rdb_user.metabase_analytics` | Readonly user (`metabase-analytics-<env>`) for Metabase dashboards |
+| RDB privilege | `scaleway_rdb_privilege.metabase_analytics` | Readonly grant for `metabase_analytics` on `barometre` |
 | RDB ACL | `scaleway_rdb_acl.public` | IP allow-list (Scaleway job CIDRs + dev/prod extra IPs) |
 | Instance IP | `scaleway_instance_ip.gpu` | Flexible IP for the GPU instance |
 | Instance server | `scaleway_instance_server.gpu` | GPU instance (Whisper transcription / ML workloads) |

@@ -17,6 +17,7 @@ inputs = {
   database_admin_user             = get_env("TF_VAR_postgres_admin_user")
   database_admin_password         = ""
   barometre_rrs_read_password     = get_env("TF_VAR_barometre_rrs_read_password")
+  metabase_analytics_password     = get_env("TF_VAR_metabase_analytics_password")
   postgres_admin_password_version = 1
   node_type                       = "DB-DEV-S"
   volume_type                     = "sbs_5k"

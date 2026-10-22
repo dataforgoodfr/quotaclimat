@@ -41,7 +41,7 @@ def seed_dbt():
 
 seed_dbt()
 
-GRANT_ROLES = ["climateguard-reader-user"]
+GRANT_ROLES = ["climateguard-reader-user", "metabase-analytics-dev", "metabase-analytics-prod"]
 
 
 def create_test_roles():

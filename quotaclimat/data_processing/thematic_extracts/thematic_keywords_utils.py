@@ -5,16 +5,10 @@ import duckdb
 from datetime import date, timedelta
 import pandas as pd
 import numpy as np
-import sys
-import json
-import re
-from datetime import date
-import yaml
 
 # only local env
 load_dotenv(Path(__file__).resolve().parents[3] / ".env", override=False)
 
-from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 
 def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
                             keywords_to_look_for: list[str],

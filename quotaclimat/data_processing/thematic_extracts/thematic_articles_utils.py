@@ -5,13 +5,7 @@ from dotenv import load_dotenv
 import duckdb
 from datetime import date
 import pandas as pd
-import numpy as np
-import sys
-from urllib.parse import quote
 import re
-import unicodedata
-import json
-import hashlib
 
 
 # only local env
@@ -51,11 +45,6 @@ def create_thematic_articles_table(con: duckdb.DuckDBPyConnection,
         raise e
 
 
-def strip_accents_py(s: str) -> str:
-    return "".join(c for c in unicodedata.normalize("NFKD", s)
-                   if not unicodedata.combining(c))
-
-
 def read_factiva_articles(con: duckdb.DuckDBPyConnection,
                                     keywords_to_look_for: list[str],
                                     start_date: date, end_date: date,
@@ -68,8 +57,11 @@ def read_factiva_articles(con: duckdb.DuckDBPyConnection,
     if not keywords_to_look_for:
         raise ValueError("keywords_to_look_for est vide")
 
-    # apostrophes and hyphen -> space, same class as in the SQL below
-    expressions = [re.sub(r"['’‘‛ʼʹ´`′＇-]", " ", strip_accents_py(e)) for e in keywords_to_look_for]
+    # lower, œ/æ -> oe/ae, French accents -> plain letter, apostrophes and hyphen -> space:
+    # same normalization as the SQL txt below
+    accents = str.maketrans("àâäéèêëîïôöùûüÿç", "aaaeeeeiioouuuyc")
+    expressions = [e.lower().replace("œ", "oe").replace("æ", "ae").translate(accents) for e in keywords_to_look_for]
+    expressions = [re.sub(r"['’‘‛ʼʹ´`′＇-]", " ", e) for e in expressions]
     # escape regex special characters so that a keyword is searched literally ("c.o.p" must not match "cxoxp")
     expressions = [re.sub(r"([.^$*+?()\[\]{}|\\])", r"\\\1", e) for e in expressions]
     # longest first: with alternation, the regex keeps the first alternative that matches,
@@ -88,7 +80,14 @@ def read_factiva_articles(con: duckdb.DuckDBPyConnection,
                     a.title AS title,
                     a.snippet AS snippet,
                     a.body AS body,
-                    regexp_replace(lower(strip_accents(concat_ws(' ', a.snippet, a.title, a.body))), '[''’‘‛ʼʹ´`′＇-]', ' ', 'g') AS txt,
+                    regexp_replace(
+                        translate(
+                            replace(replace(lower(concat_ws(' ', a.snippet, a.title, a.body)), 'œ', 'oe'), 'æ', 'ae'),
+                            'àâäéèêëîïôöùûüÿç',
+                            'aaaeeeeiioouuuyc'
+                        ),
+                        '[''’‘‛ʼʹ´`′＇-]', ' ', 'g'
+                    ) AS txt,
                     a.word_count as word_count               
                 FROM {postgres_db}.{source_table} a
                 WHERE a.publication_datetime >= TIMESTAMP '{start_date}' AT TIME ZONE 'Europe/Paris'

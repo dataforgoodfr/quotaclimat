@@ -16,14 +16,12 @@
 ###     - reset: clears the table (or creates it) and restarts from the start of each period
 
 import logging
-from datetime import date, timedelta
+from datetime import timedelta
 import duckdb
-from pandas import Timedelta
 import os
 from dotenv import load_dotenv
 from pathlib import Path
 from urllib.parse import quote
-import yaml
 
 import quotaclimat.data_processing.thematic_extracts.thematic_keywords_utils as kw_utils
 import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils

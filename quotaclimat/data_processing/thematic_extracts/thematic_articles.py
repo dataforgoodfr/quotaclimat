@@ -19,10 +19,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 import duckdb
-from datetime import date, timedelta
-import pandas as pd
-import numpy as np
-import sys
+from datetime import timedelta
 from urllib.parse import quote
 
 # only local env

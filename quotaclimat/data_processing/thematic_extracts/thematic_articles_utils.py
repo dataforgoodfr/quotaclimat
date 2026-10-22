@@ -61,20 +61,22 @@ def read_factiva_articles(con: duckdb.DuckDBPyConnection,
                                     start_date: date, end_date: date,
                                     source_table: str, postgres_db: str,) -> pd.DataFrame:
     """Reads factiva_articles and keeps articles whose snippet + title + body,
-    normalized (lower, accents removed, apostrophes replaced by a space so that
-    "l'incendie" matches "incendie"), match at least one expression.
+    normalized (lower, accents removed, apostrophes and hyphens replaced by a space so that
+    "l'incendie" matches "incendie" and "Kunming-Montréal" matches "kunming montreal"),
+    match at least one expression.
     keywords_found lists the distinct matches in normalized form, sorted and separated by ','."""
     if not keywords_to_look_for:
         raise ValueError("keywords_to_look_for est vide")
 
-    expressions = [re.compile(r"['’‘ʼ]").sub(" ", strip_accents_py(e)) for e in keywords_to_look_for]
+    # apostrophes and hyphen -> space, same class as in the SQL below
+    expressions = [re.sub(r"['’‘‛ʼʹ´`′＇-]", " ", strip_accents_py(e)) for e in keywords_to_look_for]
+    # escape regex special characters so that a keyword is searched literally ("c.o.p" must not match "cxoxp")
     expressions = [re.sub(r"([.^$*+?()\[\]{}|\\])", r"\\\1", e) for e in expressions]
     # longest first: with alternation, the regex keeps the first alternative that matches,
     # so "crue" listed before "crue centennale" would hide the longer expression in keywords_found
     expressions = sorted(expressions, key=len, reverse=True)
     # whole expressions only: word boundaries on both sides
     pattern = r"(?i)\b(?:" + "|".join(expressions) + r")\b"
-    pattern_sql = pattern.replace("'", "''")
 
     try:
         out = con.sql(f"""
@@ -86,7 +88,7 @@ def read_factiva_articles(con: duckdb.DuckDBPyConnection,
                     a.title AS title,
                     a.snippet AS snippet,
                     a.body AS body,
-                    regexp_replace(lower(strip_accents(concat_ws(' ', a.snippet, a.title, a.body))), '[''’‘ʼ]', ' ', 'g') AS txt,
+                    regexp_replace(lower(strip_accents(concat_ws(' ', a.snippet, a.title, a.body))), '[''’‘‛ʼʹ´`′＇-]', ' ', 'g') AS txt,
                     a.word_count as word_count               
                 FROM {postgres_db}.{source_table} a
                 WHERE a.publication_datetime >= TIMESTAMP '{start_date}' AT TIME ZONE 'Europe/Paris'
@@ -94,9 +96,9 @@ def read_factiva_articles(con: duckdb.DuckDBPyConnection,
                     AND duplicate_status <> 'DUP'
             )
             SELECT an, source_code, source_name, publication_datetime, title, snippet, body, word_count,
-                array_to_string(list_sort(list_distinct(regexp_extract_all(txt, '{pattern_sql}'))), ',') AS keywords_found
+                array_to_string(list_sort(list_distinct(regexp_extract_all(txt, '{pattern}'))), ',') AS keywords_found
             FROM txt
-            WHERE regexp_matches(txt, '{pattern_sql}')
+            WHERE regexp_matches(txt, '{pattern}')
         """).df()
         return out
     except Exception as e:

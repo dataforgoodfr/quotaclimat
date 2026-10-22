@@ -87,9 +87,11 @@ tasks:
       DAYS_PRIOR: "{{ inputs.days_back ?? 1 }}"
       RRS_PG_DATABASE: rrs
       RRS_PG_PORT: 18492
-      BUCKET_NAME: "{{ inputs.source == 'extended' ? 'mediatree-extended-perimeter-prod' : 'mediatree' }}"
+      BUCKET_NAME: mediatree
       BUCKET: "{{ secret('SCW_ACCESS') }}"
       BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      RRS_BUCKET: "{{ secret('RRS_SCW_ACCESS') }}"
+      RRS_BUCKET_SECRET: "{{ secret('RRS_SCW_SECRET') }}"
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST') }}"
       RRS_PG_USER: "{{ secret('RRS_PG_USER') }}"
       RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD') }}"

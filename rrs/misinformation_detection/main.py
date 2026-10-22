@@ -22,6 +22,11 @@ load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 logging.basicConfig(level=logging.INFO)
 
 # ── S3 config ────────────────────────────────────────────────────────────────
+# Segments loaded for a given subject/date range can come from either the
+# barometre DB (bucket BUCKET_NAME, "mediatree") or the extended-perimeter DB
+# (any other bucket) — both credential pairs are configured as duckdb
+# secrets in _configure_s3, BUCKET/BUCKET_SECRET scoped to BUCKET_NAME and
+# RRS_BUCKET/RRS_BUCKET_SECRET as the unscoped fallback for everything else.
 
 REGION = "fr-par"
 BUCKET_NAME = os.environ.get("BUCKET_NAME")
@@ -64,9 +69,6 @@ def load_segments(
     end_date: date,
 ) -> pd.DataFrame:
     """Load segments from the RRS DB and enrich them with plaintext from S3."""
-    if not BUCKET_NAME:
-        raise SystemExit("BUCKET_NAME env var must be set")
-
     sid = make_subject_id(subject)
 
     with psycopg.connect(_rrs_conninfo()) as conn:
@@ -79,10 +81,9 @@ def load_segments(
                 WHERE subject_id = %s
                   AND start >= %s
                   AND start < %s
-                  AND split_part(s3_uri, '/', 3) = %s
                 ORDER BY start
                 """,
-                (sid, start_date, end_date + timedelta(days=1), BUCKET_NAME),
+                (sid, start_date, end_date + timedelta(days=1)),
             )
             rows = cur.fetchall()
             cols = [desc[0] for desc in cur.description]
@@ -99,16 +100,41 @@ def load_segments(
 
 
 def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
-    access_key = _get_secret("BUCKET")
-    secret_key = _get_secret("BUCKET_SECRET")
+    """Register the extended-perimeter credentials as the default S3 secret,
+    and the barometre (mediatree) credentials as a secret scoped to that one
+    bucket. DuckDB picks whichever secret's scope matches a given path (the
+    more specific scope wins), so segments from either source DB get read
+    with the right credentials without needing to know the extended bucket's
+    actual name in advance."""
     con.execute("INSTALL httpfs; LOAD httpfs;")
+
+    rrs_access_key = _get_secret("RRS_BUCKET")
+    rrs_secret_key = _get_secret("RRS_BUCKET_SECRET")
     con.execute(f"""
-        SET s3_region='{REGION}';
-        SET s3_endpoint='s3.{REGION}.scw.cloud';
-        SET s3_access_key_id='{access_key}';
-        SET s3_secret_access_key='{secret_key}';
-        SET s3_url_style='path';
+        CREATE OR REPLACE SECRET rrs_bucket (
+            TYPE S3,
+            KEY_ID '{rrs_access_key}',
+            SECRET '{rrs_secret_key}',
+            REGION '{REGION}',
+            ENDPOINT 's3.{REGION}.scw.cloud',
+            URL_STYLE 'path'
+        );
     """)
+
+    if BUCKET_NAME:
+        access_key = _get_secret("BUCKET")
+        secret_key = _get_secret("BUCKET_SECRET")
+        con.execute(f"""
+            CREATE OR REPLACE SECRET mediatree_bucket (
+                TYPE S3,
+                KEY_ID '{access_key}',
+                SECRET '{secret_key}',
+                REGION '{REGION}',
+                ENDPOINT 's3.{REGION}.scw.cloud',
+                URL_STYLE 'path',
+                SCOPE 's3://{BUCKET_NAME}'
+            );
+        """)
 
 
 def _enrich_with_plaintext(segments: pd.DataFrame) -> pd.DataFrame:

@@ -120,9 +120,11 @@ tasks:
       RRS_PG_HOST: "{{ secret('RRS_PG_HOST_DEV') }}"
       RRS_PG_USER: "{{ secret('RRS_PG_USER_DEV') }}"
       RRS_PG_PASSWORD: "{{ secret('RRS_PG_PASSWORD_DEV') }}"
-      BUCKET_NAME: "{{ inputs.source == 'extended' ? 'mediatree-extended-perimeter-dev' : 'mediatree' }}"
-      BUCKET: "{{ inputs.source == 'extended' ? secret('RRS_SCW_ACCESS_DEV') : secret('SCW_ACCESS') }}"
-      BUCKET_SECRET: "{{ inputs.source == 'extended' ? secret('RRS_SCW_SECRET_DEV') : secret('SCW_SECRET') }}"
+      BUCKET_NAME: mediatree
+      BUCKET: "{{ secret('SCW_ACCESS') }}"
+      BUCKET_SECRET: "{{ secret('SCW_SECRET') }}"
+      RRS_BUCKET: "{{ secret('RRS_SCW_ACCESS_DEV') }}"
+      RRS_BUCKET_SECRET: "{{ secret('RRS_SCW_SECRET_DEV') }}"
       EMBEDDINGS_BUCKET: "{{ secret('RRS_SCW_ACCESS_DEV') }}"
       EMBEDDINGS_BUCKET_SECRET: "{{ secret('RRS_SCW_SECRET_DEV') }}"
       EMBEDDINGS_BUCKET_NAME: expert-model-source-documents-dev

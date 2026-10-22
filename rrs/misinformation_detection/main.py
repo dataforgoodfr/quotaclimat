@@ -132,7 +132,7 @@ def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
                 REGION '{REGION}',
                 ENDPOINT 's3.{REGION}.scw.cloud',
                 URL_STYLE 'path',
-                SCOPE 's3://{BUCKET_NAME}'
+                SCOPE 's3://{BUCKET_NAME}/'
             );
         """)
 

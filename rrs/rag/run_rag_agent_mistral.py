@@ -128,7 +128,9 @@ def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
     """Register the extended-perimeter credentials as the default S3 secret,
     and the barometre (mediatree) credentials as a secret scoped to that one
     bucket. DuckDB picks whichever secret's scope matches a given path (the
-    more specific scope wins), so segments from either source DB get read
+    more specific scope wins; the scope ends with "/" because matching is
+    by string prefix and "s3://mediatree" would also match
+    "s3://mediatree-extended-perimeter-prod"), so segments from either source DB get read
     with the right credentials without needing to know the extended bucket's
     actual name in advance."""
     con.execute("INSTALL httpfs; LOAD httpfs;")
@@ -157,7 +159,7 @@ def _configure_s3(con: duckdb.DuckDBPyConnection) -> None:
                 REGION '{REGION}',
                 ENDPOINT 's3.{REGION}.scw.cloud',
                 URL_STYLE 'path',
-                SCOPE 's3://{BUCKET_NAME}'
+                SCOPE 's3://{BUCKET_NAME}/'
             );
         """)
 

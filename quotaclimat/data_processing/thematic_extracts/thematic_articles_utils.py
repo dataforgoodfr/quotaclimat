@@ -39,6 +39,7 @@ def create_thematic_articles_table(con: duckdb.DuckDBPyConnection,
                     word_count INT,
                     keywords_found VARCHAR NOT NULL,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+                    period VARCHAR NOT NULL,
                     PRIMARY KEY (an)
                 )
             """)
@@ -105,14 +106,14 @@ def read_factiva_articles(con: duckdb.DuckDBPyConnection,
     
     
 ### DESTINATION ### 
-def get_max_start_date_from_thematic_articles(con: duckdb.DuckDBPyConnection, postgres_db: str,
+def get_max_start_from_thematic_articles(con: duckdb.DuckDBPyConnection, postgres_db: str,
                                         destination_table: str,
-                                        destination_schema: str = "public") -> date:
-    """Get the maximum publication date from the destination table, or None if empty."""
+                                        destination_schema: str, period: str) -> date:
+    """Get the maximum publication date of a period in the destination table, or None if it has no rows."""
     try:
         result = con.sql(
             f"SELECT CAST(MAX(publication_datetime) AT TIME ZONE 'Europe/Paris' AS DATE) "
-            f"FROM {postgres_db}.{destination_schema}.{destination_table}"
+            f"FROM {postgres_db}.{destination_schema}.{destination_table} WHERE period = '{period}'"
         ).fetchone()
         if result and result[0]:
             return result[0]

@@ -14,6 +14,7 @@ DB = "barometre"
 SCHEMA = "public"
 DESTINATION_SCHEMA = ta.DESTINATION_SCHEMA
 D1, D2, D3, D4, D5 = (date(2025, 3, d) for d in (10, 11, 12, 13, 14))
+PERIOD = "p_test"
 SOURCE = f"{SCHEMA}.factiva_articles"
 OUT_COLS = ["an", "source_code", "source_name", "publication_datetime",
             "title", "snippet", "body", "word_count", "keywords_found"]
@@ -65,10 +66,9 @@ class RunEnv:
         self.articles, self.read_days, self.read_kw = [], [], []
         self.failing_days, self._n = set(), 0
 
-        yml = tmp_path / "thematic.yml"
-        yml.write_text(yaml.safe_dump({"inondations":{ "french": {"presse": ["inondation", "crue"],
-                                                       "audiovisuel": ["autre"]}}}))
-        monkeypatch.setattr(ta, "THEMATIC_YML", yml)
+        self.yml = tmp_path / "thematic.yml"
+        self.keywords = {"french": {"presse": ["inondation", "crue"], "audiovisuel": ["autre"]}}
+        monkeypatch.setattr(ta, "THEMATIC_YML", self.yml)
         monkeypatch.setattr(ta.duckdb, "connect", lambda *a, **k: con)
         monkeypatch.setattr(ta.utils, "configure_barometre_source", lambda *a, **k: None)
         monkeypatch.setattr(ta.art_utils, "read_factiva_articles", self._fake_read)
@@ -77,18 +77,22 @@ class RunEnv:
     def configure(self, start=None, end=D2, dry_run=False, source_table=SOURCE,
                   thematic="inondations", language="french", mode="new"):
         values = dict(
-            START_DATE=start, END_DATE=end, THEMATIC=thematic, COUNTRY="france", LANGUAGE=language,
+            THEMATIC=thematic, COUNTRY="france", LANGUAGE=language,
             DRY_RUN=dry_run, MODE=mode,
             SOURCE_TABLE=source_table, POSTGRES_USER="u", POSTGRES_PASSWORD="p",
             POSTGRES_HOST="h", POSTGRES_PORT="5432", POSTGRES_DB=DB,
         )
         for k, v in values.items():
             self.mp.setattr(ta, k, v, raising=False)
-        # the table name depends on the dates: same computation as run()
+        # one period from start (included) to end (excluded)
         if start is not None:
-            self.destination_table = utils.make_destination_table_name(
-                thematic, ta.MEDIA_TYPE, ta.COUNTRIES["france"], start, end)
-            self.table = f"{DB}.{DESTINATION_SCHEMA}.{self.destination_table}"
+            content = {"inondations": {**self.keywords,
+                                       "periodes": {"france": [{"id": PERIOD, "start": start,
+                                                                "end": end}]}}}
+            self.yml.write_text(yaml.safe_dump(content))
+        self.destination_table = utils.make_destination_table_name(
+            thematic, ta.MEDIA_TYPE, ta.COUNTRIES["france"])
+        self.table = f"{DB}.{DESTINATION_SCHEMA}.{self.destination_table}"
 
     def add_article(self, day, an=None, **overrides):
         self._n += 1
@@ -121,8 +125,8 @@ class RunEnv:
     
     def insert_sentinel(self, an="sentinel", day=date(2025, 1, 1)):
         self.con.execute(
-            f"INSERT INTO {self.table} (an, source_code, source_name, publication_datetime, title, keywords_found) "
-            f"VALUES ('{an}', 'SENT', 'Sentinel', TIMESTAMPTZ '{day} 10:00:00+01', 'old', 'inondation')")
+            f"INSERT INTO {self.table} (an, source_code, source_name, publication_datetime, title, keywords_found, period) "
+            f"VALUES ('{an}', 'SENT', 'Sentinel', TIMESTAMPTZ '{day} 10:00:00+01', 'old', 'inondation', '{PERIOD}')")
 
     def days_in_table(self):
         return [r[0] for r in self.con.execute(
@@ -274,16 +278,16 @@ def test_destination_table_exists_and_clear(env):
     assert utils.destination_table_exists(env.con, env.destination_table, DB, DESTINATION_SCHEMA)
 
 
-def test_get_max_start_date_from_thematic_articles(env):
+def test_get_max_start_from_thematic_articles(env):
     """Verify that the max date is None on an empty table and the latest day otherwise."""
     env.create_destination()
-    assert art_utils.get_max_start_date_from_thematic_articles(
-        env.con, DB, env.destination_table, DESTINATION_SCHEMA) is None
+    assert art_utils.get_max_start_from_thematic_articles(
+        env.con, DB, env.destination_table, DESTINATION_SCHEMA, PERIOD) is None
 
     env.insert_sentinel("a", D1)
     env.insert_sentinel("b", D3)
-    assert art_utils.get_max_start_date_from_thematic_articles(
-        env.con, DB, env.destination_table, DESTINATION_SCHEMA) == D3
+    assert art_utils.get_max_start_from_thematic_articles(
+        env.con, DB, env.destination_table, DESTINATION_SCHEMA, PERIOD) == D3
 
 
 # ───────────────────────── check_articles ─────────────────────────
@@ -489,16 +493,6 @@ def test_run_resume_on_empty_table_starts_from_start_date(env):
 
     assert env.read_days == [D1, D2]
     assert env.days_in_table() == [D1, D2]
-
-def test_run_returns_without_reading_when_start_not_before_end(env):
-    """Verify that run returns quietly when there is nothing to process."""
-    env.add_day(D1)
-    env.configure(start=D2, end=D2)
-
-    ta.run()
-
-    assert env.read_days == []
-
 
 @pytest.mark.parametrize("name", ["autre_table", "inondations_articles", "thematic_articles"])
 def test_clear_refuses_non_thematic_table_and_keeps_rows(env, name):

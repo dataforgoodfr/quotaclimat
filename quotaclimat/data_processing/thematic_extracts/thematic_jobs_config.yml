@@ -4,6 +4,9 @@ incendies:
       - id: ete_2026
         start: 2026-07-01
         end: 2026-07-10
+      - id: ete_2025
+        start: 2025-07-01
+        end: 2025-07-10
     belgium:
       - id: ete_2026
         start: 2026-07-01
@@ -75,4 +78,3 @@ inondations:
       - englouti par les eaux
       - engloutis par les eaux
       - englouties par les eaux
-      - engloutiees par les eaux

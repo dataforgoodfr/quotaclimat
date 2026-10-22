@@ -17,7 +17,7 @@ POSTGRES_MAX_IDENTIFIER_BYTES = 63
 MEDIA_TYPE_SHORT = {"audiovisuel": "keywords", "presse": "articles"}
 # format produced by make_destination_table_name: only these tables can be cleared
 DESTINATION_TABLE_PATTERN = (
-    r"[a-z0-9_]+_(?:" + "|".join(MEDIA_TYPE_SHORT.values()) + r")_[a-z]+_\d{8}_\d{8}"
+    r"[a-z0-9_]+_(?:" + "|".join(MEDIA_TYPE_SHORT.values()) + r")_[a-z]+"
 )
 
 
@@ -58,7 +58,8 @@ def get_periods(yml_file: str, thematic: str, country: str) -> list[dict]:
     """Returns the periods of a thematic for a country, as declared under
     [thematic]["periodes"][country]: a list of {"id": str, "start": date, "end": date}.
 
-    Raises if a period has missing or extra keys, an id outside [a-z0-9_] or start > end.
+    Raises if a period has missing or extra keys, an id outside [a-z0-9_], start >= end (end is excluded)
+    or if two periods overlap (a chunk or an article can only belong to one period).
     """
     with open(yml_file, "r", encoding="utf-8") as f:
         kw = yaml.safe_load(f)
@@ -85,8 +86,14 @@ def get_periods(yml_file: str, thematic: str, country: str) -> list[dict]:
             raise ValueError(f"Period {p} of '{thematic}' / '{country}' must have exactly the keys {sorted(PERIOD_KEYS)}")
         if not re.fullmatch(r"[a-z0-9_]+", str(p["id"])):
             raise ValueError(f"Invalid period id '{p['id']}': only [a-z0-9_] allowed")
-        if p["start"] > p["end"]:
-            raise ValueError(f"Period '{p['id']}': start {p['start']} is after end {p['end']}")
+        if p["start"] >= p["end"]:
+            raise ValueError(f"Period '{p['id']}': start {p['start']} is not before end {p['end']}")
+
+    # end is excluded: a period may start on the end of the previous one
+    by_start = sorted(periods, key=lambda p: p["start"])
+    for prev, p in zip(by_start, by_start[1:]):
+        if p["start"] < prev["end"]:
+            raise ValueError(f"Periods '{prev['id']}' and '{p['id']}' of '{thematic}' / '{country}' overlap")
     return periods
 
     
@@ -149,15 +156,15 @@ def destination_table_exists(con: duckdb.DuckDBPyConnection,
     return n > 0
 
 
-def make_destination_table_name(thematic: str, media_type: str,  country_short: str, start_date: date, end_date: date) -> str:
-    """{thematic}_{media_type_code}_{country}_{start YYYYMMDD}_{end YYYYMMDD},
-    e.g. inondations_kw_fr_20250301_20250601.
+def make_destination_table_name(thematic: str, media_type: str,  country_short: str) -> str:
+    """{thematic}_{media_type_code}_{country}, e.g. incendies_keywords_fr: one table gathers
+    all the periods of the thematic (column period).
     Raises instead of letting Postgres silently truncate a name over 63 bytes."""
 
     if media_type not in MEDIA_TYPE_SHORT:
         raise ValueError(f"Media type not in {MEDIA_TYPE_SHORT.keys()}")
 
-    table_name = f"{thematic}_{MEDIA_TYPE_SHORT[media_type]}_{country_short}_{start_date:%Y%m%d}_{end_date:%Y%m%d}"
+    table_name = f"{thematic}_{MEDIA_TYPE_SHORT[media_type]}_{country_short}"
     if not re.fullmatch(r"[a-z0-9_]+", table_name):
         raise ValueError(f"Invalid table name '{table_name}': only [a-z0-9_] allowed")
     n_bytes = len(table_name.encode("utf-8"))

@@ -6,10 +6,8 @@ from datetime import date, timedelta
 import pandas as pd
 import numpy as np
 import sys
-import hashlib
 import json
 import re
-import unicodedata
 from datetime import date
 import yaml
 
@@ -58,12 +56,12 @@ def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
 def get_max_start_from_thematic_keywords(con: duckdb.DuckDBPyConnection, 
                                         postgres_db: str, 
                                         destination_table: str,
-                                        schema: str) -> date:
-    """Get the maximum start date from the destination table, or None if empty."""
+                                        schema: str, period: str) -> date:
+    """Get the maximum start date of a period in the destination table, or None if it has no rows."""
     try:
         result = con.sql(
             f"SELECT CAST(MAX(start) AT TIME ZONE 'Europe/Paris' AS DATE) "
-            f"FROM {postgres_db}.{schema}.{destination_table}"
+            f"FROM {postgres_db}.{schema}.{destination_table} WHERE period = '{period}'"
         ).fetchone()
         return result[0] if result and result[0] else None
     except Exception as e:
@@ -91,6 +89,8 @@ def create_thematic_keywords_table(con: duckdb.DuckDBPyConnection,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
                     plaintext VARCHAR NOT NULL,
                     source_keywords_id VARCHAR,
+                    country VARCHAR NOT NULL,
+                    period VARCHAR NOT NULL,
                     PRIMARY KEY (this_id)
                 )
             """)

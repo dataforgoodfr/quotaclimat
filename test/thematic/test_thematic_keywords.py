@@ -21,6 +21,7 @@ MIN = timedelta(minutes=1)
 PARIS_DAY = f"CAST(start AT TIME ZONE '{PARIS}' AS DATE)"
 D1, D2, D3, D4, D5 = (date(2025, 3, d) for d in (10, 11, 12, 13, 14))
 TITLES = {"france": {"tf1": "TF1 (test)", "m6": "M6 (test)"}}
+PERIOD = "p_test"
 
 def _wall(ts):
     """Paris wall-clock time as text, for SQL inserts."""
@@ -99,9 +100,9 @@ class RunEnv:
         self.con, self.mp = con, monkeypatch
         self.s3_rows, self.read_days, self.failing_days, self._n = [], [], set(), 0
 
-        yml = tmp_path / "thematic.yml"
-        yml.write_text(yaml.safe_dump({"inondations":{"french": {"audiovisuel": ["inondation", "crue"]}}}))
-        monkeypatch.setattr(tk, "THEMATIC_YML", yml)
+        self.yml = tmp_path / "thematic.yml"
+        self.keywords = {"french": {"audiovisuel": ["inondation", "crue"]}}
+        monkeypatch.setattr(tk, "THEMATIC_YML", self.yml)
         monkeypatch.setattr(tk.duckdb, "connect", lambda *a, **k: con)
         monkeypatch.setattr(tk.utils, "configure_barometre_source", lambda *a, **k: None)
         monkeypatch.setattr(tk.kw_utils, "_configure_s3", lambda *a, **k: None)
@@ -111,18 +112,22 @@ class RunEnv:
     def configure(self, start=None, end=D2, dry_run=False, source_table=f"{SCHEMA}.keywords",
                   thematic="inondations", mode="new"):
         values = dict(
-            START_DATE=start, END_DATE=end, THEMATIC=thematic, COUNTRY="france", LANGUAGE="french",
+            THEMATIC=thematic, COUNTRY="france", LANGUAGE="french",
             DRY_RUN=dry_run, MODE=mode, SOURCE_TABLE=source_table, POSTGRES_USER="u", POSTGRES_PASSWORD="p",
             POSTGRES_HOST="h", POSTGRES_PORT="5432", POSTGRES_DB=DB, S3_ENDPOINT_URL="http://s3",
             S3_REGION="r", S3_ACCESS_KEY="a", S3_SECRET_KEY="s", S3_BUCKET_NAME="bucket",
         )
         for k, v in values.items():
             self.mp.setattr(tk, k, v, raising=False)
-        # the table name depends on the dates: same computation as run()
+        # one period from start (included) to end (excluded)
         if start is not None:
-            self.destination_table = utils.make_destination_table_name(
-                thematic, tk.MEDIA_TYPE, tk.COUNTRIES["france"], start, end)
-            self.table = f"{DB}.{DESTINATION_SCHEMA}.{self.destination_table}"
+            content = {"inondations": {**self.keywords,
+                                       "periodes": {"france": [{"id": PERIOD, "start": start,
+                                                                "end": end}]}}}
+            self.yml.write_text(yaml.safe_dump(content))
+        self.destination_table = utils.make_destination_table_name(
+            thematic, tk.MEDIA_TYPE, tk.COUNTRIES["france"])
+        self.table = f"{DB}.{DESTINATION_SCHEMA}.{self.destination_table}"
 
     def add_s3(self, start, plaintext, channel="tf1"):
         self.s3_rows.append({"channel_name": channel, "start": start, "plaintext": plaintext})
@@ -151,8 +156,8 @@ class RunEnv:
 
     def insert_sentinel(self, this_id="sentinel"):
         self.con.execute(
-            f"INSERT INTO {self.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext) "
-            f"VALUES ('{this_id}', 'tf1', 'TF1', TIMESTAMPTZ '2025-01-01 10:00:00+01', true, 'old')")
+            f"INSERT INTO {self.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext, country, period) "
+            f"VALUES ('{this_id}', 'tf1', 'TF1', TIMESTAMPTZ '2025-01-01 10:00:00+01', true, 'old', 'france', '{PERIOD}')")
     
 
     def count(self):
@@ -339,8 +344,8 @@ def test_check_keywords_counts_missing_neighbours_and_orphans(env):
     def add(channel, ts, thematic):
         start = pd.Timestamp(ts, tz=PARIS)
         env.con.execute(
-            f"INSERT INTO {env.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext) "
-            "VALUES (?, ?, 'T', ?, ?, 'p')", [f"id{next(n)}", channel, start, thematic])
+            f"INSERT INTO {env.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext, country, period) "
+            f"VALUES (?, ?, 'T', ?, ?, 'p', 'france', '{PERIOD}')", [f"id{next(n)}", channel, start, thematic])
 
     # tf1: 10:00 complete, 12:00 without previous, 00:00 without previous (across midnight), orphan at 15:00
     for ts, th in [("2025-03-10 09:58", False), ("2025-03-10 10:00", True), ("2025-03-10 10:02", False),
@@ -504,9 +509,7 @@ def test_run_resume_restarts_from_last_ingested_day(env):
 
 
 def test_run_resume_does_not_create_a_new_table(env):
-    """Verify that resuming writes into the existing table: no other thematic table is created,
-    and that MODE=resume on a range without table raises instead of creating one
-    (most likely a typo in START_DATE / END_DATE)."""
+    """Verify that resuming writes into the existing table: no other thematic table is created."""
     for d in (D1, D2, D3):
         env.add_day(d)
     env.failing_days = {D2}
@@ -522,12 +525,6 @@ def test_run_resume_does_not_create_a_new_table(env):
 
     assert env.tables() == tables_before
     assert env.days_in_table() == [D1, D2, D3]
-
-    # other range: no table to resume
-    env.configure(start=D1, end=D5, mode="resume")
-    with pytest.raises(ValueError, match="nothing to resume"):
-        tk.run()
-    assert env.tables() == tables_before
 
 
 @pytest.mark.parametrize("name", ["factiva_articles", "inondations_kw_fr", "autre_table",
@@ -554,8 +551,8 @@ def test_run_dry_run_writes_nothing_and_counts_chunks(env, caplog):
     env.configure(start=D1, end=D3, dry_run=True, mode="reset")
     env.create_destination()
     env.con.execute(
-        f"INSERT INTO {env.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext) "
-        "VALUES ('sentinel', 'tf1', 'TF1', TIMESTAMPTZ '2025-01-01 10:00:00+01', true, 'old')"
+        f"INSERT INTO {env.table} (this_id, channel_name, channel_title, start, thematic_chunk, plaintext, country, period) "
+        f"VALUES ('sentinel', 'tf1', 'TF1', TIMESTAMPTZ '2025-01-01 10:00:00+01', true, 'old', 'france', '{PERIOD}')"
     )
 
     with caplog.at_level(logging.INFO):

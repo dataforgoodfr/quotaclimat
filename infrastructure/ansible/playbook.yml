@@ -42,6 +42,8 @@
       LABELSTUDIO_INGESTION_POSTGRES_USER: "{{ lookup('env', 'LABELSTUDIO_INGESTION_POSTGRES_USER') }}"
       LABELSTUDIO_INGESTION_POSTGRES_PASSWORD: "{{ lookup('env', 'LABELSTUDIO_INGESTION_POSTGRES_PASSWORD') }}"
       MEDIATREE_USER: "{{ lookup('env', 'MEDIATREE_USER') }}"
+      METABASE_API_KEY: "{{ lookup('env', 'METABASE_API_KEY') }}"
+      METABASE_URL: "{{ lookup('env', 'METABASE_URL') }}"
       MEDIATREE_PASSWORD: "{{ lookup('env', 'MEDIATREE_PASSWORD') }}"
       MISTRAL_API_KEY: "{{ lookup('env', 'MISTRAL_API_KEY') }}"
       OPENAI_API_KEY: "{{ lookup('env', 'OPENAI_API_KEY') }}"

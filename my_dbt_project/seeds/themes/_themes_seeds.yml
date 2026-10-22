@@ -6,9 +6,9 @@ version: 2
 seeds:
   - name: mesinfo_theme_mots_cles
     description: >
-      Keywords of the themes of the misinformation cases, read by analytics.cas_theme: one row per theme and
-      keyword. Tuned on the production cases (metabase/metabase_cas_theme_vehicule_electrique.sql); a change of
-      this list changes the themes of the cases, to review like code.
+      In the public schema. Keywords of the themes of the misinformation cases, read by analytics.cas_theme: one
+      row per theme and keyword. Tuned on the production cases; a change of this list changes the themes of the
+      cases, to review like code.
     config:
       column_types:
         theme: text

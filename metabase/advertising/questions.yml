@@ -1,0 +1,95 @@
+# Questions Metabase dont la requête SQL est versionnée dans ce dossier (voir ../README.md).
+# Par fichier :
+#   questions : identifiants des questions Metabase qui l'exécutent (le nombre dans leur URL), synchronisées par
+#     python -m quotaclimat.metabase.sync_questions ;
+#   variables : chaque {{variable}} de la requête, avec son type Metabase (text, number, date, boolean, ou dimension
+#     pour un filtre de champ, avec field: schema.table.colonne et widget: string/= ou string/contains), et pour
+#     les variables créées par la synchronisation : values (liste déroulante), default, required, display_name.
+#     La synchronisation garde le réglage des variables qui existent déjà dans la question ;
+#   tests : valeurs des variables pour les tests (my_dbt_project/pytest_tests/test_dbt_model_analytics.py), qui
+#     exécutent la requête sur les tables dbt construites à partir des seeds de test ; min_rows : lignes attendues
+#     au moins.
+database: 2 # Scaleway Postgres
+
+queries:
+  metabase_pub_annonceurs_ponderes_cas.sql:
+    questions:
+      - 2358 # tableau
+      - 2364 # nuage de points, secteurs
+      - 2362 # courbes cumulées
+      - 2363 # courbes cumulées
+      - 2357 # camembert
+      - 2359 # camembert
+    variables:
+      debut: {type: date}
+      fin: {type: date}
+      niveau: {type: text, values: [marque, entreprise, groupe, secteur], default: entreprise}
+      ponderation_par_temps_denv: {type: boolean, default: false, required: true}
+      inclure_info_continue: {type: boolean, default: true, required: true}
+      env_heures_min: {type: number}
+      nb_points: {type: number}
+      theme_cas: {type: text}
+      pertinence_min: {type: text, values: [faible, moyenne, forte]}
+      secteur: {type: dimension, field: advertising.pub_annonceur_emission_jour.secteur, widget: string/=}
+      categorie: {type: dimension, field: advertising.pub_annonceur_emission_jour.categorie, widget: string/=}
+    tests:
+      - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: entreprise}
+        min_rows: 1
+      - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: secteur, ponderation_par_temps_denv: true,
+                 env_heures_min: 0}
+      - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: marque, inclure_info_continue: false, nb_points: 10,
+                 theme_cas: automobile, pertinence_min: moyenne, secteur: [Automobile],
+                 categorie: [Voiture électrique]}
+        min_rows: 1
+
+  metabase_pub_annonceurs_par_emission.sql:
+    questions:
+      - 2352 # tableau
+      - 2344 # nuage de points
+      - 2346 # biais de saisonnalité
+    variables:
+      debut: {type: date}
+      fin: {type: date}
+      niveau: {type: text, values: [marque, entreprise, groupe], default: entreprise}
+      env_heures_min: {type: number}
+      cas_par_heure_env_min: {type: number}
+      cas_par_heure_env_campagne_min: {type: number}
+      env_heures_campagne_min: {type: number}
+    tests:
+      # les pubs de test (30 s) restent sous le minimum de 600 s par annonceur : la requête doit tourner, sans ligne
+      - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: entreprise}
+      - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: groupe, env_heures_min: 0, cas_par_heure_env_min: 0,
+                 cas_par_heure_env_campagne_min: 0, env_heures_campagne_min: 0}
+
+  metabase_pub_repartition_annonceurs.sql:
+    questions:
+      - 2353 # camembert
+    variables:
+      debut: {type: date}
+      fin: {type: date}
+      niveau: {type: text, values: [marque, entreprise, groupe], default: entreprise}
+      emission: {type: dimension, field: advertising.pub_annonceur_emission_jour.nom, widget: string/contains}
+      chaine: {type: dimension, field: advertising.pub_annonceur_emission_jour.channel_name, widget: string/=}
+      nb_annonceurs: {type: number}
+    tests:
+      - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: marque}
+        min_rows: 1
+      - params: {debut: 2025-01-01, fin: 2025-12-31, niveau: groupe, emission: [BFM Première], chaine: [bfmtv],
+                 nb_annonceurs: 5}
+        min_rows: 1
+
+  metabase_pub_repartition_emissions.sql:
+    questions:
+      - 2354 # camembert
+    variables:
+      debut: {type: date}
+      fin: {type: date}
+      marque: {type: dimension, field: advertising.pub_annonceur_emission_jour.marque, widget: string/contains}
+      entreprise: {type: dimension, field: advertising.pub_annonceur_emission_jour.entreprise, widget: string/contains}
+      groupe: {type: dimension, field: advertising.pub_annonceur_emission_jour.groupe, widget: string/contains}
+      nb_emissions: {type: number}
+    tests:
+      - params: {debut: 2025-01-01, fin: 2025-12-31}
+        min_rows: 1
+      - params: {debut: 2025-01-01, fin: 2025-12-31, marque: [pytest skoda], groupe: [porsche], nb_emissions: 3}
+        min_rows: 1

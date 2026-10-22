@@ -44,6 +44,7 @@ COPY alembic.ini ./alembic.ini
 COPY alembic/ ./alembic
 COPY entrypoints/ ./entrypoints
 COPY i8n/ ./i8n
+COPY metabase/ ./metabase
 COPY my_dbt_project/ ./my_dbt_project
 COPY postgres ./postgres
 COPY pyproject.toml pyproject.toml

@@ -23,7 +23,7 @@ poetry run dbt run --full-refresh \
 --exclude pub_annonceur_emission_jour \
 --exclude cas_theme
 
-echo "apply dbt models to build analytics tables in 'analytics' schema."
+echo "apply dbt models to build the analytics tables (task_global_completion in 'analytics', environmental_shares_with_desinfo_counts in 'public')."
 poetry run dbt run --full-refresh --target analytics \
 --select task_global_completion \
 --select environmental_shares_with_desinfo_counts

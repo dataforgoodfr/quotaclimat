@@ -1,0 +1,23 @@
+# Questions Metabase dont la requête SQL est versionnée dans ce dossier (voir ../README.md).
+# Par fichier :
+#   questions : identifiants des questions Metabase qui l'exécutent (le nombre dans leur URL), synchronisées par
+#     python -m quotaclimat.metabase.sync_questions ;
+#   variables : chaque {{variable}} de la requête, avec son type Metabase (text, number, date, boolean, ou dimension
+#     pour un filtre de champ, avec field: schema.table.colonne et widget: string/= ou string/contains), et pour
+#     les variables créées par la synchronisation : values (liste déroulante), default, required, display_name.
+#     La synchronisation garde le réglage des variables qui existent déjà dans la question ;
+#   tests : valeurs des variables pour les tests (my_dbt_project/pytest_tests/test_dbt_model_analytics.py), qui
+#     exécutent la requête sur les tables dbt construites à partir des seeds de test ; min_rows : lignes attendues
+#     au moins.
+database: 2 # Scaleway Postgres
+
+queries:
+  metabase_taux_mesinformation_par_emission.sql:
+    questions:
+      - 2330
+    variables:
+      debut: {type: date}
+      fin: {type: date}
+    tests:
+      - params: {debut: 2025-01-01, fin: 2025-12-31}
+        min_rows: 1

@@ -10,7 +10,7 @@
     annotators disagree, is left out), same definition as ad_occurrence_mesinfo, all countries.
     With the channel attributes of program_metadata and, for the French channels (grids in Paris time), the row
     of analytics.program on the air at the start of the segment (data_item_start, UTC): the monitored program,
-    split into its emission when known, with its emission key and program day as in analytics.emission_jour,
+    split into its emission when known, with its emission key and program day as in public.emission_jour,
     which counts the cases from here. The cases have no program id: they are matched on time, with the ingestion
     margins of the keyword segments: the API is queried from start - 5 min to end + 5 min (api_to_s3.py,
     epoch_margin of France) and the program reassignment accepts 6 min

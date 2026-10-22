@@ -1,7 +1,7 @@
 {{
     config(
         materialized='table',
-        schema='analytics',
+        schema='public',
         indexes=[
             {'columns': ['jour']},
             {'columns': ['emission_cle', 'jour'], 'unique': True},
@@ -9,7 +9,7 @@
     )
 }}
 
-{#- analytics.emission_jour: one row per emission and per program day (French channels): the airtime of the
+{#- public.emission_jour: one row per emission and per program day (French channels): the airtime of the
     emission in the grid, the time spent on environmental subjects and the validated misinformation cases.
     Emission: a row group of analytics.program, the emission when known (Programmes Google Sheet), else the
     monitored program of program_metadata (type 'émission' / 'programme'), keyed by emission_cle. Program day:

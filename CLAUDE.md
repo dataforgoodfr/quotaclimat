@@ -2,18 +2,20 @@
 
 ## Analyses Metabase : où mettre les requêtes SQL
 
-Toute requête SQL native destinée à une question Metabase est versionnée dans `metabase/`, jamais seulement collée dans le chat. Le fonctionnement complet est dans `metabase/README.md`.
+Une requête SQL native n'est versionnée dans ce dépôt que si l'utilisateur le demande. Sinon, selon sa demande, on la colle dans le chat, on l'exécute avec le connecteur Metabase (`execute_sql`) ou on crée une question avec ce connecteur. Le fonctionnement des requêtes versionnées est dans `metabase/README.md`.
+
+Pour une requête à versionner :
 
 - **Emplacement** : `metabase/<sujet>/metabase_<nom>.sql`. Les sujets actuels sont `advertising/` (pub autour des émissions) et `mesinformation/` (mésinformation par émission). Un nouveau sujet a son propre sous-dossier et son propre `questions.yml`.
 - **En-tête du fichier, en français** : ce que fait la requête et pour quel graphique, chaque variable (type Metabase, facultative ou non, valeur par défaut), chaque colonne de sortie, les tables lues. Suivre le modèle des fichiers existants.
 - **Manifeste `questions.yml` du dossier** : y déclarer le fichier, chaque `{{variable}}` avec son type, et au moins un cas de test (`params`, plus `min_rows` quand les seeds de test donnent des lignes). Les données de test sont en 2025 : prendre `debut: 2025-01-01`, `fin: 2025-12-31`.
-- Une requête d'exploration ponctuelle peut aussi aller dans `metabase/`. On la supprime quand l'exploration est finie.
+- Une requête d'exploration versionnée se supprime quand l'exploration est finie.
 
 ## Garder les identifiants des questions Metabase
 
-La synchronisation (flow Kestra `quotaclimat/metabase-sync`) ne met à jour que les questions listées dans `questions:` des manifestes. Ne pas en perdre une :
+La synchronisation (flow Kestra `quotaclimat/metabase-sync`) ne met à jour que les questions listées dans `questions:` des manifestes. Pour une requête versionnée, ne pas en perdre une :
 
-- Dès qu'une question est citée (numéro, URL `.../question/2358-...`, capture), créée par l'utilisateur ou par le connecteur Metabase, ajouter son numéro au `questions:` du fichier qu'elle exécute, avec un commentaire sur son rôle (`- 2364 # nuage de points, secteurs`).
+- Dès qu'une question qui l'exécute est citée (numéro, URL `.../question/2358-...`, capture), créée par l'utilisateur ou par le connecteur Metabase, ajouter son numéro au `questions:` du fichier qu'elle exécute, avec un commentaire sur son rôle (`- 2364 # nuage de points, secteurs`).
 - Plusieurs questions peuvent exécuter le même fichier (tableau, camembert, courbes).
 - Ne jamais retirer un numéro sans l'accord de l'utilisateur.
 - Avant de modifier une requête, comparer si possible le SQL de ses questions (connecteur Metabase, `get_content` avec `definition`) avec le fichier. Si l'utilisateur a modifié le SQL dans Metabase, ou colle une version différente, reporter ses changements dans le fichier avant d'ajouter les siens, et le lui signaler. Sinon la synchronisation refusera la question ou écrasera son travail.

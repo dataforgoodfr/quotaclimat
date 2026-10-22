@@ -101,6 +101,13 @@ rrs/
 │   ├── classifier.py                # Classification logic
 │   └── definitions.py               # Per-subject prompts/definitions
 │
+├── rag/
+│   ├── agent_common.py              # Prompts, search tool, Retriever (ported from climateguard)
+│   ├── rag_utils.py                 # Embedder backends, chunking, index save/load
+│   ├── s3_sync.py                   # S3 helpers for the RAG index bucket (boto3)
+│   ├── build_embeddings.py          # Runnable: parse source PDFs -> chunk -> embed -> upload index
+│   └── run_rag_agent_mistral.py     # Runnable: RAG fact-checking agent (Mistral API) -> cases table
+│
 └── schemas/
     ├── base.py                      # SQLAlchemy declarative base
     └── models.py                    # ORM models for all 6 tables
@@ -159,7 +166,29 @@ Imports annotated rows from the quotaclimat `analytics.task_global_completion` t
 
 Classifies segments/cases with an LLM (Mistral) against per-subject misinformation definitions (`definitions.py`), producing a score and reasoning persisted back to the `cases` table.
 
-**Key environment variables:** `MISTRAL_API_KEY`, `SUBJECT` (default `insecurity`), `MISTRAL_MODEL`.
+Segments for a subject/date window can come from either the barometre or the extended-perimeter source DB (see "Extended perimeter" below), so this script configures two DuckDB S3 secrets for the media bucket: `BUCKET`/`BUCKET_SECRET` scoped to `BUCKET_NAME` ("mediatree"), and `RRS_BUCKET`/`RRS_BUCKET_SECRET` as the unscoped default for any other bucket — DuckDB picks whichever matches a given segment's actual `s3_uri`.
+
+**Key environment variables:** `BUCKET`/`BUCKET_SECRET`/`BUCKET_NAME`, `RRS_BUCKET`/`RRS_BUCKET_SECRET`, `MISTRAL_API_KEY`, `SUBJECT` (default `insecurity`), `MISTRAL_MODEL`.
+
+---
+
+### `rag/` — RAG Fact-Checking Pipeline
+
+Ported from [`dataforgoodfr/climateguard`](https://github.com/dataforgoodfr/climateguard) (`expert_models/scripts/`). Fact-checks `environmental_health` segments against a small corpus of expert-model source documents (PDFs), instead of relying on the LLM's own knowledge of the subject. `agent_common.py` (prompts, search tool, `Retriever`) and `rag_utils.py` (embedder backends, chunking, index I/O — cosine search over L2-normalised vectors) are library modules shared by the two runnable scripts below; `s3_sync.py` holds the boto3 helpers for the RAG index bucket.
+
+**`rag/build_embeddings.py`** — parses each subject's source PDFs into chapter/subsection records (font-size heuristics), splits them into overlapping chunks, embeds them, and uploads the resulting index (`chunks.jsonl`, `embeddings.npy`, `meta.json`) to S3. Source PDFs are read from and the index is written to `s3://{EMBEDDINGS_BUCKET_NAME}/{S3_PREFIX}/{subject}/{raw,rag}/`. Skips rebuilding when the raw PDFs' S3 ETags match the fingerprint stored in the previous build's `meta.json`, unless `--force`/`FORCE_REBUILD` is passed.
+
+**Required environment variables:** `EMBEDDINGS_BUCKET`, `EMBEDDINGS_BUCKET_SECRET`, `EMBEDDINGS_BUCKET_NAME`, `MISTRAL_API_KEY` (for the `mistral` embedder).
+
+**Key options:** `--embedder` (`mistral`/`e5`/`bge-m3`), `--chunk-chars`/`--min-chunk-chars`/`--overlap-chars`, `--force` (rebuild even if unchanged), `--limit` (debug: only the first N PDFs).
+
+**`rag/run_rag_agent_mistral.py`** — runs the Mistral-API fact-checking agent: downloads the RAG index built above from S3, loads segments for a subject/date range from the RRS DB (like `misinformation_detection/main.py`, enriched with plaintext from S3), and loops per segment — reason about which claims touch the theme → call the `search_reference` tool against the index → reflect on the evidence → final `[FLAGGED]`/`[NOT_FLAGGED]` verdict with a debunk of each problematic phrase. `FLAGGED` rows are upserted into the `cases` table (`model_score`=verdict, `model_reason`=debunk, `analysis`=queries/evaluations/evidence/sources trail).
+
+Segments for a subject/date window can come from either the barometre or the extended-perimeter source DB (see "Extended perimeter" below), so this script configures **two** DuckDB S3 secrets for the media bucket, same as `misinformation_detection/main.py`: `BUCKET`/`BUCKET_SECRET` scoped to `BUCKET_NAME` ("mediatree"), and `RRS_BUCKET`/`RRS_BUCKET_SECRET` as the unscoped default for any other bucket — DuckDB picks whichever matches a given segment's actual `s3_uri`.
+
+**Required environment variables:** `RRS_PG_*`, `BUCKET`/`BUCKET_SECRET`/`BUCKET_NAME`, `RRS_BUCKET`/`RRS_BUCKET_SECRET`, `EMBEDDINGS_BUCKET`/`EMBEDDINGS_BUCKET_SECRET`/`EMBEDDINGS_BUCKET_NAME`, `MISTRAL_API_KEY`.
+
+**Key options:** `--subject` (default `environmental_health`), `--start-date`/`--end-date`/`--days-prior`, `--concurrency`, `--top-k`, `--max-tool-rounds`, `--limit` (debug).
 
 ---
 
@@ -228,23 +257,24 @@ Used by `main.py`. Requires the `RRS_PG_*` environment variables.
 
 ## Extended perimeter (Droit à l'info)
 
-The `rrs-climate` and `rrs-insecurity` Kestra flows (`infrastructure/kestra/flows/main_rrs_climate.yaml`, `main_rrs_insecurity.yaml`) have a `source` input:
+The `rrs-climate`, `rrs-insecurity` and `rrs-pollution` Kestra flows (`infrastructure/kestra/flows/main_rrs_climate.yaml`, `main_rrs_insecurity.yaml`, `main_rrs_pollution.yaml`) have a `source` input, used by their write-side tasks (`analyse_keywords`/`import_segments`/`import_cases`/`filter_keywords`) to pick which source DB and bucket to read/write:
 
 | `source` | Source DB (`POSTGRES_*`) | `BUCKET_NAME` | `SOURCE_COUNTRY_CODE` |
 |---|---|---|---|
 | `barometre` (default) | `barometre` (OME host, port 22737, `RRS_BAROMETRE_READ_*`) | `mediatree` | `fra` |
 | `extended` | `extended-perimeter` (RRS host `RRS_PG_HOST`, port 18492, read with the same `RRS_BAROMETRE_READ_*` user/password as `barometre`; in dev the `_DEV` variants) | `mediatree-extended-perimeter-prod` | `ext-fra` |
 
-The extended-perimeter DB has the same structure as `barometre`, so `import_segments.py` and `import_cases.py` work unchanged apart from `import_cases.py` selecting the channel list from `SOURCE_COUNTRY_CODE` (`EXTENDED_FRANCE.channels` for `ext-fra`, `FRANCE.channels` otherwise). Both sources write into the same `rrs` database.
+The extended-perimeter DB has the same structure as `barometre`, so `import_segments.py` and `import_cases.py` work unchanged apart from `import_cases.py` selecting the channel list from `SOURCE_COUNTRY_CODE` (`EXTENDED_FRANCE.channels` for `ext-fra`, `FRANCE.channels` otherwise). Both sources write into the same `rrs` database, with no column distinguishing which perimeter wrote a `segments`/`cases` row — a given subject/date window can therefore contain segments from either perimeter at once (e.g. the extended-source run writes segments for a window shortly before the barometre-source run processes the same window).
 
 Credentials and buckets per source:
 
-- **Source DB**: `rrs-climate` (`import_segments`, `import_cases`) always connects with `RRS_BAROMETRE_READ_USER`/`RRS_BAROMETRE_READ_PASSWORD` (`_DEV` in dev); only the host (`RRS_PG_HOST` for `extended`), port, DB name and `SOURCE_COUNTRY_CODE` change. That role needs `SELECT` on `public.keywords` in the `extended-perimeter` DB, otherwise the `COPY` fails with `permission denied for table keywords`.
+- **Source DB**: `rrs-climate`/`rrs-insecurity`/`rrs-pollution` (`import_segments`, `import_cases`, `filter_keywords`, `analyse_keywords`) always connect with `RRS_BAROMETRE_READ_USER`/`RRS_BAROMETRE_READ_PASSWORD` (`_DEV` in dev); only the host (`RRS_PG_HOST` for `extended`), port, DB name and `SOURCE_COUNTRY_CODE` change. That role needs `SELECT` on `public.keywords` in the `extended-perimeter` DB, otherwise the `COPY` fails with `permission denied for table keywords`.
 - **RRS DB** (destination): `RRS_PG_HOST`/`RRS_PG_USER`/`RRS_PG_PASSWORD`, unchanged.
-- **Bucket**: `rrs-insecurity` uses `RRS_SCW_ACCESS`/`RRS_SCW_SECRET` (`_DEV` in dev) when `source=extended`, and `SCW_ACCESS`/`SCW_SECRET` otherwise.
+- **Bucket, write side** (`analyse_keywords`, `import_segments`, `filter_keywords`): `BUCKET`/`BUCKET_SECRET` switch per `source` — `RRS_SCW_ACCESS`/`RRS_SCW_SECRET` (`_DEV` in dev) when `source=extended`, `SCW_ACCESS`/`SCW_SECRET` otherwise.
+- **Bucket, read side** (`misinformation_detection/main.py`'s `detect_misinformation` task in `rrs-insecurity`, `rag/run_rag_agent_mistral.py`'s `detect_misinformation_rag` task in `rrs-pollution`): these read the full `segments`/`cases` table for a subject/date window regardless of which perimeter wrote each row (see above), so they always get **both** credential pairs unconditionally — `BUCKET`/`BUCKET_SECRET` (`SCW_ACCESS`/`SCW_SECRET`) and `RRS_BUCKET`/`RRS_BUCKET_SECRET` (`RRS_SCW_ACCESS`/`RRS_SCW_SECRET`, `_DEV` in dev) — and pick the right one per segment via DuckDB S3 secrets scoped by bucket (`BUCKET`/`BUCKET_SECRET` scoped to `BUCKET_NAME`="mediatree", `RRS_BUCKET`/`RRS_BUCKET_SECRET` as the unscoped default for any other bucket). `rrs-climate` has no equivalent read-side task (`run_clustering` reads `cases.text`, already resolved, never S3).
 - **Label Studio**: the extended perimeter uses project 24 / tab 139 in prod (the `import_cases.py` defaults) and project 23 / tab 137 in dev (set by `main_rrsdev_climate.yaml`).
 
-Extended runs are started by the `main-pipeline` flow with `run_clustering=false`, so no clusters are created for them, before the usual `barometre` -> `rrs-climate` -> `rrs-insecurity` chain. See the root `README.md` ("Extended perimeter") for the full sequence.
+Extended runs are started by the `main-pipeline` flow with `run_clustering=false` (and, for `rrs-pollution`, `run_detect_misinformation_rag=false` too), so no clusters/cases are created for them, before the usual `barometre` -> `rrs-climate` -> `rrs-insecurity` -> `rrs-pollution` chain. See the root `README.md` ("Extended perimeter") for the full sequence.
 
 ---
 
@@ -346,9 +376,14 @@ Used by `import_segments.py`, `filter_keywords.py`, and `import_cases.py` to rea
 
 | Variable | Used by | Description |
 |---|---|---|
-| `BUCKET` | `keyword_detection/analyse_keywords.py` | S3 access key |
-| `BUCKET_SECRET` | `keyword_detection/analyse_keywords.py` | S3 secret key |
-| `BUCKET_NAME` | `keyword_detection/analyse_keywords.py`, `import_segments.py`, `filter_keywords.py` | S3 bucket name (used to build the stored `s3_uri`) |
+| `BUCKET` | `keyword_detection/analyse_keywords.py`, `import_segments.py`, `filter_keywords.py`, `misinformation_detection/main.py`, `rag/run_rag_agent_mistral.py` | S3 access key for the media/transcript bucket (`BUCKET_NAME`) |
+| `BUCKET_SECRET` | same as `BUCKET` | S3 secret key |
+| `BUCKET_NAME` | same as `BUCKET` | S3 bucket name — the one `keyword_detection/*` write `s3_uri` with; the one `misinformation_detection/main.py`/`rag/run_rag_agent_mistral.py` scope the `BUCKET`/`BUCKET_SECRET` DuckDB secret to |
+| `RRS_BUCKET` | `misinformation_detection/main.py`, `rag/run_rag_agent_mistral.py` | S3 access key for the extended-perimeter media bucket — registered as the **unscoped default** DuckDB S3 secret (used for any bucket other than `BUCKET_NAME`), since segments for a subject/date window can come from either perimeter (see "Extended perimeter") |
+| `RRS_BUCKET_SECRET` | same as `RRS_BUCKET` | S3 secret key |
+| `EMBEDDINGS_BUCKET` | `rag/build_embeddings.py`, `rag/run_rag_agent_mistral.py` | S3 access key for the RAG expert-model index bucket — deliberately separate from `BUCKET`/`RRS_BUCKET` above |
+| `EMBEDDINGS_BUCKET_SECRET` | same as `EMBEDDINGS_BUCKET` | S3 secret key |
+| `EMBEDDINGS_BUCKET_NAME` | same as `EMBEDDINGS_BUCKET` | S3 bucket name for the RAG index/source documents |
 
 ### Other
 
@@ -388,11 +423,15 @@ Run any of these with `docker compose up <service>` from `rrs/`. Most read from 
 | `upsert_dictionary` | `dictionary/upsert_dictionary.py` | Depends on `upsert_subjects` |
 | `import_segments` | `keyword_detection/import_segments.py` | Climate segments from the quotaclimat DB |
 | `filter_keywords` | `keyword_detection/filter_keywords.py` | Re-filters those segments for `SUBJECT` (default `environmental_health`) |
+| `export_segments` | `keyword_detection/export_segments.py` | Segments for `SUBJECT`/date range, enriched with S3 plaintext, to CSV |
 | `import_cases` | `keyword_detection/import_cases.py` | Annotated cases from the quotaclimat DB |
 | `analyse_keywords` | `keyword_detection/analyse_keywords.py` | Raw S3 transcript scan; depends on `upsert_dictionary` |
+| `build_embeddings` | `rag/build_embeddings.py` | Builds/refreshes the `environmental_health` RAG index from source PDFs |
+| `rag` | `rag/run_rag_agent_mistral.py` | RAG fact-checking agent over `environmental_health` segments |
 | `detect_misinformation` | `misinformation_detection/main.py` | LLM misinformation classification |
 | `clustering` | `clustering/main.py` | LLM narrative clustering |
 | `pulsar` | Pulsar-based ingestion (see `Dockerfile.pulsar`) | |
+| `pulsar_export_posts` | `rrs.pulsar.export_posts` | Exports Pulsar posts for `SUBJECT` to `rrs/exports/pulsar` |
 | `console` | `sleep 12000` | Interactive shell, see below |
 
 ### Open an interactive shell

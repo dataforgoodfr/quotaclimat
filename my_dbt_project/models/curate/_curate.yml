@@ -1,0 +1,317 @@
+# Schéma curate : tables propres, documentées pour les équipes et leur Claude (MCP Metabase).
+# Conventions (vérifiées par my_dbt_project/pytest_tests/test_curate_conventions.py) : voir le CLAUDE.md,
+# section « Schéma curate ». Ces descriptions sont écrites dans Postgres (persist_docs) et poussées dans
+# Metabase par quotaclimat/metabase/sync_curate.py : elles se modifient ici, pas dans Metabase.
+#
+# meta d'un modèle : libelle (nom affiché dans Metabase).
+# meta d'une colonne : libelle ; unite et agregation (somme, moyenne ou aucune) pour une colonne numérique ;
+# type_metabase (type sémantique Metabase, ex. type/PK, type/Category) ; cle_etrangere (table.colonne de curate).
+version: 2
+
+models:
+  - name: chaine
+    description: |
+      Une ligne = une chaîne de télévision ou de radio suivie par l'Observatoire des médias sur l'écologie, en France et dans les pays partenaires.
+      Contenu : le nom affiché de la chaîne, son pays et ses caractéristiques (service public, information en continu, radio).
+      Usage : table de référence à joindre par `chaine_id` pour filtrer ou regrouper les autres tables du schéma curate par type de chaîne. Les autres tables reprennent déjà `chaine_nom` et les trois caractéristiques.
+      Pièges : une chaîne présente ici n'est pas forcément suivie sur toute la période étudiée, ni pour tous les sujets (la publicité ne concerne que des chaînes françaises).
+      Source : grilles de programmes suivies (program_metadata), caractéristiques de la grille la plus récente.
+    config:
+      meta:
+        libelle: Chaînes
+    columns:
+      - name: chaine_id
+        data_type: text
+        description: "{{ doc('curate_chaine_id') }}"
+        config:
+          meta:
+            libelle: Identifiant de la chaîne
+            type_metabase: type/PK
+        data_tests:
+          - unique
+          - not_null
+      - name: chaine_nom
+        data_type: text
+        description: "{{ doc('curate_chaine_nom') }}"
+        config:
+          meta:
+            libelle: Chaîne
+            type_metabase: type/Name
+        data_tests:
+          - not_null
+      - name: pays
+        data_type: text
+        description: >-
+          Pays de la chaîne, en français (France, Belgique, Brésil, Allemagne, Pologne, Espagne).
+        config:
+          meta:
+            libelle: Pays
+            type_metabase: type/Country
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['France', 'Belgique', 'Brésil', 'Allemagne', 'Pologne', 'Espagne']
+      - name: est_service_public
+        data_type: boolean
+        description: "{{ doc('curate_est_service_public') }}"
+        config:
+          meta:
+            libelle: Service public
+        data_tests:
+          - not_null
+      - name: est_info_continue
+        data_type: boolean
+        description: "{{ doc('curate_est_info_continue') }}"
+        config:
+          meta:
+            libelle: Information en continu
+        data_tests:
+          - not_null
+      - name: est_radio
+        data_type: boolean
+        description: "{{ doc('curate_est_radio') }}"
+        config:
+          meta:
+            libelle: Radio
+        data_tests:
+          - not_null
+
+  - name: publicite
+    description: |
+      Une ligne = une diffusion d'un spot publicitaire sur une chaîne française, détectée automatiquement et classée par secteur, catégorie de produit et marque.
+      Période : depuis le 29 septembre 2025, début de l'analyse des publicités. Chaînes : chaînes de télévision françaises dont la publicité est analysée.
+      Usage : compter les diffusions (une ligne = une diffusion) ou sommer leur durée (`duree_sec`) par secteur, marque, chaîne, jour ou programme ; voir quelles publicités passent autour des programmes et près des cas de mésinformation.
+      Pièges : un même spot diffusé plusieurs fois a plusieurs lignes, avec le même `spot_id` : compter les lignes pour le nombre de diffusions, les `spot_id` distincts pour le nombre de spots différents. Le classement (secteur, catégorie, marque) est automatique et peut se tromper : un chiffre publié se vérifie sur des exemples. Une marque absente de l'inventaire des marques garde l'orthographe détectée.
+      Source : détection et classement des publicités (pipeline advertising), table analytics.publicites.
+    config:
+      meta:
+        libelle: Publicités diffusées
+    columns:
+      - name: publicite_id
+        data_type: text
+        description: >-
+          Identifiant de la diffusion. Unique, sert à compter les diffusions.
+        config:
+          meta:
+            libelle: Identifiant de la diffusion
+            type_metabase: type/PK
+        data_tests:
+          - unique
+          - not_null
+      - name: debut_paris
+        data_type: timestamp
+        description: >-
+          Date et heure de début de la diffusion, en heure de Paris.
+        config:
+          meta:
+            libelle: Début de la diffusion
+        data_tests:
+          - not_null
+      - name: jour
+        data_type: date
+        description: "{{ doc('curate_jour') }}"
+        config:
+          meta:
+            libelle: Jour
+        data_tests:
+          - not_null
+      - name: chaine_id
+        data_type: text
+        description: "{{ doc('curate_chaine_id') }}"
+        config:
+          meta:
+            libelle: Identifiant de la chaîne
+            type_metabase: type/FK
+            cle_etrangere: chaine.chaine_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('chaine')
+                field: chaine_id
+      - name: chaine_nom
+        data_type: text
+        description: "{{ doc('curate_chaine_nom') }}"
+        config:
+          meta:
+            libelle: Chaîne
+            type_metabase: type/Category
+        data_tests:
+          - not_null
+      - name: est_service_public
+        data_type: boolean
+        description: "{{ doc('curate_est_service_public') }}"
+        config:
+          meta:
+            libelle: Service public
+        data_tests:
+          - not_null
+      - name: est_info_continue
+        data_type: boolean
+        description: "{{ doc('curate_est_info_continue') }}"
+        config:
+          meta:
+            libelle: Information en continu
+        data_tests:
+          - not_null
+      - name: est_radio
+        data_type: boolean
+        description: "{{ doc('curate_est_radio') }}"
+        config:
+          meta:
+            libelle: Radio
+        data_tests:
+          - not_null
+      - name: spot_id
+        data_type: text
+        description: >-
+          Identifiant du spot publicitaire. Un même spot diffusé plusieurs fois (sur la même chaîne ou sur plusieurs) a le même identifiant sur chacune de ses lignes. Compter les valeurs distinctes pour le nombre de spots différents.
+        config:
+          meta:
+            libelle: Identifiant du spot
+        data_tests:
+          - not_null
+      - name: ecran_id
+        data_type: text
+        description: >-
+          Identifiant de l'écran publicitaire (la coupure) où passe le spot. Un écran est une suite de spots qui s'enchaînent sur une chaîne, à moins de 5 secondes d'écart. Compter les valeurs distinctes pour le nombre d'écrans.
+        config:
+          meta:
+            libelle: Identifiant de l'écran publicitaire
+        data_tests:
+          - not_null
+      - name: duree_sec
+        data_type: double precision
+        description: >-
+          Durée du spot, en secondes. La somme sur des diffusions donne leur temps d'antenne publicitaire.
+        config:
+          meta:
+            libelle: Durée (s)
+            unite: seconde
+            agregation: somme
+            type_metabase: type/Duration
+        data_tests:
+          - not_null
+      - name: secteur
+        data_type: text
+        description: >-
+          Secteur du produit ou du service annoncé (ex. automobile, alimentation, énergie), selon la nomenclature de l'Observatoire. Vide, rarement, quand le secteur n'a pas pu être déterminé.
+        config:
+          meta:
+            libelle: Secteur
+            type_metabase: type/Category
+      - name: categorie_produit
+        data_type: text
+        description: >-
+          Catégorie de produit, plus fine que le secteur, dans la même nomenclature. Vide quand elle n'a pas été déterminée ; `categorie_ou_secteur` donne alors le secteur.
+        config:
+          meta:
+            libelle: Catégorie de produit
+            type_metabase: type/Category
+      - name: categorie_ou_secteur
+        data_type: text
+        description: >-
+          Catégorie de produit quand elle est connue, sinon secteur. À utiliser pour un graphique par catégorie sans valeur vide.
+        config:
+          meta:
+            libelle: Catégorie ou secteur
+            type_metabase: type/Category
+      - name: marque
+        data_type: text
+        description: >-
+          Marque annoncée, orthographiée comme dans l'inventaire des marques de l'Observatoire, ou telle que détectée quand elle n'y figure pas. Vide quand aucune marque n'a été détectée.
+        config:
+          meta:
+            libelle: Marque
+            type_metabase: type/Category
+      - name: entreprise
+        data_type: text
+        description: >-
+          Entreprise qui vend sous la marque, d'après l'inventaire des marques. Reprend la marque quand l'entreprise n'est pas connue ou reste à vérifier. Vide quand aucune marque n'a été détectée.
+        config:
+          meta:
+            libelle: Entreprise
+            type_metabase: type/Company
+      - name: societe_mere
+        data_type: text
+        description: >-
+          Société mère ultime de l'entreprise, d'après l'inventaire des marques : le niveau le plus haut pour regrouper les annonceurs (ex. un groupe automobile et toutes ses marques). Reprend l'entreprise quand la société mère n'est pas connue ou reste à vérifier.
+        config:
+          meta:
+            libelle: Société mère
+            type_metabase: type/Company
+      - name: classement_par
+        data_type: text
+        description: "Méthode qui a classé la publicité : « dictionnaire » quand la marque figure dans le dictionnaire de l'Observatoire (classement le plus fiable), « modèle de langage » quand un modèle de langage a déterminé la catégorie, « en cours » quand le classement n'est pas terminé."
+        config:
+          meta:
+            libelle: Classée par
+            type_metabase: type/Category
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['dictionnaire', 'modèle de langage', 'en cours']
+      - name: est_dans_programme
+        data_type: boolean
+        description: >-
+          Vrai quand l'écran publicitaire est entièrement à l'intérieur d'un programme suivi (coupure au milieu d'une émission), faux quand il est entre deux programmes ou hors des programmes suivis.
+        config:
+          meta:
+            libelle: Pendant un programme
+        data_tests:
+          - not_null
+      - name: programme_avant
+        data_type: text
+        description: >-
+          Programme en cours, ou terminé au plus 60 minutes avant le début de l'écran publicitaire, sous la forme « programme / émission (présentateurs) [rediffusion] ». Vide quand aucun programme suivi n'est assez proche. Seuls les programmes suivis par l'Observatoire sont connus, pas toute la grille de la chaîne.
+        config:
+          meta:
+            libelle: Programme avant
+            type_metabase: type/Category
+      - name: ecart_programme_avant_sec
+        data_type: double precision
+        description: >-
+          Secondes entre la fin de `programme_avant` et le début de l'écran publicitaire ; 0 quand le programme est en cours. Vide quand `programme_avant` est vide.
+        config:
+          meta:
+            libelle: Écart avec le programme avant (s)
+            unite: seconde
+            agregation: aucune
+            type_metabase: type/Duration
+      - name: programme_apres
+        data_type: text
+        description: >-
+          Premier programme suivi qui commence après le début de l'écran publicitaire, au plus 60 minutes après sa fin, même forme que `programme_avant`. Vide quand l'écran est à l'intérieur de `programme_avant` ou qu'aucun programme n'est assez proche.
+        config:
+          meta:
+            libelle: Programme après
+            type_metabase: type/Category
+      - name: ecart_programme_apres_sec
+        data_type: double precision
+        description: >-
+          Secondes entre la fin de l'écran publicitaire et le début de `programme_apres` ; 0 quand il commence pendant l'écran. Vide quand `programme_apres` est vide.
+        config:
+          meta:
+            libelle: Écart avec le programme après (s)
+            unite: seconde
+            agregation: aucune
+            type_metabase: type/Duration
+      - name: cas_mesinformation_proche_id
+        data_type: text
+        description: >-
+          Identifiant du cas de mésinformation validé le plus proche dans le temps sur la même chaîne, à 7 jours au plus avant ou après la diffusion. Vide quand il n'y en a pas.
+        config:
+          meta:
+            libelle: Cas de mésinformation le plus proche
+      - name: distance_cas_mesinformation_sec
+        data_type: double precision
+        description: >-
+          Écart en secondes (toujours positif, avant ou après) entre la diffusion et le début de ce cas de mésinformation. Vide quand il n'y en a pas à moins de 7 jours. Par exemple, `distance_cas_mesinformation_sec <= 3600` garde les publicités diffusées à moins d'une heure d'un cas.
+        config:
+          meta:
+            libelle: Écart avec le cas de mésinformation (s)
+            unite: seconde
+            agregation: aucune
+            type_metabase: type/Duration

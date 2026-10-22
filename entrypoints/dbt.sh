@@ -21,7 +21,8 @@ poetry run dbt run --full-refresh \
 --exclude publicites \
 --exclude emission_jour \
 --exclude pub_annonceur_emission_jour \
---exclude cas_theme
+--exclude cas_theme \
+--exclude path:models/curate
 
 echo "apply dbt models to build the analytics tables (task_global_completion in 'analytics', environmental_shares_with_desinfo_counts in 'public')."
 poetry run dbt run --full-refresh --target analytics \
@@ -36,3 +37,5 @@ poetry run dbt run --full-refresh \
 --select emission_jour \
 --select pub_annonceur_emission_jour \
 --select cas_theme
+
+# the curate tables (models/curate) are built after this script by entrypoints/curate.sh, in its own Kestra task

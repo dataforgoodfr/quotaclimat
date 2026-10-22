@@ -324,6 +324,8 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "pub_annonceur_emission_jour",
             "--exclude",
             "cas_theme",
+            "--exclude",
+            "path:models/curate",
             "--full-refresh",
         ]
     )
@@ -362,6 +364,9 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "--full-refresh",
         ]
     )
+    logging.info("pytest running the curate models, last as in entrypoints/dbt.sh, then their dbt tests")
+    run_dbt_command(["run", "--select", "path:models/curate", "--full-refresh"])
+    run_dbt_command(["test", "--select", "path:models/curate"])
 
 
 def test_task_global_completion(db_connection):
@@ -1373,6 +1378,70 @@ def test_dbt_objects(db_connection):
         ("advertising", "ref_ome_secteurs", "seed"),
         ("analytics", "task_global_completion", "model"),
     ]
+
+def test_curate_documented_in_postgres(db_connection):
+    """The curate models are tables of the curate schema, with their description and the one of every column
+    written as Postgres comments (persist_docs), read by Metabase and by any SQL client."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT c.relname, c.relkind, obj_description(c.oid, 'pg_class') IS NOT NULL,
+                bool_and(col_description(c.oid, a.attnum) IS NOT NULL)
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+            WHERE n.nspname = 'curate' AND c.relname IN ('chaine', 'publicite')
+            GROUP BY c.relname, c.relkind, c.oid
+            ORDER BY c.relname
+        """)
+        rows = cur.fetchall()
+    assert rows == [("chaine", "r", True, True), ("publicite", "r", True, True)]
+
+
+def test_curate_chaine(db_connection):
+    """One row per channel of program_metadata, country in French."""
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT COUNT(DISTINCT channel_name) FROM public.program_metadata")
+        channels = cur.fetchone()[0]
+        cur.execute("""
+            SELECT chaine_id, chaine_nom, pays, est_service_public, est_info_continue, est_radio
+            FROM curate.chaine
+            WHERE chaine_id IN ('bfmtv', 'france-inter', 'daserste')
+            ORDER BY chaine_id
+        """)
+        rows = cur.fetchall()
+        cur.execute("SELECT COUNT(*) FROM curate.chaine")
+        assert cur.fetchone()[0] == channels
+    assert rows == [
+        ("bfmtv", "BFM TV", "France", False, True, False),
+        ("daserste", "Das Erste", "Allemagne", True, False, False),
+        ("france-inter", "France Inter", "France", True, False, True),
+    ]
+
+
+def test_curate_publicite(db_connection):
+    """Every row of analytics.publicites, with the time in Paris time (UTC+1 in winter, UTC+2 in summer) and the
+    channel of curate.chaine."""
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM analytics.publicites")
+        ads = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM curate.publicite")
+        assert cur.fetchone()[0] == ads > 0
+        cur.execute("""
+            SELECT publicite_id, debut_paris, jour, chaine_id, chaine_nom, est_info_continue, classement_par
+            FROM curate.publicite
+            WHERE publicite_id IN ('emission_pytest_winter', 'emission_pytest_after_midnight')
+            ORDER BY publicite_id
+        """)
+        rows = cur.fetchall()
+    assert rows == [
+        # 2025-04-06 04:10 UTC
+        ("emission_pytest_after_midnight", datetime.datetime(2025, 4, 6, 6, 10), datetime.date(2025, 4, 6),
+         "lci", "LCI", True, "modèle de langage"),
+        # 2025-01-06 06:00 UTC
+        ("emission_pytest_winter", datetime.datetime(2025, 1, 6, 7, 0), datetime.date(2025, 1, 6),
+         "bfmtv", "BFM TV", True, "modèle de langage"),
+    ]
+
 
 def test_publicites_start_date(db_connection):
     """Occurrences before ad_analysis_start_date are excluded (run last: rebuilds the model)."""

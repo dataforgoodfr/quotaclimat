@@ -190,6 +190,11 @@ class Metabase:
         response.raise_for_status()
         return response.json()
 
+    def post(self, path: str, body: dict | None = None):
+        response = self.session.post(f"{self.url}/api/{path}", json=body, timeout=60)
+        response.raise_for_status()
+        return response.json()
+
     def field_id(self, database: int, field: str) -> int:
         """Id of a column schema.table.column, as synced by Metabase."""
         schema, table, column = field.split(".")

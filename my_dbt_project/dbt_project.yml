@@ -52,6 +52,19 @@ models:
         select: "{{ (['\"rrs-read-prod\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"']) if env_var('EXTENDED_PERIMETER', 'false') == 'true' else (['\"rrs-read-dev\"', '\"rrs-read-prod\"', '\"climateguard-reader-user\"'] if env_var('DBT_ENV', 'dev') == 'prod' else ['\"rrs-read-dev\"']) }}"
     homepage:
       +materialized: view
+    # clean tables for the teams and their Claude (Metabase MCP), see models/curate/_curate.yml:
+    # built after entrypoints/dbt.sh by entrypoints/curate.sh, as tables so that rebuilding the models they read does not drop them,
+    # columns frozen by the contract, docs written as Postgres comments and pushed to Metabase
+    # (quotaclimat/metabase/sync_curate.py)
+    curate:
+      +schema: curate
+      +materialized: table
+      +contract:
+        enforced: true
+      +persist_docs:
+        relation: true
+        columns: true
+      +grants: *analytics_grants
 
 # delete tables when seed are executed to have a clean start
 seeds:

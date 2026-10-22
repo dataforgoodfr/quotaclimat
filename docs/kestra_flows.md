@@ -143,6 +143,13 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
 - **Technologies:** dbt (Postgres adapter), Google Drive and Sheets APIs, SQLAlchemy.
 - **Reads:** `labelstudio` DB, Google Sheets, `barometre`. **Writes:** `barometre` schemas `public`, `analytics`, `dashboards`, `advertising`.
 
+### 5. `curate_and_metabase_docs`: clean tables and their documentation in Metabase
+
+- **Runs:** `entrypoints/curate.sh` in `quotaclimat_base`, with `allowFailure: true`: a failure leaves the execution in WARNING without stopping the main pipeline.
+- **What happens:** `dbt run --select path:models/curate` builds the `curate` schema (clean tables for the teams and their Claude through the Metabase MCP, see `my_dbt_project/models/curate/`), `dbt test` checks them, then `quotaclimat.metabase.sync_curate` pushes their dbt documentation (names shown, descriptions, units, semantic types, foreign keys) to the Metabase databases of `METABASE_CURATE_DATABASES`, after a sync of the database schema when a table or a column is new.
+- **Technologies:** dbt, Metabase API (`METABASE_URL`, `METABASE_API_KEY`).
+- **Reads:** `barometre` schemas `analytics`, `public`. **Writes:** `barometre` schema `curate`, Metabase table metadata.
+
 ## extended-perimeter
 
 ![extended-perimeter](images/flows/extended-perimeter.png)
@@ -157,6 +164,7 @@ The same four steps and the same code as [`barometre`](#barometre), run for the 
 | `detect_keywords` | Writes to the `extended-perimeter` DB on the RRS Postgres instance (port 18492) with the admin user `RRS_PG_ADMIN_USER`, because `alembic upgrade head` needs DDL rights. Rows keep `country=france`, so the DB has the same content shape as `barometre`. |
 | `detect_misinformation` | `misinformation-extended-perimeter-prod` bucket, Label Studio project 24 (S3 storage id 18), looks back `days_back` days (not `+1`). |
 | `dbt_run_transformations` | `EXTENDED_PERIMETER=true`: Label Studio ingestion only keeps project 24 (`configs.py`), and dbt grants `select` only to `rrs-read-prod`. No `EXTERNAL_SOURCES_DRIVE_FOLDER`, so the Google Sheets download is skipped. |
+| `curate_and_metabase_docs` | Not run: the `curate` schema is only built on `barometre`. |
 
 ## rrs-climate
 

@@ -34,6 +34,8 @@ Each flow has its own diagram. Read it top to bottom: every horizontal lane is o
 | [`rrs-insecurity`](#rrs-insecurity) | `rrs` | `main_rrs_insecurity.yaml` | `main-pipeline` steps 3 and 7 |
 | [`rrs-pollution`](#rrs-pollution) | `rrs` | `main_rrs_pollution.yaml` | `main-pipeline` steps 4 and 8 |
 | [`metabase-sync`](#metabase-sync) | `quotaclimat` | `main_quotaclimat_metabasesync.yaml` | `main-pipeline` step 9, or by hand |
+| [`dbt`](#dbt) | `quotaclimat` | `main_quotaclimat_dbt.yaml` | step 4 of `barometre` and `barometre-catchup`, `dbt-analytics` |
+| [`dbt-analytics`](#dbt-analytics) | `quotaclimat` | `main_quotaclimat_dbtanalytics.yaml` | by hand |
 | [`barometre-catchup`](#barometre-catchup) | `quotaclimat` | `main_quotaclimat_barometrecatchup.yaml` | cron 03:00 |
 | [`barometre-i18n`](#barometre-i18n) | `quotaclimat` | `main_quotaclimat_barometrei18n.yaml` | cron 04:07 |
 | [`pulsar-themes`](#pulsar-themes) | `rrs` | `main_rrs_pulsarthemes.yml` | cron 00:30 |
@@ -136,7 +138,7 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
 
 - **Runs:** `entrypoints/detect_keywords.sh` in `quotaclimat_base`, which runs `alembic upgrade head`, refreshes the program metadata (`transform_program.py`) and then `quotaclimat/data_processing/mediatree/api_import.py`.
 - **What happens:** for each day and channel, the parquet folder is read back from S3 and every chunk is matched against the keyword dictionary (climate, biodiversity, resources and their sub-categories). Validated stop words (ads and repeated phrases from the `stop_word` table) are removed from the text first. Each match gets a timestamp, and counts are computed per 20-second window, with and without "high risk false positive" keywords. Chunks without any theme are dropped. Rows are mapped to their program, given a hash id and upserted into `keywords` (`BATCH_SIZE=5000`). The number of rows read per channel/day is logged in `time_monitored`.
-- **Technologies:** Alembic, Ray + Modin (`MODIN_ENGINE=ray`), regex keyword matching, SQLAlchemy upserts. `logLevel: WARN` keeps the per-row logs out of the Kestra UI.
+- **Technologies:** Alembic, Ray + Modin (`MODIN_ENGINE=ray`), regex keyword matching, SQLAlchemy upserts. Ray uses all the CPUs of the host (`ray.init()` without `num_cpus`); `MODIN_CPUS=8` sets the number of partitions of the Modin dataframes, so the number of rows processed in parallel. `logLevel: WARN` keeps the per-row logs out of the Kestra UI.
 - **Reads:** S3 `mediatree`, `barometre.stop_word`, program metadata. **Writes:** `barometre.keywords`, `barometre.time_monitored`.
 
 ### 3. `detect_misinformation`: LLM screening
@@ -148,7 +150,7 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
 
 ### 4. `dbt_run_transformations`: models
 
-- **Runs:** `entrypoints/dbt.sh` in `quotaclimat_base`.
+- **Runs:** the [`dbt`](#dbt) subflow, which runs `entrypoints/dbt.sh` in `quotaclimat_base`. A subflow, so that two dbt runs never overlap.
 - **What happens**, in order:
   1. `quotaclimat.data_ingestion.labelstudio.ingest_labelstudio` copies Label Studio tasks and annotations from the `labelstudio` DB into `barometre` (`labelstudio_task_aggregate`, `labelstudio_task_completion_aggregate`).
   2. `quotaclimat.data_ingestion.external_sources.download_external_sources` downloads the reference spreadsheets listed in `my_dbt_project/external_sources.yml` from the Drive folder in `EXTERNAL_SOURCES_DRIVE_FOLDER`, using the service account in `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON`. Spreadsheets readable without credentials are refused. Then `dbt seed` and `dbt test` load and check them.
@@ -168,6 +170,23 @@ Updates the Metabase questions listed in the manifests `metabase/*/questions.yml
 | `force` | `true` | Also overwrites the questions whose SQL was edited in Metabase; `false` leaves them as they are and fails the run |
 
 A question whose SQL was edited in Metabase since its last synchronization is overwritten by the versioned SQL (with `force=false`, it is left as it is and the run fails); the difference is in the logs, to report the change in the query file if it was wanted. A table of a field filter that Metabase does not know yet (just built or moved by dbt) makes it ask Metabase to synchronize the database schema, and wait up to 5 minutes.
+
+## dbt
+
+Runs the dbt models of the `barometre` database: [`barometre`](#barometre) step 4 (`dbt_run_transformations`), described there. One `io.kestra.plugin.docker.Run` task, called as a subflow by `barometre`, `barometre-catchup` and `dbt-analytics`. Two dbt runs drop and rebuild the same tables, so they must not overlap: Kestra's `concurrency` only counts the executions of one flow, hence this shared flow with `concurrency.limit: 1`. A second run waits in the queue (`behavior: QUEUE`) until the first one ends, and the flow that called it waits with it.
+
+| Input | Default | Effect |
+|---|---|---|
+| `only_analytics` | `false` | `true` runs `dbt.sh analytics`: the models of `models/dashboards` and `models/homepage` (the long part, computed from the whole `keywords` table) are left out and keep their last build |
+
+## dbt-analytics
+
+Quick rebuild, by hand, of the tables read by the Metabase questions, for instance after a change of an analytics or advertising model, or of a reference Google Sheet. Two subflows:
+
+1. `dbt_analytics`: [`dbt`](#dbt) with `only_analytics=true`. Same steps as a full run (Label Studio ingestion, seeds, analytics and advertising models), without the dashboards and homepage models. `emission_jour` is still rebuilt, and reads the whole `public.keywords` table.
+2. `metabase_sync`: [`metabase-sync`](#metabase-sync) with `apply=true`, `force=true`; its failure only marks the run as WARNING.
+
+It runs the `quotaclimat_base:latest` image, so the code must be merged and deployed first. Started during a `barometre` or `barometre-catchup` dbt run, its dbt step waits for the end of that run.
 
 ## extended-perimeter
 
@@ -329,7 +348,7 @@ Pulls social media "themes" (clusters of topics, like Pulsar's "What's the story
 
 ## Dev flows
 
-Every prod flow except `barometre-catchup` and `barometre-i18n` has a dev twin: `main_quotaclimatdev_mainpipeline.yaml` and `main_quotaclimatdev_barometre.yaml` (namespace `quotaclimat-dev`), and `main_rrsdev_*.yaml` (namespace `rrs-dev`). They run the same tasks with the `_DEV` secrets, `-dev` buckets, dev databases, `DBT_ENV=dev` and the dev Label Studio project for the extended perimeter (23 / tab 137). The dev `main-pipeline` has no schedule.
+Every prod flow except `barometre-catchup`, `barometre-i18n`, `dbt` and `dbt-analytics` has a dev twin: `main_quotaclimatdev_mainpipeline.yaml` and `main_quotaclimatdev_barometre.yaml` (namespace `quotaclimat-dev`), and `main_rrsdev_*.yaml` (namespace `rrs-dev`). They run the same tasks with the `_DEV` secrets, `-dev` buckets, dev databases, `DBT_ENV=dev` and the dev Label Studio project for the extended perimeter (23 / tab 137). The dev `main-pipeline` has no schedule.
 
 ## Updating the diagrams
 

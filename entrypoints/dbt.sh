@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# Usage: dbt.sh [analytics]
+# Without argument: all the models.
+# With "analytics": leaves out the models of models/dashboards and models/homepage (computed from the whole
+# public.keywords table, the long part of the run), which keep their last build. The other models (the tables read
+# by the Metabase questions) are rebuilt as in a full run. Flow dbt-analytics.
+if [[ "$1" == "analytics" ]]; then
+    echo "analytics only: the models of models/dashboards and models/homepage are left out"
+    skip_dashboards=(--exclude path:models/dashboards --exclude path:models/homepage)
+else
+    skip_dashboards=()
+fi
+
 echo "ingest labelstudio data into barometre database"
 poetry run python -m quotaclimat.data_ingestion.labelstudio.ingest_labelstudio
 
@@ -13,7 +25,7 @@ poetry run dbt seed --full-refresh --select path:seeds/themes
 poetry run dbt test --select path:seeds/themes
 
 echo "apply dbt models - except analytics tables"
-poetry run dbt run --full-refresh \
+poetry run dbt run --full-refresh "${skip_dashboards[@]}" \
 --exclude task_global_completion \
 --exclude environmental_shares_with_desinfo_counts \
 --exclude path:models/advertising \

@@ -13,19 +13,7 @@ env:
 
 jobs:
 
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-      - name: poetry install
-        run: poetry install --no-interaction
-
   test_first_update_keywords:
-    needs: build
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -61,7 +49,6 @@ jobs:
           POSTGRES_PORT: 5432
 
   stop_word:
-    needs: build
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -97,7 +84,6 @@ jobs:
           POSTGRES_PORT: 5432
 
   test_print_media_keywords:
-    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -114,7 +100,6 @@ jobs:
           ENV: dev
 
   dbt:
-    needs: build
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -154,7 +139,6 @@ jobs:
           DBT_ENABLE_FIXTURE_SEEDS: "true"
 
   test_everything_else:
-    needs: build
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -190,6 +174,9 @@ jobs:
            tee pytest-coverage.txt
         env:
           ENV: dev
+          # small dataframes: the Ray engine of modin costs more than it saves here.
+          # The Ray engine stays tested by the stop_word and test_first_update_keywords jobs.
+          MODIN_ENGINE: python
           POSTGRES_USER: user
           POSTGRES_DB: postgres
           POSTGRES_PASSWORD: postgres
@@ -206,7 +193,6 @@ jobs:
           overwrite:  true
 
   verify_poetry_lock:
-    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -254,7 +240,6 @@ jobs:
           namedLogo: python
 
   build_and_push_docker_image:
-    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

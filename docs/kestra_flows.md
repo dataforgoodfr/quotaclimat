@@ -21,7 +21,7 @@ For each perimeter, the pipeline then works as follows:
 
 Both `rrs-insecurity` and `rrs-pollution` read the full `segments`/`cases` table for a subject/date window regardless of which perimeter (baromètre or extended) wrote each row, since nothing in those tables says which one did, so their misinformation-detection step always configures S3 credentials for **both** buckets (see their sections below).
 
-[`main-pipeline`](#main-pipeline) chains the two projects every day. It runs the extended perimeter first, then the baromètre, and after each one it runs the three RRS subjects.
+[`main-pipeline`](#main-pipeline) chains the two projects every day. It runs the extended perimeter first, then the baromètre, and after each one it runs the three RRS subjects. At the end, it updates the Metabase questions whose SQL is versioned in `metabase/` ([`metabase-sync`](#metabase-sync)).
 
 Each flow has its own diagram. Read it top to bottom: every horizontal lane is one Kestra task, in execution order. Inside a lane, the left side shows what the task reads, the middle shows the code it runs, and the right side shows what it writes. When a store written by one step is read by the next, it appears in both lanes (for example `S3: mediatree` at the end of step 1 and at the start of step 2).
 
@@ -33,6 +33,7 @@ Each flow has its own diagram. Read it top to bottom: every horizontal lane is o
 | [`rrs-climate`](#rrs-climate) | `rrs` | `main_rrs_climate.yaml` | `main-pipeline` steps 2 and 6 |
 | [`rrs-insecurity`](#rrs-insecurity) | `rrs` | `main_rrs_insecurity.yaml` | `main-pipeline` steps 3 and 7 |
 | [`rrs-pollution`](#rrs-pollution) | `rrs` | `main_rrs_pollution.yaml` | `main-pipeline` steps 4 and 8 |
+| [`metabase-sync`](#metabase-sync) | `quotaclimat` | `main_quotaclimat_metabasesync.yaml` | `main-pipeline` step 9, or by hand |
 | [`barometre-catchup`](#barometre-catchup) | `quotaclimat` | `main_quotaclimat_barometrecatchup.yaml` | cron 03:00 |
 | [`barometre-i18n`](#barometre-i18n) | `quotaclimat` | `main_quotaclimat_barometrei18n.yaml` | cron 04:07 |
 | [`pulsar-themes`](#pulsar-themes) | `rrs` | `main_rrs_pulsarthemes.yml` | cron 00:30 |
@@ -95,11 +96,11 @@ The RRS flows (`rrs-climate`, `rrs-insecurity`, `rrs-pollution`, `pulsar-themes`
 
 Interactive version: [`diagrams/flows/main-pipeline.html`](diagrams/flows/main-pipeline.html).
 
-The orchestrator of the daily chain. It runs no code of its own: each task is an `io.kestra.plugin.core.flow.Subflow` with `wait: true` and `transmitFailed: true`, so a step only starts when the previous one has succeeded, and a failure stops the run and marks `main-pipeline` as failed.
+The orchestrator of the daily chain. It runs no code of its own: each task is an `io.kestra.plugin.core.flow.Subflow` with `wait: true` and `transmitFailed: true`, so a step only starts when the previous one has succeeded, and a failure stops the run and marks `main-pipeline` as failed. The exception is the last step, `metabase_sync` (`allowFailure: true`): its failure only marks the run as WARNING.
 
 | Input | Default | Effect |
 |---|---|---|
-| `with_rrs` | `true` | `false` skips steps 1-4 and 6-8 (`runIf`), so only `barometre` runs |
+| `with_rrs` | `true` | `false` skips steps 1-4 and 6-8 (`runIf`), so only `barometre` and `metabase-sync` run |
 | `days_back` | `1` | Passed to `extended-perimeter` and `barometre` |
 | `start_date` | today | Passed to `extended-perimeter` and `barometre` as `YYYY-MM-DD` |
 
@@ -112,6 +113,7 @@ Steps:
 6. `rrs_climate`: [`rrs-climate`](#rrs-climate) with its defaults (`source=barometre`, clustering on).
 7. `rrs_insecurity`: [`rrs-insecurity`](#rrs-insecurity) with its defaults (`source=barometre`, clustering on).
 8. `rrs_pollution`: [`rrs-pollution`](#rrs-pollution) with its defaults (`source=barometre`, RAG fact-checking and clustering on).
+9. `metabase_sync`: [`metabase-sync`](#metabase-sync) with `apply=true`, `force=true`, last so that the tables its queries read are all built.
 
 The RRS subflows receive no dates: `rrs-climate` resumes from what is already in the `rrs` DB, `rrs-insecurity` uses its own `days_back` default of 1, and `rrs-pollution`'s `filter_keywords` step likewise resumes from the latest `environmental_health` segment already in `rrs.segments` through now.
 
@@ -162,6 +164,17 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
 - **What happens:** `dbt run --select path:models/curated` builds the `curated` schema (clean tables for the teams and their Claude through the Metabase MCP, see `my_dbt_project/models/curated/`), `dbt test` checks them, then `quotaclimat.metabase.sync_curated` pushes their dbt documentation (names shown, descriptions, units, semantic types, foreign keys) to the Metabase databases of `METABASE_CURATED_DATABASES`, after a sync of the database schema when a table or a column is new.
 - **Technologies:** dbt, Metabase API (`METABASE_URL`, `METABASE_API_KEY`).
 - **Reads:** `barometre` schemas `analytics`, `public`. **Writes:** `barometre` schema `curated`, Metabase table metadata.
+
+## metabase-sync
+
+Updates the Metabase questions listed in the manifests `metabase/*/questions.yml` with the SQL queries versioned next to them (see [`metabase/README.md`](../metabase/README.md)). One `io.kestra.plugin.docker.Run` task: `python -m quotaclimat.metabase.sync_questions` in the `quotaclimat_base` image, with the secrets `METABASE_URL` and `METABASE_API_KEY`.
+
+| Input | Default | Effect |
+|---|---|---|
+| `apply` | `true` | `false` only logs what would change in each question |
+| `force` | `true` | Also overwrites the questions whose SQL was edited in Metabase; `false` leaves them as they are and fails the run |
+
+A question whose SQL was edited in Metabase since its last synchronization is overwritten by the versioned SQL (with `force=false`, it is left as it is and the run fails); the difference is in the logs, to report the change in the query file if it was wanted. A table of a field filter that Metabase does not know yet (just built or moved by dbt) makes it ask Metabase to synchronize the database schema, and wait up to 5 minutes.
 
 ## extended-perimeter
 

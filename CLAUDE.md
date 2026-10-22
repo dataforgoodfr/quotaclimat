@@ -199,7 +199,7 @@ La synchronisation (flow Kestra `quotaclimat/metabase-sync`) ne met à jour que 
 - Dès qu'une question qui l'exécute est citée (numéro, URL `.../question/2358-...`, capture), créée par l'utilisateur ou par le connecteur Metabase, ajouter son numéro au `questions:` du fichier qu'elle exécute, avec un commentaire sur son rôle (`- 2364 # nuage de points, secteurs`).
 - Plusieurs questions peuvent exécuter le même fichier (tableau, camembert, courbes).
 - Ne jamais retirer un numéro sans l'accord de l'utilisateur.
-- Avant de modifier une requête, comparer si possible le SQL de ses questions (connecteur Metabase, `get_content` avec `definition`) avec le fichier. Si l'utilisateur a modifié le SQL dans Metabase, ou colle une version différente, reporter ses changements dans le fichier avant d'ajouter les siens, et le lui signaler. Sinon la synchronisation refusera la question ou écrasera son travail.
+- Avant de modifier une requête, comparer si possible le SQL de ses questions (connecteur Metabase, `get_content` avec `definition`) avec le fichier. Si l'utilisateur a modifié le SQL dans Metabase, ou colle une version différente, reporter ses changements dans le fichier avant d'ajouter les siens, et le lui signaler. La synchronisation de `main-pipeline` tourne avec `force` : elle écrase deux fois par jour le SQL modifié dans Metabase (l'écart reste dans les logs du flow `metabase-sync`).
 - Quand le connecteur ne permet pas d'écrire (`question_write` demande la permission `agent:content:write`), donner le SQL à coller et demander le numéro de la question créée.
 
 ## Règles d'écriture des requêtes Metabase

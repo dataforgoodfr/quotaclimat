@@ -330,6 +330,8 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "pub_annonceur_emission_jour",
             "--exclude",
             "cas_theme",
+            "--exclude",
+            "path:models/curated",
             "--full-refresh",
         ]
     )
@@ -368,6 +370,9 @@ def run_analytics(create_test_roles, create_advertising_tables, load_test_extern
             "--full-refresh",
         ]
     )
+    logging.info("pytest running the curated models, last as in entrypoints/dbt.sh, then their dbt tests")
+    run_dbt_command(["run", "--select", "path:models/curated", "--full-refresh"])
+    run_dbt_command(["test", "--select", "path:models/curated"])
 
 
 def test_task_global_completion(db_connection):
@@ -693,7 +698,7 @@ def test_emission_jour_environment(db_connection):
                 ('pytest_env_margin', 'bfmtv', %(program)s, 'france', '2025-04-07 23:03', 6),
                 -- 12:00: no emission of the program within 6 min in the test sheet, left out
                 ('pytest_env_gap', 'bfmtv', %(program)s, 'france', '2025-04-07 12:00', 30),
-                -- without program: left out, like in the dashboards
+                -- without program id nor channel_program: left out, like in the dashboards
                 ('pytest_env_no_program', 'bfmtv', NULL, 'france', '2025-04-07 07:10', 30)
         """, {"program": programs[0][0]})
     db_connection.commit()
@@ -717,6 +722,44 @@ def test_emission_jour_environment(db_connection):
         "bfmtv|émission|Face à face|false": 60,
         "bfmtv|émission|BFM Grand Soir|false": 120,
     }
+
+
+def test_emission_jour_themes_legacy_segments_and_capture(db_connection):
+    """A segment without program_metadata_id (before 2025) goes to the program of its channel_program, like the
+    dashboards; the time of each subject; chaine_captee: a channel without capture nor segment that day."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            INSERT INTO public.keywords (id, channel_name, program_metadata_id, channel_program, country, start,
+                number_of_keywords, number_of_keywords_climat, number_of_keywords_biodiversite,
+                number_of_changement_climatique_constat)
+            VALUES ('pytest_env_legacy', 'bfmtv', NULL, 'Information en continu', 'france', '2025-04-07 07:20',
+                4, 3, 2, 1)
+        """)
+    db_connection.commit()
+    try:
+        run_dbt_command(["run", "--select", "emission_jour"])
+        with db_connection.cursor() as cur:
+            cur.execute("""
+                SELECT env_heures, climat_heures, biodiversite_heures, climat_constat_heures, ressources_heures,
+                    chaine_captee
+                FROM public.emission_jour
+                WHERE emission_cle = 'bfmtv|émission|BFM Première|false' AND jour = '2025-04-07'
+            """)
+            row = cur.fetchone()
+            cur.execute("""
+                SELECT DISTINCT chaine_captee FROM public.emission_jour
+                WHERE channel_name = 'tf1' AND jour = '2025-04-07'
+            """)
+            tf1 = cur.fetchall()
+    finally:
+        with db_connection.cursor() as cur:
+            cur.execute("DELETE FROM public.keywords WHERE id = 'pytest_env_legacy'")
+        db_connection.commit()
+        run_dbt_command(["run", "--select", "emission_jour"])
+    # in seconds; the subjects of a 20 s window do not add up to the environment
+    assert [round(float(v) * 3600) for v in row[:5]] == [80, 60, 40, 20, 0]
+    assert row[5] is True
+    assert tf1 == [(False,)]
 
 
 def test_pub_annonceur_emission_jour(db_connection):
@@ -1346,6 +1389,8 @@ def test_advertising_models_schema(db_connection):
                 'publicites', 'cas_de_mesinformation', 'emission_jour', 'environmental_shares_with_desinfo_counts',
                 'mesinfo_theme_mots_cles', 'pub_annonceur_emission_jour'
             )
+              -- curated.emission_jour: see test_curated_documented_in_postgres
+              AND table_schema <> 'curated'
             ORDER BY table_name
         """)
         rows = cur.fetchall()
@@ -1394,6 +1439,118 @@ def test_dbt_objects(db_connection):
         ("advertising", "ref_ome_secteurs", "seed"),
         ("analytics", "task_global_completion", "model"),
     ]
+
+def test_curated_documented_in_postgres(db_connection):
+    """The curated models are tables of the curated schema, with their description and the one of every column
+    written as Postgres comments (persist_docs), read by Metabase and by any SQL client."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT c.relname, c.relkind, obj_description(c.oid, 'pg_class') IS NOT NULL,
+                bool_and(col_description(c.oid, a.attnum) IS NOT NULL)
+            FROM pg_class c
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+            WHERE n.nspname = 'curated' AND c.relkind = 'r'
+            GROUP BY c.relname, c.relkind, c.oid
+            ORDER BY c.relname
+        """)
+        rows = cur.fetchall()
+    assert rows == [
+        ("cas_mesinformation", "r", True, True),
+        ("chaine", "r", True, True),
+        ("emission_jour", "r", True, True),
+        ("publicite", "r", True, True),
+    ]
+
+
+def test_curated_chaine(db_connection):
+    """One row per channel of program_metadata, country in French."""
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT COUNT(DISTINCT channel_name) FROM public.program_metadata")
+        channels = cur.fetchone()[0]
+        cur.execute("""
+            SELECT chaine_id, chaine_nom, pays, est_service_public, est_info_continue, est_radio
+            FROM curated.chaine
+            WHERE chaine_id IN ('bfmtv', 'france-inter', 'daserste')
+            ORDER BY chaine_id
+        """)
+        rows = cur.fetchall()
+        cur.execute("SELECT COUNT(*) FROM curated.chaine")
+        assert cur.fetchone()[0] == channels
+    assert rows == [
+        ("bfmtv", "BFM TV", "France", False, True, False),
+        ("daserste", "Das Erste", "Allemagne", True, False, False),
+        ("france-inter", "France Inter", "France", True, False, True),
+    ]
+
+
+def test_curated_publicite(db_connection):
+    """Every row of analytics.publicites, with the time in Paris time (UTC+1 in winter, UTC+2 in summer) and the
+    channel of curated.chaine."""
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM analytics.publicites")
+        ads = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM curated.publicite")
+        assert cur.fetchone()[0] == ads > 0
+        cur.execute("""
+            SELECT publicite_id, debut_paris, jour, chaine_id, chaine_nom, est_info_continue, classement_par
+            FROM curated.publicite
+            WHERE publicite_id IN ('emission_pytest_winter', 'emission_pytest_after_midnight')
+            ORDER BY publicite_id
+        """)
+        rows = cur.fetchall()
+    assert rows == [
+        # 2025-04-06 04:10 UTC
+        ("emission_pytest_after_midnight", datetime.datetime(2025, 4, 6, 6, 10), datetime.date(2025, 4, 6),
+         "lci", "LCI", True, "modèle de langage"),
+        # 2025-01-06 06:00 UTC
+        ("emission_pytest_winter", datetime.datetime(2025, 1, 6, 7, 0), datetime.date(2025, 1, 6),
+         "bfmtv", "BFM TV", True, "modèle de langage"),
+    ]
+
+
+def test_curated_cas_mesinformation(db_connection):
+    """Every validated case, in Paris time, with its speakers, themes (every pertinence) and emission."""
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM analytics.cas_de_mesinformation")
+        cases = cur.fetchone()[0]
+        cur.execute("SELECT COUNT(*) FROM curated.cas_mesinformation")
+        assert cur.fetchone()[0] == cases > 0
+        cur.execute("""
+            SELECT debut_paris, chaine_nom, pays, emission_jour_id, locuteurs, est_dit_par_invite,
+                est_dit_par_journaliste, correction, themes, est_theme_automobile
+            FROM curated.cas_mesinformation
+            WHERE chaine_id = 'sud-radio' AND jour = '2025-04-02'
+        """)
+        rows = cur.fetchall()
+    # 2025-04-02 09:10 UTC
+    assert rows == [(
+        datetime.datetime(2025, 4, 2, 11, 10), "Sud Radio", "France",
+        "sud-radio|programme|Mettez-vous d'accord|false|2025-04-02", "invité", True, False, "non renseignée",
+        "automobile", True,
+    )]
+
+
+def test_curated_emission_jour(db_connection):
+    """The captured days of public.emission_jour, in minutes, with the cases."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT COUNT(*), SUM(volume_heures) * 60, SUM(nb_cas)
+            FROM public.emission_jour WHERE chaine_captee
+        """)
+        captured = cur.fetchone()
+        cur.execute("SELECT COUNT(*), SUM(duree_suivie_min), SUM(nb_cas_mesinformation) FROM curated.emission_jour")
+        curated = cur.fetchone()
+        cur.execute("""
+            SELECT emission_nom, est_emission_identifiee, chaine_nom, duree_suivie_min, nb_cas_mesinformation
+            FROM curated.emission_jour
+            WHERE emission_jour_id = 'europe1|programme|Europe 1 Matin|false|2025-06-10'
+        """)
+        row = cur.fetchone()
+    assert 0 < curated[0] == captured[0]
+    assert float(curated[1]) == float(captured[1])
+    assert curated[2] == captured[2] > 0
+    assert row == ("Europe 1 Matin", False, "Europe 1", 120.0, 1)
 
 
 def list_enabled_seeds(**env):

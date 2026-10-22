@@ -150,7 +150,7 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
 
 ### 4. `dbt_run_transformations`: models
 
-- **Runs:** the [`dbt`](#dbt) subflow, which runs `entrypoints/dbt.sh` in `quotaclimat_base`. A subflow, so that two dbt runs never overlap.
+- **Runs:** the [`dbt`](#dbt) subflow, so that two dbt runs never overlap. Its first task (`dbt_run_transformations`) runs `entrypoints/dbt.sh` in `quotaclimat_base`, its second one `curated_and_metabase_docs` (below).
 - **What happens**, in order:
   1. `quotaclimat.data_ingestion.labelstudio.ingest_labelstudio` copies Label Studio tasks and annotations from the `labelstudio` DB into `barometre` (`labelstudio_task_aggregate`, `labelstudio_task_completion_aggregate`).
   2. `quotaclimat.data_ingestion.external_sources.download_external_sources` downloads the reference spreadsheets listed in `my_dbt_project/external_sources.yml` from the Drive folder in `EXTERNAL_SOURCES_DRIVE_FOLDER`, using the service account in `GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON`. Spreadsheets readable without credentials are refused. Then `dbt seed` and `dbt test` load and check them.
@@ -159,6 +159,13 @@ The main OME pipeline for France (`COUNTRY=fra`): it fetches yesterday's TV/radi
   5. A last `dbt run` builds the advertising models, `cas_de_mesinformation` and `publicites`, which read the analytics tables.
 - **Technologies:** dbt (Postgres adapter), Google Drive and Sheets APIs, SQLAlchemy.
 - **Reads:** `labelstudio` DB, Google Sheets, `barometre`. **Writes:** `barometre` schemas `public`, `analytics`, `dashboards`, `advertising`.
+
+#### `curated_and_metabase_docs` (second task of the `dbt` subflow): clean tables and their documentation in Metabase
+
+- **Runs:** `entrypoints/curated.sh` in `quotaclimat_base`, with `allowFailure: true`: a failure leaves the execution in WARNING without stopping the main pipeline.
+- **What happens:** `dbt run --select path:models/curated` builds the `curated` schema (clean tables for the teams and their Claude through the Metabase MCP, see `my_dbt_project/models/curated/`), `dbt test` checks them, then `quotaclimat.metabase.sync_curated` pushes their dbt documentation (names shown, descriptions, units, semantic types, foreign keys) to the Metabase databases of `METABASE_CURATED_DATABASES`, after a sync of the database schema when a table or a column is new.
+- **Technologies:** dbt, Metabase API (`METABASE_URL`, `METABASE_API_KEY`).
+- **Reads:** `barometre` schemas `analytics`, `public`. **Writes:** `barometre` schema `curated`, Metabase table metadata.
 
 ## metabase-sync
 
@@ -173,7 +180,7 @@ A question whose SQL was edited in Metabase since its last synchronization is ov
 
 ## dbt
 
-Runs the dbt models of the `barometre` database: [`barometre`](#barometre) step 4 (`dbt_run_transformations`), described there. One `io.kestra.plugin.docker.Run` task, called as a subflow by `barometre`, `barometre-catchup` and `dbt-analytics`. Two dbt runs drop and rebuild the same tables, so they must not overlap: Kestra's `concurrency` only counts the executions of one flow, hence this shared flow with `concurrency.limit: 1`. A second run waits in the queue (`behavior: QUEUE`) until the first one ends, and the flow that called it waits with it.
+Runs the dbt models of the `barometre` database, then the `curated` schema: [`barometre`](#barometre) step 4, described there. Two `io.kestra.plugin.docker.Run` tasks (`dbt_run_transformations`, then `curated_and_metabase_docs`), called as a subflow by `barometre`, `barometre-catchup` and `dbt-analytics`. Two dbt runs drop and rebuild the same tables, so they must not overlap: Kestra's `concurrency` only counts the executions of one flow, hence this shared flow with `concurrency.limit: 1`. A second run waits in the queue (`behavior: QUEUE`) until the first one ends, and the flow that called it waits with it.
 
 | Input | Default | Effect |
 |---|---|---|
@@ -183,7 +190,7 @@ Runs the dbt models of the `barometre` database: [`barometre`](#barometre) step 
 
 Quick rebuild, by hand, of the tables read by the Metabase questions, for instance after a change of an analytics or advertising model, or of a reference Google Sheet. Two subflows:
 
-1. `dbt_analytics`: [`dbt`](#dbt) with `only_analytics=true`. Same steps as a full run (Label Studio ingestion, seeds, analytics and advertising models), without the dashboards and homepage models. `emission_jour` is still rebuilt, and reads the whole `public.keywords` table.
+1. `dbt_analytics`: [`dbt`](#dbt) with `only_analytics=true`. Same steps as a full run (Label Studio ingestion, seeds, analytics and advertising models, then the `curated` schema and its documentation in Metabase), without the dashboards and homepage models. `emission_jour` is still rebuilt, and reads the whole `public.keywords` table.
 2. `metabase_sync`: [`metabase-sync`](#metabase-sync) with `apply=true`, `force=true`; its failure only marks the run as WARNING.
 
 It runs the `quotaclimat_base:latest` image, so the code must be merged and deployed first. Started during a `barometre` or `barometre-catchup` dbt run, its dbt step waits for the end of that run.
@@ -202,6 +209,7 @@ The same four steps and the same code as [`barometre`](#barometre), run for the 
 | `detect_keywords` | Writes to the `extended-perimeter` DB on the RRS Postgres instance (port 18492) with the admin user `RRS_PG_ADMIN_USER`, because `alembic upgrade head` needs DDL rights. Rows keep `country=france`, so the DB has the same content shape as `barometre`. |
 | `detect_misinformation` | `misinformation-extended-perimeter-prod` bucket, Label Studio project 24 (S3 storage id 18), looks back `days_back` days (not `+1`). |
 | `dbt_run_transformations` | `EXTENDED_PERIMETER=true`: Label Studio ingestion only keeps project 24 (`configs.py`), and dbt grants `select` only to `rrs-read-prod`. No `EXTERNAL_SOURCES_DRIVE_FOLDER`, so the Google Sheets download is skipped. |
+| `curated_and_metabase_docs` | Not run: the `curated` schema is only built on `barometre`. |
 
 ## rrs-climate
 
@@ -314,7 +322,7 @@ A safety net that runs [`barometre`](#barometre)'s four steps every night at 03:
 - Step 1 has no `API_DATA_OVERWRITE`: only channel/days that are missing from S3 are fetched again.
 - Step 2 re-reads the whole window from S3 and upserts, so it is idempotent.
 - Step 3 looks back `days_back` days and runs without `LABEL_MISINFORMATION_OVERWRITE`.
-- Step 4 is identical.
+- Step 4 is identical: the [`dbt`](#dbt) subflow, `curated` schema included.
 
 ## barometre-i18n
 

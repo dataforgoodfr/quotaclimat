@@ -648,8 +648,11 @@ def test_print_rows_tab_separated():
     run_module.print_rows([{"marque": "Acme", "entreprise": "ACME\tSAS", "commentaires": "ligne 1\nligne 2", "x": "ignored"}], out)
     lines = out.getvalue().splitlines()
     assert lines[0] == "----- BRAND GROUPS PROPOSALS (tab-separated) -----"
-    assert lines[1].split("\t") == ["marque", "entreprise", "societe_mere_ultime", "e_statut", "smu_statut", "commentaires"]
-    assert lines[2].split("\t") == ["Acme", "ACME SAS", "", "", "", "ligne 1 ligne 2"]
+    assert lines[1].split("\t") == [
+        "marque", "entreprise", "e_statut", "societe_mere_ultime", "smu_statut", "actionnaire_maj_ultime", "amu_statut",
+        "commentaires",
+    ]
+    assert lines[2].split("\t") == ["Acme", "ACME SAS", "", "", "", "", "", "ligne 1 ligne 2"]
     assert lines[3] == "----- END OF BRAND GROUPS PROPOSALS -----"
 
 

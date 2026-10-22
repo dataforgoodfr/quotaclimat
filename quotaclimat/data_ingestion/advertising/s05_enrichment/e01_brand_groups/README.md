@@ -4,12 +4,13 @@ Scaleway job (`entrypoints/advertising_brand_groups_enrichment.sh`; the technica
 
 ## The tab `Marques`
 
-| Column | |
+| Column (any order in the tab) | |
 |---|---|
 | `marque` | the brand (Activia, Free) |
 | `entreprise` | the company that sells under the brand (Danone; Free: a brand can be its own company) |
 | `societe_mere_ultime` | ultimate parent company of the company, consolidation level (GLEIF definition) |
-| `e_statut`, `smu_statut` | status of `entreprise` and of `societe_mere_ultime`: `vérifié`, `non vérifié` or `à vérifier` |
+| `actionnaire_maj_ultime` | ultimate majority shareholder (e.g. a family holding), filled in by a human only |
+| `e_statut`, `smu_statut`, `amu_statut` | status of `entreprise`, `societe_mere_ultime` and `actionnaire_maj_ultime`: `vérifié`, `non vérifié` or `à vérifier` |
 | `commentaires` | how the job filled the row (holder, SIREN, trademark, LEI, GLEIF and Wikidata answers) |
 
 dbt uses each value unless its status is `à vérifier`. The job writes `e_statut = non vérifié` (used) and `smu_statut = à vérifier` (not used until a human checks it).

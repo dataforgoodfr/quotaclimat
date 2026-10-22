@@ -543,6 +543,12 @@ models:
         description: Ultimate parent company as written in the tab (column societe_mere_ultime), NULL when empty.
       - name: ultimate_parent_status
         description: vérifié, non vérifié or à vérifier (column smu_statut).
+      - name: ultimate_majority_shareholder
+        description: >
+          Ultimate majority shareholder as written in the tab (column actionnaire_maj_ultime), NULL when empty.
+          Passed through, whatever its status: not used by brand_company nor brand_ultimate_parent.
+      - name: ultimate_majority_shareholder_status
+        description: vérifié, non vérifié or à vérifier (column amu_statut).
       - name: brand_company
         description: company unless its status is 'à vérifier', else the brand itself.
       - name: brand_ultimate_parent

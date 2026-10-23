@@ -36,6 +36,8 @@ REQUIRED_ENV = [
 ]
 
 DESTINATION_SCHEMA = "thematic_extracts"
+# Postgres users granted SELECT on the destination table at its creation (quoted: names contain hyphens)
+USERS_TO_GRANT = ['"climateguard-reader-user"', '"metabase-analytics-prod"']
 SOURCE_TABLE = "public.factiva_articles"
 MEDIA_TYPE = "presse"
 LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch"}
@@ -116,7 +118,7 @@ def run() -> None:
             raise ValueError(
                 f"[RUN] {destination_table} already exists: rerun with MODE=resume or MODE=reset"
             )
-        art_utils.create_thematic_articles_table(_con, DRY_RUN, destination_table, POSTGRES_DB, DESTINATION_SCHEMA)
+        art_utils.create_thematic_articles_table(_con, DRY_RUN, destination_table, POSTGRES_DB, DESTINATION_SCHEMA, USERS_TO_GRANT)
 
     ### RESUME: the table must exist, restart from its last ingested day
     elif MODE == "resume":
@@ -137,7 +139,7 @@ def run() -> None:
                 raise ValueError(f"[RUN] Failed to clear {destination_table}") from e
         else:
             logging.warning(f"[RUN] MODE=reset but {destination_table} does not exist: creating it")
-            art_utils.create_thematic_articles_table(_con, DRY_RUN, destination_table, POSTGRES_DB, DESTINATION_SCHEMA)
+            art_utils.create_thematic_articles_table(_con, DRY_RUN, destination_table, POSTGRES_DB, DESTINATION_SCHEMA, USERS_TO_GRANT)
 
     counter_to_ingest = 0
     ingested = 0

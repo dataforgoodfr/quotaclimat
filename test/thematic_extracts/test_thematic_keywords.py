@@ -84,6 +84,7 @@ class RunEnv:
         monkeypatch.setattr(tk, "THEMATIC_YML", self.yml)
         monkeypatch.setattr(tk.duckdb, "connect", lambda *a, **k: con)
         monkeypatch.setattr(tk.utils, "configure_barometre_source", lambda *a, **k: None)
+        monkeypatch.setattr(tk, "USERS_TO_GRANT", [])  # in-memory DuckDB: no Postgres to grant on
         monkeypatch.setattr(tk.kw_utils, "_configure_s3", lambda *a, **k: None)
         monkeypatch.setattr(tk.kw_utils, "read_day_from_s3", self._fake_read_day_from_s3)
         self.configure(start=D1, end=D2)

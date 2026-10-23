@@ -2,6 +2,7 @@ import asyncio
 import logging
 import math
 import os
+import sys
 from datetime import date, datetime, timedelta
 
 from sentry_sdk.crons import monitor
@@ -9,6 +10,9 @@ from sqlalchemy import desc, select
 
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad_Occurrence
+from quotaclimat.data_ingestion.advertising.s01_detection.e01_check_partition_cover import (
+    check_bucket_cover,
+)
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import processor
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.scheduled_rolling_channels import (
     get_scheduled_rolling_channel,
@@ -50,7 +54,25 @@ def _scaleway_cpu_numbers() -> int:
     return math.floor(cpu)
 
 
+def _run_cover_check():
+    # COVER_CHECK_ONLY=true only lists mediatree's bucket and reports, for every channel
+    # (or the ones of COVER_CHECK_CHANNELS=tf1,france2), which files of the week are missing
+    getLogger()
+    start_date = os.environ.get("START_DATE")
+    assert start_date, "Need START_DATE (a Monday) to check the bucket cover"
+    channels = [
+        c.strip()
+        for c in os.environ.get("COVER_CHECK_CHANNELS", "").split(",")
+        if c.strip()
+    ]
+    print(asyncio.run(check_bucket_cover(start_date, channels or None)))
+
+
 if __name__ == "__main__":
+    if os.environ.get("COVER_CHECK_ONLY", "").lower() in ("1", "true", "yes"):
+        _run_cover_check()
+        sys.exit(0)
+
     with monitor(
         monitor_slug="advertising-detection"
     ):  # https://docs.sentry.io/platforms/python/crons/

@@ -219,6 +219,17 @@ docker build -f Dockerfile.ffmpeg -t quotaclimat_base_ffmpeg:latest .
 ```
 In CI, it's built `FROM` the freshly pushed `quotaclimat_base:${PROJECT_VERSION}` image and pushed as `quotaclimat_base_ffmpeg`, which is what the `advertising_detection` Scaleway job runs.
 
+### Check what is missing in Mediatree's bucket (advertising detection)
+Before running the detection, you can check which 2-minutes files of a week are missing in Mediatree's bucket, for every channel of the bucket. It only lists the bucket (nothing is downloaded), so it takes a few seconds:
+```
+COVER_CHECK_ONLY=true START_DATE=2026-10-12 poetry run python quotaclimat/data_ingestion/advertising/s01_detection/run.py
+```
+- `START_DATE` is the Monday of the week (at least 7 days ago). `COVER_CHECK_CHANNELS=tf1,france2` limits the check to some channels.
+- The expected files are the shows of `postgres/program_metadata.json` whose program grid is valid that week, with margins of 15 minutes before and after (`PROGRAM_MARGIN_BEFORE_MINUTES`, `PROGRAM_MARGIN_AFTER_MINUTES`), rounded up to Mediatree's even minutes.
+- The report gives a table per channel (missing time, shows entirely missing, partly missing, or complete but with missing margins), then for each channel the shows not fully received and the missing time slots, grouped by time of day (a slot missing every day is written once, `every day`).
+
+The same summary is written in the text report of a normal detection run.
+
 ### Explore postgres data using Metabase - a BI tool
 ```
 docker compose up metabase -d

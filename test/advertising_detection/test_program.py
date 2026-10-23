@@ -1,10 +1,12 @@
-from datetime import datetime, timedelta
-from unittest.mock import patch
+import json
+from datetime import date, datetime, timedelta
+from unittest.mock import mock_open, patch
 
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.program import (
     Show,
     extend_program_by,
     get_channel_program,
+    get_program,
     merge_shows_in_program,
 )
 
@@ -194,7 +196,7 @@ class TestExtendProgramBy:
         ]
         result = extend_program_by(shows, timedelta(hours=12))
         assert len(result) == 1
-        (start, end) = result[0].for_week(datetime(2024, 1, 1))
+        start, end = result[0].for_week(datetime(2024, 1, 1))
         assert start == datetime(2024, 1, 1)
         assert end == datetime(2024, 1, 8)
 
@@ -202,6 +204,26 @@ class TestExtendProgramBy:
 # ---------------------------------------------------------------------------
 # get_channel_program
 # ---------------------------------------------------------------------------
+
+
+class TestGetProgram:
+    def test_reads_name_grid_and_shows_crossing_midnight(self):
+        metadata = [
+            {
+                "channel_name": "redebandeirantes",
+                "weekday": 1,
+                "start": "23:45",
+                "end": "00:45",
+                "program_name": "Jornal da Noite",
+                "program_grid_start": "2023-04-01",
+                "program_grid_end": "2100-01-01",
+            }
+        ]
+        with patch("builtins.open", mock_open(read_data=json.dumps(metadata))):
+            [show] = list(get_program())
+        assert show.program_name == "Jornal da Noite"
+        assert show.grid_start == date(2023, 4, 1)
+        assert show.end - show.start == timedelta(hours=1)
 
 
 class TestGetChannelProgram:
@@ -222,6 +244,18 @@ class TestGetChannelProgram:
             result = get_channel_program("tf1")
         assert all(s.channel_name == "tf1" for s in result)
         assert len(result) == 2
+
+    def test_filters_by_program_grid_of_the_week(self):
+        old = make_show("tf1", 1, "20:00", "21:00")
+        old.grid_end = date(2024, 6, 30)
+        new = make_show("tf1", 1, "20:00", "20:45")
+        new.grid_start = date(2024, 7, 1)
+        with patch(
+            "quotaclimat.data_ingestion.advertising.s01_detection.tools.program.get_program",
+            return_value=iter([old, new]),
+        ):
+            result = get_channel_program("tf1", datetime(2025, 10, 13))
+        assert result == [new]
 
     def test_unknown_channel_returns_empty(self):
         with patch(

@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import subprocess
+from urllib.parse import quote
 
 import psycopg2
 import pytest
@@ -1528,6 +1529,52 @@ def test_curated_publicite(db_connection):
         ("emission_pytest_winter", datetime.datetime(2025, 1, 6, 7, 0), datetime.date(2025, 1, 6),
          "bfmtv", "BFM TV", True, "modèle de langage"),
     ]
+
+
+def test_curated_publicite_links(db_connection):
+    """The links of an ad broadcast: no Mediatree player for a broadcast older than a year, the S3 folder of the ad,
+    the ad viewer on the tunnel with the raw predicted brand encoded."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT lien_mediatree, lien_sauvegarde, lien_visualiseur
+            FROM curated.publicite
+            WHERE publicite_id = 'emission_pytest_winter'
+        """)
+        row = cur.fetchone()
+    # 2025-01-06 06:00 UTC = 1736143200, pytest_ad_1 of 30 s, predicted brand 'Pytest Škoda'
+    assert row == (
+        None,
+        "https://console.scaleway.com/object-storage/buckets/fr-par/advertising-detection/files/ads/pytest_ad_1/",
+        "https://metabase.quotaclimat.org/custom_viewers/visu_pubs.html?tunnel=bfmtv%401736143200"
+        "&annonceur=Pytest%20%C5%A0koda",
+    )
+    # end the transaction left open by the SELECT: its lock on the table would block dbt
+    db_connection.rollback()
+    try:
+        run_dbt_command(["run", "--select", "publicite", "--vars", '{"mediatree_link_max_age_days": 100000}'])
+        with db_connection.cursor() as cur:
+            cur.execute("SELECT lien_mediatree FROM curated.publicite WHERE publicite_id = 'emission_pytest_winter'")
+            assert cur.fetchone()[0] == (
+                "https://keywords.mediatree.fr/player/?fifo=bfmtv"
+                "&start_cts=1736143200&end_cts=1736143230&position_cts=1736143200"
+            )
+        db_connection.rollback()
+    finally:
+        run_dbt_command(["run", "--select", "publicite"])
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["Pytest Škoda", "L’Oréal Paris", "Coca-Cola®", "Mc Donald's & Co", "a+b=c/d?e#f%g", "_.-~", "日本", ""],
+)
+def test_url_encode_matches_python(db_connection, text):
+    """The url_encode dbt macro encodes like urllib.parse.quote(text, safe='')."""
+    macro = open("my_dbt_project/macros/url_encode.sql").read()
+    sql = re.search(r"\{% macro url_encode\(column\) -%\}(.*)\{%- endmacro", macro, re.S).group(1)
+    with db_connection.cursor() as cur:
+        cur.execute("SELECT " + sql.replace("{{ column }}", "%(text)s").replace("%\\1", "%%\\1"), {"text": text})
+        assert cur.fetchone()[0] == quote(text, safe="")
+    db_connection.rollback()
 
 
 def test_curated_cas_mesinformation(db_connection):

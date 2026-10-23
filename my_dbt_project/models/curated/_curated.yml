@@ -81,7 +81,7 @@ models:
     description: |
       Une ligne = une diffusion d'un spot publicitaire sur une chaîne française, détectée automatiquement et classée par secteur, catégorie de produit et marque.
       Période : depuis le 29 septembre 2025, début de l'analyse des publicités. Chaînes : chaînes de télévision françaises dont la publicité est analysée.
-      Usage : compter les diffusions (une ligne = une diffusion) ou sommer leur durée (`duree_sec`) par secteur, marque, chaîne, jour ou programme ; voir quelles publicités passent autour des programmes et près des cas de mésinformation.
+      Usage : compter les diffusions (une ligne = une diffusion) ou sommer leur durée (`duree_sec`) par secteur, marque, chaîne, jour ou programme ; voir quelles publicités passent autour des programmes et près des cas de mésinformation ; regarder ou écouter une diffusion (`lien_mediatree`, `lien_sauvegarde`, `lien_visualiseur`).
       Pièges : un même spot diffusé plusieurs fois a plusieurs lignes, avec le même `spot_id` : compter les lignes pour le nombre de diffusions, les `spot_id` distincts pour le nombre de spots différents. Le classement (secteur, catégorie, marque) est automatique et peut se tromper : un chiffre publié se vérifie sur des exemples. Une marque absente de l'inventaire des marques garde l'orthographe détectée.
       Source : détection et classement des publicités (pipeline advertising), table analytics.publicites.
     config:
@@ -105,7 +105,7 @@ models:
           Date et heure de début de la diffusion, en heure de Paris.
         config:
           meta:
-            libelle: Début de la diffusion
+            libelle: Début (heure de Paris)
         data_tests:
           - not_null
       - name: jour
@@ -322,6 +322,34 @@ models:
             unite: seconde
             agregation: aucune
             type_metabase: type/Duration
+      - name: lien_mediatree
+        data_type: text
+        description: >-
+          Lien vers la diffusion dans le lecteur Mediatree (accès réservé avec un compte), du début à la fin du spot. Vide pour une diffusion de plus d'un an, que Mediatree ne garde plus (âge calculé à la construction de la table, deux fois par jour).
+        config:
+          meta:
+            libelle: Voir sur Mediatree
+            type_metabase: type/URL
+      - name: lien_sauvegarde
+        data_type: text
+        description: >-
+          Lien vers le dossier du spot dans le stockage Scaleway de l'Observatoire (accès réservé avec un compte), qui contient l'audio ou la vidéo sauvegardés à sa détection. Le même pour toutes les diffusions d'un même spot (`spot_id`), et disponible quel que soit l'âge de la diffusion.
+        config:
+          meta:
+            libelle: Voir la version sauvegardée
+            type_metabase: type/URL
+        data_tests:
+          - not_null
+      - name: lien_visualiseur
+        data_type: text
+        description: >-
+          Lien vers le visualiseur de publicités de Metabase, centré sur l'écran publicitaire de la diffusion (`ecran_id`), avec la marque détectée mise en évidence. Sans marque mise en évidence quand aucune n'a été détectée.
+        config:
+          meta:
+            libelle: Voir dans le visualiseur
+            type_metabase: type/URL
+        data_tests:
+          - not_null
 
   - name: cas_mesinformation
     description: |

@@ -28,24 +28,25 @@ Quatre étapes, chacune validée explicitement par l'équipe avant de passer à 
 Les analyses tournent sur des tables thématiques légères, générées par un job Scaleway lancé à la main (code : `quotaclimat/data_processing/thematic_extracts/`), et non plus directement sur `keywords` et `factiva_articles`.
 
 **Configuration.** `quotaclimat/data_processing/thematic_extracts/thematic_jobs_config.yml`, une entrée par thème :
-- `periodes.<pays>` : liste des fenêtres à scanner (`id`, `start`, `end`) ;
-- `keywords.<langue>.audiovisuel` : termes sous leur forme exacte dans le dictionnaire OME ;
-- `keywords.<langue>.presse` : toutes les variantes (genre, nombre) des termes OME, détectées par regex.
+- `periodes.<pays>` (`france`, `belgium`, `belgium_flanders`) : liste des périodes à extraire, chacune avec un `id` (`[a-z0-9_]`), un `start` (inclus) et un `end` (exclu). Les périodes d'un même pays ne se chevauchent pas ;
+- `keywords.<langue>.audiovisuel` : termes sous leur forme exacte dans `keywords_with_timestamp` (orthographe et accents du dictionnaire OME) ;
+- `keywords.<langue>.presse` : toutes les variantes (genre, nombre) des termes OME, détectées par regex après normalisation.
 
-Le job prend en entrée `THEMATIC` (l'entrée du fichier), `MODE` (`new`, `reset`, `resume`), `COUNTRY` et `LANGUAGE` (par défaut `france` et `french`).
+Le job prend en entrée `THEMATIC` (l'entrée du fichier), `MODE` et `COUNTRY` (par défaut `france`). Modes : `new` crée la table, `resume` reprend chaque période à son dernier jour ingéré (c'est ainsi qu'on ajoute une période), `reset` vide la table et repart du début (obligatoire si l'on modifie les dates ou l'`id` d'une période déjà ingérée). `DRY_RUN` n'écrit rien.
 
-**Tables.** Schéma `thematic_extracts`, nommées `<thème>_<articles|keywords>_<pays>_<AAAAMMJJ début>_<AAAAMMJJ fin>`. 🔴 [confirmer le nommage quand une entrée contient plusieurs périodes]
+**Tables.** Schéma `thematic_extracts`, nommées `<thème>_<articles|keywords>_<pays>`, sans date, où `<pays>` vaut `fr`, `be` ou `befl` (exemple : `incendies_keywords_fr`). Une table par thème, par type de média et par pays ; elle contient toutes les périodes de l'entrée, quel que soit leur nombre. On sélectionne une période en filtrant sur la colonne `period`, qui contient l'`id` de la période dans le YAML (par exemple `ete_2026`).
 
 | | Presse écrite | Audiovisuel |
 |---|---|---|
-| Base Metabase | Print Media DB (id 8) | Scaleway Postgres (id 2) |
+| Base | Print Media DB (Metabase id 8) | Baromètre (Scaleway Postgres, Metabase id 2) |
 | Source | `public.factiva_articles`, hors `duplicate_status = 'DUP'` | `public.keywords` pour les segments thématiques, S3 Mediatree pour les segments adjacents |
 | Une ligne | Un article dont le titre, le chapô ou le corps contient un terme de l'entrée `presse` | Un segment de 2 minutes : thématique (`thematic_chunk = true`, il contient un terme de l'entrée `audiovisuel`) ou adjacent d'un segment thématique de la même chaîne (`false`). Un segment à la fois thématique et adjacent compte comme thématique |
 | Texte (normalisé, §3.5) | `title_normalized`, `snippet_normalized`, `body_normalized` | `plaintext_normalized` |
-| Colonne de contrôle | `keywords_found` : termes détectés, distincts | `keywords_found` : termes détectés, distincts ; `themes` : thèmes OME détectés |
-| Autres colonnes | `an` (clé), `source_code`, `source_name`, `publication_datetime`, `word_count`, `created_at` | `this_id` (clé : chaîne + `start` en UTC), `channel_name`, `channel_title`, `start` (heure de Paris), `source_keywords_id`, `created_at` |
+| Colonne de contrôle | `keywords_found` : termes détectés, distincts, sous forme normalisée | `keywords_found` : termes détectés, distincts, sous leur forme dans le dictionnaire OME (non normalisée) ; `themes` : thèmes OME détectés. Vides pour un segment adjacent |
+| Période | `period` : `id` de la période dans le YAML | `period` : `id` de la période dans le YAML |
+| Autres colonnes | `an` (clé), `source_code`, `source_name`, `publication_datetime`, `word_count`, `created_at` | `this_id` (clé : chaîne + `start` en UTC), `channel_name`, `channel_title`, `start` (heure de Paris), `source_keywords_id`, `country` (contrôle), `created_at` |
 
-🔴 [colonnes ci-dessus après la prochaine PR du job ; les tables existantes contiennent le texte d'origine et la colonne `keywords` en audiovisuel]
+Les anciennes tables datées (par exemple `incendies_articles_fr_20260701_20260708`) sont vouées à disparaître ; aucune table n'est plus créée sous ce nom.
 
 Volume du corpus audiovisuel : toujours filtrer sur `thematic_chunk = true`. Les segments adjacents ne servent qu'à la recontextualisation.
 
@@ -65,7 +66,7 @@ Classification des titres de presse (nationale, régionale...) : table `source_c
 ### 3.2 Périodes (adoptée)
 
 - **Période d'analyse** : une fenêtre d'actualité chaude sur le sujet, justifiée par une source datée (Météo-France, préfecture, presse), renseignée dans `periodes.<pays>`. C'est elle qui limite les faux positifs d'un dictionnaire noyau large.
-- **Période de comparaison** : un épisode similaire (même aléa, actualité comparable), de durée équivalente ou normalisée, renseigné comme une autre période de la même entrée.
+- **Période de comparaison** : un épisode similaire (même aléa, actualité comparable), de durée équivalente ou normalisée, renseigné comme une autre période de la même entrée. Les requêtes comparent les périodes via la colonne `period`.
 
 ### 3.3 Axes contextuels (adoptée)
 
@@ -84,8 +85,8 @@ Classification des titres de presse (nationale, régionale...) : table `source_c
 Le job normalise le texte des tables thématiques et, en presse, les mots-clés recherchés, de la même manière :
 
 1. minuscules ;
-2. accents retirés ;
-3. apostrophes et tirets remplacés par un espace.
+2. `œ` et `æ` remplacés par `oe` et `ae`, accents retirés ;
+3. apostrophes (toutes variantes typographiques) et tirets remplacés par un espace.
 
 Les regex des axes s'appliquent aux colonnes `*_normalized`, en mots entiers (`\y...\y` en Postgres). Leurs termes sont donc écrits sous la même forme : `secheresse`, `manque d eau`, `pare feu`.
 
@@ -281,7 +282,7 @@ Notre sujet est l'écologie. Une référence qui traite d'un autre sujet ne sert
 
 - Statut : en cours | publié (<lien article ou bilan>)
 - Entrée de `thematic_jobs_config.yml` : `<thème>`
-- Tables : `thematic_extracts.<thème>_articles_<pays>_<début>_<fin>`, `thematic_extracts.<thème>_keywords_<pays>_<début>_<fin>`
+- Tables : `thematic_extracts.<thème>_articles_<pays>`, `thematic_extracts.<thème>_keywords_<pays>`
 - Collection Metabase : `03. Analyses thématiques/NN. <Sujet> <Année>`
 - Document de résultats (avant publication) : <lien document Metabase>
 
@@ -289,8 +290,8 @@ Notre sujet est l'écologie. Une référence qui traite d'un autre sujet ne sert
 
 Seulement ce qui s'écarte de la méthode commune. Sinon : « Méthode commune, sans écart. »
 
-- Période d'analyse : du ... au ... (justification, source datée)
-- Période de comparaison : du ... au ... (justification)
+- Période d'analyse : `<id>` dans le YAML, du ... au ... (justification, source datée)
+- Période de comparaison : `<id>` dans le YAML, du ... au ... (justification)
 - Contrôles : complétude, précision, rappel (résultat qualitatif et date ; aucun chiffre avant publication)
 
 ## 2. Mots-clés

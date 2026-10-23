@@ -17,7 +17,8 @@ load_dotenv(Path(__file__).resolve().parents[4] / ".env", override=False)
 def create_thematic_articles_table(con: duckdb.DuckDBPyConnection, 
                                     dry_run: bool,
                                     destination_table: str, 
-                                    postgres_db: str, schema:str = "public") -> None:
+                                    postgres_db: str, schema:str = "public",
+                                    users_to_grant: list[str] | None = None) -> None:
     """The database is already attached by configure_barometre_source: we only prepare the table."""
     try:
         logging.info(f"[{destination_table}] CONFIGURATION: Using {postgres_db}")
@@ -40,6 +41,9 @@ def create_thematic_articles_table(con: duckdb.DuckDBPyConnection,
                 )
             """)
             logging.info(f"[{destination_table}] TABLE CREATED OR ALREADY EXISTED")
+            if users_to_grant:
+                con.execute(f"CALL postgres_execute('{postgres_db}', 'GRANT SELECT ON {schema}.{destination_table} TO {', '.join(users_to_grant)}')")
+                logging.info(f"[{destination_table}] SELECT GRANTED TO {', '.join(users_to_grant)}")
 
     except Exception as e:
         logging.error(f"[{destination_table}] ERROR CONNECTING:")

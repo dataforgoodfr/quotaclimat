@@ -42,6 +42,8 @@ COUNTRIES = {"france": "fr","belgium": "be", "belgium_flanders": "befl" }
 
 SOURCE_TABLE = "public.keywords"
 DESTINATION_SCHEMA = "thematic_extracts"
+# Postgres users granted SELECT on the destination table at its creation (quoted: names contain hyphens)
+USERS_TO_GRANT = ['"climateguard-reader-user"', '"metabase-analytics-prod"']
 MEDIA_TYPE="audiovisuel"
 MODES = ("new", "resume", "reset")
 
@@ -142,7 +144,7 @@ def run() -> None:
             raise ValueError(
                 f"[RUN] {destination_table} already exists: rerun with MODE=resume or MODE=reset"
             )
-        kw_utils.create_thematic_keywords_table(_con, DRY_RUN, destination_table, POSTGRES_DB, DESTINATION_SCHEMA)
+        kw_utils.create_thematic_keywords_table(_con, DRY_RUN, destination_table, POSTGRES_DB, DESTINATION_SCHEMA, USERS_TO_GRANT)
 
     ### RESUME: the table must exist, restart from its last ingested day
     elif MODE == "resume":
@@ -164,7 +166,7 @@ def run() -> None:
                 raise ValueError(f"[RUN] Failed to clear {destination_table}") from e
         else:
             logging.warning(f"[RUN] MODE=reset but {destination_table} does not exist: creating it")
-            kw_utils.create_thematic_keywords_table(_con, DRY_RUN, destination_table, POSTGRES_DB, DESTINATION_SCHEMA)
+            kw_utils.create_thematic_keywords_table(_con, DRY_RUN, destination_table, POSTGRES_DB, DESTINATION_SCHEMA, USERS_TO_GRANT)
 
     ### Configuring s3 connection
     kw_utils._configure_s3(_con, S3_ENDPOINT_URL, S3_REGION, S3_ACCESS_KEY, S3_SECRET_KEY)

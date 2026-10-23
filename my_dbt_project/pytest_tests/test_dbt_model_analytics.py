@@ -1464,17 +1464,24 @@ def test_curated_documented_in_postgres(db_connection):
 
 
 def test_curated_readable_by_metabase(db_connection):
-    """The readers of the curated tables (select grants, dev roles here) also get usage on the curated schema
-    (post-hook grant_schema_usage): without it, Metabase cannot see the tables ("permission denied for schema")."""
+    """The readers of the dbt tables (select grants, dev roles here) also get usage on their schemas (on-run-end
+    hook grant_schema_usage): without it, Metabase cannot see the tables of a schema created by dbt, like curated
+    ("permission denied for schema")."""
     with db_connection.cursor() as cur:
         cur.execute("""
-            SELECT r.role, has_schema_privilege(r.role, 'curated', 'USAGE'),
-                has_table_privilege(r.role, 'curated.chaine', 'SELECT')
+            SELECT r.role, s.schema, has_schema_privilege(r.role, s.schema, 'USAGE'),
+                has_table_privilege(r.role, s.schema || '.' || s.table_name, 'SELECT')
             FROM unnest(ARRAY['metabase-analytics-dev', 'rrs-read-dev']) AS r(role)
-            ORDER BY r.role
+            CROSS JOIN (VALUES ('analytics', 'cas_de_mesinformation'), ('curated', 'chaine')) AS s(schema, table_name)
+            ORDER BY r.role, s.schema
         """)
         rows = cur.fetchall()
-    assert rows == [("metabase-analytics-dev", True, True), ("rrs-read-dev", True, True)]
+    assert rows == [
+        ("metabase-analytics-dev", "analytics", True, True),
+        ("metabase-analytics-dev", "curated", True, True),
+        ("rrs-read-dev", "analytics", True, True),
+        ("rrs-read-dev", "curated", True, True),
+    ]
 
 
 def test_curated_chaine(db_connection):

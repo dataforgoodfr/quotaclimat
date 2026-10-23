@@ -23,6 +23,11 @@ clean-targets:         # directories to be removed by `dbt clean`
   - "dbt_packages"
 
 
+# +grants only grant select on the tables: their readers also need usage on their schema (a schema created by
+# dbt, like curated, is not covered by the readonly privilege of Scaleway), see macros/grant_schema_usage.sql
+on-run-end:
+  - "{{ grant_schema_usage(results) }}"
+
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
 

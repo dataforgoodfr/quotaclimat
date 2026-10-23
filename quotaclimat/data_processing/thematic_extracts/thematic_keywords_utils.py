@@ -5,18 +5,12 @@ import duckdb
 from datetime import date, timedelta
 import pandas as pd
 import numpy as np
-import sys
-import hashlib
-import json
-import re
-import unicodedata
-from datetime import date
-import yaml
+
+import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
 
 # only local env
 load_dotenv(Path(__file__).resolve().parents[3] / ".env", override=False)
 
-from quotaclimat.data_processing.mediatree.keyword.keyword import THEME_KEYWORDS
 
 def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
                             keywords_to_look_for: list[str],
@@ -58,12 +52,12 @@ def read_barometre_keywords(con: duckdb.DuckDBPyConnection,
 def get_max_start_from_thematic_keywords(con: duckdb.DuckDBPyConnection, 
                                         postgres_db: str, 
                                         destination_table: str,
-                                        schema: str) -> date:
-    """Get the maximum start date from the destination table, or None if empty."""
+                                        schema: str, period: str) -> date:
+    """Get the maximum start date of a period in the destination table, or None if it has no rows."""
     try:
         result = con.sql(
             f"SELECT CAST(MAX(start) AT TIME ZONE 'Europe/Paris' AS DATE) "
-            f"FROM {postgres_db}.{schema}.{destination_table}"
+            f"FROM {postgres_db}.{schema}.{destination_table} WHERE period = '{period}'"
         ).fetchone()
         return result[0] if result and result[0] else None
     except Exception as e:
@@ -89,8 +83,10 @@ def create_thematic_keywords_table(con: duckdb.DuckDBPyConnection,
                     keywords_found VARCHAR,
                     themes VARCHAR,
                     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-                    plaintext VARCHAR NOT NULL,
+                    plaintext_normalized VARCHAR NOT NULL,
                     source_keywords_id VARCHAR,
+                    country VARCHAR NOT NULL,
+                    period VARCHAR NOT NULL,
                     PRIMARY KEY (this_id)
                 )
             """)
@@ -239,9 +235,12 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
         out["this_id"] = (out["channel_name"] + "_"
                   + out["start"].dt.tz_convert("UTC").dt.strftime("%Y%m%d%H%M%S").str.replace("+", "", regex=False))
         out["channel_title"] = out["channel_name"].map(channel_titles[country])
+        # plaintext was only needed to compare the source with S3: only the normalized form is ingested,
+        # like title / snippet / body of the articles
+        out["plaintext_normalized"] = out["plaintext"].map(utils.normalize_text)
         cols = ["this_id", "channel_name", "channel_title", "start",
                 "thematic_chunk",
-                "source_keywords_id", "keywords_found", "themes", "plaintext"]
+                "source_keywords_id", "keywords_found", "themes", "plaintext_normalized"]
         return out.sort_values(["channel_name", "start"])[cols].reset_index(drop=True)
 
     except Exception as e:

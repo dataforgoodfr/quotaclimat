@@ -90,6 +90,6 @@ tasks:
       POSTGRES_HOST: "{{ secret('POSTGRES_HOST') }}"
       POSTGRES_PASSWORD: "{{ secret('POSTGRES_PASSWORD') }}"
       # Metabase databases reading the barometre database (Scaleway Postgres), ids separated by spaces
-      METABASE_CURATED_DATABASES: "2"
+      METABASE_CURATED_DATABASES: "2 13"
       METABASE_URL: "{{ secret('METABASE_URL') }}"
       METABASE_API_KEY: "{{ secret('METABASE_API_KEY') }}"

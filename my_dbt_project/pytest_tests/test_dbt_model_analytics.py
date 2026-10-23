@@ -1463,6 +1463,20 @@ def test_curated_documented_in_postgres(db_connection):
     ]
 
 
+def test_curated_readable_by_metabase(db_connection):
+    """The readers of the curated tables (select grants, dev roles here) also get usage on the curated schema
+    (post-hook grant_schema_usage): without it, Metabase cannot see the tables ("permission denied for schema")."""
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT r.role, has_schema_privilege(r.role, 'curated', 'USAGE'),
+                has_table_privilege(r.role, 'curated.chaine', 'SELECT')
+            FROM unnest(ARRAY['metabase-analytics-dev', 'rrs-read-dev']) AS r(role)
+            ORDER BY r.role
+        """)
+        rows = cur.fetchall()
+    assert rows == [("metabase-analytics-dev", True, True), ("rrs-read-dev", True, True)]
+
+
 def test_curated_chaine(db_connection):
     """One row per channel of program_metadata, country in French."""
     with db_connection.cursor() as cur:

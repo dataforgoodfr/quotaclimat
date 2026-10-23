@@ -93,6 +93,8 @@ To use a reference table in a model, declare it as a dbt source; `source_or_empt
 * **Regular perimeter** (`EXTENDED_PERIMETER` unset/`false`): `rrs-read-dev` and `metabase-analytics-dev` are granted when `DBT_ENV` is unset/`dev`; `rrs-read-dev`, `rrs-read-prod`, `climateguard-reader-user` and `metabase-analytics-prod` are granted when `DBT_ENV=prod` (only `climateguard-reader-user` and `metabase-analytics-prod` for `dashboards`).
 * **Extended perimeter** (`EXTENDED_PERIMETER=true`, see the root README's "Extended perimeter (Droit à l'info)" section): the `extended-perimeter` database only has `rrs-read-{dev,prod}` users (no `climateguard-reader-user`, no `metabase-analytics-*`), so only the `rrs-read` user matching `DBT_ENV` is granted `select`.
 
+`+grants` only grant `select` on the tables, not `usage` on their schema. The `readonly` privilege of the Scaleway database users only covers the schemas that existed when it was set, so the `curated` schema, created later by dbt, also needs `usage`: the `on-run-end` hook `grant_schema_usage` (`macros/grant_schema_usage.sql`) grants it, once at the end of each run that builds `curated` models, to the roles of their `select` grants. Without it, Metabase cannot see the `curated` tables ("permission denied for schema curated"). Checked by `test_curated_readable_by_metabase`.
+
 ## Seeds
 `seeds/fixtures/*.csv` are snapshots of the source tables used to have deterministic local/test data. They are loaded with `dbt seed --select <name>` (see the root README for the exact commands used in the `testconsole`/analytics workflows).
 

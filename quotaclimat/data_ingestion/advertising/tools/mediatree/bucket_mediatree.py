@@ -450,6 +450,31 @@ async def download_media_parts(
     return parts
 
 
+async def list_available_part_starts(
+    fs: s3fs.S3FileSystem, channel: str, day: date
+) -> set[datetime]:
+    """UTC start datetimes of the 2-minutes archives in the bucket for `channel` on `day`
+    (UTC calendar date), without downloading them. Empty when the day folder doesn't exist.
+    """
+    try:
+        keys = await fs._ls(_get_s3_folder(channel, day), refresh=True)
+    except FileNotFoundError:
+        return set()
+
+    starts = set()
+    for key in keys:
+        basename = os.path.basename(key)
+        if not basename.endswith(".tar"):
+            continue
+        try:
+            start_date, _ = get_datetime_from_basename(os.path.splitext(basename)[0])
+        except ValueError:
+            logger.warning(f"Unexpected archive name in mediatree bucket: {key}")
+            continue
+        starts.add(start_date)
+    return starts
+
+
 def cleanup_day_media_parts(dest_dir: str) -> None:
     """Delete every file downloaded/extracted by `download_media_parts` for a group."""
     shutil.rmtree(dest_dir, ignore_errors=True)

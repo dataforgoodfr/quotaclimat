@@ -69,7 +69,8 @@ keyword_occurrences AS (
       ELSE 'Autre'
     END AS crise_type,
     kw ->> 'theme' AS theme,
-    kw ->> 'keyword' AS keyword
+    kw ->> 'keyword' AS keyword,
+    to_tsvector('french', kw ->> 'keyword') AS keyword_lemma
   FROM public.keywords k
   LEFT JOIN public.program_metadata pm
     ON k.channel_program = pm.channel_program
@@ -102,6 +103,7 @@ SELECT
   ko.crise_type,
   ko.theme,
   ko.keyword,
+  ko.keyword_lemma,
   kmc.general,
   kmc.agriculture,
   kmc.transport,
@@ -133,6 +135,7 @@ GROUP BY
   ko.crise_type,
   ko.theme,
   ko.keyword,
+  ko.keyword_lemma,
   kmc.general,
   kmc.agriculture,
   kmc.transport,

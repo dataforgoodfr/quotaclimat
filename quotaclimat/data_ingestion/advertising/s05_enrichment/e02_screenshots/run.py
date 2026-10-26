@@ -14,16 +14,16 @@ from sqlalchemy.dialects.postgresql import insert
 from postgres.database_connection import get_db_session
 from postgres.schemas.advertising.models import Ad, Ad_Occurrence, Ad_Screenshot
 from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
+    MARGIN_ON_MEDIA_EXPORT_HISTORY,
     ad_media_s3_key,
+    get_margin_from_detection_date,
 )
-from quotaclimat.data_ingestion.advertising.s02_exportation.run import (
-    MARGIN_ON_MEDIA_EXPORT,
-)
-from quotaclimat.data_ingestion.advertising.s06_screenshots.frames import (
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e02_screenshots.frames import (
     build_mosaic,
     extract_frame,
     frame_offsets,
     frame_positions_in_parts,
+    video_duration,
 )
 from quotaclimat.data_ingestion.advertising.tools.interactive_tqdm import (
     interactive_tqdm,
@@ -71,8 +71,6 @@ class Filters:
     ad_ids: list[str] = field(default_factory=list)
     # None: every ad, whatever its classification
     prediction_statuses: tuple[str, ...] | None = CLASSIFIED_PREDICTION_STATUSES
-    # occurrences per ad, picked at random but always the same ones (0: every occurrence)
-    max_occurrences_per_ad: int = 3
     limit: int | None = None
     # also redo the targets already marked missing_source (errors are always retried)
     retry_missing: bool = False
@@ -120,7 +118,7 @@ def _ad_filters(filters: Filters) -> list:
 
 
 def ads_query(filters: Filters):
-    query = select(Ad.id, Ad.duration_sec).where(
+    query = select(Ad.id, Ad.duration_sec, Ad.first_detection_date).where(
         *_ad_filters(filters),
         _not_already_done("ad", Ad.id, filters.retry_missing),
     )
@@ -141,46 +139,31 @@ def ads_query(filters: Filters):
 def occurrences_query(filters: Filters):
     """Occurrences to screenshot, ordered by channel and date so that the occurrences sharing
     the same mediatree archives are processed together.
-
-    The sample of each ad is taken before leaving out the occurrences already done (md5 of the id:
-    random but stable), so a new run completes the same sample rather than drawing a new one.
     """
-    ranked = select(
-        Ad_Occurrence.id,
-        Ad_Occurrence.ad_id,
-        Ad_Occurrence.channel_name,
-        Ad_Occurrence.occurrence_date,
-        func.row_number()
-        .over(partition_by=Ad_Occurrence.ad_id, order_by=func.md5(Ad_Occurrence.id))
-        .label("rank_in_ad"),
-    ).where(Ad_Occurrence.deleted_at.is_(None))
-    if filters.start_date:
-        ranked = ranked.where(Ad_Occurrence.occurrence_date >= filters.start_date)
-    if filters.end_date:
-        ranked = ranked.where(Ad_Occurrence.occurrence_date < filters.end_date)
-    if filters.channel:
-        ranked = ranked.where(Ad_Occurrence.channel_name == filters.channel)
-    ranked = ranked.subquery()
-
     query = (
         select(
-            ranked.c.id,
-            ranked.c.ad_id,
-            ranked.c.channel_name,
-            ranked.c.occurrence_date,
+            Ad_Occurrence.id,
+            Ad_Occurrence.ad_id,
+            Ad_Occurrence.channel_name,
+            Ad_Occurrence.occurrence_date,
             Ad.duration_sec,
         )
-        .join(Ad, Ad.id == ranked.c.ad_id)
+        .join(Ad, Ad.id == Ad_Occurrence.ad_id)
         .where(
+            Ad_Occurrence.deleted_at.is_(None),
             *_ad_filters(filters),
-            _not_already_done("occurrence", ranked.c.id, filters.retry_missing),
+            _not_already_done("occurrence", Ad_Occurrence.id, filters.retry_missing),
         )
     )
-    if filters.max_occurrences_per_ad:
-        query = query.where(ranked.c.rank_in_ad <= filters.max_occurrences_per_ad)
-    return query.order_by(ranked.c.channel_name, ranked.c.occurrence_date).limit(
-        filters.limit
-    )
+    if filters.start_date:
+        query = query.where(Ad_Occurrence.occurrence_date >= filters.start_date)
+    if filters.end_date:
+        query = query.where(Ad_Occurrence.occurrence_date < filters.end_date)
+    if filters.channel:
+        query = query.where(Ad_Occurrence.channel_name == filters.channel)
+    return query.order_by(
+        Ad_Occurrence.channel_name, Ad_Occurrence.occurrence_date
+    ).limit(filters.limit)
 
 
 def save_results(session, results: list[ScreenshotResult]) -> None:
@@ -246,8 +229,31 @@ async def _mosaic_from_frames(
     return await _upload_mosaic(fs, mosaic_path, target_type, target_id), nb_frames
 
 
+def export_margin_sec(
+    ad_duration_sec: float,
+    first_detection_date: datetime,
+    video_duration_sec: float | None,
+) -> float:
+    """Margin the exportation (s02) put before (and after) the ad in raw.mp4, in seconds.
+
+    It changed over time (MARGIN_ON_MEDIA_EXPORT_HISTORY, 1s then 0.1s). The detection date gives the
+    margin of the first export, but an ad exported later (merged ad, mp4 exported again) has the
+    margin of its export: when the video duration is known, the margin of the history closest to
+    (video duration - ad duration) / 2 is used, the detection date otherwise.
+    """
+    known_margins = {m.total_seconds() for _, m in MARGIN_ON_MEDIA_EXPORT_HISTORY}
+    if video_duration_sec is not None:
+        measured = (video_duration_sec - ad_duration_sec) / 2
+        return min(known_margins, key=lambda m: abs(m - measured))
+    margin = get_margin_from_detection_date(first_detection_date)
+    return margin.total_seconds() if margin is not None else 0.0
+
+
 async def screenshot_ad(
-    fs: s3fs.S3FileSystem, ad_id: str, duration_sec: float
+    fs: s3fs.S3FileSystem,
+    ad_id: str,
+    duration_sec: float,
+    first_detection_date: datetime,
 ) -> ScreenshotResult:
     """Mosaic of the ad, from the video saved by the exportation (s02): ads/<ad_id>/raw.mp4."""
     offsets = frame_offsets(duration_sec)
@@ -269,12 +275,15 @@ async def screenshot_ad(
             result.details = {"missing": ad_media_s3_key(ad_id, "mp4")}
             return result
 
-        # raw.mp4 starts MARGIN_ON_MEDIA_EXPORT before the occurrence it was cut from
-        margin = MARGIN_ON_MEDIA_EXPORT.total_seconds()
+        # raw.mp4 starts a margin before the occurrence it was cut from
+        margin = export_margin_sec(
+            duration_sec, first_detection_date, await video_duration(video_path)
+        )
         frames = [(video_path, margin + offset) for offset in offsets]
         result.image_url, result.nb_frames = await _mosaic_from_frames(
             fs, frames, work_dir, "ad", ad_id
         )
+        result.details = {"margin_sec": margin}
     except Exception as e:
         logger.error(f"Failed to screenshot ad {ad_id}: {e}")
         result.status = "error"
@@ -389,18 +398,29 @@ async def screenshot_occurrence_group(
     return results
 
 
-def _group_by_channel_day(occurrences: list) -> dict[tuple[str, date], list]:
-    groups: dict[tuple[str, date], list] = {}
-    for occurrence in occurrences:
+def iter_occurrences_by_channel_day(session, query, page_size: int = 1000):
+    """Stream the occurrences of the query (ordered by channel and date) from Postgres with a
+    server-side cursor, one (channel, UTC day) group at a time: only one group is held in memory.
+    The UTC day matches how mediatree lays out its bucket.
+    """
+    result = session.execute(query, execution_options={"stream_results": True})
+    current_key = None
+    current_group = []
+    for occurrence in result.yield_per(page_size):
         key = (occurrence.channel_name, occurrence.occurrence_date.date())
-        groups.setdefault(key, []).append(occurrence)
-    return groups
+        if current_key is not None and key != current_key:
+            yield current_key, current_group
+            current_group = []
+        current_key = key
+        current_group.append(occurrence)
+    if current_group:
+        yield current_key, current_group
 
 
-def _log_counts(label: str, results: list[ScreenshotResult]) -> None:
+def _log_counts(label: str, statuses: list[str]) -> None:
     counts: dict[str, int] = {}
-    for r in results:
-        counts[r.status] = counts.get(r.status, 0) + 1
+    for status in statuses:
+        counts[status] = counts.get(status, 0) + 1
     logger.info(f"{label}: {counts}")
 
 
@@ -412,9 +432,9 @@ async def run_ads(session, fs: s3fs.S3FileSystem, filters: Filters) -> None:
     progress = interactive_tqdm(total=len(ads), desc="Screenshots of ads")
     all_results = []
 
-    async def _limited(ad_id, duration_sec):
+    async def _limited(ad_id, duration_sec, first_detection_date):
         async with semaphore:
-            result = await screenshot_ad(fs, ad_id, duration_sec)
+            result = await screenshot_ad(fs, ad_id, duration_sec, first_detection_date)
             progress.count(result.status)
             progress.update(1)
             return result
@@ -424,32 +444,33 @@ async def run_ads(session, fs: s3fs.S3FileSystem, filters: Filters) -> None:
             batch = ads[i : i + BATCH_SIZE]
             results = await asyncio.gather(*(_limited(*ad) for ad in batch))
             save_results(session, results)
-            all_results += results
+            all_results += [r.status for r in results]
     finally:
         progress.close()
     _log_counts("Ads", all_results)
 
 
-async def run_occurrences(session, fs: s3fs.S3FileSystem, filters: Filters) -> None:
-    occurrences = session.execute(occurrences_query(filters)).all()
-    groups = _group_by_channel_day(occurrences)
-    logger.info(
-        f"{len(occurrences)} occurrences to screenshot in {len(groups)} channel-days"
-    )
+async def run_occurrences(
+    read_session, write_session, fs: s3fs.S3FileSystem, filters: Filters
+) -> None:
+    query = occurrences_query(filters)
+    total = write_session.execute(
+        select(func.count()).select_from(query.subquery())
+    ).scalar()
+    logger.info(f"{total} occurrences to screenshot")
 
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
-    progress = interactive_tqdm(
-        total=len(occurrences), desc="Screenshots of occurrences"
-    )
+    progress = interactive_tqdm(total=total, desc="Screenshots of occurrences")
     all_results = []
     try:
-        for (channel, _), group in groups.items():
+        for (channel, _), group in iter_occurrences_by_channel_day(read_session, query):
             results = await screenshot_occurrence_group(fs, channel, group, semaphore)
-            save_results(session, results)
+            # written with another session: a commit would close the streaming cursor
+            save_results(write_session, results)
             for r in results:
                 progress.count(r.status)
             progress.update(len(results))
-            all_results += results
+            all_results += [r.status for r in results]
     finally:
         progress.close()
     _log_counts("Occurrences", all_results)
@@ -457,16 +478,13 @@ async def run_occurrences(session, fs: s3fs.S3FileSystem, filters: Filters) -> N
 
 async def run(filters: Filters, targets: set[str]) -> None:
     os.makedirs(LOCAL_CACHE_DIR, exist_ok=True)
-    session = get_db_session()
     # The mediatree bucket and the advertising bucket share the endpoint and credentials
     fs = get_s3_filesystem()
-    try:
+    with get_db_session() as read_session, get_db_session() as write_session:
         if "ads" in targets:
-            await run_ads(session, fs, filters)
+            await run_ads(write_session, fs, filters)
         if "occurrences" in targets:
-            await run_occurrences(session, fs, filters)
-    finally:
-        session.close()
+            await run_occurrences(read_session, write_session, fs, filters)
 
 
 def _parse_date(name: str) -> datetime | None:
@@ -494,7 +512,6 @@ def filters_from_env() -> Filters:
             a.strip() for a in os.environ.get("AD_IDS", "").split(",") if a.strip()
         ],
         prediction_statuses=prediction_statuses,
-        max_occurrences_per_ad=int(os.environ.get("MAX_OCCURRENCES_PER_AD", 3)),
         limit=int(limit) if limit else None,
         retry_missing=os.environ.get("RETRY_MISSING", "false").lower() == "true",
     )

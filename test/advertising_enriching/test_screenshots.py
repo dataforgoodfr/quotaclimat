@@ -1,4 +1,4 @@
-"""Screenshots of the ads and occurrences (s06_screenshots): frame positions, ffmpeg mosaic, and
+"""Screenshots of the ads and occurrences (s05_enrichment/e02_screenshots): frame positions, ffmpeg mosaic, and
 selection / saving on a PostgreSQL database, with the S3 buckets mocked."""
 
 import asyncio
@@ -20,8 +20,10 @@ from postgres.schemas.advertising.models import (
     Ad_Screenshot,
     AdvertisingBase,
 )
-from quotaclimat.data_ingestion.advertising.s06_screenshots import run as screenshots
-from quotaclimat.data_ingestion.advertising.s06_screenshots.frames import (
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e02_screenshots import (
+    run as screenshots,
+)
+from quotaclimat.data_ingestion.advertising.s05_enrichment.e02_screenshots.frames import (
     build_mosaic,
     extract_frame,
     frame_offsets,
@@ -29,7 +31,7 @@ from quotaclimat.data_ingestion.advertising.s06_screenshots.frames import (
 )
 
 T0 = datetime(2026, 4, 13, 20, 0, 0)
-RUN_MODULE = "quotaclimat.data_ingestion.advertising.s06_screenshots.run"
+RUN_MODULE = "quotaclimat.data_ingestion.advertising.s05_enrichment.e02_screenshots.run"
 
 needs_ffmpeg = pytest.mark.skipif(
     shutil.which("ffmpeg") is None, reason="ffmpeg is not installed"
@@ -145,27 +147,24 @@ def _add_ad(session, ad_id, nb_occurrences, status="subcat_done", channel="tf1")
     session.commit()
 
 
-def test_queries_sample_occurrences_and_skip_done(session):
+def test_queries_take_every_occurrence_and_skip_done(session):
     _add_ad(session, "ad-a", 5)
     _add_ad(session, "ad-b", 2)
     _add_ad(session, "ad-unclassified", 2, status=None)
 
-    filters = screenshots.Filters(max_occurrences_per_ad=3)
+    filters = screenshots.Filters()
     ads = session.execute(screenshots.ads_query(filters)).all()
     assert sorted(a.id for a in ads) == ["ad-a", "ad-b"]
 
     occurrences = session.execute(screenshots.occurrences_query(filters)).all()
-    by_ad = {}
-    for o in occurrences:
-        by_ad.setdefault(o.ad_id, []).append(o.id)
-    assert {ad: len(ids) for ad, ids in by_ad.items()} == {"ad-a": 3, "ad-b": 2}
+    assert len(occurrences) == 7
 
     screenshots.save_results(
         session,
         [
             screenshots.ScreenshotResult(
                 target_type="occurrence",
-                target_id=by_ad["ad-a"][0],
+                target_id="ad-a-occ0",
                 ad_id="ad-a",
                 status="done",
                 source="mediatree_archive",
@@ -175,7 +174,7 @@ def test_queries_sample_occurrences_and_skip_done(session):
             ),
             screenshots.ScreenshotResult(
                 target_type="occurrence",
-                target_id=by_ad["ad-a"][1],
+                target_id="ad-a-occ1",
                 ad_id="ad-a",
                 status="missing_source",
                 source="mediatree_archive",
@@ -183,21 +182,53 @@ def test_queries_sample_occurrences_and_skip_done(session):
             ),
         ],
     )
-    # the sample stays the same: only the third sampled occurrence of ad-a is left
     remaining = session.execute(screenshots.occurrences_query(filters)).all()
-    assert sorted(o.id for o in remaining if o.ad_id == "ad-a") == [by_ad["ad-a"][2]]
+    assert sorted(o.id for o in remaining if o.ad_id == "ad-a") == [
+        "ad-a-occ2",
+        "ad-a-occ3",
+        "ad-a-occ4",
+    ]
 
     retried = session.execute(
-        screenshots.occurrences_query(
-            screenshots.Filters(max_occurrences_per_ad=3, retry_missing=True)
-        )
+        screenshots.occurrences_query(screenshots.Filters(retry_missing=True))
     ).all()
-    assert sorted(o.id for o in retried if o.ad_id == "ad-a") == sorted(
-        by_ad["ad-a"][1:]
-    )
+    assert "ad-a-occ1" in {o.id for o in retried}
 
-    every = screenshots.Filters(max_occurrences_per_ad=0, prediction_statuses=None)
+    every = screenshots.Filters(prediction_statuses=None)
     assert len(session.execute(screenshots.occurrences_query(every)).all()) == 7
+
+
+def test_occurrences_streamed_by_channel_day(session):
+    _add_ad(session, "ad-a", 2, channel="tf1")
+    _add_ad(session, "ad-b", 2, channel="france2")
+    session.add(
+        Ad_Occurrence(
+            id="ad-a-next-day",
+            occurrence_date=T0 + timedelta(days=1),
+            channel_name="tf1",
+            ad_id="ad-a",
+        )
+    )
+    session.commit()
+
+    groups = list(
+        screenshots.iter_occurrences_by_channel_day(
+            session, screenshots.occurrences_query(screenshots.Filters()), page_size=2
+        )
+    )
+    assert [(key, [o.id for o in group]) for key, group in groups] == [
+        (("france2", T0.date()), ["ad-b-occ0", "ad-b-occ1"]),
+        (("tf1", T0.date()), ["ad-a-occ0", "ad-a-occ1"]),
+        (("tf1", T0.date() + timedelta(days=1)), ["ad-a-next-day"]),
+    ]
+
+
+def test_export_margin_from_video_duration_or_detection_date():
+    # 1s margins before 2026-04-27, 0.1s after
+    assert screenshots.export_margin_sec(12.0, datetime(2026, 1, 1), 14.02) == 1.0
+    assert screenshots.export_margin_sec(12.0, datetime(2026, 1, 1), 12.21) == 0.1
+    assert screenshots.export_margin_sec(12.0, datetime(2026, 1, 1), None) == 1.0
+    assert screenshots.export_margin_sec(12.0, datetime(2026, 6, 1), None) == 0.1
 
 
 @needs_ffmpeg
@@ -247,7 +278,8 @@ def test_occurrence_group_marks_missing_archives(session, tmp_path, monkeypatch)
 
 @needs_ffmpeg
 def test_screenshot_ad_from_exported_video(tmp_path, monkeypatch):
-    video = _test_video(str(tmp_path / "raw.mp4"), duration_sec=13)
+    # 12s ad exported with the 1s margins
+    video = _test_video(str(tmp_path / "raw.mp4"), duration_sec=14)
     monkeypatch.setattr(screenshots, "LOCAL_CACHE_DIR", str(tmp_path))
 
     async def _get_file(s3_key, local_path):
@@ -257,11 +289,12 @@ def test_screenshot_ad_from_exported_video(tmp_path, monkeypatch):
 
     fs = SimpleNamespace(_get_file=_get_file)
     with patch(f"{RUN_MODULE}._upload_mosaic", AsyncMock(return_value="https://img")):
-        done = asyncio.run(screenshots.screenshot_ad(fs, "ad-a", 12.0))
-        missing = asyncio.run(screenshots.screenshot_ad(fs, "missing-ad", 12.0))
+        done = asyncio.run(screenshots.screenshot_ad(fs, "ad-a", 12.0, T0))
+        missing = asyncio.run(screenshots.screenshot_ad(fs, "missing-ad", 12.0, T0))
 
     assert done.status == "done"
     assert done.nb_frames == 6
     assert done.frame_offsets_sec == [1.0, 3.0, 5.0, 7.0, 9.0, 11.0]
+    assert done.details == {"margin_sec": 1.0}
     assert missing.status == "missing_source"
     assert missing.image_url is None

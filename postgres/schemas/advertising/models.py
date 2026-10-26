@@ -150,7 +150,7 @@ class Ad_Screenshot(AdvertisingBase):
 
     One row per ad or occurrence: one mosaic image of a few frames taken at the same relative
     positions in the ad, so the mosaic of an occurrence compares tile by tile with its ad's.
-    See s06_screenshots/README.md.
+    See s05_enrichment/e02_screenshots/README.md.
     """
 
     __tablename__ = "ad_screenshot"

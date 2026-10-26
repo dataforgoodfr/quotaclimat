@@ -34,6 +34,27 @@ def frame_positions_in_parts(
     return positions
 
 
+async def video_duration(video_path: str) -> float | None:
+    """Duration of the video container in seconds, None when ffprobe can't read it."""
+    process = await asyncio.create_subprocess_exec(
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "format=duration",
+        "-of",
+        "default=noprint_wrappers=1:nokey=1",
+        video_path,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, _ = await process.communicate()
+    try:
+        return float(stdout.decode().strip())
+    except ValueError:
+        return None
+
+
 async def _run_ffmpeg(*args: str) -> None:
     process = await asyncio.create_subprocess_exec(
         "ffmpeg",

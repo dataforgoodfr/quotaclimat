@@ -72,3 +72,15 @@ groupes:
     couleurs:
       Web: "#F9D45C"
       Print: "#F2A86F"
+
+  public_prive:
+    description: >-
+      Chaîne publique ou privée. Colonne booléenne public : la série s'appelle "true" ou "false" dans les
+      réglages Metabase (series_settings), titrée Public ou Privé. Enregistrées dans la question 1376, et
+      confirmées sur la légende de la question 1370, où elles sont automatiques.
+    reference:
+      - 1376 # barres, secteurs par type de média
+      - 1370 # barres, couverture par type de média
+    couleurs:
+      "true": "#98D9D9" # Public
+      "false": "#EF8C8C" # Privé

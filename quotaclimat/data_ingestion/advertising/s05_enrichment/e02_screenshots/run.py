@@ -3,7 +3,7 @@ import logging
 import os
 import shutil
 import tempfile
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
@@ -60,9 +60,6 @@ CLASSIFIED_PREDICTION_STATUSES = (
 
 MAX_CONCURRENT_JOBS = 10
 BATCH_SIZE = 50
-# Occurrences are processed by batches of ads, the most broadcast first: within a batch, the occurrences
-# sharing the same mediatree archives are still processed together.
-ADS_PER_OCCURRENCE_BATCH = int(os.environ.get("ADS_PER_OCCURRENCE_BATCH", 20))
 LOCAL_CACHE_DIR = "./.cache/screenshots"
 
 
@@ -75,8 +72,6 @@ class Filters:
     # None: every ad, whatever its classification
     prediction_statuses: tuple[str, ...] | None = CLASSIFIED_PREDICTION_STATUSES
     limit: int | None = None
-    # only the occurrences broadcast from this date (the ads keep start_date / end_date on their detection)
-    occurrences_from: datetime | None = None
     # also redo the targets already marked missing_source (errors are always retried)
     retry_missing: bool = False
 
@@ -122,29 +117,8 @@ def _ad_filters(filters: Filters) -> list:
     return conditions
 
 
-def _occurrence_counts(filters: Filters):
-    """Number of occurrences of each ad (on the channel and from occurrences_from when set): the
-    priority of the ads, the most broadcast first."""
-    query = select(Ad_Occurrence.ad_id, func.count().label("nb_occurrences")).where(
-        Ad_Occurrence.deleted_at.is_(None)
-    )
-    if filters.occurrences_from:
-        query = query.where(Ad_Occurrence.occurrence_date >= filters.occurrences_from)
-    if filters.channel:
-        query = query.where(Ad_Occurrence.channel_name == filters.channel)
-    return query.group_by(Ad_Occurrence.ad_id).subquery()
-
-
 def ads_query(filters: Filters):
-    """Ads to screenshot, the most broadcast first. With a channel or occurrences_from, only the ads
-    broadcast there."""
-    counts = _occurrence_counts(filters)
-    query = select(Ad.id, Ad.duration_sec, Ad.first_detection_date).join(
-        counts,
-        counts.c.ad_id == Ad.id,
-        isouter=not (filters.channel or filters.occurrences_from),
-    )
-    query = query.where(
+    query = select(Ad.id, Ad.duration_sec, Ad.first_detection_date).where(
         *_ad_filters(filters),
         _not_already_done("ad", Ad.id, filters.retry_missing),
     )
@@ -152,21 +126,14 @@ def ads_query(filters: Filters):
         query = query.where(Ad.first_detection_date >= filters.start_date)
     if filters.end_date:
         query = query.where(Ad.first_detection_date < filters.end_date)
-    return query.order_by(counts.c.nb_occurrences.desc().nulls_last(), Ad.id).limit(
-        filters.limit
-    )
-
-
-def ranked_ad_ids_query(filters: Filters):
-    """Ids of the ads having occurrences, the most broadcast first: the order of the occurrence
-    batches."""
-    counts = _occurrence_counts(filters)
-    return (
-        select(Ad.id)
-        .join(counts, counts.c.ad_id == Ad.id)
-        .where(*_ad_filters(filters))
-        .order_by(counts.c.nb_occurrences.desc(), Ad.id)
-    )
+    if filters.channel:
+        query = query.where(
+            exists().where(
+                Ad_Occurrence.ad_id == Ad.id,
+                Ad_Occurrence.channel_name == filters.channel,
+            )
+        )
+    return query.order_by(Ad.first_detection_date).limit(filters.limit)
 
 
 def occurrences_query(filters: Filters):
@@ -192,8 +159,6 @@ def occurrences_query(filters: Filters):
         query = query.where(Ad_Occurrence.occurrence_date >= filters.start_date)
     if filters.end_date:
         query = query.where(Ad_Occurrence.occurrence_date < filters.end_date)
-    if filters.occurrences_from:
-        query = query.where(Ad_Occurrence.occurrence_date >= filters.occurrences_from)
     if filters.channel:
         query = query.where(Ad_Occurrence.channel_name == filters.channel)
     return query.order_by(
@@ -488,48 +453,24 @@ async def run_ads(session, fs: s3fs.S3FileSystem, filters: Filters) -> None:
 async def run_occurrences(
     read_session, write_session, fs: s3fs.S3FileSystem, filters: Filters
 ) -> None:
-    """Screenshot the occurrences by batches of ADS_PER_OCCURRENCE_BATCH ads, the most broadcast
-    first, so that their checks are complete first. Within a batch, one (channel, day) group at a time.
-    """
+    query = occurrences_query(filters)
     total = write_session.execute(
-        select(func.count()).select_from(occurrences_query(filters).subquery())
+        select(func.count()).select_from(query.subquery())
     ).scalar()
-    if filters.limit is not None:
-        total = min(total, filters.limit)
-    ranked_ad_ids = write_session.execute(ranked_ad_ids_query(filters)).scalars().all()
-    logger.info(
-        f"{total} occurrences to screenshot, {len(ranked_ad_ids)} ads by batches of "
-        f"{ADS_PER_OCCURRENCE_BATCH}"
-    )
+    logger.info(f"{total} occurrences to screenshot")
 
     semaphore = asyncio.Semaphore(MAX_CONCURRENT_JOBS)
     progress = interactive_tqdm(total=total, desc="Screenshots of occurrences")
     all_results = []
     try:
-        for i in range(0, len(ranked_ad_ids), ADS_PER_OCCURRENCE_BATCH):
-            remaining = (
-                None if filters.limit is None else filters.limit - len(all_results)
-            )
-            if remaining is not None and remaining <= 0:
-                break
-            batch_filters = replace(
-                filters,
-                ad_ids=ranked_ad_ids[i : i + ADS_PER_OCCURRENCE_BATCH],
-                limit=remaining,
-            )
-            groups = iter_occurrences_by_channel_day(
-                read_session, occurrences_query(batch_filters)
-            )
-            for (channel, _), group in groups:
-                results = await screenshot_occurrence_group(
-                    fs, channel, group, semaphore
-                )
-                # written with another session: a commit would close the streaming cursor
-                save_results(write_session, results)
-                for r in results:
-                    progress.count(r.status)
-                progress.update(len(results))
-                all_results += [r.status for r in results]
+        for (channel, _), group in iter_occurrences_by_channel_day(read_session, query):
+            results = await screenshot_occurrence_group(fs, channel, group, semaphore)
+            # written with another session: a commit would close the streaming cursor
+            save_results(write_session, results)
+            for r in results:
+                progress.count(r.status)
+            progress.update(len(results))
+            all_results += [r.status for r in results]
     finally:
         progress.close()
     _log_counts("Occurrences", all_results)
@@ -572,7 +513,6 @@ def filters_from_env() -> Filters:
         ],
         prediction_statuses=prediction_statuses,
         limit=int(limit) if limit else None,
-        occurrences_from=_parse_date("OCCURRENCES_FROM"),
         retry_missing=os.environ.get("RETRY_MISSING", "false").lower() == "true",
     )
 

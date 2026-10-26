@@ -1,11 +1,19 @@
+import asyncio
 import logging
+import os
+from collections import defaultdict
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from quotaclimat.data_ingestion.advertising.s01_detection.tools.program import (
     Show,
-    extend_program_by,
     get_channel_program,
+)
+from quotaclimat.data_ingestion.advertising.tools.mediatree.bucket_mediatree import (
+    get_s3_filesystem,
+    list_channels,
+    list_days_parts,
 )
 from quotaclimat.data_ingestion.advertising.tools.segments import Segment
 
@@ -13,100 +21,20 @@ logger = logging.getLogger(__name__)
 
 tz_paris = ZoneInfo("Europe/Paris")
 
+# Mediatree sends 2-minutes files, aligned on even minutes
+PART_DURATION = timedelta(minutes=2)
 
-def _all_intervals_between(
-    start_date: datetime, end_date: datetime, interval: timedelta
-):
-    current_start = start_date
-    while current_start < end_date:
-        current_end = min(current_start + interval, end_date)
-        yield (current_start, current_end)
-        current_start = current_end
+# Margins mediatree records around each show of the program
+MARGIN_BEFORE = timedelta(
+    minutes=int(os.environ.get("PROGRAM_MARGIN_BEFORE_MINUTES") or 15)
+)
+MARGIN_AFTER = timedelta(
+    minutes=int(os.environ.get("PROGRAM_MARGIN_AFTER_MINUTES") or 15)
+)
 
+WEEKDAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 
-def _all_intervals_for_program(
-    program: list[Show], week_start_date: datetime, interval: timedelta
-):
-    for show in program:
-        start_date, end_date = show.for_week(week_start_date)
-
-        for segment_start_date, segment_end_date in _all_intervals_between(
-            start_date, end_date, interval
-        ):
-            yield (segment_start_date, segment_end_date)
-
-
-def _merge_segments(segments: list[Segment]) -> list[Segment]:
-    # This function merge consecutive shows in the same channel into a single show.
-    # For example, if there are two shows on TF1 on Monday from 20:00 to 21:00 and from 21:00 to 22:00, they would be merged into a single show from 20:00 to 22:00.
-    if not segments:
-        return []
-
-    # Sort shows by start time
-    segments.sort(key=lambda segment: segment.start_date)
-    merged_segments = [segments[0]]
-    for segment in segments[1:]:
-        last_segment = merged_segments[-1]
-        if (
-            segment.channel == last_segment.channel
-            and segment.start_date <= last_segment.end_date
-        ):
-            # Merge segments by extending the end time of the last segment
-            merged_segments[-1] = Segment(
-                channel=last_segment.channel,
-                start_date=last_segment.start_date,
-                end_date=max(last_segment.end_date, segment.end_date),
-            )
-        else:
-            merged_segments.append(segment)
-
-    return merged_segments
-
-
-def _partition_week(
-    start_date: str,  # Start of the analyzed week, format iso 2026-12-31
-    channel: str,
-) -> list[Segment]:
-    week_start_date = datetime.fromisoformat(start_date).replace(tzinfo=tz_paris)
-    return [
-        Segment(
-            start_date=segment_start_date,
-            end_date=segment_end_date,
-            channel=channel,
-        )
-        for segment_start_date, segment_end_date in _all_intervals_between(
-            week_start_date, week_start_date + timedelta(days=7), timedelta(minutes=30)
-        )
-    ]
-
-
-def _partition_week_program(
-    start_date: str,  # Start of the analyzed week, format iso 2026-12-31
-    channel: str,
-    margin: timedelta,
-    segment_size: timedelta = timedelta(minutes=10),
-) -> list[Segment]:
-    week_start_date = datetime.fromisoformat(start_date).replace(tzinfo=tz_paris)
-
-    # Ensures week_start_date is a Monday
-    if week_start_date.weekday() != 0:
-        raise ValueError("start_date must be a Monday")
-
-    if week_start_date > datetime.now(tz=tz_paris) - timedelta(days=7):
-        raise ValueError("start_date must be at least 7 days in the past")
-
-    program = extend_program_by(get_channel_program(channel), margin)
-
-    return [
-        Segment(
-            start_date=segment_start_date,
-            end_date=segment_end_date,
-            channel=channel,
-        )
-        for segment_start_date, segment_end_date in _all_intervals_for_program(
-            program, week_start_date, segment_size
-        )
-    ]
+Part = tuple[datetime, datetime]  # UTC start and end of a 2-minutes file
 
 
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
@@ -119,80 +47,353 @@ def _ceil_to_multiple(dt: datetime, rounding_drift: timedelta) -> datetime:
     return dt + (rounding_drift - remainder)
 
 
-def _add_rounding_drift(
-    segments: list[Segment], rounding_drift: timedelta
-) -> list[Segment]:
-    """This function ensures all segments start and stop at times that are multiples of the rounding_drift, to match provider file format.
-    If a segment start or end time is not aligned, it will be adjusted to the next multiple of rounding_drift.
-    For instance with a rounding_drift=timedelta(minutes=2), a segment starting at 10:01:30 will be adjusted to start at 10:02:00, and a segment ending at 10:03:45 will be adjusted to end at 10:04:00.
+def _parts_between(start_date: datetime, end_date: datetime) -> list[Part]:
+    """2-minutes parts mediatree sends for a requested interval.
+    Mediatree drifts the asked interval to match its two minutes file format: both bounds
+    are moved to the next multiple of 2 minutes (10:01:30 -> 10:02, 10:03:45 -> 10:04).
     """
-    return [
-        Segment(
-            start_date=_ceil_to_multiple(segment.start_date, rounding_drift),
-            end_date=_ceil_to_multiple(segment.end_date, rounding_drift),
-            channel=segment.channel,
+    current = _ceil_to_multiple(start_date.astimezone(timezone.utc), PART_DURATION)
+    end = _ceil_to_multiple(end_date.astimezone(timezone.utc), PART_DURATION)
+    parts = []
+    while current < end:
+        parts.append((current, current + PART_DURATION))
+        current += PART_DURATION
+    return parts
+
+
+def _merge_parts(parts: list[Part]) -> list[Part]:
+    # Merge contiguous parts into windows, e.g. 10:00-10:02 and 10:02-10:04 into 10:00-10:04
+    windows: list[Part] = []
+    for start, end in sorted(parts):
+        if windows and start <= windows[-1][1]:
+            windows[-1] = (windows[-1][0], max(windows[-1][1], end))
+        else:
+            windows.append((start, end))
+    return windows
+
+
+def _minutes(parts_count: int) -> int:
+    return parts_count * int(PART_DURATION.total_seconds()) // 60
+
+
+def _format_duration(minutes: int) -> str:
+    return f"{minutes // 60}h{minutes % 60:02d}"
+
+
+def _format_range(values: list[int]) -> str:
+    low, high = min(values), max(values)
+    return f"{low} min" if low == high else f"{low} to {high} min"
+
+
+def _format_days(days: set[int]) -> str:
+    """{0, 1, 2, 3, 4} -> "mon-fri", {0, 2, 3} -> "mon, wed-thu", all days -> "every day"."""
+    if days == set(range(7)):
+        return "every day"
+    runs: list[list[int]] = []
+    for day in sorted(days):
+        if runs and day == runs[-1][-1] + 1:
+            runs[-1].append(day)
+        else:
+            runs.append([day])
+    return ", ".join(
+        WEEKDAYS[run[0]] if len(run) == 1 else f"{WEEKDAYS[run[0]]}-{WEEKDAYS[run[-1]]}"
+        for run in runs
+    )
+
+
+def _hhmm(dt: datetime) -> str:
+    return dt.astimezone(tz_paris).strftime("%H:%M")
+
+
+@dataclass
+class ShowCover:
+    show: Show
+    start_date: datetime  # Paris time, without margins
+    end_date: datetime
+    expected_parts: list[Part]  # With margins
+    missing_parts: list[Part]
+
+    @property
+    def weekday(self) -> int:
+        return self.start_date.weekday()
+
+    @property
+    def slot(self) -> str:
+        return f"{_hhmm(self.start_date)}-{_hhmm(self.end_date)}"
+
+    @property
+    def missing_show_parts(self) -> list[Part]:
+        # Missing parts overlapping the show itself, margins excluded
+        return [
+            (start, end)
+            for start, end in self.missing_parts
+            if start < self.end_date and end > self.start_date
+        ]
+
+    @property
+    def show_parts_count(self) -> int:
+        return sum(
+            1
+            for start, end in self.expected_parts
+            if start < self.end_date and end > self.start_date
         )
-        for segment in segments
-    ]
+
+    @property
+    def status(self) -> str:
+        if not self.missing_parts:
+            return "complete"
+        if len(self.missing_show_parts) == 0:
+            return "margins"
+        if len(self.missing_show_parts) == self.show_parts_count:
+            return "absent"
+        return "incomplete"
+
+
+@dataclass
+class CoverReport:
+    channel: str
+    week_start_date: datetime
+    shows: list[ShowCover]
+    expected_parts: list[Part]
+    missing_parts: list[Part]
+    unexpected_parts: list[Part]
+
+    def count_shows(self, status: str) -> int:
+        return sum(1 for show in self.shows if show.status == status)
+
+    @property
+    def missing_pct(self) -> float:
+        if not self.expected_parts:
+            return 0.0
+        return 100 * len(self.missing_parts) / len(self.expected_parts)
+
+    def _missing_slots_lines(self) -> list[str]:
+        # Group the missing windows by time of day, so that a slot missing every day is written once
+        days_by_slot: dict[tuple[str, str], set[int]] = defaultdict(set)
+        for start, end in _merge_parts(self.missing_parts):
+            days_by_slot[(_hhmm(start), _hhmm(end))].add(
+                start.astimezone(tz_paris).weekday()
+            )
+        return [
+            f"    {_format_days(days):<22} {start}-{end}"
+            for (start, end), days in sorted(days_by_slot.items())
+        ]
+
+    def _shows_lines(self) -> list[str]:
+        airing_days: dict[tuple[str, str], set[int]] = defaultdict(set)
+        by_status: dict[tuple[str, str, str], list[ShowCover]] = defaultdict(list)
+        for show in self.shows:
+            key = (show.show.program_name or "(unnamed show)", show.slot)
+            airing_days[key].add(show.weekday)
+            if show.status != "complete":
+                by_status[(show.status, *key)].append(show)
+
+        status_order = {"absent": 0, "incomplete": 1, "margins": 2}
+        lines = []
+        for status, name, slot in sorted(
+            by_status, key=lambda k: (status_order[k[0]], k[2], k[1])
+        ):
+            shows = by_status[(status, name, slot)]
+            days = {show.weekday for show in shows}
+            days_str = _format_days(days)
+            if days == airing_days[(name, slot)] and len(days) > 1:
+                days_str += " (every airing day)"
+            margins_missing = [
+                _minutes(len(s.missing_parts) - len(s.missing_show_parts))
+                for s in shows
+            ]
+            if status == "absent":
+                detail = "show entirely missing"
+            elif status == "incomplete":
+                detail = f"{_format_range([_minutes(len(s.missing_show_parts)) for s in shows])} of the show missing"
+            else:
+                detail = "show complete, only margins missing"
+            if status == "incomplete" and max(margins_missing) > 0:
+                detail += f", plus {_format_range(margins_missing)} of margins"
+            elif status == "margins":
+                detail += f" ({_format_range(margins_missing)})"
+            lines.append(
+                f"    {status.upper():<11} {name} {slot}, {days_str}: {detail}"
+            )
+        return lines
+
+    def summary(self) -> str:
+        week = self.week_start_date.date().isoformat()
+        header = (
+            f"{self.channel} - week of {week} (Paris time, margins "
+            f"-{_minutes_of(MARGIN_BEFORE)}/+{_minutes_of(MARGIN_AFTER)} min)"
+        )
+        if not self.shows:
+            return f"{header}\n  No show in program_metadata.json for this channel and week"
+
+        lines = [
+            header,
+            f"  {len(self.expected_parts)} expected 2-min files "
+            f"({_format_duration(_minutes(len(self.expected_parts)))}), "
+            f"{len(self.missing_parts)} missing "
+            f"({_format_duration(_minutes(len(self.missing_parts)))}, {self.missing_pct:.1f} %)",
+        ]
+        if not self.missing_parts:
+            lines.append("  All expected files received")
+        else:
+            lines.append("  Shows not fully received:")
+            lines += self._shows_lines()
+            lines.append("  Missing time slots:")
+            lines += self._missing_slots_lines()
+        if self.unexpected_parts:
+            lines.append(
+                f"  {len(self.unexpected_parts)} received files outside the program "
+                f"({_format_duration(_minutes(len(self.unexpected_parts)))})"
+            )
+        return "\n".join(lines)
+
+
+def _minutes_of(delta: timedelta) -> int:
+    return int(delta.total_seconds() // 60)
+
+
+def _week_start_date(start_date: str) -> datetime:
+    week_start_date = datetime.fromisoformat(start_date).replace(tzinfo=tz_paris)
+
+    # Ensures week_start_date is a Monday
+    if week_start_date.weekday() != 0:
+        raise ValueError("start_date must be a Monday")
+
+    if week_start_date > datetime.now(tz=tz_paris) - timedelta(days=7):
+        raise ValueError("start_date must be at least 7 days in the past")
+
+    return week_start_date
+
+
+def compute_cover(
+    segments: list[Segment],
+    start_date: str,  # Start of the analyzed week, format iso 2026-12-31
+    channel: str,
+) -> CoverReport:
+    week_start_date = _week_start_date(start_date)
+    week_end_date = week_start_date + timedelta(days=7)
+
+    actual = {
+        (s.start_date.astimezone(timezone.utc), s.end_date.astimezone(timezone.utc))
+        for s in segments
+    }
+
+    shows = []
+    for show in get_channel_program(channel, week_start_date):
+        start, end = show.for_week(week_start_date)
+        expected = _parts_between(start - MARGIN_BEFORE, end + MARGIN_AFTER)
+        shows.append(
+            ShowCover(
+                show=show,
+                start_date=start,
+                end_date=end,
+                expected_parts=expected,
+                missing_parts=[part for part in expected if part not in actual],
+            )
+        )
+    shows.sort(key=lambda s: s.start_date)
+
+    expected = {part for show in shows for part in show.expected_parts}
+    # Files of the previous or next week downloaded with the same UTC days are not unexpected
+    in_week = {
+        part
+        for part in actual
+        if week_start_date <= part[0] and part[1] <= week_end_date
+    }
+
+    return CoverReport(
+        channel=channel,
+        week_start_date=week_start_date,
+        shows=shows,
+        expected_parts=sorted(expected),
+        missing_parts=sorted(expected - actual),
+        unexpected_parts=sorted(in_week - expected),
+    )
 
 
 def check_partition_cover(
     segments: list[Segment], start_date: str, channel: str
 ) -> None | str:
-    expected_segments = _partition_week_program(
-        channel=channel,
-        start_date=start_date,
-        margin=timedelta(minutes=15),
-        segment_size=timedelta(minutes=2),
-    )
-    # This is specific to the mediatree sent files into our bucket: they drift asked interval in order to match their two minutes file format.
-    expected_segments = _add_rounding_drift(
-        expected_segments, rounding_drift=timedelta(minutes=2)
-    )
+    report = compute_cover(segments=segments, start_date=start_date, channel=channel)
 
-    expected_bounds = {*expected_segments}
-    actual_bounds = {*segments}
-
-    missing = sorted(expected_bounds - actual_bounds)
-    unexpected = sorted(actual_bounds - expected_bounds)
-
-    if unexpected:
-        unexpected_windows = _merge_segments(unexpected)
-        unexpected_windows_str = "\n".join(
-            [
-                f"Unexpected segment on weekday={s.start_date.weekday()} from {s.start_date.astimezone(tz_paris).strftime('%H:%M')} to {s.end_date.astimezone(tz_paris).strftime('%H:%M')}"
-                for s in unexpected_windows
-            ]
-        )
+    if report.unexpected_parts:
         logger.info(
-            f"{len(unexpected)} downloaded segment(s) not expected by the program "
-            f"for channel={channel} start_date={start_date}: {unexpected_windows_str}"
+            f"{len(report.unexpected_parts)} downloaded segment(s) not expected by the program "
+            f"for channel={channel} start_date={start_date}"
         )
-    if missing:
-        missing_windows = _merge_segments(missing)
-        missing_windows_str = "\n".join(
-            [
-                f"Missing segment on weekday={s.start_date.weekday()} from {s.start_date.astimezone(tz_paris).strftime('%H:%M')} to {s.end_date.astimezone(tz_paris).strftime('%H:%M')}"
-                for s in missing_windows
-            ]
-        )
+    if report.missing_parts:
+        summary = report.summary()
         logger.warning(
-            f"{len(missing)} expected segment(s) missing from downloaded segments "
-            f"for channel={channel} start_date={start_date}: {missing_windows_str}"
+            f"{len(report.missing_parts)} expected segment(s) missing from downloaded segments:\n{summary}"
         )
+        return summary
 
-        return missing_windows_str
+
+async def check_bucket_cover(start_date: str, channels: list[str] | None = None) -> str:
+    """Check, for each channel, which files of the week are missing in mediatree's bucket.
+    Only lists the bucket, nothing is downloaded. Without channels, checks every channel of the bucket.
+    """
+    week_start_date = _week_start_date(start_date)
+    fs = get_s3_filesystem()
+    if not channels:
+        channels = await list_channels(fs)
+        logger.info(f"Channels found in the bucket: {', '.join(channels)}")
+
+    # Mediatree folders are UTC days: the week in Paris time with its margins spans 9 of them
+    days = [week_start_date.date() + timedelta(days=i) for i in range(-1, 8)]
+
+    reports: list[CoverReport] = []
+    errors: dict[str, str] = {}
+    for channel in channels:
+        try:
+            parts = await list_days_parts(fs, channel, days)
+            report = compute_cover(
+                segments=[
+                    Segment(start_date=start, end_date=end, channel=channel)
+                    for start, end in parts
+                ],
+                start_date=start_date,
+                channel=channel,
+            )
+            logger.info(
+                f"{channel}: {len(report.missing_parts)}/{len(report.expected_parts)} expected files missing"
+            )
+            reports.append(report)
+        except Exception as e:
+            logger.exception(f"Cover check failed for channel={channel}")
+            errors[channel] = str(e)
+
+    lines = [
+        f"Mediatree bucket cover for the week of {start_date}",
+        "",
+        f"  {'channel':<20} {'expected':>9} {'missing':>8} {'%':>6} {'absent':>7} {'incompl.':>9} {'margins':>8}",
+    ]
+    for report in reports:
+        if not report.shows:
+            lines.append(f"  {report.channel:<20} no program for this week")
+            continue
+        lines.append(
+            f"  {report.channel:<20} "
+            f"{_format_duration(_minutes(len(report.expected_parts))):>9} "
+            f"{_format_duration(_minutes(len(report.missing_parts))):>8} "
+            f"{report.missing_pct:>5.1f}% "
+            f"{report.count_shows('absent'):>7} "
+            f"{report.count_shows('incomplete'):>9} "
+            f"{report.count_shows('margins'):>8}"
+        )
+    for channel, error in errors.items():
+        lines.append(f"  {channel:<20} ERROR {error}")
+    lines.append(
+        "  (absent / incompl. / margins: number of show airings entirely missing, "
+        "partly missing, complete but with missing margins)"
+    )
+
+    for report in reports:
+        if report.shows and report.missing_parts:
+            lines += ["", report.summary()]
+
+    return "\n".join(lines)
 
 
 if __name__ == "__main__":
-    channel = "tf1"
-    start_date = "2025-05-05"
-    margin = timedelta(minutes=30)
-
-    print(
-        _partition_week_program(
-            channel=channel,
-            start_date=start_date,
-            margin=margin,
-        )
-    )
+    print(asyncio.run(check_bucket_cover("2026-10-12", ["tf1"])))

@@ -148,6 +148,39 @@ async def _download_and_extract_audio(
         os.remove(archive_path)
 
 
+async def list_channels(fs: s3fs.S3FileSystem) -> list[str]:
+    """Return every channel that has a folder in mediatree's bucket, with our channel names."""
+    our_channel_names = {v: k for k, v in MEDIATREE_CHANNEL_MAPPING.items()}
+    folders = await fs._ls(f"/{BUCKET_NAME}/output")
+    return sorted(
+        our_channel_names.get(name, name)
+        for name in (folder.rstrip("/").split("/")[-1] for folder in folders)
+    )
+
+
+async def list_days_parts(
+    fs: s3fs.S3FileSystem, channel: str, days: list[date]
+) -> list[tuple[datetime, datetime]]:
+    """Return the UTC (start, end) of every 2-minutes archive present in the bucket for
+    `channel` on each of `days` (UTC calendar dates), without downloading anything.
+    A day without any folder is treated as empty rather than as an error.
+    """
+
+    async def _ls_day(day: date) -> list[str]:
+        try:
+            return await fs._ls(_get_s3_folder(channel, day))
+        except FileNotFoundError:
+            return []
+
+    keys_per_day = await asyncio.gather(*(_ls_day(day) for day in days))
+    return sorted(
+        get_datetime_from_basename(os.path.splitext(os.path.basename(key))[0])
+        for keys in keys_per_day
+        for key in keys
+        if key.endswith(".tar")
+    )
+
+
 async def download_days_audio_parts(
     fs: s3fs.S3FileSystem,
     channel: str,

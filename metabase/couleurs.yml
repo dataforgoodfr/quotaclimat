@@ -33,3 +33,19 @@ groupes:
       Causes: "#F2A86F"
       Conséquences: "#E75454"
       Solutions: "#689636"
+
+  secteurs:
+    description: >-
+      Secteurs d'activité de l'analyse sectorielle (tableau de bord 123). Colonne categorie. Couleurs relevées
+      sur la légende de la question 1371, où elles sont automatiques (non enregistrées dans la question).
+    reference:
+      - 1371 # courbes, audiovisuel
+    couleurs:
+      Agriculture: "#7172AD"
+      Bâtiments: "#509EE3"
+      Eau: "#88BF4D"
+      Economie des ressources: "#EF8C8C"
+      Ecosystème: "#A989C5"
+      Energie: "#F2A86F"
+      Industrie: "#F9D45C"
+      Transport: "#98D9D9"

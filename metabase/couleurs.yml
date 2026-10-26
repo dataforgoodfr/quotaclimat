@@ -1,0 +1,35 @@
+# Codes couleur des graphiques Metabase (voir README.md, « Couleurs des graphiques »).
+# Par groupe de valeurs :
+#   description : ce que représentent les valeurs, et dans quelles colonnes on les trouve ;
+#   reference : questions Metabase dont les couleurs ont servi de modèle ;
+#   couleurs : valeur affichée (telle qu'elle apparaît dans les données ou en titre de série) -> couleur hex.
+# Une couleur s'applique dans les réglages de la question (series_settings.<valeur>.color pour les courbes et
+# barres, pie.rows[].color pour les camemberts), pas sur la carte du tableau de bord.
+
+groupes:
+  crises_environnementales:
+    description: >-
+      Crises suivies : l'ensemble (crises environnementales) et chacune des trois crises. Colonnes
+      crise_environnementale (audiovisuel) et crise (presse écrite).
+    reference:
+      - 1360 # courbes, audiovisuel
+      - 1385 # courbes, presse écrite
+    couleurs:
+      Crises environnementales: "#E75454"
+      Crise climatique: "#ED8535"
+      Crise de la biodiversité: "#88BF4D"
+      Crises des ressources naturelles: "#7172AD"
+
+  chaine_causale:
+    description: >-
+      Maillons de la chaîne causale. Colonne maillon_causal (camemberts), ou une mesure par maillon titrée par
+      son nom (courbes).
+    reference:
+      - 1366 # courbes, audiovisuel
+      - 1397 # courbes, presse écrite
+      - 1398 # camembert, presse écrite
+    couleurs:
+      Constat: "#C7EAEA"
+      Causes: "#F2A86F"
+      Conséquences: "#E75454"
+      Solutions: "#689636"

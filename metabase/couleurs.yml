@@ -62,3 +62,13 @@ groupes:
       Presse économique: "#F7C4C4"
       Presse Régionale: "#F9D45C"
       Agence Presse: "#7172AD"
+
+  print_web:
+    description: >-
+      Version papier ou web d'un titre de presse écrite (tableau de bord 136). Colonne print_or_web de la
+      question 1460. Couleurs relevées sur sa légende, où elles sont automatiques.
+    reference:
+      - 1460 # barres, comparaison print / web
+    couleurs:
+      Web: "#F9D45C"
+      Print: "#F2A86F"

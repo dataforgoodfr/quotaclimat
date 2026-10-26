@@ -4,8 +4,8 @@ holder (Dacia -> Renault); and the ultimate parent company of the holder (GLEIF,
 
 A company already in the tab (written by the job or corrected by a human) is reused, with its ultimate
 parent company. Statuses: 'vérifié', 'non vérifié' (used anyway) or 'à vérifier' (not used by dbt). The
-job writes the company 'non vérifié' and the ultimate parent company 'à vérifier': a human checks and
-corrects them afterwards in the sheet.
+job writes the company 'non vérifié' and the ultimate parent company 'à vérifier' (no company, 'à vérifier',
+when no trademark was found): a human checks and corrects them afterwards in the sheet.
 """
 
 import re
@@ -205,8 +205,10 @@ def propose_row(
     job = f"job {today.isoformat()} : "
     row = {"marque": brand, "e_statut": UNVERIFIED, "smu_statut": TO_CHECK}
     if holder is None:
+        # written anyway, so that the brand is not searched again (and its INPI quota spent) on every run;
+        # 'à vérifier': for a human to fill in the company
         return {
-            **row, "entreprise": "", "societe_mere_ultime": "",
+            **row, "entreprise": "", "e_statut": TO_CHECK, "societe_mere_ultime": "",
             "commentaires": job + "aucune marque en vigueur à ce nom à l'INPI (bases FR, EU, WO)",
         }
 

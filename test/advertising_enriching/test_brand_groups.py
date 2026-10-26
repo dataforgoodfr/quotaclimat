@@ -690,7 +690,8 @@ def test_propose_row_parents():
     row = propose_row("Acme", holder, None, None, None, KnownCompanies(), TODAY)
     assert "aucune société mère trouvée" in row["commentaires"]
     nothing = propose_row("Acme", None, None, None, None, KnownCompanies(), TODAY)
-    assert (nothing["marque"], nothing["entreprise"]) == ("Acme", "")
+    assert (nothing["marque"], nothing["entreprise"], nothing["e_statut"]) == ("Acme", "", "à vérifier")
+    assert "aucune marque en vigueur à ce nom" in nothing["commentaires"]
 
 
 def test_print_rows_tab_separated():

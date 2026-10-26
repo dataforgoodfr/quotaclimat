@@ -71,10 +71,12 @@ async def _run_ffmpeg(*args: str) -> None:
 
 
 # Every frame is scaled into the same box (black bands on other aspect ratios), as the tile filter
-# needs frames of the same size.
+# needs frames of the same size. Full range pixels: recent ffmpeg versions refuse to encode a jpg
+# from limited range ones ("Non full-range YUV is non-standard").
+_JPEG_PIXEL_FORMAT = "format=yuvj420p"
 _SCALE_AND_PAD = (
     f"scale={FRAME_WIDTH}:{FRAME_HEIGHT}:force_original_aspect_ratio=decrease,"
-    f"pad={FRAME_WIDTH}:{FRAME_HEIGHT}:(ow-iw)/2:(oh-ih)/2"
+    f"pad={FRAME_WIDTH}:{FRAME_HEIGHT}:(ow-iw)/2:(oh-ih)/2,{_JPEG_PIXEL_FORMAT}"
 )
 
 
@@ -105,7 +107,7 @@ async def _black_frame(output_path: str) -> None:
         "-f",
         "lavfi",
         "-i",
-        f"color=c=black:s={FRAME_WIDTH}x{FRAME_HEIGHT}",
+        f"color=c=black:s={FRAME_WIDTH}x{FRAME_HEIGHT},{_JPEG_PIXEL_FORMAT}",
         "-frames:v",
         "1",
         output_path,
@@ -136,7 +138,7 @@ async def build_mosaic(
         "-i",
         os.path.join(work_dir, "tile_%03d.jpg"),
         "-vf",
-        f"tile={columns}x{rows}:padding=4:margin=4",
+        f"tile={columns}x{rows}:padding=4:margin=4,{_JPEG_PIXEL_FORMAT}",
         "-frames:v",
         "1",
         "-q:v",

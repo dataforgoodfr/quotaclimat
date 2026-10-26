@@ -84,18 +84,14 @@ def get_keyword_with_timestamp(theme: str, category: str, keyword : str, cts_in_
     }
 
 
-def find_matching_subtitle(subtitles, pos_in_text, keyword, country: CountryMediaTree=FRANCE):
+def find_matching_subtitle(subtitles, keyword, country: CountryMediaTree=FRANCE):
     if isinstance(subtitles, str):
         subtitles = json.loads(subtitles)
     if country.language=='french':
         logging.info(f"Matching subtitles using the old way")
-        return find_matching_subtitle_fr(subtitles, keyword)
+        return find_matching_subtitle_fr(subtitles, keyword.split()[0])
     else:
-        # find_matching_subtitle_i18n(subtitles, keyword, country)
-        return find_matching_subtitle_from_indices(subtitles, pos_in_text)
-
-def find_matching_subtitle_from_indices(subtitles, pos_in_text):
-    return subtitles[pos_in_text]
+        return find_matching_subtitle_i18n(subtitles, keyword, country)
 
 def find_matching_subtitle_fr(subtitles, keyword):
     for item in subtitles:
@@ -112,32 +108,71 @@ def find_matching_subtitle_fr(subtitles, keyword):
     return None
 
 
+def split_words_on_apostrophes(text: str) -> List[str]:
+    # same rule as i8n/srt-to-mediatree-format.py, which builds the subtitle words
+    split_words = []
+    for word in text.split():
+        if "'" in word and not word.startswith("'"):
+            left, right = word.split("'", 1)
+            split_words.append(f"{left}'")
+            split_words.append(right)
+        else:
+            split_words.append(word)
+    return split_words
+
+
+def _to_units(words: List[str], split_hyphens: bool) -> List[tuple]:
+    """(normalised word, index of the source word); words made only of punctuation are dropped"""
+    units = []
+    for i, word in enumerate(words):
+        for part in (word.split("-") if split_hyphens else [word]):
+            normalised = re.sub(r"^\W+|\W+$", "", part.lower())
+            if normalised:
+                units.append((normalised, i))
+    return units
+
+
+@lru_cache(maxsize=64)
+def _lemmatize_words(words: tuple, lang: str) -> tuple:
+    # pretokenized Doc: exactly one lemma per word, whatever spaCy's own tokenizer would do
+    nlp = get_pipeline(lang)
+    doc = nlp(spacy.tokens.Doc(nlp.vocab, words=list(words)))
+    return tuple(token.lemma_.lower() for token in doc)
+
+
 def find_matching_subtitle_i18n(subtitles, keyword, country: CountryMediaTree=FRANCE):
+    """First subtitle of the first run of subtitle words equal (or with the same lemma) to the keyword words"""
     lang = LANGUAGE_CODES[country.language]
-    keyword_lemma = set(get_lemmas(keyword.lower(), lang))
-    for item in subtitles:
-        logging.debug(f"Testing {item['text'].lower()} with {keyword_lemma}")
-        try:
-            item_lemma = set(get_lemmas(item["text"], lang))
-            if bool(keyword_lemma & item_lemma) or keyword.lower()==item["text"].lower():
-                logging.info(f"match found {item} with {keyword}")
-                return item
-        except Exception as e: 
-            logging.error(f"Error in find_matching_subtitle for keyword {keyword} - item {item} - subtitles {subtitles} - {e}")
-            raise e
+    words = [item.get("text", "") for item in subtitles]
+    # second pass with hyphens split, for a keyword detected inside a hyphenated word
+    for split_hyphens in (False, True):
+        subtitle_units = _to_units(words, split_hyphens)
+        keyword_units = _to_units(split_words_on_apostrophes(keyword), split_hyphens)
+        n = len(keyword_units)
+        if n == 0 or n > len(subtitle_units):
+            continue
+        subtitle_words = tuple(unit[0] for unit in subtitle_units)
+        keyword_words = tuple(unit[0] for unit in keyword_units)
+        subtitle_lemmas = _lemmatize_words(subtitle_words, lang)
+        keyword_lemmas = _lemmatize_words(keyword_words, lang)
+        for start in range(len(subtitle_units) - n + 1):
+            if all(
+                subtitle_words[start + k] == keyword_words[k] or subtitle_lemmas[start + k] == keyword_lemmas[k]
+                for k in range(n)
+            ):
+                return subtitles[subtitle_units[start][1]]
 
     logging.warning(f"SRT match not found - default timestamp is now 0, possible error inside srt which is acceptable - {keyword} - {subtitles}")
     return None
 
-def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], word_positions: List[int], theme: str, country: CountryMediaTree=FRANCE) -> List[dict]:
+def get_cts_in_ms_for_keywords(subtitle_duration: List[dict], keywords: List[dict], theme: str, country: CountryMediaTree=FRANCE) -> List[dict]:
     result = []
 
     logging.debug("Looking for timecode for %s inside subtitle_duration %s", keywords, subtitle_duration)
-    for multiple_keyword, pos_in_text in zip(keywords, word_positions):
+    for multiple_keyword in keywords: # case with multiple words such as 'economie circulaire'
         category = multiple_keyword["category"]
-        all_keywords = multiple_keyword["keyword"].split() # case with multiple words such as 'economie circulaire'
 
-        match = find_matching_subtitle(subtitle_duration, pos_in_text, all_keywords[0], country)
+        match = find_matching_subtitle(subtitle_duration, multiple_keyword["keyword"], country)
         if match is not None:
             cts_in_ms = match['cts_in_ms']
         else:
@@ -276,22 +311,15 @@ def _compile_keyword_pattern(kw_items: tuple):
 def get_words_in_sentence_regex_i18n(keywords_lemmas, text: str) -> Set[str]:
     logging.info("Running regex matching with lemmas for i18n languages")
     if not keywords_lemmas:
-        return set(), []
+        return set()
 
     kw_items = tuple(sorted(keywords_lemmas.items()))
     combined, kw_to_indices = _compile_keyword_pattern(kw_items)
 
-    matches = {}  # idx -> word position (first occurrence wins)
+    found = set()
     for m in combined.finditer(text):
-        matched_kw = m.group(1).lower()
-        word_pos = len(text[:m.start()].split())
-        for idx in kw_to_indices[matched_kw]:
-            if idx not in matches:
-                matches[idx] = word_pos
-
-    found = set(matches.keys())
-    word_positions = [matches[idx] for idx in found]
-    return found, word_positions
+        found.update(kw_to_indices[m.group(1).lower()])
+    return found
 
 def filter_already_contained_keyword(keywords_with_timestamp: List[dict]) -> List[dict]:
     number_of_keywords = len(keywords_with_timestamp)
@@ -380,7 +408,7 @@ def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: Cou
         keywords_tuple = tuple(kw["keyword"] for kw in keywords_dict)
         compiled_patterns = _compile_fr_keyword_patterns(keywords_tuple)
         words = set(idx for idx, pattern in compiled_patterns.items() if pattern.search(text))
-        return words, [None] * len(words)
+        return words
     else:
         lang = LANGUAGE_CODES[country.language]
         keywords_tuple = tuple(keyword_dict["keyword"].lower() for keyword_dict in keywords_dict)
@@ -391,20 +419,16 @@ def get_words_in_sentence(keywords_dict: Dict[str, str], text: str, country: Cou
         # Normalise punctuation to spaces so the space-padding word-boundary trick works for prose
         original_text = " " + re.sub(r"[^\w\s]", " ", text.lower()) + " "
 
-        lemma_found, lemma_positions = get_words_in_sentence_regex_i18n(kw_lemmas, lemmatised_text)
-        exact_found, exact_positions = get_words_in_sentence_regex_i18n(kw_originals, original_text)
+        lemma_found = get_words_in_sentence_regex_i18n(kw_lemmas, lemmatised_text)
+        exact_found = get_words_in_sentence_regex_i18n(kw_originals, original_text)
 
-        # Union: lemma match takes precedence for position; exact match adds indices not caught by lemmatization
-        position_map = dict(zip(exact_found, exact_positions))
-        position_map.update(zip(lemma_found, lemma_positions))
-        combined_found = lemma_found | exact_found
-        combined_positions = [position_map[idx] for idx in combined_found]
-        return combined_found, combined_positions
+        # Union: exact match adds indices not caught by lemmatization
+        return lemma_found | exact_found
 
 
 # def get_detected_keywords(automaton: ahocorasick.Automaton, plaintext_without_stopwords: str, keywords_dict, country=FRANCE):
 def get_detected_keywords(plaintext_without_stopwords: str, keywords_dict, country=FRANCE):
-    found_idx, word_positions = get_words_in_sentence(keywords_dict, plaintext_without_stopwords, country)
+    found_idx = get_words_in_sentence(keywords_dict, plaintext_without_stopwords, country)
     logging.debug(f"found: {found_idx}")
     # found_idx = get_words_in_sentence(automaton, keywords_dict, plaintext_without_stopwords, country)
     matching_words = [get_keyword_matching_json(keywords_dict[idx], country=country) for idx in found_idx]
@@ -412,7 +436,7 @@ def get_detected_keywords(plaintext_without_stopwords: str, keywords_dict, count
         logging.info(f"found following matching words: {matching_words}")
     else:
         logging.info(f"Found no matching keywords")
-    return matching_words, word_positions
+    return matching_words
 
 @sentry_sdk.trace
 def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], start: datetime,
@@ -435,14 +459,14 @@ def get_themes_keywords_duration(plaintext: str, subtitle_duration: List[str], s
             else:
                 # keywords = [keyword_dict["keyword"].lower() for keyword_dict in keywords_dict]
                 # automaton = build_keyword_automaton(keywords, country)
-                matching_words, word_positions = get_detected_keywords(plaitext_without_stopwords, keywords_dict, country=country)
+                matching_words = get_detected_keywords(plaitext_without_stopwords, keywords_dict, country=country)
                 # matching_words = get_detected_keywords(automaton, plaitext_without_stopwords, keywords_dict, country=country)
         
             if matching_words:
                 logging.info(f"theme found : {theme} with word {matching_words}")
                 try:
                     # look for cts_in_ms inside matching_words (['keyword':'economie circulaire', 'category':'air'}] from subtitle_duration 
-                    keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, word_positions, theme, country)
+                    keywords_to_add = get_cts_in_ms_for_keywords(subtitle_duration, matching_words, theme, country)
                     if(len(keywords_to_add) == 0):
                         logging.debug("Check regex - Empty keywords but themes is there %s - matching_words %s - %s", theme, matching_words, subtitle_duration)
                     keywords_with_timestamp.extend(keywords_to_add)

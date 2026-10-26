@@ -25,7 +25,7 @@ from quotaclimat.data_processing.mediatree.detect_keywords import (
 )
 from quotaclimat.data_processing.mediatree.keyword.stop_words import STOP_WORDS
 from quotaclimat.data_processing.mediatree.utils import get_keyword_time_separation_ms
-from quotaclimat.data_processing.mediatree.i8n.country import FRANCE
+from quotaclimat.data_processing.mediatree.i8n.country import BELGIUM_FLANDERS, FRANCE
 
 localhost = get_localhost()
 original_timestamp = 1706437079004
@@ -536,8 +536,7 @@ def test_get_cts_in_ms_for_keywords():
             "category":my_category
         },
     ]
-    # Setting word positions to None as default method for france uses regex reparsing
-    assert get_cts_in_ms_for_keywords(srt, keywords, [None]*len(keywords), theme) == expected
+    assert get_cts_in_ms_for_keywords(srt, keywords, theme) == expected
 
 def test_complex_hyphen_get_cts_in_ms_for_keywords():
     srt = [
@@ -559,7 +558,51 @@ def test_complex_hyphen_get_cts_in_ms_for_keywords():
             "category": my_category
         }
     ]
-    assert get_cts_in_ms_for_keywords(srt, keywords, [None]*len(keywords), theme) == expected
+    assert get_cts_in_ms_for_keywords(srt, keywords, theme) == expected
+
+
+def _words_to_srt(text):
+    return [{"duration_ms": 34, "cts_in_ms": 1000 * i, "text": w} for i, w in enumerate(text.split())]
+
+
+def _i18n_cts(text, keyword):
+    theme = "changement_climatique_consequences"
+    result = get_cts_in_ms_for_keywords(_words_to_srt(text), [{"keyword": keyword, "category": "c"}], theme, BELGIUM_FLANDERS)
+    return result[0]["timestamp"]
+
+
+def test_i18n_cts_exact_and_punctuation():
+    assert _i18n_cts("dit is een tekst over klimaat, en meer", "klimaat") == 5000
+
+
+def test_i18n_cts_multi_word_keyword_uses_first_word():
+    assert _i18n_cts("de circulaire economie is belangrijk", "circulaire economie") == 1000
+
+
+def test_i18n_cts_lemma_match():
+    assert _i18n_cts("de overstromingen worden erger", "overstroming") == 1000
+
+
+def test_i18n_cts_apostrophe_keyword():
+    assert _i18n_cts("c'est l' eau qui monte", "l'eau") == 1000
+
+
+def test_i18n_cts_hyphenated_and_inside_hyphen():
+    assert _i18n_cts("een zeer anti-klimaat idee", "anti-klimaat") == 2000
+    assert _i18n_cts("een zeer anti-klimaat idee", "klimaat") == 2000
+
+
+def test_i18n_cts_compound_word():
+    assert _i18n_cts("het klimaatakkoord is gesloten", "klimaatakkoord") == 1000
+
+
+def test_i18n_cts_not_found_defaults_to_zero():
+    assert _i18n_cts("niets over dit onderwerp", "klimaat") == 0
+
+
+def test_i18n_cts_keyword_beyond_subtitle_count_does_not_raise():
+    # the old index-based lookup raised IndexError when the text had more tokens than subtitles
+    assert _i18n_cts("klimaat", "klimaat") == 0
 
 
 def test_none_theme_filter_and_tag_by_theme():

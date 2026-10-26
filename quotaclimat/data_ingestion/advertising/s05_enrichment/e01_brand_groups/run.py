@@ -33,6 +33,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups impo
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi import (
     InpiClient,
     InpiQuotaExceeded,
+    InpiUnavailable,
     name_key,
 )
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import (
@@ -195,9 +196,11 @@ def run() -> int:
     for brand, sector in brands:
         try:
             row = propose(brand, sector, inpi, nice_classes, known, today)
-        except InpiQuotaExceeded as e:
-            # every following brand would fail too: stop, keep the rows found so far
-            logging.error("Brand %s: %s. The remaining brands are left for the next run", brand, e)
+        except (InpiQuotaExceeded, InpiUnavailable) as e:
+            # every following brand would fail too: stop, keep the rows found so far. The quota stops most
+            # runs (about 100 requests an hour): an error only when the run processed no brand at all
+            level = logging.WARNING if rows else logging.ERROR
+            logging.log(level, "Brand %s: %s. The remaining brands are left for the next run", brand, e)
             break
         except Exception:
             # an API error on one brand must not stop the others; the brand is retried on the next run

@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import tempfile
-from datetime import datetime, timedelta
 
 import s3fs
 from sentry_sdk.crons import monitor
@@ -13,6 +12,7 @@ from postgres.schemas.advertising.models import Ad
 from quotaclimat.data_ingestion.advertising.s01_detection.processor import chunk_creator
 from quotaclimat.data_ingestion.advertising.s02_exportation.ad_bucket import (
     ad_media_s3_key,
+    get_margin_from_detection_date,
 )
 from quotaclimat.data_ingestion.advertising.s02_exportation.run import (
     get_s3_filesystem,
@@ -23,23 +23,8 @@ from quotaclimat.utils.sentry import sentry_init
 
 logger = logging.getLogger(__name__)
 
-# The history of audio/video saving process is necessary to process them accordingly
-MARGIN_ON_MEDIA_EXPORT_HISTORY = [
-    (datetime(2025, 4, 1), timedelta(seconds=1)),
-    (datetime(2026, 4, 27), timedelta(seconds=0.1)),
-]
-
 CLEAN_OTHER_CHUNKS = os.environ.get("CLEAN_OTHER_CHUNKS", False)
 CURSOR_BATCH_SIZE = os.environ.get("CURSOR_BATCH_SIZE", 500)
-
-
-def _get_margin_from_detection_date(d: datetime) -> timedelta:
-    """Depending on the downloading processs, media and thus detection may vary in quality.
-    We do change the margins during extraction process depending on this quality.
-    This function helps find back what margin did we apply when the Ad was extracted."""
-    for start, value in reversed(MARGIN_ON_MEDIA_EXPORT_HISTORY):
-        if d > start:
-            return value
 
 
 async def _download_audio_file(
@@ -101,7 +86,7 @@ async def run():
                             fingerprints = chunk_creator.run_on_audio_file(
                                 audio_file_path=audio_file_path,
                                 offset=(
-                                    _get_margin_from_detection_date(
+                                    get_margin_from_detection_date(
                                         ad.first_detection_date
                                     ).total_seconds()
                                 ),

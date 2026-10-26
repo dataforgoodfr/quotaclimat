@@ -142,3 +142,33 @@ class Ad_Merge_Occurrence(AdvertisingBase):
     position = Column(Integer, nullable=False)
     created_at = Column(DateTime(), nullable=False, server_default=func.now())
     reverted_at = Column(DateTime(), nullable=True)
+
+
+class Ad_Screenshot(AdvertisingBase):
+    """Screenshots of an ad or of an occurrence, to check visually that the occurrences of an ad
+    are the same ad and that its metadata (brand, sector) match what is shown.
+
+    One row per ad or occurrence: one mosaic image of a few frames taken at the same relative
+    positions in the ad, so the mosaic of an occurrence compares tile by tile with its ad's.
+    See s05_enrichment/e02_screenshots/README.md.
+    """
+
+    __tablename__ = "ad_screenshot"
+    __table_args__ = (Index("ix_ad_screenshot_ad_id", "ad_id"),)
+    # "ad" or "occurrence"
+    target_type = Column(String, primary_key=True)
+    # advertising.ad.id or advertising.ad_occurrence.id
+    target_id = Column(Text, primary_key=True)
+    ad_id = Column(Text, nullable=False)
+    # "done", "missing_source" (no video to take the frames from) or "error"
+    status = Column(String, nullable=False)
+    # "ad_export" (ads/<ad_id>/raw.mp4) or "mediatree_archive" (2-minutes archives of mediatree)
+    source = Column(String, nullable=True)
+    image_url = Column(Text, nullable=True)
+    # offsets of the frames from the start of the ad, in seconds (same for an ad and its occurrences)
+    frame_offsets_sec = Column(ARRAY(Double), nullable=True)
+    nb_frames = Column(Integer, nullable=True)
+    # free context: missing archives, error message...
+    details = Column(JSON, nullable=True)
+    created_at = Column(DateTime(), nullable=False, server_default=func.now())
+    updated_at = Column(DateTime(), nullable=False, server_default=func.now())

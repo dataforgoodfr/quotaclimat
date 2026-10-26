@@ -18,22 +18,135 @@ Cinq étapes, de 0 à 4, chacune validée explicitement par l'équipe avant de p
 | 3. Requêtes | Questions Metabase sur les tables thématiques | Colonne « Question Metabase » du §3 |
 | 4. Résultats | Takeaways triés (publiable, à creuser, rien à signaler), encadré méthodologique | Document Metabase avant publication, `decisions.md` de l'analyse §4 après publication |
 
-**Étape 0, cadrage.** Elle précède l'entrée du YAML et se fait donc sur les tables sources (`public.keywords`, `public.factiva_articles`).
+**Étape 0, cadrage.** Elle précède l'entrée du YAML et se fait donc sur les tables sources (`public.keywords`, `public.factiva_articles`). Ses trois sous-étapes se valident une par une, comme les étapes : on ne propose pas la suivante (événements, courbe, périodes) tant que la précédente n'est pas validée par l'équipe.
 
-1. **Mots du corpus noyau.** Recenser, dans le dictionnaire OME du repo (`quotaclimat/data_processing/mediatree/i8n/`, selon la langue), tous les mots qui touchent au sujet, directs (HRFP) ou indirects. On produit deux listes : la liste stricte pour l'audiovisuel, sous la forme exacte du dictionnaire, et les regex pour la presse, avec les variantes de genre et de nombre, en forme normalisée (§3.5). Les mots écartés sont notés avec leur raison. Règles : §3.1.
+1. **Dictionnaire noyau.** Recenser, dans le dictionnaire OME du repo (`quotaclimat/data_processing/mediatree/keyword/keyword.py`, généré depuis l'Excel par `transform_excel_to_json.py`, une entrée par mot avec sa `language`, son drapeau `high_risk_of_false_positive` et ses thèmes), tous les mots qui touchent au sujet, directs (HRFP) ou indirects. On produit deux listes : la liste stricte pour l'audiovisuel, sous la forme exacte du dictionnaire, et les regex pour la presse, avec les variantes de genre et de nombre, en forme normalisée (§3.5). Les mots écartés sont notés avec leur raison. Règles : §3.1.
 2. **Recherche des événements.** Lister sur internet les événements marquants de la période envisagée (épisodes d'incendie, d'inondation, de chaleur, décisions politiques, procès...), un événement par ligne :
 
    | Début | Fin | Lieu (ville, département, région) | Impact | Source datée |
    |---|---|---|---|---|
 
    L'impact dépend de l'aléa : hectares brûlés, personnes évacuées ou déplacées, victimes, dégâts matériels ou coût assuré, vigilance orange ou rouge, arrêtés de catastrophe naturelle, pic de pollution... Il sert à comparer les épisodes entre eux et à tester si le traitement médiatique est proportionné aux conséquences de l'événement ou relève d'un choix éditorial (piste X3).
-3. **Courbe des occurrences par jour.** La recherche sur internet laisse passer des événements. On trace donc le nombre d'occurrences par jour des mots du corpus noyau sur une fenêtre large (plusieurs mois à deux ans), en audiovisuel (occurrences par heure de grille) et en presse (articles par jour). Chaque pic doit être rattaché à un événement de la liste ; un pic sans événement signale un oubli : on cherche ce qui s'est passé ce jour-là et on complète la liste. Modèle : question « AV - Q7 - Courbe journalière incendies - tous médias confondus » (2226) de la collection `03. Analyses thématiques/19. Incendies 2026`, en remplaçant ses mots-clés par ceux du corpus noyau ; même logique en presse, en articles par jour.
+3. **Courbe des occurrences par jour.** La recherche sur internet laisse passer des événements. On trace donc le nombre d'occurrences par jour des mots du dictionnaire noyau sur une fenêtre large (plusieurs mois à deux ans), en audiovisuel (occurrences par heure de grille) et en presse (articles par jour). Chaque pic doit être rattaché à un événement de la liste ; un pic sans événement signale un oubli : on cherche ce qui s'est passé ce jour-là et on complète la liste. Modèle audiovisuel ci-dessous, à reprendre tel quel en remplaçant les bornes et le dictionnaire noyau (entrée `audiovisuel` du YAML) ; modèle presse plus bas, en articles par jour. Il compte les mots détectés dans `keywords_with_timestamp`, comme le job, et non une regex sur le texte. `keywords.start` est en heure de Paris. Le dénominateur est la grille en vigueur chaque jour (`program_metadata`), seule source d'heures disponible avant 2025 (`time_monitored` ne commence qu'en 2025).
+
+   ```sql
+   -- AV - V2 - Courbe journalière <sujet>, toutes chaînes confondues
+   --   Mesure : occurrences des mots du dictionnaire <thematique> par heure de grille
+   --   (un segment de 2 minutes peut contenir plusieurs occurrences). Maille : jour.
+   --   Tables : public.keywords (keywords_with_timestamp), public.program_metadata
+   WITH bornes(t0, t1) AS (
+       VALUES (date '2024-10-01', date '2026-10-26')
+   ),
+   jours AS (
+       SELECT d::date AS jour
+       FROM bornes b, generate_series(b.t0, b.t1 - 1, interval '1 day') AS d
+   ),
+   -- entrée <thematique> > keywords > french > audiovisuel de thematic_jobs_config.yml
+   dictionnaire_<thematique>(mot) AS (
+       VALUES ('mot 1'), ('mot 2')
+   ),
+   occurrences AS (
+       SELECT
+           k.start::date        AS jour,
+           COUNT(*)             AS nb_occurrences,  -- une ligne par mot détecté
+           COUNT(DISTINCT k.id) AS nb_segments      -- segments de 2 minutes concernés
+       FROM public.keywords k
+       CROSS JOIN bornes b
+       CROSS JOIN LATERAL json_array_elements(k.keywords_with_timestamp) AS kwt(e)
+       WHERE k.country = 'france'
+         AND k.start >= b.t0 AND k.start < b.t1
+         AND lower(kwt.e ->> 'keyword') IN (SELECT mot FROM dictionnaire_<thematique>)
+       GROUP BY 1
+   ),
+   heures AS (
+       -- grille en vigueur le jour donné, toutes chaînes
+       SELECT j.jour, SUM(pm.duration_minutes) / 60.0 AS nb_heures_grille
+       FROM jours j
+       JOIN public.program_metadata pm
+         ON pm.country = 'france'
+        AND pm.weekday = EXTRACT(ISODOW FROM j.jour)::int
+        AND j.jour BETWEEN CAST(pm.program_grid_start AS date) AND CAST(pm.program_grid_end AS date)
+       GROUP BY j.jour
+   )
+   SELECT
+       h.jour,
+       COALESCE(o.nb_occurrences, 0) AS nb_occurrences,
+       COALESCE(o.nb_segments, 0)    AS nb_segments,
+       h.nb_heures_grille,
+       COALESCE(o.nb_occurrences, 0) / NULLIF(h.nb_heures_grille, 0) AS occ_par_heure
+   FROM heures h
+   LEFT JOIN occurrences o USING (jour)
+   ORDER BY h.jour;
+   ```
+
+   Affichage : courbe, `jour` en x, `occ_par_heure` en y, annotée des événements (G2). Tester d'abord sur un mois : sur deux ans, la lecture de `keywords` est longue.
+
+   Modèle presse (base Print Media DB). Le job n'ayant pas encore tourné, la requête normalise elle-même le texte et les mots (§3.5) ; après l'extraction, les tables thématiques fournissent les colonnes `*_normalized` et les requêtes n'ont plus à normaliser. Le dénominateur est `stats_factiva_articles` (nombre d'articles par titre et par jour). Pas de filtre `word_count` ici : la courbe mesure l'agitation des médias sur tous les articles, comme son dénominateur.
+
+   ```sql
+   -- PE - V2 - Courbe journalière <sujet>, presse
+   --   Mesure : articles dont le titre, le chapô ou le corps contient un mot du dictionnaire
+   --   <thematique>, rapportés au nombre total d'articles du jour. Maille : jour (heure de Paris).
+   --   Tables : public.factiva_articles (hors DUP), public.stats_factiva_articles
+   WITH bornes(t0, t1) AS (
+       VALUES (date '2025-01-01', date '2026-10-26')
+   ),
+   -- entrée <thematique> > keywords > french > presse de thematic_jobs_config.yml, copiée telle quelle
+   dictionnaire_<thematique>(mot) AS (
+       VALUES ('mot 1'), ('mots 1')
+   ),
+   -- même regex que le job : expressions normalisées, mots entiers
+   motif AS (
+       SELECT '\y(' || string_agg(
+                  regexp_replace(
+                      translate(replace(replace(lower(mot), 'œ', 'oe'), 'æ', 'ae'),
+                                'àâäéèêëîïôöùûüÿç', 'aaaeeeeiioouuuyc'),
+                      '[''’‘‛ʼʹ´`′＇-]', ' ', 'g'),
+                  '|' ORDER BY length(mot) DESC) || ')\y' AS regex
+       FROM dictionnaire_<thematique>
+   ),
+   <thematique> AS (
+       SELECT
+           (a.publication_datetime AT TIME ZONE 'Europe/Paris')::date AS jour,
+           COUNT(*) AS nb_articles_<thematique>
+       FROM public.factiva_articles a
+       CROSS JOIN bornes b
+       CROSS JOIN motif m
+       WHERE a.publication_datetime >= b.t0::timestamp AT TIME ZONE 'Europe/Paris'
+         AND a.publication_datetime <  b.t1::timestamp AT TIME ZONE 'Europe/Paris'
+         AND a.duplicate_status <> 'DUP'
+         AND regexp_replace(
+                 translate(replace(replace(lower(concat_ws(' ', a.snippet, a.title, a.body)), 'œ', 'oe'), 'æ', 'ae'),
+                           'àâäéèêëîïôöùûüÿç', 'aaaeeeeiioouuuyc'),
+                 '[''’‘‛ʼʹ´`′＇-]', ' ', 'g') ~ m.regex
+       GROUP BY 1
+   ),
+   total AS (
+       -- une ligne par titre et par jour
+       SELECT
+           (s.publication_datetime AT TIME ZONE 'Europe/Paris')::date AS jour,
+           SUM(s.count) AS nb_articles_total
+       FROM public.stats_factiva_articles s
+       CROSS JOIN bornes b
+       WHERE s.publication_datetime >= b.t0::timestamp AT TIME ZONE 'Europe/Paris'
+         AND s.publication_datetime <  b.t1::timestamp AT TIME ZONE 'Europe/Paris'
+       GROUP BY 1
+   )
+   SELECT
+       t.jour,
+       COALESCE(n.nb_articles_<thematique>, 0) AS nb_articles_<thematique>,
+       t.nb_articles_total,
+       100.0 * COALESCE(n.nb_articles_<thematique>, 0) / NULLIF(t.nb_articles_total, 0) AS part_articles_<thematique>_pct
+   FROM total t
+   LEFT JOIN <thematique> n USING (jour)
+   ORDER BY t.jour;
+   ```
 
 La recherche donne les événements marquants, susceptibles d'être cités dans la publication ; les pics servent de tamis pour ce qu'elle a manqué. La liste fixe ensuite les périodes d'analyse et de comparaison (§3.2) déclarées dans le YAML.
 
 **Le repo est public** : aucun chiffre ni takeaway non publié n'y entre. Avant publication, les résultats vivent dans un document Metabase `Résultats - <Sujet> <Année>` de la collection de l'analyse. Le statut d'un axe reste « testé » jusqu'à la publication.
 
-**Conventions Metabase.** Collection `03. Analyses thématiques/NN. <Sujet> <Année>`. Préfixe `AV -` pour l'audiovisuel, `PE -` pour la presse. Après le préfixe, le code de l'axe ([§4.1](#41-catégories-et-codes)) : `AV - V1 - Volume`, `PE - C1 - Lien CC`. Versions abandonnées préfixées `OLD-`. On ne modifie jamais une question d'une autre analyse : on la duplique. Après publication, le SQL des questions utilisées est copié dans `<AAAA-MM>-<sujet>/queries/`.
+**Conventions Metabase.** Collection `03. Analyses thématiques/NN. <Sujet> <Année>`. Préfixe `AV -` pour l'audiovisuel, `PE -` pour la presse. Après le préfixe, le code de l'axe ([§4.1](#41-catégories-et-codes)) : `AV - V1 - Volume`, `PE - C1 - Lien CC`. Versions abandonnées préfixées `OLD-`. On ne modifie jamais une question d'une autre analyse : on la duplique. Dans le SQL, `<sujet>` (en-tête) et `<thematique>` (commentaires, noms de CTE et de colonnes) se remplacent par le thème : `Courbe journalière inondations`, `dictionnaire_inondations`, `nb_articles_inondations`. On n'emploie pas « noyau » dans les requêtes. Après publication, le SQL des questions utilisées est copié dans `<AAAA-MM>-<sujet>/queries/`.
 
 **Nouvelle analyse.** Créer `<AAAA-MM>-<sujet>/decisions.md` à partir du [modèle](#6-modèle-pour-une-analyse) et remplir les §1 et §2 avant toute requête.
 
@@ -62,7 +175,11 @@ Le job prend en entrée `THEMATIC` (l'entrée du fichier), `MODE` et `COUNTRY` (
 
 Les anciennes tables datées (par exemple `incendies_articles_fr_20260701_20260708`) sont vouées à disparaître ; aucune table n'est plus créée sous ce nom.
 
+Profondeur des données : rien avant le 1er janvier 2023 en audiovisuel (`keywords`), rien avant le 1er janvier 2025 en presse (`factiva_articles`). Les articles de presse n'entrent en base qu'une semaine après leur parution : pas d'analyse presse au jour le jour, la dernière semaine est toujours incomplète. `time_monitored` ne remonte pas avant 2025 : en deçà, les heures se prennent dans la grille (`program_metadata`).
+
 Volume du corpus audiovisuel : toujours filtrer sur `thematic_chunk = true`. Les segments adjacents ne servent qu'à la recontextualisation.
+
+Corpus presse : à partir de l'étape 2 (axes), toujours filtrer sur `word_count >= 100` (articles de moins de 100 mots exclus). La courbe journalière de l'étape 0 n'applique pas ce filtre : elle mesure l'agitation des médias sur tous les articles, comme son dénominateur `stats_factiva_articles`. Le job garde les articles courts dans les tables thématiques, pour pouvoir y revenir.
 
 Classification des titres de presse (nationale, régionale...) : table `source_classification` (`media_all`, `source_type`), à joindre sur `source_code`.
 
@@ -71,6 +188,9 @@ Classification des titres de presse (nationale, régionale...) : table `source_c
 ### 3.1 Corpus noyau (adoptée)
 
 - Le corpus noyau d'un thème est construit uniquement à partir de mots du dictionnaire OME, directs (HRFP) ou indirects.
+- Un terme n'entre dans le dictionnaire noyau que s'il désigne le sujet sans ambiguïté : `crue centennale` oui, `piégé par les eaux` non.
+- On n'écarte jamais un terme parce qu'il est HRFP : il est dans le dictionnaire OME parce que nous voulons qu'il y soit. Ses faux positifs se mesurent au contrôle de précision (§3.6).
+- On garde toujours l'écriture du dictionnaire OME, même si elle paraît fautive ou incomplète (`augmentation du risque inondation`, sans « d' ») : elle peut reprendre un terme administratif. En presse, les variantes de genre et de nombre partent de cette écriture.
 - La liste de chaque thème est fixe : un thème récurrent (incendies, inondations...) utilise toujours la même entrée de `thematic_jobs_config.yml`.
 - En presse, une expression qui en contient une autre (« gestion des inondations » et « inondations ») n'ajoute aucun article au corpus. On la garde si elle est non-HRFP : `keywords_found` l'affiche alors en priorité et indique par quel terme l'article est entré dans `factiva_articles`.
 - La correspondance entre `thematic_jobs_config.yml` et le dictionnaire OME est vérifiée à la main à la création ou à la modification d'une entrée.
@@ -193,7 +313,7 @@ Statuts : voir plus haut. « Explorée dans » cite les analyses ; « idée » r
 |---|---|---|---|---|---|
 | V1 | Q1 (en partie) | Volume | Combien d'articles, d'occurrences, de segments, par média ? Faudra-t-il agréger ? | Classement des médias en barres (G7) | Incendies 2026, Chaleur 2026 |
 | V2 | Q7 | Timeline | Comment le volume évolue-t-il jour par jour ? Occurrences par heure de grille sur une fenêtre large (voir l'étape 0). Sert à fixer les périodes, à mesurer l'agitation des médias sur le sujet et à la comparer d'une thématique à l'autre (incendies face à inondations), pour formuler des hypothèses sur ce qui fait réagir les médias. Attention à la taille des dictionnaires noyau comparés | Courbe annotée d'événements (G2), courbe hebdomadaire (G1) | Incendies 2026 |
-| V3 | | Mots les plus employés | Quels mots du corpus noyau portent le volume, et lesquels restent peu utilisés ? Compter les occurrences dans le texte (`plaintext_normalized`, `title/snippet/body_normalized`, par exemple avec `regexp_matches(..., 'g')`), pas `keywords_found` : celui-ci ne donne que le nombre de segments ou d'articles où le mot apparaît, pas le nombre de fois où il est dit. Intéressant selon le contexte | Barres terme × famille de presse (G12) | Surchauffe 2026 |
+| V3 | | Mots les plus employés | Quels mots du dictionnaire noyau portent le volume, et lesquels restent peu utilisés ? Compter les occurrences dans le texte (`plaintext_normalized`, `title/snippet/body_normalized`, par exemple avec `regexp_matches(..., 'g')`), pas `keywords_found` : celui-ci ne donne que le nombre de segments ou d'articles où le mot apparaît, pas le nombre de fois où il est dit. Intéressant selon le contexte | Barres terme × famille de presse (G12) | Surchauffe 2026 |
 
 **C. Chaîne causale**
 
@@ -341,6 +461,7 @@ Notre sujet est l'écologie. Une référence qui traite d'un autre sujet ne sert
 ```markdown
 # <Sujet> <période>
 
+- Responsable : <prénom>
 - Statut : en cours | publié (<lien article ou bilan>)
 - Entrée de `thematic_jobs_config.yml` : `<thème>`
 - Tables : `thematic_extracts.<thème>_articles_<pays>`, `thematic_extracts.<thème>_keywords_<pays>`
@@ -358,7 +479,7 @@ Seulement ce qui s'écarte de la méthode commune. Sinon : « Méthode commune, 
 
 ## 2. Mots-clés
 
-- Entrée `<thème>` de `thematic_jobs_config.yml`, créée ou modifiée le ..., correspondance avec le dictionnaire OME vérifiée par ...
+- Entrée `<thème>` de `thematic_jobs_config.yml`, créée ou modifiée le ..., correspondance avec le dictionnaire OME vérifiée le ...
 - Termes discutés (bruit, exclusions) et décision :
 
 ## 3. Axes

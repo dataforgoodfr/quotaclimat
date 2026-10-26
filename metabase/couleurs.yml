@@ -49,3 +49,16 @@ groupes:
       Energie: "#F2A86F"
       Industrie: "#F9D45C"
       Transport: "#98D9D9"
+
+  types_de_presse:
+    description: >-
+      Catégories de titres de presse écrite (tableau de bord 136). Colonne « Type - ajusté » de la question 1387.
+      Presse Nationale et Presse économique y sont enregistrées ; Agence Presse et Presse Régionale sont
+      relevées sur sa légende, où elles sont automatiques.
+    reference:
+      - 1387 # barres, comparaison des sources
+    couleurs:
+      Presse Nationale: "#E75454"
+      Presse économique: "#F7C4C4"
+      Presse Régionale: "#F9D45C"
+      Agence Presse: "#7172AD"

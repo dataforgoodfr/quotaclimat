@@ -46,6 +46,10 @@ SEARCH_MAX_RESULTS = int(os.environ.get("INPI_SEARCH_MAX_RESULTS", "1000"))
 # of a run and the quota is about 100 requests (x-rate-limit-remaining 87 at the start of a test run)
 MAX_NOTICES = int(os.environ.get("INPI_MAX_NOTICES", "3"))
 REMAINING_HEADER = "x-rate-limit-remaining"
+# answer of the gateway refusing the documented method itself ("Request method 'POST' not supported" on
+# POST /search in October 2026, while the same search worked an hour later): the API is unavailable
+# for every brand, not for this one, so the run stops instead of failing on each brand
+UNAVAILABLE_STATUSES = {405}
 # answers of a notice the search lists but the gateway does not give (EU19429104: HTTP 403 with the HTML
 # page of the gateway, the search of the same brand having just worked): the notice is skipped, the other
 # ones of the brand are still read
@@ -238,6 +242,11 @@ class InpiQuotaExceeded(RuntimeError):
     requests would fail too."""
 
 
+class InpiUnavailable(RuntimeError):
+    """Answer of the API gateway meaning that no request can succeed (UNAVAILABLE_STATUSES): the following
+    brands would fail too."""
+
+
 def _rate_limit_headers(response) -> dict[str, str]:
     """x-rate-limit-* headers of an answer (quota information of the API gateway)."""
     return {k.lower(): v for k, v in (getattr(response, "headers", None) or {}).items() if k.lower().startswith(RATE_LIMIT_HEADERS_PREFIX)}
@@ -350,6 +359,11 @@ class InpiClient:
                     )
                 time.sleep(wait + 1)
                 continue
+            if response.status_code in UNAVAILABLE_STATUSES:
+                try:
+                    _raise_for_status(response)
+                except requests.HTTPError as e:
+                    raise InpiUnavailable(f"INPI API unavailable after {self.requests_summary}: {e}") from e
             _raise_for_status(response)
             return response
         if response.status_code == 429:

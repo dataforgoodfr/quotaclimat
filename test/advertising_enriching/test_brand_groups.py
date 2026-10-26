@@ -16,6 +16,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups impo
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi import (
     InpiClient,
     InpiQuotaExceeded,
+    InpiUnavailable,
     Notice,
     looks_like_company,
     is_alive,
@@ -181,6 +182,22 @@ def test_quota_still_exceeded_after_waiting(monkeypatch):
         raise AssertionError("no error raised")
     except InpiQuotaExceeded as e:
         assert "still exceeded" in str(e)
+
+
+def test_method_not_allowed_stops(monkeypatch):
+    session = FakeInpiSession()
+    error = FakeResponse(status_code=405)
+    error.url = "https://api-gateway.inpi.fr/services/apidiffusion/api/marques/search"
+    error.text = '{"title":"Method Not Allowed","status":405,"detail":"Request method \'POST\' not supported"}'
+    calls = []
+    monkeypatch.setattr(session, "request", lambda method, url, timeout, **kwargs: calls.append(url) or error)
+    try:
+        InpiClient("user", "password", delay_sec=0, session=session).search("Acme")
+        raise AssertionError("no error raised")
+    except InpiUnavailable as e:
+        assert str(e).startswith("INPI API unavailable after 3 INPI requests (login 2, search 1): INPI search: HTTP 405")
+    # not tried again: the gateway refuses every search
+    assert len(calls) == 1
 
 
 def test_network_error_tried_again(monkeypatch):
@@ -673,7 +690,8 @@ def test_propose_row_parents():
     row = propose_row("Acme", holder, None, None, None, KnownCompanies(), TODAY)
     assert "aucune société mère trouvée" in row["commentaires"]
     nothing = propose_row("Acme", None, None, None, None, KnownCompanies(), TODAY)
-    assert (nothing["marque"], nothing["entreprise"]) == ("Acme", "")
+    assert (nothing["marque"], nothing["entreprise"], nothing["e_statut"]) == ("Acme", "", "à vérifier")
+    assert "aucune marque en vigueur à ce nom" in nothing["commentaires"]
 
 
 def test_print_rows_tab_separated():

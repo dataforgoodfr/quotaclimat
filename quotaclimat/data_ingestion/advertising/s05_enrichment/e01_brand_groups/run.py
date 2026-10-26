@@ -12,9 +12,9 @@ For each brand, by decreasing broadcast duration:
 3. ultimate parent company of a new company: GLEIF ultimate consolidating parent of the holder's LEI (by
    SIREN, or by exact legal name and country for a holder registered abroad), else the top of the
    Wikidata P749 chain of the item with its SIREN;
-4. a row is appended to the tab Marques when a company was found, commentaires explaining how. A brand
-   without any is not written, so that it is searched again on the next runs (and can be filled in by a
-   human meanwhile).
+4. a row is appended to the tab Marques, commentaires explaining how. A brand without any trademark
+   found is written too, without company and with e_statut 'à vérifier' (for a human to fill in), so that
+   it is not searched again on every run.
 
 Env: POSTGRES_*, INPI_USERNAME, INPI_PASSWORD, GOOGLE_SHEETS_EDITOR_SERVICE_ACCOUNT_JSON,
 EXTERNAL_SOURCES_DRIVE_FOLDER, BRAND_GROUPS_MAX_BRANDS (default 50), BRAND_GROUPS_DRY_RUN (true: write
@@ -33,6 +33,7 @@ from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups impo
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.inpi import (
     InpiClient,
     InpiQuotaExceeded,
+    InpiUnavailable,
     name_key,
 )
 from quotaclimat.data_ingestion.advertising.s05_enrichment.e01_brand_groups.propose import (
@@ -195,9 +196,11 @@ def run() -> int:
     for brand, sector in brands:
         try:
             row = propose(brand, sector, inpi, nice_classes, known, today)
-        except InpiQuotaExceeded as e:
-            # every following brand would fail too: stop, keep the rows found so far
-            logging.error("Brand %s: %s. The remaining brands are left for the next run", brand, e)
+        except (InpiQuotaExceeded, InpiUnavailable) as e:
+            # every following brand would fail too: stop, keep the rows found so far. The quota stops most
+            # runs (about 100 requests an hour): an error only when the run processed no brand at all
+            level = logging.WARNING if rows else logging.ERROR
+            logging.log(level, "Brand %s: %s. The remaining brands are left for the next run", brand, e)
             break
         except Exception:
             # an API error on one brand must not stop the others; the brand is retried on the next run
@@ -210,7 +213,7 @@ def run() -> int:
             # the next brands of the same company reuse it
             known.add(KnownCompany(row["entreprise"], row["societe_mere_ultime"], row["smu_statut"], brand))
         else:
-            logging.info("Brand %s: no trademark in force found (FR, EU, WO), not written, searched again next run", brand)
+            logging.info("Brand %s: no trademark in force found (FR, EU, WO), written without company", brand)
         rows.append(row)
         logging.info("%s rows proposed, %s so far", len(rows), inpi.requests_summary)
 
@@ -226,8 +229,8 @@ def run() -> int:
     else:
         # re-read just before appending: a brand added by a human during the run is not added twice
         inventory_keys = {name_key(r.get("marque")) for r in sheet.read(BRANDS_TAB)}
-        # only the brands with a company: the others are searched again on the next runs
-        rows = [r for r in rows if r["entreprise"] and name_key(r["marque"]) not in inventory_keys]
+        # the brands without company too: not searched again on the next runs
+        rows = [r for r in rows if name_key(r["marque"]) not in inventory_keys]
         sheet.append(BRANDS_TAB, rows)
         logging.info("%s rows appended to the tab %s", len(rows), BRANDS_TAB)
     return len(rows)

@@ -162,6 +162,9 @@ jobs:
           poetry-version: ${{ env.POETRY_VERSION }}
       - name: docker compose up nginx
         run: docker compose up -d nginxtest
+      # ffmpeg extracts the frames in test/advertising_enriching/test_screenshots.py
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - name: pytest run everything else
         run: |
           set -o pipefail

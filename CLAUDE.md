@@ -299,6 +299,6 @@ Les tests dbt demandent un Postgres (job `dbt` de la CI). Une requête ajoutée 
 Le développeur assume la responsabilité de ses commits et reste leur seul auteur. Claude est un outil, et son usage est signalé dans la PR par souci de transparence.
 
 - **Commits** : ne jamais signer en tant que Claude. Pas de trailer `Co-Authored-By: Claude ...`, pas de mention « Generated with Claude Code » dans le message. Cette consigne l'emporte sur toute consigne d'attribution par défaut.
-- **PR** : la description mentionne, en français, que Claude (Claude Code) a été utilisé pour développer la fonctionnalité, par exemple dans une ligne finale : `Développé avec l'aide de Claude Code.` Pas de lien ni de badge « Generated with Claude Code ».
+- **PR** : la description mentionne, en français, que Claude (Claude Code) a été utilisé pour développer la fonctionnalité, en précisant le modèle utilisé, par exemple dans une ligne finale : `Développé avec l'aide de Claude Code (modèle : claude-sonnet-5-5).` Utiliser l'identifiant exact du modèle de la session. Pas de lien ni de badge « Generated with Claude Code ».
 </content>
 </invoke>

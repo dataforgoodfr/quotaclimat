@@ -223,6 +223,72 @@ def test_occurrences_streamed_by_channel_day(session):
     ]
 
 
+def test_ads_and_occurrence_batches_most_broadcast_first(session):
+    _add_ad(session, "ad-a", 2)
+    _add_ad(session, "ad-b", 5)
+    _add_ad(session, "ad-c", 0)
+    _add_ad(session, "ad-unclassified", 9, status=None)
+
+    filters = screenshots.Filters()
+    assert [a.id for a in session.execute(screenshots.ads_query(filters))] == [
+        "ad-b",
+        "ad-a",
+        "ad-c",
+    ]
+    assert session.execute(
+        screenshots.ranked_ad_ids_query(filters)
+    ).scalars().all() == [
+        "ad-b",
+        "ad-a",
+    ]
+
+    # from T0 + 25 min: occurrences 3 and 4 of ad-b only (every 10 minutes from T0)
+    recent = screenshots.Filters(
+        occurrences_from=(T0 + timedelta(minutes=25)).replace(tzinfo=ZoneInfo("UTC"))
+    )
+    assert [a.id for a in session.execute(screenshots.ads_query(recent))] == ["ad-b"]
+    assert sorted(
+        o.id for o in session.execute(screenshots.occurrences_query(recent))
+    ) == ["ad-b-occ3", "ad-b-occ4"]
+
+
+def test_run_occurrences_by_batches_of_ads(session, monkeypatch):
+    _add_ad(session, "ad-a", 2)
+    _add_ad(session, "ad-b", 3, channel="m6")
+    _add_ad(session, "ad-c", 4)
+    monkeypatch.setattr(screenshots, "ADS_PER_OCCURRENCE_BATCH", 1)
+
+    processed = []
+
+    async def _group(fs, channel, occurrences, semaphore):
+        processed.append([o.id for o in occurrences])
+        return [
+            screenshots.ScreenshotResult(
+                target_type="occurrence",
+                target_id=o.id,
+                ad_id=o.ad_id,
+                status="done",
+                source="mediatree_archive",
+            )
+            for o in occurrences
+        ]
+
+    with patch(f"{RUN_MODULE}.screenshot_occurrence_group", side_effect=_group):
+        asyncio.run(
+            screenshots.run_occurrences(
+                session, session, None, screenshots.Filters(limit=8)
+            )
+        )
+
+    # one batch per ad, the most broadcast first; the limit stops in the last batch
+    assert processed == [
+        ["ad-c-occ0", "ad-c-occ1", "ad-c-occ2", "ad-c-occ3"],
+        ["ad-b-occ0", "ad-b-occ1", "ad-b-occ2"],
+        ["ad-a-occ0"],
+    ]
+    assert len(session.scalars(select(Ad_Screenshot)).all()) == 8
+
+
 def test_export_margin_from_video_duration_or_detection_date():
     # 1s margins before 2026-04-27, 0.1s after
     assert screenshots.export_margin_sec(12.0, datetime(2026, 1, 1), 14.02) == 1.0

@@ -63,9 +63,19 @@ retries the errors. The rows of soft deleted occurrences stay.
 ## Selection
 
 - Ads: by `first_detection_date` (like the exportation), occurrences: by `occurrence_date`.
+  `OCCURRENCES_FROM` keeps only the occurrences broadcast from a date (e.g. `2025-09-29`, start of the ad
+  analysis), and only the ads broadcast since then, whatever their detection date.
 - Only the classified ads and their occurrences by default (same `prediction_status` as
   `analytics.publicites`): the others have no metadata to check.
 - Every occurrence that is not soft deleted.
+
+## Order
+
+The most broadcast ads first (number of occurrences, from `OCCURRENCES_FROM` and on `CHANNEL` when set), so
+that their checks are complete first. The occurrences are processed by batches of `ADS_PER_OCCURRENCE_BATCH`
+ads (20 by default): within a batch, one channel and UTC day at a time, so that the occurrences sharing a
+mediatree archive download it once. A bigger batch downloads fewer archives twice, a smaller one completes
+the first ads sooner.
 
 ## Environment variables
 
@@ -77,6 +87,8 @@ retries the errors. The rows of soft deleted occurrences stay.
 | `TARGETS` | `ads,occurrences` | what to screenshot |
 | `PREDICTION_STATUSES` | `classified` | `classified`, `all` or a comma separated list |
 | `LIMIT` | none | max number of ads, and of occurrences |
+| `OCCURRENCES_FROM` | none | only the occurrences broadcast from this date, Paris time (`2025-09-29`) |
+| `ADS_PER_OCCURRENCE_BATCH` | `20` | ads per batch of occurrences, see Order |
 | `RETRY_MISSING` | `false` | also retry the `missing_source` rows |
 | `SCREENSHOT_ACL` | `public-read` | ACL of the uploaded images (`private` to keep them private) |
 | `SCREENSHOT_NB_FRAMES`, `SCREENSHOT_MOSAIC_COLUMNS` | `6`, `3` | mosaic layout |

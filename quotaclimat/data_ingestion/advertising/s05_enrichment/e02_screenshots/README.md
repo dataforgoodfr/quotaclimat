@@ -52,6 +52,10 @@ One row per ad or occurrence in `advertising.ad_screenshot`:
 | `frame_offsets_sec`, `nb_frames` | offsets of the frames from the start of the ad, number of frames found |
 | `details` | margin of the ad video, missing archives, error message |
 
+Readable by Metabase and the other readers of the advertising dbt models (`metabase-analytics-*`,
+`rrs-read-*`, `climateguard-reader-user`), granted by the migration `a7d3e9f1c5b2`, which also makes the next
+tables created in the schema `advertising` by the migrations readable by them.
+
 A separate table rather than columns of `ad` / `ad_occurrence`: the detection deletes and recreates the
 occurrences of a window it reprocesses (same ids when the ad and its start don't change), which would
 lose the columns, and the job only writes its own table, without updating the tables the detection and

@@ -12,8 +12,6 @@
   loop:
     - /opt/services/kestra/.env
     - /opt/services/kestra/application.yml
-    - /opt/services/kestra/flows
-
 
 - name: Get docker.sock group id on host
   stat:
@@ -35,6 +33,26 @@
     src: "{{ playbook_dir }}/../kestra/flows/"
     dest: /opt/services/kestra/flows/
 
+# The flows directory is bind-mounted into the container: deleting and
+# recreating it would leave the container on the old, empty directory.
+# Only remove the files of flows deleted from the repository instead.
+- name: List deployed kestra flow files
+  find:
+    paths: /opt/services/kestra/flows
+    file_type: file
+  register: kestra_deployed_flows
+
+- name: Remove flows deleted from the repository
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ kestra_deployed_flows.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: (item.path | basename) not in kestra_repo_flows
+  vars:
+    kestra_repo_flows: "{{ lookup('fileglob', playbook_dir ~ '/../kestra/flows/*', wantlist=True) | map('basename') | list }}"
+
 - name: Set ownership of flows directory to kestra container user (uid/gid 1000)
   file:
     path: /opt/services/kestra/flows
@@ -51,12 +69,13 @@
     pull: always
   register: kestra_compose
 
+# Always restart: kestra_compose.changed is true as soon as any service of the
+# stack changes (e.g. a new autoheal image), even when kestra was not recreated.
 - name: Restart kestra to pick up flow changes
   community.docker.docker_container:
     name: kestra
     state: started
     restart: true
-  when: not kestra_compose.changed
 
 - name: Wait for Kestra to be healthy
   shell: docker exec kestra curl -sf http://localhost:8080/api/v1/configs

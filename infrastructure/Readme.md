@@ -204,9 +204,10 @@ make tags=glitchtip ansible  # Redeploy GlitchTip only
 ### Kestra flows
 
 Flow definitions live in `kestra/flows/`. The Ansible kestra role automatically:
-1. Uploads all flow YAML files to Kestra via its API
-2. Provisions secrets referenced by `{{ secret('...') }}` in flows
-3. Provisions KV store entries referenced by `{{ kv('...') }}` in flows
+1. Copies all flow YAML files to `/opt/services/kestra/flows` on the server, bind-mounted as `/app/flows` and watched by Kestra (`micronaut.io.watch`), and removes the files of flows deleted from `kestra/flows/` (the directory itself is never deleted: the container would stay on the old, empty one and lose every flow)
+2. Restarts the `kestra` container on every run so it reloads the flows
+3. Provisions secrets referenced by `{{ secret('...') }}` in flows
+4. Provisions KV store entries referenced by `{{ kv('...') }}` in flows
 
 To add or update a flow, edit the YAML in `kestra/flows/` and run:
 ```bash

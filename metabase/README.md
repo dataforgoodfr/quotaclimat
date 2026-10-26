@@ -70,6 +70,14 @@ La clé d'API se crée dans Metabase : Admin > Authentification > Clés d'API. E
 
 Une nouvelle question se crée à la main dans Metabase, en collant le SQL. On ajoute ensuite son numéro au manifeste. La synchronisation reprend alors son SQL, sa description et ses variables.
 
+## Couleurs des graphiques
+
+`couleurs.yml` donne la couleur de chaque valeur affichée dans les graphiques (crise climatique, causes, solutions...), reprise des tableaux de bord « Résultats généraux ». Elle sert à garder les mêmes couleurs d'un graphique à l'autre, en particulier pour les questions créées avec le connecteur Metabase.
+
+Une couleur se règle dans la question : dans Metabase, Visualisation > Réglages, ou `series_settings.<valeur>.color` (courbes, barres) et `pie.rows[].color` (camemberts) dans ses réglages. Une couleur réglée sur la carte d'un tableau de bord l'emporte sur celle de la question. Le connecteur ne la voit pas. Une valeur sans couleur réglée prend une couleur automatique, qui peut changer d'un graphique à l'autre.
+
+Pour ajouter un groupe de valeurs (secteurs, types de presse...), le déclarer dans le fichier avec les questions qui servent de modèle. `test/metabase/test_couleurs.py` vérifie le format des couleurs et qu'un groupe n'utilise pas deux fois la même.
+
 ## Documentation des tables du schéma `curated`
 
 Les tables du schéma `curated` (tables propres pour les équipes, voir le `CLAUDE.md`) sont documentées dans dbt, dans `my_dbt_project/models/curated/_curated.yml`. Le script `quotaclimat.metabase.sync_curated` recopie cette documentation dans les métadonnées des tables Metabase : nom affiché, description, unité et agrégation des colonnes, type sémantique, clés étrangères. Il tourne dans la tâche Kestra `curated_and_metabase_docs` du flow `dbt`, après dbt (subflow de `barometre`, `barometre-catchup` et `dbt-analytics`).

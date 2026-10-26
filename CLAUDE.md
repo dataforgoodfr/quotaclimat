@@ -214,6 +214,14 @@ La synchronisation (flow Kestra `quotaclimat/metabase-sync`) ne met à jour que 
 - **Filtres qui choisissent des lignes** : par défaut, ils ne changent pas les valeurs (parts, rangs). Le dire dans l'en-tête quand c'est le cas.
 - **Logique lourde ou réutilisée** : la mettre dans un modèle dbt plutôt que dans la requête.
 
+## Couleurs des graphiques Metabase
+
+Les codes couleur des objets affichés (crises, maillons de la chaîne causale...) sont dans `metabase/couleurs.yml`. Quand on crée ou modifie une question (connecteur Metabase, `question_write`) dont une série ou une part porte une de ces valeurs :
+
+- appliquer sa couleur dans les réglages de la question : `series_settings.<valeur>.color` pour les courbes et barres, `pie.rows[].color` pour les camemberts. Pour une mesure par série (une colonne `avg_2` titrée « Constat »), la clé est le nom de la colonne ;
+- ne pas compter sur les cartes du tableau de bord : le connecteur ne lit ni n'écrit leurs réglages, qui l'emportent sur ceux de la question ;
+- une valeur absente du fichier garde la couleur automatique de Metabase. Si l'utilisateur fixe une nouvelle couleur, l'ajouter au fichier.
+
 ## Tables dbt lues par les requêtes
 
 - `analytics` : `program`, `cas_de_mesinformation`, `cas_theme`, `publicites`, `task_global_completion`, `dbt_objects`.

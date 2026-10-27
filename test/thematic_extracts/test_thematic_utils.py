@@ -72,7 +72,7 @@ def test_get_periods_on_project_dict():
     """Verify that the periods of the project thematic_jobs_config.yml are valid."""
     yml = Path(utils.__file__).parent / "thematic_jobs_config.yml"
     assert utils.get_periods(yml, "incendies", "france")
-    assert utils.get_periods(yml, "incendies", "belgium")
+    assert utils.get_periods(yml, "incendies", "belgiumfr")
 
 
 # ───────────────────────── normalization ─────────────────────────

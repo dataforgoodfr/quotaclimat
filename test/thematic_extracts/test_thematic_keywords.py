@@ -20,7 +20,7 @@ T0 = pd.Timestamp("2025-03-10 10:00", tz=PARIS)
 MIN = timedelta(minutes=1)
 PARIS_DAY = f"CAST(start AT TIME ZONE '{PARIS}' AS DATE)"
 D1, D2, D3, D4, D5 = (date(2025, 3, d) for d in (10, 11, 12, 13, 14))
-TITLES = {"france": {"tf1": "TF1 (test)", "m6": "M6 (test)"}}
+TITLES = {"tf1": "TF1 (test)", "m6": "M6 (test)"}
 PERIOD = "p_test"
 
 def _wall(ts):
@@ -38,7 +38,7 @@ def con():
     c.execute(f"""
         CREATE TABLE {DB}.{SCHEMA}.keywords (
             id VARCHAR, channel_name VARCHAR, start TIMESTAMPTZ, plaintext VARCHAR,
-            keywords_with_timestamp VARCHAR, country VARCHAR
+            keywords_with_timestamp VARCHAR, country VARCHAR, channel_title VARCHAR
         )
     """)
     yield c
@@ -47,20 +47,20 @@ def con():
 def _add_kw(con, id_, channel, start, plaintext, pairs, country="france"):
     """pairs = [(keyword, theme), ...]"""
     con.execute(
-        f"INSERT INTO {DB}.{SCHEMA}.keywords VALUES (?, ?, CAST(? AS TIMESTAMP) AT TIME ZONE 'Europe/Paris', ?, ?, ?)",
+        f"INSERT INTO {DB}.{SCHEMA}.keywords VALUES (?, ?, CAST(? AS TIMESTAMP) AT TIME ZONE 'Europe/Paris', ?, ?, ?, ?)",
         [id_, channel, start, plaintext,
-         json.dumps([{"keyword": k, "theme": t} for k, t in pairs]), country],
+         json.dumps([{"keyword": k, "theme": t} for k, t in pairs]), country, TITLES.get(channel)],
     )
 
 def _read(con, keywords):
     return kw_utils.read_barometre_keywords(
-        con, keywords, D1, D2, "france", f"{SCHEMA}.keywords", DB
+        con, keywords, D1, D2, "france", None, f"{SCHEMA}.keywords", DB
     )
 
 def _kw_df(rows):
     """rows = [(id, channel, start, plaintext)]"""
     return pd.DataFrame([
-        {"id": i, "channel_name": c, "start": s, "plaintext": p,
+        {"id": i, "channel_name": c, "channel_title": TITLES.get(c), "start": s, "plaintext": p,
          "keywords_found": "inondation", "themes": "changement_climatique_constat"}
         for i, c, s, p in rows
     ])
@@ -69,8 +69,8 @@ def _s3_df(rows):
     """rows = [(channel, start, plaintext)]"""
     return pd.DataFrame([{"channel_name": c, "start": s, "plaintext": p} for c, s, p in rows])
 
-def _extract(kw, s3, titles=TITLES):
-    return kw_utils.extract_adjacent_chunks_day(kw, s3, tk.GAP, "france", titles)
+def _extract(kw, s3):
+    return kw_utils.extract_adjacent_chunks_day(kw, s3, tk.GAP)
 
 class RunEnv:
     """Everything run() needs, with no Postgres and no S3."""
@@ -92,7 +92,7 @@ class RunEnv:
     def configure(self, start=None, end=D2, dry_run=False, source_table=f"{SCHEMA}.keywords",
                   thematic="inondations", mode="new"):
         values = dict(
-            THEMATIC=thematic, COUNTRY="france", LANGUAGE="french",
+            THEMATIC=thematic, COUNTRY="france", COUNTRY_CONF=utils.COUNTRIES["france"],
             DRY_RUN=dry_run, MODE=mode, SOURCE_TABLE=source_table, POSTGRES_USER="u", POSTGRES_PASSWORD="p",
             POSTGRES_HOST="h", POSTGRES_PORT="5432", POSTGRES_DB=DB, S3_ENDPOINT_URL="http://s3",
             S3_REGION="r", S3_ACCESS_KEY="a", S3_SECRET_KEY="s", S3_BUCKET_NAME="bucket",
@@ -106,7 +106,7 @@ class RunEnv:
                                                                 "end": end}]}}}
             self.yml.write_text(yaml.safe_dump(content))
         self.destination_table = utils.make_destination_table_name(
-            thematic, tk.MEDIA_TYPE, tk.COUNTRIES["france"])
+            thematic, tk.MEDIA_TYPE, utils.COUNTRIES["france"]["country_short"])
         self.table = f"{DB}.{DESTINATION_SCHEMA}.{self.destination_table}"
 
     def add_s3(self, start, plaintext, channel="tf1"):
@@ -223,8 +223,8 @@ def test_extract_adjacent_chunks_day_number_of_chunks_kept():
 def test_extract_adjacent_chunks_day_output_columns_id_format_and_title():
     """Verify all output columns (neither more nor less, regardless of order since insertion
     is done BY NAME), the this_id format (channel + UTC time, 10:00 Paris = 09:00 UTC in March),
-    that this_id does not depend on the input timezone, and channel title from
-    the channel_titles dictionary passed as argument."""
+    that this_id does not depend on the input timezone, and channel title from the keywords
+    table, given to the S3 neighbours of the same channel."""
     kw, s3 = _scenario()
     out = _extract(kw, s3)
 

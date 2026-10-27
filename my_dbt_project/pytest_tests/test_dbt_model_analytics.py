@@ -1376,8 +1376,8 @@ def test_ensure_not_public_refuses_public_spreadsheet(permission_ids, status, he
 def test_advertising_models_schema(db_connection):
     """The advertising models and the reference seeds are built in the advertising schema (+schema,
     generate_schema_name), program, publicites and cas_de_mesinformation in the analytics schema (schema config),
-    emission_jour, environmental_shares_with_desinfo_counts and the seed mesinfo_theme_mots_cles in the public
-    schema, pub_annonceur_emission_jour in the advertising schema, the other models and seeds stay in the target
+    emission_jour, environmental_shares_with_desinfo_counts and the seeds mesinfo_theme_mots_cles,
+    pollution_chimique_mots_cles and chaine_communaute_belgique in the public schema, pub_annonceur_emission_jour in the advertising schema, the other models and seeds stay in the target
     schema."""
     with db_connection.cursor() as cur:
         cur.execute("""
@@ -1388,7 +1388,8 @@ def test_advertising_models_schema(db_connection):
                 'ad_tunnel_programs', 'ref_ome_secteurs', 'ref_programmes_emissions_infos_en_continue',
                 'core_query_environmental_shares', 'task_global_completion', 'keywords', 'program',
                 'publicites', 'cas_de_mesinformation', 'emission_jour', 'environmental_shares_with_desinfo_counts',
-                'mesinfo_theme_mots_cles', 'pub_annonceur_emission_jour'
+                'mesinfo_theme_mots_cles', 'pub_annonceur_emission_jour', 'pollution_chimique_mots_cles',
+                'chaine_communaute_belgique'
             )
               -- curated.emission_jour: see test_curated_documented_in_postgres
               AND table_schema <> 'curated'
@@ -1402,12 +1403,14 @@ def test_advertising_models_schema(db_connection):
         ("advertising", "ad_tunnel_programs"),
         ("advertising", "ad_tunnels"),
         ("analytics", "cas_de_mesinformation"),
+        ("public", "chaine_communaute_belgique"),
         ("public", "core_query_environmental_shares"),
         ("public", "emission_jour"),
         # built by the --target analytics run, schema='public'
         ("public", "environmental_shares_with_desinfo_counts"),
         ("public", "keywords"),
         ("public", "mesinfo_theme_mots_cles"),
+        ("public", "pollution_chimique_mots_cles"),
         ("analytics", "program"),
         ("advertising", "pub_annonceur_emission_jour"),
         ("analytics", "publicites"),
@@ -1633,6 +1636,27 @@ def list_enabled_seeds(**env):
     return sorted(line.strip() for line in result.stdout.splitlines() if line.strip().endswith(".csv"))
 
 
+def test_pollution_chimique_seeds(db_connection):
+    """One family per keyword and community, keywords in lowercase like core_query_thematics_keywords_be.keyword, and
+    the Dutch-speaking channels of the seed are those of channel_titles_belgium_flanders."""
+    from quotaclimat.data_processing.mediatree.i8n.belgium_flanders.channel_titles import (
+        channel_titles_belgium_flanders,
+    )
+    with db_connection.cursor() as cur:
+        cur.execute("""
+            SELECT communaute, mot_cle, count(*)
+            FROM public.pollution_chimique_mots_cles
+            GROUP BY 1, 2
+            HAVING count(*) > 1 OR mot_cle <> lower(mot_cle)
+        """)
+        assert cur.fetchall() == []
+        cur.execute("""
+            SELECT channel_name FROM public.chaine_communaute_belgique
+            WHERE communaute = 'néerlandophone' ORDER BY 1
+        """)
+        assert [r[0] for r in cur.fetchall()] == sorted(channel_titles_belgium_flanders)
+
+
 def test_fixture_seeds_disabled_in_production():
     """The fixture seeds have the names of the production tables (public.keywords...): with the production
     environment of entrypoints/dbt.sh (DBT_ENV=prod, `docker` target, no DBT_ENABLE_FIXTURE_SEEDS), a `dbt seed` or
@@ -1640,6 +1664,8 @@ def test_fixture_seeds_disabled_in_production():
     prod_seeds = list_enabled_seeds(DBT_ENV="prod", DBT_ENABLE_FIXTURE_SEEDS=None)
     assert all(path.startswith(("seeds/ref/", "seeds/themes/")) for path in prod_seeds), prod_seeds
     assert "seeds/themes/mesinfo_theme_mots_cles.csv" in prod_seeds
+    assert "seeds/themes/pollution_chimique_mots_cles.csv" in prod_seeds
+    assert "seeds/themes/chaine_communaute_belgique.csv" in prod_seeds
 
     test_seeds = list_enabled_seeds(DBT_ENABLE_FIXTURE_SEEDS="true")
     assert "seeds/fixtures/keywords.csv" in test_seeds

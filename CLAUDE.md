@@ -225,7 +225,7 @@ Les codes couleur des objets affichés (crises, maillons de la chaîne causale..
 ## Tables dbt lues par les requêtes
 
 - `analytics` : `program`, `cas_de_mesinformation`, `cas_theme`, `publicites`, `task_global_completion`, `dbt_objects`.
-- `public` : `emission_jour`, `environmental_shares_with_desinfo_counts`, `mesinfo_theme_mots_cles` (seed).
+- `public` : `emission_jour`, `environmental_shares_with_desinfo_counts`, `mesinfo_theme_mots_cles` (seed), `pollution_chimique_mots_cles` et `chaine_communaute_belgique` (seeds, tableaux de bord « Belgique - Pollution chimique »).
 - `advertising` : `pub_annonceur_emission_jour`, `ad_*`, seeds `ref_*`.
 - `curated` : `chaine`, `publicite`, `cas_mesinformation`, `emission_jour` (voir « Schéma curated »).
 

@@ -12,7 +12,9 @@ from quotaclimat.data_processing.mediatree.i8n.country import BELGIUM, BELGIUM_F
 # - channels: channels to scan in public.keywords (None: every channel of the country)
 COUNTRIES = {
     "france": {"country": "france", "country_short": "fr", "language": "french", "channels": None},
-    "belgiumfr": {"country": "belgium", "country_short": "befr", "language": "french", "channels": BELGIUM.channels},
+    # LN24, LATROIS and CANALZ are legacy channels
+    "belgiumfr": {"country": "belgium", "country_short": "befr", "language": "french",
+                  "channels": [c for c in BELGIUM.channels if c not in ("LN24", "LATROIS", "CANALZ")]},
     "belgiumnl": {"country": "belgium", "country_short": "benl", "language": "dutch",
                   "channels": BELGIUM_FLANDERS.channels + ["atv", "tvl"]},
 }

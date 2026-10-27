@@ -5,7 +5,7 @@
 
 ### given following environment variables
 ### - THEMATIC (mandatory): keywords and periods fetched in yaml (period start included, end excluded)
-### - COUNTRY (default france): one of COUNTRIES
+### - COUNTRY (default france): one of utils.COUNTRIES
 ### - DRY_RUN (default false): reads and counts, writes nothing
 ### - SOURCE_TABLE (default public.keywords): local only, e.g. public.test_keywords
 ### - MODE (default new): one of MODES
@@ -25,9 +25,6 @@ from urllib.parse import quote
 
 import quotaclimat.data_processing.thematic_extracts.thematic_keywords_utils as kw_utils
 import quotaclimat.data_processing.thematic_extracts.thematic_utils as utils
-from quotaclimat.data_processing.mediatree.i8n.france.channel_titles import channel_titles_france
-from quotaclimat.data_processing.mediatree.i8n.belgium.channel_titles import channel_titles_belgium
-from quotaclimat.data_processing.mediatree.i8n.belgium_flanders.channel_titles import channel_titles_belgium_flanders
 
 # only local env
 ROOT = Path(__file__).resolve().parents[3]
@@ -36,9 +33,6 @@ THEMATIC_YML = ROOT / "quotaclimat" / "data_processing" / "thematic_extracts" / 
 
 # timedelta that defines the range in which a chunk is considered adjacent to core chunk
 GAP = timedelta(minutes=2, seconds=30)
-CHANNEL_TITLES = {'france': channel_titles_france, 'belgium': channel_titles_belgium, 'belgium_flanders': channel_titles_belgium_flanders}
-LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch"}
-COUNTRIES = {"france": "fr","belgium": "be", "belgium_flanders": "befl" }
 
 SOURCE_TABLE = "public.keywords"
 DESTINATION_SCHEMA = "thematic_extracts"
@@ -57,7 +51,7 @@ REQUIRED_ENV = [
 def load_env() -> None:
     """Read environment variables (credentials and parameters) and expose them as module globals.
     Raises if a required one is missing or invalid."""
-    global THEMATIC, COUNTRY, LANGUAGE, DRY_RUN
+    global THEMATIC, COUNTRY, COUNTRY_CONF, DRY_RUN
     global SOURCE_TABLE
     global POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB
     global S3_ACCESS_KEY, S3_SECRET_KEY, S3_ENDPOINT_URL, S3_BUCKET_NAME, S3_REGION
@@ -72,9 +66,9 @@ def load_env() -> None:
     
     ### COUNTRY AND LANGUAGE
     COUNTRY = (os.getenv("COUNTRY") or "france").strip().lower()
-    if COUNTRY not in COUNTRIES:
-        raise ValueError(f"COUNTRY must be one of {list(COUNTRIES)}, got: {COUNTRY!r}")
-    LANGUAGE = LANGUAGES[COUNTRY]
+    if COUNTRY not in utils.COUNTRIES:
+        raise ValueError(f"COUNTRY must be one of {list(utils.COUNTRIES)}, got: {COUNTRY!r}")
+    COUNTRY_CONF = utils.COUNTRIES[COUNTRY]
 
     ### FLAGS
     DRY_RUN = (os.getenv("DRY_RUN") or "").strip().lower() in ("1", "true", "yes", "y", "oui")
@@ -111,12 +105,12 @@ def run() -> None:
     logging.info(
         "[PARAMS]\n"
         f"THEMATIC = {THEMATIC}\n"
-        f"COUNTRY = {COUNTRY} (deducted LANGUAGE = {LANGUAGE})\n"
+        f"COUNTRY = {COUNTRY} (deducted LANGUAGE = {COUNTRY_CONF['language']})\n"
         f"MODE={MODE}\n"
     )    
     logging.warning(f"[PARAMS] DRY_RUN={DRY_RUN}\n")
 
-    destination_table=utils.make_destination_table_name(THEMATIC, MEDIA_TYPE, COUNTRIES[COUNTRY])
+    destination_table=utils.make_destination_table_name(THEMATIC, MEDIA_TYPE, COUNTRY_CONF["country_short"])
     logging.info(f"[RUN] MODE={MODE} on {destination_table}")
 
     ## Getting periods (end excluded)
@@ -124,7 +118,7 @@ def run() -> None:
     logging.info("[RUN] Periods: " + ", ".join(f"{p['id']} ({p['start']} -> {p['end']})" for p in periods))
 
     ## Getting kw
-    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE, LANGUAGE)
+    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE, COUNTRY_CONF["language"])
     if not kw_list:
         raise ValueError(f"No keywords found for '{THEMATIC}' in {THEMATIC_YML}.")
 
@@ -203,7 +197,8 @@ def run() -> None:
 
                 keywords_day_df = kw_utils.read_barometre_keywords(_con, kw_list,
                                                              day, day + timedelta(days=1),
-                                                             COUNTRY, SOURCE_TABLE, POSTGRES_DB)
+                                                             COUNTRY_CONF["country"], COUNTRY_CONF["channels"],
+                                                             SOURCE_TABLE, POSTGRES_DB)
             except Exception:
                 logging.exception(f"[{SOURCE_TABLE}] {day}: failed")
                 stopped_day = day
@@ -219,7 +214,7 @@ def run() -> None:
             day_channels = keywords_day_df["channel_name"].unique().tolist()
             logging.info(f"[S3] {day}: Fetching s3 data on {len(day_channels)} channels from {len(keywords_day_df)} chunks")
             try:
-                s3_day_df = kw_utils.read_day_from_s3(_con, day, day_channels, COUNTRY, S3_BUCKET_NAME)
+                s3_day_df = kw_utils.read_day_from_s3(_con, day, day_channels, COUNTRY_CONF["country"], S3_BUCKET_NAME)
             except Exception:
                 logging.exception(f"[S3] {day}: failed to read S3")
                 stopped_day = day
@@ -228,9 +223,8 @@ def run() -> None:
             try:
                 # 3. Extracting thematic chunks and neighbour chunks
                 logging.info("[KEYWORDS/S3] Starting selection of chunks to keep (thematic + adjacent)")
-                day_to_ingest_df = kw_utils.extract_adjacent_chunks_day(keywords_day_df, s3_day_df, GAP,
-                                                                     COUNTRY, CHANNEL_TITLES)
-                # source country kept as a control, period id to tell periods apart in the table
+                day_to_ingest_df = kw_utils.extract_adjacent_chunks_day(keywords_day_df, s3_day_df, GAP)
+                # COUNTRY of the job kept as a control, period id to tell periods apart in the table
                 day_to_ingest_df = day_to_ingest_df.assign(country=COUNTRY, period=period["id"])
                 n_thematic_day = int(day_to_ingest_df["thematic_chunk"].sum())
                 n_adjacent_day = len(day_to_ingest_df) - n_thematic_day

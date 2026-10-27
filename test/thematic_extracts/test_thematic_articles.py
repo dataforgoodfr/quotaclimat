@@ -78,7 +78,8 @@ class RunEnv:
     def configure(self, start=None, end=D2, dry_run=False, source_table=SOURCE,
                   thematic="inondations", language="french", mode="new"):
         values = dict(
-            THEMATIC=thematic, COUNTRY="france", LANGUAGE=language,
+            THEMATIC=thematic, COUNTRY="france",
+            COUNTRY_CONF={**utils.COUNTRIES["france"], "language": language},
             DRY_RUN=dry_run, MODE=mode,
             SOURCE_TABLE=source_table, POSTGRES_USER="u", POSTGRES_PASSWORD="p",
             POSTGRES_HOST="h", POSTGRES_PORT="5432", POSTGRES_DB=DB,
@@ -92,7 +93,7 @@ class RunEnv:
                                                                 "end": end}]}}}
             self.yml.write_text(yaml.safe_dump(content))
         self.destination_table = utils.make_destination_table_name(
-            thematic, ta.MEDIA_TYPE, ta.COUNTRIES["france"])
+            thematic, ta.MEDIA_TYPE, utils.COUNTRIES["france"]["country_short"])
         self.table = f"{DB}.{DESTINATION_SCHEMA}.{self.destination_table}"
 
     def add_article(self, day, an=None, **overrides):

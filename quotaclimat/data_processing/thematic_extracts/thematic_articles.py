@@ -4,7 +4,7 @@
 
 ### given following environment variables
 ### - THEMATIC (mandatory): keywords and periods fetched in yaml (period start included, end excluded)
-### - COUNTRY (default france): one of COUNTRIES
+### - COUNTRY (default france): one of utils.COUNTRIES
 ### - DRY_RUN (default false): reads and counts, writes nothing
 ### - SOURCE_TABLE (default public.factiva_articles): local only
 ### - MODE (default new): one of MODES
@@ -40,14 +40,12 @@ DESTINATION_SCHEMA = "thematic_extracts"
 USERS_TO_GRANT = ['"climateguard-reader-user"', '"metabase-analytics-prod"']
 SOURCE_TABLE = "public.factiva_articles"
 MEDIA_TYPE = "presse"
-LANGUAGES = {"france": "french", "belgium": "french", "belgium_flanders": "dutch"}
-COUNTRIES = {"france": "fr", "belgium": "be", "belgium_flanders": "befl" }
 MODES = ("new", "resume", "reset")
 
 def load_env() -> None:
     """Read environment variables (credentials and parameters) and expose them as module globals.
     Raises if a required one is missing or invalid."""
-    global THEMATIC, COUNTRY, LANGUAGE, DRY_RUN
+    global THEMATIC, COUNTRY, COUNTRY_CONF, DRY_RUN
     global SOURCE_TABLE
     global POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_HOST, POSTGRES_PORT, POSTGRES_DB
     global MODE
@@ -61,9 +59,9 @@ def load_env() -> None:
     
     ### COUNTRY AND LANGUAGE
     COUNTRY = (os.getenv("COUNTRY") or "france").strip().lower()
-    if COUNTRY not in COUNTRIES:
-        raise ValueError(f"COUNTRY must be one of {list(COUNTRIES)}, got: {COUNTRY!r}")
-    LANGUAGE = LANGUAGES[COUNTRY]
+    if COUNTRY not in utils.COUNTRIES:
+        raise ValueError(f"COUNTRY must be one of {list(utils.COUNTRIES)}, got: {COUNTRY!r}")
+    COUNTRY_CONF = utils.COUNTRIES[COUNTRY]
 
     ### FLAGS
     DRY_RUN = (os.getenv("DRY_RUN") or "").strip().lower() in ("1", "true", "yes", "y", "oui")
@@ -87,18 +85,18 @@ def run() -> None:
         "[RUN]\n"
         f"thematic = {THEMATIC}\n"
         f"country = {COUNTRY}\n"
-        f"language = {LANGUAGE}"
+        f"language = {COUNTRY_CONF['language']}"
     )
     logging.warning(f"[RUN] DRY_RUN={DRY_RUN}")
 
-    destination_table=utils.make_destination_table_name(THEMATIC, MEDIA_TYPE, COUNTRIES[COUNTRY])
+    destination_table=utils.make_destination_table_name(THEMATIC, MEDIA_TYPE, COUNTRY_CONF["country_short"])
     logging.info(f"[RUN] MODE={MODE} on {destination_table}")
 
     ## Getting periods (end excluded)
     periods = utils.get_periods(THEMATIC_YML, THEMATIC, COUNTRY)
     logging.info("[RUN] Periods: " + ", ".join(f"{p['id']} ({p['start']} -> {p['end']})" for p in periods))
 
-    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE, LANGUAGE)
+    kw_list = utils.get_keywords(THEMATIC_YML, THEMATIC, MEDIA_TYPE, COUNTRY_CONF["language"])
     if not kw_list:
         raise ValueError(f"No keywords found for '{THEMATIC}' in {THEMATIC_YML}.")
     

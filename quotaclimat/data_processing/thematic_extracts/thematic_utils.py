@@ -3,6 +3,20 @@ import duckdb
 import re
 import yaml
 
+from quotaclimat.data_processing.mediatree.i8n.country import BELGIUM, BELGIUM_FLANDERS
+
+# key: COUNTRY env variable of the jobs and periodes key in thematic_jobs_config.yml
+# - country: value of the country column in public.keywords and of the country partition in s3
+# - country_short: suffix of the destination table name
+# - language: keywords key in thematic_jobs_config.yml
+# - channels: channels to scan in public.keywords (None: every channel of the country)
+COUNTRIES = {
+    "france": {"country": "france", "country_short": "fr", "language": "french", "channels": None},
+    "belgiumfr": {"country": "belgium", "country_short": "befr", "language": "french", "channels": BELGIUM.channels},
+    "belgiumnl": {"country": "belgium", "country_short": "benl", "language": "dutch",
+                  "channels": BELGIUM_FLANDERS.channels + ["atv", "tvl"]},
+}
+
 POSTGRES_MAX_IDENTIFIER_BYTES = 63
 MEDIA_TYPE_SHORT = {"audiovisuel": "keywords", "presse": "articles"}
 # format produced by make_destination_table_name: only these tables can be cleared

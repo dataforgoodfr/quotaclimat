@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from dotenv import load_dotenv
 import duckdb
-from datetime import date, timedelta
+from datetime import date
 import pandas as pd
 import numpy as np
 
@@ -265,41 +265,18 @@ def extract_adjacent_chunks_day(keywords_day_df: pd.DataFrame, s3_day_df: pd.Dat
     
 ### CHECKING RESULTS
 def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination_table: str,
-                   schema: str, gap: pd.Timedelta,
-                   step: timedelta = timedelta(minutes=2)) -> pd.DataFrame:
-    """Report on the whole destination table, per channel:
-    - missing_prev / missing_next: thematic chunks with no chunk of the same channel within gap
-      before / after (neighbour absent from S3, or lost)
-    - n_expected_adj: distinct slots start +/- step of thematic chunks, not themselves thematic
-      (a slot shared by two thematic chunks counts once)
-    - n_missing_adj / pct_missing_adj: expected slots absent from the table. Upper bound of
-      legitimate ones: ~105 program edges per day in France (program_metadata grid, July 2026:
-      2 for news channels, ~6 for generalist ones, 34 for rfi), reached only if every edge had a
-      thematic chunk. Beyond program edges, chunks can also be missing in S3.
-    - orphans: adjacent chunks with no thematic chunk of the same channel within gap
-    All thematic chunks are in the table (a day missing one in S3 is not ingested), so expected
-    adjacents can be rebuilt from it. A missing slot can still be a slot with no broadcast."""
+                   schema: str, gap: pd.Timedelta) -> pd.DataFrame:
+    """Per channel report on the destination table, using gap as the extraction does (starts are not always on a 2 min grid).
+    - n_expected_adj: sides (before / after) of thematic chunks with no other thematic chunk within gap
+    - n_missing_adj (missing_prev + missing_next) / pct_missing_adj: expected sides with no chunk within gap.
+      Program edges are legitimate misses (~105 per day in France, every news program edge for Belgian TV)
+    - orphans: adjacent chunks with no thematic chunk of the same channel within gap"""
     gap_sql = f"INTERVAL '{int(pd.Timedelta(gap).total_seconds())} seconds'"
-    step_sql = f"INTERVAL '{int(pd.Timedelta(step).total_seconds())} seconds'"
     try:
         report = con.sql(f"""
             WITH base AS MATERIALIZED (
                 SELECT channel_name, start, thematic_chunk
                 FROM {postgres_db}.{schema}.{destination_table}
-            ),
-            slots AS (
-                SELECT DISTINCT channel_name, start - {step_sql} AS slot FROM base WHERE thematic_chunk
-                UNION
-                SELECT DISTINCT channel_name, start + {step_sql} AS slot FROM base WHERE thematic_chunk
-            ),
-            adj AS (
-                SELECT s.channel_name,
-                    count(*) AS n_expected_adj,
-                    count(*) FILTER (WHERE b.start IS NULL) AS n_missing_adj
-                FROM slots s
-                LEFT JOIN base b ON b.channel_name = s.channel_name AND b.start = s.slot
-                WHERE b.thematic_chunk IS DISTINCT FROM true
-                GROUP BY s.channel_name
             ),
             t AS (
                 SELECT channel_name, start, thematic_chunk,
@@ -317,6 +294,9 @@ def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination
                 SELECT *,
                     thematic_chunk AND coalesce(prev_start < start - {gap_sql}, true) AS missing_prev,
                     thematic_chunk AND coalesce(next_start > start + {gap_sql}, true) AS missing_next,
+                    -- a side covered by another thematic chunk expects no adjacent
+                    thematic_chunk AND coalesce(prev_thematic < start - {gap_sql}, true) AS expected_prev,
+                    thematic_chunk AND coalesce(next_thematic > start + {gap_sql}, true) AS expected_next,
                     NOT thematic_chunk
                         AND coalesce(start - prev_thematic > {gap_sql}, true)
                         AND coalesce(next_thematic - start > {gap_sql}, true) AS orphan
@@ -329,19 +309,19 @@ def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination
                     count(*) FILTER (WHERE NOT thematic_chunk) AS n_adjacent,
                     count(*) FILTER (WHERE missing_prev) AS missing_prev,
                     count(*) FILTER (WHERE missing_next) AS missing_next,
+                    count(*) FILTER (WHERE expected_prev) + count(*) FILTER (WHERE expected_next) AS n_expected_adj,
                     count(*) FILTER (WHERE orphan) AS orphans
                 FROM flags
                 GROUP BY channel_name
             )
-            SELECT p.channel_name, p.n_chunks, p.n_thematic, p.n_adjacent,
-                p.missing_prev, p.missing_next,
-                coalesce(a.n_expected_adj, 0) AS n_expected_adj,
-                coalesce(a.n_missing_adj, 0) AS n_missing_adj,
-                round(100.0 * a.n_missing_adj / nullif(a.n_expected_adj, 0), 2) AS pct_missing_adj,
-                p.orphans
-            FROM per_channel p
-            LEFT JOIN adj a USING (channel_name)
-            ORDER BY n_missing_adj DESC, p.channel_name
+            SELECT channel_name, n_chunks, n_thematic, n_adjacent,
+                missing_prev, missing_next,
+                n_expected_adj,
+                missing_prev + missing_next AS n_missing_adj,
+                round(100.0 * (missing_prev + missing_next) / nullif(n_expected_adj, 0), 2) AS pct_missing_adj,
+                orphans
+            FROM per_channel
+            ORDER BY n_missing_adj DESC, channel_name
         """).df()
     except Exception as e:
         logging.error(f"[{destination_table}] ERROR CHECKING TABLE: {e}")
@@ -354,7 +334,7 @@ def check_keywords(con: duckdb.DuckDBPyConnection, postgres_db: str, destination
         f"[CHECK] {destination_table}: {total['n_chunks']} chunks "
         f"({total['n_thematic']} thematic, {total['n_adjacent']} adjacent) on {len(report)} channels\n"
         f"thematic chunks without neighbour: {total['missing_prev']} before, {total['missing_next']} after\n"
-        f"missing adjacents: {total['n_missing_adj']} / {total['n_expected_adj']} expected ({pct_total} %). Up to ~105 per day (France) can be program edges, "
+        f"missing adjacents (within gap): {total['n_missing_adj']} / {total['n_expected_adj']} expected ({pct_total} %). Up to ~105 per day (France) can be program edges, "
         f"and chunks can be missing in S3.\n"
         f"orphan adjacents: {total['orphans']}"
     )

@@ -225,7 +225,7 @@ def run() -> None:
                 logging.info("[KEYWORDS/S3] Starting selection of chunks to keep (thematic + adjacent)")
                 day_to_ingest_df = kw_utils.extract_adjacent_chunks_day(keywords_day_df, s3_day_df, GAP)
                 # COUNTRY of the job kept as a control, period id to tell periods apart in the table
-                day_to_ingest_df = day_to_ingest_df.assign(country=COUNTRY, period=period["id"])
+                day_to_ingest_df = day_to_ingest_df.assign(country=COUNTRY_CONF["country"], period=period["id"])
                 n_thematic_day = int(day_to_ingest_df["thematic_chunk"].sum())
                 n_adjacent_day = len(day_to_ingest_df) - n_thematic_day
                 logging.info(
